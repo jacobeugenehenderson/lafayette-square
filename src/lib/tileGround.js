@@ -699,18 +699,9 @@ export function tilesFromFrozen(frozen, streets) {
       const si = idxBySkelId.get(e?.skelId)
       if (si === undefined) return null
       const forward = e.side === 'right'
-      edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left', ...(e.atCurb ? { atCurb: true } : {}) })
+      edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
     }
-    // `road`/`roadOf` — the prebake spur-notch tag (`spurOutline.js`, `PREBAKE §4.0`:
-    // blocks = boundary − stroked roads). Dropping it here left the FILL treating a
-    // punched road notch as a block, so it stroked the carriageway INWARD from the curb
-    // and the dead-end roads went hollow (8 of 52 at full width, from 43 of 50).
-    tiles.push({
-      ring: ring.map(p => [p[0], p[1]]),
-      edges,
-      ...(t.road ? { road: true, roadOf: t.roadOf } : {}),
-      ...(Array.isArray(t.caps) && t.caps.length ? { caps: t.caps.map(c => ({ ...c })) } : {}),
-    })
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(Array.isArray(t.caps) && t.caps.length ? { caps: t.caps.map(c => ({ ...c })) } : {}) })
   }
   return tiles
 }
@@ -976,7 +967,7 @@ function groupRuns(tile) {
   }
   if (!found) {
     // whole ring is one street-side → one closed run
-    return [{ streetIdx: edges[0].streetIdx, side: edges[0].side, poly: [...ring, ring[0]], ...(edges[0].atCurb ? { atCurb: true } : {}) }]
+    return [{ streetIdx: edges[0].streetIdx, side: edges[0].side, poly: [...ring, ring[0]] }]
   }
   const runs = []
   let start = seam
@@ -987,7 +978,7 @@ function groupRuns(tile) {
     // run covers edges i0 .. i0+len-1 → vertices ring[i0] .. ring[i0+len]
     const poly = []
     for (let k = 0; k <= len; k++) poly.push(ring[(i0 + k) % n])
-    runs.push({ streetIdx: edges[i0].streetIdx, side: edges[i0].side, poly, ...(edges[i0].atCurb ? { atCurb: true } : {}) })
+    runs.push({ streetIdx: edges[i0].streetIdx, side: edges[i0].side, poly })
     start = (start + len) % n
     c += len
   }
@@ -1776,7 +1767,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
 export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   const Wacc = [], tlByLu = {}, luByLu = {}
   for (const st of shapeTiles) {
-    if (st.road) continue   // the spur notch IS road — no ped FILL inside a carriageway
     const t = sectionPassTile(st, cw, stripMat, blockCustoms)
     Wacc.push(...t.Wacc)
     for (const k in t.tlByLu) (tlByLu[k] || (tlByLu[k] = [])).push(...t.tlByLu[k])
@@ -2535,32 +2525,17 @@ export function buildTileGround(ribbons, opts = {}) {
       // datum-repair rows (Truman↔Lafayette w=2 scramble, Chouteau 6.70 m) —
       // constructing a corner from a scrambled width reshapes one artifact
       // into another; they pick this construction up once the datums hold.
-      // ⭐ FENCE REMOVED 2026-07-31. This used to read `kinds.includes('divided-transition')`,
-      // withholding the constructed corner from terminus/continuation stubs on the grounds
-      // that "constructing a corner from a scrambled width reshapes one artifact into
-      // another". There is no scramble: every chain's width comes from ONE source class
-      // (130 `seed-survey` + 22 `seed`, zero defaults, ZERO roads drawing from mixed
-      // sources), and 4 of the 18 roads whose chains "disagree" are an exact L/R mirror —
-      // the chain's point order flips between pieces, so the labels swap while the physical
-      // width is identical. Width is a SURVEY datum, settled before the Wall; gating a
-      // downstream construction on its trustworthiness imports an upstream concern into a
-      // downstream stage, which is the same category error as reaching back to chains
-      // (Jacob, 2026-07-31: *"by the time we're constructing a corner we need to be past
-      // the scrambled-width phase"*). A wrong width is a Survey fix, not a reason to leave
-      // the corner emergent.
-      const stubRecs = nd.corners?.stub || []
-      // The block fires wherever the registry records a corner — not only where a STUB
-      // exists. The stub gate was what scoped E3.3 to 23 of 261 nodes.
-      if (stubRecs.length || (nd.corners?.all || []).length) {
+      const stubRecs = nd.kinds?.includes('divided-transition') ? (nd.corners?.stub || []) : []
+      if (stubRecs.length) {
         const stubChains = new Set(stubRecs.map(c => c.chain))
         // An identified curb LINE at this node: the leg's de-tapered body
         // tangent (the same window-snapped probe the E3.2 halves use) offset
         // by the per-fe width on the stamped side. nb = unit normal toward
         // the BLOCK side of the curb.
         const lineCache = new Map()
-        const lineFor = (chain, side, halfDir, halfName) => {
+        const lineFor = (chain, side, halfDir) => {
           const ck0 = `${chain}|${side}`
-          const ck = `${ck0}|${halfName || (halfDir ? halfDir.map(v => v.toFixed(2)) : '')}`
+          const ck = `${ck0}|${halfDir ? halfDir.map(v => v.toFixed(2)) : ''}`
           if (lineCache.has(ck)) return lineCache.get(ck)
           let out = null
           const leg = legByChain.get(chain)
@@ -2576,9 +2551,7 @@ export function buildTileGround(ribbons, opts = {}) {
                 // Segment tangent + per-fe segOrd resolved on that half
                 // (point-order-forward keyed, the E3.2 convention).
                 const fdir = nrm(pts[vi + 1][0] - pts[vi][0], pts[vi + 1][1] - pts[vi][1])
-                // `corners.all` names the half outright ('fwd' / 'back'); fall back to the
-                // halfDir dot only for the legacy apex path that has no record.
-                const fwd = halfName ? halfName === 'fwd' : (!halfDir || (fdir[0] * halfDir[0] + fdir[1] * halfDir[1]) >= 0)
+                const fwd = !halfDir || (fdir[0] * halfDir[0] + fdir[1] * halfDir[1]) >= 0
                 const t = fwd ? fdir : nrm(pts[vi][0] - pts[vi - 1][0], pts[vi][1] - pts[vi - 1][1])
                 const w = feWidthAt(idx, side, segOrdAtVertex(idx, fwd ? vi : vi - 1))
                 if (w > 0.01) {
@@ -2653,7 +2626,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // spur-hygiene class) — the nudge keeps the stroke edge the boundary
         // there, invisibly.
         const NUDGE = 0.01
-        const cornerAt = (A, B, maxSpan) => {
+        const cornerAt = (A, B) => {
           const det = A.u[0] * B.u[1] - A.u[1] * B.u[0]
           if (Math.abs(det) < 0.34) return                  // near-parallel (<~20°): same curb, not a corner
           const pA = [A.p0[0] + A.nb[0] * NUDGE, A.p0[1] + A.nb[1] * NUDGE]
@@ -2676,13 +2649,8 @@ export function buildTileGround(ribbons, opts = {}) {
           // corner with no usable span (P at/beyond the far point) isn't one
           // this construction can build — skip, never emit a micro-cut.
           const spanTo = (L, e) => L.farPt ? (L.farPt[0] - P[0]) * e[0] + (L.farPt[1] - P[1]) * e[1] + 1 : lim + 8
-          // `lim + 8` ≈ 26 m is tuned for a divided transition's long taper. At an ordinary
-          // corner a cut that reaches 26 m down the leg runs far past the ~9 m junction zone
-          // and shaves the straight middle — which is exactly where the parallel litmus
-          // samples. Registry-driven corners pass a tighter reach.
-          const cap = maxSpan != null ? maxSpan : lim + 8
-          const S1 = Math.min(cap, spanTo(A, e1))
-          const S2 = Math.min(cap, spanTo(B, e2))
+          const S1 = Math.min(lim + 8, spanTo(A, e1))
+          const S2 = Math.min(lim + 8, spanTo(B, e2))
           if (S1 < 3 || S2 < 3) return
           let cut = [
             [P[0], P[1]],
@@ -2692,86 +2660,41 @@ export function buildTileGround(ribbons, opts = {}) {
           ]
           if (signedArea(cut) < 0) cut = cut.slice().reverse()
           jCornerCuts.push(cut)
-          // CORNER_DUMP=1 → provenance for every constructed corner, so a bow can be traced
-          // back to the node and the two legs that cut it. Without this the only signal is
-          // an aggregate count, and three hypotheses in a row moved it by ~1.
-          if (typeof process !== 'undefined' && process.env?.CORNER_DUMP === '1') {
-            console.error(`CUT\t${nd.key}\t${A.chain}|${A.side}\t${B.chain}|${B.side}\t${P[0].toFixed(1)},${P[1].toFixed(1)}\t${S1.toFixed(1)}\t${S2.toFixed(1)}`)
-          }
           nCorners++
         }
-        // ⭐⭐ E3.3 DRIVEN BY THE CORNER REGISTRY (`corners.all`), 2026-07-31.
-        // Was: search `corners.outer` for pairs, scoped to nodes carrying a STUB — which
-        // reached 23 of 261 nodes, leaving every ordinary intersection's corner EMERGENT
-        // from the stroke union. That is why an ordinary corner comes out disrupted while
-        // the divided ones are clean.
-        //
-        // The registry already states the answer: each record names the TWO curb sides
-        // that meet, as `{chain, end, half?, side}` in the measure convention — exactly
-        // `lineFor`'s inputs — and it names the through-HALF outright instead of inferring
-        // it from a normal. So the corner is no longer searched for; it is looked up, and
-        // built from the two legs' straight body lines run into the intersection.
-        //
-        // Two records are deliberately skipped:
-        //  · `sameChain` — a tip wrap or a centreline↔curb datum seam. One street, no corner.
-        //  · anything touching a STUB leg — §5e: the stub is the one leg that must never
-        //    corner (the carriageway tip dying into a median nose).
-        const stubLegKeys = new Set(stubRecs.map(c => `${c.chain}|${c.end}`))
-        const lineForRec = (r) => lineFor(r.chain, r.side, null, r.half)
-        // ⭐ A corner needs two different ROADS, not two different chains. A road is split
-        // into several skelIds at every name-transition/continuation seam, so `a !== b` on
-        // skelId mints a FALSE corner where the road in fact runs straight through — the
-        // same defect `throughId` was introduced to kill in the depth pass's `cornerAt`
-        // (see `streetByEdge`, keyed the same way). Measured cost of omitting it: +19
-        // straight-run bows, all on consecutive chains of one road (lafayette-5/6,
-        // park-2/4, russell-1/3, chouteau-2/3).
-        const roadOf = (chain) => {
-          const i = idxBySkel.get(chain)
-          const so = i != null ? streets[i] : null
-          return (so && (so.throughId || so.roadId || so.skelId || so.name)) || chain
-        }
-        // ⛔ A divided carriageway's INBOARD side carries no curb — it dies into the median.
-        // `corners.outer` only ever held OUTER sides, so the old path never saw these; the
-        // adjacency registry records both. Cornering the inboard side cuts into the median
-        // and bows the run: 29 new bows, every one of them `left` on park/lafayette/
-        // chouteau. Resolved with `inboardSideOf`, the ONE inboard oracle — the persisted
-        // `innerSign` is documented UNRELIABLE (it zeros the OUTBOARD side on real pairs).
-        const isInnerEdge = (chain) => {
-          const i = idxBySkel.get(chain)
-          return i != null && streets[i]?.anchor === 'inner-edge'
-        }
-        const inboardCache = new Map()
-        const isInboard = (chain, side) => {
-          if (!inboardCache.has(chain)) {
-            const i = idxBySkel.get(chain)
-            const so = i != null ? streets[i] : null
-            const cw = so && /^carriageway/.test(so.phase?.role || '')
-            const mi = so?.pairId != null ? idxBySkel.get(so.pairId) : null
-            inboardCache.set(chain, cw ? inboardSideOf(so, mi != null ? streets[mi] : null) : null)
+        for (const oc of (nd.corners?.outer || [])) {
+          if (!stubChains.has(oc.chain)) continue
+          const A = lineFor(oc.chain, oc.side)
+          // negligible curl → the stub IS its straight body; the emergent
+          // corner already rides the identified legs (any residual is datum,
+          // E3.4's) and a construction here would only manufacture
+          // coincident-edge needles. Window-built curbs always corner.
+          if (!A || (!A.fromWindow && (A.latOff || 0) < 0.4)) continue
+          // partners: the node's other identified outer curbs OUTSIDE the
+          // stub's own corridor group + the cross legs.
+          const gA = grpOf(oc.chain)
+          const cands = []
+          for (const o2 of (nd.corners?.outer || [])) {
+            if (o2.chain === oc.chain && o2.side === oc.side) continue
+            if (grpOf(o2.chain) === gA) continue
+            cands.push(o2)
           }
-          const inb = inboardCache.get(chain)
-          return inb != null && inb === side
-        }
-        for (const rec of (nd.corners?.all || [])) {
-          if (rec.sameChain) continue
-          if (isInboard(rec.a.chain, rec.a.side) || isInboard(rec.b.chain, rec.b.side)) continue
-          // ⛔ INNER-EDGE-ANCHORED chains are out of this path's domain. A divided
-          // carriageway's `points` are its INNER EDGE, not a centreline, so `p0 = node +
-          // normal × width` puts the identified line in the wrong place and the cut bites
-          // the run. Every run this pass worsened was one of them (park-avenue-0/2/4,
-          // russell-boulevard-3, lafayette-avenue-5 — all `anchor:'inner-edge'`). Those
-          // nodes are already served by the STUB-driven construction above, which was built
-          // and tuned for the divided campaign. One construction, two documented domains —
-          // not two constructions competing for the same node.
-          if (isInnerEdge(rec.a.chain) || isInnerEdge(rec.b.chain)) continue
-          if (stubLegKeys.has(`${rec.a.chain}|${rec.a.end}`)) continue
-          if (stubLegKeys.has(`${rec.b.chain}|${rec.b.end}`)) continue
-          if (roadOf(rec.a.chain) === roadOf(rec.b.chain)) continue   // one road running through
-          // Two carriageways of ONE corridor do not corner against each other — the gap
-          // between them is the median, not a corner quadrant (the old `grpOf` guard).
-          if (grpOf(rec.a.chain) === grpOf(rec.b.chain)) continue
-          const A = lineForRec(rec.a), B = lineForRec(rec.b)
-          if (A && B) cornerAt(A, B, Math.max(A.w, B.w) + 6)
+          for (const leg of nd.legs) if (leg.role === 'cross') for (const side of ['left', 'right']) cands.push({ chain: leg.chain, side })
+          // resolve lines; sameCurb-linked cands collapse to ONE (prefer the
+          // as-built window line over a straight-datum one)
+          const lines = []
+          for (const c2 of cands) {
+            const B = lineFor(c2.chain, c2.side, A.nb)   // through partners: the half facing the stub's block side
+            if (B) lines.push({ c2, B })
+          }
+          const drop = new Set()
+          for (let i = 0; i < lines.length; i++) for (let j = i + 1; j < lines.length; j++) {
+            if (drop.has(i) || drop.has(j)) continue
+            const a = lines[i], b = lines[j]
+            if (!sameCurb.has(`${a.c2.chain}|${a.c2.side}~${b.c2.chain}|${b.c2.side}`)) continue
+            drop.add(!a.B.fromWindow && b.B.fromWindow ? i : j)
+          }
+          lines.forEach(({ B }, i) => { if (!drop.has(i)) cornerAt(A, B) })
         }
         // branch apexes (the Grattan class): the stamped pair IS the corner
         for (const ap of (nd.corners?.apex || [])) {
@@ -3094,19 +3017,6 @@ export function buildTileGround(ribbons, opts = {}) {
   const shapeTiles = []
   const _mouthProbe = []   // TEMP probe (opts.deadEndMouthProbe): every candidate mouth + its nearby fillets
   for (const tile of tiles) {
-    // ⭐ THE SPUR NOTCH IS ROAD, NOT A BLOCK (`PREBAKE §4.0`). Prebake punched it out of
-    // the block with real width and a real cap, so the carriageway here IS the ring —
-    // it needs no inward stroking, and stroking it would paint the road's own surface
-    // as verge. Emit the ring as asphalt and take no ped FILL from it.
-    // ⚠️ MUST still push a shapeTile — `perTileMeta[i] / shapeTiles[i] align 1:1 with
-    // tiles[i]` (see above). A bare `continue` here shortened shapeTiles and misindexed
-    // every tile after the first notch.
-    if (tile.road) {
-      Aacc.push(tile.ring.map(p => [p[0], p[1]]))
-      shapeTiles.push({ ring: tile.ring, iA: [], vertR: [], tl: 0, sw: 0, lu: null, roundTips: [], bluntTips: [], roundTipKeys: new Set(), runs: [], bandJoin: 'miter', cap: null, fillets: [], road: true })
-      perTileMeta.push(null)
-      continue
-    }
     // [THRU] runs split at through-construction stations → per-fe spans
     const runs = thruSplits.size ? groupRuns(tile).flatMap(splitRunAtStations) : groupRuns(tile)
     const runMeta = runs.map(run => {
@@ -3170,10 +3080,7 @@ export function buildTileGround(ribbons, opts = {}) {
     const roundTipKeys = new Set(roundTips.map(t => tipKey(t.p)))
     const aStads = []
     for (const run of runs) {
-      // ⭐ A run already AT the curb contributes no asphalt. The spur notch supplies the
-      // carriageway (`PREBAKE §4.0a`); stroking inward from the curb as well painted the
-      // road at 2× width (simpson-place 15.9 m against 7.92 expected).
-      const d = run.atCurb ? 0 : edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt half-width
+      const d = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt half-width
       if (d > 1e-6) {
         // [E3.2] a run end at a constructed junction node strokes only its
         // body — the window poly supplies the constructed coverage beyond.
@@ -3257,12 +3164,6 @@ export function buildTileGround(ribbons, opts = {}) {
     // with 2 cap fillets; complex caps hit 5). Zero R at each round-tip node so the
     // cap stays the disk arc — the curb/ped offsets then wrap it cleanly, no lobes.
     for (const t of roundTips) { const ti = nearestVertexIndex(t.p, tile.ring); if (ti >= 0) vertR[ti] = 0 }
-    // Same reasoning at the SPUR LANDING: the vertex where an asserted spur's curb meets
-    // the through street's centreline is a change of datum, not a street corner, and its
-    // two edges are already inset by different amounts. Filleting it cuts the ped band
-    // into four fragments per landing (`scratch/spur-sliver-anatomy.mjs` — 8 slivers at
-    // Vail Place × Park Avenue, in mirrored pairs either side of the mouth). Zero R there
-    // so the band runs through the seam.
     const cornerRfn = (pt) => nearestVertR(pt, tile.ring, vertR)
     const fSink = []
     // [E3.2] drop degenerate (≈zero-area) rings before filleting: a coincident
@@ -3277,12 +3178,9 @@ export function buildTileGround(ribbons, opts = {}) {
     // windows pile in). Per-edge depth = the run covering that ring edge.
     // opts.iaCarveLegacy = today's swelled carve, kept for A/B on Jacob's eye.
     const edgeKey = (p, q) => `${Math.round(p[0] * 50)},${Math.round(p[1] * 50)}|${Math.round(q[0] * 50)},${Math.round(q[1] * 50)}`
-    const depthByEdge = new Map(), streetByEdge = new Map(), curbEdgeByKey = new Map()
+    const depthByEdge = new Map(), streetByEdge = new Map()
     for (const run of runs) {
-      // Zero inset on a curb edge — see the aStads note above. This is the one that
-      // matters for the silhouette: iA is the tile ring inset by these depths, and
-      // `asphalt = tile.ring − iA`, so a nonzero depth here re-paints the carriageway.
-      const baseDepth = run.atCurb ? 0 : edgeDepth(runMeasure(run), run.side, cw, 'A')
+      const baseDepth = edgeDepth(runMeasure(run), run.side, cw, 'A')
       const so = streetsOrig[run.streetIdx]
       // Key edge identity on the CANONICAL through-road id (continuesAs union,
       // frozen in derive.js) — so cornerAt reads a name-transition seam (West-18th↔
@@ -3301,7 +3199,6 @@ export function buildTileGround(ribbons, opts = {}) {
       // there → the curb runs straight through. Only same-identity/different-roadId
       // seams change; a real crossing (different identities) still corners.
       const sk = (so && (so.throughId || so.roadId || so.skelId || so.name)) || run.streetIdx
-      if (run.atCurb) for (let i = 0; i < run.poly.length - 1; i++) curbEdgeByKey.set(edgeKey(run.poly[i], run.poly[i + 1]), true)
       // [Brief C — divided "d" curb] OUTER-curb continuity ramp at a divided→
       // undivided nose. derive.js froze a per-vertex OUTER half-width (outerHWProfile,
       // vKey→hw) that makes the outer curb run STRAIGHT THROUGH the transition. Apply
@@ -3354,29 +3251,8 @@ export function buildTileGround(ribbons, opts = {}) {
     // A real corner = the two edges at this vertex belong to DIFFERENT streets.
     // Same street both sides = a through-node (T far-side / dogleg) → run straight
     // through, no corner (Jacob's T-intersection sensitivity; osm2streets doctrine).
-    // `cornerRfn` closes over vertR and reads it at call time, so zeroing here — after
-    // curbEdgeByKey is populated — still takes effect on the fillet.
-    for (let i = 0; i < nRing; i++) {
-      const j = (i - 1 + nRing) % nRing
-      const ci = !!curbEdgeByKey.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing]))
-      const cj = !!curbEdgeByKey.get(edgeKey(tile.ring[j], tile.ring[i]))
-      if (ci !== cj) vertR[i] = 0
-    }
     const streetAtEdge = (i) => streetByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing]))
-    // ⭐ A DATUM CHANGE IS NOT A CORNER. Where an asserted spur's curb meets the through
-    // street, one edge is a CURB line and the other a CENTRELINE, so their inward insets
-    // differ by a whole pavementHW. That step is a change of datum, not two streets
-    // meeting — but `a !== b` reads it as a corner and bids a fillet, and the corner
-    // machinery then shatters the ped band into slivers. It is the documented
-    // through-node break (`README` corners row) arriving by a new route: 22 junctions
-    // worsened and 4 clean ones flagged, almost all of them spur mouths.
-    const atCurbEdge = (i) => !!curbEdgeByKey.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing]))
-    const cornerAt = (i) => {
-      const j = (i - 1 + nRing) % nRing
-      const a = streetAtEdge(j), b = streetAtEdge(i)
-      if (atCurbEdge(j) !== atCurbEdge(i)) return false   // centreline ↔ curb seam
-      return a == null || b == null || a !== b
-    }
+    const cornerAt = (i) => { const a = streetAtEdge((i - 1 + nRing) % nRing), b = streetAtEdge(i); return a == null || b == null || a !== b }
     // opts.iaOffset = the per-edge parallel-offset curb (D6a). It owns the "street
     // simple" tiles (§5d); the "intersection variable" / degenerate tiles keep the
     // legacy carve that already handles them: MEDIAN tiles (offsetting both inner

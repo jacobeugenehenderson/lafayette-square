@@ -141,10 +141,6 @@ for (const v of violations.slice(0, 25)) {
   console.log(`  tile ${String(v.tile).padStart(3)}  ${(v.skelId || '?').padEnd(22)} side=${v.side.padEnd(5)} hw=${String(v.hw).padStart(5)}  curb bows ${String(v.maxDev).padStart(5)}m off-parallel  @ ${v.at}`)
 }
 if (violations.length > 25) console.log(`  … and ${violations.length - 25} more`)
-// LITMUS_ALL=1 → every violation as TSV on stderr, so two runs can be diffed. The
-// top-25 view hides whether a change moved the tail (it did: 75 → 94 with the top-25
-// max unchanged).
-if (process.env.LITMUS_ALL === '1') for (const v of violations) console.error(`BOW\t${v.skelId}\t${v.side}\t${v.maxDev}\t${v.at ? v.at.join(',') : ''}`)
 console.log(violations.length
   ? `\n❌ RED (Tier-1) — even in straight middles, away from any corner, the curb is not a parallel\n   offset of its chain. The curb is re-stroked live (a union-carve), not a frozen polygon.\n   This is the WEAKER, certain claim. It does NOT include the junction-zone "d" bulges — those\n   need the Tier-2 identity test (curb == frozen clean offset), writable only once the freeze\n   exists. See cartograph/POLYGON-FIRST.md.`
   : `\n✅ GREEN (Tier-1) — every straight-run middle is parallel to its chain. (Does not certify the\n   junction zone — that is Tier-2.)`)
