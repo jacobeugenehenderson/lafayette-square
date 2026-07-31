@@ -32,6 +32,15 @@ A bleed breaks that promise in the worst available way. A missing feature is hon
 
 Somebody already understood this class and fixed it in those two places. Site #4 below is the one they missed **in the same file**.
 
+> ### ✅ LANDED 2026-07-31 — do not re-do these three
+> | site | what landed | where |
+> |---|---|---|
+> | **1** — `bake-lamps.js` | a scene with no `raw/osm_street_lamps.json` now bakes **zero** lamps, not LS's 80 hand-placed ones. LS/toy keep reading their own file — for them it is the source, not a fallback. | branch **`lamp-scene-bleed`**, ⚠️ **not yet on trunk** |
+> | **9** — `measureModel.js` (Class B) | the static LS `ribbons.json` import is gone; the store registers the **active scene's** fixture (`setSceneMeasureSource`). No registration ⇒ empty seed ⇒ generic type default. Kills the 24-Altadena-streets bleed. | trunk `08d61ce1` |
+> | **11/14** — `config.js` (Class C) | `SCENE = env \|\| DEFAULT_SCENE` replaced by `SCENE_IS_EXPLICIT` + **`requireExplicitScene()`**, which **exits 2** on every writing entry point (`pipeline` · `skeleton` · `bake-terrain` · `promote-ribbons`). A scene with no `geography.json` now **refuses** rather than projecting the town at St. Louis's lat/lon. | trunk `08d61ce1` |
+>
+> Still open: sites **2, 3, 4** (`arborist/bake-trees.js`), **5** (`src/instance.js`), **6** (sky), **8** (legal prose), and §6.4 — **the regression test for the class**, which is the part that makes any of this hold for town #2.
+
 ## 3. The verified sites
 
 All code-verified 2026-07-20. Paths/lines were accurate at that date — **re-verify before editing** (code drifts).

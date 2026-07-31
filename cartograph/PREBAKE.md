@@ -101,7 +101,30 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > for (identity attribution; topology becoming width-dependent) + the spike:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**. Enforcement: `POLYGON-FIRST §2.1`.
 
-> ### ⭐⭐ 4.0a — ASSERT THE SPUR *BEFORE* POLYGONIZATION (2026-07-31) — BUILT, FLAG OFF
+> ### ⭐⭐ 4.0a — ASSERT THE SPUR *BEFORE* POLYGONIZATION (2026-07-31) — ⛔ TRIED, EYE SAID WORSE, REVERTED
+>
+> ⛔⛔ **STATUS 2026-07-31, read before anything below: this was built, the eye was run, and it
+> was REVERTED (`7b5b87a3`). `SPUR_OUTLINE` does not exist in the code — it is gone from trunk.**
+> Everything below describes the construction as it was; keep it as the design record, not as
+> a live flag you can turn on.
+>
+> **The verdict, in Jacob's terms:** *"Every gate I had said better or neutral. All of that was
+> true and none of it was the point. The gate is the eye and the eye says no."* Every number in
+> the MEASURED table further down was accurate **and the result was still worse on both scenes.**
+> ⭐ That is the lesson worth more than the construction: **these probes do not predict the eye.**
+> A future pass at this class must not re-run this table and conclude it is winning.
+>
+> ⭐ **And the arc surfaced a defect bigger than the one it was fixing:** the committed
+> `ribbons.json` did **not** reproduce from a fresh `pipeline.js` run — **233 vs 228 junction
+> nodes, asphalt 75 vs 71 rings.** That file *was* the map; re-deriving it produced a materially
+> different and worse one. **The pipeline is not reproducible against its own committed output.**
+> For a kit that is first-order: town #2 has no known-good artifact to notice the divergence
+> against — the pour is simply whatever it is that day. ⛔ **Do not re-promote over a committed
+> artifact without the operator's eye on the difference first.**
+>
+> The diagnosis kept: the probes, `CORNER_DUMP` / `JUNC_DUMP` / `LITMUS_ALL`, and the crop set
+> (committed to `polygon-asks-stamp` during the 2026-07-31 cleanup). The construction itself
+> stays in history at **`152e7734`** if it is wanted again.
 >
 > **In plain words:** blocks are traced by following street centre-lines. At a dead end the
 > trace ran out to the tip and straight back along the same line, so the block came back with
@@ -125,7 +148,8 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > Identity rides the strokes (`spurSide`/`spurCap`/`spurOf`/`atCurb`), never recovered from ring
 > geometry afterwards.
 >
-> **MEASURED (`SPUR_OUTLINE=1`, LS, 2026-07-31)** — re-run, don't trust:
+> **MEASURED (`SPUR_OUTLINE=1`, LS, 2026-07-31)** — ⛔ **every row below is TRUE and the eye still
+> said WORSE.** Kept as the record of what these probes can and cannot tell you. The flag is gone:
 >
 > | | flag OFF | flag ON | probe |
 > |---|---|---|---|
