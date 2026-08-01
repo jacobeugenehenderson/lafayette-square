@@ -59,6 +59,15 @@ _archive/
 # ...but the doc Diaries are tracked (cooled active docs, not defunct scripts).
 !arborist/_archive/
 !arborist/_archive/**
+# ⭐⭐ cartograph's Diary was NEVER added here — the known "_archive gitignore gotcha"
+# (BACKLOG §doc-pristineness, open since 2026-06-30; hit again 2026-07-31). Its 44
+# tracked files predate line 58, so the rule silently swallowed every archive written
+# AFTER it: trim-on-subsume quietly became deletion-with-extra-steps, in the exact
+# doc that doctrine names the sanctioned downstream home (BOZ.md §0 "additive/archiving,
+# never destructive"; git is the archive of record). Worst case is a brief moved from
+# the (also-ignored) _handoffs/ to here — it then existed in NO tracked location at all.
+!cartograph/_archive/
+!cartograph/_archive/**
 # Landscape intake — the operator's uploaded 3D set-pieces (DEM meshes, GLBs).
 # LOCAL-ONLY by design: the landscape is a STAGE intake the operator uploads
 # per-Look, deliberately OUT of the pour path so it can never be auto-swept into
