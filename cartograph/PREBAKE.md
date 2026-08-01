@@ -212,7 +212,18 @@ Two independent topologies pass through prebake, and the one that matters isn't 
 - **`streets[]` come from the skeleton; `faces[]` come from raw OSM.** That's the **two-source seam** — the skeleton was bolted on *beside* the original raw-OSM face derivation, not *in front of* it. The faces carry raw OSM's node topology (un-simplified, un-consolidated), so they don't agree with the chains.
 - **The block SHAPE is re-derived in Survey, not frozen here.** `tileGround.extractFaces` (`tileGround.js:303`, called `:779`) walks the **skeleton chains'** shared-vertex graph to build the tiles/blocks **on every render and bake**. `ribbons.faces` (the raw-OSM polygons) is consumed only for LU color (`:808`). So the real polygon is born downstream, per-build — with two costs: (1) the **false corner** is manufactured every build (`SURVEY.md §6`: the carriageway stub is a vertex in that per-build graph); (2) **every edit re-derives the whole map**, the perf sink behind the sticky Designer tools (`SURVEY.md §4.1`).
 
-### 4.1 ⭐⭐ The half that's frozen vs the half that isn't — the CURB is still re-stroked live (2026-06-09)
+### 4.1 ⭐⭐ The half that's frozen vs the half that isn't — the PRODUCER still traces chains (2026-06-09, **materially corrected 2026-07-31**)
+
+> ⛔⛔ **READ THIS BEFORE THE 2026-06-09 TEXT BELOW — it is seven weeks stale on the consumer side and it misled a session on 2026-07-31 into telling the operator that a working wall did not exist.**
+>
+> | | state | evidence |
+> |---|---|---|
+> | **Consumer boundary** | ✅ **BUILT, WIRED, DEFENDED** | **Every non-Survey view — Section/Measure *and* the neutral Design view — renders from the frozen `shape.json`** (`BlockGeometryV2Debug.jsx:562`). Frozen `iA` on **93/101** LS tiles + per-run curb polylines with measures. `sectionOpen` has **no chain in lexical scope** (`tileGround.js:1812`). Race-guarded twice (`72bbc989`, `59e5f109`). |
+> | **Survey live-strokes** | ✅ **BY DESIGN** | Survey is the tool that *edits* the SHAPE. Not a leak. |
+> | **Producer boundary** | 🔴 **OPEN — this is the real remaining gap** | `shape.json` is *minted* by `buildTileGround(liveRibbons,…)` then snapshotted → **a photograph of a live chain-stroke, not a pure function of the frozen frame.** **Check C RED** (`POLYGON-FIRST §2`). |
+> | **A fallback inside the wall** | ⛔ **NEW, live, unfixed** | A failed `shape.json` fetch **silently falls back to a live build** (`BlockGeometryV2Debug.jsx:589`), as does a scene with no freeze (`:595`). Layer-0 violation: the operator sees a plausible map and never learns the freeze didn't happen. |
+>
+> **Accurate SSOT for the wall's state: `WALL.md §31`** (it was right all along) and `ARCHITECTURE.md §79`. The text below is kept for its diagnosis of the *producer* — which still stands — and must not be quoted as evidence that downstream consumers re-derive. **They do not.**
 
 D2 **froze the face TOPOLOGY** (`ribbons.tiles[]` = per tile `{ring, edges:[{skelId,side}]}`, the `extractFaces` walk run once at prebake; `derive.js` D2 block, consumed by `tileGround.tilesFromFrozen`). That half of the program landed. **But the CURB GEOMETRY is NOT frozen** — `buildTileGround` re-strokes the chains **live, every frame in Survey** (`BlockGeometryV2Debug.jsx:661–686` → `tg.curb` / `curbOutline`) and again in the bake, building the curb as a *union* of per-chain strokes + E3 corner keep-out cuts + node aprons + `filletRing`. The Survey blue silhouette **is** `buildTileGround(liveRibbons).curb`, read from `ribbons.json` — **not** the baked `shape.json` (same engine, two times; rebaking changes nothing visible in Survey because Survey recomputes live).
 
