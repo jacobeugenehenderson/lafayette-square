@@ -216,10 +216,10 @@ bounded. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
 > |---|---|
 > | runs failing, authoring OFF | **78 of 151**, worst **4.45 m** |
 > | runs failing, authoring ON | **79** — ⭐ **the count barely moves; the COMPOSITION does.** Honoring authored widths does not rescue the number, it changes which runs fail. |
-> | tiles with a **shrunken curb ring** | **28 of 92** |
-> | worst case | tile **37**: a **2058 m²** block whose curb ring is an **85 m² fragment** — the curb has **collapsed**, not bowed |
 >
-> ⭐ **"Bow" is THREE unrelated defects wearing one name** — never quote the aggregate again: **(a) shifted** — perfectly parallel at the wrong datum (largely the authoring artifact above, i.e. *not a defect*); **(b) wander** — the distance genuinely varies, but the big ones (spread 36 m / 34 m / 27 m) are the ring notching away; **(c) collapsed rings** — the block has essentially no curb. *Same street is a perfect offset on six tiles and wild on two: it is **specific tiles**, not the offset math.*
+> ⛔ **A follow-on "collapsed curb rings — 28 of 92 tiles" census was filed the same day and WITHDRAWN hours later. Do not resurrect it.** It measured **`iA` AREA** — but **`Block = iA = tile − the authored roadway`** (`SURVEY §3` step 5), and the asphalt-edge handle *"strokes the pavement half-width outward; **the block follows**"* (`SURVEY §4`). **It was measuring the operator's width edits.** Area cannot separate an authored wide street from a genuinely narrow historical block from a graph face that is legitimately all roadway — and not with a better threshold either: median ring-share climbs **1% → 34% → 45% → 86%** with block size alone, so the metric mostly encodes size. **The only honest test is DISTANCE — is the curb at the *authored* half-width from its centerline — run with authoring loaded** (`ROADMAP A05`).
+>
+> ⭐ **"Bow" is still MORE THAN ONE THING — never quote the aggregate:** **(a) shifted** — perfectly parallel at the wrong datum, which is largely the authoring artifact above and *not a defect*; **(b) wander** — the distance genuinely varies along the run. *Same street is a perfect offset on six tiles and wild on two, so where real wander exists it is **specific tiles**, not the offset math.*
 >
 > **Consequence — this killed a fork.** "Derive the curb *correctly*" (the old Option B of `HANDOFF-freeze-the-curb…`) has **no coherent meaning**: you cannot make Mississippi's curb more parallel, it already is — you would only be **picking a different width**, and the correct width is the authored one the curb already honors. **Option A (move the computation, output unchanged) is the only coherent fork.** ⛔ And B would not have fixed tile 37 anyway: a collapsed ring is a different bug on the same red light.
 >
@@ -292,8 +292,18 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 > exactly where the map is most worked-on, so it looks healthiest where the least has been done.
 > That is the same silent-substitution shape as the LS width bleed and the wall's fallback. ⛔ An
 > invariant that has not been run against a heavily-authored scene has not been validated.
-> *(Doctrine it enforces: **everything is a best guess and everything is overridable** — `SKELETON §6`.
-> An override is first-class, so a detector that treats one as damage is measuring the wrong thing.)*
+> *(Doctrine it enforces: **everything is a best guess and everything is overridable** — `SKELETON §6`,
+> `ORIENTATION`, `CLAUDE.md` Layer 0 **q3**. The override IS the product; a detector that treats one
+> as damage is measuring the wrong thing.)*
+>
+> **RULE 1b — MEASURE THE DEFINITION, NOT A PROXY THAT CORRELATES WITH IT.** A correct curb is a
+> **distance** (`chain ⊕ authored halfWidth`). The withdrawn "collapsed rings" census measured an
+> **area ratio** instead — and area is blind to the definition: a curb could be metres off on every
+> edge and barely move it, while block *size* alone swings it 1% → 86%. ⭐ **The proxy is always the
+> cheap thing to compute; that is exactly why it gets reached for.** Three times in one day the
+> wrong quantity was measured (probes that didn't predict the eye · parallelism against un-authored
+> widths · area standing in for distance). **If you cannot state the invariant as the definition of
+> the thing, you are not ready to measure it.**
 >
 > **RULE 2 — AN UNMEASURABLE SAMPLE IS A LOUD FAILURE, NEVER A SKIPPED ONE.** Check A did
 > `if (!tile?.iA?.length) continue`, so *"this block has no curb"* was reported as *"bows 3.9 m"* —

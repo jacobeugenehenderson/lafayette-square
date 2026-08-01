@@ -19,7 +19,7 @@ When Jacob summons you at day's start by the name **"Pip"**, read **`PIP.md`** a
 looked at** — *"that checker is the real prize"* (`ORIENTATION.md`). A fix that needed an operator
 to have already seen this street has delivered nothing to town #2.
 
-### The two questions. Say the answers out loud before proposing anything.
+### The three questions. Say the answers out loud before proposing anything.
 
 1. **"What does this do for town #2?"** If the answer requires a human who has already looked at
    the specific street, it is not a fix — it is an instance patch wearing a method's clothes.
@@ -29,6 +29,25 @@ to have already seen this street has delivered nothing to town #2.
    answer is *it fails loudly*. ⛔ **NO FALLBACKS.** A fallback converts a failure into a
    plausible-looking success, and a plausible-looking success in a kit is the worst outcome there
    is — the operator sees a map and never learns it is wrong. Silence is the defect.
+3. **⭐⭐ "Am I about to call the operator's AUTHORING a defect?"** *(added 2026-07-31, after one day
+   produced three separate instances.)* **The override IS the product.** The kit machine-pours a
+   strong first draft and **the operator may override any of it** — an override is **first-class,
+   never a bug to drive to zero** (`ORIENTATION`, `SKELETON §6`). LS is a historical, idiosyncratic
+   neighborhood, and **that is precisely why the authoring tools exist.** So:
+   > ⛔ **ANY measurement, check, probe or bake taken WITHOUT the scene's authored state loaded is
+   > measuring the wrong thing** — and it is wrong in the kit's signature shape: it fails **worst on
+   > the most heavily authored town** and looks **cleanest on a fresh pour**, i.e. blind exactly
+   > where the map is most worked-on.
+   >
+   > Before reporting *any* defect, ask: **is this the authoring gesture's intended output?** Load
+   > `blockCustoms` / the scene's `design.json` and re-measure before you open your mouth.
+   **The three instances, all on 2026-07-31, all reported as damage:** `litmus-curb-parallel` ran
+   `blockCustoms: null` and scored Mississippi's authored 8.70 m as a "3.13 m bow" · a "collapsed
+   curb ring" census measured `iA` **area**, when `Block = iA = tile − the authored roadway`, so it
+   was measuring the asphalt-edge drag itself (`SURVEY §3`/`§4`) · the 2026-07-23 overlay reset threw
+   away 22 streets of measured widths on the advice that customs were "hampering" the skeleton work.
+   *Related: `feedback_dont_undo_a_decision_the_operator_made`, and the detector rules in
+   `POLYGON-FIRST §5`.*
 
 > ⭐ **Most questions you want to ask Jacob are already answered by these two.** "Skip list or
 > handle the class?" — it's a kit; handle the class. "This method or that one?" — one method, not
