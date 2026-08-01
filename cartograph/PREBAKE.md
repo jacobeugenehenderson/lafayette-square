@@ -101,136 +101,25 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > for (identity attribution; topology becoming width-dependent) + the spike:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**. Enforcement: `POLYGON-FIRST §2.1`.
 
-> ### ⭐⭐ 4.0a — ASSERT THE SPUR *BEFORE* POLYGONIZATION (2026-07-31) — ⛔ TRIED, EYE SAID WORSE, REVERTED
+> ### ⭐⭐ 4.0a — asserting the spur BEFORE polygonization: TRIED, REVERTED (2026-07-31)
 >
-> ⛔⛔ **STATUS 2026-07-31, read before anything below: this was built, the eye was run, and it
-> was REVERTED (`7b5b87a3`). `SPUR_OUTLINE` does not exist in the code — it is gone from trunk.**
-> Everything below describes the construction as it was; keep it as the design record, not as
-> a live flag you can turn on.
->
-> **The verdict, in Jacob's terms:** *"Every gate I had said better or neutral. All of that was
-> true and none of it was the point. The gate is the eye and the eye says no."* Every number in
-> the MEASURED table further down was accurate **and the result was still worse on both scenes.**
-> ⭐ That is the lesson worth more than the construction: **these probes do not predict the eye.**
-> A future pass at this class must not re-run this table and conclude it is winning.
->
-> ⭐ **And the arc surfaced a defect bigger than the one it was fixing:** the committed
-> `ribbons.json` did **not** reproduce from a fresh `pipeline.js` run — **233 vs 228 junction
-> nodes, asphalt 75 vs 71 rings.** That file *was* the map; re-deriving it produced a materially
-> different and worse one. **The pipeline is not reproducible against its own committed output.**
-> For a kit that is first-order: town #2 has no known-good artifact to notice the divergence
-> against — the pour is simply whatever it is that day. ⛔ **Do not re-promote over a committed
-> artifact without the operator's eye on the difference first.**
->
-> The diagnosis kept: the probes, `CORNER_DUMP` / `JUNC_DUMP` / `LITMUS_ALL`, and the crop set
-> (committed to `polygon-asks-stamp` during the 2026-07-31 cleanup). The construction itself
-> stays in history at **`152e7734`** if it is wanted again.
->
-> **In plain words:** blocks are traced by following street centre-lines. At a dead end the
-> trace ran out to the tip and straight back along the same line, so the block came back with
-> a zero-width crack instead of a street-shaped notch. The fix is not to cut width into that
-> crack afterwards — it is to **lay the dead-end street down as a two-sided shape first**, and
-> only then trace the blocks. ⭐ **The sequence is the fix** (Jacob): *"the slit needs to be
-> asserted BEFORE the polygonization."* Built in **`cartograph/spurOutline.js`**, called from
-> `derive.js` immediately before `extractFaces`. Same mechanism the map boundary already uses.
->
-> **What is emitted is an OPEN U — two curbs + an END COUPLER — not a closed ring.** The U's
-> free ends land on the through street's centreline, road-width apart, and the FACE WALK closes
-> the notch (its fourth side is the through-centreline between the landings). ⚠️ Closure is a
-> property of the graph, not of the stroke — when a landing fails to splice, nothing closes the
-> U, it floats inside the block, and because asserting a spur also TRIMS ITS CENTRELINE AWAY
-> that street loses its road outright. That is the 2026-06 pendant-prune failure exactly
-> (`dd4ddb6d`); it hit `south-jefferson-avenue-0`/`-8`. Hence the detect-and-roll-back pass:
-> never trust the closure, verify it after the walk.
->
-> ⭐ **The second mouth corner is CREATED, not detected** (`POLYGON-FIRST §2.1` Check 5): the
-> two curbs land at two distinct points, so each leg is bounded corner→coupler like any other.
-> Identity rides the strokes (`spurSide`/`spurCap`/`spurOf`/`atCurb`), never recovered from ring
-> geometry afterwards.
->
-> **MEASURED (`SPUR_OUTLINE=1`, LS, 2026-07-31)** — ⛔ **every row below is TRUE and the eye still
-> said WORSE.** Kept as the record of what these probes can and cannot tell you. The flag is gone:
->
-> | | flag OFF | flag ON | probe |
-> |---|---|---|---|
-> | rings with a repeated vertex (Check 1) | 50 | **9** | `coupler-slit-universal.mjs` |
-> | `tiles[].caps` (the slit registry) | 50 | **9** | inline |
-> | BLOCK faces | 101 | **101** | inline |
-> | road notch faces | 0 | **41** | inline |
-> | spurs at full road width | 43 / 52 | **45 / 52** | `spur-asphalt-truth.mjs` |
-> | junction band CLEAN | 101 | **110** | `correctness-detector.mjs` |
-> | tips asserted | — | **43 of 52**, 2 rolled back | `[S]` log line |
->
-> ⭐ **Block topology does not move (101 → 101)** — what separates this from whole-map punch-out,
-> measured to re-topologise **25 of 101** faces (`ea3ab870`).
->
-> **The FILL half.** An edge asserted at the curb carries **`atCurb`** through
-> `tilesFromFrozen` → `groupRuns` → the run, and the block's asphalt inset is **zero** there
-> (both the per-run stroke and `baseDepth`, which feeds `iA`; `asphalt = tile.ring − iA`). The
-> notch IS the road; nothing paints it twice.
->
-> **The junction band.** Net better (101 → 110 clean). The cause was a **datum change read as a
-> street corner**: at a landing one edge is a curb line and the other a centreline, so
-> `cornerAt`'s `a !== b` bid a fillet and shattered the ped band. Cured by suppressing the corner
-> across that seam and zeroing `vertR` there. 2 junctions still lose CLEAN (`Truman×Lafayette`,
-> one 4.7 m² fragment at exactly the 14 m throat radius; `Rutger`, one sub-threshold sliver).
->
-> ### ⛔ OPEN — what is owed before this ships
-> 1. **Jacob's eye in Survey — NEVER RUN.** The only remaining gate. Dolman · South 18th ·
->    Simpson · Nicholson: click a dead-end leg → that leg, whole, reacts; no partner flip, no
->    neighbouring corner or cap moving. Needs `scratch/rebake-shape.mjs` first.
-> 2. **The END COUPLER is not doctrine-conformant.** `SECTION §6.3`: the cap is an end coupler
->    whose shoulders are lane-switch corners, the bulb is ONE semicircle, and **width is
->    germane** — a spur may be authored asymmetric (Nicholson left 2.50 m / right 6.70 m), so
->    *"any dead-end detector keyed on both shoulders at the same radius is wrong by
->    construction."* `spurOutline.endCoupler` **averages the two radii** and does **not taper
->    depth across the shoulders**. Both owed.
-> 3. **9 tips not asserted** — one class: a mouth with geometry on only one side (an L-corner, or
->    a T whose cross street ends at the mouth), so one curb has nothing to land on. Plus
->    `south-18th-street-4` ×2, a disconnected stub touching nothing.
-> 4. **Retire what this makes redundant** — `walkOrd`, the mouth disc, the synthetic cap fe
->    (acceptance §5). After the eye passes, not before.
->
-> **Flag off ⇒ byte-identical** in `plain` and `design`; no detector invariant moves.
->
-> **Bugs found building it — the expensive knowledge.** The landing search returned a *copy* of
-> the segment, so the splice never matched and every curb dangled (reproducing the 2026-06 prune
-> exactly) · the mouth test required degree ≥ 3 and walked past spurs ending in an L-corner · the
-> landing ray aimed at the tip end instead of the mouth end · the inversion guard used an outward
-> tangent instead of the **point-order** tangent, rejecting 25 sound spurs · `atCurb` was written
-> as a *running* flag and latched, so two spurs never even asserted lost their asphalt · the
-> road-tile early-return skipped `shapeTiles.push`, breaking the documented `shapeTiles[i] ≡
-> tiles[i]` alignment.
->
-> ⚠️ **`spur-asphalt-truth.mjs` must NOT read `tiles[].caps`** to find tips. A cap exists only
-> where the freeze *failed* to close, so once spurs are asserted the caps vanish and a
-> caps-driven probe stops measuring the spurs the fix repaired — it dropped 50 rows to 7 and read
-> as a pass. It takes tips from `junctionMap`'s pendant-tip stamps instead.
+> Built (`152e7734`), run past Jacob eye on both scenes, judged **WORSE**, reverted (`7b5b87a3`).
+> `SPUR_OUTLINE` is not in the code. ⭐ **Every probe was green and the eye still said no — these
+> probes do not predict the eye.** Do not re-derive that table and read it as success.
+> Full construction, measurements and the bugs found building it →
+> **`_archive/PREBAKE-4.0a-spur-assert-REVERTED-2026-07-31.md`**.
+> Live doctrine for dead ends → `POLYGON-FIRST.md §2.1` (Checks 1–5).
 
-Two independent topologies pass through prebake, and the one that matters isn't frozen:
+### 4.1 ⭐⭐ What is frozen, and what is not — CONSUMER done, PRODUCER open
 
-- **`streets[]` come from the skeleton; `faces[]` come from raw OSM.** That's the **two-source seam** — the skeleton was bolted on *beside* the original raw-OSM face derivation, not *in front of* it. The faces carry raw OSM's node topology (un-simplified, un-consolidated), so they don't agree with the chains.
-- **The block SHAPE is re-derived in Survey, not frozen here.** `tileGround.extractFaces` (`tileGround.js:303`, called `:779`) walks the **skeleton chains'** shared-vertex graph to build the tiles/blocks **on every render and bake**. `ribbons.faces` (the raw-OSM polygons) is consumed only for LU color (`:808`). So the real polygon is born downstream, per-build — with two costs: (1) the **false corner** is manufactured every build (`SURVEY.md §6`: the carriageway stub is a vertex in that per-build graph); (2) **every edit re-derives the whole map**, the perf sink behind the sticky Designer tools (`SURVEY.md §4.1`).
+**Verified in code 2026-07-31. SSOT: `WALL.md §2`.**
 
-### 4.1 ⭐⭐ The half that's frozen vs the half that isn't — the PRODUCER still traces chains (2026-06-09, **materially corrected 2026-07-31**)
+- ✅ **Consumer — done.** Every non-Survey view (Section/Measure **and** the neutral Design view) renders from the frozen `shape.json`: frozen `iA` on **93/101** LS tiles plus per-run curb polylines with measures. `sectionOpen` has no chain in lexical scope and cannot re-derive. Race-guarded twice (`72bbc989`, `59e5f109`).
+- ✅ **Survey strokes live — by design.** Survey is the tool that *edits* the SHAPE.
+- 🔴 **Producer — open (`ROADMAP A03`, Check C RED).** `shape.json` is **minted** by `buildTileGround(liveRibbons,…)` and snapshotted, so the artifact is a **photograph of a chain-stroke, not a function of the frozen frame**. The tracing errors are frozen in at mint time — which is why the ~4 m divided-transition bow on a dead-straight chain survives every downstream fix. Brief: `_handoffs/HANDOFF-freeze-the-curb-in-the-first-bake.md`.
+- ⭐ **The diagnostic** (still the right one): test each curb side for parallelism to its own chain (`chain ± halfWidth`); deviation, except at a genuine corner, IS the artifact. `POLYGON-FIRST` Check A (`litmus-curb-parallel`) runs it and is RED.
 
-> ⛔⛔ **READ THIS BEFORE THE 2026-06-09 TEXT BELOW — it is seven weeks stale on the consumer side and it misled a session on 2026-07-31 into telling the operator that a working wall did not exist.**
->
-> | | state | evidence |
-> |---|---|---|
-> | **Consumer boundary** | ✅ **BUILT, WIRED, DEFENDED** | **Every non-Survey view — Section/Measure *and* the neutral Design view — renders from the frozen `shape.json`** (`BlockGeometryV2Debug.jsx:562`). Frozen `iA` on **93/101** LS tiles + per-run curb polylines with measures. `sectionOpen` has **no chain in lexical scope** (`tileGround.js:1812`). Race-guarded twice (`72bbc989`, `59e5f109`). |
-> | **Survey live-strokes** | ✅ **BY DESIGN** | Survey is the tool that *edits* the SHAPE. Not a leak. |
-> | **Producer boundary** | 🔴 **OPEN — this is the real remaining gap** | `shape.json` is *minted* by `buildTileGround(liveRibbons,…)` then snapshotted → **a photograph of a live chain-stroke, not a pure function of the frozen frame.** **Check C RED** (`POLYGON-FIRST §2`). |
-> | **A fallback inside the wall** | ⛔ **NEW, live, unfixed** | A failed `shape.json` fetch **silently falls back to a live build** (`BlockGeometryV2Debug.jsx:589`), as does a scene with no freeze (`:595`). Layer-0 violation: the operator sees a plausible map and never learns the freeze didn't happen. |
->
-> **Accurate SSOT for the wall's state: `WALL.md §31`** (it was right all along) and `ARCHITECTURE.md §79`. The text below is kept for its diagnosis of the *producer* — which still stands — and must not be quoted as evidence that downstream consumers re-derive. **They do not.**
-
-D2 **froze the face TOPOLOGY** (`ribbons.tiles[]` = per tile `{ring, edges:[{skelId,side}]}`, the `extractFaces` walk run once at prebake; `derive.js` D2 block, consumed by `tileGround.tilesFromFrozen`). That half of the program landed. **But the CURB GEOMETRY is NOT frozen** — `buildTileGround` re-strokes the chains **live, every frame in Survey** (`BlockGeometryV2Debug.jsx:661–686` → `tg.curb` / `curbOutline`) and again in the bake, building the curb as a *union* of per-chain strokes + E3 corner keep-out cuts + node aprons + `filletRing`. The Survey blue silhouette **is** `buildTileGround(liveRibbons).curb`, read from `ribbons.json` — **not** the baked `shape.json` (same engine, two times; rebaking changes nothing visible in Survey because Survey recomputes live).
-
-**This is the live leak the skeleton exists to abolish: a downstream consumer still building geometry from chains.** Its most visible symptom is the **divided-transition "d" bulge** (`HANDOFF-freeze-the-curb-in-the-first-bake.md`): the curb along a *straight* chain (e.g. Mississippi at Lafayette) is not a clean parallel offset — it bows ~4 m — because the live union *can* bow it. A correct curb is, by definition, `chain ⊕ halfWidth` (a parallel offset), with genuine corners as the intersection of two offsets — a **pure function of the skeleton**. So the curb belongs in the frozen body; the bow is the proof it isn't there yet.
-
-> **Diagnostic that beats node-archaeology:** test whether each curb side is **parallel to its own chain** (`chain ± halfWidth`). The chain is straight ground-truth; deviation from parallel — except at a genuine corner — *is* the artifact, and tells you which side drifted. Measure deviation from the definition; don't reconstruct the corner from the node soup. *(Ruled out this session as wrong altitude: de-taper-nose tuning, face-ring vertex moves, `cornersAtIx`/§437, and "the corner is missing" — the E3 corner does fire; the union just yields a non-parallel curb. See the brief.)*
-- **Contradiction to clear (code comments):** `tileGround.js` header and the `bake-ground.js` import comment still say *"TOY only / LS stays on figure-ground (transitional)"* — **stale** (pre-T2). The code runs LS on tiles unconditionally (`isTileScene = true`, `BlockGeometryV2Debug.jsx:253`; bake calls `buildTileGround` at `bake-ground.js:293`). Fix the comments when the code phase opens; until then, trust the code.
+*Prior text (2026-06-09), incl. the ruled-out approaches → `_archive/PREBAKE-4.1-frozen-vs-unfrozen-2026-06-09.md`.*
 
 ---
 
