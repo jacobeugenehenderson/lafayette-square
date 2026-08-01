@@ -199,10 +199,33 @@ bounded. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
 
 "Polygon-First is done for the curb" **means exactly** that all three pass. Nothing else counts as done.
 
-### Check A — Tier-1 parallelism (runnable TODAY · RED)
+### Check A — Tier-1 parallelism (runnable TODAY · ⛔ RED **and MIS-SPECIFIED — do not act on its number**)
 `cartograph/litmus-curb-parallel.mjs` — runs against the live producer (`buildTileGround`) and asserts every straight-run curb is a parallel offset of its chain (raycast chain→curb, distance must equal the street's half-width).
-- **Status today: ❌ RED — 38 straight-run stretches bow up to 5.8 m off-parallel**, in the run *middles*, away from any corner. That alone disproves "the curb is a parallel offset."
-- **Its honest blind spot:** it is **deliberately blind in the ~9 m junction zone** where the famous "d" bulges live — a cheap heuristic cannot separate an artifact bulge from a legitimate corner fillet there (both deviate). Widening it to reach the bulge floods it with real-corner false positives. So Check A proves the *weaker, certain* claim; it does not certify which junction-zone bows are artifacts. **That is what Check B is for.** (This blind spot is itself a lesson: the defect hides exactly where the cheap proxy can't look.)
+
+> ## ⛔⛔ THE CHECK IS BROKEN IN TWO WAYS. MEASURED 2026-07-31. READ BEFORE QUOTING ANY NUMBER.
+>
+> **(1) It runs with AUTHORING SWITCHED OFF.** `litmus-curb-parallel.mjs:77` passes **`blockCustoms: null`** — bare defaults. So it compares an **authored** curb against the **un-authored** width and reports **the operator's own decision as a defect.** Mississippi Avenue: authored half-width **8.70 m**, curb sits at **8.70 m**, spread along the run **0.00 m** — dead straight, dead parallel — and the check called it a **3.13 m bow** because it was measuring against the corridor's 11.83 m instead. ⭐ **That is damage-vs-decision, committed by an instrument** (`feedback_dont_undo_a_decision_the_operator_made`). The brief already specified the right behaviour — *"parallel offset means parallel at the **authored** width"* (`HANDOFF-freeze-the-curb…` §5.1); the check never did it.
+>
+> ⭐⭐ **AND THIS IS A LAYER-0 DEFECT, NOT A BUG.** The check fails **worst on the most heavily authored town — LS, the mould.** On a fresh pour with no customs it would look clean. **The instrument is blind exactly where the map is most worked-on**, so it is *most wrong where an operator has done the most work* — the same shape as `measureModel`'s width bleed and the wall's silent fallback: **invisible in precisely the scene you'd reach for to prove it works.** ⛔ Any detector in the suite (§5) that runs with authoring off inherits this.
+>
+> **(2) It DRESSES A FAILURE AS A MODEST DEFECT.** `:86` — `if (!tile?.iA?.length) continue` — a tile with **no curb ring at all is skipped**, and samples that find no curb nearby are dropped. So *"this block has no curb"* prints as *"bows 3.9 m."* ⛔ **A silent substitution inside the detector**, which is the one place it must never happen (`CLAUDE.md` Layer 0).
+>
+> **What the numbers actually are** (2026-07-31; the canon's "38 … up to 5.8 m" was stale):
+>
+> | | |
+> |---|---|
+> | runs failing, authoring OFF | **78 of 151**, worst **4.45 m** |
+> | runs failing, authoring ON | **79** — ⭐ **the count barely moves; the COMPOSITION does.** Honoring authored widths does not rescue the number, it changes which runs fail. |
+> | tiles with a **shrunken curb ring** | **28 of 92** |
+> | worst case | tile **37**: a **2058 m²** block whose curb ring is an **85 m² fragment** — the curb has **collapsed**, not bowed |
+>
+> ⭐ **"Bow" is THREE unrelated defects wearing one name** — never quote the aggregate again: **(a) shifted** — perfectly parallel at the wrong datum (largely the authoring artifact above, i.e. *not a defect*); **(b) wander** — the distance genuinely varies, but the big ones (spread 36 m / 34 m / 27 m) are the ring notching away; **(c) collapsed rings** — the block has essentially no curb. *Same street is a perfect offset on six tiles and wild on two: it is **specific tiles**, not the offset math.*
+>
+> **Consequence — this killed a fork.** "Derive the curb *correctly*" (the old Option B of `HANDOFF-freeze-the-curb…`) has **no coherent meaning**: you cannot make Mississippi's curb more parallel, it already is — you would only be **picking a different width**, and the correct width is the authored one the curb already honors. **Option A (move the computation, output unchanged) is the only coherent fork.** ⛔ And B would not have fixed tile 37 anyway: a collapsed ring is a different bug on the same red light.
+>
+> **Owed:** fix the check to (i) run **with the scene's authored `blockCustoms`**, and (ii) **report an absent/degenerate curb ring as its own loud failure class**, never fold it into a parallelism number. Until then Check A's aggregate is not evidence of anything.
+
+- **Its honest blind spot** (unchanged, and separate from the two faults above): it is **deliberately blind in the ~9 m junction zone** where the "d" bulges live — a cheap heuristic cannot separate an artifact bulge from a legitimate corner fillet there (both deviate). Widening it floods it with real-corner false positives. So Check A proves the *weaker, certain* claim; **that is what Check B is for.** (The blind spot is itself the lesson: the defect hides exactly where the cheap proxy can't look.)
 
 ### Check B — Tier-2 identity (the real gate · writable only after the freeze)
 > With no element active, **Survey's rendered curb == the prebake-frozen curb, byte-equal** — and the frozen curb is the clean offset (it passes Check A *including* the junction zone, because corners are constructed, not carved).
@@ -255,6 +278,34 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 3. **Enforce (the kit invariant, made mechanical).** Every flag → a **general skeleton fix** (the *class*, never the street — `SKELETON §6`). The suite is a **CI gate:** no green build with an un-flagged defect; a fix must turn a RED invariant GREEN *generally*; a regression guard keeps a fixed class fixed across towns.
 
 4. **The onboarding loop:** new town → run the suite → fix the flagged classes in the skeleton → green → ship. **Zero hand-fixing, by construction.**
+
+> ## ⭐⭐ TWO RULES EVERY INVARIANT IN THIS SUITE MUST OBEY (learned the hard way, 2026-07-31)
+>
+> Check A violated both, and the cost was a full standup spent reasoning from numbers that meant
+> nothing. **A detector that is wrong is worse than no detector** — it launders a false claim as a
+> measurement, and it is the one artifact in the kit nobody thinks to doubt.
+>
+> **RULE 1 — RUN WITH THE SCENE'S AUTHORED STATE, NEVER BARE DEFAULTS.** Check A passed
+> `blockCustoms: null`, so it measured against un-authored widths and **reported the operator's
+> decisions as defects** (`§2` Check A). ⭐ **The kit consequence is the important half: a check that
+> ignores authoring is WORST on the most authored town and CLEANEST on a fresh pour** — it is blind
+> exactly where the map is most worked-on, so it looks healthiest where the least has been done.
+> That is the same silent-substitution shape as the LS width bleed and the wall's fallback. ⛔ An
+> invariant that has not been run against a heavily-authored scene has not been validated.
+> *(Doctrine it enforces: **everything is a best guess and everything is overridable** — `SKELETON §6`.
+> An override is first-class, so a detector that treats one as damage is measuring the wrong thing.)*
+>
+> **RULE 2 — AN UNMEASURABLE SAMPLE IS A LOUD FAILURE, NEVER A SKIPPED ONE.** Check A did
+> `if (!tile?.iA?.length) continue`, so *"this block has no curb"* was reported as *"bows 3.9 m"* —
+> **a catastrophic failure dressed as a modest defect.** ⛔ Skipping what you cannot measure is a
+> fallback *inside the instrument*, and it hides the worst cases by construction (the biggest blocks
+> collapse hardest — tile 37, a 2058 m² block with an 85 m² curb fragment). **Emit `UNMEASURABLE`
+> as its own failing class with a count; never let it fall through into a magnitude.**
+>
+> **RULE 3 (the corollary) — ONE INVARIANT, ONE DEFECT.** "Bow" turned out to be three unrelated
+> defects sharing a number (shifted datum · genuine wander · collapsed ring), which made the
+> aggregate uninterpretable and sent the analysis at the wrong one. **If a check's failures need a
+> taxonomy to explain, it is really N checks; split it.**
 
 **The reframe this forces:** the six SHAPE tasks aren't the deliverable — **the detector is.** Fixing the 6 classes makes LS's suite go green; the *suite* is what defeats the problem on town #2…N. "Remove the 35 and see what breaks" stops being a one-time forensic and becomes the **standing regression test.**
 
