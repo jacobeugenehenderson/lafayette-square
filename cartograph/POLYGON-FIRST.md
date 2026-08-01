@@ -291,9 +291,17 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 > | path | tiles | |
 > |---|---|---|
 > | chain-FREE offset producer | **59** | Check C holds here |
-> | legacy carve — **median** tile | 32 | structural (offsetting both inner edges collapses the thin gap) |
-> | legacy carve — **small** tile | 10 | structural (`ringArea ≤ 1500`) |
+> | legacy carve — **divided median** | 30 | structural (offsetting both inner edges collapses the thin gap) |
+> | legacy carve — **loop-body median** | 3 | structural (`medArea > 0.5` on a single-run tile) |
+> | legacy carve — **small** tile | 9 | structural (`ringArea ≤ 1500`) |
 > | legacy carve — degenerate | **0** | every tile that qualifies for the offset path succeeds on it |
+>
+> ⚠️ **Corrected 2026-07-31:** this table first read *"32 median · 10 small"*, which conflated the two
+> median classes and mis-split the total. `isMedianTile` is `isDividedMedian || (isLoopInterior &&
+> medArea > 0.5)` — two different tile kinds behind one flag. Total is unchanged at 42.
+> ⛔ **`D6a`'s comment above this gate also lists DEAD-END tiles as a legacy-carve class. It is stale** —
+> the gate is `!isMedianTile && ringArea > 1500`, with **no dead-end condition**; dead-end tiles take the
+> OFFSET path and their caps are built in via `capArc` twelve lines below (21 tiles carry tips).
 >
 > ⛔ **The chain was NOT passed into `buildCurbRings` to cover those 42.** That is the quiet
 > re-opening the signature exists to prevent, and declining it is why the gap is countable instead of
