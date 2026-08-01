@@ -1,6 +1,10 @@
 # BRIEF — Land use is invented for most of the map. Derive it instead.
 
-**Status: DRAFT, DISPATCH-READY.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob; **Jacob dispatches.** Fresh-agent brief (identity + bounds below). Detail-home for the ROADMAP blocking-defect line; strike both together when it lands.
+**Status: DISPATCH-READY — re-verified against live code 2026-07-31.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob; **Jacob dispatches.** Fresh-agent brief (identity + bounds below). Detail-home for the ROADMAP blocking-defect line; strike both together when it lands.
+
+> ✅ **Every load-bearing claim re-checked 2026-07-31, ten days on — all still true.** `pickLuFromHash` is **live** (`tileGround.js:3079`, `return best || pickLuFromHash(...)`) · `derive.js:1020` still reads **only** `stl_parcels.json`, the line number unmoved · the County file **exists and is unread** (a **28 MB** `stlco_parcels.json` in HPDM's `raw/`) · `blockLandUse` is **0 entries** in *both* looks, so the authored escape hatch genuinely never fires · `luForRing` (`tileGround.js:3069`) behaves exactly as described: authored check → one interior point → hash.
+>
+> ⚠️ **Serialization is CLEAR as of 2026-07-31 night.** The A03/A06 agent was in `src/lib/tileGround.js` and has handed back with a clean tree. **Re-confirm nobody is in `derive.js` or `tileGround.js` before you start** — this brief rewrites the land-use join in both.
 
 **Agent: FRESH.** The forensic below replaces the discovery; there is no prior session-context worth inheriting. ⚠️ **Serialize against anything touching `cartograph/derive.js` or `src/lib/tileGround.js`** — this brief rewrites the land-use join in both (`feedback_load_bearing_files_serial_dispatch`). ⚠️ **`derive.js` is the 4,607-line god-file whose `deriveLayers()` is a single ~3,465-line function (ROADMAP C9a).** You are making a *surgical* change inside it, **not** the decomposition refactor — that is a separate, deliberate, eye-gated arc. Do not start it.
 
@@ -98,7 +102,7 @@ Phase 1 is independently valuable and independently verifiable. It may clear mos
 6. **Delete `pickLuFromHash` from the live path.** Leave the function only if something else imports it — check, and if nothing does, delete it outright (`feedback_remove_functionality_excise_knobs_wiring_docs`: knobs *and* wiring *and* docs).
 7. Make a gap read as a gap: `unknown` should be plantable and neutral-green, so missing data looks missing rather than paved. **Coordinate the colour with Jacob — palette is Stage/look authoring, his call, not yours.**
 
-### Phase 3 — Building-derived LU (the portable rung; likely post-Thursday)
+### Phase 3 — Building-derived LU (the portable rung; **sequence AFTER Phases 1–2 land and are eye-gated** — do not begin it in the same pass)
 Jacob's idea, and the right answer for the kit: **parcels are a US-municipal luxury; buildings are global.** Łódź has no assessor.
 
 - Validated: `centrum` (OSM-sourced) carries rich tags — `apartments` ×694, `office` ×49, `retail` ×39, `garages` ×42, `university` ×17, `school` ×16, `commercial` ×12, plus `amenity=place_of_worship|restaurant|townhall|theatre`.
