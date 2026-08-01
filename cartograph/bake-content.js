@@ -295,6 +295,15 @@ function classifyPoi(tags) {
 
 // County/city land-use code → structural use. County codes are 3-digit
 // strings decoded via the CSV bucket; the code prefix also carries structure.
+//
+// ⚠️ SHARED FACT, TWO CONSUMERS — the sibling is `cartograph/parcel-landuse.mjs`,
+// which reads the same assessor codes for the GROUND's land-use class (the paint
+// derive.js emits). They stay separate deliberately: this one is per-BUILDING and
+// produces a structural `use` + `use_subtype` + `use_confidence` that OSM listing
+// tags then refine (`refineUseFromListing`); that one is per-FACE and produces a
+// paint class with no catch-all. The code→bucket meaning is what they share, and
+// it is homed in parcel-landuse.mjs — change a bucket's meaning there and check
+// this site (`BOZ.md §3`, one home per fact).
 function classifyUse(parcel, luMap) {
   const code = parcel && parcel.land_use_code
   if (!code) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }

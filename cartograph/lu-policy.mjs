@@ -63,6 +63,15 @@ export const LU_POLICY = {
   // ⚠️ EYE-GATE: medians are narrow — worth confirming this isn't over-planting
   // thin strips before it rides to another town.
   median:              'soft',
+  // `underived` is derive.js's honest "nothing classified this face" class —
+  // no OSM land-use polygon covers it and no assessor parcel overlaps it
+  // (`parcel-landuse.mjs`). SOFT on purpose, and the reasoning is this module's
+  // own: a data gap routed to hardscape blanks the block and reads as a
+  // deliberate design choice, which is the silent error. Soft makes the gap
+  // look like land the operator can correct. ⛔ It is NOT a synonym for
+  // 'unknown' below — that one is a face TYPE derive could not resolve at all,
+  // and it stays hard.
+  underived:           'soft',
 
   // — hard: hardscape lot, interior forbidden (ratified with Jacob 2026-07-18) —
   commercial:          'hard',

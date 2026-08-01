@@ -123,6 +123,7 @@ const loadSceneStencil = (scene) => _loadSceneStencil(ROOT, scene)
 const TREELAWN_LU_VARIANTS = [
   'residential', 'commercial', 'vacant', 'vacant-commercial', 'parking',
   'institutional', 'recreation', 'industrial', 'park', 'island', 'unknown',
+  'underived',
 ]
 const PAINT_ORDER = [
   // Faces (land-use) at the bottom
@@ -137,6 +138,13 @@ const PAINT_ORDER = [
   ['face', 'park'],
   ['face', 'island'],
   ['face', 'unknown'],
+  // derive.js's "no OSM polygon and no assessor parcel covered this face"
+  // class (`parcel-landuse.mjs` UNDERIVED). ⚠️ PAINT_ORDER is an ALLOW-LIST:
+  // a face class absent from it lands in byFaceUse under a key no ['face',…]
+  // entry consumes and drops silently from the slab — that is exactly how the
+  // divided median vanished (see the [G4] note below). Any new LU class must
+  // be added here AND to TREELAWN_LU_VARIANTS above.
+  ['face', 'underived'],
   // Sub-block overlays — sit on top of LU faces, under street ribbons.
   // Polygon overlays from map.json (parking_lot + leisure + natural).
   ['mat', 'parking_lot'],

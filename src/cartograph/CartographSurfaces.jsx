@@ -120,6 +120,10 @@ const TABS = [
       { id: 'institutional',     label: 'Institutional', kind: 'lu' },
       { id: 'recreation',        label: 'Recreation',  kind: 'lu' },
       { id: 'industrial',        label: 'Industrial',  kind: 'lu' },
+      // No OSM land-use polygon and no assessor parcel covered the face —
+      // derive.js could not classify it (`parcel-landuse.mjs`). A visible row
+      // so the operator can find the gaps and paint over them deliberately.
+      { id: 'underived',         label: 'Underived',   kind: 'lu' },
       // Divided-road median — a derived grass face, but it bakes as a `mat`
       // group ('median', layerColors + layerVis['median'], grass-shaded by
       // BakedGround), so it's a 'layer' row, not 'lu'. Sits with land-use in

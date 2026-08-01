@@ -141,6 +141,19 @@ function census(scene) {
   const rp = ribbonsPathFor(scene)
   if (!existsSync(rp)) return null
   const faces = (JSON.parse(readFileSync(rp, 'utf8')).faces || []).filter(f => f?.ring?.length >= 3 && f.use)
+
+  // POST-FIX artifacts name the gap themselves: derive.js emits `underived` for
+  // a face no OSM polygon and no parcel could classify. When the artifact
+  // carries that class we report it straight — no reconstruction needed, and
+  // the reconstruction below would MISREAD such an artifact anyway (it models
+  // the old city-only ladder). A pour with zero `underived` faces is either
+  // pre-fix or genuinely fully derived; the reconstruction distinguishes them.
+  let underivedN = 0, underivedA = 0, totalA = 0
+  for (const f of faces) {
+    const a = ringArea(f.ring); totalA += a
+    if (f.use === 'underived') { underivedN++; underivedA += a }
+  }
+  const named = underivedN > 0
   const osmPolys = osmLUPolys(scene)
   const parcels = loadParcels(scene)
 
@@ -189,12 +202,14 @@ function census(scene) {
     else { otherN++; otherA += area }
   }
 
-  const totalA = osmA + parcelA + defaultA + otherA
+  const reconA = osmA + parcelA + defaultA + otherA
   return {
-    scene, faces: faces.length,
+    scene, faces: faces.length, named,
+    underivedN, pctUnderivedFaces: faces.length ? 100 * underivedN / faces.length : 0,
+    pctUnderivedArea: totalA ? 100 * underivedA / totalA : 0,
     osmN, parcelN, defaultN, otherN,
     pctDefaultFaces: faces.length ? 100 * defaultN / faces.length : 0,
-    pctDefaultArea: totalA ? 100 * defaultA / totalA : 0,
+    pctDefaultArea: reconA ? 100 * defaultA / reconA : 0,
     cityP, countyP, fellThrough, fellThroughCounty,
     bigDefaults: bigDefaults.sort((a, b) => b - a).slice(0, 3),
   }
@@ -209,15 +224,27 @@ for (const s of scenes) {
   const r = census(s)
   if (!r) { console.log(`  ${s}: no ribbons.json`); continue }
   console.log(`  ── ${r.scene} ──  ${r.faces} faces`)
-  console.log(`     🛰  OSM polygon vote        ${String(r.osmN).padStart(4)}`)
-  console.log(`     📄 parcel majority (city)  ${String(r.parcelN).padStart(4)}`)
-  console.log(`     🎲 bare 'residential'      ${String(r.defaultN).padStart(4)}   ${r.pctDefaultFaces.toFixed(1)}% of faces · ${r.pctDefaultArea.toFixed(1)}% of area   ← INVENTED`)
-  console.log(`     ·  non-block face types    ${String(r.otherN).padStart(4)}   (park / island / parking / unknown — kept from face.type)`)
-  if (r.bigDefaults.length) console.log(`        largest invented faces: ${r.bigDefaults.map(a => Math.round(a).toLocaleString() + ' m²').join(' · ')}`)
+  if (r.named) {
+    // Post-fix artifact — derive.js labelled the gap, so this is measured, not inferred.
+    console.log(`     ✅ POST-FIX artifact — derive.js names its own gaps`)
+    console.log(`     🕳  underived              ${String(r.underivedN).padStart(4)}   ${r.pctUnderivedFaces.toFixed(1)}% of faces · ${r.pctUnderivedArea.toFixed(1)}% of area   ← honestly unknown`)
+    console.log(`     ·  everything else        ${String(r.faces - r.underivedN).padStart(4)}   derived from OSM or assessor parcels`)
+  } else {
+    console.log(`     ⚠️  PRE-FIX artifact — no 'underived' class present; reconstructing the old ladder`)
+    console.log(`     🛰  OSM polygon vote        ${String(r.osmN).padStart(4)}`)
+    console.log(`     📄 parcel majority (city)  ${String(r.parcelN).padStart(4)}`)
+    console.log(`     🎲 bare 'residential'      ${String(r.defaultN).padStart(4)}   ${r.pctDefaultFaces.toFixed(1)}% of faces · ${r.pctDefaultArea.toFixed(1)}% of area   ← INVENTED`)
+    console.log(`     ·  non-block face types    ${String(r.otherN).padStart(4)}   (park / island / parking / unknown — kept from face.type)`)
+    if (r.bigDefaults.length) console.log(`        largest invented faces: ${r.bigDefaults.map(a => Math.round(a).toLocaleString() + ' m²').join(' · ')}`)
+  }
   if (r.cityP + r.countyP > 0) {
-    console.log(`     parcels on disk: ${r.cityP} city + ${r.countyP} county` +
-      (r.countyP ? `   ⛔ derive.js reads the CITY file only — ${r.countyP} county parcels are never opened` : ''))
-    console.log(`     codes the city-only mapper flunks to 'residential': ${r.fellThrough} (${r.fellThroughCounty} of them county)`)
+    console.log(`     parcels on disk: ${r.cityP} city + ${r.countyP} county`)
+    // Both numbers describe the RETIRED city-only mapper, and they are the
+    // reason it was retired — kept as the standing before-measurement, not as a
+    // claim about today's code. derive.js now reads both files jurisdiction-
+    // tagged through parcel-landuse.mjs (no catch-all).
+    if (r.countyP) console.log(`     ⓘ  historical: the retired city-only reader never opened those ${r.countyP} county parcels`)
+    console.log(`     ⓘ  historical: ${r.fellThrough} code(s) (${r.fellThroughCounty} county) would flunk the retired city-only mapper to 'residential'`)
   } else {
     console.log(`     parcels on disk: none (no wired assessor — OSM is the only data rung)`)
   }

@@ -32,6 +32,13 @@ export const LAND_USE_COLORS = {
   park:               '#5E8A3A',
   island:             '#5E8A3A',
   unknown:            '#666666',
+  // ⚠️ PLACEHOLDER — Jacob's palette call, not mine (BRIEF-land-use-derivation
+  // §6: "do not recolour the Look"). derive.js's `underived` class marks a face
+  // nothing could classify. It must NOT inherit `unknown`'s grey: grey reads as
+  // pavement, which is the same lie the invented 'residential' told, just in
+  // the other direction. A desaturated green says "land, unverified" — pick the
+  // real one when you see it on the render.
+  underived:          '#6E8A5E',
 }
 
 // Clip every byMaterial ring + byFaceUse face against the neighborhood

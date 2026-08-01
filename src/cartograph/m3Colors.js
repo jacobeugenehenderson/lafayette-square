@@ -85,6 +85,8 @@ export const DEFAULT_LU_COLORS = {
   island:             '#7A7A6E',  // road-island concrete
   median:             '#6E8A4E',  // divided-road median — bare ground/grass (E2 constructed median)
   unknown:            '#888888',  // neutral fallback
+  // ⚠️ PLACEHOLDER, Jacob's call — see LAND_USE_COLORS in src/lib/ribbonsGeometry.js.
+  underived:          '#6E8A5E',  // no land-use evidence — land, unverified
 }
 
 // OSM overlay defaults — one color per (category, subtype). Keys are

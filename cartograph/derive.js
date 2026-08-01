@@ -27,6 +27,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys } from '../src/lib/tileGround.js'
+import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -630,7 +631,11 @@ function detectDividedStreets(streets) {
   return gaps
 }
 
-function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks) {
+// `classify` is deriveLayers's jurisdiction-aware parcel classifier (it takes a
+// PARCEL, not a bare code — the code alone is ambiguous across the two assessor
+// taxonomies) and is threaded in rather than imported so the pour-time tally in
+// `luStats` counts every parcel exactly once, from one place.
+function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks, classify) {
   const result = []
   for (const p of parcels) {
     if (parkParcelIds.has(p.handle)) continue
@@ -656,7 +661,7 @@ function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks) {
       // Not in any rounded block — keep as-is
       result.push({
         ring: p.rings[0].map(pt => ({ x: pt[0], z: pt[1] })),
-        use: classifyLandUse(p.land_use_code),
+        use: classify(p),
         vacant: p.vacant || false,
       })
       continue
@@ -680,7 +685,7 @@ function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks) {
       }
       result.push({
         ring: pathFromClipper(clipped[best]),
-        use: classifyLandUse(p.land_use_code),
+        use: classify(p),
         vacant: p.vacant || false,
       })
     }
@@ -688,20 +693,14 @@ function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks) {
   return result
 }
 
-function classifyLandUse(code) {
-  if (!code) return 'unknown'
-  const c = Number(code)
-  if (c >= 1010 && c <= 1019) return 'vacant'        // vacant residential
-  if (c >= 1100 && c <= 1199) return 'residential'    // all residential types
-  if (c >= 1300 && c <= 1399) return 'institutional'  // schools, churches
-  if (c === 3000 || c === 3300 || c === 3900) return 'vacant-commercial'
-  if (c >= 4000 && c <= 4999) return 'recreation'     // parks, rec
-  if (c >= 5000 && c <= 5999) return 'commercial'     // commercial/retail
-  if (c >= 6000 && c <= 6999) return 'institutional'  // govt, utilities
-  if (c >= 7000 && c <= 7999) return 'industrial'
-  if (c === 1185) return 'parking'                     // residential parking
-  return 'residential'
-}
+// ⛔ The city-only `classifyLandUse(code)` that lived here is GONE. It knew only
+// St. Louis City's 4-digit ranges and ended `return 'residential'`, so every
+// County 3-digit code — 14,587 of hipointe-demun's 14,597 — came back
+// 'residential' as confidently as a real single-family parcel. The replacement
+// is `parcel-landuse.mjs` (jurisdiction-aware, no catch-all, returns null for a
+// code it cannot read) wrapped by deriveLayers's `classifyLandUse(parcel)`,
+// which turns a null into the honest `underived` class and tallies it for the
+// pour report. See BRIEF-land-use-derivation.md §2.
 
 function loadSurvey() {
   const p = join(RAW_DIR, 'survey.json')
@@ -1017,16 +1016,59 @@ export function deriveLayers(highways) {
   // scene reads its own, and LS's file sits inside the reproject-on-recenter
   // safety net alongside osm/msbf. (bake-content reads the same location.)
   console.log('  [1/4] Loading parcels...')
-  const parcelPath = join(RAW_DIR, 'stl_parcels.json')
-  // Parcels are St. Louis City/County only. A region with no wired assessor (Altadena
-  // → LA) has no file — that's EXPECTED degradation (no addresses), NOT a fatal error.
-  // Missing/unreadable → empty parcels; the scene still pours. (Was an unguarded read
-  // that crashed the whole pour for every non-STL hood → map.json never regenerated.)
-  let parcelData = { parcels: {} }
-  try { parcelData = JSON.parse(readFileSync(parcelPath, 'utf-8')) }
-  catch { console.log('    (no parcels for this region — St. Louis City/County only)') }
-  const parcels = Object.values(parcelData.parcels || {})
-  console.log(`    ${parcels.length} parcels`)
+  // ⭐ BOTH assessor files, each tagged with its jurisdiction. This read was
+  // stl_parcels.json ONLY, and the comment below it asserted "St. Louis
+  // City/County" — the author believed both were covered. They were not:
+  // hipointe-demun spans the City/County line, DeMun is in the County, and its
+  // 14,597 County parcels sat on disk unopened while that half of the
+  // neighborhood took derive.js's invented default (BRIEF-land-use-derivation).
+  //
+  // ⚠️ Jurisdiction is carried, not inferred, because the two taxonomies are
+  // NOT compatible — City codes are 4-digit, County 3-digit, and every County
+  // code falls through the City ranges. Unioning the files without the tag maps
+  // the whole County half to a confident wrong answer, which is worse than not
+  // reading it. `parcel-landuse.mjs` owns that fact.
+  //
+  // A region with no wired assessor (Altadena → LA) has neither file — EXPECTED
+  // degradation (no addresses), NOT a fatal error. Missing/unreadable → that
+  // jurisdiction contributes nothing; the scene still pours. (Was an unguarded
+  // read that crashed the pour for every non-STL hood → map.json never
+  // regenerated.) bake-content.js:141 reads the same pair from the same place.
+  const parcels = []
+  for (const [file, jurisdiction] of [['stl_parcels.json', 'city'], ['stlco_parcels.json', 'county']]) {
+    let parcelData = { parcels: {} }
+    try { parcelData = JSON.parse(readFileSync(join(RAW_DIR, file), 'utf-8')) }
+    catch { continue }
+    for (const p of Object.values(parcelData.parcels || {})) parcels.push({ ...p, jurisdiction })
+  }
+  const countyCodeTable = loadCountyCodeTable(SCENE)
+  const cityN = parcels.filter(p => p.jurisdiction === 'city').length
+  if (!parcels.length) console.log('    (no parcels for this region — St. Louis City/County only)')
+  else console.log(`    ${parcels.length} parcels (${cityN} city + ${parcels.length - cityN} county)`)
+
+  // The parcel-code join, reported at pour time so a failed one is visible here
+  // rather than weeks later on the render (`lu-policy.mjs` report(), same intent).
+  const luStats = { city: { total: 0, underived: 0 }, county: { total: 0, underived: 0 }, countyTableSize: countyCodeTable.size }
+  // Memoized per PARCEL, not per call. Three separate sites classify the same
+  // parcels (the parcel faces, the block dominant-use vote, the face-fill vote),
+  // so an un-memoized tally counts calls and reports several times more parcels
+  // than exist on disk — a loud report that overstates its own denominator is
+  // worse than no report, because it is the number an operator would act on.
+  const luCache = new Map()
+  const classifyLandUse = (parcel) => {
+    if (!parcel) return UNDERIVED
+    if (luCache.has(parcel)) return luCache.get(parcel)
+    const jur = parcel.jurisdiction
+    let lu = null
+    if (jur) {
+      lu = classifyParcelLandUse(parcel.land_use_code, jur, countyCodeTable)
+      luStats[jur].total++
+      if (!lu) luStats[jur].underived++
+    }
+    const out = lu || UNDERIVED
+    luCache.set(parcel, out)
+    return out
+  }
 
   // Find the park parcel(s) — exclude parcels with park/recreation land use
   // near the park center, and use the OSM park polygon instead
@@ -1875,10 +1917,12 @@ export function deriveLayers(highways) {
         const rounded = roundCorners(s2, radius)
         for (let k = 0; k < rounded.length; k++) {
           allBlockPaths.push(rounded[k])
-          let dominant = 'residential', maxCount = 0
+          // No parcels on this face → nothing derived it. `underived`, not a
+          // confident 'residential' (see the faceFills ladder below).
+          let dominant = UNDERIVED, maxCount = 0
           const useCounts = {}
           for (const p of faceParcels) {
-            const use = classifyLandUse(p.land_use_code)
+            const use = classifyLandUse(p)
             useCounts[use] = (useCounts[use] || 0) + 1
           }
           for (const [use, count] of Object.entries(useCounts)) {
@@ -2950,7 +2994,7 @@ export function deriveLayers(highways) {
   console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}`)
 
   const faceFills = []
-  let osmClassified = 0, parcelClassified = 0
+  let osmClassified = 0, parcelClassified = 0, underivedFaces = 0
   for (let fi = 0; fi < classifiedFaces.length; fi++) {
     const face = classifiedFaces[fi]
     if (face.type === 'fragment') continue
@@ -2977,7 +3021,7 @@ export function deriveLayers(highways) {
           if (faceParcels.length > 0) {
             const useCounts = {}
             for (const p of faceParcels) {
-              const u = classifyLandUse(p.land_use_code)
+              const u = classifyLandUse(p)
               useCounts[u] = (useCounts[u] || 0) + 1
             }
             let maxCount = 0
@@ -2986,7 +3030,23 @@ export function deriveLayers(highways) {
             }
             parcelClassified++
           } else {
-            use = 'residential'
+            // ⛔ THE THIRD RUNG USED TO BE `use = 'residential'`. No OSM polygon
+            // covers this face and no assessor parcel overlaps it — nothing
+            // derived it — and the map said "residential" in the same voice it
+            // uses for a face backed by 40 single-family parcels. That is
+            // `CLAUDE.md` Layer 0's fallback shape: a failure rendered as a
+            // plausible success, invisible to an operator who has not walked
+            // the street. Measured before this change: 121 of hipointe-demun's
+            // 302 faces (17.6% of its area, largest 97,393 m²) and 19 of
+            // lafayette-square's 173.
+            //
+            // `underived` is soft and plantable (lu-policy.mjs), so a data gap
+            // reads as land rather than as pavement — but it is its OWN class,
+            // so the census can see it, the report can count it, and the
+            // operator can paint over it deliberately. A gap should look like a
+            // gap. NEVER route this to 'unknown': that class is ratified HARD.
+            use = UNDERIVED
+            underivedFaces++
           }
         }
       }
@@ -2996,7 +3056,19 @@ export function deriveLayers(highways) {
       use,
     })
   }
-  console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels)`)
+  console.log(`    ${faceFills.length} face fills (${osmClassified} via OSM, ${parcelClassified} via parcels, ${underivedFaces} UNDERIVED)`)
+  // The parcel-code join, and the land-use gap, announced at pour time. An
+  // operator pouring town #7 learns the assessor join failed HERE, not by
+  // noticing weeks later that half the map is one colour (`lu-policy.mjs`).
+  console.log(parcelLandUseReport(SCENE, luStats))
+  if (underivedFaces) {
+    const pct = (100 * underivedFaces / faceFills.length).toFixed(1)
+    console.log(`   ⚠️  ${underivedFaces} face(s) — ${pct}% — have NO land-use evidence: no OSM`)
+    console.log(`      landuse/leisure/natural/amenity polygon covers them and no assessor parcel`)
+    console.log(`      overlaps them. They paint '${UNDERIVED}' (soft, plantable) so the gap is`)
+    console.log(`      visible rather than silently plausible. Close it with better intake, or`)
+    console.log(`      paint over it deliberately in the Designer — do not default it.`)
+  }
 
   // Park face polygon override: if an authored park polygon exists, replace
   // the polygonized park face's ring with the 4 authored corners. The
@@ -4617,7 +4689,7 @@ export function deriveLayers(highways) {
     lot:            toFeats(lotPaths),                                  // block minus sidewalk strips
     parkSidewalk:   parkSidewalkFeats,
     park:           parkFeats,
-    parcel:         clipParcelsToRoundedBlocks(parcels, parkParcelIds, allBlockPaths),
+    parcel:         clipParcelsToRoundedBlocks(parcels, parkParcelIds, allBlockPaths, classifyLandUse),
     alley:          toFeats(alleyUnion),
     centerStripe:   stripeMeta,
     bikeLane:       bikeLanes,
