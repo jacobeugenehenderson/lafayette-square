@@ -619,7 +619,20 @@ input[type="range"]:active { cursor: grabbing; }
   flex-shrink: 0;
 }
 
-/* ---------- Status bar ---------- */
+/* ---------- Status bar ----------
+   `.carto-status--alarm` is the LOUD, non-dismissable failure face: a guarantee
+   the app makes has stopped holding and the operator must know before they trust
+   what they are looking at. Used by the un-hydrated-store warning (Survey edits
+   are not persisting) and by the Data Wall warning (ROADMAP A02 — the frozen
+   shape is absent/unreadable, so the view is a LIVE re-derivation). Kept as a
+   class rather than inline literals so both read identically and can be themed
+   (`BOZ.md §1` — the CSS doc is the SSOT; two banners had colour literals in JSX). */
+.carto-status--alarm {
+  background: var(--carto-alarm-bg, #b00020);
+  color: #fff;
+  font-weight: 600;
+}
+
 .carto-status {
   position: absolute;
   bottom: 14px;

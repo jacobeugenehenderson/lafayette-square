@@ -1753,6 +1753,29 @@ const useCartographStore = create((set, get) => ({
   // edits are not persisting and can hard-refresh to re-sync (instead of the
   // edit silently vanishing on the next reload).
   overlaySaveBlocked: false,
+  // ⛔⛔ [ROADMAP A02] THE WALL MUST NOT DEGRADE SILENTLY. Outside Survey the
+  // frozen `shape.json` OWNS the render — that is the Data Wall's whole promise.
+  // When the freeze is ABSENT or its fetch FAILS, the view falls through to a
+  // live `buildTileGround`, which draws a map that looks exactly like the frozen
+  // one. Until 2026-07-31 that was a bare `console.warn`, so the operator was
+  // shown a plausible map and never learned the wall had not held.
+  //
+  // ⭐ Why this is invisible where you would look for it: Lafayette Square ALWAYS
+  // has a freeze, so the fallback never fires in the scene you would use to prove
+  // the wall works. It fires on the town nobody has inspected — which is exactly
+  // the shape `CLAUDE.md` Layer 0 names as the worst outcome a kit can have
+  // (a fallback turns a failure into a plausible-looking success).
+  //
+  // Null when the wall is holding. Otherwise a reason string, rendered as a
+  // non-dismissable red StatusBar banner — the same loud surface as
+  // `overlaySaveBlocked` above. The live build still draws (a fresh pour with no
+  // freeze yet is a legitimate state, and refusing to draw would make onboarding
+  // town #2 impossible) — but it is now LABELLED as a live re-derivation instead
+  // of masquerading as the frozen shape. The defect was the silence, not the draw.
+  shapeFreezeMissing: null,
+  setShapeFreezeMissing: (reason) => {
+    if (get().shapeFreezeMissing !== reason) set({ shapeFreezeMissing: reason })
+  },
   // ── The SHAPE freeze (the Data Wall, autosaved on Survey-exit) ────────────
   // `shapeFrozenMs` bumps when the frozen `shape.json` is rewritten, so the
   // Section surface re-opens the fresh freeze (cache-bust). This is the LIGHT

@@ -539,6 +539,8 @@ export default function BlockGeometryV2Debug({
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
   const shapeFrozenMs = useCartographStore(s => s.shapeFrozenMs)
   const freezeShape = useCartographStore(s => s.freezeShape)
+  // [ROADMAP A02] The wall's honesty flag — see the store's `shapeFreezeMissing`.
+  const setShapeFreezeMissing = useCartographStore(s => s.setShapeFreezeMissing)
   const [frozenShape, setFrozenShape] = useState(null)
   // TRUE while the frozen-shape fetch for the current (scene, freeze) is in
   // flight. ⛔ Load-bearing: without it the live build RACES the fetch. Both
@@ -559,7 +561,11 @@ export default function BlockGeometryV2Debug({
     // in Design the heavy live buildTileGround no longer runs to merely display
     // the map; it reads the frozen shape.json (the idle-case slice of the
     // freeze-curb program, HANDOFF-freeze-the-curb-in-the-first-bake.md Phase 1b).
-    if (surveyActive || !scene) { setFrozenPending(false); return }
+    // [ROADMAP A02] In Survey the live stroke is the POINT (Survey edits the
+    // SHAPE), so the wall is not being violated and the banner must not cry wolf.
+    // Clear it on the way in — otherwise a warning raised in Section would persist
+    // across a tab flip and train the operator to ignore it.
+    if (surveyActive || !scene) { setFrozenPending(false); setShapeFreezeMissing(null); return }
     // One fetch per (scene, freeze): a fresh slab bake (bakeLastMs) OR the
     // light Survey-exit freeze (shapeFrozenMs) re-opens the new shape; take
     // whichever is newer as the cache-bust + key.
@@ -585,8 +591,24 @@ export default function BlockGeometryV2Debug({
         const highway = Array.isArray(d) ? [] : (Array.isArray(d?.highway) ? d.highway : [])
         setFrozenPending(false)
         setFrozenShape(tiles && tiles.length ? { tiles, highway } : null)
+        // [ROADMAP A02] Door 1 — the freeze is ABSENT (404, or a shape with no
+        // tiles). Legitimate on a scene that has never been frozen; NOT legitimate
+        // to hide, because the live build below draws a map indistinguishable from
+        // the frozen one. Say so, loudly, for as long as it is true.
+        setShapeFreezeMissing(tiles && tiles.length
+          ? null
+          : `No frozen shape for '${scene}' — showing a LIVE re-derivation, not the frozen shape. Run a bake (or exit Survey) to freeze it.`)
       })
-      .catch(e => { done = true; console.warn('[BlockGeometryV2Debug] no frozen shape artifact (Section falls back to live build):', e); if (!dead) { setFrozenPending(false); setFrozenShape(null) } })
+      .catch(e => {
+        done = true
+        console.warn('[BlockGeometryV2Debug] frozen shape artifact FAILED to load (falling back to a live build):', e)
+        if (dead) return
+        setFrozenPending(false)
+        setFrozenShape(null)
+        // [ROADMAP A02] Door 2 — the fetch/parse FAILED. This one is not a
+        // legitimate state at all: a freeze was expected and could not be read.
+        setShapeFreezeMissing(`Frozen shape for '${scene}' FAILED to load (${e?.message || e}) — showing a LIVE re-derivation. The Data Wall is not holding; do not trust this as the frozen shape.`)
+      })
     // Abort mid-flight (tool flipped / re-mount): clear the key so the next
     // activation refetches instead of silently falling back to the live build.
     return () => { dead = true; if (!done && frozenKeyRef.current === key) { frozenKeyRef.current = null; setFrozenPending(false) } }
