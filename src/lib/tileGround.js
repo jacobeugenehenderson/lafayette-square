@@ -145,6 +145,101 @@ function bandSliverCount(ia, cw) {
   }
   return c
 }
+// ─────────────────────────────────────────────────────────────────────────
+// [A03 · ROADMAP A03 — the curb producer, split at the CHAIN boundary]
+//
+// The curb was a photograph of a live chain-stroke: `buildTileGround(liveRibbons)`
+// minted it with chains in scope and the result was snapshotted (POLYGON-FIRST
+// Check C, RED). The cure is not "move it to prebake" — prebake is authoring-BLIND
+// (derive.js never reads design.json), and the curb is a function of the AUTHORED
+// width, so freezing it there would bake a bare-defaults curb (CLAUDE.md Layer 0
+// q3). The requirement was always CHAIN-freedom, not prebake-location.
+//
+// So the producer splits in two:
+//
+//   freezeCurbEdgeFacts()  the CHAIN-DERIVED half. Reduces runs/streets/measures
+//                          to ONE fact per RING EDGE. The only half that touches a
+//                          chain; it is what moves to prebake (D6b).
+//   buildCurbRings()       the CHAIN-FREE half. ring + frozen facts + authored
+//                          widths → the curb. This is the producer, and it can no
+//                          more reach a chain than `sectionPass` can.
+//
+// ⛔ buildCurbRings' SIGNATURE IS THE GUARD (the sectionPass pattern). It takes
+// frozen facts and scalars — no `streets`, no `runs`, no `measures`, no `ribbons`.
+// If something is missing, the reflex is to pass the chain in "just for this one
+// case": that silently re-opens Check C. Freeze a new FACT instead, and let the
+// signature change be visible in review.
+// ─────────────────────────────────────────────────────────────────────────
+
+// The chain-derived half. Per RING EDGE i (ring[i]→ring[i+1]) it emits:
+//   { skelId, side, segOrd, baseHW, prof, streetKey }
+// `baseHW` is the PRE-authoring half-width; the authored override is applied at
+// build time (not here), which is what keeps the frozen facts look-agnostic — one
+// scene's facts serve every look bound to it.
+// `prof` is the divided-transition OUTER profile sampled at this edge's two chain
+// vertices (SKELETON §5d/§5h — "the outer curb runs straight through"): a
+// `[a|null, b|null]` pair, null where the profile does not speak. It reduces to a
+// per-edge fact because the profile is a per-VERTEX frozen stamp already
+// (`outerHWProfile`, vKey→hw) — we resolve the two lookups here and freeze the
+// numbers, so the builder never needs the chain that carried them.
+function freezeCurbEdgeFacts({ ring, runs, streetsOrig, measures, segOrdOf, curbWidth, isMedianTile }) {
+  const edgeKey = (p, q) => `${Math.round(p[0] * 50)},${Math.round(p[1] * 50)}|${Math.round(q[0] * 50)},${Math.round(q[1] * 50)}`
+  const factByEdge = new Map()
+  for (const run of runs) {
+    const so = streetsOrig[run.streetIdx]
+    const skelId = (so && (so.skelId || so.name)) || null
+    // BASE half-width — authoring deliberately NOT applied (see above).
+    const baseHW = edgeDepth(measures[run.streetIdx], run.side, curbWidth, 'A')
+    // Canonical through-road id — so cornerAt reads a name-transition seam as ONE
+    // road (a THROUGH node, not a corner). Preserved verbatim from the live path.
+    const streetKey = (so && (so.throughId || so.roadId || so.skelId || so.name)) || run.streetIdx
+    let profPts = null
+    if (so?.outerHWProfile && !isMedianTile && /^carriageway/.test(so.phase?.role || '')) {
+      profPts = []
+      for (const key in so.outerHWProfile) { const c = key.split(','); profPts.push([+c[0], +c[1], so.outerHWProfile[key]]) }
+    }
+    const hwAt = (p) => { if (!profPts) return null; for (const e of profPts) { const dx = e[0] - p[0], dy = e[1] - p[1]; if (dx * dx + dy * dy < 0.09) return e[2] } return null }
+    for (let i = 0; i < run.poly.length - 1; i++) {
+      const prof = profPts ? [hwAt(run.poly[i]), hwAt(run.poly[i + 1])] : null
+      const fact = { skelId, side: run.side, segOrd: segOrdOf(run), baseHW, prof, streetKey }
+      const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
+      // FORWARD key authoritative, REVERSE only as a fallback that must never
+      // clobber another run's forward key — the dead-end slit is traversed twice,
+      // once per leg, and an unconditional reverse write collapsed both legs to
+      // one width. Directed keys keep the two legs distinct. (Verbatim from the
+      // live path; the ordering IS load-bearing.)
+      factByEdge.set(k1, fact)
+      if (!factByEdge.has(k2)) factByEdge.set(k2, fact)
+    }
+  }
+  const n = ring.length
+  const out = new Array(n)
+  for (let i = 0; i < n; i++) out[i] = factByEdge.get(edgeKey(ring[i], ring[(i + 1) % n])) || null
+  return out
+}
+
+// The CHAIN-FREE half — the producer. Everything it needs is a frozen fact or a
+// scalar; `authoredHW(skelId, side, segOrd)` returns the operator's override or
+// null. ⛔ Do not widen this signature with a chain-shaped argument.
+function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved }) {
+  const n = ring.length
+  const depthAt = (i) => {
+    const f = facts[i]
+    if (!f) return 0
+    // The authored width wins over the frozen base — the override IS the product
+    // (Layer 0 q3). Frozen facts carry the frame; authoring carries the operator.
+    const a = f.skelId != null ? authoredHW(f.skelId, f.side, f.segOrd) : null
+    const base = Number.isFinite(a) ? Math.max(0, a) : f.baseHW
+    if (!f.prof) return base
+    return ((f.prof[0] ?? base) + (f.prof[1] ?? base)) / 2
+  }
+  // A real corner = the two edges at this vertex belong to DIFFERENT streets.
+  // Same street both sides = a through-node → run straight through, no corner.
+  const streetAt = (i) => facts[i]?.streetKey
+  const cornerAt = (i) => { const a = streetAt((i - 1 + n) % n), b = streetAt(i); return a == null || b == null || a !== b }
+  return offsetRingVariable(ring, depthAt, cornerAt, capAtVertex, curved)
+}
+
 function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false) {
   const n = ring.length
   if (n < 3) return []
@@ -3177,66 +3272,21 @@ export function buildTileGround(ribbons, opts = {}) {
     // NOT carved from the junction-swelled asphalt (that bows the curb where the
     // windows pile in). Per-edge depth = the run covering that ring edge.
     // opts.iaCarveLegacy = today's swelled carve, kept for A/B on Jacob's eye.
-    const edgeKey = (p, q) => `${Math.round(p[0] * 50)},${Math.round(p[1] * 50)}|${Math.round(q[0] * 50)},${Math.round(q[1] * 50)}`
-    const depthByEdge = new Map(), streetByEdge = new Map()
-    for (const run of runs) {
-      const baseDepth = edgeDepth(runMeasure(run), run.side, cw, 'A')
-      const so = streetsOrig[run.streetIdx]
-      // Key edge identity on the CANONICAL through-road id (continuesAs union,
-      // frozen in derive.js) — so cornerAt reads a name-transition seam (West-18th↔
-      // Dolman / South-18th↔West-18th) as ONE road → a THROUGH-node, not a corner.
-      // The curve then flows straight through (averaged-normal offset), killing the
-      // junction-curb bump born from a raw-skelId mismatch. Falls back to skelId for
-      // pre-roadId artifacts. [HANDOFF-curve-primitive-skeleton.md, name-aware fix]
-      //
-      // [BRIEF-terminal-node-sweep] Prefer `throughId` (the frozen identity: same-
-      // name + shared vertex) OVER roadId. roadId deliberately does NOT span a
-      // spine↔carriageway divided transition (to keep widths unsmeared), so at a
-      // split-carriageway T/dogleg — e.g. Northwood terminating into De Mun where
-      // De Mun changes spine→carriageway right at the node — the two De Mun pieces
-      // carry different roadIds and cornerAt (a≠b) minted a FALSE corner on De Mun's
-      // OWN through-frontage. throughId reads both pieces as ONE road → a≠b is false
-      // there → the curb runs straight through. Only same-identity/different-roadId
-      // seams change; a real crossing (different identities) still corners.
-      const sk = (so && (so.throughId || so.roadId || so.skelId || so.name)) || run.streetIdx
-      // [Brief C — divided "d" curb] OUTER-curb continuity ramp at a divided→
-      // undivided nose. derive.js froze a per-vertex OUTER half-width (outerHWProfile,
-      // vKey→hw) that makes the outer curb run STRAIGHT THROUGH the transition. Apply
-      // it on the OUTER block tile only — gated on `!isMedianTile`: a carriageway's
-      // ONLY non-median neighbour IS the outer block (its other side bounds the
-      // median, which builds as a separate isMedian tile via the legacy carve). ⛔ NO
-      // run.side test — the base is symmetric (4.67=4.67) so the walk-relative left/
-      // right was never disambiguated against measure and DISAGREES with the median
-      // oracle at the spike tile. The median (inner) curb stays 4.67; the offset
-      // (already variable-depth via depthAt) eases spineOuter→cwHW across the nose, so
-      // the outer edge = the spine outer line, constant. Match by nearest profile coord
-      // within ENDPOINT_SNAP-tolerance (a welded node moves ≤0.15 m). Non-carriageway /
-      // median-tile / non-transition runs → baseDepth, byte-identical.
-      let profPts = null
-      if (so?.outerHWProfile && !isMedianTile && /^carriageway/.test(so.phase?.role || '')) {
-        profPts = []
-        for (const key in so.outerHWProfile) { const c = key.split(','); profPts.push([+c[0], +c[1], so.outerHWProfile[key]]) }
-      }
-      const hwAt = (p) => { if (!profPts) return null; for (const e of profPts) { const dx = e[0] - p[0], dy = e[1] - p[1]; if (dx * dx + dy * dy < 0.09) return e[2] } return null }
-      for (let i = 0; i < run.poly.length - 1; i++) {
-        const dd = profPts ? ((hwAt(run.poly[i]) ?? baseDepth) + (hwAt(run.poly[i + 1]) ?? baseDepth)) / 2 : baseDepth
-        const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
-        // FORWARD key = this run's own traversal direction, and the ring walks
-        // each run in exactly that direction — so it is authoritative. The REVERSE
-        // key is only a fallback for a ring walking the other way, and must NEVER
-        // clobber another run's forward key. On a dead-end finger the ring is a
-        // zero-width SLIT traversed twice, once per leg, so both legs write the
-        // same pair of keys — and an unconditional reverse write let whichever run
-        // came second overwrite the first. Both sides then drew at ONE width, so a
-        // road authored asymmetrically (Nicholson Place: left 2.50 m, right 6.70 m)
-        // rendered symmetric at 2.50 and neither leg answered its authoring
-        // handles. The asphalt is frozen SHAPE, so the curb and both ped bands
-        // inherited the collapse. Directed keys keep the two legs distinct.
-        depthByEdge.set(k1, dd)
-        streetByEdge.set(k1, sk)
-        if (!depthByEdge.has(k2)) depthByEdge.set(k2, dd)
-        if (!streetByEdge.has(k2)) streetByEdge.set(k2, sk)
-      }
+    // [A03] The chain-stroke that used to live inline here is now the two-part
+    // producer at the top of this file: freezeCurbEdgeFacts (chain-derived, one
+    // fact per ring edge) → buildCurbRings (chain-FREE). The frozen facts carry
+    // the FRAME; the authored width is applied inside the builder, so the facts
+    // stay look-agnostic and the curb still honours the operator (Layer 0 q3).
+    const curbFacts = tile.curbFacts || freezeCurbEdgeFacts({
+      ring: tile.ring, runs, streetsOrig, measures, segOrdOf: runSegOrd, curbWidth: cw, isMedianTile,
+    })
+    // The ONLY authoring channel into the curb. Mirrors runMeasure's resolution
+    // (blockCustoms pavementHW over the per-chain base) but takes scalars, so the
+    // builder never sees a measure object or the chain behind it.
+    const authoredHW = (skelId, side, segOrd) => {
+      if (!blockCustoms || !skelId) return null
+      const c = blockCustoms[skelId]?.[side]?.[segOrd]
+      return (c && Number.isFinite(c.pavementHW)) ? c.pavementHW : null
     }
     const nRing = tile.ring.length
     // [curve-primitive Phase 2] This tile has a bezier'd (curved) run → enable the
@@ -3247,12 +3297,8 @@ export function buildTileGround(ribbons, opts = {}) {
     // = non-clean + dropFoldSpurs (identity on a straight ring), so STRAIGHT tiles
     // stay byte-identical — only curved tiles get the strip. (HANDOFF-curve-primitive.)
     const tileIsCurved = runs.some(run => { const so = streetsOrig[run.streetIdx]; return so?.segments?.some(g => g.type === 'bezier') })
-    const depthAt = (i) => depthByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing])) || 0
-    // A real corner = the two edges at this vertex belong to DIFFERENT streets.
-    // Same street both sides = a through-node (T far-side / dogleg) → run straight
-    // through, no corner (Jacob's T-intersection sensitivity; osm2streets doctrine).
-    const streetAtEdge = (i) => streetByEdge.get(edgeKey(tile.ring[i], tile.ring[(i + 1) % nRing]))
-    const cornerAt = (i) => { const a = streetAtEdge((i - 1 + nRing) % nRing), b = streetAtEdge(i); return a == null || b == null || a !== b }
+    // [A03] depthAt / cornerAt now live INSIDE buildCurbRings, resolved from the
+    // frozen per-edge facts — see the producer split at the top of this file.
     // opts.iaOffset = the per-edge parallel-offset curb (D6a). It owns the "street
     // simple" tiles (§5d); the "intersection variable" / degenerate tiles keep the
     // legacy carve that already handles them: MEDIAN tiles (offsetting both inner
@@ -3285,7 +3331,16 @@ export function buildTileGround(ribbons, opts = {}) {
       const capByVertex = new Map()
       for (const t of roundTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'round') }
       for (const t of bluntTips) { const vi = nearestVertexIndex(t.p, tile.ring); if (vi >= 0) capByVertex.set(vi, 'blunt') }
-      const off = offsetRingVariable(tile.ring, depthAt, cornerAt, (i) => capByVertex.get(i) || null, smooth > 0 || tileIsCurved)
+      // [A03] THE PRODUCER — chain-free. Everything it reads is a frozen fact, a
+      // scalar, or the authored override; there is no chain, street or measure in
+      // its scope. (POLYGON-FIRST Check C.)
+      const off = buildCurbRings({
+        ring: tile.ring,
+        facts: curbFacts,
+        authoredHW,
+        capAtVertex: (i) => capByVertex.get(i) || null,
+        curved: smooth > 0 || tileIsCurved,
+      })
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
       blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
     } else {
