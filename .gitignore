@@ -177,6 +177,19 @@ cartograph/data/lafayette-square/clean/*
 # + scripts/14 (OSM Overpass), but frozen here so the committed bake is reproducible.
 !cartograph/data/lafayette-square/clean/park_trees.json
 !cartograph/data/lafayette-square/clean/osm_trees.json
+# ⭐⭐ THE GEOMETRY INPUTS — same rule as the census wells above, learned the same
+# way. map.json and src/data/ribbons.json were tracked while the inputs that
+# PRODUCE them were ignored, so "unchanged inputs" was never verifiable from git
+# and the producing state was unrecoverable rather than merely unknown — that is
+# the root of ROADMAP A01 (the pipeline does not reproduce its own committed
+# output; measured by Tally 2026-07-31). overlay.json is AUTHORED: it carries the
+# operator's measured street widths, and a reset on 2026-07-23 dropped it from 22
+# streets-with-measure to 0 while the only surviving copies sat untracked, one
+# `git clean` from gone. Frozen here so the committed bake is reproducible.
+!cartograph/data/lafayette-square/clean/overlay.json
+!cartograph/data/lafayette-square/clean/overlay.json.pre-reset
+!cartograph/data/lafayette-square/clean/overlay.json.backup-*
+!cartograph/data/lafayette-square/clean/skeleton.json
 cartograph/node_modules/
 
 # Claude Code local settings

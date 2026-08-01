@@ -1,0 +1,4329 @@
+{
+  "version": 1,
+  "streets": {
+    "oregon-place": {
+      "name": "Oregon Place",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "mississippi-avenue": {
+      "name": "Mississippi Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.524836729760599,
+          "treelawn": 1.524,
+          "sidewalk": 3.771508774121749,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 11.876374210124538,
+          "treelawn": 2.9144876422016814,
+          "sidewalk": 3.219995027327654,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 7.203172199626125,
+            "treelawn": 1.2026416547120755,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 12.663941234736832,
+            "treelawn": 1.7304098259152152,
+            "sidewalk": 1.4240582415582725,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        },
+        "1": {
+          "left": {
+            "pavementHW": 3.189557196749914,
+            "treelawn": 1.2026416547120755,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 5.51671319746067,
+            "treelawn": 1.7304098259152152,
+            "sidewalk": 1.4240582415582725,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      },
+      "couplers": [
+        {
+          "kind": "split",
+          "pointIdx": 14,
+          "x": 165.59,
+          "z": 218.47
+        }
+      ]
+    },
+    "south-18th-street-0": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-1": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-2": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-3": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-4": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-5": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-6": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-7": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "henrietta-place": {
+      "name": "Henrietta Place",
+      "measure": {
+        "left": {
+          "pavementHW": 6.923359996955333,
+          "treelawn": 0,
+          "sidewalk": 2.503758988587088,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 5.701969753861978,
+          "treelawn": 0,
+          "sidewalk": 2.310547022555059,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "waverly-place-0": {
+      "name": "Waverly Place",
+      "measure": {
+        "left": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "waverly-place-1": {
+      "name": "Waverly Place",
+      "measure": {
+        "left": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "waverly-place-2": {
+      "name": "Waverly Place",
+      "measure": {
+        "left": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "waverly-place-3": {
+      "name": "Waverly Place",
+      "measure": {
+        "left": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.573064933347617,
+          "treelawn": 2.3125350666523836,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "emmet-street": {
+      "name": "Emmet Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.64460464411919,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.64460464411919,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "vail-place": {
+      "name": "Vail Place",
+      "measure": {
+        "left": {
+          "pavementHW": 5.573904108800795,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.573904108800795,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": "round",
+      "capEnd": null
+    },
+    "nicholson-place": {
+      "name": "Nicholson Place",
+      "measure": {
+        "left": {
+          "pavementHW": 5.190105979129703,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.190105979129703,
+          "treelawn": 0.8654940208702975,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-22nd-street": {
+      "name": "South 22nd Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.815233443185419,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.815233443185419,
+          "treelawn": 0.2203665568145814,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "dillon-street": {
+      "name": "Dillon Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.930845826837252,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 7.930845826837252,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "preston-place": {
+      "name": "Preston Place",
+      "measure": {
+        "left": {
+          "pavementHW": 6.608709656064646,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.608709656064646,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "survey-default"
+      },
+      "capStart": "blunt",
+      "capEnd": "round"
+    },
+    "hickory-street-0": {
+      "name": "Hickory Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "hickory-street-1": {
+      "name": "Hickory Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "hickory-street-2": {
+      "name": "Hickory Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "hickory-street-3": {
+      "name": "Hickory Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.786383102772469,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "iowa-avenue": {
+      "name": "Iowa Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.073593851069642,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.073593851069642,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "henrietta-street-0": {
+      "name": "Henrietta Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.524676034486274,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.524676034486274,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "henrietta-street-1": {
+      "name": "Henrietta Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.524676034486274,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.524676034486274,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "missouri-avenue-0": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "missouri-avenue-1": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-2": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.628525862907328,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "missouri-avenue-3": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 3.674997715058554,
+          "treelawn": 1,
+          "sidewalk": 1.1215809834366155,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.927777989962047,
+          "treelawn": 0,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "missouri-avenue-4": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.73105352144237,
+          "treelawn": 0,
+          "sidewalk": 5.497889219678656,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-17th-street": {
+      "name": "South 17th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 3.3694720900446784,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.3694720900446784,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-13th-street": {
+      "name": "South 13th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 3.9831239025612275,
+          "treelawn": 3.972476097438771,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.9831239025612275,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "simpson-place": {
+      "name": "Simpson Place",
+      "measure": {
+        "left": {
+          "pavementHW": 5.298291753705734,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.298291753705734,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "saint-vincent-avenue-0": {
+      "name": "Saint Vincent Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "saint-vincent-avenue-1": {
+      "name": "Saint Vincent Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "saint-vincent-avenue-2": {
+      "name": "Saint Vincent Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.176041291628165,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "mackay-place-0": {
+      "name": "Mackay Place",
+      "measure": {
+        "left": {
+          "pavementHW": 6.5496067509266265,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.5496067509266265,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "mackay-place-1": {
+      "name": "Mackay Place",
+      "measure": {
+        "left": {
+          "pavementHW": 6.5496067509266265,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.5496067509266265,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "ann-avenue-0": {
+      "name": "Ann Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0.00476208821259938,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ann-avenue-1": {
+      "name": "Ann Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0.00476208821259938,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ann-avenue-2": {
+      "name": "Ann Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.280837911787399,
+          "treelawn": 0.00476208821259938,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "grattan-street": {
+      "name": "Grattan Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 7.025599999999999,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "st-vincent-court-0": {
+      "name": "St. Vincent Court",
+      "measure": {
+        "left": {
+          "pavementHW": 6.697854660386676,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.697854660386676,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "st-vincent-court-1": {
+      "name": "St. Vincent Court",
+      "measure": {
+        "left": {
+          "pavementHW": 6.697854660386676,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.697854660386676,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "rutger-lane": {
+      "name": "Rutger Lane",
+      "measure": {
+        "left": {
+          "pavementHW": 3.35,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.35,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "whittemore-place": {
+      "name": "Whittemore Place",
+      "measure": {
+        "left": {
+          "pavementHW": 6.5526197941248405,
+          "treelawn": 1.326821815429419,
+          "sidewalk": 1.25354467209816,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.5526197941248405,
+          "treelawn": 1.326821815429419,
+          "sidewalk": 1.25354467209816,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      },
+      "capStart": "round",
+      "capEnd": null
+    },
+    "mcnair-avenue": {
+      "name": "McNair Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.7432890892259945,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.7432890892259945,
+          "treelawn": 0.12231091077400436,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "allen-avenue-0": {
+      "name": "Allen Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0.4016055921006334,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "allen-avenue-1": {
+      "name": "Allen Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0.4016055921006334,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "allen-avenue-2": {
+      "name": "Allen Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.523994407899366,
+          "treelawn": 0.4016055921006334,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "dillon-drive": {
+      "name": "Dillon Drive",
+      "measure": {
+        "left": {
+          "pavementHW": 9.25,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.25,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "singleton-street": {
+      "name": "Singleton Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.93369818360847,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.93369818360847,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "ohio-avenue-0": {
+      "name": "Ohio Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ohio-avenue-1": {
+      "name": "Ohio Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ohio-avenue-2": {
+      "name": "Ohio Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ohio-avenue-3": {
+      "name": "Ohio Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ohio-avenue-4": {
+      "name": "Ohio Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.674005503621602,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "oregon-avenue": {
+      "name": "Oregon Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "california-avenue-0": {
+      "name": "California Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.974943149341041,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.974943149341041,
+          "treelawn": 0.0006568506589585965,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "california-avenue-1": {
+      "name": "California Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.974943149341041,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.974943149341041,
+          "treelawn": 0.0006568506589585965,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "lasalle-street-0": {
+      "name": "Lasalle Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-1": {
+      "name": "Lasalle Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-2": {
+      "name": "Lasalle Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-3": {
+      "name": "Lasalle Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-4": {
+      "name": "Lasalle Street",
+      "measure": {
+        "left": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.326772896585872,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-0": {
+      "name": "Caroline Street",
+      "measure": {
+        "left": {
+          "pavementHW": 4.132460040692814,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.132460040692814,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-1": {
+      "name": "Caroline Street",
+      "measure": {
+        "left": {
+          "pavementHW": 4.132460040692814,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.132460040692814,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "kennett-place": {
+      "name": "Kennett Place",
+      "measure": {
+        "left": {
+          "pavementHW": 5.602597563739767,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.602597563739767,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "survey-default"
+      }
+    },
+    "mississippi-alley": {
+      "name": "Mississippi Alley",
+      "measure": {
+        "left": {
+          "pavementHW": 2.8088964682680597,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 1.7064491230429406,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "symmetric": false
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "carroll-street-0": {
+      "name": "Carroll Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.223397642832015,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.223397642832015,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "carroll-street-1": {
+      "name": "Carroll Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.223397642832015,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.223397642832015,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "soulard-street": {
+      "name": "Soulard Street",
+      "measure": {
+        "left": {
+          "pavementHW": 7.926205566429083,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 7.926205566429083,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "rutger-street-0": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "rutger-street-1": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "rutger-street-2": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 4.430562030291696,
+            "treelawn": 0,
+            "sidewalk": 3.5883893575836754,
+            "terminal": "sidewalk"
+          },
+          "symmetric": true
+        }
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "rutger-street-3": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "rutger-street-4": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "montrose-avenue-0": {
+      "name": "Montrose Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.263690755014601,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.263690755014601,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "montrose-avenue-1": {
+      "name": "Montrose Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.263690755014601,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.263690755014601,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "albion-place": {
+      "name": "Albion Place",
+      "measure": {
+        "left": {
+          "pavementHW": 7.327361023241324,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.306144183072501,
+          "treelawn": 1.0330239630137168,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": "round",
+      "capEnd": null
+    },
+    "benton-place-0": {
+      "name": "Benton Place",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "benton-place-1": {
+      "name": "Benton Place",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "nebraska-avenue": {
+      "name": "Nebraska Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.042522754626692,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.042522754626692,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "serbian-drive": {
+      "name": "Serbian Drive",
+      "measure": {
+        "left": {
+          "pavementHW": 7.419312311149058,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.419312311149058,
+          "treelawn": 0.10628768885094075,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-cardinal-avenue": {
+      "name": "South Cardinal Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.50846923056702,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.50846923056702,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "peabody-court": {
+      "name": "Peabody Court",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "dolman-street-0": {
+      "name": "Dolman Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.997331895265273,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5,
+            "treelawn": 1.3756000000000004,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 2.0668687137866986,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "dolman-street-1": {
+      "name": "Dolman Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.997331895265273,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "papin-street-0": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-1": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-2": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-3": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-4": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-5": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "papin-street-6": {
+      "name": "Papin Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 5.448220840963817,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.247379159036182,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-12th-street-0": {
+      "name": "South 12th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 15.124995802117553,
+          "treelawn": 0.7506041978824456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 15.124995802117553,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-12th-street-1": {
+      "name": "South 12th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 15.124995802117553,
+          "treelawn": 0.7506041978824456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 15.124995802117553,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-tucker-boulevard": {
+      "name": "South Tucker Boulevard",
+      "measure": {
+        "left": {
+          "pavementHW": 9.740738623473888,
+          "treelawn": 0.004861376526111627,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.740738623473888,
+          "treelawn": 3.374861376526111,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "russell-boulevard-0": {
+      "name": "Russell Boulevard",
+      "measure": {
+        "left": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0.07868542325239236,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "russell-boulevard-1": {
+      "name": "Russell Boulevard",
+      "measure": {
+        "left": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0.07868542325239236,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "russell-boulevard-2": {
+      "name": "Russell Boulevard",
+      "measure": {
+        "left": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0.07868542325239236,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "russell-boulevard-3": {
+      "name": "Russell Boulevard",
+      "measure": {
+        "left": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0.07868542325239236,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.746914576747607,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-0": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-1": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-2": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-3": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-4": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-5": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-6": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-7": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-8": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-9": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-10": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-11": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "officer-david-haynes-memorial-highway-12": {
+      "name": "Officer David Haynes Memorial Highway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "south-21st-street": {
+      "name": "South 21st Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.4108272383320575,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.4108272383320575,
+          "treelawn": 2.014772761667942,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "geyer-avenue-0": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-1": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-2": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-3": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-4": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-5": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-6": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-7": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "geyer-avenue-8": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.397571175714624,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "hickory-lane": {
+      "name": "Hickory Lane",
+      "measure": {
+        "left": {
+          "pavementHW": 6.25,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.25,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "eads-avenue-0": {
+      "name": "Eads Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 4.982839668517055,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.982839668517055,
+          "treelawn": 0.8427603314829444,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "eads-avenue-1": {
+      "name": "Eads Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 4.982839668517055,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.982839668517055,
+          "treelawn": 0.8427603314829444,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-ewing-avenue-0": {
+      "name": "South Ewing Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-ewing-avenue-1": {
+      "name": "South Ewing Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-ewing-avenue-2": {
+      "name": "South Ewing Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.459094891165681,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "ozark-expressway-0": {
+      "name": "Ozark Expressway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "ozark-expressway-1": {
+      "name": "Ozark Expressway",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "chouteau-avenue-0": {
+      "name": "Chouteau Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.47900241494727425,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.46900241494727446,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "chouteau-avenue-1": {
+      "name": "Chouteau Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.47900241494727425,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.46900241494727446,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "chouteau-avenue-2": {
+      "name": "Chouteau Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.47900241494727425,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.46900241494727446,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "chouteau-avenue-3": {
+      "name": "Chouteau Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.47900241494727425,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.626597585052725,
+          "treelawn": 0.46900241494727446,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "survey-default"
+      }
+    },
+    "truman-parkway-0": {
+      "name": "Truman Parkway",
+      "measure": {
+        "left": {
+          "pavementHW": 4.025774546908343,
+          "treelawn": 12.775599999999999,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 2.1256000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.653654832258035,
+            "treelawn": 1.3928497159166802,
+            "sidewalk": 7.345507118045882,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "truman-parkway-1": {
+      "name": "Truman Parkway",
+      "measure": {
+        "left": {
+          "pavementHW": 4.1233032956067115,
+          "treelawn": 12.775599999999999,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.1233032956067115,
+          "treelawn": 2.1256000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        }
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 2,
+            "treelawn": 12.775599999999999,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 3.914538405396091,
+            "treelawn": 1,
+            "sidewalk": 1.6841500461269705,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "lafayette-avenue-0": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-1": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-2": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-3": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.592019584600921,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-4": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-5": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5052000000000003,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.8580000000000005,
+          "treelawn": 1.0668,
+          "sidewalk": 1.6764000000000001,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-6": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 6.704039023771476,
+          "treelawn": 1.5200585066011074,
+          "sidewalk": 1.5184476651648833,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 0,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-7": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-8": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-14th-street-0": {
+      "name": "South 14th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.346010234957402,
+          "treelawn": 2.4595897650425984,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.346010234957402,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-14th-street-1": {
+      "name": "South 14th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5.346010234957402,
+          "treelawn": 2.4595897650425984,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.346010234957402,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "gratiot-street": {
+      "name": "Gratiot Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.3652027541469254,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 2.3652027541469254,
+          "treelawn": 12.720397245853075,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "park-avenue-0": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 10.658029338233407,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 1,
+            "sidewalk": 3.693069658822573,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "park-avenue-1": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.655044952056748,
+          "treelawn": 3.192626415453148,
+          "sidewalk": 1.7297401723922992,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 10.307048258732868,
+          "treelawn": 1.7258555231174242,
+          "sidewalk": 2.866669482870156,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-2": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 5.645715395972545,
+            "treelawn": 1,
+            "sidewalk": 1,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 6.06749156059035,
+            "treelawn": 2.108890869059252,
+            "sidewalk": 1.4410721984077526,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "park-avenue-3": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-4": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-5": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-place-0": {
+      "name": "Park Place",
+      "measure": {
+        "left": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "park-place-1": {
+      "name": "Park Place",
+      "measure": {
+        "left": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "park-place-2": {
+      "name": "Park Place",
+      "measure": {
+        "left": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.4536641122432457,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      }
+    },
+    "accomac-street": {
+      "name": "Accomac Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "pennsylvania-avenue": {
+      "name": "Pennsylvania Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.101559890535292,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.101559890535292,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "south-jefferson-avenue-0": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-1": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 4.807286407871595,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 17.326844270907745,
+            "treelawn": 1.3465742279243145,
+            "sidewalk": 13.076746307501956,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 58.5415576539413,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "south-jefferson-avenue-2": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-3": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 0,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 0,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 5.247069279339259,
+            "treelawn": 0,
+            "sidewalk": 1.524,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "south-jefferson-avenue-4": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-5": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-6": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-7": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-8": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "west-18th-street": {
+      "name": "West 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 15.616006187045546,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 15.616006187045546,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "source": "default"
+      },
+      "segmentMeasures": {
+        "0": {
+          "left": {
+            "pavementHW": 1.872042185323237,
+            "treelawn": 3.8445590562926664,
+            "sidewalk": 1.7742262088979173,
+            "terminal": "sidewalk"
+          },
+          "right": {
+            "pavementHW": 1.991465053681122,
+            "treelawn": 0,
+            "sidewalk": 1.8517267807718945,
+            "terminal": "sidewalk"
+          },
+          "symmetric": false
+        }
+      }
+    },
+    "gravois-avenue-0": {
+      "name": "Gravois Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 9.137754013793169,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.137754013793169,
+          "treelawn": 4.997845986206832,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "gravois-avenue-1": {
+      "name": "Gravois Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 9.137754013793169,
+          "treelawn": 0,
+          "sidewalk": 0.9144000000000001,
+          "terminal": "lawn"
+        },
+        "right": {
+          "pavementHW": 9.137754013793169,
+          "treelawn": 4.997845986206832,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "lasalle-lane": {
+      "name": "Lasalle Lane",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-1": {
+      "name": "motorway_link 1",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-2": {
+      "name": "motorway 2",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-3": {
+      "name": "motorway 3",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-4": {
+      "name": "motorway 4",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-5": {
+      "name": "motorway 5",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-6": {
+      "name": "motorway 6",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-7": {
+      "name": "motorway_link 7",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-8": {
+      "name": "motorway_link 8",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-9": {
+      "name": "motorway_link 9",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-10": {
+      "name": "motorway_link 10",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-11": {
+      "name": "motorway_link 11",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-12": {
+      "name": "motorway_link 12",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-13": {
+      "name": "motorway_link 13",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-14": {
+      "name": "motorway_link 14",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-15": {
+      "name": "motorway_link 15",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-16": {
+      "name": "motorway_link 16",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-17": {
+      "name": "motorway_link 17",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-18": {
+      "name": "motorway_link 18",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-19": {
+      "name": "motorway_link 19",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-20": {
+      "name": "motorway 20",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-21": {
+      "name": "motorway 21",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-22": {
+      "name": "motorway_link 22",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-23": {
+      "name": "motorway_link 23",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-24": {
+      "name": "motorway_link 24",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-25": {
+      "name": "motorway_link 25",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-26": {
+      "name": "motorway_link 26",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-27": {
+      "name": "motorway_link 27",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-28": {
+      "name": "motorway 28",
+      "measure": {
+        "left": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 8.534400000000002,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "secondary-link-29": {
+      "name": "secondary_link 29",
+      "measure": {
+        "left": {
+          "pavementHW": 5.4864,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.4864,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "secondary-link-30": {
+      "name": "secondary_link 30",
+      "measure": {
+        "left": {
+          "pavementHW": 5.4864,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.4864,
+          "treelawn": 1.3716000000000002,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-31": {
+      "name": "motorway_link 31",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-32": {
+      "name": "motorway_link 32",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-33": {
+      "name": "motorway_link 33",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-34": {
+      "name": "motorway_link 34",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-35": {
+      "name": "motorway_link 35",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-36": {
+      "name": "motorway_link 36",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-37": {
+      "name": "motorway_link 37",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-38": {
+      "name": "motorway_link 38",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-39": {
+      "name": "motorway_link 39",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-40": {
+      "name": "motorway_link 40",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-41": {
+      "name": "motorway_link 41",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    },
+    "motorway-link-42": {
+      "name": "motorway_link 42",
+      "measure": {
+        "left": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "right": {
+          "pavementHW": 2.4384,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none",
+          "material": "highway"
+        },
+        "source": "default"
+      }
+    }
+  }
+}

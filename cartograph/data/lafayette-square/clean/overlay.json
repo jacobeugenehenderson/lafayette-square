@@ -1,0 +1,239 @@
+{
+  "version": 1,
+  "streets": {
+    "mississippi-avenue": {
+      "name": "Mississippi Avenue",
+      "couplers": [
+        {
+          "kind": "split",
+          "pointIdx": 14,
+          "x": 165.59,
+          "z": 218.47
+        }
+      ]
+    },
+    "south-18th-street-0": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-1": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-2": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-3": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-4": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-5": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-6": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-7": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "waverly-place-0": {
+      "name": "Waverly Place",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "vail-place": {
+      "name": "Vail Place",
+      "capStart": "blunt",
+      "capEnd": null
+    },
+    "nicholson-place": {
+      "name": "Nicholson Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "preston-place": {
+      "name": "Preston Place",
+      "capStart": "blunt",
+      "capEnd": "round"
+    },
+    "missouri-avenue-0": {
+      "name": "Missouri Avenue",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "missouri-avenue-1": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-2": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-3": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-4": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "simpson-place": {
+      "name": "Simpson Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "saint-vincent-avenue-0": {
+      "name": "Saint Vincent Avenue"
+    },
+    "mackay-place-0": {
+      "name": "Mackay Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "mackay-place-1": {
+      "name": "Mackay Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "whittemore-place": {
+      "name": "Whittemore Place",
+      "capStart": "round",
+      "capEnd": null
+    },
+    "lasalle-street-0": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-1": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-2": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-3": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-4": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-0": {
+      "name": "Caroline Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-1": {
+      "name": "Caroline Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "mississippi-alley": {
+      "name": "Mississippi Alley",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "carroll-street-1": {
+      "name": "Carroll Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "rutger-street-0": {
+      "name": "Rutger Street"
+    },
+    "rutger-street-1": {
+      "name": "Rutger Street",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "rutger-street-2": {
+      "name": "Rutger Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "rutger-street-3": {
+      "name": "Rutger Street"
+    },
+    "rutger-street-4": {
+      "name": "Rutger Street"
+    },
+    "albion-place": {
+      "name": "Albion Place",
+      "capStart": "round",
+      "capEnd": null
+    },
+    "dolman-street-0": {
+      "name": "Dolman Street"
+    },
+    "dolman-street-1": {
+      "name": "Dolman Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "geyer-avenue-4": {
+      "name": "Geyer Avenue"
+    },
+    "lafayette-avenue-0": {
+      "name": "Lafayette Avenue"
+    },
+    "lafayette-avenue-1": {
+      "name": "Lafayette Avenue"
+    },
+    "lafayette-avenue-3": {
+      "name": "Lafayette Avenue"
+    },
+    "lafayette-avenue-5": {
+      "name": "Lafayette Avenue"
+    },
+    "lafayette-avenue-6": {
+      "name": "Lafayette Avenue"
+    },
+    "park-avenue-1": {
+      "name": "Park Avenue"
+    },
+    "park-avenue-5": {
+      "name": "Park Avenue"
+    },
+    "south-jefferson-avenue-2": {
+      "name": "South Jefferson Avenue"
+    },
+    "south-jefferson-avenue-4": {
+      "name": "South Jefferson Avenue"
+    },
+    "south-jefferson-avenue-6": {
+      "name": "South Jefferson Avenue"
+    },
+    "lasalle-lane": {
+      "name": "Lasalle Lane",
+      "capStart": null,
+      "capEnd": "round"
+    }
+  }
+}

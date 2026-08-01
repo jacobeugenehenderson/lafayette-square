@@ -1,0 +1,569 @@
+{
+  "version": 1,
+  "streets": {
+    "mississippi-avenue": {
+      "name": "Mississippi Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.701555809672122,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 11.828274929333126,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "couplers": [
+        {
+          "kind": "split",
+          "pointIdx": 14,
+          "x": 165.59,
+          "z": 218.47
+        }
+      ]
+    },
+    "south-18th-street-0": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-1": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-2": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-3": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-4": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-5": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-6": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-7": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "waverly-place-0": {
+      "name": "Waverly Place",
+      "measure": {
+        "left": {
+          "pavementHW": 2.548574589461412,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 3.96,
+          "treelawn": 1.52,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "vail-place": {
+      "name": "Vail Place",
+      "capStart": "blunt",
+      "capEnd": null
+    },
+    "nicholson-place": {
+      "name": "Nicholson Place",
+      "measure": {
+        "left": {
+          "pavementHW": 2.5,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.702706787286596,
+          "treelawn": 0.57,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "preston-place": {
+      "name": "Preston Place",
+      "capStart": "blunt",
+      "capEnd": "round"
+    },
+    "missouri-avenue-0": {
+      "name": "Missouri Avenue",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "missouri-avenue-1": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-2": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.179490412721057,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-3": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-4": {
+      "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "simpson-place": {
+      "name": "Simpson Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "saint-vincent-avenue-0": {
+      "name": "Saint Vincent Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.25,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 4.5962275366593355,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "mackay-place-0": {
+      "name": "Mackay Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "mackay-place-1": {
+      "name": "Mackay Place",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "whittemore-place": {
+      "name": "Whittemore Place",
+      "measure": {
+        "left": {
+          "pavementHW": 4.403268846614062,
+          "treelawn": 1.53,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.49,
+          "treelawn": 1.88,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": "round",
+      "capEnd": null
+    },
+    "lasalle-street-0": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-1": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-2": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-3": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-4": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-0": {
+      "name": "Caroline Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "caroline-street-1": {
+      "name": "Caroline Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "mississippi-alley": {
+      "name": "Mississippi Alley",
+      "measure": {
+        "left": {
+          "pavementHW": 1.9977078925101783,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 1.9977078925101783,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "symmetric": true
+      },
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "carroll-street-1": {
+      "name": "Carroll Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "rutger-street-0": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "rutger-street-1": {
+      "name": "Rutger Street",
+      "capStart": "blunt",
+      "capEnd": "blunt"
+    },
+    "rutger-street-2": {
+      "name": "Rutger Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "rutger-street-3": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "rutger-street-4": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "albion-place": {
+      "name": "Albion Place",
+      "capStart": "round",
+      "capEnd": null
+    },
+    "dolman-street-0": {
+      "name": "Dolman Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.997331895265273,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "dolman-street-1": {
+      "name": "Dolman Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "geyer-avenue-4": {
+      "name": "Geyer Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 4.7037433095845955,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 4.7037433095845955,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "symmetric": true
+      }
+    },
+    "lafayette-avenue-0": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-1": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-3": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-5": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 4.673822891386253,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "right": {
+          "pavementHW": 3.3654700668002517,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-6": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 14.703209067728572,
+          "treelawn": 2.85,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.498833348819067,
+          "treelawn": 0,
+          "sidewalk": 0,
+          "terminal": "none"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-1": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.538202461707964,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 11.042034627188867,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-5": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-2": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-4": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "south-jefferson-avenue-6": {
+      "name": "South Jefferson Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 7.716508745489069,
+          "treelawn": 2.002554538036364,
+          "sidewalk": 5.108928968970948,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 9.163045461963636,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lasalle-lane": {
+      "name": "Lasalle Lane",
+      "capStart": null,
+      "capEnd": "round"
+    }
+  }
+}
