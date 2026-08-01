@@ -258,22 +258,63 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 > producer's scope"* — prebake-freezing was the assumed mechanism, never the requirement. **The thing
 > that has to die is the chain, not the authoring.**
 >
-> **Design under construction (agent, 2026-07-31 — not yet proven, do not cite as landed):** prebake
-> freezes the **chain-derived FACTS per ring edge** — `segOrd`, canonical through-identity (for
-> `cornerAt`), base half-width, the divided-transition outer profile, cap kind, median/curved flags —
-> extending `tiles[].edges[]`, which already carries `{skelId, side}`. Then
-> **`buildCurb(frozenEdgeFacts, authoredWidths) → iA`**, with **no chain, street, or measure-chain in
-> lexical scope**, run at shape time so authoring is honored. That is Check C satisfied **structurally,
-> the way `sectionPass` already is** — and it keeps the byte-identical acceptance test.
-> ⚠️ **The risk to watch: the frozen facts must be SUFFICIENT.** If `buildCurb` needs something that
-> was not frozen, the reflex is to reach back to the chain — which silently re-opens Check C. The
-> guard is the signature: reaching back must require a visible, auditable change to it.
-> ⚠️ **The hard case is the divided-transition outer profile** (`SKELETON §5d/§5h` — "the outer curb
-> runs straight through"); encoding that as a per-edge frozen fact is the subtle part of this work.
+> ### ✅ AS-BUILT — the producer split LANDED 2026-07-31 (`4dd05303`, branch `a03-freeze-curb-prebake`)
+>
+> The producer is now two functions, split at the chain boundary (`src/lib/tileGround.js`):
+>
+> | | | |
+> |---|---|---|
+> | **`freezeCurbEdgeFacts()`** | chain-DERIVED | reduces runs/streets/measures to **one fact per RING EDGE** — `{skelId, side, segOrd, baseHW, prof, streetKey}`. The only half that touches a chain. |
+> | **`buildCurbRings()`** | chain-FREE | `ring + facts + authoredHW → iA`. No `streets`, `runs`, `measures` or `ribbons` in lexical scope. |
+>
+> ⭐ **`baseHW` is frozen PRE-authoring; the override applies inside the builder.** That is what keeps
+> the facts **look-agnostic** — one scene's facts serve every look bound to it — while the curb still
+> honours the operator (Layer 0 q3). It is also the specific thing the impossible D6b wording got
+> backwards.
+>
+> ⭐ **The flagged hard case REDUCED — the divided-transition outer profile IS a per-edge fact.**
+> `outerHWProfile` is already a per-**vertex** frozen stamp, so the two lookups resolve at freeze time
+> and store as a `[a|null, b|null]` pair per edge; the builder never needs the chain that carried it.
+> This was called out as the case most likely to fail. It did not. **Whoever takes the carve (below)
+> should expect the same to be possible there.**
+>
+> **Acceptance: `scratch/a03-curb-identity.mjs`** — byte-identical on **both** the authored state
+> **and** bare defaults, across artifact / block / curb / asphalt / sidewalk / fillets, hashed per
+> tile. ⭐ Both states are gated deliberately: a refactor identical on LS but not on a fresh pour would
+> repeat exactly the Check A blindness (§2, Check A) it was written after.
+>
+> ### ⚠️ CHECK C IS STILL RED — and this is the honest scope of what landed
+>
+> The chain-free producer owns **59 of 101 tiles (58%)**. The rest still route through the legacy carve
+> (`tile.ring − aFill`), **and `aFill` is chain-derived**:
+>
+> | path | tiles | |
+> |---|---|---|
+> | chain-FREE offset producer | **59** | Check C holds here |
+> | legacy carve — **median** tile | 32 | structural (offsetting both inner edges collapses the thin gap) |
+> | legacy carve — **small** tile | 10 | structural (`ringArea ≤ 1500`) |
+> | legacy carve — degenerate | **0** | every tile that qualifies for the offset path succeeds on it |
+>
+> ⛔ **The chain was NOT passed into `buildCurbRings` to cover those 42.** That is the quiet
+> re-opening the signature exists to prevent, and declining it is why the gap is countable instead of
+> hidden. **Do not claim Check C green at 58%.**
+>
+> ⭐ **What this bought, stated plainly:** the producer defect went from *"the curb is traced from
+> chains"* — unbounded and unmeasured — to **42 named tiles in two structural classes**. Bounded and
+> countable beats green-by-redefinition.
+>
+> **Left open, deliberately unbundled:** freezing `aFill` so the legacy carve is chain-free too
+> (**A06**) — a materially bigger change against a *different* class of tile; bundling it would put two
+> risks behind one byte-identical proof. And moving `freezeCurbEdgeFacts` into `derive.js` is a
+> **freeze-once optimization, not a Check C requirement** — same shape as `sectionPass`, which is
+> chain-free at its signature while something upstream built its input from chains. Do it when there is
+> a reason beyond tidiness; it touches prebake and the artifact, which is the one thing that could cost
+> the byte-identical property.
 
 - **D6a — build `iA` as a parallel offset, not an asphalt-union carve. ✅ CONSTRUCTION LANDED** (`offsetRingVariable`, 2026-06-09; now the DEFAULT at `tileGround.js:2728/2810`, replacing the `tile.ring − aFill` carve — which survives only as the degenerate `legacyBlock` fallback). Per-edge offset (`chain ⊕ pavementHW`, corners = offset-intersections; at a divided transition, corner the corridor outer-edge legs via the frozen `phase.spineAt*`). Converges to today's curb everywhere except the bug sites. **Turns Check A green** (incl. the junction zone). ⚠️ **but NOT yet robust — un-parked 2026-06-14.** Live confirmation: the correctness detector's **CURVE-FIT gate is RED** — offsetting the *smoothed* centerline (smooth=1.5) produces **6 new needle/spur degenerates** vs smooth=0 (`scratch/correctness-detector.mjs`), which is exactly why `STREET_SMOOTH` is pinned at 0 and macro FRONT A3 (curves-on) is blocked on the robust offset. The **curve-fit / smooth centerline** (the one knob, `SKELETON §3.5`) is its forcing function: a smooth dense curve makes the curb's inward offset **self-intersect at tight bends** → a **172° needle** (W18 corner: tile.ring smooth at 16°, curb spikes to 172°). Root: the through-node/curve path (`offsetRingVariable` :122–124, the averaged-normal offset) has **no miter clamp** (the :128 clamp guards only *corner* vertices), so on a bend tighter than the offset depth the inner edge overshoots and `unionRings` (:136) leaves the needle. The faceted curve hid it; the smooth curve exposes it — *the litmus-RED non-parallelism, made visible*. **"Proper" = the robust clean offset** (tight-curve-safe), **authoring untouched** (only `iA` construction changes; handles still read the resulting rings — brief §"Authoring integration").
-- **D6b — freeze it in prebake (the D2 pattern, extended to geometry).** Factor D6a so `derive.js` emits `iA` **once** and freezes it into `ribbons.tiles[]` beside `{ring, edges}`, with its load-bearing companions (`ring, vertR, bandJoin, cap, runs[].measure, med, tips` — `PREBAKE.md §4.1`), in the **authored** state. Moves the wall to ~P3. **Makes Check B writable.**
-- **D6c — Survey *consumes* the frozen curb.** Extend the chain-free consumer pattern (`sectionOpen`) to Survey's `tileGeos` (`BlockGeometryV2Debug.jsx:661`): inactive tiles read the frozen `iA`; only the active element re-strokes. **Turns Check C green.** This half has never existed.
+- **D6b — split the producer at the chain boundary. ✅ LANDED 2026-07-31** (`4dd05303`) — see the as-built block above. ⛔ **The old text of this bullet said "`derive.js` emits `iA` once and freezes it into `ribbons.tiles[]` … in the authored state." That is impossible** (prebake is authoring-blind; `ribbons.json` is per-scene, `blockCustoms` per-look) and it is the wording that nearly baked a bare-defaults curb — full text moved to `_archive/POLYGON-FIRST-D6b-prebake-wording-2026-07-31.md`. What replaced it: `freezeCurbEdgeFacts` (chain-derived, per ring edge) → `buildCurbRings` (chain-free), authored width applied in the builder. **Byte-identical; Check C green on 59/101 tiles, RED overall.**
+- **D6c — Survey *consumes* the frozen curb.** Extend the chain-free consumer pattern (`sectionOpen`) to Survey's `tileGeos` (`BlockGeometryV2Debug.jsx:661`): inactive tiles read the frozen `iA`; only the active element re-strokes. ⚠️ **Re-scoped by D6b's landing:** the *producer* is no longer the blocker it was written against — `buildCurbRings` is already chain-free at its signature. What remains here is the consume-once/perf half.
+- **A06 — freeze `aFill` so the legacy carve is chain-free too.** The 42 median/small tiles D6b deliberately left. Separate ticket on purpose: a different tile class, and bundling it would put two risks behind one byte-identical proof.
 - **D6d — the block-local edit / commit / re-freeze loop (= the D5 perf payoff).** Today one edit rebuilds the whole map (one whole-map `useMemo`; the junction builder reads every leg at a node; a final `unionRings` melts all tiles into one blob, `tileGround.js:2075`). Build the edit-key→tile index (`tiles[].edges[].skelId`), per-node junction construction, and a per-tile-addressable output; on commit, re-freeze only the touched junction's incident tiles (~3–4). The authoring loop the freeze was always missing.
 
 **Sequencing:** D6a ships alone and visible. D6b+D6c are the architecture move, gated on D6a proving out on Jacob's eye. D6d is the large perf/authoring restructure. D3 (corner identity) folds into D6b — once the curb is a frozen offset cornered at offset-intersections, the divided-transition corner identity is frozen *as part of the curb*, dissolving the whole transition defect class.
