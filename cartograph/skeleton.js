@@ -840,7 +840,19 @@ function rdpKeep(coords, eps = 0.5, protectedKeys = null) {
 // centerline becomes a true arc (no straight chords) so the curb's concentric offset is
 // smooth — no facets, inner and outer. GRID-SAFE BY CONSTRUCTION: a straight run (no
 // interior bend) and a sharp corner are left byte-identical — only genuine curves change.
-const CURVE_FIT        = process.env.CURVE_FIT === '1'   // OFF by default — gates the curve-PRIMITIVE fit (HANDOFF-curve-primitive-skeleton.md)
+// ⭐ DEFAULT-ON 2026-08-02. Was `=== '1'` (off by default), which made the pipeline
+// unable to reproduce its own committed frame: the shipped LS skeleton carries 52 of
+// 217 streets with bezier `segments`, so it was minted with the flag ON, and the
+// documented rebuild silently produced a curve-LESS frame instead. That is ROADMAP
+// A01's root and the exact silent-substitution shape — town #2 follows the docs, gets
+// faceted streets, and nothing fails.
+// ⚠️ Do NOT confuse this with STREET_SMOOTH, the retired render-time smoothing knob
+// (`smoothCenterline.js`, pinned 0 since 2026-06-14) whose offset had no miter clamp
+// and produced the needle/spur degenerates. THIS is the curve PRIMITIVE: sparse bezier
+// control points fitted at the frame, grid-safe by construction, guarded by
+// CURVE_MIN_RADIUS/CURVE_DEV_TOL below — and eye-approved twice (`7c49349` "centerline
+// perfect"; `4273ce8` "curve curb is clean now"). Set CURVE_FIT=0 to disable.
+const CURVE_FIT        = process.env.CURVE_FIT !== '0'   // ON by default — the curve-PRIMITIVE fit (HANDOFF-curve-primitive-skeleton.md)
 const CURVE_HARD_TURN  = 35 * Math.PI / 180   // a vertex turning ≥ this is a real corner → kept SHARP, never inside a cluster
 const CURVE_MIN_TURN   = 5  * Math.PI / 180   // a cluster must accumulate at least this total turn to be a real curve
 const CURVE_SEG_MAX    = 40                    // a segment LONGER than this is a straight LEG — kept verbatim, never bezier'd
