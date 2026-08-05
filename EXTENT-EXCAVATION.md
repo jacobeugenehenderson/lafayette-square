@@ -37,7 +37,7 @@ The single change that makes the rest affordable: **stop fetching everything up 
 ## 0.2 The line — what the LIGHT pass keeps
 
 **KEEPS**
-- **Chains, names, junctions** → `clean/street-index.json` (2.1 MB, unsimplified, already built by `skeleton.js --index`). This is the vocabulary; nothing can be named before it exists.
+- **Chains, names, junctions** → `clean/street-index.json` (built by `skeleton.js --index`). ⚠️ **Present for only 2 of 6 scenes** (`centrum` 2.0 MB, `lafayette-square-staging` 0.3 MB) — absent for `lafayette-square`, `hipointe-demun`, `altadena`, `ksi-y-m-yn`. The two-pass SOFT-fetch design here and PART C's face-enumeration both assume it is a per-scene given; it is not. *(Re-checked 2026-08-04.)* This is the vocabulary; nothing can be named before it exists.
 - **OSM query 1, NARROWED to** `highway` + `waterway` + `railway` + `boundary` — the named linear features a boundary can run along.
 - **The building source this pour will use, painted** — MSBF where it exists, OSM buildings where it doesn't.
 
@@ -121,7 +121,7 @@ Ratifies §0.1 and adds the three pieces it does not carry. **The nomenclature i
 
 ⚠️ **NAME COLLISION — do not merge these.** `SourcesPanel.jsx:86` already uses `locked` for *"chosen for you by region — nothing to supply"* (MSBF in the US, OSM in Europe): immutable **by governance**. This lock is immutable **by sequence**. Two axes, one word. Name the new one distinctly (`sealed`/`committed`) before both ship, or the next reader merges them.
 
-**⭐ ② The lock is what makes building identity stable — and it removes the need for a registry.** `fetch-msbf.js:169` mints `msbfId: i` — *the array index of the fetch*. Not Microsoft's id; the external id is never captured. So today a re-fetch **renumbers every building**, and every listing, logo, place card and `activate`/`hide` entry silently re-points to a different building — with no error. This is the **identity instance of PART D's structural finding** (*"membership is computed, never recorded… a re-fetch silently changes answers"*): membership is not recorded, and neither is identity. Both are re-derived from fetch order.
+**⭐ ② The lock is what makes building identity stable.** ✅ **BUILT for `msbf-` (`fetch-msbf.js:179`)** — a per-scene registry + high-water allocator: an existing footprint keeps its permanent `msbfId`, an unseen one appends at `highWater+1`, **nothing is renumbered**, with a coincident-centroid collision warning. ⛔ **NOT built for `osm-`**: `msbf-identity.js` has exactly one importer, so the OSM fetcher never received it and **both Polish pours remain unlocked**. *(Verified 2026-08-04. The paragraph below described `msbfId: i` = fetch array index as the live state — that was true when written and is now history for msbf-, live for osm-.)* Under the old scheme a re-fetch **renumbered every building**, and every listing, logo, place card and `activate`/`hide` entry silently re-pointed — with no error. This is the **identity instance of PART D's structural finding** (*"membership is computed, never recorded… a re-fetch silently changes answers"*): membership is not recorded, and neither is identity. Both are re-derived from fetch order.
 
 **The lock fixes it by construction.** Once the soft fetch is frozen, a fetch ordinal is a legitimate permanent key — there is no second fetch that can renumber it. **The lock IS the registry.** Consequences:
 - **Identity is minted in the SOFT pass, not the prebake** — because §0.2 puts MSBF footprints in the light pass (you must see them to judge an edge). The prebake and every baker already just carry it (`derive.js:4703`, `bake-buildings.js:66`, `bake-content.js:126`); that part is correct and needs no change.
@@ -320,23 +320,16 @@ Consequence beyond the known framing bug: **LS's `neighborhood_boundary.json` ca
 2. **`HANDOFF-lodz-ksiezy-mlyn.md`** (2026-07-19, 22h47m pre-retraction) — `:48` files name-the-boundary-streets as **"(retired)"** in a kit backlog. An agent reading it will *decline to build the mechanism*. Its recency makes it look trustworthy.
 3. **`HANDOFF-altadena-pour.md:167`** — prefixed **"Doctrine:"**, short and quotable, five days pre-retraction.
 
-**⭐ The bigger finding: the retraction is incomplete in the CANON, and the gap is on the routing path.** `004a33e3` touched ten files. **`cartograph/PREBAKE.md` was not one of them**, and `PREBAKE.md:56` states the retracted model in full — *"the excluder model, 2026-07-14, **supersedes the boundary-street polygon**… The **circle** is the boundary"* — while `:120` in the same file says "boundary polygon." Also still leaking, in files the commit *did* touch:
+**⭐ ✅ CLOSED — the retraction gap was swept 2026-07-23; re-verified 2026-08-04.** This section reported that `004a33e3` corrected headers and summaries but left the **step-by-step procedures** — what an agent actually follows — still teaching the retracted excluder model, so *"an agent obeying the routing gate could not avoid being told the inclusion polygon was dead."* **Every site it named now states the corrected model, in place:** `PREBAKE.md` (the one file the retraction commit missed) leads with `(polygon ∪ activate) − (exclusions ∪ hide)` and carries the fix note; `ARCHITECTURE.md §disc`, `OPERATIONS.md` step 7 and `NEIGHBORHOOD-INPUTS §11` each carry the corrected model with an explicit retraction; `INTAKE.md §0.5` carries the full retraction banner.
 
-- `cartograph/ARCHITECTURE.md:168` — *"the disc… **is the membership boundary** — every building inside is IN"*, ~140 lines above the corrected §Extent that contradicts it.
-- `cartograph/INTAKE.md:15` — heading still reads *"the **excluder pen** (LANDED 2026-07-14)"*; `:26` still reads *"**Every building inside it is IN by default** — no perimeter to trace"*, seven lines above its own retraction banner.
-- `cartograph/OPERATIONS.md:20` step 5 — *"The auto-fit **circle** is the boundary… No streets to name, no corners to place"*, nine lines below `:11` saying the opposite.
-- `NEIGHBORHOOD-INPUTS.md:318` and `:327-329`; `PIPELINE.md:197` footer; `BACKLOG.md:119`; `DOC-CODE-COHERENCE.md:87`.
-
-The retraction commit's own words: *"an agent obeying the routing gate could not avoid being told the inclusion polygon was dead."* **On this evidence that is still true today.** The corrections landed in headers and summaries; the **step-by-step procedures**, which is what an agent actually follows, were not swept.
-
-*(Reported, not fixed, per §7.)*
+⛔ **Left standing, this section manufactures distrust of docs that are now correct** — which costs a re-sweep to discover. Kept only as the record of the failure mode: *a retraction that lands in headings and not in procedures has not landed.*
 
 ### B5 (§3e). What I would DELETE
 
 1. **`scene !== 'lafayette-square'` at `bake-buildings.js:671`** (X5, D7) — a hardwire the same file already declares retired. Deleting it is a no-op for LS today (no polygon, no overrides) and removes an exemption that guarantees LS never exercises the mechanism.
 2. **The `.prebak-rescope` write** (`serve.js:1664`) — delete it *or* wire a rollback. A snapshot nobody can restore is worse than none: it reads as protection.
 3. **`neighborhood.json`'s duplicate `polygon` / `polygonSource` / `radius`** — the same values live in two files and already disagree (HPDM `radius` 1260 vs 1251; ksi polygon in one and not the other, D2). One of these files should own each field.
-4. **The `sides` field** — `ARCHITECTURE.md:364` calls it vestigial; `INTAKE.md:33` says it *is* the mechanism; Altadena persists `borderStreets: []` instead, a third name. Resolve to one, delete the others.
+4. ⛔ **NOT the `sides` field — RESOLVED 2026-08-04, do not delete it.** `ARCHITECTURE` called it vestigial and `INTAKE` called it the mechanism; **the code settles it as the mechanism** — 22 references in `ExtentApp.jsx` (declared, auto-saved into the draft, hydrated from `nb.sides`, resolved to geometry, driving `<ExtentClickableStreets selected={sides}>` and the boundary-street picker UI). `ARCHITECTURE` is corrected. What *does* remain is the naming collision: Altadena persists `borderStreets: []`, a third name for the same idea — unify the name, keep the field.
 5. **`ExtentApp.jsx:1138`'s `if (committed) return {x:0,z:0}`** — this is not cleanup, it is D4's fix, but it is a deletion.
 6. **`HANDOFF-boundary-trio.md`, `HANDOFF-hipointe-pour-step0.md`** → archive with a retraction banner. Both are dead work described in a retracted model, and the first is *cited as required reading*.
 

@@ -22,9 +22,13 @@ The Extent subsystem and the polygon/stamp subsystem have the **same disease**, 
   the type away and emits `{ring, edges}`; the FILL re-guesses identity *from shape* and co-claims
   1400 m². Cure: *the polygon asks the stamp* — carry identity onto the face; the FILL **reads**
   ownership instead of negotiating it.
-- **Extent (`EXTENT-EXCAVATION.md` PART D):** *membership is computed, never recorded.* Building
-  identity is `msbfId: i` = the fetch **array index**; a re-fetch renumbers every building and every
-  listing/logo/card silently re-points. Membership is re-derived in **nine** places, two disagreeing.
+- **Extent (`EXTENT-EXCAVATION.md` PART D):** *membership is computed, never recorded.* Membership is
+  re-derived in **nine** places, two disagreeing. ✅ **The identity half is FIXED for `msbf-`** — the
+  registry + high-water allocator landed at `fetch-msbf.js:179` (*"an existing footprint keeps its
+  PERMANENT msbfId; an unseen one appends at highWater+1; nothing is renumbered"*), so `msbfId: i` =
+  fetch array index is **history, not a live defect**. ⛔ **Still open: `osm-` ids never got the
+  registry** — `msbf-identity.js` has exactly one importer, so the OSM fetcher (i.e. **both Polish
+  pours**) is unlocked. That port is the remaining work; membership recording is untouched.
 
 **One cure both times: mint identity once, upstream; freeze it; carry it forward; never re-derive it.**
 
@@ -256,9 +260,11 @@ progenitor — is conformed last** (it is production `lafayette-square.com` and 
 never the night before a demo).
 
 1. **Schema split** (§5.1) — three artifacts. No PART E dependency; unblocks the rest.
-2. **HPDM identity lock** (§4) — make `msbf-NNNN` a **permanent key** (persist an external MSBF id or a
-   high-water-mark allocator) so a re-fetch can never renumber HPDM's 192 listings' anchors. **Does not
-   require re-pouring HPDM.** This is the single thing between HPDM and "safe to hand a customer."
+2. ✅ **HPDM identity lock — DONE** (`fetch-msbf.js:179`, the per-scene registry + high-water allocator;
+   verified 2026-08-04). ⛔ **The remaining half is `osm-`**: `msbf-identity.js` has one importer, so the
+   OSM fetcher never got the registry and **both Polish pours are still unlocked**. Port it there.
+   *(This step was the worklist's #2 and was described as "the single thing between HPDM and safe to
+   hand a customer" — for HPDM it is closed; the sentence is now true of the Polish scenes instead.)*
 3. **The two gate checks** (`EXTENT-EXCAVATION §0.6`) — the **membership diff** (old vs new: who
    enters/leaves and why) + the **scene-parity layer-count check** (raw OSM feature count vs `map.json`
    per layer — the detector that would've caught the park drop 63→0). Plus the served-parity guard
