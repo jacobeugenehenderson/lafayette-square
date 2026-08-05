@@ -1,6 +1,6 @@
 # Bake — pouring the slab
 
-> **Status: v0.2 (2026-07-04; base v0.1 2026-06-09) — topic-doc + scene-generic bake / boundary cull.** The keystone Reference for the **bake** stage. Grounded against the live orchestration in `serve.js` (the `/looks/:id/bake` handler, ~L461–623) and the bake scripts it runs, not assembled from prose. Part of the front-half rebuild spec — the doc that was missing between **section** and **stage**. Paired with **`STAGE.md`** (the Look tool whose output this stage freezes) and **`SLAB-CONTRACT.md`** (the output format, owned by neither app).
+> **Status: v0.2 (2026-07-04; base v0.1 2026-06-09) — topic-doc + scene-generic bake / boundary cull.** The keystone Reference for the **bake** stage. Grounded against the live orchestration in `serve.js` (the `/looks/:id/bake` handler) and the bake scripts it runs. ⚠️ **Cite the SYMBOL, never the line** — this doc's line numbers had drifted by ~1,400 lines and landed readers nowhere near the code, not assembled from prose. Part of the front-half rebuild spec — the doc that was missing between **section** and **stage**. Paired with **`STAGE.md`** (the Look tool whose output this stage freezes) and **`SLAB-CONTRACT.md`** (the output format, owned by neither app).
 >
 > The bake is **both** an *idea* (the publish stage — `… section → bake → stage`) and a *thing* (the artifacts under `public/baked/<look>/`). This doc owns the *how*: which scripts run, in what order, what each freezes. It does **not** re-document the slab's byte format — that is `SLAB-CONTRACT.md`'s job, referenced never duplicated.
 
@@ -36,7 +36,7 @@ Two load-bearing facts:
 
 ## 2. How it builds — the chain, in order
 
-The handler runs steps through one helper, `runIfDirty(label, inputs, outputs, cmd)` (`serve.js:531`): **a step is skipped when every output is newer than every declared input — including the step's own `.js` source.** `?force=1` on the bake URL forces a full rebuild. This is the **dirty-skip** contract (`ARCHITECTURE.md §7` "Bake writes go through `io.js`'s `writeIfChanged`") — no-op bakes are ~1ms; mtime is touched even on byte-identical writes so the graph doesn't cascade.
+The handler runs steps through one helper, `runIfDirty(label, inputs, outputs, cmd)` (`serve.js`, inside the bake handler): **a step is skipped when every output is newer than every declared input — including the step's own `.js` source.** `?force=1` on the bake URL forces a full rebuild. This is the **dirty-skip** contract (`ARCHITECTURE.md §7` "Bake writes go through `io.js`'s `writeIfChanged`") — no-op bakes are ~1ms; mtime is touched even on byte-identical writes so the graph doesn't cascade.
 
 **Layer-visibility is a bake lever, not just a render toggle** (`serve.js:536`): a hidden layer (`layerVis[id] === false`) skips its (often heavy) sub-bake entirely. Re-showing flips `design.json` → the sub-bake goes dirty → re-runs.
 
@@ -53,9 +53,9 @@ The steps, in execution order:
 | 7 | **trees** | `arborist/bake-trees.js` | the SCENE's census + species map + `map.json` (resolved by `cartograph/tree-bake-inputs.mjs`) | `public/baked/<scene>/trees.json` | Per **neighborhood**, never shared (`SLAB-CONTRACT.md §8`). Two axes: `--scene` = whose census; `--heroLook` = whose camera tracks drive `heroTier`. No census on disk → **honest zero**, skip (a blank grove, never another hood's trees). Gated on `layerVis.tree`. *(Was LS-only, writing the fossil `baked/default.json`; retired 2026-07-15.)* |
 | 8 | **ground-ao** | `bake-ground-ao.js` | `map.json`, `design.json`, `ground.json` | `ground.lightmap.png` **+ `ground.poolmap.png` + `ground.colormap.png`** | **last** — slowest (~50 s); depends on `ground.json` mtime, runs after the geometry settles. Emits three "ground-contact" textures (2026-06-22): the **AO lightmap** (building AO), the **ground FX map** (R = lamp light pool, G = tree+lamp contact shadow), and the **ground-color map** (albedo raster for the tree trunk-base blend). See `SLAB-CONTRACT.md §3/§3.1/§3.2`. ⚠️ reads tree positions from the look's own `trees.json` + lamp positions from the per-Look `lamps.json` (or `street_lamps.json`). |
 
-On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js:616`) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
+On success the handler stamps the Look's `bakedAt = Date.now()` into the Looks index (`serve.js`, at the end of the bake handler) — the canonical `?t=` cache-bust seed (`SLAB-CONTRACT.md §4`).
 
-> **`bake-svg.js` is deliberately NOT in the chain** (`serve.js:493`). It's demoted to a CLI-only QA artifact (human-readable / diffable); the runtime consumes `ground.json/bin/lightmap` exclusively.
+> **`bake-svg.js` is not in the chain — the script no longer exists at all** (`serve.js` carries only a note where it used to run). The runtime consumes `ground.json`/`bin`/`lightmap` exclusively; a stale `public/looks/lafayette-square/ground.svg` remains on disk, read by nothing.
 >
 > **`bake-terrain.js` IS now in the per-Look bake** (2026-07-02, the HiPointe bake→3D phase). Terrain is a **per-installation** artifact: `bake-terrain.js --scene=<id>` writes the scene's own heightfield to the portable folder `cartograph/data/<scene>/clean/terrain.{json,bin}` (was the global `src/data/terrain.*` — retired; LS bakes byte-identical through the same path, no privilege), and the bake **publishes it into the slab** (`public/baked/<look>/terrain.{json,bin}`) so the runtime fetches it BY lookId like `ground.bin`. `src/utils/terrainShader.js` loads the active look's slab terrain (flat fallback if absent) and re-points live on a Stage scene-switch (`reloadTerrain`). Runs before `ground` (its adaptive refine samples the relief). *(Rationale: `feedback_installations_are_independent` — a poured neighborhood must lift on its OWN relief, and the installation folder is portable.)*
 
@@ -131,9 +131,9 @@ Harness: **`scratch/tree-lu-exclusion-census.mjs`** (read-only; runs the *same* 
 ## 5. Status — done / open / aspirational
 
 **DONE (shipping, verified in code):**
-- ✅ The full chain runs incrementally, dirty-skipped, with mtime discipline (`writeIfChanged`, `serve.js:531`). No-op bakes ~1ms; layer-vis bake-gating live.
+- ✅ The full chain runs incrementally, dirty-skipped, with mtime discipline (`writeIfChanged`, `serve.js` `runIfDirty`). No-op bakes ~1ms; layer-vis bake-gating live.
 - ✅ `ground` / `buildings` / `lamps` / `scene` / `trees` / `ground-ao` all emit and are consumed by production (the L1.1/L1.3 cutovers — `SLAB-CONTRACT.md §11`).
-- ✅ `shape.json` (WALL artifact) emitted by `bake-ground.js:887` when `emitArtifact:true`; Section opens it chain-free (`ef460d1`, `WALL.md`).
+- ✅ `shape.json` (WALL artifact) emitted by `bake-ground.js` when `emitArtifact:true`; Section opens it chain-free (`ef460d1`, `WALL.md`).
 - ✅ The slab is **look-complete** for the shipped channels (SC.1–SC.3 + SC.7 baked into `scene.json` — see `STAGE.md §5`).
 - ✅ **Scene-generic bake (2026-07-03/04).** A poured neighborhood bakes a full slab (ground/lightmap/buildings/scene/shape) from its own OSM via the Pour tool; the "scene-specific pipeline not yet implemented" comment was conservative (§1). Poured scenes get **polygon + activate/hide building membership** — applied in `pipeline.js` (the single filtered `map.json` source), belt-and-suspendered in `bake-buildings.js` (step 4; `NEIGHBORHOOD-INPUTS §5.2`). Buildings load via a per-scene **render ledger** (`data/<scene>/buildings.json`), retiring the LS source hardwire.
 
