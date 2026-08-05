@@ -33,7 +33,26 @@ does not match the machine — or where two docs disagree and the code quietly p
 - **What a fix would establish:** for each thing we want frozen at prebake, *which channel does it
   depend on?* That question is answerable today and was being skipped.
 
-### W2 — ⭐⭐ The membership formula in ELEVEN docs is not the formula the code runs. Nobody has ruled.
+### W2 — ⭐⭐ The membership formula in ELEVEN docs was not the formula the code runs. ✅ **RULED 2026-08-04.**
+
+> **RULING (Jacob asked for it; `8205a48a`): the formula is ORDERED and THE FINEST GESTURE WINS.**
+> `hide` ⇒ OUT · `activate` ⇒ IN · exclusion loop ⇒ OUT · polygon (or disc). As algebra,
+> **`((polygon − exclusions) ∪ activate) − hide`.** So a per-building `activate` **beats** an exclusion
+> loop — **the code was right and eleven documents were wrong.** No behaviour changed. Rationale lives at
+> the SSoT (`NEIGHBORHOOD-INPUTS §5.2`); all eleven sites corrected; the three code sites carry a
+> comment naming the precedence and the ⛔ against "fixing" it back. Layer 0 decided it: under the flat
+> formula, an operator who lassos a strip out and clicks the corner bakery back in gets **nothing**, and
+> **a per-building override silently demoted to a no-op is q3's named failure** — plus q2's, because the
+> map redraws plausibly and nothing says the gesture was discarded. Every other layered override in the
+> kit already resolves by specificity; membership stops being the exception.
+>
+> ⚠️ **Found while ruling, surfaced not fixed → `ROADMAP A08`:** the three sites **disagree on degenerate
+> footprints** (<3 vertices — pipeline pre-clip *keeps*, pipeline post-derive *centroid-tests*,
+> `bake-buildings` *drops*), while `bake-buildings`'s own comment claims it "must match `pipeline.js`
+> exactly." The 2D Designer can therefore show a building the slab does not.
+
+<details><summary>The original finding, as reported before the ruling</summary>
+
 
 - **The belief:** `Membership = (polygon ∪ activate) − (exclusions ∪ hide)` — stated in `README`,
   `ORIENTATION`, `PIPELINE`, `ARCHITECTURE`, `OPERATIONS`, `PREBAKE`, `INTAKE`, `BAKE`,
@@ -53,6 +72,8 @@ does not match the machine — or where two docs disagree and the code quietly p
   neither side should be changed unilaterally.
 - **What a fix must establish:** which gesture wins. Then *one* of the two moves — reword the formula
   everywhere, or move the `activate` test below the exclusion loop in all three sites.
+
+</details>
 
 ### W3 — ⭐ "The SHAPE pass is nearly chain-free" — there are TWO reach-backs, and one is geometric
 
@@ -271,10 +292,12 @@ an under-correction (the floor is 41, not 30, and `POLYGON-FIRST §3` had 42 rig
 the third time in this arc that a correction over- or under-swung — the pattern is real and it argues
 for citing the method, not just the number, every time.
 
-**The one thing I would do next:** ⭐ **rule the membership precedence, then sweep it once.** It is a
-five-minute decision that closes an eleven-document contradiction, and it is the only finding here where
-the corpus and the code have been quietly disagreeing about what the product *does* rather than about
-where a line number went. Second, if you want a geometry payoff rather than a doctrine one: **A07 is a
+**✅ The membership precedence was ruled the same day** (`8205a48a`) — ordered, finest gesture wins, the
+code was right, eleven docs corrected, and the three code sites now carry the rule as a comment. It also
+turned up a sibling: those three sites disagree on degenerate footprints, so the 2D Designer can show a
+building the slab does not (`ROADMAP A08`, XS, unfixed).
+
+**The one thing I would do next:** **A07 is a
 prerequisite for the "d" bulge**, not a sibling — until the producer choice is recorded per tile, every
 diagnosis of that bulge is a coin flip about which of two code paths built the tile you are looking at.
 
