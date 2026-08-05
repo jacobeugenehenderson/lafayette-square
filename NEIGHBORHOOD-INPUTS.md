@@ -245,6 +245,14 @@ Membership is authored on the Extent tool. **⭐ The POLYGON is the boundary; th
 > - **Nothing is lost.** To re-exclude an activated building, drop it from `activate` or add it to
 >   `hide`. `hide` beats `activate` so a contradictory authoring state resolves OUT — the safe direction.
 >
+> **⭐ ONE IMPLEMENTATION (2026-08-04, `2585292f`).** The decision lives in
+> **`cartograph/membership.mjs`** — `createMembershipFilter({nb, activate, hide}).decide(id, ring)` — and
+> all three consumers call it (`pipeline.js` pre-clip · `pipeline.js` post-derive → `map.json` · 
+> `bake-buildings.js`). It used to be hand-copied three times under a comment claiming they matched;
+> they didn't (`ROADMAP A08`). ⚠️ **A `<3`-vertex ring is UNDECIDABLE** — no trustworthy centroid, so
+> `hide`/`activate` still apply (id-keyed) and past that the building is **kept, counted, and reported
+> loudly**. Membership is not a data-quality culler; a malformed footprint is an **intake** defect.
+>
 > **What changed:** the docs, not the code. `EXTENT-EXCAVATION §D8` recorded this divergence on
 > 2026-07-23 and it sat unruled; the eleven documents stating `(polygon ∪ activate) − (exclusions ∪ hide)`
 > were the wrong side of it. All eleven now carry the ordered form. ⛔ **Do not "fix" the code to match

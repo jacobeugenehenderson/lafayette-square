@@ -46,10 +46,14 @@ does not match the machine — or where two docs disagree and the code quietly p
 > map redraws plausibly and nothing says the gesture was discarded. Every other layered override in the
 > kit already resolves by specificity; membership stops being the exception.
 >
-> ⚠️ **Found while ruling, surfaced not fixed → `ROADMAP A08`:** the three sites **disagree on degenerate
-> footprints** (<3 vertices — pipeline pre-clip *keeps*, pipeline post-derive *centroid-tests*,
-> `bake-buildings` *drops*), while `bake-buildings`'s own comment claims it "must match `pipeline.js`
-> exactly." The 2D Designer can therefore show a building the slab does not.
+> ⚠️ **Found while ruling → `ROADMAP A08`, and ✅ FIXED on Jacob's go-ahead (`2585292f`):** the three
+> sites **disagreed on degenerate footprints** (<3 vertices — pipeline pre-clip *kept*, pipeline
+> post-derive *centroid-tested*, `bake-buildings` *dropped*), while `bake-buildings`'s own comment
+> claimed it "must match `pipeline.js` exactly", so the 2D Designer could show a building the slab does
+> not. **The decision is now ONE function** (`cartograph/membership.mjs`) that all three call — the fix
+> is not one rule pasted three times, because pasting is what let it drift. A degenerate ring is now
+> **UNDECIDABLE**: kept, counted, and reported loudly, because membership is not a data-quality culler.
+> Proved a no-op on **72,735** real decisions (`scratch/a08-membership-equivalence.mjs`).
 
 <details><summary>The original finding, as reported before the ruling</summary>
 
