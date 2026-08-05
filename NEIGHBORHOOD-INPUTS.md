@@ -2,7 +2,7 @@
 
 **What every input to a neighborhood is, where Lafayette Square got it, and whether that well transfers to the next town.** This is the intake SSOT *across all four domains* (Map · Trees · Weather · Content) — the checklist an operator opens on day one of pouring a new slab. It answers Jacob's question directly: *the infrastructure exists; how do we fill it?*
 
-> **Status: v0.6 (2026-07-23) — Boz.** Building membership is the **INCLUSION POLYGON**: `(polygon ∪ activate) − (exclusions ∪ hide)` — the polygon DECIDES, the disc RENDERS (§5.2). ⛔ *v0.5 said membership was the **excluder pen** — "circle − exclusion loops," reconciled 2026-07-16 "from the superseded polygon model." That had it exactly backwards and was RETRACTED 2026-07-20; the polygon was never superseded.* Design of record: `EXTENT-DESIGN.md`. The **content-layer schema is ratified (§5.1.1)** — the canonical collection format (building ledger + listings, joined by slab building id). Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
+> **Status: v0.6 (2026-07-23) — Boz.** Building membership is the **INCLUSION POLYGON**: `((polygon − exclusions) ∪ activate) − hide` — the polygon DECIDES, the disc RENDERS (§5.2). ⛔ *v0.5 said membership was the **excluder pen** — "circle − exclusion loops," reconciled 2026-07-16 "from the superseded polygon model." That had it exactly backwards and was RETRACTED 2026-07-20; the polygon was never superseded.* Design of record: `EXTENT-DESIGN.md`. The **content-layer schema is ratified (§5.1.1)** — the canonical collection format (building ledger + listings, joined by slab building id). Grounded in `cartograph/INTAKE.md` (the map layer's deep provenance home — this doc cites it, does not restate it) + a four-domain provenance sweep of the live code. Some content-layer attributions are first-pass — marked **⚠️ confirm**. Not yet wired into `README` doc-map / `ORIENTATION` — do that on ratification (§8).
 >
 > **Scope note:** this is the *intake/authoring* companion to `SLAB-CONTRACT.md`. The contract says what a finished slab **is**; this says what you must **gather and author** to pour one.
 
@@ -49,7 +49,7 @@ Deep home: **`cartograph/INTAKE.md`** (provenance SSOT + the GEOMETRY-vs-ATTRIBU
 | **`survey.json`** | measured street **widths** (61/68 streets) | operator, from "OSM sidewalk distances + assessor ROW fallback" | `raw/survey.json` | **③** | measured |
 | **Curated centerlines** (35 in LS) | hand-authored street *shapes* the source data can't capture | operator hand-draw | `centerlines.json` `source:'curated'` | **③** | authored — **legitimate, not debt** (revised 2026-07-02; see §1.1) |
 
-**Doctrine (revised 2026-07-02 — see §1.1):** the map has an **automated backbone** (geometry, widths, class, land-use, heights — all fetchable) *plus* a **legitimate authoring layer** for the idiosyncratic features a historical neighborhood carries that street data simply doesn't hold. The extent has TWO parts (`neighborhood_boundary.json`): the **inclusion polygon** decides membership (`(polygon ∪ activate) − (exclusions ∪ hide)`, §5.2) and the **center + radius circle** is the slab disc that renders, with the soft stencil fading the rim (§9). *(Pre-2026-07-20 this doc said the circle IS the boundary; retracted.)*
+**Doctrine (revised 2026-07-02 — see §1.1):** the map has an **automated backbone** (geometry, widths, class, land-use, heights — all fetchable) *plus* a **legitimate authoring layer** for the idiosyncratic features a historical neighborhood carries that street data simply doesn't hold. The extent has TWO parts (`neighborhood_boundary.json`): the **inclusion polygon** decides membership (`((polygon − exclusions) ∪ activate) − hide`, §5.2) and the **center + radius circle** is the slab disc that renders, with the soft stencil fading the rim (§9). *(Pre-2026-07-20 this doc said the circle IS the boundary; retracted.)*
 
 > **✅ Terrain/elevation is per-scene and already wired (2026-07-04) — don't re-investigate.** `bake-terrain.js` reads the installation's own USGS 3DEP GeoTIFF (`data/<scene>/raw/elevation.tif`), clips to that scene's geography+boundary, resamples to a 5 m grid → `clean/terrain.{json,bin}`, copied into the slab per-Look; `bake-buildings.js` (`loadSceneTerrain`) drapes buildings onto it. No installation is privileged — LS bakes through the exact same path. **HiPointe shares LS's exact tile** (`n39w091`), associated via a symlink (`hipointe-demun/raw/elevation.tif → lafayette-square/raw/elevation.tif`), and already renders on real relief (baseElev 143 m). The pour's `--skip-elevation` flag skips only the *legacy EPQS per-building* path (superseded by the GeoTIFF drape), **not** the terrain — so it is not a gap.
 
@@ -214,9 +214,42 @@ LS's building metadata (historic status, style, architect, year) was **bulk-auth
 *Realized for HPDM 2026-07-05: `content/photos/{barrio,louie,sashas,clementines}/`, listings use `photos/<slug>/…`. The reader/decoupling arc owns teaching the runtime to serve an instance's co-located assets.*
 
 ### 5.2 Building membership — the INCLUSION POLYGON + corrections (rewritten 2026-07-20)
-Membership is authored on the Extent tool. **⭐ The POLYGON is the boundary; the circle RENDERS.** Membership = `(polygon ∪ activate) − (exclusions ∪ hide)`; a scene with no polygon falls back to the disc, so hoods poured under the old excluder model are byte-identical. Every building inside the polygon is IN **by default**.
+Membership is authored on the Extent tool. **⭐ The POLYGON is the boundary; the circle RENDERS.** Membership = `((polygon − exclusions) ∪ activate) − hide`; a scene with no polygon falls back to the disc, so hoods poured under the old excluder model are byte-identical. Every building inside the polygon is IN **by default**.
 
-> ⚠️ **PRECEDENCE FOOTNOTE (2026-08-04) — the formula is shorthand; the code's precedence differs, and nobody has ruled.** All three implementations (`pipeline.js` pre-clip and post-derive, `bake-buildings.js`) run: **`hide` first (always out) → `activate` returns TRUE immediately → then exclusion loops → then polygon-or-disc.** So a building that is BOTH activated AND inside an exclusion loop is **IN** in code and **OUT** under `(polygon ∪ activate) − (exclusions ∪ hide)`. The code's behaviour is defensible (a per-building activate is a deliberate later gesture; an exclusion loop is a coarse sweep), but **the formula as written says otherwise and it is stated in eleven documents.** ⛔ **Do not "fix" either side unilaterally** — `EXTENT-EXCAVATION §D8` recorded this divergence and it has never been decided. Either the formula becomes `((polygon − exclusions) ∪ activate) − hide`, or the code moves the activate test below the exclusion loop.
+> ### ⭐⭐ THE PRECEDENCE RULING — 2026-08-04. **The finest gesture wins.**
+>
+> The formula is **ordered**, not a flat set expression. Coarse → fine:
+>
+> | # | Gesture | Says | Beaten by |
+> |---|---|---|---|
+> | 1 | **the inclusion polygon** | what the neighborhood **IS** | everything below |
+> | 2 | **exclusion loops** (`nb.exclusions`) | a **coarse** sweep — "not that strip" | 3 |
+> | 3 | **per-building `activate` / `hide`** | the **finest** statement — "that one, specifically" | nothing (`hide` beats `activate`) |
+>
+> **∴ an `activate` beats an exclusion loop.** Resolution order, exactly as all three code sites run it:
+> `hide` ⇒ OUT · else `activate` ⇒ IN · else inside any exclusion loop ⇒ OUT · else the polygon (or the
+> disc, when a scene carries no polygon). As algebra: **`((polygon − exclusions) ∪ activate) − hide`.**
+>
+> **Why this way, and it is not a coin flip — the doctrine already decided it:**
+> - ⭐ **The override IS the product** (`CLAUDE.md` Layer 0 q3). Under the old formula, an operator who
+>   lassos a commercial strip out and then clicks the corner bakery back on gets **nothing** — the click
+>   is silently discarded. **A per-building override demoted to a no-op is the exact failure Layer 0 q3
+>   names**, and it fails hardest on the most heavily curated town.
+> - ⛔ **A silent no-op is the fallback disease wearing different clothes** (Layer 0 q2). The map
+>   redraws, it looks plausible, and nothing tells the operator their gesture was thrown away.
+> - **One rule, not two.** Every layered override in this kit already resolves by **specificity** —
+>   `DEFAULTS → PRESETS → overlay`, the per-shot look cascade, the customs resolver. Membership now
+>   matches instead of being the one exception.
+> - **"Later wins" is not implementable** — exclusions and `building-overrides.json` carry no ordering,
+>   so specificity is the only stable rule available.
+> - **Nothing is lost.** To re-exclude an activated building, drop it from `activate` or add it to
+>   `hide`. `hide` beats `activate` so a contradictory authoring state resolves OUT — the safe direction.
+>
+> **What changed:** the docs, not the code. `EXTENT-EXCAVATION §D8` recorded this divergence on
+> 2026-07-23 and it sat unruled; the eleven documents stating `(polygon ∪ activate) − (exclusions ∪ hide)`
+> were the wrong side of it. All eleven now carry the ordered form. ⛔ **Do not "fix" the code to match
+> the old formula** — the code was right.
+
  *(⚠️ The memory `project_neighborhood_disc` is still true about **shape** — the rendered disc is a circle, always — but not about **jurisdiction**; it predates the polygon and must not be read as "the circle is the extent.")* The operator carves the exceptions in two layers:
 - **Exclusion loops (the bezier pen, `BezierPen.jsx`)** — draw editable loops around the strays to force them OUT (a commercial block, the far side of an arterial, forest/mountain past the real edge). Exclusion loops are a *correction*, not the mechanism; a building is out if its centroid falls in any loop. The loops are the **first-class persisted artifact** (`nb.exclusions`, lon/lat anchors + handles), reloaded editable across sessions.
 - **Per-building override** — for the idiosyncratic margin: **`activate`** forces one building IN, **`hide`** forces one OUT — persisted per scene as `{ activate, hide }` in `cartograph/data/<scene>/building-overrides.json` (`feedback_effective_payload_layering`; robust to radius/exclusion edits, never merged into the render-ledger seed).

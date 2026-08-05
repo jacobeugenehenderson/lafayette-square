@@ -104,6 +104,16 @@ async function main() {
         const ccx = nb.center?.[0] ?? 0, ccz = nb.center?.[1] ?? 0
         const R2 = (nb.radius ?? Infinity) ** 2
         const before = raw.buildings.length
+        // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
+        // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
+        // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
+        // activate/hide (the finest statement). So `activate` DELIBERATELY returns
+        // before the exclusion test: lasso a strip out, click one shop back in, the
+        // click wins. ⛔ Do NOT "fix" this to match the old flat form
+        // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
+        // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
+        // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
+        // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
         raw.buildings = raw.buildings.filter((b) => {
           const pts = b.coords || b.ring || (b.rings && b.rings[0]) || []
           if (pts.length < 3) return true
@@ -245,6 +255,16 @@ async function main() {
     const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
     const bR2 = (nb.radius ?? Infinity) ** 2
     const bBefore = buildings.length
+    // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
+    // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
+    // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
+    // activate/hide (the finest statement). So `activate` DELIBERATELY returns
+    // before the exclusion test: lasso a strip out, click one shop back in, the
+    // click wins. ⛔ Do NOT "fix" this to match the old flat form
+    // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
+    // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
+    // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
+    // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
     buildings = buildings.filter((b) => {
       const pts = b.ring || []
       if (!pts.length) return true

@@ -684,6 +684,16 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
     const R2 = (nb.radius ?? Infinity) ** 2
     const centroidOf = (fp) => { let sx = 0, sz = 0; for (const [x, z] of fp) { sx += x; sz += z } return [sx / fp.length, sz / fp.length] }
     const before = buildings.length
+    // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
+    // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
+    // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
+    // activate/hide (the finest statement). So `activate` DELIBERATELY returns
+    // before the exclusion test: lasso a strip out, click one shop back in, the
+    // click wins. ⛔ Do NOT "fix" this to match the old flat form
+    // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
+    // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
+    // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
+    // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
     buildings = buildings.filter(b => {
       const fp = b.footprint || []
       if (fp.length < 3 || hide.has(b.id)) return false
