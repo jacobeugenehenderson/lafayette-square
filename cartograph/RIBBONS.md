@@ -36,16 +36,13 @@
 > it re-founds the tile substrate and this sentence changes with it. Spike + risks:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
 >
-> ⭐ **ANSWERED IN THE NARROW, 2026-07-30 — and the sentence survives.** The tile model does NOT have to be
-> re-founded to close a dead end. Keep the face walk on centrelines and **assert the spur as a closed
-> two-sided outline before the walk runs** (`spurOutline.js`, `PREBAKE §4.0a`): the walk finds no pendant,
-> the block closes around a real notch, and — measured — the **block faces stay at 101**, where whole-map
-> punch-out re-topologises 25 of them. So "tiles = faces of the centreline graph" holds; what changes is
-> that a degree-1 chain is **given its two sides before it is walked**, rather than walked as a line and
-> patched after. Both halves built (still flag-off): the frozen edge carries `atCurb` so the block's
-> asphalt inset is zero at a curb edge — the notch IS the road and nothing paints it twice
-> (43/52 → 45/52 at full width). ⭐ The junction band comes out **net better than baseline (101 → 110 clean)** once the
-> centreline↔curb seam stops being read as a street corner. ⛔ Open: the eye has not been run.
+> ⛔⛔ **TRIED AND REVERTED, 2026-07-31 — the answer above did NOT survive the eye.** Asserting the spur as
+> a closed two-sided outline before the walk (`spurOutline.js`, `SPUR_OUTLINE`) was built and then
+> **reverted out of trunk** (`152e7734` built it, `7b5b87a3` reverted it, taking the corner registry and
+> the probes with it). There is **no `spurOutline.js` in the tree and no `SPUR_OUTLINE` in any source
+> file** — verified 2026-08-04. ⛔ **Do not go looking for the flag; there is nothing behind it.**
+> ⭐ **The lesson is the load-bearing part: every probe was green and the eye still said no**
+> (`PREBAKE §4.0a`). The dead-end substrate question is therefore **OPEN**, not answered.
 
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 
@@ -129,10 +126,23 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
       disabled,
     },
   ],
-  intersections: [ { point: [x, z], streets: [...] } ],   // emergent IX list
-  faces: [ { ring: [[x, z], ...], use: 'residential' | 'park' | ... } ],  // read for LU coloring
+  intersections: [ { point: [x, z], streets: [...] } ],   // ⛔ SHIPPED EMPTY — length 0. Corners come
+                                                          //    from the tile graph, not from here.
+  faces:  [ { ring: [[x, z], ...], use: 'residential' | 'park' | ... } ],  // 173 on LS — read for LU coloring
+  tiles:  [ { ring, edges: [{skelId, side}], caps } ],    // ⭐ 101 FROZEN BLOCK FACES — the polygon
+                                                          //    substrate, frozen at prebake by derive.js
+                                                          //    and consumed by tilesFromFrozen(). The
+                                                          //    live extractFaces walk is the FALLBACK
+                                                          //    for artifacts that carry none (toy/pre-D2).
+  medians: [...],        // 52 — CONSTRUCTED at prebake, load-bearing (tileGround dereferences it)
+  corridors: [...],      // 0 on LS
+  junctionMap: { nodes: [...] },   // 233 nodes on LS
+  junctions: [...],      // 277
+  nameTransitions: [...],// 21
+  alleys, paths,
 }
 ```
+⚠️ **Two traps this schema used to set.** `intersections` is documented as the "emergent IX list" and is **empty in the shipped artifact** — a consumer written from it silently gets nothing. And `tiles` was **omitted entirely**, which is how the corpus came to assert in two other docs that no block polygon exists in `ribbons.json`. *(Both corrected 2026-08-04, measured off `src/data/ribbons.json`.)*
 
 **Field semantics:** `pavementHW` — perp half-width from centerline to asphalt outer edge (the curb is this offset). `terminal` — `'sidewalk'` (ped zone present) or `'none'` (bare median, etc.). `anchor: 'inner-edge'` — divided-carriageway authoring mode; zeroes the inboard ped zone so the median falls out (`SKELETON §4`). `intersections.ix` are **indices** — the fragile key; `segOrd` (IX-count-before-a-run) and `cornerKeyAt` (IX coord + leg skelIds) are the densify-robust keys (`SKELETON §3.5`).
 
@@ -146,13 +156,13 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
 
 ### The curb SHAPE — `iA` (the frozen polygon)
 
-The curb is the per-edge **parallel offset** of the centerline: `iA = chain ⊕ pavementHW` per side (`offsetRingVariable`, `tileGround.js:147`; D6a — the curb is an offset, not an asphalt-union carve). Corners are rounded **once** by `filletRing` (`tileGround.js:262`) — the single legitimate rounding (analogous to figure-ground's `applyRoundCornersToRing`). The curb's render differs by tool:
+The curb is the per-edge **parallel offset** of the centerline: `iA = chain ⊕ pavementHW` per side (`offsetRingVariable`; D6a — the curb is an offset, not an asphalt-union carve) — **for the tiles that qualify, which is 60 of LS's 101.** ⛔ **The offset is gated, and the gate is silent.** `tileGround.js` takes it only when `opts.iaOffset !== false && !isMedianTile && ringArea > 1500`; everything else — **at least 41 of 101 on LS** (30 small ∪ 30 divided-median, 19 both) — takes `legacyBlock()`, the asphalt-union carve, **as its primary path**, and a qualifying offset that comes out degenerate is swapped for the carve with no signal. So *"the curb is a concentric offset"* is true of the **majority**, not of the map, and a defect on a median or a small tile will not respond to offset-side reasoning. `ROADMAP A07`. Corners are rounded **once** by `filletRing` (`tileGround.js:262`) — the single legitimate rounding (analogous to figure-ground's `applyRoundCornersToRing`). The curb's render differs by tool:
 - **Survey (live, pre-Wall):** re-stroked every frame by `buildTileGround` (`sectionFrozen=false` → `tileGeos`).
 - **Section (frozen, post-Wall):** read from `shape.json` (`sectionOpen` off the frozen `_shapeArtifact`); the live stroke is gated OFF. (`SKELETON §3.5` — the render-path map.)
 
 ### `shape.json` — the frozen per-tile SHAPE (`_shapeArtifact`) + sibling groups
 
-The Wall freezes the SHAPE here: each tile's `runs[]` = `{skelId, side, segOrd, poly, baseMeasure}` (the curb edge + run identity). This is Section's frozen input (`SECTION.md §2`). `64K` on LS.
+The Wall freezes the SHAPE here: each tile's `runs[]` = `{skelId, side, segOrd, poly, baseMeasure}` (the curb edge + run identity). This is Section's frozen input (`SECTION.md §2`). **~1.03 MB on LS** (measured 2026-08-04; the `64K` this line carried for months was 16× low, and it is the number a slab-payload question gets answered with here).
 
 **Format (`{ tiles, highway }`, 2026-06-16 G1).** The artifact is now an OBJECT wrapping the per-tile array plus **sibling groups that aren't tile-shaped**: `{ tiles: _shapeArtifact[], highway: rings[] }`. The `highway` group holds the grade-separated highway-class strokes (motorway/trunk + links/ramps) — frozen alongside the tiles so the non-Survey frozen views (Section/Design) restore them. *Legacy bare-array `shape.json` is still read* (treated as `{ tiles: d, highway: [] }`) so an un-re-baked scene degrades gracefully. Readers: `BlockGeometryV2Debug` fetch + `freezeShape` (`useCartographStore`); writers: the Survey-exit freeze + `bake-ground.js:923`. Grade-sep centerlines are smoothed unconditionally at 1.5 m before stroking (independent of `STREET_SMOOTH=0`, which exists only to spare the fragile *concentric curb* offset — highways stroke flat) so the frozen ramps are facet-free (`tileGround.js` gradeSep loop). *(Was: a bare array; 4924d9a routed non-Survey views to the frozen path, which dropped the top-level highway group → highways vanished from Design/Measure. Restored (G1, landed) → `_archive/handoffs/HANDOFF-surface-and-wire-geometry-LANDED-2026-06-22.md`.)*
 
@@ -225,7 +235,7 @@ The 2D Survey/Section render reads `buildTileGround` live (Survey) or `sectionOp
 
 > ✅ **T4 LANDED (2026-07-15) — figure-ground's geometry is deleted.** The warning that stood here was right and the bill came due: the "real perf/reliability drag" was **285 s of Altadena's 320 s Designer load, drawing nothing** (`DESIGNER-LOAD-FORENSIC.md`). Deleted: the unreachable render branch + the `isTileScene` flag that had short-circuited it, `buildChainBandsLive` (the drag sidecar — the census's "residual third representation"), `emitOneBlockRingBands` / `emitBlockRingBands` / `buildFrontageBandsV2` / `silhouetteStraightEmitter`, `blockFill` / `ribbonUnion` / `applyRoundCornersToRing`, the `_v2Blocks` + `measureDragging` wiring, and `buildV2BakeShape` in the bake. ≈1,900 lines. `blockSharp` / `asphaltRounded` / `cornersAtIx` survive **only** as inputs to the fe builder.
 >
-> ⚠️ **T3 is still owed, and it is now the ONLY reason `buildBlockGeometryV2` exists.** What's left of it builds the **frontage-edge identity** — `feCustomKey` = `[chainSkelId, side, min(segOrds)]` — that SurveyorOverlay / MeasureOverlay / MeasurePanel resolve `blockCustoms` against. The tile `runs` already carry the identical triple (`tileGround.js:935`: `blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd]`), so this is a **duplicate derivation** — the last of the three representations. T3 unifies them and the file dies. **Gate: prove the tile-derived key is byte-identical to `feCustomKey` for every fe on LS *and* Altadena BEFORE cutting** — `blockCustoms` hashes off it, so a drifted segOrd doesn't error, it **silently orphans** every authored custom (the LS re-center failure mode). `scratch/t4-fe-parity.mjs` is the harness.
+> ⚠️ **T3 is still owed, and it is now the ONLY reason `buildBlockGeometryV2` exists.** What's left of it builds the **frontage-edge identity** — `feCustomKey` = `[chainSkelId, side, min(segOrds)]` — that SurveyorOverlay / MeasureOverlay / MeasurePanel resolve `blockCustoms` against. The tile `runs` already carry the identical triple (`tileGround.js:935`: `blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd]`), so this is a **duplicate derivation** — the last of the three representations. T3 unifies them. ⛔ **It does NOT end with "the file dies"** — `buildBlockGeometryV2.js` is also a live utility module: `tileGround.js` imports `pickLuFromHash`/`hashKey`/`blockKeyFromRing`/`resolveChainSegmentation` from it, `buildPathRibbons.js` imports `differenceRings`/`intersectRings`, and both overlays import `resolveChainSegmentation`. Deleting it breaks the live tile construction, land-use hashing and the path ribbons; T3 needs an **extraction** step nobody has budgeted. **Gate: prove the tile-derived key is byte-identical to `feCustomKey` for every fe on LS *and* Altadena BEFORE cutting** — `blockCustoms` hashes off it, so a drifted segOrd doesn't error, it **silently orphans** every authored custom (the LS re-center failure mode). `scratch/t4-fe-parity.mjs` is the harness.
 
 ---
 
@@ -256,7 +266,7 @@ When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward 
 ### 6.2a ⛔ `layers.park[0]` is AUTHORED — it is NOT the phantom (read this before "getting rid of" it)
 **The recurring trap (Jacob: *"a piece of phantom geometry that always trips us up"* — 2026-07-30).** `map.json layers.park` holds exactly **one** object, and it reads synthetic on sight: a **perfect 350 × 350 m square, 4 vertices, no tags, centred on the origin, rotated 9.2°, area 122,502 m²** (= 350²). It looks like junk. **It is not.**
 
-It is `clean/park-polygon.json` — an authored 4-corner polygon (`tiltDegrees: -9.2`, `halfWidthMeters: 175`) that `derive.js:1060` **deliberately prefers over the OSM `leisure=park` trace**, because 4-corner topology is what lets the round-corners op and the three corner-plug components (asphalt / curb / concrete) reconcile cleanly. `derive.js` warns on fallback: *"corner plugs will degrade."* Consumers: `parkFeats` · `parkSidewalk` · `parkPaths` · the face-retag at `derive.js:3008`. **Deleting it drops the map onto the 65-vertex OSM trace the doctrine rejects** (`FEATURES.md` "The ribbon doctrine"); `[[feedback_dont_undo_a_decision_the_operator_made]]`.
+It is `clean/park-polygon.json` — an authored 4-corner polygon (`tiltDegrees: -9.2`, `halfWidthMeters: 175`) that `derive.js:1060` **deliberately prefers over the OSM `leisure=park` trace**, because 4-corner topology is what lets the round-corners op and the three corner-plug components (asphalt / curb / concrete) reconcile cleanly. `derive.js` warns on fallback: *"corner plugs will degrade."* Consumers: `parkFeats` · `parkSidewalk` · `parkPaths` · the face-retag at `derive.js:3008`. **Deleting it drops the map onto the 41-vertex OSM trace the doctrine rejects** (`derive.js` says 41 in both its warning and its comment; this doc said 65) (`FEATURES.md` "The ribbon doctrine"); `[[feedback_dont_undo_a_decision_the_operator_made]]`.
 
 ⭐ **And it is NOT misaligned — measured 2026-07-30:**
 
@@ -276,7 +286,7 @@ It agrees with the street grid to within ~0.3°. *(Boz mis-identified this face 
 The robust-offset program (D6a) is partial; the RED-until-true detector (`scratch/correctness-detector.mjs`) + `POLYGON-FIRST.md §5` gate the curve-fit cleanliness + corner-roundness. Live state in `BACKLOG.md`.
 
 ### 6.4 Dead-end mouth-collapse — ✅ LANDED via the FILL-side lever (eye-confirmed 2026-06-22)
-Where a side street **dead-ends/T's into a through street**, `extractFaces` walks it as a **zero-width out-and-back spur** — the face's mouth vertex collapses (tile[53] Albion: `ring[1]==ring[3]`, 0.0 m). The FILL keys corners **by vertex** (`cornerT`), so the two mouth corners collapsed onto one key → one fillet wrapped, the other **butt-capped** (Section-only; curb smooth in Survey, `iA` already carries both mouth fillets). ✅ **FIXED, FILL-side, `iA` BYTE-IDENTICAL** (`spliceDeadEndMouths`-equiv, `opts.deadEndMouthWrap`, `tileGround.js`): (1) **snap** the two spur run-ends to their two fillet apexes → two `cornerT` keys; (2) **trim** the through-road's leg-sector back by a per-mouth disc so the corner wedge (`bandRem`) is free → the bent sector builds at each apex; (3) **synthesize the missing through-leg** on each mouth `cornerT` so the existing **Idea-A deep-leg slide** (`§6.1` step 5) fires → the set-back straight leg dips in. **Bounded per-mouth disc** (centered on the asymmetric fillet midpoint) keeps it local → iA byte-identical on all 101 tiles, multi-spur safe (tile[11]/[43] independent), no 98 m blow-up. 39 mouths/20 tiles; Benton/Waverly/SV loops excluded (deg-1-tip gate); `kennett-place`/`park-avenue-1` customs segOrd-stable. ⛔ **THE LESSON:** every proxy LIED — two false "LANDED" reports off unfaithful proxy renders; **the operator's eye was the only gate.** And the forensic's "iA-unachievable" blocking constraint was true for *ring-reshape* but moot — **don't reshape the face; the FILL-side lever wins.** ⚠️ **OPEN:** +5 `junction-band` detector flags = the slide's LU ramp-wedge fragments at mouths (eye-call, iA untouched); **8 single-fillet fallback mouths** unwrapped; **strip-swappable** dead-ends not yet rebuilt. Full forensic + wrong turns: `DEAD-END-MOUTH-FORENSIC.md`.
+Where a side street **dead-ends/T's into a through street**, `extractFaces` walks it as a **zero-width out-and-back spur** — the face's mouth vertex collapses (tile[53] Albion: `ring[1]==ring[3]`, 0.0 m). The FILL keys corners **by vertex** (`cornerT`), so the two mouth corners collapsed onto one key → one fillet wrapped, the other **butt-capped** (Section-only; curb smooth in Survey, `iA` already carries both mouth fillets). ✅ **FIXED, FILL-side, `iA` BYTE-IDENTICAL** (`spliceDeadEndMouths`-equiv, `opts.deadEndMouthWrap`, `tileGround.js`): (1) **snap** the two spur run-ends to their two fillet apexes → two `cornerT` keys; (2) **trim** the through-road's leg-sector back by a per-mouth disc so the corner wedge (`bandRem`) is free → the bent sector builds at each apex; (3) **synthesize the missing through-leg** on each mouth `cornerT` so the existing **Idea-A deep-leg slide** (`§6.1` step 5) fires → the set-back straight leg dips in. **Bounded per-mouth disc** (centered on the asymmetric fillet midpoint) keeps it local → iA byte-identical on all 101 tiles, multi-spur safe (tile[11]/[43] independent), no 98 m blow-up. **41 mouths / 20 tiles** in the frozen artifact (this line said 39; re-counted 2026-08-04); Benton/Waverly/SV loops excluded (deg-1-tip gate); `kennett-place`/`park-avenue-1` customs segOrd-stable. ⛔ **THE LESSON:** every proxy LIED — two false "LANDED" reports off unfaithful proxy renders; **the operator's eye was the only gate.** And the forensic's "iA-unachievable" blocking constraint was true for *ring-reshape* but moot — **don't reshape the face; the FILL-side lever wins.** ⚠️ **OPEN:** +5 `junction-band` detector flags = the slide's LU ramp-wedge fragments at mouths (eye-call, iA untouched); **8 single-fillet fallback mouths** unwrapped; **strip-swappable** dead-ends not yet rebuilt. Full forensic + wrong turns: `DEAD-END-MOUTH-FORENSIC.md`.
 
 ---
 

@@ -75,7 +75,7 @@ The model is **`RIBBONS §1` — "ribbon monowidth, strips variable."** One unif
 
 Before the operator authors anything, Section draws a **best-effort default** off the frozen silhouette. The model (Jacob): the system needs only **two things per edge** — **treelawn Y/N** + **strip depths (ADA).** This replaced the old per-tile *averaged* measures (a noisy continuum that drew sub-meter treelawn slivers).
 
-- **Treelawn Y/N is *gleaned from data*, not guessed.** `survey.json` measured `pavementHalfWidth` (centerline→sidewalk); *"tree lawn is the natural gap"* — already in the frame as the `treelawn` field. The LS distribution is cleanly **bimodal** (n=951): **391 ≈ 0** (sidewalk at curb → **N**), **508 ≥ 0.75 m** clustered at ~1.7 m (**Y**), ~**50** in the 0.25–0.75 valley (operator's call). **Threshold the gap (~0.6 m) → Y/N for ~95 % of edges automatically.**
+- **Treelawn Y/N is *gleaned from data*, not guessed.** `survey.json` measured `pavementHalfWidth` (centerline→sidewalk); *"tree lawn is the natural gap"* — already in the frame as the `treelawn` field. The LS distribution is cleanly **bimodal**, and the *shape* is what this doctrine rests on: threshold the gap (~0.6 m) and Y/N decides itself for **~95 % of edges**, leaving a small valley for the operator's call. ⚠️ **The old `n=951 / 391 / 508 / ~50` breakdown is struck** — it was measured against a `survey.json` denominator that cannot be reconstructed, and three sources disagreed on the ambiguous count (doc "~50" · a `tileGround.js` comment "~92" · 22 measured). Over the shipped `ribbons.json` (418 street-sides) it reads **269 N · 127 Y · 22 valley** — so the ~95 % automatic figure survives, but **treelawn-Y is a minority (30 %), not the stated majority (53 %)**. ⛔ **Do not size the DEFAULT-FILL front off the old numbers.**
 - **Strip depths default to ADA-standard — also the Revert state** (Jacob). Treelawn-Y → standard treelawn + ADA sidewalk; treelawn-N → ADA sidewalk abuts the curb. Reset/revert returns here.
 - **∴ default fill = (gleaned treelawn Y/N) × (ADA depths).**
 
@@ -241,7 +241,12 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > | 1st pass | `kennett-place` → `south-18th-street-3` | ✅ different streets |
 > | 2nd pass | `south-18th-street-3` → `south-18th-street-3` | ❌ **same street both sides** |
 >
-> ⇒ **A dead-end spur gets a corner on ONE side of its mouth and NONE on the other.** A leg is normally
+> ⇒ **On 9 of LS's 50 spurs, the mouth gets a corner on ONE side and NONE on the other.** ⛔ **NOT all 50** —
+> `coupler-slit-anatomy.mjs` Check 5, map-wide: **41/50 spurs have a corner at EVERY mouth pass; 9/50 miss at
+> least one; 9/50 have a leg running THROUGH the mouth.** The class is real and this is its mechanism, but
+> **sizing a prebake re-founding off "all 50 are unbounded" overstates the prize by ~5×.** *(Corrected
+> 2026-08-04; the adjacent "98 of 107 leg slots ARE clickable — the defect is BOUNDING, not EXISTENCE"
+> correction also over-swung: bounding holds on 41 of 50 too.)* Where it does fire: a leg is normally
 > bounded **corner-to-corner** — that boundary is what makes "select this leg" a region, what stops an edit
 > at the leg's end, and what tells the cap/mouth machinery where they sit. One leg is therefore bounded and
 > the other is an unbounded run-through, which is exactly this class's triad: **the edit lands on a SEGMENT
@@ -283,7 +288,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
 - **§3.3 per-edge depth + divider** — the mono-width slice (`RIBBONS §1`): the depth override renders, the corner takes `cw + max-adjacent` (`cornerT`).
-- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). ⚠️ The **corner** construction is OPEN (§6) — a bent-polygon attempt was reverted.
+- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). ✅ The **corner** construction **LANDED 2026-06-10** (§0/§6.1) — `arcSectorPoly` is defined in `tileGround.js` and called in the FILL off the frozen `fillets` (present on 93 of 101 tiles). *(This bullet said OPEN-and-reverted, contradicting §0 and §6.1 of this same document; the code sides with LANDED. A reader who reached §7 first would rebuild a shipped feature.)*
 - **Dead-end caps built into the curb offset** — the cap (round semicircle / blunt segment) is part of `offsetRingVariable`, so it's tangent to the achieved per-fe width by construction (D6a, `[[project_d6a_curb_offset]]`). NB: the *ped* wrap at the cap is still open (below).
 - **One depth truth** — handle placement and FILL stroke both read `resolvePedDepths`; the handle rides the achieved curb (`sectionCurbRings`).
 - **Revert UI** — whole-scene + per-edge (§5.1).
@@ -316,7 +321,7 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
 - **⛔ Ribbon monowidth, strips variable — and the mono-width is SACROSANCT.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape. The mono-width was the hardest-won step (the corner saga ended on it); the per-edge work builds *inside* it, never re-architects it.
 - **The FILL is curb → center.** Strips near the curb; the LU remainder flows to the polygon center (no hard property line). Both-strips-LU → an open field.
 - **Two strips always, EQUAL width — they SWAP, never collapse.** Every edge has an outer + inner strip (equal width — the mono-width) + LU remainder. Treelawn-Y reads `grass → walk → lawn`; treelawn-N reads `walk → lawn`. The gleaned Y/N is a **material** decision, not a width — a sidewalk-only edge is the same-width ribbon with the materials swapped, not a half-ribbon. Both→LU is an open field.
-- **The corner is the band BENT around the arc** — a slice, never a primitive (`RIBBONS §1` invariant 1). Depth = `cw + max-adjacent`. ⚠️ A robust construction + the SW↔SW → concrete→LU material refinement are **OPEN** (§6) — a bent-polygon attempt was reverted 2026-06-10.
+- **The corner is the band BENT around the arc** — a slice, never a primitive (`RIBBONS §1` invariant 1). Depth = `cw + max-adjacent`. ✅ The robust construction **LANDED 2026-06-10** (§6.1, `arcSectorPoly` off the frozen `fillets`). ⚠️ What is still open is the **SW↔SW → concrete→LU material refinement** only. *(This line carried the construction as reverted; corrected 2026-08-04 — self-contradiction with §0/§6.1.)*
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).
 - **Section = FILL; Survey = SHAPE.** Section never authors the silhouette or the corner radius.
 - **Revert is the way back; Default IS the calc.** Edits autosave (no commit), so the operator reverts to undo. Section's Default falls out of the gleaned-treelawn + ADA calc — no blessed snapshot (that's Survey's, whose inputs are surveyed not calculated). Whole-scene + per-edge (⌃-click), field-scoped so Section never wipes Survey (§5.1).
