@@ -450,7 +450,7 @@ Replace `ParkTrees` (currently muted in `src/components/LafayettePark.jsx`):
 - Each `(speciesId, variantId)` renders as one `InstancedMesh` over that variant's GLB geometry.
 - Per-instance attributes: position, Y-rotation (stable from `hash(treeId)`), scale (driven by `dbh`).
 - A second `InstancedMesh` per `(speciesId, variantId)` for leaf cards: variant's tips × tree-instances product, sampling the morph texture.
-- **Live tint binding.** Per species, look up the active Look's `materialColors[speciesId]` if set; else fall back to the manifest's `tints.<currentSeason>`. Push as a shader uniform on the leaf-card material so Surfaces edits show instantly without a re-bake (mirrors how `SvgGround` already binds live colors — see `src/cartograph/SvgGround.jsx`).
+- **Live tint binding.** Per species, look up the active Look's `materialColors[speciesId]` if set; else fall back to the manifest's `tints.<currentSeason>`. Push as a shader uniform on the leaf-card material so Surfaces edits show instantly without a re-bake (⚠️ this used to cite `src/cartograph/SvgGround.jsx` as the precedent — **that component does not exist**, and neither does `bake-svg.js`; the per-Look `ground.svg` path was retired. The live-binding pattern still stands as a design, but there is no in-repo exemplar to copy).
 
 ### Stage Surfaces.Trees tab — keep morph rows, add per-species tints
 
