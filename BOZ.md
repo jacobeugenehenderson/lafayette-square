@@ -46,7 +46,7 @@ family on sight:
 
 | what stood in silently | what it hid |
 |---|---|
-| `measureModel.js` seeds widths in EVERY scene from LS's ribbons, keyed by street NAME | **24 Altadena streets inherit St. Louis measurements**; both Polish pours collide on 0, so it is invisible in exactly the scenes used to prove the kit travels |
+| `measureModel.js` seeded widths in EVERY scene from LS's ribbons, keyed by street NAME *(✅ fixed 2026-07-31, `08d61ce1` — historical example, **not** a live defect)* | **24 Altadena streets inherited St. Louis measurements**; both Polish pours collided on 0, so it was invisible in exactly the scenes used to prove the kit travels |
 | `SCENE = env \|\| DEFAULT_SCENE` | every build silently became LS — a whole day spent building a scene the operator wasn't viewing |
 | a committed artifact that a fresh pipeline run doesn't reproduce | "stale" was a *judgement*; re-deriving and promoting over it destroyed the operator's map |
 | a skip list of nine unhandled cases | made an ~80% method look finished |

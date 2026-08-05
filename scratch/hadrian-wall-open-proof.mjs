@@ -16,21 +16,42 @@ const { sectionOpen, sectionPass } = TG
 
 // ── 2. static wall check on the open-side functions ──
 //
-// ⛔⛔ THIS PROOF CURRENTLY FAILS ON TRUNK — AND THE FAILURE IS UNADJUDICATED.
-//     Verified 2026-08-02: it exits 1 with
-//        ✗ sectionOpen references chain identifiers: blockCustoms
-//     because `sectionOpen` gained a `blockCustoms` reference. ⭐ THE OPEN
-//     QUESTION IS WHETHER THAT IS A VIOLATION AT ALL: `blockCustoms` is the
-//     operator's AUTHORING, not a chain identifier. Everything else on this list
-//     is chain-graph identity (the thing the wall exists to kill). Authoring is
-//     not — CLAUDE.md Layer 0 q3: "the override IS the product", and a wall that
-//     forbids the open side from seeing authoring would make every post-wall view
-//     render the un-authored to-code default.
-//     ⚠️ DO NOT "fix" this by editing either side until Jacob rules. Deleting the
-//     entry makes a red proof green without deciding anything; deleting the code
-//     reference would strip authoring out of Section. It is a DOCTRINE call for
-//     the whole corpus, not a lint. → ROADMAP / standup 2026-08-02.
-const FORBIDDEN = ['ribbons', 'streets', 'blockCustoms', 'extractFaces', 'centerline', 'skelId', 'buildTileGround']
+// ⭐ WHAT THIS LIST TESTS — read before adding to it.
+//    WALL.md's doctrine line: "Chains die here. Past the wall, NO GEOMETRY
+//    DERIVED FROM CHAINS." §3: what crosses is "everything Section needs,
+//    nothing chain-shaped." The rule is about WHERE GEOMETRY COMES FROM. It is
+//    not a rule about which words appear in the function body — this scan is a
+//    crude proxy for provenance, so every entry needs to earn its place.
+//
+//    ⛔ THE ENTRIES BELOW ARE THE CHAIN *GRAPH*: reaching any of them would let
+//    the open side re-derive a polygon instead of reading the frozen one.
+//
+// ── `blockCustoms` was REMOVED from this list, 2026-08-04 (Jacob's ruling) ──
+//    It sat here from the start and turned the proof RED once `sectionOpen`
+//    gained its one authoring read. That was a FALSE POSITIVE:
+//      • `blockCustoms` is the OPERATOR'S AUTHORING, not chain identity.
+//      • Its only use is a dictionary lookup —
+//          blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd]   (tileGround.js:1107)
+//        — returning SCALARS (treelawn/sidewalk width, capFlip). Every polygon
+//        still comes from the frozen artifact. No geometry is derived from a chain.
+//      • THE LIST CONTRADICTED ITSELF: the note below already grants exactly this
+//        exception to `skelId` (id-as-data is fine; dereferencing the GRAPH is not),
+//        then banned the table that is merely KEYED by `skelId`.
+//      • Taking it literally would be a Layer-0 q3 violation in its own right: if
+//        the open side could not see `blockCustoms`, every post-wall view would
+//        render the UN-AUTHORED to-code default — the wall erasing the product.
+//        "The override IS the product" (ORIENTATION, CLAUDE.md Layer 0 q3).
+//
+//    ⚠️ THE REAL FRAGILITY, WHICH THIS CHECK CANNOT SEE — KEEP IT IN VIEW.
+//    `blockCustoms` is keyed BY `skelId`, so the authoring table's key space is
+//    chain-shaped. That is not a wall violation, but if chains ever renumber,
+//    AUTHORED CUSTOMS ORPHAN SILENTLY. It is the same hazard already flagged on
+//    **T3** (migrate the frontage-edge identity onto the tile `runs`): README's
+//    construction-model row — "⚠️ T3 must prove key parity FIRST or authored
+//    customs silently orphan" — and ROADMAP **C4**, which T3 gates. If you touch
+//    chain numbering or the fe→run identity migration, that parity proof is the
+//    gate, not this scan. → ROADMAP C4 · README §construction model · WALL.md §6.
+const FORBIDDEN = ['ribbons', 'streets', 'extractFaces', 'centerline', 'skelId', 'buildTileGround']
 // (skelId DOES appear in the frozen per-run meta as data — but the open-side
 // code must never *dereference* chain identity; it only strokes frozen polys.)
 const stripComments = s => s.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')

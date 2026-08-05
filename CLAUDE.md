@@ -60,12 +60,25 @@ to have already seen this street has delivered nothing to town #2.
 > patches with an exception table at the end (2026-07-31). The purpose has to be *used*, not
 > absorbed.
 
-**The standing evidence that this is real, not rhetoric:** `measureModel.js` seeds street widths in
-**every scene** from LS's `ribbons.json`, keyed by street NAME — so **24 Altadena streets silently
-inherit St. Louis measurements** (incl. Allen Ave, Iowa Ave), and every town collides on the
-auto-generated `motorway_link N`. Both Polish pours show **0** collisions, so the defect is
-invisible in exactly the scenes you would reach for to prove the kit travels. That is what a
-fallback costs. (Measured 2026-07-31; open — `ROADMAP` A-tier.)
+**The standing evidence that this is real, not rhetoric — `ROADMAP` A07, measured 2026-08-02, OPEN:**
+the kit's most-quoted invariant is *"the curb is a concentric offset"* (`ORIENTATION`,
+`POLYGON-FIRST §1`). **The code has two curb producers and picks between them without telling
+anyone.** `tileGround.js:3326` gates the offset on `!isMedianTile && ringArea > 1500`; everything
+else takes the legacy boolean carve at `:3347` — **at least 30 of LS's 101 tiles**, and an offset
+that passes the gate but comes out degenerate is swapped for the carve at `:3345` with no signal at
+all. The comment at `:3309` states the defect out loud: *"Falling back to legacy is never a
+regression."* The carve may well look fine — **that is exactly what makes it dangerous.** On town #2
+the operator reads "concentric offset," sees a plausible curb, and has no way to learn a third of
+their blocks were built by the other method. *(The fix is not to delete the carve — it is right for
+medians, dead-end disks and slivers. The fix is that the choice must be RECORDED and the genuine
+failure at `:3345` must be LOUD.)*
+
+> *Receipt replaced 2026-08-04. This slot used to cite `measureModel.js` bleeding LS street widths
+> into every scene by street name (24 Altadena streets inheriting St. Louis measurements). **That was
+> fixed 2026-07-31 (`08d61ce1`)** and the text sat here claiming it was open — the gate doc proving
+> its own doctrine with an expired receipt. ⭐ **When you close a fallback, come back and re-arm this
+> slot with a live one.** A doctrine whose evidence doesn't check out teaches agents to stop trusting
+> the first read, which is the adherence we can least afford to lose.*
 
 ---
 
