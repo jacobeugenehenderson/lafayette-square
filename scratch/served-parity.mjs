@@ -73,14 +73,26 @@ function namespaceOf(scene) {
 //           assignIds/loadRegistry (cartograph/msbf-identity.js); an existing
 //           footprint keeps its PERMANENT id, an unseen one appends at
 //           highWater+1, "nothing is renumbered". Affects altadena, hipointe-demun.
-//   osm-  : STILL UNSTABLE — msbf-identity.js has exactly ONE importer
-//           (fetch-msbf.js). The OSM fetcher never got the lock, so both Polish
-//           pours (ksi-y-m-yn, centrum) still id by fetch array index.
-//           ⭐ That is the open work: port the registry to the OSM path.
+//   osm-  : STABLE NATIVELY — needs no registry. `fetch.js:156` sets
+//           `osmId: way.id`, i.e. OSM's own PERMANENT way id, which is exactly
+//           the "external key, not the fetch index" criterion above. Verified
+//           2026-08-04 against live data: ksi-y-m-yn / centrum ids are
+//           39524935, 76277579, 89901592 … — OSM way ids, not 0,1,2,3.
+//           ⛔ DO NOT "port the registry to the OSM path" — there is nothing to
+//           fix. msbf- needs a registry only because Microsoft's footprint
+//           dataset ships no per-building id; OSM already has one.
+//
+// ⚠️⚠️ THIS TABLE HAS NOW BEEN WRONG IN BOTH DIRECTIONS. It called msbf-
+// UNSTABLE after the lock landed (reporting a fixed defect as live), and on
+// 2026-08-04 a correction pass flipped osm- to UNSTABLE on the assumption that
+// "no registry ⇒ no lock" — inventing maintenance work for scenes nobody is
+// returning to. ⭐ THE LESSON: check what the id actually IS before grading the
+// namespace. A checker that lies is worse than no checker, and an OVER-
+// correction is as costly as the rot it replaces.
 const NS_STATUS = {
   'bldg-': 'DEAD — from an ingest path that no longer exists; nothing re-mints it',
   'msbf-': 'LOCKED — per-scene registry + high-water (fetch-msbf.js:179); nothing renumbered',
-  'osm-':  'UNSTABLE — id = fetch array index; a re-fetch renumbers every anchor (registry not ported to the OSM fetcher)',
+  'osm-':  "STABLE — id is OSM's own permanent way id (fetch.js:156); no registry needed",
 }
 
 console.log('\n═══ SERVED-PARITY — is every scene the same, built by the one kit? ═══\n')
