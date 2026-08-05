@@ -18,6 +18,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
+import { createVocabularyGate } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_SCENE, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
@@ -1268,7 +1269,7 @@ export function deriveLayers(highways) {
   const faces = polygonize(nodedSegments)
 
   // Classify faces using OSM overlays
-  const classifiedFaces = classify(faces, osmData)
+  const classifiedFaces = classify(faces, osmData, SCENE)
   const blockFaces = classifiedFaces.filter(f => f.type === 'block')
   console.log(`    ${blockFaces.length} block faces from ${classifiedFaces.length} total faces`)
 
@@ -2975,12 +2976,21 @@ export function deriveLayers(highways) {
     return Math.abs(a / 2)
   }
   const osmLUPolys = []
+  // The SECOND customer of the ingest vocabulary gate. `OSM_TO_LU` is an
+  // allow-list, so a tag it lacks was silently not-a-land-use — the same shape
+  // as classify.js's `unknown` hijack, one stage down. One gate, one account per
+  // pour, so the operator sees the whole vocabulary gap at once rather than two
+  // half-reports. (`osm-vocabulary.mjs` — a sentinel is not a value.)
+  const luVocabGap = createVocabularyGate('osm-lu',
+    'Add the class(es) above to OSM_TO_LU in derive.js if they name a land use. ' +
+    'Until then they contribute NOTHING to the land-use vote, so the faces they ' +
+    'cover are decided by parcels or fall to `underived`.')
   for (const [cat, key] of [['landuse','landuse'],['leisure','leisure'],['natural','natural'],['amenity','amenity']]) {
     for (const f of (osmData.ground?.[cat] || [])) {
       const subtype = f.tags?.[key]
       if (!subtype) continue
       const lu = OSM_TO_LU[`${cat}:${subtype}`]
-      if (!lu) continue
+      if (!lu) { luVocabGap.record(`${cat}=${subtype}`, f.coords, f.tags); continue }
       if (!f.coords || f.coords.length < 3) continue
       let sx = 0, sz = 0
       for (const p of f.coords) { sx += p.x; sz += p.z }
@@ -2992,6 +3002,8 @@ export function deriveLayers(highways) {
     }
   }
   console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}`)
+  const luGapReport = luVocabGap.report(SCENE)
+  if (luGapReport) console.warn(luGapReport)
 
   const faceFills = []
   let osmClassified = 0, parcelClassified = 0, underivedFaces = 0

@@ -14,6 +14,8 @@
 
 // ── Point-in-polygon (ray casting) ───────────────────────────────────
 
+import { createVocabularyGate } from './osm-vocabulary.mjs'
+
 function pointInPolygon(px, pz, ring) {
   let inside = false
   for (let i = 0, j = ring.length - 1; i < ring.length; j = i++) {
@@ -43,9 +45,15 @@ function centroid(ring) {
  * @param {Object} snapped — full snapped OSM data with .ground categories
  * @returns {Array} faces with .type added
  */
-export function classify(faces, snapped) {
+export function classify(faces, snapped, scene = null) {
   // Collect closed polygons from landuse, leisure, amenity, natural
   const overlays = []
+
+  // The ingest vocabulary gate — what this town brought that the kit cannot read.
+  const vocabGap = createVocabularyGate('classify',
+    'Add a branch to classify.js for any class above that should type a face ' +
+    '(park / parking / water / block). Until then those faces are typed by AREA ' +
+    'alone, which is honest but blind — the town\'s OSM data is richer than its map.')
 
   for (const cat of ['landuse', 'leisure', 'natural', 'amenity']) {
     const feats = snapped.ground[cat] || []
@@ -53,8 +61,15 @@ export function classify(faces, snapped) {
       if (!f.isClosed || f.coords.length < 4) continue
       const ring = f.coords.map(c => ({ x: c.x, z: c.z }))
 
-      // Determine overlay type from tags
-      let type = 'unknown'
+      // Determine overlay type from tags.
+      //
+      // ⭐ `null` MEANS "WE COULD NOT READ THIS" — IT IS NOT A TYPE.
+      // This used to initialise to the string 'unknown', which made the failure
+      // a VALUE: it was pushed into `overlays` as a peer of real answers, won
+      // the containment race below, and arrived downstream as a confident type
+      // that `derive.js`'s `if (face.type === 'block')` then skipped. See the
+      // invariant in `osm-vocabulary.mjs` — A SENTINEL IS NOT A VALUE.
+      let type = null
       const tags = f.tags || {}
 
       if (tags.leisure === 'park' || tags.leisure === 'garden' ||
@@ -68,7 +83,16 @@ export function classify(faces, snapped) {
         type = 'block'
       }
 
-      overlays.push({ ring, type, tags })
+      if (type) {
+        overlays.push({ ring, type, tags })
+      } else {
+        // ⛔ AN UNREADABLE OVERLAY DOES NOT VOTE. It is not evidence of anything,
+        // so it must not capture the faces it happens to overlap — it falls
+        // through to the honest size fallback below. But it is NOT dropped
+        // silently either: that would be the same defect, quieter. It is
+        // recorded and announced at pour time (Layer 0 — no fallbacks).
+        vocabGap.record(`${cat}=${tags[cat] ?? '(missing)'}`, ring, tags)
+      }
     }
   }
 
@@ -108,6 +132,12 @@ export function classify(faces, snapped) {
   for (const [type, count] of Object.entries(counts).sort()) {
     console.log(`    ${type}: ${count}`)
   }
+
+  // ⭐ THE GATE. Loud, every pour, every town — including the ones nobody has
+  // looked at. This is the deliverable, not the excision above: the excision
+  // stops THIS town's hijack; the report is what catches the class in town #7.
+  const gapReport = vocabGap.report(scene)
+  if (gapReport) console.warn(gapReport)
 
   return result
 }
