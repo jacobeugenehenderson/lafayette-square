@@ -1,5 +1,29 @@
 # OSM-FORENSICS — The Skeleton's Semantic Frame
 
+> ## ⚠️ ACCORD BANNER, 2026-08-04 — what still holds, and what cannot be re-derived.
+> - ✅ **The headline gate HOLDS on today's frame.** Re-ran this doc's own probe
+>   (`scratch/vesalius-raw-vs-us.cjs`, read-only): *"raw OSM HAD a shared node there (WE removed it): **0**
+>   · genuine OSM gap: **0**"*, and the Dolman→18th trace still resolves at **0.00 m**. The strongest
+>   surviving claim in the cluster.
+> - ⚠️ **Part 3.5's "simplification 48% → 37%, verts 1431 → 1588" is not today's number.** The same probe
+>   now reports raw vehicular 2741 → skeleton **976 (64% removed)**. ⛔ **That is NOT the junction-blind
+>   simplify returning** — 0 junctions are lost; the reduction is the **bezier curve-fit** replacing
+>   polyline vertices (`SKELETON §3.5 CURVE-FIT`), which neither this doc nor its EVAL knows exists.
+> - ⛔ **Part 2's closing claim — "every numeric claim here is reproducible against `raw/osm.json` +
+>   `clean/skeleton.json`" — is FALSE as written.** Reproduced exactly: 2032 highway ways · max 71 verts /
+>   avg 5.40 · lanes 242 · maxspeed 171 · width 0 · name 288 · kerb 2. **Not reproducible:** `surface
+>   "261/333"`, `oneway "250/333"`, and the denominator itself (*"vh = 333 vehicular/named LS ways"* falls
+>   out of no subset — 732 vehicular / 288 named / 742 either / 278 both). ⚠️ **`raw/osm.json` is a live,
+>   re-fetchable input**, so every raw-OSM count here is structurally unverifiable after the fact — which
+>   is the durable lesson: **a forensic pinned to a mutable input has no test.**
+> - ⚠️ **Part 1.1's cap evidence points at the DEAD path.** The `buildBlockGeometryV2.js` "blunt-and-pray"
+>   comment is verbatim and real, but that module is no longer the live curb producer (`buildTileGround`
+>   is), `skeleton.json` carries `caps` on all 217 streets and `ribbons.json` `capEnds` on all 209. **EVAL's
+>   follow-on #2 ("consume `caps` in `chainPavementRing`/`buildBlockGeometryV2`") targets dead code.**
+> - **This banner's "archive PENDING (2026-06-14)" is ~7 weeks stale** and the changes it waits on are long
+>   committed.
+
+
 > 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `PIPELINE §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `PIPELINE.md §Wall`/`§P1` · `SKELETON.md` · `INTAKE.md`.
 
 > **Forensic report.** Pathologist: **Vesalius** (named for the anatomist who corrected centuries of received error by *dissecting the bones* instead of trusting the textbook). Dispatched 2026-05-31, delivered 2026-06-01. **Read-only forensics — this is a report, not a fix.** Companion brief: `HANDOFF-osteopathologist.md`. Doctrine: `PIPELINE.md §P1, §Wall`; memory `project_skeleton_is_the_first_bake`.

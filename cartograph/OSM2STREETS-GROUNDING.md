@@ -1,5 +1,29 @@
 # osm2streets grounding — our road model vs. the standard
 
+> ## ⚠️ ACCORD BANNER, 2026-08-04 — two of this doc's three headline items are CLOSED.
+> 1. **§3.1 "the 18th mis-pair" is FIXED, not live.** On the committed skeleton, `south-18th-street-1` is
+>    `motorway_link` / `phase.kind "single"` / `pairKey null` and `-4` is `service` / `single` / `null` —
+>    neither the pairing nor the class flattening survives, and class is now correct per-chain across all
+>    nine 18th chains. The gate is `carriagewayGates` in `skeleton.js` (eligible-class set, exact
+>    class-match, split/rejoin requirement), run **data-first**, with `scoreOnewayPair` demoted to
+>    geometric confirmation. **The genuine pair still pairs** — `-5`/`-6`, both `secondary`,
+>    `phase.chainGap ≈ 11`, matching this doc's own "gap 11.0 m". ⛔ Presented as live, §3.1 invites a
+>    re-forensic of a fixed defect.
+> 2. **§4.2 recommendation 1 (data-first divided detection) is substantially LANDED.** What genuinely
+>    remains is one sub-clause: *"tighten 60 m toward a plausible median ceiling"* — `DIVIDED_MAX_GAP = 60`
+>    is unchanged. ⛔ Don't budget the whole port.
+> 3. **§4.2 recommendation 2 ("intersection-everywhere") is largely LANDED too, and this doc is the stale
+>    side of a contradiction.** It calls the promotion from "a censused exception list (~86 nodes)" to an
+>    invariant the big remaining architectural item; `SKELETON §5e` records it resolved 2026-06-07
+>    (`9c275ce`, junctionMap 86→238), and the artifact agrees: `ribbons.json junctionMap` = **233 nodes,
+>    19 unpaired** — generalized, not an exception list. **`SKELETON` is right.**
+> 4. ⚠️ **§2/§3.2 quote `tileGround.js`'s header — *"the IX is never constructed"* — as evidence of a live
+>    divergence.** The quote is verbatim and still in the code, but the code has **outgrown its own
+>    comment**: the IX is now constructed by leg-adjacency at every node. The doc's "defining divergence"
+>    verdict rests on a stale code comment. *(That comment is a doc-rot instance inside the source; the
+>    fix belongs with whoever next touches that header.)*
+
+
 **Deliverable of `HANDOFF-osm2streets-grounding.md` (Macadam, 2026-06-06). Web-grounded reference — no code touched.** The field's reference implementation for OSM→street-geometry is **osm2streets** (the A/B Street project, `github.com/a-b-street/osm2streets`, Apache-2.0, Rust core + `osm2streets-js` WASM): lanes, road casings, intersection polygons, dual carriageways, blocks. Read against our `SKELETON.md` / `PREBAKE.md` / `_archive/JUNCTION-CURE-PLAN.md` / `LOOP-STREETS.md` / `RIBBONS.md` / `skeleton.js` / `tileGround.js`, plus a fresh forensic on the South-18th mis-pair (raw OSM tags, this session).
 
 > **Verdict up front.** The standard model **independently validates our two deepest doctrines** — the emergent median (their `DualCarriageway` block kind: *"space between one-way roads"*) and tiles-as-graph-faces (their `Block`, computed by the same half-edge walk). The two places we diverged from the standard are exactly where our worst bug families live: **(1) they construct the intersection positively** (every node is a first-class `Intersection` object; roads are *trimmed back* to an explicit intersection polygon) where our tile model's header says, verbatim, *"the IX is never constructed"* — that one divergence is the whole E3 family; **(2) they detect dual carriageways from the data model + topology** (name + `oneway` + a split/rejoin trace, highway class respected, ramps dispatched to a dedicated routine) where we detect from **geometry alone** — which is how a `motorway_link` ramp and a `service` drive, both named "South 18th Street," became a fabricated 3.2 m-median "divided road" (§3.1). **E3 is us re-deriving the standard intersection algorithm by hand** — apron = intersection polygon, de-taper window = trim distance, corner identity = their corner-assembly step. Right cure, non-standard vocabulary, partial coverage. **Recommendation: don't adopt the library; port two methods (intersection-everywhere at prebake, data-first divided detection) and align vocabulary** (§4). And one consolation: even the reference implementation ships dual-carriageway *merging* as an experimental opt-in full of TODOs — our locked two-carriageway model is the standard-compatible choice; only our *detector* is homegrown.
