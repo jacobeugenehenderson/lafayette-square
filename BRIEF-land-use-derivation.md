@@ -1,10 +1,58 @@
 # BRIEF — Land use is invented for most of the map. Derive it instead.
 
-**Status: DISPATCH-READY — re-verified against live code 2026-07-31.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob; **Jacob dispatches.** Fresh-agent brief (identity + bounds below). Detail-home for the ROADMAP blocking-defect line; strike both together when it lands.
+**Status: 🟡 PHASE 1 LANDED 2026-08-01 · EYE-GATED AND FAILED 2026-08-02 · the arc continues under a CORRECTED diagnosis.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob. Detail-home for the ROADMAP line.
 
-> ✅ **Every load-bearing claim re-checked 2026-07-31, ten days on — all still true.** `pickLuFromHash` is **live** (`tileGround.js:3079`, `return best || pickLuFromHash(...)`) · `derive.js:1020` still reads **only** `stl_parcels.json`, the line number unmoved · the County file **exists and is unread** (a **28 MB** `stlco_parcels.json` in HPDM's `raw/`) · `blockLandUse` is **0 entries** in *both* looks, so the authored escape hatch genuinely never fires · `luForRing` (`tileGround.js:3069`) behaves exactly as described: authored check → one interior point → hash.
+> # ⛔⛔ READ THIS BEFORE ANY OF THE BODY BELOW — §1's HEADLINE IS WRONG.
 >
-> ⚠️ **Serialization is CLEAR as of 2026-07-31 night.** The A03/A06 agent was in `src/lib/tileGround.js` and has handed back with a clean tree. **Re-confirm nobody is in `derive.js` or `tileGround.js` before you start** — this brief rewrites the land-use join in both.
+> **The body of this brief (§1, §2's framing, §5's target numbers) was written from a diagnosis that measurement disproved on 2026-08-01.** It is kept, not deleted, because the *reasoning* is sound and the §2 root cause was right — but its central mechanism claim is retracted. **Do not act on §1.**
+>
+> ### What was RETRACTED
+> ⛔ **"54/87 LS blocks (62%) and 103/180 HPDM (57%) get their land use from `pickLuFromHash`."** `pickLuFromHash` is effectively **dead code**: **1 of 101** LS tiles, **2 of 196** HPDM. The brief assumed `luForRing` probes a tile against *parcel* faces and falls to the hash on a miss. It does not — `faceList` is `ribbons.faces`, which `derive.js` walks from the **same centreline graph** as `ribbons.tiles`, so face and tile are co-topological and the probe essentially always hits. (Verified the frozen path is the live one: 0 unresolved edge `skelId`s in both scenes.) **The "25% rolls to hardscape" mechanism therefore never fired either.** Detector: `scratch/invented-lu-census.mjs`.
+>
+> ### What was CONFIRMED, at full magnitude
+> ✅ **§2 was right.** `derive.js` read only `stl_parcels.json`; **14,597 County parcels sat unread**. And its mapper was City-only with a `return 'residential'` catch-all, so **14,587 County codes would have flunked it** — unioning the files without jurisdiction would have been *worse* than not reading them.
+>
+> ### Where the invention actually lived
+> The ladder's **third rung was the bare constant `use = 'residential'`** (`derive.js` `faceFills`). A face with no OSM polygon and no overlapping parcel was painted residential in the same voice as a face backed by 40 parcels — Layer 0's fallback shape exactly. **LS 19/173 faces (2.6% of area) · HPDM 121/302 (17.6%, largest 97,393 m²).** Detector: `scratch/lu-provenance-census.mjs`.
+>
+> ---
+>
+> ## ✅ PHASE 1 — LANDED (`cd8e70e6` + `40c7e2e5`)
+> Both parcel files loaded **jurisdiction-tagged** · mapping moved to **`cartograph/parcel-landuse.mjs`** (City ranges + County resolved through the assessor's own 189-row `county-land-use-codes.csv` bucket table, **no catch-all**) · an unreadable code returns `null` and becomes the honest **`underived`** class, wired through **all five** vocabulary consumers (`PAINT_ORDER` is an allow-list — a class missing from it drops silently from the slab) · pour-time report per jurisdiction.
+>
+> **Measured, HPDM re-poured + re-baked:** invented land use **121 faces / 17.6% of area → 55 / 3.3%, and labelled**. County parcels **99.8%** classified. LS **not** re-poured or re-baked.
+>
+> ## 🔴 THE EYE-GATE FAILED — and the remaining cause is NOT in this brief
+> Jacob, 2026-08-02: *"the greenbelt is still gray."* It is **Concordia Seminary** (`amenity=college`, 291,019 m²), typed `unknown`, painted `#666666`.
+>
+> **`classify.js:57`** starts every OSM overlay at `type = 'unknown'`; four branches can rename it; **`:86`** gives a face its containing overlay's type and `break`s. Only a face matching **no** overlay reaches **`:94`**'s `absArea > 500 → block` — and `block` is the only type `derive.js` runs the land-use ladder on.
+>
+> ⭐⭐ **An OSM polygon the kit cannot read is STRICTLY WORSE THAN NO POLYGON AT ALL. The richer the OSM data, the worse the map.** **17/17** `unknown` faces are hijacks — *zero* reached the size fallback, so `unknown` never means "we looked and found nothing," it means "we found something and couldn't read it." **15/17** would classify if typed `block`. Detector: `scratch/unknown-face-forensic.mjs`.
+>
+> ⛔ **"Make `unknown` soft" is not the fix.** `LU_POLICY` soft/hard is consumed by exactly one thing — `forbidden-surface.mjs`, the **tree gate**. It has no influence on ground colour. Flipping it plants trees on ground that stays grey. *(Whether `unknown` should be soft on its own merits is a separate, smaller question — **Jacob's ruling still owed**.)*
+>
+> **Two more joins behind it, both kit-general, both unfixed:**
+> 1. **`OSM_TO_LU` is a 32-entry allow-list.** HPDM brings **54 subtypes it cannot read, 2,446,607 m²** — `amenity:college` 445k · `amenity:hospital` 112k · `landuse:forest` 48k · `natural:grassland` 58k. Same shape as the `lu-policy` vocabulary gap, one stage upstream at ingest.
+> 2. **The OSM vote asks "is the POLYGON's centroid in the face?"** — structurally favouring small polygons. The seminary votes in **1 of the 7 faces it covers**; mapped parking lots outvote the unmapped lawn in the other six. The **reverse** test is YES for all 7, and is what `luForRing` already uses downstream — **the two stages disagree about which direction containment runs.**
+>
+> ## ▶ NEXT, in dependency order — they do NOT ship independently
+> Fixing only the first moves the seminary from grey `unknown` to grey `parking`.
+> 1. **Stop the hijack** — an unreadable overlay must fall through to the size fallback, not capture the face.
+> 2. **Make the ingest vocabulary fail loudly**, the way `lu-policy.mjs` already does one stage down.
+> 3. **Settle the containment direction** between `classify`/the OSM vote and `luForRing`.
+>
+> *Then* **Phase 2** (§3 — area-weighted join, delete `pickLuFromHash`, which is now a cleanup rather than a fix) and **Phase 3** (§3 — building-derived LU, still the portable rung for assessor-less towns).
+>
+> ⚠️ **Bounds in §6 all still apply** — especially: **no LS re-pour or re-bake without Jacob's explicit go-ahead** (~19 of its 173 faces move), and **do not recolour the Look** (the `underived` colour shipped as a flagged **placeholder** at both palette sites, pending Jacob's call).
+>
+> **Ledger:** `DOC-CODE-COHERENCE` **C15** (the unread County file + city-only mapper) · **C16** (the bare `residential` rung) · **C17** (`unknown`-is-hard, identified, its own gate).
+
+---
+
+<details>
+<summary><strong>⬇ The ORIGINAL brief as drafted 2026-07-21 / re-verified 2026-07-31 — kept for its reasoning and its §2/§3/§6, but see the retraction above before acting on §1.</strong></summary>
+
+> ⚠️ **Superseded status line, kept verbatim:** *"DISPATCH-READY — re-verified against live code 2026-07-31."* The re-verification checked that the *code still looked like* the description; it did not test whether the described mechanism *fires*, which is how a wrong headline survived ten days and a re-verification pass. **That is the lesson worth carrying: "the line number is unmoved" is not the same as "the branch is taken."**
 
 **Agent: FRESH.** The forensic below replaces the discovery; there is no prior session-context worth inheriting. ⚠️ **Serialize against anything touching `cartograph/derive.js` or `src/lib/tileGround.js`** — this brief rewrites the land-use join in both (`feedback_load_bearing_files_serial_dispatch`). ⚠️ **`derive.js` is the 4,607-line god-file whose `deriveLayers()` is a single ~3,465-line function (ROADMAP C9a).** You are making a *surgical* change inside it, **not** the decomposition refactor — that is a separate, deliberate, eye-gated arc. Do not start it.
 
@@ -149,3 +197,9 @@ HPDM's trees were re-baked at 8,383 (from 4,335) against the widened policy. **Y
 ---
 
 *Drafted 2026-07-21 (Boz + Jacob) from the HPDM bald-blocks investigation. Sits downstream of `cartograph/lu-policy.mjs` (landed same day). Detail-home for the ROADMAP line; strike both together when it lands.*
+
+</details>
+
+---
+
+*Phase 1 landed + eye-gated 2026-08-01/02 (Cadastre). **The eye verdict was NO: the map is not visually fixed.** The invented land use shrank from 17.6% of HPDM's area to a labelled 3.3%, but the greenbelt Jacob opened this brief with is still grey — and the cause is a different join, in `classify.js`, documented in the banner at the top. **Judge this arc by the render, not by the percentage** (`feedback_results_over_vocabulary`, `feedback_a_metric_can_be_a_bad_proxy_for_the_symptom`).*
