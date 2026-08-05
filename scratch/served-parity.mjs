@@ -63,12 +63,24 @@ function namespaceOf(scene) {
 }
 
 // A stable namespace is one minted from an EXTERNAL key, not the fetch index.
-// bldg- : dead ingest path, nothing in cartograph/*.js mints it (excavation §0.8)
-// msbf- / osm- : minted as `msbfId: i` = fetch ARRAY INDEX → re-fetch renumbers
+//
+// ⚠️ CORRECTED 2026-08-02 — this table called msbf- UNSTABLE after the lock had
+// already landed, i.e. the checker was reporting a fixed defect as live. A
+// checker that lies is worse than no checker: re-verify before trusting a row.
+// Verified per-namespace on trunk this date:
+//   bldg- : still dead — nothing in cartograph/*.js mints it (excavation §0.8)
+//   msbf- : LOCKED — fetch-msbf.js:179 consults a per-scene registry via
+//           assignIds/loadRegistry (cartograph/msbf-identity.js); an existing
+//           footprint keeps its PERMANENT id, an unseen one appends at
+//           highWater+1, "nothing is renumbered". Affects altadena, hipointe-demun.
+//   osm-  : STILL UNSTABLE — msbf-identity.js has exactly ONE importer
+//           (fetch-msbf.js). The OSM fetcher never got the lock, so both Polish
+//           pours (ksi-y-m-yn, centrum) still id by fetch array index.
+//           ⭐ That is the open work: port the registry to the OSM path.
 const NS_STATUS = {
   'bldg-': 'DEAD — from an ingest path that no longer exists; nothing re-mints it',
-  'msbf-': 'UNSTABLE — id = fetch array index; a re-fetch renumbers every anchor',
-  'osm-':  'UNSTABLE — id = fetch array index; a re-fetch renumbers every anchor',
+  'msbf-': 'LOCKED — per-scene registry + high-water (fetch-msbf.js:179); nothing renumbered',
+  'osm-':  'UNSTABLE — id = fetch array index; a re-fetch renumbers every anchor (registry not ported to the OSM fetcher)',
 }
 
 console.log('\n═══ SERVED-PARITY — is every scene the same, built by the one kit? ═══\n')

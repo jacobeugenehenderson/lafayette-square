@@ -104,9 +104,19 @@ By the time the operator leaves Survey we hold an extremely-simplified, polygon-
 
 *(The wall **should** sit even earlier — at the Skeleton/prebake boundary (P2). Today it sits at `sectionPass`; closing that gap is the standing architectural debt. First diagnostic on any head-scratcher: "is this chains again?" — `PIPELINE §Wall`.)*
 
-### 5.1 ⭐ The deeper truth — Survey is **not yet polygon-first**
+### 5.1 ⭐ The deeper truth — Survey is **not yet polygon-first** *(but the tile freeze DID land — see the correction)*
 
-The block polygon is **re-derived from the centerline graph on every build** (`extractFaces` walks the chains; the silhouette is stroked + filleted from them and only *then* frozen at `sectionPass`). So chains are load-bearing right up to the freeze — Survey today is **chain-derived-then-frozen, not polygon-first.** This is the substrate behind every "corner saga":
+> ⚠️ **PARTLY SUPERSEDED — corrected 2026-08-02. The D2 tile freeze shipped; this section predates it.**
+> **Verified on trunk:** `ribbons.json` **does** carry `tiles[]` — **101** frozen block faces for LS, **694**
+> for Altadena — and `tilesFromFrozen` (`tileGround.js:774`) is the **live** consumer at `:2197`:
+> `tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)`. Since `STREET_SMOOTH` is pinned
+> **0**, the default path reads the **frozen** faces; it does **not** re-walk the chains.
+> ⛔ **So do not read the paragraph below as "there is no block polygon in the artifact" and go build one —
+> that is rebuilding shipped infrastructure.** What remains true is the *narrower* claim: the **silhouette**
+> (stroke + fillet + corner identity) is still constructed per-build from chain-derived measures, and the
+> wall still sits at `sectionPass` rather than P2. The topology is frozen; the **shape** is not.
+
+The block **topology** is frozen at prebake (above), but the **silhouette** is still re-derived from the centerline graph on every build (the ring is stroked + filleted from chain measures and only *then* frozen at `sectionPass`). So chains remain load-bearing right up to the freeze — Survey today is **chain-derived-then-frozen, not polygon-first.** This is the substrate behind every "corner saga":
 
 - **The false corner (§6) is born here.** At a divided transition the carriageway *stub* is a vertex in the centerline graph → it becomes a tile vertex → `filletRing` corners it. In a true **polygon-first** Survey (block silhouette = the primary frozen/authored object, wall at **P2**) there is no stub and **no false corner** — nothing to detect, nothing to patch.
 - **The canon already names the cure:** *the chains-root-problem and the corner-confusion are one disease with one cure — polygon-first* (`PIPELINE §Wall` + §Tile). The corner is **a symptom of the wall sitting too late, not a unit of work.**

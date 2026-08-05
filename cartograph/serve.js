@@ -1901,9 +1901,12 @@ createServer(async (req, res) => {
       const force = /[?&]force=1\b/.test(req.url || '')
       const REPO_ROOT = join(import.meta.dirname, '..')
       const here = import.meta.dirname
-      // Bake inputs come from the active Look's scene. Looks without an
-      // explicit scene fall back to the default; pipeline.js + promote-
-      // ribbons.js + arborist trees are skipped for non-LS scenes today
+      // Bake inputs come from the active Look's scene. A Look without an
+      // explicit scene is REFUSED (409) — see the block below; it does NOT
+      // fall back. (This comment said "fall back to the default" until
+      // 2026-08-02, contradicting the code six lines down.)
+      // pipeline.js + promote-ribbons.js + arborist trees are skipped for
+      // non-LS scenes today
       // (toy doesn't have an OSM-derived pipeline yet — its centerlines
       // are hand-authored, so the pipeline step is a no-op for now).
       const bakeLookEntry = idx.looks.find(l => l.id === id)

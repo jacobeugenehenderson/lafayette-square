@@ -127,9 +127,27 @@ it could not fix *where that leg starts and stops*, because there was no second 
 > ⭐ **The one-line test for any proposal: DOES IT CREATE THE SECOND MOUTH CORNER?** If not, it is another
 > way of managing the absence, and it will fail on the eye exactly as the previous three passes did.
 
-### ⭐⭐ LANDED 2026-07-30 — the CORNER REGISTRY (`junctionMap.nodes[].corners.all`)
+### ⛔⛔ REVERTED — the CORNER REGISTRY (`junctionMap.nodes[].corners.all`) is **NOT on trunk**
 
-**The second mouth corner is now RECORDED at prebake, at all 6 mouths that need it.** Not constructed —
+> **Read the whole section below as a DESIGN RECORD of an attempt, not as shipped behavior.** *(Corrected
+> 2026-08-02; it was written and left standing as "⭐⭐ LANDED 2026-07-30, default-on".)*
+>
+> **Verified:** `corners.all` has **0 occurrences** repo-wide — code, artifacts, everything. It went out
+> with the dead-end-spur work in **`7b5b87a3`** (`Revert "feat(prebake): assert the dead-end spur BEFORE
+> polygonization; drive E3.3 from the corner registry"`). `cornersAdjacent` was therefore **never retired**,
+> and `corners.{outer,apex,stub}` are still the only registry `tileGround.js` sees.
+>
+> ⚠️ **AND THE NUMBERS BELOW CANNOT BE REPRODUCED.** `7b5b87a3`'s own message says *"The probes, the debug
+> dumps … are kept"* — **it deleted them**: `scratch/stamp-mouth-audit.mjs` (−51) and
+> `scratch/stamp-predicts-fill.mjs` (−67) are in that commit's diffstat and absent from `scratch/` today.
+> So *"6 of 6 blind mouth corners"*, *"50 of 50 caps"*, *"769 corners"* are **unreproducible by the very rule
+> this section states** — do not cite them as measurements. They are the attempt's self-report.
+>
+> **What survives as doctrine** — and it does survive, this is why the section is kept — is §2's
+> one-line test above: *does it create the second mouth corner?* The registry was one answer to it. It is
+> not a shipped one.
+
+**[ATTEMPT, REVERTED]** The second mouth corner is RECORDED at prebake, at all 6 mouths that need it. Not constructed —
 *recorded*: the stamp is written from the chains, before the face walk exists, so it is not subject to the
 ring's blindness. Additive only; **`cap-fill-hash.mjs` is byte-identical in both `plain` and `design` mode**,
 and `correctness-detector.mjs` is line-identical but for its own tip-wrap skip counter (26 → 52).
