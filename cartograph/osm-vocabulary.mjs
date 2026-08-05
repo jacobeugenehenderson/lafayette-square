@@ -65,7 +65,32 @@ function ringArea(ring) {
  *                           it. Be specific: a vague remedy is why these gaps
  *                           survive. Name the file and the shape of the edit.
  */
-export function createVocabularyGate(stage, remedy) {
+/**
+ * ⭐ THIRD CUSTOMER, 2026-08-04 (`ROADMAP A07`) — the SHAPE producer.
+ *
+ * The curb has two producers and used to pick between them with no signal. That
+ * is the identical invariant one layer down — *a silent choice is not a disclosed
+ * one* — so it reports through THIS module rather than a third bespoke reporter.
+ *
+ * What it needed that vocabulary did not: different prose. "N OSM feature(s) in M
+ * unreadable class(es) … these did NOT vote" is false when the subject is a curb.
+ * So the wording is now a parameter (`prose`), defaulted to the exact vocabulary
+ * strings — existing callers pass nothing and their output is byte-identical.
+ * ⛔ If you need a fourth, parameterize further; do not fork this file.
+ */
+const VOCAB_PROSE = {
+  noun: 'OSM feature',
+  classNoun: 'unreadable class',
+  unit: 'm²',
+  body: [
+    '   These did NOT vote. They fell through to the honest fallback rather than',
+    '   capturing what they overlap — but the kit could not read them, so this town\'s',
+    '   map is poorer than its data. Worst first:',
+  ],
+}
+
+export function createVocabularyGate(stage, remedy, prose = {}) {
+  const P = { ...VOCAB_PROSE, ...prose }
   /** @type {Map<string, {count:number, area:number, sample:object}>} */
   const gaps = new Map()
   let total = 0
@@ -109,16 +134,14 @@ export function createVocabularyGate(stage, remedy) {
       const rows = this.gaps
       const area = rows.reduce((s, g) => s + g.area, 0)
       const lines = [
-        `[vocabulary:${stage}] ⚠️  ${scene || '(no scene)'} — ${total} OSM feature(s) in ` +
-        `${rows.length} unreadable class(es), ${Math.round(area).toLocaleString()} m².`,
-        `   These did NOT vote. They fell through to the honest fallback rather than`,
-        `   capturing what they overlap — but the kit could not read them, so this town's`,
-        `   map is poorer than its data. Worst first:`,
+        `[vocabulary:${stage}] ⚠️  ${scene || '(no scene)'} — ${total} ${P.noun}(s) in ` +
+        `${rows.length} ${P.classNoun}(es), ${Math.round(area).toLocaleString()} ${P.unit}.`,
+        ...P.body,
       ]
       for (const g of rows.slice(0, 12)) {
-        lines.push(`     ${Math.round(g.area).toLocaleString().padStart(12)} m²  ×${String(g.count).padStart(3)}  ${g.signature}`)
+        lines.push(`     ${Math.round(g.area).toLocaleString().padStart(12)} ${P.unit}  ×${String(g.count).padStart(3)}  ${g.signature}`)
       }
-      if (rows.length > 12) lines.push(`     … and ${rows.length - 12} more class(es).`)
+      if (rows.length > 12) lines.push(`     … and ${rows.length - 12} more ${P.classNoun}(es).`)
       lines.push(`   ▶ ${remedy}`)
       return lines.join('\n')
     },

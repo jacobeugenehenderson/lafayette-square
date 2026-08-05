@@ -23,9 +23,47 @@ We are not at zero. The gap is named, the mechanism is understood, and below it 
 
 ## 1. The invariant
 
-> **The curb is a pure function of the frozen frame.** It is produced **once**, in prebake, as the parallel offset of the skeleton (`chain ⊕ halfWidth`, corners as offset-intersections), frozen beside the topology, and **consumed** — never re-derived — by every downstream stage. The only live re-derivation permitted is the **single element under the operator's hand**, which re-freezes on commit.
+> **The curb is a pure function of the frozen frame.** It is produced **once**, in prebake, frozen beside the topology, and **consumed** — never re-derived — by every downstream stage. The only live re-derivation permitted is the **single element under the operator's hand**, which re-freezes on commit.
 
 This mirrors the one enforcement that already works (`sectionPass` closure), moved to the **producer** side: a `buildCurb(frozenFrame) → curbPolygon` with no live chain-stroke union in scope.
+
+> ### ⭐⭐ THE TRUE RULE — two producers, and the choice is RECORDED (A07, 2026-08-04)
+> This section used to say the curb *is* the parallel offset of the skeleton, full stop. **That was
+> an aspiration stated as an invariant**, and it is the kit's most-quoted sentence, so it was being
+> reasoned from on tiles it does not describe.
+>
+> **What the code does:**
+> - **`offset`** — the per-edge parallel offset (`chain ⊕ halfWidth`, corners as offset-intersections),
+>   taken when `opts.iaOffset !== false && !isMedianTile && ringArea > 1500`. This is the rule for an
+>   ordinary block.
+> - **`carve`** — the legacy boolean carve (`tile.ring − aFill`) otherwise. ⭐ **This is CORRECT, not a
+>   fallback**: a divided median, a loop-body median and a sub-block sliver genuinely are not
+>   edge-offsets, and offsetting them collapses or blows up the ring. ⛔ Do not "fix" it by deleting
+>   the carve.
+> - **`degenerate:*`** — an offset that *passed* the gate and came back unusable (empty · collapsed
+>   below 5% of the tile · overflowed past it). **THAT is a failure**, it is now counted and LOUD, and
+>   it is reported **separately** so it can never be buried among the routine structural carves.
+>
+> **Measured live, all scenes, 2026-08-04** (`scratch/a07-producer-disclosure.mjs`):
+>
+> | scene | offset | carve | carved |
+> |---|---|---|---|
+> | lafayette-square | 59 / 101 | 42 | 42% |
+> | lafayette-square-staging | 69 / 116 | 47 | 41% |
+> | altadena | 643 / 694 | 51 | **7%** |
+> | hipointe-demun | 106 / 196 | 90 | 46% |
+> | centrum | 251 / 571 | 320 | 56% |
+> | **ksi-y-m-yn** | **19 / 77** | **58** | **⛔ 75%** |
+>
+> ⛔⛔ **THAT SPREAD IS THE POINT — 7% to 75%, and LS is mid-range.** The invariant's truth is a
+> property of *the town's block geometry*, not of the kit, so no single scene can tell you whether it
+> holds. On the first non-US pour, **three quarters of the map is built by the producer the docs do
+> not mention.** An operator there reads "concentric offset," sees a plausible curb, and has no way to
+> learn otherwise — which is exactly the silent-substitution shape `CLAUDE.md` Layer 0 forbids.
+>
+> **∴ every tile now carries `producer` + `producerReason` in `shape.json`**, the bake prints the split
+> once per pour, and the tool shows it in the status bar. ⭐ **Degeneracy count: 0 on every scene** —
+> and that is a *measured* 0 for the first time; this table asserted it without ever running the branch.
 
 ---
 

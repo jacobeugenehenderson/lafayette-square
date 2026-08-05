@@ -541,6 +541,7 @@ export default function BlockGeometryV2Debug({
   const freezeShape = useCartographStore(s => s.freezeShape)
   // [ROADMAP A02] The wall's honesty flag — see the store's `shapeFreezeMissing`.
   const setShapeFreezeMissing = useCartographStore(s => s.setShapeFreezeMissing)
+  const setCurbProducerCensus = useCartographStore(s => s.setCurbProducerCensus)
   const [frozenShape, setFrozenShape] = useState(null)
   // TRUE while the frozen-shape fetch for the current (scene, freeze) is in
   // flight. ⛔ Load-bearing: without it the live build RACES the fetch. Both
@@ -598,6 +599,18 @@ export default function BlockGeometryV2Debug({
         setShapeFreezeMissing(tiles && tiles.length
           ? null
           : `No frozen shape for '${scene}' — showing a LIVE re-derivation, not the frozen shape. Run a bake (or exit Survey) to freeze it.`)
+        // [A07] The producer split, off the frozen stamp. An artifact baked before
+        // A07 carries no `producer` — say "unstamped" rather than inventing 0.
+        if (tiles && tiles.length) {
+          const stamped = tiles.filter(t => t.producer)
+          if (!stamped.length) setCurbProducerCensus({ unstamped: true, total: tiles.length })
+          else {
+            const carve = stamped.filter(t => t.producer === 'carve')
+            const byReason = {}
+            for (const t of carve) byReason[t.producerReason || 'carve'] = (byReason[t.producerReason || 'carve'] || 0) + 1
+            setCurbProducerCensus({ total: stamped.length, carve: carve.length, offset: stamped.length - carve.length, byReason })
+          }
+        } else setCurbProducerCensus(null)
       })
       .catch(e => {
         done = true

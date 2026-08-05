@@ -66,7 +66,7 @@ Read it left-to-right: messy inputs get traced into a clean **frame**, frozen in
 
 - **Everything is a shadow of the centerline.** The order is **centerline → block shape → sidewalk ribbon.** The street's centerline is the one true source; the curb is just that line pushed outward by half the road's width; even *what counts as a corner* is read off it.
 - **So fix it at the centerline, not the shadow.** If a block or a curb looks wrong, the real bug is almost always upstream in the centerline. Patching the shape while the centerline stays rough is editing a shadow — it comes right back. → `cartograph/RIBBONS.md §1`, `SKELETON.md §3.5`
-- **The curb is a concentric offset.** The curb isn't drawn on its own — it's the centerline stepped outward a fixed distance, parallel to it everywhere. Fix the line, the curb follows. → `cartograph/POLYGON-FIRST.md §1`
+- **The curb has TWO producers, and the choice is recorded.** Most of the time the curb is the centerline stepped outward a fixed distance, parallel everywhere — fix the line, the curb follows. But a **median, a sliver or a dead-end disk is not an edge-offset**, so it is built by a **boolean carve** instead, and that is the *right* answer for it. ⛔ So *"the curb is a concentric offset"* describes **most blocks, not the map** — **59 of 101 on LS, 19 of 77 on Księży Młyn.** Which producer built each block is stamped into the frozen shape, because a reader who believes the headline debugs a carved tile with reasoning that cannot apply to it. → `cartograph/POLYGON-FIRST.md §1`, `ROADMAP A07`
 
 ### What's automatic vs. hand-made (this is the kit)
 

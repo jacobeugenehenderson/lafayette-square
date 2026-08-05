@@ -1776,6 +1776,15 @@ const useCartographStore = create((set, get) => ({
   setShapeFreezeMissing: (reason) => {
     if (get().shapeFreezeMissing !== reason) set({ shapeFreezeMissing: reason })
   },
+  // ── [ROADMAP A07] WHICH PRODUCER BUILT THE CURB ──────────────────────────
+  // The docs promise one producer — "the curb is a concentric offset". There are
+  // two, and until now the tool could not tell you which one drew the block you
+  // are looking at. Read off the frozen artifact's per-tile `producer` stamp, so
+  // it costs nothing and is true of the shape actually on screen.
+  // ⛔ This is an ACCOUNT, not an alarm — a median or a sliver taking the carve is
+  // the RIGHT answer. It renders as plain status, never as a warning.
+  curbProducerCensus: null,
+  setCurbProducerCensus: (c) => set({ curbProducerCensus: c }),
   // ── The SHAPE freeze (the Data Wall, autosaved on Survey-exit) ────────────
   // `shapeFrozenMs` bumps when the frozen `shape.json` is rewritten, so the
   // Section surface re-opens the fresh freeze (cache-bust). This is the LIGHT

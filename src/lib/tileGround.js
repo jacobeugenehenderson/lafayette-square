@@ -34,6 +34,7 @@ import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
 import { readCapCustom } from './feCustomKey.js'
+import { createVocabularyGate } from '../../cartograph/osm-vocabulary.mjs'
 
 const SCALE = 1000
 const toClipper = (p) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
@@ -1964,7 +1965,85 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   return out
 }
 
+/**
+ * [A07] Curb-producer disclosure — the prose for the FAILURE gate.
+ *
+ * The gate itself is `createVocabularyGate` (cartograph/osm-vocabulary.mjs), the
+ * kit's established "name what this town brought that we handled quietly" idiom.
+ * Only the wording differs: "N OSM feature(s) … did NOT vote" is false about a
+ * curb, so the module takes the nouns as a parameter and this is A07's set.
+ * ⛔ If a fourth customer appears, parameterize further — do not fork the module.
+ */
+const CURB_PRODUCER_PROSE = {
+  noun: 'tile',
+  classNoun: 'failure mode',
+  unit: 'm²',
+  body: [
+    '   These tiles QUALIFIED for the D6a parallel offset and the offset came back',
+    '   UNUSABLE, so they fell to the legacy carve. ⛔ This is NOT the median/sliver',
+    '   class — those are correct carves and are counted separately. Worst first:',
+  ],
+}
+
+/**
+ * [A07] Curb-producer disclosure — the LEGITIMATE class.
+ *
+ * An account, not an alarm. A median or a sliver taking the carve is the RIGHT
+ * answer; the defect was only ever that nobody could tell. So this counts and
+ * reports, and never warns — 41 warnings a pour is a new silence, because nobody
+ * reads it. It also keeps the raw sets, because `reason` applies a precedence
+ * (median before small) and 19 of LS's 101 tiles are genuinely both.
+ */
+function makeCurbProducerCensus() {
+  const byReason = new Map()
+  let offset = 0, carve = 0
+  const sets = { median: 0, small: 0, both: 0 }
+  return {
+    count(producer, reason, f) {
+      if (producer === 'offset') offset++
+      else carve++
+      if (reason) byReason.set(reason, (byReason.get(reason) || 0) + 1)
+      if (f.isMedianTile) sets.median++
+      if (f.small) sets.small++
+      if (f.isMedianTile && f.small) sets.both++
+    },
+    summary() {
+      const total = offset + carve
+      return {
+        total, offset, carve,
+        byReason: Object.fromEntries([...byReason.entries()].sort((a, b) => b[1] - a[1])),
+        sets,
+        /** One line for a log or a status bar. Never a warning. */
+        line: total
+          ? `curb producers: ${offset}/${total} offset · ${carve} carve` +
+            (byReason.size ? ` (${[...byReason.entries()].map(([k, v]) => `${v} ${k}`).join(' · ')})` : '')
+          : 'curb producers: no tiles',
+      }
+    },
+  }
+}
+
 export function buildTileGround(ribbons, opts = {}) {
+  // ── [A07] THE PRODUCER DISCLOSURE ─────────────────────────────────────────
+  // Two objects, deliberately, because the two things must not be conflated:
+  //
+  //   curbProducerCensus — the LEGITIMATE class. Medians, slivers, opt-outs are
+  //     correct as carves; they are not warnings. This is an ACCOUNT, surfaced
+  //     in the tool and printed once by the bake, never a per-tile alarm.
+  //   curbProducerGate   — the FAILURE. An offset that passed the gate and came
+  //     back unusable. Loud, and reported SEPARATELY so it can never be buried
+  //     among ~41 routine structural lines.
+  //
+  // The gate is the same idiom as the ingest vocabulary gate one stage upstream
+  // (cartograph/osm-vocabulary.mjs) — same invariant: a silent choice is not a
+  // disclosed one. Reused rather than reimplemented (ROADMAP A07, BRIEF §4).
+  const curbProducerCensus = makeCurbProducerCensus()
+  const curbProducerGate = createVocabularyGate('curb-producer',
+    'A tile qualified for the D6a parallel offset and the offset came back unusable. ' +
+    'This is NOT the median/sliver class — those are correct carves. Investigate the ' +
+    'ring: offsetRingVariable returned nothing, collapsed below 5% of the tile, or ' +
+    'overflowed past it. POLYGON-FIRST §3 / ROADMAP A07.',
+    CURB_PRODUCER_PROSE)
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
@@ -3300,13 +3379,24 @@ export function buildTileGround(ribbons, opts = {}) {
     // [A03] depthAt / cornerAt now live INSIDE buildCurbRings, resolved from the
     // frozen per-edge facts — see the producer split at the top of this file.
     // opts.iaOffset = the per-edge parallel-offset curb (D6a). It owns the "street
-    // simple" tiles (§5d); the "intersection variable" / degenerate tiles keep the
-    // legacy carve that already handles them: MEDIAN tiles (offsetting both inner
-    // edges collapses the thin gap), DEAD-END tiles (the round cap is a disk, not
-    // an edge offset), and tiny/sliver tiles (the offset of a sub-block fragment
-    // blows up past the tile). A post-check also rejects any offset that came out
-    // degenerate (vanished or larger than its tile). The d-tile is a large clean
-    // block → it takes the offset. Falling back to legacy is never a regression.
+    // simple" tiles (§5d); the "intersection variable" tiles keep the legacy carve
+    // that already handles them: MEDIAN tiles (offsetting both inner edges collapses
+    // the thin gap) and tiny/sliver tiles (the offset of a sub-block fragment blows
+    // up past the tile). The d-tile is a large clean block → it takes the offset.
+    //
+    // ⭐⭐ [A07] THERE ARE TWO PRODUCERS AND THE CHOICE IS NOW RECORDED. Every tile
+    // is stamped `producer: 'offset' | 'carve'` + the `reason`, into _shapeArtifact.
+    // ⛔ The old comment here read "Falling back to legacy is never a regression."
+    // That sentence was the defect stated aloud, and it conflated two different
+    // things which this code must keep apart (ROADMAP A07):
+    //
+    //   • STRUCTURAL carve (median / small / opt-out) — CORRECT for its class.
+    //     These tiles genuinely are not edge-offsets. Not a defect, not a warning;
+    //     it must be DISCLOSED, per tile, because the docs promise one producer.
+    //   • DEGENERATE (below) — an offset PASSED the gate and came back unusable.
+    //     Something was expected to work and didn't. That IS a failure and it is
+    //     now LOUD. It must never be counted among the structural class, or the
+    //     real signal drowns in ~41 routine lines a pour and nobody reads it.
     // [CULDESAC KEYHOLE] Jacob's boolean keyhole, LOCALIZED. The cul-de-sac road
     // (aFill) is already union(corridor, bulb-disk); morphologically CLOSE it so the
     // reflex mouth corners round into tangent curb-returns, carve the curb from it —
@@ -3323,6 +3413,14 @@ export function buildTileGround(ribbons, opts = {}) {
     const legacyBlock = () => differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
     const ringArea = Math.abs(signedArea(tile.ring))
     let blockRings
+    // [A07] The disclosure. `reason` uses a stated precedence because a tile can be
+    // several at once (19 of LS's 101 are BOTH median and small): opt-out > median
+    // > small — most-specific structural statement first. The overlap is not lost:
+    // the census below counts the raw sets too.
+    let _producer = 'offset', _reason = null
+    if (opts.iaOffset === false) _reason = 'opt-out'
+    else if (isMedianTile) _reason = isDividedMedian ? 'median-divided' : 'median-loop'
+    else if (ringArea <= 1500) _reason = 'small'
     if (opts.iaOffset !== false && !isMedianTile && ringArea > 1500) {
       // Dead-end caps are built INTO the offset polygon (capArc), tangent to the
       // legs — no graft, so a tile that's both a d-block and a cul-de-sac (tile 11)
@@ -3342,10 +3440,25 @@ export function buildTileGround(ribbons, opts = {}) {
         curved: smooth > 0 || tileIsCurved,
       })
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
-      blockRings = (off.length && offArea > 0.05 * ringArea && offArea <= 1.01 * ringArea) ? off : legacyBlock()
+      // [A07] THE FAILURE BRANCH. This tile qualified for the offset and the offset
+      // came back unusable — it is not a shape class, it is a defect. Name WHICH
+      // way it failed; 'degenerate' alone cannot be acted on.
+      const degen = !off.length ? 'degenerate:empty'
+        : offArea <= 0.05 * ringArea ? 'degenerate:collapsed'
+        : offArea > 1.01 * ringArea ? 'degenerate:overflow'
+        : null
+      if (degen) {
+        _producer = 'carve'; _reason = degen
+        curbProducerGate.record(degen, tile.ring, { ringArea, offArea, rings: off.length })
+        blockRings = legacyBlock()
+      } else {
+        blockRings = off
+      }
     } else {
+      _producer = 'carve'
       blockRings = legacyBlock()
     }
+    curbProducerCensus.count(_producer, _reason, { isMedianTile, isDividedMedian, small: ringArea <= 1500 })
     // [CULDESAC KEYHOLE — the bounded splice] keep the offset curb as the base
     // (grid shape untouched) and replace it with the morphologically-closed keyhole
     // ONLY inside the bulb disk(s): blockRings = (base − disks) ∪ (keyhole ∩ disks).
@@ -3624,7 +3737,11 @@ export function buildTileGround(ribbons, opts = {}) {
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
     // not mask it with a disk. Each = { apex, C, r, tA, tB } from filletRing.
-    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink, ...(_mouths ? { mouths: _mouths } : {}), ...(_thruNodeEnds ? { thruNodeEnds: _thruNodeEnds } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
+    shapeTiles.push({ ring: tile.ring, iA, vertR, tl, sw, lu, roundTips, bluntTips, roundTipKeys, runs: runMeta, bandJoin, cap, fillets: fSink,
+      // [A07] WHICH PRODUCER BUILT THIS CURB, and why. The docs promise a single
+      // concentric offset; on LS 41 of 101 tiles are not one. Recorded so an
+      // operator on a town nobody has inspected can tell, and so A06 has a test.
+      producer: _producer, ...(_reason ? { producerReason: _reason } : {}), ...(_mouths ? { mouths: _mouths } : {}), ...(_thruNodeEnds ? { thruNodeEnds: _thruNodeEnds } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
   }
 
   // ── THE WALL · Phase C · the cut ───────────────────────────────────
@@ -3793,5 +3910,9 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined }
+  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+    // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
+    // prints both once per pour; the Survey/Section tool surfaces the census.
+    _curbProducers: curbProducerCensus.summary(),
+    _curbProducerFailures: { count: curbProducerGate.count, report: curbProducerGate.report.bind(curbProducerGate) } }
 }

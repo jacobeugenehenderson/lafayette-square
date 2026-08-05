@@ -339,7 +339,7 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null) {
   const pr = buildTileGround(ribbons, {
     stencil: stencilPolygon,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
@@ -356,6 +356,15 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     // THE WALL · Phase D — emit the frozen per-tile shape artifact for bake serialization.
     emitArtifact: true,
   })
+  // ── [A07] THE PRODUCER DISCLOSURE — once per pour, and the two kinds apart ──
+  // The docs promise one curb producer ("a concentric offset"). There are two.
+  // This is where the operator of a town nobody has inspected finds that out.
+  if (pr._curbProducers) console.log(`  [A07] ${pr._curbProducers.line}`)
+  // ⛔ Reported SEPARATELY and only when non-zero. A degenerate offset is a
+  // FAILURE; the carve counts above are correct answers. Merging them would put
+  // the real signal behind ~40 routine lines a pour, which is a new silence.
+  const curbFail = pr._curbProducerFailures
+  if (curbFail?.count) console.warn(curbFail.report(scene))
   const byMaterial = new Map()
   const byFaceUse = new Map()
   const pushClipperRings = (key, rings) => {
@@ -763,7 +772,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
