@@ -1,3 +1,36 @@
+# ⛔ FROZEN — THE STERILIZED MANIFEST. This is a DRIFT BASELINE, not canon.
+
+> **Archived 2026-08-05 on Jacob's call.** The live `PIPELINE-CLAIMS.md` at root was rebuilt **narrow** —
+> scoped to the dead-end → corner → sidewalk-arrangement chain — because a fresh whole-pipeline
+> distillation alongside a mid-correction corpus inherited the rot in under twenty minutes the first time.
+> This file is kept for one purpose: **to diff against.** It is the last whole-pipeline snapshot taken
+> before the Tier 2 corrections landed, so `this file vs. the corpus today` measures **what drifted**.
+>
+> ⛔ **DO NOT EDIT IT AND DO NOT CITE IT AS TRUE.** Freezing it is what makes it useful; a corrected
+> baseline measures nothing. Several claims below are **known false** — most sharply **`3.3`**
+> (*"Prebake never reads operator authoring — zero reads, verified"*), which carries a ✅ **verified**
+> stamp and is **W1** of the Tier 2 report: `derive.js` reads `clean/overlay.json`, 52 authored LS
+> streets. **`3.4` rests on `3.3`** and inherits the error. Left standing **deliberately** — that pair is
+> the single best specimen of the failure this whole arc was hunting, a wrong belief wearing a
+> verified-in-code stamp, and correcting it here would destroy the specimen.
+>
+> ⭐ **What was CARRIED FORWARD into the narrow rebuild rather than left here:** the **`[REQ]`/`[OUR]`
+> split** (nothing else in the corpus separates *what must be true* from *how we currently do it*), the
+> **`R1–R8` cross-cutting requirements**, the **`L1–L7` ratified list**, and the plain-language chain —
+> the to-code skeleton, the armed mine at step 3, chain *links* dying at the Wall, the condensation
+> principle, The Ward. That last part is Jacob's words confirmed line by line, not a distillation, so
+> nothing upstream could rot it.
+>
+> **Drift-diff method, for whoever runs it:** take a numbered claim, find its live home in the corrected
+> corpus, and record `was ever true? / corrected when? / by which sweep?` — the three questions that
+> separate **ROT** (evict) from a **⭐WRONG BELIEF** (stop, write it up with the code site). The Tier 2
+> report (`scratch/doc-sweep-tier-2-report.md`) already did this for 8 of them; the rest of the ~290 are
+> unexamined at this grain.
+>
+> *Its original, self-aware banner follows — it called its own problem correctly and is worth reading.*
+
+---
+
 > ## ⛔⛔ STATUS 2026-08-02 — WRITTEN BEFORE THE SWEEP; DO NOT TRUST IT YET
 >
 > This file distils the doc corpus. **Hours after it was written, six adversarial sweeps graded that
