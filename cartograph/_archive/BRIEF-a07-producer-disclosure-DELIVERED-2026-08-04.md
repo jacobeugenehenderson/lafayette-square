@@ -1,3 +1,16 @@
+> # ✅ DELIVERED 2026-08-04 by **Wren** — retired to the Diary.
+> **Outcome:** `e3f4f020` (the relation ruling) + `0464c136` (the feature) + `9ce07414` (ROADMAP close).
+> Every tile now carries `producer`/`producerReason`; no curb moved, proven byte-identical on **both**
+> the authored and bare-defaults state. ⭐⭐ **The finding is the SPREAD:** carved share runs
+> **7% (altadena) → 42% (LS) → 56% (centrum) → 75% (ksi-y-m-yn)**, LS mid-range — the invariant is a
+> property of the town's block geometry, so no single scene could reveal it. Degeneracy **0 everywhere,
+> measured for the first time**. Ruled: A07 is a **prerequisite for A06** (its test instrument) and for
+> the "d" bulge diagnosis; "sibling of A06" deleted. ⏳ Left open: the **spatial** overlay (wants
+> Jacob's eye) + `shape.json` is pre-A07 until a re-bake.
+> **Live homes:** `ROADMAP A07` · `POLYGON-FIRST §1` · `ORIENTATION` · `scratch/a07-producer-disclosure.mjs`.
+
+---
+
 # BRIEF — A07: the SHAPE producer must disclose which producer built each curb
 
 **Agent: WARM → Wren.** *(Decisively, and this is not the usual call. Wren re-measured A07's floor on

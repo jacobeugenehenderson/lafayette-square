@@ -1,3 +1,15 @@
+> # ✅ DELIVERED 2026-08-04 by **Wren** — retired to the Diary.
+> **Outcome:** 8 commits, `0459beeb` → `51cd4327`. ~55 distinct facts across 26 docs (≈2× the brief's
+> ~25 estimate). ⭐⭐ **NOT all rot — 8 WRONG BELIEFS**, ranked with code sites in
+> **`scratch/doc-sweep-tier-2-report.md`** (the live deliverable; read that, not this).
+> Top two: *"prebake is authoring-blind — zero reads"* is false (`derive.js` reads `clean/overlay.json`;
+> only `design.json`/`blockCustoms` is unread — and A03/A06 were scoped off the overgeneralised version)
+> · the membership formula's precedence, since **RULED** (`8205a48a`) →
+> `NEIGHBORHOOD-INPUTS §5.2`. Also recorded: Tier 1 **under**-corrected A07 (floor 41, not 30).
+> **Live homes:** `scratch/doc-sweep-tier-2-report.md` · `ROADMAP` · the corrected canon itself.
+
+---
+
 # BRIEF — doc sweep, TIER 2: evict the status layer from the reference docs
 
 **Agent: FRESH.** *(Why, decisively: Tier 1 was done by a warm coordinator carrying two days of
