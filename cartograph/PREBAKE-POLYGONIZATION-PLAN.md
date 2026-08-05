@@ -8,6 +8,16 @@
 
 ---
 
+> ## ⛔⛔ BANNER, 2026-08-04 — **D1's datum is GONE; this document's forensic conclusions are superseded.**
+> Cause #1 below, and the whole §5 spike table keyed to it, rest on `lafayette-avenue-6` carrying
+> `pavementHW = 0` on its outer side and `6.70` median-side (and carriageway-A `10.56 / 6.86`).
+> **Measured on `src/data/ribbons.json` today: `lafayette-avenue-5` and `-6` are each `4.6738 / 4.6738`.
+> No zero, no 6.70, no 10.56, no scramble** — superseded by `8fd3485d` (*"survey-based divided median —
+> carriageway = surveyHW/2 per side"*). **D1 as written is not actionable, and §6.1's push-back on the
+> parent brief (*"without D1 the corner can only land within ~10 m"*) no longer follows.** The mechanism
+> narrative is kept as the record of how the false corner was diagnosed; ⛔ **do not cost work off its
+> numbers.**
+
 ## 0. New forensic ground truth — the false corner's full mechanism
 
 The docs say "`filletRing` corners the carriageway stub." The instrumented reality (`mercator-fillet-trace.mjs`) is sharper — **three stacked causes**:
@@ -65,7 +75,7 @@ Mechanics validated in the spike (`mercator-spike.mjs`):
 **What the retire entails:**
 1. **Stamp `use` per frozen tile at prebake.** Run the *same* LU vote (`osmLUPolys` centroid-in-ring area vote → parcel majority fallback, `derive.js:2724–2769`) against the **skeleton-derived tile rings** at prebake-time. The artifact's tiles carry `use`; `luForRing` dies; `blockLandUse` overrides keep working (`blockKeyFromRing(tile.ring)` unchanged).
    - ⚠️ **One real risk — composite faces.** Skeleton tiles can be *coarser* than OSM faces: tile #11 spans the park **plus** several blocks (pendant/dead-end streets don't split faces). A single per-tile `use` would smear LU across the composite. Today the per-tile interior-point lookup against *finer* OSM faces masks this. Mitigations (pick in D4's brief): keep the OSM LU polygons as a **classification overlay** consulted per-tile at prebake exactly as `luForRing` does today (no behavior change, still one *geometry* source), or sub-classify composite tiles. Don't silently coarsen.
-2. **Re-source `intersections[]` consumers.** `CornerEditHandles` (:133) + the Survey IX markers (`BlockGeometryV2Debug:983`) read raw-OSM `ribbons.intersections`; the skeleton's `junctions` (329, already in `ribbons.json`) carry `{x, z, degree, kind}` — a direct swap.
+2. ✅ **Re-source `intersections[]` consumers — DONE BY ATTRITION, do not cost this.** `ribbons.intersections` is `length 0` in **every** scene checked (LS, LS-staging, altadena, centrum, hipointe-demun, ksi-y-m-yn), so the marker read is already a no-op, and `BlockGeometryV2Debug` records that corners now come from the tile graph "not legacy `ribbons.intersections`". *(Also: `ribbons.junctions` is **277**, not 329 — 329 is the skeleton's count.)*
 3. **Delete** the raw-OSM face path (`vehicularStreets`→`densify`→`nodeEdges`→`polygonize`→`classify` as a *faces* source) + `ribbons.faces`/`intersections` from the artifact.
    > ⛔ **DO NOT delete `medians[]` — this step used to say to, and it was false.** *(Corrected 2026-08-02.)* The "zero `src/` consumers / vestigial decoy" reading came from the Truman forensic and was **overtaken by E2** (`LOOP-STREETS §4`, 2026-06-11 `e8cc310`): the median became a **constructed polygon frozen at prebake**, and `medians[]` is now its home. Verified on trunk: **52 entries** in `src/data/ribbons.json` (63 in Altadena) with **live dereferences** at `tileGround.js:2230` (E2 median polys), `:2335` (`medRings`), `:2611` (per-median lookup) plus the `isMedianTile` path at `:3240`. **Deleting it removes the divided/loop median construction.**
 

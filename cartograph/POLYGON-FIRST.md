@@ -311,12 +311,18 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 > | chain-FREE offset producer | **59** | Check C holds here |
 > | legacy carve — **divided median** | 30 | structural (offsetting both inner edges collapses the thin gap) |
 > | legacy carve — **loop-body median** | 3 | structural (`medArea > 0.5` on a single-run tile) |
-> | legacy carve — **small** tile | 9 | structural (`ringArea ≤ 1500`) |
+> | legacy carve — **small** tile | 9 | structural (`ringArea ≤ 1500` **and not already median**) |
 > | legacy carve — degenerate | **0** | every tile that qualifies for the offset path succeeds on it |
 >
 > ⚠️ **Corrected 2026-07-31:** this table first read *"32 median · 10 small"*, which conflated the two
 > median classes and mis-split the total. `isMedianTile` is `isDividedMedian || (isLoopInterior &&
 > medArea > 0.5)` — two different tile kinds behind one flag. Total is unchanged at 42.
+> ✅ **Independently reproduced 2026-08-04** off `public/baked/lafayette-square/shape.json`: **30 tiles
+> `ringArea ≤ 1500` · 30 carrying `isMedian` · 19 both ⇒ 41 ineligible / 60 eligible.** That is the same
+> split — the `9` row is *small AND not already median*, which is 30 − 19 − (the loop-body 3, whose flag
+> the artifact does not carry). ⚠️ **The `9` is NOT the count of small tiles** (that is 30), and reading
+> it as such is what produced a "the table is wrong" report. And the artifact's `isMedian` is written
+> from `isDividedMedian` **alone** (`tileGround.js:3627`), so any count taken off it is a **floor**.
 > ⛔ **`D6a`'s comment above this gate also lists DEAD-END tiles as a legacy-carve class. It is stale** —
 > the gate is `!isMedianTile && ringArea > 1500`, with **no dead-end condition**; dead-end tiles take the
 > OFFSET path and their caps are built in via `capArc` twelve lines below (21 tiles carry tips).
@@ -419,6 +425,17 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 > **First-pass RESULT (Sieve, 2026-06-13 — `SIEVE-DETECTOR-FINDINGS.md`, harness `scratch/correctness-detector.mjs`):** **`width-step` is the flagship** (8 curated / 4 grid — the datum-step family; make it the **first CI gate**). Recall **18/31 names (58%)** with the geometric checks; precision 43%. **`max-turn` whiffs (0 curated)** — the 35 were never vertex-jagged; **curation fixed *topology/width*, not zigzags**, so a per-chain jag-detector is the wrong instrument. ⚠️ **Provenance fix: West 18th is `source:'osm'`, NOT one of the 35** (it was conflated with South 18th). The 13 misses are **the Places** — uncaught because their defect is *topological*. **Highest-leverage next (both named above, neither built): `loop-closure` (≈7) + `cul-de-sac-cap-tangent`.** Don't widen thresholds to chase 31 — add invariants for the missing *classes*.
 >
 > **Topological pass RESULT (Loom, 2026-06-13 — `LOOM-TOPO-FINDINGS.md`):** built both. **`loop-closure` flags 0 — correctly:** every LS loop already closes (Benton 3.2cm / Park Place 0.0 / Saint Vincent 2.2cm, all inside the `e8cc310` endpoint-weld tol), so the faces form and the medians emit. It's a **regression guard, correctly green** (proven live by a `--simweld` self-test that opens a loop 1.4m and watches it fire), not a recovery detector — keep it wired to CI. **`cap-tangent` flags 1 — Preston Place** (authored `round`, a true degree-1 tip, nearest rendered cap **171.7m** away): a genuine defect all five geometric checks missed. **+1 → 19/31.** ⚠️ **Loom proposed the ~6 perfect-rendering cap/loop "Places" (Albion/Vail/Nicholson/Simpson/Whittemore + Kennett) are authoring *choices*, not bugs → denominator ~25.** **Jacob CORRECTED this (2026-06-13): the cap is *data-derivable* (OSM `turning_circle`/`turning_loop` tags) — the cap-chooser was a STOPGAP for when we couldn't yet build the geometry, so those curations are *data*-defects to automate, NOT legitimate authoring.** Denominator stays **~31**; the cap-curations count. (Doctrine: *data-derivable → must be automatic, a manual override is a bug; only genuinely-creative LOOK is authored* — `SKELETON §6` kit invariant.) **The real remaining gap = the weird junctions (Carroll, Hickory, Grattan)** — caught by the **`junction-band` invariant** (Throat, 2026-06-13: recall → 24/31; the throat-sliver count; the defect is **pervasive — ~60 junctions, grid worse than curated**, so the curated set under-counts it). ⚠️ **The invariant is the RED-until-true GATE, but the FIX is UPSTREAM (skeleton), NOT a ped construction.** A *separate* ped-silhouette is the deletion target (`SECTION §7`, Jacob): one SSoT road-junction shape, the rest derives. The junction geometry is wrong at the *skeleton* — **the West 18th ↔ Dolman name-transition is the showstopper** — diagnosed by the skeleton forensic, fixed in `skeleton.js`, proven green by `junction-band`.
+
+> ### ⭐ CURRENT RESULT — re-run 2026-08-04. **Recall 30/31 (97%), not 24/31.**
+> `node scratch/correctness-detector.mjs` today: **recall 30/31 (97%) · precision 30/61 (49%)**, with
+> **exactly one miss — Vail Place**. Per-invariant (single-check) recall is **19/31**; the 30/31 is the
+> union across invariants. ⛔ **The two checks the Sieve quote above names as "highest-leverage next,
+> neither built" — `loop-closure` and `cul-de-sac-cap-tangent` — are BOTH BUILT** (the Loom paragraph
+> says so, without updating the headline). ⚠️ **The blockquotes above are a DATED RECORD of two passes,
+> not the scoreboard.** They were read as current and had the scoreboard 6 points low while naming
+> shipped checks as the next work — a doc that undersells shipped capability causes rebuilt work.
+> ⚠️ Also stale in the same block: `[E3.3] corner identities` prints **6 corners constructed**, the
+> pre-registry number — because the corner registry was **reverted** (§2.1); its headline was 6→214.
 
 ---
 

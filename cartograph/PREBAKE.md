@@ -47,7 +47,7 @@ Intake → Skeleton → ⟦ PREBAKE ⟧ → Survey → ⟦DATA WALL⟧ → Secti
 
 ## 2.5 ⭐ The boundary clip — the Data-Wall neuter (2026-07-04)
 
-`pipeline.js` runs a **boundary clip** immediately **after `deriveLayers(...)` and before the `map.json` write** — a **KIT** step, **gated on the scene carrying a `neighborhood_boundary.json`** (LS/default, which has none for this purpose, is untouched). It is the Data Wall doing its defining job (§0): **neutering a spurious polygon *at the wall* rather than carrying it whole downstream.**
+`pipeline.js` runs a **boundary clip** immediately **after `deriveLayers(...)` and before the `map.json` write** — a **KIT** step, **gated on the scene carrying a `neighborhood_boundary.json`** — a bare `existsSync` in `pipeline.js`. ⚠️ **LS HAS one**, so the clip *does* fire on LS (`keepR = 1030 m`); every scene including `toy` carries the file. What LS lacks is a **`polygon` key**, which is the different fact that makes the building-membership test fall back to the disc. *(This parenthetical said LS "has none … is untouched" — anyone diagnosing a clipped or missing feature on LS would have ruled the clip out on the doc's word. Corrected 2026-08-04.)* It is the Data Wall doing its defining job (§0): **neutering a spurious polygon *at the wall* rather than carrying it whole downstream.**
 
 The canonical spur is a named **boundary arterial** that enters the fetch at full *city* length and overshoots the hood. **South Big Bend ran 3882 m across a 2502 m hood** (Forsyth 3677 m, Wydown 2905 m); kept whole, these arterials stick out asymmetrically (south + east) and **skew the entire content bbox SE.** The clip has three moves, keyed to the layer:
 
@@ -86,7 +86,7 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > (`scratch/coupler-slit-universal.mjs`, ported to trunk 2026-07-30 — the old "46 of 49" read the tip off a
 > FILL run's span end, not the frozen `cap.vertexIdx`; see `POLYGON-FIRST §2.1`; on `south-18th-street-3`, `ring[2]` and `ring[4]` are the same
 > coordinate). **40 of them only LOOK resolved** because the FILL-layer mouth-wrap snap displaces
-> `run.poly` off the ring by up to 13 m after the freeze; the 9 with no mouth disc show the slit raw, and
+> `run.poly` off the ring by up to **6.24 m** after the freeze (re-run of the doc's own probe, 2026-08-04 — 37 tips displaced, next-largest 6.00 and 5.49; the `13 m` this line carried was ~2× and it is used to argue the FILL mask's size); the 9 with no mouth disc show the slit raw, and
 > those are exactly where the operator's eye fails.
 >
 > ⇒ Downstream, `side` inverts on the returning leg (34/34, measured), the cap needs a synthetic
