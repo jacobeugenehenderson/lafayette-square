@@ -12,11 +12,18 @@
 > Jacob: the to-code skeleton, **the armed mine at step 3**, chain *links* dying at the Wall,
 > the condensation principle, and The Ward. That part is his words, not a distillation.
 >
-> ### ⏳ REBUILD SEQUENCING — updated 2026-08-04. **NOT YET. Wait for Tier 2.**
+> ### ✅ REBUILD SEQUENCING — the gate LIFTED 2026-08-04 (end of day). **Rebuild is now DUE.**
 >
-> The line below said "rebuild after the Tier-1 corrections land." **Tier 1 has landed**
-> (`d8c4fee7` · `c6d36fa7` · `426e01c1`) — so that instruction now reads as *due*, and it is not.
-> **⛔ Do not rebuild this until TIER 2 completes** (`BRIEF-doc-sweep-tier-2.md`, root).
+> **Tier 2 is complete** (Wren, `0459beeb` → `51cd4327`; report `scratch/doc-sweep-tier-2-report.md`;
+> brief retired to `cartograph/_archive/BRIEF-doc-sweep-tier-2-DELIVERED-2026-08-04.md`). The source
+> corpus this file distils is no longer mid-correction, so the condition below is met.
+>
+> ⚠️ **Two things to carry into the rebuild, because they are exactly what this file got wrong before:**
+> 1. Tier 2 changed **~55 facts, not ~25**, across all 26 source docs — assume nothing survived unedited.
+> 2. It found **8 WRONG BELIEFS, not just stale counts** — including the very one this header already
+>    names (*"prebake never reads operator authoring"*). Distil from the corrected docs, not from memory
+>    of them. ⛔ **A fresh distillation alongside a rotten corpus inherited the rot in under twenty
+>    minutes last time; that is the whole reason this gate existed.**
 >
 > **Why, precisely:** Tier 2 is about to change **~25 more facts across the same source docs this file
 > distils**. Rebuilding now means distilling a corpus that is **mid-correction** — inheriting the rot a
