@@ -26,6 +26,7 @@ import * as THREE from 'three'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
 import { writeIfChanged } from './io.js'
 import { loadSceneTerrain } from './terrainLoad.js'
+import { createMembershipFilter } from './membership.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -641,16 +642,6 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
-// Ray-cast point-in-polygon (poly = [{x,z}]) — building membership test.
-function pointInPolygon(px, pz, poly) {
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
-    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
-  }
-  return inside
-}
-
 export async function bakeBuildings({ look = 'default', scene = 'lafayette-square' } = {}) {
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -676,33 +667,14 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
       try { const ov = JSON.parse(readFileSync(ovP, 'utf-8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
       catch (e) { console.warn(`[bake-buildings] building-overrides unreadable: ${e.message}`) }
     }
-    const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
-    // Exclusion loops (excluder model): a building inside ANY loop drops out (unless
-    // force-kept). Must match pipeline.js exactly so 2D + slab agree on membership.
-    const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
-    const cx0 = nb.center?.[0] ?? 0, cz0 = nb.center?.[1] ?? 0
-    const R2 = (nb.radius ?? Infinity) ** 2
-    const centroidOf = (fp) => { let sx = 0, sz = 0; for (const [x, z] of fp) { sx += x; sz += z } return [sx / fp.length, sz / fp.length] }
+    // ⭐ ONE decision, shared with pipeline.js — see cartograph/membership.mjs.
+    // This used to be a hand-copied third copy under a comment claiming it "must
+    // match pipeline.js exactly"; it did not (ROADMAP A08).
+    const membership = createMembershipFilter({ nb, activate, hide, label: 'bake-buildings' })
     const before = buildings.length
-    // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
-    // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
-    // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
-    // activate/hide (the finest statement). So `activate` DELIBERATELY returns
-    // before the exclusion test: lasso a strip out, click one shop back in, the
-    // click wins. ⛔ Do NOT "fix" this to match the old flat form
-    // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
-    // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
-    // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
-    // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
-    buildings = buildings.filter(b => {
-      const fp = b.footprint || []
-      if (fp.length < 3 || hide.has(b.id)) return false
-      if (activate.has(b.id)) return true
-      const [cx, cz] = centroidOf(fp)
-      for (const e of excl) if (pointInPolygon(cx, cz, e)) return false   // carve exclusion loops
-      return poly ? pointInPolygon(cx, cz, poly) : (cx - cx0) ** 2 + (cz - cz0) ** 2 <= R2
-    })
-    console.log(`[bake-buildings] membership: ${before} → ${buildings.length} (poly=${!!poly}, excl=${excl.length}, +${activate.size}/−${hide.size})`)
+    buildings = buildings.filter(b => membership.decide(b.id, b.footprint || null))
+    membership.report()
+
   }
 
   // Per-building centroid elevation → raw `aCentroidY` per-vertex attribute;
@@ -767,9 +739,15 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
   const roofOutlineData = []
   let roofOutlinePtCursor = 0
 
+  // ⛔ Count what we cannot extrude — a building silently missing from the slab
+  // is the same silent-substitution class as a fallback (CLAUDE.md Layer 0 q2).
+  // Membership deliberately KEEPS a <3-vertex footprint (it is an intake defect,
+  // not a membership answer — cartograph/membership.mjs); this is where it stops,
+  // and it says so. ROADMAP A08.
+  const unextrudable = []
   for (const b of buildings) {
     const fp = b.footprint
-    if (!fp || fp.length < 3) continue
+    if (!fp || fp.length < 3) { unextrudable.push(b.id ?? '<no id>'); continue }
     let wallRange = null, foundRange = null, roofRange = null
     const h = (b.size && b.size[1]) || (b.stories ? b.stories * 3.5 : 8)
     // Foundation: visible top = period pedestal (fh) above grade; bottom
@@ -1009,6 +987,14 @@ export async function bakeBuildings({ look = 'default', scene = 'lafayette-squar
       }
     }
     console.log(`[bake-buildings] index tiling verified: ${buildingIndex.length} buildings tile ${groups.length} groups with no gaps/overlaps`)
+  }
+
+  if (unextrudable.length) {
+    console.warn(
+      `[bake-buildings] ⛔ ${unextrudable.length} building(s) had a footprint with <3 vertices and were ` +
+      `NOT extruded into the slab — they exist in map.json but will not appear in the 3D map. ` +
+      `Fix at intake. ids: ${unextrudable.slice(0, 20).join(', ')}${unextrudable.length > 20 ? ', …' : ''}`
+    )
   }
 
   // Layout: [positions][colors][uvs][centroidYs][indices][footprints][roofOutlines].

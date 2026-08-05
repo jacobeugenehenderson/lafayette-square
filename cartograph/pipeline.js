@@ -15,21 +15,12 @@ import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths } from './derive.js'
 import { fetchElevationGrid, interpolateElevation } from './elevation.js'
+import { createMembershipFilter, buildingIdOf } from './membership.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitScene('pipeline.js (writes data/<scene>/clean/map.json)')
 
 const skipElevation = process.argv.includes('--skip-elevation')
-
-// Ray-cast point-in-polygon (poly = [{x,z}]) — building membership test.
-function pointInPolygon(px, pz, poly) {
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i].x, zi = poly[i].z, xj = poly[j].x, zj = poly[j].z
-    if (((zi > pz) !== (zj > pz)) && (px < ((xj - xi) * (pz - zi)) / (zj - zi) + xi)) inside = !inside
-  }
-  return inside
-}
 
 async function main() {
   console.log('='.repeat(60))
@@ -99,34 +90,14 @@ async function main() {
         const ovP = join(RAW_DIR, '..', 'building-overrides.json')
         let activate = new Set(), hide = new Set()
         if (existsSync(ovP)) { try { const ov = JSON.parse(readFileSync(ovP, 'utf8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) } catch { /* ignore */ } }
-        const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
-        const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
-        const ccx = nb.center?.[0] ?? 0, ccz = nb.center?.[1] ?? 0
-        const R2 = (nb.radius ?? Infinity) ** 2
+        const membership = createMembershipFilter({ nb, activate, hide, label: 'pipeline/pre-clip' })
         const before = raw.buildings.length
-        // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
-        // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
-        // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
-        // activate/hide (the finest statement). So `activate` DELIBERATELY returns
-        // before the exclusion test: lasso a strip out, click one shop back in, the
-        // click wins. ⛔ Do NOT "fix" this to match the old flat form
-        // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
-        // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
-        // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
-        // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
-        raw.buildings = raw.buildings.filter((b) => {
-          const pts = b.coords || b.ring || (b.rings && b.rings[0]) || []
-          if (pts.length < 3) return true
-          const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
-          if (id && hide.has(id)) return false
-          let sx = 0, sz = 0
-          for (const p of pts) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
-          const bx = sx / pts.length, bz = sz / pts.length
-          if (id && activate.has(id)) return true
-          for (const e of excl) if (pointInPolygon(bx, bz, e)) return false
-          return poly ? pointInPolygon(bx, bz, poly) : (bx - ccx) ** 2 + (bz - ccz) ** 2 <= R2
-        })
-        console.log(`  Pre-clip buildings to membership: ${before} → ${raw.buildings.length}`)
+        raw.buildings = raw.buildings.filter((b) => membership.decide(
+          buildingIdOf(b),
+          b.coords || b.ring || (b.rings && b.rings[0]) || null,
+        ))
+        membership.report()
+
       } catch (e) { console.warn(`  building pre-clip skipped: ${e.message}`) }
     }
   }
@@ -249,36 +220,11 @@ async function main() {
       try { const ov = JSON.parse(readFileSync(ovPath, 'utf8')); activate = new Set(ov.activate || []); hide = new Set(ov.hide || []) }
       catch (e) { console.warn(`  building-overrides unreadable: ${e.message}`) }
     }
-    const poly = Array.isArray(nb.polygon) && nb.polygon.length >= 3 ? nb.polygon : null
-    // Exclusion loops (excluder model): a building inside ANY loop drops out (unless
-    // force-kept). Everything else IN by default (inside the circle, poly null).
-    const excl = Array.isArray(nb.exclusions) ? nb.exclusions.filter(e => Array.isArray(e) && e.length >= 3) : []
-    const bR2 = (nb.radius ?? Infinity) ** 2
+    const membership = createMembershipFilter({ nb, activate, hide, label: 'pipeline/map.json' })
     const bBefore = buildings.length
-    // ── MEMBERSHIP PRECEDENCE (RULED 2026-08-04 — NEIGHBORHOOD-INPUTS §5.2) ──
-    // The formula is ORDERED and THE FINEST GESTURE WINS. Coarse → fine:
-    // polygon (what the hood IS) → exclusion loops (a coarse sweep) → per-building
-    // activate/hide (the finest statement). So `activate` DELIBERATELY returns
-    // before the exclusion test: lasso a strip out, click one shop back in, the
-    // click wins. ⛔ Do NOT "fix" this to match the old flat form
-    // `(polygon ∪ activate) − (exclusions ∪ hide)` — that form was the docs' error
-    // (it silently discarded a per-building override, CLAUDE.md Layer 0 q3).
-    // Correct algebra: ((polygon − exclusions) ∪ activate) − hide.
-    // ⚠️ THREE SITES RUN THIS. Change one, change all: pipeline.js ×2 + bake-buildings.js.
-    buildings = buildings.filter((b) => {
-      const pts = b.ring || []
-      if (!pts.length) return true
-      const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
-      if (id && hide.has(id)) return false
-      let sx = 0, sz = 0
-      for (const p of pts) { sx += Array.isArray(p) ? p[0] : p.x; sz += Array.isArray(p) ? p[1] : p.z }
-      const bx = sx / pts.length, bz = sz / pts.length
-      if (id && activate.has(id)) return true
-      for (const e of excl) if (pointInPolygon(bx, bz, e)) return false   // carve exclusion loops
-      return poly ? pointInPolygon(bx, bz, poly) : (bx - cx) ** 2 + (bz - cz) ** 2 <= bR2
-    })
+    buildings = buildings.filter((b) => membership.decide(buildingIdOf(b), b.ring || null))
+    membership.report()
     dropped += bBefore - buildings.length
-    console.log(`  Building membership: poly=${!!poly} excl=${excl.length} +${activate.size}/−${hide.size} — kept ${buildings.length}, dropped ${bBefore - buildings.length}`)
   }
 
   // ── World-coord bbox (derived from projected layers + buildings) ────
