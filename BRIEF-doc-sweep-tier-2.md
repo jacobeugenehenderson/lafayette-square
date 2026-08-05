@@ -13,7 +13,58 @@ word, your choice; it joins the name-trail.)*
 
 ---
 
-## 0. Why this exists — read this or you will do the wrong job
+## 0. ⭐⭐ WHAT THIS IS ACTUALLY FOR — READ THIS BEFORE YOU DECIDE IT IS TIDYING
+
+> ### **We expect to find an error in the CODE by finding an error in our THINKING.**
+> *— Jacob, 2026-08-04, on why this took priority over the live land-use arc.*
+
+**This is not documentation housekeeping, and treating it as housekeeping will make you miss the
+point of the job.**
+
+The thesis: several graphics/downstream defects have resisted repeated attempts to fix them. **The
+corpus is our thinking, written down.** The code was written *by* that thinking. So where a doc claim
+is false, we are often not looking at a stale sentence — **we are looking at a place where our model
+of the system is wrong, and the code embodies the same wrong model.** That is why the bugs are stuck:
+everyone involved, docs and code alike, shares the mistaken belief, so every attempt reasons from it.
+
+**∴ the corpus audit is DIAGNOSTICS, not hygiene.** A false claim is a *lead*.
+
+**This already paid out three times on 2026-08-04, all in one day:**
+
+| The wrong belief | Where it lived **in code** |
+|---|---|
+| *"the Wall forbids authoring downstream"* | `hadrian-wall-open-proof.mjs`'s FORBIDDEN list went RED and would have driven someone to strip `blockCustoms` out of Section — the wall erasing the product |
+| *"an unreadable OSM polygon should type the face"* | `classify.js:57` — an overlay it cannot read **hijacks** the face type, so the face never reaches the land-use ladder. **17 of 17.** This is why the greenbelt is still grey after Phase 1 "worked" |
+| *"containment runs this way"* — held in two directions at once, never decided | the OSM vote asks *"is the polygon's centroid in the face?"*; `luForRing` downstream asks the **reverse**. Two stages, two beliefs, no ruling |
+
+**None of those was a stale count. Each was a wrong model with code built on it.**
+
+### What this means for how you work
+
+- ⭐⭐ **SORT YOUR FINDINGS INTO TWO PILES, and treat them differently.**
+  - **ROT** — a count drifted, a ticket closed, a status never struck. **Evict it (§1) and move on.**
+    Most of the ~25 are this. They are not interesting and should not slow you down.
+  - **⭐ A WRONG BELIEF** — the claim is false because *the thing does not work the way we thought*.
+    **STOP. Do not just delete it.** Write it up in your report **as a lead**, with the specific code
+    site, and say what a fix would have to establish. **These are the deliverable.** One of these is
+    worth more than all the evictions combined.
+  - **The tell:** ask *"was this ever true?"* If it was true and got overtaken → rot. **If it was
+    never true, or it contradicts another doc that also sounds authoritative → wrong belief.**
+    ⚠️ **Cross-doc contradictions are the richest seam** — two docs disagreeing means nobody ever
+    ruled, which means the code has probably picked a side silently. The sweep flagged
+    contradictions in cluster 4; go at those deliberately.
+- **When unsure whether a line is worth evicting:** *"would this send someone the wrong way?"* If yes,
+  it is in scope even if it looks minor.
+- ⭐ **Prefer NO claim to a plausible-but-stale one.** A gap sends someone to the code. A confident
+  wrong sentence gets built on. That asymmetry is the whole thesis.
+- **A doc that undersells shipped work is the same defect** — it causes rebuilding (§3).
+
+⛔ **You are not authorised to fix the code defects you find.** Find them, prove them, write them up.
+A doc pass that starts changing geometry is how a clean job becomes an unreviewable one.
+
+---
+
+## 0a. Why this exists — read this or you will do the wrong job
 
 Six agents independently swept the doc corpus, read-only (`scratch/doc-sweep-1..6-*.md`, committed
 `d8cdeaad`). **~290 load-bearing claims: ~134 CONFIRMED, ~91 FALSE, ~59 UNVERIFIABLE.**
@@ -132,9 +183,17 @@ a doc that oversells. Sweep for these deliberately; they are easy to skip.
 - **Commit in coherent batches** (per cluster, or per fact-across-docs), not one giant commit. Each
   message says **what you verified and how**. Selective `git add` — only your own files.
 - ⚠️ **Branch `land-use-derivation` is not pushed anywhere.** Do not push, do not merge, do not rebase.
-- **`PIPELINE-CLAIMS.md`** (root, **untracked**) is a pre-sweep distillation that already inherited two
-  errors. ⛔ Do not trust it and do not cite it. Flag it in your report — Jacob's call whether it is
-  rebuilt or deleted. **Do not `git clean`; it is untracked and would be destroyed.**
+- ⛔ **`PIPELINE-CLAIMS.md` (root) — DO NOT TOUCH IT, DO NOT REBUILD IT, DO NOT CITE IT.** *(It is
+  tracked, committed `7f69000c` — safe; an earlier note calling it untracked was wrong.)* It is a
+  150-line distillation of the very docs you are correcting, written at 16:25 on 2026-08-02 — **18
+  minutes after** the sweep that graded its source corpus a third wrong was committed at 16:07. It
+  inherited two errors immediately. Its header now carries explicit sequencing: **rebuild only after
+  YOUR pass completes**, because it distils the same docs you are about to change, and rebuilding
+  mid-correction repeats the exact failure that produced it. **Leave it alone.**
+  > ⭐ It is also the standing evidence for **why this job is eviction-in-place and not a parallel
+  > clean rewrite**: a fresh distillation alongside a rotten corpus inherits the rot in under twenty
+  > minutes. If your pass tempts you toward "just rewrite this doc cleanly" — that experiment has been
+  > run, and its result is sitting in the repo root.
 
 ---
 
@@ -162,7 +221,12 @@ trusting the first read — the adherence we can least afford to lose.
 2. **`scratch/doc-sweep-tier-2-report.md`** — for each fact: what the sweep claimed · what you found ·
    what you did (evicted / moved / corrected / **left, unverifiable**). ⭐ **Include a "could not
    verify" section and a "sweep was wrong" section.** Both are findings, not failures.
-3. **A one-paragraph verdict for Jacob**, plain language: what shape the corpus is in now, and the one
+3. ⭐⭐ **THE HEADLINE SECTION — "WRONG BELIEFS, AND WHERE THEY LIVE IN CODE."** Per §0, this is what
+   the job is *for*. For each: the belief, every doc that states it, **the specific code site that
+   embodies it**, whether it was ever true, and what a fix would have to establish. **Rank them.** If
+   this section is empty, say so plainly and say what you looked for — an honest "I found only rot" is
+   a real result. But look hard: **cross-doc contradictions first.**
+4. **A one-paragraph verdict for Jacob**, plain language: what shape the corpus is in now, and the one
    thing you would do next.
 
 ⚠️ **Surface scope drift immediately.** If Tier 2 turns out to be materially bigger than ~25 facts, or

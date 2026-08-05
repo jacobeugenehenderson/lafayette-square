@@ -12,8 +12,29 @@
 > Jacob: the to-code skeleton, **the armed mine at step 3**, chain *links* dying at the Wall,
 > the condensation principle, and The Ward. That part is his words, not a distillation.
 >
-> **Rebuild this after the Tier-1 corrections land** (`_handoffs/HANDOFF-doc-sweep-corrections.md`),
-> or delete it. Do not build a design exercise on it in its current state.
+> ### ⏳ REBUILD SEQUENCING — updated 2026-08-04. **NOT YET. Wait for Tier 2.**
+>
+> The line below said "rebuild after the Tier-1 corrections land." **Tier 1 has landed**
+> (`d8c4fee7` · `c6d36fa7` · `426e01c1`) — so that instruction now reads as *due*, and it is not.
+> **⛔ Do not rebuild this until TIER 2 completes** (`BRIEF-doc-sweep-tier-2.md`, root).
+>
+> **Why, precisely:** Tier 2 is about to change **~25 more facts across the same source docs this file
+> distils**. Rebuilding now means distilling a corpus that is **mid-correction** — inheriting the rot a
+> second time, for the identical reason it happened the first time. ⭐ This file was written at 16:25
+> on 2026-08-02; the sweep that graded its source corpus a third wrong was committed at **16:07 the
+> same day**. It inherited two errors inside twenty minutes. **The failure was TIMING, not method** —
+> do not repeat it by rebuilding one tier early.
+>
+> **Two things survive any rebuild and must be carried forward:**
+> 1. **The `[REQ]` / `[OUR]` split** (see the table below). Nothing else in the corpus separates *what
+>    must be true* from *how we currently do it*. That is what lets a fresh designer be handed the
+>    requirements without inheriting our answers — the whole point of the file.
+> 2. **The plain-language chain** — the to-code skeleton, the armed mine at step 3, chain *links*
+>    dying at the Wall, the condensation principle, The Ward. Jacob's words, confirmed line by line.
+>    **Not a distillation of anything, so nothing upstream can rot it.**
+>
+> *(Original instruction, kept: rebuild after the corrections land, or delete. Do not build a design
+> exercise on it in its current state.)*
 
 # PIPELINE CLAIMS — OSM to the Section tool, in checkable prose
 
