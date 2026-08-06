@@ -2076,12 +2076,18 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // separate plug residual needed)."
   // ⚠️ Gated on __debugRings so this remains a NO-OP on every rendered pixel.
   // Re-pointing the render at blockRounded is the NEXT, eye-gated step.
-  let blockRounded = null, asphaltRounded = null
+  let blockRounded = null, asphaltRounded = null, blockArcMeta = null
   if (opts.__debugRings) {
-    blockRounded = blockSharp
-      .map(ring => applyRoundCornersToRing(ring, allCorners, cornerRadiusScale))
-      .map(r => r.ring)
-      .filter(r => r && r.length >= 3)
+    // ⚠️ KEEP arcMeta. It is the arc sidecar the FILL corner is built from —
+    // `SECTION §6.1`: the bent sector is built "entirely off the frozen fillet
+    // the curb actually rounded there (shapeTiles[].fillets[] = {apex,C,r,tA,tB})".
+    // Under the tile path that sidecar comes from `filletRing`'s sink; under the
+    // polygon path it comes from here. Dropping it would leave the ADA corner
+    // with nothing to bend around.
+    const rounded = blockSharp.map(ring =>
+      applyRoundCornersToRing(ring, allCorners, cornerRadiusScale))
+    blockRounded = rounded.map(r => r.ring).filter(r => r && r.length >= 3)
+    blockArcMeta = rounded.map(r => r.arcMeta)
     asphaltRounded = (stencil && stencil.length >= 3)
       ? differenceRings([stencil], blockRounded)
       : asphaltSharp
@@ -2119,6 +2125,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     __blockRounded: opts.__debugRings ? blockRounded : undefined,
     __allCorners: opts.__debugRings ? allCorners : undefined,
     __asphaltRounded: opts.__debugRings ? asphaltRounded : undefined,
+    __blockArcMeta: opts.__debugRings ? blockArcMeta : undefined,
   }
 }
 
