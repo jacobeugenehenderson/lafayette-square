@@ -1,3 +1,18 @@
+# ⛔ ON HOLD — DO NOT DISPATCH (Jacob, 2026-08-06)
+
+> **Held until the live work in `cartograph/POLYGON-FIRST.md` and `ROADMAP.md` is finished.** Those are the
+> two densest targets in §2 *and* the two docs the substrate investigation is actively editing — dispatching
+> into them now means an agent excising text while it is still being written. **`git status` cleanliness does
+> not protect against this**; it only catches uncommitted collisions, not churn.
+>
+> **Release condition:** the polygon-substrate arc has settled what `POLYGON-FIRST §2.1` and `ROADMAP A0/A7`
+> should say. Then this runs — and it should run *after*, because that arc will itself produce banners worth
+> excising.
+>
+> ⭐ Everything below stands as drafted; only the timing is held.
+
+---
+
 # BRIEF — excise the correction-banners; the canon should not carry its own corpses
 
 **Agent: FRESH.** Name yourself. *(Decisive. The Tier 2 sweep's author knows which items were bannered —
