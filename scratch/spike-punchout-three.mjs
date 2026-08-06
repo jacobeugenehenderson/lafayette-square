@@ -12,6 +12,16 @@
 import fs from 'fs'
 import sharp from 'sharp'
 
+// ⛔⛔ CORRECTED 2026-08-06 — READ THE RESULT AS A COMPOUND PATH.
+// differenceRings([stencil], asphaltSharp) returns Clipper's compound output:
+// the BOUNDARY as the outer contour (ring[0], 256 verts = the stencil), HOLES
+// (opposite winding), and BLOCK ISLANDS (same winding as the boundary).
+// The first version of this spike flattened it into "120 blocks", which
+// double-counted the disc, counted the road-network hole as a block, and mixed
+// 7 zero-area boolean slivers in with real land — reporting Check1=4 and
+// node-on-ring=3 when the truth on real blocks is 1 and 0.
+// Separate by SIGNED-AREA winding, drop area <= 1 m², exclude the outer contour.
+
 const scene = 'lafayette-square'
 const ribbons = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
 const design = JSON.parse(fs.readFileSync(`public/looks/${scene}/design.json`, 'utf8'))

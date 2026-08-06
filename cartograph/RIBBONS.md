@@ -36,6 +36,82 @@
 > it re-founds the tile substrate and this sentence changes with it. Spike + risks:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
 >
+> ## ⭐⭐ 2026-08-06 — THE PUNCH-OUT WAS NEVER TRIED. Its ROUNDED HALF EXISTED UNTIL JULY.
+>
+> ⛔ **Do not read the "tried and reverted" note below as a verdict on `blocks = boundary − stroked roads`.**
+> What was tried was `SPUR_OUTLINE`, which `ROADMAP A0` describes as asserting the spur *"before
+> polygonization **rather than punching the whole map**."* It was the **alternative** to the punch-out,
+> chosen to avoid it. The punch-out has never been built as the render path, and the eye has never seen it.
+>
+> **The construction is IN THE TREE and computes on every Survey/Measure open.**
+> `buildBlockGeometryV2.js` — `blockSharp = differenceRings([stencil], asphaltSharp)`. Its result is gated
+> behind `__debugRings` with the comment *"off by default so no consumer can start depending on it"*, and
+> **`frontageEdges` — the authoring identity every handle resolves `blockCustoms` against — is already
+> sliced from it.** So the authoring runs on polygons and the render runs on centreline faces.
+>
+> **Measured, LS** (`scratch/spike-punchout-three.mjs`, read-only):
+>
+> | | face walk (today) | punch-out |
+> |---|---|---|
+> | real blocks | 101 tiles | **108** |
+> | rings with a repeated vertex (Check 1) | **22** | **1** |
+> | ring vertices **on a centreline node** | **521** | ⭐ **0** |
+>
+> ⛔⛔ **READ THE OUTPUT AS A COMPOUND PATH, NOT A LIST OF BLOCKS — this is how the first measurement got it
+> wrong.** `differenceRings([stencil], asphaltSharp)` returns Clipper's compound result: **the boundary as
+> the outer contour** (`ring[0]`, 256 verts — the stencil vertex-for-vertex), **holes** (opposite winding),
+> and **block islands** (same winding as the boundary). Flattening it into "120 blocks" double-counts the
+> disc, counts the road-network hole as a block, and mixes 7 zero-area boolean slivers in with real land.
+> **Separate by SIGNED-AREA winding, drop area ≈ 0, and exclude the boundary contour** — then it is 108
+> blocks, and the arithmetic closes: disc 3.463 M − holes 2.164 M + islands 1.670 M = **2.970 M m² of land**
+> in a 3.46 M m² disc ⇒ **0.49 M m², ~14 %, of road.** *(The first pass reported "120 blocks · Check1 4 ·
+> node-on-ring 3" — all three are artefacts of the flat read.)*
+>
+> ⭐ **THE BOUNDARY RING IS PART OF THE SHAPE, NOT A CLIP APPLIED AFTERWARD** (Jacob). It is what **closes
+> every road that runs off the edge of the neighbourhood** — without it those strokes are open-ended and the
+> compound path is ill-formed. Only 1 ring touches the boundary circle, and it is the outer contour.
+>
+> The only impure real block is `ring[55]` (2,668 m², one repeated vertex); everything else impure is a
+> 3-vertex zero-area sliver. ⭐ **Widths
+> are exact** — the punched gap equals the authored half-width to the centimetre, including Mississippi's
+> asymmetric 8.70 / 11.83. ⭐ **It is BLOCK-LOCAL**: a 1 m width change moves **2 of 120** blocks, 118
+> byte-identical — the property `SURVEY §4.1`/`D6d` need for block-local edit and re-freeze.
+>
+> ### ⛔ WHAT BROKE IT, dated to two commits a week apart — neither says so
+>
+> | date | commit | what it did |
+> |---|---|---|
+> | **7/15** | `4044bca1` *"perf(designer)!: T4 — delete figure-ground"* | deleted the **consumer**: `applyRoundCornersToRing`, `blockRounded`, `defaultR`, `bezierReplaceCorner`. `ribbons.intersections` was still **258**. |
+> | **7/22** | `cd062388` *"hold the through-road edge straight"* | emptied the **input**: `ribbons.intersections` **258 → 0** (streets 217 → 209 in the same commit) |
+>
+> ⭐ **The retired design this doc's own §5 gestures at was blocks-positive:** `buildBlockGeometryV2`'s note
+> reads *"blockRounded is now the rounded primitive, asphaltRounded derives as `stencil − blockRounded`"*,
+> and the deleted call site: *"Per FEATURES line 23 blocks are positive space; streets are the void around
+> them: **the rounding op belongs on the positive geometry**."*
+>
+> ✅ **RESTORED 2026-08-06** (`090a68cf`, `c6fb0e74`) — the primitive + its helpers, verbatim from
+> `4044bca1^`, gated behind `__debugRings`, **a no-op on every rendered pixel**. ⚠️ It currently rounds
+> **nothing**: `cornersAtIx` walks `ribbons.intersections`, so `allCorners = 0` and it runs as an identity
+> transform. §4 already calls it *"the now-dead `cornersAtIx`"*.
+>
+> ⭐ **And the corner is a feature of the polygon's boundary** — `theta` and `d_min` come from a ring
+> vertex's own neighbours, R from the authored kit or `defaultR`. Feeding it from a node registry would be
+> re-importing the chain.
+>
+> ⛔⛔ **INVARIANT 2 GOVERNS THE NEXT STEP.** `filletRing` and `applyRoundCornersToRing` round the same
+> object from opposite sides — one rounds the curb derived by offsetting tile-ring edges inward, the other
+> rounds the block boundary directly. **They are ALTERNATIVES, NOT COMPLEMENTS.** Running both is the
+> "second rounding mechanism" §1 forbids. Under `blocks = boundary − stroked roads` the block boundary IS
+> the curb, so the rounding belongs on it and `filletRing`'s role for blocks retires with the tile path.
+>
+> ⭐ **Why the tile path fails where it does, stated once:** `buildCurbRings` → `offsetRingVariable` offsets
+> each tile-ring edge **INWARD** by `pavementHW`. That is the *same subtraction* as the punch-out, computed
+> **locally per tile** instead of **globally from the boundary** — so it is undefined exactly where the tile
+> ring doubles back on itself (every dead end, and any crossing whose face revisits a vertex). The punch-out
+> never forms that ring.
+>
+> ---
+>
 > ⛔⛔ **TRIED AND REVERTED, 2026-07-31 — the answer above did NOT survive the eye.** Asserting the spur as
 > a closed two-sided outline before the walk (`spurOutline.js`, `SPUR_OUTLINE`) was built and then
 > **reverted out of trunk** (`152e7734` built it, `7b5b87a3` reverted it, taking the corner registry and
