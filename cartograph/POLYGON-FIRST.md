@@ -92,6 +92,11 @@ the eye:
 | 4 | **no real feature described by a patch** (synthetic negative-`segOrd` cap fe, mouth disc) | a polygon that didn't close, wearing a cover |
 | 5 ⭐ | **every dead-end spur presents TWO mouth corners — one per side** — so each leg is bounded `corner → cap` | ⭐ **THE ONE THAT MATTERS.** One leg is bounded and the other runs through unbounded: you can *name* that leg but you cannot *bound* it |
 
+> ⭐ **The checkable form of this whole class — `/PIPELINE-CLAIMS.md` (root).** The dead-end → corner →
+> sidewalk chain as `[REQ]`/`[OUR]` claims, each with the method that produced its number and a re-run
+> command. ⛔ **Read its `C4` before quoting the "6 of 50" vs "9 of 50" split below** — re-measured
+> 2026-08-05, the two sets are **identical, 9 and 9**; the 6 came from a probe `7b5b87a3` deleted.
+
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
 on ALL 50 dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or
 an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`; **target 0**.
