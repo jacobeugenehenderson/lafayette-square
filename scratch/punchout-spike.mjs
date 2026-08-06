@@ -1,3 +1,13 @@
+// ⚠️ READ THE RESULT AS A COMPOUND PATH, NOT A LIST OF BLOCKS (learned 2026-08-06).
+// differenceRings([stencil], asphaltSharp) returns Clipper's compound output: the
+// BOUNDARY as the outer contour (ring[0] = the stencil, vertex-for-vertex), HOLES at
+// opposite winding, and block ISLANDS at boundary winding. Flattening it and counting
+// rings as "blocks" double-counts the disc, counts the road-network hole as a block,
+// and mixes zero-area boolean slivers in with real land. Separate by SIGNED-AREA
+// winding, drop area <= 1 m², exclude the outer contour. This spike is safe — it only
+// probes distances near the tips — but three throwaway spikes were written on top of
+// it that were not, and their numbers are void. Commits c0a3d229 / e2cb21e1.
+//
 // Does "outer polygon MINUS the roads" already resolve the dead-end that the
 // centerline-graph face turns into a slit? V2 builds block rings exactly that way
 // (blockSharp = differenceRings([stencil], asphaltSharp)). Measure the NOTCH at the

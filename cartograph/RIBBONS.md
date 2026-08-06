@@ -54,13 +54,14 @@
 > **What is measured, with the commands (⛔ do not quote these numbers without re-running):**
 > `node scratch/punchout-spike.mjs` — the punch-out already computes: `blockSharp = differenceRings([stencil],
 > asphaltSharp)` (`buildBlockGeometryV2.js`), gated behind `__debugRings`, and **`frontageEdges` is already
-> sliced from it** · `node scratch/spike-punchout-three.mjs` — substrate comparison; ⛔ read the result as a
-> COMPOUND PATH (boundary contour + holes + islands, winding-encoded), not a flat block list.
+> sliced from it.** ⛔ **Read its output as a COMPOUND PATH** — boundary contour + holes + islands, winding-
+> encoded — never as a flat block list; that misread is recorded in the spike's own header.
 >
 > **What broke it, two commits a week apart, neither saying so:** `4044bca1` (7/15, *"perf(designer)!: T4"*)
 > deleted the rounded primitive `applyRoundCornersToRing`/`blockRounded`; `cd062388` (7/22) emptied
-> `ribbons.intersections` **258 → 0**, which is what `cornersAtIx` walks. Primitive restored 2026-08-06
-> (`090a68cf`) behind `__debugRings`, a no-op; it rounds nothing because its input is that empty array.
+> `ribbons.intersections` **258 → 0**, which is what `cornersAtIx` walks. ⚠️ The primitive was restored
+> 2026-08-06 (`090a68cf`) and **reverted the same day on Jacob's call** — it rounded nothing anyway, because
+> its input is that empty array. Recover it from `4044bca1^` if the substrate question rules that way.
 >
 > ⛔ **INVARIANT 2 governs any move here:** `filletRing` and `applyRoundCornersToRing` round the same object
 > from opposite sides — **alternatives, never both.** Running both is the second rounding mechanism §1 forbids.
