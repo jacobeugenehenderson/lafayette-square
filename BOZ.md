@@ -172,7 +172,14 @@ Superseded content is neither deleted nor archived-in-place — it **migrates to
 1. **History first.** Before editing, read the thing's prior discussion across the stack (its Reference doc + its NOTES history + any HANDOFF/ledger about it). Know what was decided *and what was tried* — so you **consolidate, don't duplicate**, and don't re-derive. (This is also the verify-before-assert + carry-prior-decisions gate.)
 2. **Lead the edits** — the work / the dispatch.
 3. **Synthesize the outcome COMPLETELY across the registers it actually reaches — and JUDGING which those are is the work.** Routed by maturity (State in-flight → Reference on settle → Diary narrative) and weighted by outcome.
-   - ⭐ **This is what "fulsome" meant: completion across registers, not volume.** The judgment, asked every time: **will the USER encounter it? → `FEATURES`.** Does the **operator** turn a knob? → `OPERATIONS`. Is it a **decision / a why**? → `ARCHITECTURE`. Is it **how it's built**? → the topic doc (`SKELETON`/`SURVEY`/`SECTION`/…). ⛔ **A register the change does not reach gets NOTHING** — writing there anyway is the padding that made the corpus unreadable.
+   - ⭐ **This is what "fulsome" meant: completion across registers, not volume.** The registers sit at **different altitudes** and that is the judgment (Jacob, 2026-08-06):
+     | register | altitude | worked example |
+     |---|---|---|
+     | **`FEATURES`** | **one level UP — the CAPABILITY in the user's terms.** Not the button, not the path. | *"The user can adjust sidewalks and tree lawns, and the system defaults to ADA-compliant geometry."* |
+     | **`OPERATIONS`** | **where it is in the code, how to get to it in the UI, and what knobs it has.** The manual. | the panel, the control, the file it writes, what Revert clears |
+     | **`ARCHITECTURE`** | the **decision** and the **why** | |
+     | topic doc (`SKELETON`/`SURVEY`/`SECTION`/…) | **how it is built** — the geometry, the artifact | |
+     ⛔ **A register the change does not reach gets NOTHING** — writing there anyway is the padding that made the corpus unreadable. ⚠️ And the inverse is the failure this correction was written for: a **user-facing** change that never reaches `FEATURES`/`OPERATIONS` is invisible to everyone who isn't reading the geometry docs.
    - ⛔ **AMENDED 2026-08-06:** read as *"every appropriate doc"* this became write-everywhere-by-reflex, and 64 docs / 5,500 lines followed. The cure is not "write less" — it is **judge the registers, then be complete in exactly those.**
    - **Then, before writing in any of them:** *(a) can this be a **check** instead?* (write the check + one pointer — `CLAUDE.md §PRUNE AS YOU GO`) · *(b) what does this update let me **CUT**?* (do that first) · *(c) which **ONE** doc owns the fact? (every other mention is a link, never a copy).* A fact stated in three docs disagrees with itself within a month — measured: four different "9 of 50"s quoted interchangeably, and the day that cost is why this line changed.
    - **Landed** → full Reference update (the fact becomes canon: FEATURES / OPERATIONS / ARCHITECTURE / PIPELINE / RIBBONS), cleared from State.
