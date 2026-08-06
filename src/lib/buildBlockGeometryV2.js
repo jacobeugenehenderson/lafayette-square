@@ -1450,6 +1450,265 @@ function quarterCap(center, T_out, sideSign, innerR, outerR) {
 // performance regressions; silent by default to avoid console spam.
 const V2_PROFILE = false
 
+// ═══════════════════════════════════════════════════════════════════════════
+// ⭐ RESTORED 2026-08-06 — THE ROUNDED BLOCK PRIMITIVE.
+//
+// Deleted by 4044bca1 (T4, 2026-07-15) as collateral of the figure-ground
+// removal. T4's goal was perf (285s -> 0.45s) and it was right about the
+// emitters — but it also took the ROUNDED primitive, leaving `blockSharp`
+// orphaned behind a `__debugRings` flag and nothing at all drawing from
+// polygons.
+//
+// THIS IS THE PRIMITIVE THE DOCTRINE RESTS ON. This file's own retired note
+// (search "retired: blockRounded") says it plainly:
+//     "blockRounded is now the rounded primitive, asphaltRounded derives as
+//      stencil - blockRounded"
+// Blocks positive, asphalt derived. blocks = boundary - stroked roads, corners
+// rounded ONCE on the block boundary — so the block boundary IS the curb, and
+// no centreline survives to be revisited.
+//
+// Restored verbatim from 4044bca1^ together with the two helpers T4 also took
+// (`defaultR`, `bezierReplaceCorner`) and the `K_PINCH` constant they need.
+// ⚠️ NOTHING IS WIRED TO IT YET. Restoring the primitive and re-pointing the
+// render are deliberately separate steps: this commit must be a no-op on every
+// rendered pixel, and the next one is eye-gated.
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Default-R rule (k = 0.5 pinch tolerance). See NOTES.md 2026-05-07.
+//   R = min(R_class, R_max(d_min, theta, k))
+//   R_max = d x (1 - k*sin(theta/2)) / (1 - sin(theta/2))
+const K_PINCH = 0.5
+
+function defaultR(R_class, d_min, theta) {
+  if (theta < 5 * RAD || theta > 175 * RAD) return 0
+  if (d_min <= 1e-6) return 0
+  const sin = Math.sin(theta / 2)
+  const denom = 1 - sin
+  if (denom < 1e-6) return Math.min(R_class, d_min)  // near-collinear safety
+  const Rmax = d_min * (1 - K_PINCH * sin) / denom
+  return Math.max(0, Math.min(R_class, Rmax))
+}
+
+function bezierReplaceCorner(cur, R, theta, tangentA, tangentB) {
+  if (R <= 0) return [cur]
+  const halfTheta = theta / 2
+  const tanH = Math.tan(halfTheta)
+  if (tanH <= 1e-6) return [cur]
+  const inset = R / tanH
+  // Arc central angle = π − θ (block-interior θ → arc sweeps the
+  // supplement at the inscribed circle). Brief's formula
+  // (4/3)·R·tan(θ/4) reads θ as the arc angle; here θ is the polygon's
+  // block-interior angle (from cornersAtIx) so feed (π − θ) into the
+  // canonical cubic-Bezier circular approximation. Verified by parity
+  // test: max deviation < 0.005m at any θ ∈ [60°, 170°], R ≤ 15m.
+  const handleLen = (4 / 3) * R * Math.tan((Math.PI - theta) / 4)
+  const tA = [cur[0] + inset * tangentA[0], cur[1] + inset * tangentA[1]]
+  const tB = [cur[0] + inset * tangentB[0], cur[1] + inset * tangentB[1]]
+  const P1 = [tA[0] - handleLen * tangentA[0], tA[1] - handleLen * tangentA[1]]
+  const P2 = [tB[0] - handleLen * tangentB[0], tB[1] - handleLen * tangentB[1]]
+  const out = [tA]
+  for (let k = 1; k < BEZIER_N; k++) {
+    const t = k / BEZIER_N
+    out.push(cubicBezierEval(tA, P1, P2, tB, t))
+  }
+  out.push(tB)
+  // Side-channel: also return tA / tB endpoints so the caller can write
+  // them back onto the corner record for buildCornerPadQuad. Embedded
+  // as a non-enumerable so for-loop consumers ignore.
+  Object.defineProperty(out, 'tA', { value: tA, enumerable: false })
+  Object.defineProperty(out, 'tB', { value: tB, enumerable: false })
+  return out
+}
+
+// the Bezier insertion as angular kinks immediately before tA and
+// after tB. On curved chains (Mississippi class) the asphalt-union
+// boundary carries 5–10 cluster vertices within 2m of the corner
+// record's Q point — the result was a smooth Bezier surrounded by
+// faceted polygon facets. Phase A.7's polygon-density simplification
+// patched the symptom at the polygon emitter; this walker patches it
+// structurally where it belongs — at the consumer. A.7's helpers
+// retired with the Phase B Bezier ship; this rewrite is the matching
+// structural fix on the ring-walker side.
+//
+// Two-pass:
+//   Pass 1 — for each corner-matched ring vertex (block-convex turn,
+//   R > 0.05), walk OUTWARD in both directions accumulating arc-length
+//   distance until the accumulated walk exceeds the inset (R/tan(θ/2))
+//   or the walk would consume another corner-matched vertex. Record
+//   span = { start, end, cornerIdx } and mark consumed[] for those
+//   indices.
+//   Pass 2 — rotate to a non-consumed starting index so no span wraps
+//   across the iteration boundary, then emit literals for non-consumed
+//   indices and Bezier samples once per span when first entered.
+//
+// Boundary continuity: ring[(start-1) mod n] (last unconsumed before
+// the span) joins bezier's first sample tA; ring[(end+1) mod n] (first
+// unconsumed after) joins tB. tA / tB are at corner.point + inset *
+// corner.T_{A,B}; they may not coincide with any pre-existing ring
+// vertex — that's expected. The cluster vertices ring[start..end]
+// (inclusive) are dropped from the output; the Bezier subsumes them.
+function applyRoundCornersToRing(ring, corners, scale = 1) {
+  const TOL = 0.5
+  const n = ring.length
+  if (n === 0) return { ring: [], arcMeta: [] }
+
+  // Winding-aware convex test. Phase 2 calls this on BLOCK rings
+  // (positive figure-ground); previous calls used asphalt rings. The
+  // corner-record's `point` lands on the shared boundary either way,
+  // but the "block-convex" turn sign at that vertex differs by ring
+  // type: for a CCW asphalt ring, block-convex = right turn (cross<0);
+  // for a CCW block ring, block-convex = left turn (cross>0). Detect
+  // ring winding once and check cross*ringSign > 0 to mean "convex
+  // turn relative to this ring's interior" — which is block-convex
+  // either way under our use.
+  const ringSign = ringSignedArea2D(ring) >= 0 ? +1 : -1
+
+  // Pre-pass: match each ring vertex to a corner record (or null).
+  // O(n × |corners|) — same complexity as the pre-Phase-1 walker.
+  // Bucket-index by bbox if LS-scale rings ever bite (this runs once
+  // per asphalt-union output ring; today the cost is invisible).
+  const matched = new Array(n).fill(null)
+  for (let i = 0; i < n; i++) {
+    const cur = ring[i]
+    for (const c of corners) {
+      if (Math.hypot(cur[0] - c.point[0], cur[1] - c.point[1]) < TOL) {
+        matched[i] = c
+        break
+      }
+    }
+  }
+
+  // Pass 1: per corner-matched vertex, compute the consume-span.
+  // `consumed[i] = spanIdx` (or -1). Spans store the corner-vertex
+  // ring index so Pass 2 can pass it to bezierReplaceCorner as `cur`.
+  const spans = []
+  const consumed = new Array(n).fill(-1)
+  for (let i = 0; i < n; i++) {
+    const m = matched[i]
+    if (!m) continue
+    // Block-convex (= ring-interior-convex) check, winding-aware.
+    const prev = ring[(i - 1 + n) % n]
+    const cur = ring[i]
+    const next = ring[(i + 1) % n]
+    const inDir = unit([cur[0] - prev[0], cur[1] - prev[1]])
+    const outDir = unit([next[0] - cur[0], next[1] - cur[1]])
+    const cross = inDir[0] * outDir[1] - inDir[1] * outDir[0]
+    if (cross * ringSign <= 0) continue // not convex relative to this ring
+    const baseR = Number.isFinite(m.R_authored)
+      ? m.R_authored
+      : defaultR(m.R_class, m.d_min, m.theta)
+    const R = baseR * scale
+    if (R <= 0.05) continue
+    const halfTheta = m.theta / 2
+    const tanH = Math.tan(halfTheta)
+    if (tanH <= 1e-6) continue
+    const inset = R / tanH
+    // Walk backward — stop when accumulated arc-length crossing the
+    // next neighbor would exceed `inset`, or when we'd consume another
+    // corner-matched vertex (don't stomp an adjacent corner's span).
+    let start = i
+    let walkedBack = 0
+    while (true) {
+      const prevIdx = (start - 1 + n) % n
+      if (prevIdx === i) break // wrapped the entire ring
+      if (matched[prevIdx]) break
+      const d = Math.hypot(ring[start][0] - ring[prevIdx][0], ring[start][1] - ring[prevIdx][1])
+      if (walkedBack + d > inset) break
+      walkedBack += d
+      start = prevIdx
+    }
+    // Walk forward — symmetric.
+    let end = i
+    let walkedFwd = 0
+    while (true) {
+      const nextIdx = (end + 1) % n
+      if (nextIdx === i) break
+      if (matched[nextIdx]) break
+      const d = Math.hypot(ring[end][0] - ring[nextIdx][0], ring[end][1] - ring[nextIdx][1])
+      if (walkedFwd + d > inset) break
+      walkedFwd += d
+      end = nextIdx
+    }
+    const spanIdx = spans.length
+    spans.push({ start, end, cornerIdx: i, corner: m, R })
+    // Mark consumed indices walking start→end forward (may wrap).
+    let k = start
+    while (true) {
+      consumed[k] = spanIdx
+      if (k === end) break
+      k = (k + 1) % n
+    }
+  }
+
+  if (spans.length === 0) {
+    // No corner emitted — return ring as-is.
+    return { ring: ring.slice(), arcMeta: new Array(n).fill(null) }
+  }
+
+  // Pass 2: rotate to a non-consumed start so no span wraps in
+  // iteration order, then walk forward emitting literals or
+  // span-Beziers.
+  let i0 = 0
+  while (i0 < n && consumed[i0] !== -1) i0++
+  // Pathological fallback: entire ring consumed by spans. Iterate from
+  // 0; spans get emitted at their starts in arrival order.
+  if (i0 >= n) i0 = 0
+
+  const out = []
+  const outMeta = []  // arcMeta sidecar — null for literal vertices,
+                      // { corner, arcPositionFrac } for arc samples
+                      // (frac in WALK ORDER: 0 at first-emitted arc
+                      // vertex, 1 at last; consumers read it to detect
+                      // arc midpoint for ramp/step regimes).
+  const emittedSpan = new Set()
+  for (let k = 0; k < n; k++) {
+    const i = (i0 + k) % n
+    const sIdx = consumed[i]
+    if (sIdx === -1) {
+      out.push(ring[i])
+      outMeta.push(null)
+      continue
+    }
+    if (emittedSpan.has(sIdx)) continue
+    emittedSpan.add(sIdx)
+    const span = spans[sIdx]
+    const cornerVertex = ring[span.cornerIdx]
+    let arc = bezierReplaceCorner(
+      cornerVertex, span.R, span.corner.theta,
+      span.corner.T_A, span.corner.T_B,
+    )
+    // The cubic Bezier emits [tA, ...samples, tB] using corner-record
+    // T_A / T_B. T_A points along leg A from V outward; T_B along leg
+    // B. On a BLOCK ring's CCW walk the corner is approached FROM the
+    // leg-B-edge side and departs TOWARD the leg-A-edge side (right
+    // angle convention; see Phase 2 derivation in NOTES). So the
+    // natural-order arc emission would criss-cross — reverse so the
+    // walk reads ...prev → tB → samples → tA → next... and arcMeta
+    // walks 0→1 in walk order.
+    const N1 = arc.length
+    const arcMetaForSpan = new Array(N1)
+    for (let m = 0; m < N1; m++) {
+      // Pre-reverse frac: arc[m] is at m/(N1-1) of A→B sweep.
+      arcMetaForSpan[m] = { corner: span.corner, R: span.R, arcPositionFrac: m / (N1 - 1) }
+    }
+    arc = arc.slice().reverse()
+    arcMetaForSpan.reverse()
+    // After reverse, walk order is B→A; invert frac so walk reads 0→1.
+    for (let m = 0; m < N1; m++) {
+      arcMetaForSpan[m] = {
+        corner: arcMetaForSpan[m].corner,
+        R: arcMetaForSpan[m].R,
+        arcPositionFrac: 1 - arcMetaForSpan[m].arcPositionFrac,
+      }
+    }
+    for (let m = 0; m < arc.length; m++) {
+      out.push(arc[m])
+      outMeta.push(arcMetaForSpan[m])
+    }
+  }
+  return { ring: out, arcMeta: outMeta }
+}
+
 export function buildBlockGeometryV2(ribbons, opts = {}) {
   const __t0 = V2_PROFILE ? performance.now() : 0
   const __times = V2_PROFILE ? {} : null
@@ -1808,6 +2067,27 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   )
   __mark('bakeFeScalars')
 
+  // ⭐ RESTORED 2026-08-06 — Phase 2, round-block, derive asphalt as negative.
+  // Verbatim from 4044bca1^ (T4 deleted it). Its original comment, kept because
+  // it states the doctrine exactly: "Per FEATURES line 23 'blocks are positive
+  // space; streets are the void around them': the rounding op belongs on the
+  // positive geometry. Round each blockSharp ring, then asphaltRounded =
+  // stencil - blockRounded. The rounded asphalt mouths emerge inherently (no
+  // separate plug residual needed)."
+  // ⚠️ Gated on __debugRings so this remains a NO-OP on every rendered pixel.
+  // Re-pointing the render at blockRounded is the NEXT, eye-gated step.
+  let blockRounded = null, asphaltRounded = null
+  if (opts.__debugRings) {
+    blockRounded = blockSharp
+      .map(ring => applyRoundCornersToRing(ring, allCorners, cornerRadiusScale))
+      .map(r => r.ring)
+      .filter(r => r && r.length >= 3)
+    asphaltRounded = (stencil && stencil.length >= 3)
+      ? differenceRings([stencil], blockRounded)
+      : asphaltSharp
+    __mark('applyRoundCorners')
+  }
+
   // ── T4 (2026-07-15) ──────────────────────────────────────────────────────
   // Everything past this point used to build the figure-ground GEOMETRY:
   // applyRoundCorners, asphaltRounded, frontageBands, filletAttribution,
@@ -1836,6 +2116,9 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     // Diagnosis-only, opt-in: the block rings the fes were sliced from. Off by
     // default so no consumer can start depending on it (scratch/cap-*.mjs).
     __blockRings: opts.__debugRings ? blockSharp : undefined,
+    __blockRounded: opts.__debugRings ? blockRounded : undefined,
+    __allCorners: opts.__debugRings ? allCorners : undefined,
+    __asphaltRounded: opts.__debugRings ? asphaltRounded : undefined,
   }
 }
 
