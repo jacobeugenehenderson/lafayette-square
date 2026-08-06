@@ -129,7 +129,7 @@ it for months as an identity source.
 
 ⇒ The rule is **content, checked at the freeze, failing the bake**: rings simple + nonzero area · no
 same-chain/opposite-side vertex · every frontage edge has an interior on exactly one side · no real
-feature described by a patch. Enforceable form + the "gate to make green" caveat (Checks 1–2 fail on all 50 tips; Check 5 on 6 of 50 — not the "9 of 50" quoted elsewhere, which counts legs running through the mouth):
+feature described by a patch. Enforceable form + the "gate to make green" caveat (Checks 1–2 fail on all 50 tips; Check 5 on **9 of 50** — ⛔ **and that is the SAME 9 as "legs running through the mouth"**, set-identical, re-measured 2026-08-05; the "6 of 50" this line used to give came from a probe `7b5b87a3` deleted and is unreproducible. See `POLYGON-FIRST §2.1` and `/PIPELINE-CLAIMS.md` `C4`):
 **`POLYGON-FIRST.md §2.1`**. Live task + the punch-out construction:
 `_handoffs/HANDOFF-deadend-face-resolution.md`.
 

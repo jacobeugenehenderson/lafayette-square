@@ -132,17 +132,48 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > (`south-18th-street-3`: `ring[4]` is `south-18th/left → south-18th/left`, and its returning leg runs on to
 > `ring[5]` because no corner stops it). Scope the fix to the condition, not to "all dead ends".
 >
-> ⚠️⚠️ **"9 of 50" IS TWO DIFFERENT MEASUREMENTS WORN AS ONE — corrected 2026-07-30.** The figure is quoted
-> in `README`, `ROADMAP`, `PIPELINE` and above. Re-measured with `scratch/stamp-mouth-audit.mjs`:
+> ⛔⛔ **RE-MEASURED 2026-08-05 — THE "6 vs 9" SPLIT IS FALSE. The corner set and the run-through set are
+> SET-IDENTICAL, member for member.** This block previously said they were two different measurements
+> yielding **6** and **9**, and `README`, `ROADMAP A0` and `PIPELINE §Wall` all repeated it. They are the
+> same nine folds:
+>
+> `allen-avenue-0[start] · carroll-street-0[end] · geyer-avenue-0[end] · mackay-place-1[start] ·
+> park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
+> waverly-place-1[start]`
 >
 > | measurement | count | what it is |
 > |---|---|---|
-> | mouths where the ring cannot see a corner | **6 of 50** | the second pass reads same-chain — Check 5's actual failure |
-> | folds with a leg **running through** the mouth | **9 of 50** | the *symptom*: no corner stops the returning leg's span |
-> | fold chains with **no mouth disc** | **9 of 50** | a third, overlapping set — the FILL patch's coverage |
+> | mouths where the ring cannot see a corner | **9 of 50** | the second pass reads same-chain — Check 5's failure |
+> | folds with a leg **running through** the mouth | **9 of 50** | ⭐ **the SAME 9.** `A ∩ B = 9`; neither set has a member the other lacks |
+> | fold chains with **no mouth disc** | **9 chains / 10 folds** | ⭐ genuinely a **third, different** set — 3 members belong to no other set |
 >
-> Three sets of similar size, listed interchangeably. **The corner test fires on 6.** Quote the number with
-> the probe that produced it, or don't quote it.
+> ⭐ **The two predicates are INDEPENDENT, which is what makes this evidence rather than a tautology.**
+> `isCorner` is an **edge-identity** test at the mouth vertex (`inc.skelId !== out.skelId`); `runThrough` is
+> a **leg-span** test (does a leg's endpoint land somewhere other than a mouth pass?). Two unrelated
+> computations over `mouthInfo()` selecting the same nine members. *Method:
+> `node scratch/claims-deadend-set-decomposition.mjs`; both sets off the frozen artifact, `C` run in **both**
+> the authored and bare-defaults state (identical — this set is authoring-invariant).*
+>
+> ⭐⭐ **What this CONFIRMS — read it as support for `ROADMAP A0`, not just as a correction.** A0's thesis is
+> that the missing corner, the unresponsive leg and the mouth co-claim are **one upstream fault**.
+> Co-extensive sets from two independent predicates are exactly what that thesis predicts. ⛔ **But do NOT
+> collapse the two into one concept:** cause and symptom can be 1:1 by mechanism and still be different
+> things. What died is *"different measurements, different counts"* — **not** the distinction between the
+> corner test and its symptom.
+>
+> ⚠️ **The decomposition of the 9 — and it is NOT 6 + 3.** **5** are a genuine missing corner with two mouth
+> passes; **4** present only **ONE** mouth pass at all, which is a *different condition sharing a counter*
+> (§5 Rule 3: split it before sizing work off "9"). **The historical 6 matches neither term** and is
+> **unreproducible, not merely wrong** — `stamp-mouth-audit.mjs`, the probe that produced it, was deleted by
+> `7b5b87a3` (whose message claimed *"the probes are kept"*). Nobody can now say what it measured. ⭐ That
+> distinction is deliberate: this arc has **over-corrected three times**, and *"6 was wrong"* would be a
+> fourth. The honest statement is **9 is reproducible; 6 is unknowable.**
+>
+> ⭐ **`SECTION §6.3` had this right the whole time** — "41/50 have a corner at every mouth pass; 9/50 miss at
+> least one; **9/50** have a leg running through" — while four documents contradicted it. Same shape as §3's
+> 42. **The cross-doc seam is where the code quietly picked a side; go there first.**
+>
+> **Quote the number with the probe that produced it, or don't quote it.**
 
 ### ⭐⭐⭐ Check 5 is the diagnosis — the missing piece is the CORNER (Jacob, 2026-07-30)
 
