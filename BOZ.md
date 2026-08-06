@@ -100,7 +100,9 @@ The **same germane fact** appears in each register **in that register's voice** 
 
 ### The one law
 
-> **Additive / archiving, never destructive.** Superseded content is never deleted — it **migrates** to where it belongs (operator-knobs FEATURES→OPERATIONS · decisions→ARCHITECTURE · landed-facts State→Reference · narrative→NOTES; the Diary is the sanctioned downstream home, git is the archive of record). Cut only after the load-bearing fact is safely in its Reference home (§3 safety). **Hit every register a little as you go** — that per-touch cadence is what keeps the studious pile a golden Suite instead of a debt.
+> **Non-destructive AND net-down.** Superseded content is never deleted — it **migrates** to where it belongs (operator-knobs FEATURES→OPERATIONS · decisions→ARCHITECTURE · landed-facts State→Reference · narrative→NOTES; the Diary is the sanctioned downstream home, git is the archive of record). Cut only after the load-bearing fact is safely in its Reference home (§3 safety).
+>
+> ⛔⛔ **AMENDED 2026-08-06 (Jacob) — "additive, never destructive" was read as licence to only ever ADD, and the corpus reached 64 active docs / 5,500 lines in `cartograph/` alone.** *"All this effluvium is what caused this."* **Non-destructive is about WHERE content goes, never about whether the active corpus shrinks. It must shrink.** Every touch **removes or consolidates at least as much as it adds**; the surplus moves to the dated Diary with its refs repointed. ⛔ And **if a fact can be checked by running something, it is a CHECK, not prose** — the doc keeps one line pointing at the command (`CLAUDE.md §PRUNE AS YOU GO`). The "hit every register a little as you go" cadence below is **not** a mandate to write in nine places; it is a mandate to keep each register *current*, which usually means **cutting**.
 
 ---
 
@@ -169,7 +171,7 @@ Superseded content is neither deleted nor archived-in-place — it **migrates to
 
 1. **History first.** Before editing, read the thing's prior discussion across the stack (its Reference doc + its NOTES history + any HANDOFF/ledger about it). Know what was decided *and what was tried* — so you **consolidate, don't duplicate**, and don't re-derive. (This is also the verify-before-assert + carry-prior-decisions gate.)
 2. **Lead the edits** — the work / the dispatch.
-3. **Synthesize the outcome into a *fulsome* doc update** — every appropriate doc, **routed by maturity** (State in-flight → Reference on settle → Diary narrative) **and weighted by outcome:**
+3. **Synthesize the outcome into the SMALLEST TRUE doc update** — **routed by maturity** (State in-flight → Reference on settle → Diary narrative) **and weighted by outcome.** ⛔ **AMENDED 2026-08-06: this step used to say "a *fulsome* doc update — every appropriate doc," and that word is the generator.** Ask in order: *(a) can this be a **check** instead?* (then write the check and one pointer — `CLAUDE.md §PRUNE AS YOU GO`) · *(b) what does this update let me **CUT**?* (do that first) · *(c) which **ONE** doc owns this fact? (every other mention becomes a link, never a copy).* A fact stated in three docs will disagree with itself within a month — measured: four different "9 of 50"s were quoted interchangeably across the corpus, and the day it cost is why this line changed.
    - **Landed** → full Reference update (the fact becomes canon: FEATURES / OPERATIONS / ARCHITECTURE / PIPELINE / RIBBONS), cleared from State.
    - **Tossed / superseded** → a Diary *lesson* (NOTES: *tried X, here's why it didn't hold* — the RIBBONS §7 graveyard is the model), cleared from State.
    - **Abandoned / moved on** → a light Diary note, cleared from active State.

@@ -98,8 +98,35 @@ failure at `:3345` must be LOUD.)*
 ## Verify your own premises
 Counts, greps, "this shipped," "it's not skeleton" — check the **code** and the **lit app**, never memory alone. Code drifts faster than docs, docs faster than memory. **Proxy renders mislead on this map; the operator's eye is the gate** (`feedback_proxy_render_is_not_the_operator_eye`).
 
-## Keep it trimmed (when you touch a doc)
-Once something is **subsumed/superseded** — or just older than ~the last couple of weeks of this full-time project — **trim it out of the active doc into the Diary** (`cartograph/_archive/`, dated). Active docs carry LIVE doctrine + open state only; the Diary is the verbose, rarely-read, deep-dive-only home. "RESOLVED, kept for context" left in place is the anti-pattern. Migrating a section includes **repointing refs to the live home** *(coordinator depth: `BOZ.md §3`, when you're Boz)*.
+## ⛔⛔ PRUNE AS YOU GO — the corpus may not grow (2026-08-06, Jacob)
+
+> **"All this effluvium is what caused this."** 64 active docs / 5,500 lines in `cartograph/` alone. A day
+> was lost to it: four different "9 of 50"s quoted interchangeably · a false code comment the sweep had
+> already flagged, left in place, read hours later and reported as a live finding · an existing spike
+> rebuilt because its existence was recorded in a doc nobody had read. **The corpus did not rot by
+> accident — it grew exactly as instructed.** These two rules are the correction.
+
+**1. ⭐ IF IT CAN BE CHECKED BY RUNNING SOMETHING, IT IS A CHECK — NOT PROSE.** The doc gets **one line
+pointing at the command.** Only *judgment* stays prose: doctrine, rulings, why-we-chose, what-failed.
+- ⛔ **Never write a number into a doc without the command that reproduces it** — and prefer *deleting the
+  number* and keeping the command. A count in prose is stale the moment it is written and is then quoted
+  for months by people who cannot re-derive it.
+- ⭐ **A check must READ the source, never restate it.** `scratch/claims-revert-field-coverage.mjs` parses
+  the field lists out of the store instead of copying them, so it cannot go stale. That is the pattern.
+  This is Layer 0's *"the deliverable is the check"* extended from defects to **facts**.
+
+**2. ⭐ EVERY TOUCH NETS DOWN. Prune as you go — non-destructively.** When you touch a doc you **remove or
+consolidate at least as much as you add.** Superseded content **moves to the Diary** (`cartograph/_archive/`,
+dated) — it is never deleted, and **refs are repointed to the live home in the same breath** (a dead pointer
+is the one unforgivable error). Active docs carry **LIVE doctrine + open state only**.
+- ⛔ **"RESOLVED, kept for context" left in place is the anti-pattern**, and so is a correction banner
+  sitting next to the false sentence it corrects — **excise the sentence**; the banner's job is done when
+  its subject is gone. A false claim outlives its correction because it is shorter and reached first.
+- ⛔ **No net-new document** without retiring one, or without Jacob asking for it. If your instinct is to
+  capture today in a new file, that instinct is the disease — put it in the commit message, or in a check.
+
+*(Coordinator depth: `BOZ.md §3`. ⚠️ `BOZ.md §0`'s matrix — every topic across every register — and §3's
+"fulsome doc update" are what generated this; both are amended there.)*
 
 ## Standup before code
 After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `BOZ.md §4`, when you're Boz)*. Read → align → then build.
