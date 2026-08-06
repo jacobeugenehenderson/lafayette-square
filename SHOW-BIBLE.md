@@ -85,7 +85,7 @@ LOOK is authored; the open work is the SHAPE campaign (make the skeleton produce
 One canonical reading order, every session: **`ORIENTATION.md`** (the plain-language mental model) → **`README.md §⭐ START HERE`** (the settled conclusion per topic + the cross-cutting feature index "where does X live") → **the topic canon** it names. (`BOZ.md` is the coordinator's doc, summoned only when you're Boz.)
 
 ### What it is, per stage (the authoritative homes)
-Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · `WALL` (the freeze) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `BOZ.md §0`–`§3`.
+Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · `WALL` (the freeze) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
 
 ### How to fix / troubleshoot
 - **First diagnostic: "is this chains again?"** A wrong silhouette is upstream (skeleton/survey); how the ribbon *bends* is Section. The fix is to move the wall earlier, never patch chains deeper. (`PIPELINE §Wall`.)
@@ -116,4 +116,4 @@ The de-hardwiring inventory *is* the productization spec, seen through four lens
 - **v1 drafted 2026-06-15.** This is the campaign's productization deliverable (the "Show Bible" step 2 of `AUDIT-MATRIX.md` named).
 - **The per-app `FEATURES.md` docs are the marketing SSoT** — sharpen the sales voice there; this doc aggregates.
 - **Remaining campaign steps** (`cartograph/BACKLOG.md §"Forensic audit → Show Bible"`): execute the removal queue (post-v1) · route the Tier-1/2/4 register into `plans/` · re-audit the held ribbons/corners exclusion zone (now the tile model landed) · build out `OPERATIONS.md` (the stalled operator register) as T3 authoring lands.
-- **Keep it honest:** when a per-app pitch or a productization tier changes at its home, update the one-liner here in the same sweep (the accord rule, `BOZ §3`). A stale Show Bible mistrains every audience it serves.
+- **Keep it honest:** when a per-app pitch or a productization tier changes at its home, update the one-liner here in the same sweep (the accord rule, `BOZ §4`). A stale Show Bible mistrains every audience it serves.

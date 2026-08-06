@@ -125,8 +125,8 @@ is the one unforgivable error). Active docs carry **LIVE doctrine + open state o
 - ⛔ **No net-new document** without retiring one, or without Jacob asking for it. If your instinct is to
   capture today in a new file, that instinct is the disease — put it in the commit message, or in a check.
 
-*(Coordinator depth: `BOZ.md §3`. ⚠️ `BOZ.md §0`'s matrix — every topic across every register — and §3's
-"fulsome doc update" are what generated this; both are amended there.)*
+*(Coordinator depth: `BOZ.md §4`. ⚠️ `BOZ.md` was cut 275→115 lines on the same day; the matrix and the "fulsome doc update"
+that generated this are retired to `cartograph/_archive/BOZ-full-2026-08-06.md`.)*
 
 ## Standup before code
-After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `BOZ.md §4`, when you're Boz)*. Read → align → then build.
+After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `BOZ.md §5`, when you're Boz)*. Read → align → then build.

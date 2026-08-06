@@ -129,7 +129,7 @@ clean/map.json           2,340 parcels
 
 `derive.js`'s mapper is City-only (`c >= 1010 && c <= 1019 → 'vacant'`, `c >= 1300 && c <= 1399 → 'institutional'`, …). County `110` — 11,392 residential parcels — falls through **every** range. Naively unioning the files maps the entire County half wrong, which is worse than today because it would look plausible.
 
-**`cartograph/bake-content.js` (~line 300+) already has county-aware code handling. Read it and reuse its mapping rather than inventing a second one** (`BOZ.md §3` — one home per fact). If the two mappers must stay separate, say so explicitly in a comment at both sites.
+**`cartograph/bake-content.js` (~line 300+) already has county-aware code handling. Read it and reuse its mapping rather than inventing a second one** (`BOZ.md §4` — one home per fact). If the two mappers must stay separate, say so explicitly in a comment at both sites.
 
 ---
 

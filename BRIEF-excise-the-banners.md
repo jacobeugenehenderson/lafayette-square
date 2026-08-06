@@ -19,13 +19,13 @@
 but bannering-in-place is the habit that produced this, and the report is available as an input document.
 Fresh eyes, sweep's findings, none of the sweep's reflexes.)*
 
-**Route first** (`CLAUDE.md` is the gate): `ORIENTATION.md` → `README §⭐ START HERE` → `BOZ.md §2/§3`.
+**Route first** (`CLAUDE.md` is the gate): `ORIENTATION.md` → `README §⭐ START HERE` → `BOZ.md §4`.
 
 ---
 
 ## 0. Why — and it is not tidiness
 
-`CLAUDE.md` / `BOZ.md §3` say **trim on subsume**: superseded content *migrates* to the dated `_archive/`;
+`CLAUDE.md §PRUNE AS YOU GO` / `BOZ.md §4` say **trim on subsume**: superseded content *migrates* to the dated `_archive/`;
 *"'RESOLVED, kept for context' left in place is the anti-pattern."* The practice drifted — "archive, don't
 delete" got read as **"annotate, don't remove"** — so the Tier 2 sweep corrected ~55 facts by **bannering**
 them rather than **excising** them.
@@ -80,9 +80,9 @@ every node (`junctionMap` = 233). `OSM2STREETS-GROUNDING` rests a verdict on tha
    `cartograph/_archive/<TOPIC>-superseded-2026-08-06.md` — with one line of context: what it claimed, when
    it was falsified, and by what. One file per topic cluster, not forty files.
 2. **⛔ REPOINT EVERY REF IN THE SAME BREATH.** The dead pointer is the archivist's one unforgivable error
-   (`BOZ.md §1`). After moving anything, grep the whole repo for its name/section and repoint to the LIVE
+   (`BOZ.md §4`). After moving anything, grep the whole repo for its name/section and repoint to the LIVE
    home — never to the archive.
-3. **Consolidate the paragraph you touch**, don't leave a scar where the banner was (`BOZ.md §3.6`).
+3. **Consolidate the paragraph you touch**, don't leave a scar where the banner was (`BOZ.md §4`).
 4. **Reachability:** anything still load-bearing stays reachable from `ORIENTATION.md` in ≤2 hops.
 
 ## 4. ⛔ Cautions

@@ -138,7 +138,7 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 > Honest labels (`DOC-CODE-COHERENCE §Landed-forensic`): `landed` = ancestor-of-HEAD + code-path-live · `eye-pending` = code-landed, unconfirmed on the lit app · `⚠️ NOT landed` = claimed but absent. The 12 landed/OBE/folded briefs are in `_archive/handoffs/` (dated).
 >
-> ⚠️ **Two different layers, two different homes.** `HANDOFF-*.md` (this table) live in the **gitignored `_handoffs/`** folder — local-only, not in git. Root **`BRIEF-*.md`** are git-tracked campaign briefs; when one lands it is captured below and **deleted** (git is its archive, `BOZ §2`).
+> ⚠️ **Two different layers, two different homes.** `HANDOFF-*.md` (this table) live in the **gitignored `_handoffs/`** folder — local-only, not in git. Root **`BRIEF-*.md`** are git-tracked campaign briefs; when one lands it is captured below and **deleted** (git is its archive, `BOZ §3`).
 
 ### ✅ Retired BRIEFs — outcome captured, files deleted (git holds them)
 
@@ -160,7 +160,7 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 | **channel-variant-cascade** | per-shot + per-platform channel values | design-doc first; **lands LAST** (highest convergence) |
 | **authoring-session-hardening** | restore-where-left · safe bake · one camera home | Ph1–3 landed; Ph4 (camera) + Ph5 (docs) open |
 | **section-perf** | the FILL re-stroke perf | #1/#2/toggle landed; drag-fluidity eye-pending. ⚠️ Brief lives at `cartograph/_archive/HANDOFF-section-perf.md` (not `_handoffs/`) |
-| **dead-end-cap-wrap-curb** | curb break wrapping the round cap | ⚠️ **no brief file exists** (index-only row — not dispatchable until one is drafted, `BOZ §2`). Detector-flagged sub-8 m² clusters (2026-07-22), **NO visible symptom** on Jacob's eye; low pri |
+| **dead-end-cap-wrap-curb** | curb break wrapping the round cap | ⚠️ **no brief file exists** (index-only row — not dispatchable until one is drafted, `BOZ §3`). Detector-flagged sub-8 m² clusters (2026-07-22), **NO visible symptom** on Jacob's eye; low pri |
 | **curve-primitive-skeleton** | curves as beziers | Ph1/2.1 landed; **v2 (loops/divided) open** |
 | **junction-construction** | intersection-everywhere | metadata spans every node; geometry divided-only |
 | **band-fold-fix** | G12 thorn clamp | ⚠️ **NOT landed** (`8e1e414` stranded) |

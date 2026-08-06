@@ -127,7 +127,7 @@ something as a checkable claim, it does not go in.
 2. A **known-open** list, so nobody re-reports these as discoveries.
 3. **⭐ REACHABILITY — this is a real requirement, not bookkeeping.** The old file had **zero** live refs;
    nothing in `ORIENTATION` or `README` pointed at it, so it was an orphan and no one built on it.
-   `BOZ.md §3` calls the orphan *the* failure. Wire the new one in: a line in `README §⭐ START HERE`
+   `BOZ.md §4` calls the orphan *the* failure. Wire the new one in: a line in `README §⭐ START HERE`
    and a pointer from the topic canon, so it is reachable from `ORIENTATION` in **≤2 hops**.
 4. A short report to Jacob: **what you could not verify, left and listed** (an unverified edit to canon
    is worse than a stale line), and **anything you found that is a lead rather than a claim.**

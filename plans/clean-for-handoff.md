@@ -1,6 +1,6 @@
 # Plan — Clean for Human Handoff
 
-> **State / forward plan** (`BOZ §2`). **Status: DRAFT (2026-06-30, Boz + Jacob).** Purpose: get the codebase to a state where **human developers can be handed the package and it reads clean** — no corpse-lies, no dead paths mounted as if live, one render pipeline instead of forks, tabled work quarantined honestly.
+> **State / forward plan** (`BOZ.md §4`). **Status: DRAFT (2026-06-30, Boz + Jacob).** Purpose: get the codebase to a state where **human developers can be handed the package and it reads clean** — no corpse-lies, no dead paths mounted as if live, one render pipeline instead of forks, tabled work quarantined honestly.
 >
 > ⛔ **ROUTE FIRST** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` → then the arc docs this plan sequences (`HANDOFF-render-pipeline-install.md`, `cartograph/DOC-CODE-COHERENCE.md`, `plans/pre_public_cleanout.md`).
 
@@ -54,7 +54,7 @@ Banners landed 2026-06-30 (meteorologist volumetric TABLED; arborist v1 SPEC sup
 `plans/pre_public_cleanout.md` (already drafted; partly executed — S5a handoff-doc retirements done 2026-06-30). Finish: authoring HTML out of the prod build (`rollupOptions.input` mode-conditional), verified-orphan deletions, the deployment-ID audit gate. This is the LS-app-surface half of "clean."
 
 ### W6 — Doc-canon accord (mostly done)
-The 2026-06-30 whole-corpus sweep landed (banners, ~10 dead pointers repointed, 3 HANDOFFs retired, orphans indexed). Residual: codify the doc-currency mechanism (dated `verified` headers) into `BOZ §3`; the deferred physical archiving (overlaps W4).
+The 2026-06-30 whole-corpus sweep landed (banners, ~10 dead pointers repointed, 3 HANDOFFs retired, orphans indexed). Residual: codify the doc-currency mechanism (dated `verified` headers) into `BOZ §4`; the deferred physical archiving (overlaps W4).
 
 ## Sequencing
 
