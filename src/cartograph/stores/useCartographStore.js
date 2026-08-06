@@ -870,7 +870,25 @@ const useCartographStore = create((set, get) => ({
   //     IS reverting to default, no snapshot needed.
   // Field-SCOPED so reverting Survey never wipes Section and vice-versa.
   _SURVEY_FE_FIELDS: ['pavementHW', 'terminal'],
-  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials'],
+  // ⭐ `capFlip` IS a Section field. It is authored in Measure (MeasureOverlay's
+  // cap ⌃-click) and it INVERTS THE MATERIALS at the cap — `tileGround.js:1668`,
+  // `capFlipped ? (m === 'LU' ? 'SW' : 'LU') : m`. It is a sidewalk↔treelawn swap
+  // by another name, so it belongs to the same revert scope as `materials`.
+  // ⛔ It was in NEITHER list until 2026-08-06, which meant NO revert path
+  // anywhere cleared it: the operator flipped a cap, hit "Revert to Default",
+  // the tool reported success, and the inversion silently survived. The scene
+  // then claims to be at default and is not — the silent-substitution shape
+  // `CLAUDE.md` Layer 0 q2 forbids, inside the one control whose entire promise
+  // is "you are now at the calculated default". Measured on LS: 5 flipped caps
+  // outliving a whole-scene revert, so every measurement ever taken of "the
+  // default arrangement" on this scene was contaminated by up to 5 material
+  // inversions — including the DEFAULT-FILL front's own diagnosis.
+  // ⚠️ There is no PER-CAP revert gesture: ⌃-click on a cap IS the flip
+  // (MeasureOverlay.jsx:796), so the manual way back is flipping twice. This
+  // list governs the whole-scene revert, which is the path that was lying.
+  // Guard: `node scratch/claims-revert-field-coverage.mjs` fails if any authored
+  // blockCustoms field is absent from BOTH lists (the class, not this instance).
+  _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip'],
   // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).
   _blockCustomsStripped: (fields) => {
     const cur = get().blockCustoms || {}
