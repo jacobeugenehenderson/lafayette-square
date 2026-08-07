@@ -102,9 +102,6 @@
       "capStart": null,
       "capEnd": "round"
     },
-    "saint-vincent-avenue-0": {
-      "name": "Saint Vincent Avenue"
-    },
     "mackay-place-0": {
       "name": "Mackay Place",
       "capStart": null,
@@ -165,9 +162,6 @@
       "capStart": null,
       "capEnd": "round"
     },
-    "rutger-street-0": {
-      "name": "Rutger Street"
-    },
     "rutger-street-1": {
       "name": "Rutger Street",
       "capStart": "blunt",
@@ -178,57 +172,15 @@
       "capStart": null,
       "capEnd": "round"
     },
-    "rutger-street-3": {
-      "name": "Rutger Street"
-    },
-    "rutger-street-4": {
-      "name": "Rutger Street"
-    },
     "albion-place": {
       "name": "Albion Place",
       "capStart": "round",
       "capEnd": null
     },
-    "dolman-street-0": {
-      "name": "Dolman Street"
-    },
     "dolman-street-1": {
       "name": "Dolman Street",
       "capStart": null,
       "capEnd": "round"
-    },
-    "geyer-avenue-4": {
-      "name": "Geyer Avenue"
-    },
-    "lafayette-avenue-0": {
-      "name": "Lafayette Avenue"
-    },
-    "lafayette-avenue-1": {
-      "name": "Lafayette Avenue"
-    },
-    "lafayette-avenue-3": {
-      "name": "Lafayette Avenue"
-    },
-    "lafayette-avenue-5": {
-      "name": "Lafayette Avenue"
-    },
-    "lafayette-avenue-6": {
-      "name": "Lafayette Avenue"
-    },
-    "park-avenue-1": {
-      "name": "Park Avenue"
-    },
-    "park-avenue-5": {
-      "name": "Park Avenue"
-    },
-    "south-jefferson-avenue-2": {
-      "name": "South Jefferson Avenue"
-    },
-    "south-jefferson-avenue-4": {
-      "name": "South Jefferson Avenue"
-    },
-    "south-jefferson-avenue-6": {
-      "name": "South Jefferson Avenue"
     },
     "lasalle-lane": {
       "name": "Lasalle Lane",
