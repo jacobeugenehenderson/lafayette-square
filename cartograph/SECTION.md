@@ -320,8 +320,22 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > pull-back (`legTrim` `:1416`, exact via `tangentTrim` `:1409`) is therefore **intended**.
 >
 > ⭐⭐ **The doctrine does not say "if a fillet can be found."** The takeover is gated on
-> `bandRem.length && cornerT.size && fillets.length` (`:1566`) and, per corner, on locating a fillet within
-> `best.r + c.trim + 1` of it (`:1575`). **Step over is unconditional; step back is not.**
+> `bandRem.length && cornerT.size && fillets.length` (`:1566`), per corner on locating a fillet within
+> `best.r + c.trim + 1` (`:1575`), and again on the intersection coming back non-empty (`:1583`).
+> **Step over is unconditional; step back is not.**
+>
+> ▶ **The population is measured, not estimated — `node scratch/claims-corner-takeover.mjs`** (all 7 scenes,
+> both states, runs the real `sectionPassTile` under `CORNER_DUMP=1`; the dump is inert — output is
+> byte-identical armed and disarmed). What it establishes:
+> - **Four decline modes exist, and LS fires all four** — `bandRem-empty` · `bandRem-empty + no-fillets` ·
+>   `no-fillet-in-range` · **`empty-pad` (`:1583`)**. ⛔ **No town carries a mode LS lacks**, so the cure
+>   does not need a town nobody has looked at in order to be designed.
+> - ⚠️ **But the MIX is not portable, and that is the trap.** `bandRem-empty` as a share of a town's bids:
+>   **altadena 6.6% · LS 20.2% · Księży Młyn 53.6%.** Decline rate overall spans **11% → 63%**, LS
+>   mid-range. **A cure tuned to LS's dominant gate is tuned wrong for both extremes** — handle all four
+>   structurally, never optimise for the common one.
+> - **Two gates are dead:** `zero-depth` (`:1569`) and the pure no-fillets tile gate fired **0 times in
+>   7,632 bids**. ⛔ Do not treat either as load-bearing.
 >
 > ⭐⭐ **An unhonoured takeover is a MISLABEL, not a hole.** Band the legs released and no corner claimed
 > falls to `luRemainder` (`:1642`) and **renders as land use** — the gap is **ribbon painted green**, not

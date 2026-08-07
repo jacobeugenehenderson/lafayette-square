@@ -61,7 +61,12 @@ const edgeBetween = (atCoord, a, b, n) => {
 
 const auditScene = (scene) => {
   const path = join(BAKED, scene, 'shape.json')
-  const tiles = JSON.parse(readFileSync(path, 'utf8')).tiles || []
+  // The artifact has TWO shapes on disk: `{tiles, highway}` (LS et al) and a
+  // BARE ARRAY of tiles (toy). Reading `.tiles` alone silently yields 0 tiles
+  // and reports a perfectly measurable scene as NOT CHECKED — a check lying
+  // quietly, which is the defect this suite exists to refuse.
+  const raw = JSON.parse(readFileSync(path, 'utf8'))
+  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])
 
   let ringEdges = 0, clean = 0, doubled = 0, offRing = 0
   const violations = []       // partition-breaking: double cover, or off-ring with no tip
