@@ -157,13 +157,9 @@ that never became the live model — CLAUDE.md's "RESOLVED, kept for context" an
 
 ### 7a. Phase F leaf-color architecture (design, 2026-05-19) — NOT the live model
 
-## Phase F leaf-color architecture (design, 2026-05-19)
-
-> ⚠️ **SUPERSEDED 2026-06 — the `annualCycle` manifest + per-Look override-packs design below did NOT become the live model.** Leaf **color** is now a **rubric axis recolored via posterize** (build-once greyscale base → posterized tint), not a per-anchor gradient LUT keyed on `uDayOfYear`. Live home = `scratch/FOREST-BUILDER-KIT-MATCHER.md §6` + `SALON-INTERFACE.md §2` (root). Kept as the historical design record of the Phase F pivots.
-
 Phase F's leaf surface architecture went through three pivots on 2026-05-19. The final shape consolidates three doctrines: vendor-pack binding, year-long tree (annual cycle), and per-Look art-direction overrides. See `BACKLOG.md` Phase F for full pivot history; [[project_year_long_tree_doctrine]] for the year-long manifest schema in detail.
 
-### Layer 1 — Leaf-pack library (greyscale shape + PBR)
+#### Layer 1 — Leaf-pack library (greyscale shape + PBR)
 
 Leaf shapes live as vendor or operator-authored PBR packs at `public/textures/leaves/shapes/<pack_id>/`:
 
@@ -178,7 +174,7 @@ Leaf shapes live as vendor or operator-authored PBR packs at `public/textures/le
 
 Per [[feedback_leverage_vendor_pbr_before_authoring]]: operator authoring is for coverage gaps, not the default path. Configuration-by-binding before Photoshop.
 
-### Layer 2 — Year-long tree (annual cycle in manifest)
+#### Layer 2 — Year-long tree (annual cycle in manifest)
 
 Per [[project_year_long_tree_doctrine]] (locked 2026-05-19 PM): the species manifest carries its annual phenology cycle. Runtime samples a `uDayOfYear` uniform (Meteorologist-published) and interpolates between authored season anchors:
 
@@ -207,7 +203,7 @@ Per [[project_year_long_tree_doctrine]] (locked 2026-05-19 PM): the species mani
 
 **Runtime shader:** Phase F gradient LUT is per-anchor (256×1 RGBA texture baked at manifest-hash-keyed from gradient stops). Fragment shader samples luminance(`vColor`) → indexes the LUT for current bracket → `mix()` between adjacent anchors weighted by `uDayOfYear`. Per-card alpha multiplied by interpolated `presence`; per-card scale multiplied by interpolated `scale`. Single shader program preserved.
 
-### Layer 3 — Per-Look art-direction overrides
+#### Layer 3 — Per-Look art-direction overrides
 
 The year-long manifest is the species's botanical TRUTH. Per-Look art-direction overrides ride the existing `scene.materialColors[<species>]` channel, extended to carry both shape-pack AND gradient overrides per (Look, species) pair:
 
@@ -232,10 +228,6 @@ Halloween bats, Christmas candy canes, Diwali ornament gold, Pride rainbow, Vale
 
 
 ### 7b. Configuration D canopy render (Phase L Cycle 2 + Phase H supersession, 2026-05-19) — NOT the live model
-
-## Configuration D canopy render (Phase L Cycle 2 + Phase H supersession, 2026-05-19)
-
-> ⚠️ **SUPERSEDED 2026-06 — the outer-shell-cards + inner-mass `THREE.Points` point-canopy design below is NOT the live model.** Trees ship **all-mesh** (every visible placement is a full lod1 mesh tree, `bake-trees.js#PROM_THRESHOLD=0`); geometry is role-at-bake, no points-canopy. Live home = `FEATURES.md` "What ships to LS today" + `ARCHITECTURE.md §Tree-render reality at LS`. Kept as historical design record.
 
 Per [[project_configuration_d_canopy_render]] (locked 2026-05-19 PM): the canopy renders as **outer-shell A2C cards + inner-mass `THREE.Points` point cloud**.
 
