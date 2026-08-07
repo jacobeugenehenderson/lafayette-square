@@ -60,25 +60,30 @@ to have already seen this street has delivered nothing to town #2.
 > patches with an exception table at the end (2026-07-31). The purpose has to be *used*, not
 > absorbed.
 
-**The standing evidence that this is real, not rhetoric — `ROADMAP` A07, measured 2026-08-02, OPEN:**
-the kit's most-quoted invariant is *"the curb is a concentric offset"* (`ORIENTATION`,
-`POLYGON-FIRST §1`). **The code has two curb producers and picks between them without telling
-anyone.** `tileGround.js:3326` gates the offset on `!isMedianTile && ringArea > 1500`; everything
-else takes the legacy boolean carve at `:3347` — **at least 30 of LS's 101 tiles**, and an offset
-that passes the gate but comes out degenerate is swapped for the carve at `:3345` with no signal at
-all. The comment at `:3309` states the defect out loud: *"Falling back to legacy is never a
-regression."* The carve may well look fine — **that is exactly what makes it dangerous.** On town #2
-the operator reads "concentric offset," sees a plausible curb, and has no way to learn a third of
-their blocks were built by the other method. *(The fix is not to delete the carve — it is right for
-medians, dead-end disks and slivers. The fix is that the choice must be RECORDED and the genuine
-failure at `:3345` must be LOUD.)*
+**The standing evidence that this is real, not rhetoric — `POLYGON-FIRST §2.1` Check A, measured
+2026-07-31, OPEN and verified still open 2026-08-06:** the kit's whole premise is *"let the machine
+catch the bugs — that checker is the real prize"* (`ORIENTATION`). **Our flagship curb checker is
+blind in both of Layer 0's failure modes at once.** `cartograph/litmus-curb-parallel.mjs:77` passes
+**`blockCustoms: null`** — it runs with **authoring switched off** — so it compares an *authored* curb
+against the *un-authored* width and reports **the operator's own decision as a defect**. Mississippi
+Avenue: authored half-width 8.70 m, curb at 8.70 m, dead parallel — scored a **3.13 m bow**. ⭐ That
+is **question 3 committed by an instrument**, and it fails *worst on the most heavily authored town
+and cleanest on a fresh pour* — blind exactly where the map is most worked-on. And `:86` —
+`if (!tile?.iA?.length) continue` — **silently skips a tile with no curb ring at all**, so *"this
+block has no curb"* prints as *"bows 3.9 m."* ⭐ That is **question 2**: a silent substitution inside
+the one place it must never happen — the detector itself. *(The fix is not a better threshold: run it
+**with** the scene's `blockCustoms`, and report an absent/degenerate ring as its own **loud** failure
+class. Until then Check A's aggregate is not evidence of anything.)*
 
-> *Receipt replaced 2026-08-04. This slot used to cite `measureModel.js` bleeding LS street widths
-> into every scene by street name (24 Altadena streets inheriting St. Louis measurements). **That was
-> fixed 2026-07-31 (`08d61ce1`)** and the text sat here claiming it was open — the gate doc proving
-> its own doctrine with an expired receipt. ⭐ **When you close a fallback, come back and re-arm this
-> slot with a live one.** A doctrine whose evidence doesn't check out teaches agents to stop trusting
-> the first read, which is the adherence we can least afford to lose.*
+> *Receipt re-armed 2026-08-06, twice over. This slot cited `measureModel.js` bleeding LS widths into
+> every scene — **fixed 2026-07-31 (`08d61ce1`)**; it was then re-armed with A07's two-producer
+> disclosure — **which landed 2026-08-04** (`producer` + `producerReason` are stamped on every tile,
+> `tileGround.js:3749`; the census prints per pour; the *"Falling back to legacy is never a
+> regression"* comment is gone). Both times the text sat here claiming OPEN what was closed — the gate
+> doc proving its own doctrine with an expired receipt, **including the line numbers, which had all
+> drifted.** ⭐ **When you close a fallback, come back and re-arm this slot with a live one — and
+> RE-VERIFY the receipt in the code before you trust it.** A doctrine whose evidence doesn't check out
+> teaches agents to stop trusting the first read, which is the adherence we can least afford to lose.*
 
 ---
 

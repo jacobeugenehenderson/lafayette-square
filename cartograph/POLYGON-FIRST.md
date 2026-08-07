@@ -28,9 +28,9 @@ We are not at zero. The gap is named, the mechanism is understood, and below it 
 This mirrors the one enforcement that already works (`sectionPass` closure), moved to the **producer** side: a `buildCurb(frozenFrame) → curbPolygon` with no live chain-stroke union in scope.
 
 > ### ⭐⭐ THE TRUE RULE — two producers, and the choice is RECORDED (A07, 2026-08-04)
-> This section used to say the curb *is* the parallel offset of the skeleton, full stop. **That was
-> an aspiration stated as an invariant**, and it is the kit's most-quoted sentence, so it was being
-> reasoned from on tiles it does not describe.
+> ⛔ **"The curb is the parallel offset of the skeleton" describes MOST blocks, not the map** — and it is
+> the kit's most-quoted sentence, so it gets reasoned from on tiles it does not describe. **Check
+> `producer` on the tile before you reason from it.**
 >
 > **What the code does:**
 > - **`offset`** — the per-edge parallel offset (`chain ⊕ halfWidth`, corners as offset-intersections),
@@ -112,19 +112,18 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > nothing; `coupler-slit-universal` prints `0 slits`, which reads as *"no defect"*). The ported versions
 > replaced them; don't re-copy from the branch.
 
-> ⭐⭐ **THE MEASUREMENT, CORRECTED ON THE PORT (2026-07-30). Two different vertices, two different numbers —
-> the old "46 of 49" conflated them.**
+> ⭐⭐ **THE MEASUREMENT — two different vertices, two different numbers. Never conflate them.**
 >
 > | | measured | what it means |
 > |---|---|---|
 > | **TIP** — Checks 1–2 | **50 of 50** tips are zero-width slits | the freeze closes NO dead-end polygon, anywhere |
 > | **MOUTH** — Check 5 | **9 of 50** spurs miss a mouth corner | the leg that runs through unbounded |
 >
-> **Why the old count was wrong:** the branch probe read the tip off a FILL run's span *end* rather than the
-> frozen `cap.vertexIdx`. On `hickory-street-1`, `henrietta-place` and `south-22nd-street` that end is the FAR
-> end of the block — 195 m, 154 m and 328 m from the cap — so it measured a gap there and called them
-> "FACE=WIDTH". At the actual cap vertex all three are **0.0000 m**. It also dropped `waverly-place-1`, which
-> caps twice in one tile, giving 49 instead of 50.
+> ⛔ **READ THE TIP OFF THE FROZEN `cap.vertexIdx` — never off a FILL run's span end.** They are not the
+> same vertex and on a long block they are hundreds of metres apart, so a span-end probe measures the gap at
+> the *far* end of the block and reports a capped spur as open. ⚠️ **And a chain that caps TWICE in one tile
+> must count twice** (`waverly-place-1`) — a per-chain denominator silently loses it. Both mistakes make the
+> defect look *smaller*, which is why they survived: an under-count reads as progress.
 >
 > ⭐ **And Check 5 is NOT universal — that is the substantive find.** Most spurs DO get a corner at every
 > mouth pass, because their returning leg immediately meets a *different* chain. The failures are the ones
@@ -201,89 +200,54 @@ it could not fix *where that leg starts and stops*, because there was no second 
 > ⭐ **The one-line test for any proposal: DOES IT CREATE THE SECOND MOUTH CORNER?** If not, it is another
 > way of managing the absence, and it will fail on the eye exactly as the previous three passes did.
 
-### ⛔⛔ REVERTED — the CORNER REGISTRY (`junctionMap.nodes[].corners.all`) is **NOT on trunk**
+### ⛔⛔ TRIED AND REVERTED — the CORNER REGISTRY (`junctionMap.nodes[].corners.all`). Read before re-opening.
 
-> **Read the whole section below as a DESIGN RECORD of an attempt, not as shipped behavior.** *(Corrected
-> 2026-08-02; it was written and left standing as "⭐⭐ LANDED 2026-07-30, default-on".)*
->
-> **Verified:** `corners.all` has **0 occurrences** repo-wide — code, artifacts, everything. It went out
-> with the dead-end-spur work in **`7b5b87a3`** (`Revert "feat(prebake): assert the dead-end spur BEFORE
-> polygonization; drive E3.3 from the corner registry"`). `cornersAdjacent` was therefore **never retired**,
-> and `corners.{outer,apex,stub}` are still the only registry `tileGround.js` sees.
->
-> ⚠️ **AND THE NUMBERS BELOW CANNOT BE REPRODUCED.** `7b5b87a3`'s own message says *"The probes, the debug
-> dumps … are kept"* — **it deleted them**: `scratch/stamp-mouth-audit.mjs` (−51) and
-> `scratch/stamp-predicts-fill.mjs` (−67) are in that commit's diffstat and absent from `scratch/` today.
-> So *"6 of 6 blind mouth corners"*, *"50 of 50 caps"*, *"769 corners"* are **unreproducible by the very rule
-> this section states** — do not cite them as measurements. They are the attempt's self-report.
->
-> **What survives as doctrine** — and it does survive, this is why the section is kept — is §2's
-> one-line test above: *does it create the second mouth corner?* The registry was one answer to it. It is
-> not a shipped one.
+**The prohibition, forward-stated:**
 
-**[ATTEMPT, REVERTED]** The second mouth corner is RECORDED at prebake, at all 6 mouths that need it. Not constructed —
-*recorded*: the stamp is written from the chains, before the face walk exists, so it is not subject to the
-ring's blindness. Additive only; **`cap-fill-hash.mjs` is byte-identical in both `plain` and `design` mode**,
-and `correctness-detector.mjs` is line-identical but for its own tip-wrap skip counter (26 → 52).
+⛔ **`corners.all` does not exist. Do not cite it, build on it, or assume a consumer reads it.** It has
+**0 occurrences repo-wide** — code, artifacts, everything — having gone out with the dead-end-spur work in
+**`7b5b87a3`** (`Revert "feat(prebake): assert the dead-end spur BEFORE polygonization; drive E3.3 from the
+corner registry"`). `cornersAdjacent` was therefore **never retired**, and `corners.{outer,apex,stub}`
+remain the only registry `tileGround.js` sees.
 
-**One list replaces two.** `cornersAdjacent` (degree-≥3 only, no consumer) is **retired**; `corners.all`
-carries every corner at every node in one shape — `{ a, b, sameChain?, source }`, each side a
-`{chain, end, half?, side}` measure key. `corners.{outer,apex,stub}` survive **only** as the
-divided-transition construction bookkeeping `tileGround.js:2665` still consumes; they retire when `all`
-gains a consumer (`HANDOFF-ask-the-stamp`). Three shapes, one list: degree ≥ 3 = the adjacency fan ·
-degree 2 = one corner per side (the L-corner) · degree 1 = **the tip wrap**, the chain's own left curb
-meeting its own right curb around the cap, always `sameChain`.
+⛔ **Do not quote any number the attempt reported** — *"769 corners"*, *"261 nodes"*, *"50 of 50 caps"*,
+*"6 of 6 blind mouth corners"*. `7b5b87a3`'s message claims *"The probes, the debug dumps … are kept"*;
+it **deleted them** (`scratch/stamp-mouth-audit.mjs` −51, `scratch/stamp-predicts-fill.mjs` −67, both in
+that commit's diffstat and absent from `scratch/` today). Those figures are the attempt's self-report and
+are **unreproducible by the very rule this doc states**. ⭐ **A commit message is part of the corpus and
+nothing audits it** — this one asserted the opposite of its own diff, and two later documents cited the
+probes in good faith.
 
-⭐ **`sameChain: true` IS the ring-blind class, marked explicitly** so no consumer has to rediscover that
-`a.chain === b.chain` is the meaningful case. 160 of 769 corners carry it.
+⛔ **Measure against a FRESH `pipeline.js` run, never the committed `src/data/ribbons.json`.** The two
+disagree — the committed bundle read 233 nodes / 29 tips where a fresh run gave 228 / 26, with a different
+FILL fingerprint (75 vs 71 asphalt rings). Drift predating that work and **still open**; it is the
+pipeline-reproducibility fault, not an artifact of this attempt. → `PREBAKE §4.0a`,
+`_handoffs/HANDOFF-pipeline-reproducibility.md`.
 
-| | before | after |
-|---|---|---|
-| nodes | 228 | **261** |
-| nodes carrying a corner | 200 (`cornersAdjacent`) / 24 (`corners.outer`) | **261 / 261** |
-| corners recorded | 695 | **769** (160 `sameChain`) |
-| dead-end caps with a `pendant-tip` | **15 of 50** | **50 of 50** |
-| blind mouth corners recorded | 5 of 6 | **6 of 6** |
+**What the attempt bought that is worth keeping — two name-vs-function slips, the `detectTileCaps` pattern
+again.** Both are structural findings about the *tip stamp*, independent of the reverted registry:
 
-**Two root causes, both name-vs-function slips** (the `detectTileCaps` pattern again):
-1. **Source 6 gated on `Math.abs(L - R) >= 0.5`** — it stamped a tip only where the chain's left/right
-   pavement half-widths *differ*. A **width-step detector wearing the tip's name**: it covered 15 of 50 caps
-   while stamping **14 boundary cuts that are not dead ends at all**. Gate dropped; the width step is still
-   readable off `measure`, so nothing was lost.
-2. **The real discriminator is topological: degree 1 AND inside the boundary.** LS has **94 degree-1
-   endpoints but only 50 dead ends** — the other 44 are the ENVELOPE CUT (the network extends past the
-   boundary). The inside-boundary test yields **52, containing all 50 caps with zero misses**; the 2 extra
-   are `south-18th-street-4`'s two ends, a disconnected interior stub that bounds no face so it caps
-   nowhere — a genuine tip all the same.
+1. ⛔ **A width-step test is not a tip test.** Source 6 gated the tip stamp on
+   `Math.abs(L - R) >= 0.5` — the chain's left/right pavement half-widths *differing* — so it covered a
+   minority of caps while stamping boundary cuts that are not dead ends at all. **A detector named for the
+   thing it does not measure**, which is this doc's recurring failure shape (`detectTileCaps` is a slit
+   detector wearing a cap detector's name, §2.1).
+2. ⭐ **The real discriminator is topological: degree 1 AND inside the boundary.** LS has far more degree-1
+   endpoints than dead ends — the surplus is the **ENVELOPE CUT**, where the network simply extends past
+   the boundary. ⚠️ **Degree 1 alone will always over-count on any town**, and it over-counts *more* the
+   tighter the hood is drawn — the kit-relevant form of this finding. The inside-boundary test also
+   admits a genuine edge case: a disconnected interior stub bounds no face, so it caps nowhere and is
+   still a real tip.
 
-Also added: **Source 0b, degree-2 corner joins** (7 nodes). Sources 2+4 reach an end-to-end meeting only
-when it *continues*; one that **turns** was explicitly dropped as "not junction-map material" — true for
-construction bookkeeping, false for a corner registry, where an L-corner is the most ordinary corner there
-is. Identity-only, like `plain`; no apron.
+⚠️ **Do not over-read this as "there is nothing to click."** `node scratch/coupler-fe-coverage.mjs` (the
+probe survives — re-run it rather than quoting): most dead-end leg slots **do** have a clickable frontage
+edge, the ones that don't all have an fe on the opposite side, and they are the same legs the mouth brief
+recorded as unresponsive — independent corroboration. **The dominant defect is BOUNDING, not existence** —
+aim at the missing corner, not at a missing surface.
 
-⚠️ **`src/data/ribbons.json` was STALE on trunk** — the committed bundle read 233 nodes / 29 tips where a
-fresh `pipeline.js` gives 228 / 26, and its FILL fingerprint differed (75 vs 71 asphalt rings). Pre-existing
-drift, unrelated to this change; measure against a **fresh** run, never the committed bundle.
-
-⚠️ **Open findings — the stamp does NOT predict 8 constructed corners** (`scratch/stamp-predicts-fill.mjs`):
-513 fillet corners, 455 predicted, 50 on the map edge (expected — the boundary is not a chain), **8 away
-from it**. Four cluster on the `officer-david-haynes-memorial-highway` interchange, where `curbed()` filters
-`gradeSeparated` out of the junction map by design; the rest sit on divided Lafayette. **None are in the
-dead-end class.** Not addressed this pass.
-
-Probes: `scratch/stamp-mouth-audit.mjs` (does the registry record each ring-blind mouth?) ·
-`scratch/stamp-predicts-fill.mjs` (acceptance #1).
-
-⚠️ **Do not over-read this as "there is nothing to click."** `scratch/coupler-fe-coverage.mjs` on trunk:
-**98 of 107 dead-end leg slots DO have a clickable frontage edge; 9 do not**, and all 9 have an fe on the
-opposite side. (The branch original counted Slice-1 *walk* slots — 191 of 198 — same shape, different
-denominator.) The 9 include `whittemore-place|right`, `rutger-street-0|right`, `st-vincent-court-1|left` —
-exactly the legs the mouth brief §1 recorded as unresponsive, which is independent corroboration. The
-dominant defect is **bounding, not existence** — aim at the missing corner, not at a missing surface.
-
-⭐ Why the gate earns its cost: it would have failed at the freeze on 2026-07-24, *before* a coupler was
-designed, a walk-ordinal key built, and an evening spent clicking dead-end legs that could be named but not
-bounded. Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
+⭐ **What survives as doctrine is §2's one-line test:** *does it create the second mouth corner?* The
+registry was one answer to it, and not a shipped one. Live task:
+**`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
 
 ---
 
@@ -337,14 +301,21 @@ Today the producer is `buildTileGround(liveRibbons, …)` — chains fully in sc
 
 The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, sequenced tickets that close it. Full brief: `HANDOFF-freeze-the-curb-in-the-first-bake.md`. **Rebuild-gated → PARKED** (Jacob, 2026-06-09: anything requiring a rebuild waits).
 
-> ⛔⛔ **D6b's LITERAL WORDING IS IMPOSSIBLE — corrected 2026-07-31 (verified in code).** Any phrasing
-> here that says *"emit and freeze `iA` in prebake"* **cannot be built as written.** **Prebake is
-> authoring-blind by construction:** `derive.js` / `pipeline.js` / `promote-ribbons.js` read
-> `design.json` / `blockCustoms` **zero times** (every mention in `derive.js` is a comment), and
-> `derive.js:3813` says so itself — *"widths resolve at shape time (`runMeasure`/`blockCustoms`)."*
-> ⛔ So freezing `iA` there would freeze a curb built from **bare defaults** — precisely what
-> `CLAUDE.md` **Layer 0 q3** forbids, baked into an artifact. *(Structurally, `looks` and `scenes` are
-> also separate namespaces, though they are 1:1 for every installation today.)*
+> ⛔⛔ **D6b's LITERAL WORDING IS IMPOSSIBLE.** Any phrasing here that says *"emit and freeze `iA` in
+> prebake"* **cannot be built as written.** **Prebake is blind to the per-fe SHAPE channel:**
+> `derive.js` / `pipeline.js` / `promote-ribbons.js` read `design.json` / `blockCustoms` **zero times**
+> (every mention in `derive.js` is a comment), and `derive.js:3813` says so itself — *"widths resolve at
+> shape time (`runMeasure`/`blockCustoms`)."* ⛔ So freezing `iA` there would freeze a curb built from
+> **bare defaults for every per-frontage-edge width** — precisely what `CLAUDE.md` **Layer 0 q3** forbids,
+> baked into an artifact. *(Structurally, `looks` and `scenes` are also separate namespaces, though they
+> are 1:1 for every installation today.)*
+>
+> ⚠️ **Say "blind to `blockCustoms`", NOT "authoring-blind".** Prebake sees **one of the two authoring
+> channels, not zero** — it **does** read `clean/overlay.json`, the skelId-keyed measures/caps/anchors
+> Survey and Measure write (`derive.js`, the `overlayById`/`overlayLoops` load). ⛔ The broad phrasing is
+> the overgeneralisation that **mis-scoped this very question** (`ORIENTATION §3`): it makes "freeze the
+> curb in prebake" look categorically impossible when it is impossible only for per-fe SHAPE intent, and
+> A03/A06 were scoped off that error.
 >
 > ⭐ **The goal was always CHAIN-FREEDOM, not prebake-location.** Check C asks for *"no chain in the
 > producer's scope"* — prebake-freezing was the assumed mechanism, never the requirement. **The thing
