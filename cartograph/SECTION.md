@@ -284,132 +284,81 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 
 ## 7. Where Section is today
 
-> ## ⛔⛔ THE ROOT OF THE BROKEN SIDEWALK — the band is built WHOLE, then cut by chain predicates
+> ## ⛔⛔ THE ROOT OF THE BROKEN SIDEWALK — the corner ribbon's takeover is CONDITIONAL
 >
-> **The governing statement (Jacob):** *"The sidewalk should be one continuous smooth line all around the
-> entire polygon, around the whole map."* · *"Legs and corners are all planned, and the different
-> configurations work because they're based on the **curb** and not chains."* · **"ALL CURBS WORK."** ·
-> *"The Survey tool as it exists today works as expected. It is the Measure/Section customs tool that
-> doesn't work."*
+> **Frame (Jacob):** *"ALL CURBS WORK."* · *"Survey works as expected; it is the Measure/Section customs
+> tool that doesn't."* · *"The sidewalk should be one continuous smooth line all around the entire polygon."*
+> **Symptom:** the ped band stops short of **some** corners. Some, not all.
 >
-> **The symptom:** the ped band stops short of **some** corners — green where the sidewalk should turn.
-> Some, not all.
+> ⛔ **Read the design record before proposing anything here — the construction is not new and the corner
+> doctrine is settled.** `_archive/RIBBONS-figureground-emitter-2026-06-15.md` (`emitOneBlockRingBands`,
+> 2026-05-29 — the mono-width ring band, and §"What carried forward" = the four invariants binding the tile
+> model) · `_archive/RIBBONS-history-2026-06-12.md §6.9` (the AASHTO/ADA corner-ribbon doctrine, 7 points)
+> and **`§7`** (the 13-month corner saga: every construction tried, shipped or reverted, with its lesson).
+> ⭐ **What that record describes — *"three inward Clipper offsets … `jtMiter`, 2 strips + sector slicing;
+> the corner is the `fullBand` slice"* — is what `sectionPassTile` builds today, under the same names.**
 >
-> ⭐ **This is the V1 keystone construction working as designed, with one step of the design not honoured.**
-> The design is on record and predates the defect: *"three inward Clipper offsets of the block ring
-> (`cw` / `cw+TL` / `WB`) with `jtMiter`, 2 strips + **sector slicing**; the corner is the **`fullBand`
-> slice** (band bent)"* — `emitOneBlockRingBands`, shipped 2026-05-29
-> (`_archive/RIBBONS-figureground-emitter-2026-06-15.md`). The emitter was replaced at T4; **the
-> construction it names is what `sectionPassTile` builds today**, under the same names.
+> ### Design → code, so nobody re-derives it
 >
-> ### The construction as built — `sectionPassTile`, `tileGround.js:1104`
+> | design | `tileGround.js` |
+> |---|---|
+> | three inward offsets of the block ring, `jtMiter` | `ringAt(d)` = `offsetRings(iA, −(cw+d), 'miter')` — `:59`, `:1296` |
+> | the continuous mono-width band | `fullBand = differenceRings(iC, iW)` — `:1301`; `bandRem` = its unclaimed part — `:1320` |
+> | sector slicing for material tags | `sector = strokeOpen(trimPolyline(run.poly, t0, t1), …)` — `:1450`; `claim = bandRem ∩ g.sectors` — `:1484` |
+> | 2 strips | `claim − ringAt(g.o)` / `(claim ∩ ringAt(g.o)) − ringAt(g.total)` — `:1489` |
+> | the corner is the `fullBand` slice | `arcSectorPoly(…) ∩ bandRem` — `:1585` |
+> | *(no design term)* | everything unclaimed → `luRemainder` — `:1642` |
 >
-> | | code | what it produces |
-> |---|---|---|
-> | 1 | `ringAt(d)` = `offsetRings(iA, −(cw+d), 'miter')` (`:59`, `:1296`) | Clipper offsets of the frozen curb ring, cached per depth |
-> | 2 | `fullBand = differenceRings(iC, iW)` (`:1301`) | **one continuous ribbon around the whole tile**, curb → property line |
-> | 3 | `bandRem = fullBand` (`:1320`) | the unclaimed remainder |
-> | 4 | `sector = strokeOpen(trimPolyline(run.poly, t0, t1), …)` (`:1443`, `:1450`) | per run: a **claim stencil**, deliberately out-reaching the band |
-> | 5 | `claim = bandRem ∩ g.sectors` ; `bandRem −= g.sectors` (`:1484`) | the band arc this group owns |
-> | 6 | `outerStrip = claim − ringAt(g.o)` ; `innerStrip = (claim ∩ ringAt(g.o)) − ringAt(g.total)` (`:1489`) | the two strips — **concentric rings, clipped by the stencil** |
-> | 7 | `luRemainder = iW ∪ luExtra ∪ (bandRem − cornerClaimed)` (`:1642`) | everything unclaimed → **land use** |
+> ⭐ **The sector is the LABEL, not the geometry.** Every strip boundary is a concentric offset of `iA`; the
+> sector only decides which **arc** carries a group's `(outer depth, total depth, outer mat, inner mat)` —
+> runs group by exactly that 4-tuple (`gkOf`, `:1341`). ⛔ So *"give the FILL a continuous ring"* is not the
+> cure: it has one.
 >
-> ⭐ **The continuous ring is not missing — it is step 2, and it always was.** Every strip boundary in the
-> FILL is a concentric offset of `iA`; **the per-run sector never defines one.** Its only job is the
-> designed one — *sector slicing for material tags*: decide which **arc** of the continuous band carries this
-> group's `(outer depth, total depth, outer material, inner material)`. Runs group by exactly that 4-tuple
-> (`gkOf`, `:1341`), so a default tile has one or two groups. **The slicing carries a LABEL, not a
-> geometry** — which is why "give the FILL a continuous ring" is not the cure: it has one.
+> ### The deviation
 >
-> ### Width adjustment already maintains the mono-width band — and the cure must keep doing so
+> Doctrine `§6.9`.4: *"**Both legs stop at tA/tB; the corner ribbon takes over; legs resume.**"* The
+> pull-back (`legTrim` `:1416`, exact via `tangentTrim` `:1409`) is therefore **intended**.
 >
-> The Measure tool authors per-edge widths **without breaking the uniform ribbon**, and the mechanism is two
-> lines. The band's outer envelope is `WB = cw + max(TL) + max(SW)` taken **over the tile's edges**, floored
-> at the frozen tile depths so an unauthored tile reproduces the frozen geometry exactly (`:1286`). So:
+> ⭐⭐ **The doctrine does not say "if a fillet can be found."** The takeover is gated on
+> `bandRem.length && cornerT.size && fillets.length` (`:1566`) and, per corner, on locating a fillet within
+> `best.r + c.trim + 1` of it (`:1575`). **Step over is unconditional; step back is not.**
 >
-> - authoring an edge **deeper** raises the tile's max ⇒ `fullBand` grows for the **whole block**, and the
->   ribbon stays one uniform outer depth;
-> - authoring an edge **shallower** leaves the envelope where it is, and that edge's residual band routes to
->   land use — `luExtra.push(claim ∩ ringAt(g.total))` when `g.total < TLmax + SWmax` (`:1511`).
+> ⭐⭐ **An unhonoured takeover is a MISLABEL, not a hole.** Band the legs released and no corner claimed
+> falls to `luRemainder` (`:1642`) and **renders as land use** — the gap is **ribbon painted green**, not
+> absent geometry. That is why it is intermittent while the curb is uniformly correct.
 >
-> ⇒ **the depth envelope is already per-BLOCK; only ownership and materials are per-edge.** The partition
-> the cure needs is therefore purely *along the ring* — it does not touch the envelope, and it must not.
-> This is `§3.3` step 2 and it is sacrosanct (`RIBBONS §3.9a`).
+> Five predicates decide whether a corner exists and whether the pull-back is exempted. **None reads the
+> curb:** `cornerAt` (`:245`, `skelId a !== b`) · `tipped` · `through` · `isNameTransition` · `isThruNode`
+> (all `:1416`). `isThruNode` keys the wrong run where a through-street splits into two skelIds (Mackay) and
+> misses Kennett on a node-coord mismatch. Canonical complex: **Dolman ↔ West 18th ↔ South 18th**, with
+> Carroll and Kennett.
 >
-> ### Where the design is not honoured — the corner takeover is CONDITIONAL
->
-> ⭐ **The pull-back is correct and intended.** Corner doctrine, operator-confirmed 2026-05-18
-> (`_archive/RIBBONS-history-2026-06-12.md §6.9`): *"**Both legs stop at tA/tB; the corner ribbon takes
-> over; legs resume.**"* So `legTrim` (`:1416`, exact via `tangentTrim` `:1409`) is the design — the legs are
-> *supposed* to stop at the tangents.
->
-> ⭐⭐ **What the design does not say is "if a fillet can be found."** In `sectionPassTile` the takeover is
-> gated twice — on `bandRem.length && cornerT.size && fillets.length` (`:1566`), and per corner on locating
-> a fillet within `best.r + c.trim + 1` of it (`:1575`). Doctrine has the corner ribbon taking over
-> **unconditionally**; the code takes over **where it can pair the corner with an arc.**
->
-> ⭐⭐ **And an unhonoured takeover is not a hole — it is a mislabel.** Band the legs released and the corner
-> did not claim falls through to `luRemainder` (`:1642`) and **renders as land use.** The gap is **ribbon
-> painted green**, not absent geometry. That is why the symptom is intermittent while the curb is uniformly
-> correct: *step over* (the trim) is unconditional, *step back* (the takeover) is not.
->
-> Whether a corner exists, and whether the pull-back is exempted, is decided by five predicates. **None
-> reads the curb:**
->
-> | decision | predicate | reads |
-> |---|---|---|
-> | is this a corner at all? | `cornerAt` (`:245`) — `a !== b` | **skelId** identity |
-> | exempt from pull-back? | `tipped` | dead-end tip |
-> | " | `through` | T-continuation |
-> | " | `isNameTransition` | **chain name change** |
-> | " | `isThruNode` | **through-node stamp** |
->
-> `isThruNode` keys the wrong run where a through-street is split into two skelIds at the node (Mackay), and
-> misses Kennett on a node-coord mismatch — chain fragmentation deciding whether the sidewalk turns the
-> corner. Canonical complex: **Dolman ↔ West 18th ↔ South 18th**, with Carroll and Kennett.
->
-> ### The two constructions that already do it right
->
-> - **A single closed run takes no stencil at all** (`:1321`) — the strips are whole concentric annuli,
->   `differenceRings(iC, iMid)` and `differenceRings(iMid, iWrun)`. No sectors, no corners, no trimming.
->   The continuous-ring FILL is already shipping, on every tile that has one owner.
-> - **The round-cap reclaim repairs this exact failure, bounded to dead-end tips** (`:1664`) — band area that
->   fell into `luRemainder` is intersected back out and routed to the cap owner's own outer material.
->   **There is no equivalent at a corner.**
->
-> ### The cure
+> ### The cure — honour doctrine 4
 >
 > ⛔ **The FILL-PATCH class is CLOSED — do not clamp, wrap, re-key or snap.** The band-neck clamp, the
 > walk-ordinal coupler, the mouth wrap and `SPUR_OUTLINE` were each built and reverted; each treats the
 > *output* of a wrong decision.
 >
-> **The cure is not a new construction — it is honouring `§6.9` doctrine 4: the corner ribbon takes over,
-> full stop.** Every point of `fullBand` belongs to exactly one run or one corner; ownership along the ring
-> is a **partition**, not two independent area masks that happen to abut. Where a corner has no fillet to
-> pair with (R=0, or a fillet the search misses) it still owns its arc — a square corner is a band slice
-> too (`_archive/RIBBONS-figureground-emitter §"What carried forward"` invariant 3: *the ADA corner pad is a
-> band-slice, not predicated on the arc — works square OR round*). ⭐ The one-owner path (`:1321`) is the
-> partition already working where there is nothing to partition.
+> **Ring ownership is a PARTITION** — every point of `fullBand` belongs to exactly one run or one corner,
+> never to two independent masks that happen to abut. A corner with no fillet still owns its arc:
+> invariant 3, *the ADA pad is a band-slice, not predicated on the arc — works square OR round*. ⭐ **Two
+> constructions already behave this way and are the model:** a **one-owner tile takes no sector at all**
+> (`:1321` — whole concentric annuli, no corners, no trimming), and the **round-cap reclaim** pulls band
+> back out of `luRemainder` and re-routes it to the cap owner's own material (`:1664`) — the very repair
+> this needs, already built, bounded to dead-end tips.
 >
-> ⛔ **What the cure must preserve, all already working:** the **mono-width envelope** and the
-> width-adjustment that rides it (above, `:1286`/`:1511`) · the **bent corner** as a slice of the band
-> (§6.1) · the **inside/outside strip swap with its slope-joiner** (§3.1, §6.1 Idea A) · **`jtMiter`, never
-> `jtRound`** (invariant 2 — `jtRound` re-rounds by radius=depth and corrupts operator-authored R=0
-> squares).
+> ⛔ **Preserve — all already working:** the **mono-width envelope**, `WB = cw + max(TL) + max(SW)` over the
+> **tile's** edges (`:1286`), so authoring an edge deeper grows the whole block's band while shallower routes
+> its residual to LU (`:1511`) ⇒ **the envelope is per-BLOCK, only ownership is per-edge, and the partition
+> runs purely along the ring** (§3.3 step 2) · the bent corner as a band slice (§6.1) · the inside/outside
+> strip swap with its slope-joiner (§3.1, §6.1 Idea A) · **`jtMiter`, never `jtRound`** (invariant 2).
 >
-> ⚠️ **One live tension to settle with Jacob before building, because it is doctrine against doctrine.**
-> `§6.9` doctrine 5 (operator-confirmed): *"**No cusp guard.** If `(R − max(d_A,d_B)) < 0`, honest weird
-> shape — **self-intersection is signal, not error.**"* One day later (2026-05-30) a per-block capacity
-> guard shipped that clamps `WB ≤ 0.9 · inscribed_capacity`, and `sectionPassTile` still clamps every ring
-> to the frozen `cap` (`:1297`). **The clamp is the thing doctrine 5 forbids**, and the G12 open item below
-> proposes extending it. Which one governs is a ruling, not a build.
+> ⚠️ **A RULING is owed before any build — doctrine against doctrine.** `§6.9`.5: *"**No cusp guard.** …
+> **self-intersection is signal, not error.**"* One day later a per-block capacity guard shipped
+> (`WB ≤ 0.9 · inscribed_capacity`), and `sectionPassTile` still clamps every ring to the frozen `cap`
+> (`:1297`). **G12 below proposes extending that clamp.** Which governs is Jacob's call, not a build.
 >
-> **The design record — read these before proposing anything here; the construction is not new and the
-> corner doctrine is settled:** `_archive/RIBBONS-figureground-emitter-2026-06-15.md` (the V1 keystone
-> `emitOneBlockRingBands`; §"What carried forward" = the four invariants binding the tile model) ·
-> `_archive/RIBBONS-history-2026-06-12.md §6.9` (the AASHTO/ADA corner-ribbon doctrine, 7 points) **and
-> `§7`** (the 13-month corner saga as a table — every construction tried, shipped or reverted, with its
-> lesson). *Troubleshooting archaeology 2026-06-12 → 2026-08-06: `_archive/SECTION-fill-tail-2026-08-07.md`.*
+> *Troubleshooting archaeology 2026-06-12 → 2026-08-06: `_archive/SECTION-fill-tail-2026-08-07.md`.*
 
 **LANDED (on `curb-offset-draw`):**
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
@@ -423,7 +372,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 **The open tail** — the ring partition above is the one *build*; everything below it is finish work:
 - **Perf / D6d — the gating item.** Every override re-strokes the whole map (the `tileGeos` whole-map memo); interactive handle/drag work can't be cleanly validated until the rebuild is block-local. This blocks *validation* of the handle responsiveness, not the wiring. (`[[project_d6a_curb_offset]]`.)
 - **Cap ped-wrap (G8)** — remaining: the asphalt blunt-*cap* SHAPE notch (an `offsetRingVariable` / frozen-`iA` item, not the FILL) + the undiagnosed Bentley Pl round-cap bug.
-- **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile).
+- **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile) — ⚠️ **gated on the doctrine-5 ruling above; `§6.9`.5 forbids the clamp this bullet proposes extending.**
 - **T3 — retire `buildBlockGeometryV2`.** It survives only as the frontage-edge identity builder (`feCustomKey`) the Measure/Survey handles read. Migrate that onto the tile `runs` (same `[skelId, side, segOrd]` triple, `tileGround.js:935`) and the file dies. Gate on fe-key parity (`scratch/t4-fe-parity.mjs`) — a drifted key silently orphans authored customs.
 - **Rename Measure → Section** — cosmetic, last; rides T3.
 - **Ped-band junction construction / per-edge continuity.** The weird-street FILL mess at junction-dense, name-shift-crossing streets (Dolman ↔ West 18th ↔ South 18th; Carroll, Kennett). ⛔ **Not a FILL build** — `iA` has 0 self-intersections there; the cure is upstream, in the SHAPE campaign (the skeleton produces correct geometry off which the ped derives). ⛔ Do **not** build a separate ped-silhouette: one SSoT polygon per junction, from which asphalt, curb, treelawn and sidewalk all derive (`OSM2STREETS-GROUNDING §1.2`). Live home: `BACKLOG §NOW`. *Full 2026-06-12 forensic + the two sub-cases (dead-end mouth-collapse, the default-fill front): `_archive/SECTION-fill-tail-2026-08-07.md`.*
