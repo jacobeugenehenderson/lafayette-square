@@ -21,9 +21,14 @@
 //      "round the block, offset the polygon" applied to a robust graph face.)
 //   3. asphalt = union of every tile's outer (grout-hugging) strip. The road
 //      between two tiles = each tile's half, meeting at the shared grout;
-//      asymmetric widths fall out (each tile offsets its own side's hw). The
-//      intersection fills where the tiles meeting at a node each contribute
-//      their asphalt — the IX is never constructed.
+//      asymmetric widths fall out (each tile offsets its own side's hw). At a
+//      node the meeting tiles each contribute their asphalt, so coverage is
+//      emergent — but the junction is NOT left emergent: [E3.2] consumes
+//      ribbons.junctionMap and CONSTRUCTS the intersection positively at every
+//      stamped node (runs trimmed back by a window, a window polygon welding
+//      the continuity pair at a shared curb point, one apron per node), and
+//      [E3.3] constructs the corner identities off it. Emergent coverage is
+//      the substrate; the junction silhouette is built.
 //   4. The perimeter beyond the outermost streets is the unbounded outer face
 //      (not a tile); it fills as LU = stencil − union(tiles).
 //
