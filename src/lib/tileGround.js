@@ -1101,6 +1101,18 @@ function groupRuns(tile) {
 // this tile's own runs — so the per-tile isolation is exact. Returns this tile's
 // { Wacc, tlByLu, luByLu } rings (the same arrays the old whole-map loop pushed
 // into). (Body is one indent deep from the old for-loop; logic is unchanged.)
+// ── CORNER_DUMP=1 · the corner debug channel (README "Corners" row) ──────────
+// DEBUG EMIT ONLY. Off unless the env flag is set; when off, nothing below it is
+// evaluated and construction is byte-identical. It answers ONE question the
+// geometry cannot be asked from outside: for every corner that BID (an entry
+// landed in `cornerT`, so `legTrim` already pulled the legs back), was the pad
+// built — and if not, WHICH gate declined it? An unhonoured takeover is a
+// MISLABEL, not a hole (SECTION §7): the released band falls to `luRemainder`
+// and renders as land use, so it is invisible to any area/coverage measure.
+// Drain `cornerDump.rows` after each sectionPassTile call; the caller owns the
+// tile identity (sectionPassTile has none).
+export const cornerDump = { on: (typeof process !== 'undefined' && process.env?.CORNER_DUMP === '1'), rows: [] }
+
 export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
   // treelawn band. Keys on the RESOLVED outer material (e.mat.outer) so a flipped
@@ -1424,6 +1436,8 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const prev = cornerT.get(k)
           if (!prev) cornerT.set(k, { p, T: e.total, trim: legTrim[i], legs: [leg] })
           else { if (e.total > prev.T) prev.T = e.total; if (legTrim[i] > prev.trim) prev.trim = legTrim[i]; prev.legs.push(leg) }
+          // CORNER_DUMP: remember WHICH runs met here. Inert — nothing below reads it.
+          if (cornerDump.on) { const c = cornerT.get(k); (c.dbg || (c.dbg = [])).push(`${run.skelId}|${run.side}|${run.segOrd}`) }
         })
         let t0 = legTrim[0]
         let t1 = legTrim[1]
@@ -1563,16 +1577,22 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     let cornerPad = []
     const cornerTreelawn = []   // corner LU strips (SW↔SW inner) + ramp wedges → tlByLu[lu]
     const swCarve = []          // Idea A — LU wedges to carve from the deep leg's SW strip
+    // CORNER_DUMP: the TILE-level gate. Every corner that bid here declines together.
+    if (cornerDump.on && cornerT.size && !(bandRem.length && fillets.length)) {
+      const why = [!bandRem.length && 'bandRem-empty', !fillets.length && 'no-fillets'].filter(Boolean).join('+')
+      for (const [ck, c] of cornerT) cornerDump.rows.push({ k: ck, p: c.p, T: c.T, skel: c.dbg || [], legs: c.legs?.length ?? 0, reason: `tile-gate:${why}` })
+    }
     if (bandRem.length && cornerT.size && fillets.length) {
       const shallowByT = new Map()   // distinct depth → band region above it (one offset per depth)
-      for (const [, c] of cornerT) {
-        if (c.T <= 1e-6) continue
+      for (const [ck, c] of cornerT) {
+        const dump = (reason, extra) => { if (cornerDump.on) cornerDump.rows.push({ k: ck, p: c.p, T: c.T, skel: c.dbg || [], legs: c.legs?.length ?? 0, reason, ...extra }) }
+        if (c.T <= 1e-6) { dump('zero-depth'); continue }
         // Pair this corner with the arc the curb rounded here (nearest fillet
         // apex → the sharp node). No nearby fillet ⇒ a sharp R=0 corner: skip,
         // the legs already meet at the miter with no wedge to slice.
         let best = null, bestD = Infinity
         for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bestD) { bestD = d; best = f } }
-        if (!best || bestD > best.r + c.trim + 1) continue
+        if (!best || bestD > best.r + c.trim + 1) { dump('no-fillet-in-range', { bestD: best ? +bestD.toFixed(3) : null, tol: best ? +(best.r + c.trim + 1).toFixed(3) : null }); continue }
         let shallow = shallowByT.get(c.T)
         if (!shallow) {
           shallow = (c.T >= TLmax + SWmax - 1e-9)
@@ -1584,7 +1604,10 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         // leg slab's pulled-back end, closing the leg↔corner seam (the LU notch).
         const sector = arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)
         const pad = intersectRings(shallow, [sector])
-        if (!pad.length) continue
+        // A FOURTH decline the brief's three gates do not name: the sector met the
+        // band but their intersection is empty (the band above c.T is already fully
+        // claimed by the leg strips here, or the sector missed bandRem entirely).
+        if (!pad.length) { dump('empty-pad'); continue }
         // ── Idea A: CONCENTRIC arc at the shallow (ADA) depth; ramp the deep leg ──
         // The corner arc is a clean concentric ring at cMin = min(both legs'
         // concrete depths). The DEEPER leg's set-back sidewalk SLIDES to the curb
@@ -1626,6 +1649,10 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         }
         cornerPad.push(...concrete)
         if (luInner.length) cornerTreelawn.push(...luInner)   // inner LU → parcel-matched (tlByLu[lu])
+        // BUILT — but `concrete` can still be empty (the whole pad went to luInner),
+        // which is a takeover honoured in name only. Kept as its own row, never
+        // folded into BUILT.
+        dump(concrete.length ? 'BUILT' : 'built-empty-concrete', { rings: concrete.length })
       }
     }
     // Whatever the legs + pads didn't claim flows to LU — the remainder runs
