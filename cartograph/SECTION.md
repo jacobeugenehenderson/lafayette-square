@@ -295,7 +295,14 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > **The symptom:** the ped band stops short of **some** corners — green where the sidewalk should turn.
 > Some, not all.
 >
-> ### What the FILL builds — `sectionPassTile`, `tileGround.js:1104`
+> ⭐ **This is the V1 keystone construction working as designed, with one step of the design not honoured.**
+> The design is on record and predates the defect: *"three inward Clipper offsets of the block ring
+> (`cw` / `cw+TL` / `WB`) with `jtMiter`, 2 strips + **sector slicing**; the corner is the **`fullBand`
+> slice** (band bent)"* — `emitOneBlockRingBands`, shipped 2026-05-29
+> (`_archive/RIBBONS-figureground-emitter-2026-06-15.md`). The emitter was replaced at T4; **the
+> construction it names is what `sectionPassTile` builds today**, under the same names.
+>
+> ### The construction as built — `sectionPassTile`, `tileGround.js:1104`
 >
 > | | code | what it produces |
 > |---|---|---|
@@ -307,14 +314,12 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > | 6 | `outerStrip = claim − ringAt(g.o)` ; `innerStrip = (claim ∩ ringAt(g.o)) − ringAt(g.total)` (`:1489`) | the two strips — **concentric rings, clipped by the stencil** |
 > | 7 | `luRemainder = iW ∪ luExtra ∪ (bandRem − cornerClaimed)` (`:1642`) | everything unclaimed → **land use** |
 >
-> ⭐ **The continuous ring already exists.** `fullBand` is closed around the tile and offset from the frozen
-> `iA` by Clipper. **Every strip boundary in the FILL is a concentric offset of `iA`** — the per-run sector
-> never defines one. Its only job is to decide *which arc of the continuous band* carries this group's
-> `(outer depth, total depth, outer material, inner material)`; runs group by exactly that 4-tuple (`gkOf`,
-> `:1341`), so a default tile has one or two groups.
->
-> ⭐ **∴ the per-run slicing carries a LABEL, not a geometry.** That is the whole of what it adds over the
-> whole band.
+> ⭐ **The continuous ring is not missing — it is step 2, and it always was.** Every strip boundary in the
+> FILL is a concentric offset of `iA`; **the per-run sector never defines one.** Its only job is the
+> designed one — *sector slicing for material tags*: decide which **arc** of the continuous band carries this
+> group's `(outer depth, total depth, outer material, inner material)`. Runs group by exactly that 4-tuple
+> (`gkOf`, `:1341`), so a default tile has one or two groups. **The slicing carries a LABEL, not a
+> geometry** — which is why "give the FILL a continuous ring" is not the cure: it has one.
 >
 > ### Width adjustment already maintains the mono-width band — and the cure must keep doing so
 >
@@ -331,17 +336,22 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > the cure needs is therefore purely *along the ring* — it does not touch the envelope, and it must not.
 > This is `§3.3` step 2 and it is sacrosanct (`RIBBONS §3.9a`).
 >
-> ### Why a gap appears, and what it is made of
+> ### Where the design is not honoured — the corner takeover is CONDITIONAL
 >
-> The stencil is pulled back from each corner end by `asphalt-hw + that corner's resolved R` (`legTrim`
-> `:1416`, `tangentTrim` `:1409`), and the uncovered wedge is meant to be re-covered by a separately built
-> corner pad — an arc sector off the frozen fillet, gated on `bandRem.length && cornerT.size &&
-> fillets.length` (`:1566`) and on finding a fillet near that corner (`:1575`).
+> ⭐ **The pull-back is correct and intended.** Corner doctrine, operator-confirmed 2026-05-18
+> (`_archive/RIBBONS-history-2026-06-12.md §6.9`): *"**Both legs stop at tA/tB; the corner ribbon takes
+> over; legs resume.**"* So `legTrim` (`:1416`, exact via `tangentTrim` `:1409`) is the design — the legs are
+> *supposed* to stop at the tangents.
 >
-> ⭐⭐ **Band area with no stencil over it is not missing — it falls through to `luRemainder` and renders as
-> land use.** The gap is **ribbon labelled green**, not absent geometry. The two stencils (leg sectors,
-> corner pads) are independent area masks that are *required* to tile the ring exactly, and nothing makes
-> them do so.
+> ⭐⭐ **What the design does not say is "if a fillet can be found."** In `sectionPassTile` the takeover is
+> gated twice — on `bandRem.length && cornerT.size && fillets.length` (`:1566`), and per corner on locating
+> a fillet within `best.r + c.trim + 1` of it (`:1575`). Doctrine has the corner ribbon taking over
+> **unconditionally**; the code takes over **where it can pair the corner with an arc.**
+>
+> ⭐⭐ **And an unhonoured takeover is not a hole — it is a mislabel.** Band the legs released and the corner
+> did not claim falls through to `luRemainder` (`:1642`) and **renders as land use.** The gap is **ribbon
+> painted green**, not absent geometry. That is why the symptom is intermittent while the curb is uniformly
+> correct: *step over* (the trim) is unconditional, *step back* (the takeover) is not.
 >
 > Whether a corner exists, and whether the pull-back is exempted, is decided by five predicates. **None
 > reads the curb:**
@@ -373,17 +383,33 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > walk-ordinal coupler, the mouth wrap and `SPUR_OUTLINE` were each built and reverted; each treats the
 > *output* of a wrong decision.
 >
-> **Ownership along the ring must be a PARTITION, not a set of overlapping area masks.** Every point of
-> `fullBand` belongs to exactly one run or one corner — assign it by position on the ring, the way the
-> single-closed-run path already does for a one-owner tile, and there is no uncovered case left for a
-> predicate to be wrong about.
+> **The cure is not a new construction — it is honouring `§6.9` doctrine 4: the corner ribbon takes over,
+> full stop.** Every point of `fullBand` belongs to exactly one run or one corner; ownership along the ring
+> is a **partition**, not two independent area masks that happen to abut. Where a corner has no fillet to
+> pair with (R=0, or a fillet the search misses) it still owns its arc — a square corner is a band slice
+> too (`_archive/RIBBONS-figureground-emitter §"What carried forward"` invariant 3: *the ADA corner pad is a
+> band-slice, not predicated on the arc — works square OR round*). ⭐ The one-owner path (`:1321`) is the
+> partition already working where there is nothing to partition.
 >
-> ⛔ **What the cure must preserve, all three already working:** the **mono-width envelope** and the
-> width-adjustment behaviour that rides it (above, `:1286`/`:1511`) · the **bent corner** as a slice of the
-> band (§6.1) · the **inside/outside strip swap with its slope-joiner** (§3.1, §6.1 Idea A).
+> ⛔ **What the cure must preserve, all already working:** the **mono-width envelope** and the
+> width-adjustment that rides it (above, `:1286`/`:1511`) · the **bent corner** as a slice of the band
+> (§6.1) · the **inside/outside strip swap with its slope-joiner** (§3.1, §6.1 Idea A) · **`jtMiter`, never
+> `jtRound`** (invariant 2 — `jtRound` re-rounds by radius=depth and corrupts operator-authored R=0
+> squares).
 >
-> *Investigation archaeology 2026-06-12 → 2026-08-06 (the attempted cures, and the counts that did not
-> reproduce): `_archive/SECTION-fill-tail-2026-08-07.md`.*
+> ⚠️ **One live tension to settle with Jacob before building, because it is doctrine against doctrine.**
+> `§6.9` doctrine 5 (operator-confirmed): *"**No cusp guard.** If `(R − max(d_A,d_B)) < 0`, honest weird
+> shape — **self-intersection is signal, not error.**"* One day later (2026-05-30) a per-block capacity
+> guard shipped that clamps `WB ≤ 0.9 · inscribed_capacity`, and `sectionPassTile` still clamps every ring
+> to the frozen `cap` (`:1297`). **The clamp is the thing doctrine 5 forbids**, and the G12 open item below
+> proposes extending it. Which one governs is a ruling, not a build.
+>
+> **The design record — read these before proposing anything here; the construction is not new and the
+> corner doctrine is settled:** `_archive/RIBBONS-figureground-emitter-2026-06-15.md` (the V1 keystone
+> `emitOneBlockRingBands`; §"What carried forward" = the four invariants binding the tile model) ·
+> `_archive/RIBBONS-history-2026-06-12.md §6.9` (the AASHTO/ADA corner-ribbon doctrine, 7 points) **and
+> `§7`** (the 13-month corner saga as a table — every construction tried, shipped or reverted, with its
+> lesson). *Troubleshooting archaeology 2026-06-12 → 2026-08-06: `_archive/SECTION-fill-tail-2026-08-07.md`.*
 
 **LANDED (on `curb-offset-draw`):**
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
