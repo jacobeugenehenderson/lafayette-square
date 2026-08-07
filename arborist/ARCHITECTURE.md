@@ -469,7 +469,7 @@ Bake-step knockdown to LS mobile budget (`publish-glb.js` weld/dedup/simplify at
 
 ### Option δ scope split — locked 2026-05-19 PM
 
-LiDAR provides **skeleton only** in v1.5. Canopy (leaves) stays fully procedural — D.1b leaf emission + Phase F gradient maps + Configuration D rendering (see below). The LiDAR canopy-point sampling alternative ("use real foliage points to place leaf cards") is reserved for v1.6+ when/if street-view (v2) makes the canopy-fidelity case worth the additional pipeline complexity.
+LiDAR provides **skeleton only** in v1.5. Canopy (leaves) stays fully procedural — D.1b leaf emission, rendered **all-mesh** per the live model (`§Tree-render reality at LS`). ⛔ *(This line used to name "Phase F gradient maps + Configuration D rendering"; both of those designs are retired — see the two stubs below. The scope split it describes is unaffected: what LiDAR contributes is the skeleton, whatever the canopy renderer is.)* The LiDAR canopy-point sampling alternative ("use real foliage points to place leaf cards") is reserved for v1.6+ when/if street-view (v2) makes the canopy-fidelity case worth the additional pipeline complexity.
 
 **Why this split:** LiDAR's high-value win at LS Hero distance is **trunk topology authenticity** — bark photo wraps onto real-tree geometry instead of parametric tubes, so "the shaders can work harder for the same calories." Canopy-point sampling is a tempting expansion but its visual contribution at LS distances (where individual leaves are sub-pixel) is uncertain and the pipeline complexity is significant. The split captures the high-confidence win without the high-uncertainty investment.
 

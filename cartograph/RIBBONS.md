@@ -68,13 +68,19 @@
 >
 > ---
 >
-> ⛔⛔ **TRIED AND REVERTED, 2026-07-31 — the answer above did NOT survive the eye.** Asserting the spur as
+> ⛔⛔ **TRIED AND REVERTED, 2026-07-31 — but the verdict is UNRELIABLE, not reversed.** Asserting the spur as
 > a closed two-sided outline before the walk (`spurOutline.js`, `SPUR_OUTLINE`) was built and then
 > **reverted out of trunk** (`152e7734` built it, `7b5b87a3` reverted it, taking the corner registry and
 > the probes with it). There is **no `spurOutline.js` in the tree and no `SPUR_OUTLINE` in any source
 > file** — verified 2026-08-04. ⛔ **Do not go looking for the flag; there is nothing behind it.**
-> ⭐ **The lesson is the load-bearing part: every probe was green and the eye still said no**
-> (`PREBAKE §4.0a`). The dead-end substrate question is therefore **OPEN**, not answered.
+> ⭐⭐ **THE LESSON IS THE LOAD-BEARING PART, AND IT IS NOT "the probes don't predict the eye" — that
+> over-read it.** Named 2026-08-06: **Jacob was looking at `lafayette-square` while the work was on
+> `lafayette-square-staging`, and neither party knew all day.** Different maps (overlay-authored
+> **52 vs 177**), so the verdict was taken on the scene the change was *not* on. ⛔ **Do not cite the
+> revert as proof the construction fails, and do not read this as licence to re-land it** — the probes
+> are neither vindicated nor discredited. ⭐ **An eye verdict must record the SCENE it was taken on**,
+> as strictly as a measurement records its authoring state (`PREBAKE §4.0a`, `ROADMAP A0`).
+> The dead-end substrate question is therefore **OPEN**, not answered.
 
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 

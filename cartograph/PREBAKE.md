@@ -103,9 +103,16 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 
 > ### ⭐⭐ 4.0a — asserting the spur BEFORE polygonization: TRIED, REVERTED (2026-07-31)
 >
-> Built (`152e7734`), run past Jacob eye on both scenes, judged **WORSE**, reverted (`7b5b87a3`).
-> `SPUR_OUTLINE` is not in the code. ⭐ **Every probe was green and the eye still said no — these
-> probes do not predict the eye.** Do not re-derive that table and read it as success.
+> Built (`152e7734`), judged **WORSE** on Jacob's eye, reverted (`7b5b87a3`). `SPUR_OUTLINE` is not in
+> the code. ⛔⛔ **THE VERDICT IS UNRELIABLE, NOT REVERSED — and the older claim that it was "run past
+> Jacob's eye on both scenes" is itself in doubt.** Named 2026-08-06: **Jacob was looking at
+> `lafayette-square` while the work was on `lafayette-square-staging`, and neither party knew for the
+> whole day.** Those are different maps — overlay-authored streets **52 vs 177**, tiles 101 vs 116 — so
+> the more-authored scene is precisely where the construction's effect would have shown.
+> ⚠️ **The older lesson here, *"every probe was green and the eye still said no — these probes do not
+> predict the eye,"* over-read a verdict taken on the other map.** The probes are neither vindicated
+> nor discredited; they were never tested against a correctly-scened look. ⛔ Do not re-derive that
+> table and read it as success **and** do not cite the revert as proof the construction fails.
 > Full construction, measurements and the bugs found building it →
 > **`_archive/PREBAKE-4.0a-spur-assert-REVERTED-2026-07-31.md`**.
 > Live doctrine for dead ends → `POLYGON-FIRST.md §2.1` (Checks 1–5).
