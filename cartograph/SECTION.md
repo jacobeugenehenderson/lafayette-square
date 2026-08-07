@@ -347,6 +347,25 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > back out of `luRemainder` and re-routes it to the cap owner's own material (`:1664`) — the very repair
 > this needs, already built, bounded to dead-end tips.
 >
+> ### ⭐⭐ The partition ALREADY EXISTS — the cure needs no new key
+>
+> `groupRuns` (`:1060`) walks the tile's `edges[]`, groups consecutive edges sharing `(streetIdx, side)`,
+> and consumes the whole ring ⇒ **every ring edge lands in exactly one run, and every run carries
+> `skelId / side / segOrd` — the `blockCustoms` key.** A total, exclusive, identity-bearing partition of the
+> ring, already frozen into `shape.json`.
+>
+> ▶ **`node scratch/claims-ring-partition.mjs`** (read-only, every baked scene) — ⛔ don't quote the numbers,
+> run it. **Double-covered ring edges: 0 on every scene.** Off-ring run vertices land on **dead-end** tiles
+> and are attributed to the mouth slit (**A0**), so they do not block this.
+>
+> ⇒ **The defect is a ROUND TRIP.** The FILL takes each run's polyline back out, re-strokes an **area**
+> (`strokeOpen`), trims it, and intersects it with the band. **A partition cannot leave a gap; an area mask
+> can.** ⭐ And identity was never in the mask — it is in the run — so this needs **no re-key and no parity
+> gate**, which is what killed the walk-ordinal coupler and is what T3 is gated on.
+>
+> ⚠️ **Not yet established:** that painting per-arc reproduces today's geometry where today's geometry is
+> correct. That is the build's gate — dual-state byte-identity, the `scratch/a03-curb-identity.mjs` pattern.
+>
 > ⛔ **Preserve — all already working:** the **mono-width envelope**, `WB = cw + max(TL) + max(SW)` over the
 > **tile's** edges (`:1286`), so authoring an edge deeper grows the whole block's band while shallower routes
 > its residual to LU (`:1511`) ⇒ **the envelope is per-BLOCK, only ownership is per-edge, and the partition
@@ -379,6 +398,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **Perf / D6d — the gating item.** Every override re-strokes the whole map (the `tileGeos` whole-map memo); interactive handle/drag work can't be cleanly validated until the rebuild is block-local. This blocks *validation* of the handle responsiveness, not the wiring. (`[[project_d6a_curb_offset]]`.)
 - **Cap ped-wrap (G8)** — remaining: the asphalt blunt-*cap* SHAPE notch (an `offsetRingVariable` / frozen-`iA` item, not the FILL) + the undiagnosed Bentley Pl round-cap bug.
 - **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile). ⚠️ **First classify the band-neck case by the regime test above** — a clamp is licensed only where the Clipper output actually inverts (regime 2); if the neck merely pinches to a coherent narrower band, `§6.9`.5 applies and there is nothing to clamp.
+- **⭐ NEW LEAD (2026-08-07) — 4 tiles whose runs leave the ring with NO dead-end tip to explain it:** altadena tiles 45 / 159 / 501, centrum tile 234 (`claims-ring-partition.mjs`). Every other off-ring case in every scene sits on a dead-end tile and belongs to A0; these four do not, and **Lafayette Square has zero of them** — invisible on the mould, which is the whole reason the check runs per scene. Undiagnosed; a lead, not a finding.
 - **T3 — retire `buildBlockGeometryV2`.** It survives only as the frontage-edge identity builder (`feCustomKey`) the Measure/Survey handles read. Migrate that onto the tile `runs` (same `[skelId, side, segOrd]` triple, `tileGround.js:935`) and the file dies. Gate on fe-key parity (`scratch/t4-fe-parity.mjs`) — a drifted key silently orphans authored customs.
 - **Rename Measure → Section** — cosmetic, last; rides T3.
 - **Ped-band junction construction / per-edge continuity.** The weird-street FILL mess at junction-dense, name-shift-crossing streets (Dolman ↔ West 18th ↔ South 18th; Carroll, Kennett). ⛔ **Not a FILL build** — `iA` has 0 self-intersections there; the cure is upstream, in the SHAPE campaign (the skeleton produces correct geometry off which the ped derives). ⛔ Do **not** build a separate ped-silhouette: one SSoT polygon per junction, from which asphalt, curb, treelawn and sidewalk all derive (`OSM2STREETS-GROUNDING §1.2`). Live home: `BACKLOG §NOW`. *Full 2026-06-12 forensic + the two sub-cases (dead-end mouth-collapse, the default-fill front): `_archive/SECTION-fill-tail-2026-08-07.md`.*
