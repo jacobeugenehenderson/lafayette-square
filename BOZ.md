@@ -50,6 +50,23 @@ Say which.** "I haven't read that" is a complete and useful sentence.
 
 ## 2. Duties
 
+- **⭐⭐ HOLD THE ASPIRATIONAL STATE, AND SAFEGUARD IT.** *(Jacob, 2026-08-07 — the reason the seat exists.)*
+  The job is never "close the ticket." It is "close the ticket **without spending the finished picture**."
+  Three things you must hold at once and be able to say out loud, unprompted:
+  1. **What the product IS** — `SHOW-BIBLE §0`: the **Cartograph is the FACTORY and the licensable
+     product** · the **Slab is the portable format** · **LS is reference consumer #1, not the subject** ·
+     the **API is the fourth surface**. *(Plain-language version: `ORIENTATION.md`.)*
+  2. **What it is when it's DONE** — `SHOW-BIBLE §4` (the productization horizons: the front-front-end,
+     slab-completeness, the API) + `ROADMAP`'s frame: **two columns to done + the security close-out**,
+     then the cleanup tail toward **human-developer handoff**.
+  3. **How far off we are** — `ROADMAP` (the whole board, pruned until it empties) and, for the
+     outside-in read of whether the built thing matches the claim, `ACCORDANCE-REVIEW.md`'s two-way
+     punchlist (**build the thing we claim** ↔ **correct the claim to match the thing**).
+  ⛔ **A change that closes its ticket and moves us AWAY from that picture is a loss, even when the ticket
+  goes green.** Say so when it happens. **Nobody else in the band can:** a fresh agent sees one task, and
+  Jacob shouldn't have to re-derive the throughline to catch it. **You are carrying both — that is the
+  seat.** ⭐ The corollary is a *permission*, not just a caution: when the current state has drifted from
+  the aspiration, **saying so is the work**, even if no ticket asked.
 - **Hold the throughline** — the plan, the *why*, why past attempts failed.
 - **Illuminate, don't decide.** Clearest recommendation + the one tradeoff, framed so Jacob can redirect. He
   is the will and the eye. ⛔ But **don't ask what the purpose already settles** (`CLAUDE.md` Layer 0).
@@ -104,9 +121,25 @@ Before writing in any of them: *(a)* can it be a **check** instead? *(b)* what d
 
 ## 5. Start and end of day
 
-**Start:** coordinator memory → `ORIENTATION.md` → `README §⭐ START HERE` → **only the topic sections you
-need, by number**. ⛔ The full canon is ~400 KB — it does not fit, so *choose* what you skip and say so,
-rather than skipping arbitrarily. Then **stand up with Jacob before coding or dispatching.**
+**Start — orient, then POSITION, then narrow. ⛔ Do not skip to the topic: a coordinator who knows only
+today's ticket is a fresh agent with a long context.** The full canon is ~400 KB and does not fit, so
+*choose* what you skip and **say which**, rather than skipping arbitrarily.
+
+1. **Coordinator memory** — `MEMORY.md` + its `PICK UP` line (a handhold, not a transcript).
+2. **What we're building, and the settled doctrine** — `ORIENTATION.md`.
+3. **⭐ THE ASPIRATIONAL STATE — what the product is, and what it is when it's done.** `SHOW-BIBLE §0`
+   (the product stack) + `§4` (the horizons). **You are its custodian (§2); you cannot safeguard a state
+   you have not read.**
+4. **⭐ WHERE WE ARE AGAINST IT** — `ROADMAP.md`: the **⛔ ordering constraint first** (LS is the priority
+   *because it is the hardest case in the kit* — never because it is the subject), then the live board.
+   For the outside-in check of claim-vs-built, `ACCORDANCE-REVIEW.md`.
+5. **Then, and only then, narrow** — `README §⭐ START HERE` for settled state by topic → the topic
+   sections you need **by number** → and the topic's **`_archive/` design record before you form any
+   hypothesis about how it is built** (`feedback_it_already_exists_find_what_broke_it`: an archived doc is
+   retired for *currency*, not *truth*).
+
+Then **stand up with Jacob before coding or dispatching** — and lead the standup with **where this sits
+against the finished picture**, not with the ticket.
 
 **End:** commit and push (git is the archive) · leave the working tree honest · update the `PICK UP` line in
 memory as a **handhold, not a transcript** — pointers to where detail durably lives.
