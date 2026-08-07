@@ -284,6 +284,65 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 
 ## 7. Where Section is today
 
+> ## ⛔⛔ THE ROOT OF THE BROKEN SIDEWALK — the FILL decides its corners from CHAIN predicates, never from the curb (2026-08-06)
+>
+> **Jacob, 2026-08-06, and this is the frame for the whole tool:** *"The sidewalk should be one continuous
+> smooth line all around the entire polygon, around the whole map."* · *"Legs and corners are all planned,
+> and the different configurations work because they're based on the **curb** and not chains."* ·
+> **"ALL CURBS WORK."** · *"The Survey tool as it exists today works as expected. It is the Measure/Section
+> customs tool that doesn't work."*
+>
+> ⭐ **The symptom** (screenshotted at Carroll × Dolman, unchanged for weeks): the ped band **stops short of
+> some corners**, leaving a gap. **Some, not all** — which is the diagnostic fact, because no curb-derived
+> explanation can be intermittent. Jacob's inference, which is correct: *a continuous inward offset has no
+> natural place to END, so something is handing the FILL a boundary the curb does not have.*
+>
+> **What hands it that boundary — `tileGround.js:1416`:**
+> ```js
+> const legTrim = ends.map(([p], i) =>
+>   (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run))
+>     ? 0                                 // no pull-back, no corner bid
+>     : tangentTrim(p, legDirAt(i)))      // pull the band back to the tangent
+> ```
+> Each run is **pulled back from its corner ends** by `asphalt-hw + the corner's resolved R` (`:1305`), and
+> the uncovered wedge is filled by a **separately built pad**, gated on
+> `bandRem.length && cornerT.size && fillets.length` (`:1566`) and then on finding a nearby fillet apex.
+>
+> ⛔ **Five predicates decide whether the band turns a corner. NOT ONE OF THEM READS THE CURB:**
+>
+> | decision | predicate | what it actually reads |
+> |---|---|---|
+> | is this a corner at all? | `cornerAt` (`:245`) — `a !== b` | **skelId** identity |
+> | exempt from pull-back? | `tipped` | dead-end tip |
+> | " | `through` | T-continuation |
+> | " | `isNameTransition` | **chain name change** |
+> | " | `isThruNode` | **through-node stamp** |
+>
+> ⇒ **Trim happens; pad doesn't; gap appears** — at exactly the corners where a chain predicate disagrees
+> with the (correct) curb. ⭐ **Since all curbs work, the curb ring and its fillets are RIGHT — the FILL is
+> simply not reading them for this decision.**
+>
+> ⚠️ **This is not a new bug; it is the named root of the family this doc's open tail has been circling.**
+> `README`'s Corners row already records, unfixed since 2026-07-16, that **`isThruNode` keys the WRONG RUN**
+> — *"marks the interior-vertex street as 'through', which picks the side street when the through-street is
+> split into 2 skelIds at the node (Mackay), and misses Kennett (node-coord mismatch)."* **A predicate that
+> picks the wrong run when a street is split into two skelIds is chain fragmentation reaching the FILL and
+> deciding whether the sidewalk turns the corner.** §302's canonical exemplar — *"Dolman ↔ West 18th ↔
+> South 18th; also Carroll, Kennett"* — is the very complex Jacob screenshotted.
+>
+> ⛔⛔ **THEREFORE THE FILL-PATCH CLASS IS CLOSED. Do not clamp, wrap, re-key or snap.** Every attempt has
+> been reverted — the `thinTile`→`cap` band-neck clamp (2026-06-12), the walk-ordinal coupler, the mouth
+> wrap, `SPUR_OUTLINE`. They were all treating the *output* of a wrong decision. The decision is the bug.
+>
+> ⭐ **The shape of the cure, stated but NOT built (needs a standup — the configurations are hard-won):**
+> the curb already solved this exact problem with **`offsetRingVariable` — one continuous ring with per-edge
+> offsets.** The FILL never got that treatment; it is still N pulled-back run slabs plus separately-built
+> corner pads that must be reconciled. **A single continuous variable-depth inward offset of the block ring
+> has nowhere to end**, which is precisely the property Jacob is asking for. ⛔ **Whatever is built must
+> preserve what is already hard-won: mono-width ribbons and corners, and the inside/outside sidewalk swap
+> with its slope-joiner.** ▶ Next, and cheap: **name the broken corners** — enumerate every corner where a
+> run boundary exists but the four exemptions disagree with the curb, on the clean baseline.
+
 **LANDED (on `curb-offset-draw`):**
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
