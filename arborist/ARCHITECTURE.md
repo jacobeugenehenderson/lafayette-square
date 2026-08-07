@@ -241,25 +241,20 @@ generateTreeMesh({
 
 **The doctrine (the TARGET this section describes):** the Salon Workstage preview should BE the published artifact, rendered live — not "similar to," not "two consumers of the same material." The bake chain (compose → generate-salon → bake-look → bake-trees) is the slab boundary that publishes whatever the Salon authored; LS is where that published slab gets consumed. The aim is **no daylight** between Salon preview and LS render that the operator must step across to verify their work. *(Today: see the two gaps above.)*
 
-**Sequencing — ⚠️ SUPERSEDED 2026-06-25 (the explicit two-gesture / Adopt + Re-publish model below is RETIRED):** edits now **autosave** and the Grove **"Bake → Slab" regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`), so the per-species **Re-publish gesture is gone** — the live flow is *author (autosaves) → Grove bake (regenerates + ships)*. Live home = `README.md §The Grove → Slab` + `NOTES.md` (2026-06-25). The diagram + Gesture-split note below are kept as the historical as-built record.
+**Sequencing (live since 2026-06-25).** Edits **autosave**; the Grove's **"Bake → Slab" regenerates from source** (`generate-salon` → `bake-look` → `bake-trees`). ⛔ **There is no per-species "Re-publish" gesture and no "Adopt" step** — do not document, wire, or reason from them. The flow is:
 
 ```
-[operator iterates in the Salon]              ← AUTHORING (must be visually complete here)
-       ↓ Adopt
-[operator hits Re-publish species]            ← STAGE TO LIBRARY (authoring side)
-       ↓ generate-salon → publish-glb
-       ↓ rebuild index + syncLookRoster (metadata)
-[species artifacts in public/trees/<species>] ← STAGED (library), slab untouched
+[operator iterates in the Salon]              ← AUTHORING (autosaves; must be visually complete here)
        ↓
-[operator opens Grove, hits Bake]             ← SHIP TO SLAB (production side, explicit)
-       ↓ bake-look → bake-trees (+ Vellum posterized extract)
+[operator opens Grove, hits Bake → Slab]      ← SHIP TO SLAB (regenerates from source, explicit)
+       ↓ generate-salon → bake-look → bake-trees (+ Vellum posterized extract)
        ↓ ════════ SLAB BOUNDARY ════════
 [scene.json + trees-atlas + per-Look GLBs]   ← FROZEN ARTIFACT
        ↓ load
 [InstancedTrees.jsx renders in LS]            ← CONSUMPTION
 ```
 
-**Gesture split (Brief 14, Lintel 2026-05-23):** Re-publish and the slab bake were a single fused gesture (Re-publish fired `bakeLook` fire-and-forget). They're now two intentional gestures — Re-publish *stages to the library*, Grove *ships to the slab*. This stops rapid Salon iteration from spam-baking the slab and keeps the operator's mental model honest about when LS changes. Per `project_authoring_is_live_production_is_static`. Note this does NOT relax the preview-equals-LS doctrine above: the Salon preview must still be visually complete: the split only changes *when the bake fires*, not *what the operator authors against*.
+⭐ **What the retired two-gesture split was FOR, and the constraint it still encodes:** authoring must not spam-bake the slab, and the operator's mental model of *when LS changes* must stay honest (`project_authoring_is_live_production_is_static`). Autosave + an explicit Grove bake preserves both — the bake is still one deliberate gesture. ⛔ **And neither model relaxes the preview-equals-LS doctrine above:** when the bake fires is a separate question from what the operator authors against. Deeper: `README.md §The Grove → Slab`.
 
 If a shader effect doesn't fire in the Salon preview, the operator can't author against it. Period. They have no iteration loop. Telling the operator to "verify in LS" routes them past the slab boundary into production — which IS the publishing step, not a verification step. That's the bug that triggered this doctrine (Brief 2.1, 2026-05-22).
 
@@ -560,100 +555,25 @@ UI controls bind to `effective`. Without the DEFAULTS layer, controls that refer
 
 ---
 
-## Phase F leaf-color architecture (design, 2026-05-19)
+## Phase F leaf-color architecture — ⛔ NOT the live model (design retired 2026-06)
 
-> ⚠️ **SUPERSEDED 2026-06 — the `annualCycle` manifest + per-Look override-packs design below did NOT become the live model.** Leaf **color** is now a **rubric axis recolored via posterize** (build-once greyscale base → posterized tint), not a per-anchor gradient LUT keyed on `uDayOfYear`. Live home = `scratch/FOREST-BUILDER-KIT-MATCHER.md §6` + `SALON-INTERFACE.md §2` (root). Kept as the historical design record of the Phase F pivots.
+⛔ **Do not build to the `annualCycle` manifest + per-Look override-packs design.** It was designed
+2026-05-19 and never became the live model. **Leaf colour is a rubric axis recoloured via posterize**
+(build-once greyscale base → posterized tint) — *not* a per-anchor gradient LUT keyed on `uDayOfYear`.
 
-Phase F's leaf surface architecture went through three pivots on 2026-05-19. The final shape consolidates three doctrines: vendor-pack binding, year-long tree (annual cycle), and per-Look art-direction overrides. See `BACKLOG.md` Phase F for full pivot history; [[project_year_long_tree_doctrine]] for the year-long manifest schema in detail.
-
-### Layer 1 — Leaf-pack library (greyscale shape + PBR)
-
-Leaf shapes live as vendor or operator-authored PBR packs at `public/textures/leaves/shapes/<pack_id>/`:
-
-- `Color.jpg` — desaturated → luminance value used as gradient-map t-coordinate
-- `Opacity.jpg` — alpha mask (shape silhouette)
-- `NormalGL.jpg` — per-leaf surface direction (real per-leaf lighting)
-- `Displacement.jpg` — optional bevel/relief (defer use to v1.6 unless visible at Hero)
-
-10 vendor packs live at `assets/botanical-reference-hires/LeafSet0xx/` covering ~80% of LS inventory by morphology (palmate via LeafSet010, oak/lobed via LeafSet016, willow/narrow via LeafSet013, redbud/heart via LeafSet004, pine needles via LeafSet019, etc.). README in that directory pre-tags each pack to morphology — canonical source.
-
-**Morphology → pack mapping** lives in (planned) `arborist/leaf-pack-bindings.json` — drives auto-suggested defaults per species in the workspace UI. Coverage gaps (Ginkgo `fan`, Honeylocust `fine_compound`, etc.) are explicit; flagged for operator-authoring or future vendor sourcing.
-
-Per [[feedback_leverage_vendor_pbr_before_authoring]]: operator authoring is for coverage gaps, not the default path. Configuration-by-binding before Photoshop.
-
-### Layer 2 — Year-long tree (annual cycle in manifest)
-
-Per [[project_year_long_tree_doctrine]] (locked 2026-05-19 PM): the species manifest carries its annual phenology cycle. Runtime samples a `uDayOfYear` uniform (Meteorologist-published) and interpolates between authored season anchors:
-
-```json
-"leafCluster": {
-  "morphology": "palmate",
-  "shapeRef": "LeafSet010",
-  "annualCycle": [
-    { "day":  15, "label": "winter",      "presence": 0.0, "scale": 0.0 },
-    { "day": 105, "label": "spring buds", "presence": 0.6, "scale": 0.4,
-      "shapeRef": "LeafSet010_spring_buds",
-      "gradientFront": [{"t":0,"color":"#7eba5e"},{"t":1,"color":"#aece8a"}] },
-    { "day": 196, "label": "summer peak", "presence": 1.0, "scale": 1.0,
-      "gradientFront": [{"t":0,"color":"#2a5825"},{"t":0.5,"color":"#3a7530"},{"t":1,"color":"#5a9850"}] },
-    { "day": 288, "label": "fall peak",   "presence": 1.0, "scale": 1.0,
-      "gradientFront": [{"t":0,"color":"#882010"},{"t":0.3,"color":"#c84015"},{"t":0.6,"color":"#e87020"},{"t":1,"color":"#f8b830"}] },
-    { "day": 320, "label": "late fall",   "presence": 0.4, "scale": 0.85 },
-    { "day": 350, "label": "shed",        "presence": 0.0, "scale": 0.0 }
-  ]
-}
-```
-
-**Per-anchor fields:** `day` (1–365), `presence` (card alpha 0–1), `scale` (card size 0–1), optional `shapeRef` (per-season shape override — e.g., spring buds use smaller pack), `gradientFront` + `gradientBack` (multi-stop color ramps for front and back of leaf — front/back tinting drives maple-style wind shimmer via `gl_FrontFacing`).
-
-**Sensible defaults per morphology class:** deciduous-broadleaf template carries ~6 anchors (winter / spring-buds / summer-peak / fall-peak / late-fall / shed); evergreen-conifer ~2 anchors (winter-darker / summer-lighter, presence always 1.0). Operators tweak per species from morphology defaults — keeps authoring effort to ~10 minutes per hero for a meaningful annual cycle.
-
-**Runtime shader:** Phase F gradient LUT is per-anchor (256×1 RGBA texture baked at manifest-hash-keyed from gradient stops). Fragment shader samples luminance(`vColor`) → indexes the LUT for current bracket → `mix()` between adjacent anchors weighted by `uDayOfYear`. Per-card alpha multiplied by interpolated `presence`; per-card scale multiplied by interpolated `scale`. Single shader program preserved.
-
-### Layer 3 — Per-Look art-direction overrides
-
-The year-long manifest is the species's botanical TRUTH. Per-Look art-direction overrides ride the existing `scene.materialColors[<species>]` channel, extended to carry both shape-pack AND gradient overrides per (Look, species) pair:
-
-```json
-// in public/looks/halloween/design.json
-"trees": {
-  "speciesOverrides": {
-    "acer_saccharum_procedural": {
-      "shapeRef": "halloween_bats",
-      "gradientFront": [{"t":0,"color":"#1a0008"},{"t":1,"color":"#4a0020"}]
-    },
-    "quercus_alba": { "shapeRef": "halloween_bats" }
-  }
-}
-```
-
-**Resolution order at runtime:** per-Look override (if present) wins → else year-long annual-cycle interpolation at current `uDayOfYear` → else species default.
-
-Halloween bats, Christmas candy canes, Diwali ornament gold, Pride rainbow, Valentine's pink — all expressible as per-Look override packs on top of botanical defaults. Phase W wind animates override packs identically (bats flutter in canopy). New override packs live at `public/textures/leaves/shapes/<pack_id>/` alongside vendor LeafSet packs — same greyscale + opacity + normal pipeline.
+▶ **Live home:** `scratch/FOREST-BUILDER-KIT-MATCHER.md §6` + `SALON-INTERFACE.md §2` (root).
+▶ The retired design, verbatim: `cartograph/_archive/BANNERS-excised-2026-08-06.md §7a`.
 
 ---
 
-## Configuration D canopy render (Phase L Cycle 2 + Phase H supersession, 2026-05-19)
+## Configuration D canopy render — ⛔ NOT the live model (design retired 2026-06)
 
-> ⚠️ **SUPERSEDED 2026-06 — the outer-shell-cards + inner-mass `THREE.Points` point-canopy design below is NOT the live model.** Trees ship **all-mesh** (every visible placement is a full lod1 mesh tree, `bake-trees.js#PROM_THRESHOLD=0`); geometry is role-at-bake, no points-canopy. Live home = `FEATURES.md` "What ships to LS today" + `ARCHITECTURE.md §Tree-render reality at LS`. Kept as historical design record.
+⛔ **Do not build to the outer-shell-cards + inner-mass `THREE.Points` point-canopy design.** Trees ship
+**all-mesh**: every visible placement is a full lod1 mesh tree (`bake-trees.js#PROM_THRESHOLD=0`), geometry
+is role-at-bake, and there is no points-canopy.
 
-Per [[project_configuration_d_canopy_render]] (locked 2026-05-19 PM): the canopy renders as **outer-shell A2C cards + inner-mass `THREE.Points` point cloud**.
-
-| Layer | Geometry | Material | Cost |
-|---|---|---|---|
-| **Outer shell** | D.1b leaf cards on camera-facing surface only (~1500 cards/tree, 70% reduction from current 5500) | Phase F gradient-map alpha-blend | Alpha overdraw on ~1500 cards |
-| **Inner mass** | `THREE.Points` rendering of canopy-volume samples (algorithmic), size-attenuated | Sampled gradient color + slight bloom | One-to-nine opaque pixels per point — zero alpha overdraw |
-| **Skeleton** | Cylinders (LiDAR-baked via QSM or procedural via SCA) | Per-region bark shader | Standard cylinder cost |
-
-**Why this is the architectural pillar of Phase L:** alpha-blend overdraw is the dominant GPU cost in foliage rendering. `THREE.Points` rendering bypasses alpha entirely — interior-mass cost collapses by ~10×. Outer-shell card count drops ~70% (silhouette + camera-facing only). Bloom + film grade in the LS post-FX stack smooths the point-cloud-as-foliage into "foliage volume" — the visual sleight-of-hand is robust at LS Hero/Browse distances.
-
-**Source-split (Option δ):** in v1.5 the inner-mass points are **algorithmically sampled** from the canopy-volume envelope, not from real LiDAR canopy points. The LiDAR-canopy-point alternative is reserved for v1.6+ per the Option δ scope split (see "LiDAR pipeline + Option δ scope" above).
-
-**Supersedes the original Phase H plan** (alpha-test cards for core + A2C cards for shell). Configuration D is strictly better because POINTS HAVE NO ALPHA — the original card-core approach still had alpha-test cost on interior; the new approach has zero. Procedural-only trees that don't (yet) ship through Configuration D fall back to the original Phase H plan; LiDAR-baked trees ship through Configuration D from Phase L Cycle 2.
-
-**LoD progression:** lod0 = dense algorithmic points + cards-shell. lod1 = 30% point subsample + cards-shell. lod2 = alpha billboard or cards-only, no points.
-
-**Single shader program constraint:** Configuration D's outer-shell uses the Phase F gradient-map material; inner-mass points use a sibling material (different draw call, may compile to a separate program — verify at Cycle 2; if true, accept the 2nd program as load-bearing for the architectural win).
+▶ **Live home:** `FEATURES.md` "What ships to LS today" + `ARCHITECTURE.md §Tree-render reality at LS`.
+▶ The retired design, verbatim: `cartograph/_archive/BANNERS-excised-2026-08-06.md §7b`.
 
 ---
 

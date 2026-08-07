@@ -402,7 +402,9 @@ how a "manageable list" of samples generates the whole library.
 **Leaf** — one silhouette × ramps generates the states:
 - **The gradient ramp IS the seasonal/state engine** — summer (deep-green) / transitioning
   (green→gold→russet) / dead (brown), as a **day-of-year ramp curve** (`leaf.season`, the year-long
-  manifest `annualCycle` already exists, `ARCHITECTURE.md §Phase F Layer 2`).
+  manifest `annualCycle` already exists — schema in
+  `cartograph/_archive/BANNERS-excised-2026-08-06.md §7a`, ⛔ the *design* around it is retired; the
+  live colour model is this doc's §6).
 - **Front/back** = two ramps off one silhouette (wire the orphaned `tintFront`/`tintBack` +
   `doubleSided:true` to the `leaf.face` axis).
 - **Posterize** the leaf substrate to flatten chromatic noise (the "calm" half) *before* the ramp
