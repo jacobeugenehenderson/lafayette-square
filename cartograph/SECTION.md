@@ -353,10 +353,16 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > runs purely along the ring** (§3.3 step 2) · the bent corner as a band slice (§6.1) · the inside/outside
 > strip swap with its slope-joiner (§3.1, §6.1 Idea A) · **`jtMiter`, never `jtRound`** (invariant 2).
 >
-> ⚠️ **A RULING is owed before any build — doctrine against doctrine.** `§6.9`.5: *"**No cusp guard.** …
-> **self-intersection is signal, not error.**"* One day later a per-block capacity guard shipped
-> (`WB ≤ 0.9 · inscribed_capacity`), and `sectionPassTile` still clamps every ring to the frozen `cap`
-> (`:1297`). **G12 below proposes extending that clamp.** Which governs is Jacob's call, not a build.
+> ⭐ **On clamps — settled 2026-05-30, don't re-open it.** `§6.9`.5 (*"no cusp guard; self-intersection is
+> signal, not error"*) governs **geometrically MEANINGFUL** degeneracy: the authored input shrinks the
+> offset to a point, arc or clean self-clip that is still topologically coherent (corner R approaching the
+> ribbon depth; a divider authored at `W`). **No clamp — trust Clipper; the authored R is the design
+> control.** It does **not** govern **MEANINGLESS** degeneracy: `W` past the block's medial axis inverts the
+> offset and `differenceRings` returns the **complement**, flooding the interior with band material. That
+> needs a **topological capacity guard, which is not a doctrine clamp** — it is what `:1198`/`:3601` already
+> are (`cap = 0.9 × inscribed`). **The test:** apply the authored input and inspect the Clipper output — a
+> smaller/simpler version of the input's structure is regime 1; inverted or reversed-winding is regime 2.
+> Full rule: `[[feedback_no_corner_radius_clamps_in_emit]]`.
 >
 > *Troubleshooting archaeology 2026-06-12 → 2026-08-06: `_archive/SECTION-fill-tail-2026-08-07.md`.*
 
@@ -372,7 +378,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 **The open tail** — the ring partition above is the one *build*; everything below it is finish work:
 - **Perf / D6d — the gating item.** Every override re-strokes the whole map (the `tileGeos` whole-map memo); interactive handle/drag work can't be cleanly validated until the rebuild is block-local. This blocks *validation* of the handle responsiveness, not the wiring. (`[[project_d6a_curb_offset]]`.)
 - **Cap ped-wrap (G8)** — remaining: the asphalt blunt-*cap* SHAPE notch (an `offsetRingVariable` / frozen-`iA` item, not the FILL) + the undiagnosed Bentley Pl round-cap bug.
-- **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile) — ⚠️ **gated on the doctrine-5 ruling above; `§6.9`.5 forbids the clamp this bullet proposes extending.**
+- **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile). ⚠️ **First classify the band-neck case by the regime test above** — a clamp is licensed only where the Clipper output actually inverts (regime 2); if the neck merely pinches to a coherent narrower band, `§6.9`.5 applies and there is nothing to clamp.
 - **T3 — retire `buildBlockGeometryV2`.** It survives only as the frontage-edge identity builder (`feCustomKey`) the Measure/Survey handles read. Migrate that onto the tile `runs` (same `[skelId, side, segOrd]` triple, `tileGround.js:935`) and the file dies. Gate on fe-key parity (`scratch/t4-fe-parity.mjs`) — a drifted key silently orphans authored customs.
 - **Rename Measure → Section** — cosmetic, last; rides T3.
 - **Ped-band junction construction / per-edge continuity.** The weird-street FILL mess at junction-dense, name-shift-crossing streets (Dolman ↔ West 18th ↔ South 18th; Carroll, Kennett). ⛔ **Not a FILL build** — `iA` has 0 self-intersections there; the cure is upstream, in the SHAPE campaign (the skeleton produces correct geometry off which the ped derives). ⛔ Do **not** build a separate ped-silhouette: one SSoT polygon per junction, from which asphalt, curb, treelawn and sidewalk all derive (`OSM2STREETS-GROUNDING §1.2`). Live home: `BACKLOG §NOW`. *Full 2026-06-12 forensic + the two sub-cases (dead-end mouth-collapse, the default-fill front): `_archive/SECTION-fill-tail-2026-08-07.md`.*
