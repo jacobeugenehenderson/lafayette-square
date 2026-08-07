@@ -284,33 +284,69 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 
 ## 7. Where Section is today
 
-> ## ⛔⛔ THE ROOT OF THE BROKEN SIDEWALK — the FILL decides its corners from CHAIN predicates, never from the curb (2026-08-06)
+> ## ⛔⛔ THE ROOT OF THE BROKEN SIDEWALK — the band is built WHOLE, then cut by chain predicates
 >
-> **Jacob, 2026-08-06, and this is the frame for the whole tool:** *"The sidewalk should be one continuous
-> smooth line all around the entire polygon, around the whole map."* · *"Legs and corners are all planned,
-> and the different configurations work because they're based on the **curb** and not chains."* ·
-> **"ALL CURBS WORK."** · *"The Survey tool as it exists today works as expected. It is the Measure/Section
-> customs tool that doesn't work."*
+> **The governing statement (Jacob):** *"The sidewalk should be one continuous smooth line all around the
+> entire polygon, around the whole map."* · *"Legs and corners are all planned, and the different
+> configurations work because they're based on the **curb** and not chains."* · **"ALL CURBS WORK."** ·
+> *"The Survey tool as it exists today works as expected. It is the Measure/Section customs tool that
+> doesn't work."*
 >
-> ⭐ **The symptom** (screenshotted at Carroll × Dolman, unchanged for weeks): the ped band **stops short of
-> some corners**, leaving a gap. **Some, not all** — which is the diagnostic fact, because no curb-derived
-> explanation can be intermittent. Jacob's inference, which is correct: *a continuous inward offset has no
-> natural place to END, so something is handing the FILL a boundary the curb does not have.*
+> **The symptom:** the ped band stops short of **some** corners — green where the sidewalk should turn.
+> Some, not all.
 >
-> **What hands it that boundary — `tileGround.js:1416`:**
-> ```js
-> const legTrim = ends.map(([p], i) =>
->   (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run))
->     ? 0                                 // no pull-back, no corner bid
->     : tangentTrim(p, legDirAt(i)))      // pull the band back to the tangent
-> ```
-> Each run is **pulled back from its corner ends** by `asphalt-hw + the corner's resolved R` (`:1305`), and
-> the uncovered wedge is filled by a **separately built pad**, gated on
-> `bandRem.length && cornerT.size && fillets.length` (`:1566`) and then on finding a nearby fillet apex.
+> ### What the FILL builds — `sectionPassTile`, `tileGround.js:1104`
 >
-> ⛔ **Five predicates decide whether the band turns a corner. NOT ONE OF THEM READS THE CURB:**
+> | | code | what it produces |
+> |---|---|---|
+> | 1 | `ringAt(d)` = `offsetRings(iA, −(cw+d), 'miter')` (`:59`, `:1296`) | Clipper offsets of the frozen curb ring, cached per depth |
+> | 2 | `fullBand = differenceRings(iC, iW)` (`:1301`) | **one continuous ribbon around the whole tile**, curb → property line |
+> | 3 | `bandRem = fullBand` (`:1320`) | the unclaimed remainder |
+> | 4 | `sector = strokeOpen(trimPolyline(run.poly, t0, t1), …)` (`:1443`, `:1450`) | per run: a **claim stencil**, deliberately out-reaching the band |
+> | 5 | `claim = bandRem ∩ g.sectors` ; `bandRem −= g.sectors` (`:1484`) | the band arc this group owns |
+> | 6 | `outerStrip = claim − ringAt(g.o)` ; `innerStrip = (claim ∩ ringAt(g.o)) − ringAt(g.total)` (`:1489`) | the two strips — **concentric rings, clipped by the stencil** |
+> | 7 | `luRemainder = iW ∪ luExtra ∪ (bandRem − cornerClaimed)` (`:1642`) | everything unclaimed → **land use** |
 >
-> | decision | predicate | what it actually reads |
+> ⭐ **The continuous ring already exists.** `fullBand` is closed around the tile and offset from the frozen
+> `iA` by Clipper. **Every strip boundary in the FILL is a concentric offset of `iA`** — the per-run sector
+> never defines one. Its only job is to decide *which arc of the continuous band* carries this group's
+> `(outer depth, total depth, outer material, inner material)`; runs group by exactly that 4-tuple (`gkOf`,
+> `:1341`), so a default tile has one or two groups.
+>
+> ⭐ **∴ the per-run slicing carries a LABEL, not a geometry.** That is the whole of what it adds over the
+> whole band.
+>
+> ### Width adjustment already maintains the mono-width band — and the cure must keep doing so
+>
+> The Measure tool authors per-edge widths **without breaking the uniform ribbon**, and the mechanism is two
+> lines. The band's outer envelope is `WB = cw + max(TL) + max(SW)` taken **over the tile's edges**, floored
+> at the frozen tile depths so an unauthored tile reproduces the frozen geometry exactly (`:1286`). So:
+>
+> - authoring an edge **deeper** raises the tile's max ⇒ `fullBand` grows for the **whole block**, and the
+>   ribbon stays one uniform outer depth;
+> - authoring an edge **shallower** leaves the envelope where it is, and that edge's residual band routes to
+>   land use — `luExtra.push(claim ∩ ringAt(g.total))` when `g.total < TLmax + SWmax` (`:1511`).
+>
+> ⇒ **the depth envelope is already per-BLOCK; only ownership and materials are per-edge.** The partition
+> the cure needs is therefore purely *along the ring* — it does not touch the envelope, and it must not.
+> This is `§3.3` step 2 and it is sacrosanct (`RIBBONS §3.9a`).
+>
+> ### Why a gap appears, and what it is made of
+>
+> The stencil is pulled back from each corner end by `asphalt-hw + that corner's resolved R` (`legTrim`
+> `:1416`, `tangentTrim` `:1409`), and the uncovered wedge is meant to be re-covered by a separately built
+> corner pad — an arc sector off the frozen fillet, gated on `bandRem.length && cornerT.size &&
+> fillets.length` (`:1566`) and on finding a fillet near that corner (`:1575`).
+>
+> ⭐⭐ **Band area with no stencil over it is not missing — it falls through to `luRemainder` and renders as
+> land use.** The gap is **ribbon labelled green**, not absent geometry. The two stencils (leg sectors,
+> corner pads) are independent area masks that are *required* to tile the ring exactly, and nothing makes
+> them do so.
+>
+> Whether a corner exists, and whether the pull-back is exempted, is decided by five predicates. **None
+> reads the curb:**
+>
+> | decision | predicate | reads |
 > |---|---|---|
 > | is this a corner at all? | `cornerAt` (`:245`) — `a !== b` | **skelId** identity |
 > | exempt from pull-back? | `tipped` | dead-end tip |
@@ -318,49 +354,53 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > | " | `isNameTransition` | **chain name change** |
 > | " | `isThruNode` | **through-node stamp** |
 >
-> ⇒ **Trim happens; pad doesn't; gap appears** — at exactly the corners where a chain predicate disagrees
-> with the (correct) curb. ⭐ **Since all curbs work, the curb ring and its fillets are RIGHT — the FILL is
-> simply not reading them for this decision.**
+> `isThruNode` keys the wrong run where a through-street is split into two skelIds at the node (Mackay), and
+> misses Kennett on a node-coord mismatch — chain fragmentation deciding whether the sidewalk turns the
+> corner. Canonical complex: **Dolman ↔ West 18th ↔ South 18th**, with Carroll and Kennett.
 >
-> ⚠️ **This is not a new bug; it is the named root of the family this doc's open tail has been circling.**
-> `README`'s Corners row already records, unfixed since 2026-07-16, that **`isThruNode` keys the WRONG RUN**
-> — *"marks the interior-vertex street as 'through', which picks the side street when the through-street is
-> split into 2 skelIds at the node (Mackay), and misses Kennett (node-coord mismatch)."* **A predicate that
-> picks the wrong run when a street is split into two skelIds is chain fragmentation reaching the FILL and
-> deciding whether the sidewalk turns the corner.** §302's canonical exemplar — *"Dolman ↔ West 18th ↔
-> South 18th; also Carroll, Kennett"* — is the very complex Jacob screenshotted.
+> ### The two constructions that already do it right
 >
-> ⛔⛔ **THEREFORE THE FILL-PATCH CLASS IS CLOSED. Do not clamp, wrap, re-key or snap.** Every attempt has
-> been reverted — the `thinTile`→`cap` band-neck clamp (2026-06-12), the walk-ordinal coupler, the mouth
-> wrap, `SPUR_OUTLINE`. They were all treating the *output* of a wrong decision. The decision is the bug.
+> - **A single closed run takes no stencil at all** (`:1321`) — the strips are whole concentric annuli,
+>   `differenceRings(iC, iMid)` and `differenceRings(iMid, iWrun)`. No sectors, no corners, no trimming.
+>   The continuous-ring FILL is already shipping, on every tile that has one owner.
+> - **The round-cap reclaim repairs this exact failure, bounded to dead-end tips** (`:1664`) — band area that
+>   fell into `luRemainder` is intersected back out and routed to the cap owner's own outer material.
+>   **There is no equivalent at a corner.**
 >
-> ⭐ **The shape of the cure, stated but NOT built (needs a standup — the configurations are hard-won):**
-> the curb already solved this exact problem with **`offsetRingVariable` — one continuous ring with per-edge
-> offsets.** The FILL never got that treatment; it is still N pulled-back run slabs plus separately-built
-> corner pads that must be reconciled. **A single continuous variable-depth inward offset of the block ring
-> has nowhere to end**, which is precisely the property Jacob is asking for. ⛔ **Whatever is built must
-> preserve what is already hard-won: mono-width ribbons and corners, and the inside/outside sidewalk swap
-> with its slope-joiner.** ▶ Next, and cheap: **name the broken corners** — enumerate every corner where a
-> run boundary exists but the four exemptions disagree with the curb, on the clean baseline.
+> ### The cure
+>
+> ⛔ **The FILL-PATCH class is CLOSED — do not clamp, wrap, re-key or snap.** The band-neck clamp, the
+> walk-ordinal coupler, the mouth wrap and `SPUR_OUTLINE` were each built and reverted; each treats the
+> *output* of a wrong decision.
+>
+> **Ownership along the ring must be a PARTITION, not a set of overlapping area masks.** Every point of
+> `fullBand` belongs to exactly one run or one corner — assign it by position on the ring, the way the
+> single-closed-run path already does for a one-owner tile, and there is no uncovered case left for a
+> predicate to be wrong about.
+>
+> ⛔ **What the cure must preserve, all three already working:** the **mono-width envelope** and the
+> width-adjustment behaviour that rides it (above, `:1286`/`:1511`) · the **bent corner** as a slice of the
+> band (§6.1) · the **inside/outside strip swap with its slope-joiner** (§3.1, §6.1 Idea A).
+>
+> *Investigation archaeology 2026-06-12 → 2026-08-06 (the attempted cures, and the counts that did not
+> reproduce): `_archive/SECTION-fill-tail-2026-08-07.md`.*
 
 **LANDED (on `curb-offset-draw`):**
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
 - **§3.3 per-edge depth + divider** — the mono-width slice (`RIBBONS §1`): the depth override renders, the corner takes `cw + max-adjacent` (`cornerT`).
-- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). ✅ The **corner** construction **LANDED 2026-06-10** (§0/§6.1) — `arcSectorPoly` is defined in `tileGround.js` and called in the FILL off the frozen `fillets` (present on 93 of 101 tiles). *(This bullet said OPEN-and-reverted, contradicting §0 and §6.1 of this same document; the code sides with LANDED. A reader who reached §7 first would rebuild a shipped feature.)*
+- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). The **corner** construction (§0/§6.1) — `arcSectorPoly`, called in the FILL off the frozen `fillets` (present on 93 of 101 tiles).
 - **Dead-end caps built into the curb offset** — the cap (round semicircle / blunt segment) is part of `offsetRingVariable`, so it's tangent to the achieved per-fe width by construction (D6a, `[[project_d6a_curb_offset]]`). NB: the *ped* wrap at the cap is still open (below).
 - **One depth truth** — handle placement and FILL stroke both read `resolvePedDepths`; the handle rides the achieved curb (`sectionCurbRings`).
 - **Revert UI** — whole-scene + per-edge (§5.1).
 
-**The open tail (the FILL finish — none is a build, all are polish; folds the archived census's §6):**
+**The open tail** — the ring partition above is the one *build*; everything below it is finish work:
 - **Perf / D6d — the gating item.** Every override re-strokes the whole map (the `tileGeos` whole-map memo); interactive handle/drag work can't be cleanly validated until the rebuild is block-local. This blocks *validation* of the handle responsiveness, not the wiring. (`[[project_d6a_curb_offset]]`.)
-- **Cap ped-wrap (G8)** — ✅ **round fat-pad + blunt circle-cut FIXED 2026-06-11 (`f908143`):** the round-tip reclaim is clipped to `fullBand` (uniform treelawn+sidewalk wrap, no pad) and the blunt tip-disk is removed (side bands run to the end). Both were confused-session residue (`SECTION-CAP-CLAMP-FORENSIC.md`). **REMAINING:** the asphalt blunt-*cap* SHAPE notch (an `offsetRingVariable`/frozen-`iA` issue, not the FILL) + the undiagnosed Bentley Pl round-cap bug.
-- **Capacity guard (G12)** — port the thin-tile guard to `sectionPass`'s inward offsets (~100 sliver/median/loop thorns). The `cap` clamp is partly there; the general per-tile guard isn't complete. **⭐ Two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`, 2026-06-11):** (1) **self-int blobs** — the band-fold-fix addressed these but it's **stranded on `8e1e414`, never landed** (not "DONE"); (2) **band-neck / partial-degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) only fires on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but orphaned** (wired only to `bandJoin`, never to the depth clamp). Completion = wire the local thin-tile reach into the clamp (local, not per-tile).
-- ✅ **Delete the dying figure-ground (T4)** — **LANDED 2026-07-15.** `buildChainBandsLive` is gone (with W6's reach-back), as is all of figure-ground's geometry: the unreachable render branch, the band emitters, `blockFill`/`ribbonUnion`, and `buildV2BakeShape` in the bake (≈1,900 lines). The "per-frame compute drag" was worse than suspected — 285 s of Altadena's 320 s load, drawing nothing (`DESIGNER-LOAD-FORENSIC.md`); the build is now ~0.45 s. **Still open: T3** — `buildBlockGeometryV2` remains ONLY as the frontage-edge identity builder (`feCustomKey`) the Measure/Survey handles read. Migrate that onto the tile `runs` (same `[skelId, side, segOrd]` triple, `tileGround.js:935`) and the file dies. Gate it on fe-key parity (`scratch/t4-fe-parity.mjs`) — a drifted key silently orphans authored customs.
+- **Cap ped-wrap (G8)** — remaining: the asphalt blunt-*cap* SHAPE notch (an `offsetRingVariable` / frozen-`iA` item, not the FILL) + the undiagnosed Bentley Pl round-cap bug.
+- **Capacity guard (G12)** — two subclasses (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) **self-int blobs** — the band-fold-fix addresses these but is **stranded on `8e1e414`, never landed**; (2) **band-neck / partial degeneracy** (the Albion cul-de-sac notch) — the `cap` clamp (`:2396`) fires only on **full collapse**, and the `thinTile` signal (`:2383`) that flags the partial case is **computed but wired only to `bandJoin`**, never to the depth clamp. Completion = wire the local thin-tile reach into the clamp (local, not per-tile).
+- **T3 — retire `buildBlockGeometryV2`.** It survives only as the frontage-edge identity builder (`feCustomKey`) the Measure/Survey handles read. Migrate that onto the tile `runs` (same `[skelId, side, segOrd]` triple, `tileGround.js:935`) and the file dies. Gate on fe-key parity (`scratch/t4-fe-parity.mjs`) — a drifted key silently orphans authored customs.
 - **Rename Measure → Section** — cosmetic, last; rides T3.
-- **⭐ Ped-band JUNCTION construction + per-edge continuity — the weird-street FILL mess (filed 2026-06-12; the next family pass).** At junction-dense, asymmetric-width, name-shift-crossing streets (the canonical exemplar: the **Dolman ↔ West 18th ↔ South 18th** transition; also Carroll, Kennett) the ped FILL fragments — broken sidewalks, slivers, jagged corners. **NOT a loop bug** (18th renders as coherent streets — `SPLINE-18TH-FINDINGS.md`); it is the **same family as the Albion cul-de-sac notch** (`SECTION-CAP-CLAMP-FORENSIC.md`). **Three compounding mechanisms** (renders: `scratch/w18-{mid,lcorner,rcorner}.png`): **(1) per-edge width-STEPS** — the sidewalk jogs where the *genuinely-varying surveyed* widths change between fes (Dolman L 7.29 / R 4.67, `widthSource:"survey"`); the §5g "author the frontage, fan across through-nodes" rule applies, but here many boundaries are *real* corners/name-shifts, not through-nodes, so the steps are partly legitimate-data, partly under-fanned. **(2) treelawn-Y/N ordering FLIPS** — the mono-width strip swap inverts curb→treelawn→sidewalk vs curb→sidewalk→treelawn between adjacent fes, reading as breaks. **(3) junction band FRAGMENTATION** — independently-stroked ped bands from the legs / dead-end bulbs / name-shift segments overlap into slivers/gaps because **there is no constructed junction ped-silhouette** (the asphalt junction is constructed at prebake — E3.2/§5e — but the **ped bands are not**; G12 band-neck is the thin-tile face of this). **⭐ RESOLUTION — it's POLYGON-FIRST, not a FILL build (corrected 2026-06-12, Jacob).** Forensic (`scratch/w18-*.mjs` — the attribution overlay + neck/mechanism harnesses) showed the throat slivers are a **local junction-throat neck on a CLEAN silhouette** (iA has **0 self-intersections**; the face just pinches below band-depth right at the throat) — and the deeper root is that **the junction is never constructed as ONE polygon**. The whole benefit of polygon-first is that there is **one SSoT polygon per junction from which asphalt, curb, treelawn AND sidewalk all DERIVE** (the cross-section lives on the road — `OSM2STREETS-GROUNDING §1.2`). So a *separate* ped-silhouette is the wrong move — a fourth thing reconstructing the junction = the disagreement we're deleting. The cure is **UPSTREAM — the SHAPE campaign** (reframed 2026-06-13, Jacob): the skeleton produces correct geometry off which the ped *derives*; do **not** build a separate ped-silhouette (the cross-section lives on the road, `OSM2STREETS §1.2`). ⛔ **A FILL fix is the wrong layer** — a `thinTile`→`cap` band-neck clamp was built + **reverted** 2026-06-12 (cleaned a treelawn overlap, never touched the discontinuity; the silhouette was already clean). ▶ **Live home: `BACKLOG §NOW`** — drive `# curated` → 0 via skeleton interpretation; first brief **`HANDOFF-curve-primitive-skeleton.md`** (West-18th corners). *(The 2026-06-12 "intersection-everywhere / polygon-first junction construction" framing + its brief are **archived as the wrong task** — `_archive/handoffs/…-SUPERSEDED-2026-06-13.md`; the data question is closed, `INTAKE §5.1`.)* (The G12 `thinTile`→`cap` clamp + per-edge step policy remain *real but secondary* FILL items for genuinely-thin tiles; they are NOT the weird-street junction cure.)
-  - **⭐ DEAD-END MOUTH-COLLAPSE — the specific, decisive sub-case (2026-06-22, `DEAD-END-MOUTH-FORENSIC.md`).** The Kennett/Albion/Whittemore butt-caps are the *dead-end* member of this family, now diagnosed to the root: `extractFaces` walks a dead-end as a **zero-width spur** so the face's mouth vertex collapses, and the FILL (vertex-keyed `cornerT`) wraps only one of the two real mouth corners. Confirmed **FILL-rooted-in-the-face-identity** (smooth in Survey; `iA` already carries both mouth fillets). ✅ **LANDED, FILL-side, eye-confirmed (2026-06-22; `opts.deadEndMouthWrap`).** NOT a face reshape (those moved iA / blew up multi-spur tiles): the FILL-side lever — **snap** the two spur run-ends to the two fillet apexes (two `cornerT` keys), **trim** the through-road's sector back to free the corner wedge, and **synthesize the through-leg** so the `§6.1` Idea-A deep-leg slide fires (the straight leg dips in). Bounded per-mouth disc (asymmetric-center) → **iA byte-identical on all 101 tiles**, multi-spur safe; Benton/loops + `kennett`/`park-avenue` customs untouched. ⛔ **Lesson: every proxy lied (two false "LANDED" reports); the eye was the only gate.** Rollout extension landed (`42ec46e7`): the 2 genuine single-fillet mouths (south-13th/henrietta) wrap; strip-swap cap rebuilt (⚠️ reported **one-side-only** — open defect). Full: `DEAD-END-MOUTH-FORENSIC.md`.
-  - **⭐ THE DEFAULT-FILL FRONT (the next, bigger lever — 2026-06-22, `scratch/CORNER-MARKERS-2026-06-22.md`).** The operator circled 23 dysfunctional corners; a hotshot diagnosis confirmed **the curb (iA) is clean everywhere — NOT junction construction** (Kennett + the complex intersections are FINE; the §5b/§5e spike era is over). The dysfunction is the **default TL/SW⟷SW arrangement** not reflecting reality (`gleanTreelawn` §3.1: weak per-side survey provenance — 14 `sidewalk-1side` + 4 `assessor` streets mis-glean; ⛔ **the "35% of two-sided streets flip L/R Y/N" DOES NOT REPRODUCE — re-measured 2026-08-06: 209 two-sided streets, 50 flip (24%), and ALL 50 are `anchor:'inner-edge'` divided carriageways or corridor spines, where the inboard ped zone is zeroed BY DESIGN (`RIBBONS §2`). Zero ordinary streets mis-glean.** Either `302de36b` closed it or the 35% always counted the divided roads. ∴ **this front currently has NO surviving mechanism** — do not dispatch it against the provenance story; the next information has to come from the eye). The operator wants **reset-to-default = the REAL arrangement**. Step 1 (`302de36b`, per-street glean — inferred side inherits the measured Y/N, 6 flips) "did nothing" on his eye (too conservative + the ~20 valley cases [0.25–0.75 m] surfaced-not-applied — those are HIS eye-call; verify it RENDERS, not stale). ▶ Next: deliver the real arrangement (his valley calls + per-side fix), covers ~13 of the 23. ⚠️ Survey authoring tools are BROKEN (encode his calls directly).
+- **Ped-band junction construction / per-edge continuity.** The weird-street FILL mess at junction-dense, name-shift-crossing streets (Dolman ↔ West 18th ↔ South 18th; Carroll, Kennett). ⛔ **Not a FILL build** — `iA` has 0 self-intersections there; the cure is upstream, in the SHAPE campaign (the skeleton produces correct geometry off which the ped derives). ⛔ Do **not** build a separate ped-silhouette: one SSoT polygon per junction, from which asphalt, curb, treelawn and sidewalk all derive (`OSM2STREETS-GROUNDING §1.2`). Live home: `BACKLOG §NOW`. *Full 2026-06-12 forensic + the two sub-cases (dead-end mouth-collapse, the default-fill front): `_archive/SECTION-fill-tail-2026-08-07.md`.*
 
 **Upstream, not Section:** intersection-everywhere corner-silhouette residuals disrupt the FILL because the *frozen `iA`* is disrupted — fix in Survey/skeleton (Section inherits the clean edge). Divided carriageways are gated to legacy (the curb offset collapses a median gap) — a corridor-leg follow-on, not a FILL bug.
 
@@ -380,7 +420,7 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
 - **⛔ Ribbon monowidth, strips variable — and the mono-width is SACROSANCT.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape. The mono-width was the hardest-won step (the corner saga ended on it); the per-edge work builds *inside* it, never re-architects it.
 - **The FILL is curb → center.** Strips near the curb; the LU remainder flows to the polygon center (no hard property line). Both-strips-LU → an open field.
 - **Two strips always, EQUAL width — they SWAP, never collapse.** Every edge has an outer + inner strip (equal width — the mono-width) + LU remainder. Treelawn-Y reads `grass → walk → lawn`; treelawn-N reads `walk → lawn`. The gleaned Y/N is a **material** decision, not a width — a sidewalk-only edge is the same-width ribbon with the materials swapped, not a half-ribbon. Both→LU is an open field.
-- **The corner is the band BENT around the arc** — a slice, never a primitive (`RIBBONS §1` invariant 1). Depth = `cw + max-adjacent`. ✅ The robust construction **LANDED 2026-06-10** (§6.1, `arcSectorPoly` off the frozen `fillets`). ⚠️ What is still open is the **SW↔SW → concrete→LU material refinement** only. *(This line carried the construction as reverted; corrected 2026-08-04 — self-contradiction with §0/§6.1.)*
+- **The corner is the band BENT around the arc** — a slice, never a primitive (`RIBBONS §1` invariant 1). Depth = `cw + max-adjacent`. The construction is `arcSectorPoly` off the frozen `fillets` (§6.1). Still open: the **SW↔SW → concrete→LU material refinement**.
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).
 - **Section = FILL; Survey = SHAPE.** Section never authors the silhouette or the corner radius.
 - **Revert is the way back; Default IS the calc.** Edits autosave (no commit), so the operator reverts to undo. Section's Default falls out of the gleaned-treelawn + ADA calc — no blessed snapshot (that's Survey's, whose inputs are surveyed not calculated). Whole-scene + per-edge (⌃-click), field-scoped so Section never wipes Survey (§5.1).
