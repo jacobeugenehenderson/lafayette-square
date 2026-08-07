@@ -731,6 +731,98 @@ function uniqueLookId(base, existingIds) {
   return id
 }
 
+// ── ⛔ Scene-keyed authoring may not cross a scene boundary (A11, 2026-08-07) ──
+// A Look is seeded from another Look (POST /looks). Most of a design.json is
+// STYLE and is meant to travel — palettes, exposure, bloom, label typography.
+// But some fields are keyed by the SCENE's own identities: `blockCustoms` is
+// keyed `[skelId][side][segOrd]` (SECTION §3.2), the corner-radius maps by
+// junction coordinate + skelId, `blockLandUse` by blockKey. Those keys are
+// NAMES, and a name is portable — `park-avenue-1|right|0` is a well-formed key
+// in Altadena and in Łódź. Nothing downstream asks whether the run it names
+// belongs to this town.
+//
+// The damage this caused: the Pour calls createLook({name: scene, scene}) with
+// no fromLookId (ExtentApp.jsx), so the seed falls to the DEFAULT Look —
+// Lafayette Square. Altadena, Księży Młyn and Śródmieście each shipped with a
+// byte-identical copy of LS's authored street widths in their own design.json
+// (proven: each town's blockCustoms hashes equal to LS's at that town's own
+// creation commit). Inert only because no LS street name happened to exist in
+// those bakes; `park-avenue` and `kennett-place` are ordinary American street
+// names, so the first town that has one gets LS's measured widths applied to it
+// silently, and the operator sees a plausible map. CLAUDE.md Layer 0 q2.
+//
+// ⭐ The strip list is a DECLARATION, and a declaration goes stale — the next
+// scene-keyed field added would travel silently. So the strip is paired with a
+// guard that REFUSES rather than trusting the list: after stripping, any
+// surviving object key that parses to a street name in the SEED scene's own
+// bake means an undeclared scene-keyed field, and creation fails loudly with
+// the field named. Fixing it is one entry here.
+const SCENE_KEYED_DESIGN_FIELDS = [
+  'blockCustoms',                  // [skelId][side][segOrd] — Survey widths + Section depths/materials
+  'cornerRadiusOverrides',         // junction key
+  'cornerCornerRadiusOverrides',   // "x,z|skelId:end|skelId:end"
+  'blockLandUse',                  // blockKey
+]
+
+// Street names (skelId) a scene's frozen bake actually contains. Read from
+// runs[] — the same field sectionPass resolves against, so this cannot disagree
+// with the construction about what exists. null when the scene has no bake.
+function bakedStreetNames(scene) {
+  const raw = readJsonOrNull(join(PUBLIC_DIR, 'baked', scene, 'shape.json'))
+  if (!raw) return null
+  const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])
+  const names = new Set()
+  for (const t of tiles) for (const r of (t.runs || [])) names.add(String(r.skelId))
+  return names
+}
+
+// Recursively collect object keys whose `|`/`:`/`,`-separated tokens name a
+// street in `names`. No per-field key grammar, so a field added later is
+// covered without editing this walker.
+function sceneKeyedResidue(node, names, path = [], out = [], seen = new Set()) {
+  if (!node || typeof node !== 'object' || seen.has(node)) return out
+  seen.add(node)
+  if (Array.isArray(node)) { for (const v of node) sceneKeyedResidue(v, names, path, out, seen); return out }
+  for (const k in node) {
+    for (const tok of String(k).split(/[|:,]/)) {
+      const t = tok.trim()
+      if (t && names.has(t)) { out.push({ field: path[0] || k, key: k, street: t }); break }
+    }
+    sceneKeyedResidue(node[k], names, [...path, k], out, seen)
+  }
+  return out
+}
+
+// Returns { design, stripped } — the seed design safe to write into a Look
+// bound to `newScene`. Throws (→ 400/409) when residue survives the strip.
+function seedDesignForScene(seedDesign, seedScene, newScene) {
+  if (!seedDesign) return { design: {}, stripped: [] }
+  if (seedScene && newScene && seedScene === newScene) return { design: seedDesign, stripped: [] }
+  const design = { ...seedDesign }
+  const stripped = []
+  for (const f of SCENE_KEYED_DESIGN_FIELDS) {
+    if (design[f] == null) continue
+    const n = typeof design[f] === 'object' ? Object.keys(design[f]).length : 1
+    if (n) stripped.push(`${f} (${n})`)
+    delete design[f]
+  }
+  const seedNames = seedScene ? bakedStreetNames(seedScene) : null
+  if (seedNames?.size) {
+    const residue = sceneKeyedResidue(design, seedNames)
+    if (residue.length) {
+      const fields = [...new Set(residue.map(r => r.field))]
+      const err = new Error(
+        `⛔ REFUSING to seed a Look for scene "${newScene}" from scene "${seedScene}": ` +
+        `${residue.length} key(s) in ${fields.join(', ')} name streets that belong to "${seedScene}" ` +
+        `(e.g. "${residue[0].key}" → ${residue[0].street}). That field is scene-keyed and is not declared. ` +
+        `Add it to SCENE_KEYED_DESIGN_FIELDS in serve.js, or pass a scene matching the seed Look.`)
+      err.statusCode = 409
+      throw err
+    }
+  }
+  return { design, stripped }
+}
+
 // One-time migration: if public/looks/ doesn't exist, create it and seed the
 // default Look from overlay.json's design block (or empty if absent). Strip
 // the design block from overlay.json so it stops drifting from the Look.
@@ -2359,15 +2451,23 @@ createServer(async (req, res) => {
         const seedId = seedEntry ? seedEntry.id : idx.default
         const newScene = (scene && String(scene).trim()) || (seedEntry && seedEntry.scene) || DEFAULT_SCENE
         const id = uniqueLookId(slugify(name), idx.looks.map(l => l.id))
+        const seedScene = seedEntry?.scene || null
+        // ⛔ A11 — the seed's STYLE travels, its scene-keyed AUTHORING does not.
+        // Throws 409 if an undeclared scene-keyed field survives the strip.
+        const { design: seedDesign, stripped } =
+          seedDesignForScene(readJsonOrNull(lookDesignPath(seedId)) || {}, seedScene, newScene)
+        if (stripped.length) {
+          console.log(`[looks] "${id}" (scene ${newScene}) seeded from "${seedId}" (scene ${seedScene}) — ` +
+                      `dropped ${seedScene}'s scene-keyed authoring: ${stripped.join(', ')}. Starts at defaults.`)
+        }
         mkdirSync(lookDir(id), { recursive: true })
-        const seedDesign = readJsonOrNull(lookDesignPath(seedId)) || {}
         writeJson(lookDesignPath(id), seedDesign)
         idx.looks.push({ id, name: String(name).trim(), scene: newScene, createdAt: Date.now() })
         saveLooksIndex(idx)
         res.writeHead(200, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ ok: true, id }))
+        res.end(JSON.stringify({ ok: true, id, seededFrom: seedId, strippedSceneKeyed: stripped }))
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
+        res.writeHead(err.statusCode || 400, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: err.message }))
       }
     })
