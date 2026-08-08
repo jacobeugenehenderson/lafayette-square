@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "altadena",
-  "bakedAt": 1784762020346,
+  "bakedAt": 1786163635959,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -465,32 +465,7 @@
     }
   },
   "heroSubject": null,
-  "heroKeyframes": [
-    {
-      "position": [
-        -190,
-        107,
-        370
-      ],
-      "fov": 26
-    },
-    {
-      "position": [
-        -614,
-        114,
-        183
-      ],
-      "fov": 24
-    },
-    {
-      "position": [
-        -634,
-        113,
-        -117
-      ],
-      "fov": 22
-    }
-  ],
+  "heroKeyframes": [],
   "heroMotion": {
     "period": 1360,
     "easing": "sine"

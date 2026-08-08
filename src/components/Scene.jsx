@@ -1,4 +1,4 @@
-import { useRef, useEffect, Suspense, useState } from 'react'
+import { useRef, useEffect, useMemo, Suspense, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
@@ -55,6 +55,53 @@ function easeInOutCubic(t) {
 const HERO_CENTER = [-400, 55, 230]
 const HERO_TARGET = [400, 45, -100]
 const _heroPos = new THREE.Vector3()
+
+// ── The undesignated hero pose — A11-c, Jacob's ruling 2026-08-07 ────────────
+// "The camera is a pan pointed at the hero object. With no hero object set up,
+// the pan defaults to OFF." So a Look with no authored heroKeyframes gets ONE
+// keyframe — heroKeyframeAnim with n < 2 returns points[0] verbatim and lerpFov
+// returns keyframes[0].fov, so a single keyframe is genuinely static, no motion.
+//
+// ⛔ The pose may not be a literal. `HERO_CENTER` above is Lafayette Square's
+// coordinate; shipping it as every fresh pour's opening shot is the A00 class —
+// "falling back to a generic is fine; falling back to Lafayette Square is what
+// must never happen." So the pose is DERIVED from the scene's own framing:
+//
+//   centre   = the resolved hero subject (heroSubject.js — kit-general already:
+//              the arch when the Look installed one, else the hood centroid,
+//              which IS the local frame's origin by construction).
+//   radius   = half-diagonal of the slab's authored hood extent
+//              (scene.shots.values.browse.bounds — the same w/h Browse frames on).
+//   standoff = a RATIO of that radius, so the shot scales with the town.
+//
+// Both numbers below are dimensionless ratios applied to that radius, never a
+// distance: no scene's metres are hardcoded here. Their values are read off the
+// shape of an authored hero shot (a close oblique inside the hood, not a
+// whole-hood fit — a fit-the-extent standoff lands kilometres out and renders
+// the neighborhood as a speck).
+const HERO_STANDOFF_RATIO = 0.75  // eye distance as a fraction of hood radius
+const HERO_EYE_RATIO      = 0.13  // eye height as a fraction of hood radius
+const HERO_BEARING        = [-0.80, 0, 0.60]  // unit XZ look-in direction; compass-generic
+
+function derivedHeroPose(subject, bounds) {
+  const w = bounds?.w, h = bounds?.h
+  // ⛔ No fallback extent. Without the hood's size there is no scale to stand
+  // off by, and inventing one would put a plausible-looking frame on a scene we
+  // cannot actually measure. Fail loudly and let the authored-literal path be
+  // the visible absence.
+  if (!Number.isFinite(w) || !Number.isFinite(h) || w <= 0 || h <= 0) {
+    console.error('[hero] scene.shots.values.browse.bounds is missing or degenerate —' +
+      ' cannot derive an undesignated hero pose', bounds)
+    return null
+  }
+  const radius   = 0.5 * Math.hypot(w, h)
+  const standoff = radius * HERO_STANDOFF_RATIO
+  return [
+    subject[0] + HERO_BEARING[0] * standoff,
+    radius * HERO_EYE_RATIO,
+    subject[2] + HERO_BEARING[2] * standoff,
+  ]
+}
 
 // ── Camera presets ───────────────────────────────────────────────────────────
 // SC.5 (2026-05-13): FOVs + Street eye height retired from this const —
@@ -253,13 +300,6 @@ function CameraRig() {
   const streetFov    = shotsV.street?.fov         ?? SHOTS_FLAT_DEFAULTS.street.fov
   const streetEye    = shotsV.street?.eyeHeight   ?? SHOTS_FLAT_DEFAULTS.street.eyeHeight
 
-  // Authored hero camera animation from the slab — the SAME keyframes Stage +
-  // Preview play. Replaces production's legacy lateral pan so the operator's
-  // tuned hero motion ships.
-  const heroKeyframes = scene?.heroKeyframes?.length
-    ? scene.heroKeyframes
-    : [{ position: HERO_CENTER, fov: heroFov }]
-  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
   // Hero look-at via the SHARED resolver (one resolver across production /
   // Preview / Stage). Undesignated → the Gateway Arch (LS hero landmark) from
   // scene.arch.values; building/landmark → the slab index. No stale literal,
@@ -279,6 +319,24 @@ function CameraRig() {
   const browsePad    = shotsV.browse?.padding ?? SHOTS_FLAT_DEFAULTS.browse.padding ?? 1.05
   const browseCx     = browseBounds?.cx ?? 0
   const browseCz     = browseBounds?.cz ?? 0
+
+  // Authored hero camera animation from the slab — the SAME keyframes Stage +
+  // Preview play. Replaces production's legacy lateral pan so the operator's
+  // tuned hero motion ships.
+  //
+  // ⭐ A11-c: with NO authored path the pan is OFF — one keyframe, statically
+  // framed on this scene's own hood (derivedHeroPose above), never LS's
+  // HERO_CENTER. HERO_CENTER survives only as the last-resort pose for a scene
+  // whose bounds we could not read at all, and that path SHOUTS first.
+  const heroKeyframes = useMemo(() => {
+    if (scene?.heroKeyframes?.length) return scene.heroKeyframes
+    const pos = derivedHeroPose(heroSubject, browseBounds)
+    if (!pos) return [{ position: HERO_CENTER, fov: heroFov }]
+    return [{ position: pos, fov: heroFov }]
+    // heroSubject is a fresh array each render; key on its components.
+  }, [scene?.heroKeyframes, heroSubject[0], heroSubject[1], heroSubject[2],
+      browseBounds?.w, browseBounds?.h, heroFov])
+  const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 

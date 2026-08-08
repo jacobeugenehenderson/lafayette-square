@@ -461,32 +461,6 @@
     }
   },
   "heroSubject": null,
-  "heroKeyframes": [
-    {
-      "position": [
-        -190,
-        107,
-        370
-      ],
-      "fov": 26
-    },
-    {
-      "position": [
-        -614,
-        114,
-        183
-      ],
-      "fov": 24
-    },
-    {
-      "position": [
-        -634,
-        113,
-        -117
-      ],
-      "fov": 22
-    }
-  ],
   "heroMotion": {
     "period": 1360,
     "easing": "sine"
