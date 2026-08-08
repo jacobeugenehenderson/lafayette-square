@@ -97,13 +97,23 @@ regression guard. Measured today:
 
 Every other hood is a scene under `clean/<scene>/`. **LS's artifacts live at the shared default
 paths** — `src/data/ribbons.json`, `src/data/buildings.json`, `src/data/street_lamps.json`,
-`src/data/landmarks.json`, `src/data/park-feature-elev.json` — **imported by literal name at 19
-sites** (`loadInstanceData.js` even hands LS `import('./ribbons.json')` = the shared root). So
+`src/data/landmarks.json`, `src/data/park-feature-elev.json` — **imported by literal name** across the
+app (`loadInstanceData.js` even hands LS `import('./ribbons.json')` = the shared root). So
 `src/data/*` is simultaneously *"the shared default"* **and** *"LS's own render data"*. That
 conflation is the root the entire LS-bleed class grows from: when a poured scene's input is absent,
 the kit falls back to `src/data/*` — which **is** Lafayette Square. LS bleeds into everyone because
-LS *is* the fallback. Retire the 19 name-imports → the whole bleed brief closes at the root instead
+LS *is* the fallback. Retire the name-imports → the whole bleed brief closes at the root instead
 of site-by-site.
+
+> ⭐ **COUNT THE SITES, DON'T QUOTE THEM** *(2026-08-08 — this paragraph said "19 sites" and the
+> figure does not reproduce; nobody can say how it was counted, and it is the number the work is
+> sized on).* Run it:
+> ```
+> grep -rn "data/\(ribbons\|buildings\|street_lamps\|landmarks\|park-feature-elev\)\.json" src cartograph
+> ```
+> ⚠️ **Split code from docs before sizing** — a large share of the hits are *doc* mentions, which are
+> repointing work, not import work. **The import sites are the ticket; the doc mentions ride along in
+> the same sweep.**
 
 ---
 
@@ -176,9 +186,26 @@ frozen** (fetch center, append-only); the **disc centroid is a separate, draggab
 the forever zone (hood center). That draggable-centroid is R10 made a handle — reuse the `CircleHandle`
 / `ParkTitleHandle` dot pattern.
 
-⛔ **Blocked today by D4:** the code **forces disc center = origin** (`ExtentApp.jsx:~1138
-if(committed) return {x:0,z:0}` + `makeCircleBoundary` hardcodes `center:[0,0]`), discarding the
-`keptCenter` it just computed. **Fixing D4 is what enables the draggable centroid.** ⚠️ The recurring
+⛔ **Blocked today by D4:** the code **forces disc center = origin** (`ExtentApp.jsx:1145`
+`if (committed) return { x: 0, z: 0 }` — *line re-verified 2026-08-08; it had drifted from the `~1138`
+recorded here* — plus `makeCircleBoundary` hardcodes `center:[0,0]`), discarding the `keptCenter` it
+just computed. **Fixing D4 is what enables the draggable centroid.**
+
+> ⭐⭐ **D4 IS A LIVE RISK TO LS SPECIFICALLY, AND LS IS ONE OF THE TWO SAFEGUARDED MAPS.** Measured
+> 2026-08-08 — **LS is the only scene carrying authored values in this artifact:**
+>
+> | scene | center | innerFadeOffset | polygon |
+> |---|---|---|---|
+> | **lafayette-square** | **`[-15,-15]`** (Lafayette Park centroid) | **134** | ⛔ **none** |
+> | hipointe-demun | `[0,0]` | 200 (default) | 4 pts |
+> | ksi-y-m-yn | `[0,0]` | 200 (default) | ⛔ none |
+>
+> `PART D`'s destruction table: commit-extent / rescope **always resets `center`, `fade`, `streetFade`,
+> `innerFadeOffset` to hardcoded values, with no protection and no warning.** ⇒ **the first time the
+> Extent tool touches LS, its two authored values are silently gone** — and LS is production
+> (`lafayette-square.com`). *(Reproduce: print each scene's `cartograph/data/<scene>/neighborhood_boundary.json`.)*
+> ⭐ LS's missing `polygon` is the same artifact and is already on the board as **B6**'s tree-membership
+> fallback — *the file exists; the polygon inside it does not.* ⚠️ The recurring
 trap: resizing the **bb** when the **disc** is the problem (an un-authored scene auto-fits the disc to
 *all* fetched buildings → huge radius, off-center), and conflating the big-generous SOFT with the
 deliberate HARD. Author the disc; keep the bb's forever-zone. (Home:

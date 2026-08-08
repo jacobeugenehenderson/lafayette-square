@@ -134,8 +134,17 @@ today's ticket is a fresh agent with a long context.** The full canon is ~400 KB
 3. **⭐ THE ASPIRATIONAL STATE — what the product is, and what it is when it's done.** `SHOW-BIBLE §0`
    (the product stack) + `§4` (the horizons). **You are its custodian (§2); you cannot safeguard a state
    you have not read.**
-4. **⭐ WHERE WE ARE AGAINST IT** — `ROADMAP.md`: the **⛔ ordering constraint first** (LS is the priority
-   *because it is the hardest case in the kit* — never because it is the subject), then the live board.
+4. **⭐ WHERE WE ARE AGAINST IT** — `ROADMAP.md`: **BOTH ordering blocks first**, then the live board.
+   ⛔ **TWO KINDS OF WORK GET CALLED "WORKING ON LS," AND LS SITS AT OPPOSITE ENDS OF EACH.**
+   **Fixing the geometry** (sidewalks/curbs/corners — this board) does **LS FIRST**, *because it is the
+   hardest case, never because it is the subject*. **Moving a town onto the Extent tool** ("conforming"
+   it — `EXTENT-DESIGN §6`) does **LS LAST**: it is live production and has never been poured, so HPDM
+   is hardened first. **Fix LS's sidewalks first; move LS's plumbing last.** Its scope ruling adds:
+   **LS + HPDM are the safeguarded pair while altadena/ksi/centrum are deliberately unfinished.** ⭐⭐ **Read
+   `EXTENT-DESIGN.md` before proposing any cross-town work** — it is a **separate project bolted onto
+   the front of the product**, and the board alone will send you the wrong way. *(2026-08-08: a standup
+   built off the board alone proposed an LS-first, all-five-towns plan, filed three unfinished towns'
+   values as live defects, and offered to patch a class `§6` step 4 already closes at the root.)*
    For the outside-in check of claim-vs-built, `ACCORDANCE-REVIEW.md`.
 5. **Then, and only then, narrow** — `README §⭐ START HERE` for settled state by topic → the topic
    sections you need **by number** → and the topic's **`_archive/` design record before you form any
