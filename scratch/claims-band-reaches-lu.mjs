@@ -58,12 +58,13 @@
  *           and makes the cure look broken. ⛔ Reported as its own class, never
  *           folded in. (ROADMAP A10: "two failures share every frame — two
  *           tickets, not one.")
- *   NO-PED — a tile with a run whose asphalt edge is zero (a boundary edge, a
- *           median-facing side): no street, so no ped band is owed, but the
- *           mono-width annulus still runs the whole ring and that arc lands in
- *           LU. NOT attributable from outside the construction ⇒ its own LOUD
- *           class with an area, never a skip and never a magnitude
- *           (POLYGON-FIRST §5 RULE 2).
+ *   ⭐ RIM TILES ARE IN A10, NOT IN A THIRD BUCKET (Jacob's ruling, 2026-08-08).
+ *           A run with no asphalt owes no ped band, but it is a RING OWNER, not
+ *           an absence — the disc is the outer contour of one closed shape
+ *           (ARCHITECTURE §"The compound shape"). Its arc is now excluded by
+ *           NAME (`ZERO-DEPTH`, read off the construction's own `g.total`) and
+ *           everything ELSE on that tile is measured like anywhere else. The eye
+ *           can never witness the rim, so this invariant is its only gate.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * HOW IT MEASURES WITHOUT TOUCHING `src/` — and without RESTATING it.
@@ -118,9 +119,13 @@ export const BAND_PROBE_EDITS = [
     find: /^      const noPed = aBase <= 1e-6$/m,
     to: '      const noPed = aBase <= 1e-6; if (noPed) _noPed++' },
 
-  { why: 'capture the AUTHORED-SHALLOWER residual of a single-run tile (iWrun − iW)',
+  { why: 'capture the AUTHORED-SHALLOWER residual of a single-run tile (iWrun − iW), and the ZERO-DEPTH arcs (below)',
     find: /^    const luExtra = \[\] +\/\/ authored-shallower band residual along legs → LU$/m,
-    to: '    const luExtra = []; let _singleResidual = []   // authored-shallower band residual along legs → LU' },
+    to: '    const luExtra = []; let _singleResidual = []; const _zeroDepth = []   // authored-shallower band residual along legs → LU' },
+
+  { why: 'split the ZERO-DEPTH arcs out of luExtra. A group whose total is 0 owes no band AT ALL — a rim run, a median face, an edge authored to nothing. Its whole claim going to LU is STRUCTURAL, not an authored-SHALLOWER gesture, and folding the two would let the rim launder itself as the operator\'s authoring (it did: LS at genuine default reported 10,696 m² "authored" with zero blockCustoms).',
+    find: /^        if \(g\.total < TLmax \+ SWmax - 1e-9\) luExtra\.push\(\.\.\.intersectRings\(claim, wRing\)\)$/m,
+    to: '        if (g.total < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(claim, wRing))\n        if (bandDump.on && g.total <= 1e-6) _zeroDepth.push(...intersectRings(claim, wRing))' },
   { find: /^      bandRem = differenceRings\(iWrun, iW\) +\/\/ authored-shallower residual → LU$/m,
     why: 'the single-run tile routes its whole residual through bandRem, not luExtra',
     to: '      bandRem = differenceRings(iWrun, iW); _singleResidual = bandRem   // authored-shallower residual → LU' },
@@ -131,6 +136,7 @@ export const BAND_PROBE_EDITS = [
     if (bandDump.on) bandDump.rows.push({
       fullBand,
       authored: unionRings([...luExtra, ..._singleResidual]),
+      zeroDepth: unionRings(_zeroDepth),
       lu: [].concat(...Object.values(luByLu)),
       noPed: _noPed,
       nRuns: runs.length,
@@ -206,12 +212,15 @@ export const END_M2 = 1e-3
  * frozen footprint: the cap disc the G8 reclaim itself uses, and the mouth disc
  * the shape pass froze. No tuned distance appears anywhere.
  *
- *   NO-PED  a tile carrying a run with no asphalt edge. The mono-width annulus
- *           still runs the whole ring but no ped band is owed there, and WHICH
- *           arc that is cannot be recovered from outside ⇒ the tile's whole
- *           defect is unattributable. ⛔ Its own LOUD class, never a skip and
- *           never folded into A10 (RULE 2). Takes precedence: nothing on such a
- *           tile is attributable.
+ *   ZERO-DEPTH  the arcs owned by a run whose resolved ped total is 0 — a RIM run
+ *           (the disc clipped the tile), a median face, an edge authored to
+ *           nothing. It owes NO band at all, so its arc arriving in land use is
+ *           STRUCTURAL and correct. ⭐ It is EXCLUDED, like the authored residual
+ *           — but on its own line, NEVER inside it, because they are different
+ *           facts and folding them let the rim launder itself as the operator's
+ *           authoring (LS at genuine default read 10,696 m² "authored" with zero
+ *           blockCustoms). Read from the construction's own `g.total`, not
+ *           guessed from outside.
  *   A0      defect inside a frozen dead-end/mouth disc — the band faithfully
  *           wrapping a bulb, or the zero-width slit. ⇒ ticket A0.
  *   A10     everything else. ⭐ THIS is the number the cure must drive to zero.
@@ -219,26 +228,50 @@ export const END_M2 = 1e-3
  *   ends    the connected components of the A10 region — the "band ends" the
  *           agreed sentence is about. A cure REMOVES an end; shrinking one is
  *           not a service.
+ *
+ * ⛔⛔ A RIM TILE IS COUNTED, NOT SKIPPED (Jacob, ruled 2026-08-08). This file
+ * used to book a tile's ENTIRE defect to an unattributable NO-PED class the
+ * moment it carried one no-asphalt run — the same "whole tile to one bucket"
+ * failure it had already fixed for A0, surviving one class over, and it blinded
+ * the invariant on ~23 of 101 LS tiles. It could only do that because the rim
+ * run was DROPPED from the partition, so which arc was the rim's was genuinely
+ * unrecoverable. Now the rim run owns its arc (`tileGround.js`, the no-asphalt
+ * predicate) and the construction reports that arc, so the tile classifies like
+ * any other. ⭐ The eye can NEVER witness the rim — it is blended to transparent
+ * — so this invariant is the only gate that will ever exist there, and a gate
+ * that skips a quarter of the map is not one.
  */
 export function classifyTile(row, ops) {
   const bandInLu = ops.intersectRings(row.fullBand, row.lu)
-  const defect = row.authored.length ? ops.differenceRings(bandInLu, row.authored) : bandInLu
+  // Both exclusions are the construction's OWN accounting, never a heuristic:
+  // `authored` is what luExtra/bandRem routed as an authored-SHALLOWER residual,
+  // `zeroDepth` is what a zero-total group claimed. Subtracted, never skipped —
+  // each is printed on its own line every run so neither can quietly grow.
+  // ⛔ THE TWO EXCLUSIONS MUST BE DISJOINT OR THE REPORT LIES BY DOUBLE-COUNTING.
+  // A zero-total group also satisfies `g.total < TLmax + SWmax`, so its claim is
+  // pushed to `luExtra` too — the zero-depth arcs are a SUBSET of `authored`.
+  // Reported unsubtracted, the rim shows up on the AUTHORED line, which is the
+  // exact laundering this split exists to stop. Subtract, then report each alone.
+  const zeroD = row.zeroDepth || []
+  const authoredOnly = zeroD.length ? ops.differenceRings(row.authored || [], zeroD) : (row.authored || [])
+  const excluded = ops.unionRings([...authoredOnly, ...zeroD])
+  const defect = excluded.length ? ops.differenceRings(bandInLu, excluded) : bandInLu
   const comps = (rings) => rings.filter(r => ringArea(r) > END_M2)
     .map(r => ({ c: centroid(r).map(v => +v.toFixed(2)), a: +ringArea(r).toFixed(3) }))
     .sort((x, y) => y.a - x.a)
 
   const out = {
     bandArea: areaOf(row.fullBand),
-    authoredArea: areaOf(row.authored),
+    authoredArea: areaOf(authoredOnly),
+    zeroArea: areaOf(zeroD),
     defectArea: areaOf(defect),
     noPed: row.noPed, nRuns: row.nRuns,
     // the envelope fingerprint — a cure that MOVES fullBand is not painting from
     // the partition, it is re-architecting the sacrosanct mono-width envelope.
     fullBandKey: `${row.fullBand.length}:${areaOf(row.fullBand).toFixed(4)}`,
     a0Discs: row.a0.length,
-    a10: [], a0: [], noPedArea: 0, ends: [],
+    a10: [], a0: [], ends: [],
   }
-  if (row.noPed > 0) { out.noPedArea = out.defectArea; out.a0 = []; out.ends = []; return out }
 
   const zone = row.a0.length ? ops.unionRings(row.a0.map(d => ops.circlePoly(d.c[0], d.c[1], d.r))) : []
   const inA0 = zone.length ? ops.intersectRings(defect, zone) : []
@@ -365,25 +398,28 @@ if (import.meta.url === `file://${process.argv[1]}` || process.argv[1]?.endsWith
     measured++
 
     const sum = (a, f) => a.reduce((s, x) => s + f(x), 0)
-    const noPedT = rows.filter(t => t.noPed > 0)
-    const attr   = rows.filter(t => t.noPed === 0)
-    const a0T    = attr.filter(t => t.a0.length)
-    const redT   = attr.filter(t => t.ends.length)
+    // ⭐ EVERY tile is attributable now — including the rim tiles. `rimT` counts
+    // them so their presence is still visible, but it is a COUNT, never a filter.
+    const rimT = rows.filter(t => t.noPed > 0)
+    const a0T  = rows.filter(t => t.a0.length)
+    const redT = rows.filter(t => t.ends.length)
 
     console.log(`── ${s.id} ──  ${bake.tiles.length} tiles · cw=${cw} · from ${s.file}`)
     console.log(`   authoring: ${resolved}/${slots} blockCustoms slot(s) resolve at the skelId|side|segOrd TRIPLE` +
-                (slots ? '' : '   (genuine default — every arrival at luRemainder is a defect, the exclusion below MUST be 0)'))
+                (slots ? '' : '   (genuine default — every arrival at luRemainder is a defect, the AUTHORED exclusion below MUST be 0)'))
     console.log(`   ✅ authored-shallower residual EXCLUDED: ${sum(rows, t => t.authoredArea).toFixed(2)} m²` +
                 `  ← the operator's own gesture (Layer 0 q3), never a defect`)
-    console.log(`   ⛔ A10   ⭐ THIS TICKET, the number the cure must zero      tiles ${String(redT.length).padStart(4)} · ends ${String(sum(redT, t => t.ends.length)).padStart(4)} · ${sum(attr, t => t.a10Area).toFixed(1).padStart(9)} m²`)
-    console.log(`   ·  A0    dead-end/mouth disc — OTHER TICKET, never folded  tiles ${String(a0T.length).padStart(4)} · rgns ${String(sum(a0T, t => t.a0.length)).padStart(4)} · ${sum(attr, t => t.a0Area).toFixed(1).padStart(9)} m²`)
-    console.log(`   ⛔ NO-PED a run with no asphalt edge — UNATTRIBUTABLE, LOUD tiles ${String(noPedT.length).padStart(4)} ·             ${sum(noPedT, t => t.noPedArea).toFixed(1).padStart(9)} m²`)
-    console.log(`      A10 area not in a NAMED end — sub-${END_M2} m² boolean slivers + interior holes (counted above, never dropped): ${sum(attr, t => t.dust).toFixed(4)} m²`)
+    console.log(`   ✅ ZERO-DEPTH arcs EXCLUDED (rim / median / authored-to-nothing): ${sum(rows, t => t.zeroArea).toFixed(2)} m²` +
+                `  ← owes no band at all; structural, NOT authoring`)
+    console.log(`   ⛔ A10   ⭐ THIS TICKET, the number the cure must zero      tiles ${String(redT.length).padStart(4)} · ends ${String(sum(redT, t => t.ends.length)).padStart(4)} · ${sum(rows, t => t.a10Area).toFixed(1).padStart(9)} m²`)
+    console.log(`   ·  A0    dead-end/mouth disc — OTHER TICKET, never folded  tiles ${String(a0T.length).padStart(4)} · rgns ${String(sum(a0T, t => t.a0.length)).padStart(4)} · ${sum(rows, t => t.a0Area).toFixed(1).padStart(9)} m²`)
+    console.log(`   ·  of which RIM — tiles carrying a no-asphalt run. COUNTED IN A10 ABOVE, never skipped: ${rimT.length} tile(s)`)
+    console.log(`      A10 area not in a NAMED end — sub-${END_M2} m² boolean slivers + interior holes (counted above, never dropped): ${sum(rows, t => t.dust).toFixed(4)} m²`)
 
     if (redT.length) {
       redStates++
       const worst = redT.slice().sort((x, y) => y.a10Area - x.a10Area)
-      console.log(`   ⛔ RED — band reaches land use on ${redT.length} A10 tile(s), ${sum(attr, t => t.a10Area).toFixed(1)} m². WHERE:`)
+      console.log(`   ⛔ RED — band reaches land use on ${redT.length} A10 tile(s), ${sum(rows, t => t.a10Area).toFixed(1)} m². WHERE:`)
       for (const t of worst.slice(0, ROWS || 6)) {
         console.log(`      tile ${String(t.i).padStart(4)}  ${t.a10Area.toFixed(1).padStart(7)} m² in ${String(t.ends.length).padStart(2)} end(s)` +
                     `   at ${t.ends.slice(0, 3).map(x => `(${x.c[0]}, ${x.c[1]})=${x.a}m²`).join('  ')}`)

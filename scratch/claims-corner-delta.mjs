@@ -56,8 +56,11 @@
  * naive "does this band have an end" test attributes A0's failures here and
  * makes the cure look broken. The split is geometric and uses A0's OWN frozen
  * radii (`claims-band-reaches-lu.mjs`); A0 regions are counted and printed on
- * their own line and NEVER bucketed. A run with no asphalt edge makes its whole
- * tile UNATTRIBUTABLE — also its own loud line, never folded.
+ * their own line and NEVER bucketed. ⭐ A RIM TILE IS NOT ONE OF THOSE: a run with
+ * no asphalt owes no band, so its ZERO-DEPTH ARC is excluded by name and printed
+ * on its own line, but everything else on that tile is bucketed like anywhere
+ * else. (This file used to drop the whole tile — the same "one feature, whole
+ * tile to one bucket" failure it had already fixed for A0.)
  *
  * ⛔ THE CORNER VERDICTS ARE KEPT — AS DIAGNOSIS, NOT AS THE GATE. D1's dump
  * still runs and the corner-set-changed loud class still fires (the bid set is
@@ -438,7 +441,7 @@ const measure = (bake, cw, blockCustoms) => {
       continue
     }
     // ⭐ THE BAND ENDS — the unit `served` is now defined on. Classified into
-    // A10 / A0 / NO-PED by the invariant's own code, so the two files cannot
+    // A10 / A0 / ZERO-DEPTH by the invariant's own code, so the two files cannot
     // disagree about which ticket an end belongs to.
     const band = bandDump.rows[0] ? classifyTile(bandDump.rows[0], bandOps) : null
     tiles.push({
@@ -452,7 +455,7 @@ const measure = (bake, cw, blockCustoms) => {
       a10Rings: band ? (band.a10Rings || []) : [],
       a10Area: band ? +(band.a10Area ?? 0).toFixed(3) : 0,
       a0Area: band ? +(band.a0Area ?? 0).toFixed(3) : 0,
-      noPedArea: band ? +(band.noPedArea ?? 0).toFixed(3) : 0,
+      zeroArea: band ? +(band.zeroArea ?? 0).toFixed(3) : 0,
     })
     for (const row of cornerDump.rows) {
       corners.push({ tile: i, k: row.k, reason: row.reason, T: round6(row.T), legs: row.legs ?? null, p: (row.p || []).map(round6), skel: row.skel || [] })
@@ -545,10 +548,14 @@ for (const s of selected) {
               ` · FILL ${own.fill}   (diagnosis)`)
   // ⭐ the gate's own unit, printed at measure time so a baseline can never be
   // saved without its band-end census on the page.
-  const ok = own.tiles.filter(t => !t.threw && !t.noPed)
+  // ⭐ RIM TILES ARE IN, not skipped. `noPed` used to disqualify a whole tile
+  // here; the invariant now excludes only the ZERO-DEPTH ARC and measures the
+  // rest, so the census covers the whole map (Jacob's ruling, 2026-08-08 — the
+  // eye can never witness the rim, so a gate that skips it is not a gate).
+  const ok = own.tiles.filter(t => !t.threw)
   const nEnds = ok.reduce((n, t) => n + (t.a10Rings || []).length, 0)
   console.log(`   ⭐ band ends (A10) ${nEnds} on ${ok.filter(t => (t.a10Rings || []).length).length} tile(s) · ${ok.reduce((s, t) => s + t.a10Area, 0).toFixed(1)} m²` +
-              `   ·  not bucketed: A0 ${own.tiles.reduce((s, t) => s + (t.a0Area || 0), 0).toFixed(1)} m² · NO-PED ${own.tiles.reduce((s, t) => s + (t.noPedArea || 0), 0).toFixed(1)} m²`)
+              `   ·  not bucketed: A0 ${own.tiles.reduce((s, t) => s + (t.a0Area || 0), 0).toFixed(1)} m² · ZERO-DEPTH ${own.tiles.reduce((s, t) => s + (t.zeroArea || 0), 0).toFixed(1)} m² (owes no band)`)
 
   snapshot.states.push({
     id: s.id, scene: s.scene, look: s.look, variant: s.variant, file: s.file, cw,
@@ -593,13 +600,13 @@ const E = { served: 0, unchanged: 0, regression: 0 }   // BAND ENDS — the unit
 const C = { served: 0, unchanged: 0, regression: 0 }   // corner verdicts — DIAGNOSIS ONLY
 let loud = 0
 const loudLines = []
-let a0Seen = 0, noPedSeen = 0
+let a0Seen = 0, zeroSeen = 0
 
 console.log('\n══ THE THREE BUCKETS ══')
 console.log('⭐ served = A BAND END THAT EXISTED NO LONGER EXISTS (overlap, not proximity).')
 console.log('   regression = a band end that did not exist now does · an end that GREW · geometry')
 console.log('   moved on a tile where no end was removed.')
-console.log('⛔ A0 (dead-end/mouth) regions and NO-PED tiles are printed on their own lines and are')
+console.log('⛔ A0 (dead-end/mouth) regions and ZERO-DEPTH arcs are printed on their own lines and are')
 console.log('   NEVER bucketed — they are other tickets. The corner verdicts below are DIAGNOSIS.\n')
 
 for (const cur of snapshot.states) {
@@ -658,7 +665,7 @@ for (const cur of snapshot.states) {
   const endRows = []
   for (const t of cur.tiles) {
     const bt = bT.get(t.i); if (!bt || t.threw || bt.threw) continue
-    a0Seen += (t.a0Area || 0); noPedSeen += (t.noPedArea || 0)
+    a0Seen += (t.a0Area || 0); zeroSeen += (t.zeroArea || 0)
     // ⛔ LOUD — the mono-width envelope moved. SECTION §7 lists it among what the
     // cure must PRESERVE; and a narrower band makes ends vanish without a single
     // one being CLAIMED, which is exactly the false green this class exists for.
@@ -667,10 +674,6 @@ for (const cur of snapshot.states) {
       loudLines.push(`tile ${t.i} — the MONO-WIDTH ENVELOPE (fullBand) moved, ${bt.fb} → ${t.fb}. Its band ends are not bucketable: ends can vanish here for the wrong reason.`)
       continue
     }
-    // a run with no asphalt edge makes the whole tile unattributable — its own
-    // loud line above, never a bucket.
-    if (t.noPed > 0 || bt.noPed > 0) continue
-
     // ⭐ IDENTICAL FIRST, OVERLAP SECOND. An end whose ring is byte-identical is
     // trivially still there — say so without asking Clipper. That matters: at the
     // very bottom of the size range Clipper CLEANS a degenerate sliver away and
@@ -742,7 +745,7 @@ for (const cur of snapshot.states) {
   console.log(`   band ends: ${per(E)}   ⭐ THE GATE   (cumulative across states)`)
   console.log(`   tiles:     ${per(T)}   (cumulative across states)`)
   console.log(`   corners:   ${per(C)}   (DIAGNOSIS ONLY — a decline count is not a verdict)`)
-  console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² (dead-end/mouth — ticket A0) · NO-PED ${noPedSeen.toFixed(1)} m² (unattributable)`)
+  console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² (dead-end/mouth — ticket A0) · ZERO-DEPTH ${zeroSeen.toFixed(1)} m² (rim/median — owes no band)`)
   for (const w of wrongWay) { loud++; console.log(`   ⛔ ${w}`) }
   if (ROWS) for (const r of endRows.slice(0, 60)) console.log(`      ${r.bucket.padEnd(11)} tile ${String(r.tile).padStart(4)}  ${r.why}`)
   if (ROWS) for (const r of rows.slice(0, 60)) console.log(`      corner ${r.bucket.padEnd(11)} ${r.k.padEnd(26)} ${r.why}   ${(r.skel || []).join(' + ')}`)
@@ -765,7 +768,7 @@ console.log(`   band ends  served ${E.served} · unchanged ${E.unchanged} · reg
 console.log(`   tiles      served ${T.served} · unchanged ${T.unchanged} · regression ${T.regression}`)
 console.log(`   corners    served ${C.served} · unchanged ${C.unchanged} · regression ${C.regression}   (diagnosis only)`)
 console.log(`   loud       ${loud}   (envelope moves · corner-set changes · bake moves · end-without-geometry · wrong-direction)`)
-console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² · NO-PED ${noPedSeen.toFixed(1)} m² — other tickets, reported so they cannot be quietly counted as either success or failure.`)
+console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² · ZERO-DEPTH ${zeroSeen.toFixed(1)} m² — reported so they cannot be quietly counted as either success or failure.`)
 // ⛔ The corner regressions still count against the change: losing a takeover
 // that worked is damage even if no band end moved.
 const bad = E.regression + T.regression + C.regression + loud + fixtureStale + hardFail
