@@ -108,13 +108,17 @@ function capArc(PL, PR, bx, bz, N = 16) {
 // [D6a robust-offset, 2026-06-14 — POLYGON-FIRST §3, the iA-source fix; the
 // band-side sliver filter is forbidden, fix the pinch where it's born.]
 const SPUR_COS = Math.cos(165 * Math.PI / 180)   // in·out < this ⇒ turn > 165°
-function dropFoldSpurs(ring) {
-  let r = ring
+// [A10-③ STAMP] Tracked twin. Identical logic, vertex-for-vertex; it additionally
+// returns `src`, where src[k] is the index in the INPUT ring of output vertex k.
+// dropFoldSpurs() below is this function with the bookkeeping thrown away, so the
+// two can never diverge — there is one implementation, not two.
+function dropFoldSpursTracked(ring) {
+  let r = ring, ri = ring.map((_, i) => i)
   for (let pass = 0; pass < 8; pass++) {
-    const d = []                                   // collapse near-coincident points
-    for (const p of r) { const q = d[d.length - 1]; if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.03) continue; d.push(p) }
-    while (d.length >= 3 && Math.hypot(d[0][0] - d[d.length - 1][0], d[0][1] - d[d.length - 1][1]) < 0.03) d.pop()
-    if (d.length < 3) return r
+    const d = [], di = []                          // collapse near-coincident points
+    for (let k = 0; k < r.length; k++) { const p = r[k], q = d[d.length - 1]; if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < 0.03) continue; d.push(p); di.push(ri[k]) }
+    while (d.length >= 3 && Math.hypot(d[0][0] - d[d.length - 1][0], d[0][1] - d[d.length - 1][1]) < 0.03) { d.pop(); di.pop() }
+    if (d.length < 3) return { ring: r, src: ri }
     const n = d.length, keep = new Array(n).fill(true)
     let removed = 0
     for (let i = 0; i < n; i++) {
@@ -123,13 +127,14 @@ function dropFoldSpurs(ring) {
       const li = Math.hypot(ix, iy) || 1, lo = Math.hypot(ox, oy) || 1
       if ((ix / li) * (ox / lo) + (iy / li) * (oy / lo) < SPUR_COS) { keep[i] = false; removed++ }
     }
-    if (!removed) return d
+    if (!removed) return { ring: d, src: di }
     const nx = d.filter((_, i) => keep[i])
-    if (nx.length < 3) return d
-    r = nx
+    if (nx.length < 3) return { ring: d, src: di }
+    r = nx; ri = di.filter((_, i) => keep[i])
   }
-  return r
+  return { ring: r, src: ri }
 }
+function dropFoldSpurs(ring) { return dropFoldSpursTracked(ring).ring }
 // Count curb-band degenerates a given iA would produce — the gate's own metric
 // (tiny rings <8 m² + near-180° reversal spurs) on band = iA − (iA inset by cw).
 // Used to SELF-VALIDATE a median fold-strip: adopt it only when it lowers this.
@@ -227,7 +232,7 @@ function freezeCurbEdgeFacts({ ring, runs, streetsOrig, measures, segOrdOf, curb
 // The CHAIN-FREE half — the producer. Everything it needs is a frozen fact or a
 // scalar; `authoredHW(skelId, side, segOrd)` returns the operator's override or
 // null. ⛔ Do not widen this signature with a chain-shaped argument.
-function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved }) {
+function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = null }) {
   const n = ring.length
   const depthAt = (i) => {
     const f = facts[i]
@@ -243,10 +248,68 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved }) {
   // Same street both sides = a through-node → run straight through, no corner.
   const streetAt = (i) => facts[i]?.streetKey
   const cornerAt = (i) => { const a = streetAt((i - 1 + n) % n), b = streetAt(i); return a == null || b == null || a !== b }
-  return offsetRingVariable(ring, depthAt, cornerAt, capAtVertex, curved)
+  return offsetRingVariable(ring, depthAt, cornerAt, capAtVertex, curved, stamp)
 }
 
-function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false) {
+// ─────────────────────────────────────────────────────────────────────────
+// [A10-③ · THE SOURCE-EDGE STAMP] Carry a ring-edge INDEX from `tile.ring` to
+// `iA`. Ruled by Jacob 2026-08-09: iA is stamped with WHICH RING EDGE PRODUCED
+// EACH PIECE — an index, never a street name. Street identity stays a label on
+// the ring edge, exactly where it lives today (`tile.edges[i]`), so this adds no
+// chain state anywhere; it records provenance the geometry already had and threw
+// away. (ROADMAP A15: the wiring is load-bearing precisely BECAUSE iA carries no
+// owner stamp, so `sectionPassTile` re-strokes a run's polyline to get from a
+// ring-side owner to an iA-side arc. This is the missing half of that route.)
+//
+// THE LABEL, stated exactly: a stamped iA vertex carries the index `i` of the
+// tile.ring VERTEX whose emission step produced it. Ring vertex i is the START of
+// ring edge i (ring[i]→ring[i+1]), so the arc running from the first stamped `i`
+// to just before the first stamped `i+1` is ring edge i's piece of the curb, and
+// the corner geometry minted AT vertex i (miter point, bevel pair, or dead-end cap
+// arc) sits at the head of it. That is a half-open convention applied uniformly —
+// ⛔ not a judgment about who OWNS a corner, which is the FILL's question and is
+// deliberately not answered here.
+//
+// ⛔ NOTHING IS EVER GUESSED. Every transform below either preserves the label by
+// index or the tile REFUSES the stamp with a named reason. There is no proximity
+// projection, no nearest-vertex fallback, no empty array standing in for "none".
+// ─────────────────────────────────────────────────────────────────────────
+//
+// Re-attach per-vertex labels across a Clipper boolean. Clipper quantizes every
+// coordinate onto the 1/SCALE integer grid (`toClipper` ROUNDS), so an input
+// vertex that survives comes back carrying exactly the integer it went in with:
+// the lookup is an IDENTITY match on Clipper's own grid, not a distance
+// tolerance. Two outcomes have no source and are refused rather than guessed:
+//   • a vertex Clipper MINTED (a self-intersection point) — no key at all;
+//   • two input vertices with DIFFERENT labels colliding on one grid point.
+function relabelThroughClipper(inRings, inLabels, outRings) {
+  const gkey = (p) => `${Math.round(p[0] * SCALE)},${Math.round(p[1] * SCALE)}`
+  const map = new Map()
+  for (let r = 0; r < inRings.length; r++) {
+    const ring = inRings[r], lab = inLabels[r]
+    for (let i = 0; i < ring.length; i++) {
+      const k = gkey(ring[i]), prev = map.get(k)
+      if (prev === undefined) map.set(k, lab[i])
+      else if (prev !== lab[i]) map.set(k, -1)
+    }
+  }
+  const out = []
+  for (const ring of outRings) {
+    const lab = new Array(ring.length)
+    for (let i = 0; i < ring.length; i++) {
+      const v = map.get(gkey(ring[i]))
+      if (v === undefined) return { labels: null, refused: 'clipper-minted-vertex' }
+      if (v === -1) return { labels: null, refused: 'grid-collision' }
+      lab[i] = v
+    }
+    out.push(lab)
+  }
+  return { labels: out, refused: null }
+}
+// `stamp` (optional) collects the per-output-ring source labels described above:
+// on return it carries either `{ labels: number[][] }` parallel to the returned
+// rings, or `{ refused: '<reason>' }`. Passing it changes no geometry.
+function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null) {
   const n = ring.length
   if (n < 3) return []
   const ccw = signedArea(ring) > 0
@@ -259,6 +322,8 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     seg.push({ dir: [dx, dy], P: [a[0] + nx * d, a[1] + ny * d], nrm: [nx, ny], d })
   }
   const W = []
+  const WL = []                                            // [A10-③] source ring-vertex per emitted point
+  const push = (p, i) => { W.push(p); WL.push(i) }
   for (let i = 0; i < n; i++) {
     const A = seg[(i - 1 + n) % n], B = seg[i]              // vertex i: between edge i-1 and edge i
     const capT = capAt(i)
@@ -269,8 +334,8 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
       // the tip side; blunt → a flat butt segment. bodyDir = −A.dir + B.dir.
       const PL = [ring[i][0] + A.nrm[0] * A.d, ring[i][1] + A.nrm[1] * A.d]
       const PR = [ring[i][0] + B.nrm[0] * B.d, ring[i][1] + B.nrm[1] * B.d]
-      if (capT === 'blunt') W.push(PL, PR)
-      else W.push(...capArc(PL, PR, -A.dir[0] + B.dir[0], -A.dir[1] + B.dir[1]))
+      if (capT === 'blunt') { push(PL, i); push(PR, i) }
+      else for (const p of capArc(PL, PR, -A.dir[0] + B.dir[0], -A.dir[1] + B.dir[1])) push(p, i)
       continue
     }
     const det = A.dir[0] * B.dir[1] - A.dir[1] * B.dir[0]
@@ -279,7 +344,7 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     // through, no spurious corner from an off-chord vertex or a per-fe width step.
     if (!cornerAt(i) || Math.abs(det) < 1e-9) {
       let mx = A.nrm[0] + B.nrm[0], my = A.nrm[1] + B.nrm[1]; const mL = Math.hypot(mx, my) || 1; mx /= mL; my /= mL
-      W.push([ring[i][0] + mx * ((A.d + B.d) / 2), ring[i][1] + my * ((A.d + B.d) / 2)]); continue
+      push([ring[i][0] + mx * ((A.d + B.d) / 2), ring[i][1] + my * ((A.d + B.d) / 2)], i); continue
     }
     const t = ((B.P[0] - A.P[0]) * A.dir[1] - (B.P[1] - A.P[1]) * A.dir[0]) / det
     const X = [B.P[0] + B.dir[0] * t, B.P[1] + B.dir[1] * t]
@@ -287,9 +352,9 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     if (Math.hypot(X[0] - ring[i][0], X[1] - ring[i][1]) > lim) {
       const pA = (ring[i][0] - A.P[0]) * A.dir[0] + (ring[i][1] - A.P[1]) * A.dir[1]
       const pB = (ring[i][0] - B.P[0]) * B.dir[0] + (ring[i][1] - B.P[1]) * B.dir[1]
-      W.push([A.P[0] + A.dir[0] * pA, A.P[1] + A.dir[1] * pA])
-      W.push([B.P[0] + B.dir[0] * pB, B.P[1] + B.dir[1] * pB])
-    } else W.push(X)
+      push([A.P[0] + A.dir[0] * pA, A.P[1] + A.dir[1] * pA], i)
+      push([B.P[0] + B.dir[0] * pB, B.P[1] + B.dir[1] * pB], i)
+    } else push(X, i)
   }
   // Robust cleanup (D6a "proper", 2026-06-14). A concave fold on a tight/dense
   // smooth bend (offset depth > local edge length, exposed by the curve-fit knob)
@@ -307,8 +372,33 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // the per-vertex offset overshoots into a thin near-180° spike that the union keeps
   // as an attached needle (legs near-touch, never fully cross) → it pinches the curb
   // band downstream. Off for smooth=0 so the frozen live map is byte-identical.
-  if (!clean) return unionRings([W]).filter(r => Math.abs(signedArea(r)) > AREA_MIN)
-  return unionRings([dropFoldSpurs(W)]).map(dropFoldSpurs).filter(r => r.length >= 3 && Math.abs(signedArea(r)) > AREA_MIN)
+  // [A10-③] The two return paths below are the SAME expressions as before, split
+  // into named steps so the stamp can ride each one by index. Geometry unchanged:
+  // the `stamp` bookkeeping is read-only w.r.t. the rings.
+  if (!clean) {
+    const uni = unionRings([W])
+    const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
+    if (stamp) {
+      const rl = relabelThroughClipper([W], [WL], uni)
+      if (rl.refused) stamp.refused = rl.refused
+      else stamp.labels = keep.map(k => rl.labels[k])
+    }
+    return keep.map(k => uni[k])
+  }
+  const t0 = dropFoldSpursTracked(W)
+  const W0 = t0.ring, L0 = t0.src.map(k => WL[k])
+  const uni = unionRings([W0])
+  const rl = stamp ? relabelThroughClipper([W0], [L0], uni) : null
+  if (stamp && rl.refused) stamp.refused = rl.refused
+  const out = [], outL = []
+  for (let k = 0; k < uni.length; k++) {
+    const t = dropFoldSpursTracked(uni[k])
+    if (!(t.ring.length >= 3 && Math.abs(signedArea(t.ring)) > AREA_MIN)) continue
+    out.push(t.ring)
+    if (rl && !rl.refused) outL.push(t.src.map(j => rl.labels[k][j]))
+  }
+  if (stamp && rl && !rl.refused) stamp.labels = outL
+  return out
 }
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
 // corners sharper than R up to radius R, leaves gentler ones. Used to round the
@@ -345,26 +435,38 @@ const FILLET_TURN_TOL = 18 * Math.PI / 180
 // never corner-test a vertex whose leg is shorter than MIN_CORNER_LEG.
 const RING_DUP_EPS = 0.02      // m — collapse consecutive verts closer than this
 const MIN_CORNER_LEG = 0.05    // m — a leg shorter than this is residue, not a leg
-function dedupeRing(ring) {
+// [A10-③] Tracked twin, same shape as dropFoldSpursTracked: `src[k]` is the input
+// index of output vertex k. dedupeRing() is this with the bookkeeping discarded.
+function dedupeRingTracked(ring) {
   const n = ring.length
-  if (n < 3) return ring
-  const out = []
+  if (n < 3) return { ring, src: ring.map((_, i) => i) }
+  const out = [], src = []
   for (let i = 0; i < n; i++) {
     const p = ring[i], q = out[out.length - 1]
     if (q && Math.hypot(p[0] - q[0], p[1] - q[1]) < RING_DUP_EPS) continue
-    out.push(p)
+    out.push(p); src.push(i)
   }
   // close-seam dup (last ≈ first)
-  while (out.length >= 3 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < RING_DUP_EPS) out.pop()
-  return out.length >= 3 ? out : ring
+  while (out.length >= 3 && Math.hypot(out[0][0] - out[out.length - 1][0], out[0][1] - out[out.length - 1][1]) < RING_DUP_EPS) { out.pop(); src.pop() }
+  return out.length >= 3 ? { ring: out, src } : { ring, src: ring.map((_, i) => i) }
 }
+function dedupeRing(ring) { return dedupeRingTracked(ring).ring }
 // `sink` (optional) collects the ACHIEVED fillet per corner — { apex, C, r, tA,
 // tB } — so the authoring handle can draw the exact curb arc the construction
 // produced (one corner truth; no independent re-derivation → no drift).
-function filletRing(ring0, Rfn, sink) {
-  const ring = dedupeRing(ring0)
+// [A10-③] `lab0` (optional) = a per-vertex source label parallel to `ring0`; when
+// given, `outLab` is filled with the labels of the emitted ring. filletRing is
+// already a pure index walk — dedupeRing shifts indices, `arcAt`/`drop` are keyed
+// by index, and pass 2 emits in index order — so the carry is exact: an arc minted
+// at corner i inherits ring vertex i's label, and a vertex dropped inside a
+// fillet's inset takes its label with it (that ring edge simply has no piece of
+// the curb left, which is a FACT, not a gap to paper over).
+function filletRing(ring0, Rfn, sink, lab0 = null, outLab = null) {
+  const dd = dedupeRingTracked(ring0)
+  const ring = dd.ring
+  const lab = lab0 ? dd.src.map(k => lab0[k]) : null
   const n = ring.length
-  if (n < 3) return ring.slice()
+  if (n < 3) { if (outLab && lab) outLab.push(...lab); return ring.slice() }
   const sign = signedArea(ring) >= 0 ? 1 : -1
   // Pass 1 — find corner vertices (convex relative to interior, turning > tol).
   const corners = []                                // { i, R, theta, inx,iny, outx,outy }
@@ -382,7 +484,7 @@ function filletRing(ring0, Rfn, sink) {
     if (!(R > 0.01)) continue
     corners.push({ i, R, theta, inx, iny, outx, outy })
   }
-  if (!corners.length) return ring.slice()
+  if (!corners.length) { if (outLab && lab) outLab.push(...lab); return ring.slice() }
   // Arc-length to the previous / next corner (cyclic), to clamp the inset.
   const segLen = (a, b) => Math.hypot(ring[a][0] - ring[b][0], ring[a][1] - ring[b][1])
   const gapAfter = (ci) => {                                       // dist corner ci → ci+1
@@ -429,14 +531,23 @@ function filletRing(ring0, Rfn, sink) {
   const out = []
   for (let k = 0; k < n; k++) {
     const i = (i0 + k) % n
-    if (arcAt.has(i)) { for (const p of arcAt.get(i)) out.push(p) }
-    else if (!drop[i]) out.push(ring[i].slice())
+    if (arcAt.has(i)) { for (const p of arcAt.get(i)) { out.push(p); if (outLab && lab) outLab.push(lab[i]) } }
+    else if (!drop[i]) { out.push(ring[i].slice()); if (outLab && lab) outLab.push(lab[i]) }
   }
   return out
 }
 // Map filletRing over a ring SET (outer rings + holes), preserving the rest.
-function filletRings(rings, Rfn, sink) {
-  return rings.map(r => (r && r.length >= 3) ? filletRing(r, Rfn, sink) : r)
+// [A10-③] `labs` (optional) parallel to `rings`; `outLabs` receives one label
+// array per emitted ring. A ring too short to fillet is passed through verbatim,
+// so its labels are too.
+function filletRings(rings, Rfn, sink, labs = null, outLabs = null) {
+  return rings.map((r, k) => {
+    if (!(r && r.length >= 3)) { if (outLabs) outLabs.push(labs ? labs[k] : null); return r }
+    const o = outLabs ? [] : null
+    const res = filletRing(r, Rfn, sink, labs ? labs[k] : null, o)
+    if (outLabs) outLabs.push(o)
+    return res
+  })
 }
 // Indices of a ring's SHARP convex corners — the centerline NODES (real
 // intersections / authored bends), excluding the dense intermediate vertices
@@ -3463,6 +3574,11 @@ export function buildTileGround(ribbons, opts = {}) {
     // > small — most-specific structural statement first. The overlap is not lost:
     // the census below counts the raw sets too.
     let _producer = 'offset', _reason = null
+    // [A10-③ STAMP] `_iaLabels` = per-iA-ring arrays of source ring-VERTEX indices
+    // (see the header above offsetRingVariable). `_iaNo` = the named reason there
+    // is no stamp. ⛔ Exactly one of the two is ever set; an absent stamp always
+    // says why, and an empty array is never emitted to mean "no owners".
+    let _iaLabels = null, _iaNo = null
     if (opts.iaOffset === false) _reason = 'opt-out'
     else if (isMedianTile) _reason = isDividedMedian ? 'median-divided' : 'median-loop'
     else if (ringArea <= 1500) _reason = 'small'
@@ -3477,13 +3593,17 @@ export function buildTileGround(ribbons, opts = {}) {
       // [A03] THE PRODUCER — chain-free. Everything it reads is a frozen fact, a
       // scalar, or the authored override; there is no chain, street or measure in
       // its scope. (POLYGON-FIRST Check C.)
+      const _offStamp = {}
       const off = buildCurbRings({
         ring: tile.ring,
         facts: curbFacts,
         authoredHW,
         capAtVertex: (i) => capByVertex.get(i) || null,
         curved: smooth > 0 || tileIsCurved,
+        stamp: _offStamp,
       })
+      if (_offStamp.labels) _iaLabels = _offStamp.labels
+      else _iaNo = `offset:${_offStamp.refused || 'no-labels'}`
       const offArea = off.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
       // [A07] THE FAILURE BRANCH. This tile qualified for the offset and the offset
       // came back unusable — it is not a shape class, it is a defect. Name WHICH
@@ -3496,12 +3616,20 @@ export function buildTileGround(ribbons, opts = {}) {
         _producer = 'carve'; _reason = degen
         curbProducerGate.record(degen, tile.ring, { ringArea, offArea, rings: off.length })
         blockRings = legacyBlock()
+        _iaLabels = null; _iaNo = `carve:${degen}`     // the offset's labels died with its rings
       } else {
         blockRings = off
       }
     } else {
       _producer = 'carve'
       blockRings = legacyBlock()
+      // ⛔ THE CARVE PATH IS NOT STAMPED AND SAYS SO. `tile.ring − aFill` is a
+      // Clipper difference against the junction-swelled asphalt union: its output
+      // vertices are minted by the boolean, not carried from a ring edge, so there
+      // is no source index to carry. Recovering one would be a proximity guess —
+      // forbidden (ROADMAP A15; POLYGON-FIRST §5). A06 is where this class gets an
+      // answer, by freezing `aFill`; until then the refusal is the honest state.
+      _iaNo = `carve:${_reason || 'unclassified'}`
     }
     curbProducerCensus.count(_producer, _reason, { isMedianTile, isDividedMedian, small: ringArea <= 1500 })
     // [CULDESAC KEYHOLE — the bounded splice] keep the offset curb as the base
@@ -3514,7 +3642,12 @@ export function buildTileGround(ribbons, opts = {}) {
       // stutter; the disk arc itself comes from circlePoly (both sides), so it welds.
       const keyhole = cleanRings(differenceRings([tile.ring], closed).filter(r => Math.abs(signedArea(r)) > 0.5), 0.15)
       const spliced = unionRings([...differenceRings(blockRings, _cdDisks), ...intersectRings(keyhole, _cdDisks)])
-      if (spliced.length) blockRings = spliced
+      if (spliced.length) {
+        blockRings = spliced
+        // The splice replaces the bulb's curb with geometry carved from `aFill` and
+        // clipped to a disc — both mint vertices with no ring-edge source. Refuse.
+        if (_iaLabels) { _iaLabels = null; _iaNo = 'keyhole-splice' }
+      }
     }
     // The offset path is fold-stripped inside offsetRingVariable (identity at
     // smooth=0). The MEDIAN carve is not: on a smoothed dense ring the inner-edge
@@ -3543,10 +3676,16 @@ export function buildTileGround(ribbons, opts = {}) {
       return false
     }
     if (blockRings.some(ringHasSpur)) {
-      const cleaned = blockRings.map(dropFoldSpurs).filter(r => r.length >= 3)
-      if (cleaned.length && bandSliverCount(filletRings(cleaned, cornerRfn, []), cw) < bandSliverCount(filletRings(blockRings, cornerRfn, []), cw)) blockRings = cleaned
+      const tracked = blockRings.map(r => dropFoldSpursTracked(r))
+      const cleaned = tracked.map(t => t.ring).filter(r => r.length >= 3)
+      if (cleaned.length && bandSliverCount(filletRings(cleaned, cornerRfn, []), cw) < bandSliverCount(filletRings(blockRings, cornerRfn, []), cw)) {
+        if (_iaLabels) _iaLabels = tracked.map((t, k) => t.src.map(j => _iaLabels[k][j])).filter((_, k) => tracked[k].ring.length >= 3)
+        blockRings = cleaned
+      }
     }
-    let iA = filletRings(blockRings, cornerRfn, fSink)   // rounded asphalt-inner (curb line)
+    const _fLabs = _iaLabels ? [] : null
+    let iA = filletRings(blockRings, cornerRfn, fSink, _iaLabels, _fLabs)   // rounded asphalt-inner (curb line)
+    if (_fLabs) _iaLabels = _fLabs
     // [Brief B mech #4, 2026-06-16 / §10] filletRing can rejoin a clamped arc into a
     // near-180° degenerate NEEDLE — a sub-0.15 m reversal spike (the "coincident-point
     // arc" the median note above describes) born in the fillet, NOT in blockRings, so
@@ -3563,8 +3702,12 @@ export function buildTileGround(ribbons, opts = {}) {
     if (iA.some(ringHasSpur)) {
       const spurCount = (rings) => rings.reduce((c, r) => c + (r.length >= 4 ? (() => { const n = r.length; let k = 0; for (let i = 0; i < n; i++) { const a = r[(i-1+n)%n], v = r[i], b = r[(i+1)%n]; const ix=v[0]-a[0],iy=v[1]-a[1],ox=b[0]-v[0],oy=b[1]-v[1]; const li=Math.hypot(ix,iy)||1,lo=Math.hypot(ox,oy)||1; if ((ix/li)*(ox/lo)+(iy/li)*(oy/lo) < SPUR_COS) k++ } return k })() : 0), 0)
       const areaOf = (rings) => rings.reduce((s, r) => s + Math.abs(signedArea(r)), 0)
-      const cleaned = iA.map(dropFoldSpurs).filter(r => r.length >= 3)
-      if (cleaned.length && spurCount(cleaned) < spurCount(iA) && Math.abs(areaOf(cleaned) - areaOf(iA)) < 0.5) iA = cleaned
+      const tracked = iA.map(r => dropFoldSpursTracked(r))
+      const cleaned = tracked.map(t => t.ring).filter(r => r.length >= 3)
+      if (cleaned.length && spurCount(cleaned) < spurCount(iA) && Math.abs(areaOf(cleaned) - areaOf(iA)) < 0.5) {
+        if (_iaLabels) _iaLabels = tracked.map((t, k) => t.src.map(j => _iaLabels[k][j])).filter((_, k) => tracked[k].ring.length >= 3)
+        iA = cleaned
+      }
     }
     // Tag each achieved fillet with its corner key (the centerline NODE it
     // rounded + that node's two tile-edge legs) so the authoring handle can read
@@ -3778,6 +3921,18 @@ export function buildTileGround(ribbons, opts = {}) {
         }
       }
     }
+    // [A10-③] LAST GATE BEFORE THE FREEZE: the stamp must be shape-exact against
+    // the iA it claims to describe — same ring count, same vertex count per ring,
+    // every index inside tile.ring. A stamp that merely LOOKS present is worse than
+    // none, so a mismatch refuses loudly by name instead of shipping a wrong map.
+    let _iaShape = false
+    if (_iaLabels) {
+      const nR = tile.ring.length
+      _iaShape = _iaLabels.length === iA.length
+        && iA.every((r, k) => Array.isArray(_iaLabels[k]) && _iaLabels[k].length === r.length
+          && _iaLabels[k].every(v => Number.isInteger(v) && v >= 0 && v < nR))
+      if (!_iaShape) { _iaNo = 'shape-mismatch'; _iaLabels = null }
+    }
     // Freeze everything the section pass needs off this tile's shape.
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend
     // the ped band around each one as an annular SECTOR (RIBBONS §3.9a step 10),
@@ -3786,6 +3941,12 @@ export function buildTileGround(ribbons, opts = {}) {
       // [A07] WHICH PRODUCER BUILT THIS CURB, and why. The docs promise a single
       // concentric offset; on LS 41 of 101 tiles are not one. Recorded so an
       // operator on a town nobody has inspected can tell, and so A06 has a test.
+      // [A10-③ THE SOURCE-EDGE STAMP] `iaEdge[r][k]` = the index of the tile.ring
+      // VERTEX whose emission produced iA[r][k] — equivalently the ring EDGE that
+      // starts there (see the header above offsetRingVariable). Street identity is
+      // NOT here and must not be put here: it stays on `tile.edges[i]`, which this
+      // index addresses. When there is no stamp, `iaEdgeReason` says why, always.
+      ...(_iaShape ? { iaEdge: _iaLabels } : { iaEdgeReason: _iaNo || 'unstamped' }),
       producer: _producer, ...(_reason ? { producerReason: _reason } : {}), ...(_mouths ? { mouths: _mouths } : {}), ...(_thruNodeEnds ? { thruNodeEnds: _thruNodeEnds } : {}), ...(isDividedMedian ? { isMedian: true } : (medClip.length ? { med: medClip } : {})) })
   }
 
