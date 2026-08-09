@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * "DID THE CURE SERVE THE CORNERS THAT DECLINED — AND ONLY THOSE?" — A10 / D2,
- * the classified-delta gate. Written BEFORE the cure, to judge it.
+ * "DID THE CURE REMOVE THE BAND ENDS — AND ONLY THOSE?" — A10 / D2, the
+ * classified-delta gate. Written BEFORE the cure, to judge it.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * WHY THIS EXISTS (2026-08-08). D1 (`scratch/claims-corner-takeover.mjs`) named
@@ -11,22 +11,58 @@
  * cure that serves 400 declining corners while quietly moving 900 corners that
  * were already correct is a REGRESSION wearing a green number.
  *
- * ⭐ SO THIS FILE CLASSIFIES, IT DOES NOT SCORE. A magnitude is not a verdict;
- * a bucket is. Every corner, and every tile whose FILL geometry moves, lands in
- * exactly one of three:
+ * ⭐⭐ THE UNIT OF SERVICE IS A BAND END, NOT A CORNER SERVED (restated
+ * 2026-08-08, after A10's agreed sentence was ratified). This file's first cut
+ * defined `served` as "a corner that DECLINED now gets a pad" — a MECHANISM.
+ * The agreed sentence settles that the symptom is the BAND: "ends exist only
+ * because we make areas out of lines that have ends." So:
  *
- *   ✅ served      — the corner D1 recorded as DECLINING now gets its arc
- *                    (`BUILT`, with real concrete). The fix, working.
- *   ·  unchanged   — same gate verdict, byte-identical FILL geometry.
- *   ⛔ regression  — geometry moved where nothing declined · a takeover that was
- *                    BUILT is now declined · a decline "served" into an arc with
- *                    no concrete in it (`built-empty-concrete` — honoured in name
- *                    only, D1's own distinction; it is NOT a service).
+ *      ⭐ served = A BAND END THAT EXISTED NO LONGER EXISTS.
+ *
+ * ⛔ That is not a rewording. A corner can be served — pad built, decline gone —
+ * while the band it was supposed to close STILL reaches `luRemainder` a metre
+ * away; under the old definition that scored as a cure. And a real cure that
+ * closes the band WITHOUT ever building a corner pad (painting from the ring
+ * partition, which is exactly what A10's cure is) scored as NOTHING under the
+ * old definition. The old bucket was wrong in both directions.
+ *
+ * ⭐ AN END IS "GONE" BY GEOMETRIC OVERLAP, NEVER BY A DISTANCE TOLERANCE. A
+ * baseline end is served iff the current run's defect region does not overlap
+ * it (above the Clipper noise floor). A tuned proximity knob would be the thing
+ * deciding the verdict; overlap is the definition itself. An end that merely
+ * SHRANK is still an end — it stays `unchanged` and the shrink is printed.
+ *
+ * ⭐ SO THIS FILE CLASSIFIES, IT DOES NOT SCORE. A magnitude is not a verdict;
+ * a bucket is. Every band end, and every tile whose FILL geometry moves, lands
+ * in exactly one of three:
+ *
+ *   ✅ served      — a band end present at baseline is gone. The fix, working.
+ *   ·  unchanged   — the end is still there (same area, or smaller — still an end).
+ *   ⛔ regression  — a band end that did NOT exist at baseline exists now · an
+ *                    end that GREW · geometry moved on a tile where no end was
+ *                    removed.
  *
  * ⛔ NO FOURTH SILENT BUCKET. A corner that appears or disappears between runs,
  * a tile whose verdicts changed while its geometry did not, a scene whose bake
- * moved under the comparison — each is its own LOUD class with a count, never
- * folded into a magnitude and never skipped (POLYGON-FIRST §5 RULE 2).
+ * moved under the comparison, A TILE WHOSE MONO-WIDTH ENVELOPE (`fullBand`)
+ * MOVED — each is its own LOUD class with a count, never folded into a magnitude
+ * and never skipped (POLYGON-FIRST §5 RULE 2). The envelope class is new and it
+ * is load-bearing: `SECTION §7` lists the mono-width envelope among the things
+ * the cure must PRESERVE, so a change to it is a re-architecture, not a cure —
+ * and a narrower band makes ends vanish for the wrong reason.
+ *
+ * ⛔⛔ A0's TILES ARE NOT A10's. Dead-end tips and mouths are ticket A0: the band
+ * legitimately wraps a cul-de-sac bulb and A0's tips are zero-width slits, so a
+ * naive "does this band have an end" test attributes A0's failures here and
+ * makes the cure look broken. The split is geometric and uses A0's OWN frozen
+ * radii (`claims-band-reaches-lu.mjs`); A0 regions are counted and printed on
+ * their own line and NEVER bucketed. A run with no asphalt edge makes its whole
+ * tile UNATTRIBUTABLE — also its own loud line, never folded.
+ *
+ * ⛔ THE CORNER VERDICTS ARE KEPT — AS DIAGNOSIS, NOT AS THE GATE. D1's dump
+ * still runs and the corner-set-changed loud class still fires (the bid set is
+ * upstream of the takeover; a cure must not move it). What no longer decides
+ * anything is the decline COUNT.
  *
  * ─────────────────────────────────────────────────────────────────────────────
  * THE STATE DISCIPLINE (CLAUDE.md Layer 0 q3; A0's rule for eye verdicts, here
@@ -82,19 +118,17 @@
  * shape hash and the comparison reports ⛔ UNCOMPARABLE rather than a number.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * ⭐ WHAT "GEOMETRY MOVED" MEANS, AND THE HONEST LIMIT OF IT. `sectionPassTile`
- * returns `{ Wacc, tlByLu, luByLu }` — concrete, treelawn-per-LU, land-use
- * remainder — for the whole TILE. It does not return per-corner polygons, and
- * this file does not patch `src/` to make it. So:
- *   · the VERDICT unit is the corner  (from the CORNER_DUMP rows, keyed by the
- *     construction's own `cornerT` key — a coordinate, stable across runs),
- *   · the GEOMETRY unit is the tile   (hash + area of the three outputs).
- * A tile's movement is attributed to its own corners' verdict changes. A tile
- * that moved with NO served corner in it is a regression by definition — that
- * is exactly "moved where nothing declined." This coarseness is a real limit,
- * stated here rather than hidden: it cannot separate two corners inside one
- * tile that moved in opposite directions, and it reports that tile as a
- * regression (the strict reading), never as a wash.
+ * ⭐ WHAT "GEOMETRY MOVED" MEANS, AND THE HONEST LIMIT OF IT.
+ *   · the VERDICT unit is the BAND END — a connected region of `fullBand` that
+ *     reached `luRemainder` with no authored-shallower gesture behind it,
+ *     recovered by the shared instrument in `claims-band-reaches-lu.mjs`,
+ *   · the GEOMETRY unit is the tile — `sectionPassTile` returns `{ Wacc,
+ *     tlByLu, luByLu }` for the whole tile (hash + area of the three).
+ * A tile that moved with NO band end removed in it is a regression by
+ * definition — that is "moved where nothing was closed". The coarseness is
+ * stated rather than hidden: two ends inside one tile that moved in opposite
+ * directions still report that tile as a regression (the strict reading),
+ * never as a wash.
  *
  * ⭐ AND THE DIRECTION IS EVIDENCE, not decoration. An unhonoured takeover is a
  * MISLABEL: the released band falls to `luRemainder` and RENDERS AS LAND USE
@@ -105,16 +139,16 @@
  * ─────────────────────────────────────────────────────────────────────────────
  * MUTATION-VERIFIED, AND THE VERIFICATION IS ITSELF RUNNABLE. A gate nobody has
  * seen fail is not a gate — and a sentence in a report saying "I mutation-tested
- * it" goes stale the day someone edits the gate. `--mutant` copies
- * `src/lib/tileGround.js`, applies one declared source edit (asserting the
- * pattern matched EXACTLY once — a silently-unapplied mutation would be a false
- * green), rewrites its relative imports to absolute, and measures the mutant
- * instead. `--selftest` replays every mutant and asserts the bucket signature it
+ * it" goes stale the day someone edits the gate. `--mutant` rides the shared
+ * loader in `claims-band-reaches-lu.mjs`: it copies `src/lib/tileGround.js`,
+ * applies the band instrument plus one declared mutation (each asserted to match
+ * EXACTLY once — a silently-unapplied edit would be a false green), rewrites its
+ * relative imports to absolute, and measures the copy. `--selftest` replays every mutant and asserts the bucket signature it
  * MUST produce, then exercises the LOUD classes (bake moved · corner set changed
  * · frozen iA moved) by tampering with a COPY of the baseline. ⛔ Nothing under
  * `src/` is ever written, and a baseline measured under a mutant cannot be saved.
  *
- * ⛔ READ-ONLY except `scratch/.d2-*`. Reads `public/baked/<scene>/shape.json`,
+ * ⛔ READ-ONLY except `scratch/.d2-*` and `scratch/.band-probe/`. Reads `public/baked/<scene>/shape.json`,
  *    `public/looks/index.json`, `public/looks/<look>/design.json*`. Writes only
  *    its own baseline + mutant scratch files (the transient ones are cleaned up).
  *    Removes no authoring from anything — the `.pre-reset` fixture is read-only
@@ -127,19 +161,26 @@
  *   ...build the cure...
  *   node scratch/claims-corner-delta.mjs --against before        # the three buckets
  *
+ * ▶ THE RED-UNTIL-TRUE INVARIANT ITSELF (run this first — it needs no baseline):
+ *     node scratch/claims-band-reaches-lu.mjs
+ *     node scratch/claims-band-reaches-lu.mjs --inert   (the instrument is inert)
+ *
  *   --mutant list · --mutant <name> --against <baseline>
  *   --only <substring of a state id>   ·   --rows   (every non-unchanged row)
  */
-import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, mkdirSync, rmSync } from 'fs'
-import { join, resolve } from 'path'
+import { readFileSync, writeFileSync, existsSync, readdirSync, statSync, rmSync } from 'fs'
+import { join } from 'path'
 import { createHash } from 'crypto'
+// The band instrument lives in ONE place — the RED-until-true invariant — so the
+// gate and the invariant cannot drift on what `fullBand`, the authored-shallower
+// residual, or "a band end" mean. It also owns the source-copy machinery this
+// file's mutants ride on.
+import { loadInstrumented, classifyTile, NOISE_M2, END_M2 } from './claims-band-reaches-lu.mjs'
 
 const ROOT   = new URL('..', import.meta.url).pathname
 const BAKED  = join(ROOT, 'public/baked')
 const LOOKS  = join(ROOT, 'public/looks')
-const SRCDIR = join(ROOT, 'src/lib')
-const TG     = join(SRCDIR, 'tileGround.js')
-const TMP    = join(ROOT, 'scratch/.d2-mutants')
+const TMP    = join(ROOT, 'scratch/.band-probe')   // the shared instrument's scratch dir
 
 const argv = process.argv.slice(2)
 const opt  = (name) => { const i = argv.indexOf(`--${name}`); return i < 0 ? null : (argv[i + 1] ?? '') }
@@ -157,20 +198,20 @@ const ROWS    = has('rows')
 const MUTANTS = [
   { name: 'noop',
     why: 'the cry-wolf control — an inert comment, no behaviour change. A gate that reports damage here reports damage always.',
-    expect: 'served 0 · regression 0 · loud 0',
-    assert: (r) => r.cServed === 0 && r.cReg === 0 && r.tServed === 0 && r.tReg === 0 && r.loud === 0,
+    expect: 'ends served 0 · regression 0 · loud 0',
+    assert: (r) => r.eServed === 0 && r.eReg === 0 && r.tServed === 0 && r.tReg === 0 && r.loud === 0,
     find: /const iC = ringAt\(0\)/,
     to:   'const iC = /* d2-noop */ ringAt(0)' },
   { name: 'serve-everything',
-    why: 'a FALSE cure — widen the fillet-range tolerance until `no-fillet-in-range` stops declining. The decline COUNT plummets, which is exactly the green number a scoring gate would swallow. Must be SEEN as service AND still FAIL.',
-    expect: 'served > 0 AND (regression > 0 or loud > 0) — caught despite the improvement',
-    assert: (r) => r.cServed > 0 && (r.cReg > 0 || r.tReg > 0 || r.loud > 0),
+    why: 'a FALSE cure — widen the fillet-range tolerance until `no-fillet-in-range` stops declining. The decline COUNT plummets and REAL band ends do close, which is exactly the green number a scoring gate would swallow. Must be SEEN as service AND still FAIL.',
+    expect: 'ends served > 0 AND (regression > 0 or loud > 0) — caught despite the improvement',
+    assert: (r) => r.eServed > 0 && (r.eReg > 0 || r.tReg > 0 || r.loud > 0),
     find: /bestD > best\.r \+ c\.trim \+ 1\b/,
     to:   'bestD > best.r + c.trim + 1000' },
   { name: 'move-the-band',
-    why: 'a pure REGRESSION — shift the band inner edge 5 cm on EVERY tile, including tiles with no corner and nothing declining. Nothing is served; everything moves.',
-    expect: 'served 0 · tile regression > 0',
-    assert: (r) => r.cServed === 0 && r.tServed === 0 && r.tReg > 0,
+    why: 'a pure REGRESSION — shift the band inner edge 5 cm on EVERY tile, including tiles with no corner and nothing declining. It also makes small band ends VANISH by narrowing the band, which is the trap: the ends go away without a single one being CLAIMED. The envelope loud class exists for exactly this.',
+    expect: 'ends served 0 · tile regression > 0 (the mono-width envelope moved — nothing is bucketable)',
+    assert: (r) => r.eServed === 0 && r.tServed === 0 && r.tReg > 0,
     find: /const iW = ringAt\(TLmax \+ SWmax\)/,
     to:   'const iW = ringAt(TLmax + SWmax - 0.05)' },
 ]
@@ -203,13 +244,13 @@ if (has('selftest')) {
     catch (e) { out = (e.stdout || '') + (e.stderr || '') }
     const num = (re) => { const x = out.match(re); return x ? +x[1] : NaN }
     const r = {
-      cServed: num(/corners\s+served (\d+)/), cReg: num(/corners\s+served \d+ · unchanged \d+ · regression (\d+)/),
-      tServed: num(/tiles\s+served (\d+)/),   tReg: num(/tiles\s+served \d+ · unchanged \d+ · regression (\d+)/),
+      eServed: num(/band ends\s+served (\d+)/), eReg: num(/band ends\s+served \d+ · unchanged \d+ · regression (\d+)/),
+      tServed: num(/tiles\s+served (\d+)/),     tReg: num(/tiles\s+served \d+ · unchanged \d+ · regression (\d+)/),
       loud:    num(/loud\s+(\d+)/),
     }
     const ok = Object.values(r).every(Number.isFinite) && m.assert(r)
     if (!ok) bad++
-    console.log(`  ${ok ? '✅' : '⛔'} ${m.name.padEnd(18)} corners ${r.cServed}/${r.cReg} · tiles ${r.tServed}/${r.tReg} · loud ${r.loud}   (served/regression)`)
+    console.log(`  ${ok ? '✅' : '⛔'} ${m.name.padEnd(18)} ends ${r.eServed}/${r.eReg} · tiles ${r.tServed}/${r.tReg} · loud ${r.loud}   (served/regression)`)
     console.log(`     ${''.padEnd(16)} expected: ${m.expect}`)
     if (!ok) console.log(`     ⛔ THE GATE HAS GONE BLIND TO THIS CLASS — do not trust a green verdict from it.`)
   }
@@ -253,31 +294,27 @@ if (has('selftest')) {
   process.exit(bad ? 1 : 0)
 }
 
-// ── load the construction (real, or mutated) ────────────────────────────────
+// ── load the construction (instrumented; real, or mutated) ──────────────────
+// ⭐ ONE loader, shared with the invariant. It copies src/lib/tileGround.js,
+// applies the band instrument + (optionally) this run's declared mutation —
+// each asserted to match EXACTLY once, a zero- or multi-match aborts rather
+// than measuring a silently unapplied edit — and imports the copy. Nothing
+// under src/ is ever written. The band instrument is proven inert by
+// `node scratch/claims-band-reaches-lu.mjs --inert`.
 process.env.CORNER_DUMP = '1'          // must precede the import — read at module init
-let modulePath = TG, mutantNote = null
+let mutantNote = null
 if (MUTANT) {
-  const m = MUTANTS.find(x => x.name === MUTANT)
-  if (!m) { console.error(`⛔ unknown mutant "${MUTANT}". Run --mutant list.`); process.exit(2) }
-  const src = readFileSync(TG, 'utf8')
-  const hits = src.match(new RegExp(m.find.source, 'g')) || []
-  if (hits.length !== 1) {
-    console.error(`⛔ mutant "${m.name}" pattern matched ${hits.length} time(s), expected exactly 1.`)
-    console.error(`   The source has drifted; the mutation would be silently unapplied and the gate`)
-    console.error(`   would report a FALSE GREEN. Re-anchor the pattern before trusting any run.`)
-    process.exit(2)
-  }
-  // rewrite relative specifiers to absolute so the copy resolves from scratch/
-  const rewritten = src.replace(m.find, m.to)
-    .replace(/(from\s*['"])(\.[^'"]*)(['"])/g, (_, a, spec, z) => a + resolve(SRCDIR, spec) + z)
-  mkdirSync(TMP, { recursive: true })
-  modulePath = join(TMP, `tileGround.${m.name}.mjs`)
-  writeFileSync(modulePath, rewritten)
-  mutantNote = m
+  mutantNote = MUTANTS.find(x => x.name === MUTANT)
+  if (!mutantNote) { console.error(`⛔ unknown mutant "${MUTANT}". Run --mutant list.`); process.exit(2) }
 }
-const { sectionPassTile, cornerDump } = await import(modulePath)
+const mod = await loadInstrumented(mutantNote ? [mutantNote] : [], mutantNote ? `d2.${mutantNote.name}` : 'd2')
+const { sectionPassTile, cornerDump, bandDump, bandOps } = mod
 if (!cornerDump?.on) {
   console.error('⛔ CORNER_DUMP is not armed — the construction did not pick up the flag. Nothing measured.')
+  process.exit(2)
+}
+if (!bandDump?.on) {
+  console.error('⛔ the band instrument did not apply — `served` cannot be measured. Nothing measured.')
   process.exit(2)
 }
 
@@ -389,6 +426,7 @@ const measure = (bake, cw, blockCustoms) => {
   const tiles = [], corners = []
   for (const [i, st] of bake.tiles.entries()) {
     cornerDump.rows.length = 0
+    bandDump.rows.length = 0
     let r = null, threw = null
     try { r = sectionPassTile(st, cw, STRIP_MAT, blockCustoms) }
     catch (err) { threw = String(err?.message || err) }
@@ -396,21 +434,39 @@ const measure = (bake, cw, blockCustoms) => {
       // ⛔ never a skip: a tile that cannot be measured is its own failing class.
       tiles.push({ i, ia: h(canon(st?.iA ?? null)), threw })
       corners.push({ tile: i, k: `<tile ${i}>`, reason: 'PROBE-ERROR', err: threw })
-      cornerDump.rows.length = 0
+      cornerDump.rows.length = 0; bandDump.rows.length = 0
       continue
     }
+    // ⭐ THE BAND ENDS — the unit `served` is now defined on. Classified into
+    // A10 / A0 / NO-PED by the invariant's own code, so the two files cannot
+    // disagree about which ticket an end belongs to.
+    const band = bandDump.rows[0] ? classifyTile(bandDump.rows[0], bandOps) : null
     tiles.push({
       i, ia: h(canon(st?.iA ?? null)),
       w: h(canon(r.Wacc)), tl: h(canonMap(r.tlByLu)), lu: h(canonMap(r.luByLu)),
       aW: +areaOf(r.Wacc).toFixed(3), aTl: +areaMap(r.tlByLu).toFixed(3), aLu: +areaMap(r.luByLu).toFixed(3),
+      // the mono-width envelope's fingerprint — SECTION §7 lists it among the
+      // things the cure must PRESERVE, so a change here is its own loud class.
+      fb: band ? band.fullBandKey : null,
+      noPed: band ? band.noPed : 0,
+      a10Rings: band ? (band.a10Rings || []) : [],
+      a10Area: band ? +(band.a10Area ?? 0).toFixed(3) : 0,
+      a0Area: band ? +(band.a0Area ?? 0).toFixed(3) : 0,
+      noPedArea: band ? +(band.noPedArea ?? 0).toFixed(3) : 0,
     })
     for (const row of cornerDump.rows) {
       corners.push({ tile: i, k: row.k, reason: row.reason, T: round6(row.T), legs: row.legs ?? null, p: (row.p || []).map(round6), skel: row.skel || [] })
     }
-    cornerDump.rows.length = 0
+    cornerDump.rows.length = 0; bandDump.rows.length = 0
   }
   return { tiles, corners, fill: h(canon(tiles.map(t => [t.w, t.tl, t.lu]))) }
 }
+
+// ── the served test, stated exactly ─────────────────────────────────────────
+// A band end that existed no longer exists ⇔ the other run's defect region does
+// not overlap it above the Clipper noise floor. ⛔ No distance tolerance: a
+// proximity knob would be the thing deciding the verdict.
+const overlapArea = (ring, rings) => (!rings.length ? 0 : areaOf(bandOps.intersectRings([ring], rings)))
 
 // ── run every selected state ────────────────────────────────────────────────
 const snapshot = { states: [] }
@@ -486,7 +542,13 @@ for (const s of selected) {
     if (!fieldLive.some(f => f.live)) console.log(`        ⛔ every field is consumed elsewhere (upstream at the SHAPE pass, or by another tool). This is real authoring that A10 cannot test.`)
   }
   console.log(`   corners bid ${bid} · declined ${declined} (${bid ? (100 * declined / bid).toFixed(1) : '0.0'}%) · hollow ${hollow}` +
-              ` · FILL ${own.fill}`)
+              ` · FILL ${own.fill}   (diagnosis)`)
+  // ⭐ the gate's own unit, printed at measure time so a baseline can never be
+  // saved without its band-end census on the page.
+  const ok = own.tiles.filter(t => !t.threw && !t.noPed)
+  const nEnds = ok.reduce((n, t) => n + (t.a10Rings || []).length, 0)
+  console.log(`   ⭐ band ends (A10) ${nEnds} on ${ok.filter(t => (t.a10Rings || []).length).length} tile(s) · ${ok.reduce((s, t) => s + t.a10Area, 0).toFixed(1)} m²` +
+              `   ·  not bucketed: A0 ${own.tiles.reduce((s, t) => s + (t.a0Area || 0), 0).toFixed(1)} m² · NO-PED ${own.tiles.reduce((s, t) => s + (t.noPedArea || 0), 0).toFixed(1)} m²`)
 
   snapshot.states.push({
     id: s.id, scene: s.scene, look: s.look, variant: s.variant, file: s.file, cw,
@@ -527,13 +589,18 @@ const base = JSON.parse(readFileSync(basePath, 'utf8'))
 const baseById = new Map(base.states.map(s => [s.id, s]))
 
 const T = { served: 0, unchanged: 0, regression: 0 }
-const C = { served: 0, unchanged: 0, regression: 0 }
+const E = { served: 0, unchanged: 0, regression: 0 }   // BAND ENDS — the unit of service
+const C = { served: 0, unchanged: 0, regression: 0 }   // corner verdicts — DIAGNOSIS ONLY
 let loud = 0
 const loudLines = []
+let a0Seen = 0, noPedSeen = 0
 
 console.log('\n══ THE THREE BUCKETS ══')
-console.log('served = a corner that DECLINED now gets its arc · regression = geometry moved where')
-console.log('nothing declined, a built takeover lost, or an arc served with no concrete in it.\n')
+console.log('⭐ served = A BAND END THAT EXISTED NO LONGER EXISTS (overlap, not proximity).')
+console.log('   regression = a band end that did not exist now does · an end that GREW · geometry')
+console.log('   moved on a tile where no end was removed.')
+console.log('⛔ A0 (dead-end/mouth) regions and NO-PED tiles are printed on their own lines and are')
+console.log('   NEVER bucketed — they are other tickets. The corner verdicts below are DIAGNOSIS.\n')
 
 for (const cur of snapshot.states) {
   const b = baseById.get(cur.id)
@@ -554,8 +621,7 @@ for (const cur of snapshot.states) {
   // corners, keyed by the construction's own cornerT key within its tile
   const bMap = new Map(b.corners.map(c => [`${c.tile}|${c.k}`, c]))
   const cMap = new Map(cur.corners.map(c => [`${c.tile}|${c.k}`, c]))
-  const servedTiles = new Map(), lostTiles = new Map(), declinedAtBase = new Set()
-  for (const c of b.corners) if (isDecline(c.reason)) declinedAtBase.add(c.tile)
+  const servedTiles = new Map(), lostTiles = new Map()
 
   const appeared = [...cMap.keys()].filter(k => !bMap.has(k))
   const vanished = [...bMap.keys()].filter(k => !cMap.has(k))
@@ -583,8 +649,65 @@ for (const cur of snapshot.states) {
     if (bucket !== 'unchanged') rows.push({ k, bucket, why, p: cc.p, skel: cc.skel })
   }
 
-  // tiles — the geometry unit
+  // ── THE BAND ENDS — the unit `served` is defined on ───────────────────────
+  // servedTiles/lostTiles are now driven by ENDS, not by corner verdicts: a tile
+  // "served" is a tile that lost a band end. The corner buckets above stay, but
+  // they no longer decide what a served tile is.
   const bT = new Map(b.tiles.map(t => [t.i, t]))
+  servedTiles.clear(); lostTiles.clear()
+  const endRows = []
+  for (const t of cur.tiles) {
+    const bt = bT.get(t.i); if (!bt || t.threw || bt.threw) continue
+    a0Seen += (t.a0Area || 0); noPedSeen += (t.noPedArea || 0)
+    // ⛔ LOUD — the mono-width envelope moved. SECTION §7 lists it among what the
+    // cure must PRESERVE; and a narrower band makes ends vanish without a single
+    // one being CLAIMED, which is exactly the false green this class exists for.
+    if (bt.fb !== t.fb) {
+      loud++
+      loudLines.push(`tile ${t.i} — the MONO-WIDTH ENVELOPE (fullBand) moved, ${bt.fb} → ${t.fb}. Its band ends are not bucketable: ends can vanish here for the wrong reason.`)
+      continue
+    }
+    // a run with no asphalt edge makes the whole tile unattributable — its own
+    // loud line above, never a bucket.
+    if (t.noPed > 0 || bt.noPed > 0) continue
+
+    // ⭐ IDENTICAL FIRST, OVERLAP SECOND. An end whose ring is byte-identical is
+    // trivially still there — say so without asking Clipper. That matters: at the
+    // very bottom of the size range Clipper CLEANS a degenerate sliver away and
+    // an intersection with itself comes back empty, which read as "served AND a
+    // new end" on an unchanged map. The identity pass makes the noop mutant exact
+    // instead of nearly-exact, and no threshold had to be widened to get there.
+    const bR = (bt.a10Rings || []).filter(r => ringArea(r) > END_M2)
+    const cR = (t.a10Rings || []).filter(r => ringArea(r) > END_M2)
+    const bSet = new Set(bR.map(r => JSON.stringify(r)))
+    const cSet = new Set(cR.map(r => JSON.stringify(r)))
+    for (const r of bR) {
+      const a = ringArea(r)
+      if (cSet.has(JSON.stringify(r))) { E.unchanged++; continue }
+      const ov = overlapArea(r, cR)
+      if (ov <= NOISE_M2) {
+        E.served++; servedTiles.set(t.i, (servedTiles.get(t.i) || 0) + 1)
+        endRows.push({ bucket: 'served', tile: t.i, why: `band end of ${a.toFixed(2)} m² GONE` })
+      } else if (ov < a - 0.05) {
+        E.unchanged++
+        endRows.push({ bucket: 'unchanged', tile: t.i, why: `band end SHRANK ${a.toFixed(2)} → ~${ov.toFixed(2)} m² — still an end, NOT a service` })
+      } else E.unchanged++
+    }
+    for (const r of cR) {
+      const a = ringArea(r)
+      if (bSet.has(JSON.stringify(r))) continue
+      if (overlapArea(r, bR) <= NOISE_M2) {
+        E.regression++; lostTiles.set(t.i, (lostTiles.get(t.i) || 0) + 1)
+        endRows.push({ bucket: 'regression', tile: t.i, why: `a NEW band end of ${a.toFixed(2)} m² — band reaching land use where it did not` })
+      }
+    }
+    if (t.a10Area > bt.a10Area + 0.05) {
+      E.regression++; lostTiles.set(t.i, (lostTiles.get(t.i) || 0) + 1)
+      endRows.push({ bucket: 'regression', tile: t.i, why: `A10 band-in-LU GREW ${bt.a10Area} → ${t.a10Area} m²` })
+    }
+  }
+
+  // tiles — the geometry unit
   const wrongWay = []
   for (const t of cur.tiles) {
     const bt = bT.get(t.i)
@@ -596,7 +719,7 @@ for (const cur of snapshot.states) {
       T.unchanged++
       if (servedTiles.has(t.i) || lostTiles.has(t.i)) {
         loud++
-        loudLines.push(`tile ${t.i} — a corner VERDICT changed but the tile's FILL geometry did not. A takeover that emits nothing is not a service.`)
+        loudLines.push(`tile ${t.i} — a band end changed but the tile's FILL geometry did not. Impossible; the comparison is not measuring what it thinks.`)
       }
       continue
     }
@@ -606,20 +729,23 @@ for (const cur of snapshot.states) {
       if (dLu > 0.5) wrongWay.push(`tile ${t.i}: served, but LAND USE grew ${dLu.toFixed(1)} m² (concrete ${dW >= 0 ? '+' : ''}${dW.toFixed(1)} m²) — moved the wrong way`)
     } else if (lostTiles.has(t.i)) {
       T.regression++
-    } else if (!declinedAtBase.has(t.i)) {
-      T.regression++
-      if (ROWS) console.log(`      ⛔ tile ${t.i} — geometry MOVED and NOTHING declined here at baseline.`)
     } else {
+      // ⭐ geometry moved and NOT ONE band end was removed here. Under the old
+      // corner definition this was excused whenever a corner had declined on the
+      // tile; it no longer is — the cure's business is ends.
       T.regression++
-      if (ROWS) console.log(`      ⛔ tile ${t.i} — geometry MOVED, corners still decline, none served.`)
+      if (ROWS) console.log(`      ⛔ tile ${t.i} — geometry MOVED and no band end was removed here.`)
     }
   }
 
   const per = (o) => `served ${o.served} · unchanged ${o.unchanged} · regression ${o.regression}`
-  console.log(`   corners: ${per(C)}   (cumulative across states)`)
-  console.log(`   tiles:   ${per(T)}   (cumulative across states)`)
+  console.log(`   band ends: ${per(E)}   ⭐ THE GATE   (cumulative across states)`)
+  console.log(`   tiles:     ${per(T)}   (cumulative across states)`)
+  console.log(`   corners:   ${per(C)}   (DIAGNOSIS ONLY — a decline count is not a verdict)`)
+  console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² (dead-end/mouth — ticket A0) · NO-PED ${noPedSeen.toFixed(1)} m² (unattributable)`)
   for (const w of wrongWay) { loud++; console.log(`   ⛔ ${w}`) }
-  if (ROWS) for (const r of rows.slice(0, 60)) console.log(`      ${r.bucket.padEnd(11)} ${r.k.padEnd(26)} ${r.why}   ${(r.skel || []).join(' + ')}`)
+  if (ROWS) for (const r of endRows.slice(0, 60)) console.log(`      ${r.bucket.padEnd(11)} tile ${String(r.tile).padStart(4)}  ${r.why}`)
+  if (ROWS) for (const r of rows.slice(0, 60)) console.log(`      corner ${r.bucket.padEnd(11)} ${r.k.padEnd(26)} ${r.why}   ${(r.skel || []).join(' + ')}`)
   console.log('')
 }
 for (const l of loudLines) console.log(`⛔ LOUD — ${l}`)
@@ -635,11 +761,15 @@ for (const s of snapshot.states.filter(s => s.verdict !== 'LIVE AUTHORING' && s.
   console.log(`   ⛔ ${s.id} — ${s.verdict}: a clean result here is not evidence about authoring.`)
 
 console.log('\n══ VERDICT ══')
-console.log(`   corners  served ${C.served} · unchanged ${C.unchanged} · regression ${C.regression}`)
-console.log(`   tiles    served ${T.served} · unchanged ${T.unchanged} · regression ${T.regression}`)
-console.log(`   loud     ${loud}   (corner-set changes · bake moves · verdict-without-geometry · wrong-direction)`)
-const bad = C.regression + T.regression + loud + fixtureStale + hardFail
+console.log(`   band ends  served ${E.served} · unchanged ${E.unchanged} · regression ${E.regression}   ⭐ THE GATE`)
+console.log(`   tiles      served ${T.served} · unchanged ${T.unchanged} · regression ${T.regression}`)
+console.log(`   corners    served ${C.served} · unchanged ${C.unchanged} · regression ${C.regression}   (diagnosis only)`)
+console.log(`   loud       ${loud}   (envelope moves · corner-set changes · bake moves · end-without-geometry · wrong-direction)`)
+console.log(`   not bucketed: A0 ${a0Seen.toFixed(1)} m² · NO-PED ${noPedSeen.toFixed(1)} m² — other tickets, reported so they cannot be quietly counted as either success or failure.`)
+// ⛔ The corner regressions still count against the change: losing a takeover
+// that worked is damage even if no band end moved.
+const bad = E.regression + T.regression + C.regression + loud + fixtureStale + hardFail
 if (bad) console.log(`\n⛔ FAIL — the change is not a clean cure. Every line above is a class, not a score.`)
-else if (!C.served && !T.served) console.log(`\n⚠️  NOTHING MOVED — this is not a pass, it is "the cure is not in this build".`)
-else console.log(`\n✅ PASS — ${C.served} corner(s) served, ${T.served} tile(s) moved, and NOTHING moved that had not declined.`)
-process.exit(bad ? 1 : (C.served || T.served) ? 0 : 1)
+else if (!E.served) console.log(`\n⚠️  NO BAND END WAS REMOVED — this is not a pass, it is "the cure is not in this build".`)
+else console.log(`\n✅ PASS — ${E.served} band end(s) no longer exist, ${T.served} tile(s) moved, and NOTHING moved where no end was removed.`)
+process.exit(bad ? 1 : E.served ? 0 : 1)

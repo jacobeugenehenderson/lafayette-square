@@ -249,5 +249,8 @@ _handoffs/
 # tileGround.mjs (~245 KB each) that the self-test builds and replays. Both are
 # derivatives the tool regenerates on demand — the checker itself is tracked, its
 # scratchpad is not. Dot-prefixed by the agent for exactly this reason.
-scratch/.d2-before.json
+scratch/.d2-*.json
 scratch/.d2-mutants/
+# The instrumented COPIES of tileGround.js that `claims-band-reaches-lu.mjs`
+# builds (it now owns the loader `.d2-mutants/` used to hold). Same reasoning.
+scratch/.band-probe/
