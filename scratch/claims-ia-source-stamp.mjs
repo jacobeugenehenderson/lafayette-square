@@ -21,15 +21,23 @@
  *      never be spelled the same way as "owners: none of them".
  *   2. SHAPE — one label array per iA ring, one integer label per iA vertex.
  *   3. RANGE — every label is a valid index into that tile's `ring`.
- *   4. ⚠️ WALK STRUCTURE — contiguity and sequence — is REPORTED, NOT ASSERTED, and
- *      that is a deliberate WEAKENING of this check with its reason recorded at the
- *      site. Both were true while only non-folding tiles were stamped; once the
- *      provenance channel carries labels through a REPAIRED FOLD they stop being
- *      true, because the repaired curb genuinely does not walk the tile ring
- *      monotonically. ⛔ The partition property itself (2 + 3 above: exactly one
- *      in-range owner per vertex) is still asserted, and it is what "the polygon can
- *      ask the stamp" actually needs. Cost, stated: the `order` mutant is retired —
- *      the check is weaker than it was, with no equally strong replacement in hand.
+ *   4. ⭐ WALK STRUCTURE — a SPLIT ASSERTION, never a skip. Which branch a tile
+ *      takes is decided by THIS FILE's own crossing test on the pre-union walk,
+ *      ⛔ never by anything the repair path says about itself — a population that
+ *      can nominate itself for exemption grows invisibly.
+ *        SIMPLE (the offset never crossed itself): CONTIGUITY — one cyclic run per
+ *          source edge — and SEQUENCE — the runs in ring order, one wrap — asserted
+ *          strictly, exactly as before folds were stamped.
+ *        REPAIRED (the offset crossed itself; the boolean removed a lobe): the walk
+ *          legitimately stops being monotone, so what IS true for them is asserted
+ *          instead — a source edge owning more than one arc must coincide with the
+ *          repaired ring GENUINELY REVISITING A COORDINATE, by exact equality on
+ *          Clipper's own grid, at the union output where the repair happened.
+ *          ⚠️ Tested there and NOT on `iA`: filletRing can dissolve the pinch vertex
+ *          into arc points, so 2 of 12 multi-arc rings carry no exact repeat by the
+ *          time they reach iA. Measured before it was asserted.
+ *      Both populations are printed every run — a silent partition is how a check
+ *      shrinks without anyone noticing.
  *   6. ARTIFACT IDENTITY — the frozen artifact MINUS the two new keys hashes
  *      exactly as it did before the change (the A07 precedent,
  *      `a07-producer-disclosure.mjs`). `a03-curb-identity.mjs`'s `artifact` hash
@@ -50,7 +58,7 @@
  * Usage:
  *   node scratch/claims-ia-source-stamp.mjs
  *   node scratch/claims-ia-source-stamp.mjs --only lafayette-square
- *   node scratch/claims-ia-source-stamp.mjs --mutate <shape|range|silent|empty>
+ *   node scratch/claims-ia-source-stamp.mjs --mutate <shape|range|silent|empty|order|split>
  *        ⭐ MUTATION-VERIFY. Breaks the carry deliberately in the artifact and
  *        requires the check to FAIL. A check that has never failed is not a check.
  */
@@ -60,13 +68,83 @@ import crypto from 'crypto'
 import { fileURLToPath } from 'url'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
-const { buildTileGround } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
+const SRCDIR = path.join(ROOT, 'src/lib')
+const TG = path.join(SRCDIR, 'tileGround.js')
+
+// ── THE INDEPENDENT CROSSING DETECTOR — the design constraint of the split ──
+// ⛔⛔ THE "WAS THIS REPAIRED?" MARK MUST NEVER COME FROM THE REPAIR PATH'S OWN
+// SAY-SO. If the repairing code declared its own exemptions, a tile could mark
+// itself out of the strict branch and the exempt population would grow invisibly —
+// a skip list that writes itself. So the instrument dumps only RAW INPUTS (the
+// pre-union walk W) and this file decides, with its own segment-crossing test, which
+// population a tile is in. The repair contributes no opinion about itself.
+const EDITS = [{
+  why: 'dump the pre-union walk + the returned rings/labels (non-clean path)',
+  find: /    return keep\.map\(k => uni\[k\]\)\n/,
+  to: `    if (globalThis.__stampDump) globalThis.__stampDump.set(ring, { W, rings: keep.map(k => uni[k]), labels: (stamp && uniL) ? keep.map(k => uniL[k]) : null })
+    return keep.map(k => uni[k])
+`,
+}, {
+  why: 'same on the clean (curved-tile) path',
+  find: /  if \(stamp && uniL\) stamp\.labels = outL\n  return out\n/,
+  to: `  if (stamp && uniL) stamp.labels = outL
+  if (globalThis.__stampDump) globalThis.__stampDump.set(ring, { W: W0, rings: out, labels: uniL ? outL : null })
+  return out
+`,
+}]
+const loadInstrumented = async () => {
+  let out = fs.readFileSync(TG, 'utf8')
+  for (const e of EDITS) {
+    const hits = out.match(new RegExp(e.find.source, 'g')) || []
+    if (hits.length !== 1) {
+      console.error(`\u26d4 INSTRUMENT ANCHOR DRIFTED \u2014 matched ${hits.length}\u00d7, expected 1:\n   ${e.why}`)
+      console.error('   The edit would be silently unapplied and every number below would be a FALSE GREEN.')
+      process.exit(2)
+    }
+    out = out.replace(e.find, e.to)
+  }
+  out = out.replace(/(from\s*['"])(\.[^'"]*)(['"])/g, (_, a, sp, z) => a + path.resolve(SRCDIR, sp) + z)
+  fs.mkdirSync(path.join(ROOT, 'scratch/.stamp-probe'), { recursive: true })
+  const f = path.join(ROOT, 'scratch/.stamp-probe/tileGround.stamp.mjs')
+  fs.writeFileSync(f, out)
+  return await import(f)
+}
+const { buildTileGround } = await loadInstrumented()
+
+// this file's own crossing test — the 18 ms one, independent of the repair
+const segX = (p1, p2, p3, p4) => {
+  const ax = p2[0] - p1[0], ay = p2[1] - p1[1], bx = p4[0] - p3[0], by = p4[1] - p3[1]
+  const den = ax * by - ay * bx
+  if (Math.abs(den) < 1e-12) return false
+  const t = ((p3[0] - p1[0]) * by - (p3[1] - p1[1]) * bx) / den
+  const u = ((p3[0] - p1[0]) * ay - (p3[1] - p1[1]) * ax) / den
+  return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9
+}
+const selfIntersects = (W) => {
+  const n = W.length
+  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) {
+    if (i === 0 && j === n - 1) continue
+    if (segX(W[i], W[(i + 1) % n], W[j], W[(j + 1) % n])) return true
+  }
+  return false
+}
+// EXACT repeated coordinate — no tolerance. The union output sits on Clipper's own
+// 1/SCALE integer grid, which is the same exactness the label carry already relies
+// on. ⚠️ Deliberately tested HERE and not on `iA`: filletRing runs after the repair
+// and can dissolve the pinch vertex into arc points, so 2 of 12 multi-arc rings have
+// no exact repeat by the time they reach iA (altadena 313 ring 3, staging 59 ring 0).
+// Measured before it was asserted.
+const revisitsACoordinate = (ring) => {
+  const seen = new Set()
+  for (const p of ring) { const k = `${p[0]},${p[1]}`; if (seen.has(k)) return true; seen.add(k) }
+  return false
+}
 
 const argv = process.argv.slice(2)
 const opt = (n) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : null }
 const ONLY = opt('only')
 const MUTATE = opt('mutate')
-const MUTANTS = ['shape', 'range', 'silent', 'empty']   // ⚠️ 'order' retired — see checkTile
+const MUTANTS = ['shape', 'range', 'silent', 'empty', 'order', 'split']
 if (MUTATE && !MUTANTS.includes(MUTATE)) {
   console.error(`⛔ unknown mutant "${MUTATE}". One of: ${MUTANTS.join(' · ')}`)
   process.exit(2)
@@ -115,24 +193,40 @@ if (!selected.length) { console.error(`⛔ no state matched --only "${ONLY}". No
 // ⭐ Each one is a way the carry could be silently wrong. If the check passes a
 // mutant, the check does not test what it claims to test.
 const nRuns = (lab) => new Set(lab).size
-const mutate = (tiles, kind) => {
-  // `order` needs a ring with ≥4 distinct source edges to break sequence without
-  // also breaking contiguity — otherwise it would pass for the wrong reason.
-  const want = kind === 'order' ? (a) => a && nRuns(a) >= 4 : (a) => a && a.length > 3
-  const victim = tiles.find(t => Array.isArray(t.iaEdge) && t.iaEdge.some(want))
-  if (!victim) return false
-  const k = victim.iaEdge.findIndex(want)
-  if (kind === 'shape') victim.iaEdge[k] = victim.iaEdge[k].slice(0, -1)          // one label short
-  if (kind === 'range') victim.iaEdge[k] = victim.iaEdge[k].map((v, i) => i === 0 ? victim.ring.length : v)
+const runsOf = (lab) => { const o = []; for (let i = 0; i < lab.length; i++) if (lab[i] !== lab[(i - 1 + lab.length) % lab.length]) o.push(lab[i]); return o }
+const mutate = (tiles, kind, dumps) => {
+  const isRep = (t) => { const d = dumps.get(t.ring); return d ? selfIntersects(d.W) : false }
+  let victim, k
   if (kind === 'order') {
-    // Swap two NON-ADJACENT source edges' labels wholesale. Every arc stays
-    // contiguous and every index stays in range — only the SEQUENCE breaks. This
-    // is the corruption a carry that loses index alignment would actually produce.
-    const lab = victim.iaEdge[k], seq = []
-    for (let i = 0; i < lab.length; i++) if (lab[i] !== lab[(i - 1 + lab.length) % lab.length]) seq.push(lab[i])
+    // ⭐ RESTORED, and pointed at the branch that asserts sequence: a SIMPLE tile.
+    victim = tiles.find(t => Array.isArray(t.iaEdge) && !isRep(t) && t.iaEdge.some(a => a && nRuns(a) >= 4))
+    if (!victim) return false
+    k = victim.iaEdge.findIndex(a => a && nRuns(a) >= 4)
+    const lab = victim.iaEdge[k], seq = runsOf(lab)
     const a = seq[0], b = seq[Math.floor(seq.length / 2)]
     victim.iaEdge[k] = lab.map(v => v === a ? b : v === b ? a : v)
+    return true
   }
+  if (kind === 'split') {
+    // ⭐ NEW, for the REPAIRED branch: manufacture a split arc on a repaired tile
+    // whose union output has NO pinch, so nothing explains the split. Must fail.
+    victim = tiles.find(t => Array.isArray(t.iaEdge) && isRep(t)
+      && !(dumps.get(t.ring)?.rings || []).some(revisitsACoordinate)
+      && t.iaEdge.some(a => a && nRuns(a) >= 3))
+    if (!victim) return false
+    k = victim.iaEdge.findIndex(a => a && nRuns(a) >= 3)
+    const lab = victim.iaEdge[k], seq = runsOf(lab)
+    const far = seq[Math.floor(seq.length / 2)]
+    if (lab[0] === far || lab[1] === far) return false
+    lab[0] = far                                   // `far` now owns two separated arcs
+    return true
+  }
+  const want = (a) => a && a.length > 3
+  victim = tiles.find(t => Array.isArray(t.iaEdge) && t.iaEdge.some(want))
+  if (!victim) return false
+  k = victim.iaEdge.findIndex(want)
+  if (kind === 'shape') victim.iaEdge[k] = victim.iaEdge[k].slice(0, -1)          // one label short
+  if (kind === 'range') victim.iaEdge[k] = victim.iaEdge[k].map((v, i) => i === 0 ? victim.ring.length : v)
   if (kind === 'silent') { delete victim.iaEdge; delete victim.iaEdgeReason }     // stamp vanishes, nothing says why
   if (kind === 'empty') { victim.iaEdge = [] }                                    // "no owners", the forbidden spelling
   return true
@@ -154,7 +248,7 @@ const cyclicRuns = (lab) => {
   return out
 }
 
-const checkTile = (t, ti, fail, walk) => {
+const checkTile = (t, ti, fail, walk, repaired, dump) => {
   const has = Array.isArray(t.iaEdge)
   const why = typeof t.iaEdgeReason === 'string' && t.iaEdgeReason.length > 0
   if (has && why) return fail(ti, 'BOTH iaEdge and iaEdgeReason — the tile cannot say two things at once')
@@ -168,35 +262,41 @@ const checkTile = (t, ti, fail, walk) => {
     const lab = t.iaEdge[r], ring = iA[r]
     if (!Array.isArray(lab) || lab.length !== ring.length) return fail(ti, `ring ${r}: ${Array.isArray(lab) ? lab.length : 'no'} label(s) for ${ring.length} vertices`)
     for (const v of lab) if (!Number.isInteger(v) || v < 0 || v >= nRing) return fail(ti, `ring ${r}: label ${v} is not a valid index into a ${nRing}-vertex tile.ring`)
-    // ⭐⭐ WALK STRUCTURE IS MEASURED AND REPORTED, NOT ASSERTED — and this is a
-    // DELIBERATE WEAKENING with a reason, recorded because weakening a check to let
-    // a build pass is exactly the move this suite exists to refuse.
+    // ⭐⭐ THE SPLIT ASSERTION. Walk structure is asserted STRICTLY where it is true
+    // and asserted DIFFERENTLY — never skipped — where it is not. ⛔ There is no
+    // skip list: which branch a tile takes is decided by THIS FILE's own crossing
+    // test on the pre-union walk (`selfIntersects`), never by anything the repair
+    // path says about itself. A population that can nominate itself for exemption
+    // grows invisibly.
     //
-    // CONTIGUITY (one cyclic run per source edge) and SEQUENCE (the runs in ring
-    // order, one wrap) were written when the only STAMPED tiles were those whose
-    // offset does not self-intersect, and they are true of that population. Once the
-    // provenance channel carries labels through a REPAIRED FOLD, they stop being
-    // true — not because the carry is wrong, but because the repaired curb genuinely
-    // does not walk the tile ring monotonically: the boolean removed a lobe, and a
-    // ring that pinches to a point (LS tile 42 revisits one coordinate at output
-    // index 0 and 187) legitimately gives one source edge arcs on both sides of the
-    // pinch, 8.94 m apart. That is the geometry, not a partition error.
-    //
-    // ⛔ WHAT IS STILL ASSERTED IS THE PARTITION PROPERTY ITSELF, above: every iA
-    // vertex carries EXACTLY ONE in-range source edge index. That is what "the
-    // polygon can ask the stamp" needs — no vertex is unowned, none is owned twice.
-    // ⚠️ COST, stated: the `--mutate order` mutant (swap two runs' labels wholesale)
-    // is no longer caught, because it violates only the reported structure. The
-    // check is weaker than it was yesterday and there is no equally strong
-    // replacement in hand today.
+    //  SIMPLE (the offset never crossed itself) — the majority. CONTIGUITY (one
+    //     cyclic run per source edge) and SEQUENCE (the runs in ring order, one
+    //     wrap) hold strictly, exactly as they did before folds were stamped.
+    //  REPAIRED (the offset crossed itself and the boolean removed a lobe) — the
+    //     walk legitimately stops being monotone, so the invariant that IS true for
+    //     them is asserted instead: a source edge owning more than one arc must
+    //     coincide with the repaired ring GENUINELY REVISITING A COORDINATE — a
+    //     pinch, tested by exact equality on Clipper's own grid, at the union output
+    //     where the repair happened. ⛔ If a label owns two arcs with no pinch to
+    //     explain it, that is a real partition defect and it FAILS.
     const runs = cyclicRuns(lab)
     const distinct = new Set(lab).size
     let asc = 0, desc = 0
     for (let i = 0; i < runs.length; i++) { const a = runs[i], b = runs[(i + 1) % runs.length]; if (b > a) asc++; else desc++ }
     const monotone = runs.length <= 1 || asc === 1 || desc === 1
-    if (runs.length !== distinct) walk.multiArc++
-    else if (!monotone) walk.nonMonotone++
-    else walk.simple++
+    if (repaired) {
+      walk.repaired++
+      if (runs.length !== distinct) {
+        walk.multiArc++
+        const uRings = dump?.rings || []
+        const pinched = uRings.some(revisitsACoordinate)
+        if (!pinched) return fail(ti, `ring ${r}: ${runs.length} run(s) for ${distinct} source edge(s) on a REPAIRED tile, and NO union-output ring revisits a coordinate — a split arc with no pinch to explain it`)
+      }
+    } else {
+      walk.simple++
+      if (runs.length !== distinct) return fail(ti, `ring ${r}: ${runs.length} cyclic run(s) for ${distinct} distinct source edge(s) on a tile whose offset never crossed itself — a source edge owns two separated arcs (CONTIGUITY)`)
+      if (!monotone) return fail(ti, `ring ${r}: the runs are not in ring sequence on a tile whose offset never crossed itself (${asc} ascent(s) / ${desc} descent(s); a single wrap is required)`)
+    }
   }
   return 'stamped'
 }
@@ -213,26 +313,30 @@ for (const s of selected) {
   let pr
   try {
     const rb = s.ribbons || JSON.parse(fs.readFileSync(s.ribbonsPath))
+    globalThis.__stampDump = new Map()
     pr = quiet(() => buildTileGround(rb, { ...OPTS, blockCustoms: s.blockCustoms }))
   } catch (e) { console.log(`  ⛔ ${s.id.padEnd(30)} NOT MEASURED — ${e.message.slice(0, 70)}`); bad++; continue }
   const tiles = pr._shapeArtifact || []
+  const dumps = globalThis.__stampDump || new Map()
   if (!tiles.length) { console.log(`  ⛔ ${s.id.padEnd(30)} NOT MEASURED — 0 tiles`); bad++; continue }
   statesRun++
 
   // artifact identity, the A07 way: strip ONLY the new keys and hash the rest
   artifactHashes[s.id] = h(canon(tiles.map(t => { const { iaEdge, iaEdgeReason, ...rest } = t; return rest })))
 
-  if (MUTATE && !mutate(tiles, MUTATE)) { console.log(`  ⚠️  ${s.id.padEnd(30)} no stampable tile to mutate — skipped`); continue }
+  if (MUTATE && !mutate(tiles, MUTATE, dumps)) { console.log(`  ⚠️  ${s.id.padEnd(30)} no stampable tile to mutate — skipped`); continue }
 
   const failures = []
   const fail = (ti, msg) => { failures.push(`tile ${ti}: ${msg}`); return 'FAIL' }
   let stamped = 0, refused = 0
   const byReason = new Map()
   const coverage = { edges: 0, covered: 0 }
-  const walk = { simple: 0, nonMonotone: 0, multiArc: 0 }
+  const walk = { simple: 0, repaired: 0, multiArc: 0 }
   for (let i = 0; i < tiles.length; i++) {
     const t = tiles[i]
-    const v = checkTile(t, i, fail, walk)
+    const dump = dumps.get(t.ring)
+    const repaired = dump ? selfIntersects(dump.W) : false
+    const v = checkTile(t, i, fail, walk, repaired, dump)
     if (v === 'stamped') {
       stamped++
       const seen = new Set()
@@ -249,7 +353,7 @@ for (const s of selected) {
   const pct = tiles.length ? (100 * stamped / tiles.length).toFixed(0) : '0'
   console.log(`  ${ok ? '✅' : '⛔'} ${s.id.padEnd(30)} ${String(stamped).padStart(4)}/${String(tiles.length).padStart(4)} tiles stamped (${pct}%) · ${refused} refused`)
   if (byReason.size) console.log(`     ${' '.repeat(28)} refusals: ${[...byReason].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${k}`).join(' · ')}`)
-  if (stamped) console.log(`     ${' '.repeat(28)} walk structure (REPORTED, not gated): ${walk.simple} simple · ${walk.nonMonotone} non-monotone · ${walk.multiArc} multi-arc — the last two are repaired folds, see the note in checkTile`)
+  if (stamped) console.log(`     ${' '.repeat(28)} walk: ${walk.simple} SIMPLE (contiguity+sequence asserted strictly) · ${walk.repaired} REPAIRED (pinch-explains-split asserted), of which ${walk.multiArc} carry a split arc`)
   if (stamped) console.log(`     ${' '.repeat(28)} coverage (reported, not gated): ${coverage.covered}/${coverage.edges} ring edges have an iA vertex — the rest were swallowed by a fillet inset or a coincident-point collapse`)
   for (const f of failures.slice(0, 8)) console.log(`     ⛔ ${f}`)
   if (failures.length > 8) console.log(`     ⛔ … ${failures.length - 8} more`)
