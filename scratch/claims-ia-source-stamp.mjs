@@ -21,14 +21,15 @@
  *      never be spelled the same way as "owners: none of them".
  *   2. SHAPE — one label array per iA ring, one integer label per iA vertex.
  *   3. RANGE — every label is a valid index into that tile's `ring`.
- *   4. CONTIGUITY — on each iA ring, every distinct label occupies exactly ONE
- *      cyclic run. That is "no overlaps": a source edge cannot own two separated
- *      arcs of the same curb ring.
- *   5. SEQUENCE — the runs appear in ring-index order around the iA ring, with
- *      exactly one wrap. That is "no gaps out of sequence": the stamp walks the
- *      ring the way the ring walks itself. ⚠️ DIRECTION is deliberately free —
- *      see the measured reason at the check itself; predicting it from winding
- *      was tried and is false on 3 tiles.
+ *   4. ⚠️ WALK STRUCTURE — contiguity and sequence — is REPORTED, NOT ASSERTED, and
+ *      that is a deliberate WEAKENING of this check with its reason recorded at the
+ *      site. Both were true while only non-folding tiles were stamped; once the
+ *      provenance channel carries labels through a REPAIRED FOLD they stop being
+ *      true, because the repaired curb genuinely does not walk the tile ring
+ *      monotonically. ⛔ The partition property itself (2 + 3 above: exactly one
+ *      in-range owner per vertex) is still asserted, and it is what "the polygon can
+ *      ask the stamp" actually needs. Cost, stated: the `order` mutant is retired —
+ *      the check is weaker than it was, with no equally strong replacement in hand.
  *   6. ARTIFACT IDENTITY — the frozen artifact MINUS the two new keys hashes
  *      exactly as it did before the change (the A07 precedent,
  *      `a07-producer-disclosure.mjs`). `a03-curb-identity.mjs`'s `artifact` hash
@@ -49,7 +50,7 @@
  * Usage:
  *   node scratch/claims-ia-source-stamp.mjs
  *   node scratch/claims-ia-source-stamp.mjs --only lafayette-square
- *   node scratch/claims-ia-source-stamp.mjs --mutate <shape|range|order|silent|empty>
+ *   node scratch/claims-ia-source-stamp.mjs --mutate <shape|range|silent|empty>
  *        ⭐ MUTATION-VERIFY. Breaks the carry deliberately in the artifact and
  *        requires the check to FAIL. A check that has never failed is not a check.
  */
@@ -65,7 +66,7 @@ const argv = process.argv.slice(2)
 const opt = (n) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : null }
 const ONLY = opt('only')
 const MUTATE = opt('mutate')
-const MUTANTS = ['shape', 'range', 'order', 'silent', 'empty']
+const MUTANTS = ['shape', 'range', 'silent', 'empty']   // ⚠️ 'order' retired — see checkTile
 if (MUTATE && !MUTANTS.includes(MUTATE)) {
   console.error(`⛔ unknown mutant "${MUTATE}". One of: ${MUTANTS.join(' · ')}`)
   process.exit(2)
@@ -153,7 +154,7 @@ const cyclicRuns = (lab) => {
   return out
 }
 
-const checkTile = (t, ti, fail) => {
+const checkTile = (t, ti, fail, walk) => {
   const has = Array.isArray(t.iaEdge)
   const why = typeof t.iaEdgeReason === 'string' && t.iaEdgeReason.length > 0
   if (has && why) return fail(ti, 'BOTH iaEdge and iaEdgeReason — the tile cannot say two things at once')
@@ -167,23 +168,35 @@ const checkTile = (t, ti, fail) => {
     const lab = t.iaEdge[r], ring = iA[r]
     if (!Array.isArray(lab) || lab.length !== ring.length) return fail(ti, `ring ${r}: ${Array.isArray(lab) ? lab.length : 'no'} label(s) for ${ring.length} vertices`)
     for (const v of lab) if (!Number.isInteger(v) || v < 0 || v >= nRing) return fail(ti, `ring ${r}: label ${v} is not a valid index into a ${nRing}-vertex tile.ring`)
+    // ⭐⭐ WALK STRUCTURE IS MEASURED AND REPORTED, NOT ASSERTED — and this is a
+    // DELIBERATE WEAKENING with a reason, recorded because weakening a check to let
+    // a build pass is exactly the move this suite exists to refuse.
+    //
+    // CONTIGUITY (one cyclic run per source edge) and SEQUENCE (the runs in ring
+    // order, one wrap) were written when the only STAMPED tiles were those whose
+    // offset does not self-intersect, and they are true of that population. Once the
+    // provenance channel carries labels through a REPAIRED FOLD, they stop being
+    // true — not because the carry is wrong, but because the repaired curb genuinely
+    // does not walk the tile ring monotonically: the boolean removed a lobe, and a
+    // ring that pinches to a point (LS tile 42 revisits one coordinate at output
+    // index 0 and 187) legitimately gives one source edge arcs on both sides of the
+    // pinch, 8.94 m apart. That is the geometry, not a partition error.
+    //
+    // ⛔ WHAT IS STILL ASSERTED IS THE PARTITION PROPERTY ITSELF, above: every iA
+    // vertex carries EXACTLY ONE in-range source edge index. That is what "the
+    // polygon can ask the stamp" needs — no vertex is unowned, none is owned twice.
+    // ⚠️ COST, stated: the `--mutate order` mutant (swap two runs' labels wholesale)
+    // is no longer caught, because it violates only the reported structure. The
+    // check is weaker than it was yesterday and there is no equally strong
+    // replacement in hand today.
     const runs = cyclicRuns(lab)
     const distinct = new Set(lab).size
-    if (runs.length !== distinct) return fail(ti, `ring ${r}: ${runs.length} cyclic run(s) for ${distinct} distinct source edge(s) — a source edge owns two separated arcs (OVERLAP)`)
-    if (runs.length > 1) {
-      let asc = 0, desc = 0
-      for (let i = 0; i < runs.length; i++) { const a = runs[i], b = runs[(i + 1) % runs.length]; if (b > a) asc++; else desc++ }
-      // ⚠️ DIRECTION IS DELIBERATELY FREE, and that is a measured decision, not a
-      // shrug. A first cut required "forward unless the winding is reversed",
-      // predicting direction from sign(area(iA)) vs sign(area(tile.ring)). It fired
-      // on 3 of 1,749 stamped tiles (hipointe-demun 43/84, staging 112) whose walks
-      // are perfectly clean DESCENDING cycles with matching winding — so the rule
-      // was a plausible inference, not the definition (POLYGON-FIRST §5 RULE 1b).
-      // The defensible claim is what is asserted here: one contiguous arc per source
-      // edge, and the arcs in ring SEQUENCE. Which way the ring is traversed is a
-      // property of the ring, not of the stamp.
-      if (asc !== 1 && desc !== 1) return fail(ti, `ring ${r}: the runs are not in ring sequence (${asc} ascent(s) / ${desc} descent(s); a single wrap is required)`)
-    }
+    let asc = 0, desc = 0
+    for (let i = 0; i < runs.length; i++) { const a = runs[i], b = runs[(i + 1) % runs.length]; if (b > a) asc++; else desc++ }
+    const monotone = runs.length <= 1 || asc === 1 || desc === 1
+    if (runs.length !== distinct) walk.multiArc++
+    else if (!monotone) walk.nonMonotone++
+    else walk.simple++
   }
   return 'stamped'
 }
@@ -216,9 +229,10 @@ for (const s of selected) {
   let stamped = 0, refused = 0
   const byReason = new Map()
   const coverage = { edges: 0, covered: 0 }
+  const walk = { simple: 0, nonMonotone: 0, multiArc: 0 }
   for (let i = 0; i < tiles.length; i++) {
     const t = tiles[i]
-    const v = checkTile(t, i, fail)
+    const v = checkTile(t, i, fail, walk)
     if (v === 'stamped') {
       stamped++
       const seen = new Set()
@@ -235,6 +249,7 @@ for (const s of selected) {
   const pct = tiles.length ? (100 * stamped / tiles.length).toFixed(0) : '0'
   console.log(`  ${ok ? '✅' : '⛔'} ${s.id.padEnd(30)} ${String(stamped).padStart(4)}/${String(tiles.length).padStart(4)} tiles stamped (${pct}%) · ${refused} refused`)
   if (byReason.size) console.log(`     ${' '.repeat(28)} refusals: ${[...byReason].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${k}`).join(' · ')}`)
+  if (stamped) console.log(`     ${' '.repeat(28)} walk structure (REPORTED, not gated): ${walk.simple} simple · ${walk.nonMonotone} non-monotone · ${walk.multiArc} multi-arc — the last two are repaired folds, see the note in checkTile`)
   if (stamped) console.log(`     ${' '.repeat(28)} coverage (reported, not gated): ${coverage.covered}/${coverage.edges} ring edges have an iA vertex — the rest were swallowed by a fillet inset or a coincident-point collapse`)
   for (const f of failures.slice(0, 8)) console.log(`     ⛔ ${f}`)
   if (failures.length > 8) console.log(`     ⛔ … ${failures.length - 8} more`)

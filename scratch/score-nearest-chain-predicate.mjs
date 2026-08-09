@@ -61,8 +61,8 @@ const EDITS = [{
 `,
 }, {
   why: 'same on the clean (curved-tile) path',
-  find: /  if \(stamp && rl && !rl\.refused\) stamp\.labels = outL\n/,
-  to: `  if (stamp && rl && !rl.refused) stamp.labels = outL
+  find: /  if \(stamp && uniL\) stamp\.labels = outL\n/,
+  to: `  if (stamp && uniL) stamp.labels = outL
   if (stamp && globalThis.__allDump) globalThis.__allDump.push({ minted: stamp.refused === 'clipper-minted-vertex', refused: stamp.refused || null, ring, W: W0, WL: L0 })
 `,
 }]

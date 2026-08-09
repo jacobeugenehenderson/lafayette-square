@@ -57,15 +57,15 @@ const ROWS = +(opt('rows') || 8)
 // coordinate because it only pushes onto a global sink.
 const EDITS = [{
   why: 'arm the fold dump at the non-clean refusal site',
-  find: /      if \(rl\.refused\) stamp\.refused = rl\.refused\n/,
-  to: `      if (rl.refused) stamp.refused = rl.refused
-      if (rl.refused && globalThis.__foldDump) globalThis.__foldDump.push({ reason: rl.refused, ring, W, WL, uni, clean: false, seg: seg.map(s => s.d), AREA_MIN })
+  find: /    const keep = uni\.map\(\(r, k\) => k\)\.filter\(k => Math\.abs\(signedArea\(uni\[k\]\)\) > AREA_MIN\)\n/,
+  to: `    const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
+    if (globalThis.__foldDump) globalThis.__foldDump.push({ reason: 'offset', ring, W, WL, uni, clean: false, seg: seg.map(s => s.d), AREA_MIN })
 `,
 }, {
   why: 'arm the fold dump at the clean (curved-tile) refusal site',
-  find: /  if \(stamp && rl\.refused\) stamp\.refused = rl\.refused\n/,
-  to: `  if (stamp && rl.refused) stamp.refused = rl.refused
-  if (stamp && rl.refused && globalThis.__foldDump) globalThis.__foldDump.push({ reason: rl.refused, ring, W: W0, WL: L0, uni, clean: true, seg: seg.map(s => s.d), AREA_MIN })
+  find: /  const out = \[\], outL = \[\]\n/,
+  to: `  if (globalThis.__foldDump) globalThis.__foldDump.push({ reason: 'offset', ring, W: W0, WL: L0, uni, clean: true, seg: seg.map(s => s.d), AREA_MIN })
+  const out = [], outL = []
 `,
 }]
 
@@ -162,7 +162,11 @@ for (const s of selected) {
   catch (e) { console.log(`  ⛔ ${s.id} NOT MEASURED — ${e.message.slice(0, 60)}`); continue }
   const tiles = pr._shapeArtifact || []
   const offsetTiles = tiles.filter(t => t.producer === 'offset').length
-  const dump = globalThis.__foldDump.filter(d => d.reason === 'clipper-minted-vertex')
+  // ⚠️ RE-ANCHORED after the provenance channel landed: the old anchors were the
+  // refusal sites, which no longer fire. The dump is now EVERY offset tile, so the
+  // fold population is selected here, by the definition — W self-intersects.
+  const selfX = (W) => { const n = W.length; for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) { if (i === 0 && j === n - 1) continue; if (segInt(W[i], W[(i + 1) % n], W[j], W[(j + 1) % n])) return true } return false }
+  const dump = globalThis.__foldDump.filter(d => selfX(d.W))
 
   const rows = []
   for (const d of dump) {

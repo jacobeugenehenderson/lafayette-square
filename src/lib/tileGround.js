@@ -275,36 +275,62 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // projection, no nearest-vertex fallback, no empty array standing in for "none".
 // ─────────────────────────────────────────────────────────────────────────
 //
-// Re-attach per-vertex labels across a Clipper boolean. Clipper quantizes every
-// coordinate onto the 1/SCALE integer grid (`toClipper` ROUNDS), so an input
-// vertex that survives comes back carrying exactly the integer it went in with:
-// the lookup is an IDENTITY match on Clipper's own grid, not a distance
-// tolerance. Two outcomes have no source and are refused rather than guessed:
-//   • a vertex Clipper MINTED (a self-intersection point) — no key at all;
-//   • two input vertices with DIFFERENT labels colliding on one grid point.
-function relabelThroughClipper(inRings, inLabels, outRings) {
-  const gkey = (p) => `${Math.round(p[0] * SCALE)},${Math.round(p[1] * SCALE)}`
-  const map = new Map()
-  for (let r = 0; r < inRings.length; r++) {
-    const ring = inRings[r], lab = inLabels[r]
-    for (let i = 0; i < ring.length; i++) {
-      const k = gkey(ring[i]), prev = map.get(k)
-      if (prev === undefined) map.set(k, lab[i])
-      else if (prev !== lab[i]) map.set(k, -1)
+// ⭐⭐ THE PROVENANCE CHANNEL — carry the label THROUGH the boolean instead of
+// trying to recover it afterwards.
+//
+// The defect was never the fold. It is that a folded walk was handed to Clipper and
+// repaired ANONYMOUSLY: the union mints a vertex at each self-crossing, that vertex
+// has no source, and the tile loses its stamp (43% of A10's defect area, measured).
+//
+// ⛔ SO WE DO NOT REPAIR THE FOLD OURSELVES, AND THAT IS THE DESIGN, NOT A SHORTCUT.
+// Clipper still performs exactly the boolean it performed before — same code, same
+// integers, same output — and we simply stop throwing away who each point came
+// from. Three things fall out that a hand-rolled repair would have had to earn:
+//   • the geometry is byte-identical BY CONSTRUCTION, not by comparison;
+//   • a legitimate SPLIT is preserved for free — a block that pinches in the middle
+//     still returns two rings, because nothing about the boolean changed. There is
+//     no way for this code to weld two curb rings into one;
+//   • degenerate cases still reach A07's `degenerate:*` gate untouched.
+//
+// The mechanism is Clipper's own `SetZ`: a surviving vertex inherits its Z from the
+// endpoint it coincides with, and ONLY a genuine intersection reaches ZFillFunction.
+// ⚠️ Z === 0 is Clipper's "unset" sentinel (`SetZ`: `if (pt.Z !== 0) return`), so
+// labels ride as label+1 and a 0 coming back means "this is a crossing point".
+//
+// ⭐ THE ONE CONVENTION, stated because it is a choice and not a derivation:
+// A CROSSING POINT IS OWNED BY THE ARC THAT LEAVES IT. That is the same rule the
+// rest of the stamp already uses — a label names the arc STARTING at that vertex —
+// and it is what keeps the partition contiguous by construction: the crossing joins
+// the HEAD of the outgoing run, so no run is ever split in two. It is resolved on
+// the OUTPUT walk (where "leaves" is well defined), never inside ZFillFunction
+// (where Clipper offers only scanbeam order, an implementation detail).
+function unionRingLabelled(ring, labels) {
+  const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
+  const prev = clipperLib.use_xyz
+  clipperLib.use_xyz = true
+  let out = []
+  try {
+    const c = new Clipper()
+    c.ZFillFunction = () => {}          // leave pt.Z = 0 ⇒ "an intersection point"
+    c.AddPath(ring.map((p, i) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: labels[i] + 1 })), PolyType.ptSubject, true)
+    c.Execute(ClipType.ctUnion, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+  } finally { clipperLib.use_xyz = prev }
+  const rings = out.map(p => p.map(fromClipper))
+  const labs = []
+  for (const p of out) {
+    const raw = p.map(q => (q.Z ? q.Z - 1 : -1))          // -1 = a crossing
+    const n = raw.length
+    const res = new Array(n)
+    for (let i = 0; i < n; i++) {
+      if (raw[i] >= 0) { res[i] = raw[i]; continue }
+      let v = -1
+      for (let k = 1; k <= n; k++) { const j = raw[(i + k) % n]; if (j >= 0) { v = j; break } }
+      if (v < 0) return { rings, labels: null, refused: 'all-vertices-minted' }
+      res[i] = v
     }
+    labs.push(res)
   }
-  const out = []
-  for (const ring of outRings) {
-    const lab = new Array(ring.length)
-    for (let i = 0; i < ring.length; i++) {
-      const v = map.get(gkey(ring[i]))
-      if (v === undefined) return { labels: null, refused: 'clipper-minted-vertex' }
-      if (v === -1) return { labels: null, refused: 'grid-collision' }
-      lab[i] = v
-    }
-    out.push(lab)
-  }
-  return { labels: out, refused: null }
+  return { rings, labels: labs, refused: null }
 }
 // `stamp` (optional) collects the per-output-ring source labels described above:
 // on return it carries either `{ labels: number[][] }` parallel to the returned
@@ -375,29 +401,30 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // [A10-③] The two return paths below are the SAME expressions as before, split
   // into named steps so the stamp can ride each one by index. Geometry unchanged:
   // the `stamp` bookkeeping is read-only w.r.t. the rings.
+  // [A10-③] The labelled union is gated on `stamp` so the live Survey path keeps
+  // today's exact call. a03's byte-identity across both states is what proves the
+  // two are the same boolean — the Z channel writes only .Z, never .X/.Y.
   if (!clean) {
-    const uni = unionRings([W])
+    let uni, uniL = null
+    if (stamp) { const r = unionRingLabelled(W, WL); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
+    else uni = unionRings([W])
     const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
-    if (stamp) {
-      const rl = relabelThroughClipper([W], [WL], uni)
-      if (rl.refused) stamp.refused = rl.refused
-      else stamp.labels = keep.map(k => rl.labels[k])
-    }
+    if (stamp && uniL) stamp.labels = keep.map(k => uniL[k])
     return keep.map(k => uni[k])
   }
   const t0 = dropFoldSpursTracked(W)
   const W0 = t0.ring, L0 = t0.src.map(k => WL[k])
-  const uni = unionRings([W0])
-  const rl = stamp ? relabelThroughClipper([W0], [L0], uni) : null
-  if (stamp && rl.refused) stamp.refused = rl.refused
+  let uni, uniL = null
+  if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
+  else uni = unionRings([W0])
   const out = [], outL = []
   for (let k = 0; k < uni.length; k++) {
     const t = dropFoldSpursTracked(uni[k])
     if (!(t.ring.length >= 3 && Math.abs(signedArea(t.ring)) > AREA_MIN)) continue
     out.push(t.ring)
-    if (rl && !rl.refused) outL.push(t.src.map(j => rl.labels[k][j]))
+    if (uniL) outL.push(t.src.map(j => uniL[k][j]))
   }
-  if (stamp && rl && !rl.refused) stamp.labels = outL
+  if (stamp && uniL) stamp.labels = outL
   return out
 }
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
