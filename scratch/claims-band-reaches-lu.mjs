@@ -114,9 +114,9 @@ export const BAND_PROBE_EDITS = [
   { why: 'count the runs with NO ped frontage — the third population, invisible from outside',
     find: /^    const rr = \[\]$/m,
     to: '    let _noPed = 0\n    const rr = []' },
-  { why: 'the no-ped skip is where that population is decided',
-    find: /^      if \(aBase <= 1e-6\) continue +\/\/ median-facing \/ no street → no ped$/m,
-    to: '      if (aBase <= 1e-6) { _noPed++; continue }   // median-facing / no street → no ped' },
+  { why: 'the no-asphalt predicate is where that population is decided (it no longer DROPS the run — the run stays in the partition at zero ped depth; the population is still counted here)',
+    find: /^      const noPed = aBase <= 1e-6$/m,
+    to: '      const noPed = aBase <= 1e-6; if (noPed) _noPed++' },
 
   { why: 'capture the AUTHORED-SHALLOWER residual of a single-run tile (iWrun − iW)',
     find: /^    const luExtra = \[\] +\/\/ authored-shallower band residual along legs → LU$/m,

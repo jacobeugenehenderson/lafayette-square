@@ -1227,9 +1227,16 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     const rr = []
     for (const run of runs) {
       const aBase = edgeDepth(run.baseMeasure, run.side, cw, 'A')   // base asphalt edge (grout)
-      if (aBase <= 1e-6) continue                                   // median-facing / no street → no ped
+      // No asphalt on this edge: the ring reached the edge of the DRAWING (the
+      // neighborhood disc clipped the tile) or a median face. ARCHITECTURE §"The
+      // compound shape" — the circle is the OUTER CONTOUR of one closed shape,
+      // never an absence, so this edge is not missing, it just owes no sidewalk of
+      // its own. It still must not BREAK the ring for its neighbours ⇒ it stays in
+      // the partition and OWNS ITS ARC at zero ped depth, exactly as a median tile
+      // does one line up (pedOff). Dropping the run was A10's NO-PED arrival.
+      const noPed = aBase <= 1e-6
       const c = runCustom(run)
-      const ped = pedOff ? { tl: 0, sw: 0, hasTL: false } : resolvePedDepths(run.baseMeasure, run.side, c)
+      const ped = (pedOff || noPed) ? { tl: 0, sw: 0, hasTL: false } : resolvePedDepths(run.baseMeasure, run.side, c)
       const o = ped.hasTL ? ped.tl : ped.sw                         // outer (curb-side) strip depth
       const inn = ped.hasTL ? ped.sw : ped.tl                       // inner strip depth
       const defMat = ped.hasTL
@@ -1240,7 +1247,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         ? { outer: cm.outer === 'SW' ? 'SW' : 'LU', inner: cm.inner === 'LU' ? 'LU' : 'SW' }
         : defMat
       const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
-      rr.push({ run, aBase, a, hasTL: ped.hasTL, tlD: ped.tl, swD: ped.sw, o, inn, total: o + inn, mat })
+      rr.push({ run, aBase, a, noPed, hasTL: ped.hasTL, tlD: ped.tl, swD: ped.sw, o, inn, total: o + inn, mat })
     }
     // Peel treelawn-Y runs first: where two legs' slabs graze near a corner the
     // treelawn claims the overlap (matching the old zone-union semantics — the
@@ -1425,9 +1432,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const proj = (t) => (t[0] - p[0]) * dir[0] + (t[1] - p[1]) * dir[1]
           return Math.max(0, Math.max(proj(best.tA), proj(best.tB)))
         }
+        // A run with NO asphalt owns its arc but bids NO corner: there is no curb
+        // ramp where there is no curb, and a zero-depth leg entering the corner would
+        // drag Idea A's cMin to 0 and paint the whole pad LU. It DOES still trim at
+        // its ends like any other leg, so the corner ribbon takes over there exactly
+        // as §6.9.4 intends and the neighbouring corner keeps its pad — the rim's
+        // slab must not reach into an arc that is not its own.
         const legTrim = ends.map(([p], i) => (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) ? 0 : tangentTrim(p, legDirAt(i)))
         ends.forEach(([p, k], i) => {
-          if (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) return   // tip / T-continuation / thru-node / name-transition → no corner bid
+          if (e.noPed || tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) return   // no asphalt / tip / T-continuation / thru-node / name-transition → no corner bid
           // conD = how deep the ramp CONCRETE runs before LU on this leg: a
           // set-back sidewalk (mat.inner === 'SW', a treelawn-Y leg) → the full
           // total; a curb-side sidewalk (SW leg) → its one strip width.
