@@ -255,11 +255,14 @@ scratch/.d2-mutants/
 # builds (it now owns the loader `.d2-mutants/` used to hold). Same reasoning.
 scratch/.band-probe/
 # A10-③ (the iA source-edge stamp, 2026-08-09). Same rule, same reasoning: the
-# checkers are tracked, their scratchpads are not. NOTE: `claims-ia-source-stamp`
-# already printed "scratch/.iastamp-artifact.json, gitignored" while no such rule
-# existed — the message was true of the intent and false of the repo. Caught by
-# `git check-ignore`, which is the only way that class of claim gets caught.
-scratch/.iastamp-artifact.json
+# checkers are tracked, their scratchpads are not.
+# ⛔ `scratch/.iastamp-artifact.json` is deliberately NOT listed. It is COMMITTED,
+# and that is right: at 396 bytes it survives a fresh clone, which is exactly what
+# `ROADMAP` A10 complains that `a10-post-rim` does not do ("the baseline is not in
+# git… regenerate it BEFORE you touch the cure"). A rule here would also be dead —
+# gitignore never applies to a tracked file.
+# ⚠️ But `claims-ia-source-stamp.mjs` PRINTS "…, gitignored" for it, which is false
+# twice over. Fix the message, not the tracking.
 scratch/.stamp-probe/
 scratch/.fold-probe/
 scratch/.mint-flip-*.json
