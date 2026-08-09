@@ -243,3 +243,11 @@ public/baked/*/trees-atlas-*-viz.png
 
 # Local handoff/brief dispatch archive — kept on disk, out of git (Jacob, 2026-07-21)
 _handoffs/
+
+# D2 gate working artifacts (agent Plumb, 2026-08-08). `.d2-before.json` is the
+# captured corner baseline (~1.4 MB) and `.d2-mutants/` holds generated COPIES of
+# tileGround.mjs (~245 KB each) that the self-test builds and replays. Both are
+# derivatives the tool regenerates on demand — the checker itself is tracked, its
+# scratchpad is not. Dot-prefixed by the agent for exactly this reason.
+scratch/.d2-before.json
+scratch/.d2-mutants/
