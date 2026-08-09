@@ -1,3 +1,15 @@
+// ⛔⛔ THIS IS A FROZEN SNAPSHOT, NOT LIVE SOURCE. DO NOT READ IT AS THE
+// CONSTRUCTION. (Banner added 2026-08-08; flagged by agent Verge.)
+//   · Live source is `src/lib/tileGround.js`. This copy is pre-`073ea0c5` and is
+//     used ONLY by `scratch/caliper-instr.mjs` for a Survey forensic.
+//   · ⚠️ It still carries `if (aBase <= 1e-6) continue` at :618 — the exact line
+//     A10 changed. Live source no longer has it (`const noPed = aBase <= 1e-6`).
+//     **A grep for the old line lands HERE and looks live.** It is not.
+//   · The header below says "THIS is THE live ground construction for every
+//     scene." That sentence was true when copied and is FALSE of this file.
+//   · ⛔ Do not resync it to fix the drift — a forensic's fixture must stay
+//     frozen or its results stop reproducing. The banner is the fix.
+//
 // tileGround — the pure-ribbon TILE construction (T1 of the reconceived
 // pipeline; spike-validated, HANDOFF-spike-pure-ribbon.md → HANDOFF-tile-T1-
 // live-path.md). ONE module shared by the LIVE Designer (BlockGeometryV2Debug)
