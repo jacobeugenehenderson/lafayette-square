@@ -36,6 +36,33 @@ const round = (v) => (typeof v === 'number' ? +v.toFixed(6) : v)
 const canon = (o) => JSON.stringify(o, (k, v) => round(v))
 const h = (s) => crypto.createHash('sha256').update(s).digest('hex').slice(0, 16)
 
+// ── DECLARED ARTIFACT ADDITIONS ─────────────────────────────────────────────
+// This gate's contract is IDENTITY: no curb may move. But when a change's whole
+// DELIVERABLE is a new key in the frozen artifact, `artifact` cannot not move —
+// and a gate that reads correct work as failure trains people to wave it through,
+// which is worse than no gate. So the `artifact` hash is taken with DECLARED new
+// keys stripped, exactly A07's precedent (it did this for producer/producerReason).
+//
+// ⛔ DECLARED, never "ignore unknown keys". An undeclared key still moves the hash
+// and still fails — that is the point. Adding a line here is a deliberate act with
+// a commit behind it, not a silent tolerance that grows forever.
+//
+// ⭐ AND THE LIST CANNOT ROT: every entry must actually be PRESENT in the current
+// artifact or this gate FAILS. A strip list that outlives its key is a permanent
+// blind spot — it would silently forgive a future key that happened to reuse the
+// name. (Same declare-or-refuse pattern as claims-look-seed-scene-clean.mjs.)
+const ARTIFACT_NEW_KEYS = [
+  { key: 'iaEdge',       since: '52008afa', why: 'A10 ③ — per-iA-vertex source ring-edge index' },
+  { key: 'iaEdgeReason', since: '52008afa', why: 'A10 ③ — why a tile is unstamped; always one of the pair' },
+]
+const STRIP = new Set(ARTIFACT_NEW_KEYS.map(d => d.key))
+const stripDeclared = (t) => {
+  if (!t || typeof t !== 'object') return t
+  const o = {}
+  for (const k of Object.keys(t)) if (!STRIP.has(k)) o[k] = t[k]
+  return o
+}
+
 const out = {}
 for (const [label, blockCustoms] of STATES) {
   const pr = buildTileGround(ribbons, {
@@ -46,10 +73,20 @@ for (const [label, blockCustoms] of STATES) {
   const tiles = pr._shapeArtifact || []
   // per-tile iA hash — so a diff names the TILE, not just "something moved"
   const perTile = tiles.map((t, i) => ({ i, iA: h(canon(t?.iA ?? null)), ring: h(canon(t?.ring ?? null)) }))
+  // declare-or-refuse: a declared key that is no longer emitted means this list
+  // has rotted into a blind spot. Fail here, not silently three months from now.
+  for (const d of ARTIFACT_NEW_KEYS) {
+    if (!tiles.some(t => t && Object.prototype.hasOwnProperty.call(t, d.key))) {
+      console.error(`⛔ ARTIFACT_NEW_KEYS declares "${d.key}" (${d.since}) but NO tile carries it in state "${label}".`)
+      console.error(`   The strip list has rotted — it is now forgiving a key that does not exist. Remove the entry or fix the emitter.`)
+      process.exit(2)
+    }
+  }
   out[label] = {
     tileCount: tiles.length,
     iAAll: h(canon(tiles.map(t => t?.iA ?? null))),
-    artifact: h(canon(tiles)),
+    artifact: h(canon(tiles.map(stripDeclared))),   // ⭐ GATED — declared keys stripped
+    artifactRaw: h(canon(tiles)),                   // informational: moves whenever a declared key changes
     block: h(canon(pr.block)), curb: h(canon(pr.curb)), asphalt: h(canon(pr.asphalt)),
     sidewalk: h(canon(pr.sidewalk)), fillets: h(canon(pr.cornerFillets)),
     perTile,
@@ -73,6 +110,13 @@ for (const label of Object.keys(out)) {
     const same = JSON.stringify(a?.[k]) === JSON.stringify(b[k])
     if (!same) bad++
     console.log(`  ${same ? '✅' : '❌'} ${k.padEnd(10)} ${same ? 'identical' : `${a?.[k]} → ${b[k]}`}`)
+  }
+  // Informational, NOT gated: the whole-artifact hash including declared new keys.
+  // It SHOULD move when a declared key lands — that is the deliverable, not a
+  // regression. Printed so the addition stays visible instead of invisible.
+  if (a?.artifactRaw !== undefined || b.artifactRaw !== undefined) {
+    const rawSame = a?.artifactRaw === b.artifactRaw
+    console.log(`  ${rawSame ? '·' : 'ℹ'}  ${'artifactRaw'.padEnd(10)} ${rawSame ? 'identical' : `${a?.artifactRaw ?? '(pre-strip baseline)'} → ${b.artifactRaw}`}  — not gated; declared keys: ${ARTIFACT_NEW_KEYS.map(d => d.key).join(', ')}`)
   }
   const moved = (b.perTile || []).filter((t, i) => a?.perTile?.[i]?.iA !== t.iA)
   if (moved.length) console.log(`  ❌ ${moved.length} tile(s) whose iA changed: ${moved.slice(0, 20).map(t => t.i).join(', ')}${moved.length > 20 ? ' …' : ''}`)
