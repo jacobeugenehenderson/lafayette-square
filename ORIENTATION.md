@@ -24,12 +24,24 @@ A **kit for pouring 3D neighborhoods.** You feed it real city data; it produces 
 
 *(Confirmed with Jacob 2026-07-31, in his corrections. If you read only one thing before touching the pipeline, read this — three separate passes in one day went wrong on **step 3** alone.)*
 
+> ⭐⭐ **THE TOOLS AND THE STAGES HAVE DIFFERENT NAMES, AND BOTH ARE LIVE. Learn the pairing or every doc reads as though it is about something else.** *(Added 2026-08-09 — Jacob: "The Survey comes from the Extent; Survey feeds Measure." That sentence is the chain in the operator's words, and this doc did not contain it.)*
+>
+> | the operator opens… | the canon calls the stage… |
+> |---|---|
+> | **Extent** | intake / the served skeleton (`EXTENT-DESIGN.md`) |
+> | **Survey** | Survey — SHAPE (step 4) |
+> | **Measure** | **Section — FILL (step 6)** ⭐ *the same thing; `SECTION.md` is its home* |
+> | **Stage** · **Preview** | look / bake / stress-test (step 7) |
+>
+> ⛔ **And the steps below are NUMBERED FROM 1 = Intake for historical reasons — other docs cite "step 3" by number, so Extent is step 0 rather than a renumber.** Extent is *first*, not optional: **it is a separate project bolted onto the front of the product** and has its own ruled ordering. **Read `EXTENT-DESIGN.md` before proposing anything cross-town** (`ROADMAP`'s ordering block).
+
+0. **Extent — say what the neighborhood IS, and freeze the frame.** Before any of the below there is no town: you size a generous envelope, fetch, then **author the boundary out of real streets** (click the bounding streets and watch the ring close; the gazetteer is a hint, never a requirement). What it produces is the **served skeleton** — a labeled point cloud — plus the **frame origin**, which may grow or shrink but ⛔ **must never move.** Everything downstream is keyed to it. → **`EXTENT-DESIGN.md`**.
 1. **Intake — stamp and label, simultaneously.** Pull OSM, parcels and right-of-way, whatever **street widths** the city has, ML footprints, aerials. The first minibake stamps and labels in **one** pass.
 2. **Skeleton — the generic "to code" bake.** The messy traced lines become a clean, **hardened and named** frame: fragments welded, wiggles simplified (junction-protected — a junction-*blind* pass once deleted 79 of them), name-transitions resolved so a road stays one road across a name change. ⭐ **What comes out is to *spec*, not to reality** — regular, to-code streets.
 3. **Prebake — the polygon world. ⚠️⚠️ THIS IS THE ARMED MINE.** The centerline graph is cut into **tiles** (the bounded faces between streets) and that topology is frozen. ⚠️ **PREBAKE SEES ONE OF THE TWO AUTHORING CHANNELS, NOT ZERO.** It **does** read `clean/overlay.json` — the skelId-keyed measures/caps/anchors Survey and Measure write (`derive.js`, the `overlayById`/`overlayLoops` load — count it, don't quote it: `node -e "console.log(Object.keys(require('./cartograph/data/<scene>/clean/overlay.json').streets).length)"`. ⚠️ **LS's figure MOVED**: it was reverted to genuine default on 2026-08-06 (`2481ffad`), and the pre-reset state is kept beside it as `overlay.json.pre-reset`). What it does **not** read is `design.json`/`blockCustoms`, the per-frontage-edge SHAPE SSoT — zero reads in `derive.js`/`pipeline.js`/`promote-ribbons.js`. **So anything frozen here that depends on per-fe SHAPE intent freezes the to-code default instead of the actual town**; anything that depends only on chain measure does not. That is the precise form of `CLAUDE.md` **Layer 0 q3** — and it is *narrower* than "prebake is authoring-blind," which is the overgeneralisation that mis-scoped the curb-freeze question.
 4. **Survey — conform the drawn map to reality.** The operator opens regular, to-spec streets over the **aerial** and reshapes them until the drawing matches the ground: widths, caps, corner radius. ⭐ **A single block may change width several times across its span** — LS is historical and idiosyncratic, and **this is what the authoring tools are FOR.**
 5. **The Wall — chain *links* die; welded chains become polygons.** After it there is no such thing as *"this chain link."* Forever after it is **"this surface / this edge of this tile."** Chains stop being independent entities.
-6. **Section — the pedestrian FILL**, stroked *inward* from the frozen curb: treelawn, sidewalk, materials, ADA pads. It physically cannot see a chain.
+6. **Section — the pedestrian FILL** *(⭐ **the operator opens this tool as `Measure`** — same thing, two names)*, stroked *inward* from the frozen curb: treelawn, sidewalk, materials, ADA pads. It physically cannot see a chain.
 7. **Bake → Stage → Preview.** The geometry is poured; the **slab** proper also carries trees, weather and lighting. We render **from Preview** into commits, staging sites and live URLs.
 8. **The Ward — the public app.** The slab ships to **The Ward**, and The Ward has everything it needs to **animate** everything in the slab.
 
@@ -41,14 +53,24 @@ A **kit for pouring 3D neighborhoods.** You feed it real city data; it produces 
 ## The same chain, as a diagram
 
 ```
-real-world data → SKELETON → prebake → SURVEY → ⟦THE WALL⟧ → SECTION → BAKE → the SLAB → the public app
- (OSM, parcels,   (clean      (the       (author    (freeze!)   (author   (pour)   (what       (Lafayette
-  measured         street      frozen     the                    the                 ships)      Square,
-  widths,          frame)      shapes)    hardscape              sidewalks                        then town
-  aerials)                                SHAPE)                 = FILL)                           #2, #3…)
+EXTENT → intake → SKELETON → prebake → SURVEY → ⟦THE WALL⟧ → SECTION → BAKE → the SLAB → the public app
 ```
 
-Read it left-to-right: messy inputs get traced into a clean **frame**, frozen into **shapes**, dressed with **sidewalks**, given a **look**, and **baked** into the slab **The Ward** trusts. We're currently working the early stages (skeleton + survey); the look is largely authored. ⚠️ *The diagram compresses steps 7–8 — the full sequence is Bake → **Stage** → **Preview**, and we render from Preview; see the prose above.*
+| | stage | what happens | the tool the operator opens |
+|---|---|---|---|
+| 0 | **Extent** | say what the hood IS; freeze the frame origin | **Extent** |
+| 1 | intake | OSM, parcels, measured widths, aerials | *(runs with Extent)* |
+| 2 | **Skeleton** | the clean, named street frame | — |
+| 3 | prebake | the frozen tile topology ⚠️ *the armed mine* | — |
+| 4 | **Survey** | author the hardscape **SHAPE** | **Survey** |
+| 5 | ⟦**THE WALL**⟧ | **freeze — chains die here** | — |
+| 6 | **Section** | author the sidewalks — the **FILL** | ⭐ **Measure** |
+| 7 | Bake → Stage → Preview | pour the slab; author the look; stress-test | **Stage** · **Preview** |
+| 8 | **The Ward** | the public app plays the slab | — |
+
+Read it left-to-right: **you say what the hood is**, messy inputs get traced into a clean **frame**, frozen into **shapes**, dressed with **sidewalks**, given a **look**, and **baked** into the slab **The Ward** trusts. We're currently working the early stages (skeleton + survey); the look is largely authored.
+
+⭐ **Each arrow is a freeze, and each freeze is what makes the next step possible** — that is why a defect is almost never fixable at the step where you see it (`§"Why there are bakes at all"`). ⛔ **And Extent is co-existent, not finished:** the migration onto it is still running and has its own ruled ordering — **`EXTENT-DESIGN.md`** before any cross-town proposal.
 
 ---
 
