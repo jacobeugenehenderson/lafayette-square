@@ -9,7 +9,7 @@
 The night the kit "broke through to together." Two arborist-relevant milestones:
 
 1. **LS roster re-seeded → 9 composed species, baked, rendering everywhere.** The Salon roster-driven navigator (Brief 26, canonical-id slugs) was used to compose 9 species (`maple_sugar, ash_green, maple_silver, maple_red, birch, blackgum, linden_american, oak_bur` + `platanus`/sycamore); `design.json#/trees` pruned of the stale forest/generics; full bake (`bake-look` + `bake-trees`, 745/756 placed); committed `810f5b5`. Proved the compose→publish→bake→slab loop end-to-end. (Diagnostic banked: "Stage dark, Preview fine" = half-baked slab — run `bake-trees`, not just `bake-look`; `[[stage-dark-preview-fine-half-baked-slab]]`.)
-2. **Trees now render in PRODUCTION**, not just Preview/Stage. The render-parity pass (commit `5313473`, cartograph/ls-side, Preview-agent) mounted `InstancedTrees` (+ StageFog, LampGlowDriver, hero keyframes, the Atmosphere weather-driver chain that fixes Stage/Preview clouds) in `Scene.jsx`. **`[[project_v1_no_trees]]` is obsolete** — the roster shipped; production's missing tree mount was migration debt, now closed.
+2. **Trees now render in PRODUCTION**, not just Preview/Stage. The render-parity pass (commit `5313473`, cartograph/ls-side, Preview-agent) mounted `InstancedTrees` (+ StageFog, LampGlowDriver, hero keyframes, the Atmosphere weather-driver chain that fixes Stage/Preview clouds) in `Scene.jsx`. **`project_v1_no_trees *(memory retired 2026-08-09)*` is obsolete** — the roster shipped; production's missing tree mount was migration debt, now closed.
 
 **Phase shift recorded** (`[[build-to-finesse-phase-shift]]`): the three helpers + slab are one working whole; the arc is now finesse/QC/parity-polish, not whole-cloth building. Next structural item: hybrid buildings bake (`HANDOFF-buildings-bake.md`, bumps slab → v2). Cross-helper level-set pending Jacob's "deep breath."
 
@@ -2212,7 +2212,7 @@ With Phases A → D → B-core → B.1.a → C → F landed (E priority-dropped;
 - v1 ship doctrine: NOTES entry "## 2026-05-14 — Procedural-trees fallback: shipped (commit `dbbd1ed`)"
 - Original ParkTrees algorithm (resurrected for v1): `git show 43c4aa3~1:src/components/LafayettePark.jsx | sed -n '440,880p'`
 - Arborist UI patterns to mirror: `src/arborist/Workstage.jsx` (per-species toolbar/viewport/panel), `src/arborist/SpecimenViewport.jsx` (R3F GLB renderer), `src/arborist/Grove.jsx` (gallery)
-- Memories: [[project_v1_no_trees]], [[project_slab_is_the_instance_identity]], [[project_kit_helpers_pattern]], [[feedback_no_parallel_pipeline_for_scenes]], [[feedback_stash_isolate_per_file]], [[project_doped_artifact_placecard_edit_pattern]], [[feedback_phase_scope_explicitness]], [[feedback_d3_bundling_failure_modes]], [[feedback_features_md_is_a_working_doc]], [[feedback_baby_must_surface_scope_drift]], [[feedback_notes_md_holds_architecture]], [[feedback_preview_uses_production_pipeline]]
+- Memories: project_v1_no_trees *(memory retired 2026-08-09)*, [[project_slab_is_the_instance_identity]], [[project_kit_helpers_pattern]], [[feedback_no_parallel_pipeline_for_scenes]], [[feedback_stash_isolate_per_file]], [[project_doped_artifact_placecard_edit_pattern]], [[feedback_phase_scope_explicitness]], [[feedback_d3_bundling_failure_modes]], [[feedback_features_md_is_a_working_doc]], [[feedback_baby_must_surface_scope_drift]], [[feedback_notes_md_holds_architecture]], [[feedback_preview_uses_production_pipeline]]
 
 ---
 
@@ -2247,7 +2247,7 @@ The entry below is the pre-ship architecture record per [[feedback_notes_md_hold
 
 ### Why this exists
 
-Current `lafayette-square` Look roster carries 14 hand-modeled/scanned variants (`platanus_acerifolia` ×9, `alaskan_cedar_2`, `broadleaf_rt3`, three generics). Total 138 MB baked GLBs + 10 MB atlas — too heavy for the mobile target per [[feedback_beautiful_first_lightweight_51]]. SpeedTree is the eventual destination (cards + LODs + impostor baker) but it carries a learning-curve cost. Procedurals are the v1 stopgap per [[project_v1_no_trees]].
+Current `lafayette-square` Look roster carries 14 hand-modeled/scanned variants (`platanus_acerifolia` ×9, `alaskan_cedar_2`, `broadleaf_rt3`, three generics). Total 138 MB baked GLBs + 10 MB atlas — too heavy for the mobile target per [[feedback_beautiful_first_lightweight_51]]. SpeedTree is the eventual destination (cards + LODs + impostor baker) but it carries a learning-curve cost. Procedurals are the v1 stopgap per project_v1_no_trees *(memory retired 2026-08-09)*.
 
 The wiring to remove the old procedural component was already done at commit `43c4aa3` (Arborist library split); `{false && <ParkTrees />}` and its dependencies are gone from `src/`. Only stale doc-comment residue remains (`src/components/R3FErrorBoundary.jsx`, `arborist/SPEC.md:16`). The deployed live site still mounts those procedurals because it ships from a pre-`43c4aa3` build.
 

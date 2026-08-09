@@ -975,7 +975,7 @@ Phase E and v1.6.
 - **Why now:** SpeedTree path has a learning curve; the pre-procedural
   138 MB baked-GLB roster is too heavy for the mobile target
   ([[feedback_beautiful_first_lightweight_51]]). Procedurals are the
-  v1 stopgap per [[project_v1_no_trees]]. SpeedTree will replace them
+  v1 stopgap per project_v1_no_trees *(memory retired 2026-08-09)*. SpeedTree will replace them
   by raising roster quality ratings — zero code change at swap time.
 
 ### Cross-helper integrations

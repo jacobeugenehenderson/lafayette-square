@@ -997,7 +997,7 @@ const useCartographStore = create((set, get) => ({
     return n
   },
   // Reset the toy's user-authored SESSION layer back to the fixture baseline
-  // (project_reset_toy_button_queued; Stadia's (a1) target). The toy bake reads
+  // (the toy-reset arc, shipped 2026-05-30; Stadia's (a1) target). The toy bake reads
   // its generic + test-feature baseline from the AUTHORED fixture
   // (src/data/toy/toy-input.json → toy-ribbons.json), NOT from overlay/derive —
   // so those files are never touched here. Benton's one-side asymmetry and

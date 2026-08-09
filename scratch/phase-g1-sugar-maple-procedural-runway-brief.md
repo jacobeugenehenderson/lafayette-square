@@ -178,7 +178,7 @@ Report ships the cycle. Operator decides next: G.2 (Ginkgo), polish iteration on
 1. Update `arborist/NOTES.md` with Phase G.1 entry — what shipped, surfaced scope drift, the hand-grounded PRESETS source-of-truth specimens.
 2. Update `arborist/BACKLOG.md` — Phase G.1 marked `[x]`.
 3. Update `scratch/pre-stage-g1-sugar-maple-hero.md` head-note — mark as "G.1 SHIPPED via procedural runway path" and note which sections are now historical.
-4. Update memory `[[project_v1_no_trees]]` if relevant — the assumption "trees in v1 but arborist roster behind launch" may need refining now that G.1 is shipping.
+4. Update memory `the v1 tree-scope note (retired 2026-08-09 — trees are Column B; see `ROADMAP`)` if relevant — the assumption "trees in v1 but arborist roster behind launch" may need refining now that G.1 is shipping.
 
 ---
 
