@@ -254,3 +254,12 @@ scratch/.d2-mutants/
 # The instrumented COPIES of tileGround.js that `claims-band-reaches-lu.mjs`
 # builds (it now owns the loader `.d2-mutants/` used to hold). Same reasoning.
 scratch/.band-probe/
+# A10-③ (the iA source-edge stamp, 2026-08-09). Same rule, same reasoning: the
+# checkers are tracked, their scratchpads are not. NOTE: `claims-ia-source-stamp`
+# already printed "scratch/.iastamp-artifact.json, gitignored" while no such rule
+# existed — the message was true of the intent and false of the repo. Caught by
+# `git check-ignore`, which is the only way that class of claim gets caught.
+scratch/.iastamp-artifact.json
+scratch/.stamp-probe/
+scratch/.fold-probe/
+scratch/.mint-flip-*.json
