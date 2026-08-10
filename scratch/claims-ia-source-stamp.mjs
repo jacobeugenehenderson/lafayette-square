@@ -378,7 +378,8 @@ if (argv.includes('--save-artifact')) {
   }
   if (moved) console.log('  ⛔ the stamp changed the frozen shape. It is a RECORD of the geometry, never a input to it.')
 } else {
-  console.log('  ⚠️  no baseline on disk (scratch/.iastamp-artifact.json, gitignored). Regenerate from a')
+  console.log('  ⚠️  no baseline on disk (scratch/.iastamp-artifact.json — TRACKED in git, so it should')
+  console.log('      be here; if it is missing, something deleted it). Regenerate from a')
   console.log('      CLEAN tree with --save-artifact, then re-run here. Until then this half is UNPROVEN,')
   console.log('      which is not the same as passed. (a03-curb-identity.mjs proves the geometry itself.)')
 }
@@ -395,5 +396,5 @@ if (MUTATE) {
   process.exit(1)
 }
 console.log(bad ? `⛔ FAIL — ${bad} state(s) with a broken or unexplained stamp, of ${statesRun} measured.`
-                : `✅ ${statesRun} state(s): every iA vertex carries exactly one in-range source edge index, each\n   source edge owns exactly one contiguous arc, and the arcs walk the ring in order.\n   Every unstamped tile names its reason.`)
+                : `✅ ${statesRun} state(s): every iA vertex carries exactly one in-range source edge index —\n   no vertex unowned, none owned twice. SIMPLE tiles additionally assert contiguity +\n   ring order; REPAIRED tiles assert that a split arc coincides with a genuine pinch.\n   Every unstamped tile names its reason.`)
 process.exit(bad ? 1 : 0)
