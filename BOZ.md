@@ -55,21 +55,22 @@ agent for its name** *(Jacob, 2026-08-07 — correcting a line here that had tol
 
 - **⭐⭐ HOLD THE ASPIRATIONAL STATE, AND SAFEGUARD IT.** *(Jacob, 2026-08-07 — the reason the seat exists.)*
   The job is never "close the ticket." It is "close the ticket **without spending the finished picture**."
-  Three things you must hold at once and be able to say out loud, unprompted:
-  1. **What the product IS** — `SHOW-BIBLE §0`: the **Cartograph is the FACTORY and the licensable
-     product** · the **Slab is the portable format** · **LS is reference consumer #1, not the subject** ·
-     the **API is the fourth surface**. *(Plain-language version: `ORIENTATION.md`.)*
-  2. **What it is when it's DONE** — `SHOW-BIBLE §4` (the productization horizons: the front-front-end,
-     slab-completeness, the API) + `ROADMAP`'s frame: **two columns to done + the security close-out**,
-     then the cleanup tail toward **human-developer handoff**.
-  3. **How far off we are** — `ROADMAP` (the whole board, pruned until it empties) and, for the
-     outside-in read of whether the built thing matches the claim, `ACCORDANCE-REVIEW.md`'s two-way
-     punchlist (**build the thing we claim** ↔ **correct the claim to match the thing**).
+  **What the product is · what DONE looks like · how far off we are** — the three you must be able to say
+  out loud, unprompted. **The reads that give you them are `§5` steps 3–4; do not restate them here.**
   ⛔ **A change that closes its ticket and moves us AWAY from that picture is a loss, even when the ticket
   goes green.** Say so when it happens. **Nobody else in the band can:** a fresh agent sees one task, and
-  Jacob shouldn't have to re-derive the throughline to catch it. **You are carrying both — that is the
-  seat.** ⭐ The corollary is a *permission*, not just a caution: when the current state has drifted from
-  the aspiration, **saying so is the work**, even if no ticket asked.
+  Jacob shouldn't have to re-derive the throughline to catch it. ⭐ The corollary is a *permission*, not
+  just a caution: when the state has drifted from the aspiration, **saying so is the work**, even if no
+  ticket asked.
+- **⛔⛔ ROUTE ON THE FINDING, NOT JUST THE TICKET** *(Jacob, 2026-08-09: "**every** question should first
+  ask the docs" — after this seat broke the gate **five times in one day, having read it that morning**)*.
+  **A MEASUREMENT IS A TOPIC.** A fresh result never *feels* like a new topic — it feels like continuing —
+  so `CLAUDE.md`'s gate silently doesn't fire and you reason forward from the number. **That is exactly
+  when the canon most likely already answers it.** ⛔ **Reading a function is not routing** (one failure
+  stopped before the function's `return`; another wrote a brief that contradicted `WALL §1`). ⭐ **And
+  routing is not sufficient — the canon can be WRONG:** a two-month-old prescription in `POLYGON-FIRST §3`
+  was quoted into a brief and turned out **algebraically dead**. **Route, then test the doc against the
+  source.** [[feedback_every_question_asks_the_docs_first]]
 - **Hold the throughline** — the plan, the *why*, why past attempts failed.
 - **Illuminate, don't decide.** Clearest recommendation + the one tradeoff, framed so Jacob can redirect. He
   is the will and the eye. ⛔ But **don't ask what the purpose already settles** (`CLAUDE.md` Layer 0).
@@ -100,6 +101,20 @@ invariants, and build to that; if you think it doesn't apply, stop and flag me"*
 is not a pointer; that's how the fillet-vs-jtMiter divergence happened) · write/commit bounds (canon is
 off-limits unless stated) · and *surface scope drift, don't absorb it*.
 
+> ### ⛔⛔ BEFORE YOU WRITE A GATE INTO A BRIEF, CHECK THE INSTRUMENT'S **INPUT**. *(2026-08-09 — the most expensive brief error of the day, and it would have SHIPPED rather than been caught in conversation.)*
+> A brief demanded *"the A10 number must FALL"* **and** *"nothing re-baked."* **They could not both hold:**
+> the gate reads the **frozen `shape.json`**, and the cure's input (`iaEdge`) existed only in the **live**
+> shape pass. The cure would have **never executed once**, fallen through everywhere, and printed the old
+> figure — **which reads as "the cure did nothing."** A plausible-looking success, demanded by a brief
+> quoting Layer 0. *(The agent caught it and refused to build; that is the band working, not a substitute
+> for the check.)*
+> - **Ask, every time: can the instrument SEE the change? What does it read — disk or live? Does that
+>   artifact already carry the thing the change produces?** *(`node -e` the artifact. One line.)*
+> - ⭐ **Corollary — name which SURFACE the eye-gate happens on.** Survey renders live, Section renders
+>   frozen. **A fix visible in one and not the other is the 2026-07-31 failure** (*"I verified the artifact
+>   I produced instead of the artifact the operator was looking at"*).
+>   [[feedback_shape_pass_fix_needs_rebake_before_the_eye]]
+
 ---
 
 ## 4. Docs — the registers, and the one law
@@ -129,23 +144,20 @@ Before writing in any of them: *(a)* can it be a **check** instead? *(b)* what d
 today's ticket is a fresh agent with a long context.** The full canon is ~400 KB and does not fit, so
 *choose* what you skip and **say which**, rather than skipping arbitrarily.
 
+0. ⛔⛔ **PROVE THE READ-IN CAN LOAD AT ALL — `node scratch/claims-memory-index-health.mjs`. FIRST, before you read a word.** `MEMORY.md` **only ever grows**, and **past its hard limit it truncates SILENTLY and still looks whole** — a Layer-0 silent substitution *in the read-in itself*. **On 2026-08-10 it was over budget and nobody would have known.** If it fails, **compact before reading**: drop the previous `PICK UP` tail (git history, not context) · one line per entry · move a topic farm to an `index_*.md` and leave a one-line pointer.
+   - ⭐ **A MEMORY THAT IS NOT IN THE INDEX IS EFFECTIVELY UNWRITTEN.** `feedback_shape_pass_fix_needs_rebake_before_the_eye` sat unindexed for **three weeks** and named — with its purpose-built tool — the exact blocker that stopped ③. **Two people re-derived it the hard way.** ⇒ when the check reports unreferenced files, that is a finding, not noise *(the three husks are the one declared exception, and `MEMORY.md` says so)*.
 1. **Coordinator memory** — `MEMORY.md` + its `PICK UP` line (a handhold, not a transcript).
 2. **What we're building, and the settled doctrine** — `ORIENTATION.md`.
 3. **⭐ THE ASPIRATIONAL STATE — what the product is, and what it is when it's done.** `SHOW-BIBLE §0`
    (the product stack) + `§4` (the horizons). **You are its custodian (§2); you cannot safeguard a state
    you have not read.**
-4. **⭐ WHERE WE ARE AGAINST IT** — `ROADMAP.md`: **BOTH ordering blocks first**, then the live board.
-   ⛔ **TWO KINDS OF WORK GET CALLED "WORKING ON LS," AND LS SITS AT OPPOSITE ENDS OF EACH.**
-   **Fixing the geometry** (sidewalks/curbs/corners — this board) does **LS FIRST**, *because it is the
-   hardest case, never because it is the subject*. **Moving a town onto the Extent tool** ("conforming"
-   it — `EXTENT-DESIGN §6`) does **LS LAST**: it is live production and has never been poured, so HPDM
-   is hardened first. **Fix LS's sidewalks first; move LS's plumbing last.** Its scope ruling adds:
-   **LS + HPDM are the safeguarded pair while altadena/ksi/centrum are deliberately unfinished.** ⭐⭐ **Read
-   `EXTENT-DESIGN.md` before proposing any cross-town work** — it is a **separate project bolted onto
-   the front of the product**, and the board alone will send you the wrong way. *(2026-08-08: a standup
-   built off the board alone proposed an LS-first, all-five-towns plan, filed three unfinished towns'
-   values as live defects, and offered to patch a class `§6` step 4 already closes at the root.)*
-   For the outside-in check of claim-vs-built, `ACCORDANCE-REVIEW.md`.
+4. **⭐ WHERE WE ARE AGAINST IT** — `ROADMAP.md`: **read BOTH ordering blocks in full before the board**,
+   then the board. ⛔ **They are the thing this step exists for, and they are NOT restated here** — a copy
+   drifts and this doc's own `§4` forbids it. In one line so you know what you are going for: **"fix LS's
+   sidewalks first; move LS's plumbing last,"** and **LS + HPDM are the safeguarded pair.** ⭐⭐ **Read
+   `EXTENT-DESIGN.md` before proposing any cross-town work** — a separate project bolted onto the front of
+   the product; **the board alone will send you the wrong way** *(it did, 2026-08-08)*. For the outside-in
+   claim-vs-built read, `ACCORDANCE-REVIEW.md`.
 5. **Then, and only then, narrow** — `README §⭐ START HERE` for settled state by topic → the topic
    sections you need **by number** → and the topic's **`_archive/` design record before you form any
    hypothesis about how it is built** (`feedback_it_already_exists_find_what_broke_it`: an archived doc is
@@ -155,7 +167,15 @@ Then **stand up with Jacob before coding or dispatching** — and lead the stand
 against the finished picture**, not with the ticket.
 
 **End:** commit and push (git is the archive) · leave the working tree honest · update the `PICK UP` line in
-memory as a **handhold, not a transcript** — pointers to where detail durably lives.
+memory as a **handhold, not a transcript** — pointers to where detail durably lives · **re-run the `§5`.0
+health check, because you just added to the index.**
+
+> ⛔ **AN AGENT'S "DONE" IS NOT DONE UNTIL IT IS COMMITTED — CHECK THE TREE, DON'T TAKE THE REPORT.**
+> *(2026-08-09: an agent reported three fixes done; the tree was clean and the strings were still live —
+> they existed only in its context and would have been lost overnight, greeting the next session as
+> authoritative output.)* **`git status` + grep for the thing it claimed to change.** Same discipline as
+> verifying a measurement: **the report is a claim, the repo is the fact.**
 
 **The test for every fact:** *if my context vanished now, could tomorrow's Boz reconstruct this from repo +
-memory alone?* If not, it isn't packed.
+memory alone?* If not, it isn't packed. ⭐ **Test it, don't assert it** — the good handovers were the ones
+where someone actually tried the read-in and found the holes.
