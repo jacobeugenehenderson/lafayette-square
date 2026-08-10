@@ -847,8 +847,12 @@ function rdpKeep(coords, eps = 0.5, protectedKeys = null) {
 // A01's root and the exact silent-substitution shape — town #2 follows the docs, gets
 // faceted streets, and nothing fails.
 // ⚠️ Do NOT confuse this with STREET_SMOOTH, the retired render-time smoothing knob
-// (`smoothCenterline.js`, pinned 0 since 2026-06-14) whose offset had no miter clamp
-// and produced the needle/spur degenerates. THIS is the curve PRIMITIVE: sparse bezier
+// (`smoothCenterline.js`, pinned 0 since 2026-06-14) whose offset SELF-INTERSECTS on
+// tight bends and produced the needle/spur degenerates. ⛔ That is NOT "a missing miter
+// clamp" — that prescription is provably dead (the averaged-normal point's distance
+// from the apex is bounded by construction, so the clamp can never fire); both branches
+// are per-vertex LOCAL tests and self-intersection is GLOBAL. → ROADMAP A4.
+// THIS is the curve PRIMITIVE: sparse bezier
 // control points fitted at the frame, grid-safe by construction, guarded by
 // CURVE_MIN_RADIUS/CURVE_DEV_TOL below — and eye-approved twice (`7c49349` "centerline
 // perfect"; `4273ce8` "curve curb is clean now"). Set CURVE_FIT=0 to disable.
