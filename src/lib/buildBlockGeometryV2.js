@@ -1575,8 +1575,22 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     const capStart = street.capStart || street.capEnds?.start
     const capEnd   = street.capEnd   || street.capEnds?.end
 
-    const resolveSide = (segOrd, sideKey) =>
-      (customsResolver && customsResolver(chainIdx, segOrd, sideKey)) || m[sideKey] || {}
+    // A custom LAYERS onto the chain measure, field by field — it does not
+    // replace it. ⛔ This was an OR-replace (`custom || m[sideKey]`) until
+    // 2026-08-11, which made a PARTIAL custom collapse that edge's asphalt to
+    // zero: only `pavementHW` is read below, so a blob that omits it read as 0.
+    // That forced every authoring gesture to re-state the whole measure even
+    // when it had authored one field — which is how a strip-material flip came
+    // to persist invented `treelawn`/`sidewalk` depths and defeat Revert (A16).
+    // ⭐ Absence must mean "inherit the calculation" (`SECTION §3.1`/`§5.1`), and
+    // that is only true if the resolver merges. `tileGround`'s two consumers
+    // (`runMeasure`, `feWidthAt`) already guard with `Number.isFinite` and fall
+    // back to base — this brings the SHAPE path in line with them.
+    // Predicted, with this exact trigger named: [[feedback_customs_resolver_wholesale_not_merge]].
+    const resolveSide = (segOrd, sideKey) => {
+      const custom = customsResolver && customsResolver(chainIdx, segOrd, sideKey)
+      return custom ? { ...(m[sideKey] || {}), ...custom } : (m[sideKey] || {})
+    }
 
     for (let segOrd = 0; segOrd < segments.length; segOrd++) {
       const seg = segments[segOrd]

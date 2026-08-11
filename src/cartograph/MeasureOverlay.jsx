@@ -742,13 +742,32 @@ export default function MeasureOverlay() {
       // override handles the exceptions. writeBlockEdgeCustoms fans the one
       // arrangement across THIS fe's owned segOrds (feSegOrds) — that is the only
       // fan that remains, and it is within the single block-edge.
-      const chainSeed = innerEdgeMeasure(
-        chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
-      )
+      // ⛔⛔ WRITE ONLY WHAT THE GESTURE AUTHORED (A16, 2026-08-11). This built a
+      // FULL measure blob — chain seed + existing + `treelawn: ped.tl` +
+      // `sidewalk: ped.sw` — and those last two are `resolvePedDepths`' own
+      // constants (`STD_TREELAWN` / `ADA_SIDEWALK`), not the edge's values. So a
+      // one-field material flip persisted two INVENTED depths on an edge nobody
+      // had authored.
+      // ⭐ THE HARM IS REVERT, NOT THE RENDER. The blob was inert on the eye —
+      // `resolvePedDepths` returns the same (tl, sw) with it and without it. But
+      // ADA depths ARE the Revert state and Default IS the calculation
+      // (`SECTION §3.1`/`§5.1`): clearing an override re-seeds by construction,
+      // so **absence is the defined state for "not authored."** Pinning the
+      // constants converts *unauthored, re-seeds* into *authored, pinned* —
+      // harmless only while the constants match, wrong the moment the
+      // calculation moves, and it makes an untouched edge count as an override.
+      // ⛔ The two alternatives are both barred, and neither is a matter of taste:
+      //   (a) seed from the resolved measure — `resolvePedDepths` IS the
+      //       constants, so it re-writes the same invented values.
+      //   (b) seed from the FRAME — its `treelawn: 0` is the gleaned gap
+      //       (`SECTION §3.1`), and writing it makes the inert write LIVE and
+      //       collapses the strip: `SECTION §3.3`, "the mono-width ribbon is
+      //       SACROSANCT · two strips always, EQUAL width — swap, not collapse."
+      // ⇒ carry the prior override forward and add the materials. Nothing else.
+      // Safe only because `resolveSide` now MERGES (buildBlockGeometryV2.js) —
+      // under the old OR-replace this blob would have collapsed the asphalt.
       const existing = readFeCustom(blockCustoms, fe)
-      const ped = resolvePedDepths(chainSeed, side, existing)
-      const seed = { ...(chainSeed[side] || sourceMeasure), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      store.writeBlockEdgeCustoms([{ fe, measure: { ...seed, materials: { ...nextMats } } }])
+      store.writeBlockEdgeCustoms([{ fe, measure: { ...(existing || {}), materials: { ...nextMats } } }])
       useCartographStore.setState({ status: `Flipped ${slot} strip material` })
       return true
     }
