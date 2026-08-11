@@ -314,7 +314,17 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > runs group by exactly that 4-tuple (`gkOf`, `:1341`). ⛔ So *"give the FILL a continuous ring"* is not the
 > cure: it has one.
 >
-> ### The deviation
+> ### ✅✅ CURED 2026-08-11 (`07e65753`) — READ THIS BEFORE THE DIAGNOSIS BELOW, WHICH IS NOW THE *ACCOUNT OF A FIXED BUG*.
+>
+> **The band is painted FROM THE PARTITION.** On a tile carrying the `iaEdge` stamp, `iA` is cut at every
+> fillet's two tangent points and at every ownership change outside a fillet; **each owner sweeps its own
+> arc inward**, and adjacent arcs close on the **same inward bisector** — so **step over and step back are
+> ONE cut, and a gap is not constructible.** ⇒ the four decline modes below **no longer gate the takeover
+> on a partitioned tile**; the corner owns its arc rather than bidding for it. **An unstamped tile keeps the
+> construction described below, byte-identical** — so the diagnosis stays live for that population.
+> ▶ **State, scope and what remains: `ROADMAP` A10.** The full journey: `_archive/A10-cure-journey-2026-08-11.md`.
+>
+> ### The deviation *(the bug, as diagnosed — still live on UNSTAMPED tiles)*
 >
 > Doctrine `§6.9`.4: *"**Both legs stop at tA/tB; the corner ribbon takes over; legs resume.**"* The
 > pull-back (`legTrim` `:1416`, exact via `tangentTrim` `:1409`) is therefore **intended**.
@@ -361,24 +371,18 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > back out of `luRemainder` and re-routes it to the cap owner's own material (`:1664`) — the very repair
 > this needs, already built, bounded to dead-end tips.
 >
-> ### ⭐⭐ The partition ALREADY EXISTS — the cure needs no new key
+> ### ✅ The partition ALREADY EXISTED — and the build confirmed it (`07e65753`): no new key was needed.
 >
-> `groupRuns` (`:1060`) walks the tile's `edges[]`, groups consecutive edges sharing `(streetIdx, side)`,
-> and consumes the whole ring ⇒ **every ring edge lands in exactly one run, and every run carries
-> `skelId / side / segOrd` — the `blockCustoms` key.** A total, exclusive, identity-bearing partition of the
-> ring, already frozen into `shape.json`.
+> `groupRuns` (`:1060`) groups consecutive ring edges sharing `(streetIdx, side)` and consumes the whole
+> ring ⇒ **every ring edge lands in exactly one run**, already frozen into `shape.json`.
+> ▶ **`node scratch/claims-ring-partition.mjs`** — ⛔ run it, don't quote it; **only "0 double-covered
+> edges" is the live gate.** Off-ring run vertices land on **dead-end** tiles (**A0**) and do not block this.
 >
-> ▶ **`node scratch/claims-ring-partition.mjs`** (read-only, every baked scene) — ⛔ don't quote the numbers,
-> run it. **Double-covered ring edges: 0 on every scene.** Off-ring run vertices land on **dead-end** tiles
-> and are attributed to the mouth slit (**A0**), so they do not block this.
->
-> ⇒ **The defect is a ROUND TRIP.** The FILL takes each run's polyline back out, re-strokes an **area**
-> (`strokeOpen`), trims it, and intersects it with the band. **A partition cannot leave a gap; an area mask
-> can.** ⭐ And identity was never in the mask — it is in the run — so this needs **no re-key and no parity
-> gate**, which is what killed the walk-ordinal coupler and is what T3 is gated on.
->
-> ⚠️ **Not yet established:** that painting per-arc reproduces today's geometry where today's geometry is
-> correct. That is the build's gate — dual-state byte-identity, the `scratch/a03-curb-identity.mjs` pattern.
+> ⇒ **The defect was a ROUND TRIP** — the FILL took each run's polyline back out, re-stroked an **area**
+> (`strokeOpen`), trimmed it and intersected it with the band. ⭐ **A partition cannot leave a gap; an area
+> mask can.** Identity was never in the mask, so this needed **no re-key and no parity gate** — which is
+> what killed the walk-ordinal coupler. ✅ **And the open question — does painting per-arc reproduce
+> today's geometry where it is correct — was answered by the gate: `a03` identical, `--inert` green on 8.**
 >
 > ⛔ **Preserve — all already working:** the **mono-width envelope**, `WB = cw + max(TL) + max(SW)` over the
 > **tile's** edges (`:1286`), so authoring an edge deeper grows the whole block's band while shallower routes
