@@ -1324,8 +1324,21 @@ export function bandSpans(st, owner) {
       // a through-continuation) the road runs straight past and the arc belongs to
       // the run the stamp gives it. A span with no owner at all would be an arc
       // nobody paints — the very hole this ticket is about.
+      // [A10-③ · the keyhole ruling] A vertex whose stamp is `null` has NO OWNER
+      // (the keyhole splice minted it inside the bulb disc). Tally only OWNED
+      // vertices, and if a span has none, DROP it — "an arc with no owner is
+      // simply never walked". ⛔ Never let an unowned majority elect an owner:
+      // that would paint minted ground with a neighbour's identity, which is the
+      // proximity recovery this ticket exists to avoid.
       const tally = new Map()
-      for (let t = 0; t < len; t++) { const w = owner[lab[(i0 + t) % m]]; tally.set(w, (tally.get(w) || 0) + 1) }
+      for (let t = 0; t < len; t++) {
+        const src = lab[(i0 + t) % m]
+        if (src == null) continue
+        const w = owner[src]
+        if (w === undefined) continue
+        tally.set(w, (tally.get(w) || 0) + 1)
+      }
+      if (!tally.size) continue                    // unowned arc — not painted, not guessed
       let o = null, bestN = -1
       for (const [w, c] of tally) if (c > bestN) { bestN = c; o = w }
       out.push({ r, i0, i1, len, owner: o, fillet })
@@ -3847,7 +3860,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // (see the header above offsetRingVariable). `_iaNo` = the named reason there
     // is no stamp. ⛔ Exactly one of the two is ever set; an absent stamp always
     // says why, and an empty array is never emitted to mean "no owners".
-    let _iaLabels = null, _iaNo = null
+    let _iaLabels = null, _iaNo = null, _iaSpliced = false
     if (opts.iaOffset === false) _reason = 'opt-out'
     else if (isMedianTile) _reason = isDividedMedian ? 'median-divided' : 'median-loop'
     else if (ringArea <= 1500) _reason = 'small'
@@ -3912,10 +3925,40 @@ export function buildTileGround(ribbons, opts = {}) {
       const keyhole = cleanRings(differenceRings([tile.ring], closed).filter(r => Math.abs(signedArea(r)) > 0.5), 0.15)
       const spliced = unionRings([...differenceRings(blockRings, _cdDisks), ...intersectRings(keyhole, _cdDisks)])
       if (spliced.length) {
+        // [A10-③ · RULED 2026-08-11, Jacob] CARRY THE STAMP THROUGH THE SPLICE,
+        // PER VERTEX. This nulled the WHOLE tile's labels — `_iaLabels = null;
+        // _iaNo = 'keyhole-splice'` — on the true-but-local premise that the
+        // splice mints vertices with no ring-edge source. It does: INSIDE the
+        // discs. Everything else on the ring keeps its owner, and dropping those
+        // too costs the tile its entire perimeter. On LS that is 44 arcs and 10
+        // runs, including a Carroll frontage 130 m from the circle, which then
+        // paints as `luRemainder` — the operator sees the sidewalk stop.
+        // ⭐ THE RULING: the cure consumes ARCS, so there is nothing to spell for
+        // "unowned" — an arc with no owner is simply never walked (`bandSpans`).
+        // ⛔ No sentinel in the field where answers live (`project_a_sentinel_is_not_a_value`).
+        // ⛔ EXACT coordinate match, never a tolerance: a disc-boundary proximity
+        // test to rescue near-misses is the forbidden recovery. Measured
+        // (`claims-keyhole-splice-survival`): 0 pre-splice vertices outside the
+        // discs are destroyed, and the unmatched-but-outside ones sit 0.04–0.61 mm
+        // from a boundary — genuine minted welds that MUST refuse.
+        if (_iaLabels) {
+          const srcByKey = new Map()
+          for (let k = 0; k < blockRings.length; k++) {
+            const lab = _iaLabels[k]
+            if (!Array.isArray(lab)) continue
+            const ring = blockRings[k]
+            for (let j = 0; j < ring.length; j++) {
+              const kk = `${ring[j][0]},${ring[j][1]}`
+              if (!srcByKey.has(kk)) srcByKey.set(kk, lab[j])
+            }
+          }
+          _iaLabels = spliced.map(r => r.map(p => {
+            const v = srcByKey.get(`${p[0]},${p[1]}`)
+            return Number.isInteger(v) ? v : null      // null = no owner, not a value
+          }))
+          _iaSpliced = true
+        }
         blockRings = spliced
-        // The splice replaces the bulb's curb with geometry carved from `aFill` and
-        // clipped to a disc — both mint vertices with no ring-edge source. Refuse.
-        if (_iaLabels) { _iaLabels = null; _iaNo = 'keyhole-splice' }
       }
     }
     // The offset path is fold-stripped inside offsetRingVariable (identity at
@@ -4197,10 +4240,20 @@ export function buildTileGround(ribbons, opts = {}) {
     let _iaShape = false
     if (_iaLabels) {
       const nR = tile.ring.length
+      // [A10-③] `null` = THIS VERTEX HAS NO OWNER, and it is legal ONLY on a tile
+      // that took the keyhole splice (which mints vertices inside the bulb disc).
+      // Anywhere else an absent owner means the carry broke, and that must still
+      // refuse loudly — a stamp that merely LOOKS present is worse than none.
+      const okLabel = (v) => (Number.isInteger(v) && v >= 0 && v < nR) || (_iaSpliced && v === null)
       _iaShape = _iaLabels.length === iA.length
         && iA.every((r, k) => Array.isArray(_iaLabels[k]) && _iaLabels[k].length === r.length
-          && _iaLabels[k].every(v => Number.isInteger(v) && v >= 0 && v < nR))
+          && _iaLabels[k].every(okLabel))
       if (!_iaShape) { _iaNo = 'shape-mismatch'; _iaLabels = null }
+      // ⛔ NO NEW ARTIFACT KEY FOR "how much came through unowned". It is
+      // derivable by counting `null`s in `iaEdge` itself, and a stored
+      // restatement of its own source goes stale — `CLAUDE.md §PRUNE`. Keeping
+      // the frozen shape at exactly two stamp keys is also what lets the
+      // identity gate stay strict (`claims-ia-source-stamp` §6).
     }
     // Freeze everything the section pass needs off this tile's shape.
     // Freeze the achieved fillet arcs (the curb corners) so sectionPass can bend

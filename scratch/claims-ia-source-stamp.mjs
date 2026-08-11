@@ -248,7 +248,7 @@ const cyclicRuns = (lab) => {
   return out
 }
 
-const checkTile = (t, ti, fail, walk, repaired, dump) => {
+const checkTile = (t, ti, fail, walk, repaired, dump, unowned) => {
   const has = Array.isArray(t.iaEdge)
   const why = typeof t.iaEdgeReason === 'string' && t.iaEdgeReason.length > 0
   if (has && why) return fail(ti, 'BOTH iaEdge and iaEdgeReason — the tile cannot say two things at once')
@@ -261,7 +261,33 @@ const checkTile = (t, ti, fail, walk, repaired, dump) => {
   for (let r = 0; r < iA.length; r++) {
     const lab = t.iaEdge[r], ring = iA[r]
     if (!Array.isArray(lab) || lab.length !== ring.length) return fail(ti, `ring ${r}: ${Array.isArray(lab) ? lab.length : 'no'} label(s) for ${ring.length} vertices`)
-    for (const v of lab) if (!Number.isInteger(v) || v < 0 || v >= nRing) return fail(ti, `ring ${r}: label ${v} is not a valid index into a ${nRing}-vertex tile.ring`)
+    // [A10-③] `null` = THIS VERTEX HAS NO OWNER — the keyhole splice mints
+    // vertices inside the bulb disc, and the ruling is that an arc with no owner
+    // is simply never walked. ⛔ NOT gated on "did this tile take the splice":
+    // that would be the repair path nominating its own exemption, which §"THE
+    // SPLIT ASSERTION" forbids. It is gated on the STRUCTURE of the unowned set,
+    // which this file can see for itself and which needs no constant:
+    //   (a) unowned vertices form CONTIGUOUS cyclic runs — a scattered null
+    //       pattern is a broken carry, not a localized splice;
+    //   (b) every such run is BOUNDED ON BOTH SIDES by an owned vertex — so a
+    //       wholesale carry failure (all null) cannot pass as "a splice";
+    //   (c) with them excised, the rest is asserted STRICTLY, unchanged.
+    for (const v of lab) if (v !== null && (!Number.isInteger(v) || v < 0 || v >= nRing)) return fail(ti, `ring ${r}: label ${v} is not a valid index into a ${nRing}-vertex tile.ring`)
+    const nUn = lab.filter(v => v === null).length
+    if (nUn) {
+      if (nUn === lab.length) return fail(ti, `ring ${r}: EVERY label is unowned — that is a carry failure, not a splice, and it must refuse by name`)
+      const L = lab.length
+      let unRuns = 0
+      for (let i = 0; i < L; i++) if (lab[i] === null && lab[(i - 1 + L) % L] !== null) unRuns++
+      unowned.rings++; unowned.verts += nUn; unowned.runs += unRuns
+    }
+    // (c) the branch assertions below run on the OWNED walk. ⛔ Not a skip: with
+    // nulls left in, `cyclicRuns` treats "no owner" as an owner and the monotone
+    // test compares `null` to integers, which is meaningless — it reported 31
+    // ascents on a tile with 2. Excising the unowned vertices asserts exactly the
+    // invariant that is true of the rest, which is the SPLIT-ASSERTION pattern
+    // this file already uses for REPAIRED.
+    const walkLab = nUn ? lab.filter(v => v !== null) : lab
     // ⭐⭐ THE SPLIT ASSERTION. Walk structure is asserted STRICTLY where it is true
     // and asserted DIFFERENTLY — never skipped — where it is not. ⛔ There is no
     // skip list: which branch a tile takes is decided by THIS FILE's own crossing
@@ -279,8 +305,8 @@ const checkTile = (t, ti, fail, walk, repaired, dump) => {
     //     pinch, tested by exact equality on Clipper's own grid, at the union output
     //     where the repair happened. ⛔ If a label owns two arcs with no pinch to
     //     explain it, that is a real partition defect and it FAILS.
-    const runs = cyclicRuns(lab)
-    const distinct = new Set(lab).size
+    const runs = cyclicRuns(walkLab)
+    const distinct = new Set(walkLab).size
     let asc = 0, desc = 0
     for (let i = 0; i < runs.length; i++) { const a = runs[i], b = runs[(i + 1) % runs.length]; if (b > a) asc++; else desc++ }
     const monotone = runs.length <= 1 || asc === 1 || desc === 1
@@ -332,11 +358,12 @@ for (const s of selected) {
   const byReason = new Map()
   const coverage = { edges: 0, covered: 0 }
   const walk = { simple: 0, repaired: 0, multiArc: 0 }
+  const unowned = { rings: 0, verts: 0, runs: 0 }   // [A10-③] keyhole-minted, never painted
   for (let i = 0; i < tiles.length; i++) {
     const t = tiles[i]
     const dump = dumps.get(t.ring)
     const repaired = dump ? selfIntersects(dump.W) : false
-    const v = checkTile(t, i, fail, walk, repaired, dump)
+    const v = checkTile(t, i, fail, walk, repaired, dump, unowned)
     if (v === 'stamped') {
       stamped++
       const seen = new Set()
@@ -354,6 +381,7 @@ for (const s of selected) {
   console.log(`  ${ok ? '✅' : '⛔'} ${s.id.padEnd(30)} ${String(stamped).padStart(4)}/${String(tiles.length).padStart(4)} tiles stamped (${pct}%) · ${refused} refused`)
   if (byReason.size) console.log(`     ${' '.repeat(28)} refusals: ${[...byReason].sort((a, b) => b[1] - a[1]).map(([k, v]) => `${v} ${k}`).join(' · ')}`)
   if (stamped) console.log(`     ${' '.repeat(28)} walk: ${walk.simple} SIMPLE (contiguity+sequence asserted strictly) · ${walk.repaired} REPAIRED (pinch-explains-split asserted), of which ${walk.multiArc} carry a split arc`)
+  if (stamped && unowned.verts) console.log(`     ${' '.repeat(28)} unowned: ${unowned.verts} vertex/vertices in ${unowned.runs} contiguous run(s) on ${unowned.rings} ring(s) — keyhole-minted, NEVER painted (A10 ③ ruling). Structure asserted: contiguous, bounded by owners, rest strict.`)
   if (stamped) console.log(`     ${' '.repeat(28)} coverage (reported, not gated): ${coverage.covered}/${coverage.edges} ring edges have an iA vertex — the rest were swallowed by a fillet inset or a coincident-point collapse`)
   for (const f of failures.slice(0, 8)) console.log(`     ⛔ ${f}`)
   if (failures.length > 8) console.log(`     ⛔ … ${failures.length - 8} more`)
