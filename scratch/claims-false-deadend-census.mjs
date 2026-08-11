@@ -48,6 +48,16 @@
  * ⛔ No LS knowledge. No street names in this source. Runs on every scene that
  *    has a skeleton; the operator reads the per-scene table.
  *
+ * ⭐⭐ AND THE STAGE IS SETTLED — DO NOT ROUTE A DEAD-END SYMPTOM UP HERE.
+ *   Jacob, 2026-08-11: *"it's already correct in the survey tool, so it's only
+ *   the corner naming and the ribbons reading the labels."* The frame is right,
+ *   Survey is right, the curb is right (`README §START HERE`: Survey ✅ works,
+ *   ALL CURBS WORK, Section is the broken tool). The live defect is that the
+ *   CORNER IS NOT NAMED and the ribbons read those labels — `A15`'s tell at the
+ *   mouth, where `cornerAt` (`tileGround.js:245`) needs two DIFFERENT streets
+ *   and a doubled-back spur's second pass is `spur -> spur`. ⛔ This check sizes
+ *   a frame question. It is NOT the route to a broken sidewalk.
+ *
  * Read-only. Writes nothing.
  *
  * Usage: node scratch/claims-false-deadend-census.mjs [--scene=<name>] [--verbose]
