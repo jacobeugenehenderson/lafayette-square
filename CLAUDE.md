@@ -161,5 +161,9 @@ is the one unforgivable error). Active docs carry **LIVE doctrine + open state o
 *(Coordinator depth: `BOZ.md §4`. ⚠️ `BOZ.md` was cut 275→115 lines on the same day; the matrix and the "fulsome doc update"
 that generated this are retired to `cartograph/_archive/BOZ-full-2026-08-06.md`.)*
 
+## ⛔⛔ MEASURE BEFORE WRITING · ASK BEFORE BUILDING · STOP NARRATING *(Jacob, 2026-08-11)*
+> **"WRITING WRONG SHIT DOWN IS WHY YOU ARE FAILING."** ⛔ **Never write the EXPLANATION of a number — only the number.** One day's measurements were sound and **the prose laid on top of them was every single error**: five claims went onto the board as fact and were measured FALSE within the hour. **If the mechanism has not been measured, write "cause not established" and stop.**
+> ⛔ **Don't build-then-revert unasked** — that day the operator's eye caught the regression the gates passed. ⛔ **Token cost is part of the defect:** the same expensive gate was run four times, once against itself. `[[feedback_measure_before_writing_ask_before_building]]`
+
 ## Standup before code
 After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `BOZ.md §5`, when you're Boz)*. Read → align → then build.
