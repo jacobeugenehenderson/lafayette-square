@@ -22,6 +22,19 @@
  * upstream of where A0 works. The curated polyline runs straight through the
  * hole and says the street continues.
  *
+ * ⛔⛔ RETRACTED THE DAY IT WAS WRITTEN — THE CURATED FILE IS NOT AN ARBITER
+ *   OF CONTINUITY. It draws Carroll Street continuous straight through Truman
+ *   Parkway. Jacob, 2026-08-11: *"Carroll is severed by Truman — it's a cul de
+ *   sac on one side and butts up to Truman on the other side."* ⇒ on the one
+ *   row taken to the ground, the curated line is WRONG and the frame is RIGHT.
+ *   **A row below is a DISAGREEMENT between two inputs, not a defect in the
+ *   frame**, and this check cannot say which side is correct.
+ *   ⭐ What survives, and it is worth keeping: the file is authoritative by
+ *   `README §Data sources`, is repaired by a purpose-built tool, and the frame
+ *   has never read it. That contradiction is real whichever way each row goes —
+ *   either we are ignoring good geometry, or we are calling bad geometry
+ *   authoritative in the README. Both are findings; neither is A0's.
+ *
  * ⛔ THIS DOES NOT SAY THE WELD IS THE CURE. What sits in the hole is
  *    reported per instance, because it decides the answer: a hole spanned by
  *    a crossing street is a MISSING JUNCTION (welding it would draw pavement
@@ -176,8 +189,10 @@ for (const scene of scenes) {
 console.log(`═══ ${spanned} holes spanned by authoritative curated geometry · ${missingJunction} MISSING JUNCTION · ${emptySeam} EMPTY SEAM`
   + (noCurated ? ` · ${noCurated} scene(s) have no curated file` : ''))
 console.log(`
-⛔ Every one of these is a place the frame says the street ENDS and the
-   authoritative input says it CONTINUES. The polygon layer is a faithful
-   shadow of the frame, so nothing in prebake, Survey or Section can reach it.
-   ⛔ The two classes take DIFFERENT cures and must not be closed together.
+⛔ Every one of these is a place the frame says the street ENDS and the file
+   the README calls authoritative says it CONTINUES — with no mechanism that
+   could ever reconcile them, because the frame does not read the file.
+   ⛔ RETRACTED at Carroll: the curated line says continuous, the ground says
+      severed, and the FRAME IS RIGHT there (Jacob, 2026-08-11). A row is a
+      disagreement between inputs; this check cannot say which side wins.
    → README §Data sources · SKELETON §5b-bis · ROADMAP A0 · cartograph/rejoin-splits.js`)

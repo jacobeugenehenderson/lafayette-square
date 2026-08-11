@@ -11,8 +11,32 @@
  *
  * ⭐ THIS IS THE FILTER A0's OWN ENTRY ASKS FOR AND NOBODY HAD RUN:
  *   intersect the degree-1 tip set with the same-name-fragment set.
- *   A tip in both is a FALSE dead end. Until this number exists, A0's size is
- *   unknown.
+ *
+ * ⛔⛔ BUT A TIP IN BOTH IS A **CANDIDATE**, NOT A VERDICT — AND THE FIRST ONE
+ *   CHECKED AGAINST THE GROUND CAME BACK **REAL**. *(Jacob, 2026-08-11:
+ *   "Carroll is severed by Truman — it's a cul de sac on one side and butts up
+ *   to Truman on the other side.")* `carroll-street-1`'s round degree-1 tip is
+ *   CORRECT; the frame is right, the cap is right, and the bulb the map draws
+ *   there is the real street. ⇒ this check finds *"the name continues on the
+ *   far side of a hole"*, which is a QUESTION. It cannot tell a severed street
+ *   from a fragmented one, because both look identical to a name test.
+ *   ⛔ Do not size A0 by subtracting this number. Do not call a row a defect.
+ *
+ * ⛔ AND THE CURATED CENTERLINES DO NOT ARBITRATE IT. `raw/centerlines.json`
+ *   draws Carroll continuous straight through Truman, which the ruling above
+ *   says is wrong — so agreement with the curated line is not evidence of
+ *   continuation (`claims-curated-centerlines-unread.mjs` carries the same
+ *   retraction). Nor does "a street sits in the hole": Carroll HAS one and is
+ *   severed by it.
+ *
+ * ▶ THE ARBITER THAT WOULD ACTUALLY WORK IS ALREADY FETCHED AND THROWN AWAY.
+ *   A real cul-de-sac carries an OSM `highway=turning_circle` on its tip node.
+ *   `fetch.js:97` asks Overpass for `node["highway"]` and `:123` keeps only
+ *   `[lon, lat]`, discarding `el.tags` — so the one signal that separates
+ *   "severed, and it really ends" from "fragmented, and it continues" is paid
+ *   for on every fetch and dropped. `ROADMAP A09` measured 20 turning circles
+ *   in the LS bbox, 13 landing at 0.00 m on a degree-1 tip. ⛔ UNVERIFIED HERE
+ *   — it cannot be tested offline until the intake keeps the tags.
  *
  * ⛔ Reads the SKELETON, never map.json / ribbons.json (A01: the committed
  *    map.json is stale and does not correspond to any run of current code).
@@ -64,7 +88,8 @@ if (!scenes.length) {
   process.exit(1)
 }
 
-console.log('FALSE DEAD-END CENSUS — degree-1 tips ∩ same-name fragments')
+console.log('DEAD-END CANDIDATE CENSUS — degree-1 tips whose NAME continues across a hole')
+console.log('❓ candidates are QUESTIONS. Carroll scores here and is a genuine cul-de-sac (header).')
 console.log(`gap ≤ ${GAP_M} m · turn ≤ ${TURN_DEG}°   (skeleton.json; degree read from caps, never recomputed)\n`)
 
 const totals = { tips: 0, false: 0, real: 0, loud: 0 }
@@ -114,33 +139,35 @@ for (const scene of scenes) {
         }
       }
 
+      // CANDIDATE = the name continues across a hole. NOT a verdict: Carroll
+      // scores here and is a genuine cul-de-sac (see the header ruling).
       const verdict = !n ? 'UNNAMED'
-        : !best ? 'REAL'
-        : (best.d <= GAP_M && best.turn <= TURN_DEG) ? 'FALSE' : 'REAL'
+        : !best ? 'ENDS'
+        : (best.d <= GAP_M && best.turn <= TURN_DEG) ? 'CANDIDATE' : 'ENDS'
       rows.push({ id: s.id, which, name: s.name, cap: cap.cap, best, verdict })
     }
   }
 
-  const f = rows.filter(r => r.verdict === 'FALSE')
-  const r = rows.filter(r => r.verdict === 'REAL')
+  const f = rows.filter(r => r.verdict === 'CANDIDATE')
+  const r = rows.filter(r => r.verdict === 'ENDS')
   const u = rows.filter(r => r.verdict === 'UNNAMED')
 
   console.log(`━━ ${scene}`)
   console.log(`   chains ${streets.length} · named streets fragmented into >1 chain: ${fragmentedNames.length}/${byName.size}`)
   console.log(`   degree-1 tips: ${rows.length}`)
-  console.log(`   ⛔ FALSE dead end (same-name fragment seam) : ${f.length}   ← A0 cannot fix these; SKELETON §5b-bis owns them`)
-  console.log(`   ✅ REAL road end (no same-name partner)      : ${r.length}`)
+  console.log(`   ❓ CANDIDATE — the name continues across a hole : ${f.length}   ← a QUESTION for the eye or a turning_circle tag, NEVER a defect count`)
+  console.log(`   ·  no same-name partner across a hole          : ${r.length}`)
   if (u.length) console.log(`   ⚠️  UNNAMED chain, cannot be name-tested   : ${u.length}`)
   if (loud.length) {
     console.log(`   ⛔ UNCLASSIFIABLE — frame carries no degree : ${loud.length}`)
     for (const l of loud) console.log(`        ${l}`)
   }
   for (const row of f) {
-    console.log(`      ⛔ ${row.id.padEnd(28)} ${row.which.padEnd(5)} cap=${String(row.cap).padEnd(6)}`
+    console.log(`      ❓ ${row.id.padEnd(28)} ${row.which.padEnd(5)} cap=${String(row.cap).padEnd(6)}`
       + ` → ${row.best.id} ${row.best.which} (deg ${row.best.degree})  gap ${row.best.d.toFixed(1)} m  turn ${row.best.turn.toFixed(0)}°`)
   }
   if (VERBOSE) for (const row of r) {
-    console.log(`      ✅ ${row.id.padEnd(28)} ${row.which.padEnd(5)} cap=${String(row.cap).padEnd(6)}`
+    console.log(`      · ${row.id.padEnd(28)} ${row.which.padEnd(5)} cap=${String(row.cap).padEnd(6)}`
       + (row.best ? `  nearest same-name ${row.best.d.toFixed(1)} m / turn ${row.best.turn.toFixed(0)}°` : '  no same-name chain'))
   }
   console.log()
@@ -154,11 +181,16 @@ for (const scene of scenes) {
   }
 }
 
-console.log(`═══ TOTAL across ${scenes.length} scene(s): ${totals.tips} degree-1 tips · ${totals.false} FALSE · ${totals.real} REAL`
+console.log(`═══ TOTAL across ${scenes.length} scene(s): ${totals.tips} degree-1 tips · ${totals.false} CANDIDATE · ${totals.real} no-partner`
   + (totals.loud ? ` · ${totals.loud} UNCLASSIFIABLE` : ''))
 console.log('    sensitivity (turn ≤ ' + TURN_DEG + '°):', Object.entries(sens).map(([k, v]) => `${k} → ${v}`).join(' · '))
 console.log(`
-⛔ A FALSE tip is not a polygon failure. The frame says the street ends; the
-   polygon is a faithful shadow of it. Welding the fragment (SKELETON §5b-bis)
-   removes the tip, the cap, the bulb and the slit in one move, upstream.
-   → SKELETON §5b-bis · ROADMAP A0 · OSM-FORENSICS §④`)
+❓ A CANDIDATE is a question, not a finding, and the first one taken to the
+   ground came back REAL: Carroll IS severed by Truman Parkway (Jacob,
+   2026-08-11) — cul-de-sac one side, butting the parkway on the other. Its
+   round degree-1 tip is CORRECT and the bulb the map draws is the street.
+   ⛔ Do not size A0 by subtracting this number, and do not weld a row of it.
+   ▶ The separator is OSM \`highway=turning_circle\` on the tip node — asked for
+     at fetch.js:97 and discarded at :123. Until the intake keeps the tags,
+     these rows can only be settled by the operator's eye.
+   → ROADMAP A09 · SKELETON §5b-bis · ROADMAP A0 · OSM-FORENSICS §④`)
