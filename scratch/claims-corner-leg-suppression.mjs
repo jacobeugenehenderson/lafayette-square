@@ -32,8 +32,12 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SRCDIR = path.join(ROOT, 'src/lib')
 const TG = path.join(SRCDIR, 'tileGround.js')
 
-const ANCHOR = /          if \(e\.noPed \|\| tipped\[i\] \|\| through\[i\] \|\| isNameTransition\(p, run\) \|\| isThruNode\(p, run\)\) return/
-const PATCH = `          if (e.noPed || tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) {
+// ⚠️ RE-ANCHORED 2026-08-11: `8b848226` (A7's EITHER-rule) hoisted the five-term
+// disjunction into `const suppressed = …` one line above, so the old literal
+// anchor matched 0× and the instrument refused to run — working as designed.
+// The five predicates are unchanged and still in scope at the return.
+const ANCHOR = /          if \(suppressed\) return/
+const PATCH = `          if (suppressed) {
             if (globalThis.__legDump) globalThis.__legDump.push({
               p, why: [e.noPed && 'noPed', tipped[i] && 'tipped', through[i] && 'through',
                        isNameTransition(p, run) && 'nameTransition', isThruNode(p, run) && 'thruNode'].filter(Boolean),

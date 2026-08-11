@@ -266,3 +266,6 @@ scratch/.band-probe/
 scratch/.stamp-probe/
 scratch/.fold-probe/
 scratch/.mint-flip-*.json
+scratch/.leg-probe/
+scratch/.prov-probe/
+scratch/.rekey-probe/
