@@ -41,7 +41,24 @@ to have already seen this street has delivered nothing to town #2.
    >
    > Before reporting *any* defect, ask: **is this the authoring gesture's intended output?** Load
    > `blockCustoms` / the scene's `design.json` and re-measure before you open your mouth.
-   **The three instances, all on 2026-07-31, all reported as damage:** `litmus-curb-parallel` ran
+   > ### ⭐⭐⭐ THE SHARPENED FORM, AND IT IS THE ONE THAT KEEPS FAILING *(Jacob, 2026-08-11, enraged — and right)*
+   > **A DIFFERENCE BETWEEN BLOCKS IS THE PRODUCT. IT IS NEVER, BY ITSELF, EVIDENCE OF A BUG.**
+   > `SURVEY §4` / `ORIENTATION` step 4, verbatim: ***"A single block may change width several times
+   > across its span — LS is historical and idiosyncratic, and this is what the authoring tools are FOR."***
+   > ⛔ So *"adjacent blocks have different widths"* · *"half the override slots don't resolve"* ·
+   > *"the change stops partway along the street"* are **descriptions of a working product.**
+   > ⭐⭐ **AND THE TRAP THAT CAUGHT ME: I USED *SYMMETRY* AS EVIDENCE OF A MECHANICAL WRITE** — *"it stops
+   > on both sides at the same place, a human drag wouldn't do that."* **A street's width changes AT A
+   > CROSS-STREET, on both sides at once, because that is where blocks end.** The very shape I called
+   > suspicious is the expected one. **Before calling a write partial, ask what the map looks like if it
+   > is CORRECT — and if the answer is "exactly this," there is no finding.**
+   > **Instance, 2026-08-11:** Boz measured Park Avenue's per-block `pavementHW`, found the west stretch
+   > widened and the east at default, and reported it to Jacob twice as a probable authoring bug —
+   > *"a curb kink, the write not the geometry."* **Park Avenue is genuinely different widths on different
+   > blocks. Jacob had said so, the canon says so, and the map on his screen was the most correct it has
+   > ever been.** ⛔ **The cost is not the wrong claim — it is that the day went into probing something
+   > already worked out, while the real defects (`A0`'s endcaps, chain artifacting) waited.**
+   **The three earlier instances, all on 2026-07-31, all reported as damage:** `litmus-curb-parallel` ran
    `blockCustoms: null` and scored Mississippi's authored 8.70 m as a "3.13 m bow" · a "collapsed
    curb ring" census measured `iA` **area**, when `Block = iA = tile − the authored roadway`, so it
    was measuring the asphalt-edge drag itself (`SURVEY §3`/`§4`) · the 2026-07-23 overlay reset threw
