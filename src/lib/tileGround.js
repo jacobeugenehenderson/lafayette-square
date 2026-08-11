@@ -1224,6 +1224,161 @@ function groupRuns(tile) {
   return runs
 }
 
+// ══ [A10-③] PAINT THE BAND FROM THE PARTITION ════════════════════════════════
+// "The ring is already partitioned, one owner per edge. The band must be painted
+//  FROM THAT PARTITION — each owner painting its own arc of the inset — not by
+//  re-stroking each run's polyline into an area and intersecting. Ends exist only
+//  because we make areas out of lines that have ends." (Jacob, ratified 2026-08-08.)
+//
+// The three pieces below turn that sentence into geometry. They read ONLY the
+// frozen artifact (ring / runs / iA / iaEdge / fillets) — no chain, no centerline,
+// no street name, no tuned distance deciding ownership.
+//
+// ⛔ NO FALLBACK. Each returns `null` with the reason NAMED on `partitionDump`
+// when it cannot establish the partition; the caller then leaves that tile on the
+// old construction, and the A10 invariant still reports its defect, so a refusal
+// can never read as a cure.
+export const partitionDump = { rows: [] }
+const _pdump = (why) => { if (partitionDump.rows.length < 5000) partitionDump.rows.push(why) }
+
+// WHICH RUN OWNS EACH RING EDGE. `groupRuns` built `runs[]` by walking `edges[]`
+// in ring order and grouping consecutive edges sharing (streetIdx, side), so the
+// runs are consecutive and consume the ring exactly — that is the partition, and
+// this recovers its index form from the frozen artifact without a new key.
+// ⭐ INTERIOR vertices are asserted, ENDS are not: the shape pass may snap a
+// dead-end run's END onto a fillet apex, but it never moves an interior vertex.
+// The rotation is chosen by exact-match score and must be UNIQUE — a tie is a
+// refusal, never a coin-flip.
+export function ringRunOwners(st) {
+  const ring = st.ring, runs = st.runs || [], n = ring?.length || 0
+  if (!n || !runs.length) return null
+  let total = 0
+  for (const r of runs) { if (!r.poly || r.poly.length < 2) return null; total += r.poly.length - 1 }
+  if (total !== n) { _pdump('runs-do-not-consume-ring'); return null }
+  const K = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
+  const key = ring.map(K)
+  let best = null, bestScore = -1, ties = 0
+  for (let s = 0; s < n; s++) {
+    let c = s, ok = true, score = 0
+    for (const r of runs) {
+      for (let k = 1; k < r.poly.length - 1; k++) if (key[(c + k) % n] !== K(r.poly[k])) { ok = false; break }
+      if (!ok) break
+      for (let k = 0; k < r.poly.length; k++) if (key[(c + k) % n] === K(r.poly[k])) score++
+      c = (c + r.poly.length - 1) % n
+    }
+    if (!ok) continue
+    if (score > bestScore) { bestScore = score; best = s; ties = 1 }
+    else if (score === bestScore) ties++
+  }
+  if (best == null) { _pdump('no-rotation-matches-the-ring'); return null }
+  if (ties !== 1) { _pdump('ambiguous-rotation'); return null }
+  const owner = new Array(n)
+  let c = best
+  runs.forEach((r, ri) => { for (let k = 0; k < r.poly.length - 1; k++) owner[(c + k) % n] = ri; c = (c + r.poly.length - 1) % n })
+  return owner
+}
+
+// THE ARCS OF `iA`, ONE OWNER EACH. Cut the curb ring at (a) every fillet's two
+// TANGENT POINTS — frozen, and exact vertices of `iA` (346/346 measured) — and
+// (b) every ownership change that is not inside a fillet arc, which is a corner
+// the curb rounded at R=0, where the two legs meet at a miter with no arc to hand
+// over. Between the cuts sits exactly one owner: a run, or a corner.
+// ⭐ This is doctrine §6.9.4 with the takeover made UNCONDITIONAL — "both legs
+// stop at tA/tB; the corner ribbon takes over; legs resume". Step over and step
+// back are now the SAME cut, so neither can leave a gap.
+export function bandSpans(st, owner) {
+  const K = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
+  const out = []
+  for (let r = 0; r < st.iA.length; r++) {
+    const A = st.iA[r], lab = st.iaEdge[r], m = A.length
+    if (!Array.isArray(lab) || lab.length !== m) { _pdump('stamp-shape-mismatch'); return null }
+    if (m < 3) continue
+    const idx = new Map()
+    for (let k = 0; k < m; k++) { const kk = K(A[k]); if (!idx.has(kk)) idx.set(kk, k) }
+    const arcs = []
+    for (const f of (st.fillets || [])) {
+      const a = idx.get(K(f.tA)), b = idx.get(K(f.tB))
+      if (a == null || b == null) continue          // not this ring's corner
+      const fwd = (b - a + m) % m, bwd = (a - b + m) % m
+      const [s, e, len] = fwd <= bwd ? [a, b, fwd] : [b, a, bwd]
+      if (len === 0 || len * 2 > m) continue        // a fillet is the MINOR arc, as arcSectorPoly says
+      arcs.push({ s, e, len, f })
+    }
+    const inArc = new Array(m).fill(false)
+    for (const ar of arcs) for (let k = 1; k < ar.len; k++) inArc[(ar.s + k) % m] = true
+    const cuts = new Set()
+    for (const ar of arcs) { cuts.add(ar.s); cuts.add(ar.e) }
+    for (let k = 0; k < m; k++) {
+      const a = owner[lab[(k - 1 + m) % m]], b = owner[lab[k]]
+      if (a !== b && !inArc[k]) cuts.add(k)
+    }
+    const cs = [...cuts].sort((x, y) => x - y)
+    if (!cs.length) { out.push({ r, i0: 0, i1: 0, len: m, owner: owner[lab[0]], fillet: null }); continue }
+    const arcAt = new Map(arcs.map(ar => [`${ar.s}|${ar.e}`, ar.f]))
+    for (let j = 0; j < cs.length; j++) {
+      const i0 = cs[j], i1 = cs[(j + 1) % cs.length]
+      const len = (i1 - i0 + m) % m || m
+      const fillet = arcAt.get(`${i0}|${i1}`) || null
+      // ⭐ EVERY span carries an owning run, fillet or not. A fillet arc is a
+      // corner only where a corner actually bid; where none did (a name transition,
+      // a through-continuation) the road runs straight past and the arc belongs to
+      // the run the stamp gives it. A span with no owner at all would be an arc
+      // nobody paints — the very hole this ticket is about.
+      const tally = new Map()
+      for (let t = 0; t < len; t++) { const w = owner[lab[(i0 + t) % m]]; tally.set(w, (tally.get(w) || 0) + 1) }
+      let o = null, bestN = -1
+      for (const [w, c] of tally) if (c > bestN) { bestN = c; o = w }
+      out.push({ r, i0, i1, len, owner: o, fillet })
+    }
+  }
+  return out
+}
+
+// THE ARC'S OWN SLICE OF THE BAND. A quad strip swept inward off the arc, joined
+// at every interior vertex, and closed at each END on the ring's own inward
+// BISECTOR — which both neighbouring spans compute identically, so their claims
+// share that cut exactly: no gap to fall into land use, no overlap to double-paint.
+// ⛔ Not a buffer of a polyline: the geometry is the arc of the FROZEN curb, so a
+// claim cannot end anywhere the ownership does not.
+export function spanClaimPoly(A, i0, len, m, D, sgn) {
+  const nrm = (i, j) => { const dx = A[j][0] - A[i][0], dy = A[j][1] - A[i][1]; const L = Math.hypot(dx, dy); if (L < 1e-12) return null; return [-dy / L * sgn, dx / L * sgn] }
+  const bis = (k) => {
+    const a = nrm((k - 1 + m) % m, k), b = nrm(k, (k + 1) % m)
+    if (!a) return b; if (!b) return a
+    const x = a[0] + b[0], y = a[1] + b[1], L = Math.hypot(x, y)
+    return L < 1e-9 ? b : [x / L, y / L]
+  }
+  const at = (p, d) => [p[0] + d[0] * D, p[1] + d[1] * D]
+  const i1 = (i0 + len) % m
+  const parts = []
+  for (let t = 0; t < len; t++) {
+    const i = (i0 + t) % m, j = (i0 + t + 1) % m
+    const n = nrm(i, j)
+    if (!n) continue                                   // a zero-length ring edge sweeps nothing
+    const di = t === 0 ? (bis(i0) || n) : n
+    const dj = t === len - 1 ? (bis(i1) || n) : n
+    parts.push([A[i], A[j], at(A[j], dj), at(A[i], di)])
+    // the join: fan the turn between the two edge normals so a bend cannot open a
+    // wedge inside the span (the ends are handled by the shared bisector above).
+    if (t < len - 1) {
+      const n2 = nrm(j, (i0 + t + 2) % m)
+      if (n2) {
+        let da = Math.atan2(n2[1], n2[0]) - Math.atan2(n[1], n[0])
+        while (da > Math.PI) da -= 2 * Math.PI
+        while (da < -Math.PI) da += 2 * Math.PI
+        if (Math.abs(da) > 1e-4) {
+          const steps = Math.max(1, Math.round(Math.abs(da) / (Math.PI / 24)))
+          const a0 = Math.atan2(n[1], n[0])
+          const fanPts = [A[j]]
+          for (let q = 0; q <= steps; q++) { const a = a0 + da * (q / steps); fanPts.push(at(A[j], [Math.cos(a), Math.sin(a)])) }
+          parts.push(fanPts)
+        }
+      }
+    }
+  }
+  return parts.length ? unionRings(parts) : []
+}
+
 // ── THE WALL · sectionPass ─────────────────────────────────────────────────
 // The FILL side of the wall: the interior authored ped strips (treelawn/sidewalk
 // leg strips, the ADA all-SW corner pad, the LU flood) stroked off the FROZEN
@@ -1363,7 +1518,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // ({outer:'LU', inner:'SW'} = TL-position LU / SW-position SW), then the
     // per-edge .materials override (§3.2) flips slots; both-LU = open field.
     const rr = []
-    for (const run of runs) {
+    for (const [ri, run] of runs.entries()) {
       const aBase = edgeDepth(run.baseMeasure, run.side, cw, 'A')   // base asphalt edge (grout)
       // No asphalt on this edge: the ring reached the edge of the DRAWING (the
       // neighborhood disc clipped the tile) or a median face. ARCHITECTURE §"The
@@ -1385,7 +1540,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         ? { outer: cm.outer === 'SW' ? 'SW' : 'LU', inner: cm.inner === 'LU' ? 'LU' : 'SW' }
         : defMat
       const a = edgeDepth(run.measure, run.side, cw, 'A')   // per-fe asphalt edge, frozen (trim follows it)
-      rr.push({ run, aBase, a, noPed, hasTL: ped.hasTL, tlD: ped.tl, swD: ped.sw, o, inn, total: o + inn, mat })
+      rr.push({ ri, run, aBase, a, noPed, hasTL: ped.hasTL, tlD: ped.tl, swD: ped.sw, o, inn, total: o + inn, mat })
     }
     // Peel treelawn-Y runs first: where two legs' slabs graze near a corner the
     // treelawn claims the overlap (matching the old zone-union semantics — the
@@ -1475,6 +1630,25 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     const luExtra = []       // authored-shallower band residual along legs → LU
     const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
     let bandRem = fullBand
+    // [A10-③] THE PARTITION, IF THIS TILE CARRIES THE STAMP. The spans hand each
+    // run its own arcs of the band and each corner its own; together they consume
+    // the ring, so there is nothing left over to fall into land use.
+    // A tile whose stamp is absent, or whose partition cannot be established, keeps
+    // the old polyline-stroked construction — byte-identical, and still reported by
+    // the A10 invariant, so a refusal can never read as a cure.
+    const spansRaw = (!single && st.iaEdge && Array.isArray(st.iaEdge))
+      ? (() => { const own = ringRunOwners(st); return own ? bandSpans(st, own) : null })()
+      : null
+    const partitioned = !!spansRaw?.length
+    // The sweep must out-reach the band EVERYWHERE, including the miter the band's
+    // own inner ring throws at a reflex vertex — which `offsetRings` bounds at
+    // `miterLimit 2` × the offset depth (`:63`). So the reach is that same limit,
+    // read off the same construction, not a number chosen to make a case pass.
+    const spanD = 2 * Math.min(cw + TLmax + SWmax, cap) + 1
+    const spanSgn = iA.map(r => signedArea(r) > 0 ? 1 : -1)
+    const spanPoly = (s) => spanClaimPoly(iA[s.r], s.i0, s.len, iA[s.r].length, spanD, spanSgn[s.r])
+    const runSpans = new Map()     // run index → its arcs' claims (filled after the bids)
+    const cornerSpans = new Map()  // fillet → its arc's claim
     if (single) {
       const iMid = ringAt(single.o)
       const iWrun = ringAt(single.total)
@@ -1590,6 +1764,10 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           // CORNER_DUMP: remember WHICH runs met here. Inert — nothing below reads it.
           if (cornerDump.on) { const c = cornerT.get(k); (c.dbg || (c.dbg = [])).push(`${run.skelId}|${run.side}|${run.segOrd}`) }
         })
+        // [A10-③] On a partitioned tile the claim is not built here: it is each
+        // run's own ARCS of the frozen curb, assembled after this loop (the corner
+        // spans need the bids above to know which fillets are corners at all).
+        if (partitioned) continue
         let t0 = legTrim[0]
         let t1 = legTrim[1]
         // [DEAD-END MOUTH WRAP] Trim the THROUGH-road run back from a dead-end mouth
@@ -1640,6 +1818,60 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         let g = groups.get(gk)
         if (!g) { g = { o: e.o, inn: e.inn, total: e.total, mat: e.mat, hasTL: e.hasTL, sectors: [] }; groups.set(gk, g) }
         g.sectors.push(...sector)
+      }
+      // ── [A10-③] THE PARTITION PATH · assemble the claims from the ARCS ────────
+      // Each span painted by its own owner. A fillet arc is a CORNER only where a
+      // corner actually bid (the same pairing the corner pass makes below); at a
+      // name-transition or a through-continuation no corner exists, so the arc
+      // belongs to the run the stamp gives it and the band flows straight through
+      // — which is what the doctrine says happens there.
+      if (partitioned) {
+        const byIdx = new Map(rr.map(e => [e.ri, e]))
+        // The SAME pairing the corner pass makes below — each corner takes its
+        // nearest fillet — so a fillet cannot be a corner here and a leg there.
+        const cornerFillet = new Map()
+        for (const [, c] of cornerT) {
+          let bf = null, bd = Infinity
+          for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bd) { bd = d; bf = f } }
+          if (bf && bd <= bf.r + c.trim + 1) cornerFillet.set(bf, c)
+        }
+        for (const s of spansRaw) {
+          const corner = s.fillet ? cornerFillet.get(s.fillet) : null
+          const poly = spanPoly(s)
+          if (!poly.length) continue
+          if (corner) { cornerSpans.set(s.fillet, poly); continue }
+          const e = byIdx.get(s.owner)
+          if (!e) continue                       // an owner index with no resolved run: refuse the arc rather than guess an owner — the invariant still reports it
+          const a = runSpans.get(s.owner) || []
+          a.push(...poly)
+          runSpans.set(s.owner, a)
+        }
+        // [THE BULB HAS NO HALVES] The stamp splits a cul-de-sac's cap arc between
+        // the two legs that produced it. Where the pair resolves DIFFERENTLY the
+        // bulb goes WHOLE to the cap owner (SECTION §6.3, Jacob 2026-07-22) — the
+        // other leg hands its half over inside the frozen cap's own curb radius.
+        // Every uniform cap leaves `capOwner` empty, so nothing happens here.
+        for (const [k, ownerE] of capOwner) {
+          const t = roundTipByKey.get(k)
+          if (!t) continue
+          const disk = [circlePoly(t.p[0], t.p[1], t.hw + cw)]
+          for (const e of rr) {
+            if (e === ownerE || e.run.skelId !== ownerE.run.skelId) continue
+            const mine = runSpans.get(e.ri)
+            if (!mine?.length) continue
+            const handed = intersectRings(mine, disk)
+            runSpans.set(e.ri, differenceRings(mine, disk))
+            if (handed.length) runSpans.set(ownerE.ri, unionRings([...(runSpans.get(ownerE.ri) || []), ...handed]))
+          }
+        }
+        for (const e of rr) {
+          const sector = runSpans.get(e.ri)
+          if (!sector?.length) continue
+          const gk = gkOf(e)
+          let g = groups.get(gk)
+          if (!g) { g = { o: e.o, inn: e.inn, total: e.total, mat: e.mat, hasTL: e.hasTL, sectors: [] }; groups.set(gk, g) }
+          g.sectors.push(...sector)
+        }
       }
       // Peel treelawn-Y groups first (rr is Y-sorted, but make it explicit):
       // where two legs' sectors graze near a corner the treelawn claims the
@@ -1744,6 +1976,10 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         let best = null, bestD = Infinity
         for (const f of fillets) { const d = Math.hypot(f.apex[0] - c.p[0], f.apex[1] - c.p[1]); if (d < bestD) { bestD = d; best = f } }
         if (!best || bestD > best.r + c.trim + 1) { dump('no-fillet-in-range', { bestD: best ? +bestD.toFixed(3) : null, tol: best ? +(best.r + c.trim + 1).toFixed(3) : null }); continue }
+        // [A10-③] On a partitioned tile the corner OWNS ITS ARC, so the takeover is
+        // not a bid: the legs already stopped at this arc's two tangents and nothing
+        // else can claim it. Step over and step back are the same cut.
+        const ownArc = partitioned ? cornerSpans.get(best) : null
         let shallow = shallowByT.get(c.T)
         if (!shallow) {
           shallow = (c.T >= TLmax + SWmax - 1e-9)
@@ -1753,8 +1989,14 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         }
         // margin = c.trim (asphalt-hw + R) extends the sector up each leg to the
         // leg slab's pulled-back end, closing the leg↔corner seam (the LU notch).
-        const sector = arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)
-        const pad = intersectRings(shallow, [sector])
+        const sector = ownArc || [arcSectorPoly(best.C, best.r, best.tA, best.tB, sectorDepth, c.trim)]
+        const pad = intersectRings(shallow, sector)
+        // The corner's own band DEEPER than its max-adjacent total is the same
+        // authored-shallower residual a leg routes to LU (`luExtra`) — on the
+        // partition path the corner owns that ground, so it must route it too or
+        // it reads as this ticket's defect. Genuine default: c.T is the envelope,
+        // so this is empty.
+        if (ownArc && c.T < TLmax + SWmax - 1e-9) luExtra.push(...intersectRings(intersectRings(sector, bandRem), ringAt(c.T)))
         // A FOURTH decline the brief's three gates do not name: the sector met the
         // band but their intersection is empty (the band above c.T is already fully
         // claimed by the leg strips here, or the sector missed bandRem entirely).
