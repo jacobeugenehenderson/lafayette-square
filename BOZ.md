@@ -105,10 +105,20 @@ measurement, not a probe, nothing that writes.*
 
 **Every brief carries:** **"name yourself — one word, yours"** (the agent's name-trail; ⛔ Boz never names
 itself, `§1`) · a decisive **`Agent: FRESH`** or **`WARM → <name>`** (never "either works") with the
-one-line why · **the canon section BY NUMBER** for that exact task — *"read `RIBBONS §1`, the four
-invariants, and build to that; if you think it doesn't apply, stop and flag me"* (a bare "consult RIBBONS"
-is not a pointer; that's how the fillet-vs-jtMiter divergence happened) · write/commit bounds (canon is
-off-limits unless stated) · and *surface scope drift, don't absorb it*.
+one-line why · write/commit bounds (canon is off-limits unless stated) · and *surface scope drift, don't
+absorb it*. Plus, and it is the one that keeps failing:
+
+> ### ⛔⛔ NAME **BOTH** READS — THE CANON SECTION *AND* THE CODE SITES. FINDING THEM IS BOZ'S JOB, NOT THE AGENT'S.
+> *(Jacob, 2026-08-11: "the agent needs to read the docs AND code related to the task at hand" — after an
+> agent burned a session on a brief whose premise nobody had confirmed. Now `CLAUDE.md` routing step 2.)*
+> - **The canon section BY NUMBER** — *"read `RIBBONS §1`, the four invariants, and build to that"*. A bare
+>   *"consult RIBBONS"* is not a pointer; that is how the fillet-vs-jtMiter divergence happened.
+> - **The code sites BY `file:line`** — the function that actually does the thing, and the artifact it reads.
+>   ⛔ **A brief that cites only docs hands the agent a MODEL and no way to check it**, so the agent builds on
+>   the framing and the wheels spin. The canon can be wrong (`§2`), and **the code is the fact.**
+> - **The instruction is CONFIRM-THEN-BUILD:** *"read both, tell me what you found, and if the code
+>   contradicts this brief — STOP AND FLAG ME."* ⭐ **The stop is the deliverable, not a failure of the
+>   brief.** The two receipts below are exactly this, caught by the agent rather than by the brief.
 
 > ### ⛔⛔ BEFORE YOU WRITE A GATE INTO A BRIEF, CHECK THE INSTRUMENT'S **INPUT**. *(2026-08-09 — the most expensive brief error of the day, and it would have SHIPPED rather than been caught in conversation.)*
 > A brief demanded *"the A10 number must FALL"* **and** *"nothing re-baked."* **They could not both hold:**
