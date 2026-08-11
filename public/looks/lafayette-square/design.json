@@ -114,7 +114,86 @@
     "bgAlpha": 1,
     "sizeK": 1
   },
-  "blockCustoms": {},
+  "blockCustoms": {
+    "park-avenue-1": {
+      "right": {
+        "0": {
+          "pavementHW": 8.08534241674922,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 8.08534241674922,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "2": {
+          "pavementHW": 11.18690923233322,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 11.18690923233322,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 11.18690923233322,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 11.18690923233322,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "left": {
+        "0": {
+          "pavementHW": 7.2612960770636485,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "1": {
+          "pavementHW": 11.316622187140405,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "2": {
+          "pavementHW": 11.316622187140405,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "3": {
+          "pavementHW": 10.40808738179407,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "4": {
+          "pavementHW": 10.40808738179407,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "5": {
+          "pavementHW": 10.552510244416608,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    }
+  },
   "surveyDefault": null,
   "blockLandUse": {},
   "materialColors": {},
