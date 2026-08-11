@@ -357,6 +357,18 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > misses Kennett on a node-coord mismatch. Canonical complex: **Dolman ↔ West 18th ↔ South 18th**, with
 > Carroll and Kennett.
 >
+> ### ⭐⭐ JACOB NAMED THIS BLOCK AS THE DEFECT, 2026-08-11 — and ruled out everything upstream of it
+> *"It's already correct in the survey tool, so it's only the **corner naming** and the **ribbons reading the
+> labels**."* Said of the Carroll frame, after the severance there was confirmed **real** and the SHAPE layer
+> confirmed **correct**. ⇒ **Frame ✅ · Survey ✅ · curb ✅** — the five predicates above are the site.
+> - ⭐ **This is `A15`'s falsifiable tell, instantiated:** at a dead-end mouth the ring position is
+>   unambiguous and `cornerAt` still mints nothing, because a doubled-back spur's second pass is
+>   `spur → spur` and the predicate needs two **different** streets. **The geometry knew; the label didn't.**
+> - ⛔ **So a dead-end / cul-de-sac symptom does NOT route to the skeleton, to intake, or to a same-name
+>   weld.** An arc on 2026-08-11 took it upstream on all three counts and every one was refused —
+>   `_archive/A0-deadend-history-2026-08-11.md §4`. ⛔ And it is **not** a FILL patch either: clamp, wrap,
+>   re-key and snap were each built and reverted (`§7`, `A10`).
+>
 > ### The cure — honour doctrine 4
 >
 > ⛔ **The FILL-PATCH class is CLOSED — do not clamp, wrap, re-key or snap.** The band-neck clamp, the

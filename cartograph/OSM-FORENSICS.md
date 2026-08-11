@@ -74,7 +74,7 @@ For each situation: ① the real thing · ② how OSM (mis)represents it · ③ 
 | ④ Eliminates | False welds *and* false dead-ends. The brief is explicit: **don't build a split tool** — make the frame *understand* the severance. |
 | ⑤ Resolved by | **Inference** (gap-distance + dead-end typing), operator-confirm for ambiguous cases. |
 
-**Real LS instances** (35 names emit >1 chain). Genuine severances (large endpoint gap): **California Avenue** (2 chains, 74.4 m gap), **St. Vincent Court** (54.5 m), **Truman Parkway** sections, **Carroll Street** (26.9 m), **Eads Avenue** (29.0 m). These are *correct* multi-chain cases. **But** the same list is contaminated by a *different* pathology — see 1.7.
+**Real LS instances** (35 names emit >1 chain). Genuine severances (large endpoint gap): **California Avenue** (2 chains, 74.4 m gap), **St. Vincent Court** (54.5 m), **Truman Parkway** sections, **Carroll Street** (26.9 m), **Eads Avenue** (29.0 m). These are *correct* multi-chain cases. ⭐⭐ **CONFIRMED BY THE OPERATOR 2026-08-11 AND THIS ROW IS NOW A RECEIPT:** Jacob, on Carroll — *"severed by Truman — a cul de sac on one side and butts up to Truman on the other"*, and *"already correct in the survey tool."* ⛔ **`SKELETON §5b-bis` spent two months using Carroll as its worked example of the OPPOSITE (a false dead end needing a weld); this line was right the whole time and nobody routed to it.** ⇒ before proposing any weld, read §1.3 ③–⑤: the cure is to make the frame **understand** the severance (typed endpoints), never to fuse across it. **But** the same list is contaminated by a *different* pathology — see 1.7.
 
 ### 1.4 Name-change along one continuous street  ★ end-to-end stress case
 
