@@ -1642,8 +1642,6 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     const capOwner = new Map()
     const luExtra = []       // authored-shallower band residual along legs → LU
     const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
-    // [A7] legs that may JOIN a corner they must not MINT — keyed by node, drained below.
-    const pendingLegs = new Map()
     let bandRem = fullBand
     // [A10-③] THE PARTITION, IF THIS TILE CARRIES THE STAMP. The spans hand each
     // run its own arcs of the band and each corner its own; together they consume
@@ -1788,10 +1786,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           // ⛔ `noPed` stays excluded and is a different case: that is the RIM (A15,
           // skelId null, 34/34 set-identical with the no-asphalt set), where there
           // genuinely is no curb, so there is no ramp to build against.
-          if (suppressed) {
-            if (!e.noPed) { const a = pendingLegs.get(k); if (a) a.push(leg); else pendingLegs.set(k, [leg]) }
-            return
-          }
+          if (suppressed) return
           const prev = cornerT.get(k)
           if (!prev) cornerT.set(k, { p, T: e.total, trim: legTrim[i], legs: [leg] })
           else { if (e.total > prev.T) prev.T = e.total; if (legTrim[i] > prev.trim) prev.trim = legTrim[i]; prev.legs.push(leg) }
@@ -1990,15 +1985,17 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // corner comes out sidewalk-deep and a TL-adjacent corner full-depth. The
     // arc comes from the FROZEN fillet the curb actually rounded here; a corner
     // with no fillet (R=0 / sharp) has no arc to bend — the legs meet at a miter.
-    // ⭐ [A7] DRAIN THE PENDING LEGS. A corner that another run minted now collects
-    // the legs the five predicates stopped from BIDDING — so Idea A sees two legs
-    // and lays its ramp. ⛔ Only into a corner that already EXISTS: a pending leg
-    // can never mint one, which is exactly A2's protection kept intact.
-    for (const [k, legs] of pendingLegs) {
-      const c = cornerT.get(k)
-      if (!c) continue
-      for (const leg of legs) { if (c.legs.length >= 2) break; c.legs.push(leg) }
-    }
+    // ⛔⛔ [A7] THE DRAIN IS REVERTED — 2026-08-11, on Jacob's eye: "that only ruined
+    // the opposite corner." It poured the suppressed legs into `cornerT.get(k)`, and
+    // ⭐ `cornerT` IS KEYED BY NODE COORDINATE, not by corner. A tile's ring can visit
+    // one node SEVERAL TIMES — LS tile 10 visits Dolman × Carroll at ring indices 6, 8
+    // AND 10 — so three geometrically distinct corners collapse into ONE entry, and
+    // with `legs` capped at 2 a leg from one quadrant takes the slot that shapes
+    // another. The fix made that pre-existing collapse VISIBLE by feeding it more legs.
+    // ⭐⭐ THE REAL DEFECT IS THE KEY: a corner is a RING POSITION, and keying it by the
+    // coordinate two runs happen to share is node-thinking — `A15`'s stink, one level
+    // in. Re-land this only on a per-corner-instance key. *(The `cMin` half below is
+    // independent of all this and STAYS — it is what took `built-empty-concrete` 6 → 0.)*
     const sectorDepth = cw + TLmax + SWmax + 2   // the sector inner clears the band bottom (iW)
     let cornerPad = []
     const cornerTreelawn = []   // corner LU strips (SW↔SW inner) + ramp wedges → tlByLu[lu]
