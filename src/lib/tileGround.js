@@ -1642,6 +1642,8 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     const capOwner = new Map()
     const luExtra = []       // authored-shallower band residual along legs → LU
     const cornerT = new Map()   // corner vertex → { p, T: max-adjacent ped total, trim }
+    // [A7] legs that may JOIN a corner they must not MINT — keyed by node, drained below.
+    const pendingLegs = new Map()
     let bandRem = fullBand
     // [A10-③] THE PARTITION, IF THIS TILE CARRIES THE STAMP. The spans hand each
     // run its own arcs of the band and each corner its own; together they consume
@@ -1765,12 +1767,31 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         // slab must not reach into an arc that is not its own.
         const legTrim = ends.map(([p], i) => (tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) ? 0 : tangentTrim(p, legDirAt(i)))
         ends.forEach(([p, k], i) => {
-          if (e.noPed || tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)) return   // no asphalt / tip / T-continuation / thru-node / name-transition → no corner bid
+          const suppressed = e.noPed || tipped[i] || through[i] || isNameTransition(p, run) || isThruNode(p, run)
           // conD = how deep the ramp CONCRETE runs before LU on this leg: a
           // set-back sidewalk (mat.inner === 'SW', a treelawn-Y leg) → the full
           // total; a curb-side sidewalk (SW leg) → its one strip width.
           const conD = e.mat.inner === 'SW' ? e.total : e.o
           const leg = { dir: legDirAt(i), tlo: tloThis, conD }
+          // ⭐⭐ [A7] ONE FLAG WAS DOING TWO JOBS. These five predicates legitimately
+          // stop an end from MINTING a corner — that is A2's cure for the FALSE
+          // corner a through-run bids against a stem. They were also stopping the
+          // end from being a LEG of a corner some OTHER run minted, which was never
+          // intended and is the defect: the corner then has `legs.length === 1`, so
+          // the whole Idea A block below is skipped — no concentric arc at `cMin`,
+          // and no RAMP sliding the deeper leg's walk to the curb. The missing ramp
+          // IS the hard step the operator sees, and only on the suppressed side.
+          // Measured at Jacob's marked corner (Dolman × Carroll, 2026-08-11):
+          // `dolman-street-1|left|3` and `|4` both suppressed by `through`, both with
+          // `pavementHW 5.49` — a leg dropped where the curb is perfectly good, while
+          // the same corner on the neighbouring tile kept both legs and looked right.
+          // ⛔ `noPed` stays excluded and is a different case: that is the RIM (A15,
+          // skelId null, 34/34 set-identical with the no-asphalt set), where there
+          // genuinely is no curb, so there is no ramp to build against.
+          if (suppressed) {
+            if (!e.noPed) { const a = pendingLegs.get(k); if (a) a.push(leg); else pendingLegs.set(k, [leg]) }
+            return
+          }
           const prev = cornerT.get(k)
           if (!prev) cornerT.set(k, { p, T: e.total, trim: legTrim[i], legs: [leg] })
           else { if (e.total > prev.T) prev.T = e.total; if (legTrim[i] > prev.trim) prev.trim = legTrim[i]; prev.legs.push(leg) }
@@ -1969,6 +1990,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // corner comes out sidewalk-deep and a TL-adjacent corner full-depth. The
     // arc comes from the FROZEN fillet the curb actually rounded here; a corner
     // with no fillet (R=0 / sharp) has no arc to bend — the legs meet at a miter.
+    // ⭐ [A7] DRAIN THE PENDING LEGS. A corner that another run minted now collects
+    // the legs the five predicates stopped from BIDDING — so Idea A sees two legs
+    // and lays its ramp. ⛔ Only into a corner that already EXISTS: a pending leg
+    // can never mint one, which is exactly A2's protection kept intact.
+    for (const [k, legs] of pendingLegs) {
+      const c = cornerT.get(k)
+      if (!c) continue
+      for (const leg of legs) { if (c.legs.length >= 2) break; c.legs.push(leg) }
+    }
     const sectorDepth = cw + TLmax + SWmax + 2   // the sector inner clears the band bottom (iW)
     let cornerPad = []
     const cornerTreelawn = []   // corner LU strips (SW↔SW inner) + ramp wedges → tlByLu[lu]
@@ -2027,7 +2057,17 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const aFirst = dot(c.legs[0].dir, [best.tA[0] - ap[0], best.tA[1] - ap[1]]) >= dot(c.legs[1].dir, [best.tA[0] - ap[0], best.tA[1] - ap[1]])
           const legA = aFirst ? c.legs[0] : c.legs[1]      // the tA leg
           const legB = aFirst ? c.legs[1] : c.legs[0]      // the tB leg
-          const cMin = Math.min(legA.conD, legB.conD)
+          // ⭐⭐ [A7 · JACOB'S RULE, 2026-08-11] "We can build the corner there; ALL LU
+          // only happens if there are no sidewalks from either side." So the depth
+          // vote is taken over the legs that actually CARRY concrete: a leg with no
+          // sidewalk does not drag `cMin` to 0 and paint the whole pad LU — it simply
+          // does not vote. Only when NEITHER leg carries concrete is the pad all-LU.
+          // ⛔ This is a MATERIAL state, never an absence: the mono-width ribbon is
+          // still there at full width on that leg (`SECTION §3.3`, two strips always,
+          // EQUAL width — swap, not collapse). Modelling it as zero depth would encode
+          // an authoring state as missing geometry — `project_a_sentinel_is_not_a_value`.
+          const conc = [legA.conD, legB.conD].filter(d => d > 1e-6)
+          const cMin = conc.length ? Math.min(...conc) : 0
           // concentric ring at cMin → the arc is a constant-offset band
           if (cMin < c.T - 1e-6) {
             const ring = ringAt(cMin)
