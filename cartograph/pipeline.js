@@ -146,7 +146,30 @@ async function main() {
   if (existsSync(nbPath)) {
     const nb = JSON.parse(readFileSync(nbPath, 'utf-8'))
     const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
-    const keepR = (nb.streetFade?.outer ?? nb.radius ?? Infinity) + 30
+    // keepR is a CONTENT extent, and it may never reach INSIDE the hood. Floor it
+    // at the authored disc radius: `streetFade` is a look band, and nothing stops a
+    // scene authoring one NARROWER than its own disc — on which the bare
+    // `streetFade.outer` would clip the neighborhood's own streets. LS is the only
+    // scene whose band isn't radius+160 (1000 vs 892, authored), so no scene reveals
+    // this on its own — a kit defect by construction (`EXTENT-DESIGN §3.3` D4).
+    const fadeOuter = Number.isFinite(nb.streetFade?.outer) ? nb.streetFade.outer : null
+    const discR = Number.isFinite(nb.radius) ? nb.radius : null
+    // ⛔ NO FALLBACK. This used to read `?? Infinity`: a boundary carrying neither
+    // field clipped NOTHING, then printed its kept/dropped line like a clean run —
+    // a silent success inside a KIT step, on the town where nobody has looked
+    // (CLAUDE.md Layer 0, q2). The absent extent is the failure; say so and stop.
+    if (fadeOuter === null && discR === null) {
+      console.error(`
+⛔ ${nbPath}
+   carries neither streetFade.outer nor radius, so the boundary clip has no extent.
+
+   It cannot proceed: clipping to Infinity keeps the entire fetched square and
+   reports success. Author a radius on the scene's boundary, or delete the file
+   to opt this scene out of the clip deliberately.
+`)
+      process.exit(1)
+    }
+    const keepR = Math.max(fadeOuter ?? 0, discR ?? 0) + 30
     const R2 = keepR * keepR
     const touches = (pts) => {
       if (!Array.isArray(pts)) return false
