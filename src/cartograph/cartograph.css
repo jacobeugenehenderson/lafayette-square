@@ -1223,15 +1223,6 @@ input[type="range"]:active { cursor: grabbing; }
   margin-top: 8px;
 }
 
-/* A refusal the operator has to be able to READ. Used where the tool declines to
-   draw something — today the withheld curb handle (a block-edge that owns no arc
-   of the frozen curb). Ghost grey would let it pass as ordinary metadata, and the
-   whole point of the state is that it is not ordinary. */
-.carto-warn {
-  color: var(--carto-warn, #ffb000);
-  line-height: 1.45;
-}
-
 .carto-section-meta {
   font-size: 11px;
   color: var(--carto-text-ghost);

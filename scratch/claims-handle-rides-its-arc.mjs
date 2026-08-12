@@ -6,6 +6,13 @@
 // no owner), so neither overlay can tell its OWN curb from the one across the
 // street — only "how far away was it", which is a tuned distance.
 //
+// ⚠️ THE CURE WAS BUILT AND REVERTED (2026-08-12). Riding the owned arc works —
+// 0 handles off their own arc — but it goes dark on 70 of 304 street-sides,
+// because a block-edge whose tiles carry no `iaEdge` stamp owns no arc. Jacob's
+// eye, on Park Place: "the whole area around it is a mess … both cases: No
+// handles." So the rows below are BOTH open: the ray is still live, and the
+// arc-owned replacement is blocked behind stamp coverage.
+//
 // This check asks the polygon instead. `tile.runs[]` names every arc
 // (skelId · side · segOrd) and `iaEdge` binds every `iA` vertex to the ring edge
 // that produced it, so `ringRunOwners` + `bandSpans` — both already exported and
@@ -41,9 +48,6 @@ const TOL = 0.5          // m — reporting bucket only, never an ownership test
 const STEP = 10          // m — station spacing along each chain
 
 const { buildTileGround, ringRunOwners, bandSpans } = await import(path.join(ROOT, 'src/lib/tileGround.js'))
-// ⭐ THE SHIPPED RESOLVER — the check exercises the code the tool runs, it does
-// not re-implement it. A check that restates its subject cannot catch it drifting.
-const { buildCurbArcs, feArcRecords, arcAnchor } = await import(path.join(ROOT, 'src/cartograph/measureModel.js'))
 
 const rd = (p) => JSON.parse(fs.readFileSync(path.join(ROOT, p), 'utf8'))
 const ribbons = rd(SCENE === 'lafayette-square'
@@ -196,22 +200,6 @@ for (const st of tiles) {
 }
 
 // ── sample stations along every chain, both sides ────────────────────────────
-// what the TOOL now does, built from the same artifact
-const shippedArcs = buildCurbArcs(tiles)
-const feSegOrdsOf = (skelId, side) => shippedArcs.filter(r => r.skelId === skelId && r.side === side).map(r => r.segOrd)
-const onOwnedArc = (a, recs) => recs.some(rec => (rec.arcs || []).some(arc => {
-  for (let i = 0; i < arc.length - 1; i++) {
-    const ax = arc[i][0], az = arc[i][1]
-    const dx = arc[i + 1][0] - ax, dz = arc[i + 1][1] - az
-    const l2 = dx * dx + dz * dz
-    if (l2 < 1e-12) continue
-    const t = Math.max(0, Math.min(1, ((a.x - ax) * dx + (a.z - az) * dz) / l2))
-    if (Math.hypot(a.x - (ax + t * dx), a.z - (az + t * dz)) < 1e-6) return true
-  }
-  return false
-}))
-let placedNew = 0, withheldNew = 0, offOwnArc = 0
-
 let anchors = 0, outsideHood = 0, surveyAccepted = 0, surveyStray = 0, surveyWorst = 0, surveyWorstAt = ''
 let measureNoHit = 0, measureStray = 0, noArc = 0
 const noArcBy = new Map()
@@ -240,16 +228,6 @@ for (const st of ribbons.streets || []) {
       const pavHW = Math.max(0, m[side]?.pavementHW || 0)
       if (pavHW <= 0) continue
       anchors++
-      // ── AFTER: what the tool places now, through the SHIPPED resolver ──────
-      // ⛔ The assertion is MEMBERSHIP, not distance: the anchor must lie ON an
-      // arc this block-edge owns. A wrong-street hit is then not expressible, so
-      // there is no "how far off" left to measure — that is what "by
-      // construction" has to mean or it means nothing.
-      const recs = feArcRecords(shippedArcs, skelId, side, feSegOrdsOf(skelId, side))
-      const placed = arcAnchor(recs, cx, cz)
-      if (placed) { placedNew++; if (!onOwnedArc(placed, recs)) offOwnArc++ }
-      else withheldNew++
-
       // THE ARC: the run of this (skelId, side) whose chain-arclength span
       // contains this station. Containment, not proximity.
       let hit = null
@@ -305,10 +283,6 @@ if (surveyWorst) console.log(`      worst: ${surveyWorst.toFixed(2)} m — ${sur
 console.log(`   ⛔ MEASURE ray (capped at pavHW + curb + 8 m):`)
 console.log(`      no hit in range → SILENT centreline-ruler fallback:  ${measureNoHit}`)
 console.log(`      hit in range but >${TOL} m off its own arc:          ${measureStray}`)
-console.log(`\n   ── AFTER · the shipped resolver (measureModel.buildCurbArcs → feArcRecords → arcAnchor)`)
-console.log(`      handle placed:                                   ${placedNew}  (${pct(placedNew, anchors)})`)
-console.log(`      ⛔ placed OFF an arc its own block-edge owns:     ${offOwnArc}   ← must be 0, by construction`)
-console.log(`      handle WITHHELD (no arc; the panel names why):    ${withheldNew}  (${pct(withheldNew, anchors)})`)
 
 console.log(`\n   ⚠️  stations with no arc: ${noArc} (${pct(noArc, anchors)}) — no handle may be drawn at these.`)
 for (const [k, v] of [...noArcBy.entries()].sort((a, b) => b[1] - a[1])) console.log(`      ${String(v).padStart(5)}  ${k}`)
@@ -323,11 +297,7 @@ if (top.length) console.log(`\n   worst streets (stray stations): ${top.map(([k,
 // street, and averaging hides it. Park Place is the case that taught this.
 {
   const bySideKey = new Map()
-  for (const r of shippedArcs) {
-    const k = `${r.skelId}|${r.side}`
-    if (!bySideKey.has(k)) bySideKey.set(k, false)
-    if (r.arcs.length) bySideKey.set(k, true)
-  }
+  for (const [k, recs] of runsByKey) bySideKey.set(k, recs.some(r => r.arcs.length > 0))
   const allSides = []
   for (const st of ribbons.streets || []) {
     if (st.gradeSeparated || !st.measure) continue
@@ -340,11 +310,13 @@ if (top.length) console.log(`\n   worst streets (stray stations): ${top.map(([k,
   console.log(`         area around it is a mess … both cases: No handles." RED. This row is why.`)
 }
 
-console.log(`\n   ⭐ The BEFORE rows are what the ray did and are kept as the record of the`)
-console.log(`      defect; the tool no longer contains that path.`)
-// ⛔ The gate is the AFTER number. The before-numbers are reported so the fix can
-// be seen, but a non-zero `offOwnArc` is the only thing that can fail this check
-// now — the old ray is gone from the tool.
-if (offOwnArc) { console.error(`   ⛔ RED — ${offOwnArc} handle(s) placed off their own arc.`); process.exit(1) }
-console.log(`   ✅ GREEN — every placed handle sits on an arc its own block-edge owns.\n`)
-process.exit(0)
+console.log(`\n   ⭐ BOTH HALVES ARE LIVE DEFECTS, and they are in tension — that is the state.`)
+console.log(`      The RAY rows are what the tool does today. The DARK-SIDES row is what the`)
+console.log(`      arc-owned cure cost when it was tried (17929e19) and reverted on the eye`)
+console.log(`      (85e894b3, revert 2026-08-12). Curing one by itself re-opens the other:`)
+console.log(`      the arcs cannot be ridden until the stamp covers the carve tiles (A06).`)
+// ⛔ THIS CHECK NO LONGER HAS A GREEN. It measures a defect that is still in the
+// tool (the ray) and the cost of the cure that was tried and reverted (the dark
+// sides). Both numbers are real; neither is fixed. It exits 1 on purpose.
+console.log(`\n   ⇒ ⛔ RED, and open. The ray is still how both overlays place a handle.\n`)
+process.exit(1)

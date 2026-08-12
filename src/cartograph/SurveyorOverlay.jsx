@@ -5,8 +5,7 @@ import useCartographStore from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
 import { innerEdgeMeasure } from './streetProfiles.js'
-import { chainMeasure, findFeForSide, applyKindToMeasure,
-         feArcRecords, arcAnchor, arcWithheldReason } from './measureModel.js'
+import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
@@ -24,18 +23,26 @@ function screenToWorld(clientX, clientY, camera, domElement) {
   return { x: intersectPt.x, z: intersectPt.z }
 }
 
-// ⛔⛔ THE RAY IS GONE (2026-08-11). The asphalt-edge handle used to raycast from
-// the centreline to the flat curb-ring list and sit on the FIRST hit between 0.2
-// and 40 m — no identity filter and no per-street bound at all, so it took
-// whatever curb the ray met, including the far side of the street. Measured on LS
-// with authoring loaded (`node scratch/claims-handle-rides-its-arc.mjs`): 612 of
-// 5533 accepted hits landed >0.5 m off the arc that side owns, worst 340.8 m.
-// Measure's `pavHW + curb + 8` cap would not have saved it either — a tuned
-// distance cannot tell one street's curb from another's.
-//
-// The handle now rides the arc its BLOCK-EDGE owns (`feArcRecords` → `arcAnchor`),
-// identity from the fe's own authoring key, geometry from the frozen partition.
-// No arc ⇒ no handle, and the panel names why.
+// First hit distance of ray O+t·D (D unit) against the edges of a set of rings,
+// t>eps. Used to anchor the asphalt-edge handle ON the achieved curb ("one
+// geometry truth"), so it can't drift from a per-segment measure value.
+function rayHitRings(O, D, rings) {
+  let best = Infinity
+  for (const ring of rings || []) {
+    if (!ring || ring.length < 2) continue
+    for (let i = 0; i < ring.length; i++) {
+      const A = ring[i], B = ring[(i + 1) % ring.length]
+      const ex = B[0] - A[0], ez = B[1] - A[1]
+      const den = ex * D[1] - ez * D[0]
+      if (Math.abs(den) < 1e-12) continue
+      const wx = A[0] - O[0], wz = A[1] - O[1]
+      const t = (ex * wz - ez * wx) / den          // distance along the ray
+      const s = (D[0] * wz - D[1] * wx) / den       // param along the segment
+      if (t > 1e-3 && s >= -1e-9 && s <= 1 + 1e-9 && t < best) best = t
+    }
+  }
+  return best
+}
 
 function distToPolyline(pts, px, pz) {
   let best = Infinity
@@ -159,7 +166,7 @@ export default function SurveyorOverlay() {
   const selectedMeasurePoint = useCartographStore(s => s.selectedMeasurePoint)
   const blockCustoms = useCartographStore(s => s.blockCustoms)
   const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
-  const sectionCurbArcs = useCartographStore(s => s.sectionCurbArcs)
+  const sectionCurbRings = useCartographStore(s => s.sectionCurbRings)
 
   // Coord-match IX identity per chain — shared with the tile per-fe resolution +
   // the walker, so a per-block write resolves the same segOrd the tile reads.
@@ -217,37 +224,22 @@ export default function SurveyorOverlay() {
       },
       st.anchor === 'inner-edge' ? st.innerSign : 0
     )
+    const ax = -nz, az = nx
+    const rotY = Math.atan2(ax, az)
     const handles = []
-    const withheld = []
-    const skelKey = st.skelId || st.name || null
-    const anchorPt = mp || { x: cx, z: cz }
-    for (const [sideKey, fe] of [['left', feL], ['right', feR]]) {
+    for (const [sideKey, sign] of [['left', -1], ['right', +1]]) {
       const meas = measure[sideKey]?.pavementHW || 0
       if (meas <= 0) continue   // median-facing inner edge has no curb to drag
-      // ⭐ Sit ON the arc this block-edge owns, oriented by THAT ARC's tangent.
-      // The asphalt edge IS the arc (`iA` is the inner-asphalt line), so the
-      // handle takes the arc point itself — no offset, no ruler, no cap.
-      const recs = feArcRecords(sectionCurbArcs, skelKey, sideKey, fe?.segOrds)
-      const a = arcAnchor(recs, anchorPt.x, anchorPt.z)
-      if (!a) { withheld.push({ side: sideKey, why: arcWithheldReason(recs) }); continue }
-      handles.push({
-        side: sideKey,
-        r: Math.hypot(a.x - cx, a.z - cz),
-        x: a.x, z: a.z,
-        rotY: Math.atan2(a.tx, a.tz),
-        tanX: a.tx, tanZ: a.tz, nrmX: a.nx, nrmZ: a.nz,
-      })
+      // Ride the achieved CURB: raycast from the anchor along this side's normal
+      // to the curb rings and sit ON the first hit, so the handle is on the
+      // rendered curb edge (one geometry truth) and a drag visibly pulls it. The
+      // measure value is a fallback (curb not published yet / a stray no-hit).
+      const hit = rayHitRings([cx, cz], [sign * nx, sign * nz], sectionCurbRings)
+      const hw = (Number.isFinite(hit) && hit > 0.2 && hit < 40) ? hit : meas
+      handles.push({ side: sideKey, r: hw, x: cx + sign * nx * hw, z: cz + sign * nz * hw, rotY })
     }
-    // ⛔ chain frame not exported — see MeasureOverlay's note.
-    return { streetIdx: selectedStreet, ordinal, handles, withheld }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, v2FrontageEdges, ixByChain, sectionCurbArcs])
-
-  // ⭐ A WITHHELD HANDLE SAYS SO — same rule as Section's. No arc, no handle, and
-  // the panel names the reason rather than leaving a hole the operator has to
-  // guess at.
-  useEffect(() => {
-    useCartographStore.getState().setCurbArcWithheld(asphaltHandles?.withheld || [])
-  }, [asphaltHandles])
+    return { streetIdx: selectedStreet, ordinal, mid: { cx, cz, nx, nz }, handles }
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, v2FrontageEdges, ixByChain, sectionCurbRings])
 
   // rAF-throttle the asphalt-edge drag write — each write rebuilds the whole
   // tile mesh, far heavier than one frame. Buffer the latest, flush ≤1×/frame;
@@ -345,11 +337,11 @@ export default function SurveyorOverlay() {
     // long axis along street, short axis across). On a revert-click, revert that
     // handle's fe instead of grabbing it.
     if (asphaltHandles) {
-      // each handle in ITS OWN frame (along its arc / its inward normal), not the
-      // chain's — the same error as placing it there
+      const ax = -asphaltHandles.mid.nz, az = asphaltHandles.mid.nx
+      const nx = asphaltHandles.mid.nx, nz = asphaltHandles.mid.nz
       for (const h of asphaltHandles.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
-        if (Math.abs(dx * h.tanX + dz * h.tanZ) < HANDLE_LONG / 2 && Math.abs(dx * h.nrmX + dz * h.nrmZ) < HANDLE_SHORT / 2) {
+        if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
           if (isRevert) { revertAsphaltHandle(asphaltHandles.streetIdx, h.side); e.preventDefault(); e.stopPropagation(); return }
           dragRef.current = { streetIdx: asphaltHandles.streetIdx, side: h.side }
           e.stopPropagation()
@@ -422,9 +414,11 @@ export default function SurveyorOverlay() {
     const lineThresh = 8 / (camera.zoom || 1)
     let hit = false
     if (asphaltHandles) {
+      const ax = -asphaltHandles.mid.nz, az = asphaltHandles.mid.nx
+      const nx = asphaltHandles.mid.nx, nz = asphaltHandles.mid.nz
       for (const h of asphaltHandles.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
-        if (Math.abs(dx * h.tanX + dz * h.tanZ) < HANDLE_LONG / 2 && Math.abs(dx * h.nrmX + dz * h.nrmZ) < HANDLE_SHORT / 2) { hit = true; break }
+        if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) { hit = true; break }
       }
     }
     if (!hit && selectedStreet !== null) {
