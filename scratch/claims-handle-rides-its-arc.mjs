@@ -316,6 +316,30 @@ const gaps = [...noArcBy.entries()].filter(([k]) => k.startsWith('⛔')).reduce(
 console.log(`      ⇒ ${gaps} (${pct(gaps, anchors)}) unexplained; the rest own none by construction.`)
 const top = [...strayByStreet.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8)
 if (top.length) console.log(`\n   worst streets (stray stations): ${top.map(([k, v]) => `${k} ${v}`).join(' · ')}`)
+// ⛔⛔ THE NUMBER THE EYE ACTUALLY CARES ABOUT, and the one this check did not
+// report until the eye gate failed: not "what fraction of stations", but HOW MANY
+// STREET-SIDES LOSE THEIR HANDLE ENTIRELY. A side that is 90% covered still feels
+// fine to author; a side with NO handle anywhere on it is a dead tool for that
+// street, and averaging hides it. Park Place is the case that taught this.
+{
+  const bySideKey = new Map()
+  for (const r of shippedArcs) {
+    const k = `${r.skelId}|${r.side}`
+    if (!bySideKey.has(k)) bySideKey.set(k, false)
+    if (r.arcs.length) bySideKey.set(k, true)
+  }
+  const allSides = []
+  for (const st of ribbons.streets || []) {
+    if (st.gradeSeparated || !st.measure) continue
+    for (const side of ['left', 'right']) if (st.measure[side]?.pavementHW > 0) allSides.push(`${st.skelId || st.name}|${side}`)
+  }
+  const darkSides = allSides.filter(k => !bySideKey.get(k))
+  console.log(`\n   ⛔ STREET-SIDES WITH NO HANDLE ANYWHERE ON THEM: ${darkSides.length} of ${allSides.length}  (${pct(darkSides.length, allSides.length)})`)
+  console.log(`      ${darkSides.slice(0, 10).join(' · ')}${darkSides.length > 10 ? ` … +${darkSides.length - 10}` : ''}`)
+  console.log(`      ⭐ EYE GATE, lafayette-square, 2026-08-12 — Jacob: "Park place and the whole`)
+  console.log(`         area around it is a mess … both cases: No handles." RED. This row is why.`)
+}
+
 console.log(`\n   ⭐ The BEFORE rows are what the ray did and are kept as the record of the`)
 console.log(`      defect; the tool no longer contains that path.`)
 // ⛔ The gate is the AFTER number. The before-numbers are reported so the fix can

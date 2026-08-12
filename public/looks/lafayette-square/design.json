@@ -12,10 +12,10 @@
     "building": false,
     "parking_lot": false,
     "garden": false,
-    "playground": true,
+    "playground": false,
     "swimming_pool": true,
     "pitch": false,
-    "sports_centre": true,
+    "sports_centre": false,
     "wood": false,
     "scrub": false,
     "tree_row": false,
@@ -190,6 +190,160 @@
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
+        }
+      }
+    },
+    "dolman-street-1": {
+      "left": {
+        "4": {
+          "pavementHW": 5.49,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "kennett-place": {
+      "right": {
+        "0": {
+          "pavementHW": 4.69,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "rutger-street-1": {
+      "right": {
+        "1": {
+          "pavementHW": 5.07,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      },
+      "left": {
+        "1": {
+          "pavementHW": 4.94,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "carroll-street-0": {
+      "left": {
+        "-2": {
+          "capFlip": true
+        }
+      }
+    },
+    "mississippi-avenue": {
+      "left": {
+        "6": {
+          "pavementHW": 8.746772561143649,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 8.646339266637895,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "8": {
+          "pavementHW": 8.646339266637895,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "9": {
+          "pavementHW": 4.077373504658231,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "10": {
+          "pavementHW": 4.077373504658231,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      },
+      "right": {
+        "6": {
+          "pavementHW": 11.4386233527224,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 11.4386233527224,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "8": {
+          "pavementHW": 11.4386233527224,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "lafayette-avenue-5": {
+      "right": {
+        "0": {
+          "pavementHW": 2.4024653253374093,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "saint-vincent-avenue-2": {
+      "right": {
+        "0": {
+          "pavementHW": 5.639136499334435,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        }
+      }
+    },
+    "south-18th-street-3": {
+      "left": {
+        "6": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "7": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "-2": {
+          "capFlip": true
         }
       }
     }
@@ -874,7 +1028,7 @@
   },
   "openSections": {
     "Streets": false,
-    "Blocks": false,
+    "Blocks": true,
     "Paths": false,
     "Features": false,
     "Labels": false,
