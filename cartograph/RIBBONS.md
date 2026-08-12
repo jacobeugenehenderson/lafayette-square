@@ -97,11 +97,154 @@
 > the standing removal-queue discipline is `SHOW-BIBLE §4`. ⛔ A retirement list written later is a
 > retirement list that never runs — this one was written at the moment of the decision on purpose.
 >
-> ### ⛔ PRE-BUILD GATES — none of these is optional, and the first move is NOT a build
-> 1. **`~115 vs 101` is unexplained** — the punch-out spike yields ~115 block rings against today's 101,
->    and `HANDOFF §C2` says it *"must be explained before any build."* Not overridden here.
-> 2. **The retrace × severed overlap is unmeasured** — do the 21 retracing tiles and the 39 severed bands
->    coincide? That decides whether this closes the acceptance gate or an adjacent one.
+> ### ⛔ THE FOUR GATES — and ⭐⭐ ONLY ONE OF THEM SHAPES THE BUILD. THE OTHER THREE JUDGE IT.
+> *(Corrected 2026-08-12, hours after it was written: this block first said "none of these is optional,
+> and the first move is NOT a build." **That sentence converts a calibration into a stop sign** and it
+> stalls the work for nothing. ⛔ Do not restore it. `1` informs the build's shape and can run
+> ALONGSIDE it; `2–4` govern how the result is JUDGED and cannot block starting. **The slit is real in
+> the frozen artifact — closing it is correct whatever these return.**)*
+> 1. ✅ **RECONCILED 2026-08-12 (agent Quire) — `node scratch/reconcile-punchout-vs-faces.mjs`. ⛔ "~115"
+>    was itself wrong** (the 4th number in that lineage): under the spike's own settings the compound path
+>    closes to **121 = 1 outer + 5 holes + 108 islands + 7 slivers**, so the block count is **108**.
+>    **And the comparison was not apples-to-apples in two ways that pull opposite directions** — the spike
+>    punches with all 209 streets **including the 57 `gradeSeparated`** (which `tileGround.js:2618`
+>    excludes from the face graph, Δ **29 islands**, shattering `frozen[12]` into 12 pieces), and it uses
+>    a stencil scaled **×1.1771** where `derive.js` freezes against the **raw boundary** (Δ **14**).
+>    - **Apples-to-apples (grade-sep excluded, raw boundary, authoring loaded): 93 islands ↔ 101 tiles,
+>      a CLEAN INJECTION — 0 merges, 0 splits, 0 straddlers.** ⭐ The punch-out reproduces the face
+>      topology; it does not re-topologise the map.
+>    - **The 8 tiles with no island are ONE class, not eight:** narrow gores whose width is less than the
+>      sum of the two facing `pavementHW` — **the two carriageways' asphalt overlaps and annihilates the
+>      land between them** (8/8; the 8 narrowest tiles, 2.39–7.48 m).
+>    - ⛔⛔ **THIS KILLS AND INVERTS THE MEDIAN HYPOTHESIS** (`HANDOFF §4.1`: *"divided medians become
+>      leftover islands, probably MORE correct"*). **Measured: the punch-out ERASES 6 of 30 `isMedian`
+>      tiles and shrinks the survivors to 0.06–0.90 of frozen area (median 0.41)**, where ordinary blocks
+>      shrink to 0.83 — and that 0.83 is *correct* (curb-to-curb vs centreline-to-centreline; the
+>      333,193 m² delta is the road footprint).
+>
+> ### ⭐⭐⭐ AND THIS IS WHY THE RULING SAYS **WALKED**, NOT BOOLEAN — now MEASURED, not argued
+> > **A union cannot represent overlap as anything but ABSENCE.** Two carriageways whose strokes overlap
+> > produce one merged blob and the land between them **ceases to exist — no ring, no warning, no record
+> > that anything was there.**
+>
+> ⭐ **A directed side-chain walk cannot reproduce that**: the median's two bounding edges are one directed
+> side-chain each, and the face between them is emitted from two half-edges **whether or not they cross**.
+> If authored widths genuinely push them past each other the walk yields a self-intersecting / negative-area
+> face — **a LOUD failure at a named `(skelId, side)` pair.** The boolean yields silence.
+> ⛔⛔ **That is `CLAUDE.md` Layer 0 q2 committed by the substrate itself**, and it lands on **32 tiles**
+> that are most likely the operator's authored `pavementHW` — i.e. **the boolean's response to authoring it
+> dislikes is to DELETE the polygon.** ⇒ *"divided is separation 0 vs N"* is exactly the property that
+> makes the class vanish: **at the lane-edge datum there is no double-stroke to overlap.**
+> *(Also boolean-only, and a walk produces neither: 5 co-linear slivers ≤1 m², and 4 enclosed holes of
+> 4.5–35 m² sitting 1.4–4.0 m from degree-1 tips — the same rings the tip-coupler build aims at. Hole
+> mechanism NOT established.)*
+>
+> ### ✅ TIGHT vs LOOSE — SETTLED. It is **LOOSE**, and TIGHT is not a variant.
+> V2 **structurally cannot** produce TIGHT (its only ring set is `entry.asphaltRings`; there is no
+> ribbon-outer union in the file). And at real LS ped depths (~6 m/side) TIGHT **destroys a third of the
+> block set and starts splitting blocks LOOSE keeps whole**. ⭐ TIGHT is also the **wrong cut under this
+> ruling**: the datum is the left edge of the right lane — **the asphalt edge, not the sidewalk edge.**
+> *(Closes `HANDOFF §C2`'s "confirm which variant" question.)*
+>
+> ### ⚠️ THE OUTER POLYGON IS NOW A DECISION JACOB OWES — it is structural, not cosmetic
+> **(a) raw `neighborhood_boundary.json`** (what `derive.js:4632-4648` already freezes against;
+> 2,499,401 m²) → **93 islands, clean**, every rim block closing against the boundary with `__boundary__`
+> identity available by construction. **(b) `streetFade.outer + 50`** (the spike, `CartographApp.jsx:669`,
+> `bake-ground.js:992`; 3,463,258 m²) → **79 islands, badly**; 31 frozen perimeter tiles have no
+> counterpart, merging into a road-free annulus. ⛔ **`streetFade` is a RENDER parameter** (a shader fade,
+> `BakedGround.jsx:117`) — adopting (b) lets **a look knob decide block topology at the rim.**
+> `ORIENTATION`'s *"the inclusion polygon DECIDES, the disc RENDERS"* points at (a). ⚠️ **(a)'s cost, to
+> accept deliberately: with the raw boundary the roads cut the rim, so there is NO single outer contour —
+> the boundary stops being an "outer ring" and becomes just another set of ring edges.** ⭐ A **third
+> option nobody has costed**: the inclusion polygon from `design.json`. **Not decided.**
+>
+> ### ⭐⭐⭐ THE RIM IS A SECOND UNOWNED CLASS, AND IT IS 4× THE DEAD-END ONE (2026-08-12)
+> **DECIDED (Jacob): Slice 2 takes the outer ring as an ARGUMENT — ⛔ never a reach into
+> `neighborhood_boundary.json`.** Today `derive.js:4632-4648` closes the faces against that file's
+> `boundary[256]`, and **`EXTENT-DESIGN §5.1` says that artifact welds THREE JOBS** — the render disc
+> (`center`,`radius`,`boundary[256]`,`fade`,`streetFade`), the membership polygon, and the exclusions —
+> with `makeCircleBoundary` **regenerating the disc fields from hardcoded constants on every
+> commit/rescope** (the same mechanism that clobbers LS's authored `center:[-15,-15]`).
+> ⛔ **So the substrate today closes against the DISC — the thing `ORIENTATION` says must only RENDER,
+> never DECIDE.** The Extent-authored shape is `polygon`, and **LS HAS NONE** (HPDM 4 · centrum 815 ·
+> LS/ksi/altadena absent). ⇒ Taking it as an argument keeps the swap to the authored polygon a one-line
+> change on any town the day `EXTENT-DESIGN §5.1`'s schema split lands (**worklist item 1, "no
+> dependency, unblocks the rest"**) — without pulling LS's plumbing forward against `ROADMAP`'s ordering.
+>
+> ⭐⭐ **AND THE STRUCTURAL FINDING (Jacob: *"we didn't then know we were going to HAVE that boundary edge
+> to pull from"*).** Extent produced a disc for **rendering + membership**; the 2026-08-08 compound-path
+> ruling then promoted the rim to **an edge of the drawing, never an absence** — and `derive.js` had to
+> **invent an owner** to make the perimeter faces close. Nobody told Extent it now supplies structural
+> geometry. **Measured on LS:**
+> ```
+> tiles with a __boundary__ edge   31 of 101
+> __boundary__ ring edges          290
+> side value                       'right' × 290   (a CONSTANT filler, not a real side)
+> __boundary__ in ribbons.streets  NO — synthetic id, no chain behind it
+> ```
+> ⛔⛔ **Under this ruling every ring edge is owned by exactly one `(skelId, side)` directed side-chain.
+> THE RIM HAS NO CHAIN.** So the walked substrate has a **second genuinely-new piece**: a rim owner /
+> rim coupler, **290 edges — 4× the dead-end class's 67.** ⭐ This is `A15`'s already-logged *"rim (no
+> `skelId`, 34/34)"* failure class, re-measured at its true size.
+> ⚠️ **Live risk regardless of the ruling: a look-side regeneration of the disc silently moves 31 tiles'
+> ring edges**, because a render artifact is load-bearing geometry and nothing says so.
+>
+> ### Dead-end notches change SHAPE, not COUNT — ⛔ on LS, and do not carry it as a law
+> 0 cap-tiles are split into more than one island; a punched spur is a **concavity**, adding vertices not
+> rings. It *would* change the count if a spur reached clean across a block, which does not happen on LS.
+> ⭐ **That is a property of this map, not of the construction** — the check that generalises is
+> islands → dominant frozen tile, flagging any tile dominant for more than one island.
+> 2. ✅ **MEASURED 2026-08-12 — the ruling is CORRECT and NOT SUFFICIENT.** `node
+>    scratch/overlap-retrace-x-severed.mjs --lists` (banded tiles only):
+>    ```
+>                  retrace   no retrace   total
+>    severed          15          24        39
+>    not severed       4          24        28
+>    ```
+>    ⭐⭐ **24 of 39 severed tiles retrace NOTHING** ⇒ closing the dead-end class touches **at most 15 of
+>    39**, and there is a second, larger cause of severance. ⛔ **15 is a CEILING, not a forecast — the
+>    table contains its own disproof: 4 tiles retrace and do NOT sever**, so retrace alone does not cause
+>    severance. Retracing tiles sever more often (15/19 = 79% vs 24/48 = 50%) — suggestive, nothing more.
+>    **Cause not established for any of the 15.**
+>    - **"Dead-end tile" and "retracing tile" are the same 21 tiles** — `ribbons.tiles[].caps` is present
+>      on exactly 21 tiles (50 cap records), set-identical member-for-member to the retrace set.
+>    - **Severance is an OFFSET-producer phenomenon** — 37 of 39; but so is the banded population
+>      (59 of 61 offset tiles are banded, 34 of 42 carve tiles have no band). As a share of banded:
+>      offset 37/59 = 63%, carve 2/8 = 25%. ⛔ Small carve denominator — do not lean on the contrast.
+>    - ⛔ **The two artifacts' rings are BIT-IDENTICAL** (`shape.json` carries the frozen `ribbons` ring
+>      through unchanged); the join is 1:1 and total at 101↔101. *(A brief asserted they were differently
+>      ordered. False for this scene — but do not assume it holds after a re-pour or on another town.)*
+>    - ⛔⛔ **THE 39 MEASURES THE WRONG PROPERTY — verified 2026-08-12 (agent Rung,
+>      `node scratch/bandgate-parameterisation.mjs`).** The **parameters are the producer's** (`0.381` IS
+>      LS's authored `curbWidth`; `{outer:'LU', inner:'SW'}` IS the real default; substituting the live
+>      values yields the **identical severed set**). ⭐ **But the invariant is stated as *"a continuous
+>      strip around every block"* — CONNECTIVITY — while the predicate is *"count of positive-area rings
+>      in a Clipper union"* — TOPOLOGY.** A zero-width point contact violates the predicate while the paint
+>      is continuous. `SEVERED` is documented *"exact, no threshold"*; it is **exact about the wrong
+>      quantity for 35 of the 39** (`POLYGON-FIRST §5` **RULE 1b**).
+>      ```
+>      severed                                    39
+>        materially separated (>1 µm)              4   (1.26 / 2.61 / 3.16 / 6.38 m)
+>        touching at 0.000                        35
+>          point pinch (<1 cm border)             23
+>          sharing a real border up to 3.0 m      16   ← two rings from a ≤1 µm contact. CAUSE NOT ESTABLISHED.
+>      ```
+>      ⭐ **THREE NUMBERS, NOT A CONTRADICTION — they measure different defects:** union rings **39** ·
+>      materially separated **4** (Rung) · tiles with an unpainted band arc >0.5 m **14** (Quill,
+>      `sever24-taxonomy.mjs`). A tile can touch at 0.000 somewhere *and* have a 222 m unpainted stretch
+>      elsewhere. ⛔ **The two agents never reconciled their criteria and said so — do not merge the counts.**
+>      ⚠️ **RULING OWED (Jacob's eye, not an agent): what does "continuous" mean?** Look at one point-pinch
+>      tile and one material-hole tile. If a pinch reads unbroken, the acceptance predicate is *unpainted
+>      arc* (≈14) and this gate gets rewritten; if it reads broken, 39 stands.
+>      **"39" and "4" cannot both be the acceptance number.**
+>    - ⛔ **KIT DEFECT IN THE INSTRUMENT, separate and small: `curbWidth` is a LITERAL `0.381`.** A scene
+>      whose operator has not authored one gets `CURB_WIDTH = 0.1524` ⇒ **33 severed, 20 tiles changing
+>      class.** On town #2 it measures a curb the producer never poured — Check A's blindness, recurring.
+>    - ⚠️ **The live render and the bake disagree on `blockCustoms`** — the Designer expands a split fe's
+>      custom across its segOrds (`feCustomKey.js:107-138`), the bake does not. Bounded at **zero effect on
+>      LS's 39**; unmeasured elsewhere. Own ticket.
+>    - ✅ Not the problem, tested and excluded: per-tile vs global union (all 39 stay in different global
+>      components, and the stencil clip is an intersect — it can only cut, never join).
 > 3. **Do not regress the June render.** `tileGround.js:620-627` records dead-end pendants as deliberately
 >    unpruned because the render is *"verified clean map-wide."* June measured the RENDER; July measured
 >    AUTHORING/IDENTITY. **Both are true.** State which layer you are claiming.
@@ -310,7 +453,7 @@ Per-run cross-section override authored in Survey/Section, keyed by the **frozen
 
 ### 3.2 Tiles — `extractFaces` (`:508`)
 
-Builds the planar graph from shared vertices of `streets[].points` (excludes `gradeSeparated`), welds near-coincident endpoints (`ENDPOINT_SNAP`), walks the enclosed faces. Output: the tiles, each carrying its bounding-street edges (skelId/side per edge). Loop interiors emerge as faces (→ median, `LOOP-STREETS.md`); the outer/perimeter face is included so exterior streets get asphalt (G9).
+Builds the planar graph from shared vertices of `streets[].points` (excludes `gradeSeparated`), welds near-coincident endpoints (`ENDPOINT_SNAP`), walks the enclosed faces. Output: the tiles, each carrying its bounding-street edges (skelId/side per edge). Loop interiors emerge as faces (→ median, `LOOP-STREETS.md`). ⛔ **CORRECTED 2026-08-12 — "the outer/perimeter face is INCLUDED so exterior streets get asphalt (G9)" is FALSE, and `PIPELINE §Wall` carries the same false sentence.** `tileGround.js:984` drops **every** non-positive-area face, the outer face included (its only filter is `signedArea > 1e-3`). **What actually happens:** `derive.js:4632-4648` clips the face-streets to the boundary and **injects the boundary ring as closing edges** (`skelId: '__boundary__'`), so the perimeter faces close into real bounded tiles — **31 of the 101 carry a `__boundary__` edge.** ⭐ The mechanism matters: it is exactly what the punch-out reproduces for free against the raw boundary (§1's outer-polygon note).
 
 ### 3.3 The curb SHAPE — `offsetRingVariable` + `filletRing`
 
