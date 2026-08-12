@@ -4329,7 +4329,7 @@ export function deriveLayers(highways) {
     // of a leg is measure-RIGHT iff the leg points along point order.
     // PRESENT-but-not-yet-consumed: the fillet-identity gate flips on these
     // once the through-node construction is blessed.
-    let adjacentPairs = 0
+    let adjacentPairs = 0, capCouplers = 0
     for (const n of jnodes.values()) {
       const dirs = []
       for (const { s, end } of endsAt.get(n.key) || []) {
@@ -4347,6 +4347,29 @@ export function deriveLayers(highways) {
         const back = norm(p[vi - 1][0] - p[vi][0], p[vi - 1][1] - p[vi][1])
         dirs.push({ chain: s.skelId, end: 'through', half: 'fwd', u: fwd, alongPO: true })
         dirs.push({ chain: s.skelId, end: 'through', half: 'back', u: back, alongPO: false })
+      }
+      // ⭐ THE DEAD-END TIP — THE CAP *IS* A COUPLER (RIBBONS §1 ruling, 2026-08-12).
+      // A degree-1 node has ONE arm, so the CCW sweep below wraps that arm onto
+      // itself and the same-arm guard drops the pair — which is exactly why the
+      // relation was absent at every tip while complete at every T and cross. The
+      // wrap is not degenerate: it IS the cap, and under the very same convention
+      // it couples the arm's two SIDE-CHAINS around the spike (the CCW side hands
+      // off to the CW side of the same chain-end). Emitted here so the coupler
+      // relation is TOTAL — every directed side-chain has a successor at every
+      // node it touches, which is what a half-edge walk requires.
+      // `via:'cap'` is LOUD ON PURPOSE: a consumer that fillets a pair of distinct
+      // legs must not silently fillet this one. a.chain===b.chain && a.end===b.end
+      // says the same thing structurally; the tag says it without inference.
+      if (dirs.length === 1) {
+        const A = dirs[0]
+        n.cornersAdjacent = [{
+          a: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'right' : 'left' },
+          b: { chain: A.chain, end: A.end, ...(A.half ? { half: A.half } : {}), side: A.alongPO ? 'left' : 'right' },
+          via: 'cap',
+        }]
+        adjacentPairs++
+        capCouplers++
+        continue
       }
       if (dirs.length < 3) continue
       dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
@@ -4416,7 +4439,31 @@ export function deriveLayers(highways) {
     const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
     console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
     console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips`)
-    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs`)
+    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs (${capCouplers} of them dead-end CAP couplers)`)
+    // ⛔ LOUD, BY NAME. The coupler relation can only be total over the nodes that
+    // EXIST. A degree-1 vertex only becomes a node if some source above claimed it,
+    // and the only tip source is Source 6, gated on |left − right| pavement half-width
+    // ≥ 0.5 m — a WIDTH-STEP test standing in for a TIP test (POLYGON-FIRST §2.1,
+    // and on RIBBONS §1's retirement list). A symmetric dead end therefore gets no
+    // node and no coupler. Print the gap rather than let it read as coverage.
+    {
+      const vDeg = new Map()   // GEOMETRIC degree — endpoint 1, interior 2 (tileGround `nodeDeg`)
+      for (const s of ribbonStreets) {
+        if (!curbed(s)) continue
+        const p = s.points
+        for (let i = 0; i < p.length; i++) {
+          const k = vKey(p[i])
+          vDeg.set(k, (vDeg.get(k) || 0) + ((i === 0 || i === p.length - 1) ? 1 : 2))
+        }
+      }
+      let tipVerts = 0, tipNoNode = 0
+      for (const [k, v] of vDeg) {
+        if (v !== 1) continue
+        tipVerts++
+        if (!jnodes.has(k)) tipNoNode++
+      }
+      if (tipNoNode) console.log(`    [E3.1]   ⛔ ${tipNoNode} of ${tipVerts} degree-1 tip vertices carry NO junction node — no cap coupler is emitted there (Source 6's |L−R| ≥ 0.5 m width-step gate; a symmetric dead end is invisible to it)`)
+    }
     if (unpaired.length) console.log(`    [E3.1]   unpaired: ${unpaired.map(u => `${u.chains.join('+')}@${u.key} (${u.reason})`).join('; ')}`)
     return { nodes, unpaired }
   })()
