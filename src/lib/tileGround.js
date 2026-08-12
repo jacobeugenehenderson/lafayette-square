@@ -3879,10 +3879,28 @@ export function buildTileGround(ribbons, opts = {}) {
     // bulb that shares a megatile with the grid leaves the grid SHAPE untouched.
     let _cdKeyhole = false
     const _cdDisks = []
+    // [A10-③ · THE DISC KNOWS WHOSE IT IS] Each disc is created BY a run — it exists
+    // because `culDeSacLoops` has an entry for THAT run's street. So ground the splice
+    // mints inside it is not ownerless: it belongs to the run that produced the disc.
+    // ⭐ That is PROVENANCE, not proximity — the forbidden recovery is asking "which
+    // chain is nearest this point"; this asks "which run caused this circle to exist",
+    // which the construction already knows. Canon agrees the bulb is undivided: "THE
+    // BULB HAS NO HALVES — it is one continuous semicircle carrying ONE cross-section"
+    // (SECTION §6.3, Jacob 2026-07-22). Carried as a `tile.ring` VERTEX INDEX because
+    // that is what `_iaLabels` speaks; `poly[0]` is a reference INTO `ring`
+    // (`groupRuns` pushes ring elements, never copies), so `indexOf` is exact identity,
+    // not a coordinate compare.
+    const _cdOwner = []
     if (opts.culDeSacKeyhole !== false && aFill.length && !isMedianTile) {
       for (const run of runs) {
         const lc = culDeSacLoops.get(run.streetIdx)
-        if (lc) { _cdKeyhole = true; _cdDisks.push(circlePoly(lc.C[0], lc.C[1], lc.R + 9, 64)) }
+        if (lc) {
+          _cdKeyhole = true
+          const disk = circlePoly(lc.C[0], lc.C[1], lc.R + 9, 64)
+          _cdDisks.push(disk)
+          const ringIdx = tile.ring.indexOf(run.poly[0])
+          if (ringIdx >= 0) _cdOwner.push({ disk, ringIdx })
+        }
       }
     }
     const legacyBlock = () => differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
@@ -3991,8 +4009,43 @@ export function buildTileGround(ribbons, opts = {}) {
           }
           _iaLabels = spliced.map(r => r.map(p => {
             const v = srcByKey.get(`${p[0]},${p[1]}`)
-            return Number.isInteger(v) ? v : null      // null = no owner, not a value
+            if (Number.isInteger(v)) return v
+            // MINTED BY THE SPLICE. Measured 2026-08-11 (`claims-label-loss-bisect`):
+            // 86 of 102 such vertices lie INSIDE a keyhole mask, and refusing them
+            // cost 137 m of curb on LS that no owner ever paints — the band falls to
+            // `luRemainder` and the operator sees the walk cut to the curb by grass.
+            // The mask was created BY a run, so this ground has an owner: give it that
+            // run's ring index. ⛔ Still no proximity: containment in the mask that
+            // caused this geometry to exist, not distance to the nearest anything.
+            for (const o of _cdOwner) if (pointInRing(p[0], p[1], o.disk)) return o.ringIdx
+            return null      // outside every mask — resolved by ring adjacency below
           }))
+          // [THE CLIP SEAM] What is left is the handful of vertices the boolean put
+          // ON the mask circle, where the spliced ring crosses from the untouched ring
+          // to the keyhole. Measured: 0.05 mm – 19 mm off the circle, so a containment
+          // test cannot decide them. ⛔ AND MUST NOT BE MADE TO — "a mask-boundary
+          // proximity test to rescue near-misses is the forbidden recovery"; a tolerance
+          // here is the tuned distance this whole campaign exists to remove.
+          // ⭐ Resolve it in the RING instead of in space. A label is a per-EDGE fact:
+          // it says which source edge the arc arriving at this vertex belongs to. A seam
+          // vertex is the far end of an edge whose near end is owned, so it takes its
+          // ring PREDECESSOR's label — the arc runs under one owner up to the seam, and
+          // the next vertex (inside the mask) opens the mask owner's arc. One clean
+          // ownership change at the seam, which is what the geometry actually does.
+          // ⛔ Adjacency in the ring, never distance: walking back is exact and stops at
+          // the first owned vertex. A ring with NO owned vertex at all stays null — an
+          // arc with no owner is still never walked (the A10-③ ruling stands).
+          for (const lab of _iaLabels) {
+            const m = lab.length
+            if (!lab.some(Number.isInteger)) continue
+            for (let j = 0; j < m; j++) {
+              if (Number.isInteger(lab[j])) continue
+              for (let b = 1; b < m; b++) {
+                const v = lab[(j - b + m) % m]
+                if (Number.isInteger(v)) { lab[j] = v; break }
+              }
+            }
+          }
           _iaSpliced = true
         }
         blockRings = spliced
