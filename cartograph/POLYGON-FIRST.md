@@ -294,6 +294,15 @@ aim at the missing corner, not at a missing surface.
 registry was one answer to it, and not a shipped one. Live task:
 **`_handoffs/HANDOFF-deadend-face-resolution.md` §C0**.
 
+> ## ✅ AND THE TEST NOW HAS A RULED ANSWER (2026-08-12) → **`RIBBONS.md §1`**
+> **The substrate is the punch-out, walked over identity-carrying directed side-chains.** It creates the
+> second mouth corner **by construction**: today both mouth passes are the *same coordinate*, so the second
+> reads `south-18th → south-18th` and `cornerAt` correctly declines; **give the spur width and the two
+> mouth vertices are different points**, each a genuine street-meets-street. ⛔ **This does NOT re-open
+> `corners.all`** — that registry is dead and stays dead; the ruling consumes **`cornersAdjacent`**, the
+> surviving field, and adds the one record it lacks (a coupler at a degree-1 tip). ⭐ The prohibitions in
+> this section are unaffected and still bind.
+
 ---
 
 ## 2. The definition-of-done — three checks, not three adjectives

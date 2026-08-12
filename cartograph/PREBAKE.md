@@ -94,6 +94,20 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 > there is nothing there to click. Every one of those is a consumer rebuilding a polygon prebake never
 > made. ⛔ **Do not address around it** (a walk-ordinal key was built and retired for exactly this reason).
 >
+> ## ✅ RULED 2026-08-12 — the construction below is ADOPTED, with the walk kept. → **`RIBBONS.md §1`** (the ruling; this pointer is the only copy).
+> **blocks = boundary − stroked roads, computed as a DIRECTED HALF-EDGE WALK over identity-carrying
+> side-chains** — each authored chain derives into two directed side-chains (datum = the left EDGE of the
+> right lane, i.e. coincident at the centerline when undivided), joined at every node by a **coupler**.
+> ⭐ **That answers the punch-out's blocking risk** (a boolean loses "which chain and which side bounds
+> this edge"); walking side-chains carries identity by construction. ⛔ **Authoring is unchanged — the
+> split is DERIVED**, so `blockCustoms` does not migrate. ⭐ **The coupler relation is already frozen and
+> unconsumed — `junctionMap.nodes[].cornersAdjacent`** (`POLYGON-FIRST §2.1`); it is complete at every T
+> and cross and **absent at all 29 dead ends**, which is the one genuinely new build.
+> ⚠️ **Topology becomes width-dependent ⇒ the combinatorial half freezes at prebake (`cornersAdjacent`,
+> width-independent) and the geometric half resolves after width authoring** — §5's own split, at last.
+> ⛔ **Pre-build gates, none optional:** explain `~115 vs 101` · measure the retrace × severed overlap ·
+> do not regress the June render (`tileGround.js:620-627`) · the eye-gate must record its scene.
+>
 > **The construction (Jacob):** the SSoT radius as the **outer polygon**, everything inside **punched
 > out** — blocks = boundary − stroked roads — so a spur becomes a real notch. Precedent in-repo:
 > `buildBlockGeometryV2` already builds `blockSharp = differenceRings([stencil], asphaltSharp)`, and all 9

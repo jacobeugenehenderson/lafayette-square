@@ -36,7 +36,87 @@
 > it re-founds the tile substrate and this sentence changes with it. Spike + risks:
 > **`_handoffs/HANDOFF-deadend-face-resolution.md`**.
 >
-> ## ⭐⭐ 2026-08-06 — THE SUBSTRATE QUESTION IS OPEN AND UNRULED. Read before building on either side.
+> ## ⭐⭐⭐ RULED 2026-08-12 (Jacob) — THE SUBSTRATE IS THE PUNCH-OUT, WALKED WITH IDENTITY CARRIED. The 2026-08-06 banner is CLOSED.
+>
+> **The ruling, in one sentence: blocks = boundary − stroked roads — but computed as a DIRECTED HALF-EDGE
+> WALK over identity-carrying side-chains, never as an anonymous boolean.**
+>
+> ⭐ **Each authored chain derives into TWO directed side-chains**, each owning exactly one side and
+> emitting only to its right; they are joined at every node by a **coupler** — a permutation saying which
+> incoming side hands off to which outgoing side. **The datum is the left EDGE of the right lane**, which
+> for an undivided street IS the centerline (the two side-chains are *coincident*, so they cannot cross);
+> a divided corridor is the same construction with the pair separated by the median. ⇒ **"divided" stops
+> being a special case — it is separation 0 vs N.**
+> ⛔ **AUTHORING DOES NOT CHANGE.** The operator still authors ONE chain per street, street-keyed
+> (`A15`). The split is a **derived step**, downstream of authoring, upstream of the walk ⇒ **zero
+> `blockCustoms` migration.**
+>
+> ### Why this is not a third option — it is the ANSWER to punch-out's blocking risk
+> `_handoffs/HANDOFF-deadend-face-resolution.md §4.1` risk 1 is what kept punch-out unshipped: *"a boolean
+> gives you RINGS, not which chain and which side bounds this edge… ⛔ this is exactly where identity can
+> quietly become re-derived-from-geometry again."* **Walking side-chains eliminates that risk rather than
+> mitigating it:** every ring edge is owned by one `(skelId, side)` **by construction**, so identity is
+> never lost and never has to be recovered. That is `§C6`'s own 2026-07-30 ruling — *"build the compound
+> path from STAMPED strokes… identity must be carried THROUGH the boolean, never recovered from ring
+> geometry afterward"* — finally given a mechanism. ⇒ **The `PIPELINE §Tile` "figure-ground is dead"
+> contradiction dissolves:** the objection to figure-ground was that streets-subtracted loses identity.
+> This does not.
+>
+> ### It passes §2.1's one-line test BY CONSTRUCTION
+> *Does it create the second mouth corner?* **Yes.** Today both mouth passes are the **same coordinate**,
+> so the second reads `south-18th → south-18th` and `cornerAt(a,b)` correctly declines. **Give the spur
+> width and the two mouth vertices are different points**, each a genuine `kennett × south-18th` meeting —
+> two real corners, one per side, every leg bounded corner-to-corner.
+>
+> ### ⭐⭐ THE SPLIT THAT MAKES IT BUILDABLE — combinatorial at prebake, geometric after authoring
+> Punching with the *stroked* road makes tile topology **width-dependent** (risk 2). Prebake is blind to
+> `design.json`/`blockCustoms` (`ORIENTATION §3`, `POLYGON-FIRST §3`), so freezing a width-dependent
+> topology there would freeze **bare-default widths** — Layer 0 q3, baked into an artifact. **Therefore:**
+> - **The COUPLER RELATION is width-INDEPENDENT** — which side hands off to which is a graph property.
+>   Prebake, frozen once. ⭐ **It already exists: `junctionMap.nodes[].cornersAdjacent`** — complete at
+>   every T and cross, **read by nothing** (`POLYGON-FIRST §2.1`).
+> - **The GEOMETRY is width-DEPENDENT** — where the side-chain lands. Resolves AFTER width authoring.
+>
+> ⭐ This is `PREBAKE §5`'s own unexecuted sentence: *"corner identity (topology) = prebake, frozen once;
+> curb position (width/radius) = Survey, authored on top."* ⚠️ **Consequence to accept deliberately: the
+> SHAPE freeze must sit firmly after width authoring** — a width edit re-topologises.
+>
+> ### The ONE genuinely new build
+> `cornersAdjacent` is complete at every ordinary intersection and **absent at all 29 dead ends.** The
+> missing piece is **a coupler record at a degree-1 tip** — the end cap as a coupler that wraps the two
+> side-chains around the spike. That is the build, and it aims exactly at the rings that retrace.
+>
+> ### ⛔⛔ THE RETIREMENT LIST — write it now, execute it as ONE window (Jacob, 2026-08-12: *"we have laid down so much defunct wiring, once we solve this we'll have to do a real cleanup"*)
+> **Each of these exists ONLY to describe the absence this ruling closes. ⛔ Do not extend any of them.**
+> `walkOrd` / the walk-ordinal coupler · the inverted `side` law (34/34) · the mouth disc + the mouth-wrap
+> snap · the synthetic negative-`segOrd` cap fe · `innerSign` (face adjacency replaces the vote —
+> `OSM2STREETS §2`) · `innerEdgeAssign`'s ped-zeroing hack (a one-sided chain faked with a two-sided one)
+> · `[THRU-T]` (`tileGround.js:3589-3613`, **already dead — `opts.thruTNode` is never passed**) ·
+> `detectTileCaps` as an identity source (it is a slit detector wearing a cap detector's name).
+> ⭐ **Excise knobs, wiring AND docs together, in one window** (`[[feedback_remove_functionality_excise_knobs_wiring_docs]]`);
+> the standing removal-queue discipline is `SHOW-BIBLE §4`. ⛔ A retirement list written later is a
+> retirement list that never runs — this one was written at the moment of the decision on purpose.
+>
+> ### ⛔ PRE-BUILD GATES — none of these is optional, and the first move is NOT a build
+> 1. **`~115 vs 101` is unexplained** — the punch-out spike yields ~115 block rings against today's 101,
+>    and `HANDOFF §C2` says it *"must be explained before any build."* Not overridden here.
+> 2. **The retrace × severed overlap is unmeasured** — do the 21 retracing tiles and the 39 severed bands
+>    coincide? That decides whether this closes the acceptance gate or an adjacent one.
+> 3. **Do not regress the June render.** `tileGround.js:620-627` records dead-end pendants as deliberately
+>    unpruned because the render is *"verified clean map-wide."* June measured the RENDER; July measured
+>    AUTHORING/IDENTITY. **Both are true.** State which layer you are claiming.
+> 4. **The eye-gate must record its scene** — the one prior attempt was judged on `lafayette-square` while
+>    the work sat on `lafayette-square-staging` (52 vs 177 authored streets), and that contaminated verdict
+>    still reads as "tried and failed."
+>
+> *(Superseded by this ruling: the "OPEN AND UNRULED — do not build on either side" banner of 2026-08-06,
+> and the three-way framing of face-walk vs punch-out vs spur-assert. The evidence that closed it: the slit
+> is real in the frozen artifact — rings that walk an edge A→B then B→A — and `cornersAdjacent` is the
+> coupler relation, already frozen, unconsumed. Both re-derivable via `POLYGON-FIRST §2.1`.)*
+>
+> ---
+>
+> ## ⭐⭐ 2026-08-06 — the evidence and cautions that survive the ruling. Read before building.
 >
 > ⛔ **The "tried and reverted" note below is about `SPUR_OUTLINE`, which `ROADMAP A0` describes as asserting
 > the spur *"rather than punching the whole map."* It was the ALTERNATIVE to `blocks = boundary − stroked
@@ -49,7 +129,9 @@
 > records that the field standard face-walks for blocks **and rejected boolean clipping** for intersections.
 > **Jacob (2026-08-06): the tile regime is correct; the curb is derived from the tiles' edges; "the polygon"
 > means THE DERIVED CURB, and corners must be identified off it — if they don't fall out, we're in chains.**
-> ⛔ Do not build on either reading until that is ruled.
+> ✅ **RESOLVED by the 2026-08-12 ruling above** — walking identity-carrying side-chains satisfies both
+> readings at once: the walk survives (so identity is carried, not recovered) and the roads have width
+> (so the spur closes). The corners *do* fall out, and they fall out off the derived curb.
 >
 > **What is measured, with the commands (⛔ do not quote these numbers without re-running):**
 > `node scratch/punchout-spike.mjs` — the punch-out already computes: `blockSharp = differenceRings([stencil],
@@ -80,7 +162,9 @@
 > revert as proof the construction fails, and do not read this as licence to re-land it** — the probes
 > are neither vindicated nor discredited. ⭐ **An eye verdict must record the SCENE it was taken on**,
 > as strictly as a measurement records its authoring state (`PREBAKE §4.0a`, `ROADMAP A0`).
-> The dead-end substrate question is therefore **OPEN**, not answered.
+> The dead-end substrate question was therefore **OPEN** on that evidence — ✅ **and is now RULED
+> (2026-08-12, the block at the top of this section).** ⭐ **The revert still must not be cited as proof
+> the construction fails**; the ruling does not rest on it either way.
 
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 
@@ -182,7 +266,7 @@ The visible "street" is a cross-section running along the chain: asphalt, then c
 ```
 ⚠️ **Two traps this schema used to set.** `intersections` is documented as the "emergent IX list" and is **empty in the shipped artifact** — a consumer written from it silently gets nothing. And `tiles` was **omitted entirely**, which is how the corpus came to assert in two other docs that no block polygon exists in `ribbons.json`. *(Both corrected 2026-08-04, measured off `src/data/ribbons.json`.)*
 
-**Field semantics:** `pavementHW` — perp half-width from centerline to asphalt outer edge (the curb is this offset). `terminal` — `'sidewalk'` (ped zone present) or `'none'` (bare median, etc.). `anchor: 'inner-edge'` — divided-carriageway authoring mode; zeroes the inboard ped zone so the median falls out (`SKELETON §4`). `intersections.ix` are **indices** — the fragile key; `segOrd` (IX-count-before-a-run) and `cornerKeyAt` (IX coord + leg skelIds) are the densify-robust keys (`SKELETON §3.5`).
+**Field semantics:** `pavementHW` — perp half-width from centerline to asphalt outer edge (the curb is this offset). `terminal` — `'sidewalk'` (ped zone present) or `'none'` (bare median, etc.). `anchor: 'inner-edge'` — ⛔ **NOT an authoring mode** (corrected 2026-08-11, `SKELETON.md:183`): it is the **prebake width-side normalizer**, stamped at prebake and **not** in `overlay.json` — reading the operator's overlay for it reports "unset" on every carriageway, which is how this was first mis-measured. The chain sits at the carriageway's **inner edge**; `innerEdgeAssign` sets both sides to `surveyHW/2` and zeroes the inboard ped. `intersections.ix` are **indices** — the fragile key; `segOrd` (IX-count-before-a-run) and `cornerKeyAt` (IX coord + leg skelIds) are the densify-robust keys (`SKELETON §3.5`).
 
 ### The TILE — the block face (`extractFaces`)
 
@@ -221,7 +305,7 @@ Per-run cross-section override authored in Survey/Section, keyed by the **frozen
 ### 3.1 The frame, divided roads, and the smooth knob
 
 - **Centerline smoothing rides ONE knob.** `smoothCenterline.js` exports `STREET_SMOOTH` (`:150`, currently `0`) + `junctionKeysOf` (`:159`); `buildTileGround` takes `opts.smooth = STREET_SMOOTH`. `smoothChain` (`:101`) is an interpolating centripetal Catmull-Rom, **corner-protected** (30° splits sharp corners as hard vertices) + **junction-pinned** + **arc-length-uniform** (no scallop on sparse input). Applied at **consume time** on a COPY — it must never bake into the frozen frame (the IX-index constraint, `SKELETON §3.5`). One constant + one pin-set ⇒ one smooth curve, concentric by construction.
-- **Divided carriageways stay two centerlines; the median is an emergent geometric face (this line is now the WHOLE model — see the §1 update).** The chain stays at carriageway center; each carriageway strokes `surveyHW/2` per side (the `3a` widths); the median is whatever face `extractFaces` walks between the two carriageways, and its grass is the ordinary `luRemainder` of that tile (ped-zeroed by **face-read identity**: a tile bounded by BOTH carriageways of one pair — §3.5) — **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring. The E2 stamp ring that briefly contradicted this is **deleted** (§3.5). The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology (longitudinal weld, station-overlap pairing, `phase.spineAt*` the frozen transition link) lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
+- **Divided carriageways stay two centerlines; the median is an emergent geometric face (this line is now the WHOLE model — see the §1 update).** ⛔ **CORRECTED 2026-08-11 — "the chain stays at carriageway CENTER" is the REFUTED center-chain model; do not restore it** (`SKELETON.md:183`, which retired it when D1 landed `innerEdgeAssign`). **The carriageway chains sit at the carriageways' INNER EDGES** — `anchor:'inner-edge'`, measured on **all 38** LS carriageways — and `innerEdgeAssign` sets both sides to `surveyHW/2` while **zeroing the inboard ped**. ⭐ **That is a one-sided chain being faked with a two-sided one plus a suppression hack, and the 2026-08-12 ruling (§1) makes it honest** — it is also the evidence that Jacob's left-edge datum is already the live model for divided roads. The median is whatever face `extractFaces` walks between the two carriageways, and its grass is the ordinary `luRemainder` of that tile (ped-zeroed by **face-read identity**: a tile bounded by BOTH carriageways of one pair — §3.5) — **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring. The E2 stamp ring that briefly contradicted this is **deleted** (§3.5). The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology (longitudinal weld, station-overlap pairing, `phase.spineAt*` the frozen transition link) lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
 - **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`WALL.md §31`).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
 
 ### 3.2 Tiles — `extractFaces` (`:508`)
