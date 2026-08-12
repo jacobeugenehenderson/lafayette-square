@@ -304,16 +304,48 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // the HEAD of the outgoing run, so no run is ever split in two. It is resolved on
 // the OUTPUT walk (where "leaves" is well defined), never inside ZFillFunction
 // (where Clipper offers only scanbeam order, an implementation detail).
-function unionRingLabelled(ring, labels) {
-  const { Clipper, ClipType, PolyType, PolyFillType } = clipperLib
+// [A06] THE LABELLED BOOLEAN — one primitive, every clip type.
+// Generalized from `unionRingLabelled` (which is now a thin wrapper, so the proven
+// offset path is byte-identical by construction). Labels ride Clipper's Z channel:
+// a vertex contributed by an input keeps `label + 1`; a vertex MINTED at a crossing
+// gets Z = 0 and is resolved by scanning FORWARD around the output ring to the next
+// labelled vertex — ring adjacency, never distance.
+//
+// ⭐ WHY THIS IS THE A06 ROUTE, MEASURED (2026-08-11). On LS's 42 carve tiles the
+// carve output's 529 vertices come from: `tile.ring` 10.2% · a labelled stad 39.7% ·
+// ⛔ NEITHER 50.1%. That last half are Clipper's own crossing points — they sit on no
+// input curve, so NO lookup after the fact can label them, which is why the carve
+// path's "recovering one would be a proximity guess" was true of a post-hoc map and
+// false of the boolean itself. The label has to ride THROUGH the operation.
+//
+// ⛔ ONE LABEL SPACE. Every label here is an index into `tile.ring`, for subject and
+// clip alike — the same space `_iaLabels` speaks — so a carve vertex inherited from
+// the asphalt side and one inherited from the ring side are directly comparable.
+// ⚠️ Unlabelled clip geometry is legitimate (the junction/median constructions add
+// polygons that belong to no single run): its vertices land as crossings and inherit
+// forward, which is the same ring-adjacency rule the keyhole clip seam uses.
+function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null) {
+  const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
   let out = []
+  const enc = (p, lab) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: Number.isInteger(lab) ? lab + 1 : 0 })
   try {
     const c = new Clipper()
     c.ZFillFunction = () => {}          // leave pt.Z = 0 ⇒ "an intersection point"
-    c.AddPath(ring.map((p, i) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: labels[i] + 1 })), PolyType.ptSubject, true)
-    c.Execute(ClipType.ctUnion, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    let s = 0
+    for (let k = 0; k < subjectRings.length; k++) {
+      const r = subjectRings[k]; if (!r || r.length < 3) continue
+      const L = subjectLabels?.[k]
+      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), PolyType.ptSubject, true); s++
+    }
+    if (!s) return { rings: [], labels: [], refused: null }
+    for (let k = 0; k < clipRings.length; k++) {
+      const r = clipRings[k]; if (!r || r.length < 3) continue
+      const L = clipLabels?.[k]
+      c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), PolyType.ptClip, true)
+    }
+    c.Execute(clipType, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   } finally { clipperLib.use_xyz = prev }
   const rings = out.map(p => p.map(fromClipper))
   const labs = []
@@ -331,6 +363,11 @@ function unionRingLabelled(ring, labels) {
     labs.push(res)
   }
   return { rings, labels: labs, refused: null }
+}
+// The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
+// byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
+function unionRingLabelled(ring, labels) {
+  return booleanLabelled(clipperLib.ClipType.ctUnion, [ring], [labels])
 }
 // `stamp` (optional) collects the per-output-ring source labels described above:
 // on return it carries either `{ labels: number[][] }` parallel to the returned
@@ -3728,6 +3765,13 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     const roundTipKeys = new Set(roundTips.map(t => tipKey(t.p)))
     const aStads = []
+    // [A06] Parallel to `aStads`: the owning run's `tile.ring` VERTEX INDEX, so the
+    // asphalt carries provenance into the boolean instead of being recovered after
+    // it. `run.poly[0]` is a reference INTO `ring` (`groupRuns` pushes ring elements,
+    // never copies), so `indexOf` is exact identity — not a coordinate compare.
+    // A stad with no resolvable owner stays `null`; null is refused, never guessed.
+    const aStadLabs = []
+    const _labelStads = (from, lab) => { for (let k = from; k < aStads.length; k++) aStadLabs[k] = lab }
     for (const run of runs) {
       const d = edgeDepth(runMeasure(run), run.side, cw, 'A')   // per-fe asphalt half-width
       if (d > 1e-6) {
@@ -3736,11 +3780,24 @@ export function buildTileGround(ribbons, opts = {}) {
         // [THRU] span ends at a through-construction station likewise.
         let sp = jTrimmed(run)
         if (sp && (run._thruT0 || run._thruT1)) sp = trimPolyline(sp, run._thruT0 || 0, run._thruT1 || 0)
-        if (sp) aStads.push(...strokeOpen(sp, d))
+        if (sp) { const _f = aStads.length; aStads.push(...strokeOpen(sp, d)); const _li = tile.ring.indexOf(run.poly[0]); _labelStads(_f, _li >= 0 ? _li : null) }
       }
     }
-    for (const t of roundTips) if (t.hw > 1e-6) aStads.push(circlePoly(t.p[0], t.p[1], t.hw))
+    for (const t of roundTips) if (t.hw > 1e-6) { aStads.push(circlePoly(t.p[0], t.p[1], t.hw)); aStadLabs[aStads.length - 1] = null }
     let aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
+    // [A06] The SAME two operations, run labelled, alongside the originals. Geometry
+    // is taken from the ORIGINAL calls — this pair only carries provenance, so a bug
+    // here can change what is STAMPED but never what is DRAWN. `_aFillLabs` is nulled
+    // by any later unlabelled reshape of `aFill` (below): a label that stopped being
+    // true is refused, not carried forward.
+    let _aFillLabs = null
+    if (aStads.length) {
+      const _u = booleanLabelled(clipperLib.ClipType.ctUnion, aStads, aStadLabs)
+      if (_u.labels) {
+        const _ix = booleanLabelled(clipperLib.ClipType.ctIntersection, _u.rings, _u.labels, [tile.ring], [tile.ring.map((_, i) => i)])
+        if (_ix.labels && _ix.rings.length === aFill.length) _aFillLabs = _ix.labels
+      }
+    }
     // E2 — constructed-median consumption (replaces the G3a >40%-median-facing
     // heuristic). merge patches (transition tapers, crossing windows) are
     // corridor asphalt in whatever tile they land; a tile mostly covered by a
@@ -3765,6 +3822,11 @@ export function buildTileGround(ribbons, opts = {}) {
     // split station (same positive-asphalt landing as the E3.2 windows).
     const tClip = thruClipFor(tile.ring)
     if (tClip.length) aFill = aFill.length ? unionRings([...aFill, ...tClip]) : tClip
+    // [A06] Any of the four constructed reshapes above (merge nose, corner cut,
+    // junction window, through-station) adds geometry belonging to NO single run, so
+    // the carried labels stop being true. ⛔ REFUSE them rather than carry one that
+    // has quietly become a guess — the stamp's entire value is that it never guesses.
+    if (mergeClip.length || cCut.length || jClip.length || tClip.length) _aFillLabs = null
     const medClip = medianClipFor(tile.ring)   // loop-body median rings only (divided no longer stamps rings)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
@@ -3903,7 +3965,22 @@ export function buildTileGround(ribbons, opts = {}) {
         }
       }
     }
-    const legacyBlock = () => differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
+    // [A06] The carve, labelled. Geometry is the ORIGINAL expression, unchanged; the
+    // labelled run alongside it only carries provenance, and is adopted only when it
+    // reproduces the same ring count — so a provenance bug can never move a vertex.
+    let _legacyLabs = null
+    const legacyBlock = () => {
+      const geo = differenceRings([tile.ring], aFill).filter(r => Math.abs(signedArea(r)) > 0.5)
+      _legacyLabs = null
+      if (_aFillLabs) {
+        const r = booleanLabelled(clipperLib.ClipType.ctDifference, [tile.ring], [tile.ring.map((_, i) => i)], aFill, _aFillLabs)
+        if (r.labels) {
+          const keep = r.rings.map((rr, k) => k).filter(k => Math.abs(signedArea(r.rings[k])) > 0.5)
+          if (keep.length === geo.length) _legacyLabs = keep.map(k => r.labels[k])
+        }
+      }
+      return geo
+    }
     const ringArea = Math.abs(signedArea(tile.ring))
     let blockRings
     // [A07] The disclosure. `reason` uses a stated precedence because a tile can be
@@ -3960,13 +4037,20 @@ export function buildTileGround(ribbons, opts = {}) {
     } else {
       _producer = 'carve'
       blockRings = legacyBlock()
-      // ⛔ THE CARVE PATH IS NOT STAMPED AND SAYS SO. `tile.ring − aFill` is a
-      // Clipper difference against the junction-swelled asphalt union: its output
-      // vertices are minted by the boolean, not carried from a ring edge, so there
-      // is no source index to carry. Recovering one would be a proximity guess —
-      // forbidden (ROADMAP A15; POLYGON-FIRST §5). A06 is where this class gets an
-      // answer, by freezing `aFill`; until then the refusal is the honest state.
-      _iaNo = `carve:${_reason || 'unclassified'}`
+      // [A06] THE CARVE IS NOW STAMPED WHERE THE ASPHALT CARRIED PROVENANCE.
+      // ⚠️ The refusal that stood here — "its output vertices are minted by the
+      // boolean … there is no source index to carry. Recovering one would be a
+      // proximity guess" — was true of a LOOKUP AFTER THE FACT and false of the
+      // boolean itself. Measured on LS's 42 carve tiles: of 529 output vertices,
+      // 10.2% sit on `tile.ring`, 39.7% on a labelled stad, and 50.1% on NEITHER —
+      // Clipper's own crossing points, which no post-hoc map could ever reach. So
+      // the label rides THROUGH the difference on the Z channel instead, inheriting
+      // forward around the ring at a crossing. Provenance, not proximity.
+      // ⛔ Still refused, and named, where it cannot be earned: a stad with no
+      // resolvable owner, or an `aFill` reshaped by the constructed junction/median
+      // pieces (which belong to no single run).
+      if (_legacyLabs) _iaLabels = _legacyLabs
+      else _iaNo = `carve:${_reason || 'unclassified'}`
     }
     curbProducerCensus.count(_producer, _reason, { isMedianTile, isDividedMedian, small: ringArea <= 1500 })
     // [CULDESAC KEYHOLE — the bounded splice] keep the offset curb as the base
