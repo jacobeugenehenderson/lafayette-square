@@ -1,30 +1,33 @@
 #!/usr/bin/env node
 /**
- * READ-ONLY. Taxonomy of the SEVERED-and-NOT-RETRACING tiles.
+ * READ-ONLY. THREE-AXIS anatomy of every SEVERED tile (all 39, not just the 24).
  *
- * Re-derives the severed set from shape.json (predicate 1 of
- * claims-band-is-one-ring.mjs ONLY — SLIT/FLAP are declared UNVALIDATED there and
- * are not touched) and the retrace set from ribbons.json, joined on the RING
- * (rotation/direction-independent vertex multiset hash). Every finding below is
- * keyed to that hash, never to a tile index and never to a count.
+ * ⛔ THREE DIFFERENT DEFECTS ARE IN CIRCULATION UNDER ONE WORD. They are reported
+ *    here as three NAMED COLUMNS and must never be merged into one taxonomy again:
+ *      A1 BREAK TYPE     — how the UNION splits (topology). The gate's "39" lives here.
+ *      A2 UNPAINTED ARC  — metres of arc the PRODUCER expects a band on and did not
+ *                          get (material). Arcs it expects nothing on are EXCLUDED.
+ *      A3 MIN BAND DEPTH — the band's painted radial depth at its worst point within
+ *                          3 m of a contact. Catches a pinch the A2 walk steps over.
  *
- * For each severed tile it LOCATES the breaks by asking the POLYGON:
- *   walk the frozen curb ring `iA`, probe inward across the band depth, and
- *   report the contiguous arcs where NOTHING is painted. For each such arc:
- *     · which of the tile's OWN runs owns it (nearest run.poly — tile-local arc
- *       identity, `skelId·side·segOrd`; ⛔ never a nearest-chain query into
- *       ribbons.streets)
- *     · whether the unpainted arc is instead covered by luByLu (the released
- *       band → land use MISLABEL, not a hole)
- *     · whether the owning run is a NO-PED run (`edgeDepth(baseMeasure)<=0` —
- *       rim / median face: owns its arc at zero depth BY CONSTRUCTION)
- *     · whether the owner carries an authored blockCustoms override
- *     · whether the arc sits at a run-end junction (corner) or mid-leg
- *     · the tile's thin-feature headroom (`st.cap` vs WB = cw+tl+sw) — G12
+ * ⭐ EXPECTATION IS RESOLVED THE WAY THE PRODUCER RESOLVES IT (`resolveRun`, below),
+ *    never off `ribbons.streets` and never off the run's own `measure`. See the note
+ *    on `resolveRun` for what `resolvePedDepths` actually reads — it is NOT the
+ *    frozen measure's treelawn/sidewalk/terminal, and that surprises people.
  *
- * Runs WITH the scene's authored blockCustoms (CLAUDE.md Layer 0 rule 1).
+ * ⭐ EXCLUDED ARCS ARE SPLIT `AUTHORED` vs `DERIVED`. Both are correctly unpainted;
+ *    keeping them apart is how a defect in the DERIVATION stays distinguishable from
+ *    an operator decision (CLAUDE.md Layer 0 q3).
  *
- * Usage: node scratch/sever24-taxonomy.mjs [--scene <name>] [--all] [--gaps]
+ * Joined to ribbons.json on the RING (rotation/direction-independent vertex multiset
+ * hash), proven 1:1 and total before use. Every finding is keyed to that hash —
+ * never to a tile index, never to a count.
+ *
+ * Reproduces predicate 1 of claims-band-is-one-ring.mjs ONLY (its SLIT/FLAP are
+ * declared UNVALIDATED there and are not touched). Runs WITH the scene's authored
+ * blockCustoms (POLYGON-FIRST §5 Rule 1).
+ *
+ * Usage: node scratch/sever24-taxonomy.mjs [--scene <name>] [--only24|--only15] [--gaps]
  */
 import fs from 'node:fs'
 import path from 'node:path'
@@ -115,6 +118,33 @@ const d2poly = (p, poly) => { let m = Infinity; for (let i = 0; i + 1 < poly.len
 // no sidewalk of its own"). On LS every such run also has skelId === null.
 const basePHW = run => { const v = run.baseMeasure?.[run.side]?.pavementHW; return Number.isFinite(v) ? Math.max(0, v) : 0 }
 const isNoPed = run => basePHW(run) <= 1e-6
+
+// ⭐⭐ DOES THE PRODUCER EXPECT A BAND ON THIS ARC? Resolved the way sectionPassTile
+// does it (:1616-1633), NOT off ribbons.streets and NOT off the run's own measure:
+//     pedOff = tile (tl+sw) <= 0                      — median / zero-ped TILE
+//     noPed  = edgeDepth(baseMeasure,'A') <= 0        — rim / no-asphalt EDGE
+//     else     resolvePedDepths(baseMeasure, side, blockCustoms[skelId][side][segOrd])
+// ⛔ NOTE WHAT resolvePedDepths ACTUALLY READS (:1234): the OVERRIDE, else the two
+// module constants STD_TREELAWN / ADA_SIDEWALK. It does NOT read measure.treelawn,
+// measure.sidewalk or measure.terminal for DEPTH — those feed only gleanTreelawn,
+// which picks strip ORDERING (hasTL), never total depth. So an arc is expected to
+// carry a band unless the TILE is ped-off, the EDGE has no asphalt, or an override
+// explicitly zeroes it. An unpainted arc anywhere else is a real hole.
+const resolveRun = (st, run) => {
+  const pedOff = ((st.tl || 0) + (st.sw || 0)) <= 1e-6
+  const noPed = isNoPed(run)
+  const c = custOf(run)
+  const ped = (pedOff || noPed) ? { tl: 0, sw: 0, hasTL: false } : resolvePedDepths(run.baseMeasure, run.side, c)
+  const total = ped.tl + ped.sw
+  let why = null
+  if (total <= 1e-6) {
+    if (c && (c.treelawn === 0 || c.sidewalk === 0)) why = 'AUTHORED · blockCustoms zeroes the strips'
+    else if (pedOff) why = 'DERIVED · tile ped-off (median / zero-ped tile, frozen by the shape pass)'
+    else if (!run.baseMeasure) why = 'DERIVED · no baseMeasure (rim — edge of the drawing)'
+    else why = 'DERIVED · pavementHW = 0 on this side (no asphalt)'
+  }
+  return { expected: total > 1e-6, total, tl: ped.tl, sw: ped.sw, why, authored: !!c }
+}
 const custOf = run => bc?.[run.skelId]?.[run.side]?.[run.segOrd] || null
 
 // ---------- per-tile
@@ -278,7 +308,8 @@ for (const [ti, st] of shape.entries()) {
           const q = [px + nx * d, py + ny * d]
           let owner = null, od = Infinity
           for (const r of (st.runs || [])) { const dd = d2poly([px, py], r.poly); if (dd < od) { od = dd; owner = r } }
-          mid.push({ q, painted: inRings(band, q), green: inRings(lu, q), len: L / steps, noPed: owner ? isNoPed(owner) : false, p: [px, py], owner })
+          const res = owner ? resolveRun(st, owner) : { expected: false, why: 'DERIVED · no owning run', total: 0 }
+          mid.push({ q, painted: inRings(band, q), green: inRings(lu, q), len: L / steps, exp: res.expected, why: res.why, p: [px, py], owner })
         }
       }
     }
@@ -286,19 +317,58 @@ for (const [ti, st] of shape.entries()) {
     // point lands OUTSIDE the tile and reads "unpainted" for a reason that is mine,
     // not the map's. Measure it rather than trust it.
     rec.probeOutside = mid.filter(s => !inRings([st.ring], [s.p[0] + (s.q[0] - s.p[0]), s.p[1] + (s.q[1] - s.p[1])])).length
-    rec.probeOutsideUnpainted = mid.filter(s => !s.painted && !s.noPed && !inRings([st.ring], s.q)).reduce((a, s) => a + s.len, 0)
+    rec.probeOutsideUnpainted = mid.filter(s => !s.painted && s.exp && !inRings([st.ring], s.q)).reduce((a, s) => a + s.len, 0)
     rec.midN = mid.length
     rec.midTotal = mid.reduce((a, s) => a + s.len, 0)
-    rec.midUnpaintedNoPed = mid.filter(s => !s.painted && s.noPed).reduce((a, s) => a + s.len, 0)
-    rec.midUnpaintedStreet = mid.filter(s => !s.painted && !s.noPed).reduce((a, s) => a + s.len, 0)
+    // EXCLUDED arc length, split by WHY — an operator decision and a derivation
+    // result are both correctly unpainted, but they are not the same fact.
+    rec.exclAuthored = mid.filter(s => !s.exp && s.why?.startsWith('AUTHORED')).reduce((a, s) => a + s.len, 0)
+    rec.exclDerived = mid.filter(s => !s.exp && s.why?.startsWith('DERIVED')).reduce((a, s) => a + s.len, 0)
+    rec.exclWhy = [...new Set(mid.filter(s => !s.exp).map(s => s.why))]
+    rec.midUnpaintedNoPed = mid.filter(s => !s.painted && !s.exp).reduce((a, s) => a + s.len, 0)
+    rec.midUnpaintedStreet = mid.filter(s => !s.painted && s.exp).reduce((a, s) => a + s.len, 0)
     // contiguous unpainted stretches owned by a STREET run (the ones that matter)
     const stretches = []; let cur = null
     for (const s of mid) {
-      if (!s.painted && !s.noPed) { if (!cur) cur = { len: 0, p: s.p, owner: s.owner, green: 0, n: 0 }; cur.len += s.len; cur.n++; if (s.green) cur.green++ }
+      if (!s.painted && s.exp) { if (!cur) cur = { len: 0, p: s.p, owner: s.owner, green: 0, n: 0 }; cur.len += s.len; cur.n++; if (s.green) cur.green++ }
       else if (cur) { stretches.push(cur); cur = null }
     }
     if (cur) stretches.push(cur)
     rec.midStretches = stretches.sort((a, b) => b.len - a.len)
+  }
+  // ---- ⭐ THE PINCH SCAN (resolves the loose thread from the first pass).
+  // The 0.25 m mid-line walk can STEP OVER a zero-width contact: a pinch is a
+  // measure-zero point, so a walk that samples past it reads "painted" on both
+  // sides and reports continuity that does not exist. So near every contact,
+  // re-walk the curb at 0.05 m and measure the band's PAINTED RADIAL DEPTH —
+  // how much of [CW, WB] is actually filled. A pinch shows as depth -> 0.
+  {
+    const contacts = rec.joints.flatMap(j => j.clusters.map(c => c.at))
+    let worst = { depth: Infinity, at: null, owner: null }, notchLen = 0
+    for (const ring of iA) {
+      const sgn = area(ring) > 0 ? 1 : -1, m = ring.length
+      for (let i = 0; i < m; i++) {
+        const a = ring[i], b = ring[(i + 1) % m]
+        const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1e-9) continue
+        const nx = -sgn * (b[1] - a[1]) / L, ny = sgn * (b[0] - a[0]) / L
+        const steps = Math.max(1, Math.ceil(L / 0.05))
+        for (let sI = 0; sI < steps; sI++) {
+          const t = (sI + 0.5) / steps
+          const px = a[0] + (b[0] - a[0]) * t, py = a[1] + (b[1] - a[1]) * t
+          if (!contacts.some(c => Math.hypot(c[0] - px, c[1] - py) < 3)) continue
+          let owner = null, od = Infinity
+          for (const r of (st.runs || [])) { const dd = d2poly([px, py], r.poly); if (dd < od) { od = dd; owner = r } }
+          if (!owner || !resolveRun(st, owner).expected) continue
+          let filled = 0
+          for (let d = CW + 0.02; d <= WB - 0.02; d += 0.05)
+            if (inRings(band, [px + nx * d, py + ny * d])) filled += 0.05
+          if (filled < worst.depth) worst = { depth: filled, at: [px, py], owner }
+          if (filled < 0.15) notchLen += L / steps
+        }
+      }
+    }
+    rec.pinch = worst.at ? worst : null
+    rec.notchLen = notchLen
   }
   rec.WB = WB
   rec.cap = st.cap
@@ -310,7 +380,8 @@ for (const [ti, st] of shape.entries()) {
 // ---------- summary
 const by = c => rows.filter(r => r.cls === c)
 console.log(`POPULATION  severed ${by('SEVERED').length}  one-ring ${by('ONERING').length}  no-band ${by('NOBAND').length}  threw ${by('THREW').length}`)
-const target = by('SEVERED').filter(r => arg('--retrace') ? r.retrace : !r.retrace)
+// ⭐ ALL 39 severed tiles — the 24 and the 15 both bear on this correction.
+const target = by('SEVERED').filter(r => arg('--only24') ? !r.retrace : arg('--only15') ? r.retrace : true)
 console.log(`TARGET SET — SEVERED × ${arg('--retrace') ? 'RETRACE' : 'NO RETRACE'}: ${target.length}\n`)
 
 // ---- classify each BREAK (joint), then the tile by its breaks.
@@ -362,45 +433,55 @@ for (const f of ['thruNodeEnds', 'mouths', 'iaEdge', 'fillets', 'cap', 'bandJoin
 }
 
 
-// ================= FINAL TABLE — the deliverable, keyed by RING HASH =================
-// ⭐ The goal is stated MATERIALLY ("a continuous strip around every block"), so the
-// verdict axis is the MID-BAND WALK, not the union's ring count. A union splits at a
-// zero-width contact; that is a topology event, not a hole the operator can see.
-const HOLE = 0.5   // m of unpainted mid-band on a STREET-owned run — below this, nothing to see
-console.log(`\n\n${'='.repeat(100)}\nFINAL — SEVERED × NO RETRACE, by ring hash. Verdict axis = unpainted MID-BAND on STREET runs.\n${'='.repeat(100)}`)
-console.log(`ringHash    [idx]  streetGap  noPedGap  comps  verdict`)
+// ================= FINAL — TWO AXES, NAMED SEPARATELY =================
+// ⛔ These measure DIFFERENT defects and must never be merged into one taxonomy again.
+//   AXIS 1 · BREAK TYPE   — how the UNION splits (topology). Pinch / butt joint / real gap.
+//   AXIS 2 · UNPAINTED ARC — how many metres of arc the PRODUCER expects a band on and
+//                            did not get (material). Excluded arcs do not count.
+//   AXIS 3 · MIN BAND DEPTH near a contact — catches a pinch the 0.25 m walk steps over.
+const HOLE = 0.5
+console.log(`\n\n${'='.repeat(126)}`)
+console.log(`FINAL — ALL ${target.length} SEVERED TILES, by ring hash. Three axes, named separately.`)
+console.log(`${'='.repeat(126)}`)
+console.log(`ringHash    [idx] rtr | A1 BREAK TYPE            | A2 UNPAINTED  | A3 minDepth | excl AUTH  excl DERIV | verdict`)
+const brk = r => {
+  const cs = [...new Set(r.joints.map(j => jCls(r, j)[0]))].sort().join('+')
+  return { P: 'zero-width contact', A: 'rim / no-ped arc', B: 'released->luRem', E: 'open gap', C: 'thin', X: 'overlap', S: 'shared border', H: 'hairline' }[cs] || cs
+}
 const mat = [], topo = []
 for (const r of target) (r.midUnpaintedStreet > HOLE ? mat : topo).push(r)
+const line = r => {
+  const md = r.pinch ? r.pinch.depth.toFixed(2) + 'm' : '   —  '
+  return `${r.key}  [s${String(r.ti).padStart(2)}] ${r.retrace ? 'yes' : ' no'} | ${brk(r).padEnd(23)} | ${r.midUnpaintedStreet.toFixed(1).padStart(8)}m    | ${md.padStart(8)}    | ${r.exclAuthored.toFixed(1).padStart(6)}m ${r.exclDerived.toFixed(1).padStart(8)}m |`
+}
 for (const r of [...mat].sort((a, b) => b.midUnpaintedStreet - a.midUnpaintedStreet)) {
   const s0 = r.midStretches[0]
-  console.log(`${r.key}  [s${String(r.ti).padStart(2)}]  ${r.midUnpaintedStreet.toFixed(1).padStart(7)}m  ${r.midUnpaintedNoPed.toFixed(1).padStart(7)}m  ${String(r.comps).padStart(4)}   MATERIAL HOLE — biggest ${s0.len.toFixed(1)}m on ${s0.owner?.skelId}|${s0.owner?.side}|${s0.owner?.segOrd}, ${(100 * s0.green / s0.n).toFixed(0)}% GREEN, authored ${custOf(s0.owner) ? JSON.stringify(custOf(s0.owner)) : 'no'}`)
+  console.log(`${line(r)} MATERIAL HOLE — ${s0.len.toFixed(1)}m on ${s0.owner?.skelId}|${s0.owner?.side}|${s0.owner?.segOrd}${(100 * s0.green / s0.n) > 50 ? ', GREEN' : ''}`)
 }
-for (const r of [...topo].sort((a, b) => b.midUnpaintedNoPed - a.midUnpaintedNoPed)) {
-  console.log(`${r.key}  [s${String(r.ti).padStart(2)}]  ${r.midUnpaintedStreet.toFixed(1).padStart(7)}m  ${r.midUnpaintedNoPed.toFixed(1).padStart(7)}m  ${String(r.comps).padStart(4)}   TOPOLOGICAL ONLY — no street-owned hole; ${r.midUnpaintedNoPed > 0.5 ? 'band stops at the NO-PED (rim) arc, by construction' : 'band unbroken all the way round'}`)
+for (const r of [...topo].sort((a, b) => (a.pinch?.depth ?? 9) - (b.pinch?.depth ?? 9))) {
+  const notch = r.pinch && r.pinch.depth < 0.15
+  console.log(`${line(r)} ${notch ? `⚠️ PINCH NOTCH — band depth ${r.pinch.depth.toFixed(2)}m over ${r.notchLen.toFixed(2)}m of arc @${r.pinch.at[0].toFixed(0)},${r.pinch.at[1].toFixed(0)}` : 'no material hole, no notch'}`)
 }
-console.log(`\n  ⭐ ARE THE COMPONENTS RADIAL STRIPS OR RING ARCS? For each component, the min/max distance of its`)
-console.log(`     vertices from the frozen curb (iA). A component confined to [CW, CW+tl] vs [CW+tl, WB] is a`)
-console.log(`     RADIAL strip (treelawn vs sidewalk not fusing). Components each spanning the full depth are`)
-console.log(`     RING ARCS (a real break in the walk).`)
-for (const r of topo) {
-  const iA = (r.st.iA || []).filter(x => x && x.length >= 3)
-  const dC = p => Math.min(...iA.map(g => { let m = Infinity; for (let i = 0; i < g.length; i++) m = Math.min(m, d2seg(p, g[i], g[(i + 1) % g.length])); return m }))
-  const prof = r.compRings.map(c => { const ds = c.map(dC); return `${Math.min(...ds).toFixed(2)}-${Math.max(...ds).toFixed(2)}` })
-  console.log(`     ${r.key} [s${r.ti}] WB ${r.WB.toFixed(2)}  per-component dist-from-curb: ${prof.join('  ')}`)
+console.log(`\n  AXIS 2 · MATERIAL HOLE (>${HOLE} m of EXPECTED arc unpainted): ${mat.length} of ${target.length}`)
+console.log(`  AXIS 3 · of the rest, carrying a PINCH NOTCH (<0.15 m band depth): ${topo.filter(r => r.pinch && r.pinch.depth < 0.15).length}`)
+console.log(`           clean on all three axes:                                 ${topo.filter(r => !(r.pinch && r.pinch.depth < 0.15)).length}`)
+
+console.log(`\n${'='.repeat(126)}\nEXCLUDED ARCS — an arc the producer expects NO band on. Both are correct; they are not the same fact.\n${'='.repeat(126)}`)
+const eA = target.reduce((a, r) => a + r.exclAuthored, 0), eD = target.reduce((a, r) => a + r.exclDerived, 0)
+console.log(`  AUTHORED zero (operator override zeroes the strips): ${eA.toFixed(1)} m`)
+console.log(`  DERIVED  zero (rim / no asphalt / ped-off tile):     ${eD.toFixed(1)} m`)
+const whys = new Map()
+for (const r of target) for (const w of r.exclWhy) if (w) whys.set(w, (whys.get(w) || 0) + 1)
+for (const [w, n] of [...whys].sort((a, b) => b[1] - a[1])) console.log(`     ${String(n).padStart(3)} tiles  ${w}`)
+
+console.log(`\n${'='.repeat(126)}\n⭐ ITEM 5 — do the two real sidewalks survive the correction?\n${'='.repeat(126)}`)
+for (const [k, want] of [['780434eb15', 'rutger-street-1|right'], ['11c49fcef4', 'chouteau-avenue-0|right']]) {
+  const r = target.find(x => x.key === k)
+  if (!r) { console.log(`  ${k} ${want} — LEFT THE SEVERED SET`); continue }
+  const run = (r.st.runs || []).find(x => `${x.skelId}|${x.side}` === want)
+  const res = run ? resolveRun(r.st, run) : null
+  console.log(`  ${k}  ${want}`)
+  console.log(`     frozen measure    ${JSON.stringify(run?.measure?.[run.side])}`)
+  console.log(`     producer resolves tl ${res?.tl.toFixed(2)} + sw ${res?.sw.toFixed(2)} = ${res?.total.toFixed(2)} m  ⇒ band EXPECTED: ${res?.expected}`)
+  console.log(`     unpainted on EXPECTED arcs after the correction: ${r.midUnpaintedStreet.toFixed(1)} m  ⇒ ${r.midUnpaintedStreet > HOLE ? '✅ SURVIVES — a real sidewalk still reads unpainted' : '⛔ dropped out'}`)
 }
-console.log(`\n  ⭐ ZERO-WIDTH CONTACT ANATOMY (TOPOLOGICAL-ONLY set). A contact spanning the band DEPTH is a`)
-console.log(`     FULL-DEPTH BUTT JOINT — two abutting claims the union did not fuse; the eye sees nothing.`)
-console.log(`     A contact spanning ~0 m is a true POINT PINCH — band width -> 0; the eye sees a notch.`)
-for (const r of topo) {
-  const depth = r.WB - CW
-  const spans = r.joints.flatMap(j => j.clusters.map(c => c.span)).sort((a, b) => b - a)
-  const butt = spans.filter(x => Math.abs(x - depth) < 0.15 || Math.abs(x - depth / 2) < 0.15).length
-  const pt = spans.filter(x => x < 0.15).length
-  console.log(`     ${r.key} [s${r.ti}] depth ${depth.toFixed(2)}  contacts ${spans.length}  butt ${butt}  pinch ${pt}  spans [${spans.map(x => x.toFixed(2)).join(' ')}]`)
-}
-console.log(`\n  MATERIAL HOLE (>${HOLE} m unpainted mid-band on a street run): ${mat.length}`)
-console.log(`  TOPOLOGICAL ONLY (union splits at a zero-width contact):      ${topo.length}`)
-console.log(`\n  AUTHORED STATE — blockCustoms streets: ${bc ? Object.keys(bc).join(', ') : 'none'}`)
-const authoredInTarget = target.flatMap(r => (r.st.runs || []).map(x => [r.key, x, custOf(x)]).filter(z => z[2]))
-console.log(`  authored runs inside the target set: ${authoredInTarget.length}`)
-for (const [k, run, c] of authoredInTarget) console.log(`    ${k}  ${run.skelId}|${run.side}|${run.segOrd}  ${JSON.stringify(c)}`)
