@@ -129,6 +129,7 @@ export default function MeasurePanel() {
   const setStreetDisabled  = useCartographStore(s => s.setStreetDisabled)
   const revertSectionToDefault = useCartographStore(s => s.revertSectionToDefault)
   const sectionOverrideCount = useCartographStore(s => s.sectionOverrideCount)
+  const curbArcWithheld    = useCartographStore(s => s.curbArcWithheld)
 
   if (selectedStreet === null) {
     return (
@@ -204,6 +205,20 @@ export default function MeasurePanel() {
         onChange={s => updateSide('left', s)} />
       <SideBlock sideKey="right" side={measure.right}
         onChange={s => updateSide('right', s)} />
+
+      {/* ⭐ THE WITHHELD HANDLE, NAMED. A block-edge that owns no arc of the frozen
+          curb gets NO handle — the tool will not draw a plausible one somewhere
+          else, which is what the old centreline ray did. But a handle that simply
+          vanishes reads as a broken tool, so the edge and the REASON are stated
+          here. The reasons are the shape pass's own (`iaEdgeReason`), not this
+          panel's vocabulary. */}
+      {curbArcWithheld.length > 0 && (
+        <div className="carto-meta carto-warn">
+          {curbArcWithheld.map(w => (
+            <div key={w.side}>⛔ {w.side}: no curb arc — {w.why}. Handle withheld.</div>
+          ))}
+        </div>
+      )}
 
       <div className="carto-meta">
         {st.type || 'residential'} · {st.points.length} nodes · {hasCustom ? 'custom block' : 'inherits chain'}

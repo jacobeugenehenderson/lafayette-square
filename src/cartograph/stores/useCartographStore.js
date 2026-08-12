@@ -588,11 +588,28 @@ const useCartographStore = create((set, get) => ({
   // persisted — derived geometry, rebuilt every tile build.
   tileCorners: [],
   setTileCorners: (c) => set({ tileCorners: c || [] }),
-  // The frozen curb (iA) rings the Section FILL strokes off — published so the
-  // Measure handles anchor to the SAME geometry the FILL uses (one *geometry*
-  // truth, SECTION.md §5), not a centreline ruler. Empty outside frozen Section.
-  sectionCurbRings: [],
-  setSectionCurbRings: (r) => set({ sectionCurbRings: r || [] }),
+  // ⭐ THE CURB, WITH ITS OWNER ON IT. This used to be `sectionCurbRings` — the
+  // frozen `iA` rings flattened into one list with the identity stripped off one
+  // line before the store. A handle could then only ask "which curb is NEAREST",
+  // which is a tuned distance, and on a miss both overlays drew the handle by
+  // centreline ruler anyway (silently, in the grass).
+  //
+  // Now the PARTITION travels with the geometry: one record per tile run, each
+  // carrying its identity (skelId · side · segOrd), the arcs of `iA` that run
+  // OWNS, its own stretch of centerline, and the ring's inward sign. Built by
+  // `buildCurbArcs` off `ringRunOwners` + `bandSpans` — the same two functions
+  // the FILL partitions with, so the handle and the band cannot disagree.
+  //
+  // ⛔ A run whose tile carries no `iaEdge` stamp contributes NOTHING here. That
+  // is the point: no arc means no handle, never a plausible one somewhere else.
+  sectionCurbArcs: [],
+  setSectionCurbArcs: (a) => set({ sectionCurbArcs: Array.isArray(a) ? a : [] }),
+  // Block-edges of the SELECTED chain that own no arc, so no handle was drawn:
+  // [{ side, why }]. The panel shows them. ⛔ This is the loud half of "no arc,
+  // no handle" — without it the rule is a silent disappearance, which is the
+  // failure mode the rule exists to prevent.
+  curbArcWithheld: [],
+  setCurbArcWithheld: (w) => set({ curbArcWithheld: Array.isArray(w) ? w : [] }),
   // Transient UI mode — when true, the Corner-edit handles surface in the
   // 3D scene. Not persisted (operators don't want a Look to load in edit
   // mode); toggled from the Streets > Corners subsection in Panel.

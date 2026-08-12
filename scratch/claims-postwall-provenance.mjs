@@ -240,12 +240,22 @@ const AUTH_SITES = [
   ['src/cartograph/MeasureOverlay.jsx', 'centerlineData?.streets?.[streetIdx]', 3, 'CHAIN', 'the selected element IS a chain, not an arc'],
   ['src/cartograph/MeasureOverlay.jsx', 'const pr = projectOntoPolyline(fe.points, px, pz)', 1, 'PROXIMITY', 'the clicked block-edge = nearest frontage polyline'],
   ['src/cartograph/MeasureOverlay.jsx', 'const idMatches = idKey && fe.chainSkelId === idKey', 1, 'CHAIN', 'candidate edges filtered by chain identity'],
-  ['src/cartograph/MeasureOverlay.jsx', 'const rotY = Math.atan2(ax, az)', 1, 'CHAIN', "the handle's ORIENTATION is the chain's tangent — never the band's"],
-  ['src/cartograph/MeasureOverlay.jsx', 'rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings, pavHW + cwSide + RAY_CURB_MARGIN)', 1, 'CHAIN/PROX', 'handle anchor: ray FROM the chain, ALONG the chain normal, capped at 8 m'],
-  ['src/cartograph/MeasureOverlay.jsx', 'const base = curb || { x: cx + sign * nx * pavHW, z: cz + sign * nz * pavHW }', 1, 'FALLBACK', '⛔ ray missed → place the handle by chain ruler ANYWAY, silently'],
-  ['src/cartograph/MeasureOverlay.jsx', 'const signedPerp = dx * frame.nx + dz * frame.nz', 1, 'CHAIN', "which SIDE a click landed on, from the chain's normal"],
-  ['src/cartograph/MeasureOverlay.jsx', "if (r > curbEnd && r <= oEnd && oD > 1e-6) slot = 'outer'", 1, 'CHAIN', 'which STRIP a click landed in — radii measured out from the chain'],
-  ['src/cartograph/MeasureOverlay.jsx', "if (sd.terminal !== 'sidewalk') return null", 1, 'FALLBACK', '⛔ 169 of 418 street-sides: the gesture silently does nothing'],
+  // ⭐ FIVE SITES RETIRED 2026-08-11 — the handle now rides the arc its block-edge
+  // owns (`measureModel.feArcRecords` → `arcAnchor`), so these decisions no longer
+  // exist to be classified. Kept named here, not deleted silently, because the
+  // point of an inventory is that a site's DISAPPEARANCE is as auditable as its
+  // presence — and re-adding any of them should read as a regression:
+  //   · `const rotY = Math.atan2(ax, az)`            the handle's orientation was the CHAIN's tangent
+  //   · `rayHitCurb(… pavHW + cwSide + RAY_CURB_MARGIN)`  ray from the chain, capped at 8 m
+  //   · `const base = curb || { … cx + sign * nx * pavHW … }`  ⛔ the silent centreline-ruler fallback
+  //   · `const signedPerp = dx * frame.nx + dz * frame.nz`     which SIDE, from the chain's normal
+  //   · `if (r > curbEnd && r <= oEnd …) slot = 'outer'`       which STRIP, by radius off the chain
+  // Orientation, position, side and strip are now all read off the frozen
+  // partition. Survey's twin ray (`rayHitRings`, accept 0.2–40 m, no identity
+  // filter at all) was never inventoried here and is also gone.
+  // Receipt: `node scratch/claims-handle-rides-its-arc.mjs` — every placed handle
+  // sits on an arc its own block-edge owns, asserted by MEMBERSHIP not distance.
+  ['src/cartograph/MeasureOverlay.jsx', "if (sd.terminal !== 'sidewalk') return null", 1, 'FALLBACK', '⛔ 169 of 418 street-sides: the gesture silently does nothing (LEFT AS IS — ruled 2026-08-11: "it is obvious when it does not work")'],
   ['src/cartograph/MeasureOverlay.jsx', 'resolveChainSegmentation(centerlineData?.streets || [])', 1, 'CHAIN', 'the edit unit is a chain segmentation'],
   ['src/cartograph/measureModel.js', 'const fromPipeline = _sceneMeasure.get(st.skelId) || _sceneMeasure.get(st.name)', 1, 'CHAIN', "the edge's measure, looked up by chain id then by NAME"],
   ['src/cartograph/measureModel.js', 'const idMatches = idKey && fe.chainSkelId === idKey', 2, 'CHAIN', 'fe resolution by chain identity (findFeForSide, feesForChainSide)'],
@@ -284,9 +294,14 @@ for (const [file, rows] of byFile) {
 const authBad = Object.entries(authTot).filter(([c]) => !OK.has(c)).reduce((s, [, n]) => s + n, 0)
 console.log(`\n   authoring-surface sites: ${Object.entries(authTot).map(([c, n]) => `${c} ${n}`).join(' · ')}`)
 console.log(`   ⇒ ${authBad ? '⛔ RED' : '✅ GREEN'} — ${authBad} site(s) decide from the chain, a node, a tuned distance, or fail silently`)
-console.log(`\n   ⭐ 0 of these ask the polygon. \`tile.runs[].poly\` names every arc and \`iaEdge\` binds`)
-console.log(`      every inset vertex to its owning ring edge — the handle's arc, the click's arc and`)
-console.log(`      the edit's extent are all already there, frozen, and none of them is consulted.`)
+console.log(`\n   ⭐ THE HANDLE'S GEOMETRY NOW ASKS THE POLYGON (2026-08-11). Placement, orientation,`)
+console.log(`      which SIDE and which STRIP all read the frozen partition — \`tile.runs[].poly\``)
+console.log(`      names every arc, \`iaEdge\` binds every inset vertex to its owning ring edge,`)
+console.log(`      and \`measureModel.buildCurbArcs\` hands the store the curb WITH its owner.`)
+console.log(`      What remains above is IDENTITY and the WRITE, which are chain-keyed on purpose:`)
+console.log(`      \`blockCustoms[skelId][side][segOrd]\` is the operator's design intent and was`)
+console.log(`      ruled legitimate 2026-08-04. ⛔ Do not "fix" those by renaming the key — the rule`)
+console.log(`      is about where GEOMETRY comes from, never which identifiers appear.`)
 if (authBad) anyRed = true
 
 console.log(`\n⭐ HOW TO READ IT. A decision is not a defect because it is WRONG — it is a defect

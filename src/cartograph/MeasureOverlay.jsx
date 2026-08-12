@@ -7,7 +7,8 @@ import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
 import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
-import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure } from './measureModel.js'
+import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure,
+         feArcRecords, arcAnchor, arcHitAt, arcWithheldReason } from './measureModel.js'
 import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
 // Resolve effective measure for a specific segment ordinal. Post-couplers
@@ -168,42 +169,26 @@ function sideBoundaries(side) {
   ]
 }
 
-// Cast the side-perpendicular ray from the centreline click outward to the frozen
-// curb (iA) rings; return the nearest curb-crossing point. The handle then sits at
-// that REAL curb + the ped depth — ONE geometry truth with the FILL, instead of a
-// centreline ruler that drifts from the rounded iA at corners (Plumb forensic 2a).
+// ⛔⛔ THE RAY IS GONE, AND SO IS ITS CAP (2026-08-11).
 //
-// `maxT` (meters) caps the ray distance to the street's OWN curb. Without it the
-// nearest crossing is taken with no street-identity filter, so where this street's
-// curb is interrupted (a junction opening) or absent (the disrupted weird streets —
-// S 18th / Dolman / Carroll), the ray sails through and latches onto a FAR curb
-// 100–217 m away → the handle floats out into the grass (proven, `scratch/handle-diag.mjs`;
-// = Caliper's "corner-registration gap"). Capping → no hit in range → caller falls
-// back to the centreline ruler, keeping the handle ON the ribbon. The real curb
-// absence is the upstream skeleton fix (HANDOFF-18th-loop-skeleton.md); this is the
-// defensive cap. NOTE: the deeper skeleton fix is what makes the curb EXIST.
-function rayHitCurb(cx, cz, dx, dz, rings, maxT = Infinity) {
-  let bestT = Infinity, hit = null
-  for (const ring of rings) {
-    if (!ring || ring.length < 3) continue
-    for (let i = 0; i < ring.length; i++) {
-      const A = ring[i], B = ring[(i + 1) % ring.length]
-      const ex = B[0] - A[0], ez = B[1] - A[1]
-      const denom = dx * ez - dz * ex
-      if (Math.abs(denom) < 1e-9) continue
-      const ax = A[0] - cx, az = A[1] - cz
-      const t = (ax * ez - az * ex) / denom   // ray param (distance along D)
-      const u = (ax * dz - az * dx) / denom    // segment param
-      if (t > 0.05 && t <= maxT && u >= 0 && u <= 1 && t < bestT) { bestT = t; hit = { x: cx + dx * t, z: cz + dz * t } }
-    }
-  }
-  return hit
-}
-// The legitimate curb sits at ~pavementHW + curb from the centreline; a corner
-// fillet / densified curve can push the perpendicular hit a little past that, so
-// allow a generous margin. Anything beyond is a DIFFERENT street's curb (the floats
-// were 100 m+, so the threshold is not delicate).
-const RAY_CURB_MARGIN = 8   // m
+// A handle used to be placed by casting a side-perpendicular ray FROM THE
+// CENTRELINE and taking the first curb it crossed, capped at `pavementHW + curb
+// + 8 m`. The ray had no way to tell this street's curb from any other — the
+// store published the `iA` rings flat, identity stripped — so the cap was doing
+// the identifying, and a distance cannot identify. Measured on LS with authoring
+// loaded (`node scratch/claims-handle-rides-its-arc.mjs`): 612 of 5533 accepted
+// Survey hits landed >0.5 m off the arc that side owns, worst 340.8 m; Measure
+// took 494 silent centreline-ruler fallbacks and 409 in-range hits off its own
+// arc. Jacob's screenshot of it: two handles on a rooftop, half a block off the
+// band. ⛔ And the cap could never have caught the case that prompted this —
+// Lafayette's bad hit was 12.92 m against a 13.05 m cap.
+//
+// The handle now asks the polygon which arc its BLOCK-EDGE owns (`feArcRecords`
+// → `arcAnchor`) and rides that. Identity comes from (skelId, side, segOrds) —
+// the operator's own authoring key — and geometry from the frozen partition, so
+// a wrong-street hit is not constructible and no cap is needed. Where the edge
+// owns no arc, NO HANDLE IS DRAWN and the reason is named; ⛔ never a plausible
+// one placed somewhere else.
 
 // Handle pill dimensions (meters). Long axis runs along the street; short
 // axis is the perpendicular "ruler" direction. Used for hit-testing AND
@@ -246,7 +231,7 @@ function naturalSegmentOrdinal(street, segI, ixSet) {
 export default function MeasureOverlay() {
   const tool = useCartographStore(s => s.tool)
   const spaceDown = useCartographStore(s => s.spaceDown)
-  const sectionCurbRings = useCartographStore(s => s.sectionCurbRings)
+  const sectionCurbArcs = useCartographStore(s => s.sectionCurbArcs)
   const centerlineData = useCartographStore(s => s.centerlineData)
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectStreet = useCartographStore(s => s.selectStreet)
@@ -422,35 +407,41 @@ export default function MeasureOverlay() {
     // handles still emit on both sides — operator authors carriageway width
     // the same as a regular street.
     const measure = innerEdgeMeasure(baseMeasure, st.anchor === 'inner-edge' ? st.innerSign : 0)
-    // Along-street unit vector (perpendicular to the ruler). Handles
-    // orient with long axis along the street so they don't overlap each
-    // other when boundary radii are close.
-    const ax = -nz, az = nx
-    const rotY = Math.atan2(ax, az)   // rotation for a plane geometry aligned XZ
     const handles = []
-    for (const [sideKey, sign] of [['left', -1], ['right', +1]]) {
+    const withheld = []
+    const skelKey = st.skelId || st.name || null
+    for (const [sideKey, fe] of [['left', feLeft], ['right', feRight]]) {
       const bounds = sideBoundaries(measure[sideKey])
       const pavHW = Math.max(0, measure[sideKey]?.pavementHW || 0)
-      // ⭐ One GEOMETRY truth (Plumb fix): anchor to the REAL frozen curb (iA)
-      // along this side's perpendicular, then offset inward by the PED depth
-      // (b.r − pavementHW). This rides the rounded iA at corners and uses the
-      // actual curb position, not the chainMeasure ruler. Falls back to the
-      // centreline ruler when no frozen curb is published (non-Section modes).
-      const cwSide = Number.isFinite(measure[sideKey]?.curb) ? measure[sideKey].curb : CURB_WIDTH
-      const curb = sectionCurbRings.length
-        ? rayHitCurb(cx, cz, sign * nx, sign * nz, sectionCurbRings, pavHW + cwSide + RAY_CURB_MARGIN)
-        : null
-      const base = curb || { x: cx + sign * nx * pavHW, z: cz + sign * nz * pavHW }
+      // ⭐ THE HANDLE RIDES THE ARC ITS BLOCK-EDGE OWNS. Identity: this fe's
+      // (skelId, side, segOrds) — the operator's authoring key, unchanged.
+      // Geometry: the frozen partition. Orientation: THAT ARC's tangent, so the
+      // pill lies along the band instead of along the centreline, which is what
+      // made it read as "attached to the chain" at a bend.
+      const recs = feArcRecords(sectionCurbArcs, skelKey, sideKey, fe?.segOrds)
+      const base = bounds.length ? arcAnchor(recs, selPt.x, selPt.z) : null
+      if (bounds.length && !base) {
+        // ⛔ NO ARC, NO HANDLE. Named, not silent — an unexplained absence in an
+        // authoring tool reads as a broken tool rather than as the map's state.
+        withheld.push({ side: sideKey, why: arcWithheldReason(recs) })
+        continue
+      }
+      if (!base) continue
+      const rotY = Math.atan2(base.tx, base.tz)   // along the ARC, for an XZ plane
       for (const b of bounds) {
         const dPed = Math.max(0, b.r - pavHW)   // curb → this boundary (cw + treelawn[+sidewalk])
         handles.push({
           side: sideKey,
           kind: b.kind,
           r: b.r,
-          x: base.x + sign * nx * dPed,
-          z: base.z + sign * nz * dPed,
+          x: base.x + base.nx * dPed,
+          z: base.z + base.nz * dPed,
           alongOffset: 0,
           rotY,
+          // each handle carries its OWN frame — hit-testing used to run in the
+          // chain's frame, which is the same error as placing it there
+          tanX: base.tx, tanZ: base.tz,
+          nrmX: base.nx, nrmZ: base.nz,
         })
       }
     }
@@ -470,22 +461,35 @@ export default function MeasureOverlay() {
         const curr = sideHandles[i]
         if (Math.abs(curr.r - prev.r) < STAGGER_GAP) {
           staggerIdx += 1
-          // Alternate fore/aft of the centerline anchor point.
+          // Alternate fore/aft along the ARC the handle rides (its own tangent),
+          // not along the chain — otherwise the stagger walks off the band.
           const dir = staggerIdx % 2 === 0 ? +1 : -1
           const mag = Math.ceil(staggerIdx / 2) * STAGGER_AMT
           curr.alongOffset = dir * mag
-          curr.x += (-nz) * curr.alongOffset
-          curr.z += (nx) * curr.alongOffset
+          curr.x += curr.tanX * curr.alongOffset
+          curr.z += curr.tanZ * curr.alongOffset
         }
       }
     }
-    return { streetIdx: selectedStreet, measure, ordinal, mid: { cx, cz, nx, nz }, handles }
-  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, nearestFeForSide, ixByChain, sectionCurbRings])
+    // ⛔ The chain frame (cx/cz/nx/nz) is deliberately NOT exported any more. Every
+    // consumer of it was a decision that belonged to the arc, and leaving it here
+    // is an invitation to route the next one through the chain again.
+    return { streetIdx: selectedStreet, measure, ordinal, handles, withheld, skelKey }
+  }, [active, selectedStreet, centerlineData, selectedMeasurePoint, blockCustoms, findFeForSide, nearestFeForSide, ixByChain, sectionCurbArcs])
 
   // Mirror selection.ordinal to the store so MeasurePanel shows the right segment.
   useEffect(() => {
     if (!selection) return
     useCartographStore.getState().setSegmentOrdinal(selection.ordinal)
+  }, [selection])
+
+  // ⭐ A WITHHELD HANDLE SAYS SO. Where a block-edge owns no arc, no handle is
+  // drawn — and an absence with no account of itself reads as a broken tool, so
+  // the edge and the REASON go to the panel (MeasurePanel renders them). On LS
+  // this is 33 frontages: 12 where the ground is a neighbour's and the dark is
+  // correct, and the rest a stamp-coverage gap upstream (A06).
+  useEffect(() => {
+    useCartographStore.getState().setCurbArcWithheld(selection?.withheld || [])
   }, [selection])
 
   // Apply a boundary drag. `r` = new radius (absolute, from centerline).
@@ -536,17 +540,17 @@ export default function MeasureOverlay() {
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     const thresh = 5 / (camera.zoom || 1)
 
-    // Priority 1: start dragging an existing handle. Hit-test in the handle's
-    // local frame (long axis = along street, short axis = perpendicular = ruler).
+    // Priority 1: start dragging an existing handle. Hit-test in THE HANDLE'S OWN
+    // frame (long axis = along its arc, short axis = the inward normal). It used
+    // to run in the chain's frame, so at a bend the clickable box sat askew of the
+    // drawn pill.
     if (selection) {
-      const ax = -selection.mid.nz, az = selection.mid.nx   // along-street
-      const nx = selection.mid.nx, nz = selection.mid.nz    // across (ruler)
       const longHalf = HANDLE_LONG / 2
       const shortHalf = HANDLE_SHORT / 2
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
-        const along = dx * ax + dz * az
-        const across = dx * nx + dz * nz
+        const along = dx * h.tanX + dz * h.tanZ
+        const across = dx * h.nrmX + dz * h.nrmZ
         if (Math.abs(along) < longHalf && Math.abs(across) < shortHalf) {
           dragRef.current = { streetIdx: selection.streetIdx, ordinal: selection.ordinal, side: h.side, kind: h.kind }
           e.stopPropagation()
@@ -605,11 +609,9 @@ export default function MeasureOverlay() {
     const p = screenToWorld(e.clientX, e.clientY, camera, gl.domElement)
     let hit = false
     if (selection) {
-      const ax = -selection.mid.nz, az = selection.mid.nx
-      const nx = selection.mid.nx, nz = selection.mid.nz
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
-        if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) { hit = true; break }
+        if (Math.abs(dx * h.tanX + dz * h.tanZ) < HANDLE_LONG / 2 && Math.abs(dx * h.nrmX + dz * h.nrmZ) < HANDLE_SHORT / 2) { hit = true; break }
       }
     }
     if (!hit) {
@@ -654,11 +656,9 @@ export default function MeasureOverlay() {
     // pill bounds). Handle clicks are NO-OP in V1.5 (drag-only).
     const hitHandle = (p) => {
       if (!selection) return null
-      const ax = -selection.mid.nz, az = selection.mid.nx
-      const nx = selection.mid.nx, nz = selection.mid.nz
       for (const h of selection.handles) {
         const dx = p.x - h.x, dz = p.z - h.z
-        if (Math.abs(dx * ax + dz * az) < HANDLE_LONG / 2 && Math.abs(dx * nx + dz * nz) < HANDLE_SHORT / 2) {
+        if (Math.abs(dx * h.tanX + dz * h.tanZ) < HANDLE_LONG / 2 && Math.abs(dx * h.nrmX + dz * h.nrmZ) < HANDLE_SHORT / 2) {
           return h
         }
       }
@@ -674,39 +674,48 @@ export default function MeasureOverlay() {
     // §3.1 ordering (outer = the curb-side strip): treelawn-Y → outer=TL,
     // inner=SW; treelawn-N → outer=SW (the walk hugs the curb), inner=TL
     // (0-deep until authored).
+    // ⭐ WHICH ARC CONTAINS THE CLICK, not which side of the chain and how far.
+    // `side` used to come from the sign of the chain's normal and the strip from a
+    // radius measured out from the centreline — both of which drift from the band
+    // wherever the curb is not a clean offset. Now the click is offered to the
+    // arcs of this chain; the one whose band actually contains it answers, and the
+    // SIDE falls out of that record because a run knows its own side.
     const resolveStripHit = (p) => {
       if (!selection) return null
       const st = centerlineData.streets[selection.streetIdx]
       if (!st) return null
-      const frame = frameAtPoint(st.points, p.x, p.z)
-      const dx = p.x - frame.cx, dz = p.z - frame.cz
-      const signedPerp = dx * frame.nx + dz * frame.nz
-      const side = signedPerp >= 0 ? 'right' : 'left'
-      const r = Math.abs(signedPerp)
-      // Resolve the fe by nearest frontage polyline (robust near corners — see
-      // nearestFeForSide). Fall back to the segment-ordinal path if no fe matched.
-      const nf = nearestFeForSide(selection.streetIdx, side, p.x, p.z)
-      const nfSeg = (nf?.segOrds?.length) ? Math.min(...nf.segOrds) : null
-      const segOrd = nfSeg != null ? nfSeg : naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-      const customFe = nfSeg != null ? nf : findFeForSide(selection.streetIdx, segOrd, side)
-      const existing = readFeCustom(blockCustoms, customFe)
       const chainM = chainMeasure(st)
-      const chainSide = chainM?.[side] || null
-      if (!chainSide && !existing) return null
-      const ped = resolvePedDepths(chainM, side, existing)
-      const sd = { ...(chainSide || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
-      if (sd.terminal !== 'sidewalk') return null
-      const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
-      const curbEnd = (sd.pavementHW || 0) + cw
-      const oD = ped.hasTL ? ped.tl : ped.sw     // outer (curb-side) slot depth
-      const iD = ped.hasTL ? ped.sw : ped.tl     // inner slot depth
-      const oEnd = curbEnd + oD
-      const iEnd = oEnd + iD
+      // per-record band depth: how deep this edge's ped band actually reaches,
+      // read off the SAME resolution the FILL strokes (SECTION §5, one depth
+      // truth). Not a tuned radius — the band's own total.
+      const depthsFor = (rec) => {
+        const fe = findFeForSide(selection.streetIdx, rec.segOrd, rec.side)
+        const existing = readFeCustom(blockCustoms, fe)
+        const chainSide = chainM?.[rec.side] || null
+        if (!chainSide && !existing) return null
+        const ped = resolvePedDepths(chainM, rec.side, existing)
+        const sd = { ...(chainSide || {}), ...(existing || {}), treelawn: ped.tl, sidewalk: ped.sw }
+        if (sd.terminal !== 'sidewalk') return null
+        const cw = Number.isFinite(sd.curb) ? sd.curb : CURB_WIDTH
+        const oD = ped.hasTL ? ped.tl : ped.sw     // outer (curb-side) slot depth
+        const iD = ped.hasTL ? ped.sw : ped.tl     // inner slot depth
+        return { fe, sd, ped, cw, oD, iD }
+      }
+      const hit = arcHitAt(sectionCurbArcs, selection.skelKey, p.x, p.z, (rec) => {
+        const d = depthsFor(rec)
+        return d ? d.cw + d.oD + d.iD : 0
+      })
+      if (!hit) return null
+      const d = depthsFor(hit.rec)
+      if (!d) return null
+      // depth is measured INWARD FROM THE FROZEN CURB — the datum the strips are
+      // actually built off — so the curb stroke itself is the first `cw`.
+      const fromCurb = hit.depth - d.cw
       let slot = null
-      if (r > curbEnd && r <= oEnd && oD > 1e-6) slot = 'outer'
-      else if (r > oEnd && r <= iEnd && iD > 1e-6) slot = 'inner'
+      if (fromCurb > 0 && fromCurb <= d.oD && d.oD > 1e-6) slot = 'outer'
+      else if (fromCurb > d.oD && fromCurb <= d.oD + d.iD && d.iD > 1e-6) slot = 'inner'
       if (!slot) return null
-      return { slot, side, segOrd, sourceMeasure: sd, hasTL: ped.hasTL, fe: customFe }
+      return { slot, side: hit.rec.side, segOrd: hit.rec.segOrd, sourceMeasure: d.sd, hasTL: d.ped.hasTL, fe: d.fe }
     }
     // Try to flip the material of the strip whose body the click landed in.
     // Polygon-only (same scope rules as drag): per-block flips the one fe at
@@ -881,7 +890,7 @@ export default function MeasureOverlay() {
       dom.removeEventListener('dblclick', onDblClick, opts)
       window.removeEventListener('keydown', onKeyDown)
     }
-  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain])
+  }, [active, gl, camera, selection, onPointerDown, onPointerMove, onPointerUp, deselectStreet, centerlineData, findFeForSide, blockCustoms, ixByChain, sectionCurbArcs])
 
   if (!active) return null
 

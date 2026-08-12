@@ -34,6 +34,7 @@ import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore from './stores/useCartographStore.js'
+import { buildCurbArcs } from './measureModel.js'   // the curb, published WITH its owner — the partition the handles ride
 import {
   BOUNDARY_CENTER_XZ,
   FADE_INNER, FADE_OUTER,
@@ -871,16 +872,22 @@ export default function BlockGeometryV2Debug({
   // curb arc (one corner truth — the handle reads geometry, never re-derives).
   // Publish the frozen curb (iA) rings so MeasureOverlay anchors handles to the
   // SAME geometry the FILL strokes (Plumb forensic: "one geometry truth").
-  const setSectionCurbRings = useCartographStore(s => s.setSectionCurbRings)
+  const setSectionCurbArcs = useCartographStore(s => s.setSectionCurbArcs)
   useEffect(() => {
-    // Curb (iA) rings from whichever FILL path actually renders — frozen Section
-    // (sectionGeos) OR the live tile build (tileGeos) — so handle anchoring works
-    // regardless of mode, not only when the frozen artifact is loaded.
-    const rings = sectionGeos?.blockRings?.length ? sectionGeos.blockRings
-      : tileGeos?.blockRings?.length ? tileGeos.blockRings
-      : []
-    setSectionCurbRings(rings)
-  }, [sectionGeos, tileGeos, setSectionCurbRings])
+    // ⭐ Publish the curb WITH ITS OWNER, not the bare rings. This used to hand
+    // the store `blockRings` — the same `iA` geometry with the partition stripped
+    // off — so a handle could only ask which curb was nearest. The shape tiles
+    // carry `runs` + `iaEdge`, so the owner is right there; `buildCurbArcs` reads
+    // it with the FILL's own two functions and invents nothing.
+    //
+    // Same either/or as before, so anchoring works in both tools: the FROZEN
+    // shape in Section/Design, the live artifact in Survey (the tile build emits
+    // it — `emitArtifact: true` above).
+    const shape = (sectionFrozen && frozenShape?.tiles?.length) ? frozenShape.tiles
+      : tileGeos?._shapeArtifact?.length ? tileGeos._shapeArtifact
+      : null
+    setSectionCurbArcs(shape ? buildCurbArcs(shape) : [])
+  }, [sectionFrozen, frozenShape, tileGeos, setSectionCurbArcs])
   const setTileCornerFillets = useCartographStore(s => s.setTileCornerFillets)
   useEffect(() => {
     setTileCornerFillets(tileGeos?.cornerFillets || {})
