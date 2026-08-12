@@ -366,6 +366,29 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
+// [A06] The stamp's own structural claim, per ring: each source ring edge owns ONE
+// cyclic arc, and the arcs walk the ring in source order with a SINGLE wrap.
+// ⛔ Cyclic, not linear — a run may straddle index 0, and treating that as two runs
+// would refuse every tile whose first edge happens to start there.
+// ⚠️ Both halves are needed: one-arc-per-edge still permits visiting the arcs OUT OF
+// ORDER (centrum tile 157 did exactly that and passed a contiguity-only test).
+function _labsContiguous(labs) {
+  for (const L of labs || []) {
+    const n = L.length; if (n < 2) continue
+    let start = 0
+    while (start < n && L[start] === L[(start - 1 + n) % n]) start++
+    const runs = new Map(), seq = []
+    for (let k = 0; k < n; k++) {
+      const i = (start + k) % n, prev = (start + k - 1 + n) % n
+      if (k === 0 || L[i] !== L[prev]) { runs.set(L[i], (runs.get(L[i]) || 0) + 1); seq.push(L[i]) }
+    }
+    for (const c of runs.values()) if (c > 1) return false
+    let desc = 0
+    for (let k = 1; k < seq.length; k++) if (seq[k] < seq[k - 1]) desc++
+    if (desc > 1) return false
+  }
+  return true
+}
 function unionRingLabelled(ring, labels) {
   return booleanLabelled(clipperLib.ClipType.ctUnion, [ring], [labels])
 }
@@ -3790,12 +3813,13 @@ export function buildTileGround(ribbons, opts = {}) {
     // here can change what is STAMPED but never what is DRAWN. `_aFillLabs` is nulled
     // by any later unlabelled reshape of `aFill` (below): a label that stopped being
     // true is refused, not carried forward.
-    let _aFillLabs = null
+    let _aFillLabs = null, _aFillBase = null
     if (aStads.length) {
       const _u = booleanLabelled(clipperLib.ClipType.ctUnion, aStads, aStadLabs)
       if (_u.labels) {
         const _ix = booleanLabelled(clipperLib.ClipType.ctIntersection, _u.rings, _u.labels, [tile.ring], [tile.ring.map((_, i) => i)])
         if (_ix.labels && _ix.rings.length === aFill.length) _aFillLabs = _ix.labels
+      if (_aFillLabs) _aFillBase = aFill.map(r => r.slice())
       }
     }
     // E2 — constructed-median consumption (replaces the G3a >40%-median-facing
@@ -3826,7 +3850,23 @@ export function buildTileGround(ribbons, opts = {}) {
     // junction window, through-station) adds geometry belonging to NO single run, so
     // the carried labels stop being true. ⛔ REFUSE them rather than carry one that
     // has quietly become a guess — the stamp's entire value is that it never guesses.
-    if (mergeClip.length || cCut.length || jClip.length || tClip.length) _aFillLabs = null
+    // [A06] CARRY the labels through the four constructed reshapes; do NOT drop the
+    // class. They add geometry owned by no street — the intersection interior is not
+    // a street (`SKELETON §5d`) — but they reshape the ASPHALT, while a label's
+    // meaning is about the RING, which `groupRuns` partitions completely, at a
+    // junction as much as anywhere. Their vertices land as crossings and inherit
+    // forward. ⭐ MEASURED: dropping the class cost 27 LS tiles and 37 on altadena
+    // for nothing. The refusal belongs PER TILE (at the freeze), never up front.
+    if (_aFillLabs && _aFillBase) {
+      let R = _aFillBase, L = _aFillLabs
+      const step = (ct, clip) => { if (!L || !clip.length) return
+        const r = booleanLabelled(ct, R, L, clip); if (!r.labels) { L = null; return } R = r.rings; L = r.labels }
+      if (mergeClip.length) step(clipperLib.ClipType.ctUnion, mergeClip)
+      if (cCut.length) step(clipperLib.ClipType.ctDifference, cCut)
+      if (jClip.length) step(clipperLib.ClipType.ctUnion, jClip)
+      if (tClip.length) step(clipperLib.ClipType.ctUnion, tClip)
+      _aFillLabs = (L && R.length === aFill.length) ? L : null
+    } else _aFillLabs = null
     const medClip = medianClipFor(tile.ring)   // loop-body median rings only (divided no longer stamps rings)
     let medArea = 0
     for (const r of medClip) medArea += Math.abs(signedArea(r))
@@ -4412,6 +4452,18 @@ export function buildTileGround(ribbons, opts = {}) {
     // every index inside tile.ring. A stamp that merely LOOKS present is worse than
     // none, so a mismatch refuses loudly by name instead of shipping a wrong map.
     let _iaShape = false
+    // [A06] THE REFUSAL LANDS AT THE FREEZE, ON THE FINAL LABELS.
+    // ⚠️ Measured: testing the carve OUTPUT let centrum tile 234 through, because
+    // `filletRings` and the fold-spur strip run AFTER it and can re-order the
+    // sequence. A stamp is only true if it is true of what actually gets frozen.
+    // ⛔ Carve-produced labels only — the offset path keeps its own looser
+    // SIMPLE/REPAIRED assertion, because a self-crossing offset splits an arc
+    // legitimately and strict contiguity would refuse tiles that are correct.
+    // ⭐ On LS the two tiles this refuses are tiles 30 and 33 — the ONLY two notched
+    // tiles on the map. A source edge owning two separated arcs IS the notch, seen
+    // from the label side. Stamping them would launder a real geometry defect into
+    // an authoritative label, which `WALL §1` calls odious.
+    if (_producer === 'carve' && _iaLabels && !_labsContiguous(_iaLabels)) { _iaLabels = null; _iaNo = 'carve:noncontiguous-arcs' }
     if (_iaLabels) {
       const nR = tile.ring.length
       // [A10-③] `null` = THIS VERTEX HAS NO OWNER, and it is legal ONLY on a tile
