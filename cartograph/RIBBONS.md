@@ -93,6 +93,38 @@
 > `OSM2STREETS §2`) · `innerEdgeAssign`'s ped-zeroing hack (a one-sided chain faked with a two-sided one)
 > · `[THRU-T]` (`tileGround.js:3589-3613`, **already dead — `opts.thruTNode` is never passed**) ·
 > `detectTileCaps` as an identity source (it is a slit detector wearing a cap detector's name).
+> **· `clean/park-polygon.json` — a PRE-TILE-MODEL SURVIVAL** *(measured 2026-08-12, from Jacob's
+> question "why do we need that polygon at all?")*. ⭐ **`tile #8` IS the park** — bounded by
+> `mississippi-avenue · lafayette-avenue-3 · missouri-avenue-2 · park-avenue-1`, centroid **4 m** from
+> the authored polygon's. The park has been an ordinary block face since the tile model landed.
+> What the polygon still drives, and what replaces it:
+> | use | site | replaced by |
+> |---|---|---|
+> | the park face | `derive.js:2308` | **tile #8** |
+> | a **bespoke sidewalk** | `derive.js:2313-2322` | the ordinary inward band |
+> | fence corners | `LafayettePark.jsx:49-58` | inset from `corners` directly |
+> | label position + text rotation | `LafayettePark.jsx:65-67` | the tile's own centroid/axis |
+> | bridge + steps clip region | `LafayettePark.jsx:234`,`:290` | the tile ring |
+> - ⛔⛔ **The bespoke sidewalk offsets with `jtRound` — the method INVARIANT 2 forbids, applied to a
+>   SQUARE, which is the exact case that invariant says `jtRound` CORRUPTS.** It is a second, parallel
+>   sidewalk mechanism that is not the tile band.
+> - ⛔ **`parkAxisToCompass` (`:42-47`) IS AN APPLIED ROTATION** — a matrix built from `tiltDegrees`,
+>   used for the fence and the label. ⭐ **Gratuitous:** `parkPolygon.corners` are already real-world
+>   coordinates; the fence is a 2 m inset, so it could inset from `corners` and need no rotation.
+>   Instead it **discards the corners, rebuilds a square from `halfWidthMeters`, and rotates it back.**
+>   *(This is the survival Jacob suspected when he said "early on we applied a rotation to different
+>   things before we settled on a real-world orientation." Outputs still land at true position, so
+>   `ORIENTATION`'s no-trick-rotations OUTCOME holds — the MECHANISM is the leftover.)*
+> - ⛔ **Three files import it by hardcoded LS path** — `LafayettePark.jsx:17`,
+>   `loadInstanceData.js:58`, `BlockGeometryV2Debug.jsx:30` — a live LS-bleed vector of exactly the
+>   kind `EXTENT-DESIGN §2.1` names as the root of that class.
+> - ⚠️ **What genuinely still needs a park identity is the CONTENT** (fence, water, paths, stairs) —
+>   and that hangs off **which tile is the park**, which `blockLandUse` already keys. ⭐ The only
+>   remaining geometric argument is the corner plugs, and that reduces to *"simplify a park face
+>   automatically"* — the junction-protected simplifier the kit already owns for streets
+>   (`SKELETON`: *a city block should be ~4 corners, not 30 wiggles*). Town #2 has **no**
+>   `park-polygon.json` and takes the OSM 41-vertex fallback that `derive.js:1114` warns degrades.
+>
 > ⭐ **Excise knobs, wiring AND docs together, in one window** (`[[feedback_remove_functionality_excise_knobs_wiring_docs]]`);
 > the standing removal-queue discipline is `SHOW-BIBLE §4`. ⛔ A retirement list written later is a
 > retirement list that never runs — this one was written at the moment of the decision on purpose.
@@ -189,6 +221,30 @@
 > ⚠️ **Live risk regardless of the ruling: a look-side regeneration of the disc silently moves 31 tiles'
 > ring edges**, because a render artifact is load-bearing geometry and nothing says so.
 >
+> ### ✅✅ RULED 2026-08-12 (Jacob) — THE BOUNDARY IS AN ORDINARY CHAIN AND GETS AN ORDINARY BAND
+> > *"The edge boundary polygon is treated as equal to chains, and their intersection is treated exactly
+> > the same. If it helps you, we can just **continue the sidewalk/tree lawn × corner config around the
+> > boundary edge**, because the last step is the map within the boundary gets **feathered** at the edge,
+> > and we feather it far enough to swallow whatever customs might show."*
+>
+> ⭐⭐ **THIS DELETES THE RIM SPECIAL CASE OUTRIGHT — it is a simplification, not an extra feature.**
+> The rim run takes a **normal `baseMeasure`**, paints a **normal treelawn/sidewalk**, and corners with
+> its neighbours by the **same** rule as any other pair. Nothing downstream needs to know the edge is
+> special, because **the feather is applied last, as a look, and is sized to swallow it.**
+> ⇒ **What this retires, by construction:**
+> - the `__boundary__` **no-`baseMeasure`** case, and with it **4271.8 m of "derived-zero" exclusions
+>   across 20 tiles** — the *entire* derived-zero population on LS (measured, Quill);
+> - **12 of the 16** topological-only severances that *"stop against a NO-PED arc"* — there is no
+>   NO-PED arc at the rim any more;
+> - the filler `side:'right'` on all 290 rim edges, and every consumer branch that tests for a rim.
+>
+> ⭐ **It also settles `EXTENT-DESIGN §8` Q4** (*"what does a boundary street's SIDE mean?"*) for the
+> geometry layer: the boundary chain's inward side is an ordinary side and carries an ordinary
+> cross-section. ⛔ **Do not build a rim-kind, a rim branch, or a rim exception.** If a construction needs
+> to ask "is this the rim?", that is the signal it has diverged from this ruling.
+> ⚠️ **Verify the feather actually covers it before shipping** — the ruling rests on the fade being wide
+> enough to hide the rim band, and that is an *eye* check on the real render, not a probe.
+>
 > ### Dead-end notches change SHAPE, not COUNT — ⛔ on LS, and do not carry it as a law
 > 0 cap-tiles are split into more than one island; a punched spur is a **concavity**, adding vertices not
 > rings. It *would* change the count if a spur reached clean across a block, which does not happen on LS.
@@ -237,6 +293,40 @@
 >      tile and one material-hole tile. If a pinch reads unbroken, the acceptance predicate is *unpainted
 >      arc* (≈14) and this gate gets rewritten; if it reads broken, 39 stands.
 >      **"39" and "4" cannot both be the acceptance number.**
+>      - ✅ **14 RE-DERIVED AND UNCHANGED (Quill, 2026-08-12)** — per-tile delta **zero**; not inflated,
+>        now resolved the producer's way. **Exclusions on LS are degenerate:** authored-zero **0.0 m**
+>        (30 `blockCustoms` entries, none resolve to zero ped) · derived-zero **4271.8 m / 20 tiles**, all
+>        one cause — *no `baseMeasure` at all*, i.e. **the rim**. ⭐ **LS cannot exercise the authored
+>        branch; town #2 is where that half first gets tested.**
+>      - ⛔⛔ **A BOZ DIAGNOSIS THAT WOULD HAVE MASKED A REAL HOLE — do not repeat it.** Boz read
+>        `truman-parkway-0|right` as `treelawn 0 · sidewalk 0 · terminal 'none'` and briefed excluding it
+>        as no-ped-by-design. **`resolvePedDepths` (`tileGround.js:1234`) NEVER READS those fields for
+>        depth** — it takes `custom?.treelawn ?? STD_TREELAWN` / `custom?.sidewalk ?? ADA_SIDEWALK`, both
+>        **1.5**; `measure.{treelawn,sidewalk,terminal}` feed only `gleanTreelawn`, which picks strip
+>        ORDERING (`SECTION §3.1`: the standard depths deliberately replaced the averaged measures).
+>        ⇒ that side resolves to a **full 3.00 m expected band and its 222 m IS a hole.** ⭐ **Asserted
+>        from two measurements without reading the resolution path** — the agent checked instead of
+>        building on it. [[feedback_measure_before_writing_ask_before_building]]
+>      - ⚠️ **RULING OWED, SEPARATE: `terminal:'none'` is consulted by NOTHING.** A side marked no-ped is
+>        painted a full band anyway. If it *should* zero the strips that is a change to the derivation and
+>        it moves numbers on every town. [[project_a_sentinel_is_not_a_value]]
+>      - ⭐⭐ **THE 25 ARE NOT PINCHES — measured at 0.05 m spacing within 3 m of every contact, the band
+>        runs at 2.95–3.00 m on a 3.00 m band right up to it. ZERO pinch notches in 39 tiles.** They are
+>        **full-depth abutments the union fails to fuse.** ⛔ **Cause not established** — it is not a width
+>        collapse, and beyond that there are measurements, not a mechanism.
+>      - ⛔⛔ **AND THE GATE UNDER-REPORTS AS WELL AS OVER-REPORTS — "39" IS WRONG IN BOTH DIRECTIONS.**
+>        **10 tiles the band gate PASSES as one clean ring carry material holes**, up to **47.5 m**
+>        (`655d3f2d4e`, `grattan-street|right|1`). So the severed set is neither a superset nor a subset of
+>        the defect: 25 false positives *and* 10 false negatives. ⭐ **A tile can have one continuous union
+>        ring and still be missing metres of band** — ring-count and unpainted-arc are orthogonal, which is
+>        the whole reason the predicate has to change. *(Quill, unasked — `scratch/sever24-mechanism.mjs`.)*
+>      - ⚠️ **`shape.json` MOVED MID-SESSION** (`59886df6…` → `05666e18…`, uncommitted). Re-derived on the
+>        new bytes: severed **39**, material holes **14** — both unchanged. ⛔ But `sever24-taxonomy.mjs`
+>        as committed was measured on the OLDER bytes. **State the artifact hash with any count from here.**
+>      - ▶ **THE TWO OPEN MECHANISMS, both Section-layer, both unexplained:** *(i)* why **expected,
+>        full-depth-capable arc goes unpainted** — 483 m (`truman-parkway-0|right` + `grattan-street|left`)
+>        · 28.5 m (`chouteau-avenue-0|right`) · 24.2 m (`rutger-street-1|right`); *(ii)* why a **full-depth
+>        abutment yields two union rings.** ⭐ **The count is no longer the story.**
 >    - ⛔ **KIT DEFECT IN THE INSTRUMENT, separate and small: `curbWidth` is a LITERAL `0.381`.** A scene
 >      whose operator has not authored one gets `CURB_WIDTH = 0.1524` ⇒ **33 severed, 20 tiles changing
 >      class.** On town #2 it measures a curb the producer never poured — Check A's blindness, recurring.
@@ -508,7 +598,46 @@ The 2D Survey/Section render reads `buildTileGround` live (Survey) or `sectionOp
 
 > The front of the work. The figure-ground-era modes (SELFINT band rings, curb-stroke Clipper gaps, dblclick-vs-spec) are retired to the figure-ground archive; the live thorn/degeneracy class is tracked as **G12** in `HANDOFF-tile-feature-ledger.md`.
 
-### 6.1 G12 — thin-feature degeneracy ("thorns") — OPEN (PARTIAL)
+### 6.1 G12 — thin-feature degeneracy ("thorns") — OPEN (PARTIAL) · ⭐⭐ SUBCLASS 2 **CONFIRMED AND SIZED** 2026-08-12
+
+> **`node scratch/sever24-mechanism.mjs` (agent Quill), LS, authored.** Inward ray from each curb sample
+> to the far side of the tile, 0.05 m spacing, threshold **2·WB** (the band occupies WB inward from *each*
+> side, so below 2·WB the offsets pass the medial axis — WB alone is "cannot fit at all"; 2·WB is the
+> collision):
+> ```
+>                 width < 2·WB    width ≥ 2·WB
+>   unpainted        510.0 m         397.1 m
+>   painted          292.7 m      22 846.6 m
+>   unpainted rate     63.5%            1.7%     ← risk ratio 37.2×
+> ```
+> ⭐ **Subclass 2 owns 510 m — 56% of all unpainted band metres.** Median local width along the unpainted
+> arc: **1.3 / 1.0 / 2.0 / 0.3 m against a 6.76 m threshold.** These are the **tapering wedges Jacob's eye
+> picked out** on the render (Rutger/Park, chouteau, lafayette/mississippi — "same shaped", 2026-08-12).
+> ⇒ **LAYER: SHAPE, not FILL.** The tile's own geometry pinches below band capacity; the FILL is being
+> asked for something the region cannot hold. ⛔ The cure is `§6.1`'s **LOCAL capacity clamp**
+> (`HANDOFF-band-fold-fix.md`) and is explicitly **not** a FILL patch and **not** a corner-R clamp.
+>
+> ⛔⛔ **A PRIOR "G12 IS KILLED" IS RETRACTED — and the retraction is the lesson.** It was killed on
+> *"every one of the 24 has `cap === WB` exactly, so no tile is capacity-limited."* **`cap === WB` means
+> the CLAMP DID NOT FIRE — which is precisely what subclass 2 looks like**, because (per this section) the
+> clamp fires only on FULL collapse and `thinTile` is computed but orphaned. **The test measured the clamp,
+> not the thinness.** ⭐ And a whole-tile mean width (`2A/P`) cannot see it either — Boz ran it and got
+> 64 m and 67 m on two of the affected tiles, because **a tapering block reads as ordinary on an average.**
+> **The only valid test is LOCAL width along the arc.**
+>
+> ⛔ **THE OTHER 397 m IS NOT THIN AND G12 DOES NOT TOUCH IT.** 20 tiles sit at 0% below threshold with
+> local widths of **43–364 m** — including both standing leads, `rutger-street-1|right` (43.2 m wide) and
+> `chouteau-avenue-0|right` (78.7 m). `iA` is present and well-formed, the arc is **owned**, the region is
+> wide, and nothing paints it. **CAUSE NOT ESTABLISHED.** Killed on the way: unowned arc (unpainted is
+> *less* unowned than painted, 8.9% vs 19.7%) · "whole leg ⇒ the run was excluded" (1 of 34 runs is ≥95%
+> unpainted; 33 are partial) · co-claim (**0%** of unpainted samples are painted by a neighbour — not a
+> partition defect) · corner over-trim (killed by scale).
+>
+> ⛔ **SIDE-SKEW IS DEAD — and it inverted.** Normalised over every banded tile: left **450.0 m / 20,424 m
+> = 2.20%**, right **457.2 m / 29,294 m = 1.56%**; ratio **0.71 — right is the LOWER rate.** The raw
+> right-side majority in the first five samples was **the denominator talking** (right-side runs carry 43%
+> more arc). ⭐ Boz proposed this hunt off those five; **it is the third time in one day a shape was read
+> off an un-normalised sample** (cf. the offset-producer share, the median hypothesis).
 When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward offsets collapse past the medial axis → degenerate spurs `filletRing` rounds into thorns. **Two subclasses, both open** (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) self-intersecting blobs (the band-fold-fix is STRANDED on a non-ancestor branch); (2) band-neck / partial-degeneracy (the `cap` clamp fires only on FULL collapse; the `thinTile` signal is computed but orphaned). The fix is the **LOCAL** capacity clamp (engage on partial-degeneracy without over-clamping the in-spec rest of the block — `HANDOFF-band-fold-fix.md`). ⛔ **Not** a corner-R clamp. Verify map-wide, zoomed-out, on Jacob's eye (the pulled-in view hides them).
 
 ### 6.2 Phantom park from `classify.js` — OPEN (data/classification) · ⭐ **MEASURED 2026-07-30, and the prescribed fix was aimed at the WRONG TAG**

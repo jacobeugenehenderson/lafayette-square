@@ -58,6 +58,62 @@ The canonical spur is a named **boundary arterial** that enters the fetch at ful
 
 Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
 
+> ### ⛔⛔ 2.5a — THE CLIP MANUFACTURES DEAD ENDS, AND A LOOK KNOB DECIDES THEM (Jacob's eye, 2026-08-12)
+> **Jacob, seeing round-capped stubs north of Chouteau: *"I am seeing artificially cut off streets in this
+> whole area."* Measured, LS:**
+> ```
+> population                       total   at clip radius   beyond hood R(892)   interior(<0.8R)
+> chain endpoints (what RENDERS)      94        29                 42                 33
+> junctionMap degree-1 nodes          29        11                 12                 10
+> frozen tile.caps                50/21 tiles    0                  0                 31
+> ```
+> **29 endpoints sit at EXACTLY 1030 m — `keepR = streetFade.outer + 30`, to the metre.** That is not a
+> cluster, it is the guillotine. **A clipped street is then given a ROUND CAP by the cap machinery, so a
+> guillotined street renders as a cul-de-sac.**
+> - ⛔⛔ **`streetFade` IS A RENDER PARAMETER** (a shader fade — `boundary.js:10`, `BakedGround.jsx:117`).
+>   **A look knob is deciding where streets end, and therefore how many dead ends the map has.** Same
+>   defect shape as the outer-polygon finding (`RIBBONS §1`), one level worse: it manufactures *topology*.
+> - ⭐ **AND IT CONTRADICTS THE DOCTRINE STATED 4,500 LINES AWAY IN THE SAME PIPELINE.** `derive.js:4632`'s
+>   own comment: **"build full, crop LAST."** `pipeline.js:149` crops **FIRST**, at a **different radius**
+>   (1030) from the one the faces close against (the boundary, 892), and **`clipRun` keeps only the LONGEST
+>   inside run** — a lossy discard, upstream of everything.
+> - ✅ **THE FROZEN TILE/CAP SYSTEM IS CLEAN** — 0 of 50 caps at the clip radius — because `derive.js`
+>   re-clips face-streets to the **boundary** before the walk. ⇒ `RIBBONS §1`'s ruled dead-end class is
+>   **not** contaminated.
+> - ⛔ **`junctionMap` IS contaminated: only 10 of 29 degree-1 nodes are real interior tips.** ⚠️ **Slice 1
+>   (`a2e0f6c4`) stamped tip couplers over that population** — it is not wrong *per node*, but its
+>   *coverage* is mostly clip artifact. **Re-scope it against real tips before the walk consumes it.**
+> - ⚠️ **Corroborated independently, from the other end:** `clipRun` clips street polylines but **never
+>   filters `junctionMap.nodes`**, so **19 of 31 unlocatable stamps name a chain the clip removed**
+>   (agent A, `a2e0f6c4`). Same step, same day, two directions.
+>
+> ### ✅ RULED 2026-08-12 (Jacob) — CUT FIRST, MEASURE SECOND, FIX LAST
+> > *"Once we eliminate the artificial hand-cuts and re-connect the underlying nodes and chains,
+> > theoretically we will only be left with honest CDSs, so we can wait to fix until we make sure it's
+> > busted."*
+>
+> **SEQUENCING, and it reorders the board:** ① remove the artificial cut and **reconnect the underlying
+> nodes and chains** → ② **re-measure the dead-end population** → ③ only then re-scope the tip couplers
+> and the cap machinery. ⛔ **Do not fix the caps, the tip source, or Slice 1's coverage first** — most
+> of what they aim at may not survive ①.
+>
+> ⛔⛔ **THE FIX IS A `pipeline.js` CHANGE — NEVER AN EXTENT OPERATION. THIS IS THE TRAP.**
+> `EXTENT-DESIGN §3.3` (D4, measured 2026-08-08): **`commit-extent`/`rescope` ALWAYS reset `center`,
+> `fade`, `streetFade`, `innerFadeOffset` to hardcoded values, with no protection and no warning** — and
+> **LS is the ONLY scene carrying authored values there** (`center:[-15,-15]` = Lafayette Park's centroid;
+> `innerFadeOffset:134`; every other scene `[0,0]`/200). **`streetFade` is in that reset set, and it is
+> the very field `keepR` reads.** ⇒ **Going through the tool would silently destroy LS's authored centre
+> and fade in order to fix a cropping bug** — on production `lafayette-square.com`, a scene that **has
+> never been poured** (`EXTENT-DESIGN §2`) and that the worklist rules is **conformed LAST**.
+>
+> ⛔ **CLEAN IT UP; DO NOT PATCH, AND DO NOT KEEP AN IMPRINT** *(Jacob: "this is the very definition of
+> clogging dead code effluvium… we will not return to this state, so it is no benefit to save an imprint
+> of it. **This is true in the documentation as well.**")* Excise knobs, wiring **and prose** in one pass.
+> ⚠️ A **deliberate, scoped exception** to *archive-don't-delete*: it covers **dead code and the artifacts
+> of a state we will not return to** — never design record or rulings.
+> ⭐ `§2.5`'s original job is real (a city-length arterial skewing the content bbox; `map.json`
+> 180 → 52 MB) — **replace the job, don't just delete the implementation.**
+>
 > **Doctrine (ties §0 to §6).** The Data Wall is where a **spurious / overshooting polygon gets neutered** — polyline-clip the boundary arterial *to the hood*, don't keep it whole. Drop what's fully outside; clip what straddles; hold buildings to the **inclusion polygon** (+ exclusions + roster overrides — `NEIGHBORHOOD-INPUTS §5.2`). The wall **neuters**, it doesn't merely pass geometry through.
 
 ---
