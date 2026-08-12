@@ -210,6 +210,51 @@ it could not fix *where that leg starts and stops*, because there was no second 
 corner registry"`). `cornersAdjacent` was therefore **never retired**, and `corners.{outer,apex,stub}`
 remain the only registry `tileGround.js` sees.
 
+> ### ⭐⭐⭐ AND `cornersAdjacent` IS THE COUPLER RELATION — FROZEN, COMPLETE AT EVERY ORDINARY INTERSECTION, AND READ BY NOTHING (2026-08-12)
+> *(Found while sizing Jacob's directed-side-chain proposal. This is not "another orphaned field" — it
+> is the one this doc has been circling, and it moves the substrate question.)*
+>
+> Each record pairs **`(chain, end, side)` → `(chain, end, side)`** at a node — *which incoming side
+> hands off to which outgoing side.* That is a **permutation on directed half-chains**, which is
+> exactly what determines the face structure of an embedded graph. ⭐ **The identity a face walk would
+> need is already stamped; what is missing is a consumer.**
+> - **Produced** at prebake — `derive.js:4353` / `:4358`, serialized `:4410`.
+> - ⛔ **Consumed by NOTHING.** Zero reads in `src/`:
+>   `grep -rn "cornersAdjacent" --include="*.js" --include="*.jsx" src cartograph` → **three lines, all
+>   in `derive.js`** (produce · push · serialize). ⛔ **The `--include` is load-bearing** — a bare grep
+>   over `src` also walks `src/data/ribbons.json`, where the field appears in the artifact thousands of
+>   times, and the noise reads as "plenty of consumers." ⭐ **`project_polygon_must_ask_the_stamp` in
+>   its purest form: the stamp exists, is correct in shape, and the polygon never asks.**
+> - **Coverage vs built geometry — re-derive, do not quote:**
+>   `node -e "const N=require('./src/data/ribbons.json').junctionMap.nodes,d=n=>(n.legs||[]).reduce((a,l)=>a+(l.end==='through'?2:1),0),t={};for(const n of N){const k=d(n);t[k]=t[k]||[0,0,0];t[k][0]++;if((n.cornersAdjacent||[]).length)t[k][1]++;if(n.apron||(n.continuity||[]).some(c=>c.source!=='tip-wrap')||(n.deTaper||[]).length)t[k][2]++}console.table(t)"`
+>   The shape it prints: **every degree-3 T and every degree-4 cross carries the relation; a small
+>   minority carry built geometry; degree-1 carries the relation ZERO times.**
+> - ⛔⛔ **`legs.length` IS NOT THE NODE DEGREE** — a leg with `end:'through'` is one chain passing
+>   through, i.e. **two arms**. `tileGround.js:2787` computes the real degree (`nodeDeg`); the artifact
+>   does not store it. **A census keyed on `legs.length` reports the opposite of the truth, and did**
+>   (2026-08-12, Boz — it made the ordinary intersections look constructed when they are not).
+>
+> ⭐⭐ **WHY IT MATTERS FOR §2.1's ONE-LINE TEST.** The relation is present at 100% of ordinary
+> intersections and **absent at every dead end** — and the dead end is the only place the ring
+> retraces. So *"does it create the second mouth corner?"* has a structural answer for the first time:
+> **at a T or a cross the pairing already exists and could bound the legs; at a spur there is nothing
+> to couple to, which is precisely the missing corner this section diagnoses.** ⛔ This does **not**
+> resurrect `corners.all` — that registry is dead and stays dead. `cornersAdjacent` is a *different,
+> surviving* field, and the finding is about its **consumer**, not about re-landing the revert.
+>
+> ⚠️ **Unmeasured, deliberately:** whether `cornersAdjacent` is **correct**, not merely present. It has
+> never had a consumer, so it has never been validated by anything. **Do not build on it without a
+> check that reads it against the frozen ring** (`§5` Rule 1 — and note the artifact/fresh-run drift
+> warned about four paragraphs up applies to any count taken here).
+>
+> ⛔ **AND THE DENOMINATOR IS CONTAMINATED — read this before reconciling two counts.** **32 of the 233
+> stamps are UNLOCATABLE**: their `at` matches no vertex of any `ribbons.streets` entry, and they name
+> chains absent from the scene (`accomac-street`, `montrose-avenue-1`), clustered at a clip edge.
+> `node scratch/apron-node-at-match.mjs`. **They inflate every per-degree count taken off the artifact**,
+> so the one-liner above (which counts all 233) and `scratch/apron-node-kinds.mjs` (which excludes them)
+> legitimately disagree. ⭐ **Neither is wrong — say which denominator you used.** Cause not established;
+> clip-leftover is a hypothesis, not a measurement, and it is its own ticket.
+
 ⛔ **Do not quote any number the attempt reported** — *"769 corners"*, *"261 nodes"*, *"50 of 50 caps"*,
 *"6 of 6 blind mouth corners"*. `7b5b87a3`'s message claims *"The probes, the debug dumps … are kept"*;
 it **deleted them** (`scratch/stamp-mouth-audit.mjs` −51, `scratch/stamp-predicts-fill.mjs` −67, both in
@@ -485,8 +530,13 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 > says so, without updating the headline). ⚠️ **The blockquotes above are a DATED RECORD of two passes,
 > not the scoreboard.** They were read as current and had the scoreboard 6 points low while naming
 > shipped checks as the next work — a doc that undersells shipped capability causes rebuilt work.
-> ⚠️ Also stale in the same block: `[E3.3] corner identities` prints **6 corners constructed**, the
-> pre-registry number — because the corner registry was **reverted** (§2.1); its headline was 6→214.
+> ⚠️ Also in the same block: `[E3.3] corner identities` prints **6 corners constructed**. ⛔ **That is
+> NOT "the pre-registry number left behind by the revert"** — corrected 2026-08-12 against the source.
+> `tileGround.js:3265` gates the whole pass on `nd.kinds?.includes('divided-transition')` **and** a
+> non-empty `corners.stub`, a scope its own comment states outright (*"the 24-node sweep class"*), with
+> the terminus/continuation/join stubs deliberately deferred to the E3.4 datum repairs. **6 is what
+> that scope yields, not residue.** The corner machinery is *narrow by design*, which is a different —
+> and more actionable — fact than *broken by a revert*. → §2.1's `cornersAdjacent` block above.
 
 ---
 
