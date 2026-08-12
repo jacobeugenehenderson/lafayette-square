@@ -269,3 +269,7 @@ scratch/.mint-flip-*.json
 scratch/.leg-probe/
 scratch/.prov-probe/
 scratch/.rekey-probe/
+scratch/.notch-probe/
+scratch/.rev-probe/
+scratch/.lab-probe/
+scratch/.arc-probe/
