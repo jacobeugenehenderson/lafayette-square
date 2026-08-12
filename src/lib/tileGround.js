@@ -242,7 +242,15 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
     const a = f.skelId != null ? authoredHW(f.skelId, f.side, f.segOrd) : null
     const base = Number.isFinite(a) ? Math.max(0, a) : f.baseHW
     if (!f.prof) return base
-    return ((f.prof[0] ?? base) + (f.prof[1] ?? base)) / 2
+    // ⭐ The frozen fact is ALREADY a two-ENDED ramp — `freezeCurbEdgeFacts` samples
+    // the divided-transition profile at this edge's two chain vertices. Hand the
+    // producer both ends. Averaging them to a scalar (what this line used to do)
+    // is what forced the outer curb to run PARALLEL to a splaying nose instead of
+    // straight through it: a constant-depth offset of a splaying edge cannot be
+    // collinear with the spine's outer line, however good the datum is
+    // (SKELETON §5d). A null end still falls back to `base`, so an edge the
+    // profile does not speak for is unchanged.
+    return [f.prof[0] ?? base, f.prof[1] ?? base]
   }
   // A real corner = the two edges at this vertex belong to DIFFERENT streets.
   // Same street both sides = a through-node → run straight through, no corner.
@@ -404,8 +412,27 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     const a = ring[i], b = ring[(i + 1) % n]
     let dx = b[0] - a[0], dy = b[1] - a[1]; const L = Math.hypot(dx, dy) || 1; dx /= L; dy /= L
     const nx = ccw ? -dy : dy, ny = ccw ? dx : -dx          // inward normal (winding-aware)
-    const d = Math.max(0, depthAt(i) || 0)
-    seg.push({ dir: [dx, dy], P: [a[0] + nx * d, a[1] + ny * d], nrm: [nx, ny], d })
+    // ⭐ `depthAt(i)` may return a scalar (constant depth — every caller before
+    // 2026-08-11) or a [start, end] PAIR (the depth varies linearly along the
+    // edge). The offset of an edge whose depth ramps linearly is STILL A STRAIGHT
+    // SEGMENT — it is simply no longer parallel to the edge. That is the whole
+    // change: without it the curb can only ever be parallel to its ring edge, so a
+    // divided nose that splays away from the spine's outer line drags the curb off
+    // that line no matter what half-width it is given (SKELETON §5d).
+    // ⛔ When the two ends are EQUAL this must reduce to the old code EXACTLY —
+    // same expressions, same order — so the whole map stays byte-identical. The
+    // tapered direction is computed only when they actually differ.
+    const raw = depthAt(i)
+    const dS = Math.max(0, (Array.isArray(raw) ? raw[0] : raw) || 0)
+    const dE = Math.max(0, (Array.isArray(raw) ? raw[1] : raw) || 0)
+    const P = [a[0] + nx * dS, a[1] + ny * dS]
+    let dir = [dx, dy]
+    if (dE !== dS) {
+      const Q = [b[0] + nx * dE, b[1] + ny * dE]
+      let ex = Q[0] - P[0], ey = Q[1] - P[1]; const eL = Math.hypot(ex, ey) || 1
+      dir = [ex / eL, ey / eL]
+    }
+    seg.push({ dir, P, nrm: [nx, ny], dS, dE })
   }
   const W = []
   const WL = []                                            // [A10-③] source ring-vertex per emitted point
@@ -415,11 +442,12 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     const capT = capAt(i)
     if (capT) {
       // DEAD-END cap built INTO the offset (no graft). PL/PR = the two legs'
-      // offset endpoints at the tip (using the offset depths A.d/B.d, so the cap
+      // offset endpoints at the tip (using the depths AT THIS VERTEX — A.dE/B.dS —
+      // so the cap
       // matches the legs' authored width + is tangent). Round → a semicircle on
       // the tip side; blunt → a flat butt segment. bodyDir = −A.dir + B.dir.
-      const PL = [ring[i][0] + A.nrm[0] * A.d, ring[i][1] + A.nrm[1] * A.d]
-      const PR = [ring[i][0] + B.nrm[0] * B.d, ring[i][1] + B.nrm[1] * B.d]
+      const PL = [ring[i][0] + A.nrm[0] * A.dE, ring[i][1] + A.nrm[1] * A.dE]
+      const PR = [ring[i][0] + B.nrm[0] * B.dS, ring[i][1] + B.nrm[1] * B.dS]
       if (capT === 'blunt') { push(PL, i); push(PR, i) }
       else for (const p of capArc(PL, PR, -A.dir[0] + B.dir[0], -A.dir[1] + B.dir[1])) push(p, i)
       continue
@@ -430,11 +458,11 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     // through, no spurious corner from an off-chord vertex or a per-fe width step.
     if (!cornerAt(i) || Math.abs(det) < 1e-9) {
       let mx = A.nrm[0] + B.nrm[0], my = A.nrm[1] + B.nrm[1]; const mL = Math.hypot(mx, my) || 1; mx /= mL; my /= mL
-      push([ring[i][0] + mx * ((A.d + B.d) / 2), ring[i][1] + my * ((A.d + B.d) / 2)], i); continue
+      push([ring[i][0] + mx * ((A.dE + B.dS) / 2), ring[i][1] + my * ((A.dE + B.dS) / 2)], i); continue
     }
     const t = ((B.P[0] - A.P[0]) * A.dir[1] - (B.P[1] - A.P[1]) * A.dir[0]) / det
     const X = [B.P[0] + B.dir[0] * t, B.P[1] + B.dir[1] * t]
-    const lim = 2.5 * Math.max(A.d, B.d, 0.5) + 1           // miter clamp (acute-corner spike → bevel)
+    const lim = 2.5 * Math.max(A.dE, B.dS, 0.5) + 1         // miter clamp (acute-corner spike → bevel)
     if (Math.hypot(X[0] - ring[i][0], X[1] - ring[i][1]) > lim) {
       const pA = (ring[i][0] - A.P[0]) * A.dir[0] + (ring[i][1] - A.P[1]) * A.dir[1]
       const pB = (ring[i][0] - B.P[0]) * B.dir[0] + (ring[i][1] - B.P[1]) * B.dir[1]
@@ -452,7 +480,7 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // The thin in-and-out needles are the iA-source concave pinch — fixed upstream,
   // not by morphology. Gated by the curve-fit + corner-roundness invariants in
   // scratch/correctness-detector.mjs.
-  let maxD = 0; for (const s of seg) if (s.d > maxD) maxD = s.d
+  let maxD = 0; for (const s of seg) { if (s.dS > maxD) maxD = s.dS; if (s.dE > maxD) maxD = s.dE }
   const AREA_MIN = Math.max(0.5, maxD * maxD * 0.6)
   // Strip fold needles (curve-fit only — `clean`): on a bend tighter than the depth
   // the per-vertex offset overshoots into a thin near-180° spike that the union keeps

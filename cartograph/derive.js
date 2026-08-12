@@ -3806,7 +3806,7 @@ export function deriveLayers(highways) {
   // residual after D6a; HANDOFF-freeze-the-curb… §LANDING). DOCTRINE (Jacob): the
   // OUTER edge of the road must run STRAIGHT THROUGH the transition — only the
   // MEDIAN (inner) opens. Enforce it in the frame (derivation, not construction):
-  // ramp the carriageway's outer half-width from spineOuter at the node down to its
+  // ramp the carriageway's outer half-width from spineOuter at the node toward its
   // base over the nose, so the outer edge = centerline + outer_hw = the spine's
   // outer line, CONSTANT (proven: oe·spN = spineLine·spN exactly). Emitted as a
   // side-agnostic per-vertex profile {vKey → outer half-width}; the consumer applies
@@ -3827,6 +3827,8 @@ export function deriveLayers(highways) {
     const bySkel = new Map()
     for (const s of ribbonStreets) bySkel.set(s.skelId || s.name, s)
     let rampedCarriageways = 0, rampedVerts = 0
+    const unresolved = []                              // ⛔ NO FALLBACKS: an end we cannot
+    const noLink = []                                  // continue is NAMED, never silently skipped
     for (const cw of ribbonStreets) {
       if (!/^carriageway/.test(cw.phase?.role || '')) continue
       const pts = cw.points
@@ -3841,8 +3843,9 @@ export function deriveLayers(highways) {
         { spineId: cw.phase?.spineAtEnd, nodeIdx: pts.length - 1, adjIdx: pts.length - 2 },
       ]
       for (const e of ends) {
+        if (!e.spineId) { noLink.push(`${cw.skelId} @${e.nodeIdx === 0 ? 'start' : 'end'}`); continue }
         const sp = bySkel.get(e.spineId)
-        if (!sp || !sp.points || sp.points.length < 2) continue
+        if (!sp || !sp.points || sp.points.length < 2) { unresolved.push(`${cw.skelId} @${e.spineId}: spine chain missing/degenerate`); continue }
         const node = pts[e.nodeIdx], adj = pts[e.adjIdx]
         const s0 = sp.points[0], sN = sp.points[sp.points.length - 1]
         const atStart = lenv(sub(s0, node)) < lenv(sub(sN, node))
@@ -3853,12 +3856,27 @@ export function deriveLayers(highways) {
         const cwDir = unitv(sub(adj, node))            // into the carriageway body
         const sideSign = Math.sign(dotv(sub(adj, node), spN)) || 1   // which spine side it departs to
         const spineOuter = sideSign > 0 ? spL : spR
-        if (!(spineOuter > cwHW + 0.05)) continue      // spine no wider than the carriageway → no step
+        if (!(spineOuter > 0)) { unresolved.push(`${cw.skelId} @${e.spineId}: spine carries no outer pavementHW`); continue }
+        // ⭐ SIGN-SYMMETRIC (2026-08-11). The old gate here was
+        //     if (!(spineOuter > cwHW + 0.05)) continue
+        // which encodes an ASSUMPTION, not a measurement: that the spine is always
+        // the WIDER of the two. Where that reverses the pass produced ZERO
+        // correction, leaving the carriageway's outer edge off the spine's outer
+        // line AT THE NODE (lateral = 0) — the one place no amount of profile
+        // coverage can reach, because the ramp is anchored there. Measured on LS:
+        // 34 ends spine-wider, 2 spine-NARROWER (russell-boulevard-1/-3, +0.52 m at
+        // the node) — and those 2 carry the LARGEST world-space curb step on the
+        // map. The discontinuity is |cwHW − spineOuter| in EITHER direction, so the
+        // ramp runs in either direction. (`scratch/claims-divided-seam-step.mjs`.)
+        const dHW = cwHW - spineOuter                  // > 0 ⇒ carriageway wider than the spine
+        if (Math.abs(dHW) < 1e-6) continue             // already continuous → nothing to ramp
+        const noseLat = Math.abs(dHW)                  // the splay at which the median has fully
+        const rampSign = Math.sign(dHW)                // opened — read off the datums, never tuned
         const outerN = [spN[0] * sideSign, spN[1] * sideSign]        // outward (away from median)
-        // Walk OUTWARD from the node, ramping outer_hw = spineOuter − lateral so the
-        // outer edge stays on the spine outer line, and STOP at the natural end of the
-        // nose: when the carriageway reaches full splay (lateral ≥ spineOuter−cwHW →
-        // oh would dip below the base) OR the centerline curves back toward the spine
+        // Walk OUTWARD from the node, ramping outer_hw from spineOuter TOWARD the base
+        // so the outer edge stays on the spine outer line, and STOP at the natural end
+        // of the nose: when the carriageway reaches full splay (lateral ≥ |cwHW −
+        // spineOuter|, whichever of the two is wider) OR the centerline curves back toward the spine
         // axis (lateral decreases — a far body vertex that wanders near the straight
         // node-axis must NOT be re-ramped) OR past the carriageway's own half. This
         // covers a gently-splaying long carriageway fully (outer edge straight the whole
@@ -3872,8 +3890,16 @@ export function deriveLayers(highways) {
           const lateral = dotv(sub(pts[i], node), outerN)
           if (lateral < prevLat - 0.5) break          // curve-back → end of nose
           prevLat = Math.max(prevLat, lateral)
-          const oh = spineOuter - Math.max(0, lateral)
-          if (!(oh > cwHW + 1e-6)) break              // full splay reached → rest is base
+          const lat = Math.max(0, lateral)
+          // ⛔ Stop BEFORE stamping the far end of the nose. The consumer's null
+          // endpoint falls back to the edge's own `base`, which carries the
+          // OPERATOR'S AUTHORED width; `cwHW` is the frame default and does not
+          // (Layer 0 q3). Tapering to `base` is right; stamping cwHW over it is not.
+          if (lat >= noseLat) break                   // full splay reached → the rest IS base
+          // oh(0) = spineOuter — the outer edge starts ON the spine's outer line —
+          // ramping to base at full splay. Sign-symmetric: identical to the old
+          // expression when the spine is wider, and the mirror of it when it is not.
+          const oh = spineOuter + rampSign * lat
           const k = pvKey(pts[i]); if (!(prof[k] >= oh)) prof[k] = oh
         }
       }
@@ -3881,6 +3907,11 @@ export function deriveLayers(highways) {
       if (keys.length) { cw.outerHWProfile = prof; rampedCarriageways++; rampedVerts += keys.length }
     }
     if (rampedCarriageways) console.log(`    [Brief C] outer-curb continuity: ramped ${rampedVerts} nose verts on ${rampedCarriageways} carriageways (outer edge runs straight through the transition)`)
+    // ⛔ LOUD, BY NAME. A carriageway end with no spine to continue FROM has no
+    // inheritance source — it is not "passing", it is UNMEASURED. Printing the
+    // count only would let an unresolved end read as a handled one.
+    if (noLink.length) console.log(`    [Brief C] ⛔ ${noLink.length} carriageway end(s) carry NO phase.spineAt* link — no outer edge to continue, NOT corrected: ${noLink.join(', ')}`)
+    if (unresolved.length) console.log(`    [Brief C] ⛔ ${unresolved.length} linked end(s) UNRESOLVABLE: ${unresolved.join(' · ')}`)
   }
 
   // ── [E3.1] THE JUNCTION MAP — frozen per-node identity stamps ─────────
