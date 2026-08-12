@@ -145,6 +145,58 @@ if (unreachable.length) {
   console.log()
 }
 
+// ── THE PRUNING PROGRAM (added 2026-08-12, Jacob: "a pruning program built in
+// from here on out"). The size check above catches the SYMPTOM — this catches the
+// three MECHANISMS that produce it, each of which grew this file past budget once:
+//   1. §C never evicts        — a finding stays after it is written into canon
+//   2. clause accretion       — an incident bolts a sentence onto an existing line
+//   3. duplicate routing      — several lines pointing at the same index_*
+// ⛔ These are WARNINGS, not failures: a real arc can legitimately run 6 live lines.
+//    They exist so the drift is SEEN on the session that causes it, not three later.
+{
+  const lines = src.split('\n')
+  const sectionOf = (i) => {
+    for (let j = i; j >= 0; j--) { const m = lines[j].match(/^##\s+§([A-E])/); if (m) return m[1] }
+    return null
+  }
+  const bullets = lines.map((l, i) => ({ l, i })).filter(x => /^\s*-\s+\S/.test(x.l))
+
+  const liveFront = bullets.filter(b => sectionOf(b.i) === 'C')
+  const LIVE_CAP = 6
+  if (liveFront.length > LIVE_CAP) {
+    console.log(`⚠️  §C THE LIVE FRONT has ${liveFront.length} lines (cap ${LIVE_CAP}).`)
+    console.log('    ⛔ EVICTION RULE: a finding LEAVES §C the moment it is written into canon.')
+    console.log('    Cut the ones whose home doc now carries them; keep the pointer only.\n')
+  }
+
+  const FAT = 700
+  const fat = bullets.filter(b => b.l.length > FAT)
+  if (fat.length) {
+    console.log(`⚠️  ${fat.length} line(s) over ${FAT} B — the clause-accretion tell:`)
+    for (const b of fat.slice(0, 5)) {
+      console.log(`     §${sectionOf(b.i) ?? '?'} ${b.l.length} B — ${b.l.replace(/^\s*-\s*/, '').slice(0, 72)}…`)
+    }
+    console.log('    ⛔ Do NOT append another clause. Rewrite the line, or move detail to the linked file.\n')
+  }
+
+  const idxCount = new Map()
+  for (const m of src.matchAll(/\[\[(index_[a-z_]+)\]\]/g)) idxCount.set(m[1], (idxCount.get(m[1]) || 0) + 1)
+  const dupes = [...idxCount].filter(([, n]) => n > 1)
+  if (dupes.length) {
+    console.log('⚠️  duplicate index routing — one pointer line per index_*, no duplicates:')
+    for (const [k, n] of dupes) console.log(`     [[${k}]] × ${n}`)
+    console.log()
+  }
+
+  // ⛔ The all-clear must test WITHIN CAP, not ZERO — an empty §C is not the
+  // healthy state, it is an unused section. (This branch read `!liveFront.length`
+  // on its first run and printed NOTHING at all: no warning, no all-clear. A check
+  // that goes silent is the failure this file exists to prevent.)
+  if (liveFront.length <= LIVE_CAP && !fat.length && !dupes.length) {
+    console.log(`✅ pruning program: §C ${liveFront.length}/${LIVE_CAP} live · no fat lines · no duplicate index routing.\n`)
+  }
+}
+
 console.log(failed
   ? '⛔ FAIL — fix before banking anything else into memory.'
   : '✅ PASS — the read-in loads in full.')

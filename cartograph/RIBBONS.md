@@ -523,7 +523,33 @@ The Wall freezes the SHAPE here: each tile's `runs[]` = `{skelId, side, segOrd, 
 
 ### `blockCustoms[skelId][side][segOrd]` — operator overrides
 
-Per-run cross-section override authored in Survey/Section, keyed by the **frozen run identity** (`feCustomKey`), never chain geometry. Same shape as `measure[side]`. A width drag **fans across every `segOrd` the frontage `fe` owns** (so a far-side T does not step the near frontage — `SKELETON §5g`).
+Per-run cross-section override authored in Survey/Section, keyed by `feCustomKey` = `[skelId, side, min(segOrds)]`.
+⛔⛔ **CORRECTED 2026-08-12 — this line said "keyed by the frozen run identity, NEVER chain geometry." THAT IS THE OPPOSITE OF THE CODE, and the whole index question turns on it** (agent Ferrule). **BOTH components are positional:**
+- **`segOrd` is a point-array ordinal.** `naturalSegments()` (`buildBlockGeometryV2.js:660`) partitions the chain's point array via `resolveChainSegmentation`, which decides an IX by **bucketing coordinates into 0.5 m bins**. ⇒ **inserting one vertex renumbers every later slot on that chain.**
+- **`skelId` is positional too for any multi-chain street.** `skeleton.js:1681` — `chains.length === 1 ? slugify(name) : slugify(name)+'-'+i` — **`i` is the ARRAY INDEX of the chain within its street.** On LS: **78 streets emit one chain (no suffix) · 35 emit many (indexed).** ⇒ welding an earlier fragment renumbers every later one, and a street that welds 2→1 **changes id SHAPE** (`carroll-street-0` → `carroll-street`).
+⭐ **This is exactly the `msbfId: i` = fetch-array-index disease `EXTENT-DESIGN §0` calls "history, not a live defect" FOR BUILDINGS — it is still live for CHAINS.**
+⚠️ **`shape.json`'s `tile.runs` carries the SAME `skelId·side·segOrd` key**, so a renumber silently re-points **the frozen SHAPE** as well as the authoring — with no operator in the loop. **Any index must freeze both in one breath.**
+### ⛔⛔ AND THEREFORE CHAINS PERSIST INTO **MEASURE** — THE WALL DOES NOT HOLD (Jacob, 2026-08-12)
+> *"If chains persist at Ribbons in Measure, it is NOT fixed. That must be fixed."* — and his opening
+> constraint the same morning: ***"The Measure Tool should NEVER encounter nodes or chains."***
+
+⛔ **Correcting a doc's description of the key is not fixing the defect.** Measured:
+`MeasureOverlay.jsx:9` **imports `resolveChainSegmentation`** and `:264` calls it on
+`centerlineData.streets` — **the Measure tool walks the CENTERLINES**; `:19`/`:25` read `chainMeasure` /
+`chainPavementHW`; `:270` matches "by chain identity (`skelId`)"; `MeasurePanel.jsx:13` names it outright
+— *"the fe's **chain-anchored** identity."*
+
+⭐⭐ **This is `POLYGON-FIRST §2.1`'s distinction, live: the Wall is a HANDLE rule, not a CONTENT rule.**
+`sectionOpen` genuinely has no chain in scope — and it doesn't matter, because **the KEY the operator
+authors against IS a chain**, so Measure must resolve chain segmentation to find a slot. **The artifact
+passes the handle test while BEING a chain.**
+
+⇒ ⭐⭐⭐ **THE RIGID INDEX AND "CHAINS DIE AT THE WALL" ARE THE SAME DELIVERABLE.** Key a run to two
+permanent NODE ids instead of a chain ordinal and Measure never needs a chain — `resolveChainSegmentation`
+has nothing left to do there, and the key stops moving when the geometry does. ⛔ Do not treat the index
+as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it cannot be deferred.**
+
+▶ Measured blast radius of the ruled subtraction (`node scratch/index-skelid-fragility.mjs`): simulating step ② (streets weld to one chain) orphans **21 of 30 authored slots by the ID CHANGE ALONE**, before `segOrd` is considered; **42 of 51 `overlay.json` entries** are positional-or-absent. ⇒ **the index must freeze chain identity BEFORE anything reconnects** — mint after, and you mint against already-renumbered chains. Same shape as `measure[side]`. A width drag **fans across every `segOrd` the frontage `fe` owns** (so a far-side T does not step the near frontage — `SKELETON §5g`).
 
 ### `runs` / `groupRuns` — the leg identity
 
