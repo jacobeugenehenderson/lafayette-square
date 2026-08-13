@@ -41,15 +41,31 @@
 > **The ruling, in one sentence: blocks = boundary − stroked roads — but computed as a DIRECTED HALF-EDGE
 > WALK over identity-carrying side-chains, never as an anonymous boolean.**
 >
-> ⭐ **Each authored chain derives into TWO directed side-chains**, each owning exactly one side and
-> emitting only to its right; they are joined at every node by a **coupler** — a permutation saying which
-> incoming side hands off to which outgoing side. **The datum is the left EDGE of the right lane**, which
-> for an undivided street IS the centerline (the two side-chains are *coincident*, so they cannot cross);
-> a divided corridor is the same construction with the pair separated by the median. ⇒ **"divided" stops
-> being a special case — it is separation 0 vs N.**
-> ⛔ **AUTHORING DOES NOT CHANGE.** The operator still authors ONE chain per street, street-keyed
-> (`A15`). The split is a **derived step**, downstream of authoring, upstream of the walk ⇒ **zero
-> `blockCustoms` migration.**
+> ### ⭐⭐⭐ THE LANES ARE PRIMITIVE, NOT DERIVED *(Jacob, 2026-08-13 — supersedes the derived-split wording below it; that read "each authored chain DERIVES INTO two side-chains")*
+> > *"The right lane of traffic and the left should just be separate. In 2-way traffic, to the eye it
+> > looks like one chain but it's not — it's two chains going opposite directions. Sometimes they
+> > diverge, sometimes come back together. **0 interp required.**"*
+>
+> **A street IS two directed lane-chains, always** — opposite directions, each owning exactly one side and
+> emitting only to its right, joined at every node by a **coupler** (a permutation: which incoming side
+> hands off to which outgoing side). **The datum is the left EDGE of the right lane.** Undivided = the two
+> run coincident (so they cannot cross); divided = the same two, separated by the median.
+>
+> ⭐⭐ **WHY PRIMITIVE BEATS DERIVED, AND IT IS THE WHOLE POINT: A DERIVATION HAS A MOMENT WHERE THE COUNT
+> CHANGES, AND THAT MOMENT IS A CASE BOUNDARY.** Nothing decides *"here it becomes divided"*, so there is
+> nothing to interpolate across and **no seam for a discontinuity to appear at.** Divergence and
+> convergence are just the two chains' geometry. ⇒ **"divided" is not a special case and never was one.**
+> ⛔ **The break the operator sees at a divided↔undivided transition is therefore UNCONSTRUCTIBLE under
+> this model** — it exists today only because a chain ends there and the band is an area stroked from a
+> line that has an end (`A10`'s ruling: *"ends exist only because we make areas out of lines that have
+> ends"*). ⛔ **Do not patch that break. Any suppression is a patch on the symptom** — the same class as
+> `innerSign`, `innerEdgeMeasure`, the mouth-wrap snap and the walk-ordinal coupler.
+>
+> ⛔ **AUTHORING DOES NOT CHANGE.** The operator authors the STREET, street-keyed (`A15`) — two chains
+> underneath does not mean two handles on top ⇒ **zero `blockCustoms` migration.**
+> ⚠️ **Open engineering question, not an objection:** an undivided street's two chains are *coincident*,
+> and coincident input is exactly where geometry libraries return degenerate results. **Verify the stroke
+> handles zero separation before building on it.**
 >
 > ### Why this is not a third option — it is the ANSWER to punch-out's blocking risk
 > `_handoffs/HANDOFF-deadend-face-resolution.md §4.1` risk 1 is what kept punch-out unshipped: *"a boolean
@@ -107,10 +123,15 @@
 > ### ⛔⛔ THE RETIREMENT LIST — write it now, execute it as ONE window (Jacob, 2026-08-12: *"we have laid down so much defunct wiring, once we solve this we'll have to do a real cleanup"*)
 > **Each of these exists ONLY to describe the absence this ruling closes. ⛔ Do not extend any of them.**
 > `walkOrd` / the walk-ordinal coupler · the inverted `side` law (34/34) · the mouth disc + the mouth-wrap
-> snap · the synthetic negative-`segOrd` cap fe · `innerSign` (face adjacency replaces the vote —
-> `OSM2STREETS §2`) · `innerEdgeAssign`'s ped-zeroing hack (a one-sided chain faked with a two-sided one)
+> snap · the synthetic negative-`segOrd` cap fe
 > · `[THRU-T]` (`tileGround.js:3589-3613`, **already dead — `opts.thruTNode` is never passed**) ·
 > `detectTileCaps` as an identity source (it is a slit detector wearing a cap detector's name).
+> ✅ **STRUCK 2026-08-13 (`de7fcba5`) — `innerEdgeMeasure`'s ped-zeroing AND `innerSign`'s consumer, both
+> excised.** ⭐ These were the model's own two **falsifiable predictions** (*"if either does NOT fall out,
+> the model has a hole — find it before building"*): both fell out, from work aimed at something else.
+> `innerSign` is not absent-of-information — it is **faithfully re-derived every bake (378/378) with an
+> INVERTED sign→key convention** (`derive.js:3167-3171`), agreeing with the geometric oracle on 6/378.
+> ⏳ `derive.js:3171` still carries a stale reference, inside the inverted comment itself.
 > **· `clean/park-polygon.json` — a PRE-TILE-MODEL SURVIVAL** *(measured 2026-08-12, from Jacob's
 > question "why do we need that polygon at all?")*. ⭐ **`tile #8` IS the park** — bounded by
 > `mississippi-avenue · lafayette-avenue-3 · missouri-avenue-2 · park-avenue-1`, centroid **4 m** from
