@@ -987,13 +987,37 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
     off += c.byteLength
   }
 
-  // Bake bbox anchored to stencil.center so the AO baker's texel→world
-  // map and BakedGround's UV2 stay concentric with face/street fades.
-  // Half-extent prefers streetFade.outer + 50 (LS); falls back to the
-  // stencil radius + 50 when fade isn't authored (toy, where the
-  // boundary IS the bbox). Final fallback: 1000m, matches the prior
-  // hardcoded default.
-  const _bakeHalf = (stencil.streetFade?.outer ?? stencil.radius ?? 1000) + 50
+  // Bake bbox anchored to stencil.center so the AO baker's texel→world map and
+  // BakedGround's UV2 stay concentric with face/street fades. The half-extent must
+  // ENCLOSE the silhouette: both consumers map texel→world THROUGH this bbox, so a
+  // bbox smaller than the ground mis-maps every texel rather than cropping.
+  //
+  // FLOORED at the disc radius (same defect cured in pipeline.js, b54cbaae):
+  // streetFade is a LOOK band and nothing stops a scene authoring one narrower than
+  // its own disc, on which the bare `streetFade.outer` under-sizes the bake. Every
+  // scene today is radius+160 except LS (1000 vs 892, authored), so no scene reveals
+  // it — a kit defect by construction.
+  //
+  // ⛔ NO FALLBACK. This read `?? 1000` — presented as "the prior hardcoded default",
+  // it was DEAD: loadSceneStencil coerces an absent radius to 1 (`sceneStencil.js:35`
+  // `s.radius || 1`), so the `??` never fired and a scene with no authored extent
+  // baked a 51 m bbox — silently, and looking like a successful bake. That 1 is the
+  // absent signal here; a real hood is never 1 m. ⚠️ The coercion itself is the
+  // deeper defect and it lives one layer up, in sceneStencil.js.
+  const _fadeOuter = Number.isFinite(stencil.streetFade?.outer) ? stencil.streetFade.outer : null
+  const _discR = Number.isFinite(stencil.radius) && stencil.radius > 1 ? stencil.radius : null
+  if (_fadeOuter === null && _discR === null) {
+    console.error(`
+⛔ scene '${scene}' has no authored extent (no streetFade.outer, no radius > 1)
+   in cartograph/data/${scene}/neighborhood_boundary.json.
+
+   The bake bbox anchors the AO texel→world map and BakedGround's UV2. Baking
+   without an extent produces a 51 m bbox and a mis-mapped ground that still
+   writes a manifest and reads as a successful bake. Author the boundary first.
+`)
+    process.exit(1)
+  }
+  const _bakeHalf = Math.max(_fadeOuter ?? 0, _discR ?? 0) + 50
   const bx0 = stencil.center[0] - _bakeHalf
   const bx1 = stencil.center[0] + _bakeHalf
   const bz0 = stencil.center[1] - _bakeHalf
