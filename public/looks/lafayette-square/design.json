@@ -309,6 +309,12 @@
         }
       },
       "right": {
+        "3": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
         "6": {
           "pavementHW": 11.4386233527224,
           "treelawn": 1.5,
@@ -473,8 +479,22 @@
         "0": {
           "pavementHW": 5.298098371777266,
           "treelawn": 1.5,
-          "sidewalk": 1.5,
-          "terminal": "none"
+          "sidewalk": 1.4935200000000002,
+          "terminal": "sidewalk",
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "lafayette-avenue-6": {
+      "left": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "LU"
+          }
         }
       }
     }
