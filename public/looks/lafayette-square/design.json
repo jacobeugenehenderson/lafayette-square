@@ -195,6 +195,18 @@
     },
     "dolman-street-1": {
       "left": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "1": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
         "3": {
           "materials": {
             "outer": "LU",
@@ -339,6 +351,18 @@
     },
     "south-18th-street-3": {
       "left": {
+        "4": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "5": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
         "6": {
           "materials": {
             "outer": "LU",
@@ -363,6 +387,94 @@
             "outer": "LU",
             "inner": "SW"
           }
+        }
+      }
+    },
+    "hickory-street-0": {
+      "left": {
+        "2": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "3": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      },
+      "right": {
+        "2": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
+        "3": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "dolman-street-0": {
+      "right": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "lasalle-street-1": {
+      "right": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      },
+      "left": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "west-18th-street": {
+      "left": {
+        "0": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "mackay-place-1": {
+      "left": {
+        "1": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        }
+      }
+    },
+    "south-jefferson-avenue-3": {
+      "right": {
+        "0": {
+          "pavementHW": 5.298098371777266,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
         }
       }
     }
