@@ -352,7 +352,9 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > absent geometry. That is why it is intermittent while the curb is uniformly correct.
 >
 > Five predicates decide whether a corner exists and whether the pull-back is exempted. **None reads the
-> curb:** `cornerAt` (`:245`, `skelId a !== b`) · `tipped` · `through` · `isNameTransition` · `isThruNode`
+> curb:** `cornerAt` (⛔ **not `skelId` — it keys on `streetKey = throughId || roadId || skelId || name`.
+> And it asks IDENTITY ONLY: no geometry condition, so a corner is built on a 3.24° bend — live defect,
+> `RIBBONS §3.3`**) · `tipped` · `through` · `isNameTransition` · `isThruNode`
 > (all `:1416`). `isThruNode` keys the wrong run where a through-street splits into two skelIds (Mackay) and
 > misses Kennett on a node-coord mismatch. Canonical complex: **Dolman ↔ West 18th ↔ South 18th**, with
 > Carroll and Kennett.

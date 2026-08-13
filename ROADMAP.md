@@ -251,7 +251,7 @@
     |---|---|---|
     | `st.nodeKinds` (the "stamp") | **chain endpoint coincidence + chain TANGENTS + chain POINT-ORDER** | `derive.js:3902` — `junctionMap` is built from `ribbonStreets`, `ptOf(s,'start'\|'end')`, `outward()`, `rightDir()` |
     | `groupRuns`'s ring partition | `edges[i].streetIdx` + `.side` | `tileGround.js:1060` |
-    | `cornerAt` | `skelId a !== b` | `tileGround.js:245` |
+    | `cornerAt` | ⛔ **not `skelId`** — `streetKey = throughId \|\| roadId \|\| skelId \|\| name`; and it asks **identity only, no geometry** | grep `const streetKey =` in `tileGround.js`; live defect — `RIBBONS §3.3` |
     | `blockCustoms` | `skelId \| side \| segOrd` | the authoring key |
 
     ⛔⛔ **∴ "THE POLYGON MUST ASK THE STAMP" PROPOSES TO CURE CHAIN-LEAKAGE BY IMPORTING MORE CHAIN STATE.** A **node** is literally *"where two chain ends coincide,"* and its *kind* is derived from chain tangents. **That is the stink**, and it is why `13b5120c` measured green on plain blocks and was **nearly invisible** on the canonical dead-end — it added chain identity where the chain already had an answer, and had nothing to add where it didn't.

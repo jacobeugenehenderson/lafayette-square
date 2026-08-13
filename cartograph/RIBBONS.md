@@ -120,6 +120,30 @@
 > HPDM 18. No new coupler *kind* is needed: 100% of the hole is an end-to-end weld of two distinct
 > chains, which the existing CCW sweep pairs correctly. ▶ `node scratch/claims-coupler-totality.mjs`.
 >
+> ### ⭐⭐⭐ RULED 2026-08-13 (Jacob) — SMOOTHNESS IS ACHIEVED BY CONSTRUCTION, NEVER BY CLEANUP.
+> > *"We should achieve that smoothness through construction and not by cleanup patch."*
+>
+> **The spec: a street's silhouette is smooth — asphalt, curb, treelawn, sidewalk, all of it.** A band that
+> steps at a right angle where the curb curves is not authoring showing through; it is the band failing to be
+> concentric with the curb it was struck from.
+>
+> ⭐ **The distinction that makes this operable — smoothness is the DETECTOR, never the FIX.** A check that
+> *measures* smoothness is the machine catching the bug, which is the deliverable Layer 0 asks for. What is
+> forbidden is a pass that *takes a jagged output and cleans it up*. **Detector at the end; fix at the root.**
+> ⛔ **The forbidden shape, stated so it is recognisable:** a smoother, a simplifier, a snap, a **clamp**, or
+> any guard that fires when a construction degenerates and substitutes something plausible. **A clamp is a
+> cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
+> example, and it is *the* artifact there.
+>
+> ⭐⭐ **THIS IS THE RETIREMENT LIST'S CRITERION, so the list stops being a list:** *anything that exists to
+> clean up after a degenerate construction belongs on it.* Test each entry below against that sentence rather
+> than against memory.
+> ⛔ **And it is slice 2's ACCEPTANCE:** the silhouette is smooth **AND no step in the pipeline smooths it.**
+> That is stricter than gate 2's ring-count predicates and it settles their disagreement by making it moot —
+> **39 / 4 / 14 all count rings in the OUTPUT, which is the wrong end of the pipe.**
+> *(Consistent with §1's own 2026-06-15 update — "fix the derivation → the universal walk produces the right
+> polygon; construction is the last resort" — and with INVARIANT 1: the corner is the band BENT around the arc.)*
+>
 > ### ⛔⛔ THE RETIREMENT LIST — write it now, execute it as ONE window (Jacob, 2026-08-12: *"we have laid down so much defunct wiring, once we solve this we'll have to do a real cleanup"*)
 > **Each of these exists ONLY to describe the absence this ruling closes. ⛔ Do not extend any of them.**
 > `walkOrd` / the walk-ordinal coupler · the inverted `side` law (34/34) · the mouth disc + the mouth-wrap
@@ -599,9 +623,23 @@ Builds the planar graph from shared vertices of `streets[].points` (excludes `gr
 
 ### 3.3 The curb SHAPE — `offsetRingVariable` + `filletRing`
 
-Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per-run via `runMeasure`) → `iA`, the curb edge. `offsetRingVariable(ring, depthAt, cornerAt, capAt)` (`:147`) does the variable-depth parallel offset; `cornerAt` uses the run-seam test (real corner vs through-node) so a width step doesn't appear at a through-node. `filletRing(ring, Rfn, sink)` (`:262`) rounds the curb corners **once** (radius from the authored corner-R kit: global scale × per-IX × per-corner). `strokeOpen(polyline, delta)` (`:371`) handles open/perimeter runs. **jtMiter throughout** (invariant 2). This is the SHAPE that freezes at the Wall.
+Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per-run via `runMeasure`) → `iA`, the curb edge. `offsetRingVariable(ring, depthAt, cornerAt, capAt)` does the variable-depth parallel offset; `cornerAt` uses the run-seam test (real corner vs through-node) so a width step doesn't appear at a through-node — ⛔ **which key it reads is a live defect, see the block below.** `filletRing(ring, Rfn, sink)` rounds the curb corners **once** (radius from the authored corner-R kit: global scale × per-IX × per-corner). `strokeOpen(polyline, delta)` handles open/perimeter runs. **jtMiter throughout** (invariant 2). This is the SHAPE that freezes at the Wall. *(Line numbers deleted 2026-08-13 — all three had drifted 2–3× over; grep the function name.)*
 
-> ⭐ **Name-aware identity (2026-06-15) — `cornerAt`/`isThrough` key on the canonical `roadId`, not raw `skelId`.** A `continuesAs` name-transition is ONE continuous road (*the road is the line, the name a label*), so its seam is a **through-node, not a corner** — `cornerAt` reads the same `roadId` both sides and runs the offset straight through; `sectionPass`'s `isNameTransition` suppresses the corner/ADA bid there. The `roadId` (a `continuesAs` union) is frozen in `derive.js` and rides the frozen `runMeta` so Section reads it post-Wall. Keying on `skelId` mis-read the West-18th↔Dolman / South-18th↔West-18th seam as a corner → an unstable offset-line intersection between near-tangent legs → the junction-curb **bump** + a phantom mid-curve ADA ramp (the resolved `HANDOFF-curve-primitive-skeleton.md` defect). The companion is the **width datum**: a through-road must carry one `pavementHW` per side (next §, the width-step line).
+> ### ⛔⛔ `cornerAt` ASKS IDENTITY AND NOTHING ELSE — and that is the defect. *(Measured 2026-08-13, agent Wend, `1cadbceb`; RULED the same day by Jacob. This block previously read "`cornerAt`/`isThrough` key on the canonical `roadId`, not raw `skelId`" and declared the West-18th↔Dolman seam resolved — on the very street pair that still carries the artifact.)*
+>
+> ⭐⭐ **JACOB'S RULING, and it inverts the obvious diagnosis: Dolman, West 18th and South 18th are DIFFERENT STREETS, joined in a SMOOTH U.** The name changes because the street changes. ⇒ **Identity is answering correctly when it says "different."** The bug is that **identity is the ONLY question asked.** A corner gets built because the names differ, on a bend that turns **3.24°**. ⛔ **A corner needs a GEOMETRY condition, not just a different-street test.** *(This kills the tempting fix — "make `cornerAt` treat the union as one road." That suppresses a corner by asserting a continuity the operator says does not exist.)*
+>
+> **The identity chain, recorded because it is not what the docs said:** `cornerAt` keys on `streetKey = throughId || roadId || skelId || name` (`src/lib/tileGround.js`, grep `const streetKey =`) — **not `skelId`** — and `throughId` is a street **NAME** (`cartograph/skeleton.js`, grep `idKeyOf` → `corridor || name`). The `roadId` `continuesAs` union sits behind it and never gets consulted at a name change.
+>
+> **What actually renders the artifact, measured.** Identity alone is benign: 4 of LS's 6 flagged stations carry Δ`pavementHW` 0.0000 → displacement ≤6 mm. It becomes visible when a **width step rides it**. At West-18th↔Dolman a **1.4369 m unauthored step** across that 3.24° turn puts the two offset lines' intersection **26.15 m** out — past the **18.32 m miter limit — so a CLAMP fires and substitutes a bevel**, emitting two points instead of one: a 1.4786 m chord at 78°/102° to the road. Frozen `iA` runs 5.490 m, swings to 8.826 / 11.075 m across the fillet rounding that bevel, returns to 6.927 m — **excursion 3.34 / 5.59 m off a curb that should be parallel.** That is the tooth-and-chamfer on the U.
+> ⭐⭐ **THE CLAMP IS THE TELL.** It is a guard covering for a construction that degenerates as the legs approach parallel — **a cleanup patch living inside the construction**, which the ruling below forbids. ⛔ **The fix is therefore not a better clamp and not a smoother: a near-tangent seam must not enter a line-intersection construction at all.** That is INVARIANT 1 already — *the corner is the band BENT around the arc.*
+>
+> **Two things left open, both unmeasured — do not close them by reasoning:**
+> - **Why the side labels flip at this seam.** The flip and the width step co-occur here; the two non-flipping sites carry Δ 0. **Cause not established.**
+> - **Whether `continuesAs` should join these three streets at all.** It builds `roadId`, and `roadId` is what the width reconcile uses to force ONE `pavementHW` per side across the union — plausibly the source of the 1.4369 m step. **Unmeasured.** (Next §, the width-step line: the reconcile compares by literal side label, and this seam joins a *left* run to a *right* run, so the two values that physically meet are never compared.)
+>
+> ⭐ **The class ports — the test names no street:** `roadId agrees ∧ throughId disagrees`. **LS: 6 stations, 3 sites.** ▶ `node scratch/claims-uturn-outer-edge-walk.mjs`
+> ⚠️ **`scratch/correctness-detector.mjs` already flagged this** (`West 18th Street: curb(1.45m) bump(97°)`) and it sat unjudged in the "grid false-positives" bucket. **The detector worked; nobody read it.**
 
 ### 3.4 The ped FILL — `sectionPass` / `sectionOpen` (`:801` / `:1161`)
 
@@ -747,7 +785,7 @@ Where a side street **dead-ends/T's into a through street**, `extractFaces` walk
 - **tile** — a block face of the centerline graph (`extractFaces`); the unit everything is painted onto.
 - **grout** — the centerlines, which form the tile edges (the tiles are the faces between them).
 - **iA** — the curb edge: the centerline's per-side parallel offset by `pavementHW` (`offsetRingVariable`), rounded once by `filletRing`. The frozen SHAPE.
-- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`); a run seam (street changes) is a **corner**, same street both sides is a **through-node** (`cornerAt`).
+- **run / leg** — a maximal span of same-street edges on a tile (`groupRuns`); a run seam (street changes) is a **corner**, same street both sides is a **through-node** (`cornerAt`). ⛔ *"Same street" by WHICH id is the live defect — `§3.3`.*
 - **fe / frontage edge** — a block-edge between two REAL corners; owns `skelId`, `side`, and the `segOrd`s spanning its through-nodes. The authoring unit (`feCustomKey`).
 - **segOrd** — count of IX vertices before a run; the densify-robust run key (vs `intersections.ix`, the fragile index key).
 - **mono-width** — one total ped depth per block (clean concentric corners); the divider + materials vary per-edge. "Ribbon monowidth, strips variable."
