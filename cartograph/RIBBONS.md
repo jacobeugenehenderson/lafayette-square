@@ -93,10 +93,16 @@
 > curb position (width/radius) = Survey, authored on top."* ⚠️ **Consequence to accept deliberately: the
 > SHAPE freeze must sit firmly after width authoring** — a width edit re-topologises.
 >
-> ### The ONE genuinely new build
-> `cornersAdjacent` is complete at every ordinary intersection and **absent at all 29 dead ends.** The
-> missing piece is **a coupler record at a degree-1 tip** — the end cap as a coupler that wraps the two
-> side-chains around the spike. That is the build, and it aims exactly at the rings that retrace.
+> ### ✅ Slice 1 — the degree-1 coupler — LANDED `a2e0f6c4` (2026-08-12)
+> The cap **is** a coupler: the CCW sweep's same-arm guard was dropping the one-arm case, so `via:'cap'`
+> now wraps a tip's two side-chains around the spike. ⛔ **It reaches NO artifact until a pipeline
+> re-pour** — `derive.js` is prebake, and `via:'cap'` greps **0** in all six committed `ribbons.json`.
+> Harmless today (`cornersAdjacent` has **zero consumers**), but **slice 2's walk consumes it ⇒ the
+> re-pour is on the critical path.**
+> ⛔ **AND THE RELATION IS NOT TOTAL, despite `derive.js:4373` claiming it is** — `dirs.length < 3`
+> silently drops **degree-2** (continuation · same-corridor-join · divided-transition). LS 4 nodes /
+> HPDM 18. No new coupler *kind* is needed: 100% of the hole is an end-to-end weld of two distinct
+> chains, which the existing CCW sweep pairs correctly. ▶ `node scratch/claims-coupler-totality.mjs`.
 >
 > ### ⛔⛔ THE RETIREMENT LIST — write it now, execute it as ONE window (Jacob, 2026-08-12: *"we have laid down so much defunct wiring, once we solve this we'll have to do a real cleanup"*)
 > **Each of these exists ONLY to describe the absence this ruling closes. ⛔ Do not extend any of them.**
