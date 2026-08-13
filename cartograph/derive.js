@@ -4329,7 +4329,7 @@ export function deriveLayers(highways) {
     // of a leg is measure-RIGHT iff the leg points along point order.
     // PRESENT-but-not-yet-consumed: the fillet-identity gate flips on these
     // once the through-node construction is blessed.
-    let adjacentPairs = 0, capCouplers = 0
+    let adjacentPairs = 0, capCouplers = 0, weldNodes = 0
     for (const n of jnodes.values()) {
       const dirs = []
       for (const { s, end } of endsAt.get(n.key) || []) {
@@ -4371,7 +4371,23 @@ export function deriveLayers(highways) {
         capCouplers++
         continue
       }
-      if (dirs.length < 3) continue
+      // ⭐ DEGREE 2 IS NOT A SPECIAL CASE — it is the same CCW sweep (RIBBONS §1,
+      // slice 2). This read `< 3` and silently dropped every degree-2 node while
+      // the log below claimed the relation was total. A half-edge walk needs a
+      // successor for EVERY directed side-chain at EVERY node it touches, and a
+      // weld is a node the walk arrives at like any other.
+      // ⛔ NO NEW COUPLER KIND. Measured before the change, all six scenes
+      // (`node scratch/claims-coupler-totality.mjs`): the degree-2 population is
+      // 100% an end-to-end weld of two DISTINCT chains — 0 interior through-pass
+      // of one chain, 0 chain welded to itself. The sweep below pairs that
+      // correctly on its own: with 2 arms it emits both wedges, (A,B) and (B,A),
+      // giving each of the 4 directed side-chains exactly one successor.
+      // The same-arm guard still governs the two sub-kinds LS does not exhibit
+      // but town #2 may — a lone chain passing through (half 'fwd' vs 'back') and
+      // a chain welded to its own other end (end 'start' vs 'end') both differ
+      // under it, so both emit their two wedges rather than being dropped.
+      if (dirs.length < 2) continue
+      if (dirs.length === 2) weldNodes++
       dirs.sort((a, b) => Math.atan2(a.u[1], a.u[0]) - Math.atan2(b.u[1], b.u[0]))
       n.cornersAdjacent = []
       for (let i = 0; i < dirs.length; i++) {
@@ -4439,7 +4455,7 @@ export function deriveLayers(highways) {
     const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
     console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
     console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips`)
-    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs (${capCouplers} of them dead-end CAP couplers)`)
+    console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs (${capCouplers} of them dead-end CAP couplers, ${weldNodes} degree-2 weld nodes)`)
     // ⛔ LOUD, BY NAME. The coupler relation can only be total over the nodes that
     // EXIST. A degree-1 vertex only becomes a node if some source above claimed it,
     // and the only tip source is Source 6, gated on |left − right| pavement half-width
