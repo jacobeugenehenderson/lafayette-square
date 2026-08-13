@@ -62,11 +62,23 @@
 > contradiction dissolves:** the objection to figure-ground was that streets-subtracted loses identity.
 > This does not.
 >
-> ### It passes §2.1's one-line test BY CONSTRUCTION
-> *Does it create the second mouth corner?* **Yes.** Today both mouth passes are the **same coordinate**,
-> so the second reads `south-18th → south-18th` and `cornerAt(a,b)` correctly declines. **Give the spur
-> width and the two mouth vertices are different points**, each a genuine `kennett × south-18th` meeting —
-> two real corners, one per side, every leg bounded corner-to-corner.
+> ### ⛔ §2.1's "second mouth corner" test IS NOT A DEFECT — measured 2026-08-12 (Tessel)
+> The test read: *both mouth passes are the same coordinate, so the second reads `south-18th →
+> south-18th` and `cornerAt` declines; give the spur width and they become two real corners.*
+> **The premise is a misreading of the node.** At `south-18th-street-3`'s mouth (386.30, 149.10)
+> `kennett-place` **ENDS** and `south-18th` **RUNS THROUGH**: pass 1 is `kennett → south-18th`
+> (a real corner, filleted) and pass 2 is `south-18th → south-18th` — **a genuine through node**,
+> the two directions collinear to ~1°. ⭐ **`cornerAt` declining is CORRECT, and a second corner
+> there would be a defect.** At a T only one side corners; that is what a T looks like.
+> ⭐⭐ **And the slit never reached the block.** The retrace lives in `tile.ring` alone — `iA` at that
+> tip already carries a real notch: sides standing off **5.50 / 6.94 m** against an authored
+> **5.49 / 6.9269** (`clean/overlay.json`, asymmetric BY AUTHORING), a round cap at r=6.93, and a
+> continuous leg→cap slope. ⇒ **Do not cite this tip as the thing the substrate fixes.**
+> ▶ `node scratch/claims-deadend-notch-standoff.mjs` — the general form: at every frozen cap, march
+> out from the spur centerline to `iA` and compare against the half-width **the producer itself was
+> handed** (`shape.json runs[].measure`), station by station on the cap leg. Asymmetric authoring
+> PASSES by construction. **31 of 49 caps clean at every station; 18 carry ≥1 station off by >0.1 m
+> — cause not established.**
 >
 > ### ⭐⭐ THE SPLIT THAT MAKES IT BUILDABLE — combinatorial at prebake, geometric after authoring
 > Punching with the *stroked* road makes tile topology **width-dependent** (risk 2). Prebake is blind to
@@ -135,14 +147,14 @@
 > stalls the work for nothing. ⛔ Do not restore it. `1` informs the build's shape and can run
 > ALONGSIDE it; `2–4` govern how the result is JUDGED and cannot block starting. **The slit is real in
 > the frozen artifact — closing it is correct whatever these return.**)*
-> 1. ✅ **RECONCILED 2026-08-12 (agent Quire) — `node scratch/reconcile-punchout-vs-faces.mjs`. ⛔ "~115"
->    was itself wrong** (the 4th number in that lineage): under the spike's own settings the compound path
->    closes to **121 = 1 outer + 5 holes + 108 islands + 7 slivers**, so the block count is **108**.
->    **And the comparison was not apples-to-apples in two ways that pull opposite directions** — the spike
->    punches with all 209 streets **including the 57 `gradeSeparated`** (which `tileGround.js:2618`
->    excludes from the face graph, Δ **29 islands**, shattering `frozen[12]` into 12 pieces), and it uses
->    a stencil scaled **×1.1771** where `derive.js` freezes against the **raw boundary** (Δ **14**).
->    - **Apples-to-apples (grade-sep excluded, raw boundary, authoring loaded): 93 islands ↔ 101 tiles,
+> 1. ✅ **RECONCILED 2026-08-12 (agent Quire) — `node scratch/reconcile-punchout-vs-faces.mjs`, case C.**
+>    ⛔ **Only case C is apples-to-apples**, and the two settings are load-bearing in opposite directions:
+>    grade-sep must be EXCLUDED (`tileGround.js:2618` excludes it from the face graph; including it costs
+>    Δ29 islands and shatters `frozen[12]` into 12) and the stencil must be the **raw boundary**, not the
+>    spike's ×1.1771 (Δ14). ⛔ Do not quote a block count from any other case; re-run it.
+>    **Re-verified 2026-08-12 (Tessel) — unchanged. This is the substrate's precondition AND its
+>    regression guard.**
+>    - **Case C (grade-sep excluded, raw boundary, authoring loaded): 93 islands ↔ 101 tiles,
 >      a CLEAN INJECTION — 0 merges, 0 splits, 0 straddlers.** ⭐ The punch-out reproduces the face
 >      topology; it does not re-topologise the map.
 >    - **The 8 tiles with no island are ONE class, not eight:** narrow gores whose width is less than the
@@ -178,19 +190,43 @@
 > ruling**: the datum is the left edge of the right lane — **the asphalt edge, not the sidewalk edge.**
 > *(Closes `HANDOFF §C2`'s "confirm which variant" question.)*
 >
-> ### ⚠️ THE OUTER POLYGON IS NOW A DECISION JACOB OWES — it is structural, not cosmetic
-> **(a) raw `neighborhood_boundary.json`** (what `derive.js:4632-4648` already freezes against;
-> 2,499,401 m²) → **93 islands, clean**, every rim block closing against the boundary with `__boundary__`
-> identity available by construction. **(b) `streetFade.outer + 50`** (the spike, `CartographApp.jsx:669`,
-> `bake-ground.js:992`; 3,463,258 m²) → **79 islands, badly**; 31 frozen perimeter tiles have no
-> counterpart, merging into a road-free annulus. ⛔ **`streetFade` is a RENDER parameter** (a shader fade,
-> `BakedGround.jsx:117`) — adopting (b) lets **a look knob decide block topology at the rim.**
-> `ORIENTATION`'s *"the inclusion polygon DECIDES, the disc RENDERS"* points at (a). ⚠️ **(a)'s cost, to
-> accept deliberately: with the raw boundary the roads cut the rim, so there is NO single outer contour —
-> the boundary stops being an "outer ring" and becomes just another set of ring edges.** ⭐ A **third
-> option nobody has costed**: the inclusion polygon from `design.json`. **Not decided.**
+> ### ✅ THE OUTER POLYGON — SETTLED: the **raw `neighborhood_boundary.json`**, which is what
+> `derive.js:4632-4648` already freezes against and what gate 1's passing case C uses. ⛔ Rejected:
+> `streetFade.outer + 50` (the spike) — **79 islands, badly**, 31 perimeter tiles merging into a road-free
+> annulus, and it lets **a RENDER knob** (`BakedGround.jsx:117`) decide block topology at the rim, against
+> `ORIENTATION`'s *"the inclusion polygon DECIDES, the disc RENDERS."* ⭐ Still uncosted, for the day the
+> Extent schema split lands on LS: the inclusion polygon from `design.json`.
 >
-> ### ⭐⭐⭐ THE RIM IS A SECOND UNOWNED CLASS, AND IT IS 4× THE DEAD-END ONE (2026-08-12)
+> ### ⭐⭐⭐ THE RIM BOUNDS, IT DOES NOT OWN — RETRACTED AND RE-RULED 2026-08-12 (Jacob)
+> > *"I was wrong; the radius is not an ordinary chain. That was when we were trying to close the
+> > circle."*
+>
+> **The retraction, with its reason: the rim was made an ordinary chain in order to CLOSE THE CIRCLE.**
+> Under `blocks = boundary − stroked roads` the boundary is the **outer contour of the subtraction**, so
+> nothing needs closing and the rim never becomes a participant. Its exact status, all three at once:
+> - ✅ **it BOUNDS** — the stencil of the punch;
+> - ✅ **its ring edges carry `__boundary__` identity** by construction;
+> - ⛔ **it is NOT a side-chain** — no coupler, no `baseMeasure`, no band, no ADA, no corner rule.
+> ⭐ A construction asking *"is this the rim?"* to decide **painting** has diverged; asking to decide
+> **bounding** is the stencil doing its job.
+>
+> ### ⛔⛔ AND THE RIM CANNOT BE DROPPED FOR A WALK — MEASURED, 2026-08-12 (Tessel)
+> *"Build full, crop last"* is `derive.js:4632`'s own stated doctrine and it is available to the
+> **punch-out**, which has a stencil. It is **NOT** available to a bare face-walk: **a walk over the
+> street graph does not close the perimeter.** Walked unclipped with no ring injected, of the tiles that
+> today carry a `__boundary__` edge, the number that close on real streets alone is
+> **LS 14/31 · staging 33/48 · ksi-y-m-yn 0/1 · hipointe-demun 25/53 · centrum 34/68 · altadena 10/43** —
+> the rest are part of the single unbounded face. ⭐ **The control is what makes it trustworthy: every
+> INTERIOR tile lands inside a bounded face on all six scenes** (70/70 · 68/68 · 76/76 · 143/143 ·
+> 503/503 · 651/651), so the misses are the graph, not the instrument. **Cause not established** — LS's
+> face graph reaches r=1030 m against an 892 m radius and carries 95 degree-1 chain ends, 55 beyond 0.9R.
+> ▶ `node scratch/phase0-unclipped-close.mjs`
+> ⇒ **This is why the substrate takes the boundary as a STENCIL and not as an owner.** ⚠️ Accept §1's
+> stated cost: with the raw boundary the roads cut the rim, so there is no single outer contour — the
+> boundary is just another set of ring edges.
+> ⚠️ **Live risk either way: a look-side regeneration of the disc silently moves 31 tiles' ring edges**,
+> because a render artifact is load-bearing geometry and nothing says so.
+>
 > **DECIDED (Jacob): Slice 2 takes the outer ring as an ARGUMENT — ⛔ never a reach into
 > `neighborhood_boundary.json`.** Today `derive.js:4632-4648` closes the faces against that file's
 > `boundary[256]`, and **`EXTENT-DESIGN §5.1` says that artifact carries THREE JOBS** — the render disc
@@ -203,47 +239,20 @@
 > change on any town — **and the split has now landed** (worklist item 1) — without pulling LS's
 > plumbing forward against `ROADMAP`'s ordering.
 >
-> ⭐⭐ **AND THE STRUCTURAL FINDING (Jacob: *"we didn't then know we were going to HAVE that boundary edge
-> to pull from"*).** Extent produced a disc for **rendering + membership**; the 2026-08-08 compound-path
-> ruling then promoted the rim to **an edge of the drawing, never an absence** — and `derive.js` had to
-> **invent an owner** to make the perimeter faces close. Nobody told Extent it now supplies structural
-> geometry. **Measured on LS:**
-> ```
-> tiles with a __boundary__ edge   31 of 101
-> __boundary__ ring edges          290
-> side value                       'right' × 290   (a CONSTANT filler, not a real side)
-> __boundary__ in ribbons.streets  NO — synthetic id, no chain behind it
-> ```
-> ⛔⛔ **Under this ruling every ring edge is owned by exactly one `(skelId, side)` directed side-chain.
-> THE RIM HAS NO CHAIN.** So the walked substrate has a **second genuinely-new piece**: a rim owner /
-> rim coupler, **290 edges — 4× the dead-end class's 67.** ⭐ This is `A15`'s already-logged *"rim (no
-> `skelId`, 34/34)"* failure class, re-measured at its true size.
-> ⚠️ **Live risk regardless of the ruling: a look-side regeneration of the disc silently moves 31 tiles'
-> ring edges**, because a render artifact is load-bearing geometry and nothing says so.
+> ⭐⭐ **THE STRUCTURAL FINDING THAT SURVIVES (Jacob: *"we didn't then know we were going to HAVE that
+> boundary edge to pull from"*).** Extent produced a disc for **rendering + membership**; the 2026-08-08
+> compound-path ruling promoted the rim to **an edge of the drawing, never an absence** — and `derive.js`
+> had to **invent an owner** (`__boundary__`, 290 ring edges on 31 of 101 LS tiles, `side:'right'` × 290 —
+> a constant filler, no chain in `ribbons.streets`) to make the perimeter faces close. **Nobody told
+> Extent it now supplies structural geometry.** ⇒ Under the stencil reading the invented owner is not
+> replaced by a better owner — **it stops being needed as an owner at all**, while the same 290 edges keep
+> `__boundary__` as their identity.
 >
-> ### ✅✅ RULED 2026-08-12 (Jacob) — THE BOUNDARY IS AN ORDINARY CHAIN AND GETS AN ORDINARY BAND
-> > *"The edge boundary polygon is treated as equal to chains, and their intersection is treated exactly
-> > the same. If it helps you, we can just **continue the sidewalk/tree lawn × corner config around the
-> > boundary edge**, because the last step is the map within the boundary gets **feathered** at the edge,
-> > and we feather it far enough to swallow whatever customs might show."*
->
-> ⭐⭐ **THIS DELETES THE RIM SPECIAL CASE OUTRIGHT — it is a simplification, not an extra feature.**
-> The rim run takes a **normal `baseMeasure`**, paints a **normal treelawn/sidewalk**, and corners with
-> its neighbours by the **same** rule as any other pair. Nothing downstream needs to know the edge is
-> special, because **the feather is applied last, as a look, and is sized to swallow it.**
-> ⇒ **What this retires, by construction:**
-> - the `__boundary__` **no-`baseMeasure`** case, and with it **4271.8 m of "derived-zero" exclusions
->   across 20 tiles** — the *entire* derived-zero population on LS (measured, Quill);
-> - **12 of the 16** topological-only severances that *"stop against a NO-PED arc"* — there is no
->   NO-PED arc at the rim any more;
-> - the filler `side:'right'` on all 290 rim edges, and every consumer branch that tests for a rim.
->
-> ⭐ **It also settles `EXTENT-DESIGN §8` Q4** (*"what does a boundary street's SIDE mean?"*) for the
-> geometry layer: the boundary chain's inward side is an ordinary side and carries an ordinary
-> cross-section. ⛔ **Do not build a rim-kind, a rim branch, or a rim exception.** If a construction needs
-> to ask "is this the rim?", that is the signal it has diverged from this ruling.
-> ⚠️ **Verify the feather actually covers it before shipping** — the ruling rests on the fade being wide
-> enough to hide the rim band, and that is an *eye* check on the real render, not a probe.
+> ⚠️ **STILL OPEN, and NOT retired by the retraction** — these were logged as dying with a rim band, and a
+> stencil does not paint: the `__boundary__` **no-`baseMeasure`** case and its **4271.8 m of derived-zero
+> exclusions across 20 tiles** (the entire derived-zero population on LS, measured by Quill) · **12 of the
+> 16** topological-only severances that *"stop against a NO-PED arc"* · `EXTENT-DESIGN §8` Q4 (*"what does
+> a boundary street's SIDE mean?"*). **What paints at the rim is undecided; only what BOUNDS is ruled.**
 >
 > ### Dead-end notches change SHAPE, not COUNT — ⛔ on LS, and do not carry it as a law
 > 0 cap-tiles are split into more than one island; a punched spur is a **concavity**, adding vertices not
@@ -355,16 +364,6 @@
 > the spur *"rather than punching the whole map."* It was the ALTERNATIVE to `blocks = boundary − stroked
 > roads`, not that construction.** That construction has never been the render path and the eye has never
 > seen it.
->
-> ⚠️ **AND THE CORPUS CONTRADICTS ITSELF HERE — this is the seam, not a stale count.** `PIPELINE §Tile` says
-> *"NOT figure-ground (blocks-as-positive, streets-subtracted) — that regime is dead"*; `ARCHITECTURE §2.1`
-> defines the polygons Survey receives as *"faces of the centreline graph"*; `OSM2STREETS-GROUNDING §1.4/§1.6`
-> records that the field standard face-walks for blocks **and rejected boolean clipping** for intersections.
-> **Jacob (2026-08-06): the tile regime is correct; the curb is derived from the tiles' edges; "the polygon"
-> means THE DERIVED CURB, and corners must be identified off it — if they don't fall out, we're in chains.**
-> ✅ **RESOLVED by the 2026-08-12 ruling above** — walking identity-carrying side-chains satisfies both
-> readings at once: the walk survives (so identity is carried, not recovered) and the roads have width
-> (so the spur closes). The corners *do* fall out, and they fall out off the derived curb.
 >
 > **What is measured, with the commands (⛔ do not quote these numbers without re-running):**
 > `node scratch/punchout-spike.mjs` — the punch-out already computes: `blockSharp = differenceRings([stencil],
