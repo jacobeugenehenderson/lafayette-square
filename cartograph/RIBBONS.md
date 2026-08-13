@@ -193,15 +193,15 @@
 > ### ⭐⭐⭐ THE RIM IS A SECOND UNOWNED CLASS, AND IT IS 4× THE DEAD-END ONE (2026-08-12)
 > **DECIDED (Jacob): Slice 2 takes the outer ring as an ARGUMENT — ⛔ never a reach into
 > `neighborhood_boundary.json`.** Today `derive.js:4632-4648` closes the faces against that file's
-> `boundary[256]`, and **`EXTENT-DESIGN §5.1` says that artifact welds THREE JOBS** — the render disc
-> (`center`,`radius`,`boundary[256]`,`fade`,`streetFade`), the membership polygon, and the exclusions —
-> with `makeCircleBoundary` **regenerating the disc fields from hardcoded constants on every
-> commit/rescope** (the same mechanism that clobbers LS's authored `center:[-15,-15]`).
+> `boundary[256]`, and **`EXTENT-DESIGN §5.1` says that artifact carries THREE JOBS** — the render disc
+> (`center`,`radius`,`boundary[256]`,`fade`,`streetFade`), the membership polygon, and the exclusions
+> (split into three RECORDS, one file, 2026-08-12). ⛔ **The split changes nothing here: the disc is
+> still the disc, and it still only RENDERS.**
 > ⛔ **So the substrate today closes against the DISC — the thing `ORIENTATION` says must only RENDER,
 > never DECIDE.** The Extent-authored shape is `polygon`, and **LS HAS NONE** (HPDM 4 · centrum 815 ·
 > LS/ksi/altadena absent). ⇒ Taking it as an argument keeps the swap to the authored polygon a one-line
-> change on any town the day `EXTENT-DESIGN §5.1`'s schema split lands (**worklist item 1, "no
-> dependency, unblocks the rest"**) — without pulling LS's plumbing forward against `ROADMAP`'s ordering.
+> change on any town — **and the split has now landed** (worklist item 1) — without pulling LS's
+> plumbing forward against `ROADMAP`'s ordering.
 >
 > ⭐⭐ **AND THE STRUCTURAL FINDING (Jacob: *"we didn't then know we were going to HAVE that boundary edge
 > to pull from"*).** Extent produced a disc for **rendering + membership**; the 2026-08-08 compound-path
