@@ -16,8 +16,30 @@ const SKEL = process.argv[3] || 'south-18th-street-3'
 const CAPEND = process.argv[4] || 'end'
 const o = console.log
 
-const sh = JSON.parse(fs.readFileSync('public/baked/lafayette-square/shape.json', 'utf8'))
+const REBUILT = process.argv.includes('--rebuilt')
 const design = JSON.parse(fs.readFileSync('public/looks/lafayette-square/design.json', 'utf8'))
+let sh = JSON.parse(fs.readFileSync('public/baked/lafayette-square/shape.json', 'utf8'))
+if (REBUILT) {
+  // ⛔ In-process rebuild of the SHAPE pass — writes nothing, bakes nothing.
+  // Same input reconstruction the CONTROL in tessel-cap-bulb-verify.mjs proves
+  // reproduces the frozen artifact (46/46 under the old rule).
+  const { buildTileGround } = await import('../src/lib/tileGround.js')
+  const rb = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
+  const ov = JSON.parse(fs.readFileSync('cartograph/data/lafayette-square/clean/overlay.json', 'utf8'))
+  const nb = JSON.parse(fs.readFileSync('cartograph/data/lafayette-square/neighborhood_boundary.json', 'utf8'))
+  const streets = rb.streets.map(x => {
+    const m = ov.streets?.[x.skelId || x.name]?.measure
+    return (m && (Number.isFinite(m?.left?.pavementHW) || Number.isFinite(m?.right?.pavementHW))) ? { ...x, measure: { ...x.measure, ...m } } : x
+  })
+  const q = console.log; console.log = () => {}
+  const built = buildTileGround({ ...rb, streets }, {
+    stencil: nb.boundary, curbWidth: design.curbWidth ?? 0.1524, blockLandUse: design.blockLandUse || null,
+    cornerRadiusScale: design.cornerRadiusScale ?? 1, cornerRadiusOverrides: design.cornerRadiusOverrides || null,
+    cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides || null, blockCustoms: design.blockCustoms || null, emitArtifact: true })
+  console.log = q
+  sh = Array.isArray(built._shapeArtifact) ? { tiles: built._shapeArtifact } : built._shapeArtifact
+  o('⚙️  tiles REBUILT in-process (nothing written)')
+}
 const bc = design.blockCustoms || null
 const CW = design.curbWidth ?? 0.381
 const st = sh.tiles[TI]
@@ -87,11 +109,18 @@ if (E.length === 2) {
     o(`  ⇒ capOwner := the 'left' leg (tileGround.js:1812, a stated tie-break, not peel order) = ${owner.run.side}, total ${owner.total.toFixed(2)}, aBase ${owner.aBase.toFixed(4)}`)
     o(`  ⇒ the OTHER leg (${E.find(e => e !== owner).run.side}) is clipped to its own side, ENDING AT THE SHOULDER, and depends on the END COUPLER (tileGround.js:2307-2380) to reconnect.`)
   }
-  // The coupler places its quad at `hw + cw + d` off the CAP AXIS (:2372,
-  // P(s,d) = tip + a*s + p*(hw+cw+d)) — one hw for both shoulders.
-  o(`\n  COUPLER PLACEMENT (tileGround.js:2372 — a single cap hw serves BOTH shoulders):`)
-  o(`     coupler band offset  = capHW + cw + d = ${tip.hw.toFixed(4)} + ${CW} + d`)
-  for (const e of E) o(`     ${e.run.side.padEnd(5)} leg band offset = aBase + cw + d = ${e.aBase.toFixed(4)} + ${CW} + d      ⇒ offset gap vs coupler ${Math.abs(tip.hw - e.aBase).toFixed(4)} m`)
+  // ⚠️ TWO ORIGINS. The cap's radius is measured from the BULB CENTRE; a leg's
+  // band offset is measured from the CHAIN. Comparing the raw numbers is
+  // meaningless — what must hold is TANGENCY: the centre sits `hw` from each
+  // leg's asphalt edge, so each leg's band and the cap's meet without a step.
+  const C = Array.isArray(tip.c) ? tip.c : tip.p
+  const moved = Math.hypot(C[0] - tip.p[0], C[1] - tip.p[1])
+  o(`\n  BULB: radius ${tip.hw.toFixed(4)}, centre ${moved.toFixed(4)} m off the chain node${moved > 1e-9 ? ' (toward the wider leg)' : ' (symmetric legs — on the node)'}`)
+  for (const e of E) {
+    const wider = E.length === 2 && e.aBase >= E.find(x => x !== e).aBase
+    const dist = e.aBase + (E.length === 2 ? (wider ? -moved : moved) : 0)
+    o(`     ${e.run.side.padEnd(5)} asphalt edge is ${dist.toFixed(4)} m from the bulb centre  ⇒ tangency error ${Math.abs(dist - tip.hw).toFixed(6)} m`)
+  }
 }
 
 // ── THE UNION, and where each component sits ──────────────────────────────

@@ -1,4 +1,8 @@
-// READ-ONLY, scratch. THE CAP SHOULDER STEP, sized across every LS cap.
+// READ-ONLY. THE CAP SHOULDER STEP — the CLASS GATE, per scene.
+//
+// ⭐ It answers for a town nobody has looked at: it reads each scene's own
+// authored widths out of its own baked shape.json and asks whether the bulb
+// discards one of them. Nothing here is LS-specific and nothing is a constant.
 //
 // Measured at south-18th-street-3: the cap ring is built at ONE half-width —
 // `deadEndTips` (tileGround.js:2817) takes `Math.max(left.pavementHW,
@@ -6,20 +10,28 @@
 // whose authored width equals the max is flush with the cap, and the other leg
 // meets it at a step of exactly the difference.
 //
-// This census asks one thing per cap: what is |left − right| of the two legs'
-// authored pavementHW, and does the union ring actually carry a step that size
-// at the narrow shoulder?
+// ✅ FIXED 2026-08-12: the bulb is now a symmetric circle on the road's REAL
+// centreline — radius (left+right)/2, centre displaced (right−left)/2 toward
+// the wider side — so it is tangent to BOTH legs and neither shoulder steps.
+// This census is the gate that keeps it that way: it reports the step each cap
+// WOULD have carried under the old `Math.max`, and RED means a cap's frozen
+// radius still equals that max on an asymmetric pair (⇒ a stale artifact, or
+// the rule regressed).
 //
-//   node scratch/tessel-cap-step-census.mjs
+//   node scratch/tessel-cap-step-census.mjs [scene]        (default all scenes)
 import fs from 'node:fs'
 import clipperLib from 'clipper-lib'
 import { sectionPassTile, resolvePedDepths } from '../src/lib/tileGround.js'
 
 const o = console.log
-const sh = JSON.parse(fs.readFileSync('public/baked/lafayette-square/shape.json', 'utf8'))
-const design = JSON.parse(fs.readFileSync('public/looks/lafayette-square/design.json', 'utf8'))
+const SCENES = process.argv[2] ? [process.argv[2]]
+  : fs.readdirSync('public/baked').filter(d => fs.existsSync(`public/baked/${d}/shape.json`))
+let anyRed = false
+for (const scene of SCENES) {
+const sh = JSON.parse(fs.readFileSync(`public/baked/${scene}/shape.json`, 'utf8'))
+const design = (() => { try { return JSON.parse(fs.readFileSync(`public/looks/${scene}/design.json`, 'utf8')) } catch { return {} } })()
 const bc = design.blockCustoms || null
-const CW = design.curbWidth ?? 0.381
+const CW = design.curbWidth ?? 0.1524
 const H = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1])
 const SC = 1e5
 const unionAll = (rings) => {
@@ -35,7 +47,8 @@ const edgeA = (m, side) => Math.max(0, Number.isFinite(m?.[side]?.pavementHW) ? 
 
 let nAsym = 0, nSym = 0, nUnpaired = 0
 const rows = []
-sh.tiles.forEach((st, ti) => {
+const TILES = Array.isArray(sh) ? sh : (sh.tiles || [])
+TILES.forEach((st, ti) => {
   for (const t of (st.roundTips || []).concat(st.bluntTips || [])) {
     if (!t.skelId) continue
     const legs = (st.runs || []).filter(r => r.skelId === t.skelId && r.poly.some(p => H(p, t.p) < 1.5))
@@ -66,14 +79,24 @@ sh.tiles.forEach((st, ti) => {
   }
 })
 
-o(`THE CAP SHOULDER STEP — lafayette-square, authored state (curbWidth ${CW})\n`)
-o(`   the cap disk radius is Math.max(left.pavementHW, right.pavementHW)  (tileGround.js:2817)`)
-o(`   each leg's band starts at its OWN aBase + curbWidth`)
-o(`   ⇒ predicted step at the narrow shoulder = |left − right|\n`)
-o('tile skelId                       end    leg aBase L/R      step    capHW   cap band outer   narrow band outer  comps')
-for (const r of rows.sort((a, b) => (b.step ?? -1) - (a.step ?? -1))) {
-  if (r.note) { o(`${String(r.ti).padStart(4)} ${r.t.skelId.padEnd(28)} ${String(r.t.capEnd).padEnd(5)}  — ${r.note}`); continue }
-  o(`${String(r.ti).padStart(4)} ${r.t.skelId.padEnd(28)} ${String(r.t.capEnd).padEnd(5)} ${r.aL.toFixed(2).padStart(6)}/${r.aR.toFixed(2).padEnd(6)} ${r.step.toFixed(3).padStart(7)}  ${r.capHW.toFixed(3).padStart(6)}  ${r.capOuter.toFixed(2).padStart(8)}${r.hitCap ? ' ✓' : ' ·'}      ${r.narrowOuter.toFixed(2).padStart(8)}${r.hitNarrow ? ' ✓' : ' ·'}      ${r.comps}`)
+o(`\n══ ${scene}   (curbWidth ${CW}, ${bc ? Object.keys(bc).length + ' authored blockCustoms entries' : '⛔ NO blockCustoms — measuring an unauthored map'})`)
+if (!TILES.length) { o('   ⚠️ shape.json carries no tiles — NOT MEASURED'); continue }
+if (!rows.length) { o('   no round caps in this scene'); continue }
+const asym = rows.filter(r => !r.note && r.step > 0.01)
+// RED: an asymmetric cap whose frozen radius still equals the old Math.max.
+const stale = asym.filter(r => Math.abs(r.capHW - Math.max(r.aL, r.aR)) < 1e-9)
+o(`   caps ${rows.length}   asymmetric legs ${asym.length}   ⛔ still built at Math.max (stale artifact or regression) ${stale.length}`)
+if (asym.length) {
+  o(`   worst asymmetry: ${asym.sort((a,b)=>b.step-a.step)[0].t.skelId} ${asym[0].step.toFixed(3)} m  (${asym[0].aL.toFixed(2)} / ${asym[0].aR.toFixed(2)})`)
+  o(`   cap                                  legs L/R        radius   expected (L+R)/2   step it would carry`)
+  for (const r of asym.slice(0, 10)) {
+    const want = (r.aL + r.aR) / 2
+    const bad = Math.abs(r.capHW - want) > 1e-9
+    o(`   ${(r.t.skelId + '|' + r.t.capEnd).padEnd(34)} ${r.aL.toFixed(2).padStart(5)}/${r.aR.toFixed(2).padEnd(5)} ${r.capHW.toFixed(3).padStart(9)} ${want.toFixed(3).padStart(15)}   ${r.step.toFixed(3).padStart(8)}${bad ? '  ⛔' : '  ✅'}`)
+  }
 }
-o(`\ncaps with a paired finger: ${nAsym + nSym}   ⛔ asymmetric legs (step > 1 cm): ${nAsym}   symmetric: ${nSym}   unpaired: ${nUnpaired}`)
-o(`✓ = the union ring actually carries a vertex at that radius from the tip (±5 cm, within 25 m)`)
+if (stale.length) anyRed = true
+}
+o(`\n${anyRed ? '⛔ RED — at least one scene\'s shape.json still carries a Math.max bulb on an asymmetric cap. Re-freeze it (Survey in → Survey out).' : '✅ GREEN — no scene carries a Math.max bulb on an asymmetric cap.'}`)
+o(`⭐ A scene with 0 asymmetric caps proves nothing about the rule — it just has no instances.`)
+process.exit(anyRed ? 1 : 0)

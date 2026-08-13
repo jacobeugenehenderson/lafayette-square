@@ -1003,6 +1003,28 @@ export function extractFaces(streets) {
 // floods to the boundary, no curb/sidewalk on the map edge. Shared with derive.js.
 export const BOUNDARY_EDGE_SKEL = '__boundary__'
 
+// ⭐ THE CAP BULB'S CENTRE. A round dead-end's bulb is a symmetric circle on the
+// road's REAL centerline, which is the chain displaced toward the wider side by
+// half the difference of the two authored half-widths (the producer computes it
+// once, in `deadEndTips`, and freezes it as `roundTips[].c`). ⛔ `t.p` is the
+// chain's tip NODE and stays the identity key — never a circle centre.
+//
+// ⚠️ A shape.json frozen BEFORE this landed carries no `c`, and its `hw` is the
+// old `Math.max`. The two travel together, so falling back to `p` reproduces
+// that artifact's own geometry exactly rather than mixing a new centre with an
+// old radius. It is disclosed once per session, not silent: a stale artifact
+// must announce itself (Layer 0 q2), and the cure is one Survey-in/Survey-out
+// re-freeze.
+let __capCentreStaleWarned = false
+export function capCentre(t) {
+  if (Array.isArray(t?.c) && t.c.length === 2) return t.c
+  if (!__capCentreStaleWarned) {
+    __capCentreStaleWarned = true
+    console.warn('[tileGround] STALE SHAPE ARTIFACT: roundTips carry no bulb centre `c`, so dead-end caps are drawn at the pre-2026-08-12 `Math.max` radius on the chain node. Asymmetric caps will show the shoulder step. Re-freeze (Survey in → Survey out) to pick up the fix.')
+  }
+  return t.p
+}
+
 export function tilesFromFrozen(frozen, streets) {
   if (!Array.isArray(frozen) || !frozen.length) return null
   const idxBySkelId = new Map()
@@ -1569,7 +1591,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         }
       }
       if (nAx) { const l = Math.hypot(ax, az) || 1; axis = [ax / l, az / l] }
-      const info = { p: t.p, hw: t.hw, total: (t.tl || 0) + (t.sw || 0), axis, flipped }
+      const info = { p: t.p, c: capCentre(t), hw: t.hw, total: (t.tl || 0) + (t.sw || 0), axis, flipped }
       capCouplers.set(tipKey(t.p), info)
       if (flipped) capFlip.set(tipKey(t.p), info)
     }
@@ -1581,15 +1603,16 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // a semicircle.")
     const capSemi = (cap) => {
       const R = cap.hw + cw + SECTOR_D
-      if (!cap.axis) return [circlePoly(cap.p[0], cap.p[1], R)]
+      const C = cap.c                                  // the bulb's centre, not the chain node
+      if (!cap.axis) return [circlePoly(C[0], C[1], R)]
       const a = cap.axis, n = [-a[1], a[0]], B = R + 2
       const half = [
-        [cap.p[0] + n[0] * B, cap.p[1] + n[1] * B],
-        [cap.p[0] - n[0] * B, cap.p[1] - n[1] * B],
-        [cap.p[0] - n[0] * B - a[0] * B, cap.p[1] - n[1] * B - a[1] * B],
-        [cap.p[0] + n[0] * B - a[0] * B, cap.p[1] + n[1] * B - a[1] * B],
+        [C[0] + n[0] * B, C[1] + n[1] * B],
+        [C[0] - n[0] * B, C[1] - n[1] * B],
+        [C[0] - n[0] * B - a[0] * B, C[1] - n[1] * B - a[1] * B],
+        [C[0] + n[0] * B - a[0] * B, C[1] + n[1] * B - a[1] * B],
       ]
-      return intersectRings([circlePoly(cap.p[0], cap.p[1], R)], [half])
+      return intersectRings([circlePoly(C[0], C[1], R)], [half])
     }
     // Blunt dead-end tips: like round tips, they are NOT junction corners — the
     // curb caps flat at the tip node, so the leg must run TO the tip (no e.a+R
@@ -1928,7 +1951,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           if (!t) return
           const owner = capOwner.get(k)
           if (owner && owner !== e) return          // the bulb belongs to the other leg's arrangement
-          sector.push(circlePoly(p[0], p[1], t.hw + cw + SECTOR_D))
+          { const C = capCentre(t); sector.push(circlePoly(C[0], C[1], t.hw + cw + SECTOR_D)) }
         })
         if (!sector.length) continue
         const gk = gkOf(e)
@@ -1971,7 +1994,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
         for (const [k, ownerE] of capOwner) {
           const t = roundTipByKey.get(k)
           if (!t) continue
-          const disk = [circlePoly(t.p[0], t.p[1], t.hw + cw)]
+          const disk = [circlePoly(capCentre(t)[0], capCentre(t)[1], t.hw + cw)]
           for (const e of rr) {
             if (e === ownerE || e.run.skelId !== ownerE.run.skelId) continue
             const mine = runSpans.get(e.ri)
@@ -2221,7 +2244,7 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // all-concrete caps stay byte-identical; only the 20 treelawn-Y caps change.
     if (roundTips.length) {
       for (const t of roundTips) {
-        const cap0 = circlePoly(t.p[0], t.p[1], t.hw + cw + t.tl + t.sw + 1)
+        const cap0 = circlePoly(capCentre(t)[0], capCentre(t)[1], t.hw + cw + t.tl + t.sw + 1)
         const stray = intersectRings(intersectRings(luRemainder, [cap0]), fullBand)
         if (!stray.length) continue
         luRemainder = differenceRings(luRemainder, stray)
@@ -2317,23 +2340,35 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     if (fullBand.length) {
       for (const cap of capCouplers.values()) {
         if (!cap.axis) continue
-        const tip = cap.p, hw = cap.hw, a = cap.axis
+        // ⛔ TWO DIFFERENT POINTS, and conflating them breaks the leg match:
+        // `tip` is the bulb's CENTRE (the geometric frame — both shoulders sit
+        // `hw` from it), `node` is the chain's tip vertex (what a run's polyline
+        // endpoint actually equals). On an asymmetric cap they are up to
+        // |left − right| / 2 apart — 2.10 m at nicholson-place.
+        const tip = cap.c, node = cap.p, hw = cap.hw, a = cap.axis
         // EACH SHOULDER IS SERVED BY ITS OWN LEG. An asymmetric cap builds
         // differently on its two sides, so one owner run cannot describe both —
         // reading a single owner was what made the asymmetric case unbuildable.
         // The legs leave the tip almost parallel but diverge toward the mouth, so
         // classify each by the sign of its body's offset across the cap axis.
+        // ⚠️ MEASURED 2026-08-12 AND STILL TRUE OF THIS CLASSIFIER: on a pendant
+        // the two legs ARE one centreline, so `poly[1]` and `poly[nP-2]` return
+        // the SAME node, both offsets are equal, and the tie-break below hands
+        // the same leg to both shoulders — 11 of LS's 39 caps. Left standing
+        // deliberately: with the bulb correctly centred both shoulders are
+        // equidistant, so measure whether this still decides anything before
+        // rewriting it. `scratch/tessel-coupler-trace.mjs` is the instrument.
         const perp0 = [-a[1], a[0]]
         const bodyOf = (run) => {
           const nP = run.poly.length
-          if (Math.hypot(run.poly[0][0] - tip[0], run.poly[0][1] - tip[1]) < 1.5) return run.poly[1]
-          if (Math.hypot(run.poly[nP - 1][0] - tip[0], run.poly[nP - 1][1] - tip[1]) < 1.5) return run.poly[nP - 2]
+          if (Math.hypot(run.poly[0][0] - node[0], run.poly[0][1] - node[1]) < 1.5) return run.poly[1]
+          if (Math.hypot(run.poly[nP - 1][0] - node[0], run.poly[nP - 1][1] - node[1]) < 1.5) return run.poly[nP - 2]
           return null
         }
         const owners = []
         for (const e of rr) {
           const b = bodyOf(e.run)
-          if (b) owners.push({ e, off: (b[0] - tip[0]) * perp0[0] + (b[1] - tip[1]) * perp0[1] })
+          if (b) owners.push({ e, off: (b[0] - node[0]) * perp0[0] + (b[1] - node[1]) * perp0[1] })
         }
         if (!owners.length) continue
         for (const sign of [1, -1]) {
@@ -2814,14 +2849,50 @@ export function buildTileGround(ribbons, opts = {}) {
       // rounded the end — a broken-looking cap. Only an explicit 'blunt' is blunt.)
       const cap = (authored && authored !== 'none') ? authored : (caps?.[k]?.cap || 'round')
       const m = s.measure
-      const hw = Math.max(m?.left?.pavementHW || 0, m?.right?.pavementHW || 0)
+      // ⭐ THE BULB IS A SYMMETRIC CIRCLE ON THE ROAD'S REAL CENTERLINE (Jacob,
+      // 2026-08-12). ⛔ THE CHAIN IS NOT THAT CENTERLINE — an asymmetric
+      // pavementHW is exactly what "the traced line is off-centre" looks like.
+      // So the cul-de-sac keeps ONE radius, the MEAN half-width, and its CENTRE
+      // is the chain displaced toward the wider side by half the difference.
+      // Both legs' asphalt edges are then exactly `hw` from that centre, so the
+      // bulb is tangent to both and neither shoulder steps.
+      // ⛔ NOT max: max DISCARDED one of the two authored widths — the
+      // operator's decision (Layer 0 q3) — and made the narrower leg meet the
+      // cap at a step of |left − right|, on 25 of LS's 50 caps (worst
+      // nicholson-place, 4.20 m). ⛔ Not min, not a clamp: same objection.
+      // ✅ left === right ⇒ hw === the old max AND the displacement is exactly
+      // 0, so every symmetric cap stays byte-identical.
+      // ⭐ There is no left branch and no right branch: one radius, one centre.
+      const hwL = Math.max(0, Number.isFinite(m?.left?.pavementHW) ? m.left.pavementHW : 0)
+      const hwR = Math.max(0, Number.isFinite(m?.right?.pavementHW) ? m.right.pavementHW : 0)
+      const hw = (hwL + hwR) / 2
+      // The chain's tangent at this tip in POINT ORDER — the measure convention
+      // (right-perp = (-dz, dx) of the point order; the same one computePerps
+      // and the E3.2 sidePerp use), so a positive (right − left) displaces
+      // toward `right`. Walk off any duplicated vertex before taking it.
+      const tipP = pts[idx]
+      let nb = null
+      for (let q = 1; q < pts.length; q++) {
+        const cand = pts[idx === 0 ? q : idx - q]
+        if (!cand) break
+        if (Math.hypot(cand[0] - tipP[0], cand[1] - tipP[1]) > 1e-9) { nb = cand; break }
+      }
+      const tdx = nb ? (idx === 0 ? nb[0] - tipP[0] : tipP[0] - nb[0]) : 1
+      const tdz = nb ? (idx === 0 ? nb[1] - tipP[1] : tipP[1] - nb[1]) : 0
+      const tLen = Math.hypot(tdx, tdz) || 1
+      const disp = (hwR - hwL) / 2
+      const capCx = tipP[0] + (-tdz / tLen) * disp
+      const capCy = tipP[1] + (tdx / tLen) * disp
       // Best-effort fill (SECTION.md §3.1): the dead-end tip's ped wrap uses the
       // STANDARD model too (treelawn Y/N × ADA), so the cap wrap (sectionPass)
       // matches the straight-section bands. (The round-cap FILL bug — ② — is the
       // wrap geometry, separate from these depths.)
       const tlw = (gleanTreelawn(m, 'left') || gleanTreelawn(m, 'right')) ? STD_TREELAWN : 0
       const sww = ADA_SIDEWALK
-      deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1] })
+      // `px,py` and the KEY stay the chain's tip NODE — every lookup, cap-flip
+      // slot and ring-vertex match is keyed off it. `c` is the bulb's CENTRE and
+      // is the only thing the circle primitives may use.
+      deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1], c: [capCx, capCy] })
     }
   }
 
@@ -3810,7 +3881,7 @@ export function buildTileGround(ribbons, opts = {}) {
           const tk = tipKey(p)
           if (seenTip.has(tk)) continue
           const t = deadEndTips.get(tk)
-          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
+          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
         }
       }
     }
@@ -3834,7 +3905,7 @@ export function buildTileGround(ribbons, opts = {}) {
         if (sp) { const _f = aStads.length; aStads.push(...strokeOpen(sp, d)); const _li = tile.ring.indexOf(run.poly[0]); _labelStads(_f, _li >= 0 ? _li : null) }
       }
     }
-    for (const t of roundTips) if (t.hw > 1e-6) { aStads.push(circlePoly(t.p[0], t.p[1], t.hw)); aStadLabs[aStads.length - 1] = null }
+    for (const t of roundTips) if (t.hw > 1e-6) { const c = capCentre(t); aStads.push(circlePoly(c[0], c[1], t.hw)); aStadLabs[aStads.length - 1] = null }
     let aFill = aStads.length ? intersectRings(unionRings(aStads), [tile.ring]) : []
     // [A06] The SAME two operations, run labelled, alongside the originals. Geometry
     // is taken from the ORIGINAL calls — this pair only carries provenance, so a bug
@@ -4605,7 +4676,7 @@ export function buildTileGround(ribbons, opts = {}) {
       for (const [, t] of deadEndTips) {
         if (t.cap !== 'round' || t.hw <= 1e-6) continue
         const d = level === 'A' ? t.hw : level === 'C' ? t.hw + cw : level === 'T' ? t.hw + cw + t.tl : t.hw + cw + t.tl + t.sw
-        stads.push(circlePoly(t.px, t.py, d))
+        stads.push(circlePoly(t.c ? t.c[0] : t.px, t.c ? t.c[1] : t.py, d))
       }
       return stads.length && perimeter.length ? intersectRings(unionRings(stads), perimeter) : []
     }

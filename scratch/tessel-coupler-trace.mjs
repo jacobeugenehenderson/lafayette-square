@@ -27,7 +27,6 @@ for (const [ti, st] of sh.tiles.entries()) {
   for (const r of globalThis.__COUPLER_TRACE) {
     const t = tips.find(x => Math.hypot(x.p[0] - r.tip[0], x.p[1] - r.tip[1]) < 1)
     if (only && t?.skelId !== only) continue
-    console.log(`tile ${String(ti).padStart(3)} ${String(t?.skelId).padEnd(24)} ${String(t?.capEnd).padEnd(5)} shoulder ${r.sign > 0 ? '+' : '-'} leg=${r.leg.padEnd(5)} aBase=${String(r.legABase).padEnd(7)} capHW=${String(r.capHW).padEnd(7)} flip=${r.flipped ? 'Y' : 'n'} parity leg/cap=${r.legWalkOuter ? 'out' : 'in'}/${r.capWalkOuter ? 'out' : 'in'} total ${r.legTotal}/${r.capTotal}  → ${r.verdict}`)
-    console.log(`        ${r.why}`)
+    console.log(`${String(ti).padStart(3)} ${String(t?.skelId).padEnd(22)} ${String(t?.capEnd).padEnd(5)} sh${r.sign>0?'+':'-'} leg=${r.leg} ${r.v}`)
   }
 }
