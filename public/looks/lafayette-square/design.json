@@ -195,6 +195,12 @@
     },
     "dolman-street-1": {
       "left": {
+        "3": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
+        },
         "4": {
           "pavementHW": 5.49,
           "treelawn": 1.5,
@@ -204,6 +210,9 @@
             "outer": "LU",
             "inner": "SW"
           }
+        },
+        "-2": {
+          "capFlip": true
         }
       }
     },
@@ -311,7 +320,7 @@
     "lafayette-avenue-5": {
       "right": {
         "0": {
-          "pavementHW": 2.4024653253374093,
+          "pavementHW": 11.44544891695867,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
@@ -344,6 +353,16 @@
         },
         "-2": {
           "capFlip": true
+        }
+      }
+    },
+    "carroll-street-1": {
+      "left": {
+        "1": {
+          "materials": {
+            "outer": "LU",
+            "inner": "SW"
+          }
         }
       }
     }
