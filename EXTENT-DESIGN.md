@@ -87,7 +87,7 @@ regression guard. Measured today:
 
 | scene | ns | poured / served? | notes |
 |---|---|---|---|
-| **lafayette-square** | `bldg-` (1082) | ⛔ **NOT poured** — no `clean/ribbons.json` | render data lives at `src/data/*`, name-imported at **19 sites** |
+| **lafayette-square** | `bldg-` (1082) | ⛔ **NOT poured** — no `clean/ribbons.json` | render data lives at `src/data/*`, name-imported (§2.1 — count, don't quote) |
 | **hipointe-demun** | `msbf-` (1281) | ✅ served from `clean/` | namespace correct; **identity unstable** (fetch-index) |
 | altadena | `msbf-` (15397) | ✅ served | fetch-index |
 | ksi-y-m-yn | `osm-` (1640) | ✅ served | fetch-index; deferred (§0.5) |
@@ -99,11 +99,18 @@ Every other hood is a scene under `clean/<scene>/`. **LS's artifacts live at the
 paths** — `src/data/ribbons.json`, `src/data/buildings.json`, `src/data/street_lamps.json`,
 `src/data/landmarks.json`, `src/data/park-feature-elev.json` — **imported by literal name** across the
 app (`loadInstanceData.js` even hands LS `import('./ribbons.json')` = the shared root). So
-`src/data/*` is simultaneously *"the shared default"* **and** *"LS's own render data"*. That
-conflation is the root the entire LS-bleed class grows from: when a poured scene's input is absent,
-the kit falls back to `src/data/*` — which **is** Lafayette Square. LS bleeds into everyone because
-LS *is* the fallback. Retire the name-imports → the whole bleed brief closes at the root instead
-of site-by-site.
+`src/data/*` is simultaneously *"the shared default"* **and** *"LS's own render data"*.
+
+⭐ **THE LIVE ROOT IS AN IMPORT, NOT A FALLBACK** *(re-armed 2026-08-12; the fallback claim that stood
+here was measured FALSE and excised).* ⛔ **The reader has no fallback path:** `loadInstanceData.js` is
+a per-`lookId` manifest and a missing entry returns `null` with a warn (`:106`) — HPDM and ksi-y-m-yn
+carry their own manifests and never reach `./ribbons.json`, so **no scene inherits LS's data by
+absence.** What is live is **scene-blind, module-scope static imports of LS's ribbons in the AUTHORING
+app** — `CartographApp.jsx:53`, `MapLayers.jsx:14`, `useCartographStore.js:9` (`measureModel.js:25`
+records a fixed instance of the same class, `08d61ce1`). Retire the imports → the bleed class closes at
+the root instead of site-by-site.
+⚠️ **UNMEASURED — establish before sizing step 4 on it:** whether those three imports are *live* with a
+non-LS scene open, or superseded at runtime. **Cause not established.**
 
 > ⭐ **COUNT THE SITES, DON'T QUOTE THEM** *(2026-08-08 — this paragraph said "19 sites" and the
 > figure does not reproduce; nobody can say how it was counted, and it is the number the work is
@@ -345,8 +352,8 @@ never the night before a demo).
    enters/leaves and why) + the **scene-parity layer-count check** (raw OSM feature count vs `map.json`
    per layer — the detector that would've caught the park drop 63→0). Plus the served-parity guard
    (§2, already built). These make conforming *provable*, not hopeful.
-4. **Retire the 19 `src/data/*` name-imports** → per-scene served path (§2.1). Closes the entire
-   LS-bleed class at the root. Each import is independent — land smallest first.
+4. **Retire the `src/data/*` name-imports** → per-scene served path (§2.1 — ⛔ count them, don't quote a
+   figure). Closes the bleed class at the root. Each import is independent — land smallest first.
 5. **Conform LS, last** — pour LS through the one path → `clean/lafayette-square/{skeleton,ribbons,map}.json`,
    served like HPDM; **geometry-match `bldg-NNNN` → the locked scheme once** (anchored on lon/lat
    centroid so it survives a frame-origin shift); excise the exemptions (`scene !== 'lafayette-square'`
