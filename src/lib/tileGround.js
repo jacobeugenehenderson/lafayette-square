@@ -1106,14 +1106,17 @@ export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => 
 
 // Inboard-side ped zeroing for divided carriageways (anchor='inner-edge'):
 // the median-facing side keeps pavement but drops curb/treelawn/sidewalk, so
-// the thin tile between the two carriageways floods to a bare median. Mirrors
-// streetProfiles.innerEdgeMeasure — the median geometry falls out of honest
-// per-side widths + this transform, with no median-construction code.
-// RECLAIM guard (D1, mirrors innerEdgeMeasure): left/right keys are
-// point-order-relative; a weld that reverses a chain swaps the physical sides
-// under the persisted keys. Outer pavementHW 0 with inboard > 0 is an
-// impossible road (zero-width carriageway) → the width is misfiled on the
-// median key; swap the sides back. Fires only on that impossible state.
+// the thin tile between the two carriageways floods to a bare median — the
+// median geometry falls out of honest per-side widths + this transform, with
+// no median-construction code.
+// ⚠️ This is IDEMPOTENT re-resolution, NOT the primary decision: `derive.js
+// innerEdgeAssign` already zeroed the inboard ped at bake using this SAME
+// oracle, so re-running it lands on the same side. That is the whole reason it
+// is safe. The `streetProfiles.innerEdgeMeasure` variant — which re-ran it
+// through the persisted `innerSign` key instead, and so named the OUTBOARD side
+// — was DELETED 2026-08-13; its D1 RECLAIM guard went with it, measured
+// unreachable on 378/378 chains in six towns (see that file for the full
+// adjudication). ⛔ Do not restore a side-KEY path here; ask the geometry.
 // [construct-the-hard-polygons] The median-facing (inboard) side of a divided
 // carriageway, resolved GEOMETRICALLY — the side whose inward (left) perp points toward
 // the mate's centerline. ⛔ The persisted `innerSign` side-key is UNRELIABLE: it zeros

@@ -15,7 +15,7 @@
  * center.
  */
 import clipperLib from 'clipper-lib'
-import { CURB_WIDTH, innerEdgeMeasure } from '../cartograph/streetProfiles.js'
+import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { readFeCustom } from './feCustomKey.js'
 import { smoothChain } from './smoothCenterline.js'
 
@@ -1466,12 +1466,13 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     blockLandUse = null,
     smooth = 0,
     useRingBandEmitter = false } = opts  // C4 flag — toy on, LS off until C5
-  // Apply inner-edge anchor transform to all chains up front: every
-  // downstream consumer (street.measure, segmentMeasures via
-  // measureForSegment) sees the post-transform measure where inboard
-  // pavement+curb+ped are zero on inner-edge chains. Single source of
-  // truth — keeps Designer and bake in lockstep without auditing every
-  // street.measure read site.
+  // ⛔ The inner-edge anchor transform that used to run here is DELETED
+  // (2026-08-13, streetProfiles.js). It re-applied `derive.js innerEdgeAssign`'s
+  // ped-zeroing through the persisted `innerSign` key — a constant `-1` on every
+  // inner-edge chain in every poured town — and so zeroed the OUTBOARD side on
+  // 26 of LS's 28 real divided chains, on top of the inboard side the bake had
+  // already zeroed geometrically. `ribbons.json` arrives with the inboard ped
+  // ALREADY zero on the correct side; there is nothing left to transform.
   // Phase 2 — interpolating Catmull-Rom smoothing of every chain's
   // mid-vertices, applied here at ingest so ALL downstream consumers
   // (segmentation, perp-offset stroke, frontage walk, corner rounding)
@@ -1493,20 +1494,8 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
     if (!s) return s
     const eff = Math.max(smooth || 0, s.smooth || 0)
     const smoothed = eff > 0 ? smoothChain(s.points, eff) : null
-    const isInner = s.anchor === 'inner-edge' && s.innerSign
-    if (!smoothed && !isInner) return s
-    const out = { ...s }
-    if (smoothed) out.points = smoothed
-    if (isInner) {
-      if (s.measure) out.measure = innerEdgeMeasure(s.measure, s.innerSign)
-      if (s.segmentMeasures) {
-        out.segmentMeasures = {}
-        for (const k of Object.keys(s.segmentMeasures)) {
-          out.segmentMeasures[k] = innerEdgeMeasure(s.segmentMeasures[k], s.innerSign)
-        }
-      }
-    }
-    return out
+    if (!smoothed) return s
+    return { ...s, points: smoothed }
   })
   const intersections = ribbons?.intersections || []
 

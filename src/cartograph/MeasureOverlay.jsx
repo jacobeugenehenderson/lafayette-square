@@ -2,7 +2,7 @@ import { useMemo, useRef, useCallback, useEffect } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
-import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline, innerEdgeMeasure } from './streetProfiles.js'
+import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffsetPolyline } from './streetProfiles.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
@@ -417,11 +417,15 @@ export default function MeasureOverlay() {
       right: resolveSide(customRight, 'right'),
       symmetric: chainM.symmetric,
     }
-    // For inner-edge chains, zero out the inboard ped zone so its handles
-    // collapse (no treelawn/sidewalk along the median). Pavement + curb
-    // handles still emit on both sides — operator authors carriageway width
-    // the same as a regular street.
-    const measure = innerEdgeMeasure(baseMeasure, st.anchor === 'inner-edge' ? st.innerSign : 0)
+    // ⛔ THIS IS THE SITE THE OPERATOR FELT (fixed 2026-08-13). It read "zero out
+    // the inboard ped zone so its handles collapse" — but it picked the side from
+    // the persisted `innerSign`, a constant `-1` ⇒ always the 'left' key, which on
+    // 26 of LS's 28 real divided chains is the OUTBOARD side. So the ped handles
+    // collapsed on the street side of a divided roadway and sidewalk↔treelawn could
+    // not be flipped there. The inboard ped is already zero in `chainM` — the bake
+    // zeroed it on the geometrically-resolved side — so the handles collapse where
+    // they should with no transform at all. See streetProfiles.js.
+    const measure = baseMeasure
     // Along-street unit vector (perpendicular to the ruler). Handles
     // orient with long axis along the street so they don't overlap each
     // other when boundary radii are close.
@@ -513,13 +517,12 @@ export default function MeasureOverlay() {
     const fe = nearestFeForSide(streetIdx, side, anchor.x, anchor.z)
     if (!fe) return
     const blockCustoms = store.blockCustoms || {}
-    // Chain-default seed, innerEdge-resolved so divided carriageways match
-    // the bake: innerEdgeMeasure is applied to chain.measure at build time
-    // but NOT to blockCustoms, so the seed must pre-apply it or the median
-    // side would sprout a ped zone.
-    const chainSeed = innerEdgeMeasure(
-      chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0
-    )
+    // Chain-default seed. It needs no inner-edge resolution: `derive.js` zeroes a
+    // divided carriageway's inboard ped at bake, on the geometrically-resolved
+    // side, so `chainMeasure` already carries it. (The old pre-apply here used the
+    // constant `innerSign` key and seeded a drag on the OUTBOARD side from a zeroed
+    // base — streetProfiles.js.)
+    const chainSeed = chainMeasure(st)
     const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
     // ⭐ One depth truth (SECTION.md §5): seed the drag from the SAME resolution
     // the FILL renders, so the drag redistributes within the depths on screen —

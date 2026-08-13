@@ -447,52 +447,57 @@ export function innerEdgeOffsetPolyline(pts, innerSign, pavementHW) {
   return offsetPolyline(pts, pavementHW, innerSign)
 }
 
-// Inner-edge anchor: chain stays at carriageway center (skeleton's OSM
-// way center). Cross-section is authored two-sided as usual (pavement
-// + curb on BOTH sides). The anchor flag flips `measure.symmetric` off
-// in the store so outboard drag doesn't mirror inboard, and seeds the
-// inboard `pavementHW` to 0 on flip — that's the operator's "I'm now
-// in inner-edge mode; widen inboard if you want to eat into the median"
-// starting state. Here, in the resolution helper, only the inboard ped
-// zone is zeroed (no treelawn, no sidewalk, no `terminal` — there's no
-// pedestrian zone along a median). Pavement + curb stay whatever the
-// operator has authored. The polygon between paired carriageways'
-// chains, minus the two inboard pavement HWs, IS the emergent median;
-// if the gap can't accommodate one, no median renders (free).
-// CONVENTION: innerSign === +1 → inboard key 'right' (the measure-RIGHT is
-// the (-dz,dx) perp of point order). Must match tileGround.isMedianFacing and
-// derive.js innerSideSign — this side-mapping has bitten twice; don't re-derive
-// it from "CCW = left" intuition.
+// ⛔ `innerEdgeMeasure` DELETED 2026-08-13 — INTERIM, superseded by RIBBONS §1's
+// substrate ruling (a directed side-chain owns ONE side by construction, so there
+// is no side-key left to get wrong). Excised early because it made divided roads
+// UNAUTHORABLE, and the reason is the general lesson:
 //
-// RECLAIM guard (D1): measure left/right keys are point-order-relative, so a
-// skeleton weld that reverses a chain's direction silently swaps which
-// physical side a persisted key refers to (lafayette-avenue-6: the authored
-// carriageway width ended up on the median key, outer pavementHW 0 — the
-// block ran flush to the chain). An outer pavementHW of 0 with inboard > 0 is
-// an impossible road (zero-width carriageway), so the width datum is misfiled:
-// swap the sides back before zeroing the inboard ped zone. Fires only on that
-// impossible state — authored "eat into the median" (inboard > 0 WITH a real
-// outer width) passes through untouched.
-export function innerEdgeMeasure(baseMeasure, innerSign) {
-  if (!innerSign) return baseMeasure
-  const inboardKey = innerSign === +1 ? 'right' : 'left'
-  const outboardKey = inboardKey === 'left' ? 'right' : 'left'
-  let inboardSide = baseMeasure?.[inboardKey] || {}
-  let outboardSide = baseMeasure?.[outboardKey] || {}
-  if (!(outboardSide.pavementHW > 0) && inboardSide.pavementHW > 0) {
-    const t = outboardSide; outboardSide = inboardSide; inboardSide = t
-  }
-  return {
-    ...baseMeasure,
-    [outboardKey]: outboardSide,
-    [inboardKey]: {
-      ...inboardSide,
-      treelawn: 0,
-      sidewalk: 0,
-      terminal: 'none',
-    },
-  }
-}
+// ⭐ IT RE-APPLIED A DECISION THE BAKE HAD ALREADY MADE, THROUGH AN INVERTED SELECTOR.
+// `derive.js innerEdgeAssign` zeroes the inboard ped at BAKE, picking the side with
+// the GEOMETRIC oracle (`inboardKeyGeom` — the side whose inward perp points at the
+// mate). The zeroing is already in `ribbons.json`. Every caller here then re-ran it
+// against the PERSISTED `innerSign` key — and got the OTHER side.
+//
+// ⛔ `innerSign` IS NOT A DEAD CONSTANT, AND THAT WAS THE TEMPTING WRONG READ.
+// Recomputing `innerSideSign` from current geometry reproduces the persisted value on
+// 378/378 inner-edge chains across six poured towns — it is faithfully re-derived every
+// bake, exactly as `derive.js` claims. It is `-1` everywhere because its sign→key
+// CONVENTION (`derive.js:3167-3171`, "+1 ⇒ inboard key 'right'") is INVERTED relative
+// to the oracle: both read the same `(-dz, dx)` perp against the mate, and their keys
+// agree on 6/378. So `innerSign` carries side information that is WRONG, not absent —
+// it names the OUTBOARD side. (Cambour reached the same verdict by eye on 2026-06-15;
+// that is why `derive.js` already calls the oracle and not this.)
+// ⇒ every caller here wiped the OUTBOARD treelawn/sidewalk/terminal: the ped handles
+// the operator drags collapsed on the street side of a divided roadway, so the flip
+// sidewalk↔treelawn was impossible there. ⛔ Layer 0 q3 — the code called the
+// operator's own authoring surface a median. Measured LS: 26 chains restored,
+// both-ped-zeroed 36 → 10 (the 10 = the motorway class the bake zeroed on purpose).
+// ▶ `node scratch/claims-inner-edge-deletion-gates.mjs [--customs]` — 5 gates, per
+//   scene, all six towns. `claims-inner-edge-side-selector.mjs --all` re-derives the census.
+//
+// ⭐ THE D1 RECLAIM GUARD WENT WITH IT — adjudicated, not absorbed (Jacob asked).
+// Its failure mode is real and NAMED: a skeleton weld reverses a chain's direction and
+// silently swaps which physical side a persisted left/right key means (lafayette-avenue-6:
+// the carriageway width landed on the median key, outer pavementHW 0, the block ran flush
+// to the chain). Three findings, in order of what settles it:
+//   1. RIBBONS §1's substrate ruling retires the FAILURE MODE, not merely the zeroing —
+//      a directed side-chain owns ONE side by construction, so no two-sided key survives
+//      for a reversal to invert. The guard is in scope of that retirement.
+//   2. But it was ALREADY DEAD, twice over, and neither reason is the ruling:
+//      · trigger unreachable — `innerEdgeAssign` writes `surveyHW/2` to BOTH sides, so
+//        "outer pavementHW 0 with inboard > 0" cannot survive the bake this ran after.
+//        0 reachable / 378 chains, both key choices; L/R pavementHW differ on 0 of them.
+//      · selector inverted — it chose which sides to swap from `innerSign`, i.e. from the
+//        very key that names the wrong side. Had it ever fired it would have swapped wrong.
+//   3. ⛔ THE RESIDUE IS LIVE AND IS NOT HANDLED HERE. A weld reversing a chain still
+//      corrupts persisted side keys — but across ALL chains and into `blockCustoms`, not
+//      just inner-edge `pavementHW`. That is the Wall/index arc (skelId+segOrd are
+//      POSITIONAL; a reconnect orphans slots), and this guard never covered it.
+//      ⇒ deleting it removed a defence that defended nothing; it did not close the hole.
+//
+// ⛔ Do not reintroduce a side-key resolver here. If a consumer needs the inboard
+// side, it reads the measure `derive.js` already zeroed — or asks the oracle.
+
 
 // Catmull-Rom polyline subdivision. Returns a new point array with
 // interpolated samples between original points. `smooth` ∈ [0..1] controls

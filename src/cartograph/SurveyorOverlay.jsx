@@ -4,7 +4,6 @@ import * as THREE from 'three'
 import useCartographStore from './stores/useCartographStore.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob (SSoT; SKELETON.md §3.5) — the SURVEY navy renders the smooth curve
-import { innerEdgeMeasure } from './streetProfiles.js'
 import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
@@ -216,14 +215,15 @@ export default function SurveyorOverlay() {
     const chainM = chainMeasure(st)
     const feL = findFeForSide(v2FrontageEdges, st, ordinal, 'left')
     const feR = findFeForSide(v2FrontageEdges, st, ordinal, 'right')
-    const measure = innerEdgeMeasure(
-      {
-        left: readFeCustom(blockCustoms, feL) || chainM.left,
-        right: readFeCustom(blockCustoms, feR) || chainM.right,
-        symmetric: chainM.symmetric,
-      },
-      st.anchor === 'inner-edge' ? st.innerSign : 0
-    )
+    // No inner-edge transform: this reads `pavementHW` only, which the deleted
+    // `innerEdgeMeasure` never touched — its sole effect here was the RECLAIM
+    // side-swap, measured unreachable on 378/378 inner-edge chains across six
+    // towns (`innerEdgeAssign` writes surveyHW/2 to BOTH sides). streetProfiles.js.
+    const measure = {
+      left: readFeCustom(blockCustoms, feL) || chainM.left,
+      right: readFeCustom(blockCustoms, feR) || chainM.right,
+      symmetric: chainM.symmetric,
+    }
     const ax = -nz, az = nx
     const rotY = Math.atan2(ax, az)
     const handles = []
@@ -267,7 +267,9 @@ export default function SurveyorOverlay() {
     if (!st || !anchor) { store.setStreetPavementHW(streetIdx, side, r, mirror); return }
     const frame = frameAtPoint(st.points, anchor.x, anchor.z)
     const segOrd = naturalSegmentOrdinal(st, frame.segI ?? 0, ixByChain?.get(st))
-    const chainSeed = innerEdgeMeasure(chainMeasure(st), st.anchor === 'inner-edge' ? st.innerSign : 0)
+    // The bake already zeroed a divided carriageway's inboard ped on the
+    // geometrically-resolved side, so the chain measure IS the seed (streetProfiles.js).
+    const chainSeed = chainMeasure(st)
     const FALLBACK = { pavementHW: 5, treelawn: 1.5, sidewalk: 1.5, terminal: 'sidewalk' }
     const entries = []
     for (const s of sides) {
