@@ -193,25 +193,22 @@ frozen** (fetch center, append-only); the **disc centroid is a separate, draggab
 the forever zone (hood center). That draggable-centroid is R10 made a handle — reuse the `CircleHandle`
 / `ParkTitleHandle` dot pattern.
 
-⛔ **Blocked today by D4:** the code **forces disc center = origin** (`ExtentApp.jsx:1145`
-`if (committed) return { x: 0, z: 0 }` — *line re-verified 2026-08-08; it had drifted from the `~1138`
-recorded here* — plus `makeCircleBoundary` hardcodes `center:[0,0]`), discarding the `keptCenter` it
-just computed. **Fixing D4 is what enables the draggable centroid.**
+**D4 — the WRITE half is CLOSED (2026-08-12, §5.1).** The disc's authored values are now records that
+carry forward: `center` since 2026-07-23, the **fade set** with the schema split. ▶ `node
+scratch/claims-boundary-record-split.mjs` prints the per-scene authored/generated census. *(Run it,
+don't quote it.)*
 
-> ⭐⭐ **D4 IS A LIVE RISK TO LS SPECIFICALLY, AND LS IS ONE OF THE TWO SAFEGUARDED MAPS.** Measured
-> 2026-08-08 — **LS is the only scene carrying authored values in this artifact:**
->
-> | scene | center | innerFadeOffset | polygon |
-> |---|---|---|---|
-> | **lafayette-square** | **`[-15,-15]`** (Lafayette Park centroid) | **134** | ⛔ **none** |
-> | hipointe-demun | `[0,0]` | 200 (default) | 4 pts |
-> | ksi-y-m-yn | `[0,0]` | 200 (default) | ⛔ none |
->
-> `PART D`'s destruction table: commit-extent / rescope **always resets `center`, `fade`, `streetFade`,
-> `innerFadeOffset` to hardcoded values, with no protection and no warning.** ⇒ **the first time the
-> Extent tool touches LS, its two authored values are silently gone** — and LS is production
-> (`lafayette-square.com`). *(Reproduce: print each scene's `cartograph/data/<scene>/neighborhood_boundary.json`.)*
-> ⭐ LS's missing `polygon` is the same artifact and is already on the board as **B6**'s tree-membership
+⛔ **Still open — the DISPLAY half.** `ExtentApp.jsx:1145` `if (committed) return {x:0,z:0}` computes
+`boundaryCentroid`, so a committed hood's disc *draws* at the origin however it is authored (LS renders
+`[0,0]`, file says `[-15,-15]`). The client never posts `center` (`api.js:212` sends
+`{radius, exclusions}`), so this has never reached disk — a render bug, not a destroyer. **The work is
+un-gating `CenterHandle` (`ExtentApp.jsx:1815`, `!committed`); the server already accepts `center:[x,z]`.**
+
+> ⭐⭐ **LS IS THE ONLY SCENE WITH AN AUTHORED FADE SET, WHICH IS WHY NO OTHER SCENE COULD REVEAL THIS.**
+> Every other v2 scene is the formula to the metre — `lafayette-square-staging` is radius 850 →
+> `streetFade.outer` 1010 = 850+160 — so a gate that preserves LS's 1000 *and* leaves staging
+> byte-identical is what proves the kit can tell authored from generated. ⭐ LS's missing `polygon` is
+> the same artifact and is already on the board as **B6**'s tree-membership
 > fallback — *the file exists; the polygon inside it does not.* ⚠️ The recurring
 trap: resizing the **bb** when the **disc** is the problem (an un-authored scene auto-fits the disc to
 *all* fetched buildings → huge radius, off-center), and conflating the big-generous SOFT with the
@@ -313,15 +310,24 @@ downstream would only half-apply the one cure.
 
 ## 5. The structural fixes v1 depends on
 
-### 5.1 Split the three-jobs artifact (`EXTENT-EXCAVATION` PART D#1) — the cheapest structural fix
+### 5.1 ✅ Split the three-jobs artifact (`EXTENT-EXCAVATION` PART D#1) — DONE 2026-08-12
 
-`neighborhood_boundary.json` welds **three jobs**: the render disc (`center`, `radius`, `boundary[256]`,
-`fade`, `streetFade`), the membership polygon, and the exclusion loops. `makeCircleBoundary`
-*constructs a fresh object* on every commit/rescope, regenerating the disc fields from hardcoded
-constants while two `if` branches hand-preserve membership — which is why the disc silently clobbers
-LS's authored `center: [-15,-15]` / `innerFadeOffset: 134` (D4), why ksi's polygon is in the wrong
-file (D2), and why the polygon was ever droppable (X3). **Three jobs → three artifacts.** A schema
-split, not a redesign. Fixes D4 (stop forcing the two centerpoints equal) in passing.
+The artifact welded **three jobs** — disc (`center` `radius` `boundary[256]` + the fade set),
+membership polygon, exclusion loops — and the routes built the whole file by **constructing a fresh
+object**, so anything not re-stated by hand was lost. Membership and exclusions each grew an `if`
+branch to hand-preserve them; **the fade set never got one** (D4). Same root as D2 and X3.
+
+**Built:** `cartograph/boundaryRecords.mjs` (`splitBoundary` / `composeBoundary` / `makeDiscRecord`),
+consumed by both `serve.js` routes, which now **start from the prior records and replace only what the
+gesture addresses** — preservation is the structure, not a branch you can forget. The rescope legacy
+preserve-block is gone; the commit one is a carry.
+
+⛔ **Three RECORDS, not three files.** Thirteen production sites open the artifact by literal path, so
+the composed file stays the wire format; splitting the *file* is a consumer migration, not a schema split.
+⭐ **Authored-vs-generated is DERIVED, never stamped** — generated iff it equals `generatedFade(radius)`.
+⛔ Authored fade + **changed** radius **throws** (absolute metres: neither holdable nor scalable without
+inventing intent); a **partial** set throws naming the field; an **absent** one (toy) is legal and never
+manufactured. ▶ `node scratch/claims-boundary-record-split.mjs`
 
 ### 5.2 Record membership per building, with a reason code
 
@@ -342,7 +348,9 @@ the only actual commercially requested map."* **HPDM is checked hardest and made
 progenitor — is conformed last** (it is production `lafayette-square.com` and has never been poured;
 never the night before a demo).
 
-1. **Schema split** (§5.1) — three artifacts. No PART E dependency; unblocks the rest.
+1. ✅ **Schema split — DONE 2026-08-12** (§5.1). Three *records*, one file; D4's write half closed.
+   ⛔ **The remaining half is the DISPLAY half** — `ExtentApp.jsx:1145` + the `!committed` gate on
+   `CenterHandle` (§3.3). Not a destroyer; it is what blocks the draggable centroid.
 2. ✅ **HPDM identity lock — DONE** (`fetch-msbf.js:179`, the per-scene registry + high-water allocator;
    verified 2026-08-04). ⛔ **The remaining half is `osm-`**: `msbf-identity.js` has one importer, so the
    OSM fetcher never got the registry and **both Polish pours are still unlocked**. Port it there.

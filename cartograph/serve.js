@@ -7,6 +7,7 @@ import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
 import { treeBakeInputsForScene } from './tree-bake-inputs.mjs'
 import { intakeStatusForScene, sampleForRow, addAltSource } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
+import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
 
 // Promise wrapper around spawn with shell: true. Matches execSync's
@@ -606,31 +607,17 @@ function streetGeom(scene, name) {
   return { polylines: chains.map(c => c.points.map(p => [r2(p.x), r2(p.z)])) }
 }
 
-// The neighborhood stencil — a 256-gon circle of radius R around `center`
-// (local x/z), with the two feather bands the slab clip reads (SLAB-CONTRACT
-// §2.1). ⭐ center is the HOOD CENTER and may be OFF-ORIGIN: the frame origin is
-// the frozen fetch center and never moves (R10 two centers; EXTENT-DESIGN §3.3),
-// so the disc sits wherever the hood is. Every consumer already reads this center
-// (boundary.js `nb.center`, BakedGround `stencil.center`, bake-ground bbox), so
-// an off-origin disc is followed, not broken. Fade bands are radial (center-free).
-function makeCircleBoundary(radius, center = [0, 0]) {
-  const R = Math.round(radius)
-  const r2 = (v) => Math.round(v * 100) / 100
-  const cx = r2(center?.[0] || 0), cz = r2(center?.[1] || 0)
-  const boundary = []
-  for (let i = 0; i < 256; i++) {
-    const a = (i / 256) * 2 * Math.PI
-    boundary.push([r2(cx + R * Math.cos(a)), r2(cz + R * Math.sin(a))])
-  }
-  return {
-    version: 2,
-    center: [cx, cz],
-    radius: R,
-    innerFadeOffset: 200,
-    fade: { inner: Math.max(0, R - 200), outer: R },
-    streetFade: { inner: Math.max(0, R - 140), outer: R + 160 },
-    boundary,
-  }
+// Read `neighborhood_boundary.json` as its THREE RECORDS — disc / membership /
+// exclusions (`EXTENT-DESIGN §5.1`, `boundaryRecords.mjs`). Both write routes start
+// from this instead of constructing a fresh object, which is what stopped the disc
+// clobbering LS's authored fade set: preservation is the structure, not a branch.
+// → null when the scene has no boundary yet (a first pour). ⛔ A boundary that
+// EXISTS but does not parse or is missing a field THROWS, naming it — the old code
+// swallowed that into "first pour" and wrote defaults over it.
+function readBoundaryRecords(scene) {
+  const p = sceneDataPaths(scene).boundary
+  if (!existsSync(p)) return null
+  return splitBoundary(JSON.parse(readFileSync(p, 'utf8')), `${scene}/neighborhood_boundary.json`)
 }
 
 // Street names for the Extent dropdown — sourced from the skeleton (welded,
@@ -1548,34 +1535,41 @@ createServer(async (req, res) => {
         //
         // Accepts lon/lat anchors (frame-independent, like exclusions) and flattens
         // into the NOW re-centered frame, so a re-commit never drifts the boundary.
-        const boundary = makeCircleBoundary(radius, discCenter)
+        //
+        // ⭐ THREE RECORDS. Start from the prior records and replace only what this
+        // gesture addresses; the DISC record carries the fade set forward when it is
+        // authored (`makeDiscRecord`). The old code built a fresh object here, so the
+        // fade set regenerated from constants on every commit with nothing to stop it.
+        const priorRecs = readBoundaryRecords(scene)
+        const disc = makeDiscRecord({
+          radius, center: discCenter, prior: priorRecs?.disc ?? null,
+          where: `${scene}/neighborhood_boundary.json`,
+        })
+        // ⚠️ Exclusions are REQUEST-ONLY on this path — omitting the array drops any
+        // on disk. Preserved as-is (ExtentApp always sends one), not quietly changed.
         const excl = Array.isArray(exclusions)
           ? exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           : []
-        if (excl.length) boundary.exclusions = excl
-        let polyXZ = null
+        let membership = null
         if (Array.isArray(polygon) && polygon.length >= 3) {
-          polyXZ = flattenBoundaryPath({ closed: true, anchors: polygon }, geo)
+          const polyXZ = flattenBoundaryPath({ closed: true, anchors: polygon }, geo)
           if (!Array.isArray(polyXZ) || polyXZ.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
+          membership = { polygon: polyXZ, polygonSource: polygonSource || 'authored' }
+          console.log(`[commit-extent] ${scene}: inclusion polygon ${polyXZ.length} pts (source=${membership.polygonSource})`)
         } else if (polygon != null && !Array.isArray(polygon)) {
           throw new Error('polygon must be an array of {lon,lat} anchors')
+        } else if (priorRecs?.membership) {
+          // No polygon supplied → the record is simply carried, not re-stated.
+          membership = priorRecs.membership
+          console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${membership.polygon.length} pts) — none supplied`)
         }
-        if (polyXZ) {
-          boundary.polygon = polyXZ
-          boundary.polygonSource = polygonSource || 'authored'
-          console.log(`[commit-extent] ${scene}: inclusion polygon ${polyXZ.length} pts (source=${boundary.polygonSource})`)
-        } else {
-          // No polygon supplied. PRESERVE an existing one rather than dropping it —
-          // the destructive default this endpoint used to have.
-          try {
-            const prev = JSON.parse(readFileSync(sceneDataPaths(scene).boundary, 'utf8'))
-            if (Array.isArray(prev.polygon) && prev.polygon.length >= 3) {
-              boundary.polygon = prev.polygon
-              if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
-              console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${prev.polygon.length} pts) — none supplied`)
-            }
-          } catch { /* no prior boundary — first pour */ }
+        if (disc.fadeOrigin === 'authored') {
+          console.log(`[commit-extent] ${scene}: preserved AUTHORED fade set (innerFadeOffset ${disc.fade.innerFadeOffset}, streetFade ${disc.fade.streetFade.inner}/${disc.fade.streetFade.outer})`)
         }
+        const boundary = composeBoundary({
+          disc, membership, exclusions: excl.length ? excl : null,
+          carry: priorRecs?.carry ?? {}, keyOrder: priorRecs?.keyOrder ?? [],
+        })
         writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
         const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
         // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat)
@@ -1677,7 +1671,7 @@ createServer(async (req, res) => {
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
         const prev = JSON.parse(readFileSync(bPath, 'utf8'))
         // ⭐ PRESERVE THE DISC CENTER (D4 residual, fixed 2026-07-23). This called
-        // `makeCircleBoundary(radius)` with no center, which defaults to [0,0] — so
+        // the disc constructor with no center, which defaults to [0,0] — so
         // every radius edit on a committed hood silently SNAPPED THE DISC BACK TO
         // THE ORIGIN, discarding an authored off-origin center. That is the whole
         // reason a hand-placed disc kept "reverting" to [0,0]: not the commit path
@@ -1686,7 +1680,7 @@ createServer(async (req, res) => {
         //
         // Rescope is the LIGHT re-apply and by definition never re-centers, so the
         // center is a preserved field like polygon/exclusions below, not an input.
-        // A v1 boundary has no `center`; makeCircleBoundary defaults it to [0,0],
+        // A v1 boundary has no `center`; `makeDiscRecord` defaults it to [0,0],
         // which is what those hoods already are. (R10 two centers, EXTENT-DESIGN
         // §3.3: the FRAME origin is frozen forever; the DISC center is free to roam
         // the forever zone — moving the disc must never move the frame.)
@@ -1708,7 +1702,19 @@ createServer(async (req, res) => {
         if (Array.isArray(center) && discCenter !== prev.center) {
           console.log(`[rescope] ${scene}: disc center ${JSON.stringify(prev.center ?? [0, 0])} → ${JSON.stringify(discCenter)} (frame origin untouched)`)
         }
-        const boundary = makeCircleBoundary(radius, discCenter)
+        // ⭐ THREE RECORDS (EXTENT-DESIGN §5.1). The DISC record carries an AUTHORED
+        // fade set forward instead of regenerating it from constants — the half of D4
+        // that was still live (the `center` half was closed 2026-07-23, just above).
+        const priorRecs = splitBoundary(prev, `${scene}/neighborhood_boundary.json`)
+        const disc = makeDiscRecord({
+          radius, center: discCenter, prior: priorRecs.disc,
+          where: `${scene}/neighborhood_boundary.json`,
+        })
+        if (disc.fadeOrigin === 'authored') {
+          console.log(`[rescope] ${scene}: preserved AUTHORED fade set (innerFadeOffset ${disc.fade.innerFadeOffset}, streetFade ${disc.fade.streetFade.inner}/${disc.fade.streetFade.outer})`)
+        }
+        let membership = priorRecs.membership   // preserved unless a gesture says otherwise
+        let excl = priorRecs.exclusions
         // The LIGHT re-apply — re-clip + re-bake in the committed frame, no re-center.
         if (Array.isArray(exclusions)) {
           // EXCLUDER model: membership = inside-circle − exclusions.
@@ -1730,10 +1736,11 @@ createServer(async (req, res) => {
           // it is what the boundary-street process produces. Dropping it is now an
           // EXPLICIT act (`dropPolygon: true`), never a side effect of editing extent.
           const geo = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
-          const excl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
-          if (excl.length) boundary.exclusions = excl
+          const flatExcl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
+          excl = flatExcl.length ? flatExcl : null
           if (dropPolygon) {
-            if (prev.polygon) console.log(`[rescope] ${scene}: DROPPING inclusion polygon (${prev.polygon.length} pts) — explicitly requested`)
+            if (membership) console.log(`[rescope] ${scene}: DROPPING inclusion polygon (${membership.polygon.length} pts) — explicitly requested`)
+            membership = null
           } else if (Array.isArray(polygon) && polygon.length >= 3) {
             // A NEW inclusion polygon supplied by the operator. Rescope is the path a
             // COMMITTED hood's Bake takes, so without this the boundary could only ever
@@ -1743,19 +1750,18 @@ createServer(async (req, res) => {
             const geoR = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
             const flat = flattenBoundaryPath({ closed: true, anchors: polygon }, geoR)
             if (!Array.isArray(flat) || flat.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
-            boundary.polygon = flat
-            boundary.polygonSource = polygonSource || 'authored'
-            console.log(`[rescope] ${scene}: NEW inclusion polygon ${flat.length} pts (source=${boundary.polygonSource})`)
-          } else {
-            if (prev.polygon) { boundary.polygon = prev.polygon; console.log(`[rescope] ${scene}: preserved inclusion polygon (${prev.polygon.length} pts)`) }
-            if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
+            membership = { polygon: flat, polygonSource: polygonSource || 'authored' }
+            console.log(`[rescope] ${scene}: NEW inclusion polygon ${flat.length} pts (source=${membership.polygonSource})`)
+          } else if (membership) {
+            console.log(`[rescope] ${scene}: preserved inclusion polygon (${membership.polygon.length} pts)`)
           }
-        } else {
-          // Legacy radius-only rescope — preserve the prior membership shape as-is.
-          if (prev.polygon) boundary.polygon = prev.polygon
-          if (prev.polygonSource) boundary.polygonSource = prev.polygonSource
-          if (Array.isArray(prev.exclusions)) boundary.exclusions = prev.exclusions
         }
+        // (No `else` — the legacy radius-only rescope preserved the prior membership
+        // shape by hand. Records make that the default, so the branch is now empty.)
+        const boundary = composeBoundary({
+          disc, membership, exclusions: excl,
+          carry: priorRecs.carry, keyOrder: priorRecs.keyOrder,
+        })
         // Snapshot before overwriting. commit-extent has .prebak rollback; this path
         // — the one that runs on every SUBSEQUENT extent edit — had none, so a bad
         // rescope was unrecoverable without git.
