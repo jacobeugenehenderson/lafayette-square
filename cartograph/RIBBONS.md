@@ -203,14 +203,30 @@
 >    grade-sep must be EXCLUDED (`tileGround.js:2618` excludes it from the face graph; including it costs
 >    Δ29 islands and shatters `frozen[12]` into 12) and the stencil must be the **raw boundary**, not the
 >    spike's ×1.1771 (Δ14). ⛔ Do not quote a block count from any other case; re-run it.
->    **Re-verified 2026-08-12 (Tessel) — unchanged. This is the substrate's precondition AND its
->    regression guard.**
+>    **This is the substrate's precondition AND its regression guard.**
 >    - **Case C (grade-sep excluded, raw boundary, authoring loaded): 93 islands ↔ 101 tiles,
 >      a CLEAN INJECTION — 0 merges, 0 splits, 0 straddlers.** ⭐ The punch-out reproduces the face
 >      topology; it does not re-topologise the map.
->    - **The 8 tiles with no island are ONE class, not eight:** narrow gores whose width is less than the
->      sum of the two facing `pavementHW` — **the two carriageways' asphalt overlaps and annihilates the
->      land between them** (8/8; the 8 narrowest tiles, 2.39–7.48 m).
+>    - ⛔⛔ **AND FOR A DAY THAT WAS UNREPRODUCIBLE, BECAUSE THE INSTRUMENT WAS WRONG — NOT THE MAP**
+>      *(agent Tally, 2026-08-13, `b365a26b`)*. The probe matched island→tile by **island centroid inside
+>      tile ring**. A 69,092 m² **non-convex** island lying **100% inside tile #3** has its centroid land in
+>      **#17** — printing one error twice, as a phantom split of #17 and a phantom no-island #3. Re-matched
+>      by **dominant area overlap**, same rings, same run: **93 · 0 straddlers · 0 splits · 8 no-island.**
+>      ⭐⭐ **This matters beyond the count: the walk produces large non-convex islands BY CONSTRUCTION**
+>      (a punched spur is a concavity, below) — **the exact shape a centroid rule misfiles.** A guard on the
+>      old rule would have reported phantom failures on precisely the geometry slice 2 introduces.
+>      ⛔ **The numbers are pinned to artifacts and asserted by the probe, not by this sentence** —
+>      `ribbons 4491db8475 · design 99db2706fb · boundary dc44dc7054`. ⚠️ Case C reads
+>      `ribbons.json` + `design.json` + `neighborhood_boundary.json` and **none of `shape.json`**; a Boz
+>      hypothesis that the old numbers came from uncommitted `shape.json` bytes was **killed, not inherited.**
+>    - **The 8 tiles with no island are ONE class, not eight — the OUTCOME is confirmed 8/8:** interior
+>      sampling finds **100.0% of each tile swallowed**, no interior point landing in any island. *(Tile #3
+>      is 15.3% swallowed and was never a member — it was the centroid rule's phantom.)*
+>      ⛔ **The WIDTH form of the explanation is NOT established** — *"width < the sum of the two facing
+>      `pavementHW`; the 8 narrowest tiles, 2.39–7.48 m"* was measured by a chord metric that returns the
+>      tile's long axis at the ends (192 m on a tile that is 100% swallowed), so it can neither confirm nor
+>      refute it; by narrow dimension it agrees on 6 of 8. **The mechanism is plausible and unproven — do
+>      not quote the width rule as measured.** *(Deleted rather than bannered: the prior wording asserted it.)*
 >    - ⛔⛔ **THIS KILLS AND INVERTS THE MEDIAN HYPOTHESIS** (`HANDOFF §4.1`: *"divided medians become
 >      leftover islands, probably MORE correct"*). **Measured: the punch-out ERASES 6 of 30 `isMedian`
 >      tiles and shrinks the survivors to 0.06–0.90 of frozen area (median 0.41)**, where ordinary blocks
