@@ -181,7 +181,7 @@ The root definition, which everything else inherits:
 
 ### A2. METHODS — how we currently do it (kept separate on purpose)
 
-Search sizes a square envelope (place bbox + 1000 m, squared **in metres**) · fetch is the one irreversible step and produces the street **index**, not the skeleton · boundary authored as a set of named street **runs**, three equivalent entries (click / pulldown / text) · corners = junctions consecutive runs share · exclusion loops via `BezierPen`, lon/lat anchors · per-building `activate`/`hide` → `building-overrides.json` · `commit-extent` re-centers (>100 m) → `reproject-raw` → `skeleton.js` · `makeCircleBoundary` writes a 256-gon · `pipeline.js` pre-clips raw input then derives then clips again · `bake-buildings.js` re-applies membership.
+Search sizes a square envelope (place bbox + 1000 m, squared **in metres**) · fetch is the one irreversible step and produces the street **index**, not the skeleton · boundary authored as a set of named street **runs**, three equivalent entries (click / pulldown / text) · corners = junctions consecutive runs share · exclusion loops via `BezierPen`, lon/lat anchors · per-building `activate`/`hide` → `building-overrides.json` · `commit-extent` re-centers (>100 m) → `reproject-raw` → `skeleton.js` · `makeDiscRecord` (`boundaryRecords.mjs`) writes a 256-gon · `pipeline.js` pre-clips raw input then derives then clips again · `bake-buildings.js` re-applies membership.
 
 **None of these is a requirement.** Each is our answer to one, and several are the answer to a requirement whose reason has since expired.
 
@@ -214,7 +214,7 @@ pick boundary streets           →  neighborhood.json.polygon (lon/lat, draft)
   computeBoundaryFromSelection
 draw exclusions (BezierPen)     →  neighborhood.json.exclusions (lon/lat)
 click footprints                →  building-overrides.json {activate,hide}   ← INDEPENDENT FILE
-Bake → POST /commit-extent      →  neighborhood_boundary.json  ⟵ makeCircleBoundary(radius)
+Bake → POST /commit-extent      →  neighborhood_boundary.json  ⟵ makeDiscRecord({radius, center, prior})
   (>100 m: reproject-raw+skeleton)    {center, radius, fade, streetFade, boundary[256], polygon?}
   POST /rescope (committed path)  →  same file, .prebak-rescope snapshot
 POST /pour → pipeline.js        →  clean/map.json  (PRE-clipped, then clipped again)
@@ -277,7 +277,7 @@ const density = (x, z) => {
 - `serve.js:622` — `makeCircleBoundary` returns `center: [0, 0]`, hardcoded.
 - `ExtentApp.jsx:1174` — the preview's circle fallback uses that zeroed `keptCenter`.
 
-Consequence beyond the known framing bug: **LS's `neighborhood_boundary.json` carries `center: [-15, -15]`.** It is committed, so the panel routes it to `/rescope`, which also calls `makeCircleBoundary`. **The first time LS is touched through the panel its disc silently recenters to the origin and its hand-authored `innerFadeOffset: 134` is overwritten with 200.** That is R22 (byte-identical LS) broken by the tool built to protect it. It also breaks R20 today: for any committed no-polygon scene the preview tests against origin while the artifact says otherwise.
+Consequence beyond the known framing bug: **LS's `neighborhood_boundary.json` carries `center: [-15, -15]`.** It is committed, so the panel routes it to `/rescope`, which also called the disc constructor. **The first time LS was touched through the panel its disc would have silently recentered to the origin and its hand-authored `innerFadeOffset: 134` been overwritten with 200.** That was R22 (byte-identical LS) broken by the tool built to protect it. It also broke R20: for any committed no-polygon scene the preview tested against origin while the artifact said otherwise. ✅ **CLOSED — `center` `71f5ff36`, the fade set `025f1083`. The hazard never fired; LS's values are intact.** ▶ `node scratch/claims-boundary-record-split.mjs`
 
 **D5 — The most-run destructive path has a dead safety net.** `/rescope` is the path every *subsequent* extent edit takes on a committed hood. It writes `${bPath}.prebak-rescope` (`serve.js:1664`). **Nothing reads it** — grep across `cartograph/` and `src/` returns exactly that one write site. There is no rescope-rollback endpoint and no UI. `/rollback-extent` reads only `.prebak`, which only `commit-extent` writes.
 
@@ -401,7 +401,7 @@ Three places, and they are real:
 
 ### Where I diverge
 
-**1. `neighborhood_boundary.json` is not one artifact; it is three, welded.** It carries the render disc (`center`, `radius`, `boundary[256]`, `fade`, `streetFade`), the membership polygon, *and* the exclusion loops. Because `makeCircleBoundary` **constructs a fresh object** on every commit and rescope, the disc fields are regenerated from hardcoded constants while the membership fields are hand-preserved by two `if` branches — which is exactly why the polygon was droppable (X3), why LS's authored center and fade will be silently destroyed (D4), and why ksi's polygon is in the wrong file (D2). `ARCHITECTURE.md:295` correctly says *"three boundaries, three jobs."* **They should be three artifacts.** This is a schema split, not a redesign, and it is the cheapest structural fix available.
+**1. `neighborhood_boundary.json` is not one artifact; it is three, welded.** It carries the render disc (`center`, `radius`, `boundary[256]`, `fade`, `streetFade`), the membership polygon, *and* the exclusion loops. Because `makeCircleBoundary` **constructs a fresh object** on every commit and rescope, the disc fields are regenerated from hardcoded constants while the membership fields are hand-preserved by two `if` branches — which is exactly why the polygon was droppable (X3), why LS's authored center and fade will be silently destroyed (D4), and why ksi's polygon is in the wrong file (D2). `ARCHITECTURE.md:295` correctly says *"three boundaries, three jobs."* **They should be three artifacts.** This is a schema split, not a redesign, and it is the cheapest structural fix available. ✅ **LANDED `025f1083` as three RECORDS in one file** (`boundaryRecords.mjs`) — 13 production sites open the artifact by literal path, so the composed file stays the wire format; splitting the *file* is a consumer migration, not a schema split.
 
 **2. `BRIEF-extent-boundary-procedure.md:113` says membership is reimplemented five times. It is nine (B1), and two of them disagree in kind** — `pipeline.js:161` tests radius only and ignores the polygon entirely; `bake-labels.js` hard-cuts where `bake-lamps.js` dissolves.
 
