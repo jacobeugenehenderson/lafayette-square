@@ -2618,28 +2618,95 @@ export function deriveLayers(highways) {
   // BASE pavementHW to the MAX across its chains — widen the narrow artifacts to the
   // road's true width; never narrow a genuinely-wide segment. (Per-fe blockCustoms
   // overrides are reconciled separately in design.json, the Survey SHAPE SSoT.)
+  // ⭐ RECONCILE BY THE PHYSICAL SIDE, NOT THE SIDE LABEL. `left`/`right` are
+  // POINT-ORDER-RELATIVE: they name the hand relative to each chain's own
+  // digitisation order, so two chains of ONE road whose point orders oppose each
+  // other put the SAME physical curb under OPPOSITE labels. Keying the max on
+  // `${roadId}|${side}` then makes each LABEL uniform while leaving a real step
+  // in the ground — the two values that physically meet at the seam are never
+  // compared. Measured on LS: a U whose two legs both START at the shared node,
+  // so west-18th.left IS south-18th-3.right; both labels reconciled to a uniform
+  // 5.49/6.93 and the curb still stepped 1.44 m at the join.
+  //
+  // Fix: union the (chain, side) keys that are physically continuous — two chains
+  // of one road sharing an endpoint agree on labels only when the shared node is
+  // one chain's END and the other's START; head-to-head or tail-to-tail FLIPS
+  // them — then take the max per physical group. Pure topology: no street name,
+  // no per-town table, no threshold beyond the existing endpoint tolerance.
   {
-    const maxBySide = new Map()   // `${roadId}|${side}` → max pavementHW
+    const parent = new Map()
+    const add = (k) => { if (!parent.has(k)) parent.set(k, k) }
+    const find = (k) => { while (parent.get(k) !== k) { parent.set(k, parent.get(parent.get(k))); k = parent.get(k) } return k }
+    const union = (a, b) => { add(a); add(b); const ra = find(a), rb = find(b); if (ra !== rb) parent.set(ra, rb) }
+    const sideKey = (st, side) => `${st.skelId}|${side}`
+    for (const st of ribbonStreets) for (const side of ['left', 'right']) add(sideKey(st, side))
+
+    const byRoad = new Map()
     for (const st of ribbonStreets) {
       const rid = st.roadId || st.skelId
-      for (const side of ['left', 'right']) {
-        const v = st.measure?.[side]?.pavementHW
-        if (v == null) continue
-        const k = `${rid}|${side}`
-        if (!maxBySide.has(k) || v > maxBySide.get(k)) maxBySide.set(k, v)
+      if (!byRoad.has(rid)) byRoad.set(rid, [])
+      byRoad.get(rid).push(st)
+    }
+    // ⭐ Join only at a DEGREE-2 end. "Shares an endpoint" is NOT "is continuous
+    // with": where three or more of a road's chains meet (a Y, or a chain
+    // rejoining its own road), the pair is not a pass-through and the hand does
+    // not carry across it. Unioning there manufactures a false orientation cycle
+    // that then reads as a contradiction and suppresses the whole road's
+    // reconcile. Count the chain-ends at each node first; union only the 2-ended
+    // ones, where "continuous" is unambiguous.
+    const EPS = 0.15                                   // = tileGround's ENDPOINT_SNAP
+    const nodeKey = (p) => `${Math.round(p[0] / EPS)},${Math.round(p[1] / EPS)}`
+    let joins = 0, flips = 0, skippedDeg = 0
+    for (const group of byRoad.values()) {
+      const ends = new Map()                           // node → [{ st, isStart }]
+      for (const st of group) {
+        const p = st.points
+        if (!p?.length) continue
+        for (const [pt, isStart] of [[p[0], true], [p[p.length - 1], false]]) {
+          const k = nodeKey(pt)
+          if (!ends.has(k)) ends.set(k, [])
+          ends.get(k).push({ st, isStart })
+        }
       }
+      for (const [, inc] of ends) {
+        if (inc.length !== 2) { if (inc.length > 2) skippedDeg++; continue }
+        const [X, Y] = inc
+        if (X.st === Y.st) continue                    // a chain closing on itself
+        // Labels agree iff the shared node is one chain's END and the other's
+        // START; start-to-start or end-to-end means the point orders oppose.
+        const reversed = X.isStart === Y.isStart
+        joins++; if (reversed) flips++
+        union(sideKey(X.st, 'left'), sideKey(Y.st, reversed ? 'right' : 'left'))
+        union(sideKey(X.st, 'right'), sideKey(Y.st, reversed ? 'left' : 'right'))
+      }
+    }
+    // ⛔ FAIL LOUDLY on a contradiction: if a chain's own two sides landed in one
+    // group, the road's topology carries an odd number of flips and there is no
+    // consistent physical side. Reconciling anyway would smear one width across
+    // BOTH sides of a street — a plausible-looking wrong map, the worst outcome.
+    const contradicted = new Set()
+    for (const st of ribbonStreets) {
+      if (find(sideKey(st, 'left')) === find(sideKey(st, 'right'))) {
+        contradicted.add(find(sideKey(st, 'left')))
+        console.warn(`    ⛔ [name-aware] ${st.skelId}: left and right resolved to the SAME physical side — orientation cycle in road ${st.roadId || st.skelId}; its widths are left UNRECONCILED`)
+      }
+    }
+    const maxByGroup = new Map()
+    for (const st of ribbonStreets) for (const side of ['left', 'right']) {
+      const v = st.measure?.[side]?.pavementHW
+      if (v == null) continue
+      const g = find(sideKey(st, side))
+      if (contradicted.has(g)) continue
+      if (!maxByGroup.has(g) || v > maxByGroup.get(g)) maxByGroup.set(g, v)
     }
     let reconciled = 0
-    for (const st of ribbonStreets) {
-      const rid = st.roadId || st.skelId
-      for (const side of ['left', 'right']) {
-        const m = st.measure?.[side]
-        if (!m || m.pavementHW == null) continue
-        const mx = maxBySide.get(`${rid}|${side}`)
-        if (mx != null && mx - m.pavementHW > 1e-3) { m.pavementHW = mx; reconciled++ }
-      }
+    for (const st of ribbonStreets) for (const side of ['left', 'right']) {
+      const m = st.measure?.[side]
+      if (!m || m.pavementHW == null) continue
+      const mx = maxByGroup.get(find(sideKey(st, side)))
+      if (mx != null && mx - m.pavementHW > 1e-3) { m.pavementHW = mx; reconciled++ }
     }
-    if (reconciled) console.log(`    [name-aware] reconciled ${reconciled} through-road side-width step(s) to the road's max half-width`)
+    if (reconciled || flips) console.log(`    [name-aware] reconciled ${reconciled} through-road side-width step(s) to the road's max half-width (${joins} chain joins, ${flips} orientation flips)`)
   }
 
   // [curve-primitive] TESSELLATE bezier'd chains' points to a dense polyline (the ONE
