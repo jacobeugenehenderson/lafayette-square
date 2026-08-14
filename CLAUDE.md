@@ -104,6 +104,41 @@ class. Until then Check A's aggregate is not evidence of anything.)*
 
 ---
 
+## ⛔ WHERE WE ARE: **DESIGN IS DONE.** Three jobs, one milieu.
+
+The work is now **(1) conform the documentation to the live product · (2) productize · (3) fix and
+troubleshoot** — all of it inside the **causal chains**, which is why routing is a gate and not a
+courtesy. ⛔ A proposal that reopens design is out of scope; say so and move.
+
+### ⭐⭐ EVERY FIX IS A FIX IN THREE PARTS — it is not done until all three.
+1. **The code works.**
+2. **What a marketer or a developer needs to know is written down**, in the register that reaches them
+   (`FEATURES` = the capability in their words · `OPERATIONS` = the knobs). ⛔ **COMMIT GATE: the commit
+   message names the register it reached, or says "reaches no register" outright.** Silence is not an
+   answer — this is the part with no natural forcing function, so skipping it must be *visible*.
+3. **The superseded verbiage is REMOVED** — to the Diary, never deleted — so code and documentation are
+   fully **pari passu**, and **beautiful**.
+
+### ⭐⭐⭐ THE DOCS AND THE CODE ARE EACH OTHER'S SMELL DETECTOR. **If they disagree, ONE OF THEM IS WRONG.**
+Finding out which **is the work**, not a detour. A doc that **overstates** the code is a bug lying in the
+open; a doc that **understates** it is a capability we ship and nobody knows about.
+⛔ **Never settle a mismatch by trusting the doc, and never by quietly correcting the doc.**
+**Three causes, and you must say which — the mismatch names a QUESTION, not an answer:**
+- **ROT** — the doc describes an old reality. **Evict it.**
+- **REGRESSION** — the doc describes what should still be true; the code drifted, or a bug returned in a
+  different form. **Fix the code.**
+- **⭐⭐ ASPIRATION** — the doc describes intent that was never built. ⛔ **Neither evict nor "correct."**
+  It is an unbuilt thing filed as done; **surface it as work.**
+> ⛔⛔ **THE THIRD IS THE CONFORMANCE JOB'S OWN FAILURE MODE.** An aspiration looks exactly like rot, so a
+> pass that brings docs into line with code will **delete decisions**, quietly, one plausible edit at a
+> time. ⭐ **Which side is wrong is a judgment about where the project is GOING — take it to Boz, who owes
+> you the stakes: what breaks downstream if the code is wrong, or what we lose if the intent is erased.**
+
+⚠️ **TRODDEN GROUND — this has bitten us repeatedly, including in this file's own receipts. Read the
+instances before assuming yours is new; they live in the commit record and the Diary, not here.**
+
+---
+
 ## Before you diagnose, run a forensic, or edit ANY topic — ROUTE FIRST
 
 > ⛔ **Fires on EVERY topic you engage — including one that surfaces mid-session or feels like Jacob redirecting you.** A felt "new topic" is most often *you drifting off the plan*, not a real change of plan: route to the canon FIRST and it pulls you back. (2026-06-13 — the session "changed topics" repeatedly; every time, *"is this chains again?"* showed it was the **same** plan — a return, not a redirect — and the day was lost patching downstream before re-routing.) When the topic shifts, you do **not** skip the route; you re-run it for the new topic before touching anything. **Documentation first, every time, period.**
@@ -117,7 +152,7 @@ class. Until then Check A's aggregate is not evidence of anything.)*
 1. **Open the front door.** Repo-root `README.md §⭐ START HERE` (settled-state, by topic) + its **cross-cutting feature index** ("where does X live"). Find your topic → it names the **home doc + the one-line conclusion + the existing forensic.**
 2. ### ⛔⛔ **READ THE DOCS *AND* THE CODE FOR THE TASK — BOTH, BEFORE YOU FORM A PLAN.** *(Jacob, 2026-08-11, after an agent burned a session on a brief whose premise nobody had confirmed.)*
    **Read the cited canon to the section**, *and* **open the code sites it names.** Rebuilding the model from grep + first-principles when the canon already spells it out is *the* recurring, expensive failure — and taking the canon's word for what the code does is the **other half of the same failure**. A hard gate, not advice.
-   - ⭐ **A BRIEF'S PREMISES ARE CLAIMS, NOT FACTS — and so are a doc's.** Your first act is to confirm them against the source and **say what you found**, before building anything. ⛔ If the code contradicts the brief or the canon, **STOP AND FLAG IT** — that is the work, not an interruption of it. *(This has already saved us twice: the gate that could not see its own cure, and the miter clamp that was algebraically dead — `BOZ.md §3`. Both times the agent caught it and the doc treated it as luck.)*
+   - ⭐ **A BRIEF'S PREMISES ARE CLAIMS, NOT FACTS — and so are a doc's.** Your first act is to confirm them against the source and **say what you found**, before building anything. ⛔ If the code contradicts the brief or the canon, **STOP AND FLAG IT** — that is the work, not an interruption of it, and the smell-detector rule above tells you what to do next. ⚠️ **TRODDEN — the stop has already saved us more than once; the instances are in the commit record.**
    - **Counts, greps, "this shipped," "it's not skeleton" — check the code and the lit app, never memory alone.** Code drifts faster than docs, docs faster than memory. ⛔ **Absence is a claim too:** *"X doesn't exist"* needs a grep, and in this repo it is usually wrong — the thing is demoted, gated, or described by a stale line. **Proxy renders mislead on this map; the operator's eye is the gate** (`feedback_proxy_render_is_not_the_operator_eye`).
 3. **Reuse forensics — never re-derive.** If a harness or forensic exists for the symptom, run/read it instead of building a new one (`scratch/` holds 200+; the studies are `*-FORENSIC.md`, the `cartograph/_archive/` forensics, the `HANDOFF-*` ledgers).
 4. **Name the layer before you fix.** SHAPE (the frozen polygon / curb — Survey · skeleton · prebake) vs FILL (the inward ped strokes — Section)? Ask **"is this chains again?"** (`PIPELINE §Wall`). A wrong *silhouette* is upstream; how the *ribbon bends* is Section. Patching the wrong layer is the recurring waste — confirm the layer, in the canon, before editing.

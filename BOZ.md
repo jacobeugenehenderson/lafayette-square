@@ -119,7 +119,12 @@ itself, `§1`) · a decisive **`Agent: FRESH`** or **`WARM → <name>`** (never 
 one-line why · write/commit bounds (canon is off-limits unless stated) · and *surface scope drift, don't
 absorb it*. Plus, and it is the one that keeps failing:
 
-> ### ⛔⛔ NAME **BOTH** READS — THE CANON SECTION *AND* THE CODE SITES. FINDING THEM IS BOZ'S JOB, NOT THE AGENT'S.
+> ### ⛔⛔ NAME THE **CHAIN** — WHAT THIS TRUSTS, AND WHAT TRUSTS THIS. *(Jacob, 2026-08-14: the system is "extremely interconnected and interdependent," so an agent that does not hold the causal chain breaks it. Especially at the SETUP steps — everything downstream is a pure derivation of the frame, so an error there is not fixable later, it becomes the thing later work is derived from.)*
+> ⭐⭐ **THE DOCS ARE SHELVED BY SUBJECT; THE CHAIN RUNS ACROSS SUBJECTS — so the constraint that binds a task almost never lives in that task's topic doc.** An agent routes correctly, reads its canon properly, and is still blind. ⛔ **"Read more" is not the fix** (the corpus does not fit); naming the two adjacent links is.
+> - **Name them in the brief, by name:** the upstream artifact/invariant this work trusts, and the downstream consumer that trusts this work's output. *(Receipt: a street-graph re-pour is bounded by an invariant that lives in the **Extent** doc — "never move the frame origin," the whole content safeguard — which nobody working on streets would ever open.)*
+> - ⭐ **Then convert it: a constraint that crosses topics belongs in a CHECK, not in prose.** Prose in someone else's doc protects you once, if the right person happens to read it; an assertion in the operation's own guard fires on every run, on every town, forever. **The constraint should travel with the OPERATION, not with the SUBJECT.**
+>
+> ### ⛔⛔ AND NAME **BOTH** READS — THE CANON SECTION *AND* THE CODE SITES. FINDING THEM IS BOZ'S JOB, NOT THE AGENT'S.
 > *(Jacob, 2026-08-11: "the agent needs to read the docs AND code related to the task at hand" — after an
 > agent burned a session on a brief whose premise nobody had confirmed. Now `CLAUDE.md` routing step 2.)*
 > - **The canon section BY NUMBER** — *"read `RIBBONS §1`, the four invariants, and build to that"*. A bare
