@@ -150,18 +150,25 @@
 >    the sidewalk merely rides inside it.*
 > 2. **THE ADA CORNER IS UNINTERRUPTED** — a slice of that same band **wrapped** around the corner, never
 >    glued onto the ends of two legs.
-> 3. **EVERY JOINT IS ACCOUNTED FOR.** The joints between **caps, corners and legs** must be smooth — and
->    ⭐⭐ **"smooth" here means BOTH smooth AND *planned*.** A seam belongs where the design puts one (a real
->    corner · a block end · a cap). ⛔ **A seam that exists because something RAN OUT — a chain ended, a name
->    changed, a width step landed mid-block — is a defect.** Same geometry, opposite verdicts; the difference
->    is whether anything *decided* it. ⭐ **The check ports to town #2 because the test is "name the thing
->    that planned this seam," which needs no local knowledge.**
+> 3. ### ⭐⭐⭐ THERE IS EXACTLY **ONE** LICENSED HARD SEAM IN THE SYSTEM: **ADA → TL | LU.**
+>    **Everything else is designed never to have a hard seam at all** — leg into corner, corner into cap,
+>    block into block. The ribbon runs **continuously** through all of it (INVARIANT 1: *the corner is the
+>    band BENT around the arc*; a cap is the band wrapped around a tip). ⇒ **The test is not "name the thing
+>    that planned this seam." It is: ANY HARD SEAM THAT IS NOT `ADA → TL|LU` IS A DEFECT.** Nothing to
+>    adjudicate, one enumerable exception, and it ports to town #2 unchanged.
+>    ⛔ **So the joints are not seam LOCATIONS — they are the places most REQUIRED to be seamless**, which is
+>    exactly where our defects live: the 18th/Dolman tooth is a hard seam at a name change; the
+>    divided↔undivided break is a hard seam where a chain ends.
 >
 > ⇒ **This retires gate 2's 39 / 4 / 14 dispute rather than picking among them: all three count rings in the
-> visible strip, which was never the invariant.** ⭐ It also explains why the 35 zero-contact "severances"
-> were never defects — a seam between adjacent blocks is **planned**. ⛔ *(Two Boz formulations struck here:
-> "the smoothness ruling makes continuity moot" — it does not, smooth and complete are different properties —
-> and "measure unpainted edge, acceptance zero," which measures the strip, i.e. the symptom.)*
+> visible strip, which was never the invariant.** ⭐ And the 35 zero-contact "severances" were never defects
+> for a cleaner reason than "planned" — **they are not seams at all**, just an artifact of emitting one
+> polygon per tile where the ribbon in fact runs through.
+> ⛔ *(Three Boz formulations struck, all one session: "the smoothness ruling makes continuity moot" — it
+> does not, smooth and complete are different properties · "measure unpainted edge, acceptance zero" — that
+> measures the strip, i.e. the symptom · **"a seam belongs at a real corner, a block end, or a cap"** — the
+> exact inversion of the rule above. ⭐ **The pattern in all three: reaching for the visible artefact instead
+> of the invariant that governs it.**)*
 >
 > ⏳ **DEFERRED — an ASPIRATION, filed not built** *(Jacob, 2026-08-14: "this is NOT present work")*: the
 > operator may author **both** strips of the mono-width to the same class — both `LU`, or both `SW`. The
