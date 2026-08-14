@@ -203,7 +203,14 @@ function freezeCurbEdgeFacts({ ring, runs, streetsOrig, measures, segOrdOf, curb
     const baseHW = edgeDepth(measures[run.streetIdx], run.side, curbWidth, 'A')
     // Canonical through-road id — so cornerAt reads a name-transition seam as ONE
     // road (a THROUGH node, not a corner). Preserved verbatim from the live path.
+    // ⭐ TWO UNIONS, BOTH CONSULTED (see cornerAt below). They are deliberately
+    // DIFFERENT unions (derive.js "Distinct from roadId"): `throughId` spans a
+    // spine↔carriageway divided transition that `roadId` does not, and `roadId`
+    // spans a continuesAs NAME transition that `throughId` does not — because
+    // throughId IS the name (skeleton.js `idKeyOf = corridor || name`). Keeping
+    // only the first is what re-opened the 2026-06-15 name-transition corner.
     const streetKey = (so && (so.throughId || so.roadId || so.skelId || so.name)) || run.streetIdx
+    const roadKey = (so && (so.roadId || so.skelId || so.name)) || run.streetIdx
     let profPts = null
     if (so?.outerHWProfile && !isMedianTile && /^carriageway/.test(so.phase?.role || '')) {
       profPts = []
@@ -212,7 +219,7 @@ function freezeCurbEdgeFacts({ ring, runs, streetsOrig, measures, segOrdOf, curb
     const hwAt = (p) => { if (!profPts) return null; for (const e of profPts) { const dx = e[0] - p[0], dy = e[1] - p[1]; if (dx * dx + dy * dy < 0.09) return e[2] } return null }
     for (let i = 0; i < run.poly.length - 1; i++) {
       const prof = profPts ? [hwAt(run.poly[i]), hwAt(run.poly[i + 1])] : null
-      const fact = { skelId, side: run.side, segOrd: segOrdOf(run), baseHW, prof, streetKey }
+      const fact = { skelId, side: run.side, segOrd: segOrdOf(run), baseHW, prof, streetKey, roadKey }
       const k1 = edgeKey(run.poly[i], run.poly[i + 1]), k2 = edgeKey(run.poly[i + 1], run.poly[i])
       // FORWARD key authoritative, REVERSE only as a fallback that must never
       // clobber another run's forward key — the dead-end slit is traversed twice,
@@ -254,8 +261,26 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
   }
   // A real corner = the two edges at this vertex belong to DIFFERENT streets.
   // Same street both sides = a through-node → run straight through, no corner.
+  // ⭐ A THROUGH-NODE IF *EITHER* UNION AGREES. The two identities answer
+  // different questions and neither subsumes the other, so a corner requires BOTH
+  // to say "different road". Consulting only `throughId` re-opened the exact
+  // defect the 2026-06-15 name-aware cure closed (RIBBONS §3.3): at a continuesAs
+  // seam the NAME changes, so throughId disagrees while the canonical roadId —
+  // computed, frozen, and carried on runMeta for precisely this — agrees. The
+  // offset then cornered two near-tangent legs (measured 3.24°) at stepped
+  // depths, and the miter clamp's bevel is the visible tooth.
+  // ⛔ This is NOT a reorder: dropping `throughId` would lose the spine↔carriageway
+  // divided transition it was added for. Both are consulted; either one suffices.
   const streetAt = (i) => facts[i]?.streetKey
-  const cornerAt = (i) => { const a = streetAt((i - 1 + n) % n), b = streetAt(i); return a == null || b == null || a !== b }
+  const roadAt = (i) => facts[i]?.roadKey
+  const cornerAt = (i) => {
+    const a = streetAt((i - 1 + n) % n), b = streetAt(i)
+    if (a == null || b == null) return true          // unknown identity → corner (loud, not silent)
+    if (a === b) return false                        // the throughId union agrees
+    const ra = roadAt((i - 1 + n) % n), rb = roadAt(i)
+    if (ra != null && rb != null && ra === rb) return false   // the roadId union agrees
+    return true
+  }
   return offsetRingVariable(ring, depthAt, cornerAt, capAtVertex, curved, stamp)
 }
 
