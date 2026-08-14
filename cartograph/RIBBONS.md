@@ -207,26 +207,34 @@
 >    - **Case C (grade-sep excluded, raw boundary, authoring loaded): 93 islands ↔ 101 tiles,
 >      a CLEAN INJECTION — 0 merges, 0 splits, 0 straddlers.** ⭐ The punch-out reproduces the face
 >      topology; it does not re-topologise the map.
->    - ⛔⛔ **AND FOR A DAY THAT WAS UNREPRODUCIBLE, BECAUSE THE INSTRUMENT WAS WRONG — NOT THE MAP**
->      *(agent Tally, 2026-08-13, `b365a26b`)*. The probe matched island→tile by **island centroid inside
->      tile ring**. A 69,092 m² **non-convex** island lying **100% inside tile #3** has its centroid land in
->      **#17** — printing one error twice, as a phantom split of #17 and a phantom no-island #3. Re-matched
->      by **dominant area overlap**, same rings, same run: **93 · 0 straddlers · 0 splits · 8 no-island.**
->      ⭐⭐ **This matters beyond the count: the walk produces large non-convex islands BY CONSTRUCTION**
->      (a punched spur is a concavity, below) — **the exact shape a centroid rule misfiles.** A guard on the
->      old rule would have reported phantom failures on precisely the geometry slice 2 introduces.
->      ⛔ **The numbers are pinned to artifacts and asserted by the probe, not by this sentence** —
->      `ribbons 4491db8475 · design 99db2706fb · boundary dc44dc7054`. ⚠️ Case C reads
->      `ribbons.json` + `design.json` + `neighborhood_boundary.json` and **none of `shape.json`**; a Boz
->      hypothesis that the old numbers came from uncommitted `shape.json` bytes was **killed, not inherited.**
->    - **The 8 tiles with no island are ONE class, not eight — the OUTCOME is confirmed 8/8:** interior
->      sampling finds **100.0% of each tile swallowed**, no interior point landing in any island. *(Tile #3
->      is 15.3% swallowed and was never a member — it was the centroid rule's phantom.)*
->      ⛔ **The WIDTH form of the explanation is NOT established** — *"width < the sum of the two facing
->      `pavementHW`; the 8 narrowest tiles, 2.39–7.48 m"* was measured by a chord metric that returns the
->      tile's long axis at the ends (192 m on a tile that is 100% swallowed), so it can neither confirm nor
->      refute it; by narrow dimension it agrees on 6 of 8. **The mechanism is plausible and unproven — do
->      not quote the width rule as measured.** *(Deleted rather than bannered: the prior wording asserted it.)*
+>    - ⭐⭐⭐ **THE CANON WAS RIGHT THE WHOLE TIME, AND THE FAILURE MODE IS THE FINDING: TWO SECTIONS OF ONE
+>      PROBE ANSWERED THE SAME QUESTION DIFFERENTLY, AND THE WRONG ONE CAME FIRST** *(agent Tally,
+>      2026-08-13, `b365a26b` + `549000d8`)*. `§13` **always** matched by area and **always** printed
+>      93 → 93 distinct tiles, 0 straddlers, 0 splits, 8 unclaimed — which is what this gate quoted. But
+>      `§3`, the **first** match section anyone re-running the script reads, matched by **island centroid
+>      inside tile ring** and printed 1 split / 9 no-island. ⇒ Two independent readers concluded the canon
+>      was unreproducible; it was reproducible from a different section of the same file.
+>      ⛔ **A check that contradicts itself internally is worse than no check** — the reader takes the first
+>      answer and has no signal that a second exists. `§3` now uses `§13`'s rule and `§17` asserts the result.
+>      **The centroid rule's failure shape, and why it would have broken slice 2:** an island is a ring, not a
+>      convex blob — the 69,092 m² / 109-vertex island lies **100% inside tile #3 and 0% inside #17**, but its
+>      centroid lands in #17, printing one error twice. ⭐⭐ **The walk produces large non-convex islands BY
+>      CONSTRUCTION** (a punched spur is a concavity, below) — **the exact shape a centroid rule misfiles.**
+>      ⛔ **Numbers pinned to artifacts and asserted BY THE PROBE, not by this sentence** —
+>      `ribbons 4491db8475 · design 99db2706fb · boundary dc44dc7054`, rule=area. ⚠️ Case C reads
+>      `ribbons.json` + `design.json` + `neighborhood_boundary.json` and **none of `shape.json`.**
+>    - **The 8 tiles with no island are ONE class, not eight — confirmed twice, independently.**
+>      **Outcome:** interior sampling (`§16`, sharing no code with the matcher) finds **100.0% of each tile
+>      swallowed** — no interior point lands in any island; 8/8, 0 disagreements. *(Tile #3 is 15.3%
+>      swallowed and was never a member — it was the centroid rule's phantom.)*
+>      **Mechanism:** `§14` verifies **width < Σ of the two widest facing `pavementHW` in 8/8**, tiles
+>      2.39–7.54 m — **the two carriageways' asphalt overlaps and annihilates the land between them.**
+>      ⚠️ Its `2A/P` width understates on L-shaped tiles and the probe says so in place: **directional, and
+>      it is the tiles-WITH-islands row that the caveat bounds, not the 8.**
+>    - ⛔ **TWO BOZ CLAIMS STRUCK HERE, both stated in the same register as measurements and both false:**
+>      *"the old numbers came from uncommitted `shape.json` bytes"* (case C never reads it) and
+>      *"the width rule was never measured"* (`§14` measures it). The second was written **into this doc**
+>      in `01839d1f` and deleted a correct sentence. `[[feedback_measure_before_writing_ask_before_building]]`
 >    - ⛔⛔ **THIS KILLS AND INVERTS THE MEDIAN HYPOTHESIS** (`HANDOFF §4.1`: *"divided medians become
 >      leftover islands, probably MORE correct"*). **Measured: the punch-out ERASES 6 of 30 `isMedian`
 >      tiles and shrinks the survivors to 0.06–0.90 of frozen area (median 0.41)**, where ordinary blocks
