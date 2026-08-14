@@ -7,8 +7,9 @@
 //   node scratch/reconcile-punchout-vs-faces.mjs
 //
 import fs from 'fs'
+import crypto from 'crypto'
 const o = console.log; console.log = () => {}
-const { buildBlockGeometryV2 } = await import('../src/lib/buildBlockGeometryV2.js')
+const { buildBlockGeometryV2, intersectRings } = await import('../src/lib/buildBlockGeometryV2.js')
 const { extractFaces } = await import('../src/lib/tileGround.js')
 const { offsetClosedRing } = await import('../src/lib/buildPathRibbons.js')
 console.log = o
@@ -73,7 +74,19 @@ function report(P) {
   return P
 }
 
+const CENTROID_ASSERT = process.argv.includes('--centroid-match')
+
 o('═══ 0. THE INSTRUMENT AND ITS INPUTS ═══')
+// ⛔ PRINT THE ARTIFACTS ON EVERY RUN. This gate spent a day being unreproducible
+// while a shape.json move was suspected; case C reads none of shape.json, and the
+// only way that stops being re-guessed is for the run to say what it read.
+{
+  const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
+  o(`  src/data/ribbons.json ........ ${H('src/data/ribbons.json')}`)
+  o(`  design.json .................. ${H('public/looks/lafayette-square/design.json')}`)
+  o(`  neighborhood_boundary.json ... ${H('cartograph/data/lafayette-square/neighborhood_boundary.json')}`)
+  o(`  shape.json ................... ${H('public/baked/lafayette-square/shape.json')}   ⭐ NOT AN INPUT — listed so nobody re-hypothesises it`)
+}
 const all = (ribbons.streets || []).filter(s => s?.points?.length >= 2)
 const noGrade = all.filter(s => !s.gradeSeparated)
 o(`ribbons.streets ................ ${(ribbons.streets || []).length}`)
@@ -110,20 +123,63 @@ o(`  tiles touching __boundary__ .. ${bEdges}`)
 const liveFaces = extractFaces(noGrade)
 o(`live extractFaces(noGrade), NO boundary injected: ${liveFaces.length} bounded faces (outer face dropped by the >1e-3 filter, tileGround.js:984)`)
 
-o('\n═══ 3. MATCH: punch-out islands ↔ frozen tiles (centroid containment) ═══')
-function match(P, fzSet) {
+o('\n═══ 3. MATCH: punch-out islands ↔ frozen tiles ═══')
+// ⭐⭐ AND HERE IS HOW THE CANON AND THE INSTRUMENT CAME APART, which matters more
+// than the fix: §13 below ALWAYS did area matching (sampled) and ALWAYS printed
+// 93 → 93 distinct tiles, 0 straddlers, 0 splits, 8 unclaimed. RIBBONS §1 gate 1
+// quoted §13. Anyone re-running the script read §3 — the FIRST match section —
+// got 1 split / 9 no-island, and concluded the canon was unreproducible. It was
+// reproducible the whole time, from a different section of the same file.
+// ⇒ TWO SECTIONS OF ONE PROBE ANSWERING THE SAME QUESTION DIFFERENTLY IS THE
+// DEFECT. §3 now uses the same rule as §13 and §17 asserts the result.
+// ⛔⛔ THE MATCHING RULE WAS THE DEFECT, FIXED 2026-08-13 (Tally).
+// This read ISLAND CENTROID INSIDE TILE RING. An island is a ring, not a convex
+// blob: the 69,092 m² / 109-vertex island lies 100% inside frozen tile #3 and 0%
+// inside #17, but its centroid lands in #17. That ONE mis-assignment surfaced
+// TWICE — a phantom SPLIT of #17 and a phantom NO-ISLAND #3 — and read for a day
+// as "the punch-out re-topologises the map." It does not.
+// ⭐ AND IT WOULD HAVE MISGRADED SLICE 2 SPECIFICALLY: the walk produces large
+// non-convex islands BY CONSTRUCTION (a punched spur is a concavity, RIBBONS §1),
+// which is exactly the shape the centroid rule misfiles.
+// ⇒ DOMINANT AREA OVERLAP is now the rule, computed EXACTLY with intersectRings
+// (no sampling, no tolerance). The centroid rule is KEPT and always reported so a
+// disagreement between the two is visible rather than silently resolved in favour
+// of the new one. --centroid-match makes the OLD rule the one that gets asserted.
+function matchBy(P, fzSet, rule) {
   const unmatched = []
   const hits = new Map()
   for (const isl of P.islands) {
-    const c = centroid(isl.r)
     let found = -1
-    for (const t of fzSet) { if (inRing(c, t.r)) { found = t.i; break } }
+    if (rule === 'centroid') {
+      const c = centroid(isl.r)
+      for (const t of fzSet) { if (inRing(c, t.r)) { found = t.i; break } }
+    } else {
+      let bestA = 0
+      for (const t of fzSet) {
+        let ov = 0
+        try { for (const r of (intersectRings([isl.r], [t.r]) || [])) ov += Math.abs(area(r)) } catch { ov = 0 }
+        if (ov > bestA) { bestA = ov; found = t.i }
+      }
+      if (bestA <= 1) found = -1
+    }
     if (found < 0) unmatched.push(isl); else hits.set(found, (hits.get(found) || 0) + 1)
   }
   const fzUnhit = fzSet.filter(t => !hits.has(t.i))
   const fzMulti = [...hits.entries()].filter(([, n]) => n > 1)
   return { unmatched, fzUnhit, fzMulti, hits }
 }
+const match = (P, fzSet) => matchBy(P, fzSet, CENTROID_ASSERT ? 'centroid' : 'area')
+
+o('   BOTH RULES, EVERY CASE — a disagreement is a finding about the instrument:')
+o('   case                                  rule       islands  straddle  SPLIT  NO-ISLAND')
+for (const P of [A, B, C]) {
+  for (const rule of ['area', 'centroid']) {
+    const m = matchBy(P, fz, rule)
+    const tag = rule === (CENTROID_ASSERT ? 'centroid' : 'area') ? ' ← asserted' : ''
+    o(`   ${P.label.slice(0, 34).padEnd(36)} ${rule.padEnd(9)} ${String(P.islands.length).padStart(7)}  ${String(m.unmatched.length).padStart(8)}  ${String(m.fzMulti.length).padStart(5)}  ${String(m.fzUnhit.length).padStart(9)}${tag}`)
+  }
+}
+
 for (const P of [A, B, C]) {
   const m = match(P, fz)
   o(`\n${P.label}`)
@@ -485,3 +541,74 @@ o('\n═══ 15. WHERE THE SUB-AREA RINGS SIT (holes + slivers) ═══')
 }
 
 o('\ndone.')
+
+o('\n═══ 16. GROUND TRUTH — INDEPENDENT OF THE MATCHING RULE ═══')
+// ⛔ THIS EXISTS TO CATCH THE MATCHER LYING, so it must not share its logic.
+// It shares no code with matchBy(): no intersectRings, no dominance, no
+// island→tile assignment at all. It asks one question per unclaimed tile, by
+// brute interior sampling: is this tile's land actually GONE — is there any
+// interior point of it that lies in no island?
+//   a tile the matcher calls unclaimed AND that is ~100% swallowed  → agreed
+//   a tile the matcher calls unclaimed AND that is NOT swallowed    → ⛔ THE
+//     MATCHER IS WRONG. That is the exact failure the centroid rule committed
+//     on tile #3 (15.3% swallowed, i.e. 85% of it plainly still there).
+function swallowedPct(tileRing, islandRings) {
+  let lo = [1e18, 1e18], hi = [-1e18, -1e18]
+  for (const p of tileRing) { lo[0] = Math.min(lo[0], p[0]); lo[1] = Math.min(lo[1], p[1]); hi[0] = Math.max(hi[0], p[0]); hi[1] = Math.max(hi[1], p[1]) }
+  const STEP = Math.max(0.4, Math.min(4, Math.sqrt(Math.abs(area(tileRing))) / 40))
+  let inside = 0, gone = 0
+  for (let x = lo[0]; x <= hi[0]; x += STEP) for (let z = lo[1]; z <= hi[1]; z += STEP) {
+    const p = [x, z]
+    if (!inRing(p, tileRing)) continue
+    inside++
+    let covered = false
+    for (const r of islandRings) if (inRing(p, r)) { covered = true; break }
+    if (!covered) gone++
+  }
+  return { inside, gone, pct: inside ? 100 * gone / inside : NaN }
+}
+const mC = match(C, fz)
+const islandRingsC = C.islands.map(x => x.r)
+let liars = 0
+o('   case C, every tile the matcher leaves unclaimed:')
+o('   tile      area m²   interior pts   swallowed     %   verdict')
+for (const t of mC.fzUnhit.sort((a, b) => Math.abs(b.a) - Math.abs(a.a))) {
+  const g = swallowedPct(t.r, islandRingsC)
+  const ok = !(g.inside > 0) || g.pct > 95
+  if (!ok) liars++
+  o(`   #${String(t.i).padStart(3)} ${Math.abs(t.a).toFixed(0).padStart(10)}   ${String(g.inside).padStart(8)}   ${String(g.gone).padStart(9)}  ${g.pct.toFixed(1).padStart(5)}   ${!(g.inside > 0) ? 'too thin to sample' : ok ? 'agreed — the land IS gone' : '⛔ MATCHER IS WRONG — the land is still there'}`)
+}
+o(`   tiles where the matcher and the ground truth DISAGREE: ${liars}`)
+
+o('\n═══ 17. THE FROZEN BASELINE — asserted here, not in a doc ═══')
+// ⛔ A number in a doc is stale the moment it is written, and that is precisely
+// how this gate reached the state it was found in: RIBBONS §1 carried
+// "0 merges, 0 splits, 0 straddlers" for a day while the instrument printed
+// 1 split / 9 no-island, and nobody could tell which was wrong.
+// This asserts and EXITS NON-ZERO on drift. If it fires, do not edit the
+// expectation — find out what moved.
+const BASELINE = {
+  ribbons: 'sha256:4491db8475', design: 'sha256:99db2706fb', boundary: 'sha256:dc44dc7054',
+  islands: 93, straddlers: 0, splits: 0, noIsland: 8, rule: 'area',
+}
+{
+  const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
+  const got = {
+    ribbons: H('src/data/ribbons.json'), design: H('public/looks/lafayette-square/design.json'),
+    boundary: H('cartograph/data/lafayette-square/neighborhood_boundary.json'),
+    islands: C.islands.length, straddlers: mC.unmatched.length, splits: mC.fzMulti.length,
+    noIsland: mC.fzUnhit.length, rule: CENTROID_ASSERT ? 'centroid' : 'area',
+  }
+  const fails = []
+  for (const k of Object.keys(BASELINE)) if (got[k] !== BASELINE[k]) fails.push(`${k}: expected ${BASELINE[k]}, got ${got[k]}`)
+  if (liars) fails.push(`ground truth contradicts the matcher on ${liars} tile(s) — the matching rule is wrong again`)
+  if (!fails.length) {
+    o(`   ✅ case C matches the frozen baseline: ${BASELINE.islands} islands · ${BASELINE.straddlers} straddlers · ${BASELINE.splits} splits · ${BASELINE.noIsland} no-island (rule: ${BASELINE.rule})`)
+    o(`      and the independent ground truth agrees on all ${mC.fzUnhit.length} unclaimed tiles.`)
+  } else {
+    o('   ⛔ BASELINE DRIFT — this gate is FAILING:')
+    for (const f of fails) o(`      · ${f}`)
+    o('   ⛔ Do not edit the expectation to make this pass. Find what moved.')
+    process.exitCode = 1
+  }
+}
