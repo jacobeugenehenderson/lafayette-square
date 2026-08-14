@@ -4258,17 +4258,34 @@ export function deriveLayers(highways) {
     // ── Source 6: pendant tips with L↔R asymmetry — the tip itself is the
     // continuity point (the butt cap wraps one curb into the other; a width
     // step there is the SAME-STREET step family).
-    let tipCount = 0
+    // ⭐⭐ FIXED 2026-08-14 (Tally): A TIP TEST AND A WIDTH-STEP TEST ARE TWO
+    // DIFFERENT QUESTIONS, and this asked the second one to answer the first.
+    // `if (Math.abs(L - R) < 0.5) continue` sat ABOVE nodeFor(), so a SYMMETRIC
+    // dead end — the ordinary case — got no junction node at all, and Source 6
+    // is the only tip source. Cost, measured: 65 of 95 LS degree-1 tips and
+    // 115 of 138 on staging carried no node, so no cap coupler could be emitted
+    // there and slice 2's walk arrives at them with nothing to ask (88 of its 97
+    // no-successor failures). The width-step gate is on RIBBONS §1's retirement
+    // list by name.
+    // ⇒ THE SPLIT: the NODE is minted for every degree-1 tip, because a tip is a
+    // tip. The `tip-wrap` CONTINUITY PAIR — whose stated subject is the
+    // SAME-STREET width-step family — keeps its |L−R| >= 0.5 m condition exactly
+    // as before, so nothing that consumed it changes meaning.
+    // ⛔ This is not a widened threshold. A threshold would still be a width test
+    // standing in for a topological one.
+    let tipCount = 0, tipWraps = 0
     for (const [k, list] of endsAt) {
       if (list.length !== 1 || (interiorAt.get(k) || []).length) continue
       const { s, end } = list[0]
-      const L = s.measure?.left?.pavementHW || 0
-      const R = s.measure?.right?.pavementHW || 0
-      if (Math.abs(L - R) < 0.5) continue
       const n = nodeFor(ptOf(s, end))
       n.kinds.add('pendant-tip')
       addLeg(n, s, end, s.phase?.role || 'single')
-      addPair(n, { chain: s.skelId, side: 'left' }, { chain: s.skelId, side: 'right' }, 'tip-wrap')
+      const L = s.measure?.left?.pavementHW || 0
+      const R = s.measure?.right?.pavementHW || 0
+      if (Math.abs(L - R) >= 0.5) {
+        addPair(n, { chain: s.skelId, side: 'left' }, { chain: s.skelId, side: 'right' }, 'tip-wrap')
+        tipWraps++
+      }
       tipCount++
     }
 
@@ -4309,7 +4326,17 @@ export function deriveLayers(highways) {
         if (jnodes.has(k)) continue
         const ends = endsAt.get(k) || []
         const thrs = interiorAt.get(k) || []
-        if (ends.length + thrs.length * 2 < 3) continue   // not a junction
+        // ⭐⭐ FIXED 2026-08-14 (Tally): `< 3` skipped the END-TO-END WELD — two
+        // chains meeting tip to tip, which is a real junction with two arms and
+        // is exactly where phase 1's degree-2 coupler now wants a node to hang
+        // off. 7 such vertices on LS carried no node.
+        // ⛔ THE CONDITION IS DELIBERATELY `ends.length >= 2`, NOT `sum >= 2`.
+        // A mid-chain INTERIOR vertex of a single chain also scores 2
+        // (thrs 1 x 2) and is NOT a junction — minting there would put a node on
+        // every vertex of every street. The distinction is chain ENDS meeting,
+        // and that is what the measured population is: 100% end-to-end weld of
+        // two distinct chains, 0 interior through-pass (claims-coupler-totality).
+        if (ends.length + thrs.length * 2 < 3 && ends.length < 2) continue   // not a junction
         const pt = ends.length ? ptOf(ends[0].s, ends[0].end) : thrs[0].points[[...thrs[0].points.keys()].find(i => vKey(thrs[0].points[i]) === k)]
         const n = nodeFor(pt)
         n.kinds.add('plain')
@@ -4454,7 +4481,7 @@ export function deriveLayers(highways) {
     const pairCount = nodes.reduce((a, n) => a + n.continuity.length, 0)
     const windowCount = nodes.reduce((a, n) => a + (n.deTaper?.length || 0), 0)
     console.log(`    [E3.1] junction map: ${nodes.length} nodes [${Object.entries(kindCounts).map(([k, v]) => `${k} ${v}`).join(', ')}]`)
-    console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips`)
+    console.log(`    [E3.1]   ${pairCount} continuity pairs (${spineLinkPairs} spine-link), ${windowCount} de-taper windows, ${apronCount} aprons, ${absorbed} median fragment(s) absorbed, ${tipCount} pendant tips (${tipWraps} with a width-step tip-wrap)`)
     console.log(`    [E3.1]   intersection-everywhere: ${plainCount} plain nodes stamped, ${adjacentPairs} clockwise-adjacency corner pairs (${capCouplers} of them dead-end CAP couplers, ${weldNodes} degree-2 weld nodes)`)
     // ⛔ LOUD, BY NAME. The coupler relation can only be total over the nodes that
     // EXIST. A degree-1 vertex only becomes a node if some source above claimed it,

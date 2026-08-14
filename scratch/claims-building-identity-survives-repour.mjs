@@ -75,9 +75,26 @@ function readBuildings(scene) {
   if (!list) return { ok: false, why: 'artifact carries no `buildings` array' }
   const out = new Map()
   let unkeyed = 0
+  // ⛔ KIT DEFECT FOUND 2026-08-14 (Tally), FIXED HERE: this read
+  // `b.projectId ?? b.id` only. A scene whose buildings come from MSBF rather
+  // than a curated project file keys on `msbfId`, so this guard reported
+  // lafayette-square-staging as "0 keyed, 772 UNKEYED" — i.e. BLIND on exactly
+  // the towns it exists to protect. LS carries projectId because LS is the mould.
+  // EXTENT-DESIGN §3.3 names msbfId as the identity lock in its own words:
+  // "on any re-fetch, retained footprints keep their msbfId and dropped ones keep
+  // reserved numbers — verified". The guard was not checking the lock the canon
+  // relies on. ⇒ surfaced to Boz as ASPIRATION (an identity lock documented as
+  // verified, unenforced by the guard on any msbf scene), not settled by a doc edit.
+  // ⭐ The NAMESPACE is recorded and asserted below — mixing key spaces across a
+  // pour would make "0 lost" meaningless, so a namespace change is itself fatal.
+  const keyOf = (b) => b.projectId != null ? ['projectId', b.projectId]
+    : b.id != null ? ['id', b.id]
+      : b.msbfId != null ? ['msbfId', b.msbfId] : [null, null]
+  const spaces = new Set()
   for (const b of list) {
-    const id = b.projectId ?? b.id ?? null
+    const [space, id] = keyOf(b)
     if (id == null) { unkeyed++; continue }
+    spaces.add(space)
     const ring = b.ring || b.footprint || b.coords || []
     let sx = 0, sz = 0, n = 0
     for (const v of ring) {
@@ -91,17 +108,53 @@ function readBuildings(scene) {
       elev: Number.isFinite(b.elev) ? +b.elev.toFixed(3) : null,
     })
   }
-  return { ok: true, buildings: out, unkeyed, total: list.length }
+  return { ok: true, buildings: out, unkeyed, total: list.length, keySpace: [...spaces].sort().join('+') || 'none' }
 }
 
+
+// ⭐⭐ GATE 1 (Tally, 2026-08-14) — THE FRAME ORIGIN, AS A CHECK RATHER THAN AN
+// INSTRUCTION. EXTENT-DESIGN §3.3: the origin "may grow or shrink; it must NEVER
+// MOVE … only moving the origin reprojects everything at once and re-orders
+// identity (the 84→5 content death). 'Never move the center' is the whole content
+// safeguard."
+// ⛔ THAT SENTENCE PROTECTS US ONCE, IF THE RIGHT PERSON READS THE RIGHT DOC. A
+// street-graph job never opens the Extent doc. So the constraint travels with the
+// OPERATION instead of the subject: every pour, every town, forever.
+// ⭐ WHAT THE ORIGIN ACTUALLY IS, and it is NOT the disc `center`: the frozen
+// fetch centre plus its projection scalars, geography.json {lat, lon,
+// lonToMeters, latToMeters} (serve.js:1493-1503 — the disc centre is stored
+// OFF-ORIGIN precisely so the frame never moves). `bbox` is the fetch EXTENT and
+// is allowed to grow or shrink, so it is deliberately NOT asserted — asserting it
+// would forbid the two operations the doctrine permits.
+function frameOrigin(scene) {
+  const p = path.join(ROOT, 'cartograph', 'data', scene, 'geography.json')
+  if (!fs.existsSync(p)) return { ok: false, why: `no geography.json at ${path.relative(ROOT, p)}` }
+  let g
+  try { g = JSON.parse(fs.readFileSync(p, 'utf8')) } catch (e) { return { ok: false, why: `geography.json unreadable: ${e.message}` } }
+  const fields = ['lat', 'lon', 'lonToMeters', 'latToMeters']
+  const missing = fields.filter(f => g[f] === undefined)
+  if (missing.length) return { ok: false, why: `geography.json lacks ${missing.join(', ')}` }
+  // BYTE-identical, not float-tolerant. A tolerance here is a licence to drift.
+  const canon = JSON.stringify(Object.fromEntries(fields.map(f => [f, g[f]])))
+  return { ok: true, canon, fields: Object.fromEntries(fields.map(f => [f, g[f]])) }
+}
+const showOrigin = (fo) => fo.ok
+  ? `lat ${fo.fields.lat} · lon ${fo.fields.lon} · lonToMeters ${fo.fields.lonToMeters} · latToMeters ${fo.fields.latToMeters}`
+  : `⛔ ${fo.why}`
+
 function snapshot(scene) {
+  const fo = frameOrigin(scene)
+  console.log(`  FRAME ORIGIN  ${showOrigin(fo)}`)
+  if (!fo.ok) { console.log(`  ⛔ NOT MEASURED — the origin cannot be read, so it cannot be protected.`); return 2 }
   const r = readBuildings(scene)
   if (!r.ok) { console.log(`  ⛔ NOT MEASURED — ${r.why}`); return 2 }
   fs.mkdirSync(SNAP_DIR, { recursive: true })
   fs.writeFileSync(snapPathOf(scene), JSON.stringify({
     scene, takenAgainst: 'pre-repour', total: r.total, unkeyed: r.unkeyed,
+    frameOrigin: fo.canon, keySpace: r.keySpace,
     buildings: Object.fromEntries(r.buildings),
   }, null, 0))
+  console.log(`  key space ..... ${r.keySpace}`)
   console.log(`  baseline written — ${r.buildings.size} keyed buildings${r.unkeyed ? `, ⚠️ ${r.unkeyed} UNKEYED (they cannot be tracked)` : ''}`)
   console.log(`  → ${path.relative(ROOT, snapPathOf(scene))}`)
   return 0
@@ -115,9 +168,37 @@ function compare(scene) {
     return 2
   }
   const base = JSON.parse(fs.readFileSync(sp, 'utf8'))
+
+  // ⛔ THE ORIGIN IS CHECKED FIRST AND ON ITS OWN. If it moved, every downstream
+  // number in this report is measured in a different coordinate frame and is
+  // meaningless — reporting "0 lost" under a moved origin would be the exact
+  // plausible-looking success a kit must never produce.
+  const fo = frameOrigin(scene)
+  console.log(`  FRAME ORIGIN  ${showOrigin(fo)}`)
+  if (!fo.ok) { console.log(`  ⛔ NOT MEASURED — the origin cannot be read, so it cannot be protected.`); return 2 }
+  if (base.frameOrigin === undefined) {
+    console.log(`  ⚠️ baseline predates the origin check — NOT MEASURED for origin drift (not "unchanged"). Re-snapshot to arm it.`)
+  } else if (base.frameOrigin !== fo.canon) {
+    console.log(`  ⛔⛔ FRAME ORIGIN MOVED — this is fatal and nothing below it is trustworthy.`)
+    console.log(`      before ${base.frameOrigin}`)
+    console.log(`      after  ${fo.canon}`)
+    console.log(`      EXTENT-DESIGN §3.3: the origin may GROW or SHRINK, never MOVE. Moving it`)
+    console.log(`      reprojects every coordinate and re-orders building identity — the 84→5`)
+    console.log(`      content death. ⛔ Do not re-baseline to make this pass. Find what moved it.`)
+    return 1
+  } else {
+    console.log(`  ✅ frame origin byte-identical across the pour (grow/shrink of bbox is permitted and not asserted)`)
+  }
+
   const now = readBuildings(scene)
   if (!now.ok) { console.log(`  ⛔ NOT MEASURED — ${now.why}`); return 2 }
 
+  console.log(`  key space ..... ${now.keySpace}${base.keySpace && base.keySpace !== now.keySpace ? `  ⛔ CHANGED from ${base.keySpace} — ids are not comparable across a namespace change` : ''}`)
+  if (base.keySpace && base.keySpace !== now.keySpace) return 1
+  if (now.buildings.size === 0) {
+    console.log(`  ⛔ NOT MEASURED — 0 keyed buildings (${now.unkeyed} unkeyed). ⛔ This is not a pass.`)
+    return 2
+  }
   const before = new Map(Object.entries(base.buildings))
   const after = now.buildings
   const lost = [...before.keys()].filter(k => !after.has(k))
