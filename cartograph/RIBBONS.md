@@ -138,9 +138,36 @@
 > ⭐⭐ **THIS IS THE RETIREMENT LIST'S CRITERION, so the list stops being a list:** *anything that exists to
 > clean up after a degenerate construction belongs on it.* Test each entry below against that sentence rather
 > than against memory.
-> ⛔ **And it is slice 2's ACCEPTANCE:** the silhouette is smooth **AND no step in the pipeline smooths it.**
-> That is stricter than gate 2's ring-count predicates and it settles their disagreement by making it moot —
-> **39 / 4 / 14 all count rings in the OUTPUT, which is the wrong end of the pipe.**
+> ### ⭐⭐⭐ AND HERE IS SLICE 2'S ACCEPTANCE — ⛔ THE VISIBLE STRIP WAS NEVER THE INVARIANT *(Jacob, 2026-08-14)*
+> > *"There is uninterrupted ADA corners and mono-width ribbons… the sidewalk just FEELS like the strip
+> > because you can see it."*
+>
+> The sidewalk is the part you can see, so it is what everyone reaches for — but *"is the sidewalk one
+> continuous polygon"* is **not** the property that has to hold. **Three are, and all three are already
+> INVARIANTS 1/3/4 of this section; what was missing is that none was ever made into a check:**
+> 1. **MONO-WIDTH RIBBON** — one **outer depth per block**, curb to property line. The strips inside may
+>    vary (treelawn↔sidewalk swap, materials); the total may not. *The ribbon is continuous BY DEPTH, and
+>    the sidewalk merely rides inside it.*
+> 2. **THE ADA CORNER IS UNINTERRUPTED** — a slice of that same band **wrapped** around the corner, never
+>    glued onto the ends of two legs.
+> 3. **EVERY JOINT IS ACCOUNTED FOR.** The joints between **caps, corners and legs** must be smooth — and
+>    ⭐⭐ **"smooth" here means BOTH smooth AND *planned*.** A seam belongs where the design puts one (a real
+>    corner · a block end · a cap). ⛔ **A seam that exists because something RAN OUT — a chain ended, a name
+>    changed, a width step landed mid-block — is a defect.** Same geometry, opposite verdicts; the difference
+>    is whether anything *decided* it. ⭐ **The check ports to town #2 because the test is "name the thing
+>    that planned this seam," which needs no local knowledge.**
+>
+> ⇒ **This retires gate 2's 39 / 4 / 14 dispute rather than picking among them: all three count rings in the
+> visible strip, which was never the invariant.** ⭐ It also explains why the 35 zero-contact "severances"
+> were never defects — a seam between adjacent blocks is **planned**. ⛔ *(Two Boz formulations struck here:
+> "the smoothness ruling makes continuity moot" — it does not, smooth and complete are different properties —
+> and "measure unpainted edge, acceptance zero," which measures the strip, i.e. the symptom.)*
+>
+> ⏳ **DEFERRED — an ASPIRATION, filed not built** *(Jacob, 2026-08-14: "this is NOT present work")*: the
+> operator may author **both** strips of the mono-width to the same class — both `LU`, or both `SW`. The
+> **`SW`+`SW`** case requires the corner to expect that pairing and supply **angled sidewalk joiners**.
+> ⛔ Do not build it and do not scope it. ⭐ If it falls out of the walk for free, that is a celebration; if
+> it costs a session, it is not this arc's.
 > *(Consistent with §1's own 2026-06-15 update — "fix the derivation → the universal walk produces the right
 > polygon; construction is the last resort" — and with INVARIANT 1: the corner is the band BENT around the arc.)*
 >
