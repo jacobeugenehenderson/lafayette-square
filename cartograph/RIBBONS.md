@@ -178,18 +178,66 @@
 > *(Consistent with §1's own 2026-06-15 update — "fix the derivation → the universal walk produces the right
 > polygon; construction is the last resort" — and with INVARIANT 1: the corner is the band BENT around the arc.)*
 >
+> ### ⭐⭐⭐ RULED 2026-08-14 (Jacob) — A MEDIAN IS A **BLOCK**. Bounded by two sides of the same street; streets split around it.
+> > *"This just makes a new kind of 'block' and we stipulate that streets can split around it. Then we treat
+> > it exactly the same."*
+>
+> **No divided-road concept, no emitter distinction, no median-specific ped rule.** A street emits its
+> half-width to each side; blocks are the faces; sometimes there is a block between the halves. ⛔ **Nothing
+> decides *"divided"*** — a street with a block in the middle LOOKS divided, and that is the whole of it.
+> ⭐ The identity is **face-read** and lives in polygon-world, which survives the Wall; every mechanism below
+> was chain-world machinery keeping a polygon-world fact alive across it.
+>
+> ⭐⭐ **THIS IS WHAT LICENSES THE RETIREMENT, AND IT IS MEASURED ON BOTH SAFEGUARDED TOWNS: the chain
+> apparatus knows NOTHING the polygon does not.** Median blocks by the polygon rule vs by the chain flags —
+> **chain-only is EMPTY on LS and on HPDM**, 0 exceptions. The rule never reads
+> `pairId`/`anchor`/`innerSign`/`phase.role`.
+> ▶ `node scratch/median-block-ped-coverage.mjs` (agent Wick, `b16ce8c3`). ⛔⛔ **EVERY FIGURE IN THIS RULING
+> COMES FROM THAT ONE COMMAND — re-run it, never quote these numbers.** The *directions* are the doctrine
+> (chain-only empty · the superset · HPDM sparser · a majority of medians crossed); the digits are a snapshot.
+>
+> ⚠️ **IT IS NOT YET THE MEDIAN TEST — the polygon rule is a strict SUPERSET and the excess is a different
+> animal** (LS chain✓ mean area ~825 m² vs chain✗ ~81,698 m² — two orders of magnitude). ⛔ **Do not invent a
+> threshold to close the gap.**
+> ⛔⛔ **AND THE OBVIOUS DISCRIMINATOR — "the two bounding sides FACE EACH OTHER" — HAS ALREADY BEEN TRIED AND
+> REVERTED** (`§3.5`): the measure `side` is point-order-relative **per chain**, so a pair's two carriageways
+> disagree about which side faces the median (Lafayette: A matches the inboard oracle, B does not). ⭐ **So it
+> is not a discriminator we lack — it is one that the `side` labels cannot currently support**, and it waits
+> on the walk's directed sides, which is the same root as the inverted `side` law on the list below.
+>
+> ### ⭐⭐ AND THE PED RULE IS REPLACED BY THE LADDER THAT ALREADY EXISTS — ask the data, then guess, then override.
+> **`effectiveMeasure`'s blanket `treelawn:0, sidewalk:0` is WRONG ON THE MAJORITY OF MEDIANS** — measured:
+> **68% of LS · 56% of HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
+> medians have sidewalks that cross them"*). ⇒ **the median joins `gleanTreelawn`'s ladder like any other
+> block; there is no median rule to write.**
+> ⛔ **BUT THE DATA IS A RUNG, NOT A REPLACEMENT.** Normalized sidewalk coverage of street frontage at +2 m:
+> **LS 27.7% · HPDM 15.6%** — ⭐ **normalized, HPDM is the SPARSER town, and the raw way counts said the
+> opposite.** Ask-the-data alone leaves most of town #2 unanswered.
+> ⭐ **Closes the stated blocker on `BACKLOG.md`'s dead-end-mouth crossing item** (*"needs an intake trace
+> first to confirm we still retain crossing nodes"*) — **crossings ARE retained** and survive the skeleton bake.
+> ⛔ **The tag is `footway=crossing`; `highway=crossing` is ZERO on both towns**, so a check keyed on that
+> backlog item's wording reports *"no crossings"* on a town that has hundreds.
+>
 > ### ⛔⛔ THE RETIREMENT LIST — write it now, execute it as ONE window (Jacob, 2026-08-12: *"we have laid down so much defunct wiring, once we solve this we'll have to do a real cleanup"*)
 > **Each of these exists ONLY to describe the absence this ruling closes. ⛔ Do not extend any of them.**
 > `walkOrd` / the walk-ordinal coupler · the inverted `side` law (34/34) · the mouth disc + the mouth-wrap
 > snap · the synthetic negative-`segOrd` cap fe
 > · `[THRU-T]` (`tileGround.js:3589-3613`, **already dead — `opts.thruTNode` is never passed**) ·
 > `detectTileCaps` as an identity source (it is a slit detector wearing a cap detector's name).
-> ✅ **STRUCK 2026-08-13 (`de7fcba5`) — `innerEdgeMeasure`'s ped-zeroing AND `innerSign`'s consumer, both
-> excised.** ⭐ These were the model's own two **falsifiable predictions** (*"if either does NOT fall out,
-> the model has a hole — find it before building"*): both fell out, from work aimed at something else.
-> `innerSign` is not absent-of-information — it is **faithfully re-derived every bake (378/378) with an
-> INVERTED sign→key convention** (`derive.js:3167-3171`), agreeing with the geometric oracle on 6/378.
-> ⏳ `derive.js:3171` still carries a stale reference, inside the inverted comment itself.
+> ⭐⭐ **· THE WHOLE DIVIDED-ROAD APPARATUS — evidenced by the ruling above:** the **Anchor pulldown**
+> (`SurveyorPanel.jsx` — the emitter distinction; ⛔ **0 authored anchors on every scene with an overlay, it
+> has never been used**) · `innerEdgeAssign`'s two-sided fake · `effectiveMeasure`'s inboard ped-zeroing ·
+> `anchor`/`innerSign`/`pairId` as GEOMETRIC inputs.
+> ⛔ **ORDER MATTERS — converge the datum BEFORE deleting the pulldown.** `setAnchor` is the one site that
+> already implements emit-from-inner-curb correctly (it seeds inboard `pavementHW = 0`); delete it first and
+> `innerEdgeAssign`'s opposite meaning of the same word is the only definition left standing.
+> ⛔⛔ **AND THE TRAP RIDING ON IT — `SurveyorOverlay.jsx`, `if (meas <= 0) continue`:** the inboard asphalt
+> handle renders only while inboard `pavementHW > 0`, which is true today **only because of the bug**.
+> Converge the datum and **the median handle vanishes from all 38 LS carriageways, silently.** ⭐ A zero-width
+> side is **closed, not absent** — it still has a side, and that side's width is the control that reopens it.
+> ✅ **STRUCK 2026-08-13 (`de7fcba5`) — `innerEdgeMeasure`'s ped-zeroing AND `innerSign`'s consumer**, the
+> model's own two falsifiable predictions, both fallen out of work aimed elsewhere. ⏳ `derive.js` still
+> carries a stale `innerSign` reference inside its own inverted comment.
 > **· `clean/park-polygon.json` — a PRE-TILE-MODEL SURVIVAL** *(measured 2026-08-12, from Jacob's
 > question "why do we need that polygon at all?")*. ⭐ **`tile #8` IS the park** — bounded by
 > `mississippi-avenue · lafayette-avenue-3 · missouri-avenue-2 · park-avenue-1`, centroid **4 m** from
@@ -672,7 +720,7 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 ### 3.1 The frame, divided roads, and the smooth knob
 
 - **Centerline smoothing rides ONE knob.** `smoothCenterline.js` exports `STREET_SMOOTH` (`:150`, currently `0`) + `junctionKeysOf` (`:159`); `buildTileGround` takes `opts.smooth = STREET_SMOOTH`. `smoothChain` (`:101`) is an interpolating centripetal Catmull-Rom, **corner-protected** (30° splits sharp corners as hard vertices) + **junction-pinned** + **arc-length-uniform** (no scallop on sparse input). Applied at **consume time** on a COPY — it must never bake into the frozen frame (the IX-index constraint, `SKELETON §3.5`). One constant + one pin-set ⇒ one smooth curve, concentric by construction.
-- **Divided carriageways stay two centerlines; the median is an emergent geometric face (this line is now the WHOLE model — see the §1 update).** ⛔ **CORRECTED 2026-08-11 — "the chain stays at carriageway CENTER" is the REFUTED center-chain model; do not restore it** (`SKELETON.md:183`, which retired it when D1 landed `innerEdgeAssign`). **The carriageway chains sit at the carriageways' INNER EDGES** — `anchor:'inner-edge'`, measured on **all 38** LS carriageways — and `innerEdgeAssign` sets both sides to `surveyHW/2` while **zeroing the inboard ped**. ⭐ **That is a one-sided chain being faked with a two-sided one plus a suppression hack, and the 2026-08-12 ruling (§1) makes it honest** — it is also the evidence that Jacob's left-edge datum is already the live model for divided roads. The median is whatever face `extractFaces` walks between the two carriageways, and its grass is the ordinary `luRemainder` of that tile (ped-zeroed by **face-read identity**: a tile bounded by BOTH carriageways of one pair — §3.5) — **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring. The E2 stamp ring that briefly contradicted this is **deleted** (§3.5). The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology (longitudinal weld, station-overlap pairing, `phase.spineAt*` the frozen transition link) lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
+- **Divided carriageways stay two centerlines; the median is a BLOCK.** ⭐ **`§1`'s 2026-08-14 ruling owns the model and this line does not restate it** — its grass is the ordinary `luRemainder` of that tile; **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring (the E2 stamp ring that briefly contradicted this is deleted — `§3.5`). ⛔ *"The chain stays at carriageway CENTER"* as a **model** is REFUTED; do not restore it (`SKELETON.md:183`). ⚠️ **But the chain POINTS are at carriageway CENTRELINES, and `anchor:'inner-edge'` on all 38 LS carriageways is a FLAG, not a position** *(measured 2026-08-14: read as inner-edge-anchored every LS divided road would carry a 7–20 m median; centreline-anchored gives 1.5–3.5 m)*. `innerEdgeAssign` writes `surveyHW/2` to BOTH sides — arithmetic only correct about a centreline — while `anchor` tells the runtime to **render** the centreline at the inner edge. ⭐ **One chain, two incompatible datums, and the inboard ped-zeroing is what covers the mismatch.** Both retire under `§1`. The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
 - **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`WALL.md §31`).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
 
 ### 3.2 Tiles — `extractFaces` (`:508`)
@@ -711,7 +759,7 @@ Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per
 ### 3.5 Materials / LU / median
 
 - **Per-LU color:** each tile colors by its own land-use metadata (M1); the treelawn paints its tile's LU color (M2). LU = `blockLandUse[blockKey]` override → `face.use` → weighted hash.
-- **Median (divided) — a WALKED FACE, derived (the as-built home; §1 update is the doctrine).** The median is the block face `extractFaces` produces between the two carriageway chains. **Identity (`isMedianTile`, `tileGround.js`):** a tile bounded by **BOTH carriageways of one divided pair** (read off `phase.role`/`phase.pairKey`). ⛔ **No left/right side test** — tried and reverted: the measure side is point-order-relative *per chain*, so a pair's two carriageways disagree on which side faces the median (Lafayette: A's side matches the inboard oracle, B's doesn't). "Bounded by both members of the pair" is the convention-free signal; `pairKey` rules out cross-pair junction tiles. **Grass:** the tile's `luRemainder` (the open-field flood, `SECTION §3`) routed to the `median` class via a frozen `isMedian` flag (ped bands already zeroed) — no clip, no ring. **Curb:** the universal carve `differenceRings([tile.ring], aFill)` (tile − asphalt = the inner-edge gap). **The nose, crossings, and no-median all fall out** once the carriageway widths are `surveyHW/2` per side: where the carriageways converge or a cross-street crosses, their asphalt closes the gap → `luRemainder` empty. `derive.js` keeps only `noseRecs` (junction map) + corridor **merge asphalt** (crossing windows + nose tapers); the median STAMP RING is deleted. *(OPEN: nose rounds with the standard cap/fillet — pending; the merge-asphalt may be removable once the junction lands — `HANDOFF-junction-construction.md`.)*
+- **Median (divided) — a WALKED FACE (the as-built home; `§1`'s 2026-08-14 ruling is the doctrine).** The median is the block face `extractFaces` produces between the two carriageway chains. **Identity: RETIRING** — today `isMedianTile` reads `phase.role`/`phase.pairKey` (a tile bounded by both carriageways of one pair); `§1` replaces it with the polygon rule, and measured the chain flags to find nothing the polygon does not. ⛔ **A left/right side test was TRIED AND REVERTED** — the measure `side` is point-order-relative *per chain*, so a pair's two carriageways disagree on which side faces the median (Lafayette: A matches the inboard oracle, B does not). **Grass:** the tile's `luRemainder` (the open-field flood, `SECTION §3`) — no clip, no ring. ⛔ *(The "ped bands already zeroed" that used to qualify this is retired by `§1`: ped presence comes from `gleanTreelawn`'s ladder like any other block.)* **Curb:** the universal carve `differenceRings([tile.ring], aFill)`. **The nose, crossings, and no-median all fall out** once the carriageway widths are per-side: where the carriageways converge or a cross-street crosses, their asphalt closes the gap → `luRemainder` empty. `derive.js` keeps only `noseRecs` + corridor **merge asphalt**; the median STAMP RING is deleted. *(OPEN: nose rounds with the standard cap/fillet; the merge-asphalt may be removable once the junction lands — `HANDOFF-junction-construction.md`.)*
 - **Median (loop-body):** the enclosed loop interior (Benton / Park Place, `LOOP-STREETS.md`) is the analogous case, still on a Clipper-inset `kind:'median'` ring (frozen `med`, clipped) — **not yet unified** to the walked-face/`luRemainder` path. Separate from the divided median above.
 - **Curb stroke** is one continuous polygon per tile, wrapping the silhouette incl. corners (G6), painted OVER the bands so the band-to-asphalt seam hides under it.
 
