@@ -123,7 +123,13 @@
 > ### ✅ Slice 1 — the degree-1 coupler — LANDED `a2e0f6c4` (2026-08-12)
 > The cap **is** a coupler: the CCW sweep's same-arm guard was dropping the one-arm case, so `via:'cap'`
 > now wraps a tip's two side-chains around the spike. ⛔ **It reaches NO artifact until a pipeline
-> re-pour** — `derive.js` is prebake, and `via:'cap'` greps **0** in all six committed `ribbons.json`.
+> re-pour** — `derive.js` is prebake. ⛔⛔ **CORRECTED 2026-08-14: this said "`via:'cap'` greps 0 in all six
+> committed `ribbons.json`." ROT — true when written, falsified the NEXT DAY by the `918f5ff6` promote.**
+> `src/data/ribbons.json` carries **30** cap couplers; the five per-scene bundles carry 0. ⭐⭐ **AND THE
+> METHOD IS THE LESSON: `grep '"via":"cap"'` returns 0 on a PRETTY-PRINTED file** (`"via": "cap"`) — the
+> claim and its independent re-check were both made with the same brittle string match, so they agreed and
+> were both wrong. ⛔ **Count structurally, never by string:**
+> `node -e "const r=require('./src/data/ribbons.json');let n=0;for(const d of r.junctionMap.nodes)for(const c of (d.cornersAdjacent||[]))if(c.via==='cap')n++;console.log(n)"`
 > Harmless today (`cornersAdjacent` has **zero consumers**), but **slice 2's walk consumes it ⇒ the
 > re-pour is on the critical path.**
 > ⛔ **AND THE RELATION IS NOT TOTAL, despite `derive.js:4373` claiming it is** — `dirs.length < 3`
