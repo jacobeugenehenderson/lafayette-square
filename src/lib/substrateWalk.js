@@ -29,12 +29,15 @@
 //   · NO fallback. A missing successor is a named failure, not a guess.
 //
 // ⚠️ WHAT THIS DOES NOT DO YET — stated so a caller cannot mistake it for done:
-//   · PER-SEGORD WIDTHS. Half-width arrives through the caller's `widthAt`
-//     callback. This file deliberately contains NO width resolution of its own —
-//     a second widths mechanism next to buildBlockGeometryV2's resolveSide is
-//     exactly the parallel-mechanism anti-pattern. If the caller resolves per
-//     chain rather than per segOrd, the walk inherits that coarseness; it does
-//     not paper over it.
+//   · WIDTHS ARE THE CALLER'S. Half-width arrives through `widthAt`, and this
+//     file still contains NO width resolution of its own — a second widths
+//     mechanism next to buildBlockGeometryV2's resolveSide / tileGround's
+//     feWidthAt is exactly the parallel-mechanism anti-pattern. What changed
+//     2026-08-14: `widthAt` is now handed the ARC (`{arcIdx, i0, i1}`) as well
+//     as the vertex, because the producer resolves a custom per RUN — a span
+//     with a lower original-index boundary (`tileGround.js:2739 runSegOrd`) —
+//     and a bare vertex index cannot express that. The walk supplies the span;
+//     the caller still owns the resolution.
 //   · THE RIM. Measured 2026-08-12 (Tessel): a walk over the street graph does
 //     not close the perimeter — on LS only 14 of 31 rim tiles close on real
 //     streets alone. That is WHY the boundary is a stencil. Perimeter faces are
@@ -118,8 +121,9 @@ const alongPO = (d) => d.end === 'start' || (d.end === 'through' && d.half === '
  *                     filtered set (grade-sep excluded etc). Not filtered here.
  * @param junctionMap  ribbons.junctionMap — supplies cornersAdjacent, the
  *                     width-INDEPENDENT coupler relation frozen at prebake.
- * @param widthAt      (skelId, side, vertexIndex) => metres. The caller owns
- *                     width resolution; see the header.
+ * @param widthAt      (skelId, side, vertexIndex, arc) => metres, where `arc` is
+ *                     `{arcIdx, i0, i1}` in ORIGINAL point indices. The caller
+ *                     owns width resolution; see the header.
  * @param outerRing    the stencil, AS AN ARGUMENT. Used only to classify which
  *                     faces are perimeter; never reached for, never painted.
  * @param orientation  'a-to-b' | 'b-to-a' — which member of a coupler pair is
@@ -162,8 +166,9 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
           { arcIdx: arc.arcIdx, vertices: degenerate })
         continue
       }
+      const span = { arcIdx: arc.arcIdx, i0: arc.i0, i1: arc.i1 }
       const geom = walkPts.map((p, i) => {
-        const hw = widthAt(arc.skelId, side, side === 'right' ? arc.i0 + i : arc.i1 - i)
+        const hw = widthAt(arc.skelId, side, side === 'right' ? arc.i0 + i : arc.i1 - i, span)
         if (!Number.isFinite(hw)) {
           fail('no-width', arc.skelId, side, `widthAt returned ${hw}`, { arcIdx: arc.arcIdx })
           return null
@@ -241,8 +246,10 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
       const nx = succ.get(cur.key)
       if (!nx) {
         // ⛔ LOUD. No successor means the coupler relation has a hole at this
-        // node, or the node does not exist at all (81 LS vertices touched by a
-        // curbed chain carry no junction node). Not a fallback, not a guess.
+        // node, or the node does not exist at all — a vertex on a curbed chain
+        // that no junction node covers. Not a fallback, not a guess. ⛔ The size
+        // of that population is a property of the POUR, so it is counted by the
+        // probe and never written down here.
         const nd = nodes.get(cur.toKey)
         const reason = !nd ? 'NO JUNCTION NODE EXISTS at this vertex — the coupler relation cannot be total over a node that does not exist'
           : !(nd.cornersAdjacent || []).length ? 'the node exists but carries NO cornersAdjacent'
@@ -264,7 +271,7 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
       for (const p of h.geom) ring.push(p)
       // IDENTITY, CARRIED. Every ring edge knows its owner because the
       // half-edge that emitted it did — nothing is recovered afterward.
-      edges.push({ skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, verts: h.geom.length })
+      edges.push({ key: h.key, skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, i0: h.i0, i1: h.i1, verts: h.geom.length })
     }
     if (ring.length < 3) continue
     const A = signedArea(ring)
@@ -279,11 +286,18 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
       `face self-intersects ${sx}x — authored widths push these side-chains past each other`, { owners, crossings: sx })
 
     const onRim = outerRing ? chain.some(h => h.skelId === '__boundary__') : false
-    faces.push({ ring, edges, area: A, owners, degenerate: A <= 0 || sx > 0, onRim })
+    // ⛔ The two degeneracies are kept SEPARATE on the face, never summed into
+    // one flag alone: a negative area is WINDING (the signature of a traversal
+    // enumerating the complementary faces) while selfCrossings is
+    // winding-agnostic. Collapsing them scores a gusset walk as a bad block walk.
+    faces.push({ ring, edges, area: A, owners, selfIntersections: sx, degenerate: A <= 0 || sx > 0, onRim })
   }
 
   return {
     faces, failures,
+    // The half-edge UNIVERSE, so a caller can check coverage against what was
+    // actually built rather than against a tile list from another producer.
+    halfEdges: [...halves.values()].map(h => ({ key: h.key, skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, i0: h.i0, i1: h.i1 })),
     stats: {
       chains: streets.length, arcs: arcs.length, halfEdges: halves.size,
       couplerPairs: pairs, withSuccessor: succ.size,
@@ -292,5 +306,99 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
       faces: faces.length, openRuns,
       degenerateFaces: faces.filter(f => f.degenerate).length,
     },
+  }
+}
+
+/**
+ * ⭐⭐ THE COMPLETENESS INVARIANT — the walk's own guard, and the acceptance.
+ *
+ * A directed half-edge walk is a PARTITION or it is nothing. The invariant:
+ *   **every half-edge is claimed by exactly one face in each traversal.**
+ *   · UNCLAIMED (0 in a traversal) = a HOLE — that arc bounds nothing.
+ *   · MULTI-CLAIMED (>1 in one traversal) = an OVERLAP — two faces over one arc.
+ *   · A face produced by BOTH traversals = the two face sets do not complement;
+ *     the same region is being counted as block and as gusset at once.
+ *
+ * ⛔ WHY THIS REPLACES "84 of 101". A complete partition measured against a
+ * BLOCK-ONLY tile list was never a comparison: the walk emits gussets and
+ * medians the tile list has no member for, so a shortfall could mean a hole in
+ * the walk or a face the comparand cannot name, and the number could not tell
+ * you which. This checks the walk against ITSELF — the universe is the
+ * half-edges the walk built, so town #2 needs no reference map to be checked.
+ *
+ * ⛔ Nothing is repaired, nothing is excluded. Every failure is returned NAMED
+ * at (skelId, side, arcIdx).
+ *
+ * ⚠️ AND ONE THING IT DOES *NOT* MEAN, because the construction says otherwise:
+ * a block face and the gusset on the far side of the same arc BOTH come out of
+ * ONE traversal — §2 builds a half-edge for each side of every arc before any
+ * orientation is consulted, and §3 only chooses which member of a coupler pair
+ * is the successor. So `orientation` is a choice of coupler permutation, NOT
+ * blocks-vs-gussets, and a half-edge claimed in both traversals is exactly that
+ * and nothing more.
+ *
+ * @param runs [{ label, result }] — two or more walkSubstrate results over the
+ *             SAME streets/junctionMap, differing only in `orientation`.
+ */
+export function completeness(runs) {
+  const nameOf = (h) => `${h.skelId}|${h.side}|${h.arcIdx}`
+
+  // The universe must be identical across runs — half-edges are built before
+  // any orientation is consulted. ⛔ A mismatch is reported, never reconciled:
+  // it would mean the runs are not comparable and every count below is void.
+  const universe = new Map()
+  const universeMismatch = []
+  for (const { label, result } of runs) {
+    const keys = new Set(result.halfEdges.map(h => h.key))
+    for (const h of result.halfEdges) if (!universe.has(h.key)) universe.set(h.key, h)
+    for (const [k, h] of universe) if (!keys.has(k)) universeMismatch.push({ label, ...h })
+  }
+
+  const claimsByKey = new Map([...universe.keys()].map(k => [k, []]))
+  const perRun = []
+  const faceSig = new Map()   // sorted half-edge key set -> [{label, faceIdx}]
+
+  for (const { label, result } of runs) {
+    const count = new Map([...universe.keys()].map(k => [k, 0]))
+    result.faces.forEach((f, faceIdx) => {
+      for (const e of f.edges) count.set(e.key, (count.get(e.key) || 0) + 1)
+      const sig = f.edges.map(e => e.key).sort().join('')
+      if (!faceSig.has(sig)) faceSig.set(sig, [])
+      faceSig.get(sig).push({ label, faceIdx, area: f.area, owners: f.owners })
+    })
+    const unclaimed = [], multi = []
+    for (const [k, n] of count) {
+      claimsByKey.get(k).push(n)
+      if (n === 0) unclaimed.push(universe.get(k))
+      else if (n > 1) multi.push({ ...universe.get(k), claims: n })
+    }
+    perRun.push({
+      label,
+      total: universe.size,
+      claimedOnce: universe.size - unclaimed.length - multi.length,
+      unclaimed, multi,
+      faces: result.faces.length,
+    })
+  }
+
+  // The joint picture: the claim-count vector across runs, in `runs` order.
+  const joint = new Map()
+  for (const [k, v] of claimsByKey) {
+    const sig = v.join(',')
+    if (!joint.has(sig)) joint.set(sig, [])
+    joint.get(sig).push(universe.get(k))
+  }
+
+  const sharedFaces = [...faceSig.entries()]
+    .filter(([, hits]) => new Set(hits.map(h => h.label)).size > 1)
+    .map(([sig, hits]) => ({ edges: sig.split('').length, hits }))
+
+  return {
+    universe: universe.size, universeMismatch, perRun,
+    joint: [...joint.entries()]
+      .map(([sig, list]) => ({ pattern: sig, count: list.length, members: list }))
+      .sort((a, b) => b.count - a.count),
+    sharedFaces,
+    nameOf,
   }
 }
