@@ -39,6 +39,10 @@ import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
 import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
 import { readCapCustom } from './feCustomKey.js'
+// [SLICE 2 — TEMPORARY] The substrate walk, imported but NOT called unless the
+// flag is on (`electSubstrateTiles`). An import is not a call site: with the
+// flag off nothing in this module reaches it. Goes when the hybrid goes.
+import { walkSubstrate, tilesFromWalk } from './substrateWalk.js'
 import { createVocabularyGate } from '../../cartograph/osm-vocabulary.mjs'
 
 const SCALE = 1000
@@ -1078,6 +1082,91 @@ export function tilesFromFrozen(frozen, streets) {
     tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(Array.isArray(t.caps) && t.caps.length ? { caps: t.caps.map(c => ({ ...c })) } : {}) })
   }
   return tiles
+}
+
+// ══ [SLICE 2 — TEMPORARY SCAFFOLDING] ELECT A TILE SOURCE, PER TILE ══════════
+// ⛔ This function is here to be DELETED. It exists only because the walk emits
+// no perimeter face and may not be given one (RIBBONS §1: "the rim BOUNDS, it
+// does not own"). When the "what closes a face against the stencil?" question is
+// ruled, one producer wins outright and this goes.
+//
+// The election, stated so nothing is implicit:
+//   · a frozen RIM tile (carries a __boundary__ edge)      → FROZEN, always
+//   · a frozen INTERIOR tile a walk face covers            → the WALK's face
+//   · a frozen INTERIOR tile no walk face covers           → FROZEN, counted
+//   · a walk face covering no frozen interior tile         → WITHHELD, named
+//
+// ⚠️ THE ONE THING HERE THAT IS NOT BY-CONSTRUCTION, DECLARED: the tile↔face
+// correspondence is decided by CONTAINMENT of a robust interior point. That is
+// geometry, and it is precisely the kind of matching the finished model must not
+// need. It decides only WHICH SOURCE draws a tile — every edge's (streetIdx,
+// side) identity still arrives attached from the half-edge that emitted it.
+// ⛔ Interior point, never centroid: a face is a ring, not a convex blob, and the
+// centroid rule already misfiled tile #3 once (RIBBONS §1, gate 1).
+function electSubstrateTiles({ frozenTiles, ribbons, streets, widthAt }) {
+  const R = walkSubstrate({ streets, junctionMap: ribbons.junctionMap, widthAt, orientation: 'a-to-b' })
+  const { tiles: walkTiles, refused } = tilesFromWalk(R.faces, streets)
+
+  const inRing = (p, r) => { let ins = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const xi = r[i][0], zi = r[i][1], xj = r[j][0], zj = r[j][1]; if ((zi > p[1]) !== (zj > p[1]) && p[0] < (xj - xi) * (p[1] - zi) / (zj - zi) + xi) ins = !ins } return ins }
+  const dSeg = (p, a, b) => { const ex = b[0] - a[0], ez = b[1] - a[1], L2 = ex * ex + ez * ez || 1; let t = ((p[0] - a[0]) * ex + (p[1] - a[1]) * ez) / L2; t = Math.max(0, Math.min(1, t)); return Math.hypot(p[0] - (a[0] + ex * t), p[1] - (a[1] + ez * t)) }
+  const interiorPoint = (r) => {
+    let x0 = Infinity, z0 = Infinity, x1 = -Infinity, z1 = -Infinity
+    for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[1] < z0) z0 = p[1]; if (p[0] > x1) x1 = p[0]; if (p[1] > z1) z1 = p[1] }
+    let best = null, bd = -1
+    for (let i = 1; i < 40; i++) for (let j = 1; j < 40; j++) {
+      const p = [x0 + (x1 - x0) * i / 40, z0 + (z1 - z0) * j / 40]
+      if (!inRing(p, r)) continue
+      let d = Infinity
+      for (let a = 0, b = r.length - 1; a < r.length; b = a++) { const dd = dSeg(p, r[b], r[a]); if (dd < d) d = dd }
+      if (d > bd) { bd = d; best = p }
+    }
+    return best
+  }
+
+  const isRim = (t) => (t.edges || []).some(e => e.boundary || e.streetIdx === -1)
+  const out = [], usedFace = new Set()
+  let fromWalk = 0, fromFrozenRim = 0, fromFrozenGap = 0, drawnSelfIntx = 0
+  const gaps = []
+  for (const t of frozenTiles) {
+    if (isRim(t)) { out.push(t); fromFrozenRim++; continue }
+    const p = interiorPoint(t.ring)
+    let pick = -1
+    if (p) for (let i = 0; i < walkTiles.length; i++) {
+      if (!walkTiles[i] || usedFace.has(i)) continue
+      if (inRing(p, walkTiles[i].ring)) { pick = i; break }
+    }
+    if (pick < 0) { out.push(t); fromFrozenGap++; gaps.push(t); continue }
+    usedFace.add(pick)
+    const w = walkTiles[pick]
+    if (w.selfIntersections > 0) drawnSelfIntx++
+    // caps are FACE-topology facts frozen at prebake; the walk does not restate
+    // them, so a walk-sourced tile carries the frozen tile's caps unchanged.
+    out.push({ ring: w.ring, edges: w.edges, ...(t.caps ? { caps: t.caps } : {}) })
+    fromWalk++
+  }
+  const withheld = walkTiles.filter((w, i) => w && !usedFace.has(i))
+
+  // ⛔ LOUD, EVERY RUN. A silent mix would be the worst possible outcome here.
+  console.log(`[substrate] TEMPORARY HYBRID — tiles: ${fromWalk} from the WALK · ${fromFrozenRim} FROZEN (rim: the stencil question is unruled) · ${fromFrozenGap} FROZEN (interior, no walk face covers it)`)
+  console.log(`[substrate]   walk faces ${R.faces.length} → adapted ${walkTiles.filter(Boolean).length}, refused ${refused.length}${refused.length ? ' (' + refused.map(r => r.reason).join('; ') + ')' : ''}`)
+  console.log(`[substrate]   WITHHELD — walk faces covering no frozen interior tile: ${withheld.length}. ⛔ Not drawn, and what they ARE is unruled (median-is-a-block).`)
+  console.log(`[substrate]   ⛔ DRAWN WITH A SELF-INTERSECTING CENTRELINE RING: ${drawnSelfIntx}. Reported, never repaired — they will draw as garbage and that is the point.`)
+  console.log(`[substrate]   offset-ring degeneracies in the same walk (NOT drawn — the adapter feeds the centreline): ${R.stats.degenerateFaces}`)
+  for (const g of gaps) console.log(`[substrate]   gap tile kept FROZEN, no walk face covers it`)
+
+  // ⛔ DISJOINT AND TOTAL, ASSERTED. Not a warning — a throw. A hybrid that
+  // silently drops or double-counts a tile is exactly the failure this whole
+  // slice exists to make impossible.
+  if (out.length !== frozenTiles.length) {
+    throw new Error(`[substrate] election is not total: ${out.length} tiles out of ${frozenTiles.length} frozen (${fromWalk} walk + ${fromFrozenRim} rim + ${fromFrozenGap} gap)`)
+  }
+  if (fromWalk + fromFrozenRim + fromFrozenGap !== frozenTiles.length) {
+    throw new Error(`[substrate] election is not disjoint: ${fromWalk}+${fromFrozenRim}+${fromFrozenGap} ≠ ${frozenTiles.length}`)
+  }
+  if (usedFace.size !== fromWalk) {
+    throw new Error(`[substrate] a walk face was elected for more than one tile: ${usedFace.size} faces for ${fromWalk} tiles`)
+  }
+  return out
 }
 
 // ── Dead-end CAP identity on the frozen face (HANDOFF-dead-end-cap-flip §36) ──
@@ -2936,6 +3025,40 @@ export function buildTileGround(ribbons, opts = {}) {
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
   let tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)
+
+  // ══ [SLICE 2 — TEMPORARY] THE SUBSTRATE WALK AS A THIRD TILE SOURCE ═══════
+  // ⛔⛔ THIS BLOCK IS SCAFFOLDING AND MUST NOT HARDEN. It exists to get the
+  // walk's TOPOLOGY in front of the operator's eye once. It elects a source
+  // PER TILE, which is a seam the finished model does not have.
+  //
+  // Why a hybrid at all: the walk emits no perimeter faces, and it may not.
+  // RIBBONS §1, retracted and re-ruled 2026-08-12 — "the rim BOUNDS, it does
+  // not own": no coupler, no baseMeasure, no band. ⛔ A rim coupler would make
+  // the rim a side-chain, which that retraction forbids. So the rim comes from
+  // the frozen artifact until "what closes a face against the stencil?" is
+  // RULED. That ruling is the thing that deletes this block.
+  //
+  // ⛔ DEFAULT OFF, STRUCTURALLY: nothing passes `opts.substrateTiles` and the
+  // env var is unset, so with the flag off `tiles` is the frozen artifact,
+  // byte-for-byte, and this block cannot touch it.
+  // ⛔ NEVER SILENT. A quiet mix of two producers is a fallback wearing a
+  // feature's clothes. The split is printed every run and the election is
+  // asserted disjoint-and-total against the frozen list — a mismatch THROWS.
+  const substrateTiles = opts.substrateTiles ?? (typeof process !== 'undefined' && process.env?.SUBSTRATE_TILES === '1')
+  if (substrateTiles && tiles && ribbons?.junctionMap?.nodes?.length) {
+    // ⭐ The width feed is the PRODUCER'S OWN, not a second one: `feWidthAt` +
+    // `segOrdAtVertex` are the same closures the shape pass resolves runs with,
+    // and a custom resolves per RUN, so the arc's lower index is the segOrd key.
+    const idxBySkel = new Map()
+    streetsOrig.forEach((s, i) => { const k = s?.skelId || s?.name; if (k != null && !idxBySkel.has(k)) idxBySkel.set(k, i) })
+    const walkWidthAt = (skelId, side, vertexIdx, arc) => {
+      const idx = idxBySkel.get(skelId)
+      if (idx === undefined) return NaN
+      return feWidthAt(idx, side, segOrdAtVertex(idx, arc ? arc.i0 : vertexIdx))
+    }
+    tiles = electSubstrateTiles({ frozenTiles: tiles, ribbons, streets: streetsOrig, widthAt: walkWidthAt })
+  }
+
   if (!tiles) {
     // Live fallback (toy / pre-D2, no frozen artifact): derive dead-end cap
     // identity HERE — the only place it can come from when nothing is frozen.

@@ -347,6 +347,83 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
 }
 
 /**
+ * ⭐⭐ THE TILE ADAPTER — a walk face in the shape `tilesFromFrozen` produces.
+ *
+ * ⛔⛔ IT EMITS THE CENTRELINE CYCLE, NOT THE OFFSET RING, AND THAT IS THE WHOLE
+ * POINT OF THIS FUNCTION. `tile.ring` is a CENTRELINE face: tileGround strokes
+ * the asphalt outward from it by the authored half-width (`:3933
+ * strokeOpen(sp, d)`) and insets `iA` from it (`:2553 A = differenceRings(
+ * [st.ring], iA)`). This walk's `face.ring` is ALREADY displaced by
+ * `pavementHW`. Handing that in would offset every block a second time —
+ * measured on LS at a median 1.262× area, max 7.335× — i.e. the whole map
+ * wrong while still looking like a map. ⇒ A walk face is a cycle of ARCS, and
+ * an arc is a run of centreline points, which is exactly the species
+ * `tile.ring` already is. That run is what this emits.
+ *
+ * ⭐ Identity is EMITTED, never recovered: each ring vertex is pushed BY the
+ * half-edge that owns it, carrying its (skelId, side) straight into
+ * (streetIdx, forward). Nothing is read back off the geometry.
+ *
+ * The contract, from tileGround.js:1053 —
+ *   tile = { ring: [[x,z],…], edges: [{streetIdx, forward, side, boundary?}] }
+ *   ring.length === edges.length          (one edge per ring VERTEX)
+ *   forward = (side === 'right')
+ *   '__boundary__' → streetIdx -1, boundary: true
+ *
+ * A face that cannot satisfy it is REFUSED and named — never patched to fit.
+ */
+export function tilesFromWalk(faces, streets) {
+  const idxBySkelId = new Map()
+  streets.forEach((s, i) => {
+    const k = s?.skelId || s?.name
+    if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i)
+  })
+  const ptsBySkelId = new Map()
+  for (const s of streets) {
+    const k = s?.skelId || s?.name
+    if (k != null && !ptsBySkelId.has(k)) ptsBySkelId.set(k, s.points)
+  }
+
+  const tiles = [], refused = []
+  faces.forEach((face, faceIdx) => {
+    const ring = [], edges = []
+    let bad = null
+    for (const e of face.edges) {
+      const pts = ptsBySkelId.get(e.skelId)
+      if (!pts) { bad = `no chain for ${e.skelId}`; break }
+      const seq = e.side === 'right'
+        ? pts.slice(e.i0, e.i1 + 1)
+        : pts.slice(e.i0, e.i1 + 1).reverse()
+      const forward = e.side === 'right'
+      const streetIdx = e.skelId === '__boundary__' ? -1 : idxBySkelId.get(e.skelId)
+      if (streetIdx === undefined) { bad = `no streetIdx for ${e.skelId}`; break }
+      // ⛔ The shared node between consecutive arcs is emitted ONCE — it is the
+      // same coordinate from both sides, and a duplicate would break the
+      // one-edge-per-vertex contract with a zero-length edge.
+      for (let k = 0; k < seq.length - 1; k++) {
+        ring.push([seq[k][0], seq[k][1]])
+        edges.push({
+          streetIdx, forward, side: forward ? 'right' : 'left',
+          ...(e.skelId === '__boundary__' ? { boundary: true } : {}),
+        })
+      }
+    }
+    if (!bad && ring.length < 3) bad = `centreline ring carries only ${ring.length} vertices`
+    if (!bad && ring.length !== edges.length) bad = `ring ${ring.length} ≠ edges ${edges.length}`
+    if (bad) {
+      refused.push({ faceIdx, owners: face.owners, reason: bad })
+      tiles.push(null)
+      return
+    }
+    // ⛔ REPORTED, NEVER REPAIRED. A centreline ring that crosses itself will
+    // draw as garbage, and that is the walk telling the truth about its own
+    // topology. No simplifier, no snap — the bar is explicit.
+    tiles.push({ ring, edges, selfIntersections: selfCrossings(ring, true), area: signedArea(ring) })
+  })
+  return { tiles, refused }
+}
+
+/**
  * ⭐⭐ THE COMPLETENESS INVARIANT — the walk's own guard, and the acceptance.
  *
  * A directed half-edge walk is a PARTITION or it is nothing. The invariant:
