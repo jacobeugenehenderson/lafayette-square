@@ -51,6 +51,17 @@
 > hands off to which outgoing side). **The datum is the left EDGE of the right lane.** Undivided = the two
 > run coincident (so they cannot cross); divided = the same two, separated by the median.
 >
+> ⛔⛔ **READ THAT SENTENCE AS AN IDENTITY, NOT AN INSTRUCTION — IT HAS ALREADY COST A SESSION** *(Jacob,
+> 2026-08-14: "we were never emitting FROM the left edge, that was confusing and wrong. It's MAKING the
+> centerline the left edge")*. **The centerline BECOMES the left edge because that is where the lane is
+> cut. Nothing relocates, and nothing is emitted from an edge.**
+> ⭐ **ALL POLYGONS ALREADY EMIT ASYMMETRICALLY FROM THE CENTERLINE — this is shipped behaviour, not a
+> target** (`iA = chain ⊕ pavementHW` per side, left and right free to differ, `§2`).
+> ⛔ **So there is no "datum move", no "emit from the inner curb" build, and no convergence ticket.** Read
+> cold, the sentence above says *relocate the emitter*; a coordinator read it that way on 2026-08-14, built
+> an (A)/(B) fork on top of it, and wrote a retirement ordering into this section that had to be struck the
+> same day. **If you find yourself planning to move a chain's points to an edge, you have made this error.**
+>
 > ⭐⭐ **WHY PRIMITIVE BEATS DERIVED, AND IT IS THE WHOLE POINT: A DERIVATION HAS A MOMENT WHERE THE COUNT
 > CHANGES, AND THAT MOMENT IS A CASE BOUNDARY.** Nothing decides *"here it becomes divided"*, so there is
 > nothing to interpolate across and **no seam for a discontinuity to appear at.** Divergence and
@@ -224,17 +235,18 @@
 > snap · the synthetic negative-`segOrd` cap fe
 > · `[THRU-T]` (`tileGround.js:3589-3613`, **already dead — `opts.thruTNode` is never passed**) ·
 > `detectTileCaps` as an identity source (it is a slit detector wearing a cap detector's name).
-> ⭐⭐ **· THE WHOLE DIVIDED-ROAD APPARATUS — evidenced by the ruling above:** the **Anchor pulldown**
-> (`SurveyorPanel.jsx` — the emitter distinction; ⛔ **0 authored anchors on every scene with an overlay, it
-> has never been used**) · `innerEdgeAssign`'s two-sided fake · `effectiveMeasure`'s inboard ped-zeroing ·
-> `anchor`/`innerSign`/`pairId` as GEOMETRIC inputs.
-> ⛔ **ORDER MATTERS — converge the datum BEFORE deleting the pulldown.** `setAnchor` is the one site that
-> already implements emit-from-inner-curb correctly (it seeds inboard `pavementHW = 0`); delete it first and
-> `innerEdgeAssign`'s opposite meaning of the same word is the only definition left standing.
-> ⛔⛔ **AND THE TRAP RIDING ON IT — `SurveyorOverlay.jsx`, `if (meas <= 0) continue`:** the inboard asphalt
-> handle renders only while inboard `pavementHW > 0`, which is true today **only because of the bug**.
-> Converge the datum and **the median handle vanishes from all 38 LS carriageways, silently.** ⭐ A zero-width
-> side is **closed, not absent** — it still has a side, and that side's width is the control that reopens it.
+> ⭐⭐ **· THE DIVIDED-ROAD IDENTITY APPARATUS — evidenced by the ruling above:** the **Anchor (center/edge)
+> pulldown** (`SurveyorPanel.jsx` — ⛔ **0 authored anchors on every scene with an overlay; it has never been
+> used**, so removing it moves nothing on screen) · `effectiveMeasure`'s inboard ped-zeroing ·
+> `anchor`/`innerSign`/`pairId` as GEOMETRIC inputs. ⭐ Ruled out for the user 2026-08-14: with one datum
+> there is nothing to choose, and a control that selects between two datums **is a case boundary made manual.**
+> ⛔ **WHAT IS *NOT* ON THIS LIST, AND WAS BRIEFLY PUT HERE IN ERROR: `innerEdgeAssign`'s per-side widths.**
+> A carriageway chain is a centerline and **emits to both sides** — the inboard emission is what bounds the
+> gusset. `surveyHW/2` per side is therefore **correct arithmetic, not a fake.** Only its **ped-zeroing**
+> (`treelawn:0, sidewalk:0`) retires, under the ladder ruling above.
+> ⚠️ **The anomaly is `setAnchor`** (`useCartographStore.js`), which seeds inboard `pavementHW = 0` — a
+> one-sided emission the model does not call for. It leaves with the pulldown; ⛔ **do not "converge" the
+> pipeline onto it.**
 > ✅ **STRUCK 2026-08-13 (`de7fcba5`) — `innerEdgeMeasure`'s ped-zeroing AND `innerSign`'s consumer**, the
 > model's own two falsifiable predictions, both fallen out of work aimed elsewhere. ⏳ `derive.js` still
 > carries a stale `innerSign` reference inside its own inverted comment.
@@ -720,7 +732,7 @@ as only a re-pour-survival device; **it is the Wall cure, and the Wall is why it
 ### 3.1 The frame, divided roads, and the smooth knob
 
 - **Centerline smoothing rides ONE knob.** `smoothCenterline.js` exports `STREET_SMOOTH` (`:150`, currently `0`) + `junctionKeysOf` (`:159`); `buildTileGround` takes `opts.smooth = STREET_SMOOTH`. `smoothChain` (`:101`) is an interpolating centripetal Catmull-Rom, **corner-protected** (30° splits sharp corners as hard vertices) + **junction-pinned** + **arc-length-uniform** (no scallop on sparse input). Applied at **consume time** on a COPY — it must never bake into the frozen frame (the IX-index constraint, `SKELETON §3.5`). One constant + one pin-set ⇒ one smooth curve, concentric by construction.
-- **Divided carriageways stay two centerlines; the median is a BLOCK.** ⭐ **`§1`'s 2026-08-14 ruling owns the model and this line does not restate it** — its grass is the ordinary `luRemainder` of that tile; **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring (the E2 stamp ring that briefly contradicted this is deleted — `§3.5`). ⛔ *"The chain stays at carriageway CENTER"* as a **model** is REFUTED; do not restore it (`SKELETON.md:183`). ⚠️ **But the chain POINTS are at carriageway CENTRELINES, and `anchor:'inner-edge'` on all 38 LS carriageways is a FLAG, not a position** *(measured 2026-08-14: read as inner-edge-anchored every LS divided road would carry a 7–20 m median; centreline-anchored gives 1.5–3.5 m)*. `innerEdgeAssign` writes `surveyHW/2` to BOTH sides — arithmetic only correct about a centreline — while `anchor` tells the runtime to **render** the centreline at the inner edge. ⭐ **One chain, two incompatible datums, and the inboard ped-zeroing is what covers the mismatch.** Both retire under `§1`. The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
+- **Divided carriageways stay two centerlines; the median is a BLOCK.** ⭐ **`§1`'s 2026-08-14 ruling owns the model and this line does not restate it** — its grass is the ordinary `luRemainder` of that tile; **not** a chain-identity consequence, **not** an authored object, **not** a constructed ring (the E2 stamp ring that briefly contradicted this is deleted — `§3.5`). ⭐⭐ **The chain POINTS sit at the carriageway CENTRELINE, and each carriageway emits to BOTH sides — the outboard emission bounds its block, the inboard one bounds the gusset.** `innerEdgeAssign`'s `surveyHW/2` per side is exactly that, and it is **correct**. ⛔ **`anchor:'inner-edge'` on all 38 LS carriageways is a FLAG, not a position** — it tells the runtime to *render* the centerline at the inner edge *(measured 2026-08-14: read as a position, every LS divided road would carry a 7–20 m median; as a centreline, 1.5–3.5 m)*. What retires under `§1` is the inboard **ped-zeroing** and `anchor`/`innerSign`/`pairId` as **geometric inputs** — ⛔ **not** the per-side widths. ⚠️ **`SKELETON.md:183`'s *"the center-chain model is REFUTED"* is ROT by the same measurement — the chain IS at the centre — and is owed a correction in its own doc.** The two-carriageway model is **LOCKED** (no pair synthesis, no collapse to a single spine). Frame topology lives in `SKELETON.md §2/§3` + `_archive/TRUMAN-FORENSICS.md`.
 - **Divided↔undivided transition (the "special sauce", `SKELETON §5d/§5e`).** At a transition the outer curb must run **straight through**; the median opens **inward**. The corner-builder must round the **two corridor outer-edge legs** (treat the divided corridor as ONE road at the corner), never the carriageway *stubs* — rounding a stub against the cross-street fabricates the **false corner**. Detect via `phase.spineAt*` (a frozen frame fact, never re-derived by node-matching at construction). This cured the live false corner (`9c275ce`). The residual transition "d" bulge comes from the **PRODUCER** — the curb is minted by stroking chains and then snapshotted, so the bow is frozen *into* the artifact (**Check C, RED**). ⚠️ *Precision fix 2026-07-31: this is not "the curb is unfrozen for consumers" — every non-Survey view already reads the frozen `shape.json` (`WALL.md §31`).* Fixed by building the curb once in prebake from the frozen frame (`HANDOFF-freeze-the-curb-in-the-first-bake.md` D6b/c), not by more construction.
 
 ### 3.2 Tiles — `extractFaces` (`:508`)
