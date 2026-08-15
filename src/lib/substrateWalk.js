@@ -155,6 +155,13 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
   // ── 2. HALF-EDGES. Two per arc: one per side, each traversing so that the
   // side it owns is on its RIGHT. Identity is attached HERE and never re-derived.
   const halves = new Map()
+  // ⛔⛔ THE HALF-EDGES THAT NEVER GOT BUILT, KEPT AS THEIR OWN POPULATION.
+  // Every arc owes exactly two. When one cannot be constructed it is not
+  // "unclaimed" — it is ABSENT, and it silently shrinks the denominator any
+  // coverage figure is measured against. That is a completeness check reporting
+  // a better number BECAUSE something failed, which is the one thing a detector
+  // must never do. Named here so the caller can measure against `arcs × 2`.
+  const unbuilt = []
   for (const arc of arcs) {
     for (const side of ['right', 'left']) {
       // side 'right' runs along point order; side 'left' runs against it.
@@ -164,6 +171,7 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
         fail('perp-collapse', arc.skelId, side,
           `the point-order tangent vanishes at ${degenerate.length} vertex/vertices — a duplicated centreline vertex. buildBlockGeometryV2:110 substitutes a constant [0,1] here; this reports instead.`,
           { arcIdx: arc.arcIdx, vertices: degenerate })
+        unbuilt.push({ skelId: arc.skelId, side, arcIdx: arc.arcIdx, reason: 'perp-collapse' })
         continue
       }
       const span = { arcIdx: arc.arcIdx, i0: arc.i0, i1: arc.i1 }
@@ -175,7 +183,7 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
         }
         return [p[0] + perps[i][0] * hw, p[1] + perps[i][1] * hw]
       })
-      if (geom.some(g => !g)) continue
+      if (geom.some(g => !g)) { unbuilt.push({ skelId: arc.skelId, side, arcIdx: arc.arcIdx, reason: 'no-width' }); continue }
 
       // ⛔ NAMED SEPARATELY, AND ON PURPOSE. A one-sided offset that crosses
       // itself is an OFFSET CUSP — the centreline turns tighter than the
@@ -233,14 +241,24 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
   // ── 4. WALK. Follow successors from every unvisited half-edge.
   const seen = new Set()
   const faces = []
+  const runs = []          // ⭐ EVERY run, closed or not, with WHY it ended.
   let openRuns = 0
   for (const start of halves.values()) {
     if (seen.has(start.key)) continue
     const chain = []
     let cur = start
     let closed = false
+    // ⭐⭐ THE TERMINATOR. An unclaimed half-edge is never unclaimed on its own
+    // account — it is unclaimed because the RUN it belongs to did not close, and
+    // a run ends for exactly one reason. Recording that reason here is what lets
+    // a caller partition the unclaimed population into CLASSES instead of
+    // counting it. ⛔ Recorded, never acted on: the walk still does not repair.
+    let terminator = { kind: 'guard-exhausted' }
     for (let guard = 0; guard < halves.size + 2; guard++) {
-      if (seen.has(cur.key)) break
+      if (seen.has(cur.key)) {
+        terminator = { kind: 'successor-already-consumed', at: cur.key, node: cur.fromKey }
+        break
+      }
       seen.add(cur.key)
       chain.push(cur)
       const nx = succ.get(cur.key)
@@ -257,13 +275,15 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
         fail('no-successor', cur.skelId, cur.side,
           `arrives at node ${cur.toKey}: ${reason}`,
           { arcIdx: cur.arcIdx, node: cur.toKey, reason: !nd ? 'no-node' : !(nd.cornersAdjacent || []).length ? 'no-couplers' : 'unmatched' })
+        terminator = { kind: 'no-successor', node: cur.toKey, reason: !nd ? 'no-node' : !(nd.cornersAdjacent || []).length ? 'no-couplers' : 'unmatched', at: cur.key }
         break
       }
-      if (nx === start.key) { closed = true; break }
+      if (nx === start.key) { closed = true; terminator = { kind: 'closed' }; break }
       cur = halves.get(nx)
-      if (!cur) break
+      if (!cur) { terminator = { kind: 'successor-missing', at: nx }; break }
     }
-    if (!closed) { openRuns++; continue }
+    const memberKeys = chain.map(h => h.key)
+    if (!closed) { openRuns++; runs.push({ closed: false, memberKeys, terminator }); continue }
 
     const ring = []
     const edges = []
@@ -273,7 +293,16 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
       // half-edge that emitted it did — nothing is recovered afterward.
       edges.push({ key: h.key, skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, i0: h.i0, i1: h.i1, verts: h.geom.length })
     }
-    if (ring.length < 3) continue
+    // ⛔ A run that CLOSES but carries fewer than 3 ring vertices emits no face,
+    // so its half-edges end up unclaimed while nothing in the failure list says
+    // so. Named, so that silence cannot be mistaken for coverage.
+    if (ring.length < 3) {
+      fail('closed-run-too-short', chain[0].skelId, chain[0].side,
+        `the run closes but its ring carries only ${ring.length} vertices — no face is emitted and its ${chain.length} half-edge(s) are left unclaimed`,
+        { arcIdx: chain[0].arcIdx, members: chain.length })
+      runs.push({ closed: true, memberKeys, terminator: { kind: 'closed-run-too-short' }, faceIdx: null })
+      continue
+    }
     const A = signedArea(ring)
     const owners = [...new Set(chain.map(h => `${h.skelId}|${h.side}`))]
     // ⛔ EMIT THE BAD FACE. Do not delete it, do not repair it. Silently erasing
@@ -290,16 +319,24 @@ export function walkSubstrate({ streets, junctionMap, widthAt, outerRing = null,
     // one flag alone: a negative area is WINDING (the signature of a traversal
     // enumerating the complementary faces) while selfCrossings is
     // winding-agnostic. Collapsing them scores a gusset walk as a bad block walk.
+    runs.push({ closed: true, memberKeys, terminator, faceIdx: faces.length })
     faces.push({ ring, edges, area: A, owners, selfIntersections: sx, degenerate: A <= 0 || sx > 0, onRim })
   }
 
   return {
-    faces, failures,
+    faces, failures, runs,
     // The half-edge UNIVERSE, so a caller can check coverage against what was
     // actually built rather than against a tile list from another producer.
-    halfEdges: [...halves.values()].map(h => ({ key: h.key, skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, i0: h.i0, i1: h.i1 })),
+    halfEdges: [...halves.values()].map(h => ({ key: h.key, skelId: h.skelId, side: h.side, arcIdx: h.arcIdx, i0: h.i0, i1: h.i1, fromKey: h.fromKey, toKey: h.toKey })),
+    // The successor relation itself. ⛔ Exposed so a caller can attribute an
+    // unclaimed half-edge to the terminal event DOWNSTREAM of it rather than
+    // re-deriving the relation — a second copy of the coupler resolution is the
+    // parallel-mechanism anti-pattern the header forbids for widths.
+    successors: [...succ.entries()],
+    unbuilt,
     stats: {
-      chains: streets.length, arcs: arcs.length, halfEdges: halves.size,
+      chains: streets.length, arcs: arcs.length,
+      halfEdgesExpected: arcs.length * 2, halfEdges: halves.size, halfEdgesUnbuilt: unbuilt.length,
       couplerPairs: pairs, withSuccessor: succ.size,
       pairsUnresolvedBoth: unresolved.both, pairsNoInbound: unresolved.noInbound,
       pairsNoOutbound: unresolved.noOutbound, pairsAlreadyClaimed: unresolved.alreadyClaimed,
@@ -354,6 +391,13 @@ export function completeness(runs) {
     for (const [k, h] of universe) if (!keys.has(k)) universeMismatch.push({ label, ...h })
   }
 
+  // ⛔⛔ THE DENOMINATOR IS WHAT THE ARCS OWE, NOT WHAT GOT BUILT. Every arc owes
+  // two half-edges. One that failed to build is ABSENT, not unclaimed — it never
+  // enters `universe`, so measuring coverage against `universe` alone REWARDS the
+  // failure with a higher percentage. Reported separately and loudly.
+  const expected = runs[0]?.result?.stats?.halfEdgesExpected ?? universe.size
+  const unbuilt = runs[0]?.result?.unbuilt ?? []
+
   const claimsByKey = new Map([...universe.keys()].map(k => [k, []]))
   const perRun = []
   const faceSig = new Map()   // sorted half-edge key set -> [{label, faceIdx}]
@@ -394,7 +438,7 @@ export function completeness(runs) {
     .map(([sig, hits]) => ({ edges: sig.split('').length, hits }))
 
   return {
-    universe: universe.size, universeMismatch, perRun,
+    universe: universe.size, expected, unbuilt, universeMismatch, perRun,
     joint: [...joint.entries()]
       .map(([sig, list]) => ({ pattern: sig, count: list.length, members: list }))
       .sort((a, b) => b.count - a.count),

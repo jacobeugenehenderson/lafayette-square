@@ -14,100 +14,22 @@
 // ⛔ ksi-y-m-yn · centrum · altadena are CHILLERED. This probe refuses them by
 //    name and prints CHILLERED rather than a number.
 //
-import fs from 'fs'
-import crypto from 'crypto'
+import { loadScene, banner, ARG, CHILLERED } from './_substrate-feed.mjs'
+
 const o = console.log; console.log = () => {}
 const { walkSubstrate, completeness } = await import('../src/lib/substrateWalk.js')
-const { resolveChainSegmentation } = await import('../src/lib/buildBlockGeometryV2.js')
 console.log = o
 
-const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--${k}=`)); return a ? a.split('=')[1] : d }
-const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
-
-const CHILLERED = ['ksi-y-m-yn', 'centrum', 'altadena']
 const SCENE = ARG('scene', 'lafayette-square')
 if (CHILLERED.includes(SCENE)) { o(`  ${SCENE}: CHILLERED (2026-08-13) — made for a pitch, pitch made. ⛔ No number is printed for it.`); process.exit(0) }
-const DEFAULT_RIBBONS = SCENE === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${SCENE}/clean/ribbons.json`
-const RIBBONS_PATH = ARG('ribbons', DEFAULT_RIBBONS)
 const WIDTH_MODE = ARG('widths', 'both')
-const raw = JSON.parse(fs.readFileSync(RIBBONS_PATH, 'utf8'))
-// A clean/map.json is the POUR; src/data/ribbons.json is the PROMOTED bundle.
-// Both are read here so a measurement can name which bytes it was taken on
-// without a promote — ⛔ promoting is a material clobber of the operator's map
-// (cartograph/promote-ribbons.js refuses to do it silently) and is not this
-// probe's business.
-const ribbons = raw.layers?.ribbons || raw
-const NB_PATH = `cartograph/data/${SCENE}/neighborhood_boundary.json`
-const DESIGN_PATH = `public/looks/${SCENE}/design.json`
-const nb = JSON.parse(fs.readFileSync(NB_PATH, 'utf8'))
-const design = JSON.parse(fs.readFileSync(DESIGN_PATH, 'utf8'))
 
-o('═══ SCENE + ARTIFACTS (an eye-gate must record its scene; so must a probe) ═══')
-o(`  scene ........................ ${SCENE}  (⛔ lafayette-square and lafayette-square-staging are DIFFERENT MAPS)`)
-o(`  ribbons READ FROM ............ ${RIBBONS_PATH}`)
-o(`                                 ${H(RIBBONS_PATH)}${raw.layers ? '   (the POUR — layers.ribbons, untracked/gitignored)' : '   (the PROMOTED bundle)'}`)
-o(`  junction nodes / coupler pairs  ${(ribbons.junctionMap?.nodes || []).length} / ${(ribbons.junctionMap?.nodes || []).reduce((s, n) => s + (n.cornersAdjacent || []).length, 0)}   via:'cap' ${(ribbons.junctionMap?.nodes || []).reduce((s, n) => s + (n.cornersAdjacent || []).filter(c => c.via === 'cap').length, 0)}`)
-o(`  design.json .................. ${H(DESIGN_PATH)}   ${Object.keys(design.blockCustoms || {}).length} authored streets`)
-o(`  neighborhood_boundary.json ... ${H(NB_PATH)}   (read HERE, passed as an argument — the walk never opens it)`)
-
-const streets = (ribbons.streets || []).filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-const bc = design.blockCustoms || {}
-const byId = new Map(streets.map(s => [s.skelId, s]))
-
-// ⚠️ WIDTH RESOLUTION LIVES HERE, NOT IN THE WALK — deliberately, so the walk
-// carries no second widths mechanism.
-//
-// ⭐ PER SEGORD, THROUGH THE MECHANISM THAT ALREADY EXISTS. The producer's rule,
-// mirrored line for line and NOT reinvented:
-//   · IX identity  — `resolveChainSegmentation` (buildBlockGeometryV2.js:701),
-//     the SSoT for "what is an IX on this chain"; imported, not copied.
-//   · segOrd of a SPAN — tileGround.js:2739 `runSegOrd` / :2779 `segOrdAtVertex`:
-//     the number of interior-IX vertices at or before the span's LOWER original
-//     index. This is why the walk now hands `widthAt` the arc: a custom resolves
-//     per RUN, and a bare vertex index cannot express a span.
-//   · the override read — tileGround.js:2770 `feWidthAt`: a custom's pavementHW
-//     LAYERS onto the chain measure and is taken only when finite, so a custom
-//     carrying materials alone (mississippi-avenue|right|3) does not read as 0.
-// ⚠️ The IX set is resolved over the SAME filtered street list the SHAPE
-// producer uses (points≥2, grade-sep excluded — tileGround.js:2681) — not
-// buildBlockGeometryV2's unfiltered list, which would partition differently.
-// ✅ Measured, not assumed: `effectiveMeasure` (tileGround.js:1166) rewrites only
-// `treelawn`/`sidewalk`, never `pavementHW`, so the per-chain BASE here is
-// byte-identical to the producer's.
-const segSets = resolveChainSegmentation(streets)
-const ixByChain = new Map()
-for (const s of streets) {
-  const n = s.points.length
-  ixByChain.set(s.skelId, [...(segSets.get(s) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b))
-}
-const segOrdAt = (skelId, lower) => { let so = 0; for (const i of (ixByChain.get(skelId) || [])) if (i <= lower) so++; return so }
-const baseHW = (skelId, side) => Math.max(0, byId.get(skelId)?.measure?.[side]?.pavementHW || 0)
-
-function widthAtSegOrd(skelId, side, vertexIdx, arc) {
-  if (!byId.has(skelId)) return NaN
-  const segOrd = segOrdAt(skelId, arc ? arc.i0 : vertexIdx)
-  const c = bc[skelId]?.[side]?.[segOrd]
-  return (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : baseHW(skelId, side)
-}
-
-// ⛔ KEPT ONLY AS THE COMPARAND for the degenerate-face re-attribution below —
-// this is the pre-2026-08-14 feed and it is WRONG: it ignores the vertex it is
-// handed and keeps whichever authored half-width Object.keys enumerated last.
-// Never the default.
-const hwCacheChain = new Map()
-function widthAtChain(skelId, side) {
-  const k = skelId + '|' + side
-  if (hwCacheChain.has(k)) return hwCacheChain.get(k)
-  if (!byId.has(skelId)) { hwCacheChain.set(k, NaN); return NaN }
-  let hw = baseHW(skelId, side)
-  const cust = bc[skelId]?.[side]
-  if (cust) for (const segOrd of Object.keys(cust)) {
-    const v = cust[segOrd]?.pavementHW
-    if (Number.isFinite(v)) hw = v
-  }
-  hwCacheChain.set(k, hw)
-  return hw
-}
+// ⭐ The scene + the per-segOrd width feed live in ONE module, shared with
+// scratch/slice2-unclaimed-classes.mjs. Two probes each carrying their own copy
+// of the resolution is the parallel-mechanism anti-pattern one level up.
+const S = await loadScene(SCENE, ARG('ribbons', null))
+banner(S, o)
+const { ribbons, streets, bc, byId, segOrdAt, ixByChain, widthAtSegOrd, widthAtChain, outerRing } = S
 
 o(`\n═══ THE WIDTH FEED — what per-segOrd resolution actually changes ═══`)
 {
@@ -198,9 +120,6 @@ o(`\n═══ THE WIDTH FEED — what per-segOrd resolution actually changes �
   o(`     segOrd beyond the chain's natural segment count ............................ ${orphans.length}${orphans.length ? '  ' + orphans.slice(0, 6).join(' ') : ''}`)
 }
 
-const [cx, cz] = nb.center
-const outerRing = nb.boundary.map(([x, z]) => [cx + (x - cx), cz + (z - cz)])
-
 const MODES = WIDTH_MODE === 'both' ? ['segord', 'chain'] : [WIDTH_MODE]
 const ORIENTATIONS = ['a-to-b', 'b-to-a']
 const feed = { segord: widthAtSegOrd, chain: widthAtChain }
@@ -259,9 +178,11 @@ for (const mode of MODES) {
   const C = completeness(ORIENTATIONS.map(or => ({ label: or, result: RUNS[mode][or] })))
   o(`\n  ── widths = ${mode}`)
   if (C.universeMismatch.length) o(`     ⛔⛔ HALF-EDGE UNIVERSE DIFFERS ACROSS TRAVERSALS (${C.universeMismatch.length}) — every count below is void.`)
-  o(`     half-edge universe ......... ${C.universe}`)
+  o(`     half-edges the arcs OWE .... ${C.expected}   (2 per arc — the honest denominator)`)
+  o(`     ⛔ NEVER BUILT ............. ${C.unbuilt.length}   ${C.unbuilt.length ? '(' + [...new Set(C.unbuilt.map(u => u.reason))].join(', ') + ') — ABSENT, not unclaimed; they can never be claimed by anything' : ''}`)
+  o(`     universe actually built .... ${C.universe}`)
   for (const r of C.perRun) {
-    o(`     ${r.label.padEnd(10)} faces ${String(r.faces).padStart(4)} · claimed once ${String(r.claimedOnce).padStart(4)} (${(100 * r.claimedOnce / C.universe).toFixed(1)}%) · UNCLAIMED ${String(r.unclaimed.length).padStart(4)} · MULTI-CLAIMED ${r.multi.length}`)
+    o(`     ${r.label.padEnd(10)} faces ${String(r.faces).padStart(4)} · claimed once ${String(r.claimedOnce).padStart(4)} — ${(100 * r.claimedOnce / C.expected).toFixed(1)}% of OWED / ${(100 * r.claimedOnce / C.universe).toFixed(1)}% of built · UNCLAIMED ${String(r.unclaimed.length).padStart(4)} · MULTI-CLAIMED ${r.multi.length}`)
   }
   o(`     joint claim pattern (${ORIENTATIONS.join(', ')}):`)
   for (const j of C.joint) {
