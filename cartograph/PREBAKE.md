@@ -114,9 +114,14 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > ### ✅ RULED 2026-08-12 — THE RIM IS THE SUBSTRATE'S JOB; ② CLOSED WITHOUT REMOVING THE CLIP
 > `__boundary__` is a **synthetic id with no chain behind it in `ribbons.streets`** (`RIBBONS §1`), so
 > `derive.js:4697` closes the faces against the contour at **892** while the streets run on to **1030** and
-> get capped. **The chop is the missing rim chain, not the cut** ⇒ **the cure ships with the substrate
-> slice**, when the boundary becomes an ordinary chain with an ordinary band. ⛔ **Do not re-open the clip
-> for it.** *(Superseded: an earlier sequencing ruled "remove the artificial cut and reconnect the nodes
+> get capped. ⇒ **the cure ships with the substrate slice.** ⛔ **Do not re-open the clip for it.**
+> ⛔⛔ **ROT EVICTED 2026-08-21 — this sentence used to read "when the boundary becomes an ordinary chain
+> with an ordinary band." JACOB RETRACTED THAT ON 2026-08-12** (`RIBBONS §1`: *"I was wrong; the radius is
+> not an ordinary chain"*). **The rim BOUNDS, it does not OWN — no coupler, no band.** ⇒ the rim will
+> **never** supply junction nodes, so ⛔ **do not expect the nodeless-tip class to close as a side effect
+> of the boundary becoming a participant. It cannot.** *(The live candidate is different and unmeasured:
+> `derive.js:4632`'s own "build full, crop last" — the punch-out walks the FULL graph and the stencil
+> crops, in which case the clip's manufactured vertices are never walked. Unestablished; see the brief.)* *(Superseded: an earlier sequencing ruled "remove the artificial cut and reconnect the nodes
 > first." The measurement above closed it — there is no interior population to recover.)*
 >
 > What the clip did need was the two defects it shared with the bake bbox (`bake-ground.js`): a **floor**,
