@@ -49,10 +49,10 @@ function extractFn(src, name) {
   }
   return src.slice(start, i)
 }
-const naturalSegments = new Function(`${extractFn(V2_SRC, 'naturalSegments')}; return naturalSegments`)()
+export const naturalSegments = new Function(`${extractFn(V2_SRC, 'naturalSegments')}; return naturalSegments`)()
 
 // ── scene load — AUTHORING ON (design.json blockCustoms), per Layer 0 Q3 ───
-function loadScene(scene) {
+export function loadScene(scene) {
   const ribPath = scene === 'lafayette-square'
     ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
   const ribbons = JSON.parse(rd(ribPath))
@@ -78,9 +78,9 @@ function loadScene(scene) {
 }
 
 // ── geometry helpers ───────────────────────────────────────────────────────
-const nodeKey = p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`
-const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1])
-function quantiles(arr) {
+export const nodeKey = p => `${p[0].toFixed(3)},${p[1].toFixed(3)}`
+export const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1])
+export function quantiles(arr) {
   if (!arr.length) return { min: NaN, p05: NaN, median: NaN }
   const s = [...arr].sort((a, b) => a - b)
   const at = q => s[Math.min(s.length - 1, Math.floor(q * (s.length - 1)))]
@@ -141,15 +141,15 @@ function feMidpoint(pts) {
 }
 
 // ── the measurement ────────────────────────────────────────────────────────
-function measure(scene) {
-  console.log(`\n${'='.repeat(78)}\n${scene}\n${'='.repeat(78)}`)
+// THE ONE DERIVATION. Exported so a sibling probe consumes it rather than
+// restating it — a second copy of the span/pair derivation is how they drift.
+export function deriveNodePairs(scene) {
   const { ribbons, design, v2, stencil } = loadScene(scene)
   const streets = ribbons.streets || []
   const ixByChain = resolveChainSegmentation(streets)
   const fes = v2.frontageEdges || []
   const keyable = [], unkeyable = []
   for (const fe of fes) (feCustomKey(fe) ? keyable : unkeyable).push(fe)
-  console.log(`fes ${fes.length} · keyable ${keyable.length} · NOT keyable today ${unkeyable.length} (no chain id / no side / no owned segment — out of scope: cannot carry a custom under EITHER key)`)
 
   // ─ ① TOTALITY ─
   const derived = []          // { fe, key, U, V, uIdx, vIdx, chain, sign }
@@ -189,6 +189,36 @@ function measure(scene) {
     derived.push({ fe, key, name, U, V, uIdx, vIdx, chain, sign, span: dist(U, V),
       offRatio, perp: prj.perp, clamped: prj.clamped, hw, withSpan: dot >= 0 ? 1 : -1 })
   }
+  return { ribbons, design, v2, stencil, streets, fes, keyable, unkeyable, derived, failTotality, nonContiguous }
+}
+
+// ④'s classification, exported so the sibling probe shares ONE definition of
+// "a break" rather than restating the convention.
+export function classifySides(derived) {
+  const table = new Map()   // `${side}|${sign}` → count
+  const degenSign = []
+  for (const d of derived) {
+    if (d.sign === 0) { degenSign.push(d); continue }
+    const k = `${d.fe.side}|${d.sign}`
+    table.set(k, (table.get(k) || 0) + 1)
+  }
+  // Majority convention per side, then NAME every fe that breaks it.
+  const majSign = {}
+  for (const side of new Set(derived.map(d => d.fe.side))) {
+    const plus = table.get(`${side}|1`) || 0, minus = table.get(`${side}|-1`) || 0
+    majSign[side] = plus >= minus ? 1 : -1
+  }
+  const sidesUsed = Object.keys(majSign)
+  const conventionClean = sidesUsed.length === 2 && majSign[sidesUsed[0]] !== majSign[sidesUsed[1]]
+  const sideBreaks = derived.filter(d => d.sign !== 0 && d.sign !== majSign[d.fe.side])
+  return { table, degenSign, majSign, sidesUsed, conventionClean, sideBreaks }
+}
+
+function measure(scene) {
+  console.log(`\n${'='.repeat(78)}\n${scene}\n${'='.repeat(78)}`)
+  const { ribbons, design, stencil, streets, fes, keyable, unkeyable, derived, failTotality, nonContiguous } = deriveNodePairs(scene)
+  console.log(`fes ${fes.length} · keyable ${keyable.length} · NOT keyable today ${unkeyable.length} (no chain id / no side / no owned segment — out of scope: cannot carry a custom under EITHER key)`)
+
   console.log(`\n① TOTALITY — every keyable fe yields an ordered node pair`)
   console.log(`   ${derived.length}/${keyable.length} yield a pair · ${failTotality.length} FAIL`)
   for (const f of failTotality) console.log(`   ❌ ${f.name} — ${f.why}`)
@@ -200,25 +230,10 @@ function measure(scene) {
   // ─ ④ SIDE FROM ORDER (measured before ②/③, which consume the order) ─
   // Contingency: fe.side × geometric sign. The CONVENTION is not assumed — it is
   // read off the table. ④ passes only if the table is a clean 2x2 bijection.
-  const table = new Map()   // `${side}|${sign}` → count
-  const degenSign = []
-  for (const d of derived) {
-    if (d.sign === 0) { degenSign.push(d); continue }
-    const k = `${d.fe.side}|${d.sign}`
-    table.set(k, (table.get(k) || 0) + 1)
-  }
+  const { table, degenSign, majSign, sidesUsed, conventionClean, sideBreaks } = classifySides(derived)
   console.log(`\n④ SIDE FROM ORDER — §4.1's load-bearing ⭐⭐ claim: the pair's ORDER supplies \`side\``)
   console.log(`   contingency (fe.side × geometric side of the directed span U→V):`)
   for (const [k, n] of [...table].sort()) console.log(`      side=${k.split('|')[0]} × sign=${k.split('|')[1] === '1' ? '+1' : '-1'} : ${n}`)
-  // Majority convention per side, then NAME every fe that breaks it.
-  const majSign = {}
-  for (const side of new Set(derived.map(d => d.fe.side))) {
-    const plus = table.get(`${side}|1`) || 0, minus = table.get(`${side}|-1`) || 0
-    majSign[side] = plus >= minus ? 1 : -1
-  }
-  const sidesUsed = Object.keys(majSign)
-  const conventionClean = sidesUsed.length === 2 && majSign[sidesUsed[0]] !== majSign[sidesUsed[1]]
-  const sideBreaks = derived.filter(d => d.sign !== 0 && d.sign !== majSign[d.fe.side])
   if (!conventionClean) {
     console.log(`   ❌ NO CLEAN CONVENTION — both sides map to the same geometric sign. Order CANNOT supply \`side\`.`)
   } else {
@@ -377,8 +392,9 @@ function measure(scene) {
     conventionClean, minNN: q.min, jmMissing: missing.length, capSlots: capSlots.length }
 }
 
+const isMain = process.argv[1] && process.argv[1].endsWith('claims-node-pair-key-parity.mjs')
 const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']
-const results = scenes.map(measure)
+const results = isMain ? scenes.map(measure) : []
 console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
 for (const r of results) {
   console.log(`${r.scene}: ① ${r.derived}/${r.keyable} pairs, ${r.failTotality} fail · ② ${r.collisions} collisions · ③ see above · ④ ${r.conventionClean ? 'convention clean' : 'NO CLEAN CONVENTION'}, ${r.sideBreaks} breaks · ⑤ min NN ${r.minNN.toFixed(2)} m · ⑥ ${r.capSlots} cap slots · junctionMap absent for ${r.jmMissing} consulted nodes`)
