@@ -267,23 +267,39 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 > - ⚠️ **UNMEASURED, the live exposure: node stability across a RE-FETCH** (a weld concatenates; a
 >   re-fetch may re-*digitize*). ❓ And whether a divided road's 4-node cluster is one node or four.
 
-> ### ⛔⛔ THE KEY BUILT ON IT IS **OPEN, NOT SETTLED** — parity measured 2026-08-21, and it FAILS
+> ### ⛔⛔ THE KEY BUILT ON IT IS **OPEN, NOT SETTLED** — parity measured 2026-08-21; it does NOT pass
 > *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
 > `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`. ⭐ It was **ASPIRATION
 > filed as done** — `CLAUDE.md`'s third mismatch cause — so it is surfaced as work, never evicted.)*
 > ▶ **`node scratch/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
 > ⛔ **Reproduce, never quote.** In the order that matters:
-> - ⛔⛔ **THE FREEZE DOES NOT HOLD THE NODES THE KEY NEEDS.** `ribbons.junctionMap` is **not a superset**
->   of the consulted population. **`§4.1`'s premise is "carry it, never re-derive it" — there is nothing
->   to carry.** Upstream of everything else here; rule on this first.
-> - ⛔ **The consult tolerance does not survive town #2**, and on HPDM it falls **below the 0.5 m EPS
+> - ⚠️⚠️ **THE SUPERSET CLAIM IS MEASURED ON THE WRONG ARTIFACT — RE-MEASURE OWED.** *(corrected
+>   2026-08-21, same day it was written.)* The probe reads the **promoted bundle** (`:56-58` →
+>   `src/data/ribbons.json` for LS, `clean/ribbons.json` elsewhere). **Those predate `9f53ef39`, the
+>   junction-node mint.** The fresh un-promoted pour in `clean/map.json` carries materially more nodes
+>   on both towns. ⇒ **What was measured is "the artifact PRODUCTION reads lacks these nodes" — true,
+>   and its cure is the promote. What `§4.1` needs is "CAN the freeze hold them," which is unmeasured.**
+>   ⛔ Do not cite this as a design finding until it is re-run against `clean/map.json`.
+>   ⭐ **The instrument-input rule (`BOZ §3`) exists for exactly this and was not applied.**
+> - ⚠️ **The consult tolerance does not survive town #2** — on HPDM it falls **below the 0.5 m EPS
 >   `resolveChainSegmentation` uses to decide what an intersection IS** (`buildBlockGeometryV2.js:702`).
-> - ⛔ **`side` does NOT fall out of the pair's ORDER** — breaks on both towns, two independent
->   instruments agreeing. The sign convention is clean; breaks sit where an fe's midpoint is not one
->   half-width off its own span. ⭐ **Cause not established.** Two candidate loci, **both UPSTREAM of the
->   key**: `assignSegOrdsToFes` (`buildBlockGeometryV2.js:1026`) crediting an fe a span it does not
->   front, and the `min..max` span derivation under non-contiguous `segOrd` ownership. ⇒ **"fix the key
->   first" may itself sit behind fixing the fe↔span attribution.** Same disease as `SKELETON §5g`(`:297`).
+>   ⚠️ **Computed off the same pre-mint node set as the bullet above ⇒ this number moves too. Re-measure
+>   with it.**
+> - ⚠️ **`side` and the pair's ORDER disagree on 18 fes — but only ONE is a real contradiction**
+>   *(re-measured 2026-08-21, `f5e76aef`. ▶ `node scratch/claims-side-baseline-audit.mjs`.)* On 4 of the
+>   18, `fe.side` is **UNDEFINED** — its own probe point sits ~0 m off the centerline against half-widths
+>   of 4–8 m, so the comparison was against a coin flip. ⛔ **`fe.side` is NOT a point-order-relative
+>   label** — `buildBlockGeometryV2.js:1271-1273` computes the same cross product the test used, so
+>   `4124c486`'s mechanism cannot reach this comparison (it bites `derive.js`'s `roadId|side` grouping,
+>   one consumer down). What the two DO differ in is **which geometry each picks**: `fe.side` takes the
+>   nearest chain segment **anywhere on the chain**; the test takes the **credited span**.
+> - ⭐⭐ **∴ THE LOCUS IS fe↔SPAN ATTRIBUTION, AND IT IS NARROWED TO ONE FUNCTION.** Of the fes whose
+>   midpoint projects off the end of its span, **LS 0 of 3 fail · HPDM 5 of 8 fail**, and **0 own
+>   non-contiguous `segOrd`s** ⇒ the `min..max` span derivation is **EXONERATED**; the **credit** is the
+>   locus — `assignSegOrdsToFes` (`buildBlockGeometryV2.js:1026`) attributing a segment to an fe that
+>   does not front it. ⭐ **Invisible on LS, visible on HPDM** — town #2 caught what the mould could not.
+>   Vivid instance: `oak-knoll-park-0/left/0`, **0% interior to its span yet 100% within the ±half-width
+>   band** — a perfect frontage edge of something, just not the span it was given.
 > - ⛔ **One collision is ACROSS TWO STREETS** on a short shared span — ⭐ **not** fixed by fixing `side`;
 >   it is a property of the pair.
 > - ⚠️ **A pair-keyed store cannot be read by the BAKE as it stands** — `tileGround.js:1658` reads per

@@ -40,16 +40,22 @@ authoring ON). Live home of the open question: `EXTENT-DESIGN §4.1`.
 |---|---|
 | tolerance "unambiguous below 2.53 m" | ⛔ **does not survive town #2.** The number was LS-only and was never re-run elsewhere. |
 | "26 of 28 `segOrd` slots keyable" | ⛔ **superseded** — a 28-slot sample, not the fe population. Run at fe level on both towns it does not hold. |
-| ⭐⭐ "the ORDER supplies `side`" | ⛔ **FAILS on both towns**, corroborated by two independent instruments. The sign convention itself is clean; the breaks sit where an fe's midpoint is not one half-width off its own span, or projects off the end of it. **Cause not established.** |
+| ⭐⭐ "the ORDER supplies `side`" | ⚠️ **SOFTENED 2026-08-21** (`f5e76aef`). 18 disagreements across both towns, but **only ONE is a real contradiction** — on 4, `fe.side` is itself undefined (probe point ~0 m off the centerline). ⛔ The retirement does **not** rest on this clause. |
 | ⭐⭐⭐ "chains need no permanent id at all" | ⛔ **does not follow** — it was a corollary of the clause above. Not refuted on its own merits; **unsupported.** |
 | ⚠️ cap slots may be clip artifacts | ✅ **DISCHARGED.** All 3 authored LS cap tips verified per-tip: interior real dead ends, deg-1, 224–591 m inside the stencil. `carroll-street-0` and `south-18th-street-3` are not clip artifacts. |
 
-## The finding the box never anticipated
+## The finding the box never anticipated — ⚠️ AND ITS OWN CORRECTION, SAME DAY
 
-⛔ **The frozen `ribbons.junctionMap` is NOT a superset of the node population the key must consult.**
-`§4.1`'s premise is *"a frozen frame fact … carry it, never re-derive it."* A large share of the
-consulted endpoints are absent from the freeze at exact coordinates, so the consult would have to
-re-derive the very population it is supposed to trust. **This is upstream of every clause above.**
+It was reported that the frozen `ribbons.junctionMap` is **not a superset** of the node population the
+key must consult, and that this is upstream of every clause above.
+
+⚠️ **That was measured on the PROMOTED BUNDLE, which predates `9f53ef39` — the junction-node mint.**
+The fresh un-promoted pour carries materially more nodes on both towns. ⇒ What was actually
+established is *"the artifact **production** reads lacks these nodes"* — true, and its cure is the
+**promote**, not a redesign. Whether the freeze **can** hold them is **unmeasured**.
+⭐ Recorded here because the correction is the more useful artifact than the claim: **the
+instrument-input rule (`BOZ §3` — "can the instrument SEE the change? disk or live?") was written into
+the very brief that produced this, and then not applied to the result.**
 
 ⭐ Note also that `§4.1`'s weld table, `ribbons.junctionMap.nodes`, and the key's consulted set are
 **three different populations**. They were read interchangeably. ⛔ Do not merge their counts.
