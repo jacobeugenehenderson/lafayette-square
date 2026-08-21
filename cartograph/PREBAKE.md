@@ -68,8 +68,8 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > `tileGround.js:2787` recomputes and caps) · `junctionMap` (frozen stamp) — plus the frozen tile caps.
 > ⚠️ **Name the population or the old figures do not reproduce:** they count **degree-1 nodes EXCLUDING
 > `gradeSeparated`** (57 chains held out on LS). On that population `94` total, `42` beyond the hood and
-> `33` interior-at-`<0.8R` reproduce exactly. **`29 at clip radius` does NOT — it measures 25 at any
-> tolerance to 5 m. Cause not established.**
+> `33` interior-at-`<0.8R` reproduce exactly. **`29 at clip radius` does NOT — it measures 25.**
+> ✅ **CAUSE ESTABLISHED 2026-08-21** — that 25 is the nodeless-tip population below, and it is exact.
 >
 > **What the clip does, measured:** it **never touches the interior dead-end population** — 51 interior
 > degree-1 tips pre-clip, 51 post. It manufactures **31 tips at the rim**, at exactly `keepR` (1030 m on
@@ -81,6 +81,30 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 >   freeze run **before the clip exists** (`pipeline.js:111` `deriveLayers` vs `:139`; `derive.js:4707`
 >   resolves caps against the original chain endpoints). ⇒ `RIBBONS §1`'s ruled dead-end class is **not**
 >   contaminated.
+> ### ⛔⛔ THE RECIPROCAL HALF — **THE CLIP MANUFACTURES VERTICES THAT HAVE NO NODE** *(2026-08-21, agent Gimbal, `6d2fcb4d`)*
+> This section knew the clip **strands** nodes outside the rim. It did not record the other direction, and
+> **that direction is what breaks the sidewalk band.**
+> ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour`
+> - **The sequence, in source:** `pipeline.js:111` `deriveLayers` builds `junctionMap` over **full-length
+>   chains**; the clip then runs and `clipRun` **mints brand-new endpoint coordinates** at the circle. The
+>   category filter is `if (Array.isArray(arr))` — `junctionMap` is an **object**, so it is **skipped**.
+>   ⇒ **A frozen index outlives a mutation of the geometry it indexes, with no re-derive and no refusal.**
+> - **Every nodeless degree-1 tip sits within 0.5 m of `keepR` — 25/25 LS · 67/67 HPDM, zero exceptions,
+>   zero unexplained.** ⛔ **No node source declined them; at derive time those vertices DID NOT EXIST.**
+>   Every source is correct. **There is no coverage gap in `junctionMap`.**
+> - **Downstream, and this is why it matters:** no node ⇒ no `cornersAdjacent` (the emitter iterates
+>   `jnodes.values()`) ⇒ the walk hits `no-successor`/`no-node` ⇒ **the run does not close** ⇒ a hole in
+>   the ped band. `substrateWalk.js:262-280`.
+> - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — **LS 48/305
+>   (16%) · HPDM 2006/2457 (82%)**. HPDM's index mostly describes streets that are not in the map.
+> - ⛔ **THE NAIVE CURE IS A PLAUSIBLE-LOOKING WRONG MAP:** minting a node at the cut promises a **cap
+>   coupler** there, i.e. the kit would render a guillotined arterial as a **cul-de-sac by design**.
+> - ⚠️ **Bears on the ruling below but does not overturn it** — that ruling rests on there being no
+>   interior population to recover, which still holds (51 interior tips pre-clip, 51 post). **What is new
+>   is the invalidation defect, which is general and not rim-specific.** Jacob's ruling owed.
+> - ⛔ **Populations here are POST-MINT (95 pendant-tip nodes, 25 rim tips); the figures above are
+>   PRE-MINT (29 deg-1 nodes, 31 rim tips). Different populations — never merge them.**
+>
 > - ⚠️ **`junctionMap` is stamped pre-clip and never re-filtered** — 0 of its 29 degree-1 nodes sit at the
 >   clip radius, but **19 of 31 unlocatable stamps name a chain the whole-feature drop removed**
 >   (agent A, `a2e0f6c4`). ⛔ **Do not read this as "Slice 1 is mostly artifact."** That reading came from

@@ -273,14 +273,13 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 > filed as done** — `CLAUDE.md`'s third mismatch cause — so it is surfaced as work, never evicted.)*
 > ▶ **`node scratch/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
 > ⛔ **Reproduce, never quote.** In the order that matters:
-> - ⚠️⚠️ **THE SUPERSET CLAIM IS MEASURED ON THE WRONG ARTIFACT — RE-MEASURE OWED.** *(corrected
->   2026-08-21, same day it was written.)* The probe reads the **promoted bundle** (`:56-58` →
->   `src/data/ribbons.json` for LS, `clean/ribbons.json` elsewhere). **Those predate `9f53ef39`, the
->   junction-node mint.** The fresh un-promoted pour in `clean/map.json` carries materially more nodes
->   on both towns. ⇒ **What was measured is "the artifact PRODUCTION reads lacks these nodes" — true,
->   and its cure is the promote. What `§4.1` needs is "CAN the freeze hold them," which is unmeasured.**
->   ⛔ Do not cite this as a design finding until it is re-run against `clean/map.json`.
->   ⭐ **The instrument-input rule (`BOZ §3`) exists for exactly this and was not applied.**
+> - ✅ **THE SUPERSET QUESTION IS CLOSED, AND IT WAS NEVER A COVERAGE GAP** *(2026-08-21)*. The nodes the
+>   key could not find are **vertices the CLIP manufactured after `junctionMap` was frozen** — no source
+>   declined them; at derive time they did not exist. **25/25 LS · 67/67 HPDM within 0.5 m of `keepR`.**
+>   ⇒ **`junctionMap`'s coverage is not the defect; a frozen index outliving its geometry is.**
+>   ⛔ Home is `PREBAKE §2.5a` — the mechanism, the populations and the ruling live there, not here.
+>   *(This bullet was wrong twice in one day — first as a design finding, then as "re-measure owed." Both
+>   retired to `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`.)*
 > - ⚠️ **The consult tolerance does not survive town #2** — on HPDM it falls **below the 0.5 m EPS
 >   `resolveChainSegmentation` uses to decide what an intersection IS** (`buildBlockGeometryV2.js:702`).
 >   ⚠️ **Computed off the same pre-mint node set as the bullet above ⇒ this number moves too. Re-measure
