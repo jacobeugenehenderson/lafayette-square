@@ -18,6 +18,16 @@
  */
 import { deriveNodePairs, classifySides, nodeKey, dist, quantiles } from './claims-node-pair-key-parity.mjs'
 
+// ⛔ The instrument-input guard applies here too — this probe consumes the same
+// derivation, so it inherits the same "which artifact?" hazard. NO DEFAULT.
+const ARGV = process.argv.slice(2)
+const SOURCE = (ARGV.find(a => a.startsWith('--source=')) || '').split('=')[1] || null
+if (!SOURCE) {
+  console.error(`⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.\n` +
+    `   usage: node scratch/claims-side-baseline-audit.mjs --source=pour|bundle [scene ...]`)
+  process.exit(2)
+}
+
 // ── the PHYSICAL side, by topology alone (4124c486 / claims-physical-side-reconcile) ──
 // Union the (chain, side) keys that are physically continuous. Join ONLY at a
 // DEGREE-2 end: "shares an endpoint" is not "is continuous with" — at a Y the
@@ -137,8 +147,9 @@ function feSideProbePoint(fe) {
 }
 
 function audit(scene) {
-  console.log(`\n${'='.repeat(78)}\n${scene}\n${'='.repeat(78)}`)
-  const { streets, derived } = deriveNodePairs(scene)
+  console.log(`\n${'='.repeat(78)}\n${scene}   [source: ${SOURCE}]\n${'='.repeat(78)}`)
+  const { streets, derived, ribPath } = deriveNodePairs(scene, SOURCE)
+  console.log(`reading ${ribPath}`)
   const { majSign, conventionClean, sideBreaks } = classifySides(derived)
   const phys = physicalSideGroups(streets)
   console.log(`physical-side union (deg-2 ends only, ENDPOINT_SNAP 0.15): joins ${phys.joins} · orientation FLIPS ${phys.flips} · deg>2 ends skipped ${phys.skippedDeg} · contradictions ${phys.contradicted.size}`)
@@ -255,7 +266,7 @@ function audit(scene) {
     bNoFront: bNoFront.length, bNonContig: bNonContig.length, flips: phys.flips, breaks: sideBreaks.length }
 }
 
-const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']
+const scenes = ARGV.filter(a => !a.startsWith('--')).length ? ARGV.filter(a => !a.startsWith('--')) : ['lafayette-square', 'hipointe-demun']
 const res = scenes.map(audit)
 console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
 for (const r of res) console.log(`${r.scene}: ${r.breaks} breaks = A ${r.A} · B ${r.B} · C ${r.C} · unpartitioned ${r.rest} | A on a label-flip chain: ${r.aWithFlip}/${r.A}, in-span ${r.aInSpan}/${r.A}, HARD (baseline well-defined) ${r.aHard}/${r.A} | B not fronting span: ${r.bNoFront}/${r.B} (non-contiguous ${r.bNonContig}) | road label-flips on town: ${r.flips}`)
