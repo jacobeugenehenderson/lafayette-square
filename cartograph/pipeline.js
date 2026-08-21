@@ -221,6 +221,17 @@ async function main() {
     const POLYLINE = new Set(['streets', 'alleys', 'paths'])
     const rb = layers.ribbons
     if (rb && typeof rb === 'object' && !Array.isArray(rb)) {
+      // ⛔ THE FROZEN-INDEX FLOOR — snapshot the chain ENDPOINTS the junction map
+      // was stamped against, before clipRun mints new ones. `deriveLayers` above
+      // built `ribbons.junctionMap` over FULL-LENGTH chains; the census below says
+      // out loud what the clip then does to it. Same vKey rounding as derive.js:3444.
+      const jvKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
+      const preClipEnds = new Map()
+      for (const it of (Array.isArray(rb.streets) ? rb.streets : [])) {
+        const p = it?.points
+        if (!p || p.length < 2) continue
+        preClipEnds.set(it.skelId ?? it.name, { start: jvKey(p[0]), end: jvKey(p[p.length - 1]), curbed: !it.gradeSeparated && !it.disabled })
+      }
       for (const key of ['streets', 'faces', 'tiles', 'medians', 'corridors', 'alleys', 'paths', 'intersections', 'junctions', 'nameTransitions']) {
         if (!Array.isArray(rb[key])) continue
         const before = rb[key].length
@@ -230,6 +241,42 @@ async function main() {
           rb[key] = rb[key].filter(keep)
         }
         dropped += before - rb[key].length; kept += rb[key].length
+      }
+      // ⛔⛔ [clip/frozen-index] A LOUD, NAMED, COUNTED CLASS — never a silent line.
+      // The key list above is the whole of what the clip touches, and `junctionMap`
+      // is NOT in it: the loop's own `Array.isArray(arr)` guard skips it, because it
+      // is an object. So every chain clipRun severs gains an endpoint no node source
+      // ever saw, and the node stamped at the real end is stranded outside `keepR`.
+      // Downstream: no node ⇒ no `cornersAdjacent` ⇒ substrateWalk cannot close the
+      // run ⇒ a hole in the pedestrian band. Root + measurement: PREBAKE §2.5a.
+      //   ▶ node scratch/claims-nodeless-tip-classifier.mjs --source=pour
+      // ⚠️⚠️ DELIBERATELY NOT FATAL. The condition is LIVE on every scene that clips
+      // (LS 25, HPDM 67 as of 2026-08-21), so `exit(1)` here bricks the pipeline for
+      // everyone before the cure exists. It earns its refusal the day the count is 0
+      // — and THAT IS A ONE-LINE CHANGE, made deliberately, right here.
+      const jnodes = rb.junctionMap?.nodes
+      if (Array.isArray(jnodes) && preClipEnds.size) {
+        const jmSet = new Set(jnodes.map(n => jvKey(n.at)))
+        const severed = [], manufactured = []
+        for (const it of rb.streets || []) {
+          const was = preClipEnds.get(it.skelId ?? it.name)
+          const p = it?.points
+          if (!was || !p || p.length < 2) continue
+          for (const [end, now] of [['start', jvKey(p[0])], ['end', jvKey(p[p.length - 1])]]) {
+            if (now === was[end]) continue
+            const who = `${it.skelId ?? it.name}/${end}`
+            if (jmSet.has(was[end])) severed.push(`${who}@${was[end]}`)
+            if (was.curbed && !jmSet.has(now)) manufactured.push(`${who}→${now}`)
+          }
+        }
+        const stranded = jnodes.filter(n => !keep({ points: [n.at] })).length
+        console.log(`  ⛔ [clip/frozen-index] junctionMap is NOT in the clipped key list — it is stamped pre-clip and never re-derived.`)
+        console.log(`     ${severed.length} chain-end(s) SEVERED whose frozen node the clip strands · ${manufactured.length} NEW endpoint(s) MANUFACTURED with no junction node · ${stranded} of ${jnodes.length} node(s) now beyond keepR ${keepR} m`)
+        if (manufactured.length) console.log(`     manufactured (no node ⇒ no coupler ⇒ the walk cannot close here): ${manufactured.join(' · ')}`)
+        if (severed.length) console.log(`     severed (their frozen node is now unreachable): ${severed.join(' · ')}`)
+        if (!severed.length && !manufactured.length) console.log(`     ✅ 0 and 0 — the frozen index and the clipped geometry agree. This is the state that makes the refusal above safe to arm.`)
+      } else if (preClipEnds.size) {
+        console.log(`  ⛔ [clip/frozen-index] NOT MEASURED — ribbons.junctionMap has no nodes[]. The census cannot run, so absence of a warning here means nothing.`)
       }
     }
     // Building MEMBERSHIP (KIT): the neighborhood is the area inside the

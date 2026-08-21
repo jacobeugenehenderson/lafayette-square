@@ -72,6 +72,11 @@ const POLYLINE_KEYS = grab(PIPELINE_SRC, 'pipeline.js', "the clip's POLYLINE set
 const CLIP_TOUCHES_JUNCTIONMAP = CLIP_KEYS.includes('junctionMap')
 const CLIP_TRIMS_STREETS = POLYLINE_KEYS.includes('streets') && CLIP_KEYS.includes('streets')
 
+// The FLOOR: the clip's loud named class. Its presence is a claim like any other —
+// checked in source, never assumed. `armed` = has it been flipped to a refusal yet.
+const FLOOR_PRESENT = /\[clip\/frozen-index\]/.test(PIPELINE_SRC)
+const FLOOR_ARMED = /\[clip\/frozen-index\][\s\S]{0,4000}?process\.exit\(/.test(PIPELINE_SRC)
+
 // ── the instrument-input guard (inherited from claims-node-pair-key-parity) ─
 const SOURCES = {
   pour: scene => `cartograph/data/${scene}/clean/map.json`,
@@ -243,4 +248,58 @@ for (const scene of scenes) {
   console.log(`\n─ DECLINED BY DESIGN (not part of the question, stated so it is not re-counted as a gap) ─`)
   console.log(`   ${interiorNodeless} mid-chain interior vertices carry no node. Source 0's gate refuses them by name`)
   console.log(`   ("would put a node on every vertex of every street"). CORRECT.`)
+
+  // ── THE FLOOR — is it still in pipeline.js, is it armed, and what will it print? ──
+  // ⭐ A DRY RUN, not a restatement: the census's own predicate is EXTRACTED from
+  // pipeline.js and evaluated here against the pre-clip endpoints (clean/skeleton.json,
+  // the chains deriveLayers consumed) and the post-clip artifact. So this predicts the
+  // next pour's line WITHOUT pouring, and it dies loudly if the floor is edited away.
+  console.log(`\n─ THE FLOOR (pipeline.js [clip/frozen-index]) — present? armed? what will it print? ─`)
+  if (!FLOOR_PRESENT) {
+    console.log(`   ⛔ ABSENT — the clip's [clip/frozen-index] census is not in pipeline.js. It was removed or renamed.`)
+    console.log(`      The clip is silent again. This is the failure the floor exists to stop; fix the source or fix this probe.`)
+  } else {
+    console.log(`   present · refusal ARMED (exit on a nonzero count): ${FLOOR_ARMED ? 'YES' : 'NO — prints only, by design, until the count is 0'}`)
+    let dry = null
+    try {
+      const sk = JSON.parse(rd(`cartograph/data/${scene}/clean/skeleton.json`))
+      const pre = new Map()
+      for (const s of sk.streets || []) {
+        const p = s.points
+        if (!p || p.length < 2) continue
+        pre.set(s.id, { start: vKey([p[0].x, p[0].z]), end: vKey([p[p.length - 1].x, p[p.length - 1].z]) })
+      }
+      const severed = [], manufactured = []
+      for (const it of S) {
+        const was = pre.get(it.skelId), p = it.points
+        if (!was || !p || p.length < 2) continue
+        for (const [end, now] of [['start', vKey(p[0])], ['end', vKey(p[p.length - 1])]]) {
+          if (now === was[end]) continue
+          if (jmSet.has(was[end])) severed.push(`${it.skelId}/${end}`)
+          if (curbed(it) && !jmSet.has(now)) manufactured.push(`${it.skelId}/${end}`)
+        }
+      }
+      dry = { severed: severed.length, manufactured: manufactured.length }
+      console.log(`   DRY RUN against clean/skeleton.json (the geometry deriveLayers consumed):`)
+      console.log(`      severed chain-ends whose frozen node the clip strands : ${dry.severed}  ⚠️ LOWER BOUND — see below`)
+      console.log(`      NEW endpoints manufactured with no junction node      : ${dry.manufactured}`)
+      console.log(`   ⇒ the pour will print the manufactured count exactly; the census captures pre-clip endpoints`)
+      console.log(`     IN PROCESS, while this dry run substitutes clean/skeleton.json for them. derive collapses`)
+      console.log(`     micro-segments at intersection vertices, so a skeleton endpoint is not always the ribbon`)
+      console.log(`     endpoint — that is why SEVERED reads low here. ⛔ Cause of the residual not established;`)
+      console.log(`     quote the pour's line for severed, this one only for manufactured.`)
+      // ⛔ The two predicates are NOT the same and are never merged: the census asks
+      // "did this endpoint move and is it nodeless"; the table above asks "is this a
+      // degree-1 tip with no node". A severed end landing among other chains is in the
+      // first and not the second. Report the relation; do not assert equality.
+      const rel = dry.manufactured === rows.length ? 'EQUAL' : dry.manufactured > rows.length
+        ? `census is LARGER by ${dry.manufactured - rows.length} — severed ends that are not degree-1 tips`
+        : `census is SMALLER by ${rows.length - dry.manufactured} — ⛔ a nodeless tip the census does not see. Investigate.`
+      console.log(`   vs this probe's ${rows.length} nodeless degree-1 tip(s): ${rel}`)
+    } catch (e) {
+      console.log(`   ⛔ DRY RUN NOT MEASURED — ${e.message}. Absence of a number here means nothing.`)
+    }
+    console.log(`   ⭐ THE GATE: when a cure lands, both counts go to 0 while the interior population is unmoved`)
+    console.log(`      (node scratch/claims-deadend-populations.mjs). 0/0 is when arming the refusal becomes safe.`)
+  }
 }
