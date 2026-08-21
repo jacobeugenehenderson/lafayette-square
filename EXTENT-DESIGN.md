@@ -243,7 +243,7 @@ by degree — dead-end / corner / T / cross / Y — and the prebake freezes the 
 `ribbons.junctionMap.nodes` (kinds[], legs, corners). This is a **frozen frame fact**, exactly like a
 building id, and it obeys the same rule: **carry it, never re-derive it.**
 
-> ### ⭐⭐⭐ THE NODE-IDENTITY SPEC — MEASURED AND SETTLED 2026-08-12 (agent Ferrule)
+> ### ⭐⭐⭐ NODES SURVIVE A WELD — MEASURED AND SETTLED 2026-08-12 (agent Ferrule)
 > **A real intersection cannot move under a weld. Measured on the REAL weld** (`skeleton.js` already
 > performs one: 324 fragments → 217 chains), not a simulation:
 > ```
@@ -254,43 +254,45 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 >   4 (cross)           83       83        0         0
 >   5+                  10       10        0         0
 > ```
-> ⭐ **deg≥3: 229 of 229 survive, ZERO move, ZERO dissolve — at EXACT coordinates, max displacement
-> 0.0000 m.** deg-1: 100/100. **Only degree-2 dissolves (74%) — and those were never intersections.**
-> **This doc's own `SKELETON §3` said why all along:** `weldLongitudinal` *"excludes degree-3+ nodes (a
-> Y/junction is not a weld point)"*, and step 8's junction-protected RDP forces junction vertices as
-> keeps. **The weld is structurally incapable of moving a real intersection.**
->
-> ⇒ **THE KEY: mint a node id, consult by POSITION, validate with the name-set, mint on miss.** That is
-> not an analogy to `fetch-msbf.js:179` — **it is the same mechanism**, since the msbf consult keys on
-> the building *centroid*, i.e. position. **Tolerance ceiling, measured:** nearest-neighbour distance
-> among the 229 is **min 2.53 m** · p05 7.30 · median 49.25 ⇒ **unambiguous below 2.53 m.**
-> *(⛔ An earlier warning that "a 0.5 m bucket is fragile" conflated two things: 0.5 m is fragile as a
-> **segmentation boundary**, not as an **intersection consult**.)*
-> - ⛔ **Name-sets KILLED as a key** — 34 colliding sets covering **76 of 229 nodes (33.2%)**, and the
->   collisions are **divided roads by construction** (a divided avenue crossing a street makes four
->   nodes with one name-set, 8–20 m apart). Fine as a *validator*, never as the key.
-> - ⭐⭐ **A RUN KEYS ON AN ORDERED NODE PAIR `(nodeA → nodeB)` — and the ORDER supplies the left/right
->   datum that `side` currently takes from chain forward-direction.** So the pair replaces **both**
->   `skelId` and `segOrd` in `feCustomKey`, and `side` keeps its meaning **without a chain**. A cap keys
->   on a single deg-1 node. **Measured: 26 of 28 `segOrd` slots keyable, ZERO failing for node
->   instability** (the 2 failures are the derive drift — endpoints absent from `skeleton.json`).
-> - ⭐⭐⭐ **∴ CHAINS NEED NO PERMANENT ID AT ALL** — they become exactly what `§1` already calls them,
->   *a downstream view, with identity living on the points.* **And that is what "the Measure Tool should
->   never encounter nodes or chains" requires: if nothing authored is chain-keyed, nothing chain-shaped
->   needs to reach Measure.**
-> - ⛔ **OSM node ids are RECEIVED AND THROWN AWAY** — `fetch.js:122` builds `nodes[el.id]`, `:140`
->   iterates `way.nodes`, and the id is discarded when projecting to coords. **We are handed a permanent
->   upstream identity and drop it one line before use.** Carrying `way.nodes[i]` onto each coord is small
->   and would make the consult exact rather than positional. **Own ticket.**
-> - ⚠️ **UNMEASURED, and it is the live exposure: node stability across a RE-FETCH.** A weld concatenates
->   geometry; a re-fetch may re-*digitize* it. The tolerance is what would save the consult, and that is
->   untested — **the same exposure the msbf centroid consult already carries**, so the precedent is
->   honest but it is not proof.
-> - ⚠️ **The 2 cap slots may be keyed to CLIP ARTIFACTS** (`carroll-street-0`, `south-18th-street-3`) —
->   `skeleton.json` is pre-clip so its deg-1 tips are real, but this was not verified per-tip. **Direct
->   interaction with the subtraction work; check it first.** → `PREBAKE §2.5a`.
-> - ❓ Unsettled by measurement: whether a divided road's **4-node cluster** should model as one node or
->   four. Treated as four here, which is what the graph says.
+> ⭐ **deg≥3: 229 of 229 survive, ZERO move, ZERO dissolve — at EXACT coordinates.** deg-1: 100/100.
+> **Only degree-2 dissolves (74%) — and those were never intersections.** `SKELETON §3` said why all
+> along: `weldLongitudinal` *"excludes degree-3+ nodes (a Y/junction is not a weld point)"*, and step
+> 8's junction-protected RDP forces junction vertices as keeps. **The weld is structurally incapable of
+> moving a real intersection.**
+> ⛔⛔ **THIS IS THE ONLY SETTLED CLAIM IN §4.1. Everything derived from it is OPEN — next box.**
+> - ⛔ **Name-sets KILLED as a key** — 34 colliding sets over 229 nodes, and the collisions are **divided
+>   roads by construction**. Fine as a *validator*, never as the key.
+> - ⛔ **OSM node ids are RECEIVED AND THROWN AWAY** — `fetch.js:122`/`:140` discard `el.id` when
+>   projecting to coords. Carrying it would make the consult **exact rather than positional. Own ticket.**
+> - ⚠️ **UNMEASURED, the live exposure: node stability across a RE-FETCH** (a weld concatenates; a
+>   re-fetch may re-*digitize*). ❓ And whether a divided road's 4-node cluster is one node or four.
+
+> ### ⛔⛔ THE KEY BUILT ON IT IS **OPEN, NOT SETTLED** — parity measured 2026-08-21, and it FAILS
+> *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
+> `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`. ⭐ It was **ASPIRATION
+> filed as done** — `CLAUDE.md`'s third mismatch cause — so it is surfaced as work, never evicted.)*
+> ▶ **`node scratch/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
+> ⛔ **Reproduce, never quote.** In the order that matters:
+> - ⛔⛔ **THE FREEZE DOES NOT HOLD THE NODES THE KEY NEEDS.** `ribbons.junctionMap` is **not a superset**
+>   of the consulted population. **`§4.1`'s premise is "carry it, never re-derive it" — there is nothing
+>   to carry.** Upstream of everything else here; rule on this first.
+> - ⛔ **The consult tolerance does not survive town #2**, and on HPDM it falls **below the 0.5 m EPS
+>   `resolveChainSegmentation` uses to decide what an intersection IS** (`buildBlockGeometryV2.js:702`).
+> - ⛔ **`side` does NOT fall out of the pair's ORDER** — breaks on both towns, two independent
+>   instruments agreeing. The sign convention is clean; breaks sit where an fe's midpoint is not one
+>   half-width off its own span. ⭐ **Cause not established.** Two candidate loci, **both UPSTREAM of the
+>   key**: `assignSegOrdsToFes` (`buildBlockGeometryV2.js:1026`) crediting an fe a span it does not
+>   front, and the `min..max` span derivation under non-contiguous `segOrd` ownership. ⇒ **"fix the key
+>   first" may itself sit behind fixing the fe↔span attribution.** Same disease as `SKELETON §5g`(`:297`).
+> - ⛔ **One collision is ACROSS TWO STREETS** on a short shared span — ⭐ **not** fixed by fixing `side`;
+>   it is a property of the pair.
+> - ⚠️ **A pair-keyed store cannot be read by the BAKE as it stands** — `tileGround.js:1658` reads per
+>   RUN. A run→pair resolver is a **downstream blocker, not a key defect.** (The store also **fans** a
+>   measure across an fe's segOrds, `useCartographStore.js:26`; a pair key collapses that — expected.)
+> - ✅ **DISCHARGED — the cap slots are NOT clip artifacts.** All 3 authored LS tips verified per-tip:
+>   interior real dead ends, deg-1, well inside the stencil.
+> - ⭐ **Three different node populations are in play** — the weld table's, `junctionMap.nodes`, and the
+>   key's consulted set. They have been read interchangeably. ⛔ **Never merge their counts.**
 
 Today it is minted and then *not believed*: `extractFaces` emits `{ring, edges}` and drops the label,
 so the FILL re-guesses (dead-ends counted three ways — 70/29/50 — and 1400 m² of corner co-claim).
