@@ -44,30 +44,46 @@ operator's override is applied **at build time** inside `buildCurbRings` (`autho
 `tileGround.js:4192`). **So the frozen facts are look-agnostic — one scene's facts serve every Look,
 and freezing them does NOT freeze authoring.** That is what defuses the old blocker
 (`POLYGON-FIRST §3`: *"freezing `iA` at prebake would bake a bare-defaults curb"* — Layer 0 q3).
-⭐ **A03's reframe governs the location: the goal is CHAIN-FREEDOM, not prebake-location.**
-⛔ **So do NOT build a prebake migration.** Freeze where every other shape fact already freezes.
+⛔⛔ **CORRECTED 2026-08-21, after agent Kerb refused to build on it — the original text here said
+*"the goal is CHAIN-FREEDOM, not prebake-location ⇒ do NOT build a prebake migration."* THAT WAS THE
+AUTHOR'S ERROR AND IT MADE THE TICKET UNBUILDABLE.** A03's reframe is about **`buildCurbRings`'
+signature**, not about where the facts are written. **`tileGround.js:177` states the plan the author
+contradicted: `freezeCurbEdgeFacts` *"is what moves to prebake (D6b)."*** ⇒ **PREBAKE IS THE LOCATION.
+Ruled by Jacob, 2026-08-21.**
 
 ## 3. THE WORK
 
-**Carry `curbFacts` into the frozen artifact, so `:4186`'s `||` resolves to a frozen value.**
-- The artifact is assembled at `tileGround.js:4914` — `opts.emitArtifact ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] })) : undefined` — and written by `bake-ground.js:1060`.
-- ⇒ the facts must ride on the shape tile that `shapeTiles` collects, and be JSON-safe.
+**Freeze the facts at PREBAKE, into `ribbons.tiles`, and carry them through the whitelist.**
+⛔⛔ **`shape.json` IS THE WRONG FILE AND THE ORIGINAL §3 SAID TO USE IT. IT CANNOT REACH `:4186`** —
+measured by Kerb, verified independently:
+- `:3027` `tiles = tilesFromFrozen(ribbons?.tiles, streets)` — the read's input is **`ribbons.json`**.
+- `:1082` `tilesFromFrozen` pushes an explicit whitelist — `{ ring, edges, caps? }`. **Any other field
+  on the input is dropped by construction.**
+- `bake-ground.js:748` reads ribbons → `:1060` writes shape. **A ONE-WAY PIPE.** `shape.json`'s only
+  consumer is `sectionOpen` (the FILL, `BlockGeometryV2Debug.jsx:582`), which never re-enters
+  `buildTileGround`.
+- ⇒ writing `curbFacts` into `shape.json` **would ship a field no code reads and leave the fallback
+  100% hot** — the ticket's own defect, one file over.
+⇒ **The work:** produce the facts in `derive.js` onto `ribbons.tiles`, and **widen `tilesFromFrozen`'s
+whitelist** so they survive into `tile.curbFacts`.
 - ⛔ **DO NOT widen `buildCurbRings`' signature** (`:182`: *"the signature IS the guard"*). If the
   builder needs something it hasn't got, **freeze a new FACT** — never pass a chain in "just for this case."
 
-## 4. THE TWO THINGS TO ESTABLISH FIRST — ⛔ answer both BEFORE writing cure code
+## 4. THE TWO THINGS TO ESTABLISH FIRST — ✅ BOTH ANSWERED 2026-08-21 (agent Kerb, confirm pass)
 
-1. **WHAT INVALIDATES A FROZEN FACT?** `baseHW` derives from `measures` — the per-chain base the
-   operator edits in Survey. Frozen facts therefore go stale on a base-measure edit. **A re-freeze
-   trigger already exists** (`BlockGeometryV2Debug.jsx:849-868`, the Survey-exit re-freeze, `a96f00c2`).
-   **Establish whether it covers every path that changes `measures`.** ⛔ If it does not, a stale fact
-   is a plausible-looking wrong curb — **the worst outcome available** (Layer 0 q2). Report before building.
-2. **ORDERING — DOES THIS FREEZE WRONG DATA?** `WALL §1`: *"freezing WRONG data is worse than not
-   freezing at all; it launders garbage into authority,"* and the 2026-08-09 correction puts **A4's
-   robustness half UPSTREAM of A3**. **My read — CONFIRM OR REFUTE IT, do not inherit it:** A4's
-   fold/thorn defect is in the **offset geometry** produced by `buildCurbRings`, whereas the facts are
-   frame-derived **scalars and ids**, so the self-intersection is not in what we would freeze.
-   ⛔ **If that is wrong, this ticket is blocked on A4 and you must say so and stop.**
+1. ✅ **WHAT INVALIDATES A FROZEN FACT — ANSWERED 2026-08-21 (Kerb), AND IT ARGUES FOR PREBAKE.**
+   `baseHW ≡ ribbons.streets[i].measure[side].pavementHW` (`edgeDepth(…,'A')` returns at `:1276` before
+   `curbWidth` is touched). `derive.js` reads `overlay.json` (`:2511-2517`) → `streets[].measure` →
+   writes `ribbons.json` (`:4604`). ⇒ **at prebake the fact and its only input are one producer, one
+   run, one file — it cannot go stale**, and `serve.js:2033` already lists `overlay.json` in the
+   pipeline mtime gate, so a base-measure edit forces the re-derive. **No new trigger needed.**
+   ⛔ **In `shape.json` it COULD go stale** — the Survey-exit re-freeze re-freezes the shape artifact
+   from whatever `ribbons.json` currently is; it never regenerates `ribbons.json`. Fact and source in
+   different files, different producers, different times. **That is the second reason shape.json is wrong.**
+2. ✅ **ORDERING vs A4 — ANSWERED 2026-08-21 (Kerb), NOT BLOCKED.** `ROADMAP:314`'s gate is on freezing
+   the **offset geometry**; `offsetRingVariable` is called at `:288`, **inside `buildCurbRings`, strictly
+   downstream** of the facts. ⭐ And `iA` — the folded geometry itself — **is already frozen in
+   `shape.json` today, 93/101**, so freezing scalars adds no fold exposure that is not already laminated.
 
 ## 5. THE GATE — a harness already exists, use it
 
@@ -85,9 +101,12 @@ node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles;con
 
 ## 6. TRAPS, EACH ALREADY PAID FOR
 
-- ⛔ **The artifact is built ONLY when `opts.emitArtifact` is set** (`:4914`) — the live tool path does
-  not build it. **Name which surface you verified on: Survey renders LIVE, Section renders FROZEN.**
-  A fix visible in one and not the other is the 2026-07-31 failure.
+- ⛔ **Name which surface you verified on: Survey renders LIVE, Section renders FROZEN.** A fix visible
+  in one and not the other is the 2026-07-31 failure. ⚠️ **The trap here originally read *"the live tool
+  path does not build the artifact"* — FALSE, and struck 2026-08-21.** `BlockGeometryV2Debug.jsx:799`
+  passes `emitArtifact: true`; **the live path builds it too**, which is what makes the Survey-exit
+  re-freeze work at all. **`tileGround.js:4913`'s comment carries the same false claim — ROT, excise it
+  in this ticket.**
 - ⛔ **Prebake does not read `design.json`/`blockCustoms`** (`ORIENTATION` step 3). Anything frozen that
   depends on per-fe SHAPE intent freezes the to-code default. The facts are look-agnostic **by design** —
   keep them that way; the moment `authoredHW` leaks into `freezeCurbEdgeFacts`, this ticket has failed.
