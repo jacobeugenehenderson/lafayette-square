@@ -92,9 +92,18 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > - **Every nodeless degree-1 tip sits within 0.5 m of `keepR` — 25/25 LS · 67/67 HPDM, zero exceptions,
 >   zero unexplained.** ⛔ **No node source declined them; at derive time those vertices DID NOT EXIST.**
 >   Every source is correct. **There is no coverage gap in `junctionMap`.**
-> - **Downstream, and this is why it matters:** no node ⇒ no `cornersAdjacent` (the emitter iterates
->   `jnodes.values()`) ⇒ the walk hits `no-successor`/`no-node` ⇒ **the run does not close** ⇒ a hole in
->   the ped band. `substrateWalk.js:262-280`.
+> - **Downstream — and ⛔ READ THE SCOPE BEFORE THE CONSEQUENCE:** no node ⇒ no `cornersAdjacent` ⇒ the
+>   walk hits `no-successor`/`no-node` ⇒ **the run does not close** (`substrateWalk.js:262-280`).
+>   ⛔⛔ **THAT CHAIN ENDS INSIDE A SWITCHED-OFF PRODUCER. IT DOES NOT REACH THE SHIPPED MAP.**
+>   `cornersAdjacent` has exactly **one** consumer, `substrateWalk.js`, and the walk is **default-off,
+>   structurally**: `tileGround.js:3047` gates it on `opts.substrateTiles` (passed by nothing) or
+>   `SUBSTRATE_TILES=1` (absent in the browser). Flag off ⇒ **tiles are the frozen `shape.json`,
+>   byte-for-byte** (`tileGround.js:3042`, its own comment).
+>   ▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
+>   ⇒ **This defect explains nothing the operator is looking at today.** It is a blocker on the walk
+>   becoming the producer — real, and scoped to that. *(Corrected 2026-08-21: this line said "⇒ a hole in
+>   the ped band" flatly, and that framing sent two sessions into the chain graph after production
+>   symptoms.)*
 > - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — **LS 48/305
 >   (16%) · HPDM 2006/2457 (82%)**. HPDM's index mostly describes streets that are not in the map.
 > - ⛔ **THE NAIVE CURE IS A PLAUSIBLE-LOOKING WRONG MAP:** minting a node at the cut promises a **cap

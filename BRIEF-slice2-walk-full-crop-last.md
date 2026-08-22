@@ -8,6 +8,18 @@ framing — including this one. Re-run the commands.)*
 
 ---
 
+## ⛔⛔ SCOPE — READ THIS FIRST OR THE WHOLE DOCUMENT MISLEADS YOU *(added 2026-08-21)*
+
+**THE WALK IS SWITCHED OFF. NOTHING IN THIS BRIEF EXPLAINS THE MAP THE OPERATOR IS LOOKING AT.**
+`tileGround.js:3047` gates it on `opts.substrateTiles` — **passed by nothing** — or `SUBSTRATE_TILES=1`,
+absent in the browser. Flag off ⇒ **tiles are the frozen `shape.json`, byte-for-byte** (`:3042`).
+`cornersAdjacent` has **one consumer**, `substrateWalk.js`.
+▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
+
+⇒ **This brief is about making the walk fit to become the producer. It is NOT a diagnosis of any
+symptom on screen.** ⛔ Do not cite it when something looks wrong in the app. *(It was cited that way
+twice on 2026-08-21, by the author, from these very pages.)*
+
 ## 0. THE GOAL THIS SERVES — say it before you start
 
 **One continuous sidewalk band around the perimeter of every street, with end caps and corner
@@ -28,8 +40,8 @@ proposal makes a material choice change the geometry, it is wrong.
 - **Nodeless degree-1 tips: 25/25 LS · 67/67 HPDM within 0.5 m of `keepR`. Zero unexplained.**
   ⛔ **No node source declined them — at derive time the vertices did not exist.** Every source is
   correct. **There is no coverage gap in `junctionMap`.**
-- Downstream: no node ⇒ no `cornersAdjacent` (the emitter iterates `jnodes.values()`) ⇒
-  `substrateWalk` `no-successor`/`no-node` ⇒ **the run does not close** ⇒ **a hole in the ped band.**
+- Downstream: no node ⇒ no `cornersAdjacent` ⇒ `substrateWalk` `no-successor`/`no-node` ⇒ **the run
+  does not close.** ⛔ **Inside the switched-off walk only — see SCOPE above.** Not a shipped symptom.
 - **`no-node` is 100% the clip on both towns — 0 elsewhere.**
 - Reciprocal: nodes beyond `keepR` — **LS 48/305 · HPDM 2006/2457 (82%)**. *(LS's half re-derives from
   the bundle alone — `§2`'s one-liner.)*
