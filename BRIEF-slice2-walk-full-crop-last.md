@@ -31,7 +31,8 @@ proposal makes a material choice change the geometry, it is wrong.
 - Downstream: no node ⇒ no `cornersAdjacent` (the emitter iterates `jnodes.values()`) ⇒
   `substrateWalk` `no-successor`/`no-node` ⇒ **the run does not close** ⇒ **a hole in the ped band.**
 - **`no-node` is 100% the clip on both towns — 0 elsewhere.**
-- Reciprocal: nodes beyond `keepR` — **LS 48/305 · HPDM 2006/2457 (82%)**.
+- Reciprocal: nodes beyond `keepR` — **LS 48/305 · HPDM 2006/2457 (82%)**. *(LS's half re-derives from
+  the bundle alone — `§2`'s one-liner.)*
 
 ## 2. ESTABLISHED — the walk is CORRECT, and it is fed the wrong geometry
 
@@ -47,6 +48,25 @@ proposal makes a material choice change the geometry, it is wrong.
   / 278 HPDM chains carry a vertex beyond `keepR`** ⇒ post-clip, confirmed.
 - **Pre-clip geometry is NOT reachable at walk time.** `clean/skeleton.json` is cartograph-side and
   absent from the bundle. Full-graph input must be **carried through the freeze deliberately.**
+- ### ⭐⭐ AND THE DISAGREEMENT IS VISIBLE IN THE SHIPPED ARTIFACT ITSELF — no probe required.
+  **Jacob, 2026-08-21: “the nodes and chains are stripped out by the time we get to ribbons.”**
+  `src/data/ribbons.json` carries `junctionMap.nodes` **and** `streets[].points`, but they no longer
+  describe the same graph — the index is **pre-clip**, the geometry is **post-clip**:
+  ```
+  node -e "const r=require('./src/data/ribbons.json'),k=(x,z)=>Math.round(x*100)+','+Math.round(z*100),\
+  N=new Set(r.junctionMap.nodes.map(n=>k(n.at[0],n.at[1]))),V=new Set();let t=0,tn=0,o=0;\
+  for(const s of r.streets){if(!s.points)continue;for(const p of s.points)V.add(k(p[0],p[1]));\
+  if(s.points.length<2||s.gradeSeparated)continue;for(const p of [s.points[0],s.points.at(-1)]){t++;if(!N.has(k(p[0],p[1])))tn++;}}\
+  for(const n of r.junctionMap.nodes)if(!V.has(k(n.at[0],n.at[1])))o++;\
+  console.log('endpoints',t,'nodeless',tn,'| nodes',r.junctionMap.nodes.length,'orphan',o,\
+  '| chains named in legs',new Set(r.junctionMap.nodes.flatMap(n=>n.legs.map(l=>l.chain))).size,'streets',r.streets.length)"
+  ```
+  ⭐ It prints `§1`'s nodeless-tip and orphan-node counts back — **re-derived from the shipped bundle with
+  no probe and no `keepR`. The artifact is self-incriminating.** *(⛔ Don't quote its numbers here; run it.)*
+  ⛔ **What this rules out is a LOCATION, not an option:** whatever the cure is, it cannot run at the walk,
+  because what reaches the walk is a frozen index that has already parted company with its geometry.
+  ⛔ **Cause not established here** for whether a node graph could be re-derived from post-clip endpoints
+  at ribbons — that is §5 unknown 1's territory. Do not write that sentence until someone measures it.
 
 ## 3. ESTABLISHED — "build full, crop last" is ASPIRATION for the walk
 
