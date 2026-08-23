@@ -210,6 +210,40 @@ Cycle 1 endpoints used:
 
 ---
 
+## Full monte (`?view=fullmonte` → `src/components/TreeDiorama.jsx`)
+
+**The first view anywhere in the product that shows a FINISHED tree.** One
+specimen from the Look's **bake**, wearing the shared tree atlas the map's trees
+wear, mounted in the neighbourhood's real sky and lit by it, with the production
+sway driver attached. Not a composition check — a *ship* check.
+
+⭐ **Why it exists.** The Salon's cyclorama answers "is this composition right".
+Nothing answered "is the thing we ship good", which is exactly how a publish
+contract that paints leaves with bark reached production without anyone noticing
+(`BACKLOG.md`, 2026-08-22). A view that shows the shipped artifact, dressed the
+way the runtime dresses it, is the check for that whole class.
+
+⛔ **It is the SAME component the marketing embed mounts** (`?embed=tree`) — one
+method, two mounts. A second implementation here would drift, and the drift would
+be invisible because both would look plausible.
+
+- `?view=fullmonte` — read straight off the URL, not a store flag: it is a
+  destination you link to, not a mode you can get stranded in.
+- `&species=` / `&lod=` / `&variant=` — swap the specimen. Defaults to the Look's
+  baked `linden_american` at lod0.
+- Reads `public/baked/<look>/trees/…`, ⛔ **never** `public/trees/` (gitignored
+  authoring pool, never read by runtime — see `.gitignore`). So what it shows is
+  what deploys.
+- The specimen's primitives are stamped with `stampTreeVertexAttrs` and drawn
+  merged when their attribute sets agree, **unmerged when they do not** — the
+  baked linden is 3 parts with divergent attrs, and an earlier cut that returned
+  nothing in that case rendered an empty sky. One `[TreeDiorama]` console line
+  reports parts / merge state / tris / height on every mount, so "loaded but drew
+  nothing" cannot be silent.
+- ◻ **Wind is mounted but still**: the sway driver reads the atmosphere
+  directive, and the meteorologist does not yet author wind into it. See
+  `ls/OPERATIONS.md §5`.
+
 ## Grove (`src/arborist/Grove.jsx`)
 
 Per-Look roster curation. Reads `public/looks/<look>/design.json#/trees`; lets the operator scope `In Look` / `All Published`, click a tile to select it → toggle membership in the fixed editor panel, fires `/api/cartograph/looks/<id>/trees` + `/api/arborist/atlas/bake?look=<id>` automatically. **The Grove is how operators prune heavy hand-authored variants from a Look — not by editing design.json directly.**

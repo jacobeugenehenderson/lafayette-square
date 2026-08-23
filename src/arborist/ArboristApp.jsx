@@ -15,6 +15,17 @@
  *     ground plane. Reached via Salon's Grove → button (or ?legacy=grove).
  *   - Procedural / LiDAR / Workstage: legacy authoring surfaces, reached
  *     via ?legacy= URL params only.
+ *   - Full monte: `?view=fullmonte` — ONE specimen, at source resolution,
+ *     wearing the Look's real atlas, swaying in the Look's real wind, lit by
+ *     the Look's real sky. ⭐ It is the first view anywhere in the product that
+ *     shows a FINISHED tree, which is exactly how a publish contract that
+ *     paints leaves with bark shipped without anyone noticing
+ *     (`arborist/BACKLOG.md`, 2026-08-22). The Salon's cyclorama answers "is
+ *     this composition right"; this answers "is the thing we ship good".
+ *     ⛔ It is the SAME component the marketing embed mounts
+ *     (`components/TreeDiorama.jsx`) — one method, two mounts. A second
+ *     implementation here would be a copy that drifts, and the drift would be
+ *     invisible precisely because both look plausible.
  */
 import { useEffect } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
@@ -24,6 +35,7 @@ import ProceduralWorkstage from './ProceduralWorkstage.jsx'
 import LidarWorkstage from './LidarWorkstage.jsx'
 import SalonWorkstage from './SalonWorkstage.jsx'
 import ShelvesWorkstage from './ShelvesWorkstage.jsx'
+import TreeDiorama from '../components/TreeDiorama.jsx'
 
 export default function ArboristApp() {
   const activeSpeciesId = useArboristStore(s => s.activeSpeciesId)
@@ -64,6 +76,20 @@ export default function ArboristApp() {
       if (sp) setActiveSpecies(sp)
     }
   }, [setProceduralOpen, setLidarOpen, setGroveOpen, setShelvesOpen, setActiveSpecies])
+
+  // `?view=fullmonte` — read from the URL directly rather than through a store
+  // flag, because unlike the *Open flags this is not a mode the operator toggles
+  // INTO and can get stranded in: it is a destination you link to. No stale
+  // localStorage to wake up inside.
+  let fullMonte = false
+  try { fullMonte = new URLSearchParams(window.location.search).get('view') === 'fullmonte' } catch { fullMonte = false }
+  if (fullMonte) {
+    return (
+      <div style={{ position: 'fixed', inset: 0, background: '#000' }}>
+        <TreeDiorama />
+      </div>
+    )
+  }
 
   // Mode-route ladder. Salon is the default (always-true salonOpen flag)
   // and sits at the bottom; a legacy URL or stale localStorage *Open flag

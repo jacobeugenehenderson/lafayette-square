@@ -565,7 +565,13 @@ function TierDriver() {
 // (role-at-bake doctrine). `computeTier` is kept below for TierDriver (bark
 // shader detail, a uniform — not geometry).
 
-function SwayDriver() {
+// ⭐ EXPORTED for TreeDiorama (`?embed=tree` / the Arborist's full-monte view).
+// A single specimen needs the SAME wind the map's 745 trees get — driven off the
+// live atmosphere directive, not a hand-rolled breeze — so the diorama's canopy
+// and its sky are moved by one weather state. Grove has its OWN driver
+// (`Grove.jsx#GroveWind`) only because it has no weather feed; anything that
+// mounts the real sky must use this one.
+export function SwayDriver() {
   const lastMs = useRef(0)
   useFrame(() => {
     // Advance the sway clock off WALL-CLOCK, not the R3F delta: under

@@ -88,6 +88,19 @@ arrives as itself — real scrolling, real search, a real card — because the
 panel's parts were already self-contained enough to mount alone. ⭐ **That is
 worth saying plainly: making them embeddable was a route, not a refactor.**
 
+**And the sky and a tree can be mounted as scenes, not pictures.** Beyond the
+DOM pieces above, an embedding page can ask for the neighbourhood's *actual
+sky* — the authored gradient across the day, the true sun and moon, the
+catalogue stars, the clouds and the live weather falling — or for **the
+diorama**: one specimen, fully dressed, standing under that same sky in a
+single scene. ⭐ The tree is lit by the sun that is *in the picture*, at the
+hour the page says it is, because the sky is not a backdrop behind it — the
+sky is the light. Drag the hour and the light on the leaves moves with it.
+⛔ Neither is an image: a still cannot take scene light, cannot follow the
+slider, and cannot sway, and those are the three things worth having. The same
+scene is what the Arborist shows an operator when they want to see a finished
+tree rather than a composition.
+
 **And the day is shared.** The Almanac's slider and an embedding page's own sky
 are the same clock, so they drive each other: scrub the hour on the page and the
 map moves; scrub it in the Almanac and the page follows. Two controls are fine;

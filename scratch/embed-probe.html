@@ -1,0 +1,24 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>embed probe</title>
+<style>
+  html,body{margin:0;background:#0d1117;color:#cdd6e4;font:12px/1.5 ui-monospace,Menlo,monospace}
+  iframe{display:block;width:896px;height:560px;border:1px solid #2b3442}
+  pre{padding:8px;white-space:pre-wrap}
+</style>
+<iframe id="f" src="/?embed=tree"></iframe>
+<pre id="out">waiting…</pre>
+<script>
+const out=document.getElementById('out'), f=document.getElementById('f');
+// Drive the day from the embedding page, exactly as a host page would.
+const MINUTE = Number(new URLSearchParams(location.search).get('min') ?? 13*60);
+setInterval(()=>{ try{ f.contentWindow.postMessage({type:'ward-time',minute:MINUTE},'*') }catch{} }, 700);
+let back=[];
+addEventListener('message',e=>{ if(e.data&&e.data.type==='ward-time') back.push(e.data.minute) });
+setInterval(()=>{
+  const d=f.contentDocument, c=d&&d.querySelector('canvas');
+  if(!c){out.textContent='no canvas';return}
+  const r=c.getBoundingClientRect();
+  out.textContent=`canvas ${c.width}x${c.height} css ${r.width}x${r.height}\nsent minute ${MINUTE}  |  echoed back: ${back.slice(-1)[0] ?? '—'}`;
+},500);
+</script>

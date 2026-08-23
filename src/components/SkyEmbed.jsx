@@ -1,4 +1,3 @@
-import { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
@@ -32,21 +31,31 @@ import { TimeTicker, SkyStateTicker } from './Scene'
  * moves this sky and the map above it together.
  */
 export default function SkyEmbed() {
-  /* ⚠ R3F MEASURES ITS CONTAINER ONCE, ON MOUNT, and then waits for a resize.
-     A frame loads at its final size, so no resize ever comes — and if that
-     first measurement lands before layout, the canvas stays at the default
-     300×150 forever while every ancestor around it is correctly sized. That is
-     exactly what happened here, and it looks like a broken embed rather than a
-     timing problem.
+  /* ⚠ SIZING — THE ANSWER, so nobody spends another day on it.
+     R3F v8 gates its ENTIRE setup on react-use-measure
+     (`@react-three/fiber` Canvas: `if (containerRect.width > 0 && ... )
+     createRoot(canvas)`), and react-use-measure reports through a
+     ResizeObserver. ⛔ A ResizeObserver cannot deliver while the frame is not
+     being RENDERED — a background tab, a throttled frame. So there: no
+     callback, no measurement, no root at all, and the canvas keeps the HTML
+     default 300×150 with an EMPTY `style.width`. On the first real paint it
+     fires and everything sizes. It self-heals; there is nothing to fix here.
 
-     One resize on the next frame is all it needs. ⛔ Do not "fix" this by
-     putting width/height in the Canvas `style` prop — that lands on the canvas
-     element itself and clobbers the sizing R3F is trying to apply, which is
-     the wrong turn I took first. */
-  useEffect(() => {
-    const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
-    return () => cancelAnimationFrame(id)
-  }, [])
+     ⚠ Measured 2026-08-22, clean load: t=1000ms → 300×150, style w=""; t=5500ms
+     → 1344×504 backing / 896×336 CSS, sky drawing full width. Nothing changed
+     between those two readings except that the tab got painted.
+     ▶ Repro: `scratch/embed-probe.html`.
+
+     ⛔ TWO WRONG TURNS, BOTH ALREADY TAKEN — do not repeat either:
+     · width/height in the Canvas `style` prop — lands on the canvas element and
+       clobbers the sizing R3F applies. Made it worse.
+     · a requestAnimationFrame resize nudge — was here, did nothing, and has been
+       removed: rAF is throttled by the very thing that throttles the observer,
+       so it cannot fire when it would be needed.
+     ⚠ And the trap that protected the wrong diagnosis for a day: checking for a
+     context with `canvas.getContext('webgl2')` CREATES one, so it can never
+     report a context missing. Read `style.width` instead — empty means
+     `gl.setSize` never ran, therefore there is no root. */
 
   return (
     <Canvas
