@@ -602,6 +602,56 @@ function App() {
     return () => window.removeEventListener('message', onMessage)
   }, [])
 
+  // ── The day, shared with the embedding page ──────────────────────────────
+  // The Almanac's slider and an embedding page's own sky are the SAME clock;
+  // two that do not drive each other is worse than one (Jacob, 2026-08-22). So
+  // the store is bidirectional across the frame: a `ward-time` message scrubs
+  // us, and every change to the day is announced outward — including the
+  // Almanac's own slider, which needs no wiring because it moves this store.
+  //
+  // ⚠ The echo guard is the whole trick. Without it, adopt → announce → adopt
+  // is an infinite round trip. Both sides compare before acting.
+  //
+  // targetOrigin is '*' deliberately: the product does not know who framed it,
+  // and a minute-of-day is not a secret. Nothing else is posted outward.
+  useEffect(() => {
+    if (window.parent === window) return undefined
+
+    function onTime(e) {
+      const m = e.data
+      if (!m || m.type !== 'ward-time') return
+      const tod = useTimeOfDay.getState()
+      if (m.minute === null || m.minute === undefined) {
+        if (!tod.isLive) tod.returnToLive()
+        return
+      }
+      if (Math.abs(tod.getMinuteOfDay() - m.minute) < 1) return   // already there
+      // ⚠ setTime, NOT setMinuteOfDay. The comment above setMinuteOfDay says it
+      // leaves live mode; the code does not (it only writes currentTime), so the
+      // 60s live pump would walk a scrubbed day straight back to now. setTime
+      // flips isLive, which is what the Almanac's own slider uses
+      // (DawnTimeline). Flagged rather than fixed in the store: nothing else
+      // calls those two, so the mismatch is latent, and which side is wrong is
+      // a decision rather than a cleanup.
+      const at = new Date()
+      at.setHours(Math.floor(m.minute / 60), Math.round(m.minute % 60), 0, 0)
+      tod.setTime(at)
+    }
+    window.addEventListener('message', onTime)
+
+    let last = -1
+    const announce = (st) => {
+      const minute = st.currentTime.getHours() * 60 + st.currentTime.getMinutes()
+      if (minute === last) return
+      last = minute
+      try { window.parent.postMessage({ type: 'ward-time', minute, isLive: st.isLive }, '*') } catch { /* gone */ }
+    }
+    announce(useTimeOfDay.getState())
+    const unsub = useTimeOfDay.subscribe(announce)
+
+    return () => { window.removeEventListener('message', onTime); unsub() }
+  }, [])
+
   if (route.page === 'checkin') {
     return <CheckinPage locationId={route.locationId} />
   }
