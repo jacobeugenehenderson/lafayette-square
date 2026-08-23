@@ -85,8 +85,7 @@ around tree? Work on luminance and back lighting, pump up color saturation."
     which is exactly what golden hour shows: at 18:40 with the sun directly
     behind the trunk and a warm horizon burning through, the canopy stays a
     uniform mid-green with no warm rim and no glow anywhere.
-    ✅ **APPROVED AND IT IS TOMORROW'S FIRST ITEM** — Jacob, 2026-08-23: *"add
-    the leaf transmission uniform tomorrow."* Spec, so it needs no re-deriving:
+    ✅✅ **BUILT 2026-08-23.** `uLeafTransmission` + `uLeafTransmissionSharpness`, shared material, default 0, gated on `vBark`, looping **every** directional light so the moon transmits too. Tune by eye: `?view=fullmonte&leafT=&leafK=`. ⚠️ **Not authored per Look yet — that value is Jacob's call and until it is made the map is unchanged.** The spec it was built to, kept because it records what was ruled out:
       - `uLeafTransmission` on the SHARED tree material (`treeAtlasMaterial.js`,
         wired in `injectFoliageSway` beside the existing sway uniforms), plus a
         module-scoped `{ value }` object so one write drives every mounted tree

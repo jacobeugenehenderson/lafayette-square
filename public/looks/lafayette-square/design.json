@@ -10,7 +10,7 @@
     "sidewalk": true,
     "treelawn": true,
     "building": false,
-    "parking_lot": false,
+    "parking_lot": true,
     "garden": false,
     "playground": false,
     "swimming_pool": true,

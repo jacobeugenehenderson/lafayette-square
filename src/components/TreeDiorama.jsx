@@ -13,7 +13,7 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
-import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
+import { useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission } from './treeAtlasMaterial'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
@@ -342,6 +342,27 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
  * the embed breaks — in that operator's browser only.
  */
 function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
+  // ── Leaf transmission, tunable by eye on the proving ground ──────────────
+  // ⭐ THE SHIPPED DEFAULT IS 0 and stays 0 until a value is authored — the
+  // uniform lives on the SHARED tree material, so anything else would change
+  // every scene the moment this landed. This is the dial for choosing that
+  // value, on the surface that exists to choose it.
+  //   ?leafT=<0..4>   how much light comes through a leaf
+  //   ?leafK=<0.25..16> how tightly the glow hugs the light's direction
+  // Same shape as InstancedTrees' `?heroGeom=`. ⛔ Not a fallback: with no
+  // parameter this writes nothing at all and the default stands.
+  useEffect(() => {
+    let t = null, k = null
+    try {
+      const q = new URLSearchParams(window.location.search)
+      t = q.get('leafT'); k = q.get('leafK')
+    } catch { /* no URL, no dial */ }
+    if (t == null && k == null) return
+    const applied = setLeafTransmission(t == null ? undefined : Number(t),
+                                        k == null ? undefined : Number(k))
+    console.log('[TreeDiorama] leaf transmission', applied)
+  }, [])
+
   const pick = useCanaryTree()
   // ⭐ ALPHA MODE — the tree with the sky's LIGHT but not the sky's PIXELS.
   // A host page that already draws its own sky (the site's band, with its own

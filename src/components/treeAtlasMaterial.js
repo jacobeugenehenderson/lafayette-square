@@ -103,6 +103,46 @@ export function setBarkShaderTier(tier) {
   treeBarkTierPinned.value = true
 }
 export function releaseBarkShaderTier() { treeBarkTierPinned.value = false }
+
+// ── LEAF TRANSMISSION (Jacob, 2026-08-23) ──────────────────────────────────
+//
+// A leaf is not opaque. Ours was: leaves are double-sided MeshStandard faces, so
+// one lit from BEHIND shows an unlit back face and the canopy goes flat exactly
+// when it should be at its most alive — golden hour, sun through the crown.
+//
+// ⭐ WHAT WAS NOT WRONG, because it was measured first and cost a day to rule
+// out: the alpha. `trees-atlas.json#atlas` carries alphaMode MASK, alphaCutoff
+// 0.5, alphaTest 0.5, doubleSided TRUE — backlit cards are NOT culled, and
+// distance erosion is already handled by the coverage-preserving mip chain.
+// There was simply no path for light to come THROUGH a leaf.
+//
+// ⛔ A UNIFORM BRANCH, NEVER A SHADER VARIANT. The single-program constraint is
+// load-bearing for Bloom (see uUseBarkGradient below, same rule). A second
+// compiled program is the one outcome to avoid.
+//
+// ⭐ DEFAULT 0 — with this at zero every scene renders bit-identical to before
+// it landed, which is what makes it safe to put on the SHARED material ahead of
+// anyone authoring a value. Turn it up per Look; the street view then inherits
+// it by moving a knob rather than by reimplementing it.
+export const treeLeafTransmission = { value: 0 }
+
+// How tightly the glow hugs the light's own direction. Low = a broad wash across
+// the canopy; high = only leaves almost directly in front of the sun. 3 is a
+// leaf-like falloff; it is a knob rather than a constant because a needle canopy
+// and a broad one do not want the same answer.
+export const treeLeafTransmissionSharpness = { value: 3 }
+
+// Debug/authoring setter. Drives every mounted tree at once — one write, because
+// the uniform object is shared by reference, exactly like treeSwayUniforms.
+export function setLeafTransmission(amount, sharpness) {
+  const a = Number(amount)
+  if (Number.isFinite(a)) treeLeafTransmission.value = Math.max(0, Math.min(4, a))
+  if (sharpness != null) {
+    const k = Number(sharpness)
+    if (Number.isFinite(k)) treeLeafTransmissionSharpness.value = Math.max(0.25, Math.min(16, k))
+  }
+  return { amount: treeLeafTransmission.value, sharpness: treeLeafTransmissionSharpness.value }
+}
 if (typeof window !== 'undefined') {
   window.__setBarkShaderTier = setBarkShaderTier
   window.__releaseBarkShaderTier = releaseBarkShaderTier
@@ -180,6 +220,9 @@ export function injectFoliageSway(material) {
     shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
     shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
     shader.uniforms.uRustleAmplitude   = treeSwayUniforms.uRustleAmplitude
+    // Shared by REFERENCE, so one write drives every mounted tree.
+    shader.uniforms.uLeafTransmission          = treeLeafTransmission
+    shader.uniforms.uLeafTransmissionSharpness = treeLeafTransmissionSharpness
     // Per-tree lamp-glow uniform — driven by CartographApp from the
     // per-Look TOD curve (lampGlow.trees slider). The per-instance
     // `aLampGlow` attribute (pre-baked at tree position) carries the
@@ -578,6 +621,8 @@ export function injectFoliageSway(material) {
       .replace(
         '#include <common>',
         `#include <common>
+         uniform float uLeafTransmission;
+         uniform float uLeafTransmissionSharpness;
          uniform float uLampGlow;
          uniform sampler2D uGroundColorMap;
          uniform vec2  uGroundColorMin;
@@ -821,7 +866,35 @@ export function injectFoliageSway(material) {
         // the lighting chunks); clamping it is safe in any GLSL version. NaN via
         // ternary select (NaN != NaN), never mix() (NaN*0==NaN).
         '#include <opaque_fragment>',
-        `if (uTreeSanitizeOn > 0.5) {
+        `// ⭐ LEAF TRANSMISSION — light coming THROUGH the leaf, not off it.
+         // Sits after the lighting chunks, where outgoingLight is a plain vec3
+         // and diffuseColor still holds this fragment's own sampled albedo.
+         //
+         // ⛔ GATED ON vBark, so bark is untouched. The gate ALREADY EXISTED —
+         // aBark is interpolated to vBark for the bark retint — so this needs no
+         // new attribute and no re-bake: the GLBs stay byte-identical.
+         //
+         // ⭐ EVERY DIRECTIONAL LIGHT, NOT JUST THE SUN. The moon is its own
+         // directional light on a TOD channel (scene.json#dirMoon, night x2), so
+         // looping means a moonlit canopy transmits too — which is the reason
+         // this was asked for on a single tree at night in the first place.
+         //
+         // tBack = how nearly the light comes from BEHIND this fragment toward
+         // the eye. Tinted by diffuseColor so a lit leaf glows its OWN colour
+         // rather than washing out to the light's.
+         #if NUM_DIR_LIGHTS > 0
+         if (uLeafTransmission > 0.0 && vBark < 0.5) {
+           vec3 tView = normalize(vViewPosition);
+           float tK = max(uLeafTransmissionSharpness, 0.001);
+           for (int tI = 0; tI < NUM_DIR_LIGHTS; tI++) {
+             vec3 tL = normalize(directionalLights[tI].direction);
+             float tBack = pow(clamp(dot(-tL, tView), 0.0, 1.0), tK);
+             outgoingLight += diffuseColor.rgb * directionalLights[tI].color
+                            * tBack * uLeafTransmission;
+           }
+         }
+         #endif
+         if (uTreeSanitizeOn > 0.5) {
            outgoingLight = vec3(
              (outgoingLight.r != outgoingLight.r) ? 0.0 : clamp(outgoingLight.r, 0.0, 1000.0),
              (outgoingLight.g != outgoingLight.g) ? 0.0 : clamp(outgoingLight.g, 0.0, 1000.0),
