@@ -25,12 +25,17 @@ installation would, and that turned out to be the useful part:
 - the **published tree GLB paints its leaves with bark** (`arborist/BACKLOG.md`,
   2026‑08‑22) — invisible inside the runtime, because the Look supplies what the
   file omits
-- the **deployed build is incomplete and silent about it** (`PUBLISH.md`) — found
-  by a page asking a deployed site for an asset and getting a 404 while the site
-  rendered fine
+That one is real. **A second "finding" was mine and was wrong**, and is recorded
+here because the mistake is the instructive part: a page asked the deployed site
+for `/trees/<species>/…`, got a 404, and I wrote it up as the deploy silently
+shipping incomplete. It is not. `public/trees/` is the **authoring source pool**
+and is gitignored on purpose — `.gitignore:230` says so, and says what runtime
+consumes instead. The published tree is `/baked/<look>/trees/…`, it is tracked,
+and staging serves it today.
 
-Neither is a website bug. Both were found because something finally stood
-outside and pulled.
+⭐ **The lesson worth keeping: I read a 404 as a defect without reading the
+ignore rule that explains it.** The corpus had the answer written down and I
+asserted a doctrine violation instead.
 
 ---
 
@@ -79,15 +84,13 @@ or reshape the sky model, expect to classify it.
 
 ## Open, and where it is tracked
 
-The site's own list is `BACKLOG.md`. Two items are **this product's** work, not
-the site's, and both block the same thing:
+The site's own list is `BACKLOG.md`. **One** item is this product's work:
 
 1. **`?embed=` with a Canvas does not size** — mounts, no errors, container
    correct, canvas stuck at R3F's default.
-2. **Tree assets are not deployed** — see `PUBLISH.md`.
 
-Both are briefed for a fresh agent in **`BRIEF-tree-and-sky-embed.md`**, with
-what has already been ruled out so nobody re-tests it.
+Briefed for a fresh agent in **`BRIEF-tree-and-sky-embed.md`**, with what has
+already been ruled out so nobody re-tests it.
 
 ---
 

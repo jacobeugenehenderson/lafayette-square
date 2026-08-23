@@ -79,42 +79,6 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 ---
 
-## ⛔⛔ THE BUILD IS 7.7 GB AND STAGING IS SERVING IT INCOMPLETE
-
-*Measured 2026-08-22, from outside — building a page that tried to load a tree
-from the deployed site.*
-
-```
-dist            7.7 GB          ← Pages' limit is 1 GB
-  trees         5.4 GB
-  photos        1.0 GB
-  baked         931 MB
-  models        255 MB
-
-curl …/lafayette-square-staging/trees/tilia_americana/skeleton-1-lod1.glb  → 404
-```
-
-**The deployed staging site renders. It is also missing assets, and nothing says
-so.** That is the no-fallback rule broken at the deploy layer: a site that looks
-fine while incomplete is worse than one that fails, because nobody goes looking.
-
-⚠️ **This is the 2026-07-21 finding, escalated.** `arborist/BACKLOG.md` recorded
-tracked `public/` at ≈1.03 GB against the same limit and named the cause —
-*"the town is small, the trees are not."* Thirteen months of tree work later the
-built output is seven times the limit. **Read that entry before proposing a fix;
-it already has the per-scene numbers.**
-
-⛔ **Do not treat this as a website problem.** Anything that consumes a deployed
-Ward — an embedding page, a second installation, a licensee — inherits it. The
-decision it forces is *what belongs in a shipped slab*, which is a product
-question with a home on `ROADMAP.md`, not a `.gitignore` edit.
-
-▶ **Before trusting any deploy:** `du -sh dist` and `du -sh dist/*`, then curl
-one asset you expect to be there. The workflow reporting success is not evidence
-that what you needed arrived.
-
----
-
 ## 1. Frontend (GitHub Pages)
 
 Deploys automatically on every push to `main`. **Per the working loop (strategy B, 2026-06-26), promote to `main` only after verifying on staging** (the trunk `curb-offset-draw`) — see the Quick reference above + [`cartograph/OPERATIONS.md §Save → ship`](cartograph/OPERATIONS.md). Both branches are slab-era and stay a few commits apart, so prod promotion is a clean fast-forward.

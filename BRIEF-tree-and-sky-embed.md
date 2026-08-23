@@ -17,9 +17,10 @@ of problem and is the stretch goal; if you get the tree, you have won the day.
 
 ## 1. What is already true (confirm each)
 
-**The tree works today.** A published GLB, dressed with a bark kit and the
-Look's leaf atlas tile, renders as a real leafy tree. Verified in an
-off‑the‑shelf three.js viewer with no Ward code in it:
+**The tree works today.** A *source-pool* GLB, dressed by hand with a bark kit
+and the Look's leaf atlas tile, renders as a real leafy tree. Verified in an
+off‑the‑shelf three.js viewer with no Ward code in it — note this is the
+authoring artifact, not the deployed one; see §2 for the difference:
 
 ```
 scratch/tree-viewer.html?tree=tilia_americana&lod=0&bark=bark_brown_01
@@ -81,12 +82,37 @@ child component inside `<Canvas>` that reads `gl.domElement.parentElement`'s
 rect and calls `setSize` directly, re‑running on a `ResizeObserver`. The app's
 own canvases size fine, so the fault is specific to this route, not to Canvas.
 
-**Second blocker, independent:** the tree GLBs are **not deployed**.
-`https://jacobeugenehenderson.github.io/lafayette-square-staging/trees/tilia_americana/skeleton-1-lod1.glb`
-returns **404**, and `dist` is **7.7 GB** (`dist/trees` alone is 5.4 GB) against
-a 1 GB Pages limit. So a live tree embed works locally and cannot work on
-staging until a small curated payload ships. **That is a product decision about
-what deploys, not a website change** — surface it, do not solve it silently.
+⭐ **THERE IS NO SECOND BLOCKER — and an earlier draft of this brief said there
+was.** It claimed the tree GLBs were undeployed, because a page asked staging
+for `/trees/<species>/…` and got a 404. **That 404 is correct.**
+`public/trees/` is the Arborist's **authoring source pool**, gitignored on
+purpose (`.gitignore:230`, which also names what runtime consumes instead).
+
+**The deployed tree is `/baked/<look>/trees/<species>/skeleton-N-lodN.glb`, it
+is tracked, and staging serves it right now.** Confirmed:
+
+```
+…/lafayette-square-staging/baked/lafayette-square/trees/linden_american/skeleton-1-lod1.glb  200  6.4 MB
+…/baked/lafayette-square/trees-atlas-color.png                                               200  7.5 MB
+…/baked/lafayette-square/trees-atlas-normal.png                                              200  4.6 MB
+```
+
+⚠️ **The baked tree is a DIFFERENT artifact from the source tree, and they dress
+differently. Do not mix them up as this brief's author did:**
+
+| | source pool (`/trees/…`) | the bake (`/baked/<look>/trees/…`) |
+|---|---|---|
+| deployed | **no**, by design | **yes** |
+| material | `EuropeanLindenBark_Mat`, bark map embedded | `TreeAtlas`, **no embedded textures** |
+| dressing | bark kit + leaf atlas tile, bound by hand | the Look's shared atlas, bound by the runtime |
+| lod1 | 809 KB | 6.4 MB (placement-substituted, 172,998 tris) |
+
+⭐ **So for a deployed embed the atlas is not optional — `TreeAtlas` is what the
+material is called.** Budget ≈ 6.4 MB + 7.5 MB colour (+ 4.6 MB normal). Heavy,
+and Jacob's call was *"this is marketing, we can push it."*
+
+▶ **Prefer the baked path.** It is what ships, what the runtime already binds,
+and it needs no new published artifact.
 
 ---
 
