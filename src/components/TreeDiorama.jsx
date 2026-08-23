@@ -10,7 +10,7 @@ import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
-import { ExposureTicker, PostProcessing } from './PostProcessing'
+import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
@@ -156,6 +156,48 @@ function Specimen({ url, material, onMeasured }) {
       ))}
     </group>
   )
+}
+
+/**
+ * ShadowFocus — spend the shadow map on ONE tree.
+ *
+ * ⭐ THE SINGLE BIGGEST QUALITY WIN HERE, and it is free. `CelestialBodies`
+ * sizes its sun's shadow camera for a whole NEIGHBOURHOOD — ±900 m at 4096²,
+ * which is ~0.44 m per texel. At that resolution a 21 m tree's shadow is one
+ * soft blob: correct, and telling you nothing. Pointed at the tree instead,
+ * the same 4096² map covers ~60 m — about 15 mm per texel — and the canopy
+ * casts LEAVES.
+ *
+ * ⭐ This is the diorama's whole licence, in Jacob's words: "this is our chance
+ * to really romanticize the lighting when it's only one tree and almost
+ * certainly on a desktop browser." The map cannot do this — it needs those
+ * 900 m. One specimen can afford what 745 cannot.
+ *
+ * ⛔ Local, and deliberately so: it retargets the light this Canvas already
+ * mounted rather than forking `CelestialBodies` or adding a prop that every
+ * other surface would then carry. Nothing shared changes.
+ */
+function ShadowFocus({ height, spread }) {
+  const scene = useThree(s => s.scene)
+  useEffect(() => {
+    if (!height) return
+    // Cover the tree and the ground its shadow can fall on — a low sun throws
+    // a long shadow, so the frustum needs room well beyond the canopy.
+    const extent = Math.max(height, (spread || height * 0.4) * 2) * 1.6
+    scene.traverse((o) => {
+      if (!o.isDirectionalLight || !o.castShadow) return
+      const c = o.shadow.camera
+      c.left = -extent; c.right = extent
+      c.top = extent;   c.bottom = -extent
+      c.near = 0.5;     c.far = extent * 8
+      c.updateProjectionMatrix()
+      o.shadow.mapSize.set(4096, 4096)
+      o.shadow.bias = -0.00015
+      o.shadow.normalBias = 0.02   // the map default (0.15) is tuned for buildings
+      o.shadow.needsUpdate = true
+    })
+  }, [scene, height, spread])
+  return null
 }
 
 /**
@@ -323,7 +365,9 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
         toneMapping: THREE.ACESFilmicToneMapping,
       }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, alpha ? 0 : 1)}
-      dpr={IS_MOBILE ? 1 : [1, 1.5]}
+      /* One specimen, near-certainly desktop — spend the pixels the map
+         cannot (Jacob, 2026-08-23). The map caps at 1.5 for 745 trees. */
+      dpr={IS_MOBILE ? 1 : [1, 2]}
       shadows
     >
       {/* The clock, and the weather it drives — the same seam every other embed
@@ -365,6 +409,10 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
           showing something the map would never render — the same class as the
           missing ExposureTicker, one layer up. */}
       {!alpha && <PostProcessing lookId={look} />}
+      {/* The authored soft-shadow settings, so the contact reads soft rather
+          than stencilled — same component Stage uses. */}
+      {!alpha && <StageShadows lookId={look} />}
+      {!alpha && <ShadowFocus height={measured?.height} spread={measured?.spread} />}
       <DioramaCamera height={measured?.height} spread={measured?.spread} baseY={measured?.baseY} topY={measured?.topY} />
       {atlas.status === 'ready' && (
         <Suspense fallback={null}>
