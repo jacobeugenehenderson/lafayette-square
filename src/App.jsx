@@ -21,6 +21,7 @@ import AdminPrompt from './components/AdminPrompt'
 import useGuardianStatus from './hooks/useGuardianStatus'
 import useCamera, { FRAMED } from './hooks/useCamera'
 import useTimeOfDay from './hooks/useTimeOfDay'
+import { setFramedPresence } from './lib/framedPresence.js'
 import useSelectedBuilding from './hooks/useSelectedBuilding'
 import useBulletin from './hooks/useBulletin'
 import useListings from './hooks/useListings'
@@ -653,6 +654,13 @@ function App() {
   useEffect(() => {
     if (window.parent === window) return undefined
 
+    function onPerf(e) {
+      const m = e.data
+      if (!m || m.type !== 'ward-perf') return
+      setFramedPresence(m.presence)
+    }
+    window.addEventListener('message', onPerf)
+
     function onTime(e) {
       const m = e.data
       if (!m || m.type !== 'ward-time') return
@@ -685,7 +693,11 @@ function App() {
     announce(useTimeOfDay.getState())
     const unsub = useTimeOfDay.subscribe(announce)
 
-    return () => { window.removeEventListener('message', onTime); unsub() }
+    return () => {
+      window.removeEventListener('message', onPerf)
+      window.removeEventListener('message', onTime)
+      unsub()
+    }
   }, [])
 
   if (route.page === 'checkin') {

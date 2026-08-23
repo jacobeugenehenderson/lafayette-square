@@ -4,6 +4,8 @@ import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { INSTANCE, moduleOn } from '../instance.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
+import { framedPresence } from '../lib/framedPresence.js'
+import { FRAMED } from '../hooks/useCamera'
 import { browseAltitude } from '../lib/browseAltitude.js'
 import { SHOT_TRANSITION_MS } from '../camera/transitions.js'
 import LafayetteScene from './LafayetteScene'
@@ -257,16 +259,24 @@ function SheetGround({ active, ground }) {
 function FrameLimiter() {
   const invalidate = useThree((s) => s.invalidate)
   useEffect(() => {
-    let skip = false
+    let n = 0
     let id
     const loop = () => {
       // Pause rendering when full-screen overlays are open — free the GPU
       const paused = document.querySelector('[data-scene-pause]')
       if (!paused) {
         const isHero = !IS_MOBILE && useCamera.getState().viewMode === 'hero'
-        if (isHero || !skip) invalidate()
+        // ⭐ Three rates, not two. An embedding page that has scrolled us
+        // mostly out of view says so (`ward-perf`), and we drop to a third —
+        // enough that the sky still moves and nothing looks frozen, cheap
+        // enough that the page scrolls smoothly beside us.
+        // ⛔ NOT paused: going idle is what makes Chrome drop the WebGL
+        // surface, and coming back costs seconds. Render less, never none.
+        const idle = FRAMED && framedPresence() === 'idle'
+        const every = idle ? 3 : (isHero ? 1 : 2)
+        if (n % every === 0) invalidate()
       }
-      skip = !skip
+      n++
       id = requestAnimationFrame(loop)
     }
     id = requestAnimationFrame(loop)

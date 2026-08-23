@@ -81,6 +81,24 @@ always said the slab and the reader are separate payloads; these make that
 watchable rather than merely true, and a framed consumer switches between them
 live, by message, without reloading.
 
+**It costs the host page less when nobody is looking at it.** A framed Ward
+cannot see where it sits on somebody else's page — an iframe's own
+`IntersectionObserver` measures against the iframe, and across origins it can
+see nothing of the parent at all. So the embedding page tells it: one message
+when the Ward scrolls mostly out of view, another when it comes back. The Ward
+decides what to do about that, and drops to about a third of its frame rate
+while it is out of the way — enough that the sky still moves and nothing looks
+frozen, cheap enough that the host's page scrolls smoothly past it.
+
+⛔ **Idle is not paused, and must never become paused.** Going idle is precisely
+what makes a browser drop the WebGL surface, and restoring it costs one blocked
+frame of several seconds. The scene keeps rendering; it renders less often.
+
+The split is the point: **the page decides *when*, because only it can see its
+own scroll; the Ward decides *what*, because only it knows its own frame
+budget.** That makes it a contract rather than one site's trick — every
+installation, on anyone's page, gets the same behaviour for free.
+
 Nothing here is a cut-down build. Every module, every type, every control is
 present — it is the same app, meeting a different visitor.
 
