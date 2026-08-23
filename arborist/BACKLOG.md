@@ -33,6 +33,21 @@ zero times. ⇒ `export default memo(TreeDiorama)`. ⛔ Do not remove it because
 "it takes no props so it cannot re-render" — taking no props is what makes memo
 total. ▶ Any bare `<Canvas>` mounted under `App` has this exposure.
 
+⭐⭐ **WHY THIS SURFACE IS WORTH THE SPEND — IT IS THE PROVING GROUND FOR STREET
+VIEW.** Jacob, 2026-08-23: *"our tree will need to take a lot of moonlight, as
+well. Again, being that it's a single tree. We will be able to use all these
+settings and features when we elaborate the street view of the trees."*
+⇒ ⛔ **So nothing here may be a diorama-only hack.** Every lighting gain must be
+built as an AUTHORED knob on the shared material/channels, defaulting to today's
+value, so the street view inherits it by turning it up rather than by
+reimplementing it. That is why the transmission proposal below is a uniform
+defaulting to 0 and not a second material.
+⭐ **Moonlight is already plumbed and authored** — `scene.json#dirMoon` is a TOD
+channel (`night ×2 · dusk ×1 · dawn 0 · sunset 0`) driving `SecondaryOrb` through
+`dirMoonMulRef`, and the diorama receives it because it mounts `CelestialBodies`.
+⇒ "take a lot of moonlight" is a TUNING question on an existing channel, not a
+missing feature — and it ports to street view for free.
+
 ◻ **JACOB'S LIST, 2026-08-23, verbatim** — "work on wind motion, add trunk and
 ground shading, re-add visible time slider; perhaps add actual 'grass' texture?
 around tree? Work on luminance and back lighting, pump up color saturation."
