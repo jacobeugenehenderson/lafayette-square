@@ -4,10 +4,8 @@
 which artifact each one reads, and what is done / owed / abandoned. Everything else in
 `arborist/` is detail hanging off this page.
 
-*Rewritten 2026-08-23 by **Wren** (`BRIEF-arborist-exorcism.md`, phase 1) against the code,
-not against the previous docs. The version this replaces is
-`_archive/ORIENTATION-2026-08-23-pre-exorcism.md`. Findings + every measurement behind these
-claims: `LEDGER-exorcism-wren.md`.*
+*Measured against the code 2026-08-23. What is still owed to make it true:
+`LEDGER-exorcism-wren.md`. Prior versions + the measurements: `_archive/`.*
 
 > ⛔ **Every number below is a COMMAND, not a figure.** A count written into prose is stale
 > the day it is written and is then quoted for months (`CLAUDE.md`). Run the line.
@@ -292,6 +290,6 @@ LiDAR work order) · `STAGE0-KEYSTONE.md` · `LIBRARY-BUILDER.md` (frozen Stage-
 · `ROSTER-COVERAGE.md` (a hand-typed tracker of what `GET /coverage` now computes live).
 **Each declared itself superseded in its own opening line.**
 
-⚠️ **Those docs have not yet been conformed to this page.** Where one disagrees with this
-one, this page was measured against the code on 2026-08-23 — but **check the code, not
-either document.** The conformance pass is `LEDGER-exorcism-wren.md`, phase 2.
+⚠️ **Those docs are not yet conformed to this page.** Where one disagrees with this one,
+⛔ **check the code, not either document** — then fix whichever is wrong. The outstanding
+list is `LEDGER-exorcism-wren.md §C`.
