@@ -115,6 +115,27 @@ around tree? Work on luminance and back lighting, pump up color saturation."
   - ⚠ Also observed, undiagnosed: stars render in a DAYLIT sky in this Canvas,
     and the grass reads brighter than the tree at night.
 
+◻ **ALSO TOMORROW — WRITE THE REUSE CLAIM INTO `ls/FEATURES.md`** (Jacob asked
+for this, 2026-08-23). It belongs beside the existing line about the panel
+embeds — *"making them embeddable was a route, not a refactor"* — because this
+is the 3D analogue of the same claim, and right now it is only visible to
+someone who reads the imports.
+⭐ **The claim, and it is evidence not sentiment: a surface nobody designed for
+was built almost entirely out of parts that already existed.** Assembled, not
+written — `CelestialBodies` (which carries the LIGHTS, not just the dome),
+`InstancedTrees#SwayDriver`, the shared per-Look atlas material +
+`stampTreeVertexAttrs`, `ExposureTicker`, `PostProcessing`, `StageShadows`,
+`makeGrassMaterial`, `CANARY_GROUND_CAMERA`, the `ward-time` bridge already in
+`App`, and `useCanaryTree`. Genuinely new: the camera fit, a ground disc,
+`ShadowFocus`.
+⚠️ **Write the counterweight too or it is marketing, not documentation:** every
+real cost landed at a SEAM, not inside a module — `ExposureTicker` exists for a
+bare Canvas and nothing told us to mount it; the canary camera lived in the
+UNFINISHED surface so the finished one depended on it backwards; and the
+per-frame remount sits between `App` and R3F, which no module owns. The modules
+held; the joins are where the time went. ⛔ Do not write this as praise — name
+the parts and name the seams, or leave it out.
+
 ⛔ **LEAVES ARE NOT ON THE LIST.** Measured: 174,136 verts / 83,377 tris on the
 canopy ≈ 42,000 alpha CARDS (leaf packs, not geometry). Jacob: "the tree you
 already had with the leaves it already had were already great."
