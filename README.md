@@ -187,6 +187,7 @@ The build pipeline (Jacob's order: **intake → skeleton → prebake → survey 
 - **[`AUDIT-MATRIX.md`](AUDIT-MATRIX.md)** (the instrument) + the filed findings `scratch/audit-{cartograph,arborist,ls-app,docs}.md` — the forensic-audit campaign (the four walks landed; the dispatch briefs retired).
 - **[`plans/`](plans/)** — forward/strategic: productization, basemap-swap, pre-public-cleanout, kit-couplers, **[clean-for-handoff](plans/clean-for-handoff.md)** (the human-dev handoff campaign — leads with render-pipeline-install; DoD = the zero-open corpse-lie ledger + one render pipeline).
 - **[`PUBLISH.md`](PUBLISH.md)** — deploy procedures · `BUSINESS_LISTINGS.md` · `_handoffs/CARY-BRIEF.md`.
+- **[`THEWARD-ONLINE.md`](THEWARD-ONLINE.md)** — the marketing site (its own repo, outside this one) and **what it asks of this product**: the embed surface it depends on, the two blocks generated from source here, and the two findings it surfaced by standing outside and pulling.
 
 ### State layer & working dirs
 
