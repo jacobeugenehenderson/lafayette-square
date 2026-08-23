@@ -51,7 +51,15 @@ missing feature — and it ports to street view for free.
 ◻ **JACOB'S LIST, 2026-08-23, verbatim** — "work on wind motion, add trunk and
 ground shading, re-add visible time slider; perhaps add actual 'grass' texture?
 around tree? Work on luminance and back lighting, pump up color saturation."
-  - **wind motion** — the big gust repeats too often. ⚠ Its period is a SHARED
+  - **wind motion — ⭐ THE REAL CRITIQUE IS THAT IT IS NOT REALISTIC** (Jacob,
+    2026-08-23), which is a bigger statement than the repeat-rate note this
+    replaces and should not be collapsed back into it. A believable canopy is
+    not one gust played at a better interval: it is turbulence — many scales at
+    once, leaves moving before branches, the whole crown never in phase with
+    itself. ⚠️ CAUSE NOT ESTABLISHED and no fix is specced; what is measured is
+    only what follows. ⛔ Do not start by tuning the period — that answers the
+    old, narrower complaint.
+    The old note, still true and still a constraint on any fix: ⚠ Its period is a SHARED
     shader constant in `treeAtlasMaterial`'s sway block, so tuning it is a
     whole-map look change, not a diorama tweak. And wind is still OWED at the
     source: the meteorologist does not author a `wind` block into the directive
