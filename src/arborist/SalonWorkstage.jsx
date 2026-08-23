@@ -43,6 +43,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
+import { useCanaryTree } from '../lib/canaryTree.js'
 import { FORM_IDS, FORM_BY_ID, FormIcon, LazyChassisThumb } from './chassisForms.jsx'
 
 // Fallback for a species' declared habit when it has no dossier: the coarse
@@ -65,24 +66,6 @@ const MORPH_TO_TARGET_CATEGORY = {
 // Brief 8 (Linnet): subscribe to the Meteorologist canary localStorage key
 // for the active-canary indicator. Returns the parsed payload or null.
 // Cross-tab via browser's 'storage' event; same-tab via the synthetic
-// StorageEvent fired by setSalonCanary in the store (browsers don't fire
-// 'storage' in the writer's own tab).
-function readCanaryPref() {
-  try { return JSON.parse(localStorage.getItem('meteorologist-canary-tree') ?? 'null') }
-  catch { return null }
-}
-function useCanaryPref() {
-  const [pref, setPref] = useState(() => readCanaryPref())
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key !== 'meteorologist-canary-tree') return
-      setPref(readCanaryPref())
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-  return pref
-}
 
 // §9 — the dossier's reference plates beside the live tree ("so we know what
 // we're going for"). The cloud-Tuner's ground truth as a UI element, not an
@@ -255,7 +238,7 @@ export default function SalonWorkstage() {
   const setChassisCuration  = useArboristStore(s => s.setSalonChassisCuration)
   // Brief 8 (Linnet): canary writer + active-canary indicator.
   const setSalonCanary      = useArboristStore(s => s.setSalonCanary)
-  const canaryPref          = useCanaryPref()
+  const canaryPref          = useCanaryTree()
 
   // Mount-time fetch: when Salon was restored open via localStorage, setSalonOpen
   // never fires this session, so the store's load actions wouldn't otherwise run.

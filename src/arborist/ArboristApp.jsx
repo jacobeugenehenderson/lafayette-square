@@ -15,7 +15,12 @@
  *     ground plane. Reached via Salon's Grove → button (or ?legacy=grove).
  *   - Procedural / LiDAR / Workstage: legacy authoring surfaces, reached
  *     via ?legacy= URL params only.
- *   - Full monte: `?view=fullmonte` — ONE specimen, at source resolution,
+ *   - Full monte: `?view=fullmonte` — ONE specimen: THE CANARY, the tree the
+ *     operator has pointed at (Grove's `→ Set as Meteorologist canary`, or the
+ *     Salon's slot). ⭐ Same selection the Meteorologist's weather scene reads,
+ *     because it is the same question — "the specimen we are looking at" — and
+ *     both already resolve the same baked artifact with the same atlas
+ *     material. A second picker here would be a second answer that drifts.
  *     wearing the Look's real atlas, swaying in the Look's real wind, lit by
  *     the Look's real sky. ⭐ It is the first view anywhere in the product that
  *     shows a FINISHED tree, which is exactly how a publish contract that
@@ -86,7 +91,7 @@ export default function ArboristApp() {
   if (fullMonte) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#000' }}>
-        <TreeDiorama />
+        <TreeDiorama followCanary />
       </div>
     )
   }

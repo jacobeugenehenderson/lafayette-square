@@ -30,6 +30,7 @@ import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
 import { partitionByDirt } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
+import { writeCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 
@@ -206,12 +207,11 @@ export default function Grove() {
   // "Arborist ↔ Meteorologist canary contract".
   const toastTimerRef = useRef(null)
   const setMeteorologistCanary = (v) => {
-    const payload = {
-      species: v.speciesId,
-      variantId: Number(v.variantId),
-      lookId: activeLookId || null,
-    }
-    localStorage.setItem('meteorologist-canary-tree', JSON.stringify(payload))
+    // ⚠ Through the shared writer, which also fires the same-tab StorageEvent —
+    // Grove used to call setItem directly, so a viewer sharing THIS tab (the
+    // full monte) never heard the click. Invisible while the only viewer was
+    // Meteorologist in another tab.
+    writeCanaryTree({ species: v.speciesId, variantId: v.variantId, lookId: activeLookId })
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current)
     setToast(`Set as Meteorologist canary · ${v.speciesLabel || v.speciesId} v${v.variantId}`)
     toastTimerRef.current = setTimeout(() => setToast(null), 1500)

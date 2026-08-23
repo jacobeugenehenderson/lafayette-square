@@ -5,6 +5,7 @@
  * demand, autosave debounced, derived flags).
  */
 import { create } from 'zustand'
+import { writeCanaryTree } from '../../lib/canaryTree.js'
 
 // activeLookId persists across sessions so the operator returns to the
 // Look they were curating. Stored under a separate key from cartograph's
@@ -964,17 +965,7 @@ const useArboristStore = create((set, get) => ({
   // 'storage' in OTHER same-origin tabs automatically. Composition slot N
   // maps to variantId N (matches publish-glb's emission order).
   setSalonCanary: (species, slot, lookId) => {
-    const payload = {
-      species,
-      variantId: Number(slot),
-      lookId: lookId || null,
-    }
-    const value = JSON.stringify(payload)
-    localStorage.setItem('meteorologist-canary-tree', value)
-    window.dispatchEvent(new StorageEvent('storage', {
-      key: 'meteorologist-canary-tree',
-      newValue: value,
-    }))
+    writeCanaryTree({ species, variantId: slot, lookId })
   },
 
   loadSpecies: async () => {

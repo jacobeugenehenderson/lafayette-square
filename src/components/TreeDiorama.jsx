@@ -13,6 +13,7 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
+import { useCanaryTree } from '../lib/canaryTree.js'
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -176,11 +177,24 @@ function DioramaCamera({ height }) {
   return null
 }
 
-export default function TreeDiorama({ species, lod, variant, lookId } = {}) {
-  const look = lookId || INSTANCE.lookId
-  const sp  = readParam('species') || species || DEFAULT_SPECIES
+/**
+ * @param followCanary — take the specimen from THE CANARY, the one tree the
+ *   operator has pointed at (`lib/canaryTree.js`). ⭐ On for the Arborist's full
+ *   monte, so picking a tree in the Grove and looking at it finished is ONE
+ *   gesture rather than two pickers that can disagree. ⛔ OFF for `?embed=tree`:
+ *   the canary is per-operator browser state, and a published page that quietly
+ *   changed because someone clicked something in this browser would be a
+ *   per-viewer surprise with no way to explain itself. An explicit `?species=`
+ *   outranks the canary either way.
+ */
+export default function TreeDiorama({ species, lod, variant, lookId, followCanary = false } = {}) {
+  const canary = useCanaryTree()
+  const pick   = followCanary ? canary : null
+  const look = lookId || pick?.lookId || INSTANCE.lookId
+  const sp  = readParam('species') || species || pick?.species || DEFAULT_SPECIES
   const ld  = readParam('lod')     || lod     || DEFAULT_LOD
-  const vr  = readParam('variant') || variant || DEFAULT_VARIANT
+  const vr  = readParam('variant') || variant ||
+              (pick?.variantId != null ? String(pick.variantId) : DEFAULT_VARIANT)
 
   const atlas = useTreeAtlas(look)
   const [measured, setMeasured] = useState(null)

@@ -48,6 +48,7 @@ import {
   treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
 import { CANARY_CAMERAS } from './canaryCamera.js'
+import { useCanaryTree } from '../lib/canaryTree.js'
 
 // Gentle authoring breeze used when the active Condition's directive
 // carries no wind yet (Phase 5 directive→viewport wiring still pending).
@@ -372,26 +373,8 @@ function GroundPlane() {
 // Suspense boundary swallows it. The viewport continues to render sky +
 // ground without a tree. Operator-visible: pick a different tree in
 // Arborist.
-function useCanaryTreePref() {
-  const [pref, setPref] = useState(() => {
-    if (typeof localStorage === 'undefined') return null
-    try { return JSON.parse(localStorage.getItem('meteorologist-canary-tree') ?? 'null') }
-    catch { return null }
-  })
-  useEffect(() => {
-    const onStorage = (e) => {
-      if (e.key !== 'meteorologist-canary-tree') return
-      try { setPref(JSON.parse(e.newValue ?? 'null')) }
-      catch { setPref(null) }
-    }
-    window.addEventListener('storage', onStorage)
-    return () => window.removeEventListener('storage', onStorage)
-  }, [])
-  return pref
-}
-
 function HeroTree({ lookId }) {
-  const pref = useCanaryTreePref()
+  const pref = useCanaryTree()
   const species   = pref?.species ?? HERO_TREE_SPECIES
   const variantId = pref?.variantId ?? 1
   const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod0.glb` : HERO_TREE_SKELETON
