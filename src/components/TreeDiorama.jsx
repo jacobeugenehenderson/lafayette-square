@@ -1,5 +1,5 @@
-import { Suspense, useEffect, useMemo, useState } from 'react'
-import { Canvas, useThree } from '@react-three/fiber'
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
@@ -10,11 +10,13 @@ import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
-import { ExposureTicker } from './PostProcessing'
+import { ExposureTicker, PostProcessing } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
 import { useCanaryTree } from '../lib/canaryTree.js'
+import { makeGrassMaterial } from './grassMaterial.js'
+import { CANARY_CAMERAS } from '../meteorologist/canaryCamera.js'
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -130,16 +132,53 @@ function Specimen({ url, material, onMeasured }) {
       `tris=${Math.round(tris).toLocaleString()} height=${(box.max.y - box.min.y).toFixed(1)}m ` +
       `attrs=${Object.keys(geometries[0].attributes).join(',')}`
     )
-    if (onMeasured) onMeasured({ height: box.max.y - box.min.y, minY: box.min.y })
+    if (onMeasured) {
+      onMeasured({
+        height: box.max.y - box.min.y,
+        // ⚠ The REAL extremes. Framing on `height` alone assumes the base sits
+        // at y=0 and silently clips the crown when the bake left it elsewhere.
+        baseY: box.min.y,
+        topY: box.max.y,
+        // A spreading tree runs out of HORIZONTAL room before vertical.
+        spread: Math.max(
+          Math.abs(box.max.x), Math.abs(box.min.x),
+          Math.abs(box.max.z), Math.abs(box.min.z),
+        ),
+      })
+    }
   }, [geometries, onMeasured, url])
 
   if (!geometries.length || !material) return null
   return (
     <group>
       {geometries.map((g, i) => (
-        <mesh key={i} geometry={g} material={material} frustumCulled={false} />
+        <mesh key={i} geometry={g} material={material} frustumCulled={false} castShadow receiveShadow />
       ))}
     </group>
+  )
+}
+
+/**
+ * Ground — the thing the tree STANDS on, and the thing its shadow lands on.
+ *
+ * ⭐ A tree with no ground is a specimen floating in space: nothing receives its
+ * shadow, so there is no contact, and with no contact the eye reads it as pasted
+ * on. The shadow is the cue that says the tree and the horizon share a world.
+ *
+ * ⛔ Not a new material — `makeGrassMaterial` is the one the park uses, so this
+ * takes the same weather (snow accumulates on it) and the same lights. A disc
+ * with a radial fade rather than a rectangle, so the far edge does not cut a
+ * straight line across the sky and read as a table top.
+ */
+function Ground({ radius = 90 }) {
+  const material = useMemo(
+    () => makeGrassMaterial({ fade: { center: [0, 0], inner: radius * 0.42, outer: radius } }).material,
+    [radius],
+  )
+  return (
+    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={material}>
+      <circleGeometry args={[radius, 96]} />
+    </mesh>
   )
 }
 
@@ -151,43 +190,89 @@ function Specimen({ url, material, onMeasured }) {
  * mid-canopy, so the tree is seen slightly from beneath and reads as STANDING
  * rather than as a specimen on a turntable.
  */
-function DioramaCamera({ height }) {
+function DioramaCamera({ height, spread, baseY = 0, topY }) {
   const camera = useThree(s => s.camera)
   const size = useThree(s => s.size)
+  const poseRef = useRef(null)
   useEffect(() => {
     if (!height) return
-    // Fit the WHOLE tree, head to foot, with real headroom. ⚠ The fit is taken
-    // against whichever axis is tighter: `fov` is VERTICAL, so a wide short
-    // frame (an embed strip is exactly that) runs out of HORIZONTAL room first
-    // and a vertical-only fit silently crops the canopy — which it did.
-    const aimY = height * 0.5
-    const vFov = (camera.fov * Math.PI) / 180
+
+    // ⭐ THE POSE IS AUTHORED, NOT INVENTED — `CANARY_CAMERAS.ground`, the
+    // Meteorologist's own canary camera (Jacob: "duplicate Hero camera and use
+    // it only here, call it canary or something"). It already encodes the shot
+    // this view wants and says so in its own comment: eye on the ground at
+    // 1.7 m, backed off, tilted UP at the canopy, "what users see standing in
+    // the neighborhood."
+    // ⛔ Not duplicated. The canary scene and this one are the same question
+    // about the same specimen — a second copy of the pose would drift, and the
+    // drift would be invisible because both would look plausible.
+    const base = CANARY_CAMERAS.ground
+    const eyeY = base.position[1]                        // 1.7 m — a person's eye
+    const azimuth = Math.atan2(base.position[0], base.position[2])   // its angle round the tree
+    if (camera.fov !== base.fov) { camera.fov = base.fov }
+
+    // ⚠ ONLY THE DISTANCE IS DERIVED, and it has to be: that pose was authored
+    // "for typical 12-18m broadleaves" (its words), and the canary is whatever
+    // the operator pointed at — a 21 m linden, a 25 m oak. Holding the authored
+    // distance clips them; deriving it keeps the authored SHOT and makes it fit.
+    const top  = topY ?? height
+    const base_ = baseY ?? 0
+    const vHalf = (camera.fov * Math.PI) / 360
     const aspect = size.width && size.height ? size.width / size.height : 1
-    const hFov = 2 * Math.atan(Math.tan(vFov / 2) * aspect)
-    const halfSpan = height * 0.62                    // ~12% air above and below
-    const distance = Math.max(
-      halfSpan / Math.tan(vFov / 2),
-      (height * 0.55) / Math.tan(hFov / 2),           // canopy spread ≈ its height
-    )
-    // Eye a little below mid-canopy: a tree looked at slightly from beneath
-    // reads as standing, where a level view reads as a specimen on a turntable.
-    camera.position.set(distance * 0.34, height * 0.42, distance * 0.94)
-    camera.lookAt(0, aimY, 0)
-    camera.updateProjectionMatrix()
-  }, [camera, height, size.width, size.height])
+    const hHalf = Math.atan(Math.tan(vHalf) * aspect)
+    const MARGIN = 0.82                                   // 18% air, top and bottom
+
+    // span(d) = atan((top-eye)/d) + atan((eye-base)/d) — falls monotonically in
+    // d, so a bisection lands it exactly, with no trig identity to get wrong.
+    let lo = height * 0.2, hi = height * 6
+    const wantV = 2 * vHalf * MARGIN
+    for (let i = 0; i < 40; i++) {
+      const d = (lo + hi) / 2
+      const span = Math.atan((top - eyeY) / d) + Math.atan((eyeY - base_) / d)
+      if (span > wantV) lo = d; else hi = d
+    }
+    let distance = (lo + hi) / 2
+    const r = spread || height * 0.35
+    distance = Math.max(distance, (r * 1.06) / Math.tan(hHalf))   // wide canopies too
+
+    // Aim at the middle of the span in ANGLE — what centres the tree and keeps
+    // the horizon low, which is the authored shot's whole character.
+    const midAngle = (Math.atan((top - eyeY) / distance) - Math.atan((eyeY - base_) / distance)) / 2
+    const aimY = eyeY + Math.tan(midAngle) * distance
+
+    poseRef.current = {
+      pos: [Math.sin(azimuth) * distance, eyeY, Math.cos(azimuth) * distance],
+      aimY,
+      fov: base.fov,
+    }
+  }, [camera, height, spread, baseY, topY, size.width, size.height])
+
+  // ⚠ ASSERTED EVERY FRAME, NOT SET ONCE — and this is not belt-and-braces.
+  // Mounting the PostProcessing chain re-initialises the Canvas camera AFTER a
+  // one-shot effect has posed it, so the view silently snapped back to R3F's
+  // default and the whole diorama read as "looking down at a field with no tree
+  // in it." That cost a long detour: the symptom looks like a broken camera fit
+  // or a missing specimen, and it is neither. Re-asserting is cheap (a compare
+  // and maybe three writes) and makes the pose immune to whoever else touches
+  // the camera.
+  useFrame(() => {
+    const p = poseRef.current
+    if (!p) return
+    if (
+      camera.position.x !== p.pos[0] ||
+      camera.position.y !== p.pos[1] ||
+      camera.position.z !== p.pos[2] ||
+      camera.fov !== p.fov
+    ) {
+      camera.fov = p.fov
+      camera.position.set(p.pos[0], p.pos[1], p.pos[2])
+      camera.lookAt(0, p.aimY, 0)
+      camera.updateProjectionMatrix()
+    }
+  })
   return null
 }
 
-/**
- * @param followCanary — take the specimen from THE CANARY, the one tree the
- *   operator has pointed at (`lib/canaryTree.js`). ⭐ On for the Arborist's full
- *   monte, so picking a tree in the Grove and looking at it finished is ONE
- *   gesture rather than two pickers that can disagree. ⛔ OFF for `?embed=tree`:
- *   the canary is per-operator browser state, and a published page that quietly
- *   changed because someone clicked something in this browser would be a
- *   per-viewer surprise with no way to explain itself. An explicit `?species=`
- *   outranks the canary either way.
- */
 export default function TreeDiorama({ species, lod, variant, lookId, followCanary = false, transparent } = {}) {
   const canary = useCanaryTree()
   // ⭐ ALPHA MODE — the tree with the sky's LIGHT but not the sky's PIXELS.
@@ -239,7 +324,7 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
       }}
       onCreated={({ gl }) => gl.setClearColor(0x000000, alpha ? 0 : 1)}
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
-      shadows={false}
+      shadows
     >
       {/* The clock, and the weather it drives — the same seam every other embed
           uses, so an embedding page's slider moves this sky, this light and
@@ -270,7 +355,17 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
       {/* The canopy moves off the same wind that moves the clouds. */}
       <SwayDriver />
 
-      <DioramaCamera height={measured?.height} />
+      {!alpha && <Ground />}
+      {/* ⭐ THE PRODUCTION CHAIN — AO, the authored grade, bloom. Jacob: "the AO
+          isn't evident", and it was not: self-shadowing alone leaves the canopy
+          interior flat and the trunk meeting the grass with no darkening at the
+          contact, which is the one cue that says "standing on" rather than "in
+          front of". ⛔ Neither this view NOR the Meteorologist's canary mounted
+          it before, so both surfaces where an operator judges a tree were
+          showing something the map would never render — the same class as the
+          missing ExposureTicker, one layer up. */}
+      {!alpha && <PostProcessing lookId={look} />}
+      <DioramaCamera height={measured?.height} spread={measured?.spread} baseY={measured?.baseY} topY={measured?.topY} />
       {atlas.status === 'ready' && (
         <Suspense fallback={null}>
           <Specimen url={url} material={atlas.treeMaterial} onMeasured={setMeasured} />
