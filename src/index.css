@@ -411,3 +411,10 @@ input, textarea, select {
   border-radius: 0;
   box-shadow: none;
 }
+
+/* ⛔ NO DEAD CONTROLS. Mounted alone there is nothing to close back to, so the
+   card's close button does nothing — and a button that does nothing is worse
+   than no button, especially on a page whose argument is that this is the real
+   thing. Hidden by the same specificity trick as the layout above, so the
+   component keeps one behaviour everywhere it actually ships. */
+.embed-card [aria-label="Close"] { display: none; }
