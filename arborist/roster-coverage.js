@@ -3,7 +3,7 @@
  * Cadastre, lifted into a module for Brief 26 per AC5 "one shared helper").
  *
  * Computes, live + read-only, the comparison hand-maintained in
- * ROSTER-COVERAGE.md: one row per CANONICALIZED Lafayette Square park species
+ * The live have-vs-need join (retired prose: _archive/ROSTER-COVERAGE-2026-08-23.md): one row per CANONICALIZED Lafayette Square park species
  * (cartograph/data/lafayette-square/clean/park_census.json, merged via roster-name-canon.json), each tagged
  * literal / composite / gap with covering library species + park_species_map
  * routing. Brief 24's `GET /coverage` is a thin wrapper over computeCoverage().

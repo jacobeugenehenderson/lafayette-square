@@ -3,7 +3,7 @@
  * Arborist backend.
  *
  * Local-only Node service for the Arborist helper app. Mirrors
- * cartograph/serve.js patterns — see arborist/SPEC.md § "Backend
+ * cartograph/serve.js patterns — see arborist/ORIENTATION.md §5 (the pipeline) — the v1 spec is retired to _archive
  * (arborist/serve.js)" for the full endpoint contract.
  */
 import { createServer } from 'http'

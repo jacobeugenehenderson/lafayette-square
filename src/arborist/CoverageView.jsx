@@ -13,7 +13,7 @@
  *
  * The literal/composite call is a name-token heuristic (the endpoint owns it);
  * routing is shown alongside so the operator can verify and hand-correct the
- * map. See ROSTER-COVERAGE.md for the hand-authored spec this reproduces.
+ * map. Supersedes the hand-authored tracker (_archive/ROSTER-COVERAGE-2026-08-23.md).
  */
 import { useEffect, useState } from 'react'
 

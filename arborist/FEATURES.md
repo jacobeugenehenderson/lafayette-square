@@ -261,7 +261,7 @@ The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innov
 The Grove header carries a top-level view toggle:
 
 - **Gallery** — the by-model 3D crop (per-Look `In Look` / `All Published` scope + click-to-select editor panel). All roster-curation behavior lives here. **Per-tile editing is click-to-select → a fixed right-rail `GroveEditorPanel` (Brief 31, Cleat 2026-05-25), retiring the camera-chasing `<Html>` hover-card.** (Brief 27 retired the Fill/Mid/Hero quality filter — every published composition is Hero, so the filter was inert.)
-- **Coverage** (`src/arborist/CoverageView.jsx`) — a **read-only**, roster-anchored "have vs need" table. One row per *canonicalized* Lafayette Square park species (from `src/data/park_trees.json`), sorted by placement count descending, each tagged 🟢 **literal** / 🟡 **composite** / 🔴 **gap**, with the covering library species and the current `park_species_map.json` routing. It reproduces, live, the join hand-maintained in `arborist/ROSTER-COVERAGE.md`. Computed by `GET /coverage`; writes nothing.
+- **Coverage** (`src/arborist/CoverageView.jsx`) — a **read-only**, roster-anchored "have vs need" table. One row per *canonicalized* Lafayette Square park species (from `src/data/park_trees.json`), sorted by placement count descending, each tagged 🟢 **literal** / 🟡 **composite** / 🔴 **gap**, with the covering library species and the current `park_species_map.json` routing. It reproduces, live, the join hand-maintained in the live `GET /coverage` join (`arborist/roster-coverage.js`). Computed by `GET /coverage`; writes nothing.
 
 **Coverage classification (derived on the fly, never persisted — slab provenance is the separate Brief 25):**
 - 🔴 **gap** — the species has no `park_species_map` routing to any *existing* library species (no published manifest, no chassis, no composition). This is the roster-anchored shopping list.
@@ -269,7 +269,7 @@ The Grove header carries a top-level view toggle:
 
 **Map-refresh worktable.** Each row displays its current `park_species_map.json` routing and flags ⚠ missing (no map entry) / ⚠ dangling (routed at a library id nothing answers to) / thin (routed at a published-but-no-chassis species). The view *displays* routing only — it never writes `park_species_map.json` (curation is by hand). This is the surface for refreshing the stale (2026-04-29) map so `bake-trees.js#pickVariant` fans the park-names onto the right published species.
 
-**Canonicalization** — `arborist/roster-name-canon.json` (`{ "<raw name>": "<canonical name>" }`) merges messy duplicate roster names (casing / word-order / cultivar) before counting, so the coverage list doesn't double-count. Operator-editable; seeded from the 5 merges in `ROSTER-COVERAGE.md` §intro (Oak Pin + restricted = 46, Bald Cypress + Baldcypress = 25, etc.). Unmerged raw names pass through as their own canonical name (visible, so a missing merge is spottable). Canonical counts sum to the full 756 placements.
+**Canonicalization** — `arborist/roster-name-canon.json` (`{ "<raw name>": "<canonical name>" }`) merges messy duplicate roster names (casing / word-order / cultivar) before counting, so the coverage list doesn't double-count. Operator-editable; seeded from the 5 merges in `_archive/ROSTER-COVERAGE-2026-08-23.md` §intro (Oak Pin + restricted = 46, Bald Cypress + Baldcypress = 25, etc.). Unmerged raw names pass through as their own canonical name (visible, so a missing merge is spottable). Canonical counts sum to the full 756 placements.
 
 ---
 
@@ -363,7 +363,7 @@ Per-Look palette override is instant — `scene.materialColors[<species>]` wins 
 ## Cross-references
 
 - `README.md` — runtime contract (the slimmer outward-facing version of this doc)
-- `SPEC.md` — original v1 build specification (largely shipped; residual decisions folded into `BACKLOG.md`)
+- `_archive/SPEC-2026-08-23.md` — the retired v1 (LiDAR/QSM) work order. History, not canon.
 - `ARCHITECTURE.md` — load-bearing patterns: publish-loop, two-tier substitution, master atlas, generator contract, bark shader unification
 - `BACKLOG.md` — the live kit-matcher arc + recent open state + the distilled carried-forward items (the May-2026 Procedural/Salon brief arcs are cooled to `_archive/BACKLOG-2026-05-brief-arcs.md`)
 - `NOTES.md` — dated decision record (live + recent; the May-2026 brief diary, incl. the load-bearing 2026-05-15 maxi-brief, is cooled to `_archive/NOTES-2026-05-diary.md`)

@@ -1,6 +1,6 @@
 /**
  * library-builder.js — the filesystem counterpart of the rubric
- * (Forest Builder Stage 1A, FOREST-BUILDER-KIT-MATCHER.md §4.5; LIBRARY-BUILDER.md).
+ * (Forest Builder Stage 1A, FOREST-BUILDER-KIT-MATCHER.md §4.5; _archive/LIBRARY-BUILDER-2026-08-23.md).
  *
  * A background concern of ingest, NOT a one-time migration: each part handed in
  * is PLACED canonically under public/library/<partTree>/<rubricValue>/<id>/ with

@@ -134,6 +134,6 @@ The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's se
 4. `../cartograph/ARCHITECTURE.md` — the kit-wide publish-loop pattern the Arborist mirrors.
 
 ## Cross-references
-- `STAGE0-KEYSTONE.md` · `LIBRARY-BUILDER.md` — the kit keystone + the filesystem layer
+- `_archive/STAGE0-KEYSTONE-2026-08-23.md` · `_archive/LIBRARY-BUILDER-2026-08-23.md` — retired Stage-0 records. History, not canon.
 - [[project_arborist_kit_matcher]] — the project thread
 - FOR-species20K (LiDAR peer track): https://zenodo.org/records/13255198

@@ -1,119 +1,297 @@
-# Arborist — Orientation (read this first)
+# Arborist — Orientation
 
-**The front door.** Plain-language, no jargon — what the Arborist *is*, who it serves, where each piece's job starts and stops, and an honest note on what's real vs half-built. This is the shared mental model everything else hangs off. When the model here and the deeper docs disagree, **this doc is the model; the code is the truth** — fix whichever is wrong.
+**The front door, and the only one.** What the Arborist *is*, what each surface is for,
+which artifact each one reads, and what is done / owed / abandoned. Everything else in
+`arborist/` is detail hanging off this page.
 
-*(Agreed end-to-end with Jacob, 2026-07-07. Supersedes the competing "front door" framings — `README.md` is the contract/API, the quartet is the detail, `BATON`/`FOREST-BUILDER-KIT-MATCHER` are archived design records.)*
+*Rewritten 2026-08-23 by **Wren** (`BRIEF-arborist-exorcism.md`, phase 1) against the code,
+not against the previous docs. The version this replaces is
+`_archive/ORIENTATION-2026-08-23-pre-exorcism.md`. Findings + every measurement behind these
+claims: `LEDGER-exorcism-wren.md`.*
+
+> ⛔ **Every number below is a COMMAND, not a figure.** A count written into prose is stale
+> the day it is written and is then quoted for months (`CLAUDE.md`). Run the line.
 
 ---
 
-## What the Arborist is, in one breath
+## 1. What the Arborist is for
 
-The Arborist is a **bounded service** that turns *"give me species X"* into **the best tree asset it can build for X**. It does **not** decide where trees go or how many — that's the neighborhood's business. Its whole job is: **species → a pristine, whole, unique tree asset.**
+**The Arborist is a leaf-, bark- and chassis MIXER.** Its premise is that a neighbourhood
+does not need a literal, hand-modelled tree for every species it contains — because a
+tree's readable identity is *a silhouette, a bark and a leaf*, and we hold those as
+**parts**. Ask for a species; the Arborist composes the best tree it can from the parts on
+hand.
 
-The **Cartograph** (the map/neighborhood pipeline) is its **client**.
+That is the whole idea, and it is the thing to measure everything against: **coverage
+should come from composition, not from procurement.** Where the kit still needs a literal
+model per species, the mixer has not made good.
+
+**It does not decide where trees go or how many.** The **Cartograph** holds the census and
+is the Arborist's client. The Arborist's entire output is *pristine, whole, unique tree
+assets*; placing the few across the many is the Cartograph's job, and nothing downstream of
+the bake may improve or repair an asset — only decide whether it is seen.
 
 ---
 
-## The chain — who owns what
+## 2. The two sides, and the join between them
+
+Almost every confusion in this app comes from mistaking one of these for the other.
+
+- **DEMAND — what a neighbourhood asks for.** A census of real trees, per town, keyed by
+  roster names like `Oak, Pin`. This is the Salon's **left column**.
+- **SUPPLY — what we hold.** 241 chassis, plus bark refs and leaf packs. This is the
+  **Shelves**, and the pool of already-composed species.
+- **THE JOIN — how a demanded species finds its parts.** Two halves, and **both are the
+  open work of the whole app**:
+  1. a **dossier** — the species declaring which habit / bark / leaf it needs;
+  2. a **habit shelf** — each chassis ratified as one of nine habits, so a species can land
+     on the right shelf and browse.
+
+▶ `ls arborist/dossiers/*.json | wc -l` against the roster size, and
+▶ `node -e "const p=require('./arborist/state/part-index.json').parts.filter(x=>x.partType==='chassis');const h=x=>x.tags?.['chassis.habit'];console.log('ratified',p.filter(x=>h(x)?.ratified).length,'| valued',p.filter(x=>h(x)?.value).length,'| of',p.length)"`
+
+⛔ **And the habit values that exist are mostly circular.** Nearly all of them were derived
+from `source.species-botany(<the chassis's own original species>)` — *"this GLB came off a
+sugar maple, so it has a sugar maple's habit."* The keying doctrine rules the opposite: **a
+chassis is free geometry; picking it IS the assignment, and its own `source.species` keys
+nothing.** So today the mixer can confidently shelve a chassis only for species we already
+had a model of — **precisely the need the mixer exists to remove.**
+
+⇒ **When the map routes a species at a generic tree, that is not a routing bug. It is this
+join being empty.** Repointing routes without filling the join is an instance patch.
+
+### ⭐ The operator is a NON-BOTANIST. That decides the keys.
+*(Jacob, 2026-08-23.)* The operator works in **chassis · bark · leaf (+ season)** and in
+**groupings**, not in Latin. ⇒ **A species' identity, everywhere the operator can see it,
+is its common name** (`Sugar Maple` → `maple_sugar`). Botanical slugs are **supply-side
+metadata** — provenance on a part, never a name on a surface.
+⛔ **Today this is broken on both sides of the join:** several species exist twice, once
+botanical and once roster-keyed (`acer_saccharum` *and* `maple_sugar`), and the **dossiers
+are all botanical-named while every shipping tree is roster-named.** So the side that
+*declares what a species needs* and the side that *holds what we have* are keyed in
+different languages. **One key, and it is the operator's.**
+⚠️ One of those twins holds a real composition that routes nowhere — so the move is
+**merge, then retire**, never delete.
+▶ `node -e "const m=require('./cartograph/data/lafayette-square/tree-species-map.json').map;const t=new Set(Object.values(m).flat());console.log([...t].filter(Boolean).sort().join(' '))"`
+
+⚠️ **A word already taken: `Native`.** In the app today *native* means **the leaf this
+species actually has** (the dossier's target pack/arrangement — the Salon's
+`Bare · Native · Synthetic`). **There is no regional-nativeness concept anywhere.** If
+grouping by region is wanted it is unbuilt **and it needs a different word.**
+
+---
+
+## 3. The surfaces — seven, and what each is FOR
+
+`src/arborist/ArboristApp.jsx` is the whole router; read it, it is eight lines.
+▶ `sed -n '100,107p' src/arborist/ArboristApp.jsx`
+
+| surface | what it is FOR | reached by |
+|---|---|---|
+| **Salon** | Compose ONE species from parts. The only add-surface. | default |
+| **Grove** | Judge the trees together, at neighbourhood scale, and ship them. | `Grove →` / `?legacy=grove` |
+| **Shelves** | Curate the SUPPLY — put each chassis on its habit shelf. | `?legacy=shelves` |
+| **Coverage** | Read-only have-vs-need for the neighbourhood. | a tab inside Grove |
+| **Diorama** | See ONE finished tree as it actually ships, lit by the real sky. | `?view=fullmonte`, `?embed=tree` |
+| ~~Procedural~~ | ⛔ **DEAD — see §7.** | `?legacy=procedural` |
+| ~~LiDAR~~ / ~~Scan~~ | ⛔ **DEAD — see §7.** | `?legacy=lidar` / `?legacy=workstage` |
+
+Two further pieces are not surfaces but must be known: **`OverheadBaker` and
+`HeroImpostorBaker` are headless render-to-texture bakers that run INSIDE the Grove.** They
+are browser-GPU authored and **the CLI bake cannot reproduce them** — so a re-pour or a
+merge must carry their manifest keys, never re-derive them.
+
+---
+
+## 4. ⭐⭐ WHICH ARTIFACT EACH SURFACE READS
+
+**The single most load-bearing fact in this document.** Its absence has cost multiple days:
+when two surfaces disagree it reads as a bug, and it is usually two different files.
+
+| surface | reads | density |
+|---|---|---|
+| **Salon** | a **freshly built preview** — POSTs `{chassis,bark,leaves}`, gets a per-composition GLB + atlas that exists nowhere on disk | authoring |
+| **Grove — gallery** | the **authoring pool**, `/trees/<sp>/…` | **lod0** |
+| **Grove — impostor bakers** | the **bake**, `baked/<look>/trees/…` | **lod1** |
+| **Shelves** | the **chassis library** only, `public/trees/_chassis/` | — |
+| **Coverage** | **no geometry at all** — a join over census × routing × index | — |
+| **Diorama** | the **bake** | **lod0** |
+| **LS runtime** | the **bake** + the impostor records | **lod1** + impostors |
+
+▶ `grep -n "glbUrl" arborist/serve.js src/arborist/Grove.jsx src/components/TreeDiorama.jsx`
+
+**Three consequences, all currently mistaken for defects:**
+1. **The Salon will never match the diorama**, because one is a fresh build and the other
+   is a frozen file. ⛔ **This does NOT mean a worse-looking diorama is correct.** It means
+   the difference is *the bake*, and a thin bake is a defect in the bake — never something
+   the viewer can fix.
+2. **The Grove reads two artifacts at two densities inside one surface** — you judge lod0
+   from the pool while the captures that ship are made from lod1 out of the bake.
+3. **`public/trees/` is gitignored and never deployed** (`.gitignore:235`). It is the
+   **authoring pool**. Only `public/baked/<look>/` ships.
+
+---
+
+## 5. The pipeline — a part to a tree on a street
 
 ```
-CARTOGRAPH INTAKE                 ARBORIST  (the service)                 THE JOIN            RUNTIME
-─────────────────                 ──────────────────────                 ────────            ───────
-the real tree CENSUS              Library → Salon → Grove                 the BAKE            Slab → Universal
-(where + which species,      ►    (species → pristine unique      ►       (census ×      ►    Reader
- regionally real)            "give  tree ASSETS, best-available)  "here    grove)              (draws it)
-                              me X"                                are X"
+public/trees/_chassis/*.glb      the parts: chassis
+public/textures/bark/<ref>/                bark
+public/textures/leaves/shapes/<pack>/      leaf packs
+        │
+        │  the operator composes, in the SALON — autosaves, no publish gesture
+        ▼
+arborist/state/<species>/compositions.json          ← AUTHORED. the recipe.
+        │
+        │  generate-salon.js  (composes + bakes the authored transform)
+        │      └─ shells to publish-glb.js  (variants, decimation, 3 LOD tiers)
+        ▼
+public/trees/<species>/{skeleton-N-lod{0,1,2}.glb, tips-N.json, manifest.json}
+public/trees/index.json                              ← the catalog + the shippable variants
+        │
+        │  bake-look.js --look <id>   reads the LOOK's roster: looks/<look>/design.json#/trees
+        │      unifyAtlases — sha1-dedupes bark + leaf tiles across the roster
+        ▼
+public/baked/<look>/trees-atlas.json + the master PNGs
+        │
+        │  bake-trees.js --scene <name>   reads the NEIGHBOURHOOD's census + routing
+        ▼
+public/baked/<look>/trees/<species>/…                ← THE SLAB. this is what deploys.
+        │
+        ▼
+src/components/InstancedTrees.jsx                    ← runtime: frustum, LOD selection, impostors
 ```
 
-- **Cartograph intake — owns *where* + *which*.** It holds the real tree **census**: 700+ placement points, each with a regionally-real species (from city/OSM/forestry data). It **asks the Arborist** for those species "at whatever level of detail it has."
-- **Arborist — the service.** Three rooms:
-  - **Library** — the **species-level catalog** the neighborhood draws from, backed by a substrate of reusable **parts** (chassis · bark · leaf). *"LS asks the Library for regionally-appropriate species."*
-  - **Salon** — where a species that **needs work** gets **built or fixed** — one *unique* tree at a time.
-  - **Grove** — the **~8–19 unique, pristine tree assets** that ship. It is the **truth window for the ASSET**: each unique tree, whole and final. It is *not* the 700-tree scene and never holds one.
-- **The bake — the join.** The Cartograph places its **census × the Arborist's grove** — the few unique trees instanced across the many points.
-- **Slab — the frozen placed scene.** Dumb. It is what it is handed.
-- **Universal Reader — draws it.** Runtime only: per-frame frustum + occlusion + **LOD *selection*** against the live camera.
+⛔ **`--look` and `--scene` are different axes and the two commands take different flags.**
+`bake-look --look` packs the **Look's** atlas; `bake-trees --scene` places the
+**neighbourhood's** census. `bake-trees` was renamed off `--look` in 2026-07-15 — it always
+meant the scene. A Look is a *style* over a neighbourhood; a scene is the *place*.
+
+**One gesture ships: the Grove's "Bake → Slab."** It regenerates every composed species
+from source, rebuilds the index, packs the atlas, then places the census — in that order.
+⛔ **There is no per-species "Re-publish" step and there has not been since 2026-06-25.**
+Any doc telling you to publish before baking is stale.
+▶ `sed -n '1156,1216p' arborist/serve.js`
 
 ---
 
-## The law (the boundary rules)
+## 6. Authored · derived · baked · per-operator
 
-1. **The Arborist hands off pristine wholes.** When a unique tree leaves the **Grove** it is *final*: correct identity, baked true scale, its LOD ladder (lod0/1/2), its atlas. Nothing downstream may improve or repair the asset.
-2. **The 5,000-tree *scene* is the Cartograph's, not the Arborist's.** Which species sits at each point, **substitution** to cover points from the few available trees, the **impostor-vs-geometry split**, placement, scaling-per-instance — all downstream of the Grove. **The Grove never holds the scene; none of this is an asset decision — it just decides how copies of the same handful of trees are drawn.** *(The hero-pan **cull** that used to trim instances here is retired — it was deleting most of the neighborhood. Every tree now paints; see the SSoT pointer above.)*
-3. **The Slab is dumb; the Reader is runtime.** After the bake, nothing invents or drops a *unique asset* — only its *visibility* changes (per-frame frustum + LOD selection). "Smart" runtime work is fine **because it starts from pristine inputs.**
+**AUTHORED — the operator made this. It is the product. Never "fix" it to a default.**
 
-**Say it in one line:** *the Arborist prepares pristine unique trees; the Cartograph places the few across the many; the Slab freezes it; the Reader draws it — and nothing after the Grove alters an asset, only where and whether it's seen.*
+| what | where |
+|---|---|
+| the recipe for a species | `arborist/state/<species>/compositions.json` |
+| which trees are in a Look (**"atlas inclusion"**) | `public/looks/<look>/design.json#/trees` |
+| which library species a roster name routes to | `cartograph/data/<scene>/tree-species-map.json` |
+| roster name merges | `arborist/roster-name-canon.json` |
+| chassis approve / rename / notes | `arborist/state/_chassis-curation.json` |
+| the species vocabulary + dossiers | `arborist/rubric.json`, `arborist/dossiers/<id>.json` |
 
----
+⛔ **The census and the routing map are PER-TOWN** — `cartograph/data/<scene>/`. There is no
+global `src/data/park_*.json`; that was the LS special case and it was deliberately retired
+so LS goes through the same intake as every other neighbourhood.
+⚠️ **The census is several WELLS, not one file** — `park_census` · `park_trees` ·
+`forest_park_trees` · `osm_trees` · `derived_trees`. **A reader that opens one of them is
+reading a fraction of the town.**
+▶ `sed -n '110,116p' cartograph/tree-bake-inputs.mjs`
 
-## The two seams that must be daylight-tight
+**DERIVED — regenerated from the above; never hand-edit.** `public/trees/**`,
+`public/trees/index.json`, `arborist/state/part-index.json`, `public/library/**`.
 
-Everything unpredictable about LS trees lives on one of two seams:
+**BAKED — the frozen artifact; the only thing that deploys.** `public/baked/<look>/**`.
+Invalidated by any authored change; refreshed only by the Grove bake.
 
-1. **Salon preview ↔ Grove ↔ the baked unique GLB** — **asset parity.** What you author must equal what ships *as the asset*. Today it leaks: the Salon previews **lod0** but LS ships **lod1**; **botanical scale is preview-only** (not baked); some knobs (leaf tint, bark gradient) never reach the bake at all. → *close these; the Grove must be WYSIWYG for the asset.*
-2. **Cartograph census ↔ Arborist grove** — the **species-key handoff.** The census says `quercus_alba`; the grove is keyed `oak_white`; the join can't match, so it **substitutes a different tree even though the right one exists**. → *align the species vocabulary across this one boundary.* **This is the single highest-value reliability fix** — it's not in the Grove and not in the Slab, it's the handshake.
-
-The "wintery/sparse at noon" look sits on seam #1 (the unique asset renders as lod1 in fog/DoF, vs full-green lod0 on the Salon's neutral cyc). The "~50% substitution" sits on seam #2 (mostly *by design* — that's how you cover 700 points with ~8 trees — but the *avoidable* part is the key mismatch).
-
----
-
-## Call it what it is: reskinning, not assembly
-
-The "**create a species from parts**" pitch implies procedural **assembly** — grow a novel branch skeleton from primitives. That is **not** what the code does. What it does is **curate + reskin**:
-
-- **Chassis** = a whole, pre-modeled vendor tree silhouette. You **pick from ~239**; you don't grow one. *A tree's identity is mostly its branch structure — and that's the one thing you can't compose.*
-- **Bark** = always a texture swap.
-- **Leaves** = the only genuinely composable part — reskin (default) or a real geometric respray (opt-in "synthesized").
-
-This is fine — reskinning can look great **if the ~239 chassis cover the species the neighborhood asks for.** So it's a **coverage** problem, not a capability one. And the real bottleneck is **asset management**: the parts aren't sorted/tagged usefully, so the matcher under-reports what's buildable. **We can almost certainly build more species right now than we think — by fixing tagging/findability, not by building new capability.**
-
-**Our procedural generator is not usable** and its workspace is hidden. *(Don't cite the impostors as counter-evidence: both the overhead and hero impostors are **render-to-texture captures of the real tree**, not procedural stand-ins. The analytic/procedural billboard was tried and killed — "floating dark leaf-slabs + a stone trunk.")*
+**PER-OPERATOR — this machine, this browser. Never authored, never deployed.** The
+Meteorologist canary (`localStorage`, key `meteorologist-canary-tree`, read via
+`src/lib/canaryTree.js` by both the Meteorologist and the diorama) and UI open-flags.
 
 ---
 
-## The operating model — the four surfaces + where we're headed (settled 2026-07-08)
+## 7. What is DONE · OWED · ABANDONED
 
-The aspirational shape, agreed in prose with Jacob. **Each surface makes ONE kind of judgment:**
+### DONE and real
+The publish→bake→slab spine, deterministic and byte-verified. The single master atlas with
+sha1 tile dedupe — **atlas cost scales with distinct PARTS, not species count**, so a dozen
+pines sharing one bark and one needle pack are nearly free.
+▶ `node -e "const j=require('./public/baked/lafayette-square/trees-atlas.json');const b={};for(const t of j.tiles)b[t.classification]=(b[t.classification]||0)+1;console.log(b,'rosterSize',j.rosterSize)"`
+The **impostor foundation**: every placement paints as a captured canopy billboard and the
+tallest fraction keeps real `lod1` mesh as anchors (`?heroGeom=`); two capture systems split
+by viewing hemisphere, overhead for browse and azimuthal bands for the side-on pan, both RTT
+captures of the real tree. The Look roster and the slab agree exactly. Botanical mature
+heights ship. The NO-FILLER gate keeps generic and procedural assets out of the runtime pool.
 
-**Intake → Salon → Grove → Bake.**
-1. **Intake SEEDS the Look.** A neighborhood census becomes a Look with a *mandatory-real* seed roster: every census species resolves to its nearest real chassis (via `bake-trees CATEGORY_FALLBACK`) or an **honest gap** — **never a filler**. A Look is born clean + bakeable; the Salon only *refines*. This is where the no-filler rule belongs — at Look-birth, not a cleanup you keep redoing.
-2. **Salon ADDS / composes** — build a species one tree at a time (a focused, blind judgment). The only add-surface.
-3. **Grove CULLS in context** — seeing trees next to their siblings at neighborhood scale is a *gestalt* judgment you can't make one-at-a-time. Add-nothing, remove-freely: **demote per-Look** (wrong here) or **globally** (bad chassis), both **reversible / non-destructive**.
-4. **Bake SHIPS** — nothing after the Grove alters an asset (the law above).
+### OWED
+- ⭐ **The join (§2)** — dossiers, and a ratified habit per chassis. **This is the app's
+  real backlog; everything else is downstream of it.**
+- ⭐ **A completeness state.** The kit models `composed` / `not-available` / `unauthored`,
+  where **`composed` means only that a chassis is set**. Defaults silently supply the rest,
+  so **an untouched species and a finished one look identical on every surface** — you
+  cannot see what you have not done. The resolver already computes whether each field was
+  **authored** or **defaulted** and discards it; keeping that one fact yields *complete /
+  started / not started* everywhere, and gives the manifest its missing leaf provenance.
+- **The Grove invariant** *(Jacob, 2026-08-23)*: **a tree in the Grove should already be
+  baked and ready for the slab.** Today the Grove is a pre-bake surface, gates on *"has a
+  composition,"* and so **hides a species that ships**. Moving the gate to *"is in the
+  slab"* also decides where the bake gesture lives and where the impostor bakers run.
+- ⭐ **SEASONS — authored, and rendered by nothing.** `rubric.json`'s `leaf.season` is a
+  day-of-year curve (`buds · spring · summer · fall · winter`), and **every dossier already
+  carries real anchor colours** — bald cypress even carries `winter: null` with the note
+  *"DECIDUOUS conifer — has a bare-winter anchor, unlike an evergreen conifer."* **No
+  renderer reads any of it**, and the axis's own `home` field points at a design
+  `ARCHITECTURE` marks retired. **The colours survive whatever replaces the mechanism —
+  they are data, not a design.** This needs a live home.
+  ▶ `grep -h '"leaf.season"' arborist/dossiers/*.json | wc -l` · `grep -c "season\|uDayOfYear" src/components/treeAtlasMaterial.js`
+- **More parts** — leaf packs and chassis. Known and accepted.
+- **KTX2 for the impostor pool**, load-streaming along the pan, and a real height (not
+  `dbh`) driving the geometry split.
+- **`OPERATIONS.md`** — the operator's manual. Named for months, never written; operator
+  knobs still live in `FEATURES.md`.
 
-**Vocabulary = Promote / Demote. No ratings.** The 0–4 Fill/Mid/Hero scale was false precision — nobody decides "3 vs 4." **Promote** = vouch eligible. **Demote** = set aside (reversible). Untouched = the default. That's the whole language.
-
-**⭐ Categorize, don't recommend.** A per-species *match score* is brittle and never trusted (the "Recommended (0)" everywhere). The rubric already **closes the set**, so there's nothing to score: **9 chassis HABITS** — `vase · columnar · oval · spreading · weeping · multi-stem · pyramidal · rounded · irregular` — plus **10 leaf shapes** and **~8 bark types**, all finite + complete. Parts live on **shelves**; each chassis is assigned ONE habit (a *fact*, once); a species declares its habit → you land on that shelf, browse others freely. **No Recommended toggle, no matcher.** This supersedes the kit-matcher *recommendation* framing.
-
-**The composition workspace (BUILT 2026-07-11 — merge `f1496661`, agent Sylva):** the **Shelves** surface (browse all 241 chassis, silhouette-only into the 9 forms, junk auto-flag + set-aside) + **Phase-4 Salon** picker that composes off those shelves; the old matcher/ranking is ripped out. pick a species → *"we have a model (+ the other chassises on its habit shelf · bark/leaf options)"* **or** *"no model, but its habit → these chassises, its bark → these barks, **just need the leaves**."* Per-species **part-level coverage** (chassis ✓ / bark ✓ / leaf ✗) is the roster's real signal. **What remains is the tagging *pass* itself** — only ~5 chassis are classified so far; the shelves stay empty until a curation afternoon (assign-1-of-9 per chassis, no ML). Full spec + open items: `BACKLOG.md § THE BIG JOB`.
+### ABANDONED — ⛔ do not build to these, do not revive
+- ⛔⛔ **PROCEDURAL and LiDAR, and the LiDAR-fed Scan workstage** *(Jacob's ruling,
+  2026-08-23: "We are NOT using procedural OR LiDar so anything taking up space or confusing
+  things or getting in the way or being deceptively heavy is 100% rot")*. They are **~28% of
+  the app's code**, their workstages are **statically imported and therefore compiled into
+  the deployed bundle**, and the LiDAR corpus in `botanica/` is enormous. Removal is phase-2
+  work. Their "kept as equal peer tracks" doctrine is **void**.
+- ⛔ The whole-tree octahedral cross impostor. Killed — it read as floating dark slabs.
+  ⚠️ Still emitted into every slab and still read behind an unreachable condition.
+- ⛔ The `annualCycle` leaf-colour design and the points-canopy ("Configuration D"). Never
+  built. Leaf colour is a rubric axis recoloured by posterize.
+- ⛔ The monopodial-conifer algorithm. Fully specced in `ARCHITECTURE.md`; **the file has
+  never existed.**
+- ⛔ The **0–4 Fill / Mid / Hero rating**, retired 2026-07-08 for **Promote / Demote**. The
+  vocabulary never landed, so the retired ladder is still the Grove editor's most prominent
+  control — soliciting a value **nothing has ever written**.
+  ▶ `node -e "const v=require('./public/trees/index.json').variants;console.log(v.filter(x=>x.qualityOverride!=null).length,'of',v.length)"`
+- ⚠️ The **left-column bar** (`groveThreshold`): a top-N-with-pins build-eligibility dial.
+  Built as UI + persistence and **connected to nothing** — no baker or runtime reads it.
+  It also measures the wrong cost: atlas inclusion is already near-free per species (§DONE).
+  **Wire it to geometry weight or remove it — it must not stay as a control that looks live.**
 
 ---
 
-## The LsoD — one honest paragraph
+## 8. Two rules this app keeps breaking
 
-"LsoD" tangles three different axes: viewing **contexts** (Street / Hero / Browse) × geometry **LODs** (lod0/1/2) × render **tiers** (mesh / impostor). The clean split to hold: **the LOD *ladder* is a Grove/prep product** (baked into the pristine asset); **LOD *selection* is runtime** (the Reader picks per camera). That split is now realized in **both** hemispheres — overhead/Browse (2026-07-10) and hero/side-on (2026-07-22) — with the impostor as the **foundation** and geometry an enhancement on the tallest trees.
+1. ⛔ **When a consumer dies, the control dies in the same commit.** Every cleanup pass here
+   removed a consumer and left the control. That is the whole mechanism behind the flotsam.
+2. ⛔ **A default is not an authorship, and a doc is not a ruling.** A default renders as a
+   plausible tree; a plausible-looking success in a kit is the worst outcome there is
+   (`CLAUDE.md` Layer 0). The same holds for prose: an editorial sentence in a doc is a
+   claim, **including one that sounds like the operator.**
 
-> 📍 **SSoT — do not restate the render state here or anywhere else.** The one home for what trees actually render as, and the doctrine governing it, is **`arborist/ARCHITECTURE.md §"Tree-render reality at LS"`**. Every other doc gets a pointer, never a copy: this page carried a stale "hero-cross stays parked" line for weeks and a session was spent acting on it.
+## Where to go next
 
----
+`README.md` — the contract (endpoints, CLI, inputs/outputs) · `FEATURES.md` — the operator
+surface · `ARCHITECTURE.md` — load-bearing patterns · `BACKLOG.md` — in flight ·
+`NOTES.md` — dated decisions · `SALON-INTERFACE.md` (repo root) — the Salon's design.
 
-## Honest state — live / parked / not-delivered
+**Retired 2026-08-23 to `_archive/` — history, not canon.** `SPEC.md` (the 2026-04-27 v1
+LiDAR work order) · `STAGE0-KEYSTONE.md` · `LIBRARY-BUILDER.md` (frozen Stage-0 snapshots)
+· `ROSTER-COVERAGE.md` (a hand-typed tracker of what `GET /coverage` now computes live).
+**Each declared itself superseded in its own opening line.**
 
-- **Live + real:** the rubric / coverage tools; the publish → bake → slab **spine** (byte-verified); the **Salon** plate-rack (deep interface cleanup 2026-07-08); the **Grove** bake (regenerate-from-source, now no-filler + one-tile-per-species). **NO-FILLER gate live** (`build-index.js` + `serve.js#/grove`): procedural/generic never enter the runtime pool — the structural enforcement "no procedurals" always needed. Real conifer/columnar/weeping chassis rated in; 49 chassis relabeled (common + botanical) + 17 evergreen/deciduous flags fixed.
-- **Live (NEW 2026-07-10):** the **overhead plan-view SNAPSHOT impostor** — 3-slice RTT snapshot per unique tree, runtime camera-height selection (`a4458f4a`, merged). Eye-gated "amazing"; finish rolls into the chassis-tagging root-fix.
-- **Live (NEW 2026-07-11, merge `f1496661`):** the **Shelves gauntlet** (browse-all-241 chassis, silhouette→9 forms, junk-flag/set-aside, whole-chassis crown thumbnails) + **Phase-4 Salon** composing off the shelves — categorize-don't-recommend realized, matcher ripped out of the picker. Eye-gated "looking great." Doubled as library QC: added the **wood-coverage / stub-wood checker** (leaves-first vendor variants like `black_gum_i` show bare-wood as a stub) and repaired **47 orphaned-mesh chassis** (producer fix in `survey-deleaf.js` — `attachOrphansToScene` + `computeWoodCoverage` at emit, so a re-run reproduces both).
-- **Parked / hidden:** the **procedural** + **LiDAR** workspaces (URL-only, hidden — leave hidden; procedural v1 assets now *also* hard-gated out of the pool, not just the UI); the whole-tree **octahedral cross** impostor (`impostorBySpecies` — **killed**, not parked; the hero foundation replaced it); `FOREST-BUILDER-KIT-MATCHER` (design record → archive; the *recommendation* framing superseded by the 9-habit shelves above). `arborist/ARCHITECTURE.md §"Tree-render reality at LS"` is **retired** — its forward plan was built and now lives in `ARCHITECTURE.md §"Tree-render reality at LS"`.
-- **Dead knobs (swept / to sweep):** **Adopt** fully removed; the `Recommended/Show all` + `Mark not-available` + species-slug/state chrome swept (2026-07-08). ⚠️ **Still lying:** the **bark knobs** (tint / UV / roughness / jitter) are runtime uniforms keyed by a per-species bark manifest entry — **no entry → they do nothing**, so they're **dead on every Native/substituted tree** (`generate-salon.js:1571`). Fix = hide-when-inert or seed a bark entry. (Bark **ref swap** works everywhere.)
-- **Rating → Promote/Demote:** the 0–4 scale is retired in doctrine (see the operating model above); the code still carries `quality`/`excluded` under the hood until the vocabulary lands.
-- **Not yet delivered:** "species from parts" proven perfect (Sugar-Maple slice never signed off); the **habit-tagging *pass*** (the surface is built — above — but only ~5 chassis classified; the shelves fill in a curation afternoon); **intake-seeds-the-Look** (yellow/green species should open pre-loaded, not blank); leaf **color / season** ramp; the light **species-intro fallback**; the Meteorologist **canary picker**; both **daylight-seam** closures. *(Vestigial to sweep: the `InsideHeader` "recommended" scope toggle — old matcher UI, left wired to keep Phase 4 contained.)*
-
----
-
-## Read order / route
-
-1. **This doc** — the model.
-2. **`README.md`** — the contract: inputs/outputs, API endpoints, CLI, ship-to-slab procedure.
-3. The **quartet** — `FEATURES.md` (operator surface) · `ARCHITECTURE.md` (load-bearing patterns) · `BACKLOG.md` (in-flight / next) · `NOTES.md` (dated decisions).
-4. `OPERATIONS.md` — the operator's manual (the real knobs + the ship procedure). *(To be written.)*
-
-*Archived design records (history, not canon): `_archive/arborist/ARCHITECTURE.md §"Tree-render reality at LS"`, `_archive/FOREST-BUILDER-KIT-MATCHER.md`, `SPEC.md`, `STAGE0-KEYSTONE.md`, `LIBRARY-BUILDER.md`. `SALON-INTERFACE.md` stays as the Salon design doc.*
+⚠️ **Those docs have not yet been conformed to this page.** Where one disagrees with this
+one, this page was measured against the code on 2026-08-23 — but **check the code, not
+either document.** The conformance pass is `LEDGER-exorcism-wren.md`, phase 2.

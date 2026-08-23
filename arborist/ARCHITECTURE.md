@@ -648,6 +648,6 @@ The boundary lives at the **`bake-look.js` + `bake-trees.js` invocation** — ev
 - `BACKLOG.md` — the live kit-matcher arc + carried-forward open items (May-2026 brief arcs cooled to `_archive/BACKLOG-2026-05-brief-arcs.md`)
 - `NOTES.md` — dated architecture record (live + recent; the May-2026 brief diary, incl. the load-bearing 2026-05-15 maxi-brief, is cooled to `_archive/NOTES-2026-05-diary.md`)
 - `README.md` — runtime contract (slimmer)
-- `SPEC.md` — original v1 build specification
+- `_archive/SPEC-2026-08-23.md` — the retired v1 (LiDAR/QSM) work order. History, not canon.
 - `../cartograph/ARCHITECTURE.md` — kit-wide publish-loop pattern
 - Memories: `project_kit_helpers_pattern`, `project_kit_bin_pattern_for_bulk_numerics`, `project_kit_deploy_path_agnostic`, `project_slab_is_the_instance_identity`, `project_authoring_is_live_production_is_static`, `project_doped_artifact_placecard_edit_pattern`, `feedback_stash_isolate_per_file`, `feedback_no_parallel_pipeline_for_scenes`, `feedback_preview_uses_production_pipeline`
