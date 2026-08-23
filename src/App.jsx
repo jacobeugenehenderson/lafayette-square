@@ -715,7 +715,12 @@ function App() {
         {route.embed === 'masthead' && <SocietyMasthead />}
         {route.embed === 'card' && <EmbedCard placeId={route.place} />}
         {route.embed === 'society' && (
-          <div className="w-full h-full flex flex-col min-h-0">
+          <div className="embed-society w-full h-full flex flex-col min-h-0">
+            {/* Opening on a listing is what lets a page show the directory and
+                that place's card side by side, agreeing with each other. The
+                tab already expands and scrolls to the selection — this only
+                has to make the selection. */}
+            {route.place && <PlaceOpener listingId={route.place} />}
             <LafayettePagesTab isFull={false} isBrowse />
           </div>
         )}
@@ -803,7 +808,11 @@ function parseRoute() {
   // shows a visitor half a product.
   let embed = null
   try { embed = new URLSearchParams(window.location.search).get('embed') } catch { embed = null }
-  if (embed === 'society' || embed === 'masthead') return { page: 'embed', embed }
+  if (embed === 'society' || embed === 'masthead') {
+    let place = null
+    try { place = new URLSearchParams(window.location.search).get('place') } catch { place = null }
+    return { page: 'embed', embed, place }
+  }
   if (embed === 'card') {
     let place = null
     try { place = new URLSearchParams(window.location.search).get('place') } catch { place = null }

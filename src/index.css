@@ -418,3 +418,17 @@ input, textarea, select {
    thing. Hidden by the same specificity trick as the layout above, so the
    component keeps one behaviour everywhere it actually ships. */
 .embed-card [aria-label="Close"] { display: none; }
+
+/* ── The directory, mounted alone (`?embed=society`) ────────────────────────
+   The search sits at the top of the scrolling area, so it scrolls away with
+   the list. Framed on its own the list IS the surface, and searching it should
+   not require finding your way back to the top.
+
+   The hook is the scroll container's first child — the search's own wrapper —
+   scoped to the embed so the app itself is untouched. */
+.embed-society .overflow-y-auto > div:first-child {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-dim);
+}
