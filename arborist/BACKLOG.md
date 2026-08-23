@@ -53,10 +53,35 @@ around tree? Work on luminance and back lighting, pump up color saturation."
     not the Ward's ground.
   - **visible time slider** — the opaque embed now covers the band, so the
     `.skyband-mark` no longer shows (site repo).
-  - **luminance, back lighting, colour saturation** — the licence here is
-    Jacob's: "only one tree and almost certainly a desktop browser." Already
-    spent: shadow map retargeted ±900 m → ~60 m (0.44 m → ~15 mm per texel),
-    dpr 1.5 → 2, `StageShadows`.
+  - **luminance, back lighting, colour saturation — ALPHA CONFIRMED SOUND;
+    THE GAP IS LEAF TRANSMISSION.** Jacob asked to confirm alpha "mostly for
+    luminance within the canopy and when backlit and at golden hour." Measured
+    from `trees-atlas.json#atlas`:
+
+        alphaMode "MASK" · alphaCutoff 0.5 · alphaTest 0.5 · doubleSided TRUE
+
+    ⇒ Backlit cards are **not** culled (double-sided), and distance erosion is
+    already solved by the coverage-preserving mip chain. ⛔ **Nothing is wrong
+    with the alpha.**
+    ⭐ **What is missing is that a leaf cannot transmit light.** `grep -i
+    "transmission|translucen|subsurface|wrap"` over `treeAtlasMaterial.js`
+    returns NOTHING. Leaves are opaque `MeshStandardMaterial` faces, so a
+    double-sided leaf lit from behind shows an unlit back face and goes flat —
+    which is exactly what golden hour shows: at 18:40 with the sun directly
+    behind the trunk and a warm horizon burning through, the canopy stays a
+    uniform mid-green with no warm rim and no glow anywhere.
+    ▶ **Proposed shape** (not built, Jacob's call — it is a whole-product look
+    change): a transmission/wrap term in the leaf fragment path gated on
+    `aBark == 0`, driven by the sun direction and tinted by leaf albedo, behind
+    a **uniform defaulting to 0** so the map stays bit-identical until a Look
+    authors it up — the same uniform-branch discipline `treeBarkTierUniform`
+    uses, which keeps the single-shader-program constraint Bloom needs.
+    ⚠ Do NOT reach for pixel readback to quantify this: the Canvas runs without
+    `preserveDrawingBuffer`, so `drawImage`/`getImageData` returns all zeros and
+    reads as "everything is black." That is the method failing, not a finding.
+    Already spent on the licence ("only one tree, almost certainly desktop"):
+    shadow map retargeted ±900 m → ~60 m (0.44 m → ~15 mm per texel), dpr
+    1.5 → 2, `StageShadows`.
   - ⚠ Also observed, undiagnosed: stars render in a DAYLIT sky in this Canvas,
     and the grass reads brighter than the tree at night.
 
