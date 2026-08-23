@@ -419,6 +419,13 @@ input, textarea, select {
    component keeps one behaviour everywhere it actually ships. */
 .embed-card [aria-label="Close"] { display: none; }
 
+/* And the claim bar with it. "Is this your place?" opens a contact modal — a
+   flow an embed cannot finish — so it is the same dead control as the close
+   button, and as a sticky footer it jammed against the tablet's bezel besides.
+   It is the dialog's last child; two structural selectors beat Tailwind's one,
+   so again no !important and no fork of the component. */
+.embed-card > [role="dialog"] > :last-child { display: none; }
+
 /* ── The directory, mounted alone (`?embed=society`) ────────────────────────
    The search sits at the top of the scrolling area, so it scrolls away with
    the list. Framed on its own the list IS the surface, and searching it should
