@@ -107,6 +107,19 @@ const RESTAURANT_SECTIONS = [
 
 // ── Shared layout ────────────────────────────────────────────
 
+/**
+ * ⛔ A NULL CONTACT MUST NOT RENDER AS A LINK. `mailto:${null}` is the literal
+ * string "mailto:null" — a dead link with no error, on the canonical public
+ * statement. Three of the four installations have these fields set to null.
+ * ⭐ A labelled gap is the honest answer: it is visibly unfinished, so someone
+ * fixes it, where a dead link looks finished and nobody ever does. Placeholders
+ * are labelled and obvious; never a plausible-looking fake.
+ */
+function ContactBit({ href, value, display }) {
+  if (!value) return <span className="opacity-60">[not set for this installation]</span>
+  return <a href={href} className="underline hover:text-[#e0ddd8]/50">{display || value}</a>
+}
+
 function LegalShell({ title, subtitle, children }) {
   return (
     <div className="fixed inset-0 bg-[#0a0a0f] text-[#e0ddd8] font-mono overflow-y-auto">
@@ -122,7 +135,7 @@ function LegalShell({ title, subtitle, children }) {
         <footer className="mt-16 pt-6 border-t border-[#e0ddd8]/10 text-[12px] text-[#e0ddd8]/30 space-y-1">
           <p>Jacob Henderson LLC, DBA Lafayette Square Deliveries</p>
           <p>Lafayette Square, St. Louis, Missouri</p>
-          <p>Contact: <a href={`mailto:${INSTANCE.contact.email}`} className="underline hover:text-[#e0ddd8]/50">{INSTANCE.contact.email}</a> · <a href={`tel:${INSTANCE.cary.smsNumber}`} className="underline hover:text-[#e0ddd8]/50">{INSTANCE.cary.smsNumberDisplay}</a></p>
+          <p>Contact: <ContactBit href={`mailto:${INSTANCE.contact.email}`} value={INSTANCE.contact.email} /> · <ContactBit href={`tel:${INSTANCE.cary.smsNumber}`} value={INSTANCE.cary.smsNumber} display={INSTANCE.cary.smsNumberDisplay} /></p>
         </footer>
       </div>
     </div>
@@ -194,7 +207,7 @@ export function PrivacyPage() {
             <li>Delivery status updates triggered by your activity</li>
           </ul>
           <p className="mt-2">No marketing or promotional messages are sent. Message frequency varies. Message and data rates may apply. Reply STOP to opt out at any time. Reply HELP for support.</p>
-          <p className="mt-2">Contact: <a href={`mailto:${INSTANCE.cary.email}`} className="underline">{INSTANCE.cary.email}</a> · <a href={`tel:${INSTANCE.cary.smsNumber}`} className="underline">{INSTANCE.cary.smsNumberDisplay}</a></p>
+          <p className="mt-2">Contact: <ContactBit href={`mailto:${INSTANCE.cary.email}`} value={INSTANCE.cary.email} /> · <ContactBit href={`tel:${INSTANCE.cary.smsNumber}`} value={INSTANCE.cary.smsNumber} display={INSTANCE.cary.smsNumberDisplay} /></p>
         </section>
 
         <section>

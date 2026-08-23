@@ -70,6 +70,42 @@ function resolveInstance() {
 export const INSTANCE = resolveInstance()
 
 /**
+ * ⭐ THE PUBLIC-FACING CONTACT FIELDS, CHECKED OUT LOUD.
+ *
+ * These reach `LegalPage.jsx` — the canonical public statement, and the only
+ * page that is NOT module-gated, so EVERY installation shows it. On the three
+ * towns that are not Lafayette Square they are all explicitly `null`.
+ *
+ * ⛔ AND `null` IS NOT NOTHING — it RENDERS. `mailto:${INSTANCE.contact.email}`
+ * with a null value produces the literal string "mailto:null": a dead link, no
+ * error, no console line, on the one page that is supposed to be stable. A
+ * sentinel is not a value; the consumer prints whatever it is handed.
+ *
+ * ⭐ Silent, and worst on the towns nobody has looked at — which is the kit's
+ * signature failure shape. So it says so, once, at boot, naming the town and the
+ * key. ⛔ It does NOT throw: a blank app is a worse answer than a legal page with
+ * a labelled gap, and the same reasoning is why resolveInstance above falls back
+ * loudly rather than dying. Loud, not fatal.
+ */
+const PUBLIC_CONTACT_FIELDS = [
+  ['contact.email',   (i) => i?.contact?.email],
+  ['cary.email',      (i) => i?.cary?.email],
+  ['cary.smsNumber',  (i) => i?.cary?.smsNumber],
+]
+{
+  const missing = PUBLIC_CONTACT_FIELDS.filter(([, read]) => !read(INSTANCE)).map(([k]) => k)
+  if (missing.length) {
+    console.error(
+      `[instance] "${INSTANCE.id || 'unknown'}" has no ${missing.join(', ')}. ` +
+      `These are PUBLIC — they render on the legal page, which every installation ` +
+      `shows and which no module flag gates. Unset, the page shows a labelled gap ` +
+      `instead of a contact; before this check it rendered a dead "mailto:null" ` +
+      `link with nothing said. Set them in src/instances/${INSTANCE.id || '<look>'}.js ` +
+      `before this town is shown to anyone.`)
+  }
+}
+
+/**
  * Module presence for mount-gating. ⭐ DEFAULT-ON — OPT-OUT, not opt-in
  * (kit procedure, Jacob 2026-07-19). The kit activates the ENTIRE player by
  * default; an installation declares a module `false` (or delivery

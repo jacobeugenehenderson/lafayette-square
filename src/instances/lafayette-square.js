@@ -100,7 +100,12 @@ export default {
   },
 
   // General contact endpoint.
+  // ⭐ A FORWARDING ALIAS, NEVER A REAL INBOX. It routes through Cloudflare Email
+  // Routing on lafayette-square.com to an address the public never sees — one
+  // layer of separation, deliberately (Jacob, 2026-08-23). ⛔ Do not "simplify"
+  // this to a personal address: the indirection IS the feature, and this string
+  // appears on the LEGAL PAGE, which is the canonical public statement.
   contact: {
-    email: 'hello@lafayette-square.com',
+    email: 'jacob@lafayette-square.com',
   },
 }
