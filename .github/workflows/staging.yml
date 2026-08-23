@@ -2,7 +2,7 @@ name: Deploy staging
 
 on:
   push:
-    branches: [curb-offset-draw]
+    branches: [land-use-derivation]
   workflow_dispatch:
 
 concurrency:
