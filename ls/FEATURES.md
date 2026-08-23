@@ -81,6 +81,18 @@ always said the slab and the reader are separate payloads; these make that
 watchable rather than merely true, and a framed consumer switches between them
 live, by message, without reloading.
 
+**Any single part of the commons can be mounted on its own.** Beyond the two
+halves, an embedding page can ask for one *piece*: the neighborhood directory
+from its search bar down, the four role counts, or a single place card. Each
+arrives as itself — real scrolling, real search, a real card — because the
+panel's parts were already self-contained enough to mount alone. ⭐ **That is
+worth saying plainly: making them embeddable was a route, not a refactor.**
+
+**And the day is shared.** The Almanac's slider and an embedding page's own sky
+are the same clock, so they drive each other: scrub the hour on the page and the
+map moves; scrub it in the Almanac and the page follows. Two controls are fine;
+two clocks are not.
+
 **It costs the host page less when nobody is looking at it.** A framed Ward
 cannot see where it sits on somebody else's page — an iframe's own
 `IntersectionObserver` measures against the iframe, and across origins it can
