@@ -30,7 +30,7 @@ import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
 import { partitionByDirt } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
-import { writeCanaryTree } from '../lib/canaryTree.js'
+import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
 
@@ -205,6 +205,14 @@ export default function Grove() {
   // (browsers fire it in OTHER tabs on same origin automatically). No
   // backend, no authored state — see ARCHITECTURE.md
   // "Arborist ↔ Meteorologist canary contract".
+  // ⭐ THE LIVE CANARY, so the control can say what IS rather than only what it
+  // WILL DO. It was a fire-and-forget button with a 1.5s toast: click it and the
+  // panel looked identical afterwards, so there was no way to tell which tree was
+  // the canary — or whether the click had landed at all (Jacob, 2026-08-23:
+  // "Nothing happened to the button so we can't tell that this is now the
+  // canary"). ⚠️ Especially bad here, because /grove serves BOTH `acer_saccharum`
+  // and `maple_sugar` as separate tiles: two different trees, one plausible name.
+  const canary = useCanaryTree()
   const toastTimerRef = useRef(null)
   const setMeteorologistCanary = (v) => {
     // ⚠ Through the shared writer, which also fires the same-tab StorageEvent —
@@ -590,6 +598,8 @@ export default function Grove() {
             onSetOverride={(key, val) => setGroveVariantOverride(selectedVariant.speciesId, selectedVariant.variantId, key, val)}
             onToggleInLook={() => toggleInLook(activeLookId, selectedVariant.speciesId, selectedVariant.variantId)}
             onSetMeteorologistCanary={() => setMeteorologistCanary(selectedVariant)}
+            isCanary={!!canary && canary.species === selectedVariant.speciesId
+                      && Number(canary.variantId) === Number(selectedVariant.variantId)}
             onClose={() => setSelected(null)}
           />
         )}
@@ -854,7 +864,7 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
 // way the old tile-anchored Html card did. Per
 // feedback_focus_one_over_grid_for_3d_inspection: a focused panel beats
 // a grid of transient hover-cards.
-function GroveEditorPanel({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, onClose }) {
+function GroveEditorPanel({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, isCanary, onClose }) {
   return (
     <div style={{
       position: 'absolute', top: 0, right: 0, bottom: 0, width: 320,
@@ -883,6 +893,7 @@ function GroveEditorPanel({ variant, inLook, activeLookId, activeLookName, onSet
           onSetOverride={onSetOverride}
           onToggleInLook={onToggleInLook}
           onSetMeteorologistCanary={onSetMeteorologistCanary}
+          isCanary={isCanary}
         />
       </div>
     </div>
@@ -894,7 +905,7 @@ function GroveEditorPanel({ variant, inLook, activeLookId, activeLookName, onSet
 // longer a tile-anchored Html card), so it carries no positioning
 // chrome of its own. All edits go through setGroveVariantOverride /
 // toggleInLook (POST + optimistic local update).
-function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary }) {
+function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverride, onToggleInLook, onSetMeteorologistCanary, isCanary }) {
   const { speciesId, speciesLabel, variantId, quality, category, excluded, operatorNotes } = variant
   const [notes, setNotes] = useState(operatorNotes || '')
   useEffect(() => { setNotes(operatorNotes || '') }, [speciesId, variantId, operatorNotes])
@@ -1009,20 +1020,27 @@ function EditorCard({ variant, inLook, activeLookId, activeLookName, onSetOverri
               : `Add to ${activeLookName || 'Look'}`)}
       </button>
 
+      {/* ⭐ IT STATES, THEN IT OFFERS. When this variant IS the canary the control
+          says so and stops inviting a click that would do nothing; otherwise it
+          reads as the action. One element, two states — a separate "current
+          canary" line would be a second place the same fact lives. */}
       <button
-        onClick={onSetMeteorologistCanary}
-        title="Set as the canary tree shown in Meteorologist's CanaryScene"
+        onClick={isCanary ? undefined : onSetMeteorologistCanary}
+        disabled={isCanary}
+        title={isCanary
+          ? 'This variant is the canary — the Meteorologist scene and the street specimen both follow it'
+          : "Set as the canary tree shown in Meteorologist's CanaryScene"}
         style={{
           width: '100%', marginTop: 6,
           padding: '6px 10px', borderRadius: 3,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          color: '#c8c0e0',
+          background: isCanary ? 'rgba(140,200,120,0.14)' : 'rgba(255,255,255,0.04)',
+          border: isCanary ? '1px solid rgba(140,200,120,0.55)' : '1px solid rgba(255,255,255,0.12)',
+          color: isCanary ? '#bce0a0' : '#c8c0e0',
           fontFamily: 'inherit', fontSize: 11,
-          cursor: 'pointer',
           letterSpacing: '0.04em',
+          cursor: isCanary ? 'default' : 'pointer',
         }}>
-        → Set as Meteorologist canary
+        {isCanary ? '✓ This is the canary' : '→ Set as Meteorologist canary'}
       </button>
     </div>
   )
