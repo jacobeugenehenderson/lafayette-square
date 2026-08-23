@@ -60,49 +60,82 @@ shortcut — leaf *geometry* cannot look like a photographed leaf pack.
 
 ---
 
-## 2. The blocker, and it is the whole job
+## 2. ⛔ THIS SECTION'S CLAIM WAS MEASURED FALSE. `?embed=sky` WORKS.
 
-**`?embed=sky` mounts and its canvas never sizes.** Route resolves, WebGL
-context is created, **no errors are thrown**, every ancestor measures correctly
-(896 × 336) — and the canvas sits at R3F's default **300 × 150**.
+**Superseded 2026‑08‑22 by the agent this brief was written for.** Kept, not
+deleted, because the *way* it was wrong is the reusable part.
 
-- Code: `src/components/SkyEmbed.jsx`, and the embed branch in `src/App.jsx`
-  (search `route.embed`).
-- Hypothesis on the table, unproven: R3F measures its container once on mount
-  and then waits for a resize; a frame loads at its final size, so no resize
-  ever arrives, and a first measurement taken before layout sticks forever.
+**What this section said:** the canvas mounts at R3F's default 300 × 150 and
+never sizes, and that is the whole job.
 
-⛔ **Already ruled out — do not spend time re‑testing these:**
-- a stale dev server (restarted; same result)
-- console errors (none, checked inside the frame)
-- a missing WebGL context (present)
-- wrong ancestor heights (all correct)
-- `width`/`height` in the Canvas `style` prop — **this made it worse**; it lands
-  on the canvas element and clobbers the sizing R3F is applying
-- a `requestAnimationFrame` resize nudge (in the file; did not help)
-
-▶ **Untried and most promising:** bypass R3F's own measurement entirely — a
-child component inside `<Canvas>` that reads `gl.domElement.parentElement`'s
-rect and calls `setSize` directly, re‑running on a `ResizeObserver`. The app's
-own canvases size fine, so the fault is specific to this route, not to Canvas.
-
-⭐ **THERE IS NO SECOND BLOCKER — and an earlier draft of this brief said there
-was.** It claimed the tree GLBs were undeployed, because a page asked staging
-for `/trees/<species>/…` and got a 404. **That 404 is correct.**
-`public/trees/` is the Arborist's **authoring source pool**, gitignored on
-purpose (`.gitignore:230`, which also names what runtime consumes instead).
-
-**The deployed tree is `/baked/<look>/trees/<species>/skeleton-N-lodN.glb`, it
-is tracked, and staging serves it right now.** Confirmed:
+**What is true:** it sizes correctly on the first real paint. Measured on a
+clean load, nothing changed to produce it — the only variable was that the tab
+got **painted** in between:
 
 ```
-…/lafayette-square-staging/baked/lafayette-square/trees/linden_american/skeleton-1-lod1.glb  200  6.4 MB
-…/baked/lafayette-square/trees-atlas-color.png                                               200  7.5 MB
-…/baked/lafayette-square/trees-atlas-normal.png                                              200  4.6 MB
+t=1000ms   canvas attr  300 x  150   style w=""      h=""       rect  300 x 150
+t=5500ms   canvas attr 1344 x  504   style w="896px" h="336px"  rect  896 x 336
 ```
 
-⚠️ **The baked tree is a DIFFERENT artifact from the source tree, and they dress
-differently. Do not mix them up as this brief's author did:**
+**Root cause, in the dependency and not in the route.** R3F v8's `Canvas` sizes
+through `react-use-measure` and gates its whole setup on the result:
+
+```js
+// @react-three/fiber …/react-three-fiber.cjs.dev.js:92
+if (containerRect.width > 0 && containerRect.height > 0 && canvas) { … createRoot(canvas) … }
+```
+
+`react-use-measure` reports through a `ResizeObserver`, and **a ResizeObserver
+cannot deliver while the frame is not being painted.** In a throttled or
+background tab the callback never fires, `containerRect` stays 0, `createRoot`
+is never called, and the canvas keeps the HTML default. It self‑heals on the
+first paint. ⭐ **There is no stuck first measurement — no measurement was ever
+taken.** The hypothesis this section used to advance is false.
+
+⚠️ **The `rAF` resize nudge at `src/components/SkyEmbed.jsx:44‑47` is inert for
+this cause** — rAF is throttled by the same thing that throttles the observer —
+and its comment states the disproven hypothesis as fact. It should come out.
+
+### ⭐⭐ THE TRAP THAT PRODUCED THE FALSE CLAIM — this one is worth keeping
+
+⛔ **`canvas.getContext('webgl2')` CREATES the context. It can never tell you one
+already existed.** This brief's author called it to prove the context was fine,
+got a live `WebGL2RenderingContext` back from a canvas R3F had never touched,
+and wrote *"WebGL context is created, no errors are thrown"* into the ruled‑out
+list — where it then protected the wrong diagnosis from being re‑examined.
+
+⭐ **The honest reading was sitting right there: `style.width` was EMPTY.**
+`gl.setSize` had never run, so there was no R3F root at all.
+
+That is **§4's own rule one level down** — *verify on computed state, never on
+the property you just set*. A getter that mutates is the sharpest form of it,
+and this is the second time in two days that rule was broken by someone who had
+just written it down.
+
+⚠️ **And the observation itself was never certified.** The author cannot say the
+tab was foregrounded and visible when the 300 × 150 was seen — the inspection ran
+through browser automation across several tabs. ⛔ **An uncertified observation
+was reported as a blocker and put a whole day's work behind it.**
+
+---
+
+### The tree that actually deploys — and it is NOT the one in §1
+
+⭐ **`/baked/<look>/trees/<species>/skeleton-N-lodN.glb` is tracked and staging
+serves it right now.** An earlier draft of this brief claimed the tree GLBs were
+undeployed, because a page asked staging for `/trees/<species>/…` and got a 404.
+**That 404 is correct.** `public/trees/` is the Arborist's authoring source pool,
+gitignored on purpose — `.gitignore:230` says so, and names what runtime
+consumes instead.
+
+```
+…/baked/lafayette-square/trees/linden_american/skeleton-1-lod1.glb  200  6.4 MB
+…/baked/lafayette-square/trees-atlas-color.png                      200  7.5 MB
+…/baked/lafayette-square/trees-atlas-normal.png                     200  4.6 MB
+```
+
+⚠️ **The two artifacts dress differently. Do not mix them up as this brief's
+author did, in both directions, on the same day:**
 
 | | source pool (`/trees/…`) | the bake (`/baked/<look>/trees/…`) |
 |---|---|---|
@@ -111,7 +144,7 @@ differently. Do not mix them up as this brief's author did:**
 | dressing | bark kit + leaf atlas tile, bound by hand | the Look's shared atlas, bound by the runtime |
 | lod1 | 809 KB | 6.4 MB (placement-substituted, 172,998 tris) |
 
-⭐ **So for a deployed embed the atlas is not optional — `TreeAtlas` is what the
+⭐ **So on the deployed path the atlas is not optional — `TreeAtlas` is what the
 material is called.** Budget ≈ 6.4 MB + 7.5 MB colour (+ 4.6 MB normal). Heavy,
 and Jacob's call was *"this is marketing, we can push it."*
 
@@ -162,6 +195,13 @@ view, framed.
   carries the measurement: 5624 ms opaque vs 224 ms at 0.98.
 - ⚠️ **Verify on computed state, never on the property you just set.** An SVG
   `hidden` bug survived a check that read back the same property it wrote.
+  ⛔ **Its sharpest form is a GETTER THAT MUTATES** — `canvas.getContext()`
+  *creates* the context, so it can never report one missing. See §2: that call
+  put a false "already ruled out" into this brief and protected a wrong
+  diagnosis for a day.
+- ⛔ **An uncertified observation is not a finding.** If you cannot say the tab
+  was foregrounded, the build fresh, the cache cold — say *"cause not
+  established"* and stop. §2 is what happens otherwise.
 - ⚠️ **Caching lies at two levels.** Confirm what RAN is what is on disk before
   believing any symptom.
 
