@@ -40,9 +40,13 @@ anything you doubt.
 | bark kit | `public/textures/bark/<kit>/{color,normal,roughness}.jpg` | ~5 MB |
 | leaf atlas tile | `public/baked/lafayette-square/trees-atlas-leaves-color.png` | 1.3 MB |
 
-⛔ **The shared master atlas is NOT needed.** `trees-atlas-color.png` (7.5 MB)
-and friends pack *every* species for a whole neighborhood. One specimen never
-needed them. (This brief's author claimed otherwise mid‑session and was wrong.)
+⚠️ **For THIS path — the source pool — the shared master atlas is not needed.**
+`trees-atlas-color.png` (7.5 MB) packs every species for a whole neighborhood,
+and a hand-dressed specimen never touches it.
+⛔ **That is NOT true of the baked path, which is the one that deploys.** See §2:
+there the material is literally called `TreeAtlas` and carries no textures of its
+own. The two pipelines dress differently and this brief's author got the atlas
+question wrong in both directions before separating them.
 
 **A published GLB is only half dressed.** It carries ONE material — the bark —
 applied to `BranchesSG`, `CapsSG` **and** `LeavesSG`. Undressed, the canopy
