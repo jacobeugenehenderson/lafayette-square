@@ -24,6 +24,14 @@ now read one document and understand what the app is for, what each surface does
 and which artifact each one reads — **that is the job done.** The fixing is
 phase 2 and it is easier once this exists.
 
+### ⭐ NAME YOURSELF FIRST
+
+**Pick a name and sign everything with it** — every ledger entry, every commit,
+every note. Several agents may run this brief in parallel over the same corpus,
+and "the agent found X" is useless the moment there are two. A name makes your
+work referable, and makes disagreement between two passes visible instead of
+confusing. Say your name in your first reply.
+
 ### Your first four moves, in order
 
 1. **Read `CLAUDE.md`.** All of it. Layer 0 is not a preamble — the three
