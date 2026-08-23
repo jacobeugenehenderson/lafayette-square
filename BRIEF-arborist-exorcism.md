@@ -10,6 +10,81 @@ read `BOZ.md` — this is not a coordinator job.
 
 ---
 
+## 0. THE BATON — read this first, then §1
+
+**What you are inheriting, and from whom.** This was written on 2026-08-23 at the
+end of a day that spent most of itself inside the Arborist and lost four separate
+stretches to the same thing: looking at a surface, believing something was broken,
+and discovering it was either correct-by-design-and-undocumented, or a leftover
+from an arc that was abandoned without being removed.
+
+⭐ **You are not being asked to fix trees. You are being asked to make the
+Arborist KNOWABLE.** If you finish and the code is untouched but a newcomer can
+now read one document and understand what the app is for, what each surface does,
+and which artifact each one reads — **that is the job done.** The fixing is
+phase 2 and it is easier once this exists.
+
+### Your first four moves, in order
+
+1. **Read `CLAUDE.md`.** All of it. Layer 0 is not a preamble — the three
+   questions decide whether a finding is a finding. ⛔ Do not read `BOZ.md`.
+2. **Read the Arborist quartet in this order:** `arborist/ORIENTATION.md` →
+   `README.md` → `ARCHITECTURE.md` → `FEATURES.md` → `BACKLOG.md` → `NOTES.md`.
+   ⭐ **Take notes on what you CANNOT answer after reading them.** That list is
+   the outline of the spine you have to write. It is the most valuable artifact
+   of your first hour and it can only be produced by someone who has not been
+   here before — **you will lose the ability to make it within a day.**
+3. **Then open the code the docs name** — and check five claims at random against
+   it. Expect at least one to be wrong; that calibrates how much to trust the rest.
+4. **Only then** start §4's ghosts. They are examples, not the work.
+
+### What earns your trust, and what does not
+
+- ⛔ **A doc is a claim.** So is a code comment. So is every number in this brief.
+- ⛔ **`git log` is evidence; memory is not.** When a doc and the code disagree,
+  the commit that changed one of them usually says which was intended.
+- ⭐ **`arborist/_archive/` is the design record.** Archived means retired for
+  CURRENCY, not for TRUTH — search it before concluding something was never
+  decided. A surprising amount of "vestigia" is a decision whose pointer rotted.
+
+### What to do when you are stuck
+
+⛔ **Stop and ask Jacob.** Specifically, always stop for these:
+
+- **You cannot tell ROT from ASPIRATION.** That distinction is a judgement about
+  where the project is going and it is his, not yours. Guessing deletes decisions.
+- **A fix would remove a capability**, however dead it looks.
+- **You have spent more than an hour on one contradiction.** Say what you
+  measured and what you cannot resolve. ⭐ A precise "I cannot tell" is worth more
+  here than a confident wrong answer — this brief exists because of confident
+  wrong answers, several of them mine.
+
+### How to report
+
+Write findings **as you go**, not at the end. A ledger entry is:
+
+```
+FILE:LINE  ·  ROT | REGRESSION | ASPIRATION  ·  what the doc/comment claims
+           ·  what the code actually does (with the command that shows it)
+           ·  the smallest change that resolves it
+```
+
+⛔ **Never write the explanation of a number — only the number.** If you have not
+measured the mechanism, write **"cause not established"** and move on
+(`CLAUDE.md`). Three of this session's most confident sentences were false within
+the hour.
+
+### One thing you should know about the state you are walking into
+
+The last session **added** to the Arborist while these ghosts were live: a leaf
+transmission uniform (`5446d84b`), a clock jump for the diorama (`9432efa2`), a
+canary control that shows its own state (`534a3fa1`). Those are real and they
+work. ⚠️ **But they are also three more things now needing to appear in the spine
+you are about to write** — and the fact that they were built before anyone could
+say what the app is for is exactly the pattern being ended here.
+
+---
+
 ## 1. Why this exists, in Jacob's words
 
 > *"I **do not understand** how the Arborist is still a mess. It's the whole
