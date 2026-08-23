@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
@@ -341,7 +341,7 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
  * ⚠ One live consequence: point the canary at a species with no baked GLB and
  * the embed breaks — in that operator's browser only.
  */
-export default function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
+function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   const pick = useCanaryTree()
   // ⭐ ALPHA MODE — the tree with the sky's LIGHT but not the sky's PIXELS.
   // A host page that already draws its own sky (the site's band, with its own
@@ -447,3 +447,30 @@ export default function TreeDiorama({ species, lod, variant, lookId, transparent
     </Canvas>
   )
 }
+
+/**
+ * ⛔⛔ MEMOISED, AND IT IS LOAD-BEARING — NOT AN OPTIMISATION.
+ *
+ * ⚠ THE BUG IT FIXES, because it will look like anything but this: framed, the
+ * tree appeared and then vanished, leaving grass and a horizon under a camera
+ * that had never been posed. Top-level (the Arborist) the same component was
+ * perfect. Measured in the frame:
+ *
+ *     atlas "ready" · framed true · camEffect 1 · memo 6 → 43 → 85 → … → 260
+ *     …with `url` and the loaded `scene.uuid` IDENTICAL throughout,
+ *     and the measure effect NEVER committing once.
+ *
+ * A `useMemo([scene])` that recomputes ~46×/second on a stable dep is not a
+ * stale-dep bug — it is a REMOUNT every frame. `App` re-renders on every store
+ * tick; that re-renders this Canvas; R3F's Canvas re-runs `root.render()` under
+ * a fresh context Bridge, and the entire scene subtree is torn down and rebuilt
+ * before React ever commits an effect. So the geometry was built 46 times a
+ * second and measured zero times, the camera never learned the tree's height,
+ * and the specimen flickered out.
+ *
+ * ⭐ Memoising here severs that: the Canvas re-renders only when ITS props
+ * change, and it takes none from App. ⛔ Do not remove this because "it takes no
+ * props so it cannot re-render" — that is exactly backwards; taking no props is
+ * what makes memo total.
+ */
+export default memo(TreeDiorama)

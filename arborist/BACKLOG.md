@@ -10,6 +10,62 @@
 
 ---
 
+## ▶ 2026-08-23 — THE DIORAMA IS LIVE ON THE SITE; JACOB'S PUNCH LIST
+
+`?embed=tree` (framed, on theward-online) and the Arborist's `?view=fullmonte`
+are the same component — `src/components/TreeDiorama.jsx`. Working end to end:
+the canary specimen on ground, under the real sky, authored camera, production
+FX chain, `ward-time` from the host page.
+
+⛔ **THE BUG THAT NEARLY SANK IT — read this before touching the Canvas.** Framed,
+the tree appeared and then vanished, leaving grass and a horizon under a camera
+that had never been posed; top-level the same component was perfect. Measured:
+
+    atlas "ready" · framed true · memo 6 → 43 → 85 → … → 260  (~46×/second)
+    …with `url` and the loaded `scene.uuid` IDENTICAL, and the measure
+    effect NEVER committing once.
+
+A `useMemo([scene])` recomputing 46×/s on a stable dep is a REMOUNT every frame:
+`App` re-renders on every store tick → the Canvas re-renders → R3F re-runs
+`root.render()` under a fresh context Bridge → the whole scene subtree is torn
+down and rebuilt before React commits an effect. Geometry built 46×/s, measured
+zero times. ⇒ `export default memo(TreeDiorama)`. ⛔ Do not remove it because
+"it takes no props so it cannot re-render" — taking no props is what makes memo
+total. ▶ Any bare `<Canvas>` mounted under `App` has this exposure.
+
+◻ **JACOB'S LIST, 2026-08-23, verbatim** — "work on wind motion, add trunk and
+ground shading, re-add visible time slider; perhaps add actual 'grass' texture?
+around tree? Work on luminance and back lighting, pump up color saturation."
+  - **wind motion** — the big gust repeats too often. ⚠ Its period is a SHARED
+    shader constant in `treeAtlasMaterial`'s sway block, so tuning it is a
+    whole-map look change, not a diorama tweak. And wind is still OWED at the
+    source: the meteorologist does not author a `wind` block into the directive
+    (`ls/OPERATIONS.md §5`), so `uWindIntensity` is 0 and only the 5 mm rustle
+    floor runs. ▶ `node -e "const a=require('./public/clouds/almanac.json');console.log(a.rules.filter(r=>JSON.stringify(r).includes('\"wind\"')).length+'/'+a.rules.length)"`
+  - **trunk shading** — the trunk is NOT low-poly (115,123 tris). It reads smooth
+    because its bark is a slice of a 1824×1032 sheet shared across every species.
+    ⛔ Do NOT bind the raw kit: that was tried and reverted — it discards
+    `tintBase`/`tintJitterRange`/`roughnessOverride` and the
+    gradient/detail/posterized slots `applyBarkUniforms` carries, i.e. the
+    operator's authored bark TREATMENT. Any fix belongs inside that path.
+  - **ground shading + a real grass texture around the tree** — the ground is
+    currently a flat `makeGrassMaterial` disc with a radial fade. It is scenery,
+    not the Ward's ground.
+  - **visible time slider** — the opaque embed now covers the band, so the
+    `.skyband-mark` no longer shows (site repo).
+  - **luminance, back lighting, colour saturation** — the licence here is
+    Jacob's: "only one tree and almost certainly a desktop browser." Already
+    spent: shadow map retargeted ±900 m → ~60 m (0.44 m → ~15 mm per texel),
+    dpr 1.5 → 2, `StageShadows`.
+  - ⚠ Also observed, undiagnosed: stars render in a DAYLIT sky in this Canvas,
+    and the grass reads brighter than the tree at night.
+
+⛔ **LEAVES ARE NOT ON THE LIST.** Measured: 174,136 verts / 83,377 tris on the
+canopy ≈ 42,000 alpha CARDS (leaf packs, not geometry). Jacob: "the tree you
+already had with the leaves it already had were already great."
+
+---
+
 ## ▶ 2026-08-22 — A PUBLISHED TREE GLB PAINTS ITS LEAVES WITH BARK
 
 Surfaced from outside the runtime, building a marketing page: a published

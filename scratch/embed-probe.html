@@ -1,24 +1,18 @@
 <!doctype html>
-<meta charset="utf-8">
-<title>embed probe</title>
-<style>
-  html,body{margin:0;background:#0d1117;color:#cdd6e4;font:12px/1.5 ui-monospace,Menlo,monospace}
-  .row{display:flex;gap:8px;padding:8px}
-  .cell{width:440px}
-  .cell h3{margin:0 0 4px;font-size:11px;color:#7fb3ff}
-  /* mid-grey so an ALPHA canvas is obvious: page shows through */
-  iframe{display:block;width:440px;height:380px;border:1px solid #2b3442;background:#6b7280}
-</style>
-<div class="row">
-  <div class="cell"><h3>alpha=1 (transparent, grey = page showing through)</h3><iframe id="a" src="/?embed=tree&alpha=1"></iframe></div>
-  <div class="cell"><h3>opaque (own sky)</h3><iframe id="b" src="/?embed=tree"></iframe></div>
-</div>
+<meta charset="utf-8"><title>embed probe</title>
+<style>html,body{margin:0;background:#0d1117;color:#cdd6e4;font:12px/1.5 ui-monospace,Menlo,monospace}
+iframe{display:block;width:472px;height:420px;border:1px solid #2b3442}pre{padding:8px;white-space:pre-wrap}</style>
+<iframe id="f" src="/?embed=tree"></iframe>
 <pre id="out">…</pre>
 <script>
-const MIN = Number(new URLSearchParams(location.search).get('min') ?? 780);
-const fs = [document.getElementById('a'), document.getElementById('b')];
-setInterval(()=>{ fs.forEach(f=>{ try{ f.contentWindow.postMessage({type:'ward-time',minute:MIN},'*') }catch{} }) }, 700);
+const MIN = Number(new URLSearchParams(location.search).get('min') ?? 600);
+const f=document.getElementById('f'), out=document.getElementById('out');
+setInterval(()=>{ try{ f.contentWindow.postMessage({type:'ward-time',minute:MIN},'*') }catch{} }, 700);
+// sample the diagnostic over time — we are looking for a tree that appears then goes
+const hist=[];
 setInterval(()=>{
-  document.getElementById('out').textContent = 'minute=' + MIN + '  (alpha left, opaque right)';
-}, 500);
+  let d=null; try{ d=f.contentWindow.__d }catch(e){}
+  hist.push(JSON.stringify(d));
+  out.textContent = 'minute='+MIN+'\n' + hist.slice(-8).join('\n');
+}, 1000);
 </script>
