@@ -12,6 +12,45 @@
 
 ## ▶ 2026-08-23 — THE DIORAMA IS LIVE ON THE SITE; JACOB'S PUNCH LIST
 
+⛔⛔ **THE SPECIMEN VIEWER IS NOT THE PROBLEM — THE BAKE IS. Measured 2026-08-23**
+after Jacob put the Salon and the diorama side by side ("the tree in the salon is
+beautiful and the full monte looks awful"). Same species, same variant, two
+surfaces, and the difference is in the FILE:
+
+    baked/lafayette-square/trees/<sp>/skeleton-1-lod0.glb
+      linden_american      12.4 MB   331,389 verts   200,171 tris   3 prims
+      oak_white             3.7 MB   102,353 verts    56,654 tris   2 prims
+      maple_sugar           3.2 MB    90,312 verts    49,111 tris   2 prims
+      platanus_acerifolia   0.3 MB     8,761 verts     8,360 tris   4 prims
+
+⭐ **The linden is the only richly-baked specimen — 4× the maple, 24× the plane.**
+That is why it is the canary, and why everything else looks thin beside it.
+
+⭐ **AND THE TWO SURFACES ARE HONESTLY DIFFERENT BY DESIGN.** The Salon POSTs a
+live composition to the backend and renders a FRESH build at authoring density
+(`SalonWorkstage:615-631`); the diorama loads the frozen bake
+(`TreeDiorama:411`) because `ls/OPERATIONS §5` requires that what it shows is a
+thing that actually deploys. ⛔ So the diorama looking worse than the Salon is
+the system WORKING — it is showing what ships. The gap between them is the
+re-bake nobody has run.
+
+⚠️ **CONSEQUENCE FOR THE CANARY, and it should be said before anyone switches:**
+pointing the canary at sugar maple will make the diorama look WORSE until maple
+is re-baked at linden parity. Bake first, then switch. ⛔ Do not respond to the
+thin render by tuning the viewer; nothing in TreeDiorama can put back geometry
+that is not in the file. The bake is dated 2026-07-31 and 14 commits have touched
+`arborist/` or `treeAtlasMaterial.js` since — but ⚠️ that is circumstantial:
+**which of those changed leaf density is NOT established.**
+
+◻ **RENAME "FULL MONTE"** (Jacob, 2026-08-23): *"I don't even get why we're using
+that terminology anymore; it's just the street-level full-detail single tree
+export."* He is right — the name says nothing about what it is. Blast radius is
+small and known: 6 files in `src/`, 4 docs, and ⛔ one URL contract,
+`?view=fullmonte` (`ArboristApp.jsx:90`), which is written into `ls/OPERATIONS §5`
+and the site's docs. Rename the concept AND the param, or neither — a param that
+disagrees with its own name is how the next reader loses an hour.
+
+
 `?embed=tree` (framed, on theward-online) and the Arborist's `?view=fullmonte`
 are the same component — `src/components/TreeDiorama.jsx`. Working end to end:
 the canary specimen on ground, under the real sky, authored camera, production
