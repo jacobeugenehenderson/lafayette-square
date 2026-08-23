@@ -15,6 +15,7 @@ import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission } from './treeAtlasMaterial'
 import { useCanaryTree } from '../lib/canaryTree.js'
+import useTimeOfDay from '../hooks/useTimeOfDay'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
 
@@ -342,6 +343,28 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
  * the embed breaks — in that operator's browser only.
  */
 function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
+  // ── Jump the clock, so a lighting effect can actually be LOOKED at ───────
+  // ⭐ THE DIORAMA RUNS ON LIVE WALL CLOCK. That is right for the embed and
+  // wrong for inspection: at midday the sun is overhead, nothing is backlit, and
+  // an effect that depends on backlight is invisible — which reads exactly like
+  // "it didn't work" (Jacob, 2026-08-23: "I am in the arborist and I don't know
+  // what I'm looking for"). There was no visible time control here to fix that.
+  //   ?at=17:55   put the sun low and behind the tree
+  // ⛔ Not a fallback: with no parameter the live clock is untouched. TimeTicker
+  // then carries on from wherever it was put, so the scene keeps moving.
+  useEffect(() => {
+    let raw = null
+    try { raw = new URLSearchParams(window.location.search).get('at') } catch { /* no URL */ }
+    if (!raw) return
+    const m = /^(\d{1,2})(?::(\d{1,2}))?$/.exec(raw.trim())
+    if (!m) { console.warn(`[TreeDiorama] ?at="${raw}" is not HH:MM — clock untouched`); return }
+    const hh = Math.min(23, Math.max(0, Number(m[1])))
+    const mm = Math.min(59, Math.max(0, Number(m[2] || 0)))
+    const at = new Date(); at.setHours(hh, mm, 0, 0)
+    useTimeOfDay.getState().setTime(at)
+    console.log(`[TreeDiorama] clock set to ${hh}:${String(mm).padStart(2, '0')}`)
+  }, [])
+
   // ── Leaf transmission, tunable by eye on the proving ground ──────────────
   // ⭐ THE SHIPPED DEFAULT IS 0 and stays 0 until a value is authored — the
   // uniform lives on the SHARED tree material, so anything else would change
