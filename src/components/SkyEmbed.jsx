@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { Canvas } from '@react-three/fiber'
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
@@ -31,13 +32,24 @@ import { TimeTicker, SkyStateTicker } from './Scene'
  * moves this sky and the map above it together.
  */
 export default function SkyEmbed() {
+  /* ⚠ R3F MEASURES ITS CONTAINER ONCE, ON MOUNT, and then waits for a resize.
+     A frame loads at its final size, so no resize ever comes — and if that
+     first measurement lands before layout, the canvas stays at the default
+     300×150 forever while every ancestor around it is correctly sized. That is
+     exactly what happened here, and it looks like a broken embed rather than a
+     timing problem.
+
+     One resize on the next frame is all it needs. ⛔ Do not "fix" this by
+     putting width/height in the Canvas `style` prop — that lands on the canvas
+     element itself and clobbers the sizing R3F is trying to apply, which is
+     the wrong turn I took first. */
+  useEffect(() => {
+    const id = requestAnimationFrame(() => window.dispatchEvent(new Event('resize')))
+    return () => cancelAnimationFrame(id)
+  }, [])
+
   return (
     <Canvas
-      // ⚠ Sized in the style prop, not by a class on an ancestor. A framed
-      // document's height chain is not guaranteed, and an R3F Canvas whose
-      // parent measures zero mounts at the default 300×150 and stays there.
-      // The frame IS the viewport, so say so and stop depending on the chain.
-      style={{ width: '100vw', height: '100vh', display: 'block' }}
       frameloop="always"
       camera={{ position: [0, 2, 0], fov: 62, near: 1, far: 60000 }}
       gl={{
