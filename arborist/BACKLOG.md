@@ -85,12 +85,27 @@ around tree? Work on luminance and back lighting, pump up color saturation."
     which is exactly what golden hour shows: at 18:40 with the sun directly
     behind the trunk and a warm horizon burning through, the canopy stays a
     uniform mid-green with no warm rim and no glow anywhere.
-    ▶ **Proposed shape** (not built, Jacob's call — it is a whole-product look
-    change): a transmission/wrap term in the leaf fragment path gated on
-    `aBark == 0`, driven by the sun direction and tinted by leaf albedo, behind
-    a **uniform defaulting to 0** so the map stays bit-identical until a Look
-    authors it up — the same uniform-branch discipline `treeBarkTierUniform`
-    uses, which keeps the single-shader-program constraint Bloom needs.
+    ✅ **APPROVED AND IT IS TOMORROW'S FIRST ITEM** — Jacob, 2026-08-23: *"add
+    the leaf transmission uniform tomorrow."* Spec, so it needs no re-deriving:
+      - `uLeafTransmission` on the SHARED tree material (`treeAtlasMaterial.js`,
+        wired in `injectFoliageSway` beside the existing sway uniforms), plus a
+        module-scoped `{ value }` object so one write drives every mounted tree
+        — the `treeSwayUniforms` / `treeBarkTierUniform` pattern exactly.
+      - ⛔ **A UNIFORM BRANCH, NEVER A SHADER VARIANT.** The single-program
+        constraint is load-bearing for Bloom (`treeAtlasMaterial.js:232` and the
+        Phase-B notes). A second program is the one thing that must not happen.
+      - Gate on LEAF fragments only — `vBark` is already interpolated to the
+        fragment shader (set at `:455` from the `aBark` attribute), so the gate
+        exists; no new attribute, no re-bake, GLBs stay byte-identical.
+      - Backlight factor from the view/light geometry (wrap or
+        `pow(saturate(dot(-V, L)), k)`), tinted by the sampled leaf albedo so a
+        lit leaf glows its OWN colour rather than a uniform wash.
+      - ⭐ **DEFAULT 0.** With the uniform at 0 the map renders bit-identical to
+        today — which is what makes this safe to land on the shared material
+        before anyone has authored a value.
+      - Then author it up per Look (the diorama first), so ⭐ **the street view
+        inherits it by turning a knob** rather than by reimplementing it. That
+        is the whole reason it lives on the shared material and not here.
     ⚠ Do NOT reach for pixel readback to quantify this: the Canvas runs without
     `preserveDrawingBuffer`, so `drawImage`/`getImageData` returns all zeros and
     reads as "everything is black." That is the method failing, not a finding.
