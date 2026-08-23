@@ -7,6 +7,7 @@ import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel, { LafayettePagesTab, SocietyMasthead } from './components/SidePanel'
 import PlaceCard from './components/PlaceCard'
+import SkyEmbed from './components/SkyEmbed'
 import { buildings as ALL_BUILDINGS } from './data/buildings'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
@@ -713,6 +714,7 @@ function App() {
     return (
       <div className="w-full h-full overflow-hidden bg-surface-dim text-on-surface">
         {route.embed === 'masthead' && <SocietyMasthead />}
+        {route.embed === 'sky' && <SkyEmbed />}
         {route.embed === 'card' && <EmbedCard placeId={route.place} />}
         {route.embed === 'society' && (
           <div className="embed-society w-full h-full flex flex-col min-h-0">
@@ -808,6 +810,7 @@ function parseRoute() {
   // shows a visitor half a product.
   let embed = null
   try { embed = new URLSearchParams(window.location.search).get('embed') } catch { embed = null }
+  if (embed === 'sky') return { page: 'embed', embed: 'sky' }
   if (embed === 'society' || embed === 'masthead') {
     let place = null
     try { place = new URLSearchParams(window.location.search).get('place') } catch { place = null }

@@ -277,7 +277,9 @@ function FrameLimiter() {
 
 // ── Time ticker ──────────────────────────────────────────────────────────────
 
-function TimeTicker() {
+// Exported so a sky-only embed can run the same clock and the same weather
+// interpolation the scene does, rather than reimplementing either.
+export function TimeTicker() {
   const tick = useTimeOfDay((state) => state.tick)
   const lastTime = useRef(Date.now())
 
@@ -293,7 +295,7 @@ function TimeTicker() {
 
 // ── Sky state ticker (smooth weather interpolation) ─────────────────────────
 
-function SkyStateTicker() {
+export function SkyStateTicker() {
   useFrame((_, delta) => useSkyState.getState().tick(Math.min(delta, 0.1)))
   return null
 }
