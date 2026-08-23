@@ -10,6 +10,48 @@
 
 ---
 
+## ▶ 2026-08-22 — A PUBLISHED TREE GLB PAINTS ITS LEAVES WITH BARK
+
+Surfaced from outside the runtime, building a marketing page: a published
+`skeleton-N-lod*.glb` carries **ONE material** and applies it to every mesh —
+including the leaves.
+
+```
+/trees/tilia_americana/skeleton-1-lod1.glb   809 KB · 4,977 tris · 45 ms
+  materials  EuropeanLindenBark_Mat          ← the only one
+  images     EuropeanLinden_Tree_Normal, …
+  nodes      BranchesSG · CapsSG · LeavesSG  ← all three get the bark material
+```
+
+**So the GLB is self-contained for BARK and not for LEAVES.** Loaded anywhere
+but the Ward runtime — the Salon, a third-party viewer, an embedding page — the
+canopy renders as bark-coloured cards. Assign the leaf kit by hand and the
+leaves disappear instead, because the cards' UVs expect the atlas tile they were
+authored against, not a whole leaf sheet.
+
+⚠️ **Consequences worth deciding on when the arborist comes back up:**
+- **A tree GLB is not portable on its own.** Anything that consumes one outside
+  the runtime needs the Look's leaf material too, and nothing in the file says
+  so. That is the same shape as a silent fallback: it does not fail, it just
+  looks wrong.
+- The published artifact contract (`FEATURES §What it produces`) says
+  `skeleton-N.glb` + `tips-N.json` + `manifest.json`. It does not say the mesh
+  is only half-dressed.
+- `manifest.json` for `tilia_americana` has **`bark: null`, `leafCluster: null`**
+  — so the file that would name the missing material names nothing.
+
+⚠️ **A second, smaller trap for whoever picks this up:** the node names do NOT
+survive loading. After `GLTFLoader`, every mesh reports its parent as `Scene`;
+`BranchesSG` / `CapsSG` / `LeavesSG` are on the meshes themselves, in draw
+order. Matching on `parent.name` silently classifies everything as branches.
+
+▶ **Repro, 30 seconds:** `scratch/tree-viewer.html` — an off-the-shelf three.js
+viewer, no Ward code. `?tree=tilia_americana&lod=0&bark=bark_brown_01&leaf=heart`
+prints the material/mesh/kit mapping in the corner. lod0 is 202,936 tris and
+loads in ~250 ms, so weight is NOT the obstacle here; dressing is.
+
+---
+
 ## ▶ 2026-07-21 — SLAB WEIGHT: trees are ~85–88% of a poured neighborhood
 
 Surfaced auditing the GitHub-Pages payload (tracked `public/` ≈ 1.03 GB against Pages' 1 GB soft limit). The finding is arborist-shaped: **the town is small, the trees are not.**

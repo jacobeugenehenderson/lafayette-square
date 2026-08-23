@@ -1,0 +1,120 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Tree viewer</title>
+<style>
+  html,body { margin:0; height:100%; background:#11151c; color:#cdd6e4;
+              font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace }
+  #c { position:fixed; inset:0 }
+  #hud { position:fixed; left:10px; top:10px; z-index:2; background:rgba(10,14,20,.82);
+         padding:10px 12px; border:1px solid #2b3442; max-width:44ch; white-space:pre-wrap }
+  #hud b { color:#f0b454 }
+  a { color:#7fb3ff }
+</style>
+<canvas id="c"></canvas>
+<div id="hud">loading…</div>
+<script type="module">
+import * as THREE from 'three'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+
+const q       = new URLSearchParams(location.search)
+const species = q.get('tree') || 'tilia_americana'
+const lod     = q.get('lod')  || '1'
+const variant = q.get('v')    || '1'
+// ⭐ THE COMPLEX KITS, unoptimised on purpose. The atlas and the decimation
+// exist to make 745 placements affordable; one hero specimen can afford the
+// photo-PBR bark and the real leaf cutout it was authored from.
+const bark    = q.get('bark') || 'bark_brown_01'
+const leaf    = q.get('leaf') || 'heart'
+const url = `/trees/${species}/skeleton-${variant}-lod${lod}.glb`
+
+const hud = document.getElementById('hud')
+const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('c'), antialias: true })
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2))
+renderer.setSize(innerWidth, innerHeight)
+renderer.outputColorSpace = THREE.SRGBColorSpace
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+
+const scene = new THREE.Scene()
+scene.background = new THREE.Color('#11151c')
+const camera = new THREE.PerspectiveCamera(40, innerWidth / innerHeight, 0.1, 2000)
+const controls = new OrbitControls(camera, renderer.domElement)
+
+// Deliberately plain light: the question is what the GLB carries ON ITS OWN,
+// with no Look, no atlas, no authored sky.
+scene.add(new THREE.HemisphereLight(0xbfd4ff, 0x2a2418, 2.0))
+const key = new THREE.DirectionalLight(0xfff0d0, 2.2); key.position.set(6, 12, 8); scene.add(key)
+
+const t0 = performance.now()
+let buf_bytes = 0
+fetch(url).then(r => r.arrayBuffer()).then(b => { buf_bytes = b.byteLength })
+new GLTFLoader().load(url, (gltf) => {
+  const root = gltf.scene
+  scene.add(root)
+
+  const box = new THREE.Box3().setFromObject(root)
+  const size = box.getSize(new THREE.Vector3())
+  const mid  = box.getCenter(new THREE.Vector3())
+  controls.target.set(mid.x, mid.y, mid.z)
+  camera.position.set(mid.x + size.y * 0.9, mid.y + size.y * 0.15, mid.z + size.y * 1.5)
+  controls.update()
+
+  // ── dress it from the kits ────────────────────────────────────────────
+  // The GLB ships ONE material — the bark — and paints the leaves with it too,
+  // which is why an undressed tree reads as black cards. The Look normally
+  // supplies the leaf material; here the kit does, at full resolution.
+  const T = new THREE.TextureLoader()
+  const srgb = (t) => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t }
+  let bytes = buf_bytes
+
+  const barkMat = new THREE.MeshStandardMaterial({
+    map:          srgb(T.load(`/textures/bark/${bark}/color.jpg`)),
+    normalMap:    T.load(`/textures/bark/${bark}/normal.jpg`),
+    roughnessMap: T.load(`/textures/bark/${bark}/roughness.jpg`),
+    roughness: 1, metalness: 0,
+  })
+  ;[barkMat.map, barkMat.normalMap, barkMat.roughnessMap].forEach(t => {
+    t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(3, 8)
+  })
+
+  const leafTex = srgb(T.load(`/textures/leaves/${leaf}.png`))
+  const leafMat = new THREE.MeshStandardMaterial({
+    map: leafTex, alphaMap: leafTex, transparent: false, alphaTest: 0.42,
+    side: THREE.DoubleSide, roughness: 0.85, metalness: 0,
+  })
+
+  // ⚠ The GLB's node names (BranchesSG / CapsSG / LeavesSG) do not survive as
+  // parents after loading — every mesh reports "Scene". So match on any name we
+  // can see AND fall back to draw order, which follows the node order.
+  const found = []
+  root.traverse((o) => { if (o.isMesh) found.push(o) })
+  let tris = 0, meshes = found.length
+  const parts = []
+  found.forEach((o, i) => {
+    tris += (o.geometry.index ? o.geometry.index.count : o.geometry.attributes.position.count) / 3
+    const who = `${o.name}|${o.parent?.name || ''}`
+    const isLeaf = /leaf|leaves/i.test(who) || i === found.length - 1
+    o.material = isLeaf ? leafMat : barkMat
+    parts.push(`#${i} ${o.name || '(unnamed)'} → ${isLeaf ? 'LEAF kit' : 'bark kit'}`)
+  })
+  const mats = new Map([['bark', bark], ['leaf', leaf]])
+  const maps = new Set(['bark color+normal+roughness', 'leaf color+alpha'])
+  const missing = new Set()
+
+  hud.innerHTML =
+    `<b>${species}</b>  lod${lod} v${variant}\n` +
+    `${url}\n\n` +
+    `height   <b>${size.y.toFixed(1)} m</b>   spread ${Math.max(size.x, size.z).toFixed(1)} m\n` +
+    `meshes   ${meshes}    triangles <b>${Math.round(tris).toLocaleString()}</b>\n` +
+    `load     ${Math.round(performance.now() - t0)} ms\n\n` +
+    `kits\n  ${[...mats].map(([k, v]) => `${k}: ${v}`).join('\n  ')}\n` +
+    `  ${parts.join('\n  ')}\n\n` +
+    `drag to orbit\n?tree= &lod= &v= &bark= &leaf=`
+}, undefined, (e) => { hud.textContent = 'failed: ' + url + '\n' + e })
+
+addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix()
+  renderer.setSize(innerWidth, innerHeight)
+})
+;(function loop() { requestAnimationFrame(loop); controls.update(); renderer.render(scene, camera) })()
+</script>
