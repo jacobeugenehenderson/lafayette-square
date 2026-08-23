@@ -401,7 +401,16 @@ function EmbedCard({ placeId }) {
   }
   return (
     <div className="embed-card w-full h-full relative">
+      {/* ⛔ THE KEY IS LOAD-BEARING, and it is the right granularity of remount.
+          PlaceCard is stateful — open tab, photo index, edit context — and all
+          of that is keyed to the place it was mounted for. Swapping `listing`
+          underneath a reused instance renders an EMPTY card (measured: posting
+          a second id blanked the frame). Keying it to the id remounts the CARD,
+          which is cheap DOM, while the FRAME stays put — and the frame is the
+          expensive thing (a reload rebuilds the whole app inside it). The rule
+          was never "never remount"; it is "never reload the frame". */}
       <PlaceCard
+        key={placeId}
         listing={listing}
         building={building}
         allListings={listing ? [listing] : []}
@@ -623,6 +632,10 @@ function App() {
   // Plate switch. Plate by default: a direct ?layer=player link has no page to
   // ask, and this app is dark.
   const [ground, setGround] = useState('plate')
+  // Which place the card embed is showing. Starts at the `&place=` it booted
+  // on and follows `ward-place` after that — a PROP, so swapping it re-renders
+  // EmbedCard rather than remounting the frame. Changing `src` would reload.
+  const [embedPlace, setEmbedPlace] = useState(route.place)
 
   // A framed consumer switches layers by postMessage, NOT by changing our src.
   // Reloading would rebuild the WebGL context and reset the camera — which is
@@ -701,6 +714,57 @@ function App() {
     }
   }, [])
 
+  // ── The selected place, shared with the embedding page ───────────────────
+  // A page can show the directory and a place's card side by side and have them
+  // AGREE: pick a place in `?embed=society` and the `?embed=card` frame beside
+  // it turns to that place. Same shape as `ward-time` — the store is the seam,
+  // and the page is only a relay between two frames that cannot see each other.
+  //
+  // ⭐ WHY THE PRODUCT POSTS RATHER THAN THE PAGE ASKING. A cross-origin frame
+  // cannot be read from outside, so a page has no way to learn what was picked
+  // except by being told. Putting it here means every installation and every
+  // embedding page inherits the behaviour, rather than one site scraping it.
+  //
+  // ⛔ INBOUND SETS THE CARD, NEVER THE DIRECTORY'S OWN SELECTION. That is the
+  // echo guard, and it is structural rather than a comparison: the society
+  // embed only ever SPEAKS and the card embed only ever LISTENS, so
+  // adopt → announce → adopt has no cycle to run around. (`ward-time` needs a
+  // value comparison because there both sides genuinely own the same store.)
+  //
+  // targetOrigin is '*' for the same reason as the clock: the product does not
+  // know who framed it, and a public listing id is not a secret.
+  useEffect(() => {
+    if (window.parent === window) return undefined
+
+    function onPlace(e) {
+      const m = e.data
+      if (!m || m.type !== 'ward-place') return
+      if (typeof m.id === 'string' && m.id) setEmbedPlace(m.id)
+    }
+    window.addEventListener('message', onPlace)
+
+    // `highlight()` and `select()` both write selectedListingId, so this catches
+    // a directory click either way — the branch in SidePanel's handleSelectPlace
+    // (resolvable geometry or not) does not have to be known here.
+    // Seeded with the id we booted on so the mount selection is not announced
+    // back as news. ⭐ It IS announced when there is no `&place=` — a page that
+    // framed the directory with no opinion gets told what it is showing.
+    let last = route.place || null
+    const announce = (st) => {
+      const id = st.selectedListingId
+      if (!id || id === last) return
+      last = id
+      try { window.parent.postMessage({ type: 'ward-place', id }, '*') } catch { /* gone */ }
+    }
+    const unsub = useSelectedBuilding.subscribe(announce)
+
+    return () => {
+      window.removeEventListener('message', onPlace)
+      unsub()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   if (route.page === 'checkin') {
     return <CheckinPage locationId={route.locationId} />
   }
@@ -745,7 +809,7 @@ function App() {
         {route.embed === 'masthead' && <SocietyMasthead />}
         {route.embed === 'sky' && <SkyEmbed />}
         {route.embed === 'tree' && <TreeDiorama />}
-        {route.embed === 'card' && <EmbedCard placeId={route.place} />}
+        {route.embed === 'card' && <EmbedCard placeId={embedPlace} />}
         {route.embed === 'society' && (
           <div className="embed-society w-full h-full flex flex-col min-h-0">
             {/* Opening on a listing is what lets a page show the directory and
