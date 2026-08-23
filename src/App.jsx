@@ -643,7 +643,9 @@ function App() {
           not a dev artifact. The slab therefore keeps rendering and the sheet
           below is laid OVER it. Staying mounted also keeps WeatherPoller
           alive, so the Player's Almanac has a temperature. */}
-      {!adminPromptOpen && splashReady && <SceneBoundary><Scene /></SceneBoundary>}
+      {!adminPromptOpen && splashReady && (
+        <SceneBoundary><Scene sheeted={layer === 'player'} ground={ground} /></SceneBoundary>
+      )}
 
       {/* The ground the commons stands on once the slab is not showing: over
           the scene, under every piece of chrome. See .embed-sheet. */}

@@ -54,20 +54,26 @@ body {
   inset: 0;
   z-index: 5;
 
-  /* ⚠ MUST stay below 1. A fully opaque sheet is occlusion-culled by Chrome
-     exactly as if the canvas were hidden: it goes idle, the WebGL surface is
-     dropped, and coming back costs a 5.6s blocked frame. Leaving the canvas
-     partly composited keeps the switch instant — measured, same cycle:
-     5624ms opaque vs 224ms at 0.98.
+  /* ⚠⚠ MUST stay below 1, AND THAT IS NOT WHAT MAKES IT LOOK SOLID.
+     A fully opaque sheet is occlusion-culled by Chrome exactly as if the
+     canvas were hidden: it goes idle, the WebGL surface is dropped, and
+     coming back costs a 5.6s blocked frame — measured, same cycle:
+     5624ms opaque vs 224ms at 0.98. Do not round it to 1.
 
-     0.95 rather than the 0.98 that first fixed it. At 2% the slab ghosting
-     through read as a smudge; at 5% it reads as intent — the neighbourhood
-     is still there under the sheet, and saying so is the argument the piece
-     makes. Lower is also further from the culling threshold, so this is the
-     safer number as well as the better-looking one. Do not round it to 1. */
+     ⭐ The sheet now READS as fully opaque anyway, and the fix is on the
+     other side of the glass: while this sheet is up, the scene behind it
+     paints nothing but this same colour (`<SheetGround/>` in Scene.jsx).
+     Five percent of a flat field of the sheet's own colour is not a smudge;
+     it is the sheet. The canvas keeps compositing, the switch stays instant,
+     and the grid is solid. (Jacob, 2026-08-22: opaque on both sites. The
+     earlier reading — "the neighbourhood is still there under the sheet" —
+     was retired with it.)
+
+     ⛔ So the two numbers are a PAIR. Raising this to 1 breaks the switch;
+     removing SheetGround brings the smudge back. Change neither alone. */
   opacity: 0.95;
 
-  --g-bg: #2A2E30;
+  --g-bg: var(--sheet-bg-plate);
   --g-minor: #373C3F;
   --g-major: #474E52;
   --g-cell: 0.75rem;
@@ -82,9 +88,18 @@ body {
 }
 
 .embed-sheet[data-ground="paper"] {
-  --g-bg: #C6CACC;
+  --g-bg: var(--sheet-bg-paper);
   --g-minor: #B2B8BB;
   --g-major: #949CA1;
+}
+
+/* ⭐ ONE HOME for the sheet's ground colour, hoisted to :root because the
+   RENDERER needs it too — Scene.jsx reads these off the document so the
+   clear colour behind the sheet can never drift from the sheet itself.
+   Two copies of this value is exactly the bug this arrangement prevents. */
+:root {
+  --sheet-bg-plate: #2A2E30;
+  --sheet-bg-paper: #C6CACC;
 }
 
 /* Prevent iOS Safari auto-zoom on input focus and double-tap zoom */

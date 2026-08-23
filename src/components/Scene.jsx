@@ -195,6 +195,61 @@ function relaxConstraints(ctl) {
   ctl.maxPolarAngle = Math.PI
 }
 
+// ── Sheet ground ─────────────────────────────────────────────────────────────
+// While the embed sheet is up (`?layer=player`), the scene paints NOTHING but
+// the sheet's own colour.
+//
+// ⭐ WHY, and it is not the obvious reason. The sheet cannot be made opaque —
+// a fully opaque cover is occlusion-culled by Chrome exactly like a hidden
+// canvas, and coming back costs a 5.6s blocked frame (`index.css .embed-sheet`,
+// measured 5624ms vs 224ms). So the sheet stays at 0.95 and the five percent
+// that shows through used to be the neighbourhood, read as a smudge.
+//
+// The fix is not a higher opacity. It is to make what shows through be the
+// SAME COLOUR: `scene.visible = false` means the renderer still clears and
+// still composites — the canvas never goes idle, so the switch stays instant —
+// but the frame it paints is a flat field of the sheet's own ground. Five
+// percent of that is indistinguishable from the sheet.
+//
+// ⛔ Do NOT "optimise" this into pausing, unmounting, or hiding the canvas.
+// Every one of those is the failure this avoids. The scene must keep rendering;
+// it just renders nothing.
+//
+// The colour is READ OFF THE DOCUMENT (`--sheet-bg-*`, hoisted to :root in
+// index.css) rather than restated here, so the clear colour and the sheet can
+// never drift apart.
+
+function SheetGround({ active, ground }) {
+  const gl = useThree((s) => s.gl)
+  const scene = useThree((s) => s.scene)
+  const invalidate = useThree((s) => s.invalidate)
+
+  useEffect(() => {
+    if (!active) return undefined
+
+    const prevVisible = scene.visible
+    const prevClear = new THREE.Color()
+    gl.getClearColor(prevClear)
+    const prevAlpha = gl.getClearAlpha()
+
+    const css = getComputedStyle(document.documentElement)
+      .getPropertyValue(ground === 'paper' ? '--sheet-bg-paper' : '--sheet-bg-plate')
+      .trim()
+
+    if (css) gl.setClearColor(new THREE.Color(css), 1)
+    scene.visible = false
+    invalidate()
+
+    return () => {
+      scene.visible = prevVisible
+      gl.setClearColor(prevClear, prevAlpha)
+      invalidate()
+    }
+  }, [active, ground, gl, scene, invalidate])
+
+  return null
+}
+
 // ── Frame limiter ────────────────────────────────────────────────────────────
 // Canvas uses frameloop="demand" so no frames render unless invalidated.
 // Hero mode runs at 60fps for smooth pan; other modes skip every other frame (30fps).
@@ -784,7 +839,7 @@ const IS_GROUND = window.location.search.includes('ground')
 
 
 
-function Scene() {
+function Scene({ sheeted = false, ground = 'plate' } = {}) {
   const viewMode = useCamera((s) => s.viewMode)
   // Baked layer visibility — the park title honors scene.json.layerVis like
   // every other layer (authored in the panel → baked → all consumers gate on
@@ -853,6 +908,7 @@ function Scene() {
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={IS_GROUND || IS_MOBILE ? false : 'soft'}
     >
+      <SheetGround active={sheeted} ground={ground} />
       {!IS_GROUND && !IS_MOBILE && <StageShadows />}
       {/* Atmospheric fog (FogExp2 from scene.mist). Completes the authored
           `mist` channel in production — no-op at density 0. */}
