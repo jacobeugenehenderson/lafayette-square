@@ -642,7 +642,9 @@ function StatsMasthead({ stats, tagline, minHeight }) {
 }
 
 // ── Society masthead ─────────────────────────────────────────────────
-function SocietyMasthead() {
+// ⭐ Exported so an embedding page can mount the neighborhood's own counts
+// without the app around them. See App.jsx `?embed=`.
+export function SocietyMasthead() {
   const { townies, residents, guardians, couriers } = useCommunityStats()
 
   const stats = [
@@ -693,7 +695,10 @@ function SocietyInlineSearch() {
   )
 }
 
-function LafayettePagesTab({ isFull, isBrowse }) {
+// ⭐ Exported for the same reason. `isBrowse` hides the masthead (:750), so
+// `<LafayettePagesTab isBrowse />` is the directory FROM THE SEARCH BAR DOWN —
+// which is exactly what an embedding page wants, and needs no new flag.
+export function LafayettePagesTab({ isFull, isBrowse }) {
   const [expandedIds, setExpandedIds] = useState(() => new Set())
   const [scrollToSelected, setScrollToSelected] = useState(false)
   const listings = useListings((s) => s.listings)

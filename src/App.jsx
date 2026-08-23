@@ -5,7 +5,7 @@ import Scene from './components/Scene'
 import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
-import SidePanel from './components/SidePanel'
+import SidePanel, { LafayettePagesTab, SocietyMasthead } from './components/SidePanel'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
@@ -661,6 +661,32 @@ function App() {
   if (route.page === 'link') {
     return <LinkPage token={route.token} />
   }
+  // ── Chrome-only embeds ───────────────────────────────────────────────────
+  // `?embed=society`  the neighborhood directory, from the search bar down
+  // `?embed=masthead` the four role counts
+  //
+  // ⭐ WHY THIS IS SMALL: the panel's parts are already self-contained — they
+  // read the content layer from stores and take no props but layout hints — so
+  // mounting one alone is a route, not a refactor. That is the whole claim an
+  // embedding page makes about how this product is built, so it had better be
+  // true here.
+  //
+  // ⛔ NO SCENE. These are DOM-only: no Canvas, no WebGL context, nothing to
+  // occlusion-cull. That is what makes a second frame on someone else's page
+  // free, and it is why this is a separate mode rather than a `?layer=`.
+  if (FRAMED && route.embed) {
+    return (
+      <div className="w-full h-full overflow-hidden bg-surface-dim text-on-surface">
+        {route.embed === 'masthead' && <SocietyMasthead />}
+        {route.embed === 'society' && (
+          <div className="w-full h-full flex flex-col min-h-0">
+            <LafayettePagesTab isFull={false} isBrowse />
+          </div>
+        )}
+      </div>
+    )
+  }
+
   if (route.page === 'privacy') return <PrivacyPage />
   if (route.page === 'terms-courier') return <CourierTermsPage />
   if (route.page === 'terms-restaurant') return <RestaurantTermsPage />
@@ -735,6 +761,14 @@ function parseRoute() {
   if (linkMatch) return { page: 'link', token: linkMatch[1] }
   const placeMatch = path.match(/^\/place\/([^/]+)$/)
   if (placeMatch) return { page: 'place', listingId: placeMatch[1] }
+  // ⭐ `?embed=` — a chrome-only mount of one panel part, for an embedding page.
+  // A query rather than a path, because it is a MODE on the app rather than a
+  // page of it; FRAMED-only, like the layer anchors, so a direct visit never
+  // shows a visitor half a product.
+  let embed = null
+  try { embed = new URLSearchParams(window.location.search).get('embed') } catch { embed = null }
+  if (embed === 'society' || embed === 'masthead') return { page: 'embed', embed }
+
   if (path === '/bulletin') return { page: 'bulletin' }
   if (path === '/privacy') return { page: 'privacy' }
   if (path === '/terms/courier') return { page: 'terms-courier' }
