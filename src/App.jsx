@@ -6,6 +6,8 @@ import SceneBoundary from './components/SceneBoundary'
 import Controls from './components/Controls'
 import CompassRose from './components/CompassRose'
 import SidePanel, { LafayettePagesTab, SocietyMasthead } from './components/SidePanel'
+import PlaceCard from './components/PlaceCard'
+import { buildings as ALL_BUILDINGS } from './data/buildings'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
 import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
@@ -373,6 +375,39 @@ function ModeOverlay() {
   return null
 }
 
+// ── The card, mounted alone ────────────────────────────────────────────────
+// `?embed=card&place=<id>` for an embedding page. The card is normally a modal
+// dialog over the scene; here it fills its frame instead — see `.embed-card` in
+// index.css, which neutralises the positioning WITHOUT touching the component.
+//
+// ⛔ A missing id says so out loud. A blank frame on a page whose whole argument
+// is "this is the real thing" is the worst possible failure.
+function EmbedCard({ placeId }) {
+  const listings = useListings((s) => s.listings)
+  const listing = listings.find((l) => l.id === placeId) || null
+  const building = ALL_BUILDINGS.find(
+    (b) => b.id === (listing ? listing.building_id : placeId)) || null
+
+  if (!listings.length) return null   // still hydrating
+  if (!listing && !building) {
+    return (
+      <div className="p-4 text-body-sm text-on-surface-subtle">
+        No place with id “{placeId}”. Check the id against the directory.
+      </div>
+    )
+  }
+  return (
+    <div className="embed-card w-full h-full relative">
+      <PlaceCard
+        listing={listing}
+        building={building}
+        allListings={listing ? [listing] : []}
+        onClose={() => {}}
+      />
+    </div>
+  )
+}
+
 function PlaceOpener({ listingId }) {
   const listings = useListings(s => s.listings)
   useEffect(() => {
@@ -678,6 +713,7 @@ function App() {
     return (
       <div className="w-full h-full overflow-hidden bg-surface-dim text-on-surface">
         {route.embed === 'masthead' && <SocietyMasthead />}
+        {route.embed === 'card' && <EmbedCard placeId={route.place} />}
         {route.embed === 'society' && (
           <div className="w-full h-full flex flex-col min-h-0">
             <LafayettePagesTab isFull={false} isBrowse />
@@ -768,6 +804,11 @@ function parseRoute() {
   let embed = null
   try { embed = new URLSearchParams(window.location.search).get('embed') } catch { embed = null }
   if (embed === 'society' || embed === 'masthead') return { page: 'embed', embed }
+  if (embed === 'card') {
+    let place = null
+    try { place = new URLSearchParams(window.location.search).get('place') } catch { place = null }
+    return { page: 'embed', embed: 'card', place }
+  }
 
   if (path === '/bulletin') return { page: 'bulletin' }
   if (path === '/privacy') return { page: 'privacy' }

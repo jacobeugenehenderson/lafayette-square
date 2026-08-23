@@ -389,3 +389,25 @@ input, textarea, select {
   100% { transform: translateX(var(--scroll-x, 0px)); }
 }
 
+
+/* ── The place card, mounted alone (`?embed=card`) ──────────────────────────
+   The card is a modal dialog over the scene: absolutely positioned, inset from
+   the edges, offset by the panel's height. Framed on its own it should simply
+   fill the frame.
+
+   ⭐ NEUTRALISED HERE RATHER THAN IN THE COMPONENT. `.embed-card > [role=dialog]`
+   is two selectors to Tailwind's one, so it wins on specificity with no
+   !important and the card keeps ONE layout everywhere it actually ships. An
+   embed must never fork the thing it is embedding. */
+.embed-card > [role="dialog"] {
+  position: relative;
+  inset: auto;
+  top: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
