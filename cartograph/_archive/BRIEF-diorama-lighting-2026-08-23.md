@@ -1,3 +1,9 @@
+> ⛔ **RETIRED 2026-08-23, same day it was written.** Its §2 — `uLeafTransmission` —
+> is BUILT (`5446d84b`), and its §3 traps are folded into
+> `BRIEF-arborist-exorcism.md §5` alongside the four more this session found.
+> ⭐ Kept for the record of what was RULED OUT: the alpha was measured sound, so
+> nobody need re-derive that. Live state is `arborist/BACKLOG.md`.
+
 # BRIEF — the diorama's lighting: leaf transmission first
 
 **You are a fresh agent.** Read `CLAUDE.md` (the gate). Do **not** read `BOZ.md`.
