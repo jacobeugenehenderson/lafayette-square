@@ -439,3 +439,15 @@ input, textarea, select {
   z-index: 2;
   background: var(--surface-dim);
 }
+
+/* ⭐ ALPHA EMBED — `?embed=tree&alpha=1` hands the host page a tree with no sky
+   behind it, so the host's own sky shows through the canopy. The canvas clears
+   to alpha 0, but that buys nothing while anything BEHIND it still paints:
+   html and body carry the app's surface colour by default. This is the last
+   link in that chain (the React wrapper handles its own, in App.jsx).
+   ⚠ The host page must also set `background: transparent` on the <iframe>. */
+html.ward-alpha-embed,
+html.ward-alpha-embed body,
+html.ward-alpha-embed #root {
+  background: transparent !important;
+}

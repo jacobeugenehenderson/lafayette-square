@@ -3,22 +3,22 @@
 <title>embed probe</title>
 <style>
   html,body{margin:0;background:#0d1117;color:#cdd6e4;font:12px/1.5 ui-monospace,Menlo,monospace}
-  iframe{display:block;width:896px;height:560px;border:1px solid #2b3442}
-  pre{padding:8px;white-space:pre-wrap}
+  .row{display:flex;gap:8px;padding:8px}
+  .cell{width:440px}
+  .cell h3{margin:0 0 4px;font-size:11px;color:#7fb3ff}
+  /* mid-grey so an ALPHA canvas is obvious: page shows through */
+  iframe{display:block;width:440px;height:380px;border:1px solid #2b3442;background:#6b7280}
 </style>
-<iframe id="f" src="/?embed=tree"></iframe>
-<pre id="out">waiting…</pre>
+<div class="row">
+  <div class="cell"><h3>alpha=1 (transparent, grey = page showing through)</h3><iframe id="a" src="/?embed=tree&alpha=1"></iframe></div>
+  <div class="cell"><h3>opaque (own sky)</h3><iframe id="b" src="/?embed=tree"></iframe></div>
+</div>
+<pre id="out">…</pre>
 <script>
-const out=document.getElementById('out'), f=document.getElementById('f');
-// Drive the day from the embedding page, exactly as a host page would.
-const MINUTE = Number(new URLSearchParams(location.search).get('min') ?? 13*60);
-setInterval(()=>{ try{ f.contentWindow.postMessage({type:'ward-time',minute:MINUTE},'*') }catch{} }, 700);
-let back=[];
-addEventListener('message',e=>{ if(e.data&&e.data.type==='ward-time') back.push(e.data.minute) });
+const MIN = Number(new URLSearchParams(location.search).get('min') ?? 780);
+const fs = [document.getElementById('a'), document.getElementById('b')];
+setInterval(()=>{ fs.forEach(f=>{ try{ f.contentWindow.postMessage({type:'ward-time',minute:MIN},'*') }catch{} }) }, 700);
 setInterval(()=>{
-  const d=f.contentDocument, c=d&&d.querySelector('canvas');
-  if(!c){out.textContent='no canvas';return}
-  const r=c.getBoundingClientRect();
-  out.textContent=`canvas ${c.width}x${c.height} css ${r.width}x${r.height}\nsent minute ${MINUTE}  |  echoed back: ${back.slice(-1)[0] ?? '—'}`;
-},500);
+  document.getElementById('out').textContent = 'minute=' + MIN + '  (alpha left, opaque right)';
+}, 500);
 </script>

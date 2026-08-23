@@ -10,6 +10,7 @@ import CloudDome from './CloudDome'
 import WeatherEffects from './WeatherEffects'
 import WeatherPoller from './WeatherPoller'
 import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
+import { ExposureTicker } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
@@ -187,8 +188,20 @@ function DioramaCamera({ height }) {
  *   per-viewer surprise with no way to explain itself. An explicit `?species=`
  *   outranks the canary either way.
  */
-export default function TreeDiorama({ species, lod, variant, lookId, followCanary = false } = {}) {
+export default function TreeDiorama({ species, lod, variant, lookId, followCanary = false, transparent } = {}) {
   const canary = useCanaryTree()
+  // ⭐ ALPHA MODE — the tree with the sky's LIGHT but not the sky's PIXELS.
+  // A host page that already draws its own sky (the site's band, with its own
+  // sun and moon on the same clock) must not receive a second one painted over
+  // it. So the canvas clears to alpha 0 and `CelestialBodies` runs at
+  // debugLevel 1 — "lights only, no sky/moon/orbs" — which keeps the ambient,
+  // hemisphere and directional sun that make the leaves bright at noon and dark
+  // at midnight, and drops every mesh that would paint a background.
+  // ⛔ This is NOT a capture and NOT a cutout: the alpha is the frame buffer's
+  // own, per pixel, through the leaf cards' cutouts, refreshed every frame.
+  // ⭐ So the page shows through the canopy, and the canopy's luminance is the
+  // scene's, at the hour the page asked for.
+  const alpha = transparent ?? (readParam('alpha') === '1')
   const pick   = followCanary ? canary : null
   const look = lookId || pick?.lookId || INSTANCE.lookId
   const sp  = readParam('species') || species || pick?.species || DEFAULT_SPECIES
@@ -219,12 +232,12 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
       frameloop="always"
       camera={{ position: [0, 12, 40], fov: 45, near: 0.5, far: 60000 }}
       gl={{
-        alpha: false,
+        alpha: alpha,
         antialias: !IS_MOBILE,
         logarithmicDepthBuffer: !IS_MOBILE,
         toneMapping: THREE.ACESFilmicToneMapping,
       }}
-      onCreated={({ gl }) => gl.setClearColor(0x000000, 1)}
+      onCreated={({ gl }) => gl.setClearColor(0x000000, alpha ? 0 : 1)}
       dpr={IS_MOBILE ? 1 : [1, 1.5]}
       shadows={false}
     >
@@ -235,11 +248,23 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
       <SkyStateTicker />
       <WeatherPoller />
       <AtmosphereDirectiveDriver lookId={look} />
+      {/* ⭐ THE LUMINANCE OF THE HOUR, and without it the tree is lit like noon
+          at 3am. The per-Look EXPOSURE envelope is authored across the day and
+          normally applied by the PostProcessing chain, which a bare Canvas like
+          this one does not run — `ExposureTicker` exists for exactly that case.
+          ⚠ Missing it does NOT look broken: the sky still goes dark (it paints
+          its own night colours) while the tree stays daylit, so the scene reads
+          as a lit object on a night backdrop and the eye blames the tree.
+          Measured 2026-08-23: at 03:00 the canopy was full daylight green with
+          stars behind it. */}
+      <ExposureTicker lookId={look} />
 
       {/* The sky. CelestialBodies carries the lights, so this is also the
           diorama's entire lighting rig. */}
-      <CelestialBodies />
-      <CloudDome />
+      {/* debugLevel 1 = lights only. In alpha mode the host page owns the sky;
+          we still take our light from it. */}
+      <CelestialBodies debugLevel={alpha ? 1 : 0} />
+      {!alpha && <CloudDome />}
       <WeatherEffects />
 
       {/* The canopy moves off the same wind that moves the clouds. */}

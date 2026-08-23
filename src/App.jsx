@@ -710,6 +710,10 @@ function App() {
   if (route.page === 'link') {
     return <LinkPage token={route.token} />
   }
+  // `?alpha=1` — see the alpha-embed note below.
+  let embedAlpha = false
+  try { embedAlpha = new URLSearchParams(window.location.search).get('alpha') === '1' } catch { embedAlpha = false }
+
   // ── Chrome-only embeds ───────────────────────────────────────────────────
   // `?embed=society`  the neighborhood directory, from the search bar down
   // `?embed=masthead` the four role counts
@@ -724,8 +728,20 @@ function App() {
   // occlusion-cull. That is what makes a second frame on someone else's page
   // free, and it is why this is a separate mode rather than a `?layer=`.
   if (FRAMED && route.embed) {
+    // ⭐ ALPHA EMBED. `?embed=tree&alpha=1` hands the host page a tree with no
+    // sky behind it, so the page's OWN sky shows through the canopy. That only
+    // works if nothing between the canvas and the host paints a background —
+    // and three things do by default: this wrapper, and html/body. All three go
+    // transparent together or the alpha buys nothing.
+    // ⚠ The host must also set `background: transparent` on the <iframe>; an
+    // iframe paints its own white/canvas base otherwise.
+    const alphaEmbed = route.embed === 'tree' && embedAlpha
+    if (typeof document !== 'undefined') {
+      document.documentElement.classList.toggle('ward-alpha-embed', alphaEmbed)
+    }
     return (
-      <div className="w-full h-full overflow-hidden bg-surface-dim text-on-surface">
+      <div className={`w-full h-full overflow-hidden text-on-surface${alphaEmbed ? '' : ' bg-surface-dim'}`}
+           style={alphaEmbed ? { background: 'transparent' } : undefined}>
         {route.embed === 'masthead' && <SocietyMasthead />}
         {route.embed === 'sky' && <SkyEmbed />}
         {route.embed === 'tree' && <TreeDiorama />}
