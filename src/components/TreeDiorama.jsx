@@ -16,7 +16,7 @@ import { SwayDriver } from './InstancedTrees.jsx'
 import { useTreeAtlas, stampTreeVertexAttrs } from './treeAtlasMaterial'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import { makeGrassMaterial } from './grassMaterial.js'
-import { CANARY_CAMERAS } from '../meteorologist/canaryCamera.js'
+import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -94,6 +94,12 @@ function Specimen({ url, material, onMeasured }) {
       const g = o.geometry.clone()
       g.applyMatrix4(o.matrixWorld)
       stampTreeVertexAttrs(g, {}, o)
+      // Which half of the tree this is. The bake stamps it; ⚠ GLTFLoader puts
+      // primitive extras in three different places depending on version, so
+      // check all three exactly as the runtime does.
+      g.userData.isBark = (
+        o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind ?? o.userData?.gltfExtras?.atlasKind
+      ) === 'bark'
       collected.push(g)
     })
     if (!collected.length) return []
@@ -152,7 +158,14 @@ function Specimen({ url, material, onMeasured }) {
   return (
     <group>
       {geometries.map((g, i) => (
-        <mesh key={i} geometry={g} material={material} frustumCulled={false} castShadow receiveShadow />
+        <mesh
+          key={i}
+          geometry={g}
+          material={material}
+          frustumCulled={false}
+          castShadow
+          receiveShadow
+        />
       ))}
     </group>
   )
@@ -239,8 +252,8 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
   useEffect(() => {
     if (!height) return
 
-    // ⭐ THE POSE IS AUTHORED, NOT INVENTED — `CANARY_CAMERAS.ground`, the
-    // Meteorologist's own canary camera (Jacob: "duplicate Hero camera and use
+    // ⭐ THE POSE IS AUTHORED, NOT INVENTED — `CANARY_GROUND_CAMERA` — the ONE canary
+    // camera, owned here rather than borrowed from the unfinished canary scene (Jacob: "duplicate Hero camera and use
     // it only here, call it canary or something"). It already encodes the shot
     // this view wants and says so in its own comment: eye on the ground at
     // 1.7 m, backed off, tilted UP at the canopy, "what users see standing in
@@ -248,7 +261,7 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
     // ⛔ Not duplicated. The canary scene and this one are the same question
     // about the same specimen — a second copy of the pose would drift, and the
     // drift would be invisible because both would look plausible.
-    const base = CANARY_CAMERAS.ground
+    const base = CANARY_GROUND_CAMERA
     const eyeY = base.position[1]                        // 1.7 m — a person's eye
     const azimuth = Math.atan2(base.position[0], base.position[2])   // its angle round the tree
     if (camera.fov !== base.fov) { camera.fov = base.fov }
@@ -315,8 +328,21 @@ function DioramaCamera({ height, spread, baseY = 0, topY }) {
   return null
 }
 
-export default function TreeDiorama({ species, lod, variant, lookId, followCanary = false, transparent } = {}) {
-  const canary = useCanaryTree()
+/**
+ * ⭐ EVERY MOUNT FOLLOWS THE CANARY. One selection, one specimen, everywhere —
+ * the Arborist's full monte, the Meteorologist's canary scene, and the embed on
+ * the page. ⛔ The embed used to be excepted, on my reasoning that a published
+ * page should not change because an operator clicked something in their own
+ * browser. Jacob pushed on it and the reasoning does not survive: the canary is
+ * per-BROWSER, so a real visitor has none and gets the default either way — the
+ * exception bought nothing and cost the one thing the canary exists to prevent.
+ * It put a different tree on two surfaces at once, which is how an hour went
+ * into judging AO on an oak while the page was showing a linden.
+ * ⚠ One live consequence: point the canary at a species with no baked GLB and
+ * the embed breaks — in that operator's browser only.
+ */
+export default function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
+  const pick = useCanaryTree()
   // ⭐ ALPHA MODE — the tree with the sky's LIGHT but not the sky's PIXELS.
   // A host page that already draws its own sky (the site's band, with its own
   // sun and moon on the same clock) must not receive a second one painted over
@@ -329,7 +355,6 @@ export default function TreeDiorama({ species, lod, variant, lookId, followCanar
   // ⭐ So the page shows through the canopy, and the canopy's luminance is the
   // scene's, at the hour the page asked for.
   const alpha = transparent ?? (readParam('alpha') === '1')
-  const pick   = followCanary ? canary : null
   const look = lookId || pick?.lookId || INSTANCE.lookId
   const sp  = readParam('species') || species || pick?.species || DEFAULT_SPECIES
   const ld  = readParam('lod')     || lod     || DEFAULT_LOD

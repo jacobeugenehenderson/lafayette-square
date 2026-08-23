@@ -91,7 +91,7 @@ export default function ArboristApp() {
   if (fullMonte) {
     return (
       <div style={{ position: 'fixed', inset: 0, background: '#000' }}>
-        <TreeDiorama followCanary />
+        <TreeDiorama />
       </div>
     )
   }

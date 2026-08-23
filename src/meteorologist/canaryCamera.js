@@ -24,6 +24,8 @@
  *   would diverge from what's shipped.
  */
 
+import { CANARY_GROUND_CAMERA } from '../components/canaryCamera.js'
+
 export const CANARY_CAMERAS = {
   browse: {
     // True 90° overhead, mirrors production SHOTS.browse.
@@ -38,23 +40,8 @@ export const CANARY_CAMERAS = {
     showGround: false,
     orbit:      false,
   },
-  ground: {
-    // Backed off ~25m at ~1.7m above ground. Tree canopy target at 8m
-    // puts the full tree silhouette in the upper-middle of frame for
-    // typical 12-18m broadleaves.
-    //
-    // lockDolly: orbit is constrained to a horizontal circular dolly —
-    // camera Y stays at eye level (1.7m), radius stays at the starting
-    // distance (~29m), only azimuth changes as the operator drags.
-    // Zoom + pan disabled; pitch locked to the upward tilt at the
-    // canopy. CanaryScene derives the polar/radius lock values from
-    // the initial position/target so changing the starting framing
-    // auto-updates the dolly geometry.
-    position:   [-22, 1.7, 18],
-    target:     [0, 8, 0],
-    fov:        45,
-    showGround: true,
-    orbit:      true,
-    lockDolly:  true,
-  },
+  // ⭐ THE ONE DEFINITION lives in `components/canaryCamera.js` — the same shot
+  // the Arborist's full monte uses. ⛔ Do not re-specify it here; that is how
+  // the two surfaces drift. See that file for why the dependency runs that way.
+  ground: CANARY_GROUND_CAMERA,
 }
