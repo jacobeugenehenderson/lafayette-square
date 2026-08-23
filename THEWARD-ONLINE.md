@@ -84,13 +84,22 @@ or reshape the sky model, expect to classify it.
 
 ## Open, and where it is tracked
 
-The site's own list is `BACKLOG.md`. **One** item is this product's work:
+The site's own list is `BACKLOG.md`. **Nothing on it is blocked on this product.**
 
-1. **`?embed=` with a Canvas does not size** — mounts, no errors, container
-   correct, canvas stuck at R3F's default.
+⚠️ **This slot listed a blocker twice and was wrong both times** — first that the
+tree GLBs were undeployed, then that `?embed=sky` could not size. Both were
+retracted the same day, the second by the agent the brief was written for.
+**The open work is building `?embed=tree` as the diorama** — sky and tree in one
+Canvas, one clock, on the baked path. Brief: **`BRIEF-tree-and-sky-embed.md` §3**;
+its §2 is now a record of the two traps rather than a blocker.
 
-Briefed for a fresh agent in **`BRIEF-tree-and-sky-embed.md`**, with what has
-already been ruled out so nobody re-tests it.
+⭐ **The lesson this doc should carry: a marketing page is an unusually good
+detector, and an unusually good LIAR, about this product.** It found the real
+half-dressed-GLB bug — and it also produced two blockers that did not exist,
+because a page in a frame, in a background tab, on a cache, fails in ways that
+look exactly like product defects. ⛔ **Certify the observation before reporting
+the defect: which tab was painting, which build was served, and never with a
+getter that mutates** (`canvas.getContext()` *creates* the context).
 
 ---
 
