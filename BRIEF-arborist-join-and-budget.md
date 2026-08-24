@@ -146,10 +146,29 @@ never lighten.** The mechanism is already designed for that: `uGroundFxMap` (G =
 shadow) exists so the trunk blends toward the **COMBINED EFFECTIVE** ground colour — albedo ×
 AO — *"not raw albedo"* (`treeAtlasMaterial.js:369-371`). Blending toward raw albedo over
 bright grass or pavement is exactly how you get a pale ring.
-⇒ **So a light band means the FX/AO term is not reaching the blend, NOT that 0.55 is too
-strong.** ⛔ Do not "fix" it by lowering `blend` — that hides a wrong sign behind a small
-number. ⚠️ Note `poolmap` was ALSO absent before the pour, so the FX map was dormant too;
-confirm it is actually loading and non-zero under a trunk before touching any dial.
+### ⭐⭐⭐ AND THE MECHANISM IS FOUND — it is ONE LINE, and no dial can fix it
+`treeAtlasMaterial.js` (trunk-base block, ~:1000):
+```glsl
+diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);   // straight LERP toward ground colour
+```
+**Bark is dark; grass and pavement are brighter. A lerp toward a brighter colour can only
+LIGHTEN the trunk base — at ANY value of `blend`.** That is the whole defect. It is not
+tuning, it is the wrong operator.
+
+⛔ **Ruled out by measurement, so nobody re-chases them:**
+- *"the AO term isn't reaching it"* — **0 of 5127** trees fall outside the poolmap or the
+  colormap, so the `gcol *= (1.0 - gfx.g * uTrunkShadowStr)` multiply runs for every tree.
+- *"the band has a hard edge"* — the falloff is already `smoothstep(uTrunkBlendTop, 0.0,
+  vLocalY)`. **Soft by construction.** ⭐ It reads as a *band* because the VALUE inverts
+  (base brighter than trunk), not because the shape has an edge. Fix the value and the
+  softness is already there.
+
+⭐ **THE FIX, matching the spec: make the seam DARKEN-ONLY.** Jacob: *"equal or darker to the
+value of the tree trunk"* and *"a contact-shadow dark AO on the LU"*. So the seam applies the
+ground's **shadow**, never the ground's **albedo** — clamp it so it can never raise the value
+(e.g. blend toward `min(diffuseColor.rgb, gcol)`, or drop the albedo lerp entirely and apply
+only the `(1.0 - gfx.g * uTrunkShadowStr)` AO term). ⛔ **Do not lower `blend`** — that hides
+a wrong operator behind a small number, and it will be wrong again on the next town.
 
 ⭐ **THE CHECK THIS WANTS** (the deliverable is the check, `CLAUDE.md` Layer 0): sample the
 rendered trunk-base value against the trunk value above the blend band. **base ≤ trunk, always.**
