@@ -190,6 +190,22 @@ cleanly by ROLE, not by object:
   occlusion does not switch off when the light does.
 - **R = lamp pool** — the light a lamp CASTS onto the ground. **Always brightens.** Rides the
   lamp TOD curve, so ~0 by day.
+### ⭐⭐ THE LAMP'S GROUND PROFILE — one radial gradient, three zones
+*(Jacob: "it's like a radial gradient that goes from shadow dark to light and back to 0.")*
+```
+r = 0  ──►  DARK      occlusion where the post meets the ground (G)
+       ──►  BRIGHT    the pool the lamp casts (R)
+       ──►  0         neutral — no effect at all
+```
+⛔ **It is ONE authored profile, not two effects that happen to overlap.** The current two
+channels can express it — `G` a TIGHT disc inside `R`'s WIDER one — and their composite *is*
+that curve **provided `G`'s radius is smaller than `R`'s.** If G ever grows past R the middle
+zone disappears and the lamp reads as a dark blob.
+
+⭐ **THE CHECK:** sample the baked FX map radially outward from a lamp and assert the profile
+goes **dark → bright → 0**, in that order, once. Kit-generic, fails loudly, and it catches
+both the "dark blob" (G ⊇ R) and a missing pool in a town nobody has looked at.
+
 ⭐ That is the invariant to build to: **contact darkens, pool brightens, albedo does neither.**
 
 ⭐ **THE FIX, matching the spec: make the seam DARKEN-ONLY.** Jacob: *"equal or darker to the
