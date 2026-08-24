@@ -182,7 +182,8 @@ mount **and** made the geometry unquantizable (`applyMatrix4` writes floats into
 **Operator dials** (URL, all defaulting to the committed values):
 `?ring=` contact-ring footprint · `?trunk=` / `?trunkTop=` trunk-base darkening + reach ·
 `?wind=` / `?gust=` breeze · `?leafT=` / `?leafK=` leaf transmission · `?species=` `?lod=` `?variant=` ·
-`?whip=` the wind-tier ramp (see below), with `?whipGamma=` `?whipAmpMax=` `?whipLeaf=` shaping it
+`?whip=` the wind-tier ramp (see below), with `?whipGamma=` `?whipAmpMax=` `?whipLeaf=` shaping it ·
+`?nightAmbient=` / `?nightHemi=` the diorama's own night keys (see below)
 
 ⚠️ **The trunk-base contact is a SHARED knob** (`treeTrunkGround` + `setTrunkGround` in
 `treeAtlasMaterial.js`), defaulting to the map's values and restored on unmount — so street view
@@ -201,6 +202,18 @@ pre-extraction one, parsing the old thresholds out of git rather than restating 
 - ◻ **`?whip=` DEFAULTS TO 0 — the legacy buckets still ship.** The ramp is built, measured and
   renders clean, but it moves EVERY tree in the map, so the default flips only on the operator's eye
   on the cinematic pan. Until then the backwards classifier is what the map runs.
+⭐ **THE DIORAMA LIGHTS ITS OWN NIGHT, and the map never feels it** *(Jacob's ruling, 2026-08-24:
+"the Diorama should have no impact on the larger product")*. The Look's `ambient` has no `night`
+key, so midnight resolves by interpolation wrapping through the night and lands **above noon**
+(1.69 vs 1.47) — unauthored, and it read as a lit canopy against a black sky. But `ambient` /
+`hemi` are per-Look channels the **whole map** reads, so the key is **never written to the Look**:
+the diorama overlays it on an in-memory copy and passes it through `CelestialBodies`'
+`ambientOverride` / `hemiOverride` — the same seam the Stage drives. `public/looks/**` and
+`public/baked/**` stay untouched. ⛔ A Look with no baked `scene.json` keeps today's lighting **and
+says so by name**; it must never look like the override ran.
+⛔ **`design.json` is NOT `scene.json`** — `CelestialBodies` reads the BAKED slab, so an experiment
+edited into `design.json` changes nothing until a bake. That trap produces false negatives.
+
 - ◻ **Wind is FLOORED, not authored**: the meteorologist still does not author a `wind` block into
   the directive.
 

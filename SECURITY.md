@@ -2,7 +2,10 @@
 
 **Security surface catalog & fortification register for Lafayette Square / Cary.**
 
-_Forensic pass: 2026-07-01. Author: Boz (solo analytic pass). Scope: the whole repo,
+_Forensic pass: 2026-07-01 (Boz, solo analytic pass). **Remediation pass: 2026-08-24 (Wren)** — F-1,
+F-2, F-4, F-5-Twilio, F-7, F-8, F-9, F-10 closed and verified against the live project; F-3 fixed in
+source; F-14 opened. ⛔ **Findings marked CLOSED were verified by running something, and the command is
+recorded with each — re-run it rather than trusting the tick.** Scope: the whole repo,
 with emphasis on the **Cary** courier backend (`cary/supabase/**`) — that is where the
 sensitive data and the money movement live, and it is the subsystem Supabase's Security
 Advisor emails are about._
@@ -23,19 +26,16 @@ This document has three jobs:
 
 ## 1. The Supabase Security Advisor email — likely triggers
 
-Supabase emails a weekly **Security Advisor** digest. Every lint below has a concrete
-match in our migrations. Fix these and the emails stop.
+Supabase emails a weekly **Security Advisor** digest. Each lint below had a concrete match in
+our migrations. **Three of the four are now fixed** *(2026-08-24 — past tense throughout this
+table on purpose; the live state is [§3](#3-findings--gaps-ranked))*.
 
-| Advisor lint | Severity | Our object | Where |
+| Advisor lint | Severity | Our object | Status |
 |---|---|---|---|
-| `rls_disabled_in_public` | **ERROR** | **`sms_messages` has no RLS** — anon key can `select *` (phones, message bodies, device_hash) | `007_sms_messages.sql`, never enabled |
-| `security_definer_view` | ERROR/WARN | **`courier_credential_status`** view exposes name/email/phone, runs with definer rights (bypasses caller RLS) | `005_onboarding_pipeline.sql:65` |
-| `function_search_path_mutable` | WARN | `suspend_expired_couriers`, `try_activate_courier`, `get_onboarding_status` are `security definer` with **no `set search_path`** | `005:105,132,189`; `006:18,110` |
-| `auth_*` (OTP expiry / leaked-password protection) | WARN | Auth-console settings, not in repo — **verify in the dashboard** | Supabase Auth settings |
-
-**The `sms_messages` one is almost certainly the ERROR that triggered the email.** It is
-the only public table in the schema with RLS switched off, and it holds PII. See
-[F-1](#f-1-critical--sms_messages-has-no-row-level-security).
+| `rls_disabled_in_public` | **ERROR** | `sms_messages` had no RLS — the anon key could `select *` (phones, message bodies, device_hash). **The ERROR that triggered the email.** | ✅ fixed by `009` (F-1) |
+| `security_definer_view` | ERROR/WARN | `courier_credential_status` exposed name/email/phone with definer rights | ✅ fixed by `009` (F-7) |
+| `function_search_path_mutable` | WARN | `suspend_expired_couriers`, `try_activate_courier`, `get_onboarding_status` had no `set search_path` | ✅ fixed by `009` (F-8) |
+| `auth_*` (OTP expiry / leaked-password protection) | WARN | Auth-console settings, not in repo | ⚠️ **still owed — verify in the dashboard** |
 
 > ✅ **CLOSED 2026-08-24 (Wren).** `009_security_advisor_fixes.sql` is **applied to prod**
 > (`ngbvgjzrpnfrqmzkqvch`). F-1 and F-7 are verified shut against the live API — anon now gets
@@ -347,8 +347,10 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `license_plate`, `drivers_license_expiry`, `insurance_expiry`, `stripe_connect_account_id`,
   `vehicle_photo_urls`. And it carries **no auth predicate at all**, so this is the public anon key,
   not merely a signed-in user. ⭐ Latent only because there are **zero active couriers today** — it goes
-  live with the first activation, which is also when `SECURITY.md`'s own §4 "data minimization" claim
-  stops being true.
+  live with the first activation.
+  ⭐ **Precisely:** §4's data-minimization claim is about what we *store* (no PANs, no SSNs, no licence
+  numbers) and remains true. This is an **exposure** finding about what we *hand out* — the two are
+  different claims and §4 is not contradicted.
 - **Fix:** a `security_invoker` view exposing only the dispatch-display columns
   (`id, status, vehicle_type, vehicle_description, vehicle_photo_urls`), with the base-table policy
   dropped. ⛔ Column-level `GRANT`s are the wrong tool here — they apply regardless of RLS and would

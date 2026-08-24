@@ -31,77 +31,78 @@ Three of tonight's four fixes were "do what the Salon does." **Read it before in
 
 ---
 
-## 1. ⭐ THE JOB — the wind tier is classified backwards
+## 1. ⭐ THE MOTION — ✅ BUILT (`e4158056`), ◻ DEFAULT STILL OFF, pending the eye
 
-**This is the one Jacob most wants fixed.** His words: *"the branches are static… it's really
-apparent the leaves are moving independent of the tree"* · *"we should make a **bunch** more
-motion variation"* · *"overall much more subtle, but if it was realistic we would want wind
-this big in a storm."*
+**Jacob's words, which are the acceptance:** *"the branches are static… it's really apparent the
+leaves are moving independent of the tree"* · *"we should make a **bunch** more motion variation"*
+· *"overall much more subtle, but if it was realistic we would want wind this big in a storm."*
 
-**`src/components/treeAtlasMaterial.js:1528`** classifies every bark vertex by **distance
-from the trunk AXIS**:
-```js
-const r = Math.sqrt(x*x + z*z)
-if (r > 0.15 && y < 3.0) tier = 0   // trunk  → amplitude 0.05  (:555)
-else if (r > 0.06)       tier = 1   // branch → 0.30
-else                     tier = 2   // twig   → 0.60
-                                    // leaves → 1.00 (flat, non-bark)
-```
-⛔ **That is backwards for a real tree.** An outer branch tip 5 m from the axis at 12 m up
-is `r > 0.06` ⇒ **"branch", damped to 0.30**. The upper trunk core, within 6 cm of the axis,
-is ⇒ **"twig" at 0.60**. So the whippiest parts move least, the bole moves more than they do,
-and leaves at a flat 1.0 move **3× the branches they hang on.**
-▶ `sed -n '1522,1541p' src/components/treeAtlasMaterial.js` · `sed -n '549,565p' src/components/treeAtlasMaterial.js`
+**The defect, confirmed exactly as reported.** The classifier bucketed every bark vertex by
+distance from the trunk **AXIS**, so an outer branch tip 5 m out at 12 m up read `r > 0.06` ⇒
+"branch" at **0.30**, while the upper trunk core within 6 cm of the axis read "twig" at **0.60** —
+the whippiest parts moved least, the bole moved more than they did, and leaves at a flat **1.00**
+moved 3× the branches they hang on.
 
-**The shape of the fix (not a spec — confirm it against the code):**
-- Tier should come from **height × radial distance**, not radius alone. Thin twigs are far
-  out AND high. `aTreeHeightNorm` is already stamped per-vertex and available.
-- ⭐ **Make it CONTINUOUS, not three buckets.** A smooth ramp from a near-still bole to
-  whipping tips *is* the "much more motion variation" Jacob asked for, and it is the same
-  edit. Buckets are why the canopy reads as two separate objects.
-- Leaves should ride their branch: the leaf amplitude wants to be branch-motion **plus** a
-  small independent flutter, not an unrelated 1.0.
+**What landed.** One continuous ramp replacing the four buckets:
+`whip = pow(wH·aTreeHeightNorm + wR·aWindRadialNorm, gamma)` — near-still bole to whipping tips,
+which is the same edit as the "much more motion variation," since the buckets are why the canopy
+read as two objects. A leaf now takes the whip of the wood it hangs on and adds its **own** flutter
+on top, instead of moving at an unrelated amplitude.
 
-⛔⛔ **THIS IS THE SHARED MATERIAL — IT MOVES EVERY TREE IN THE MAP.** Gate it on the
-operator's eye on the **cinematic pan**, not on the diorama alone
-(`project_smooth_pan_is_the_only_perf_target`). ⭐ **Strongly consider landing it as a
-module-scoped knob defaulting to today's values**, the way `treeTrunkGround` and
-`treeSwayUniforms` do — then the map is bit-identical until someone turns it.
+⛔⛔ **IT IS THE SHARED MATERIAL — IT MOVES EVERY TREE IN THE MAP.** So it landed as
+`treeWindTiering` + `setWindTiering`, module-scoped, **defaulting to today's values**:
+`uWhipBlend = 0` keeps the legacy buckets verbatim and the map is **bit-identical** until someone
+turns it. Verified: `?whip=0` matches `5ef05604`; `?whip=1` renders clean.
+- ◻ **THE ONE THING STILL OWED: the operator's eye on the CINEMATIC PAN**, not the diorama alone
+  (`project_smooth_pan_is_the_only_perf_target`). The default flips only after that.
+- ⭐ **A second classifier existed** in `InstancedTrees.jsx`, byte-identical and hand-kept in step;
+  fixing one and not the other would have split the diorama from the map. Now one `stampWindTier`.
+- ▶ `node scratch/claims-wind-tier-extraction.mjs` — parses the OLD thresholds out of git rather
+  than restating them, and asserts the extraction is behaviour-identical.
+- Dials: `?whip=` `?whipGamma=` `?whipAmpMax=` `?whipLeaf=` `?whipH=` `?whipR=`. Full list in
+  `arborist/FEATURES.md`.
 
-⚠️ **Wind magnitude is already tuned and is NOT the problem.** `DioramaWind` floors the
-breeze at **0.7 m/s** (the Grove's 3.0 read as a storm). Dial live with `?wind=` / `?gust=`.
-⛔ Do not start by tuning the period — `BACKLOG.md` says that answers an older, narrower
-complaint.
+⚠️ **Wind MAGNITUDE was already tuned and was never the problem.** `DioramaWind` floors the breeze
+at 0.7 m/s. ⛔ Do not start by tuning the period — `BACKLOG.md` says that answers an older,
+narrower complaint.
 
 ---
 
-## 2. THE LIGHTING — ⛔ THE BRIEF'S ORIGINAL §2 WAS WRONG. Read this instead.
+## 2. THE LIGHTING — ✅ DONE (`22e5e0c3`). Read the trap, not the history.
 
-**Wren wrote §2 around the Look's `ambient` / `hemi` channels (1.69 / 1.88 at midnight, and
-`ambient` has no night key). Every one of those numbers is real. THE DIORAMA DOES NOT READ
-THEM.** Found and proved by **Rook**, 2026-08-24; confirmed independently.
+**Wren's original numbers were right and they stand:** the Look's `ambient` has **no `night`
+key**, so midnight resolves by interpolation *wrapping through* the night and lands **above
+noon** (1.69 vs 1.47) — nobody authored that. `hemi` night = 2 **is** explicitly authored and
+does reach the tree; it is a live operator decision, not a defect.
+▶ `node --input-type=module -e "const m=await import('./src/cartograph/animatedParam.js');const fs=await import('node:fs');const d=JSON.parse(fs.readFileSync('./public/baked/lafayette-square/scene.json','utf8'));for(const t of [0,720])console.log(t,m.resolveGroupAtMinute(d.ambient,t,null,['value'],{value:1}).value,m.resolveGroupAtMinute(d.hemi,t,null,['value'],{value:1}).value)"`
 
-- `TreeDiorama.jsx:766` mounts `<CelestialBodies debugLevel={…} />` — **no `scene`, no
-  `lookId`** — so `CelestialBodies.jsx:1095-1096` falls to `AMBIENT_DEFAULT_CHANNEL` /
-  `HEMI_DEFAULT_CHANNEL`, which are `{ value: 1.0 }` **flat all day**
-  (`src/cartograph/skyLightChannels.js:188,191`).
-- Rook authored an ambient night key, then dropped hemi night separately. **Three renders,
-  one picture.** The original recommendation would have changed LS map-wide and done nothing here.
+### ⛔⛔ THE TRAP, AND IT COST HALF A SESSION: `design.json` IS NOT `scene.json`.
+**`CelestialBodies` reads the BAKED `scene.json`, never the authored `design.json`.** Editing
+`design.json` and reloading changes **nothing** — the authored source only reaches the slab
+through a bake. ⭐ **An experiment on a Look must be run against `public/baked/<look>/scene.json`,
+or the instrument is not connected and every null result is a false negative.**
+⚠️ **Rook lost a stretch to exactly this**, then compounded it by explaining the null result with
+a *second* wrong claim — that the diorama fell through to `AMBIENT_DEFAULT_CHANNEL`'s flat 1.0
+"because no `scene` prop is passed." **`scene` is not a prop.** It comes from
+`useSceneJson(resolveLookId(lookId))`, and `resolveLookId` falls back to `INSTANCE.lookId`
+(`CelestialBodies.jsx:48-53`) — so the Look's channels were reaching the diorama all along.
+⭐ **The measurement was sound; the sentence laid on top of it was the error** — `CLAUDE.md`'s
+"never write the EXPLANATION of a number, only the number," committed twice in one hour.
 
-⭐ **SO THE REAL QUESTION IS A DESIGN ONE, AND IT IS JACOB'S:**
+### THE RULING *(Jacob, 2026-08-24)*
+> **"We don't want to move night everywhere. This is a tiny adjunct function bolted on to a
+> giant operation; the Diorama should have no impact on the larger product."**
 
-**(a) Give the diorama the Look's channels** — one line, and it makes the solo tree honest to
-the map: it darkens with LS, and Jacob's authored `hemi` night = 2 finally reaches it. ⭐ This
-is the SAME SEAM as everything fixed on 2026-08-23 — a bare Canvas mounting a driver and not
-feeding it (bark slots, ground maps, wind). ⚠️ Risk: the tree may then look WORSE at night,
-and fixing that means tuning the Look, which moves the whole map.
-**(b) Keep its own lighting and dial the local floors** — cannot regress the map at all.
-⚠️ Risk: the surface built to show "a thing that actually deploys" is lit by lights the map
-never uses. That is the facsimile class this whole arc exists to kill.
+⇒ `ambient` / `hemi` are per-Look channels the **whole map** reads, so the night key is **never**
+authored into the Look. The diorama overlays it onto an **in-memory copy** and passes it through
+`CelestialBodies`' existing `ambientOverride` / `hemiOverride` props — the same seam the Stage
+drives (`CartographApp:1226`). **Nothing is written; `public/looks/**` and `public/baked/**` stay
+untouched.** Portable by construction: it reads *this* Look's own channels and overlays only
+`night`. Dial by eye with `?nightAmbient=` / `?nightHemi=` (the **key** value — the tod curve
+smooths between keys, so the resolved midnight value is not the key).
 
-⛔ **Do not pick one on your own.** ⛔ And do not tune anything until the dominant term is
-measured — `CelestialBodies.jsx:1318-1326` is an unconditional stack led by a hardcoded 0.45
-white ambient floor which this surface pins at ×1.0. **Cause not established.**
+⛔ **A Look with no baked `scene.json` keeps today's lighting and says so by name** — legitimate,
+but it must never *look* like the override ran.
 
 ## 3. THE WEIGHT — compression works, measured, and is now safe to re-land
 
@@ -135,7 +136,7 @@ has not been retried since.**
 - ⛔⛔ **CHECK WHICH SPECIES IS ON SCREEN BEFORE DIAGNOSING ANYTHING.** The canary is in
   `localStorage`, not the URL. I spent a long stretch fixing `linden_american` while Jacob
   was looking at **`maple_sugar`**, so every fix was invisible to him. The console tells you:
-  `[TreeDiorama] maple_sugar/skeleton-1-lod0.glb meshes=2 tris=347,711 height=21.1m`
+  `[TreeDiorama] maple_sugar/skeleton-1-lod0.glb meshes=2 tris=347,711 height=21.1m whip=[…]`
 - ⛔ **`bake-look` used to DELETE `baked/<look>/trees/hero-impostor/` and `…/overhead/`** —
   browser-GPU captures the CLI cannot regenerate. Fixed in `76394799`; a CLI bake now spares
   them. **Verify after any bake:** `git status --short public/baked/... | grep -c "^ D"` → 0.
@@ -148,14 +149,35 @@ has not been retried since.**
 - ⛔ `?embed=tree` is **framed-only** — a direct visit falls through by design. Use
   `?view=fullmonte`.
 - ⛔ **The first screenshot after a navigate is routinely unpainted, and this tree takes
-  ~10 s to load** (20+ MB). Take a second frame before believing a picture.
+  30-40 s to appear** (20+ MB) — longer than the "~10 s" this brief used to claim, which is
+  itself a trap: a black frame reads as *"I broke it"* and invites a revert of a working change.
+  **Take a second and third frame before believing a picture**, and confirm against the mount
+  log rather than the pixels.
+- ⛔ **A stale TAB will keep serving the OLD module** even after vite has rebuilt. Confirm the
+  edit is live by grepping the SERVED module for a code identifier
+  (`curl -s localhost:5173/src/…​ | grep -c <ident>`), and if the tab is stale, open a new one —
+  reloading is not always enough.
 - ⛔ Comments are stripped from vite-served modules — grep the served module for **code
   identifiers**, not comment text, when checking whether an edit is live.
 
-## 5. THE STANDING RULE FOR THIS SURFACE
-⭐ **Nothing here may be a diorama-only hack.** Every gain is built as an **authored knob on
-the shared material or channels, defaulting to today's value**, so the coming street view
-inherits it by turning it up rather than reimplementing it. `treeTrunkGround` +
-`setTrunkGround` (`treeAtlasMaterial.js`) is the pattern to copy.
+## 5. THE STANDING RULE FOR THIS SURFACE — ⚠️ AMENDED 2026-08-24 BY A RULING
+
+**It used to read:** *"every gain is built as an authored knob on the shared material **or
+channels**."* ⛔ **The "or channels" half is struck.** Jacob, 2026-08-24: *"the Diorama should
+have no impact on the larger product."*
+
+⭐ **The rule as it now stands, and the distinction is the whole point:**
+- **SHARED MACHINERY — yes.** A gain goes in as a module-scoped knob on the shared material,
+  **defaulting to today's value**, so the map is bit-identical until someone turns it and the
+  coming street view inherits it by turning it up. `treeTrunkGround` / `treeWindTiering` in
+  `treeAtlasMaterial.js` are the pattern.
+- ⛔ **SHARED AUTHORED STATE — never.** `ambient` / `hemi` / the Look's `design.json` are read by
+  the whole map. The diorama may **drive** them through an existing override **seam**
+  (`ambientOverride` / `hemiOverride`, in memory) but may **never write** to them. A solo adjunct
+  surface does not get to move LS at night.
+
+⇒ **"Not a diorama-only hack" means REUSABLE, not GLOBAL.** The test is no longer *"does the map
+inherit it?"* but *"could town #2 turn this on without me having looked at this street — and does
+the map stay bit-identical until someone chooses otherwise?"*
 
 *Ledger of everything else open on the Arborist: `arborist/LEDGER-exorcism-wren.md`.*
