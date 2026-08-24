@@ -749,6 +749,16 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     const impostors = new Map()  // species -> instances[]  (impostor role)
     const heroImpostors = new Map()  // species -> instances[]  (hero canopy foundation)
     let heroFoundationCount = 0
+    // ⭐ WHY a placement kept geometry. Mesh is the EXPENSIVE role, and today the
+    // gate below routes to it for two completely different reasons — one intended,
+    // one a missing asset. Counting them as one number is what let 53% of the
+    // neighborhood sit in full lod1 without anyone seeing it.
+    //   anchor  = tall enough to EARN geometry (dbh >= cut). The budget working.
+    //   noRecord= its species has NO baked hero impostor. NOT a decision — an
+    //             absent asset silently upgraded to the most expensive role.
+    let meshAnchor = 0
+    let meshNoRecord = 0
+    const meshNoRecordBySpecies = new Map()  // species -> count
     // ALL non-culled instances by rendered species — the WHOLE-SCENE overhead
     // (Browse) path swaps every tree to its species' 3-slice snapshot at once, so
     // it groups by species independent of the mesh/impostor role split below.
@@ -791,7 +801,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           heroFoundationCount++
           return
         }
-        // else → mesh (tall anchor, or a species with no baked hero record). No cull.
+        // else → mesh. Two reasons, and they are NOT the same event — attribute it.
+        if (heroImpostorRecords[renderSpecies]) {
+          meshAnchor++
+        } else {
+          meshNoRecord++
+          meshNoRecordBySpecies.set(renderSpecies, (meshNoRecordBySpecies.get(renderSpecies) || 0) + 1)
+        }
       } else {
         // Legacy prominence behavior (no foundation) — the hero-pan cull + impostor role.
         if (inst.heroTier === 'cull') { heroCulled++; return }
@@ -839,7 +855,24 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     }
     const overheadTotal = [...bySpecies.values()].reduce((n, a) => n + a.length, 0)
     const heroFoundationTotal = [...heroImpostors.values()].reduce((n, a) => n + a.length, 0)
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    // ⛔ THE LEAK, SAID OUT LOUD. A species with no baked hero impostor falls
+    // through the role gate into full lod1 geometry REGARDLESS of size — an absent
+    // asset silently upgraded to the most expensive role. It looks exactly like a
+    // scene that simply has more anchors, which is why it survived unnoticed.
+    // Fix is to SHOOT the missing impostors in the Grove (browser-GPU; the CLI
+    // bake cannot reproduce them), never to widen the dbh cut.
+    if (meshNoRecord > 0) {
+      const worst = [...meshNoRecordBySpecies.entries()].sort((a, b) => b[1] - a[1])
+      const budget = Math.round(heroGeomFraction * bake.instances.length)
+      console.warn(
+        `[InstancedTrees] ⛔ ${meshNoRecord} of ${bake.instances.length} placements ` +
+        `(${(100 * meshNoRecord / bake.instances.length).toFixed(1)}%) kept MESH because their species has NO baked hero impostor — ` +
+        `not because they earned it. Geometry budget is ${budget} (heroGeom=${heroGeomFraction}); ` +
+        `actual mesh is ${meshAnchor + meshNoRecord} (${meshAnchor} earned + ${meshNoRecord} leaked). ` +
+        `Shoot these in the Grove: ` + worst.map(([sp, n]) => `${sp}(${n})`).join(' ')
+      )
+    }
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) mesh=${meshAnchor}earned+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled, heroGeomFraction])
 
