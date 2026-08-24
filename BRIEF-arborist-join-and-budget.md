@@ -127,103 +127,11 @@ smaller canopy card sits inside a shadow sized for the mesh tree it replaced —
 led with the shadows.** Nothing about the impostor split can be judged honestly until the
 shadow and the drawn tree agree.
 
-### ⛔ ② WHITE BANDS AT TRUNK BASES — ROOT FOUND. ⚠️ TREES FIRST, THEN THIS.
-
-⭐⭐ **IT IS NOT A REGRESSION. The trunk-ground seam blend was DORMANT on the map and my
-land-use pour switched it on for the first time.**
-▶ `node -e "const {execSync}=require('child_process');const o=JSON.parse(execSync('git show 29955e46~1:public/baked/lafayette-square/ground.json'));const n=require('./public/baked/lafayette-square/ground.json');console.log('before:',JSON.stringify({c:o.colormap,p:o.poolmap}));console.log('after :',JSON.stringify({c:!!n.colormap,p:!!n.poolmap}))"`
-→ **before: `{}`** — no `colormap` key, no `poolmap` key. `BakedGround.jsx:166`
-(`manifest.colormap || null`) → no texture → `hasUniform.value = 0` → **`uHasGroundColor` was
-0 and the blend never ran.** The bake produced both maps, so it is now live on defaults
-nobody has ever eye-tested (`blend 0.55`, `blendTop 1.5 m`, `shadowStr 0.5`). The fix Jacob
-remembers was real — it was tuned on the **Diorama**, which supplies its own ground textures
-and runs much tighter (`0.8 / 0.75 / 0.95`).
-
-### ⭐⭐⭐ AND THE SPEC — a LIGHT band is a WRONG ANSWER, not a mistuned one
-**Jacob, 2026-08-24: the band is *"supposed to be equal or darker to the value of the tree
-trunk and should be a contact-shadow dark AO on the LU."*** ⇒ **The seam DARKENS. It must
-never lighten.** The mechanism is already designed for that: `uGroundFxMap` (G = contact
-shadow) exists so the trunk blends toward the **COMBINED EFFECTIVE** ground colour — albedo ×
-AO — *"not raw albedo"* (`treeAtlasMaterial.js:369-371`). Blending toward raw albedo over
-bright grass or pavement is exactly how you get a pale ring.
-### ⭐⭐⭐ AND THE MECHANISM IS FOUND — it is ONE LINE, and no dial can fix it
-`treeAtlasMaterial.js` (trunk-base block, ~:1000):
-```glsl
-diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);   // straight LERP toward ground colour
-```
-**Bark is dark; grass and pavement are brighter. A lerp toward a brighter colour can only
-LIGHTEN the trunk base — at ANY value of `blend`.** That is the whole defect. It is not
-tuning, it is the wrong operator.
-
-⛔ **Ruled out by measurement, so nobody re-chases them:**
-- *"the AO term isn't reaching it"* — **0 of 5127** trees fall outside the poolmap or the
-  colormap, so the `gcol *= (1.0 - gfx.g * uTrunkShadowStr)` multiply runs for every tree.
-- *"the band has a hard edge"* — the falloff is already `smoothstep(uTrunkBlendTop, 0.0,
-  vLocalY)`. **Soft by construction.** ⭐ It reads as a *band* because the VALUE inverts
-  (base brighter than trunk), not because the shape has an edge. Fix the value and the
-  softness is already there.
-
-### ⚠️ AND THE ONE TERM THAT MUST SURVIVE A "DARKEN-ONLY" FIX — THE LAMPS
-*(Jacob, 2026-08-24: "we have a separate set of rings and pools for the LAMPS.")*
-The FX map packs **two different systems in two channels**, and they pull opposite ways:
-```glsl
-gcol *= (1.0 - gfx.g * uTrunkShadowStr);                        // G — contact shadow: DARKENS
-gcol += uTrunkPoolColor * gfx.r * uGroundFxScale * uTrunkPool;  // R — LAMP pool: BRIGHTENS
-```
-⛔ **`uTrunkPool` / `uTrunkPoolColor` come from `_lampGlow`, NOT from `treeTrunkGround`**
-(`treeAtlasMaterial.js:377-378`) — they ride the lamp system's TOD curve, so the additive term
-is ~0 by day and real at night. **A tree standing in a lamp pool SHOULD be lit at its base.
-That brightening is correct and must not be clamped away.**
-⇒ So the fix separates three terms rather than clamping the whole expression:
-**ground ALBEDO → darken-only (or gone) · contact AO (G) → darkens · lamp pool (R) → brightens, keep.**
-✅ **ANSWERED by Jacob, 2026-08-24: "both the lamps and the trunks get darkening at the
-ground."** So **G is not owned by one system — it is the CONTACT SHADOW for both.** A lamp
-post has a shadow where it meets the ground exactly as a trunk does. ⇒ The two channels split
-cleanly by ROLE, not by object:
-- **G = contact shadow** — where any upright object MEETS the ground. Serves lamps AND trunks.
-  **Always darkens.** ⛔ A darken-only fix must keep it for both.
-  ⭐ *(Jacob: "the lamp casts a small soft shadow around its own base very like an AO.")* So G
-  is **AMBIENT OCCLUSION at the junction, NOT a shadow thrown by the lamp's own light** —
-  small, soft, and **present at every hour**. ⇒ **G does NOT ride the TOD curve; R does.** At
-  night a lamp therefore shows BOTH at once: dark right at the post (occlusion) and bright in
-  a ring further out (its pool). ⛔ If a fix ever makes G fade with the lamp, it is wrong — an
-  occlusion does not switch off when the light does.
-- **R = lamp pool** — the light a lamp CASTS onto the ground. **Always brightens.** Rides the
-  lamp TOD curve, so ~0 by day.
-### ⭐⭐ THE LAMP'S GROUND PROFILE — one radial gradient, three zones
-*(Jacob: "it's like a radial gradient that goes from shadow dark to light and back to 0.")*
-```
-r = 0  ──►  DARK      occlusion where the post meets the ground (G)
-       ──►  BRIGHT    the pool the lamp casts (R)
-       ──►  0         neutral — no effect at all
-```
-⛔ **It is ONE authored profile, not two effects that happen to overlap.** The current two
-channels can express it — `G` a TIGHT disc inside `R`'s WIDER one — and their composite *is*
-that curve **provided `G`'s radius is smaller than `R`'s.** If G ever grows past R the middle
-zone disappears and the lamp reads as a dark blob.
-
-⭐ **THE CHECK:** sample the baked FX map radially outward from a lamp and assert the profile
-goes **dark → bright → 0**, in that order, once. Kit-generic, fails loudly, and it catches
-both the "dark blob" (G ⊇ R) and a missing pool in a town nobody has looked at.
-
-⭐ That is the invariant to build to: **contact darkens, pool brightens, albedo does neither.**
-
-⭐ **THE FIX, matching the spec: make the seam DARKEN-ONLY.** Jacob: *"equal or darker to the
-value of the tree trunk"* and *"a contact-shadow dark AO on the LU"*. So the seam applies the
-ground's **shadow**, never the ground's **albedo** — clamp it so it can never raise the value
-(e.g. blend toward `min(diffuseColor.rgb, gcol)`, or drop the albedo lerp entirely and apply
-only the `(1.0 - gfx.g * uTrunkShadowStr)` AO term). ⛔ **Do not lower `blend`** — that hides
-a wrong operator behind a small number, and it will be wrong again on the next town.
-
-⭐ **THE CHECK THIS WANTS** (the deliverable is the check, `CLAUDE.md` Layer 0): sample the
-rendered trunk-base value against the trunk value above the blend band. **base ≤ trunk, always.**
-That is a one-line invariant, it is kit-generic, it fails loudly, and it turns "the bands look
-wrong" into a detector that works in a town nobody has looked at.
-
-⛔⛔ **ORDER: TREES FIRST.** *(Jacob's call.)* A seam tuned against impostors will be wrong for
-mesh trees — an impostor's bark is a single rear card with no real trunk at the base, so there
-is nothing to blend. Get the trees where they go, then tune the seam against real trunks.
-Dials when you get there: `?trunk=` (strength) and `?trunkTop=` (metres).
+### ⛔ ② THE GROUND SEAM (white bands at trunk bases) — ▶ `BRIEF-ground-seam.md`
+Fully diagnosed and specced, **not implemented — trees first.** One line: the trunk lerps
+toward ground **albedo**, which can only lighten. Not a regression — the blend was dormant on
+the map and the land-use pour switched it on. Spec, origin, two ruled-out theories and two
+checks are all in that brief.
 
 ⚠️ **These two may be the same event.** Both trunk-blend and the contact shadow read the same
 regenerated ground maps. If ② turns out to be the colormap meta, check ① against it before

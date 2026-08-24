@@ -353,6 +353,307 @@ Public domain, but not a table.
 
 ---
 
-<!-- PENDING: forestry/arboricultural vocabularies (FIA, ISA/TRAQ, i-Tree, municipal inventories);
-     horticultural plant finders (MOBOT, Morton, Arnold, NC State Plant Toolbox);
-     ontologies and aggregators (TO/PO, FLOPO, TOP, TRY, EOL TraitBank, GBIF, Wikidata, efloras). -->
+### 1.9 ⭐⭐ NC State Extension Gardener Plant Toolbox — **the most granular morphology schema found**
+
+**Access — CONFIRMED.** No documented API and no bulk download, but the advanced-search page loads its
+vocabularies by AJAX from two **open, unauthenticated, no-parameter JSON endpoints** (traced out of
+`https://plants.ces.ncsu.edu/static/plants/js/main.f27e08c0e70a.js`):
+
+- `https://plants.ces.ncsu.edu/ajax_filters/` → **288 vocabulary rows** (the gardener/landscape search)
+- `https://plants.ces.ncsu.edu/ajax_id_filters/` → **249 rows** (the plant-**ID** search — this is where
+  the bark / stem / leaf-morphology vocabularies live)
+
+Row shape: `[section, field_key, printed_label, option_value, id, live_count, "", query_param, null, null]`.
+⭐ **The counts are live**, so a check can re-derive them instead of quoting a number into a doc.
+Records are plain server-rendered HTML at `/plants/{slug}/`. `robots.txt` returns **404** (no crawl
+policy published).
+
+**Record field list — verbatim, canonical order (read off `Quercus alba`;** fields render only when
+populated, so no single page shows all of them):
+
+`Genus · Species · Family · Uses (Ethnobotany) · Life Cycle · Recommended Propagation Strategy ·
+Country Or Region Of Origin · Distribution · Fire Risk Rating · Wildlife Value · Play Value ·
+Edibility · Particularly Resistant To (Insects/Diseases/Other Problems) · Dimensions`
+**Whole Plant Traits:** `Plant Type · Woody Plant Leaf Characteristics · Habit/Form · Growth Rate · Maintenance · Texture`
+**Cultural Conditions:** `Light · Soil Texture · Soil pH · Soil Drainage · Available Space To Plant · NC Region · USDA Plant Hardiness Zone`
+**Fruit:** `Fruit Color · Fruit Value To Gardener · Display/Harvest Time · Fruit Type · Fruit Length · Fruit Width · Fruit Description`
+**Flowers:** `Flower Color · Flower Inflorescence · Flower Value To Gardener · Flower Bloom Time · Flower Size · Flower Description`
+**Leaves:** `Woody Plant Leaf Characteristics · Leaf Color · Leaf Feel · Leaf Value To Gardener · Deciduous Leaf Fall Color · Leaf Type · Leaf Arrangement · Leaf Shape · Leaf Margin · Hairs Present · Leaf Length · Leaf Width · Leaf Description`
+**Bark:** `Bark Color · Surface/Attachment · Bark Plate Shape · Bark Description`
+**Stem:** `Stem Color · Stem Is Aromatic · Stem Surface · Stem Form · Stem Cross Section · Stem Buds · Stem Bud Terminal · Stem Bud Scales · Stem Lenticels · Stem Description`
+**Landscape:** `Landscape Location · Landscape Theme · Design Feature · Attracts · Resistance To Challenges · Problems`
+**Poison (conditional):** `Poisonous to Humans · Poison Severity · Poison Symptoms · Poison Toxic Principle · Causes Contact Dermatitis · Poison Part`
+**Prose:** `Common Name(s) · Previously known as · Phonetic Spelling · Description · Seasons of Interest · Quick ID Hints · Insects, Diseases, and Other Plant Problems · Cultivars / Varieties · Tags`
+
+⚠️ Exact label variants matter: it is **`Surface/Attachment`** (not "Surface/Texture"),
+**`Bark Plate Shape`**, **`Stem Is Aromatic`**, **`Woody Plant Leaf Characteristics`**.
+
+**The controlled vocabularies — verbatim:**
+
+| field | n | terms |
+|---|---|---|
+| `Plant Type` | 26 | Annual · Bulb · Carnivorous · Cool Season Vegetable · Edible · Epiphyte · Fern · Ground Cover · Herb · Herbaceous Perennial · Houseplant · Native Plant · Ornamental Grasses and Sedges · Perennial · Poisonous · Rose · Shrub · Succulent · **Tree** · Turfgrass · Vegetable · Vine · Warm Season Vegetable · Water Plant · Weed · Wildflower |
+| ⭐ **`Woody Plant Leaf Characteristics`** | 4 | Broadleaf Evergreen · Deciduous · Needled Evergreen · Semi-evergreen |
+| ⭐⭐ **`Habit/Form`** | 24 | Arching · Ascending · Broad · Cascading · Climbing · Clumping · Columnar · Conical · Creeping · Dense · Erect · Horizontal · Irregular · Mounding · Multi-stemmed · Multi-trunked · Open · Oval · Prostrate · Pyramidal · Rounded · Spreading · Vase · Weeping |
+| `Growth Rate` | 3 | Slow · Medium · Rapid |
+| ⭐ `Texture` | 3 | Fine · Medium · Coarse |
+| `appendage` (ID tool) | 4 | Prickles · Spines · Tendrils · Thorns |
+| ⭐ **`Bark Color`** | 9 | Black · Dark Brown · Dark Gray · Green · Light Brown · Light Gray · Orange · Red/Burgundy · White |
+| ⭐⭐ **`Surface/Attachment`** (bark) | 15 | Bumpy · Exfoliating · Fissured · Furrowed · **Lenticels** · Papery · **Patchy** · Peeling · Ridges · Scaly · **Shaggy** · **Shiny** · **Shredding** · Smooth · **Spongy** |
+| ⭐⭐⭐ **`Bark Plate Shape`** | 6 | **Diamond · Irregular · Oval · Rectangle · Round · Square** |
+| `Stem Color` | 14 | Black · Blue · Brown/Copper · Cream/Tan · Gold/Yellow · Gray/Silver · Green · Insignificant · Orange · Pink · Purple/Lavender · Red/Burgundy · Variegated · White |
+| `Leaf Color` | 14 | (same 14-colour palette) |
+| ⭐ **`Leaf Feel`** | 12 | Fleshy · Glossy · Leathery · Papery · Prickly · Rough · Rubbery · Slippery · Smooth · Soft · Velvety · Waxy |
+| `Leaf Value To Gardener` | 6 | Edible · Fragrant · Good Cut · Good Dried · Long-lasting · Showy |
+| ⭐⭐ **`Deciduous Leaf Fall Color`** | 9 | Brown/Copper · Cream/Tan · Gold/Yellow · Gray/Silver · Insignificant · Orange · Pink · Purple/Lavender · Red/Burgundy |
+| `Leaf Type` | 5 | Compound (Pinnately , Bipinnately, Palmately) *[sic]* · Fronds · Needles · Sheath · Simple |
+| `Leaf Arrangement` | 5 | Alternate · Opposite · Other/more complex · Rosulate · Whorled |
+| ⭐⭐ **`Leaf Shape`** | 25 | Acicular · Auriculate · Cordate · Cuneate · Deltoid · Elliptical · Filiform · Lanceolate · Linear · Oblanceolate · Oblong · Obovate · Obtuse · Orbicular · Ovate · Palmasect · Palmatifid · Peltate · Pinnatifid · Pinnatisect · Reniform · Rhomboidal · Spatulate · Subcordate · Subulate |
+| ⭐⭐ **`Leaf Margin`** | 12 | Crenate · Crenulate · Dentate · Denticulate · Doubly Crenate · Doubly Dentate · Doubly Serrate · Entire · Lobed · Serrate · Sinuate · Undulate |
+| `Hairs Present` | 2 | No · Yes |
+| ⭐ `Leaf Length` / `Leaf Width` | 4 each | < 1 inch · 1-3 inches · 3-6 inches · > 6 inches |
+| `Flower Inflorescence` | 11 | Catkin · Corymb · Cyme · Head · Insignificant · Panicle · Raceme · Solitary · Spadix · Spike · Umbel |
+| `Flower Shape` | 15 | Bell · Cross · Crown · Cup · Dome · Funnel · Irregular · Lipped · Radial · Saucer · Star · Trumpet · Tubular · Urn · Wheel |
+| `Flower Petals` | 10 | 2-3 rays/petals · 4-5 · 6 · 7-20 · >20 · asymmetrical petals · Bracts · Colored Sepals · fused petals · Tepals |
+| `Fruit Type` | 13 | Achene · Aggregate · Berry · Capsule · Caryopsis · Drupe · Follicle · Legume · Nut · Pome · Samara · Schizocarp · Siliqua |
+| `Light` | 4 | Dappled Sunlight · Deep shade (<2 h) · Full sun (6+ h) · Partial Shade (2–6 h) |
+| `Soil Texture` | 5 | Clay · High Organic Matter · Loam (Silt) · Sand · Shallow Rocky |
+| `Soil Drainage` | 7 | Frequent Standing Water · Good Drainage · Moist · Occasional Flooding · Occasionally Dry · Occasionally Wet · Very Dry |
+| `Available Space To Plant` | 7 | <12 in · 12 in–3 ft · 3–6 ft · 6–12 ft · 12–24 ft · 24–60 ft · >60 ft |
+| ⭐ `Landscape Location` | 19 | Coastal · Container · Hanging Baskets · Houseplants · Lawn · Meadow · Naturalized Area · Near Septic · Patio · Pond · Pool/Hardscape · Recreational Play Area · Riparian · Rock Wall · Slope/Bank · Small Space · Vertical Spaces · **Walkways** · Woodland |
+| ⭐ `Design Feature` | 15 | Accent · Barrier · Border · Flowering Tree · Foundation Planting · Hedge · Mass Planting · Screen/Privacy · Security · Shade Tree · Small groups · Small Tree · Specimen · **Street Tree** · Understory Tree |
+| `Attracts` | 12 | Bats · Bees · Butterflies · Frogs · Hummingbirds · Moths · Pollinators · Predatory Insects · Reptiles · Small Mammals · Songbirds · Specialized Bees |
+| ⭐ `Resistance To Challenges` | 24 | Black Walnut · **Compaction** · Deer · Diseases · Drought · Dry Soil · Erosion · Fire · **Foot Traffic** · Heat · Heavy Shade · Humidity · Insect Pests · **Pollution** · Poor Soil · Rabbits · **Salt** · Slugs · Squirrels · **Storm damage** · **Urban Conditions** · Voles · Wet Soil · Wind |
+| ⭐ `Problems` | 16 | Allelopathic · Contact Dermatitis · Frequent Disease Problems · Frequent Insect Problems · Invasive Species · Malodorous · **Messy** · Poisonous to Humans · Problem for Cats/Children/Dogs/Horses · Short-lived · Spines/Thorns · **Weak Wood** · Weedy |
+
+⚠️ **The stem block is NOT exposed in either filter endpoint** — `Stem Surface`, `Stem Form`,
+`Stem Cross Section`, `Stem Buds`, `Stem Bud Terminal`, `Stem Bud Scales`, `Stem Lenticels`,
+`Stem Is Aromatic` are record fields whose **full option lists are unconfirmed**. Values observed
+in situ (samples, not the vocabulary): Stem Surface {Smooth (glabrous), Hairy (pubescent)} ·
+Stem Form {Straight, Zig Zags} · Stem Lenticels {Conspicuous} · Stem Bud Scales {Enclosed in more
+than 2 scales, Enclosed in a single cap like scale}.
+
+**Coverage.** 4,701 plants; **Tree = 1,047**. `Street Tree` **175** · Shade Tree 297 · Small Tree 230 ·
+Understory Tree 86 · Flowering Tree 370. `Urban Conditions` 176 · `Salt` 456 · `Pollution` 303 ·
+`Compaction` 81. North-Carolina-framed (the `NC Region` field is province-specific) but the taxon list
+is general eastern-NA plus ornamentals — **the right region for Lafayette Square.**
+
+**Granularity — the highest of any source in this survey.** Bark is **four** fields, stem is **ten**,
+leaf is **thirteen**. This is a morphological key, not a garden blurb.
+
+**Authority / licence.** NC State Extension / N.C. Cooperative Extension, Center for Integrated Pest
+Management, with Extension Master Gardener curation. Help page, verbatim: *"We strongly encourage you
+to cite or reference the Plant Toolbox as you would any other publication."* Recommended citation,
+verbatim: **"Plant Toolbox. 2019 onwards. North Carolina Extension Gardener Plant Toolbox, N.C.
+Cooperative Extension."** ⚠️ **No explicit licence grant on the trait text** — reuse beyond citation is
+**unconfirmed**. Photos are individually CC-licensed.
+
+---
+
+### 1.10 Morton Arboretum Tree & Plant Finder — **best street-tree vocabulary, unusable licence**
+
+Record attribute block (identical across the three tree pages fetched): `Common names · Family
+(English) · Family (botanic) · Planting site · Tree or plant type · Foliage · Native locale · Size
+range · Mature height · Mature width · Light exposure · Hardiness zones · Soil preference · Drought
+tolerance · Other tolerances · Season of interest · Flower color and fragrance · Shape or form ·
+Growth rate · Transplants well · Planting considerations · Wildlife · Has cultivars`. Bark is a
+**prose section**, not a field.
+
+Facets are server-rendered checkboxes in the HTML (126 inputs), so the vocabulary is directly readable:
+- ⭐⭐ **`tp_planting_site`: City parkway · Residential and parks · Restricted sites · Under utility
+  lines · Wide median** — the only genuinely street-tree-native facet in any source surveyed
+- `tp_plant_shape` (17): Arching · Broad · Columnar · Creeping · Irregular · Mounded · Multi-stemmed ·
+  Narrow · Open · Oval · Pyramidal · Round · Thicket-forming · Upright · Vase-shaped · Vining · Weeping
+- `tp_size_range` (tree bands): Compact tree (10-15 ft) · Small tree (15-25 ft) · Medium tree (25-40 ft) ·
+  Large tree (more than 40 ft)
+- `tp_tolerances`: Alkaline soil · clay soil · Dry sites · Occasional drought · Occasional flooding ·
+  **Road salt** · Wet sites
+- `tp_seasons_of_interest` (12): early/mid/late × winter, spring, summer, fall
+- `tp_growth_rate`: Fast · Moderate · Slow · `tp_drought_tolerance`: Sensitive · Moderately sensitive ·
+  Moderately tolerant · Tolerant
+- ⭐ `tp_plant_considerations` (11, from their taxonomy sitemap): aggressive · commonly planted ·
+  dangerous thorns · excessive sucker growth · highly susceptible to ice damage · intolerant of
+  pollution · marginally hardy · may be difficult to find in nurseries · **messy fruit/plant parts** ·
+  **roots prone to invading sewer pipes** · **weak wood and branch structure**
+- `tp_wildlife` (20): birds · browsers · butterflies · cavity-nesting birds · game birds · game mammals ·
+  hummingbirds · insect pollinators · insect-eating birds · large/medium/small mammals · migrant birds ·
+  moths · nesting birds · sapsuckers · seed-eating birds · songbirds · water birds
+
+**Coverage.** 1,087 species URLs in `plant-sitemap.xml`; **274 tagged Tree**. City parkway 101 · Wide
+median 110 · Under utility lines 31 · Road salt 174. Chicago-calibrated.
+⛔ **Licence — the blocker.** Terms are all-rights-reserved, verbatim: *"we grant you a non-exclusive,
+non-transferable, revocable, limited license to access this Website for your own personal,
+non-commercial use"* · *"Material on this Website must not otherwise be reproduced, republished,
+licensed, sold, transferred, or distributed either online or offline, without our prior written
+permission."* `robots.txt` is permissive, **but robots.txt permissiveness is not a reuse grant.**
+⇒ **Adopt the schema shape; do not ingest the content.**
+
+---
+
+### 1.11 Arnold Arboretum — accession records, **no trait vocabulary** (but real measured dimensions)
+
+`https://gis.arboretum.harvard.edu/arcgis/rest/services/Maps/Explorer/MapServer`, layer 26 "Plant
+Center": **142 fields, 16,406 records**, open unauthenticated ArcGIS REST, `maxRecordCount: 100000`
+(the whole inventory in one call). Fields are curatorial: accession number/date, `Plant Source`,
+`Provenance`, `Collector`, `Country`/`Locality`/`Latitude`/`Longitude`/`ALTITUDE`/`ASPECT`/`SOIL_TYPE`/
+`HABITAT`, `Condition`, **`DBH`, `Height`, `Spread`, `Circumference`, `Measurement Date`**, nomenclature.
+
+**The only trait-shaped field is `HABIT`**, complete distinct vocabulary 6 values + null:
+`Geophyte · Herbaceous · Intermediate (shrub/tree) · Shrub · Tree · Vine`. No bark, leaf, flower,
+season, tolerance, zone, growth-rate or form field exists. Their curatorial doc confirms the richer
+observations live internally in **BG-BASE**, unpublished.
+
+**Licence:** *"All data are protected by copyright 2020 The President and Fellows of Harvard College"*,
+as-is, asking that *"any derived works give the Arnold Arboretum proper credit and notification."*
+⭐ **Verdict: useless as a trait vocabulary, valuable as a dimensional ground-truth set** — 16,406
+georeferenced live specimens with measured DBH / height / spread, i.e. real evidence for
+`chassis.size` and for what a *mature* vs *young* specimen actually measures.
+
+---
+
+### 1.12 RHS Find a Plant — rich facets, **nothing granted, wrong units**
+
+Record fields: `Time to Maturity · Max Spread · Max Height · soil {Chalk, Clay, Loam, Sand} · Moisture ·
+pH · Position · Aspect · Exposure · Hardiness (H-code)`, a **`Season` × {Stem, Flower, Foliage, Fruit}
+colour grid**, `Family · Native to GB/Ireland · Foliage · Habit · Potentially harmful · Plant Range`,
+plus prose `Cultivation / Propagation / Pruning / Pests / Diseases`.
+
+⭐ Notable vocabularies: **`Colour by type` = 16 colours × {Flower, Foliage, Fruit, Stem}** and
+**`Colour by season` = the same 16 × {Spring, Summer, Autumn, Winter}** (Silver · Grey · Black · Brown ·
+Bronze · Cream · Gold · Yellow · Orange · Red · Pink · Purple · Green · Blue · White · Variegated);
+`Habits` (12): Bushy · Climbing · Clump forming · Columnar upright · Floating · Matforming · Pendulous
+weeping · Spreading branched · Submerged · Suckering · Trailing · Tufted; `Foliage` {Deciduous,
+Evergreen, Semi evergreen}; `Time to ultimate height` {1 year … more than 50 years}.
+
+⛔ **Disqualifying for our purposes:** height/spread are **coarse bands with an open top** — a 15 m
+Zelkova and a 35 m plane are both *"Higher than 12 metres"*. Hardiness is UK H-codes.
+⛔ **Licence:** no site-wide terms page exists (`/terms-of-use`, `/copyright`, `/terms` all 404);
+footer "© The Royal Horticultural Society 2026". Nothing granted. `robots.txt` disallows `/api/`.
+
+### 1.13 Oregon State Landscape Plants — ⛔ **ClaudeBot is disallowed. Do not ingest.**
+
+Only ~7 machine-readable fields (`Common name · Pronunciation · Family · Genus · Synonyms · Type ·
+Native to Oregon`); everything else — habit, bark, leaves, tolerances, height — is **unlabelled prose**.
+Its identification-key facets are decent (leaf attachment, leaf/leaflet characteristics incl. *Unlobed ·
+Lobed rounded · Lobed pointed · Margin more or less smooth · Margin not smooth · Margin with obvious
+spines*; conifer growth form *Pyramidal/Conical · Globose · Weeping · Dwarf · Columnar*), but
+`robots.txt` carries **`User-agent: ClaudeBot` / `Disallow: /`** plus
+`Content-Signal: search=yes,ai-train=no,use=reference` and an explicit EU 2019/790 rights reservation.
+⛔ **Not to be ingested programmatically without written permission from OSU Horticulture.**
+
+### 1.14 Missouri Botanical Garden Plant Finder — ⚠️ **NOT VERIFIED**
+
+Nothing on missouribotanicalgarden.org was fetched. **Everything about MOBOT in this survey is
+unconfirmed** — no field list, no facet vocabularies, no licence text. Given St. Louis is the
+first town's own region, **this is the one outstanding item and should be re-run.**
+
+---
+
+### 1.15 Ontologies — vocabulary without values
+
+| source | what it is | verdict |
+|---|---|---|
+| ⭐ **FLOPO** (Flora Phenotype Ontology) | 35,440 terms, version `2026-07-31`, **CC0 1.0**, `purl.obolibrary.org/obo/flopo.owl`. Text-mined from digitised Floras — which is why it has the bark vocabulary nothing else does. Terms verbatim: `FLOPO:0000010` bark phenotype · `0000386` **bark texture** · `0000891` **bark color** · `0000385` bark smooth · `0000981` bark rough · `0000397` **bark grooved** · `0002040` bark scaly · `0002355` bark flaky · `0002390` **bark hardness** · `0001651` **bark structure** · `0001562` **bark complexity** · `0000207` bark pilosity · `0000206` bark glabrous. Leaf: `0000149` leaf shape · `0003589` leaf lamina shape · `0006028` leaf base shape · `0016878` leaf apex shape · `0015408` leaf margin shape · `0004263` palmate leaf shape · `0023274` pinnate leaf shape · `0014757` simple leaf shape. | ⭐ **The best free vocabulary for bark.** ⚠️ EQ-style: "bark smooth" is a *term*, not a value of "bark texture". **No species table.** |
+| **Plant Trait Ontology (TO)** | 6,194 terms, **CC BY 4.0**, `purl.obolibrary.org/obo/to.owl`. `TO:0000492` leaf shape · `TO:0001116` leaflet shape · `TO:0006063` leaf margin serrated · `TO:0000875` leaf lamina splitting · `TO:0002725` life cycle habit · `TO:0002756` shoot growth angle | ⚠️ **Crop-phenotype oriented, thin on trees.** A TO search for `bark` returns **zero TO terms**; for `habit`, only *shoot growth angle* and *life cycle habit* — **there is no plant-habit term in TO**. `crown` returns *root* crown. |
+| **Plant Ontology (PO)** | anatomy, not traits. `PO:0004518` **bark** · `PO:0025142` leaf tip · `PO:0009006` shoot system · inflorescence block `PO:0030115–0030135` (raceme, catkin, panicle, corymb, umbel…) | anatomy vocabulary only |
+| **PPO** (Plant Phenology Ontology) | **CC BY 3.0**. `PPO:0001014` unfolding true leaf · `0001019` mature true leaf · `0001017` senescing true leaf · `0001063` senesced true leaf · `0002017` unfolded true leaf presence | seasonal *state*, not species morphology |
+| ⛔ **TOP Thesaurus** | **The domain is gone.** `top-thesaurus.org` fetched 2026-08-24 serves a **lawn-care affiliate site** ("Rooted in Knowledge"); `/annotationInfo` and `/characteristics` 404. What it was, verbatim from the Garnier et al. 2017 record: *"TOP provides names, definitions, units, synonyms and related terms for about 850 plant characteristics."* | ⛔ **Treat as a citation target, not a usable vocabulary.** ⚠️ The Wayback snapshot exists but was not fetchable and is **unconfirmed**. Live successor worth a look: the **AusTraits Plant Dictionary** (CC-BY-4.0, resolvable per-trait URIs, fields: label/description/type/units/allowable ranges/measured structure) — Australia-scoped. |
+
+### 1.16 Trait aggregators
+
+**TRY Plant Trait Database.** Verbatim from `try-db.org/TryWeb/Database.php`: *"2661 traits"*,
+*"305,000 plant taxa"*, *"15 million trait records"* (homepage shows 15,409,681 / 305,594; v6 released
+2022-10-13, v7 imports finished July 2025). *"Trait names are standardized conforming the standards of
+the TOP Thesaurus of Plant Characteristics."* ⚠️ **Note the circularity** — that standard's website is
+gone (§1.15).
+
+⭐ **The find: TRY File Archive dataset 3, "TRY - Categorical Traits Dataset", DOI `10.17871/TRY.3`,
+rights "Public, CC.BY.3.0".** File `TRY_Categorical_Traits_Lookup_Table_2012_03_17_TestRelease.zip`.
+Columns verbatim:
+```
+AccSpeciesID, AccSpeciesName, IPNI/TROPICOS, Genus, SpeciesEpithet, Family, PhylogeneticGroup,
+PlantGrowthForm, Succulent, climber, Parasitic, Aquatic, Epiphyte, Crop, Palmoid, LeafType,
+LeafPhenology, PhotosyntheticPathway, Woodiness, WoodinessDetail, LeafCompoundness, NumberOfLeaflets,
++ a paired "…Source" provenance column for each
+```
+⇒ the categorical morphology layer is exactly seven fields: **`PlantGrowthForm`, `LeafType`,
+`LeafPhenology`, `Woodiness`, `WoodinessDetail`, `LeafCompoundness`, `NumberOfLeaflets`**.
+⚠️ Dated **2012, "TestRelease"**. ⛔ **No leaf shape, no bark thickness, no bark texture, no crown form
+anywhere in TRY that could be verified.** The premise that TRY is numeric ecophysiology holds.
+**Access:** File Archive is effectively open — *"Data download from the TRY File Archive is
+unrestricted … requires only a free registration"*; the main database is **request-based**
+(`Request PIs only` / `File Requesters only` roles). Attribution: *"please cite the original
+publication and additionally please cite the TRY File Archive data package."* Authority: Future Earth /
+MPI Biogeochemistry / iDiv. ⚠️ Main-database policy PDF and any co-authorship requirement **unconfirmed**.
+
+**⭐ EOL TraitBank — the widest predicate coverage for a NA street tree.** Fetched the live data tab
+for *Acer saccharum* (EOL page 582247). Predicates carried, verbatim, with providers:
+- *form:* `plant growth form` · `planthabit` (FEIS) · `primary growth form` · **`shape`** (USDA) ·
+  `leaf arrangement` (Kubitzki) · `leaf color` · `flower color` · `fruit or seed color` ·
+  **`foliage texture`** · **`foliage porosity summer`** · **`foliage porosity winter`** ·
+  `shedability` · `leaf sheddability` · `life cycle habit`
+- *measured:* `plant height` · `stem diameter` · **`leaf area`** · `leaf mass per area` · `seed mass` ·
+  **`wood density`** (Global Wood Density Database)
+- *silviculture (USDA PLANTS relayed):* `growth rate` · `life span` · `shade/drought/fire/salt/hedge/
+  calcareous/anaerobic/low temperature/precipitation tolerance` · `fire resistance` · `moisture use` ·
+  `soil ph` · `soil depth` · `bloom period` · `active growth period` · `seed period begin/end` ·
+  `seed spread rate` · `vegetative spread rate` · `allelopathic effect` · `browse animal palatability` ·
+  `fuelwood suitability` · `human/livestock toxicity`
+- *other:* `geographic distribution` · `native range includes` · `habitat` · `is a component of`
+  (US National Vegetation Classification) · `number of records in gbif` · biotic interactions
+
+⚠️ **The predicate set is NOT cleanly controlled at the surface** — `shedability` (USDA) and
+`leaf sheddability` (MADtraits) coexist with the same value; `plant growth form` and `planthabit` both
+resolve to `tree` from different providers. **Deduplication is on the consumer.**
+Model is Darwin Core `MeasurementOrFact` with `measurementType` as an ontology URI (TO/PATO/ENVO/UO/SIO).
+⚠️ **No concrete predicate URI could be resolved live** (`eol.org/schema/terms/planthabit` → HTTP 500;
+`eol.org/terms` → 404) — **unconfirmed**.
+**Access:** bulk `https://editors.eol.org/other_files/SDR/traits_all.zip` (564.9 MB, `traits.csv`),
+**CC BY 4.0**, attribution to original sources required; REST API and Neo4j Cypher also offered.
+⚠️ eol.org sits behind a Cloudflare JS interstitial (WebFetch → 403; a real browser passes).
+Hosted by Smithsonian NMNH. **Coverage of NA natives is the best of any source** because USDA PLANTS is
+its backbone; introduced ornamentals (Ginkgo, Zelkova, *Pyrus calleryana*) are **unverified**.
+
+**⛔ GBIF is not a trait source.** Verbatim from `techdocs.gbif.org/en/data-publishing/dataset-classes`,
+the four and only supported classes are Metadata-only · Checklist · Occurrence · Sampling event.
+There is no trait class. Traits can ride inside a checklist as extra columns but are neither indexed nor
+searchable. (EOL ingests GBIF only as `number of records in gbif`.)
+
+**⛔ Wikidata is unusable.** `P12616` "leaf morphology" exists (datatype Item, alias *"leaf shape"*,
+maintained by WikiProject Plants) — and a SPARQL count `SELECT (COUNT(*)) WHERE {?s wdt:P12616 ?o}`
+returns **52 statements, total, across all of Wikidata.** There is **no plant-habit / growth-form
+property at all** (`wbsearchentities` for "plant habit" returns an empty array). DBpedia **unconfirmed**,
+but derives from taxonomy-only plant infoboxes.
+
+**Quick verdicts on the rest:**
+- **BIEN** — R package `BIEN` on CRAN; search-derived figures of 54 traits / >25M records with
+  `whole plant growth form` (330,047) the only categorical morphology field. ⚠️ **Licence not stated on
+  any page fetched — unconfirmed.**
+- **LEDA Traitbase** — 26 traits, ~3,000 species, **Northwest European flora**, herbaceous life-history.
+  Project page 404s. ⚠️ Wrong region, wrong traits, possibly defunct.
+- **Kew Seed Information Database** — live at `ser-sid.org` (SER/INSR with RBG Kew), >50,000 taxa,
+  verbatim: *"All data contained in SID are publicly available under the terms of the Creative Commons
+  CC BY 2.0."* **Seed only — irrelevant to bark/leaf/habit.**
+- **GlobalTreeSearch / BGCI** — names and country distributions only, ~60,000 tree species, CSV,
+  current file 1.10 (2026-05-29), DOI `10.13140/RG.2.2.16046.27208`. ⛔ **CC BY-NC-ND 4.0 — non-commercial
+  AND no derivatives.** Useful as an "is it a tree?" gate; the licence is a blocker for a commercial kit.
+- **World Flora Online** — ⚠️ TLS cert validation fails from here, so all claims are search-derived and
+  **unconfirmed**: CC0 taxonomic backbone, Darwin Core Archive per family, Zenodo snapshots.
+  **A name-resolution service, not a trait source.**
+
+### 1.17 efloras / Flora of North America — **prose, definitively**
+
+Fetched the live FNA treatment for *Quercus alba* (Vol. 3, `taxon_id=233501007`). One unbroken
+paragraph of Latinate prose, verbatim: *"Trees , deciduous, to 25 m. Bark light gray, scaly. Twigs
+green or reddish, becoming gray, 2-3(-4) mm diam., initially pubescent, soon glabrous."*
+⭐ There **is** a conventional ordering — habit → Bark → Twigs → Buds → Leaves (petiole, blade, base,
+margins, sinuses, veins, apex, surfaces) → fruit → cotyledons → chromosome count — a regularity you
+could parse, but **it is not markup**: no tables, no field labels. Ranges are embedded with
+parenthetical extremes: `(79-)120-180(-230) × (40-)70-110(-165) mm`.
+⚠️ efloras.org has a **broken TLS chain** (WebFetch fails; a browser works), and **coverage is partial** —
+Acer is FNA Vol. 12 and returned *"Can not find this taxon in database"*, so **sugar maple is simply
+absent**. Licence **unconfirmed**.
+⭐ **The useful connection: this is the corpus FLOPO was text-mined from. FLOPO is what you get when
+someone has already done the NLP pass over prose like this.**
+
+<!-- PENDING: forestry/arboricultural vocabularies (FIA, ISA/TRAQ, i-Tree, municipal inventories) -->
