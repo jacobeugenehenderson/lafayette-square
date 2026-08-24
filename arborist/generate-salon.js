@@ -1662,9 +1662,38 @@ async function patchManifestForSalon(species, compositions) {
   await fs.writeFile(p, JSON.stringify(m, null, 2))
 }
 
-// Lafayette Square roster sync — same idempotent shape as
-// `generate-procedural.js#syncLookRoster`. Adds Salon-published variants
-// so they appear in LS placements after the next bake-look + bake-trees.
+// Look roster sync — same idempotent shape as
+// `generate-procedural.js#syncLookRoster`.
+//
+// ⭐ THE GROVE IS WHAT WE AFFIRMATIVELY HAVE. It holds the trees that appear in
+// THIS landscape, grouped together, apart from the rest of the library — so a
+// species earns a place in it by being GREEN: something the kit can actually
+// compose. (Jacob, 2026-08-24: "If the light isn't green or isn't otherwise
+// promoted to the grove, this is not a real conversation.")
+//
+// ⛔ This gated on "does public/trees/<species>/manifest.json exist" — i.e. does
+// it have PUBLISHED GEOMETRY — which is not the same question. A literal
+// imported asset has geometry and no composition, so it was auto-promoted into
+// the roster, and then the impostor bakers correctly refused to capture it
+// (HeroImpostorBaker: "refusing to ship an invisible species" — capture renders
+// through the shared atlas material and a species with no composition has no
+// barkDetailBySpecies record). The result was a species admitted by one gate and
+// rejected by the next, permanently mesh-only, showing up as a red capture
+// FAILURE for a promotion that should never have happened.
+// On LS that was platanus_acerifolia x4 variants = 921 placements stuck on mesh.
+//
+// The gate is now the composition itself. An uncomposed species is not promoted,
+// and is NAMED — it belongs on the Coverage list as RED (a real gap to author),
+// never in the Grove as a broken green.
+async function speciesIsComposed(species) {
+  try {
+    const raw = await fs.readFile(path.join(REPO_ROOT, 'arborist/state', species, 'compositions.json'), 'utf8')
+    const c = JSON.parse(raw)
+    const arr = Array.isArray(c) ? c : (c.compositions || Object.values(c))
+    return arr.some(x => x && x.chassis)
+  } catch { return false }
+}
+
 async function syncLookRoster(lookName, speciesList) {
   const p = path.join(REPO_ROOT, 'public/looks', lookName, 'design.json')
   let design
@@ -1674,7 +1703,13 @@ async function syncLookRoster(lookName, speciesList) {
   const haveKeys = new Set(trees.map(t => `${t.species}|${t.variantId}`))
   const newRoster = [...trees]
   let added = 0
+  const ungreen = []
   for (const species of speciesList) {
+    // ⛔ GREEN GATE — published geometry is not the same as a composed species.
+    if (!(await speciesIsComposed(species))) {
+      if (!haveKeys.has(`${species}|1`)) ungreen.push(species)
+      continue
+    }
     const manifestPath = path.join(REPO_ROOT, 'public/trees', species, 'manifest.json')
     try {
       const m = JSON.parse(await fs.readFile(manifestPath, 'utf8'))
@@ -1691,6 +1726,19 @@ async function syncLookRoster(lookName, speciesList) {
   if (added > 0) {
     design.trees = newRoster
     await fs.writeFile(p, JSON.stringify(design, null, 2))
+  }
+  if (ungreen.length) {
+    console.log(`[generate-salon] roster: NOT promoted (no composition — RED on Coverage, not a Grove failure): ${ungreen.join(' ')}`)
+  }
+  // ⛔ Say when the roster ALREADY holds an uncomposed species. It cannot be
+  // captured, so it is permanently mesh-only; this is authored state, so it is
+  // reported for the operator to decide, never silently removed.
+  const stale = []
+  for (const t of newRoster) {
+    if (!stale.includes(t.species) && !(await speciesIsComposed(t.species))) stale.push(t.species)
+  }
+  if (stale.length) {
+    console.warn(`[generate-salon] ⛔ roster holds ${stale.length} UNCOMPOSED species — they cannot be captured as impostors and will render as MESH forever: ${stale.join(' ')}. Compose them in the Salon, or remove them from ${lookName}/design.json#/trees.`)
   }
   return added
 }
