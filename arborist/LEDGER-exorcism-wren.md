@@ -66,6 +66,20 @@ posterized bark. Same file, two shader paths.**
 **Fix:** drive the three in the diorama the way the map does. ⛔ Not a diorama-only hack —
 the seam is *"a bare Canvas mounts no scene drivers,"* the same class as `ExposureTicker`.
 
+**A6b · ⭐ THE ACTUAL ROOT of "no texture on the trunk" — `TreeDiorama` never called
+`applyBarkUniforms`.** Every other consumer of the shared material does: `InstancedTrees:394`,
+`SpecimenViewport:945` (Salon), `CanaryScene:454` (Meteorologist), `OverheadBaker:176`,
+`HeroImpostorBaker:159`. **The diorama was the only one that did not**, so the per-species
+bark slots kept their compile-time defaults — above all `uBarkUVScale = (1,1)`, so the
+**tiling never ran and one 512px bark tile was stretched across a 20 m trunk.**
+`uBarkTileOffset/Scale` were also unset, so the detail overlay and posterized substrate were
+sampling the wrong atlas region entirely.
+⭐ **The bake was never at fault: the linden's bark tile carries real detail (σ 27.5).**
+▶ `node scratch/_wren-atlas-tile.mjs lafayette-square linden_american`
+⚠️ **The tier fix (A6) was necessary but NOT sufficient** — it stopped the posterized
+substitution; this is what puts bark grain on the trunk. **Two defects, one seam.**
+**Fixed** — `<BarkSlots>` applies both per frame, the `CanaryScene` pattern.
+
 **A7 · `bake-look.js:43` · bark tiles are capped at 512×1024 and the atlas is 23.5% full.**
 The linden's bark tile is **512×512** on a 3888×2584 page holding 9 tiles.
 `ARCHITECTURE` already calls this a one-line knob deferred until the roster settled; it has.

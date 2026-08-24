@@ -13,7 +13,10 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
-import { useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission, treeBarkTierUniform } from './treeAtlasMaterial'
+import {
+  useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission, treeBarkTierUniform,
+  applyBarkUniforms, applyDeformerUniforms,
+} from './treeAtlasMaterial'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -315,6 +318,54 @@ function useDioramaGround(measured, alpha) {
   return ground
 }
 
+/**
+ * ⛔⛔ THE BARK SLOTS — the diorama was the ONLY consumer of the shared tree
+ * material that never bound them (measured 2026-08-23, Wren).
+ *
+ * `InstancedTrees`, `SpecimenViewport` (Salon), `CanaryScene` (Meteorologist)
+ * and both impostor bakers all call `applyBarkUniforms` per frame. This one did
+ * not, so the per-species slots kept their compile-time defaults:
+ *   uBarkUVScale    -> (1,1)  : the tiling NEVER RAN, so ONE 512px bark tile was
+ *                               stretched across a 20 m trunk — the whole of
+ *                               "there is still no texture on this trunk"
+ *   uBarkTileOffset -> (0,0)  \ the tile-local UV recovery is wrong, so the
+ *   uBarkTileScale  -> (1,1)  / detail overlay + posterized substrate sample
+ *                               the wrong region of the atlas entirely
+ * plus tintBase / tintJitter / roughnessOverride, all unset.
+ *
+ * ⭐ The atlas tile itself was never the problem: the linden's bark tile carries
+ * real detail (luminance sigma 27.5 over 512x512) — it was being sampled wrong.
+ * ▶ scratch/_wren-atlas-tile.mjs
+ *
+ * Per-FRAME, not an effect: `material.userData.shader` does not exist until
+ * three compiles the program, so a pre-paint effect early-returns forever.
+ * (Same reasoning as CanaryScene.)
+ */
+function BarkSlots({ atlas, species, variantId }) {
+  const slots = useMemo(() => {
+    const m = atlas?.manifest
+    if (!m) return null
+    return {
+      barkSettings:   m.barkBySpecies?.[species] || null,
+      gradientSlot:   m.barkGradientByVariant?.[species]?.[variantId]
+                        || m.barkGradientByVariant?.[species]?.[String(variantId)] || null,
+      detailSlot:     m.barkDetailBySpecies?.[species] || null,
+      posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
+      deformerRange:  m.deformerBySpecies?.[species]?.range || null,
+    }
+  }, [atlas?.manifest, species, variantId])
+
+  useFrame(() => {
+    if (!atlas?.treeMaterial || !slots) return
+    applyBarkUniforms(
+      atlas.treeMaterial, slots.barkSettings,
+      slots.gradientSlot, slots.detailSlot, slots.posterizedSlot,
+    )
+    applyDeformerUniforms(atlas.treeMaterial, slots.deformerRange, null)
+  })
+  return null
+}
+
 function Ground({ radius = 90, fx = null }) {
   const material = useMemo(
     () => makeGrassMaterial({
@@ -581,6 +632,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       {!alpha && <StageShadows lookId={look} />}
       {!alpha && <ShadowFocus height={measured?.height} spread={measured?.spread} />}
       <DioramaCamera height={measured?.height} spread={measured?.spread} baseY={measured?.baseY} topY={measured?.topY} />
+      {atlas.status === 'ready' && <BarkSlots atlas={atlas} species={sp} variantId={vr} />}
       {atlas.status === 'ready' && (
         <Suspense fallback={null}>
           <Specimen url={url} material={atlas.treeMaterial} onMeasured={setMeasured} />
