@@ -1,7 +1,7 @@
 {
   "version": 1,
   "look": "lafayette-square",
-  "bakedAt": 1784790800584,
+  "bakedAt": 1787586699635,
   "palette": [
     "#dcdcdc",
     "#a0522d",
@@ -78,8 +78,8 @@
     "garden": true,
     "playground": true,
     "swimming_pool": true,
-    "pitch": false,
-    "sports_centre": true,
+    "pitch": true,
+    "sports_centre": false,
     "wood": false,
     "scrub": false,
     "tree_row": true,
@@ -93,13 +93,13 @@
     "tree": true,
     "lamp": true,
     "fence": false,
-    "wall": false,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
-    "labels": true,
+    "labels": false,
     "centerline": false,
     "park_path": true,
-    "parkTitle": true
+    "parkTitle": false
   },
   "lampGlow": {
     "animated": "tod",

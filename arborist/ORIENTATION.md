@@ -68,9 +68,10 @@ does nothing and every variant falls through to the legacy single-tint path.
 ▶ `node -e "const a=require('./public/baked/lafayette-square/trees-atlas.json');const by={};for(const t of a.tiles)by[t.classification]=(by[t.classification]||0)+1;console.log(by,'gradient',Object.keys(a.barkGradientByVariant||{}).length)"`
 ⭐ Dossiers already hold the botanical description this hangs off (*"smooth grey-brown bark"*).
 **Best effort, best guess, overridable** — the kit's own doctrine, and the Arborist is not
-exempt from it. ⚠️ 2026-08-24: a gate requiring *ratified* parts was landed and reverted the
-same day (`69e04e39`→`42db0450`) — it treated an un-overridden best guess as invalid and
-flattened the readiness board to identical rows, destroying the "what do I go get" signal.
+exempt from it. ⚠️ 2026-08-24: a gate requiring *ratified* parts was landed in
+`readiness.js` and reverted the same day (squashed out of history) — it treated an
+un-overridden best guess as invalid and flattened the readiness board to identical rows,
+destroying the "what do I go get" signal. ⛔ **Do not re-land it.**
 
 ### ⭐ The operator is a NON-BOTANIST. That decides the keys.
 *(Jacob, 2026-08-23.)* The operator works in **chassis · bark · leaf (+ season)** and in

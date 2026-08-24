@@ -42,10 +42,12 @@ proved that empirically.** Every defect chased turned out to be a symptom of it.
 `NEIGHBORHOOD-INPUTS §0.0`, `SECTION §3.1`)*: **"best effort / best guess / overrideable."**
 The kit machine-pours a strong first draft from the botanical description and the operator
 overrides any of it. ⛔ **The absence of an override is NOT a defect.**
-⚠️ **I violated this and had to revert myself the same day** (`69e04e39` → `42db0450`): I
-made `have` require a *ratified* tag, which treated an un-overridden best guess as invalid,
-flattened the whole readiness board to identical `stretch` rows, and destroyed the one thing
-it is for — telling you what to go get. **Read that revert before touching readiness.**
+⚠️ **I violated this and reverted myself the same day** — the pair was squashed out of
+history, so the lesson lives here and nowhere else: I made `have` require a **ratified** tag
+in `readiness.js`. That treats an un-overridden best guess as invalid, flattens the whole
+readiness board to identical `stretch` rows (nothing is ratified — 4 of 239 chassis, **0 of 9
+bark, 0 of 18 leaf**), and destroys the one thing the board is for: telling you what to go
+get. ⛔ **Do not re-land it.** Ratification is a FLAG on the answer, never the answer.
 
 ### ⭐ THE FIVE / FOUR SPLIT — how much the system can carry
 Dossiers require **9 axes**; parts carry only **5**. The other four are *system knobs*, not

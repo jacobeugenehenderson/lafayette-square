@@ -9,16 +9,16 @@
     "curb": true,
     "sidewalk": true,
     "treelawn": true,
-    "building": false,
+    "building": true,
     "parking_lot": true,
-    "garden": false,
-    "playground": false,
+    "garden": true,
+    "playground": true,
     "swimming_pool": true,
-    "pitch": false,
+    "pitch": true,
     "sports_centre": false,
     "wood": false,
     "scrub": false,
-    "tree_row": false,
+    "tree_row": true,
     "alley": true,
     "footway": true,
     "cycleway": false,
@@ -26,16 +26,16 @@
     "path": false,
     "park": true,
     "water": true,
-    "tree": false,
-    "lamp": false,
+    "tree": true,
+    "lamp": true,
     "fence": false,
-    "wall": false,
+    "wall": true,
     "retaining_wall": false,
     "hedge": false,
-    "labels": true,
+    "labels": false,
     "centerline": false,
     "park_path": true,
-    "parkTitle": true
+    "parkTitle": false
   },
   "layerColors": {
     "street": "#4A4A48",
@@ -1182,7 +1182,7 @@
     "Blocks": true,
     "Paths": false,
     "Features": false,
-    "Labels": false,
+    "Labels": true,
     "HeroSubject": false,
     "Look": false,
     "Land Cover": false,
@@ -1241,5 +1241,9 @@
       "species": "platanus_acerifolia",
       "variantId": 4
     }
-  ]
+  ],
+  "groveThreshold": {
+    "topN": 19,
+    "pinned": []
+  }
 }
