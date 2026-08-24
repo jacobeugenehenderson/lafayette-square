@@ -20,3 +20,30 @@ enabled = false
 
 [auth.external.google]
 enabled = false
+
+# ── Edge function gateway settings ──────────────────────────────
+# ⛔ `supabase functions deploy` defaults verify_jwt to TRUE. For an endpoint
+# whose caller is a third party, that gate is not a security layer — it is an
+# OUTAGE: Twilio cannot send an `apikey` header, so a JWT-gated sms-webhook
+# 401s every real inbound text before the function even runs. (That is exactly
+# what a deploy on 2026-08-24 did, for about a minute.)
+#
+# Pinning it here means the setting travels with the repo instead of living
+# only in whoever last typed `--no-verify-jwt`.
+#
+# ⭐ This is safe ONLY because the function authenticates the caller itself:
+# sms-webhook verifies Twilio's X-Twilio-Signature HMAC before it spends or
+# writes anything (SECURITY.md F-5). ⛔ Never set verify_jwt = false on a
+# function that has no authentication of its own.
+[functions.sms-webhook]
+verify_jwt = false
+
+# onboarding authenticates the caller itself — it requires the courier's own
+# user JWT and derives the courier id from it (SECURITY.md F-2). The gateway
+# gate is left ON as a cheap outer filter: unlike sms-webhook, every legitimate
+# caller here is our own browser client, which always sends an apikey.
+# ⚠️ It is NOT a security layer — the public anon key satisfies it. The wall is
+# authenticateCourier(). Before this was pinned, the deployed function had no
+# gate at all and executed with no apikey and no Authorization header.
+[functions.onboarding]
+verify_jwt = true

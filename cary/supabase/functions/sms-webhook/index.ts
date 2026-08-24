@@ -36,12 +36,11 @@
  */
 async function verifyTwilioSignature(req, params) {
   const signature = req.headers.get('X-Twilio-Signature')
-  if (!signature) return { ok: false, why: 'missing X-Twilio-Signature' }
+  const url = Deno.env.get('TWILIO_WEBHOOK_URL') || req.url
+  if (!signature) return { ok: false, why: 'missing X-Twilio-Signature', url }
 
   const authToken = Deno.env.get('TWILIO_AUTH_TOKEN')
-  if (!authToken) return { ok: false, why: 'TWILIO_AUTH_TOKEN not configured — cannot verify, refusing' }
-
-  const url = Deno.env.get('TWILIO_WEBHOOK_URL') || req.url
+  if (!authToken) return { ok: false, why: 'TWILIO_AUTH_TOKEN not configured — cannot verify, refusing', url }
 
   // url, then every param sorted by key, key and value concatenated raw.
   let payload = url
@@ -58,8 +57,8 @@ async function verifyTwilioSignature(req, params) {
   const mac = await crypto.subtle.sign('HMAC', cryptoKey, enc.encode(payload))
   const expected = btoa(String.fromCharCode(...new Uint8Array(mac)))
 
-  if (!timingSafeEqual(expected, signature)) return { ok: false, why: 'signature mismatch' }
-  return { ok: true }
+  if (!timingSafeEqual(expected, signature)) return { ok: false, why: 'signature mismatch', url }
+  return { ok: true, url }
 }
 
 /** Length-independent constant-time-ish compare, so we leak no prefix info. */
@@ -93,7 +92,12 @@ Deno.serve(async (req) => {
   // None of it may run for a request we cannot prove came from Twilio.
   const verdict = await verifyTwilioSignature(req, formData)
   if (!verdict.ok) {
-    console.warn(`[sms-webhook] REJECTED unverified request: ${verdict.why}`)
+    // ⭐ Log the URL the HMAC was computed over. Twilio signs the EXACT string
+    // configured in its console, so a host/proto rewrite by a proxy is the one
+    // way a genuine text gets refused — and this line is what makes that
+    // visible in one look instead of presenting as "SMS stopped working."
+    // The fix when it happens: set TWILIO_WEBHOOK_URL to the configured URL.
+    console.warn(`[sms-webhook] REJECTED unverified request: ${verdict.why} — validated against url: ${verdict.url}`)
     return new Response('Forbidden', { status: 403 })
   }
 

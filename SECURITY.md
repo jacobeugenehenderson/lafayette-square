@@ -122,7 +122,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `sms-webhook`/`sms-inbox`/`sms-reply`/`contact-sms`/`web-messages`, which bypass RLS). RLS
   on + zero policies = anon locked out, functions unaffected. Add a migration `009_*.sql`.
 
-### F-2 · HIGH · `onboarding` function trusts `courier_id` from the body (no caller auth)  — ⚙️ FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED**
+### F-2 · HIGH · `onboarding` function trusts `courier_id` from the body (no caller auth)  — ✅ CLOSED 2026-08-24 (deployed + verified live)
 - **Where:** `cary/supabase/functions/onboarding/index.ts` — `handleAction`/`handleGetStatus` (dispatch), and every handler. *(Cite the symbol, not a line number — these drifted once already.)*
 - **Impact:** Service-role client + `courier_id` taken straight from the request. Any
   anonymous caller can, for **any** courier id: `submit_insurance` → **marks insurance
@@ -150,9 +150,17 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   accepted but must match — ⛔ a mismatch is rejected **403 and logged**, never silently overridden.
   No client change was needed: couriers already hold a phone-OTP session (`useCary.js:59-69`) and
   `supabase.functions.invoke` forwards it.
-- ⚠️ **Not live until `supabase functions deploy onboarding` runs.** ⛔ Deploy **by name** — a bare
-  `supabase functions deploy` would also deploy `complete-session` (F-3), an unauthenticated
-  money-moving endpoint that has deliberately never been deployed.
+- ✅ **Deployed and verified live 2026-08-24.** Every attack this finding names now returns the
+  function's own `401 {"error":"Authentication required"}` (dummy all-zeros courier id, so no real
+  record was touched):
+
+  ```
+  curl -H "apikey: $ANON" -H "Authorization: Bearer $ANON" -X POST \
+    https://ngbvgjzrpnfrqmzkqvch.supabase.co/functions/v1/onboarding \
+    -d '{"action":"submit_insurance","courier_id":"…","insurance_expiry":"2030-01-01"}'
+  ```
+- ⛔ Deploy **by name**. A bare `supabase functions deploy` would also ship `complete-session` (F-3),
+  an unauthenticated money-moving endpoint that has deliberately never been deployed.
 - ⚠️ **Separate, pre-existing, NOT fixed here — the function has no CORS headers**, so a browser
   preflight gets `405` with no `Access-Control-Allow-Origin` and the *legitimate* client cannot call
   it; only `curl` can. Verified 2026-08-24 with
@@ -183,7 +191,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   messages), and lock the table's anon policies down. If keeping direct access, at minimum
   scope UPDATE to `status='open'` and the matching device_hash via a request header claim.
 
-### F-5 · HIGH · No webhook signature verification (Stripe / Checkr / Twilio)  — ⚙️ TWILIO HALF FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED** · Stripe/Checkr half OPEN
+### F-5 · HIGH · No webhook signature verification (Stripe / Checkr / Twilio)  — ✅ TWILIO HALF CLOSED 2026-08-24 (deployed) · Stripe/Checkr half OPEN
 - **Where:** `cary/stripe/webhooks.js` (handlers only — no `stripe.webhooks.constructEvent`);
   `cary/supabase/functions/sms-webhook/index.ts` (no `X-Twilio-Signature` check). Repo-wide grep
   for `constructEvent` / `STRIPE_WEBHOOK_SECRET` / `X-Twilio-Signature` = **zero hits**.
@@ -197,8 +205,22 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   TwiML. ⛔ **No fail-open:** an unset `TWILIO_AUTH_TOKEN` **rejects**, it does not skip — that is the
   F-11 mistake, and here it would make every forged POST indistinguishable from a real text.
   `TWILIO_WEBHOOK_URL` overrides `req.url` for the case where a proxy rewrites host/proto.
-  ✅ `TWILIO_AUTH_TOKEN` **is** already set in the project's secrets, so deploying will not blind the
-  endpoint (`supabase secrets list`).
+  ✅ `TWILIO_AUTH_TOKEN` **is** set in the project's secrets, so the deploy did not blind the endpoint
+  (`supabase secrets list`). Deployed 2026-08-24; an unsigned POST now gets `403` from the function.
+- ### ⛔⛔ `verify_jwt` IS AN OUTAGE ON A THIRD-PARTY WEBHOOK, NOT A LAYER — and this deploy proved it
+  `supabase functions deploy` defaults `verify_jwt` to **true**, and **Twilio cannot send an `apikey`
+  header**. The first deploy therefore turned the gate on and made every real inbound text `401`
+  *before the function ran* — a self-inflicted outage, caught within the minute by re-probing rather
+  than by trusting the deploy. Fixed by redeploying `--no-verify-jwt`, and **pinned in
+  `cary/supabase/config.toml`** so the setting travels with the repo instead of living in whoever last
+  typed the flag. ⭐ That is only safe because the function now authenticates its own caller: turning
+  the gate off on a function with no auth of its own is how F-2 happened.
+- ⚠️ **The positive path is NOT verified.** Rejecting forgeries is confirmed live; *accepting a genuine
+  Twilio request* cannot be, because signing one needs the auth token. The residual risk is a **URL
+  mismatch** — Twilio signs the exact URL configured in its console, so a proxy rewriting host/proto
+  makes real texts fail. The rejection log now prints the URL the HMAC was computed over, so that
+  shows up as one readable line instead of "SMS stopped working"; the fix is to set
+  `TWILIO_WEBHOOK_URL`. ▶ **Owed: send a real text and confirm it lands.**
 - **Check:** `node scratch/claims-twilio-webhook-guard.mjs` — loads the real helpers **out of the
   function's source** (never a re-implementation) and asserts that forged, misrouted, mis-keyed and
   unverifiable requests are all rejected. The HMAC is pinned against the official `twilio` package's
@@ -238,7 +260,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
 - **Fix:** Add `set search_path = ''` (or `= public, pg_temp`) to each function definition and
   schema-qualify the table references.
 
-### F-9 · MEDIUM · TwiML XML injection in `sms-webhook`  — ⚙️ FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED**
+### F-9 · MEDIUM · TwiML XML injection in `sms-webhook`  — ✅ CLOSED 2026-08-24 (deployed)
 - **Where:** `cary/supabase/functions/sms-webhook/index.ts` (the raw inbound `body` is
   interpolated into `<Message to="…">[from] ${body}</Message>` unescaped).
 - **Impact:** Combined with the missing Twilio signature check (F-5), an attacker (or a
@@ -328,12 +350,18 @@ sentence; a function can be deployed at any time:
 supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
 ```
 
-1. **F-2** — `onboarding` is **ACTIVE** and takes `courier_id` off the request body. One POST marks any
-   courier's insurance `passed`. The highest live exposure in the register.
-2. **F-5 (Twilio half)** + **F-9** — `sms-webhook` is **ACTIVE** with no `X-Twilio-Signature` check and
-   unescaped TwiML interpolation. One edit closes both.
+1. ~~**F-2**~~ ✅ closed + deployed 2026-08-24.
+2. ~~**F-5 (Twilio half)** + **F-9**~~ ✅ closed + deployed 2026-08-24. ▶ Owed: send a real text and
+   confirm it lands — the accept path could not be verified from here.
 3. **F-4** — `requests` carries an open **UPDATE** policy and is handing rows to anon right now
    (`scratch/claims-cary-anon-exposure.mjs` fails on it).
+   ### ⭐ AND **F-13/`contact-sms` IS NOW ABOVE ITS OWN RANK** *(2026-08-24)*
+   Jacob is adding a **public "direct contact" QR** that routes into `contact-sms`. That function is
+   deployed, takes `ACAO: *`, has **no auth and no rate limit**, and every POST sends a real Twilio SMS
+   to `CONTACT_PHONE` and a SendGrid email. A QR makes the endpoint *more* discoverable, and the abuse
+   is billable spend plus SMS-flooding a personal phone. `ls/OPERATIONS.md` has called this a ⛔ for a
+   while; this register still files it under **F-13 · LOW · broad CORS**, which is the wrong severity.
+   ⛔ **Rate-limit / abuse-gate it before the QR is printed**, not after.
 4. **F-3** + **F-5 (Stripe/Checkr half)** — money and vendor-trust. Not deployed today; a hard
    prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
 5. **F-10, F-6, F-11, F-12, F-13** — harden as the surfaces mature.
