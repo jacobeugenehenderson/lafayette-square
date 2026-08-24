@@ -2069,7 +2069,7 @@ createServer(async (req, res) => {
         await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
-          `node pipeline.js`,
+          `node pipeline.js ${sceneFlag}`,
           { cwd: here, timeout: 120000 })
         await runIfDirty('promote-ribbons',
           [MAP_JSON, join(here, 'promote-ribbons.js')],
