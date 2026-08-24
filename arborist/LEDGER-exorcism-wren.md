@@ -87,32 +87,31 @@ The linden's bark tile is **512×512** on a 3888×2584 page holding 9 tiles.
 ⚠️ **Secondary to A6** — raising the cap sharpens vendor bark, which tier 1 currently
 replaces anyway. **Fix A6 first, then re-measure before spending a re-bake on this.**
 
-**A8 · ⛔ NIGHT GLOW — CAUSE ESTABLISHED. It is the LOOK's authored lighting, not the tree.**
-At night the canopy shows its albedo because the scene's ambient and hemisphere lights are
-**at their highest** then. Resolved from `public/looks/lafayette-square/design.json`:
-| minute | `ambient` | `hemi` |
-|---|---|---|
-| 12:00 | 1.47 | **0.16** |
-| 22:00 | 1.66 | **1.97** |
-| 00:00 | **1.69** | 1.88 |
-▶ `node --input-type=module -e "const m=await import('./src/cartograph/animatedParam.js');const d=(await import('./public/looks/lafayette-square/design.json',{with:{type:'json'}})).default;for(const min of [0,12*60])console.log(min, m.resolveGroupAtMinute(d.ambient,min,null,['value'],{value:1}).value, m.resolveGroupAtMinute(d.hemi,min,null,['value'],{value:1}).value)"`
-`CelestialBodies.jsx:1324` — the white ambient floor is `0.45 × ambient`, so **~0.76 white
-ambient at midnight**, plus hemisphere ~1.9. **Leaves have a bright albedo and show it; bark
-is dark and hides it; the grass darkens itself in its own shader (`grassMaterial` nightTint)
-— which is why only the canopy reads as glowing.**
-⭐ **Two different classes, and they must not be treated alike:**
-- `hemi` night = 2 is **EXPLICITLY AUTHORED** (its max across the day) — an operator decision,
-  almost certainly for neighbourhood readability at browse. ⛔ **Not a defect.**
-- `ambient` has **NO `night` key at all** — keys are noon/dawn/sunrise only, so the 1.69 at
-  midnight is **interpolation wrapping through the night. Nobody authored it**, and it lands
-  *above* the noon value.
-⛔⛔ **DO NOT "fix" this in the diorama.** These are per-Look TOD channels shared with the
-whole map: changing them changes LS at night everywhere. **A tuning call on an authored
-channel — Jacob's** (the same shape as `BACKLOG`'s moonlight note: *"a TUNING question on an
-existing channel, not a missing feature"*).
-⭐ The narrow, honest fix is to **author an `ambient` night key** so night is a decision
-rather than a wrap-around artifact. Whether hemi should also drop for a single-tree framing
-is a separate judgement about the map, not about the tree.
+**A8 · ⛔⛔ NIGHT GLOW — WREN'S DIAGNOSIS WAS WRONG. Corrected by Rook, 2026-08-24.**
+**The claim that stood here:** the canopy reads lit at night because the Look's `ambient`
+(1.69 at midnight) and `hemi` (1.88) peak then. **Those numbers are real and reproducible —
+and the diorama does not read them.**
+- `TreeDiorama.jsx:766` mounts `<CelestialBodies debugLevel={…} />` with **no `scene` and no
+  `lookId`**, so `CelestialBodies.jsx:1095-1096` falls through to `AMBIENT_DEFAULT_CHANNEL` /
+  `HEMI_DEFAULT_CHANNEL` — and those are `{ value: 1.0 }` **flat at every minute of the day**
+  (`src/cartograph/skyLightChannels.js:188,191`).
+- Rook proved it rather than reasoned it: authored an ambient night key, then dropped hemi
+  night separately. **Three renders, identical picture.**
+▶ `grep -n "CelestialBodies" src/components/TreeDiorama.jsx` · `sed -n '1093,1098p' src/components/CelestialBodies.jsx` · `grep -n "FLAT_DEFAULTS *=" src/cartograph/skyLightChannels.js`
+
+⛔⛔ **THE LESSON, AND IT IS LAYER 0 QUESTION 3 COMMITTED BY ME.** I measured the Look's
+authored channels and never checked whether the surface consumes them. The recommended fix —
+author an ambient night key — would have **changed LS at night across the whole map and done
+nothing to the tree**. That is the signature shape: measured without the surface's actual
+state loaded, and wrong in the direction that looks authoritative.
+
+**What the tree IS lit by: cause not established.** An unconditional stack at
+`CelestialBodies.jsx:1318-1326`, led by a hardcoded `0.45` white ambient floor that this
+surface pins at ×1.0. Which term dominates the canopy pixel is unmeasured. ⛔ Tune nothing
+until it is.
+
+⭐ **THE OPEN QUESTION IS NOT THE ONE THE BRIEF POSED.** It is: *should the diorama be given
+the Look's channels at all?* — see `BRIEF-tree-motion-and-light.md §2`. Jacob's call.
 
 ---
 

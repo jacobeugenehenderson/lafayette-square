@@ -75,35 +75,33 @@ complaint.
 
 ---
 
-## 2. THE LIGHTING — measured, and it is authored state, not a bug
+## 2. THE LIGHTING — ⛔ THE BRIEF'S ORIGINAL §2 WAS WRONG. Read this instead.
 
-Jacob: *"the lighting looks terrible but I don't know **what** to do about that because it's
-linked to the rest of the look."* **He is right that it is linked. Here is the measurement.**
+**Wren wrote §2 around the Look's `ambient` / `hemi` channels (1.69 / 1.88 at midnight, and
+`ambient` has no night key). Every one of those numbers is real. THE DIORAMA DOES NOT READ
+THEM.** Found and proved by **Rook**, 2026-08-24; confirmed independently.
 
-| minute | `ambient` | `hemi` |
-|---|---|---|
-| 12:00 | 1.47 | **0.16** |
-| 00:00 | **1.69** | 1.88 |
+- `TreeDiorama.jsx:766` mounts `<CelestialBodies debugLevel={…} />` — **no `scene`, no
+  `lookId`** — so `CelestialBodies.jsx:1095-1096` falls to `AMBIENT_DEFAULT_CHANNEL` /
+  `HEMI_DEFAULT_CHANNEL`, which are `{ value: 1.0 }` **flat all day**
+  (`src/cartograph/skyLightChannels.js:188,191`).
+- Rook authored an ambient night key, then dropped hemi night separately. **Three renders,
+  one picture.** The original recommendation would have changed LS map-wide and done nothing here.
 
-▶ `node --input-type=module -e "const m=await import('./src/cartograph/animatedParam.js');const d=(await import('./public/looks/lafayette-square/design.json',{with:{type:'json'}})).default;for(const min of [0,12*60])console.log(min, m.resolveGroupAtMinute(d.ambient,min,null,['value'],{value:1}).value, m.resolveGroupAtMinute(d.hemi,min,null,['value'],{value:1}).value)"`
+⭐ **SO THE REAL QUESTION IS A DESIGN ONE, AND IT IS JACOB'S:**
 
-`CelestialBodies.jsx:1324` makes the white ambient floor `0.45 × ambient` ⇒ **~0.76 white
-ambient at midnight**, plus hemisphere ~1.9. Leaves have a bright albedo and show it; bark is
-dark and hides it; the grass darkens itself in its own shader — **which is why only the
-canopy reads as glowing.**
+**(a) Give the diorama the Look's channels** — one line, and it makes the solo tree honest to
+the map: it darkens with LS, and Jacob's authored `hemi` night = 2 finally reaches it. ⭐ This
+is the SAME SEAM as everything fixed on 2026-08-23 — a bare Canvas mounting a driver and not
+feeding it (bark slots, ground maps, wind). ⚠️ Risk: the tree may then look WORSE at night,
+and fixing that means tuning the Look, which moves the whole map.
+**(b) Keep its own lighting and dial the local floors** — cannot regress the map at all.
+⚠️ Risk: the surface built to show "a thing that actually deploys" is lit by lights the map
+never uses. That is the facsimile class this whole arc exists to kill.
 
-⭐ **Two DIFFERENT classes. Do not treat them alike:**
-- `hemi` night = 2 is **explicitly authored** and is its maximum across the day. An operator
-  decision, almost certainly for browse readability. ⛔ **Not a defect. Do not "fix" it.**
-- `ambient` has **NO `night` key** — keys are noon/dawn/sunrise only — so 1.69 at midnight is
-  **interpolation wrapping through the night**, landing *above* noon. **Nobody authored it.**
-
-⛔⛔ **These are per-Look channels shared with the WHOLE MAP.** Changing them changes LS at
-night everywhere. ⭐ The narrow, honest move is to **author an `ambient` night key so night
-becomes a decision** — and to show Jacob the map and the tree side by side before committing.
-**It is his call, not yours.**
-
----
+⛔ **Do not pick one on your own.** ⛔ And do not tune anything until the dominant term is
+measured — `CelestialBodies.jsx:1318-1326` is an unconditional stack led by a hardcoded 0.45
+white ambient floor which this surface pins at ×1.0. **Cause not established.**
 
 ## 3. THE WEIGHT — compression works, measured, and is now safe to re-land
 
