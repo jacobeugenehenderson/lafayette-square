@@ -141,8 +141,8 @@ Deno.serve(async (req) => {
   const deviceHash = body.device_hash || null
   const handle = body.handle || null
   const avatar = body.avatar || null
-  if (!message) return json({ error: 'Message is empty' }, 400, cors)
-  if (message.length > 1600) return json({ error: 'Message too long (1600 char max)' }, 400, cors)
+  if (!message) return json({ code: 'empty', error: 'Message is empty' }, 400, cors)
+  if (message.length > 1600) return json({ code: 'too_long', error: 'Message too long (1600 character max)' }, 400, cors)
 
   // ── RATE LIMIT · before anything spends money ───────────────────
   // ⛔ This must stay ABOVE the Twilio and SendGrid calls. A limit checked
@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
     // neighbour is the failure mode to be able to diagnose in one look.
     console.warn(`[contact-sms] REFUSED — rate limit: ${limit.which}`)
     return json(
-      { error: "You've sent a lot of messages just now — please try again a bit later." },
+      { code: 'rate_limited', error: "You've sent a few messages just now — please try again in a little while." },
       429,
       cors
     )
@@ -197,13 +197,22 @@ Deno.serve(async (req) => {
   // token (SECURITY.md F-6) and would then live in the Host's message history
   // and Twilio's logs forever. A message id grants nothing on its own and the
   // Inbox is admin-gated regardless.
-  // ⛔ NO GUESSED DOMAIN. Unset site URL = no link, said out loud — a link to
-  // the wrong installation is worse than no link at all.
-  const siteUrl = Deno.env.get('CONTACT_SITE_URL')
-  if (!siteUrl) {
-    console.warn('[contact-sms] CONTACT_SITE_URL unset — alert will carry no reply link')
+  // ⭐ The link points back at THE SITE THEY ACTUALLY USED. One Supabase project
+  // serves production and staging, so a single configured domain is always wrong
+  // for one of them — a reply link that lands on the other site opens a build
+  // that knows nothing about this message.
+  // ⛔ SECURITY: only ever an origin already on the allowlist. An attacker can
+  // set `Origin` to anything, and echoing it unchecked would put a link to THEIR
+  // site in the Host's text message — a phishing vector, sent from us, to us.
+  // The allowlist we already keep for CORS is exactly the right boundary.
+  const origin = req.headers.get('Origin')
+  const linkBase = origin && allowedOrigins().includes(origin)
+    ? origin
+    : Deno.env.get('CONTACT_SITE_URL') || null
+  if (!linkBase) {
+    console.warn('[contact-sms] no allowed Origin and no CONTACT_SITE_URL — alert will carry no reply link')
   }
-  const replyLink = siteUrl && messageId ? `${siteUrl.replace(/\/$/, '')}/?msg=${messageId}` : null
+  const replyLink = linkBase && messageId ? `${linkBase.replace(/\/$/, '')}/?msg=${messageId}` : null
 
   // ── Send SMS to owner via Twilio ────────────────────────────────
   const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')
@@ -279,7 +288,13 @@ Deno.serve(async (req) => {
     return json({ sent: true, sms: smsSent, email: emailSent }, 200, cors)
   }
 
-  return json({ error: 'Delivery failed — neither SMS nor email configured' }, 503, cors)
+  // ⛔ Distinct from a rate limit: nothing the sender did, and retrying will not
+  // help. Saying "try again later" here would be a lie.
+  return json(
+    { code: 'delivery_failed', error: 'Message could not be delivered right now.' },
+    503,
+    cors
+  )
 })
 
 function json(data, status = 200, cors = {}) {

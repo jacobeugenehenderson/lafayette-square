@@ -10,6 +10,15 @@ export const useContact = create((set) => ({
 }))
 
 import { IS_MOBILE } from '../lib/isMobile.js'
+import { INSTANCE } from '../instance.js'
+
+// ⭐ Read the fallback number from the installation, not a literal. The old
+// error text hardcoded "(877) 335-1917" in a shared component — correct for
+// Lafayette Square, wrong for every other town the kit pours, and invisible
+// until someone in town #2 read it. `cary.smsNumberDisplay` is the authored
+// field (ls/OPERATIONS.md §5); if an installation hasn't set one, say nothing
+// rather than send them to somebody else's phone.
+const SMS_NUMBER = INSTANCE?.cary?.smsNumberDisplay || null
 
 export default function ContactModal() {
   const open = useContact((s) => s.open)
@@ -53,13 +62,44 @@ export default function ContactModal() {
       const { data, error: fnError } = await supabase.functions.invoke('contact-sms', {
         body: { message: message.trim(), device_hash: deviceHash, handle: trimmedName, name: trimmedName, avatar },
       })
-      if (fnError && !data?.sent) throw fnError
-      if (data?.error) throw new Error(data.error)
+
+      // ⛔ Read WHY it failed. Every failure used to render the same sentence —
+      // a blocked origin, a rate limit, a Twilio outage and a dead network were
+      // indistinguishable, so nobody could report what actually went wrong.
+      // (A blocked origin is exactly what bit us on staging, 2026-08-24.)
+      if (fnError && !data?.sent) {
+        // A non-2xx arrives as FunctionsHttpError with the body on `context`.
+        let body = null
+        try { body = await fnError.context?.json?.() } catch { /* not JSON — a transport failure */ }
+        if (body?.error) {
+          setError(body.error)
+          console.error('[ContactModal] send refused:', body.code || 'unknown', body.error)
+          return
+        }
+        // No body at all = we never reached the function: offline, DNS, or the
+        // browser blocking the response because our origin isn't allowed.
+        setError(
+          SMS_NUMBER
+            ? `Couldn't reach the message service. Try texting ${SMS_NUMBER} directly.`
+            : "Couldn't reach the message service. Please try again in a moment."
+        )
+        console.error('[ContactModal] send failed before reaching the function:', fnError)
+        return
+      }
+      if (data?.error) {
+        setError(data.error)
+        console.error('[ContactModal] send refused:', data.code || 'unknown', data.error)
+        return
+      }
       setSent(true)
       setMessage('')
       localStorage.setItem('lsq_contact_count', String(sendCount + 1))
     } catch (err) {
-      setError('Could not send — try texting (877) 335-1917 directly.')
+      setError(
+        SMS_NUMBER
+          ? `Something went wrong sending that. You can text ${SMS_NUMBER} directly.`
+          : 'Something went wrong sending that. Please try again in a moment.'
+      )
       console.error('[ContactModal] send failed:', err)
     } finally {
       setSending(false)
