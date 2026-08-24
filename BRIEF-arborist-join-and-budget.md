@@ -25,46 +25,73 @@ asking.** The slab carries the first land-use pour (`unknown`→`underived`, gro
 
 ---
 
-## 0a. ⛔⛔ START HERE — TWO LIVE REGRESSIONS ON STAGING (2026-08-24, evening)
+## 0a. 🔥 START HERE — HERO IS BAD ON THE LIVE SITE. THIS IS THE JOB.
 
-Jacob pushed `land-use-derivation` to staging and looked at it. **Browse is fine. HERO is bad.**
+**Jacob, 2026-08-24 evening: *"The trees on the live site are small and sparse."*** Browse is
+fine. **Hero is the whole problem.** Treat this as the only ticket until it is closed.
 
-### ① Hero sparse and small — MINE, and already defused
-**`cb14c29c` puts the geometry band behind `?heroBand=1`.** Push that and hero returns to
-exactly what shipped before today. The band took hero from **2323 real trees → 403** on a
-15e6-triangle budget I picked off a distribution curve instead of looking at a frame, and
-everything it removed became a canopy card.
-⛔ **The axis is right; the budget was mine to get wrong.** Dials are `heroTriangleBudget`
-and `heroBandMaxM` in `bake-trees.js`; the bake still stamps `heroRole` + `heroBandMeta`, so
-nothing is lost. **Tune it by eye ON THE PAN, never off the curve.**
-⚠️ **And the reason any thinning looks like DAMAGE:** `ground.colormap` bakes a contact
-shadow for **every one of the 5127 placements**, whether or not a tree draws there. So a
-culled tree leaves a HOLE, not an absence. ⭐ **Solve that before tuning the budget, or every
-setting will look wrong.**
+### ⛔ WHAT IS ALREADY PUSHED — so do not "fix" it twice
+`origin/land-use-derivation` is at **`57e811f3`**, in sync. It ALREADY contains **`cb14c29c`**,
+which put my geometry band behind `?heroBand=1` (default OFF). ⚠️ **So if the site is still
+bad, the band is NOT the remaining cause** — either the deploy has not rebuilt since
+`cb14c29c`, or something else is doing it. ▶ **First move: read the console on the live site.**
+- `role=legacy-dbh` → the band is off; you are seeing something else. **Keep reading below.**
+- `role=band` → the build predates `cb14c29c`. **Redeploy, then re-look.** Nothing to debug yet.
 
-### ② ⛔ WHITE BANDS AROUND TRUNK BASES — a REGRESSION of a fix that already landed
+### ⭐⭐ THREE THINGS CHANGED HERO TODAY. Only one was mine, and it is already off.
+| # | change | effect on hero | status |
+|---|---|---|---|
+| 1 | my pan-distance band (`b01fdffb`) | 2323 mesh → **403** | ✅ **OFF** by default (`cb14c29c`) |
+| 2 | **Jacob's oak capture in the Grove** | **747 trees moved MESH → CANOPY CARD** | ⚠️ **LIVE, and nobody has looked at it** |
+| 3 | the land-use pour (`29955e46`) | +126 trees, ground rebuilt | ⚠️ live |
+
+⭐⭐⭐ **#2 IS THE ONE I WOULD LOOK AT FIRST, AND I RECOMMENDED IT.** `oak_bur` (389) and
+`oak_white` (358) had **no hero impostor record**, so they leaked to **full lod1 geometry** —
+48,415 tris each. Shooting them gave them records, which is *correct* and removed ~47M tris —
+**and in the same stroke turned 747 big foreground oaks into flat canopy cards.** That is a
+textbook "smaller and sparser", it is live, and **no eye has been on it.** ⛔ It is not a bug —
+it is the impostor foundation doing exactly what it says — but it was never eye-gated.
+▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json').instances;const b={};for(const i of t)b[i.species]=(b[i.species]||0)+1;console.log(b.oak_bur,b.oak_white)"`
+
+### 🔧 THE FAST LEVERS — URL only, no re-bake, use these to find it in minutes
+- **`?heroGeom=0.5`** ⭐ the single most useful dial. It is the legacy fraction that decides
+  how many trees keep REAL GEOMETRY (default **0.15** = only the tallest 15%). Raising it puts
+  mesh back immediately. **If `?heroGeom=0.6` makes hero look right, the answer is that the
+  impostor foundation is simply too aggressive for this shot** — and that is a number to
+  author, not a bug to chase.
+- **`?treeDebug=noHeroImpostor`** — kills the impostor foundation entirely; EVERY tree renders
+  as mesh. Slow, but it tells you in one reload whether "small and sparse" is the impostors.
+- **`?heroBand=1`** — turns my band back on. ⛔ Expect it to look WORSE; it is here so you can
+  confirm it is off, not to use.
+
+### ⚠️ AND THE THING THAT MAKES ANY OF THIS LOOK LIKE DAMAGE
+`ground.colormap` bakes a contact shadow for **all 5127 placements**, whether or not a tree
+draws there. **A tree that becomes an impostor still leaves its full-size trunk shadow.** So a
+smaller canopy card sits inside a shadow sized for the mesh tree it replaced — which reads as
+*"dark spots for trees that aren't there."* ⭐ **This is very likely why Jacob's description
+led with the shadows.** Nothing about the impostor split can be judged honestly until the
+shadow and the drawn tree agree.
+
+### ⛔ ② WHITE BANDS AROUND TRUNK BASES — a REGRESSION of a fix that already landed
 Jacob: *"The trunks also have white bands around their bases, a problem we already fixed."*
-**CAUSE NOT ESTABLISHED. I ran out of session before measuring it. Do not trust the lead
-below — measure it first.**
+**CAUSE NOT ESTABLISHED — I ran out of session before measuring. Do not trust the lead below.**
+1. The trunk base blends toward the ground colour sampled at the tree's world-XZ
+   (`treeAtlasMaterial.js:356-375` — `uTrunkBlend`, `uTrunkBlendTop`, `uGroundColorMap` +
+   `uGroundColorMin/Span`, plus the FX map so it blends toward the COMBINED colour). Fed by
+   `BakedGround.jsx:157,176`.
+2. ⭐ **MY FIRST SUSPECT, UNVERIFIED:** the land-use pour regenerated
+   **`ground.colormap.png`, `ground.poolmap.png` and `ground.json`** — which carries the
+   `min`/`span` decode meta. If that encoding moved, the decoded ground colour is wrong and the
+   trunk blends toward it. ▶ **Diff `ground.json`'s colormap/poolmap meta across `29955e46`
+   and decide from the numbers, not from this sentence.**
+3. `treeTrunkGround` is a **shared** knob and the Diorama writes it on mount / restores map
+   defaults on unmount (diorama 0.8/0.75/0.95 vs map 0.55/1.5/0.5). Cheap to rule out.
+4. **Find the ORIGINAL fix before rebuilding one** — Jacob says it was solved, so something
+   un-did it. `git log -S uTrunkBlend`, and `c7c00d41` / `8473a29c`.
 
-**Where to look, in order:**
-1. The trunk base blends toward the ground colour sampled from the baked colormap at the
-   tree's world-XZ (`treeAtlasMaterial.js:356-375`; `uTrunkBlend`, `uTrunkBlendTop`,
-   `uGroundColorMap` + `uGroundColorMin/Span`, and the FX map so it blends toward the
-   COMBINED colour, not raw albedo). Fed by `BakedGround.jsx:157,176` via
-   `setGroundColorMap` / `setGroundFxMap`.
-2. ⭐ **MY FIRST SUSPECT, UNVERIFIED:** today's land-use pour **regenerated
-   `ground.colormap.png`, `ground.poolmap.png` and `ground.json`** — which carries the
-   colormap's `min`/`span` decode meta. If that encoding moved, the decoded ground colour is
-   wrong and the trunk base blends toward the wrong colour. ▶ **Diff `ground.json`'s colormap
-   and poolmap meta across `29955e46` and decide from the numbers, not from this sentence.**
-3. ⚠️ `treeTrunkGround` is a **shared module-scoped knob** and the Diorama **writes it on
-   mount and restores map defaults on unmount** (`TreeDiorama.jsx`, `setTrunkGround`). A
-   surface that mounts and does not cleanly unmount leaves the map on diorama values
-   (blend 0.8 / top 0.75 / shadow 0.95 vs the map's 0.55 / 1.5 / 0.5). Cheap to rule out.
-4. Find the ORIGINAL fix before rebuilding one — Jacob says it was already solved, so this is
-   a REGRESSION and something un-did it. `git log -S uTrunkBlend` and the `c7c00d41` /
-   `8473a29c` trunk-contact commits are the thread.
+⚠️ **These two may be the same event.** Both trunk-blend and the contact shadow read the same
+regenerated ground maps. If ② turns out to be the colormap meta, check ① against it before
+concluding anything about impostors.
 
 ---
 
