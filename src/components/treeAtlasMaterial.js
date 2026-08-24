@@ -1656,51 +1656,6 @@ export function measureChassisRadius(geometries) {
   return Math.max(1e-4, Math.sqrt(r2Max))
 }
 
-// Brief 9a (Sough) — per-vertex wind TIER. Kept as the leaf/wood flag and as
-// the legacy bucket axis (see `treeWindTiering`): the continuous ramp reads
-// aTreeHeightNorm x radial-from-position, and uses this only to know which vertices
-// are leaf cards so they can ride their branch and flutter on top of it.
-//
-// ⛔ ONE definition, called by BOTH the LS runtime (InstancedTrees#meshes) and
-// the Salon preview / diorama (stampTreeVertexAttrs). It was duplicated in the
-// two files until 2026-08-24 and the copies had to be kept in step by hand.
-export function stampWindTier(geometry, isBark) {
-  if (!geometry?.attributes?.position) return
-  if (geometry.attributes.aWindTier) return
-  const p = geometry.attributes.position
-  const arr = new Float32Array(p.count)
-  if (!isBark) {
-    arr.fill(3)  // leaf cards
-  } else {
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), y = p.getY(i), z = p.getZ(i)
-      const r = Math.sqrt(x * x + z * z)
-      arr[i] = (r > 0.15 && y < 3.0) ? 0 : (r > 0.06 ? 1 : 2)
-    }
-  }
-  geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
-}
-
-// Chassis-wide max radial distance from the tree's local Y-axis, in metres.
-// Shared by the LS runtime and the Salon preview so bark and leaf primitives
-// normalize against the SAME canopy radius — they have different extents, and
-// normalizing each on its own would put a leaf tip and the branch tip it hangs
-// on at different points on the whip ramp, which is the very independence we
-// are removing. Base sits at X=Z=0 thanks to the clean chassis-bake frame.
-export function measureChassisRadius(geometries) {
-  let r2Max = 0
-  for (const g of geometries) {
-    const p = g?.attributes?.position
-    if (!p) continue
-    for (let i = 0; i < p.count; i++) {
-      const x = p.getX(i), z = p.getZ(i)
-      const r2 = x * x + z * z
-      if (r2 > r2Max) r2Max = r2
-    }
-  }
-  return Math.max(1e-4, Math.sqrt(r2Max))
-}
-
 // Per-vertex attribute stamper shared between the LS runtime
 // (InstancedTrees#meshes) and the Salon preview (SpecimenViewport#Skeleton).
 // Reads atlasKind / barkRegion from prim extras (geometry.userData populated
