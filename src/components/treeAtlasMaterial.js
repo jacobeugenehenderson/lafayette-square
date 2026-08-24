@@ -82,6 +82,30 @@ export const treeSwayUniforms = {
 // the single-shader-program doctrine: uniform branch, NOT customProgramCacheKey.
 export const treeBarkTierUniform = { value: 1 }
 
+// ⭐ TRUNK-GROUND CONTACT — shared, module-scoped, defaulting to TODAY'S values
+// so the map renders bit-identical until someone turns a knob. Same pattern as
+// treeSwayUniforms / treeBarkTierUniform: one write drives every mounted tree.
+//   blend     — how strongly the trunk base takes the ground colour
+//   blendTop  — how far UP the trunk that reaches, in metres
+//   shadowStr — how hard the ground's contact-shadow (G) darkens it
+// A solo surface (diorama, street view) wants this tighter and darker than the
+// map does; the map keeps the defaults by not touching them.
+export const treeTrunkGround = {
+  blendUniform:     { value: 0.55 },
+  blendTopUniform:  { value: 1.5 },
+  shadowStrUniform: { value: 0.5 },
+}
+export function setTrunkGround({ blend, blendTop, shadowStr } = {}) {
+  if (Number.isFinite(blend))     treeTrunkGround.blendUniform.value     = Math.max(0, Math.min(1, blend))
+  if (Number.isFinite(blendTop))  treeTrunkGround.blendTopUniform.value  = Math.max(0, blendTop)
+  if (Number.isFinite(shadowStr)) treeTrunkGround.shadowStrUniform.value = Math.max(0, Math.min(2, shadowStr))
+  return {
+    blend: treeTrunkGround.blendUniform.value,
+    blendTop: treeTrunkGround.blendTopUniform.value,
+    shadowStr: treeTrunkGround.shadowStrUniform.value,
+  }
+}
+
 // Brief 13 refinement (Vantage 2026-05-23) — auto-tier binding from
 // Salon camera distance + preset. The Salon viewport drives the uniform
 // per-frame from `cameraStateRef` (Overhead → 0, Ground+distance>20 → 1,
@@ -239,8 +263,8 @@ export function injectFoliageSway(material) {
     shader.uniforms.uGroundColorMin  = _groundColor.minUniform
     shader.uniforms.uGroundColorSpan = _groundColor.spanUniform
     shader.uniforms.uHasGroundColor  = _groundColor.hasUniform
-    shader.uniforms.uTrunkBlend      = { value: 0.55 }
-    shader.uniforms.uTrunkBlendTop   = { value: 1.5 }
+    shader.uniforms.uTrunkBlend      = treeTrunkGround.blendUniform
+    shader.uniforms.uTrunkBlendTop   = treeTrunkGround.blendTopUniform
     // FX map (G contact shadow / R lamp pool) so the trunk blends toward the
     // COMBINED EFFECTIVE ground colour, not raw albedo — same map + math as
     // grassMaterial, so the trunk base sits in its own shadow ring.
@@ -248,7 +272,7 @@ export function injectFoliageSway(material) {
     shader.uniforms.uGroundFxMin    = _groundColor.fxMinUniform
     shader.uniforms.uGroundFxSpan   = _groundColor.fxSpanUniform
     shader.uniforms.uGroundFxScale  = _groundColor.fxScaleUniform
-    shader.uniforms.uTrunkShadowStr = { value: 0.5 }   // matches grass uShadowStr
+    shader.uniforms.uTrunkShadowStr = treeTrunkGround.shadowStrUniform  // matches grass uShadowStr
     shader.uniforms.uTrunkPool      = _lampGlow.poolUniform
     shader.uniforms.uTrunkPoolColor = _lampGlow.colorUniform
     // Phase B bark retint uniforms (per-draw mutation pattern).

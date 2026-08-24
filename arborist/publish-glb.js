@@ -686,6 +686,20 @@ async function emitLod(doc, lod, bracket) {
   }
 
   const startTris = countTris(lodDoc)
+  // ⭐ SOLO LOD — no simplify at all, and the bracket does not apply.
+  // ⛔ `lod.ratio` alone is NOT enough to express this: the seed below
+  // OVERRIDES lod.ratio whenever a bracket exists
+  // (`ratio = bracket.maxTris / startTris`), so a solo lod marked ratio 1.0
+  // was still being simplified to ~0.01 and merely logging ✗bracket. That is
+  // what kept the published trunk at 77,542 tris against the Salon's 171,273
+  // AFTER the leaves had been fixed — the leaves matched exactly and the bark
+  // did not, because disconnected leaf quads survive `simplify` and connected
+  // bark does not. lod0 is never instanced (nothing in the map loads it), so
+  // the bracket is meaningless for it: it exists to bound INSTANCED cost.
+  if (lod.solo) {
+    await lodDoc.transform(textureCompress({ targetFormat: 'webp', resize: [lod.textureSize, lod.textureSize] }))
+    return { doc: lodDoc, ratioApplied: 1.0, startTris, finalTris: startTris, inBracket: true }
+  }
   // If already under maxTris, skip simplify — chassis was naturally light.
   if (bracket && startTris <= bracket.maxTris) {
     await lodDoc.transform(textureCompress({ targetFormat: 'webp', resize: [lod.textureSize, lod.textureSize] }))

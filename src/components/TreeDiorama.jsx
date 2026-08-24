@@ -2,7 +2,6 @@ import { memo, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
-import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { INSTANCE } from '../instance.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
 import CelestialBodies from './CelestialBodies'
@@ -13,9 +12,10 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
+import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
   useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission, treeBarkTierUniform,
-  applyBarkUniforms, applyDeformerUniforms,
+  applyBarkUniforms, applyDeformerUniforms, setTrunkGround,
 } from './treeAtlasMaterial'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useCanaryTree } from '../lib/canaryTree.js'
@@ -77,71 +77,132 @@ function readParam(name) {
  * a silent substitution, so `stampTreeVertexAttrs` (the same helper the Salon
  * preview uses) does the stamping rather than a local copy that could drift.
  */
+/**
+ * ⭐ DioramaWind — a BREEZE FLOOR, mounted after SwayDriver.
+ *
+ * The diorama mounts `SwayDriver`, which resolves wind from the atmosphere
+ * directive — and the meteorologist authors no `wind` block into it, so
+ * `baseSpeedMps` is 0, `uWindIntensity` is 0, and the ONLY motion left is the
+ * ~5 mm leaf-tip rustle floor. That is exactly "the chassis doesn't move and the
+ * canopy doesn't move in a sophisticated manner" (Jacob, 2026-08-23): with
+ * intensity 0 the shader's whole apparatus — per-tier damping (trunk / branch /
+ * twig / leaf), gust envelope, spatially-advected gust spikes — never runs.
+ *
+ * ⭐ THIS IS THE GROVE'S ANSWER, NOT A NEW ONE. `Grove.jsx#GroveWind` does the
+ * same thing for the same reason (a surface with no live weather feed). The one
+ * difference: this FLOORS rather than overrides, so a real authored wind still
+ * wins the moment the meteorologist supplies one — calm never means dead, and
+ * authored never gets clobbered.
+ *
+ * ⛔ Ordering is load-bearing: r3f runs useFrame callbacks in mount order, so
+ * this must be mounted AFTER <SwayDriver /> or SwayDriver's zero overwrites it.
+ *
+ * Tune by eye: `?wind=` (m/s) and `?gust=`.
+ */
+// ⚠️ Jacob, 2026-08-23: 3.0 (the Grove's value) is "way too crazy" here — and
+// he is right that at this magnitude "we would want wind this big in a STORM".
+// The Grove shows a rack of small tiles where gross motion reads as life; a
+// single tree at a few metres shows every centimetre. Calm-day breeze, not
+// weather. Dial live with `?wind=`.
+const BREEZE_FLOOR_MPS = 0.7
+function DioramaWind() {
+  const [floor, gust] = useMemo(() => {
+    let w = BREEZE_FLOOR_MPS, g = 0.6
+    try {
+      const q = new URLSearchParams(window.location.search)
+      const a = parseFloat(q.get('wind')); if (Number.isFinite(a)) w = Math.max(0, a)
+      const b = parseFloat(q.get('gust')); if (Number.isFinite(b)) g = Math.max(0, b)
+    } catch { /* no URL, no dial */ }
+    return [w, g]
+  }, [])
+
+  useFrame(() => {
+    // SwayDriver has already written the directive's answer this frame. Only
+    // step in when it is effectively calm.
+    if (treeSwayUniforms.uWindIntensity.value >= floor) return
+    treeSwayUniforms.uWindForce.value.set(floor, 0, 0)
+    treeSwayUniforms.uWindIntensity.value = floor
+    // Gusts are what make it read as weather rather than a fan: the shader
+    // builds a per-tree spike that TRAVELS across the scene at this velocity.
+    treeSwayUniforms.uGustFrontVelocity.value.set(floor * 2.0, 0, 0)
+    treeSwayUniforms.uGustsScale.value   = gust
+    treeSwayUniforms.uGustEnvelope.value = 1.0
+  })
+  return null
+}
+
 function Specimen({ url, material, onMeasured }) {
   const { scene } = useGLTF(url)
 
-  // ⚠ Returns a LIST, never a single geometry. The baked GLB is several
-  // primitives (branches / caps / leaves), and merging them is an optimisation,
-  // not a requirement — the runtime merges to collapse 616 draws down to one,
-  // which a single specimen does not care about. ⛔ An earlier cut of this
-  // returned `null` when the merge was rejected, so a tree whose primitives
-  // carry divergent attribute sets rendered as NOTHING against a working sky:
-  // a plausible-looking success, which is the one outcome worth failing loudly
-  // to avoid. Merge if we can, draw the primitives if we cannot, draw nothing
-  // only when there is genuinely nothing.
-  const geometries = useMemo(() => {
-    scene.updateMatrixWorld(true)
-    const collected = []
+  // ⭐ THE SALON'S METHOD, VERBATIM — traverse, stamp IN PLACE, assign the shared
+  // material, render the graph (`SpecimenViewport.jsx:901-913` + `:1438`).
+  //
+  // ⛔ WHAT THIS REPLACES, AND WHY. The previous cut cloned every geometry,
+  // baked `o.matrixWorld` into the vertices and merged the result — a technique
+  // lifted from `InstancedTrees`, which needs it to collapse hundreds of draws
+  // into one across 5,000 placements. A SINGLE specimen never needed it, and it
+  // cost twice:
+  //   · ~534k triangles of per-vertex CPU work on the main thread at every
+  //     mount — the browser stutter (Jacob, 2026-08-23);
+  //   · `applyMatrix4` writes FLOATS into the attribute buffer, so the moment
+  //     geometry is quantized (normalized ints) it is corrupted — giant leaves
+  //     and black shards, which is exactly what compression produced here and
+  //     never produced in the Salon. Three.js applies node transforms on the
+  //     GPU; letting it do so is both faster and the only quantize-safe path.
+  //
+  // ⛔ Do not reintroduce the merge "for performance". One tree is not 5,000.
+  const prepared = useMemo(() => {
+    if (!material) return null
+    // Chassis-wide Y range so `aTreeHeightNorm` normalises against the same axis
+    // the LS runtime uses — the old cut passed `{}` here, leaving the deformer's
+    // height attribute wrong on this surface alone.
+    let minY = Infinity, maxY = -Infinity
     scene.traverse((o) => {
       if (!o.isMesh || !o.geometry?.attributes?.position) return
-      // Bake the primitive's world transform in, so everything lands in the
-      // tree's own frame — matches InstancedTrees#meshes.
-      const g = o.geometry.clone()
-      g.applyMatrix4(o.matrixWorld)
-      stampTreeVertexAttrs(g, {}, o)
-      // Which half of the tree this is. The bake stamps it; ⚠ GLTFLoader puts
-      // primitive extras in three different places depending on version, so
-      // check all three exactly as the runtime does.
-      g.userData.isBark = (
-        o.geometry?.userData?.atlasKind ?? o.userData?.atlasKind ?? o.userData?.gltfExtras?.atlasKind
-      ) === 'bark'
-      collected.push(g)
+      o.geometry.computeBoundingBox()
+      const bb = o.geometry.boundingBox
+      if (bb) { minY = Math.min(minY, bb.min.y); maxY = Math.max(maxY, bb.max.y) }
     })
-    if (!collected.length) return []
+    const chassisMinY = Number.isFinite(minY) ? minY : 0
+    const chassisYRange = Math.max(1e-4, maxY - minY)
 
-    // Same guards the runtime merge uses: divergent attribute sets or an
-    // interleaved attribute make mergeGeometries fail, noisily and per-vertex.
-    const keys = Object.keys(collected[0].attributes).sort().join('|')
-    const sameKeys = collected.every(g => Object.keys(g.attributes).sort().join('|') === keys)
-    const noInterleaved = collected.every(g =>
-      Object.values(g.attributes).every(a => !a.isInterleavedBufferAttribute)
-    )
-    if (sameKeys && noInterleaved) {
-      const merged = mergeGeometries(collected, false)
-      if (merged) return [merged]
-    }
-    return collected
-  }, [scene])
+    let meshes = 0, tris = 0
+    scene.traverse((o) => {
+      if (!o.isMesh) return
+      meshes++
+      o.castShadow = true
+      o.receiveShadow = true
+      o.frustumCulled = false
+      if (o.geometry) {
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+        // Vertex colours flip USE_COLOR and compile a PARALLEL program; the
+        // shared material expects none (single-program doctrine / Bloom).
+        if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+        const pos = o.geometry.attributes.position
+        tris += (o.geometry.index ? o.geometry.index.count : pos.count) / 3
+      }
+      o.material = material
+    })
+    return { meshes, tris }
+  }, [scene, material])
 
-  // Report the real height up so the camera frames THIS tree rather than a
-  // guessed one — a 31 m linden and a 6 m ornamental want different framings.
+  // Report the real extremes so the camera frames THIS tree. Box3.setFromObject
+  // walks the graph and respects node transforms — no vertex touching required.
   useEffect(() => {
-    if (!geometries.length) return
-    const box = new THREE.Box3()
-    let tris = 0
-    for (const g of geometries) {
-      g.computeBoundingBox()
-      if (g.boundingBox) box.union(g.boundingBox)
-      tris += (g.index ? g.index.count : g.attributes.position.count) / 3
+    if (!prepared) return
+    scene.updateMatrixWorld(true)
+    const box = new THREE.Box3().setFromObject(scene)
+    if (box.isEmpty()) {
+      console.error(`[TreeDiorama] ${url} loaded but measured EMPTY — nothing will draw.`)
+      return
     }
     // One line, same shape as InstancedTrees' roster log: what actually mounted.
     // A specimen that loads but draws nothing is the exact failure this surface
     // exists to catch, so it has to be legible without a debugger.
     console.log(
       `[TreeDiorama] ${url.split('/').slice(-2).join('/')} ` +
-      `parts=${geometries.length}${geometries.length === 1 ? ' (merged)' : ' (unmerged — divergent attrs)'} ` +
-      `tris=${Math.round(tris).toLocaleString()} height=${(box.max.y - box.min.y).toFixed(1)}m ` +
-      `attrs=${Object.keys(geometries[0].attributes).join(',')}`
+      `meshes=${prepared.meshes} tris=${Math.round(prepared.tris).toLocaleString()} ` +
+      `height=${(box.max.y - box.min.y).toFixed(1)}m`
     )
     if (onMeasured) {
       onMeasured({
@@ -157,24 +218,12 @@ function Specimen({ url, material, onMeasured }) {
         ),
       })
     }
-  }, [geometries, onMeasured, url])
+  }, [prepared, scene, onMeasured, url])
 
-  if (!geometries.length || !material) return null
-  return (
-    <group>
-      {geometries.map((g, i) => (
-        <mesh
-          key={i}
-          geometry={g}
-          material={material}
-          frustumCulled={false}
-          castShadow
-          receiveShadow
-        />
-      ))}
-    </group>
-  )
+  if (!prepared || !material) return null
+  return <primitive object={scene} />
 }
+
 
 /**
  * ShadowFocus — spend the shadow map on ONE tree.
@@ -272,13 +321,51 @@ function useDioramaBarkTier() {
 // ⚠️ Sized off the MEASURED specimen, so it tracks the tree rather than a
 // hard-coded radius: no measurement yet → no maps bound → today's render.
 const GROUND_ALBEDO = '#2d5a2d'   // grassMaterial's default `color`
+// ⭐ THE TRUNK'S OWN CONTACT — the ground half of the same gesture.
+// A solo specimen is read from a few metres away, so the map's defaults (blend
+// 0.55 over the lowest 1.5 m) are too soft and too tall here: they smear a pale
+// wash a third of the way up the bole. Tighter and darker reads as the trunk
+// sitting IN the ground rather than on it (Jacob, 2026-08-23: "a similar one on
+// the trunk"). ⛔ Set through the SHARED knob, not a local uniform — so street
+// view inherits it by turning it up rather than reimplementing it, which is the
+// standing rule for anything this surface gains.
+// Dial by eye: `?trunk=` (0-1 strength) and `?trunkTop=` (metres).
+function useDioramaTrunkGround() {
+  useEffect(() => {
+    let blend = 0.8, blendTop = 0.75, shadowStr = 0.95
+    try {
+      const q = new URLSearchParams(window.location.search)
+      const b = parseFloat(q.get('trunk'));    if (Number.isFinite(b)) blend = b
+      const t = parseFloat(q.get('trunkTop')); if (Number.isFinite(t)) blendTop = t
+    } catch { /* no URL, no dial */ }
+    const applied = setTrunkGround({ blend, blendTop, shadowStr })
+    console.log('[TreeDiorama] trunk-ground', applied)
+    // Restore the map's defaults on unmount — this is a SHARED uniform.
+    return () => setTrunkGround({ blend: 0.55, blendTop: 1.5, shadowStr: 0.5 })
+  }, [])
+}
+
 function useDioramaGround(measured, alpha) {
   const ground = useMemo(() => {
     if (alpha || !measured) return null
-    // Ring radius from the canopy, floored so a narrow columnar tree still
-    // gets a contact. Half-extent of the square the maps cover.
+    // ⛔ SIZE THE RING TO THE TRUNK, NOT THE CANOPY. A contact ring is the
+    // darkening where the trunk meets the ground — it wants to hug the base.
+    // Sized off canopy spread it came out at 12 m, which dimmed the ENTIRE
+    // visible lawn evenly and read as "no ring at all" (measured 2026-08-23:
+    // the maps were bound and the material rebuilt; the falloff was just far
+    // wider than the frame). The sun's cast shadow is StageShadows' job and is
+    // much larger; this is only the contact.
     const spread = measured.spread || (measured.height || 12) * 0.35
-    const half = Math.max(spread * 1.15, 2.5)
+    // Jacob, 2026-08-23: "darker, tighter ring at the base." `?ring=` scales it.
+    let ringScale = 1
+    try {
+      const v = parseFloat(new URLSearchParams(window.location.search).get('ring'))
+      if (Number.isFinite(v)) ringScale = Math.max(0.1, v)
+    } catch { /* no URL, no dial */ }
+    // ⚠️ "Tighter" is a SHARPER EDGE, not a smaller radius: at 0.11×spread the
+    // pool was ~1 m and vanished behind the trunk flare entirely. Keep the
+    // footprint readable and make the falloff hard instead.
+    const half = Math.max(spread * 0.22, 1.8) * ringScale
     const N = 128
     const c = document.createElement('canvas'); c.width = c.height = N
     const ctx = c.getContext('2d')
@@ -287,9 +374,13 @@ function useDioramaGround(measured, alpha) {
     const g = ctx.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N / 2)
     // Dense at the trunk, gone by the canopy edge — a contact cue, not a
     // drop-shadow. The sun-driven shadow is StageShadows' job; this is AO.
+    // Dense against the bole, gone within a couple of trunk radii.
+    // Dark and near-flat across the pool, then a hard shoulder — reads as
+    // contact occlusion rather than a soft vignette.
     g.addColorStop(0.00, 'rgba(0,255,0,1)')
-    g.addColorStop(0.18, 'rgba(0,255,0,0.72)')
-    g.addColorStop(0.55, 'rgba(0,255,0,0.20)')
+    g.addColorStop(0.38, 'rgba(0,255,0,0.95)')
+    g.addColorStop(0.62, 'rgba(0,255,0,0.55)')
+    g.addColorStop(0.84, 'rgba(0,255,0,0.14)')
     g.addColorStop(1.00, 'rgba(0,255,0,0)')
     ctx.fillStyle = g; ctx.fillRect(0, 0, N, N)
     const fx = new THREE.CanvasTexture(c)
@@ -556,6 +647,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   const [measured, setMeasured] = useState(null)
   const ground = useDioramaGround(measured, alpha)
   useDioramaBarkTier()
+  useDioramaTrunkGround()
 
   const url = `${import.meta.env.BASE_URL}baked/${look}/trees/${sp}/skeleton-${vr}-lod${ld}.glb`
 
@@ -614,8 +706,10 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       {!alpha && <CloudDome />}
       <WeatherEffects />
 
-      {/* The canopy moves off the same wind that moves the clouds. */}
+      {/* The canopy moves off the same wind that moves the clouds — and a
+          breeze FLOOR beneath it, because the directive carries no wind yet. */}
       <SwayDriver />
+      <DioramaWind />
 
       {!alpha && <Ground fx={ground} />}
       {/* ⭐ THE PRODUCTION CHAIN — AO, the authored grade, bloom. Jacob: "the AO
