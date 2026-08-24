@@ -290,6 +290,8 @@ LiDAR work order) · `STAGE0-KEYSTONE.md` · `LIBRARY-BUILDER.md` (frozen Stage-
 · `ROSTER-COVERAGE.md` (a hand-typed tracker of what `GET /coverage` now computes live).
 **Each declared itself superseded in its own opening line.**
 
-⚠️ **Those docs are not yet conformed to this page.** Where one disagrees with this one,
-⛔ **check the code, not either document** — then fix whichever is wrong. The outstanding
-list is `LEDGER-exorcism-wren.md §C`.
+✅ **Conformed to this page on 2026-08-23** — the false claims are excised, the retired tracks are
+archived, and the dead paths are repointed. ⛔ **That does not make them true forever: where one
+disagrees with this page, check the CODE, not either document**, then fix whichever is wrong
+(`CLAUDE.md` — the docs and the code are each other's smell detector).
+⚠️ **`OPERATIONS.md` still does not exist**; operator knobs live in `FEATURES.md`.

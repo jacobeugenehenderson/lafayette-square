@@ -20,7 +20,14 @@
 
 Per-species runtime artifacts under `public/trees/<species>/`:
 
-- `skeleton-N.glb` — one published variant per `N`, baked at 3 LOD tiers (`skeleton-N-lod0.glb` / `lod1` / `lod2`)
+- `skeleton-N.glb` — one published variant per `N`, at 3 LOD tiers (`skeleton-N-lod0.glb` / `lod1` / `lod2`)
+  - ⭐ **`lod0` is the SOLO lod** (2026-08-23): nothing in the map loads it — `InstancedTrees#lodForRole`
+    returns `lod1` for every role — so its only consumers are the Grove tile, the diorama/embed and the
+    coming street view, each showing ONE tree. It is therefore emitted **pristine**, before the
+    destructive decimation levers and with no bracket simplify, and **matches the Salon's own build
+    exactly**. ⛔ Do not re-cut it for weight: the bracket exists to bound INSTANCED cost.
+  - `lod1` is the SHIP lod — the map's mesh anchors AND the source every impostor is captured from.
+  - ▶ `python3 scratch/_wren-glbstat.py public/trees/<sp>/skeleton-1-lod0.glb`
 - `tips-N.json` — leaf-anchor positions for per-instance jitter / wind
 - `manifest.json` — per-species metadata: variant list, `quality` / `qualityOverride`, `bark` spec (photo-PBR material ref + tint defaults + uvScale), `leafCluster` ref (per-hero), `deformer.range`, and **botanical mature height in meters** (2026-06-25 — `publish-glb.js#normalizeScale` targets the species' dossier `chassis.size`, so a sugar maple ships ~21m and a dogwood ~8m; `mature-heights.json` is the stopgap for roster species without a full dossier yet — see ARCHITECTURE "Botanical mature height")
 - `public/trees/index.json` — roster index aggregating all species
@@ -36,7 +43,7 @@ These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The
 
 ---
 
-## Authoring surface: Salon is default; Procedural / LiDAR are kept peer tracks; Scan is legacy
+## Authoring surfaces — the Salon composes; ⛔ Procedural / LiDAR / Scan are RETIRED
 
 > 🌳 **Doctrine (2026-06):** **Authored-only (Salon) is the active track; Procedural + LiDAR are kept as equal PEER tracks** (reachable, not retired). Only the **Scan** Workstage is genuinely legacy/deprecating. Where the prose below calls Procedural/LiDAR "legacy," read "peer track (kept), reachable via `?legacy=` dev-fallback URL."
 
@@ -44,70 +51,20 @@ These are the contract the deployed runtime (`InstancedTrees.jsx`) consumes. The
 
 The four authoring paths (Salon + the three legacy modes) all share the same publish pipeline and the same per-Look atlas pass. The chrome flattened; the publish contract did not change. Below, each path is documented; Salon is the operator's canonical surface as of 2026-05-23.
 
-### Scan mode (`src/arborist/Workstage.jsx`)
+### ~~Scan · Procedural · LiDAR modes~~ — ⛔ RETIRED 2026-08-23
 
-The original LiDAR-based authoring flow: pick a species, filter candidate specimens from `tree_metadata_dev.csv`, tune voxel size / min radius / tip radius in the SpecimenViewport, save the seedling library, run `python bake-tree.py --species=<id>`. The single workstage has:
+⛔ **We are not using procedural or LiDAR** (Jacob, 2026-08-23). Their knob tables, layouts,
+extraction loops and endpoints are retired to `_archive/FEATURES-procedural-lidar-2026-08-23.md`.
+The three workstages remain on disk and **are still compiled into the deployed bundle** —
+removal is a separate job, scoped in `LEDGER-exorcism-wren.md §B`.
 
-| Region | Purpose |
-|---|---|
-| Top pickers | Active species, specimen (filtered table), variant slot |
-| Center | 3D viewport — point cloud → QSM overlay → leaf preview |
-| Side | Tune panel (voxel size, min radius, tip radius), preview-tint knob, label override |
-| Bottom | Save (commits seedling), Bake (runs `bake-tree.py`) |
+### Shelves (`src/arborist/ShelvesWorkstage.jsx`, `?legacy=shelves`)
+Curate the SUPPLY: browse all chassis and assign each ONE of the nine habits, so a species can
+land on the right shelf. ⚠️ **This is the app's real bottleneck** — only a handful of chassis are
+RATIFIED, and most of the rest carry a value GUESSED from the chassis's own `source.species`, which
+the keying doctrine says keys nothing. `ORIENTATION.md §2`.
+▶ `node -e "const p=require('./arborist/state/part-index.json').parts.filter(x=>x.partType==='chassis');const h=x=>x.tags?.['chassis.habit'];console.log('ratified',p.filter(x=>h(x)?.ratified).length,'| valued',p.filter(x=>h(x)?.value).length,'| of',p.length)"`
 
-Workflow: `pick → tune → save seedling → repeat ~10 times → bake species`.
-
-### Procedural mode (`src/arborist/ProceduralWorkstage.jsx`, shipped 2026-05-15)
-
-In-Arborist authoring for the five procedural morphology fillers + the five Phase G hero species. **Dice-and-adopt, not slider-tune** — procedural trees produce unique topology per seed, so the workflow is roll-the-dice-until-good. Each species carries ~3 adopted variants; per-instance runtime jitter (Y-rotation, independent XZ + Y scale, hue shift, wind phase) provides visible diversity across LS's 745 placements.
-
-**Layout (post-Phase-C, 2026-05-16):** single-focused viewport + slot tabs. Slot tabs strip in the header (with a dirty-dot indicator); one focused card filling the main area; viewport as `flex: 1` left; 300-px controls rail right. This replaced the earlier Phase A/D grid-of-cards layout, which cropped vertically-composed silhouettes (columnar / weeping). Tab switcher is the only new affordance — the controls themselves are identical to the Phase D set.
-
-**Per-slot controls rail — 21 knobs across 5 sections** (updated through 2026-05-19):
-
-| Section | Knobs | Notes |
-|---|---|---|
-| **Trunk** | DBH (5–100 cm) | Trunk diameter at base. Top-level scalar param. |
-| **Envelope** | Profile, Width, Height, Asymmetry, Drape | Drape (was "Y offset") hidden for non-weeping presets — it only has semantic meaning when the envelope hangs below the trunk top. |
-| **Canopy** | Start, Scaffolds, Spread, Phyllotaxis, Architecture, Leader strength, Lift, Density, Fill | Architecture dropdown (spreading / strong-leader) selects the iter-0 SCA seeding mode — spreading=apical N scaffolds (oak/elm/dogwood); strong-leader=lateral scaffolds at distributed Ys along an axial trunk that threads through the crown (maple/ash/basswood, Rauh's botanical model). Leader strength visible only in strong-leader (controls how far axial extends + the per-scaffold sustained +Y tropism magnitude). Spread + Lift hidden in strong-leader — the per-scaffold localTropism takes over. Phyllotaxis (alternate/opposite) is orthogonal to Architecture and composes. |
-| **Deformers** | Trunk wander (cm), Wavelength (m), Branch jitter (%), Bark relief (%) | Operator-tunable organic noise. Trunk wander is a deterministic XZ sinuosity applied to both the visible trunk shaft and the SCA axial extension so the canopy attaches cleanly. Branch jitter perturbs each SCA spawn perpendicular to the pull line. |
-| **Tropism** | X / Y / Z | Per-axis gravity bias for SCA growth direction. |
-
-**Per-slot actions** (footer row):
-
-- 🎲 **Dice** — re-roll seed; viewport thumbnail updates from a fresh `POST /procedural/generate` (blob-URL'd GLB)
-- ↺ **Reset** — clear the operator overlay for this slot; persists `{}` to disk, refetches `effective`; sliders snap back to PRESETS defaults
-- ✓ **Adopt** — write `{slot, seed, params}` overlay to `arborist/state/procedural_<species>/seedlings.json`
-- **Seed** input (manual integer entry)
-- **Re-publish species** (species-level, in the workstage footer; blocked until all dirty slots adopted)
-
-All sliders use a local `DraftSlider` (150ms idle commit + pointer-up final commit) — same pattern as cartograph's `DraftRangeInput`. Controlled selects (Phyllotaxis, Profile) read from the store-mirrored `effective` value so operator choices reflect immediately without a server round-trip.
-
-**Floating viewport overlays** — three corners, three categories: viewing conditions, preview fidelity, instrumentation. None of them mutate the tree; all are local to the workstage session.
-
-- **Wind** (bottom-left). Toggle + strength slider (0–2). Two-layer sway — wood gets a slow height-falloff sway, leaves layer a high-frequency flutter on top. Operator-tunable in the workstage; production wind in `treeAtlasMaterial.js` is Phase W proper (still pending). Viewing condition.
-
-- **Preset cameras** (top-left, second row — Brief 13 Vantage 2026-05-23, refined same session). Two buttons: **Overhead** (literal top-down plan view — camera directly above the trunk at `treeH+20`, looking at `(0,0,0)`; yardstick + canopy fan-out visible in plan) and **Ground** (existing studio framing, default). The bark-shader tier (Brief 10's `uBarkShaderTier`) is auto-bound from the active preset + camera distance per-frame inside `DollyCam`: Overhead → tier 0 (aerial); Ground with distance > 20m → tier 1 (hero); Ground with distance < 20m → tier 2 (street). Threshold tunable; first-pass 20m. The Ground mode preserves the existing Option+drag (crane + Y-rotate), wheel zoom (distance), shift+wheel (height), and arrow-key cranes — operator wheels in from 25m → 18m and watches the bark shift from hero to street live. Overhead routes non-shift wheel to altitude so wheel-zoom does the intuitive plan-view thing. `window.__setBarkShaderTier(n)` (Cork's debug setter) now PINS the tier, suspending auto-bind so the operator can verify cross-pairs ("what does street tier look like from overhead camera"); `window.__releaseBarkShaderTier()` restores auto-bind. **LS-runtime parity (Brief 11 lightweight, Plumb 2026-05-23)**: the same tier auto-bind fires in production via `TierDriver` in `InstancedTrees.jsx`, with the discriminating signal swapped to camera altitude (`y > 150 → 0`, `y < 5 → 2`, else 1, calibrated against `Scene.jsx` PRESETS). Pin/release works across both surfaces — pinning in Salon devtools sticks across LS frames.
-
-- **LoD selector** (top-right, **Procedural-only** as of Brief 13 refinement 2026-05-23 — Salon retired it per the "Salon authors at raw fidelity, geometry LoD is a deploy concern" doctrine; Brief 6's adaptive bake pipeline owns LoD generation downstream). Three buttons (0 / 1 / 2) that re-fetch the preview at the corresponding simplification ratio. `POST /procedural/generate` carries the `lod` field; the server runs gltf-transform's `weld → dedup → simplify` with `MeshoptSimplifier` at the same ratios `publish-glb.js` uses (lod1 ratio 0.40 / err 0.002, lod2 ratio 0.10 / err 0.008). Active button gets the amber accent matching the Re-publish chrome; disabled while a preview is regenerating. State lives at `ProceduralWorkstage` scope so the choice survives slot-tab switches. Preview fidelity dial.
-
-- **Perf gauge** (bottom-right). Four-row readout sampled ~4 Hz by a read-only `<PerfProbe />` r3f child mounted inside the viewport's `<Canvas>`.
-  - `tris` — total triangle count across the loaded scene. Color zones at LoD0: green < 20k, yellow 20–40k, red > 40k. Zones scale × 0.5 at LoD1 and × 0.2 at LoD2 to mirror publish-glb's simplification ratios.
-  - `leaf cards` — `geometry.userData.atlasKind === 'leaf'` vertex count divided by 4 (each card is a 4-vert quad).
-  - `draw calls` — `gl.info.render.calls`.
-  - `programs` — `gl.info.programs.length`. Author-time tripwire: flagged red if > 5 to catch accidental shader-program divergence (per [[feedback_unique_program_cache_key_before_wrappers]]); should stay at the shared-tree-material count regardless of slot or LoD.
-  PerfProbe renders nothing — it can't pollute the count it measures. Instrumentation readout. ⚠️ **This (and the Preview GPU gauge) is a count-vs-interim-fake-budget readout, NOT a frame-ms perf signal** — the LS-side gauge reads red even with no trees and drove a reverted tree-degradation arc. Real tree perf is gated on device frame-ms + the operator's eye on the cinematic pan (2026-06-25; see ARCHITECTURE "Tree-render reality").
-
-**Conifer panel** (Phase E, pending): whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge. Hidden today.
-
-**Bark panel** (Phase B.1.b, deferred): material dropdown w/ thumbnails, UV scale X/Y sliders, tintBase color picker, tintJitterRange + roughnessOverride sliders, "Apply & republish species" button. Indefinitely deferred per 2026-05-16 EOD doctrine — bark authoring iteration value is bounded by the geometric ceiling Phase C addresses, not by UI surface.
-
-**Leaf panel** (Phase F, pending — reframed 2026-05-19 to vendor-pack binding + year-long tree doctrine; see `ARCHITECTURE.md` "Phase F leaf-color architecture"). Operator authoring as configuration, not creation:
-- **Shape pack picker** — dropdown of available leaf packs from `public/textures/leaves/shapes/`. Auto-suggested default from `arborist/leaf-pack-bindings.json` species→morphology→pack mapping (Sugar Maple defaults to LeafSet010; oak defaults to LeafSet016; etc.). Operator overrides if species has a specific authored pack.
-- **Annual cycle anchor editor** — author 4–6 season anchors (winter / spring-buds / summer-peak / fall-peak / late-fall / shed). Each anchor carries: `day` (0–365), `presence` (card alpha 0–1), `scale` (card size 0–1), optional per-season shape override, multi-stop gradient for leaf front and leaf back. Runtime samples `uDayOfYear` and interpolates between anchors — Sugar Maple peaks orange-red in mid-October by construction; Look-switching is a date pick, not a per-tree palette swap.
-- **Per-Look override packs** — for Looks that want art-direction (Halloween bats, Christmas candy canes, Diwali ornament gold), per-Look `scene.materialColors[<species>]` extension carries shape-pack + gradient overrides that pre-empt the year-long defaults.
-- **Occupancy slider** — alpha-density modulator for sparse-canopy species (honeylocust ~25%, oak ~70%, conifer ~95%).
-- **No** density/jitter/cluster-count sliders — those would be compositor knobs; the parametric compositor is dropped per the 2026-05-16 PS-authored reframe.
 
 ### Salon mode (`src/arborist/SalonWorkstage.jsx`, Brief 1 shipped 2026-05-21; roster-driven nav Brief 26; **rebuilt as the plate-rack 2026-06-25**)
 
@@ -174,42 +131,6 @@ Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR �
 
 **Bark plumbing (Brief 1.5a):** `generate-salon.js#patchManifestForSalon` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` after `publish-glb.js` completes, in the exact shape `bake-look.js#flatten` expects (`materialRef`/`uvScale`/`tintBase`/`tintJitterRange`/`roughnessOverride`). Runtime `InstancedTrees.jsx#applyBarkUniforms` then drives per-draw uniforms — the operator's tintBase / uvScale / roughnessOverride / per-instance jitter visibly land at LS. Single bark spec per species (procedural's model); per-composition bark texture variation lives in each variant's GLB. `qualityOverride: 4` (Hero tier) so Salon variants win their bucket's quality lottery vs the procedural fillers. Salon's `main()` also calls `syncLookRoster('lafayette-square', ...)` so the published variants appear in LS placements after the next bake-look + bake-trees (Brief 1 deferred this; 1.5a closed the loop).
 
-### LiDAR mode (`src/arborist/LidarWorkstage.jsx`, Phase L Cycle 1 shipped 2026-05-19; Cycle 2 Stage 1 shipped 2026-05-19 PM)
-
-Third top-level mode alongside Procedural + Grove. Operator browses LiDAR specimens of the active species (110 Sugar Maples in `botanica/dev/train/` alone), extracts QSM cylinder skeleton via tunable parameters, previews multi-layer point cloud + cylinders, saves seedling. **Publish** action (Cycle 2 Stage 1) runs the awaited chain `bake-tree.py → lidar-publish.js (LOD + manifest promotion + index rebuild) → roster-add → bake-look → bake-trees` and surfaces timings on success. Cycle 1 shipped browsing + extraction tuning + diagnostic viewport. Cycle 2 Stage 2/3 will add Configuration D canopy composition + Phase F annual-cycle integration.
-
-Per Option δ scope (locked 2026-05-19): LiDAR provides skeleton ONLY; the canopy is fully procedural. *(The scope split is what's locked — not the canopy renderer. This line named "Configuration D," a design retired 2026-06; trees ship **all-mesh** — see `ARCHITECTURE.md §Tree-render reality at LS`.)* Captures the trunk-shader-quality win (bark wraps onto authentic real-tree geometry) without LiDAR-canopy-point-sampling complexity. G.1 Sugar Maple hero ships as mixed roster (LiDAR-baked variants + procedural variants under `acer_saccharum_procedural`).
-
-Operator workflow per specimen: pick from filtered list (sorted by height descending, height + scan type as primary label, optional operator-given display name persisted to seedlings.json) → preview loads as point cloud → tune voxel/min-radius/tip-radius extraction params → see cylinder overlay color-coded by trunk-vs-branch region → save seedling → (Cycle 2) bake variant → publish to roster.
-
-Workspace render budget: desktop-class, single specimen at a time. Hi-res authoring; bake step handles knockdown to mobile LS runtime budget. See `ARCHITECTURE.md` "LiDAR pipeline + Option δ scope" for the full pipeline structure.
-
-**Cycle 1 layout (shipped 2026-05-19):**
-
-| Region | Purpose |
-|---|---|
-| Header | Active species dropdown (filtered to LiDAR-source species), auto-suggested leaf pack readout (`arborist/leaf-pack-bindings.json`-derived: species override wins → morphology fallback → first candidate; informational only — Cycle 2 binds via `bake-look.js`), `← Salon` (post-Brief-18A; was `← Library`). The Mode-toggle row retired — LiDAR reached via `?legacy=lidar` URL until Brief 18B merges its affordances into Salon's slot card. |
-| Specimen browser (left top) | Filter (display name substring OR height range like `8-12`), sorted by `treeH` descending. Each row: `✦/◯ {height}m {scanType} {displayName-or-tree-treeId}`. ✦ = saved seedling. Active row tinted amber. |
-| 3D viewport (right top) | Multi-layer composite: raw point cloud (`THREE.Points`, size-attenuated, cyan tint, ≤1M pts streamed from existing `/specimens/:treeId/preview.ply`), QSM cylinder overlay (two `InstancedMesh` draws split at median radius — trunk-like red, branch-like cyan, translucent). Layer toggle chips overlay top-left (Points / Cylinders / Skeleton only / Full preview) + Fit-to-specimen button. `OrbitControls`. |
-| Skeleton extraction (left bottom) | Three `DraftSlider`s — Voxel (m), Min radius (m), Tip radius (m) — 150ms idle commit + pointer-up final (per [[feedback_heavy_render_sliders_need_draft]]). Re-extract + Save seedling buttons. Specimen details subsection (treeId, scan type, height) + inline `display name (optional)` input that saves into `seedlings.json#displayNames[treeId]`. |
-| Statistics (right bottom) | Points loaded, cylinders, trunk/branch split, est. lod0 tris (trunk×16 + branch×12), tips, median radius, server ms, voxel-downsampled point count. |
-
-Extraction loop:
-
-1. Operator picks species + specimen → `GET /lidar/specimen/:treeId/seedling-state?species=<id>` pre-fills the tuner from saved `tuneParams` (else `config.tuneDefaults`) + the saved display name (else empty).
-2. First load auto-fires `POST /lidar/specimen/:treeId/extract` → server shells out to `lidar_extract.py` → cylinder graph + stats returned as JSON. Workstage renders the graph immediately.
-3. Operator drags voxel / min radius / tip radius sliders → on commit, Re-extract button glows; clicking it re-runs the extract. (Cycle 1 does not auto-re-extract on slider commit — explicit gesture per [[feedback_debounced_save_must_flush_before_dependent_post]] semantics.)
-4. Save seedling persists `{tuneParams, displayName}` for this treeId into `arborist/state/<species>/seedlings.json` via the existing `POST /species/:id/seedlings` endpoint. `displayNames` map merges: incoming keys win, absent keys preserved on disk.
-
-Cycle 1 endpoints used:
-- `GET /api/arborist/species/:id/specimens` (existing)
-- `GET /api/arborist/specimens/:treeId/preview.ply` (existing)
-- `POST /api/arborist/lidar/specimen/:treeId/extract` (new)
-- `GET /api/arborist/lidar/specimen/:treeId/seedling-state?species=<id>` (new)
-- `POST /api/arborist/species/:id/seedlings` (existing, extended to accept `displayNames`)
-
----
-
 ## Full monte (`?view=fullmonte` → `src/components/TreeDiorama.jsx`)
 
 **The first view anywhere in the product that shows a FINISHED tree.** One
@@ -240,15 +161,42 @@ be invisible because both would look plausible.
   nothing in that case rendered an empty sky. One `[TreeDiorama]` console line
   reports parts / merge state / tris / height on every mount, so "loaded but drew
   nothing" cannot be silent.
-- ◻ **Wind is mounted but still**: the sway driver reads the atmosphere
-  directive, and the meteorologist does not yet author wind into it. See
-  `ls/OPERATIONS.md §5`.
+### ⭐ It drives the shared material's state — the seam this surface kept falling through
+
+A bare `<Canvas>` mounts none of the drivers the map mounts, so every uniform the shared tree
+material needs sat at its module default and the specimen rendered on a path nobody chose. Fixed
+2026-08-23; **anything new that mounts this material must do the same four things:**
+
+| what | why it matters | driven in the map by |
+|---|---|---|
+| `applyBarkUniforms` per frame | ⛔ **without it `uBarkUVScale` stays (1,1) and the tiling NEVER RUNS** — one 512px bark tile stretched over a 20 m trunk, which is the whole of "there is no texture on this trunk" | `InstancedTrees:394` |
+| bark **tier → 2** | tier ≤1 REPLACES trunk diffuse with the posterized 16-colour substrate built for browse distance | `InstancedTrees:556` |
+| ground colour + FX maps | the trunk-base blend and the contact ring; both read the ground by world-XZ | `BakedGround:157,176` |
+| a wind **floor** | the directive carries no `wind` block, so `uWindIntensity` is 0 and the entire sway apparatus — per-tier damping, gust envelope, travelling spikes — never runs | the weather directive |
+
+⭐ **The specimen is rendered the SALON's way** — traverse, stamp attributes in place, assign the
+shared material, render the graph. ⛔ **It is not merged.** The merge is an `InstancedTrees`
+optimisation for 5,000 placements; on one tree it cost ~534k triangles of main-thread work per
+mount **and** made the geometry unquantizable (`applyMatrix4` writes floats into integer buffers).
+
+**Operator dials** (URL, all defaulting to the committed values):
+`?ring=` contact-ring footprint · `?trunk=` / `?trunkTop=` trunk-base darkening + reach ·
+`?wind=` / `?gust=` breeze · `?leafT=` / `?leafK=` leaf transmission · `?species=` `?lod=` `?variant=`
+
+⚠️ **The trunk-base contact is a SHARED knob** (`treeTrunkGround` + `setTrunkGround` in
+`treeAtlasMaterial.js`), defaulting to the map's values and restored on unmount — so street view
+inherits it by turning it up, never by reimplementing it.
+
+- ◻ **Wind is FLOORED, not authored**: the meteorologist still does not author a `wind` block into
+  the directive. ⛔ **And the tier classifier is backwards** — it buckets by distance from the trunk
+  AXIS, so outer branch tips damp to 0.30 while the upper trunk core reads "twig" at 0.60 and leaves
+  move 3× the branches they hang on. `BRIEF-tree-motion-and-light.md §1`.
 
 ## Grove (`src/arborist/Grove.jsx`)
 
 Per-Look roster curation. Reads `public/looks/<look>/design.json#/trees`; lets the operator scope `In Look` / `All Published`, click a tile to select it → toggle membership in the fixed editor panel, fires `/api/cartograph/looks/<id>/trees` + `/api/arborist/atlas/bake?look=<id>` automatically. **The Grove is how operators prune heavy hand-authored variants from a Look — not by editing design.json directly.**
 
-**Population is roster-driven (Brief 27, Scion 2026-05-25).** The Grove is populated by **published Salon compositions**, not a "rate it, then add it" gallery. Compose a species in the Salon and **Re-publish** → `generate-salon.js#patchManifestForSalon` stamps the variant Hero (`qualityOverride: 4`) and `syncLookRoster` adds it to the active Look's `design.json#/trees` → it appears in the Grove **In Look**, no manual rating step. Visibility = **published-and-in-roster**, never a Fill/Mid/Hero rating the operator must set. The `GET /grove` gate (`serve.js`, `quality < 2` skip) survives only as a **published-not-raw-chassis** filter — raw ingested vendor chassis stay at quality 0 and are kept out; published compositions are always Hero so they pass. (The per-tile rating ladder in the editor panel stays — it still authors `qualityOverride`, which feeds `bake-trees.js#pickVariant`'s hero-lottery via `index.json` — but it no longer gates Grove visibility. Whether that lottery is still meaningful under one-composition-per-roster-species, and an explicit `v.published` marker to decouple the gate from the rating *value*, are deferred follow-ups.)
+**Population is roster-driven (Brief 27, Scion 2026-05-25).** The Grove is populated by **published Salon compositions**, not a "rate it, then add it" gallery. Compose a species in the Salon (edits autosave; ⛔ there is no Re-publish gesture) → the Grove bake regenerates it, `patchManifestForSalon` stamps the variant Hero (`qualityOverride: 4`) and `syncLookRoster` adds it to the active Look's `design.json#/trees` → it appears in the Grove **In Look**, no manual rating step. Visibility = **published-and-in-roster**, never a Fill/Mid/Hero rating the operator must set. The `GET /grove` gate (`serve.js`, `quality < 2` skip) survives only as a **published-not-raw-chassis** filter — raw ingested vendor chassis stay at quality 0 and are kept out; published compositions are always Hero so they pass. ⛔ **(2026-08-23: the editor panel's rating / category / notes controls have NEVER been written to — 0 of 37 variants carry any of them. ▶ `node -e "const v=require('./public/trees/index.json').variants;console.log(v.filter(x=>x.qualityOverride!=null).length,v.filter(x=>x.operatorNotes).length,v.filter(x=>x.categoryOverride!=null).length,'of',v.length)"` The 0–4 scale was retired for Promote/Demote on 2026-07-08 and the vocabulary never landed.)** (The per-tile rating ladder in the editor panel stays — it still authors `qualityOverride`, which feeds `bake-trees.js#pickVariant`'s hero-lottery via `index.json` — but it no longer gates Grove visibility. Whether that lottery is still meaningful under one-composition-per-roster-species, and an explicit `v.published` marker to decouple the gate from the rating *value*, are deferred follow-ups.)
 
 **Authoring/production gesture split (Brief 14, Lintel 2026-05-23; extended Brief 14.1, Corbel 2026-05-25):** the Grove bake is now the *explicit* ship-to-slab gesture. Both authoring Re-publish paths — **Salon** (Brief 14) and **Procedural** (Brief 14.1) — stage species artifacts to the library (authoring side) but no longer auto-bake; baking the master atlas / slab is a separate, intentional Grove action. **Updated 2026-06-25:** edits now **autosave** and the **Grove bake regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`, `15682e55`), so the explicit per-species **Re-publish is retired** — the workflow is **author (autosaves) → Grove "Bake → Slab" (regenerates + ships).** This still keeps the operator's mental model clear about when LS actually changes (only on the bake). Per `project_authoring_is_live_production_is_static`. (The Vellum posterized-substrate auto-extract rides `bake-look.js`, so it now fires on the Grove bake — correct, extraction stays tied to the bake step.)
 
@@ -261,7 +209,7 @@ The Grove's master atlas (`bake-look.js:unifyAtlases`) is the load-bearing innov
 The Grove header carries a top-level view toggle:
 
 - **Gallery** — the by-model 3D crop (per-Look `In Look` / `All Published` scope + click-to-select editor panel). All roster-curation behavior lives here. **Per-tile editing is click-to-select → a fixed right-rail `GroveEditorPanel` (Brief 31, Cleat 2026-05-25), retiring the camera-chasing `<Html>` hover-card.** (Brief 27 retired the Fill/Mid/Hero quality filter — every published composition is Hero, so the filter was inert.)
-- **Coverage** (`src/arborist/CoverageView.jsx`) — a **read-only**, roster-anchored "have vs need" table. One row per *canonicalized* Lafayette Square park species (from `src/data/park_trees.json`), sorted by placement count descending, each tagged 🟢 **literal** / 🟡 **composite** / 🔴 **gap**, with the covering library species and the current `park_species_map.json` routing. It reproduces, live, the join hand-maintained in the live `GET /coverage` join (`arborist/roster-coverage.js`). Computed by `GET /coverage`; writes nothing.
+- **Coverage** (`src/arborist/CoverageView.jsx`) — a **read-only**, roster-anchored "have vs need" table. One row per *canonicalized* park species (from the scene's `cartograph/data/<scene>/clean/park_census.json`), sorted by placement count descending, each tagged 🟢 **literal** / 🟡 **composite** / 🔴 **gap**, with the covering library species and the current `park_species_map.json` routing. It reproduces, live, the join hand-maintained in the live `GET /coverage` join (`arborist/roster-coverage.js`). Computed by `GET /coverage`; writes nothing.
 
 **Coverage classification (derived on the fly, never persisted — slab provenance is the separate Brief 25):**
 - 🔴 **gap** — the species has no `park_species_map` routing to any *existing* library species (no published manifest, no chassis, no composition). This is the roster-anchored shopping list.
@@ -287,7 +235,7 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 | `GET` | `/specimens/:treeId/preview.ply` | Stream a `.laz` as PLY for the viewport (cached) |
 | `POST` | `/species/:id/bake` | Run `python bake-tree.py --species=<id>` |
 | `DELETE` | `/species/:id` | Remove published artifacts + state |
-| `GET` | `/inventory` | Species histogram from `src/data/park_trees.json` |
+| `GET` | `/inventory` | Species histogram from the scene's census |
 | `GET` | `/coverage` | **Read-only (Brief 24, Cadastre):** roster-anchored have-vs-need join, computed by the shared `arborist/roster-coverage.js#computeCoverage` (lifted from inline in Brief 26). Canonicalized park species (`park_trees.json` merged via `roster-name-canon.json`) × library (`index.json` + `_chassis/*.meta.json` + `state/*/compositions.json`) × routing (`park_species_map.json`). Returns `{summary, species:[{species,count,mergedFrom,coverage,covering,routing,mapMissing,dangling, canonicalId,recommendedChassis,authoringState,publishedCanonical}]}`. Provenance derived on the fly. Powers the Grove Coverage view (Brief 24) + the Salon roster navigator (Brief 26). |
 | `POST` | `/coverage/:rosterName/routing` | **Brief 26 (Cadastre 2026-05-25):** the ONE `park_species_map.json` write. Body `{canonicalId}` → `map[rosterName]=[canonicalId]` (composed); `{notAvailable:true}` → `map[rosterName]=[]` (deliberate gap). Mirrors the value onto the merge table's raw aliases so `bake-trees#pickVariant` routes every placement. Preserves `_doc`/`_libraryAt` + key order. |
 | `GET` | `/procedural/species` | List of procedural species + hero entries |
@@ -316,7 +264,7 @@ Mounted under `/api/arborist` from the web app via Vite proxy.
 | `node arborist/generate-salon.js [--species <id>]` | Headless Salon republish; reads `arborist/state/<species>/compositions.json` overlays + chassis-defaults + kit DEFAULTS |
 | `node arborist/survey-deleaf.js` | Regenerate the gitignored chassis library at `public/trees/_chassis/` (Whittle, Brief 0). Brief 1 acceptance-testing depends on this. |
 | `node arborist/bake-look.js --look <id>` | Re-pack per-Look master atlas + emit `trees-atlas.json` |
-| `node arborist/bake-trees.js --look <id>` | Substitute placements onto the Look's roster + emit `public/baked/<look>/trees/...` |
+| `node arborist/bake-trees.js --scene <name>` | Place the NEIGHBOURHOOD's census + emit `public/baked/<look>/trees/...`. ⛔ `--scene`, not `--look` — renamed 2026-07-15; it always meant the scene. |
 | `node arborist/republish-all.js` | Walk every species and re-emit through the full pipeline |
 | `python arborist/bake-tree.py --species=<id>` | Bake one species's LiDAR seedling library (Scan mode) |
 

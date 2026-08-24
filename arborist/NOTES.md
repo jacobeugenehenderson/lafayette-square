@@ -42,14 +42,18 @@ A long, load-bearing session. Three arcs: **(A)** fix what shipped wrong at HiPo
 
 ---
 
-## 2026-06-25 (EOD) — tree-render reality: trees ship ALL-MESH; the impostor/LOD-tier arc is PARKED; the GPU gauge is not a perf signal
+## 2026-06-25 (EOD) — ⛔ ENTRY EXCISED 2026-08-23
 
-Three things settled tonight that supersede the in-flight impostor-tiering guidance in `arborist/ARCHITECTURE.md §"Tree-render reality at LS"` (kept as the FORWARD plan, but its "Phase A/B LANDED" deltas are now reverted):
+This entry declared **"trees ship ALL-MESH; the impostor arc is PARKED"**. It was true when written
+and was superseded on 2026-07-22 by the impostor foundation — but it outlived its correction and
+**cost a month of wrong belief** (`BACKLOG.md`, fixed there in `c8c85a1a`; two further copies lived
+on in `ARCHITECTURE.md` and here until now). The two other things it settled are still true and live
+elsewhere: **botanical heights ship** (`publish-glb.js#normalizeScale`) and **the GPU gauge is not a
+perf signal** (`ARCHITECTURE.md §Tree-render reality at LS`). Full text: `_archive/`.
 
-- **Trees ship ALL-MESH in production.** `bake-trees.js#HERO_TIER.PROM_THRESHOLD = 0` ("⭐ DEMO / SHIP 2026-06-25: EVERY visible tree → full MESH") — the full-foliage forest (real mesh trees, per-tile frustum cull + occlusion cull) is what's live. The earlier aggressive `PROM_THRESHOLD = 0.06` Phase-A bake (mesh 469→92, the rest → impostor) is **reverted** to 0 (all-mesh) — that's the demo/ship state.
-- **The impostor / opaque-shell / render-to-texture-capture arc is PARKED, not deleted.** The captured-impostor + opaque-articulated-shell + RTT capture code crashed the prod build (it was dev-only) and was kept out of the production render path. The plumbing remains on disk **dormant**: `arborist/bake-impostors.js`, `src/components/impostorGeometry.js`, and `InstancedTrees.jsx`'s `ImpostorSpecies` / `lodForRole` seam exist, but `lodForRole` returns `'lod1'` for every role and nothing is tagged impostor (PROM_THRESHOLD 0), so the impostor render never fires. The FUTURE plan — impostors as authored Salon entries fed by real-tree render-to-texture — is the forward-pointer in `arborist/ARCHITECTURE.md §"Tree-render reality at LS"` + the approved plan. ⛔ Treat the aggressive impostor-tiering guidance (per-device bands, Phase-A/B prominence dials) as **superseded/parked**, not current.
-- **The GPU "gauge" is NOT a perf signal — gate perf on real device / frame-ms.** The emulator gauge is a count-vs-INTERIM-FAKE-budget verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole degradation arc (the impostor-tiering "the gauge is red, geometry must go" reasoning) that was then reverted. The real instrument is the device frame-ms + the operator's eye on the cinematic pan ([[feedback_instrument_verdict_then_fix]], [[feedback_proxy_render_is_not_the_operator_eye]]). Fixing the gauge's fake budgets is a backlog item, not a render-degradation trigger.
-- Also settled this session: **botanical heights ship** (`publish-glb.js#normalizeScale` → dossier `chassis.size`, `mature-heights.json` stopgap, `bac11a43`) and the **tree-float root cause** was the lod2 browse trunk-cut shown at a shallow angle, not terrain (`_archive/TREE-GROUND-ELEVATION-FORENSIC-2026-06-25.md`) — moot now that all roles render lod1 (full trunk).
+⭐ **The lesson, which is why this stub exists at all:** a correction banner next to a false sentence
+does not retire it. **Excise the sentence.**
+
 
 ## 2026-06-25 — the Salon-interface rebuild: rubric-forward "fashion plates" + the part model + a deep vestigia sweep
 
@@ -166,7 +170,7 @@ A long session connecting the Arborist to the slab, then chasing the leaf-size k
 
 ## 2026-07-22 — the impostor foundation lands; density restored at three layers; the SSoT trim
 
-**Render.** `hero-impostor-foundation` (Slat, 21 commits, Phases 0–2) merged to trunk (`3e809a56`). The impostor is now the **foundation** — every tree paints, the tallest slice keeps mesh as anchors, and the hero-pan **cull is retired** (it was dropping 69% of placements onto bare ground). Both impostor systems are live, split by viewing hemisphere. **This supersedes the 2026-06-25 "trees ship ALL-MESH / the impostor arc is PARKED" entry below** — do not read that entry as current. Single source of truth for render state, from here on: **`ARCHITECTURE.md §"Tree-render reality at LS"`**; every other doc holds a pointer, not a copy.
+**Render.** `hero-impostor-foundation` (Slat, 21 commits, Phases 0–2) merged to trunk (`3e809a56`). The impostor is now the **foundation** — every tree paints, the tallest slice keeps mesh as anchors, and the hero-pan **cull is retired** (it was dropping 69% of placements onto bare ground). Both impostor systems are live, split by viewing hemisphere. *(The 2026-06-25 "ALL-MESH" entry it superseded is excised — 2026-08-23.)* Single source of truth for render state, from here on: **`ARCHITECTURE.md §"Tree-render reality at LS"`**; every other doc holds a pointer, not a copy.
 
 **Placement — two independent suppressors, both fixed.**
 1. **Census wells weren't unioned.** LS baked 729 placements, 100% `source:'park'`, while its own `park_trees.json` (2,635) and `osm_trees.json` (3,376) sat unread. Two entry points had drifted: the resolver omitted `park_census.json`, and `bake-trees`' default read *only* `park_census.json`. Both now resolve the same union off `SOURCE_BY_BASENAME`. [[project_tree_census_wells_must_union_all]]

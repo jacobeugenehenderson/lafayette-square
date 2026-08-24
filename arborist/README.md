@@ -1,31 +1,14 @@
-# Arborist
+# Arborist — the contract
 
-> 🧭 **New here? Read [`ORIENTATION.md`](ORIENTATION.md) first** — the agreed end-to-end mental model (Cartograph census ⇄ Arborist [Library → Salon → Grove] → bake → Slab → Reader), the boundary law, the two daylight seams, and an honest live-vs-parked state. This README is the **contract** (inputs/outputs, API, CLI); ORIENTATION is the **model**. *(2026-07-07 — the doc-consolidation this front-door pass kicks off will conform the sections below to it.)*
+> 🧭 **The front door is [`ORIENTATION.md`](ORIENTATION.md)** — what the Arborist is, the seven
+> surfaces, which artifact each one reads, the pipeline, and what is done / owed / abandoned.
+> **This file is only the CONTRACT**: inputs, outputs, endpoints, CLI.
+> *(Conformed 2026-08-23. It used to carry its own `⭐ START HERE` and read-order — a second front
+> door, which is the disease `ORIENTATION` names in its own opening. Excised.)*
 
-The **tree kit** for the neighborhood — the helper that turns curated parts into the trees standing in Lafayette Square (and the next town after). It is the **Forest Builder kit-matcher**: one shared botanical vocabulary → robust species dossiers → parts auto-tagged on ingest → a matcher that turns a species name into ranked workable parts → the operator picks + tunes → the publish/bake spine pours them into the slab the public app renders.
+⛔ **Procedural and LiDAR are RETIRED** (Jacob, 2026-08-23), not "kept peer tracks". Anything below
+that implies otherwise is stale — say so rather than working from it.
 
-> 🎯 **The goal** (everything below serves it): **the LS trees render reliably and look as good as possible.** "Reliably" = the same authored tree bakes to the same slab every time, no vanishing leaves, no stale-cache surprises. "As good as possible" = correct silhouette, bark, and leaves (size · arrangement · color · season), across the species that fill the real park.
-
-> 🌳 **Doctrine (locked, 2026-06-18/20; render line updated 2026-07-22):** the kit-matcher is the Arborist's **front** — it rides the **kept** publish spine, it does **not** fork it (`feedback_no_parallel_pipeline_for_scenes`). **no-cull** — every tree draws, at every distance: the **impostor is the foundation** (all trees paint as captured canopy billboards) and geometry is an **enhancement on the tallest ~15%**. The hero-pan prominence cull is **retired** — it was dropping 69% of placements onto bare ground. **Authored-only** is the active track; **LiDAR + Procedural are kept as equal peer tracks** (reachable, not retired). Leaf **size** and **color** are **rubric axes**, not patches. → `ARCHITECTURE.md "Tree-render reality at LS"`.
-
----
-
-## ⭐ START HERE — what the Arborist is, now
-
-The Arborist has two layers:
-
-1. **The publish spine (built, ridden unchanged)** — `generate-salon → publish-glb → bake-look (single master atlas) → bake-trees → the slab → InstancedTrees`. This is the machine that turns an authored recipe into LS trees. It is **kept**; nothing forks it.
-2. **The kit-matcher front (the current build)** — the organizing / findability / authoring layer on top: the **rubric** (shared vocabulary), **dossiers** (robust species entries), the **matcher** (ranked workable parts), **Coverage** (per-part readiness), the **Library** (the parts), and the **Salon** (the authoring viewer). This is what the canon never coherently built before; it is being built now.
-
-**Design rationale:** `scratch/FOREST-BUILDER-KIT-MATCHER.md` (ratified architecture + the staged plan). **As-built detail:** the quartet — `FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`. This README is the **current contract + front door**.
-
-### Where the build is (now — 2026-06-25)
-- **Keystone + spine — done:** `rubric.json` (19 axes) + `dossiers/` (10 species); ingest+tagger + Library Builder + matcher + readiness (→ Coverage). The publish→bake spine carries authored edits to the slab — **verified byte-level** (`scratch/measure-leaf.mjs`).
-- **The Salon is now a plate-rack** (rubric-forward "fashion plates" — **`SALON-INTERFACE.md`**, root): **chassis** (live gray silhouettes) · **bark** (swatches) · **leaf** (cutouts) as visual plates with per-plate **★ Approve**; edits **autosave**; a **3-variants** toggle eye-gates per-tree variation; the deformer is **automatic by morphology** (panel retired). Going visual surfaced the data gaps — the empty `flat` leaf plates render as **"needed"** = the coverage map (~6 missing bases: fan, compound, fine_compound, palmate_compound, tulip, short_needle).
-- **The part model (the target, `SALON-INTERFACE.md §2`):** ~40 **build-once** bases — silhouette ~3 topologies/9 habits · bark ~8 types · leaf ~25 shapes — color/face/season via **posterize**, each part tiering near/far by render-role. The dossier reference image is **intake-only** (its product is the rubric coordinates).
-- **Open payoff:** fill the leaf-base gaps · `(Add +)` behavior + the **online asset library** (a hosted home for the build-once parts) · **3C** (canopy asymmetry / branch jitter) is the real per-tree diversity — the deformer alone is anti-stamping, parked until 3C.
-
----
 
 ## The pipeline (laid — whether a given stage is wired or not)
 
@@ -53,7 +36,9 @@ Open at `/arborist` — lands directly in the **Salon**.
 | **Grove** | Gallery of the published trees on one ground plane + the **ship-to-slab bake**. Roster-driven (a published composition appears in the Look's roster). *See the open question below.* | `src/arborist/Grove.jsx` |
 | **Coverage** | Read-only "have vs need" per roster species (🟢 literal / 🟡 composite / 🔴 gap) **+ the Forest-Builder per-part Kit readiness** (Chassis · Bark · Leaves). The path to the goal. | `src/arborist/CoverageView.jsx` |
 | **Library** | The parts inventory by rubric value (leaves by silhouette, barks by type, chassis by habit) + the gaps. | `public/library/INVENTORY.md` (rendered view pending) |
-| Procedural · LiDAR | **Kept peer tracks** — synthesize-a-tree authoring, reachable via `?legacy=procedural` / `?legacy=lidar`. Not the active track; not retired. | `ProceduralWorkstage.jsx` / `LidarWorkstage.jsx` |
+| ~~Procedural · LiDAR · Scan~~ | ⛔ **RETIRED 2026-08-23.** Still reachable at `?legacy=procedural` / `?legacy=lidar` / `?legacy=workstage` and still compiled into the deployed bundle — removal is `LEDGER-exorcism-wren.md §B`. | — |
+| **Shelves** | Curate the SUPPLY: put each chassis on its habit shelf. | `ShelvesWorkstage.jsx` (`?legacy=shelves`) |
+| **Diorama** | ONE finished tree as it ships, lit by the real sky. | `src/components/TreeDiorama.jsx` (`?view=fullmonte`, `?embed=tree`) |
 
 ---
 
@@ -62,11 +47,10 @@ Open at `/arborist` — lands directly in the **Salon**.
 | | |
 |---|---|
 | **Inputs (Authored track)** | parts — `public/trees/_chassis/*.glb`, `public/textures/bark/<ref>/`, `public/textures/leaves/shapes/<pack>/` · vocabulary — `arborist/rubric.json` + `arborist/dossiers/<id>.json` · per-species recipe — `arborist/state/<id>/compositions.json` |
-| **Inputs (peer tracks, kept)** | LiDAR — `botanica/` (FOR-species20K) + `seedlings.json` · Procedural — `seedlings.json` presets |
 | **Outputs (artifacts)** | `public/trees/<id>/{skeleton-N-lod{0,1,2}.glb, tips-N.json, manifest.json}` + `public/trees/index.json` ; per-Look `public/baked/<look>/{trees-atlas.json, master PNGs, trees/<id>/…}` → the slab |
 | **Kit state** | `arborist/state/part-index.json` (tagged parts) · `public/library/**` (canonical part tree + `INVENTORY.md`) |
 | **Backend** | `arborist/serve.js` on port **3334** (proxied at `/api/arborist`) |
-| **Ship-to-slab** | `node arborist/bake-look.js --look <id>` then `node arborist/bake-trees.js --look <id>` (the Grove bake) |
+| **Ship-to-slab** | the Grove's **Bake → Slab** (`POST /grove/bake?look=`), which regenerates every composed species from source, rebuilds the index, packs the atlas, then places the census. ⛔ Note the two axes: `bake-look --look <id>` (the LOOK's atlas) then `bake-trees --scene <name>` (the NEIGHBOURHOOD's census). `bake-trees` was renamed off `--look` on 2026-07-15 — it always meant the scene. |
 | **UI route** | `/arborist` (opens to the Salon) |
 
 Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts → byte-identical GLB. *(Reliability caveat learned 2026-06-20: the Salon preview caches by a composition snapshot — any new leaf/composition param must be added to that snapshot, and bump its `buildVersion` on emission-code changes, or the preview silently serves stale.)*
@@ -99,32 +83,30 @@ Artifacts are **deterministic** + **pristine**: same recipe + same on-disk parts
 | `node arborist/generate-salon.js [--species <id>]` | Headless Salon republish (compositions → GLBs) |
 | `node arborist/build-leaf-atlas.mjs` | Compose varied tile-grid atlases for scanned leaf packs |
 | `node arborist/bake-look.js --look <id>` | Pack the per-Look master atlas (the ship-to-slab bake) |
-| `node arborist/bake-trees.js --look <id>` | Substitute placements onto the Look's roster |
-| `python arborist/bake-tree.py --species=<id>` | LiDAR seedling bake (peer track) |
+| `node arborist/bake-trees.js --scene <name>` | Place the NEIGHBOURHOOD's census onto the roster |
 
 ---
 
-## The Grove → Slab (decided 2026-06-20)
+## The Grove → Slab
 
-The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's set *is* the slab's set; everything in the Grove already ships to the slab on the bake. So the model is:
+**One production gesture: the Grove's "Bake → Slab"** (`POST /grove/bake?look=`). It regenerates
+every composed species from its recipe + parts, rebuilds the index, packs the Look's master atlas,
+then places the neighbourhood's census — in that order. ▶ `sed -n '1156,1216p' arborist/serve.js`
 
-- **No per-tree "publish to add."** A tree is never manually added to the Grove.
-- **Grove membership = eligible + approved, automatically.** *Eligible / prepared* = the species has an authored composition whose parts are in hand (the Coverage **Kit** readiness — buildable). *Approved* = the operator's eye sign-off (curation approve). Eligible + approved → it just shows in the Grove (and in every Look whose roster has that species; approval is **global per species** — Looks restyle, they don't re-approve).
-- **One production gesture: the Grove bake.** It **regenerates each eligible+approved composition from its recipe + parts** and ships them to the slab — the bake *absorbs* the old "publish" step.
+- **Grove membership is automatic**, never a manual "publish to add": a species with an authored
+  composition appears. ⛔ There is **no per-species Re-publish gesture** and has not been since
+  2026-06-25 — edits autosave.
+- **The slab is the contract:** if it isn't baked, the public never sees it.
+- ⚠️ **Under Jacob's 2026-08-23 ruling the Grove should show only what is ALREADY baked and
+  slab-ready.** It does not yet — it is a pre-bake surface and it hides a species that ships.
+  `ORIENTATION.md §7 OWED`.
 
-**Why:** simpler (one gesture, no symbolic middle step); **more reliable** — the slab is always baked *fresh from compositions + parts*, never from stale staged artifacts; **only eye-approved trees ship**. The author-live / produce-static split stays — we drop the *per-tree publish*, not the split.
+⛔ **EXCISED 2026-08-23 — a long troubleshooting block lived here** claiming `/grove/bake` "never
+calls `generate-salon`" and instructing the operator to `POST /salon/:id/publish` **each** edited
+species first. **That has been false since `15682e55`.** It was the single most misleading passage
+in this folder: it told the operator to perform a step that no longer exists, to fix a staleness
+that no longer happens. Retired to `_archive/`.
 
-**Retires / changes:** the per-tree Re-publish gesture; `syncLookRoster`'s "add" role; the `quality < 2` Grove gate — all collapse into *eligible + approved*. `bake-look`/`bake-trees` grow to regenerate-from-source (start with regenerate-everything; incremental later).
-
-> **Status (2026-06-25 — LANDED):** the Grove **"Bake → Slab"** (`POST /grove/bake?look=`) now **regenerates-from-source** (`generate-salon` → `bake-look` → `bake-trees`, `15682e55`) — published is always fresh; the May-25-vs-June-leaf stale-trap is closed. Propagation verified byte-level (`scratch/measure-leaf.mjs`). Edits **autosave**; the per-species Re-publish gesture is retired (2026-06-25).
->
-> 🔧 **Troubleshooting "knobs work in the Salon but not the Grove / LS / after a bake" (the recurring stale-artifact bug):** there are **two daylight gaps** — (1) the Salon preview is a *different artifact* (`generateSingleCompositionGLB`@LOD0) than what gets published, and (2) `/grove/bake` repacks the *last-published* GLBs and never re-runs `generate-salon`. **Today's fix:** `POST /salon/:id/publish` **each** edited species, *then* `/grove/bake`. Hard-refresh won't help — the stale artifacts are on disk. A species with no Salon composition (raw vendor GLB, e.g. `platanus_acerifolia`) can't take the leaf/bark knobs at all. **Full as-built flow + symptom→fix table: `ARCHITECTURE.md §Salon preview ↔ LS runtime material parity`.**
->
-> 🎯 **TARGET — mostly LANDED (2026-06-25):** ✅ **autosave** (manual publish gone) · ✅ **regenerate-from-source folded into the bake** (published always fresh) · ✅ **Salon stripped to "fashion plates"** (the plate-rack — `SALON-INTERFACE.md`). ⏳ Residual: the live LOD0 preview **stays** — piece-3 locked "good enough" (it shares the runtime material, so no shader daylight; the published path is proven faithful). A **green-light readiness gate** for bake membership is *partial* — per-plate **★ Approve** exists; the all-green gate (Kit C·B·L + approve) is unbuilt. **LoD stays dormant-not-deleted** (DoF-replaces-LoD bet unproven). Realizes the *Grove → Slab (2026-06-20)* decision.
-
-> ⚠️ **Synthesized trees are NOT yet "in the clear" (2026-06-20).** The leaf model is *wired + functional* (size, whole-crown fill, Ways are visually distinct) but **not visually correct** — the Ways grammars need work and the **season/color ramp is unbuilt**. The bake-to-slab + LS-camera work proceeds to test the *pipeline + cameras + DoF*, not to declare the trees finished.
-
----
 
 ## Read order
 
@@ -136,4 +118,3 @@ The per-tree **Re-publish "add"** is **symbolic, not useful** — the Grove's se
 ## Cross-references
 - `_archive/STAGE0-KEYSTONE-2026-08-23.md` · `_archive/LIBRARY-BUILDER-2026-08-23.md` — retired Stage-0 records. History, not canon.
 - [[project_arborist_kit_matcher]] — the project thread
-- FOR-species20K (LiDAR peer track): https://zenodo.org/records/13255198

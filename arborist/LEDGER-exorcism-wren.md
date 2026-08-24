@@ -136,22 +136,23 @@ imports before deleting the file.
 
 ---
 
-## C. DOCS — conform to `ORIENTATION.md`, then net down
+## C. DOCS — ✅ CONFORMED 2026-08-23
 
-| doc | excise | why |
-|---|---|---|
-| `ARCHITECTURE.md` | §Configuration D's *"trees ship ALL-MESH"* · the GPU-gauge paragraph **duplicated verbatim** · the AS-BUILT *"Gap 2 is open"* block · §Monopodial (the file never existed) · the SCA/procedural sections | the ALL-MESH line is the ghost that cost a month; `c8c85a1a` fixed only BACKLOG's copy |
-| `README.md` | its `⭐ START HERE` + read-order (third front door) · the Grove→Slab troubleshooting block · `bake-trees --look` | `/grove/bake` **does** regenerate from source (`serve.js:1156-1216`); the flag is `--scene` |
-| `FEATURES.md` | Procedural/LiDAR/Scan knob tables + endpoints · `src/data/park_*.json` paths · `--look` · the Grove "Re-publish" instruction | those files do not exist — census + routing are per-town under `cartograph/data/<scene>/` |
-| `NOTES.md` | the 2026-06-25 (EOD) ALL-MESH bullet | same ghost |
-| `BACKLOG.md` | *"the diorama looking worse … is the system WORKING"* | ⛔ a doc's editorial sentence, **not** Jacob's ruling, and he does not accept it |
-| all | `/forest` and `/readiness` citations | built, then **deliberately dropped** (`0402dee5`) into `GET /coverage`. ⛔ Keep `matcher.js`/`readiness.js` — two endpoints use them |
+The whole table that stood here is done and therefore deleted (this file's own rule). What landed:
+the three surviving **"trees ship ALL-MESH"** copies · the **`/grove/bake` never regenerates**
+troubleshooting block and its operator instruction · the dead **`src/data/park_*`** paths ·
+**`bake-trees --look`** · the **`/forest`** and **`/readiness`** citations · the **duplicated**
+GPU-gauge paragraph · **§Monopodial** (specced, never written) · README's competing **`⭐ START
+HERE`** front door · the **"kept as equal peer tracks"** doctrine · and — per Jacob's R-1 —
+BACKLOG's *"the diorama looking worse is the system WORKING."*
 
-⚠️ **`ORIENTATION` and `README`/`FEATURES` both say "matcher" and mean different things.**
-The ranking **module** is live and load-bearing; the **Recommended UI toggle** is what was
-ripped out. Name them apart — do not "finish the rip-out" from the wording.
+**Procedural + LiDAR internals archived** to `_archive/{ARCHITECTURE,FEATURES}-procedural-lidar-2026-08-23.md`.
+**Recorded new:** lod0 as the SOLO lod (`FEATURES §What it produces`) and the diorama's
+shared-material contract + operator dials (`FEATURES §Full monte`).
 
----
+⛔ **STILL OWED, and it is the doc job's real remainder:** the arborist has **no `OPERATIONS.md`**.
+Operator knobs still live inside `FEATURES.md`. Named in `ORIENTATION`'s read order for months as
+"(to be written)". **ASPIRATION — Jacob's call whether it is owed or abandoned.**
 
 ## D. THE PRODUCT GAPS — in `ORIENTATION.md §7 OWED`; the work item is here
 

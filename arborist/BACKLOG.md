@@ -4,9 +4,9 @@
 
 > 🌳 **CURRENT ARC — the Forest Builder kit-matcher (supersedes the Salon arc below as the front-end direction).** Ratified architecture: **`scratch/FOREST-BUILDER-KIT-MATCHER.md`**. **Locked doctrine:** **no-cull** (all trees draw); hero-LOD impostor arc **ARCHIVED** (`cartograph/_archive/HANDOFF-tree-hero-lod-2026-06-21.md`) → the **real-DoF return** is now `cartograph/_archive/HANDOFF-real-dof-2026-06-27.md`; leaf scale + color are **rubric axes**; **Procedural + LiDAR kept** as equal peer tracks.
 >
-> **✅ STAGE 0 + STAGE 1 DONE (2026-06-18/19, on `curb-offset-draw`).** Keystone `arborist/rubric.json` (19 axes + similarity matrices) + `arborist/dossiers/` (10 species, ratified vs botany). Spine `arborist/{ingest-tagger,library-builder,ingest,matcher,readiness,library-inventory,forest-dashboard-html}.js` → `arborist/state/part-index.json` + canonical `public/library/` + `GET /readiness` & **`GET /forest`** (rendered dashboard, :3334) + `public/library/INVENTORY.md`. Parts procured: 4 Poly Haven CC0 barks (7/8 types) + 6 scanned vendor leaf packs (star+fan filled; hi-res in `assets/leaf-packs-2026/`, gitignored). **All 10 species buildable, 0 blockers, buildable-CLEAN=5** (Sugar/Silver/Pin Oak/Red Maple/Sweetgum). **Eye it: `:3334/forest`** (or `node arborist/readiness.js` / `INVENTORY.md`).
+> **✅ STAGE 0 + STAGE 1 DONE (2026-06-18/19, on `curb-offset-draw`).** Keystone `arborist/rubric.json` (19 axes + similarity matrices) + `arborist/dossiers/` (10 species, ratified vs botany). Spine `arborist/{ingest-tagger,library-builder,ingest,matcher,readiness,library-inventory,forest-dashboard-html}.js` → `arborist/state/part-index.json` + canonical `public/library/` + `public/library/INVENTORY.md` ⚠️ *(the `GET /readiness` + `GET /forest` dashboards were DROPPED in `0402dee5` and folded into the Grove's **Coverage** view — the modules `readiness.js`/`matcher.js` are still live and feed `/coverage`)*. Parts procured: 4 Poly Haven CC0 barks (7/8 types) + 6 scanned vendor leaf packs (star+fan filled; hi-res in `assets/leaf-packs-2026/`, gitignored). **All 10 species buildable, 0 blockers, buildable-CLEAN=5** (Sugar/Silver/Pin Oak/Red Maple/Sweetgum). **Eye it: the Grove → Coverage view** (or `INVENTORY.md`).
 >
-> **▶ NEXT UP (the live `/forest` 🟡-upgrades list, pinned durable):** **(1) STAGE 2** = vertical slice — one Sugar Maple perfect end-to-end (viewer §9 wired to matcher options + reference panel; leaf model = Ways §5 + derived `leaf.size` + season ramp + front/back), then the maple/oak kit-mileage core. **(2) Leaf polish:** ash **compound** + cypress **feathery-needle** still 🟡 placeholders (the 6 vendor packs didn't cover them); **Various-Fall-Leaves.zip** (Desktop) → the `leaf.season` ramp; `scale` silhouette unused by top-10. **(3) Bark:** birch **salmon river-birch color + 2nd mask channel** (Stage-3 exfoliating hard case). **(4) Chassis:** ideal **ornamental cores** for crabapple/redbud (stand-ins work today). **(5) Street-shot:** raise the **atlas leaf-tile budget** (device-profile) so the 2048 leaf sources render crisp up close. **(6)** habit-untag backlog (80 chassis); ratify Bark003 (ambientCG "smooth" vs our ridged). Tooling: `scratch/compose-leaf-packs.mjs` (deterministic atlas builder; ~20 scans/pack in `assets/leaf-packs-2026/`). The May-2026 Salon-composition + Procedural-v1.5 brief arcs (the as-built the kit-matcher rides) are **cooled to `_archive/BACKLOG-2026-05-brief-arcs.md`** — read the architecture doc first; the live open items that survived are distilled in `§ Live open work carried forward` (bottom).
+> **▶ NEXT UP (pinned durable):** **(1) STAGE 2** = vertical slice — one Sugar Maple perfect end-to-end (viewer §9 wired to matcher options + reference panel; leaf model = Ways §5 + derived `leaf.size` + season ramp + front/back), then the maple/oak kit-mileage core. **(2) Leaf polish:** ash **compound** + cypress **feathery-needle** still 🟡 placeholders (the 6 vendor packs didn't cover them); **Various-Fall-Leaves.zip** (Desktop) → the `leaf.season` ramp; `scale` silhouette unused by top-10. **(3) Bark:** birch **salmon river-birch color + 2nd mask channel** (Stage-3 exfoliating hard case). **(4) Chassis:** ideal **ornamental cores** for crabapple/redbud (stand-ins work today). **(5) Street-shot:** raise the **atlas leaf-tile budget** (device-profile) so the 2048 leaf sources render crisp up close. **(6)** habit-untag backlog (80 chassis); ratify Bark003 (ambientCG "smooth" vs our ridged). Tooling: `scratch/compose-leaf-packs.mjs` (deterministic atlas builder; ~20 scans/pack in `assets/leaf-packs-2026/`). The May-2026 Salon-composition + Procedural-v1.5 brief arcs (the as-built the kit-matcher rides) are **cooled to `_archive/BACKLOG-2026-05-brief-arcs.md`** — read the architecture doc first; the live open items that survived are distilled in `§ Live open work carried forward` (bottom).
 
 ---
 
@@ -26,13 +26,17 @@ surfaces, and the difference is in the FILE:
 ⭐ **The linden is the only richly-baked specimen — 4× the maple, 24× the plane.**
 That is why it is the canary, and why everything else looks thin beside it.
 
-⭐ **AND THE TWO SURFACES ARE HONESTLY DIFFERENT BY DESIGN.** The Salon POSTs a
-live composition to the backend and renders a FRESH build at authoring density
-(`SalonWorkstage:615-631`); the diorama loads the frozen bake
-(`TreeDiorama:411`) because `ls/OPERATIONS §5` requires that what it shows is a
-thing that actually deploys. ⛔ So the diorama looking worse than the Salon is
-the system WORKING — it is showing what ships. The gap between them is the
-re-bake nobody has run.
+⭐ **THE TWO SURFACES READ DIFFERENT ARTIFACTS.** The Salon POSTs a live
+composition and renders a FRESH build (`SalonWorkstage:615`); the diorama loads
+the frozen bake (`TreeDiorama:411`) because what it shows must be a thing that
+actually deploys.
+⛔ **CORRECTED 2026-08-23 — this block used to conclude "so the diorama looking
+worse than the Salon is the system WORKING." Jacob does not accept that, and it
+was a doc's editorial sentence, not his ruling.** A bake that thin is a DEFECT
+in the bake. ✅ **And it is now fixed at the source:** `publish-glb` was cutting
+lod0's canopy to `leafDecimation.targetRatio` 0.20 and the bracket simplifier
+was crushing its bark; lod0 is now the SOLO lod, emitted pristine, and matches
+the Salon EXACTLY on both species (`5ef05604`).
 
 ⚠️ **CONSEQUENCE FOR THE CANARY, and it should be said before anyone switches:**
 pointing the canary at sugar maple will make the diorama look WORSE until maple
@@ -381,7 +385,7 @@ The afternoon found the foundational blocker and the strategy to beat it. **Full
 
 **Kit / library (live — feed the kit-matcher front):**
 - [ ] **Streamline asset intake** (old Brief 28) — "+ Add Model / + Add Leaves" targeted single-asset ingest (today: chassis via whole-library `survey-deleaf.js`; bark auto-extract at bake; leaves via `compose-leaf-packs.mjs`). The thin button rides a `serve.js` upload endpoint + a single-asset ingest mode. **Now ties to the 2026-06-25 `(Add +)` + online-asset-library thread** (top entry). 🧊 pull forward when asset-adding is a routine cadence.
-- [ ] **Map-refresh — `src/data/park_species_map.json`** (operator-curated). The stale (2026-04-29, pre-chassis-library) routing `bake-trees.js#pickVariant` fans the messy park-names onto published species. Seeding the roster isn't "done" until every park-name routes onto a seeded species (or a deliberate filler). Coverage view surfaces the diagnostic; curation is by hand (no auto-guess gets it right).
+- [ ] **Map-refresh — `cartograph/data/<scene>/tree-species-map.json`** (operator-curated, PER-TOWN). The stale (2026-04-29, pre-chassis-library) routing `bake-trees.js#pickVariant` fans the messy park-names onto published species. Seeding the roster isn't "done" until every park-name routes onto a seeded species (or a deliberate filler). Coverage view surfaces the diagnostic; curation is by hand (no auto-guess gets it right).
 - [ ] **Brief 25 — persist + bake provenance** (literal vs composite) into `manifest.json` so Coverage reads it from data instead of deriving on the fly.
 - [ ] **Raise atlas `CONTENT_CAP`** (`bake-look.js`) once the roster shrinks post-Grove-curation — bark 512×1024→1024×2048 / leaf 512→1024 for a fidelity bump at no runtime cost. One-line knob; the actual roster size drives the cap. (Related: the kit-matcher §NEXT-UP "raise the atlas leaf-tile budget, device-profile" for crisp street-shot leaves.)
 

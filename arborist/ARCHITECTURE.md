@@ -2,7 +2,7 @@
 
 > Part of the **arborist quartet** (`FEATURES.md` / `ARCHITECTURE.md` / `BACKLOG.md` / `NOTES.md`). Load-bearing patterns specific to the tree helper. The kit-wide publish-loop pattern lives in `../cartograph/ARCHITECTURE.md`; this doc covers how it specializes for trees + the algorithms + the master-atlas innovation + the cartograph↔arborist boundary.
 
-> 🌳 **The kit-matcher is the Arborist's architecture now (its front); these patterns are the KEPT spine it rides.** Front door + current state: **`README.md §⭐ START HERE`**; design rationale + staged plan: `scratch/FOREST-BUILDER-KIT-MATCHER.md`. The publish-loop / single master atlas / 2-bind material / decimation levers documented here are **KEPT and ridden unchanged** — no fork (`feedback_no_parallel_pipeline_for_scenes`); the front (rubric → dossiers → matcher → Coverage → Library → Salon, **built** 2026-06-18/20) sits **on top**. New front modules live beside this spine: `rubric.json` · `dossiers/` · `ingest.js`+`ingest-tagger.js`+`library-builder.js` (→ `part-index.json`, `public/library/`) · `matcher.js` · `readiness.js` (→ Coverage) · `salon-options.js` (→ the Salon pickers). Doctrine: **no-cull** — the hero-LOD / DoF arc is **parked** (dormant, not deleted); **Authored-only** active, **LiDAR + Procedural kept as equal peer tracks**.
+> 🌳 **The kit-matcher is the Arborist's architecture now (its front); these patterns are the KEPT spine it rides.** Front door: **`ORIENTATION.md`**. The publish-loop / single master atlas / 2-bind material / decimation levers documented here are **KEPT and ridden unchanged** — no fork (`feedback_no_parallel_pipeline_for_scenes`); the front (rubric → dossiers → matcher → Coverage → Library → Salon, **built** 2026-06-18/20) sits **on top**. New front modules live beside this spine: `rubric.json` · `dossiers/` · `ingest.js`+`ingest-tagger.js`+`library-builder.js` (→ `part-index.json`, `public/library/`) · `matcher.js` · `readiness.js` (→ Coverage) · `salon-options.js` (→ the Salon pickers). Doctrine: **no-cull** — every tree paints. ⛔ **Procedural + LiDAR are RETIRED, not peer tracks** (Jacob, 2026-08-23 — see §Procedural + LiDAR internals).
 
 ---
 
@@ -11,12 +11,11 @@
 Arborist is one of four kit helpers (Cartograph / Arborist / Meteorologist / Courier) per `project_kit_helpers_pattern`. Each publishes one artifact through a pipeline of pure stages. For Arborist:
 
 ```
-Authoring (Scan or Procedural)
+Authoring (the Salon)
     │  writes operator state under arborist/state/<species>/
     ▼
-generate-procedural.js   (Procedural mode)
-bake-tree.py             (Scan mode)
-    │  emits source GLBs to /tmp
+generate-salon.js        (compose from chassis · bark · leaf)
+    │  emits a source GLB to /tmp
     ▼
 publish-glb.js
     │  variant detection (namesSuggestVariants / nodesSpatiallySeparated)
@@ -90,8 +89,6 @@ Both are **RTT captures of the real tree** — rendered from the actual `lod1` g
 
 > ⚠️ **The GPU "gauge" is NOT a perf signal.** The Preview emulator gauge is a count-vs-**interim-fake-budget** verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole tree-degradation arc (the impostor-tiering "gauge is red → geometry must go" reasoning) that was then reverted. **Gate tree perf on real device frame-ms + the operator's eye on the cinematic pan** ([[feedback_instrument_verdict_then_fix]], `[[project_smooth_pan_is_the_only_perf_target]]`) — the pan's visible set is fixed/predictable, so it's the only surface that must be smooth. Fixing the gauge's fake budgets is a backlog item, not a render trigger.
 
-> ⚠️ **The GPU "gauge" is NOT a perf signal.** The Preview emulator gauge is a count-vs-**interim-fake-budget** verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole tree-degradation arc (the impostor-tiering "gauge is red → geometry must go" reasoning) that was then reverted. **Gate tree perf on real device frame-ms + the operator's eye on the cinematic pan** ([[feedback_instrument_verdict_then_fix]], `[[project_smooth_pan_is_the_only_perf_target]]`) — the pan's visible set is fixed/predictable, so it's the only surface that must be smooth. Fixing the gauge's fake budgets is a backlog item, not a render trigger.
-
 ---
 
 ## The Grove Hero↔Browse preview — TAKES the player's animation (2026-07-16)
@@ -106,12 +103,16 @@ Ambient life: **`GroveWind`** drives a constant gentle breeze (`HERO_BREEZE_MPS`
 
 Five morphology fillers and ~5 hand-tuned heroes coexist in the same roster.
 
-- **Fillers** at `quality: 2`: `procedural_broadleaf`, `procedural_conifer`, `procedural_ornamental`, `procedural_columnar`, `procedural_weeping`. Catch every park-inventory species that doesn't have its own hero authored yet.
-- **Heroes** at `quality: 4`: `acer_saccharum_procedural` (G.1), `ginkgo_biloba_procedural` (G.2), `salix_babylonica_procedural` (G.3), `gleditsia_triacanthos_procedural` (G.4), plus a fifth TBD (G.5).
+⚠️ **The `procedural_*` fillers this section was written around are GONE from the runtime pool** — the
+NO-FILLER gate excludes them from `index.json`, and `bake-trees#pickVariant` draws only from
+`index.variants`. What survives is the *mechanism*: preferred-species routing wins, category fallback
+covers the rest, and quality breaks ties among candidates.
+⛔ **The LS routing map still points 49 roster names at `procedural_*` ids that can no longer ship.**
+Those routes are inert and the census falls through to category fallback. `LEDGER-exorcism-wren.md §B`.
 
-`bake-trees.js:pickVariant` already implements the lookup: `speciesMap.map?.[parkSpecies]` (preferred-species via `src/data/park_species_map.json`) wins first; category fallback covers everything else. Heroes win their bucket's quality lottery automatically (`4 > 2`).
+`bake-trees.js:pickVariant` already implements the lookup: `speciesMap.map?.[parkSpecies]` (preferred-species via the scene's `cartograph/data/<scene>/tree-species-map.json`) wins first; category fallback covers everything else. Heroes win their bucket's quality lottery automatically (`4 > 2`).
 
-**Same mechanism is how SpeedTree slots in at v2.** SpeedTree imports get authored at `quality: 4+` and the procedural heroes silently drop out. Substitution is the safety net; heroes are the visible product. No new code; just authoring.
+**Same mechanism is how SpeedTree would slot in at v2.** Imports get authored at `quality: 4+` and win their bucket. Substitution is the safety net; authored trees are the visible product. No new code; just authoring.
 
 **Hand-authored / vendor species** (e.g. `platanus_acerifolia` ×9) coexist at whatever quality the operator rates them in the Grove. The operator-rated `qualityOverride` field wins over `quality` per `build-index.js` (`effQuality = v.qualityOverride ?? v.quality ?? 0`).
 
@@ -127,117 +128,33 @@ Combined with the Phase B bark shader unification (below), the unified atlas aft
 
 ---
 
-## Two algorithms (skeleton-first ordering)
+## Procedural + LiDAR internals — ⛔ RETIRED 2026-08-23 (Jacob's ruling)
 
-Conifers (gymnosperms) and broadleaves (angiosperms) have fundamentally different growth architectures. Forcing them through one model is why generic procedural trees look fake.
+⛔ **We are not using procedural or LiDAR.** *"Anything taking up space or confusing things or getting
+in the way or being deceptively heavy is 100% rot"* (Jacob, 2026-08-23). This supersedes the
+"kept as equal peer tracks" doctrine every doc in this folder used to carry.
 
-### Space Colonization (Runions 2007) + tropism — `arborist/spaceColonization.js`
+**What was here:** the space-colonization + monopodial growth algorithms, the `generateTreeMesh`
+kernel contract, the three architecture modes, the LiDAR/QSM pipeline and its Option-δ scope split,
+opposite-phyllotaxis pair-spawn, the Phase-D.2 generator deformers, and the procedural seedlings
+`effective`-payload layering. **All of it → `_archive/ARCHITECTURE-procedural-lidar-2026-08-23.md`.**
 
-For broadleaf / weeping / columnar / ornamental. Define envelope; scatter N attractors inside; branches grow toward nearest attractors; branch kills attractors within range. Tropism vector handles all silhouette variants from one algorithm:
-
-| Morphology | Tropism | Notes |
-|---|---|---|
-| Broad / symmetric | `(0, 0, 0)` | |
-| Weeping | `(0, -0.4, 0)` | needs `envelope.offsetYFrac < 0` so the envelope hangs below trunkBase |
-| Columnar | `(0, +0.3, 0)` | upward bias |
-| Ornamental | `(0, -0.05, 0)` | gentle droop |
-
-Sympodial topology (two-way splits). Exports `runSCA`, `ENVELOPE_PROFILES`, `DEFAULT_SCA_BY_PRESET`, `mulberry32`.
-
-**Five named envelope profiles** as 2D (t, r) revolution curves: `rounded_oval`, `umbrella`, `tight_column`, `broad_low`, `asymmetric_oval`. Profile r-values multiply by `envelope.width` (`canopyR` semantics) to get max radius at each normalized height. `envelope.offsetYFrac` shifts the envelope vertically against the trunk base — load-bearing for weeping (without it, the willow has nowhere to hang).
-
-**Canonical SCA structural fixes (Phase C.1 / C.1b, 2026-05-16):**
-
-- **Force axial trunk extension** to `envelope.heightStart + envelope.height × branchingStartFrac` (default 0.5; weeping 0.2). Axial nodes (`axial: true`) are skipped by attractor-pull — they just paint a straight trunk to the branching-start height.
-- **N-child azimuthal seed** at trunk top: `initialChildCount = 6` children spaced evenly around `TAU`. Per-wedge attractor assignment splits cleanly; iter-1 pull is symmetric.
-- **Per-node child cap** (`MAX_CHILDREN_PER_NODE_DEFAULT = 3`): a node that has accumulated 3 direct children stops accepting attractor pull. Capped attractors flow to next-nearest tip. Fixes the runaway-cluster mode where one seed in a dense attractor pocket spawned 200+ tip clumps.
-- **Weeping carve-out**: `branchingStartFrac=0.2` + `seedStep = stepLength × 0.5`. Detected by `envelope.profile === 'umbrella'` OR `envelope.offsetYFrac < -0.1`. Future PRESETS overlays naming a weeping morphology pick the carve-out automatically.
-
-These live in `spaceColonization.js`; `generateTreeMesh()` signature unchanged.
-
-### Monopodial whorl — `arborist/monopodialWhorl.js` (Phase E, pending)
-
-For conifer. Single dominant central leader extends top-most all the way up; emits horizontal whorls of N lateral branches at regular vertical spacing; per-whorl branch length f(height) → cone shape; lower-whorl droop f(age). Botanically correct; SCA produces wrong topology for any conifer. Conifer path in `generateTreeMesh()` swaps to `runMonopodial(envelope, params)` when shipped.
-
-Phase E priority-dropped (conifer is 7% of inventory); per-conifer-species hero variants (Spruce / Pine / Fir) defer to v1.6 unless G.5 elects a conifer.
-
----
-
-## `generateTreeMesh(params) → {barkGeo, leafGeo}` — the load-bearing API
-
-Every phase preserves this signature. UI binds to it; CLI binds to it; tests bind to it. The params object grows fields per phase but never breaks back-compat.
-
-```js
-generateTreeMesh({
-  // Identity (Phase A)
-  species,           // 'procedural_broadleaf' etc. + hero ids
-  morphology,        // 'broadleaf' | 'weeping' | 'columnar' | 'ornamental' | 'conifer'
-  seed,              // integer; macro seed driving topology
-
-  // Silhouette (Phase D for SCA species; Phase E for conifer)
-  envelope: { profile, height, width, asymmetry, offsetYFrac },
-  branching: {
-    mode,            // 'sca' | 'monopodial'
-    phyllotaxis,     // 'alternate' | 'opposite' | 'whorled'
-    tropism,         // [x,y,z] gravity bias (SCA)
-    attractorCount, influenceRadius, killRadius, stepLength,        // SCA tunables
-    whorlsPerHeight, branchesPerWhorl, leaderDominance, droopPerWhorlAge,  // monopodial
-  },
-  sca: { branchingStartFrac, initialChildCount, maxChildrenPerNode },
-
-  // Geometry (Phase C)
-  geometry: { lodTier, segmentsPerBranch, radialNoise, flangeRingScale, rootFlareScale, buttressFinCount },
-
-  // Surface (Phase B)
-  bark: { materialRef, uvScale, tintBase, tintJitterRange, roughnessOverride },
-
-  // Foliage (Phase F)
-  leafCluster: { textureRef, occupancy },
-  tintRamp: { summer: {inner, outer}, fall: {inner, outer}, ... },
-})
-```
-
-**PRESETS** table in `arborist/generate-procedural.js` is the committed canonical seedling defaults. Per-variant `params: {}` overrides in `arborist/state/<species>/seedlings.json` overlay on top — operator's diced + adopted choices.
-
-`resolveVariantParams` does a one-level-deep merge for nested `envelope` / `sca` / `branching` objects, so a partial overlay (e.g. operator dragging just `sca.tropism.Y`) doesn't wipe sibling fields off the PRESET base.
-
-**Hero species are first-class at this same API.** Full per-species `bark` extras (pattern + colors + scale + roughness), `leafCluster` reference, two-stop `tintRamp` per season — signature does not change. Heroes get their own PRESETS entries; `park_species_map.json` routes inventory entries via preferred-species lists. The distinction between "hero" and "filler" is **quality rating + per-species tuning depth**, not pipeline location.
-
----
+⚠️ **The CODE removal is a separate, larger job** — ~11,000 lines, and the three workstages are
+statically imported at `ArboristApp.jsx:37-40`, so they compile into the deployed bundle. Scope,
+file list and the two wiring snags: `LEDGER-exorcism-wren.md §B`.
+⭐ **Still live and NOT part of this retirement:** the per-instance deformer on the shared material
+(Brief 3A — §Bark shader unification), which is morphology-derived and ships on every tree.
 
 ## Salon preview ↔ LS runtime material parity (mostly LANDED 2026-06-25)
 
 > ⭐ **UPDATE 2026-06-25 — mostly closed.** **Gap 2 (publish ≠ bake) is CLOSED:** the Grove "Bake → Slab" regenerates-from-source (`generate-salon` → `bake-look` → `bake-trees`, `15682e55`) — published is always fresh; propagation byte-proven (`scratch/measure-leaf.mjs`). **Gap 1 (live-preview ≠ published) is ACCEPTED, not closed — piece-3 locked "good enough"** (`SALON-INTERFACE.md §6`): the Salon keeps its live preview-atlas (instant authoring), and since Brief 7 it renders through the **same `treeAtlasMaterial`** as runtime (**no shader daylight**); the residual is only that the preview's *artifact* (per-composition atlas) differs from the published one — theoretical, since the published path is proven faithful. Revisit only if a real divergence surfaces. The TARGET block at the end is now largely realized (the Salon UI is the **plate-rack** — `SALON-INTERFACE.md`). The AS-BUILT detail below stays as the troubleshooting reference.
 
-> ⚠️ **AS-BUILT REALITY (corrected 2026-06-23 — read this before the doctrine below).** The doctrine in this section — *"the Salon preview IS the published artifact, no daylight"* — is the **goal we are building toward, not what the code does today.** Today there are **two daylight gaps**, and they are the direct cause of the recurring *"leaf/bark knobs work in the Salon but not in the Grove / LS / the bake"* symptom. Troubleshoot from the flow + gaps below, not from the aspirational doctrine.
->
-> **The as-built data flow (file:line in `serve.js`):**
-> ```
-> compose in Salon  (arborist/state/<id>/compositions.json)
->   ├─►[LIVE PREVIEW]  POST /salon/generate → generateSingleCompositionGLB @ LOD0
->   │     = what the Salon shows. Instant. Reflects every knob.          ← "Salon truth"
->   └─►[PUBLISH — explicit, PER-SPECIES]  POST /salon/:id/publish  (serve.js:1389)
->         → node generate-salon.js --species <id>
->         → THE ONLY regenerate-from-source (leaf-size, bark, authored transform live here)
->         → public/trees/<id>/skeleton-{lod0,1,2}.glb + manifest          ← "published truth"
->               └─►[BAKE — explicit]  POST /grove/bake  (serve.js:1100)
->                     → bakeLook()   repacks the master atlas FROM published GLBs (:1108)
->                     → bakeTrees()  substitutes placements                        (:1111)
->                     → public/baked/<look>/…  = the slab            ← "Grove + LS truth"
-> ```
->
-> **Gap 1 — live-preview ≠ published.** The Salon preview is a *different artifact* (`generateSingleCompositionGLB` @ LOD0) than what `generate-salon` publishes (LOD0/1/2). They can diverge.
->
-> **Gap 2 — publish ≠ bake.** `/grove/bake` calls **only** `bakeLook + bakeTrees` — it **never** calls `generate-salon`. It repacks whatever GLBs were *last published per species*. Edit a composition, skip the per-species republish, and the bake ships **stale geometry**. (This is the README's documented *"does not yet regenerate-from-source"* gap + the "May-25-vs-June-leaf trap.")
->
-> **Symptom → cause → fix:**
-> | Symptom | Cause | Fix (today) |
-> |---|---|---|
-> | Knob works in Salon, not Grove/LS | Gap 1 + 2 — Salon = live preview; Grove/LS = stale published-then-baked GLBs | `POST /salon/:id/publish` **each** edited species, *then* `/grove/bake` |
-> | Hard-refresh doesn't fix it | Stale artifacts are **on disk**, not a browser cache | republish + rebake (above) |
-> | A species shows pre-edit ("pre-leaf") after a bake | That species wasn't republished before the bake; or it has **no Salon composition** (raw vendor GLB, e.g. `platanus_acerifolia`) so the leaf knobs structurally can't reach it | republish composed species; vendor-only species need a composition or re-procurement |
->
-> **The decided TARGET (operator, 2026-06-23) — NOT yet built:** **autosave** (no manual per-species publish) → **fold regenerate-from-source into the bake** so *published is always fresh* (closes Gap 2) → **all three surfaces render the published artifact**, retiring the separate live LOD0 preview (closes Gap 1) → a **green-light readiness gate** decides Grove/bake membership (*not all green = not ready = doesn't bake*) → **strip the Salon UI** toward "fashion plates." **LoD stays dormant-not-deleted** — dropping it rides on the *unproven* bet that DoF far-blur can replace LoD swaps (see the DoF eval; the far-field perf mechanism is orthogonal to this WYSIWYG parity). When this lands, the doctrine below becomes literally true and this AS-BUILT block retires to NOTES.
+> ⚠️ **EXCISED 2026-08-23.** This section carried a long "AS-BUILT REALITY" block asserting that
+> `/grove/bake` **never** calls `generate-salon` ("Gap 2"), and instructed the operator to publish each
+> species by hand first. **That has been false since `15682e55`** — `/grove/bake` regenerates every
+> composed species from source, rebuilds the index, then packs the atlas and places the census, in that
+> order. ▶ `sed -n '1156,1216p' arborist/serve.js`. The block sat twenty lines below this section's own
+> header saying Gap 2 was closed. Retired to `_archive/`; the live flow is §Sequencing below.
 
 **The doctrine (the TARGET this section describes):** the Salon Workstage preview should BE the published artifact, rendered live — not "similar to," not "two consumers of the same material." The bake chain (compose → generate-salon → bake-look → bake-trees) is the slab boundary that publishes whatever the Salon authored; LS is where that published slab gets consumed. The aim is **no daylight** between Salon preview and LS render that the operator must step across to verify their work. *(Today: see the two gaps above.)*
 
@@ -326,7 +243,7 @@ v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v
 
 ### Per-region bark binding (Phase L Cycle 2 Stage 1 — SHIPPED 2026-05-19 PM)
 
-LiDAR-baked trees (Option δ — see "LiDAR pipeline + Option δ scope" below) carry cylinder-radius metadata per segment. Sugar Maple bark looks different on trunk (heavy furrowed) vs branches (smoother, lighter); the manifest can carry per-region bark spec keyed by a radius threshold:
+⚠️ *(Written for LiDAR-baked trees, which are retired. The per-region bark CARRIER below is live and species-agnostic — it keys off a radius threshold and mesh names, not off how the trunk was made.)* Segments carry cylinder-radius metadata. Sugar Maple bark looks different on trunk (heavy furrowed) vs branches (smoother, lighter); the manifest can carry per-region bark spec keyed by a radius threshold:
 
 ```json
 "bark": {
@@ -380,150 +297,6 @@ Deferred until Phase C lands and bark-quality re-evaluation says the wrap-line c
 
 ---
 
-## Three architecture modes (Rauh / spreading / monopodial)
-
-Botanically, mature trees fall into one of ~23 architectural models in the **Hallé & Oldeman 1970** classification. Three of those are load-bearing for the Arborist's roster — they have **different topologies**, not just different proportions, and no amount of envelope or tropism tuning will produce one from another.
-
-| Mode | Hallé & Oldeman model | Topology | Roster species |
-|---|---|---|---|
-| **spreading** | Troll's / Massart's (sympodial broadleaf) | Axial trunk stops at branching height. N scaffolds emerge azimuthally at the trunk apex (helically distributed across an upper zone). Scaffolds spread wide via attractor pull — no per-scaffold tropism overlay. | Oak, elm, dogwood, crabapple, willow (with `umbrella`+offsetYFrac for the curtain), most ornamentals |
-| **strong-leader** | Rauh's (monopodial broadleaf) | Axial trunk threads through the canopy to `leaderStrength × envelope.height`. Lateral scaffolds attach at N distributed Ys along the chain (between `branchingStartFrac` and 0.9 of envelope height). Each scaffold seed carries a `localTropism` of `[0, leaderStrength × 0.4, 0]` that **propagates to every descendant** of the chain — scaffolds run upward near-parallel to the trunk instead of spreading wide. | Sugar maple, ash, basswood, columnar cultivars, most "central-leader" hardwoods |
-| **monopodial** | Massart's whorled (gymnosperm) | Single dominant central leader extends top-most all the way up; regular whorls of N lateral branches at fixed vertical spacing; per-whorl length f(height); lower-whorl droop f(age). Runs through `monopodialWhorl.js` not `runSCA`. | Conifers — spruce, pine, fir (Phase E, pending) |
-
-**Where the modes branch in code:** `runSCA` reads `sca.architecture` (default `'spreading'`). In `spreading` mode it follows the original Phase C.1+D.1a iter-0 path (axial extension to `branchingStartY`, N azimuthally-distributed scaffolds across an upper zone, no per-scaffold tropism). In `strong-leader` mode it extends the axial chain further (up to `leaderStrength × envelope.height`), seeds N laterals at distributed Ys along the chain with a random azimuth per scaffold + a `localTropism` payload, and — when `leaderStrength < 0.95` — also seeds a single apical SCA tip at the topmost axial so the upper envelope still gets growth as a normal spreading-mode top. `runGrowthLoop` reads each node's `localTropism` in the pull-direction step (summed with global `tropism`, not replacing) and propagates it onto each spawned child. Global tropism (e.g. windward lean) composes with localTropism — both apply.
-
-**Why `spreading` is the default for weeping + ornamental:** the curtain morphology depends on apical scaffolds pinned at the trunk top (so the umbrella envelope hangs cleanly below); lateral seeding would scatter the curtain. Ornamentals (dogwood, crabapple, redbud) read as broad-low silhouettes with the spreading topology — Rauh's would give them a wrong "candelabra" form.
-
-**Defense in depth on Lift:** in strong-leader mode the per-scaffold `localTropism` is the canopy's upward push; `scaffoldEmergenceBias` (the operator-facing "Lift" slider in spreading mode) becomes redundant. The UI hides Lift in strong-leader mode AND `runGrowthLoop` zeros `emergenceBias` when `architecture === 'strong-leader'` — so importing a spreading-mode Lift overlay onto a strong-leader slot can't double the upward bias.
-
-`leaderStrength ∈ [0.3, 1.0]` is a single dial: at 1.0 the leader threads through the full envelope and the lateral tropism is `[0, 0.4, 0]`; at 0.5 the leader reaches halfway then becomes a regular SCA tip, and the laterals get only `[0, 0.2, 0]` upward bias (~50% as fasciculate). Operator default 1.0 for the central-leader heroes — drops to 0.5–0.7 to soften toward Massart's.
-
----
-
-## LiDAR pipeline + Option δ scope (Phase L, 2026-05-19)
-
-The Arborist carries TWO authoring pipelines that ultimately emit the same artifact shape (skeleton GLB + leaves + bark via the runtime atlas). The newer LiDAR pipeline lives alongside the procedural pipeline, not replacing it.
-
-```
-                 ┌─ Procedural pipeline ────────────────────────┐
-                 │  src/arborist/ProceduralWorkstage.jsx        │
-                 │  └─ arborist/generate-procedural.js          │
-                 │     └─ runSCA / runMonopodial → skeleton GLB │
-                 ▼                                              │
-            publish-glb.js                                      │
-                 ▲                                              │
-                 │  ┌─ LiDAR pipeline ────────────────────────┐ │
-                 │  │  src/arborist/LidarWorkstage.jsx        │ │
-                 │  │  └─ arborist/serve.js POST /lidar/.../extract
-                 │  │     └─ arborist/bake-tree.py            │ │
-                 │  │        └─ QSM extraction → skeleton GLB │ │
-                 └──┴─────────────────────────────────────────┘ │
-                                                                ▼
-                              bake-look.js (atlas), bake-trees.js (placement)
-                                              ▼
-                              public/baked/<look>/trees/<species>/...
-                                              ▼
-                              InstancedTrees.jsx (runtime, unchanged)
-```
-
-**bake-tree.py** is the Python QSM extractor (dated 2026-04-27 — predates the procedural arc). Reads `.laz` point clouds from `botanica/dev/train/`, voxel-downsamples, fits cylinders via slab DBSCAN clustering + parent linking, emits a tapered-cylinder skeleton GLB. Output artifact format is identical to procedural — same `publish-glb.js` consumer, same `bake-look.js` atlasing, same runtime path.
-
-### Cycle 1 refactor — extract-only path (2026-05-19)
-
-The load → voxel → slab-cluster → parent-link pipeline now lives in `arborist/lidar_extract.py` (Phase L Cycle 1) so the LidarWorkstage can drive interactive re-extraction without writing a GLB. Five exports:
-
-| Symbol | Role |
-|---|---|
-| `load_pointcloud(laz_path)` | `.laz` → Nx3 numpy, XY median-centered + Z floored at 0 |
-| `voxel_downsample(pts, voxel)` | hash-bucket voxel downsample (Nx3 → fewer-Nx3 centroids) |
-| `cluster_slab(xy, eps, min_samples)` | 2D connected-components via `cKDTree.query_pairs` + `scipy.sparse.csgraph` |
-| `extract_skeleton(pts, slab, eps, min_samples, link_max)` | Z-slab clustering + parent linking → `(nodes, edges)` |
-| `extract_cylinders(laz_path, voxel_size, min_radius, tip_radius)` | One-shot wrapper — returns `{nodes: [{x,y,z,radius,parentIdx}, ...], stats: {pointsRaw, pointsDownsampled, nodes, edges, cylinders, tips, trunkLike, branchLike, medianRadius, elapsedMs}}` |
-
-`bake-tree.py` imports the first four + `specimen_laz_path`; the cylinder-meshing / tip-extraction / trimesh GLB-export / manifest-emission code stays in `bake-tree.py` (Cycle 2 territory).
-
-`lidar_extract.py` carries a CLI used by `serve.js`'s `POST /lidar/specimen/:treeId/extract`:
-
-```
-.venv/bin/python arborist/lidar_extract.py \
-    --treeId=10184 --voxelSize=0.03 --minRadius=0.005 --tipRadius=0.02
-```
-
-Emits one JSON document on stdout (same shape `extract_cylinders` returns + `treeId` + `elapsedMs`). The HTTP endpoint just JSON-parses stdout and returns it.
-
-**Pre-flight repair (2026-05-19):** `bake-tree.py`'s `KeyError: 'sourceFile'` on every seedling was a schema-drift bug, not a numpy / dependency drift. The serve.js POST `/species/:id/seedlings` body schema doesn't accept / persist a `sourceFile` field; it's always derivable from `treeId` via the same rule `serve.js:specimenLazPath` uses. Both `bake-tree.py` callsites now fall back to `botanica/dev/<treeId>.laz` derivation when `seedling.sourceFile` is absent. Re-verified: both starred `acer_saccharum` seedlings bake clean in 4 s total.
-
-### Workspace render budget (Phase L Cycle 1)
-
-Desktop-class. Single specimen at a time. Visible-cost ceilings:
-
-| Layer | Mechanism | Ceiling (per specimen) |
-|---|---|---|
-| Raw point cloud | `THREE.Points` with `BufferGeometry` `position` + size-attenuated `PointsMaterial` | ≤1M pts; 60 fps trivially on integrated GPU at desktop res |
-| Cylinder overlay | Two `InstancedMesh` draws (trunk + branch), translucent `MeshStandardMaterial` | typical Sugar Maple TLS specimen: ~200–500 cylinders; ~10 K instance-tris total |
-| Cardinal helpers | `gridHelper` + ambient + one directional light | trivial |
-
-Bake-step knockdown to LS mobile budget (`publish-glb.js` weld/dedup/simplify at lod1=0.40, lod2=0.10) lives in Cycle 2; Cycle 1's workspace is hi-res authoring, not runtime-budget validation.
-
-**Per-region bark binding** rides the existing bark shader unification (see "Per-region bark binding" above). LiDAR cylinder radii feed directly into the trunk-vs-branch classification at bake time.
-
-### Option δ scope split — locked 2026-05-19 PM
-
-LiDAR provides **skeleton only** in v1.5. Canopy (leaves) stays fully procedural — D.1b leaf emission, rendered **all-mesh** per the live model (`§Tree-render reality at LS`). ⛔ *(This line used to name "Phase F gradient maps + Configuration D rendering"; both of those designs are retired — see the two stubs below. The scope split it describes is unaffected: what LiDAR contributes is the skeleton, whatever the canopy renderer is.)* The LiDAR canopy-point sampling alternative ("use real foliage points to place leaf cards") is reserved for v1.6+ when/if street-view (v2) makes the canopy-fidelity case worth the additional pipeline complexity.
-
-**Why this split:** LiDAR's high-value win at LS Hero distance is **trunk topology authenticity** — bark photo wraps onto real-tree geometry instead of parametric tubes, so "the shaders can work harder for the same calories." Canopy-point sampling is a tempting expansion but its visual contribution at LS distances (where individual leaves are sub-pixel) is uncertain and the pipeline complexity is significant. The split captures the high-confidence win without the high-uncertainty investment.
-
-**Mixed-roster heroes:** G.1 Sugar Maple ultimately ships as both LiDAR-baked variants AND procedural variants under the same `acer_saccharum_procedural` species id. Substitution lottery picks among them; per-instance jitter (rotation, scale, hue) diversifies across 88 LS placements. Each baked variant uploads to GPU once; instancing math is identical to procedural-only.
-
-**Workspace separation:** `LidarWorkstage.jsx` is a new third top-level mode in `ArboristApp.jsx` alongside `ProceduralWorkstage.jsx` and `Grove.jsx`. Existing `Workstage.jsx` (legacy Scan-mode UI predating the new pipelines) deprecates after Phase L Cycle 2 ships. See `BACKLOG.md` Phase L for cycle breakdown.
-
-See [[project_configuration_d_canopy_render]] for rendering doctrine + Option δ rationale.
-
----
-
-## Opposite-phyllotaxis pair-spawn (Phase D.1, 2026-05-19)
-
-The decussate Sugar Maple silhouette signature. `sca.phyllotaxisMode === 'opposite'` switches `runGrowthLoop`'s spawn step from one-child-per-pulled-node to **two children at `pullDir ± sin(θ)·pairAxis`**, where `pairAxis` lies in the plane perpendicular to the parent edge, rotated 0°/90° per generation depth (decussate plane flip).
-
-Key invariants:
-
-- Each non-axial node carries a `pairDepth` field. Scaffold seeds start at 0; each spawn increments. `azim = (pairDepth & 1) ? π/2 : 0` selects which perpendicular axis is the pair axis.
-- `spawnIncrement = 2` in opposite mode tightens the C.1b per-node child cap so pair-spawns never exceed cap. **No degradation to single-child** near cap — pairs are atomic; the attractor flows to next-nearest non-capped tip instead.
-- The pull vector still drives the *centre* of the pair (each child takes `pullDir × stepLength ± sa·u·stepLength`), so attractors continue to shape growth. The pair only adds the lateral split, not a wholesale departure from SCA.
-- Path 2 (in-loop) was chosen over Path 1 (post-pass): cleaner attractor-kill semantics, ~30 LOC, and `pairDepth` generalizes to spiral / whorled phyllotaxis modes.
-
-Trade-off: opposite mode produces ~4× wood and ~10× leaves vs alternate at the same seed (broadleaf-1 baseline). Operator-controllable via the Phyllotaxis dropdown in the Canopy panel section.
-
----
-
-## Deformers (Phase D.2, 2026-05-19)
-
-Three operator-tunable organic-noise primitives, threaded through SCA + generator + workstage via a new `deformers` nested params group (added to `NESTED_PARAM_KEYS` + `DEFAULT_SCA_BY_PRESET` + server effective payload).
-
-**Trunk wander** (`deformers.trunkWander`, `deformers.trunkWavelength`).
-Helper `getTrunkWander(seedN, worldY, wanderOriginY, amplitude, wavelength)` in `spaceColonization.js` returns a deterministic XZ offset at any world Y:
-
-- Anchored at `wanderOriginY` (the flare-trunk seam = `FLARE_H` = 0.4 m by default). Returns (0, 0) for `worldY <= wanderOriginY`.
-- Control points hashed deterministically every `wavelength` along Y via `Math.sin(x) * 43758.5453` — the same `seed()` pattern the rest of the generator uses.
-- Cosine-smoothed interpolation between control points → tangent-continuous curve (linear-lerp would produce visible corners on a per-vertex displaced trunk).
-- Amplitude ramps 0→1 linearly over the first metre above `wanderOriginY` so the trunk emerges smoothly from the planted flare instead of starting mid-amplitude one stepLength up.
-
-The **same wander function** is consumed by **three sites** simultaneously so they stay in lock-step:
-
-1. **Visible trunk geometry** (`generate-procedural.js`) — subdivide the trunk cylinder to ≥8 height rings (1 ring per ~0.3 m), then per-vertex XZ displacement after the cylinder is translated to world coordinates.
-2. **SCA root position** — `runSCA`'s root.pos = trunkBase + wander(trunkBase.y).
-3. **SCA axial extension** + lift loop — every axial node's XZ offset comes from wander() at its world Y.
-
-Without all three using the same source, the canopy "tears" off the wandered shaft.
-
-**Branch jitter** (`deformers.branchJitter`).
-Helper `_jitterPerp(seedN, hashIdx, parentDir, scale)` returns a deterministic perpendicular offset to apply to each SCA branch-spawn. Magnitude = `branchJitter × stepLength` (10% = ~4 cm at default stepLength). Each pair-spawn child gets an independent jitter so the pair doesn't lean as a unit.
-
-**Bark relief** (`deformers.barkRelief`).
-Exposes the existing `applyRadialNoise` scale that was hardcoded to 0.05. Operator-tunable from 0–15%.
-
----
-
 ## `atlasKind` extras — stamped at bake, gates runtime shaders
 
 `buildSourceGLB` writes `atlasKind: 'bark'|'leaf'` to each primitive's gltf-transform `extras`. After load (`useGLTF`), the value lands on `mesh.geometry.userData.atlasKind`. Two consumers:
@@ -537,40 +310,29 @@ One extras field, two consumers — clean. New consumers (e.g. per-leaf seasonal
 
 ---
 
-## Effective-payload layering (`effective` = DEFAULTS → PRESETS → overlay)
-
-The `GET /procedural/:species/seedlings` endpoint returns each variant with an `effective` field — the FULL resolved params object the kernel will consume, with operator deltas merged onto PRESETS variant base, which is merged onto `DEFAULT_SCA_BY_PRESET[preset]`. **All three layers must be spread in this order**, matching the generator's runtime resolution exactly.
-
-```js
-merged[key] = {
-  ...(DEFAULT_SCA_BY_PRESET[preset][key] || {}),   // lowest priority
-  ...(PRESETS_variant[key] || {}),
-  ...(operator_overlay[key] || {}),                 // highest priority
-}
-```
-
-UI controls bind to `effective`. Without the DEFAULTS layer, controls that reference fields only defined in `DEFAULT_SCA_BY_PRESET` (e.g. `phyllotaxisMode`, `scaffoldEmergenceBias`, default `deformers`) would display `undefined`-fallbacks → snap-back bugs on controlled selects.
-
-**Store-side mirror.** `setProceduralSlotParams` ALSO writes patches into `v.effective` alongside `v.params`. Sliders worked without this (DraftSlider keeps local draft state) but controlled selects (Phyllotaxis, Profile) snapped back to stale values without it. With the mirror, the next render of the panel sees the operator's choice in `effective.sca.phyllotaxisMode` immediately, no server round-trip needed.
-
----
-
 ## Phase F leaf-color architecture — ⛔ NOT the live model (design retired 2026-06)
 
 ⛔ **Do not build to the `annualCycle` manifest + per-Look override-packs design.** It was designed
 2026-05-19 and never became the live model. **Leaf colour is a rubric axis recoloured via posterize**
 (build-once greyscale base → posterized tint) — *not* a per-anchor gradient LUT keyed on `uDayOfYear`.
 
-▶ **Live home:** `scratch/FOREST-BUILDER-KIT-MATCHER.md §6` + `SALON-INTERFACE.md §2` (root).
+▶ **Live home:** `SALON-INTERFACE.md §2` (root) for the part model.
+⚠️ **But leaf SEASON has no live home and that is a real gap.** `rubric.json`'s `leaf.season` is a
+day-of-year curve and **every dossier already carries authored anchor colours** — yet no renderer
+reads any of it, and the axis's own `home` field still points at the retired design above. The
+colours are DATA and survive whatever mechanism replaces it. ▶ `ORIENTATION.md §7 OWED`.
+▶ `grep -h '"leaf.season"' arborist/dossiers/*.json | wc -l` · `grep -c "season\|uDayOfYear" src/components/treeAtlasMaterial.js`
 ▶ The retired design, verbatim: `cartograph/_archive/BANNERS-excised-2026-08-06.md §7a`.
 
 ---
 
 ## Configuration D canopy render — ⛔ NOT the live model (design retired 2026-06)
 
-⛔ **Do not build to the outer-shell-cards + inner-mass `THREE.Points` point-canopy design.** Trees ship
-**all-mesh**: every visible placement is a full lod1 mesh tree (`bake-trees.js#PROM_THRESHOLD=0`), geometry
-is role-at-bake, and there is no points-canopy.
+⛔ **Do not build to the outer-shell-cards + inner-mass `THREE.Points` point-canopy design.** Geometry is
+role-at-bake and **there is no points-canopy** — that ruling stands.
+⚠️ *(Excised 2026-08-23: this block also claimed trees ship "all-mesh". They do not — the impostor is the
+foundation. `PROM_THRESHOLD = 0` is real but it is the LEGACY bake-time classifier; the live split is at
+runtime. See §Tree-render reality at LS, which is the one home for render state.)*
 
 ▶ **Live home:** `FEATURES.md` "What ships to LS today" + `ARCHITECTURE.md §Tree-render reality at LS`.
 ▶ The retired design, verbatim: `cartograph/_archive/BANNERS-excised-2026-08-06.md §7b`.
