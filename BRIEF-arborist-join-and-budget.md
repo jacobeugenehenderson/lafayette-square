@@ -163,6 +163,24 @@ tuning, it is the wrong operator.
   (base brighter than trunk), not because the shape has an edge. Fix the value and the
   softness is already there.
 
+### ⚠️ AND THE ONE TERM THAT MUST SURVIVE A "DARKEN-ONLY" FIX — THE LAMPS
+*(Jacob, 2026-08-24: "we have a separate set of rings and pools for the LAMPS.")*
+The FX map packs **two different systems in two channels**, and they pull opposite ways:
+```glsl
+gcol *= (1.0 - gfx.g * uTrunkShadowStr);                        // G — contact shadow: DARKENS
+gcol += uTrunkPoolColor * gfx.r * uGroundFxScale * uTrunkPool;  // R — LAMP pool: BRIGHTENS
+```
+⛔ **`uTrunkPool` / `uTrunkPoolColor` come from `_lampGlow`, NOT from `treeTrunkGround`**
+(`treeAtlasMaterial.js:377-378`) — they ride the lamp system's TOD curve, so the additive term
+is ~0 by day and real at night. **A tree standing in a lamp pool SHOULD be lit at its base.
+That brightening is correct and must not be clamped away.**
+⇒ So the fix separates three terms rather than clamping the whole expression:
+**ground ALBEDO → darken-only (or gone) · contact AO (G) → darkens · lamp pool (R) → brightens, keep.**
+⚠️ Unverified: whether **G is the TREE ring or a LAMP ring** — Jacob says lamps have their own
+rings *and* pools, and the code comment calls G a generic "baked contact shadow". **Confirm
+which system owns G before touching it**, or a darken-only fix may silently disable the lamps'
+contact shadow along with the trees'.
+
 ⭐ **THE FIX, matching the spec: make the seam DARKEN-ONLY.** Jacob: *"equal or darker to the
 value of the tree trunk"* and *"a contact-shadow dark AO on the LU"*. So the seam applies the
 ground's **shadow**, never the ground's **albedo** — clamp it so it can never raise the value
