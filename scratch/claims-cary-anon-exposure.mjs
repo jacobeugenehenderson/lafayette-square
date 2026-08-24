@@ -120,15 +120,43 @@ function readMigrations() {
   return [...rels.entries()].sort(([a], [b]) => a.localeCompare(b));
 }
 
-// ── DYNAMIC: ask PostgREST, as anon, what it hands over ────────────────────
-async function probe(name) {
+// ── The two roles a stranger can hold ──────────────────────────────────────
+/**
+ * ⭐⭐ Since migration 010, "a random visitor" is NOT the anon role. Requesters
+ * get an anonymous Supabase session, and an anonymous user holds the
+ * **`authenticated`** role — so any policy written as `auth.uid() is not null`
+ * now admits the whole internet. That is exactly how F-10 (live courier GPS)
+ * silently widened, and an anon-only census cannot see it: the two roles get
+ * different policy sets.
+ *
+ * ⛔ So this probes BOTH, and if the anonymous session cannot be obtained it
+ * says so and refuses to report a pass. Checking half the surface and printing
+ * PASS is the silent substitution this whole file exists to prevent.
+ */
+async function anonymousSessionToken() {
+  try {
+    const res = await fetch(`${URL_.replace(/\/$/, '')}/auth/v1/signup`, {
+      method: 'POST',
+      headers: { apikey: KEY, 'Content-Type': 'application/json' },
+      body: '{}', // no email/password = anonymous sign-in
+    });
+    const body = await res.json().catch(() => ({}));
+    if (res.ok && body?.access_token) return { token: body.access_token };
+    return { error: body?.msg || body?.error_description || `HTTP ${res.status}` };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+// ── DYNAMIC: ask PostgREST what it hands over, as a given bearer ───────────
+async function probe(name, bearer = KEY) {
   const url = `${URL_.replace(/\/$/, '')}/rest/v1/${name}?select=*&limit=1`;
   let res;
   try {
     res = await fetch(url, {
       headers: {
         apikey: KEY,
-        Authorization: `Bearer ${KEY}`,
+        Authorization: `Bearer ${bearer}`,
         Prefer: 'count=exact',
         Range: '0-0',
       },
@@ -229,6 +257,32 @@ for (const [name, r] of rels) {
   if (v.level === 'BROKEN') brokenRows.push([name, v.why]);
   const rls = r.kind === 'view' ? (r.invoker ? 'invoker' : 'definer') : r.rlsEnabled ? 'rls:on' : 'rls:OFF';
   console.log(`[${MARK[v.level]}] ${name.padEnd(26)} ${r.kind.padEnd(5)} ${rls.padEnd(8)} ${p.detail.padEnd(26)} ${v.why}`);
+}
+
+// ── Second pass: the same surface as an ANONYMOUS AUTHENTICATED visitor ────
+console.log('');
+const anonAuth = await anonymousSessionToken();
+if (anonAuth.error) {
+  console.log(`⚠️  COULD NOT check the \`authenticated\` role: ${anonAuth.error}`);
+  console.log('    Anonymous sign-in appears to be disabled on this project. Since migration 010');
+  console.log('    the requester flow needs it, and a policy reading `auth.uid() is not null` is');
+  console.log('    invisible to the anon-only pass above.');
+  console.log('    ⛔ This run has checked HALF the surface. It is not a pass.');
+  brokenRows.push(['<authenticated role>', 'anonymous sign-in unavailable — half the surface unchecked']);
+} else {
+  console.log('Same relations, as an anonymous AUTHENTICATED visitor (the post-010 stranger):');
+  for (const [name, r] of rels) {
+    const p = await probe(name, anonAuth.token);
+    // A stranger holding only an anonymous session must be handed nothing.
+    // Rows here mean a policy is gating on the SHAPE of the caller rather than
+    // on a relationship — the F-10 defect.
+    const bad = p.state === 'ROWS';
+    if (bad) findings.push([`${name} (authenticated)`, `an anonymous visitor was handed ${p.rows} row(s) — a policy is gating on "is authenticated" rather than on a relationship`]);
+    if (p.state === 'UNREACHABLE' || p.state === 'UNEXPECTED') {
+      brokenRows.push([`${name} (authenticated)`, p.detail]);
+    }
+    console.log(`[${bad ? ' FINDING ' : '   ok    '}] ${name.padEnd(26)} ${p.detail}`);
+  }
 }
 
 console.log('');

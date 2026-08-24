@@ -300,14 +300,47 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   SendGrid body, where escaping would be wrong — `claims-twilio-webhook-guard.mjs` scopes its
   assertion to the `twiml +=` lines for exactly that reason. Signature verification landed with it (F-5).
 
-### F-10 · MEDIUM · Any authenticated user can see all courier live locations
+### F-10 · MEDIUM→**HIGH** · Any authenticated user can see all courier live locations  — ✅ CLOSED 2026-08-24 (migration `011`)
 - **Where:** `cary/supabase/migrations/002_rls_policies.sql:129-131`
   (`courier_locations_select_auth using (auth.uid() is not null)`).
 - **Impact:** Real-time GPS of every active courier is visible to any signed-in account, not
   just a requester in an active session with that courier. A stalking/safety concern for a
   neighborhood service where couriers are identifiable.
-- **Fix:** Scope to couriers with an active session tied to the viewer's request, or expose
-  location only through the dispatch/session flow rather than a blanket authenticated read.
+- ⭐⭐ **RE-RANKED, AND BY OUR OWN CHANGE.** When this policy was written, "authenticated" meant a
+  phone-OTP-verified courier — requesters had no account at all (004), so the set was small and vetted.
+  **Migration `010` gives every visitor an anonymous session, and an anonymous Supabase user holds the
+  `authenticated` role.** So `auth.uid() is not null` silently widened from *"a verified courier"* to
+  *"anyone who loads the site"* — live GPS of every active courier, to the public. A stalking surface
+  opened as a **side effect of closing a data leak**, in the same session.
+- ⛔ **THE LESSON, WHICH OUTLIVES THE PATCH: a predicate that tests the SHAPE of a caller — "is
+  authenticated", "has a JWT", "is not null" — is not an authorization rule.** It is an assumption
+  about who holds credentials, and it rots the instant that population changes. **Authorize on the
+  RELATIONSHIP** — this viewer, this courier, this trip — which does not move when the identity model
+  does. `verify_jwt` failed the same way for the same reason (F-2, F-5). This was the only
+  shape-testing policy in the schema; grep for the pattern before adding another.
+- **Fix (applied — `011_courier_locations_scope.sql`):** readable only by the courier themselves, and
+  by the requester on a session with them that has **not completed**.
+- ⚠️ **The anon-only census could not have caught this** — anon and `authenticated` get different
+  policy sets. `scratch/claims-cary-anon-exposure.mjs` now probes **both** roles, and ⛔ **refuses to
+  print a pass** when it cannot obtain an anonymous session (which is the state today, since the
+  dashboard toggle is still off — the check reports exactly that).
+
+### F-14 · MEDIUM · `courier_profiles` exposes EVERY column for any active courier  *(new, 2026-08-24)*
+- **Where:** `cary/supabase/migrations/002_rls_policies.sql:47-48` —
+  `create policy "courier_profiles_select_active" … for select using (status = 'active');`
+- **Impact:** The comment says *"Requesters can see basic info about active couriers (for dispatch
+  display)"*, but **RLS is row-level, not column-level** — the policy hands over the whole row:
+  `license_plate`, `drivers_license_expiry`, `insurance_expiry`, `stripe_connect_account_id`,
+  `vehicle_photo_urls`. And it carries **no auth predicate at all**, so this is the public anon key,
+  not merely a signed-in user. ⭐ Latent only because there are **zero active couriers today** — it goes
+  live with the first activation, which is also when `SECURITY.md`'s own §4 "data minimization" claim
+  stops being true.
+- **Fix:** a `security_invoker` view exposing only the dispatch-display columns
+  (`id, status, vehicle_type, vehicle_description, vehicle_photo_urls`), with the base-table policy
+  dropped. ⛔ Column-level `GRANT`s are the wrong tool here — they apply regardless of RLS and would
+  also strip a courier's access to their own row via `courier_profiles_select_own`.
+- **Not fixed here:** what counts as "basic info" for dispatch display is a product decision, and
+  guessing it is how an authoring decision gets called a defect. Needs a ruling.
 
 ### F-11 · LOW · `credential-check` cron auth is fail-open
 - **Where:** `cary/supabase/functions/credential-check/index.js` (`if (cronSecret && authHeader !== …)`).
@@ -391,9 +424,14 @@ supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
    is billable spend plus SMS-flooding a personal phone. `ls/OPERATIONS.md` has called this a ⛔ for a
    while; this register still files it under **F-13 · LOW · broad CORS**, which is the wrong severity.
    ⛔ **Rate-limit / abuse-gate it before the QR is printed**, not after.
-4. **F-3** + **F-5 (Stripe/Checkr half)** — money and vendor-trust. Not deployed today; a hard
+4. ~~**F-10**~~ ✅ closed by `011` — and re-ranked MEDIUM→HIGH on the way, because `010` had widened it.
+5. **F-14** — `courier_profiles` hands every column (license plate, Stripe account id, expiry dates) to
+   the anon key for any *active* courier. Latent only because there are none yet; **live on the first
+   activation**, which is exactly when Cary stops being pre-public. Needs a ruling on what "basic info"
+   means before it can be built.
+6. **F-3** + **F-5 (Stripe/Checkr half)** — money and vendor-trust. Not deployed today; a hard
    prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
-5. **F-10, F-6, F-11, F-12, F-13** — harden as the surfaces mature.
+7. **F-6, F-11, F-12, F-13** — harden as the surfaces mature.
 
 _Also check the Supabase **Auth** dashboard settings (OTP expiry, leaked-password protection,
 allowed redirect URLs) — those Advisor lints live in the console, not this repo._
