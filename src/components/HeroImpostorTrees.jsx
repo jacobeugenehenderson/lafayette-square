@@ -25,6 +25,36 @@ import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
 import { getElevationRaw } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
 
+// ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
+// Jacob's intended design is a SANDWICH: the trunk sits BETWEEN two canopy
+// shells, so it can be glimpsed through the front leaves with more canopy
+// behind it. That is the strongest intra-tree parallax cue the impostor has.
+//
+// What ships today is leaf(0.25) → leaf(0.75) → bark(1.0): the trunk is behind
+// EVERYTHING, so it can never read between layers. `captureImpostor.js:602`
+// cites "ditch the trunk on the near slice, leave it in the rear"
+// (Jacob 2026-07-17) — bark at 0.5 still honours that (it is off the near slice
+// and behind the front canopy); it just stops being behind the rear shell too.
+//
+// ⛔ Placement is DECOUPLED from the capture (`impostorGeometry.js:359` — the
+// bark layer captures FULL depth), so this is a card-position change and needs
+// NO re-shoot. null = use the baked value, so the map is bit-identical until
+// someone turns it. Dial by eye: `?barkDepth=0.5`.
+export const heroImpostorStack = { barkDepth: null }
+export function setHeroImpostorStack({ barkDepth } = {}) {
+  heroImpostorStack.barkDepth = Number.isFinite(barkDepth)
+    ? Math.max(0, Math.min(1, barkDepth))
+    : null
+  return { ...heroImpostorStack }
+}
+if (typeof window !== 'undefined') {
+  window.__setHeroImpostorStack = setHeroImpostorStack
+  try {
+    const v = parseFloat(new URLSearchParams(window.location.search).get('barkDepth'))
+    if (Number.isFinite(v)) heroImpostorStack.barkDepth = Math.max(0, Math.min(1, v))
+  } catch { /* no URL, no dial */ }
+}
+
 const NO_RAYCAST = () => null
 const _IDENTITY_QUAT = new THREE.Quaternion()
 
@@ -70,7 +100,11 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
         if (!byAz.has(l.azIdx)) byAz.set(l.azIdx, [])
         byAz.get(l.azIdx).push({
           kind: l.kind, shellIdx: l.shellIdx, shellCount: rec.shells,
-          cardDepthFrac: l.cardDepthFrac,
+          // Bark card position is overridable (see `heroImpostorStack`); leaf
+          // shells always keep their baked slice centres.
+          cardDepthFrac: (l.kind === 'bark' && heroImpostorStack.barkDepth != null)
+            ? heroImpostorStack.barkDepth
+            : l.cardDepthFrac,
           albedoTex: loadTex(url(l.albedo), { srgb: true }),
           aoTex: loadTex(url(l.ao), { srgb: false }),
         })

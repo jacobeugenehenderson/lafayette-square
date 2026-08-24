@@ -24,10 +24,10 @@ import {
   treeSwayUniforms,
   applyBarkUniforms,
   applyDeformerUniforms,
+  setWhipRadius,
   treeBarkTierUniform,
   treeBarkTierPinned,
   stampWindTier,
-  stampWindRadialNorm,
   measureChassisRadius,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
@@ -195,7 +195,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
         arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
       }
       g.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
-      stampWindRadialNorm(g, chassisRadius)
+      g.userData.chassisRadius = chassisRadius
     }
 
     // Verify all geometries share the same attribute keys before merging.
@@ -373,12 +373,16 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
   const onBeforeRender = useMemo(() => {
     return () => {
       applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
+      // Per-draw chassis radius for the whip ramp's radial axis (derived from
+      // position.xz in the shader — see treeWindTiering). Rides userData, not a
+      // vertex attribute: the shader is AT the 16-attribute ceiling.
+      setWhipRadius(material, geometry?.userData?.chassisRadius)
       // Brief 3A (Cant) — per-draw deformer range (LS seed stays 0; real
       // per-instance anchors supply the spread). Same shared-material per-draw
       // mutation as bark; a species with no authored deformer resets to (0,0).
       applyDeformerUniforms(material, deformerRange)
     }
-  }, [material, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange])
+  }, [material, geometry, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange])
 
   return (
     <instancedMesh

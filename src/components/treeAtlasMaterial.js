@@ -114,7 +114,7 @@ export function setTrunkGround({ blend, blendTop, shadowStr } = {}) {
 // blend = 0 → the legacy FOUR BUCKETS (aWindTier 0/1/2/3 → 0.05/0.30/0.60/1.00).
 // blend = 1 → a CONTINUOUS ramp from a near-still bole to whipping tips, driven
 //             by height × radial distance:
-//                 whip = pow(clamp(wH*aTreeHeightNorm + wR*aWindRadialNorm), gamma)
+//                 whip = pow(clamp(wH*aTreeHeightNorm + wR*(|position.xz|/R)), gamma)
 //                 amp  = mix(ampMin, ampMax, whip)
 //
 // Why the buckets were wrong: they classified by RADIUS ALONE, so an outer
@@ -137,6 +137,17 @@ export const treeWindTiering = {
   tempoMinUniform:    { value: 0.65 },  // slow, heavy period at the bole
   tempoMaxUniform:    { value: 1.70 },  // quick, light period at the tips
   leafFlutterUniform: { value: 0.35 },  // leaf's own flutter, ON TOP of its branch
+  // Chassis canopy radius in metres, set PER DRAW from the geometry's userData
+  // (see setWhipRadius). 0 → the radial term drops out and whip is height-only.
+  radiusUniform:      { value: 0 },
+}
+// Per-draw, mirroring applyBarkUniforms/applyDeformerUniforms: the shared
+// material carries the prior species' radius until we overwrite it right before
+// the draw is submitted.
+export function setWhipRadius(material, radius) {
+  const shader = material?.userData?.shader
+  if (!shader?.uniforms?.uWhipRadius) return
+  shader.uniforms.uWhipRadius.value = Number.isFinite(radius) && radius > 0 ? radius : 0
 }
 const _wtClamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
 export function setWindTiering(opts = {}) {
@@ -333,6 +344,7 @@ export function injectFoliageSway(material) {
     shader.uniforms.uWhipTempoMin      = treeWindTiering.tempoMinUniform
     shader.uniforms.uWhipTempoMax      = treeWindTiering.tempoMaxUniform
     shader.uniforms.uWhipLeafFlutter   = treeWindTiering.leafFlutterUniform
+    shader.uniforms.uWhipRadius        = treeWindTiering.radiusUniform
     // Shared by REFERENCE, so one write drives every mounted tree.
     shader.uniforms.uLeafTransmission          = treeLeafTransmission
     shader.uniforms.uLeafTransmissionSharpness = treeLeafTransmissionSharpness
@@ -485,8 +497,8 @@ export function injectFoliageSway(material) {
          attribute float aBarkRegion;
          attribute float aWindTier;
          attribute float aTreeHeightNorm;
-         attribute float aWindRadialNorm;
          uniform float uWhipBlend;
+         uniform float uWhipRadius;   // chassis canopy radius (m), per-draw
          uniform float uWhipHeightW;
          uniform float uWhipRadialW;
          uniform float uWhipGamma;
@@ -660,10 +672,22 @@ export function injectFoliageSway(material) {
            // CONTINUOUS path (uWhipBlend = 1) — one smooth ramp, no buckets.
            // whip is how far this vertex has travelled from the base ALONG
            // THE STRUCTURE: up the bole (aTreeHeightNorm) and out along a
-           // cantilever (aWindRadialNorm). A branch tip is far out AND high, so
+           // cantilever (radial). A branch tip is far out AND high, so
            // it whips; the bole core is high but at r=0, so it stays heavy.
+           // ⛔ DERIVED, NOT STAMPED. This was an attribute (aWindRadialNorm) for
+           // one commit and it blew the vertex-attribute budget: the tree shader
+           // already sat at exactly MAX_VERTEX_ATTRIBS=16 (position/normal/uv +
+           // instanceMatrix's FOUR slots + 9 custom + aGroundRaw), so a 10th
+           // custom attribute failed the program link — "Too many attributes
+           // (aGroundRaw)", VALIDATE_STATUS false — and every tree vanished.
+           // The trunk sits at X=Z=0 in the chassis-bake frame (the same
+           // assumption stampWindTier makes), so radial distance is just
+           // length(position.xz) and costs nothing.
+           float radialNorm = uWhipRadius > 1e-4
+             ? clamp(length(position.xz) / uWhipRadius, 0.0, 1.0)
+             : 0.0;
            float whip = clamp(uWhipHeightW * clamp(aTreeHeightNorm, 0.0, 1.0)
-                            + uWhipRadialW * clamp(aWindRadialNorm, 0.0, 1.0),
+                            + uWhipRadialW * radialNorm,
                             0.0, 1.0);
            whip = pow(whip, max(uWhipGamma, 1e-3));
            float ampCont   = mix(uWhipAmpMin,   uWhipAmpMax,   whip);
@@ -1589,7 +1613,7 @@ export function useSalonPreviewAtlas(manifestUrl) {
 
 // Brief 9a (Sough) — per-vertex wind TIER. Kept as the leaf/wood flag and as
 // the legacy bucket axis (see `treeWindTiering`): the continuous ramp reads
-// aTreeHeightNorm x aWindRadialNorm, and uses this only to know which vertices
+// aTreeHeightNorm x radial-from-position, and uses this only to know which vertices
 // are leaf cards so they can ride their branch and flutter on top of it.
 //
 // ⛔ ONE definition, called by BOTH the LS runtime (InstancedTrees#meshes) and
@@ -1632,24 +1656,49 @@ export function measureChassisRadius(geometries) {
   return Math.max(1e-4, Math.sqrt(r2Max))
 }
 
-// Per-vertex radial distance from the trunk axis, normalized to the chassis
-// radius. The second axis of the continuous wind ramp (see `treeWindTiering`);
-// aTreeHeightNorm is the first. Falls back to this geometry's own extent when
-// no chassis-wide radius is supplied, matching aTreeHeightNorm's contract.
-export function stampWindRadialNorm(geometry, chassisRadius) {
+// Brief 9a (Sough) — per-vertex wind TIER. Kept as the leaf/wood flag and as
+// the legacy bucket axis (see `treeWindTiering`): the continuous ramp reads
+// aTreeHeightNorm x radial-from-position, and uses this only to know which vertices
+// are leaf cards so they can ride their branch and flutter on top of it.
+//
+// ⛔ ONE definition, called by BOTH the LS runtime (InstancedTrees#meshes) and
+// the Salon preview / diorama (stampTreeVertexAttrs). It was duplicated in the
+// two files until 2026-08-24 and the copies had to be kept in step by hand.
+export function stampWindTier(geometry, isBark) {
   if (!geometry?.attributes?.position) return
-  if (geometry.attributes.aWindRadialNorm) return
+  if (geometry.attributes.aWindTier) return
   const p = geometry.attributes.position
-  const rMax = (typeof chassisRadius === 'number' && chassisRadius > 0)
-    ? chassisRadius
-    : measureChassisRadius([geometry])
   const arr = new Float32Array(p.count)
-  for (let i = 0; i < p.count; i++) {
-    const x = p.getX(i), z = p.getZ(i)
-    const t = Math.sqrt(x * x + z * z) / rMax
-    arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
+  if (!isBark) {
+    arr.fill(3)  // leaf cards
+  } else {
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i)
+      const r = Math.sqrt(x * x + z * z)
+      arr[i] = (r > 0.15 && y < 3.0) ? 0 : (r > 0.06 ? 1 : 2)
+    }
   }
-  geometry.setAttribute('aWindRadialNorm', new THREE.BufferAttribute(arr, 1))
+  geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
+}
+
+// Chassis-wide max radial distance from the tree's local Y-axis, in metres.
+// Shared by the LS runtime and the Salon preview so bark and leaf primitives
+// normalize against the SAME canopy radius — they have different extents, and
+// normalizing each on its own would put a leaf tip and the branch tip it hangs
+// on at different points on the whip ramp, which is the very independence we
+// are removing. Base sits at X=Z=0 thanks to the clean chassis-bake frame.
+export function measureChassisRadius(geometries) {
+  let r2Max = 0
+  for (const g of geometries) {
+    const p = g?.attributes?.position
+    if (!p) continue
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i)
+      const r2 = x * x + z * z
+      if (r2 > r2Max) r2Max = r2
+    }
+  }
+  return Math.max(1e-4, Math.sqrt(r2Max))
 }
 
 // Per-vertex attribute stamper shared between the LS runtime
@@ -1723,9 +1772,9 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
     }
     geometry.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
   }
-  // The whip ramp's radial axis. `fallback.chassisRadius` carries the
-  // chassis-wide value the same way chassisMinY/chassisYRange do.
-  stampWindRadialNorm(geometry, fallback.chassisRadius)
+  // The whip ramp's radial axis is DERIVED in-shader from position.xz (see the
+  // sway block); the per-draw radius rides on userData, not a vertex attribute.
+  if (Number.isFinite(fallback.chassisRadius)) geometry.userData.chassisRadius = fallback.chassisRadius
 }
 
 // Brief 3A (Cant) — per-draw deformer ranges. Sibling of applyBarkUniforms

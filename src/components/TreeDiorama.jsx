@@ -179,7 +179,7 @@ function Specimen({ url, material, onMeasured }) {
     // failed would leave every vertex at radial 0 — i.e. the whole tree read as
     // bole — and the tree would just move a bit less, which is exactly the kind
     // of plausible-looking success that never gets caught by eye.
-    let whipR = { min: Infinity, max: -Infinity, n: 0 }
+    let whipR = { min: 0, max: 0, n: 0 }   // radial is derived in-shader now
     let whipH = { min: Infinity, max: -Infinity }
     scene.traverse((o) => {
       if (!o.isMesh) return
@@ -194,14 +194,7 @@ function Specimen({ url, material, onMeasured }) {
         if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
         const pos = o.geometry.attributes.position
         tris += (o.geometry.index ? o.geometry.index.count : pos.count) / 3
-        const rn = o.geometry.attributes.aWindRadialNorm
         const hn = o.geometry.attributes.aTreeHeightNorm
-        if (rn) for (let i = 0; i < rn.count; i++) {
-          const v = rn.getX(i)
-          if (v < whipR.min) whipR.min = v
-          if (v > whipR.max) whipR.max = v
-          whipR.n++
-        }
         if (hn) for (let i = 0; i < hn.count; i++) {
           const v = hn.getX(i)
           if (v < whipH.min) whipH.min = v
