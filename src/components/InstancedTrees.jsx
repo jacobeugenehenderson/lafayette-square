@@ -761,6 +761,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     //   noRecord= its species has NO baked hero impostor. NOT a decision — an
     //             absent asset silently upgraded to the most expensive role.
     let meshAnchor = 0
+    let bandRoles = 0, legacyRoles = 0
     let meshNoRecord = 0
     const meshNoRecordBySpecies = new Map()  // species -> count
     // ALL non-culled instances by rendered species — the WHOLE-SCENE overhead
@@ -799,7 +800,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       // + bare shadow-spots). The foundation paints the whole neighborhood; impostors are
       // cheap billboards, so nothing gets dropped. (∩-foreground pan-distance axis: later.)
       if (heroFoundationEnabled && heroImpostorRecords) {
-        if (heroImpostorRecords[renderSpecies] && (Number(inst.dbh) || 0) < heroDbhCut) {
+        // ⭐ The BAKED band decides, when the slab carries one (hero-band.mjs):
+        // distance to the authored camera path, spending a TRIANGLE budget.
+        // `dbh < cut` is the LEGACY axis and predicts neither cost nor
+        // visibility — kept only for slabs baked before the band existed.
+        const wantsImpostor = inst.heroRole
+          ? inst.heroRole === 'impostor'
+          : ((Number(inst.dbh) || 0) < heroDbhCut)
+        if (inst.heroRole) bandRoles++; else legacyRoles++
+        if (heroImpostorRecords[renderSpecies] && wantsImpostor) {
           if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
           heroImpostors.get(renderSpecies).push(inst)
           heroFoundationCount++
@@ -865,6 +874,12 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // scene that simply has more anchors, which is why it survived unnoticed.
     // Fix is to SHOOT the missing impostors in the Grove (browser-GPU; the CLI
     // bake cannot reproduce them), never to widen the dbh cut.
+    // ⛔ Which axis actually decided this frame. A slab with no baked band falls
+    // back to the legacy dbh split — legitimate for an old slab, but it must not
+    // look like the band ran.
+    if (legacyRoles > 0 && bandRoles === 0) {
+      console.warn(`[InstancedTrees] ⛔ no baked heroRole on this slab — role chosen by the LEGACY dbh cut (${heroDbhCut.toFixed(2)}), which predicts neither cost nor visibility. Re-bake to get the pan-distance band.`)
+    }
     if (meshNoRecord > 0) {
       const worst = [...meshNoRecordBySpecies.entries()].sort((a, b) => b[1] - a[1])
       const budget = Math.round(heroGeomFraction * bake.instances.length)
@@ -876,7 +891,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         `Shoot these in the Grove: ` + worst.map(([sp, n]) => `${sp}(${n})`).join(' ')
       )
     }
-    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) mesh=${meshAnchor}earned+${meshNoRecord}leaked impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
+    console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) mesh=${meshAnchor}earned+${meshNoRecord}leaked role=${bandRoles ? 'band' : 'legacy-dbh'} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled, heroGeomFraction])
 
