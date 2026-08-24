@@ -828,28 +828,6 @@ export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale =
   // stack. Cheap (one extra bbox pass) and only meaningful on the shipped tier.
   const impostor = measureCanopyBase(doc)
   await ensureDir(path.dirname(dstFile))
-  // ⭐ COMPRESS THE SHIPPED GEOMETRY — quantize + meshopt, applied HERE and not
-  // in publish-glb. `public/trees/` is the gitignored authoring pool and never
-  // deploys; `public/baked/` is the slab, so this is the only write where
-  // compression buys payload. It is also the LAST writer, so no CLI reader
-  // downstream has to learn to decode it.
-  //
-  // Measured on linden lod0 (full canopy): 28.5 MB -> 20.2 MB quantized ->
-  // 10.9 MB with meshopt. That is SMALLER than the 15.7 MB the same file was
-  // when its canopy was cut to 20% — i.e. compression buys back the whole leaf
-  // budget and more. Precision at 14-bit position on a 31 m tree is ~2 mm.
-  //
-  // ⛔ Consumers must decode: drei's `useGLTF` wires MeshoptDecoder by default,
-  // and the two RAW GLTFLoaders (OverheadBaker / HeroImpostorBaker, which read
-  // these very files) wire it explicitly. Anything new that reads baked/ must too.
-  await MeshoptEncoder.ready
-  await doc.transform(
-    reorder({ encoder: MeshoptEncoder }),
-    quantize({ quantizePosition: 14, quantizeNormal: 10, quantizeTexcoord: 12, quantizeGeneric: 12 }),
-  )
-  doc.createExtension(EXTMeshoptCompression)
-    .setRequired(true)
-    .setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.QUANTIZE })
   await io.write(dstFile, doc)
   return { primCount, missCount, missed: [...missed], bounds, impostor }
 }
