@@ -168,15 +168,29 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   security one, and fixing it is a design choice about allowed origins (cf. F-13) — so it is left for
   that pass rather than resolved silently here.
 
-### F-3 · HIGH · `complete-session` is an unauthenticated money-moving endpoint
+### F-3 · HIGH · `complete-session` is an unauthenticated money-moving endpoint  — ⚙️ FIXED IN SOURCE 2026-08-24 · still **undeployed, and deliberately so**
 - **Where:** `cary/supabase/functions/complete-session/index.js:20-32`.
 - **Impact:** No auth check. Anyone who POSTs `{session_id}` finalizes that session, computes
   the fare, and **creates a Stripe PaymentIntent** (charge to the requester's card, transfer to
   the courier's Connect account). An attacker can force-complete sessions, and — because
   distance/duration are recomputed server-side but the trigger is open — grief metering and
   payments. Uses service role, so RLS gives no backstop.
-- **Fix:** Authenticate the caller and authorize that they are the session's courier
-  (`session.courier_id === auth.uid()`). Consider idempotency on `session_id` to block replays.
+- **Fix (done in source):** the caller's user JWT is verified and the request is refused unless
+  `session.courier_id === auth.uid()` — derived from the **session row**, never from the body.
+- ⭐ **The replay guard was worse than "missing".** The old code read `session.completed_at` and then
+  acted on it: two concurrent POSTs both see `null`, both reach Stripe, and **the requester is charged
+  twice**. Fixed with an atomic claim — a conditional `update … .is('completed_at', null)` that returns
+  a row to exactly one caller; a replay gets zero rows and a `409` without touching Stripe. A Stripe
+  `idempotencyKey` sits behind it for network-layer retries.
+- ⛔ **No silent success on the money path.** A missing default card, or a throw from Stripe, now marks
+  `payment_status = 'failed'` and returns `402`. Previously either left the session looking
+  completed-and-paid — the plausible-looking success that is worse than an error.
+- ⚠️ **STILL UNDEPLOYED, and this fix does not change that.** The function *cannot* run as written: its
+  `@supabase/supabase-js` and `stripe` imports are bare specifiers Deno cannot resolve without an
+  import map (every deployed sibling uses an `https://esm.sh/…` URL). ⭐ Left alone deliberately —
+  making a money-moving endpoint deployable is not a change to smuggle into a security fix, and its
+  non-deployment is currently a safety property. Fixing the imports is a decision, not a cleanup.
+- ⛔ `supabase functions deploy` with **no name** would ship this function. Always deploy by name.
 
 ### F-4 · HIGH · `requests` RLS opened to `USING (true)` for SELECT and UPDATE  — ✅ CLOSED 2026-08-24 (migration `010`, applied + verified live)
 - **Where:** `cary/supabase/migrations/004_requester_device_identity.sql:30-35`.
