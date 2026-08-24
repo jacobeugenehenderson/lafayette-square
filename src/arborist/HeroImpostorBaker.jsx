@@ -21,10 +21,16 @@ import { useEffect, useRef } from 'react'
 import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
 import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms } from '../components/treeAtlasMaterial.js'
 import { prepareHeroBands, captureHeroBand } from '../components/captureImpostor.js'
 
+// ⛔ MESHOPT DECODER REQUIRED. This baker reads the BAKED per-look GLBs, which
+// bake-look now writes quantized + meshopt-compressed. drei's useGLTF wires this
+// decoder for us everywhere else; this is a RAW GLTFLoader, so it must wire its
+// own or every capture fails to load and the slab ships holes.
 const _loader = new GLTFLoader()
+_loader.setMeshoptDecoder(MeshoptDecoder)
 function loadGltf(url) { return new Promise((res, rej) => _loader.load(url, res, undefined, rej)) }
 function nextFrame() { return new Promise((r) => requestAnimationFrame(r)) }
 

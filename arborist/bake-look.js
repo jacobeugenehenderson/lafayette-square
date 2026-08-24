@@ -21,8 +21,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import sharp from 'sharp'
 import { NodeIO } from '@gltf-transform/core'
-import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
-import { prune } from '@gltf-transform/functions'
+import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions'
+import { prune, quantize, reorder } from '@gltf-transform/functions'
+import { MeshoptEncoder } from 'meshoptimizer'
 import crypto from 'node:crypto'
 import { surveyRoster } from './atlas-survey.js'
 import { packSkyline } from './atlas-pack.js'
@@ -58,7 +59,9 @@ const ATLAS_DEFAULTS = {
   leaves: { alphaMode: 'MASK',   alphaCutoff: 0.5, doubleSided: true,  alphaTest: 0.5 },
 }
 
-const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
+const io = new NodeIO()
+  .registerExtensions(ALL_EXTENSIONS)
+  .registerDependencies({ 'meshopt.encoder': MeshoptEncoder })
 
 // ── helpers ──────────────────────────────────────────────────────────────
 const docCache = new Map()
@@ -825,6 +828,28 @@ export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale =
   // stack. Cheap (one extra bbox pass) and only meaningful on the shipped tier.
   const impostor = measureCanopyBase(doc)
   await ensureDir(path.dirname(dstFile))
+  // ⭐ COMPRESS THE SHIPPED GEOMETRY — quantize + meshopt, applied HERE and not
+  // in publish-glb. `public/trees/` is the gitignored authoring pool and never
+  // deploys; `public/baked/` is the slab, so this is the only write where
+  // compression buys payload. It is also the LAST writer, so no CLI reader
+  // downstream has to learn to decode it.
+  //
+  // Measured on linden lod0 (full canopy): 28.5 MB -> 20.2 MB quantized ->
+  // 10.9 MB with meshopt. That is SMALLER than the 15.7 MB the same file was
+  // when its canopy was cut to 20% — i.e. compression buys back the whole leaf
+  // budget and more. Precision at 14-bit position on a 31 m tree is ~2 mm.
+  //
+  // ⛔ Consumers must decode: drei's `useGLTF` wires MeshoptDecoder by default,
+  // and the two RAW GLTFLoaders (OverheadBaker / HeroImpostorBaker, which read
+  // these very files) wire it explicitly. Anything new that reads baked/ must too.
+  await MeshoptEncoder.ready
+  await doc.transform(
+    reorder({ encoder: MeshoptEncoder }),
+    quantize({ quantizePosition: 14, quantizeNormal: 10, quantizeTexcoord: 12, quantizeGeneric: 12 }),
+  )
+  doc.createExtension(EXTMeshoptCompression)
+    .setRequired(true)
+    .setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.QUANTIZE })
   await io.write(dstFile, doc)
   return { primCount, missCount, missed: [...missed], bounds, impostor }
 }
@@ -1308,8 +1333,25 @@ export async function bakeLook(lookName, opts = {}) {
   let tRewrite = 0
   if (rewrite) {
     const r0 = Date.now()
-    // Wipe any prior rewritten tree dir for this Look so stale variants don't linger.
-    await rmrf(path.join(outDir, 'trees'))
+    // Wipe any prior rewritten tree dir for this Look so stale variants don't
+    // linger — but ⛔ NEVER the browser-authored CAPTURE dirs that live inside it.
+    //
+    // `trees/hero-impostor/` and `trees/overhead/` are RTT captures shot by the
+    // GPU in the Grove (HeroImpostorBaker / OverheadBaker). The CLI cannot
+    // regenerate them, and `carryIfAssetsPresent` (above) honestly drops a
+    // manifest record whose PNGs are gone — so a blanket wipe here deleted the
+    // assets and the NEXT bake then dropped the keys, silently demoting those
+    // species to mesh. In the Grove flow the bakers re-shoot immediately and it
+    // was invisible; a plain `node bake-look.js` had no baker behind it and the
+    // captures just died. (Measured 2026-08-23, Wren: a CLI bake-look took
+    // heroImpostorBySpecies 9 -> 7 and deleted 252 tracked capture PNGs.)
+    const KEEP_IN_TREES = new Set(['hero-impostor', 'overhead'])
+    try {
+      for (const ent of await fs.readdir(path.join(outDir, 'trees'), { withFileTypes: true })) {
+        if (KEEP_IN_TREES.has(ent.name)) continue
+        await rmrf(path.join(outDir, 'trees', ent.name))
+      }
+    } catch { /* no prior trees dir — nothing to wipe */ }
     for (const v of survey.perVariant) {
       const scale = variantScale.get(`${v.species}|${v.variantId}`) ?? 1
       for (const lod of LODS) {
