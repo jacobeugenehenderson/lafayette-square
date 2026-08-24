@@ -1,0 +1,14 @@
+-- Cary — Force PostgREST to pick up migration 012's new column.
+--
+-- 012 added `sms_messages.sender_ip_hash`, which `contact-sms` queries through
+-- PostgREST on every call. Supabase normally reloads the schema cache on DDL via
+-- an event trigger, but "normally" is not a guarantee, and the failure here is
+-- nasty in a specific way: an unknown column makes the rate-limit query ERROR,
+-- the limiter is deliberately FAIL-CLOSED, and so every real message would be
+-- refused with a friendly "you've sent a lot of messages" — the Host's contact
+-- button dead, with no error anywhere that says so.
+--
+-- ⭐ Fail-closed is still the right call for a money-spending endpoint. This just
+-- removes the reason it would trip. Cheap, idempotent, and makes the deploy
+-- deterministic instead of dependent on a trigger firing in time.
+notify pgrst, 'reload schema';
