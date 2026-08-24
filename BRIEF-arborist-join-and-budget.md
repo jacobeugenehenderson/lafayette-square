@@ -25,6 +25,49 @@ asking.** The slab carries the first land-use pour (`unknown`→`underived`, gro
 
 ---
 
+## 0a. ⛔⛔ START HERE — TWO LIVE REGRESSIONS ON STAGING (2026-08-24, evening)
+
+Jacob pushed `land-use-derivation` to staging and looked at it. **Browse is fine. HERO is bad.**
+
+### ① Hero sparse and small — MINE, and already defused
+**`cb14c29c` puts the geometry band behind `?heroBand=1`.** Push that and hero returns to
+exactly what shipped before today. The band took hero from **2323 real trees → 403** on a
+15e6-triangle budget I picked off a distribution curve instead of looking at a frame, and
+everything it removed became a canopy card.
+⛔ **The axis is right; the budget was mine to get wrong.** Dials are `heroTriangleBudget`
+and `heroBandMaxM` in `bake-trees.js`; the bake still stamps `heroRole` + `heroBandMeta`, so
+nothing is lost. **Tune it by eye ON THE PAN, never off the curve.**
+⚠️ **And the reason any thinning looks like DAMAGE:** `ground.colormap` bakes a contact
+shadow for **every one of the 5127 placements**, whether or not a tree draws there. So a
+culled tree leaves a HOLE, not an absence. ⭐ **Solve that before tuning the budget, or every
+setting will look wrong.**
+
+### ② ⛔ WHITE BANDS AROUND TRUNK BASES — a REGRESSION of a fix that already landed
+Jacob: *"The trunks also have white bands around their bases, a problem we already fixed."*
+**CAUSE NOT ESTABLISHED. I ran out of session before measuring it. Do not trust the lead
+below — measure it first.**
+
+**Where to look, in order:**
+1. The trunk base blends toward the ground colour sampled from the baked colormap at the
+   tree's world-XZ (`treeAtlasMaterial.js:356-375`; `uTrunkBlend`, `uTrunkBlendTop`,
+   `uGroundColorMap` + `uGroundColorMin/Span`, and the FX map so it blends toward the
+   COMBINED colour, not raw albedo). Fed by `BakedGround.jsx:157,176` via
+   `setGroundColorMap` / `setGroundFxMap`.
+2. ⭐ **MY FIRST SUSPECT, UNVERIFIED:** today's land-use pour **regenerated
+   `ground.colormap.png`, `ground.poolmap.png` and `ground.json`** — which carries the
+   colormap's `min`/`span` decode meta. If that encoding moved, the decoded ground colour is
+   wrong and the trunk base blends toward the wrong colour. ▶ **Diff `ground.json`'s colormap
+   and poolmap meta across `29955e46` and decide from the numbers, not from this sentence.**
+3. ⚠️ `treeTrunkGround` is a **shared module-scoped knob** and the Diorama **writes it on
+   mount and restores map defaults on unmount** (`TreeDiorama.jsx`, `setTrunkGround`). A
+   surface that mounts and does not cleanly unmount leaves the map on diorama values
+   (blend 0.8 / top 0.75 / shadow 0.95 vs the map's 0.55 / 1.5 / 0.5). Cheap to rule out.
+4. Find the ORIGINAL fix before rebuilding one — Jacob says it was already solved, so this is
+   a REGRESSION and something un-did it. `git log -S uTrunkBlend` and the `c7c00d41` /
+   `8473a29c` trunk-contact commits are the thread.
+
+---
+
 ## 1. ⭐⭐ THE FRONT: THE JOIN IS THE WHOLE GAME
 
 `ORIENTATION §2` has said for months that the join — a dossier per species, a ratified habit
