@@ -47,6 +47,40 @@ is unreachable because `PROM_THRESHOLD = 0` classifies every placement `mesh`.
 Dead by data, not by code. **Fix:** stop emitting both keys; delete `ImpostorSpecies`.
 ⛔ Capability removal — confirm with Jacob first.
 
+**A6 · `TreeDiorama.jsx` · REGRESSION · the diorama mounts the shared tree material but drives
+NONE of its per-scene state. ⭐ ONE root, THREE reported symptoms.**
+In the map, `InstancedTrees` and `BakedGround` drive uniforms the material needs. The diorama
+mounts its own `Ground` (a grass disc) and no tier driver, so those uniforms keep their
+module defaults:
+| uniform | driven in the map by | in the diorama | symptom |
+|---|---|---|---|
+| `uBarkShaderTier` | `InstancedTrees.jsx:556` (Salon: `SpecimenViewport.jsx:213`, `<20 m → tier 2`) | **never written → default `1`** | ⛔ **tier ≤1 replaces bark diffuse with the POSTERIZED 16-colour substrate** (`treeAtlasMaterial.js:715` `useVendor = step(1.5, uBarkShaderTier)`) ⇒ *"smooth, low-poly trunk"* — **the geometry is 116,794 tris, it is not low-poly** |
+| `uGroundColorMap` | `BakedGround.jsx:176` | **unbound (null)** | no ground colour pulled onto the trunk |
+| `uGroundFxMap` (G = contact shadow) | `BakedGround.jsx:157` | **unbound (null)** | ⛔ **no AO contact ring** — the feature already exists and ships in the map |
+▶ `grep -n "treeBarkTierUniform.value =" src/components/*.jsx src/arborist/*.jsx` · `grep -rn "setGroundColorMap\|setGroundFxMap" src/`
+⭐⭐ **This is why the Salon looks right and the diorama does not, and it is NOT the bake:**
+baked lod0 and published lod0 are geometrically identical (116,794 bark tris / 41,688 leaf
+cards both). **The Salon sits <20 m → tier 2 → vendor bark. The diorama stays tier 1 →
+posterized bark. Same file, two shader paths.**
+▶ `python3 scratch/_wren-glbstat.py public/baked/lafayette-square/trees/linden_american/skeleton-1-lod0.glb public/trees/linden_american/skeleton-1-lod0.glb`
+**Fix:** drive the three in the diorama the way the map does. ⛔ Not a diorama-only hack —
+the seam is *"a bare Canvas mounts no scene drivers,"* the same class as `ExposureTicker`.
+
+**A7 · `bake-look.js:43` · bark tiles are capped at 512×1024 and the atlas is 23.5% full.**
+The linden's bark tile is **512×512** on a 3888×2584 page holding 9 tiles.
+`ARCHITECTURE` already calls this a one-line knob deferred until the roster settled; it has.
+▶ `node -e "const j=require('./public/baked/lafayette-square/trees-atlas.json');let u=0;for(const t of j.tiles)u+=(t.w||512)*(t.h||512);console.log(j.tiles.length,'tiles',(100*u/(3888*2584)).toFixed(1)+'% of page')"`
+⚠️ **Secondary to A6** — raising the cap sharpens vendor bark, which tier 1 currently
+replaces anyway. **Fix A6 first, then re-measure before spending a re-bake on this.**
+
+**A8 · ⚠️ NIGHT: the canopy reads lit while the trunk goes dark. CAUSE NOT ESTABLISHED.**
+Ruled out: `treeLeafTransmission` defaults to **0** (`treeAtlasMaterial.js:127`) and nothing
+writes it without `?leafT=`; `CelestialBodies` **is** mounted, so ambient/moon reach the
+diorama. Consistent with `BACKLOG` 2026-08-23's undiagnosed *"the grass reads brighter than
+the tree at night."* ⛔ **First measurement is which light path the LEAF fragments take** —
+leaves are gated out of every bark path by `vBark`, so they may miss a dimming the bark gets.
+**No fix specced. Do not tune anything until this is measured.**
+
 ---
 
 ## B. THE DEAD TRACKS — Jacob ruled 2026-08-23: procedural + LiDAR are ROT

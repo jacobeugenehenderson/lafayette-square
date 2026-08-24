@@ -13,7 +13,8 @@ import AtmosphereDirectiveDriver from './AtmosphereDirectiveDriver'
 import { ExposureTicker, PostProcessing, StageShadows } from './PostProcessing'
 import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
-import { useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission } from './treeAtlasMaterial'
+import { useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission, treeBarkTierUniform } from './treeAtlasMaterial'
+import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useCanaryTree } from '../lib/canaryTree.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { makeGrassMaterial } from './grassMaterial.js'
@@ -226,10 +227,105 @@ function ShadowFocus({ height, spread }) {
  * with a radial fade rather than a rectangle, so the far edge does not cut a
  * straight line across the sky and read as a table top.
  */
-function Ground({ radius = 90 }) {
+/**
+ * ⭐ THE DIORAMA MOUNTS THE SHARED TREE MATERIAL BUT DRIVES NONE OF ITS SCENE
+ * STATE — the seam these two hooks close (measured 2026-08-23, Wren).
+ *
+ * In the map, `InstancedTrees` writes the bark tier per frame and `BakedGround`
+ * supplies the ground colour + FX maps. A bare Canvas mounts neither, so the
+ * uniforms sat at their module defaults and the specimen rendered on a path
+ * nobody chose. Same class as the missing `ExposureTicker`.
+ */
+
+// `treeBarkTierUniform` defaults to 1 (hero) and NOTHING here wrote it, so the
+// bark fragment took the tier ≤ 1 branch: `useVendor = step(1.5, tier)` in
+// treeAtlasMaterial replaces the trunk's diffuse with the POSTERIZED 16-colour
+// substrate. That is the whole of "the trunk looks smooth and low-poly" — the
+// linden's trunk is 116,794 triangles; it was never low-poly, it was wearing a
+// quantised texture built for browse/hero DISTANCE.
+//
+// ⛔ Do NOT copy the Salon's distance auto-bind (`< 20 m → 2`): this camera
+// frames a whole tree head-to-foot and sits FURTHER back than that, so the
+// auto-bind would re-select tier 1 and change nothing. The diorama is a single
+// street-level hero specimen — tier 2 is an AUTHORED choice, not a derived one.
+// Tier 2 keeps the detail overlay (`step(0.5, tier)`) and adds vendor colour.
+function useDioramaBarkTier() {
+  useEffect(() => {
+    const prev = treeBarkTierUniform.value
+    treeBarkTierUniform.value = 2
+    return () => { treeBarkTierUniform.value = prev }
+  }, [])
+}
+
+// The ground blend + contact ring are NOT new features — they ship in the map.
+// But they sample the BAKED ground by world-XZ, and this specimen stands at the
+// origin of a procedural grass disc, not at a real placement, so there is
+// nothing to sample. We synthesise the smallest honest source: a flat colour
+// map (the grass albedo) and an FX map whose GREEN channel is a soft radial
+// darkening centred on the trunk. Both existing consumers then work unchanged —
+// `grassMaterial` darkens the ground (the ring) and `treeAtlasMaterial` pulls
+// that shaded ground colour up the trunk base (the skirt).
+//
+// ⚠️ Sized off the MEASURED specimen, so it tracks the tree rather than a
+// hard-coded radius: no measurement yet → no maps bound → today's render.
+const GROUND_ALBEDO = '#2d5a2d'   // grassMaterial's default `color`
+function useDioramaGround(measured, alpha) {
+  const ground = useMemo(() => {
+    if (alpha || !measured) return null
+    // Ring radius from the canopy, floored so a narrow columnar tree still
+    // gets a contact. Half-extent of the square the maps cover.
+    const spread = measured.spread || (measured.height || 12) * 0.35
+    const half = Math.max(spread * 1.15, 2.5)
+    const N = 128
+    const c = document.createElement('canvas'); c.width = c.height = N
+    const ctx = c.getContext('2d')
+    // R = lamp pool (none here) · G = contact shadow · B unused.
+    ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, N, N)
+    const g = ctx.createRadialGradient(N / 2, N / 2, 0, N / 2, N / 2, N / 2)
+    // Dense at the trunk, gone by the canopy edge — a contact cue, not a
+    // drop-shadow. The sun-driven shadow is StageShadows' job; this is AO.
+    g.addColorStop(0.00, 'rgba(0,255,0,1)')
+    g.addColorStop(0.18, 'rgba(0,255,0,0.72)')
+    g.addColorStop(0.55, 'rgba(0,255,0,0.20)')
+    g.addColorStop(1.00, 'rgba(0,255,0,0)')
+    ctx.fillStyle = g; ctx.fillRect(0, 0, N, N)
+    const fx = new THREE.CanvasTexture(c)
+    fx.colorSpace = THREE.NoColorSpace          // data, not colour
+    fx.wrapS = fx.wrapT = THREE.ClampToEdgeWrapping
+    const col = new THREE.DataTexture(
+      new Uint8Array([...new THREE.Color(GROUND_ALBEDO).convertLinearToSRGB()
+        .toArray().map(v => Math.round(v * 255)), 255]), 1, 1)
+    col.colorSpace = THREE.SRGBColorSpace
+    col.needsUpdate = true
+    return { texture: fx, colorTexture: col, min: [-half, -half], span: [half * 2, half * 2], scale: 1, half }
+  }, [measured, alpha])
+
+  useEffect(() => {
+    if (!ground) return undefined
+    setGroundColorMap(ground.colorTexture, ground.min, ground.span)
+    setGroundFxMap(ground.texture, ground.min, ground.span, ground.scale)
+    return () => {
+      setGroundColorMap(null)
+      setGroundFxMap(null)
+      ground.texture.dispose()
+      ground.colorTexture.dispose()
+    }
+  }, [ground])
+
+  return ground
+}
+
+function Ground({ radius = 90, fx = null }) {
   const material = useMemo(
-    () => makeGrassMaterial({ fade: { center: [0, 0], inner: radius * 0.42, outer: radius } }).material,
-    [radius],
+    () => makeGrassMaterial({
+      fade: { center: [0, 0], inner: radius * 0.42, outer: radius },
+      // The grass shader ALREADY darkens by the FX map's G channel (contact
+      // shadow) — in the map that map is baked. Here it is synthesised
+      // (`useDioramaGround`), so the ring rides the SAME path, not a decal.
+      poolMap: fx?.texture || null,
+      poolMin: fx?.min, poolSpan: fx?.span, poolScale: fx?.scale ?? 1,
+    }).material,
+    [radius, fx],
   )
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow material={material}>
@@ -407,6 +503,8 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
 
   const atlas = useTreeAtlas(look)
   const [measured, setMeasured] = useState(null)
+  const ground = useDioramaGround(measured, alpha)
+  useDioramaBarkTier()
 
   const url = `${import.meta.env.BASE_URL}baked/${look}/trees/${sp}/skeleton-${vr}-lod${ld}.glb`
 
@@ -468,7 +566,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
       {/* The canopy moves off the same wind that moves the clouds. */}
       <SwayDriver />
 
-      {!alpha && <Ground />}
+      {!alpha && <Ground fx={ground} />}
       {/* ⭐ THE PRODUCTION CHAIN — AO, the authored grade, bloom. Jacob: "the AO
           isn't evident", and it was not: self-shadowing alone leaves the canopy
           interior flat and the trunk meeting the grass with no darkening at the
