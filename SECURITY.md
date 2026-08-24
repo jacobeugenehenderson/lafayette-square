@@ -130,6 +130,11 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `try_activate_courier` (a Deliver courier needs only identity + agreement → **activation**),
   `upgrade_to_drive`, overwrite vehicle/license, and `GET ?courier_id=` to read another
   courier's onboarding status. Broken access control on identity/verification state.
+- ⭐ **Scope of the live exposure, measured 2026-08-24** (`supabase secrets list`): `STRIPE_SECRET_KEY`
+  and `CHECKR_API_KEY` are **not set**, so `start_identity` and `start_background` answered 503. That
+  does **not** soften the finding — the damaging actions are pure DB writes needing no vendor key:
+  `submit_insurance` (**marks insurance `passed`**), `accept_agreement` (→ `try_activate_courier`),
+  `submit_license`, `submit_vehicle`, `upgrade_to_drive`, and `GET` on anyone's status. All were live.
 - ⭐ **Worse than written, measured 2026-08-24:** the doc said `verify_jwt` doesn't save us *because
   the anon key is itself a valid JWT*. In fact **there is no JWT gate on this function at all** — it
   executes with no `apikey` and no `Authorization` header whatsoever. An attacker does not even need
@@ -178,7 +183,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   messages), and lock the table's anon policies down. If keeping direct access, at minimum
   scope UPDATE to `status='open'` and the matching device_hash via a request header claim.
 
-### F-5 · HIGH · No webhook signature verification (Stripe / Checkr / Twilio)
+### F-5 · HIGH · No webhook signature verification (Stripe / Checkr / Twilio)  — ⚙️ TWILIO HALF FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED** · Stripe/Checkr half OPEN
 - **Where:** `cary/stripe/webhooks.js` (handlers only — no `stripe.webhooks.constructEvent`);
   `cary/supabase/functions/sms-webhook/index.ts` (no `X-Twilio-Signature` check). Repo-wide grep
   for `constructEvent` / `STRIPE_WEBHOOK_SECRET` / `X-Twilio-Signature` = **zero hits**.
@@ -187,9 +192,21 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `identity.verification_session.verified` calls `try_activate_courier` → **a courier goes
   active with no real background check or identity proof**; a forged `payment_intent.succeeded`
   marks a session paid; forged Twilio inbound injects rows and abuses the SMS/email relay.
-- **Fix:** Verify signatures before trusting any webhook: Stripe `constructEvent` with
-  `STRIPE_WEBHOOK_SECRET`; Twilio `X-Twilio-Signature` HMAC; Checkr's signature header. Reject
-  on mismatch. This is a hard prerequisite before Cary handles a real activation.
+- **Fix (Twilio half, done in source):** `sms-webhook` now verifies `X-Twilio-Signature`
+  (HMAC-SHA1 over `url + sorted(k+v)`) **before** it spends SendGrid credit, writes a row, or emits
+  TwiML. ⛔ **No fail-open:** an unset `TWILIO_AUTH_TOKEN` **rejects**, it does not skip — that is the
+  F-11 mistake, and here it would make every forged POST indistinguishable from a real text.
+  `TWILIO_WEBHOOK_URL` overrides `req.url` for the case where a proxy rewrites host/proto.
+  ✅ `TWILIO_AUTH_TOKEN` **is** already set in the project's secrets, so deploying will not blind the
+  endpoint (`supabase secrets list`).
+- **Check:** `node scratch/claims-twilio-webhook-guard.mjs` — loads the real helpers **out of the
+  function's source** (never a re-implementation) and asserts that forged, misrouted, mis-keyed and
+  unverifiable requests are all rejected. The HMAC is pinned against the official `twilio` package's
+  `getExpectedTwilioSignature`, not against a remembered constant.
+- **Still OPEN — Stripe/Checkr half:** `cary/stripe/webhooks.js` still has no `constructEvent` and, in
+  fact, **no HTTP entrypoint at all** — it exports handlers nothing routes to. Verify with
+  `STRIPE_WEBHOOK_SECRET` and Checkr's signature header *when* it is wired. A hard prerequisite before
+  Cary handles a real activation.
 
 ### F-6 · MEDIUM · `web-messages` IDOR — device_hash is the only authorization
 - **Where:** `cary/supabase/functions/web-messages/index.ts` (`fetch`/`reply`/`unread` all key
@@ -221,13 +238,16 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
 - **Fix:** Add `set search_path = ''` (or `= public, pg_temp`) to each function definition and
   schema-qualify the table references.
 
-### F-9 · MEDIUM · TwiML XML injection in `sms-webhook`
+### F-9 · MEDIUM · TwiML XML injection in `sms-webhook`  — ⚙️ FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED**
 - **Where:** `cary/supabase/functions/sms-webhook/index.ts` (the raw inbound `body` is
   interpolated into `<Message to="…">[from] ${body}</Message>` unescaped).
 - **Impact:** Combined with the missing Twilio signature check (F-5), an attacker (or a
   crafted real SMS) can inject TwiML markup, altering the response Twilio executes — e.g.
   redirecting the forward message. XML-escape all interpolated values.
-- **Fix:** Escape `& < > " '` before interpolation, and add signature verification (F-5).
+- **Fix (done in source):** `escapeXml()` covers `& < > " '` and every value interpolated into the
+  TwiML now goes through it. ⭐ Deliberately **not** applied to the `console.log` or the `text/plain`
+  SendGrid body, where escaping would be wrong — `claims-twilio-webhook-guard.mjs` scopes its
+  assertion to the `twiml +=` lines for exactly that reason. Signature verification landed with it (F-5).
 
 ### F-10 · MEDIUM · Any authenticated user can see all courier live locations
 - **Where:** `cary/supabase/migrations/002_rls_policies.sql:129-131`
