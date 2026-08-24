@@ -166,6 +166,45 @@ Deno.serve(async (req) => {
     )
   }
 
+  // ── Log FIRST, so the alert can deep-link to this exact message ──
+  // ⭐ Order matters twice over. The row is what the Host's tap-through link
+  // points at, AND it is the rate-limit counter — writing it before the send
+  // means a message still counts even if Twilio then fails, which is the safe
+  // direction for a spend limiter.
+  let messageId = null
+  try {
+    const { data: row, error: logErr } = await sb
+      .from('sms_messages')
+      .insert({
+        phone: 'web',
+        direction: 'inbound',
+        body: message,
+        device_hash: deviceHash,
+        sender_ip_hash: ipHash,
+        handle,
+        avatar,
+      })
+      .select('id')
+      .single()
+    if (logErr) throw new Error(logErr.message)
+    messageId = row?.id ?? null
+  } catch (err) {
+    console.error(`[contact-sms] DB log FAILED — this send is uncounted for rate limiting: ${err.message}`)
+  }
+
+  // Tap-through link into the Host's SMS Inbox, straight to this thread.
+  // ⛔ Deliberately the MESSAGE id, never the device_hash: the hash is a bearer
+  // token (SECURITY.md F-6) and would then live in the Host's message history
+  // and Twilio's logs forever. A message id grants nothing on its own and the
+  // Inbox is admin-gated regardless.
+  // ⛔ NO GUESSED DOMAIN. Unset site URL = no link, said out loud — a link to
+  // the wrong installation is worse than no link at all.
+  const siteUrl = Deno.env.get('CONTACT_SITE_URL')
+  if (!siteUrl) {
+    console.warn('[contact-sms] CONTACT_SITE_URL unset — alert will carry no reply link')
+  }
+  const replyLink = siteUrl && messageId ? `${siteUrl.replace(/\/$/, '')}/?msg=${messageId}` : null
+
   // ── Send SMS to owner via Twilio ────────────────────────────────
   const twilioSid = Deno.env.get('TWILIO_ACCOUNT_SID')
   const twilioAuth = Deno.env.get('TWILIO_AUTH_TOKEN')
@@ -176,7 +215,9 @@ Deno.serve(async (req) => {
   if (twilioSid && twilioAuth && twilioFrom && contactPhone) {
     try {
       const who = handle ? `${avatar || ''} @${handle}`.trim() : 'Anonymous'
-      const smsBody = `Lafayette Square [${who}]:\n${message}`
+      const smsBody =
+        `Lafayette Square [${who}]:\n${message}` +
+        (replyLink ? `\n\nReply: ${replyLink}` : '')
       const res = await fetch(
         `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`,
         {
@@ -231,25 +272,6 @@ Deno.serve(async (req) => {
     } catch (err) {
       console.error('[contact-sms] Email forward failed:', err.message)
     }
-  }
-
-  // ── Log to sms_messages ────────────────────────────────────────
-  // ⚠️ This row is ALSO the rate-limit counter, so a failure here does not just
-  // lose a log line — it loses the record that this message was sent, and the
-  // next caller's count comes up short. Say so loudly.
-  try {
-    const { error: logErr } = await sb.from('sms_messages').insert({
-      phone: 'web',
-      direction: 'inbound',
-      body: message,
-      device_hash: deviceHash,
-      sender_ip_hash: ipHash,
-      handle,
-      avatar,
-    })
-    if (logErr) throw new Error(logErr.message)
-  } catch (err) {
-    console.error(`[contact-sms] DB log FAILED — this send is uncounted for rate limiting: ${err.message}`)
   }
 
   // Succeed if either channel delivered

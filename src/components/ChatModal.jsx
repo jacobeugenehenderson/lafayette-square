@@ -30,43 +30,71 @@ async function checkUnread() {
   }
 }
 
-// Listen for new admin replies in real time
-let _subscribed = false
-async function subscribeRealtime() {
-  if (_subscribed) return
-  _subscribed = true
-  try {
-    const dh = await getDeviceHash()
-    supabase
-      .channel('chat-replies')
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'sms_messages',
-          filter: `device_hash=eq.${dh}`,
-        },
-        (payload) => {
-          const msg = payload.new
-          if (msg.direction === 'outbound') {
-            // Admin replied — open modal if closed, notify store
-            useChat.getState().setUnreadCount(useChat.getState().unreadCount + 1)
-            if (!useChat.getState().open) useChat.getState().setOpen(true)
-            // Dispatch a custom event so ChatModalInner can append the message
-            window.dispatchEvent(new CustomEvent('lsq-chat-message', { detail: msg }))
-          }
-        }
-      )
-      .subscribe()
-  } catch (err) {
-    console.error('[ChatModal] realtime subscribe failed:', err)
+/**
+ * Watch for replies while the visitor is still on the site.
+ *
+ * ⛔ THIS USED TO BE A REALTIME SUBSCRIPTION ON `sms_messages`, AND IT STOPPED
+ * WORKING SILENTLY. Migration 009 enabled RLS on that table with zero policies
+ * and revoked the anon grants, to close a PII leak (SECURITY.md F-1). Realtime
+ * enforces RLS, so the subscription matched nothing and delivered nothing — no
+ * error, no warning, just a feature that quietly stopped. Excised rather than
+ * left in place: a subscription that can never fire is worse than no code,
+ * because it reads as a working live path.
+ *
+ * ⭐ Polling instead is immune to that whole class: it goes through the
+ * `web-messages` edge function on the service role, so table permissions cannot
+ * take it out from underneath. The cost is a few seconds of latency, which for
+ * a neighbourhood message is nothing.
+ *
+ * (The proper fix is to re-key web messaging onto the anonymous session added
+ * in migration 010, which would make Realtime work again on `auth.uid()`. That
+ * is a real change to how the chat identifies people, so it is a decision, not
+ * a cleanup — see ls/OPERATIONS.md §7.)
+ */
+const POLL_MS = 25_000
+let _polling = false
+
+async function pollForReplies() {
+  if (_polling) return
+  _polling = true
+
+  const tick = async () => {
+    // Don't burn requests on a backgrounded tab; the next foreground tick
+    // catches up, and checkUnread() already ran on load.
+    if (document.visibilityState !== 'visible') return
+    try {
+      // Already reading the thread? Just refresh it in place — otherwise a reply
+      // that lands while the modal is open would sit unseen until they reopened it,
+      // which is the exact live-update the dead subscription used to provide.
+      if (useChat.getState().open) {
+        window.dispatchEvent(new CustomEvent('lsq-chat-refresh'))
+        return
+      }
+      const dh = await getDeviceHash()
+      const { data } = await supabase.functions.invoke('web-messages', {
+        body: { action: 'unread', device_hash: dh },
+      })
+      const n = data?.count ?? 0
+      if (n > 0) {
+        useChat.getState().setUnreadCount(n)
+        useChat.getState().setOpen(true)
+      }
+    } catch (err) {
+      // Quiet on the console but never silently "no messages" — leave the
+      // count alone so a network blip cannot read as "nothing waiting".
+      console.error('[ChatModal] reply poll failed:', err)
+    }
   }
+
+  setInterval(tick, POLL_MS)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') tick()
+  })
 }
 
 // Thin gate
 export default function ChatModal() {
-  useEffect(() => { checkUnread(); subscribeRealtime() }, [])
+  useEffect(() => { checkUnread(); pollForReplies() }, [])
   const open = useChat((s) => s.open)
   if (!open) return null
   return <ChatModalInner />
@@ -85,17 +113,13 @@ function ChatModalInner() {
     useChat.getState().setUnreadCount(0)
   }
 
-  // Listen for real-time admin replies
+  // Refresh an open thread when the poller sees activity. (Was a listener for
+  // `lsq-chat-message`, fed by the realtime subscription 009 killed — nothing
+  // dispatched that event any more, so it was inert.)
   useEffect(() => {
-    const handler = (e) => {
-      const msg = e.detail
-      setMessages(prev => {
-        if (prev.some(m => m.id === msg.id)) return prev
-        return [...prev, msg]
-      })
-    }
-    window.addEventListener('lsq-chat-message', handler)
-    return () => window.removeEventListener('lsq-chat-message', handler)
+    const handler = () => fetchThread()
+    window.addEventListener('lsq-chat-refresh', handler)
+    return () => window.removeEventListener('lsq-chat-refresh', handler)
   }, [])
 
   const fetchThread = async () => {

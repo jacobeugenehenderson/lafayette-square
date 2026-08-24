@@ -1,17 +1,111 @@
 import { useState, useEffect, useRef } from 'react'
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import useGuardianStatus from '../hooks/useGuardianStatus'
 
 export const useSmsInbox = create((set) => ({
   open: false,
   setOpen: (open) => set({ open }),
+
+  // Deep-link target: the message id from `?msg=` in the alert SMS. Held here
+  // so the inbox can jump straight to that conversation once it has loaded.
+  targetMessageId: null,
+  setTargetMessageId: (id) => set({ targetMessageId: id }),
+
+  // Operator-side unread badge.
+  unreadCount: 0,
+  setUnreadCount: (n) => set({ unreadCount: n }),
 }))
+
+// ── Operator-side unread ────────────────────────────────────────
+// "Unread" for the Host is "arrived since I last opened the inbox". There is no
+// server-side seen-marker for the admin (read_at tracks the VISITOR reading our
+// replies, the other direction), so the watermark lives in localStorage. That
+// is per-device, which is fine for a single operator and costs no schema.
+const SEEN_KEY = 'lsq_sms_last_seen'
+
+function lastSeen() {
+  try { return localStorage.getItem(SEEN_KEY) || '1970-01-01T00:00:00Z' } catch { return '1970-01-01T00:00:00Z' }
+}
+export function markInboxSeen() {
+  try { localStorage.setItem(SEEN_KEY, new Date().toISOString()) } catch {}
+  useSmsInbox.getState().setUnreadCount(0)
+}
+
+/**
+ * Count inbound messages newer than the watermark, for the menu badge.
+ * ⛔ On failure the count is left ALONE rather than zeroed — "I could not ask"
+ * must not render as "nothing waiting". A silent zero is how a message sits
+ * unanswered for a week.
+ */
+export async function refreshInboxUnread() {
+  const adminToken = localStorage.getItem('lsq_admin_token') || ''
+  if (!adminToken) return
+  try {
+    const { data, error } = await supabase.functions.invoke('sms-inbox', {
+      body: { admin_token: adminToken },
+    })
+    if (error || !data?.messages) {
+      console.error('[SmsInbox] unread check failed — leaving the badge as-is:', error)
+      return
+    }
+    const since = lastSeen()
+    const n = data.messages.filter((m) => m.direction === 'inbound' && m.created_at > since).length
+    useSmsInbox.getState().setUnreadCount(n)
+  } catch (err) {
+    console.error('[SmsInbox] unread check failed — leaving the badge as-is:', err)
+  }
+}
+
+// ── Deep link from the alert SMS: `?msg=<message id>` ───────────
+// Read once at module load and stripped from the URL, so a reload or a shared
+// link does not keep re-opening the same thread.
+const _deepLinkMsgId = (() => {
+  try {
+    const params = new URLSearchParams(window.location.search)
+    const id = params.get('msg')
+    if (!id) return null
+    params.delete('msg')
+    const rest = params.toString()
+    window.history.replaceState({}, '', window.location.pathname + (rest ? '?' + rest : ''))
+    return id
+  } catch { return null }
+})()
 
 // Thin gate
 export default function SmsInbox() {
   const open = useSmsInbox((s) => s.open)
-  if (!open) return null
-  return <SmsInboxInner />
+  return (
+    <>
+      <InboxDeepLink />
+      {open ? <SmsInboxInner /> : null}
+    </>
+  )
+}
+
+/**
+ * Honour `?msg=` from the alert text: open the inbox on that conversation.
+ * If the Host is not admin on this device yet, raise the passphrase prompt and
+ * open the moment they are — so tapping the link from a fresh phone still lands
+ * in the right place instead of silently doing nothing.
+ */
+function InboxDeepLink() {
+  const isAdmin = useGuardianStatus((s) => s.isAdmin)
+
+  useEffect(() => {
+    if (!_deepLinkMsgId) return
+    useSmsInbox.getState().setTargetMessageId(_deepLinkMsgId)
+    if (!isAdmin) useGuardianStatus.setState({ adminPromptOpen: true })
+  }, [])
+
+  useEffect(() => {
+    if (_deepLinkMsgId && isAdmin) useSmsInbox.getState().setOpen(true)
+  }, [isAdmin])
+
+  // Keep the badge current for an admin who never taps a link.
+  useEffect(() => { if (isAdmin) refreshInboxUnread() }, [isAdmin])
+
+  return null
 }
 
 function formatPhone(phone) {
@@ -76,6 +170,15 @@ function ContactLabel({ threadKey, profiles, messages }) {
   )
 }
 
+/**
+ * Which conversation a message belongs to. ⭐ One definition, used by the
+ * grouping AND the deep link — if these two ever disagreed, a tapped link would
+ * select a thread key that no conversation has, and open nothing.
+ */
+function threadKeyOf(msg) {
+  return msg.phone === 'web' && msg.device_hash ? `device:${msg.device_hash}` : msg.phone
+}
+
 function SmsInboxInner() {
   const [messages, setMessages] = useState([])
   const [profiles, setProfiles] = useState({})  // phone → { display_name, neighborhood_relationship }
@@ -106,6 +209,21 @@ function SmsInboxInner() {
 
   useEffect(() => { fetchMessages() }, [])
 
+  // Opening the inbox IS the operator reading it — drop the badge.
+  useEffect(() => { markInboxSeen() }, [])
+
+  // Deep link: once messages are in, jump to the conversation the alert text
+  // pointed at. Cleared either way, so a message that has since been deleted
+  // leaves the operator on the list rather than stuck waiting for a jump.
+  const targetMessageId = useSmsInbox((s) => s.targetMessageId)
+  useEffect(() => {
+    if (!targetMessageId || !messages.length) return
+    const msg = messages.find((m) => m.id === targetMessageId)
+    if (msg) setSelectedPhone(threadKeyOf(msg))
+    else console.warn(`[SmsInbox] deep-link message ${targetMessageId} not found`)
+    useSmsInbox.getState().setTargetMessageId(null)
+  }, [targetMessageId, messages])
+
   // Auto-scroll thread to bottom
   useEffect(() => {
     if (selectedThread && scrollRef.current) {
@@ -124,9 +242,7 @@ function SmsInboxInner() {
   // Group messages into conversations — by device_hash for web, by phone for SMS
   const conversations = {}
   for (const msg of messages) {
-    const key = msg.phone === 'web' && msg.device_hash
-      ? `device:${msg.device_hash}`
-      : msg.phone
+    const key = threadKeyOf(msg)
     if (!conversations[key]) conversations[key] = []
     conversations[key].push(msg)
   }

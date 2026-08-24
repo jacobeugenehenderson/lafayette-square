@@ -43,9 +43,12 @@ Deno.serve(async (req) => {
       .eq('direction', 'outbound')
       .is('read_at', null)
 
+    // ⛔ NOT `{ count: 0 }`. "I could not ask" and "nothing waiting" are
+    // different answers, and collapsing them means a reply sits unseen because
+    // a query blipped. Say the query failed and let the caller keep its state.
     if (error) {
       console.error('[web-messages] unread query failed:', error.message)
-      return json({ count: 0 })
+      return json({ error: 'Could not check messages' }, 503)
     }
     return json({ count: count || 0 })
   }
