@@ -14,39 +14,110 @@
  *  10. Go live (toggle availability)
  *
  * Actions:
- *   GET  /onboarding?courier_id=...       → get_status
+ *   GET  /onboarding                      → get_status
  *   POST /onboarding { action, ... }      → step-specific handlers
+ *
+ * ⛔ AUTH: every call requires the courier's own Supabase user JWT
+ * (`Authorization: Bearer <access token>`). The courier id is taken from that
+ * token, NOT from the query string or body — a `courier_id` may still be sent
+ * but it must match, and a mismatch is rejected 403. See SECURITY.md F-2.
  */
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
-const supabase = createClient(
-  Deno.env.get('SUPABASE_URL'),
-  Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
-);
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+
+// ⛔ NO FALLBACKS. A missing key must not degrade into a client that silently
+// fails open — every request below runs with RLS bypassed, so a half-configured
+// function is more dangerous than a dead one. Fail loudly, at boot.
+for (const [name, value] of [
+  ['SUPABASE_URL', SUPABASE_URL],
+  ['SUPABASE_SERVICE_ROLE_KEY', SERVICE_ROLE_KEY],
+  ['SUPABASE_ANON_KEY', ANON_KEY],
+]) {
+  if (!value) throw new Error(`onboarding: ${name} is not set — refusing to start`);
+}
+
+const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
 
 Deno.serve(async (req) => {
   try {
-    if (req.method === 'GET') {
-      return await handleGetStatus(req);
+    if (req.method !== 'GET' && req.method !== 'POST') {
+      return json({ error: 'Method not allowed' }, 405);
     }
-    if (req.method === 'POST') {
-      return await handleAction(req);
-    }
-    return json({ error: 'Method not allowed' }, 405);
+
+    // Read the body once — a Request body is a single-use stream.
+    const body = req.method === 'POST' ? await req.json().catch(() => ({})) : {};
+    const claimed =
+      req.method === 'GET' ? new URL(req.url).searchParams.get('courier_id') : body?.courier_id ?? null;
+
+    // ── F-2 · Authenticate the caller BEFORE dispatching ──────
+    // Everything below runs on a service-role client that bypasses RLS, so the
+    // function IS the authorization (SECURITY.md §2). `verify_jwt` does not
+    // help: the anon key is itself a valid JWT, so "has a JWT" means "is anyone
+    // on the internet."
+    const auth = await authenticateCourier(req, claimed);
+    if (auth.error) return auth.error;
+    const { courierId } = auth;
+
+    return req.method === 'GET'
+      ? await handleGetStatus(courierId)
+      : await handleAction(body, courierId);
   } catch (err) {
     console.error('Onboarding error:', err);
     return json({ error: err.message }, 500);
   }
 });
 
+// ── Caller authentication ───────────────────────────────────
+
+/**
+ * Resolve the caller to a courier id from their Supabase user JWT.
+ *
+ * ⭐ The id is DERIVED from the verified token, never read from the request
+ * (SECURITY.md F-2: "Do not derive identity from the request body"). The
+ * courier already holds a real session — `useCary.js` signs them in with
+ * phone OTP and `supabase.functions.invoke` forwards that access token — and
+ * `courier_profiles.id = auth.uid()` is the identity model throughout
+ * `002_rls_policies.sql`. So the token's `sub` IS the courier id.
+ *
+ * If the request also carries a `courier_id`, it must match. ⛔ A mismatch is
+ * REJECTED, not silently overridden: a caller acting on someone else's id has
+ * either found a bug or is attacking, and both must be visible.
+ */
+async function authenticateCourier(req, claimed) {
+  const authHeader = req.headers.get('Authorization');
+  if (!authHeader?.startsWith('Bearer ')) {
+    return { error: json({ error: 'Authentication required' }, 401) };
+  }
+
+  // Verify against the auth server using the ANON key + the caller's token.
+  // The bare anon key resolves to no user, which is exactly the discrimination
+  // we need — it is a valid JWT but not a person.
+  const caller = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+
+  const { data, error } = await caller.auth.getUser();
+  if (error || !data?.user?.id) {
+    return { error: json({ error: 'Authentication required' }, 401) };
+  }
+
+  const courierId = data.user.id;
+  if (claimed && claimed !== courierId) {
+    console.warn(`[onboarding] caller ${courierId} attempted to act as ${claimed}`);
+    return { error: json({ error: 'Forbidden' }, 403) };
+  }
+
+  return { courierId };
+}
+
 // ── GET: Onboarding status ──────────────────────────────────
 
-async function handleGetStatus(req) {
-  const url = new URL(req.url);
-  const courierId = url.searchParams.get('courier_id');
-  if (!courierId) return json({ error: 'courier_id required' }, 400);
-
+async function handleGetStatus(courierId) {
   const { data, error } = await supabase.rpc('get_onboarding_status', {
     p_courier_id: courierId,
   });
@@ -57,11 +128,8 @@ async function handleGetStatus(req) {
 
 // ── POST: Step actions ──────────────────────────────────────
 
-async function handleAction(req) {
-  const body = await req.json();
-  const { action, courier_id } = body;
-
-  if (!courier_id) return json({ error: 'courier_id required' }, 400);
+async function handleAction(body, courierId) {
+  const { action } = body;
 
   const actions = {
     start_identity: startIdentityVerification,
@@ -78,7 +146,8 @@ async function handleAction(req) {
   const handler = actions[action];
   if (!handler) return json({ error: `Unknown action: ${action}` }, 400);
 
-  return await handler(courier_id, body);
+  // courierId comes from the verified token, never from `body`.
+  return await handler(courierId, body);
 }
 
 // ── Step 2: Identity Verification (Stripe Identity) ─────────

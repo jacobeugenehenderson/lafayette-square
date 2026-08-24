@@ -93,10 +93,13 @@ The system is three deployables plus two third-party backends:
 - **Service-role key ⇒ the function IS the authorization.** Every edge function creates its
   client with `SUPABASE_SERVICE_ROLE_KEY`, which **bypasses RLS entirely**. That is correct
   for a trusted server — but it means each function must authenticate its caller and authorize
-  the specific action **in its own code**. Supabase's `verify_jwt` gateway does _not_ save us:
-  the anon key is itself a valid JWT, so "has a JWT" ≈ "is anyone on the internet." Functions
-  that trust an `id` from the request body without checking it against the caller (F-2, F-3)
-  are unauthenticated privileged endpoints.
+  the specific action **in its own code**. Supabase's `verify_jwt` gateway does _not_ save us — and
+  it is weaker than it sounds twice over: even when it is on, the anon key is itself a valid JWT, so
+  "has a JWT" ≈ "is anyone on the internet"; and ⭐ **it is not on for every deployed function** —
+  `onboarding` executes with no `apikey` and no `Authorization` header at all (measured 2026-08-24,
+  F-2). ⛔ So never treat the gateway as a layer: **check per function, don't assume.** Functions that
+  trust an `id` from the request body without checking it against the caller (F-2, F-3) are
+  unauthenticated privileged endpoints.
 
 **Data sensitivity inventory** (what an attacker gains): phone numbers + verified flags,
 driver-license expiry/verified, insurance, live GPS (`courier_locations`, `route_points`),
@@ -119,17 +122,38 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `sms-webhook`/`sms-inbox`/`sms-reply`/`contact-sms`/`web-messages`, which bypass RLS). RLS
   on + zero policies = anon locked out, functions unaffected. Add a migration `009_*.sql`.
 
-### F-2 · HIGH · `onboarding` function trusts `courier_id` from the body (no caller auth)
-- **Where:** `cary/supabase/functions/onboarding/index.ts:60-82` (dispatch), and every handler.
+### F-2 · HIGH · `onboarding` function trusts `courier_id` from the body (no caller auth)  — ⚙️ FIXED IN SOURCE 2026-08-24, **NOT YET DEPLOYED**
+- **Where:** `cary/supabase/functions/onboarding/index.ts` — `handleAction`/`handleGetStatus` (dispatch), and every handler. *(Cite the symbol, not a line number — these drifted once already.)*
 - **Impact:** Service-role client + `courier_id` taken straight from the request. Any
   anonymous caller can, for **any** courier id: `submit_insurance` → **marks insurance
   `passed`** (`index.ts:255-262`, self-attested, no vendor), `accept_agreement` →
   `try_activate_courier` (a Deliver courier needs only identity + agreement → **activation**),
   `upgrade_to_drive`, overwrite vehicle/license, and `GET ?courier_id=` to read another
   courier's onboarding status. Broken access control on identity/verification state.
-- **Fix:** Require the Supabase user JWT (`Authorization: Bearer <user token>`), decode it,
-  and assert `auth.uid() === courier_id` for every mutating action (admin actions gated
-  separately). Do not derive identity from the request body.
+- ⭐ **Worse than written, measured 2026-08-24:** the doc said `verify_jwt` doesn't save us *because
+  the anon key is itself a valid JWT*. In fact **there is no JWT gate on this function at all** — it
+  executes with no `apikey` and no `Authorization` header whatsoever. An attacker does not even need
+  the public anon key. Reproduce (returns the function's own 400, i.e. its code ran):
+
+  ```
+  curl -i https://ngbvgjzrpnfrqmzkqvch.supabase.co/functions/v1/onboarding
+  ```
+
+- **Fix (done in source):** `authenticateCourier()` in `onboarding/index.ts` requires
+  `Authorization: Bearer <user token>`, verifies it via `auth.getUser()` against the anon-key client,
+  and **derives** `courierId` from the verified token. A `courier_id` in the query/body is still
+  accepted but must match — ⛔ a mismatch is rejected **403 and logged**, never silently overridden.
+  No client change was needed: couriers already hold a phone-OTP session (`useCary.js:59-69`) and
+  `supabase.functions.invoke` forwards it.
+- ⚠️ **Not live until `supabase functions deploy onboarding` runs.** ⛔ Deploy **by name** — a bare
+  `supabase functions deploy` would also deploy `complete-session` (F-3), an unauthenticated
+  money-moving endpoint that has deliberately never been deployed.
+- ⚠️ **Separate, pre-existing, NOT fixed here — the function has no CORS headers**, so a browser
+  preflight gets `405` with no `Access-Control-Allow-Origin` and the *legitimate* client cannot call
+  it; only `curl` can. Verified 2026-08-24 with
+  `curl -X OPTIONS … -H 'Origin: https://lafayette-square.com'`. It is a functional gap, not a
+  security one, and fixing it is a design choice about allowed origins (cf. F-13) — so it is left for
+  that pass rather than resolved silently here.
 
 ### F-3 · HIGH · `complete-session` is an unauthenticated money-moving endpoint
 - **Where:** `cary/supabase/functions/complete-session/index.js:20-32`.

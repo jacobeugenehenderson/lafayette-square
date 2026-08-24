@@ -227,8 +227,12 @@ supabase migration list
 # Push schema changes
 supabase db push
 
-# Deploy edge functions
-supabase functions deploy
+# ⛔ Deploy edge functions BY NAME. A bare `supabase functions deploy` deploys
+#    EVERYTHING under supabase/functions/ -- including three that have never
+#    been deployed on purpose. One of them, `complete-session`, is an
+#    UNAUTHENTICATED endpoint that moves money via Stripe (SECURITY.md F-3).
+#    Deploying it is a security incident, not a release.
+supabase functions deploy <name>
 
 # Which functions are actually live? Several in the repo have NEVER been
 # deployed — do not assume a file under supabase/functions/ is running.
