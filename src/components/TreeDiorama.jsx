@@ -22,6 +22,7 @@ import { useCanaryTree } from '../lib/canaryTree.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { makeGrassMaterial } from './grassMaterial.js'
 import { CANARY_GROUND_CAMERA } from './canaryCamera.js'
+import { useSceneJson } from '../lib/useSceneJson.js'
 
 /**
  * TREE DIORAMA — one specimen, fully dressed, under the neighbourhood's real
@@ -382,6 +383,64 @@ function useDioramaTrunkGround() {
 //   ?whip=1&whipAmpMax=1.6      whippier tips
 //   ?whip=1&whipGamma=2.4       stiller bole, looser tips
 //   ?whip=1&whipLeaf=0          leaves ride their branch with NO extra flutter
+// ⭐ THE DIORAMA LIGHTS ITS OWN NIGHT — and touches NOTHING else.
+// Jacob, 2026-08-24: "We don't want to move night everywhere. This is a tiny
+// adjunct function bolted on to a giant operation; the Diorama should have no
+// impact on the larger product."
+//
+// The Look's `ambient` has no `night` key, so midnight resolves by interpolation
+// WRAPPING THROUGH the night and lands ABOVE noon — nobody authored that. But
+// `ambient` and `hemi` are per-Look channels read by the whole map, so authoring
+// a night key into the Look would move LS at night everywhere.
+//
+// So we overlay the night key onto a COPY, in memory, and hand it to
+// CelestialBodies through its existing `ambientOverride` / `hemiOverride` seam —
+// the same seam the Stage drives (CartographApp:1226). ⛔ The Look on disk is
+// untouched and the map never sees this.
+//
+// ⛔ PORTABLE, not LS-specific: it reads THIS Look's own channels off scene.json
+// and overlays only the `night` key, so a town with different values keeps them.
+// ⛔ And it does NOT invent a channel: with no baked scene.json there is nothing
+// to copy, the overrides stay undefined, and CelestialBodies resolves exactly as
+// it does today — logged, not silently substituted.
+//
+// Dial by eye: `?nightAmbient=` / `?nightHemi=` (the KEY value, not the resolved
+// midnight value — the tod curve smooths between keys).
+const DIORAMA_NIGHT_AMBIENT = 0.25
+const DIORAMA_NIGHT_HEMI    = 0.40
+function useDioramaNightChannels(look) {
+  const scene = useSceneJson(look)
+  // ⛔ Report it, don't substitute silently. A Look with no baked scene.json
+  // gets today's lighting — which is a legitimate outcome, but it must not look
+  // like the override ran. Warned once the fetch has had time to settle.
+  useEffect(() => {
+    if (scene) return
+    const t = setTimeout(() => {
+      console.warn(`[TreeDiorama] no scene.json for look "${look}" — night override DID NOT RUN; lighting is unchanged`)
+    }, 4000)
+    return () => clearTimeout(t)
+  }, [scene, look])
+  return useMemo(() => {
+    let ambKey = DIORAMA_NIGHT_AMBIENT, hemiKey = DIORAMA_NIGHT_HEMI
+    try {
+      const q = new URLSearchParams(window.location.search)
+      const a = parseFloat(q.get('nightAmbient')); if (Number.isFinite(a)) ambKey = a
+      const h = parseFloat(q.get('nightHemi'));    if (Number.isFinite(h)) hemiKey = h
+    } catch { /* no URL, no dial */ }
+    // Copy the channel, replace only `night`. Spreading `ch` preserves
+    // `animated` / `transitionIn` / `transitionOut`, which the tod resolver reads.
+    const overlay = (ch, value) => ch
+      ? { ...ch, values: { ...(ch.values || {}), night: { ...(ch.values?.night || {}), value } } }
+      : undefined
+    const out = {
+      ambientOverride: overlay(scene?.ambient, ambKey),
+      hemiOverride:    overlay(scene?.hemi,    hemiKey),
+    }
+    if (scene) console.log(`[TreeDiorama] night channels: ambient.night=${ambKey} hemi.night=${hemiKey} (Look on disk untouched)`)
+    return out
+  }, [scene])
+}
+
 function useDioramaWindTiering() {
   useEffect(() => {
     const q = (() => { try { return new URLSearchParams(window.location.search) } catch { return null } })()
@@ -710,6 +769,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   useDioramaBarkTier()
   useDioramaTrunkGround()
   useDioramaWindTiering()
+  const nightChannels = useDioramaNightChannels(look)
   const url = `${import.meta.env.BASE_URL}baked/${look}/trees/${sp}/skeleton-${vr}-lod${ld}.glb`
 
   // ⛔ NO FALLBACK. If the atlas fails to build there is no second dressing to
@@ -763,7 +823,12 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
           diorama's entire lighting rig. */}
       {/* debugLevel 1 = lights only. In alpha mode the host page owns the sky;
           we still take our light from it. */}
-      <CelestialBodies debugLevel={alpha ? 1 : 0} />
+      <CelestialBodies
+        debugLevel={alpha ? 1 : 0}
+        lookId={look}
+        ambientOverride={nightChannels.ambientOverride}
+        hemiOverride={nightChannels.hemiOverride}
+      />
       {!alpha && <CloudDome />}
       <WeatherEffects />
 
