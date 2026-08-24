@@ -182,6 +182,12 @@ post has a shadow where it meets the ground exactly as a trunk does. ⇒ The two
 cleanly by ROLE, not by object:
 - **G = contact shadow** — where any upright object MEETS the ground. Serves lamps AND trunks.
   **Always darkens.** ⛔ A darken-only fix must keep it for both.
+  ⭐ *(Jacob: "the lamp casts a small soft shadow around its own base very like an AO.")* So G
+  is **AMBIENT OCCLUSION at the junction, NOT a shadow thrown by the lamp's own light** —
+  small, soft, and **present at every hour**. ⇒ **G does NOT ride the TOD curve; R does.** At
+  night a lamp therefore shows BOTH at once: dark right at the post (occlusion) and bright in
+  a ring further out (its pool). ⛔ If a fix ever makes G fade with the lamp, it is wrong — an
+  occlusion does not switch off when the light does.
 - **R = lamp pool** — the light a lamp CASTS onto the ground. **Always brightens.** Rides the
   lamp TOD curve, so ~0 by day.
 ⭐ That is the invariant to build to: **contact darkens, pool brightens, albedo does neither.**
