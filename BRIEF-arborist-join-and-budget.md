@@ -25,10 +25,35 @@ asking.** The slab carries the first land-use pour (`unknown`→`underived`, gro
 
 ---
 
-## 0a. 🔥 START HERE — HERO IS BAD ON THE LIVE SITE. THIS IS THE JOB.
+## 0a. 🔥 START HERE — HERO'S TREES REGRESSED. NO PUBLIC EXPOSURE. THIS IS THE JOB.
 
-**Jacob, 2026-08-24 evening: *"The trees on the live site are small and sparse."*** Browse is
-fine. **Hero is the whole problem.** Treat this as the only ticket until it is closed.
+**Jacob, 2026-08-24 evening: Hero's trees are "small and sparse".** Browse is fine.
+**Hero is the whole problem.** Treat it as the only ticket until it is closed.
+
+### ⛔⛔ GET THE BLAST RADIUS RIGHT BEFORE YOU PANIC — I got it wrong twice in five minutes
+| surface | fed by | state right now |
+|---|---|---|
+| **lafayette-square.com** | `deploy.yml` → **`main`** | ✅ **the OLD, "extremely superior" trees. NOT affected.** |
+| **theward.online** | adopts the **pushed component pieces** | ⚠️ **already showing the regression** |
+| staging | `staging.yml` → **`land-use-derivation`** (this branch) | ⚠️ regressed |
+
+⭐ **`main` is untouched, so there is NO PUBLIC REGRESSION and no emergency revert.** Jacob
+said so explicitly. ⛔ **Do not "hotfix" or revert `main` — the good trees live there and
+nothing on this branch has reached it.** But theward.online IS inferior right now, so this is
+urgent-for-Jacob, not urgent-for-the-public. Work it properly rather than fast.
+
+### ⭐⭐⭐ THE THING I GOT FUNDAMENTALLY WRONG, AND IT IS THE KEY TO THE WHOLE TICKET
+I found ~1893 trees rendering as **full lod1 geometry** because their impostor records were
+missing, and I called it a **LEAK** — measured in triangles, and true as a cost statement.
+**Those trees rendering as real geometry instead of billboards IS WHY THE OLD TREES ARE
+SUPERIOR.** The "defect" was load-bearing for the look.
+
+⛔ **That is `CLAUDE.md` Layer 0 question 3 in a form I did not recognise: I measured COST,
+declared a DEFECT, and the operator's eye says the output was BETTER.** Before you "fix" any
+tree-count number on this surface, ask what it looks like — not what it costs.
+⇒ **So the 747 oaks are not the bug to undo in isolation. The question is: how much REAL
+GEOMETRY does hero need to look right, and what does that cost?** That is an eye number
+(`?heroGeom=`), and nobody has ever set it by looking.
 
 ### ⛔ WHAT IS ALREADY PUSHED — so do not "fix" it twice
 `origin/land-use-derivation` is at **`57e811f3`**, in sync. It ALREADY contains **`cb14c29c`**,
