@@ -181,16 +181,28 @@ mount **and** made the geometry unquantizable (`applyMatrix4` writes floats into
 
 **Operator dials** (URL, all defaulting to the committed values):
 `?ring=` contact-ring footprint · `?trunk=` / `?trunkTop=` trunk-base darkening + reach ·
-`?wind=` / `?gust=` breeze · `?leafT=` / `?leafK=` leaf transmission · `?species=` `?lod=` `?variant=`
+`?wind=` / `?gust=` breeze · `?leafT=` / `?leafK=` leaf transmission · `?species=` `?lod=` `?variant=` ·
+`?whip=` the wind-tier ramp (see below), with `?whipGamma=` `?whipAmpMax=` `?whipLeaf=` shaping it
 
 ⚠️ **The trunk-base contact is a SHARED knob** (`treeTrunkGround` + `setTrunkGround` in
 `treeAtlasMaterial.js`), defaulting to the map's values and restored on unmount — so street view
 inherits it by turning it up, never by reimplementing it.
 
+⭐ **THE WIND-TIER RAMP is a SHARED knob too** (`treeWindTiering` + `setWindTiering`, same file,
+same restore-on-unmount contract). The legacy classifier buckets a vertex by distance from the trunk
+**AXIS**, which is backwards: an outer branch tip damps to 0.30 while the upper trunk core reads
+"twig" at 0.60, and leaves at a flat 1.00 move 3× the branches they hang on. `?whip=1` replaces the
+four buckets with **one continuous ramp over height × radial distance** — a near-still bole to
+whipping tips — and makes a leaf ride its branch (branch motion **+** its own flutter) instead of
+moving independently of it.
+▶ `node scratch/claims-wind-tier-extraction.mjs` — proves the shared classifier still matches the
+pre-extraction one, parsing the old thresholds out of git rather than restating them.
+
+- ◻ **`?whip=` DEFAULTS TO 0 — the legacy buckets still ship.** The ramp is built, measured and
+  renders clean, but it moves EVERY tree in the map, so the default flips only on the operator's eye
+  on the cinematic pan. Until then the backwards classifier is what the map runs.
 - ◻ **Wind is FLOORED, not authored**: the meteorologist still does not author a `wind` block into
-  the directive. ⛔ **And the tier classifier is backwards** — it buckets by distance from the trunk
-  AXIS, so outer branch tips damp to 0.30 while the upper trunk core reads "twig" at 0.60 and leaves
-  move 3× the branches they hang on. `BRIEF-tree-motion-and-light.md §1`.
+  the directive.
 
 ## Grove (`src/arborist/Grove.jsx`)
 

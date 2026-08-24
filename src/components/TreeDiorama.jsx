@@ -14,8 +14,8 @@ import { TimeTicker, SkyStateTicker } from './Scene'
 import { SwayDriver } from './InstancedTrees.jsx'
 import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
-  useTreeAtlas, stampTreeVertexAttrs, setLeafTransmission, treeBarkTierUniform,
-  applyBarkUniforms, applyDeformerUniforms, setTrunkGround,
+  useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission, treeBarkTierUniform,
+  applyBarkUniforms, applyDeformerUniforms, setTrunkGround, setWindTiering,
 } from './treeAtlasMaterial'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useCanaryTree } from '../lib/canaryTree.js'
@@ -165,8 +165,21 @@ function Specimen({ url, material, onMeasured }) {
     })
     const chassisMinY = Number.isFinite(minY) ? minY : 0
     const chassisYRange = Math.max(1e-4, maxY - minY)
+    // Chassis-wide canopy radius — the whip ramp's radial axis. Scanned across
+    // every mesh for the same reason the Y range is: bark and leaf must share
+    // one scale, or a leaf tip and the branch it hangs on land at different
+    // points on the ramp.
+    const chassisGeoms = []
+    scene.traverse((o) => { if (o.isMesh && o.geometry?.attributes?.position) chassisGeoms.push(o.geometry) })
+    const chassisRadius = measureChassisRadius(chassisGeoms)
 
     let meshes = 0, tris = 0
+    // Whip-ramp census, reported on the mount line below. A stamp that silently
+    // failed would leave every vertex at radial 0 — i.e. the whole tree read as
+    // bole — and the tree would just move a bit less, which is exactly the kind
+    // of plausible-looking success that never gets caught by eye.
+    let whipR = { min: Infinity, max: -Infinity, n: 0 }
+    let whipH = { min: Infinity, max: -Infinity }
     scene.traverse((o) => {
       if (!o.isMesh) return
       meshes++
@@ -174,16 +187,29 @@ function Specimen({ url, material, onMeasured }) {
       o.receiveShadow = true
       o.frustumCulled = false
       if (o.geometry) {
-        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange, chassisRadius }, o)
         // Vertex colours flip USE_COLOR and compile a PARALLEL program; the
         // shared material expects none (single-program doctrine / Bloom).
         if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
         const pos = o.geometry.attributes.position
         tris += (o.geometry.index ? o.geometry.index.count : pos.count) / 3
+        const rn = o.geometry.attributes.aWindRadialNorm
+        const hn = o.geometry.attributes.aTreeHeightNorm
+        if (rn) for (let i = 0; i < rn.count; i++) {
+          const v = rn.getX(i)
+          if (v < whipR.min) whipR.min = v
+          if (v > whipR.max) whipR.max = v
+          whipR.n++
+        }
+        if (hn) for (let i = 0; i < hn.count; i++) {
+          const v = hn.getX(i)
+          if (v < whipH.min) whipH.min = v
+          if (v > whipH.max) whipH.max = v
+        }
       }
       o.material = material
     })
-    return { meshes, tris }
+    return { meshes, tris, whipR, whipH, chassisRadius }
   }, [scene, material])
 
   // Report the real extremes so the camera frames THIS tree. Box3.setFromObject
@@ -202,7 +228,10 @@ function Specimen({ url, material, onMeasured }) {
     console.log(
       `[TreeDiorama] ${url.split('/').slice(-2).join('/')} ` +
       `meshes=${prepared.meshes} tris=${Math.round(prepared.tris).toLocaleString()} ` +
-      `height=${(box.max.y - box.min.y).toFixed(1)}m`
+      `height=${(box.max.y - box.min.y).toFixed(1)}m ` +
+      `whip=[r ${prepared.whipR.n ? prepared.whipR.min.toFixed(2) : '--'}..${prepared.whipR.n ? prepared.whipR.max.toFixed(2) : '--'} ` +
+      `h ${Number.isFinite(prepared.whipH.min) ? prepared.whipH.min.toFixed(2) : '--'}..${Number.isFinite(prepared.whipH.max) ? prepared.whipH.max.toFixed(2) : '--'} ` +
+      `R=${prepared.chassisRadius.toFixed(1)}m n=${prepared.whipR.n.toLocaleString()}]`
     )
     if (onMeasured) {
       onMeasured({
@@ -342,6 +371,38 @@ function useDioramaTrunkGround() {
     console.log('[TreeDiorama] trunk-ground', applied)
     // Restore the map's defaults on unmount — this is a SHARED uniform.
     return () => setTrunkGround({ blend: 0.55, blendTop: 1.5, shadowStr: 0.5 })
+  }, [])
+}
+
+// ⭐ WIND TIERING — the whip ramp, dialled by eye on this surface. Same shape as
+// useDioramaTrunkGround: a SHARED knob, restored to the map's defaults on
+// unmount. `?whip=` blends from the legacy four buckets (0) to the continuous
+// height x radial ramp (1); the rest are the ramp's shape.
+//   ?whip=1                     the ramp, at its defaults
+//   ?whip=1&whipAmpMax=1.6      whippier tips
+//   ?whip=1&whipGamma=2.4       stiller bole, looser tips
+//   ?whip=1&whipLeaf=0          leaves ride their branch with NO extra flutter
+function useDioramaWindTiering() {
+  useEffect(() => {
+    const q = (() => { try { return new URLSearchParams(window.location.search) } catch { return null } })()
+    const num = (k) => { const v = parseFloat(q?.get(k)); return Number.isFinite(v) ? v : undefined }
+    const applied = setWindTiering({
+      blend:       num('whip'),
+      heightW:     num('whipH'),
+      radialW:     num('whipR'),
+      gamma:       num('whipGamma'),
+      ampMin:      num('whipAmpMin'),
+      ampMax:      num('whipAmpMax'),
+      tempoMin:    num('whipTempoMin'),
+      tempoMax:    num('whipTempoMax'),
+      leafFlutter: num('whipLeaf'),
+    })
+    console.log('[TreeDiorama] wind-tiering', applied)
+    // Restore the map's defaults on unmount — this is a SHARED uniform.
+    return () => setWindTiering({
+      blend: 0, heightW: 0.55, radialW: 0.45, gamma: 1.6,
+      ampMin: 0.04, ampMax: 1.15, tempoMin: 0.65, tempoMax: 1.70, leafFlutter: 0.35,
+    })
   }, [])
 }
 
@@ -648,7 +709,7 @@ function TreeDiorama({ species, lod, variant, lookId, transparent } = {}) {
   const ground = useDioramaGround(measured, alpha)
   useDioramaBarkTier()
   useDioramaTrunkGround()
-
+  useDioramaWindTiering()
   const url = `${import.meta.env.BASE_URL}baked/${look}/trees/${sp}/skeleton-${vr}-lod${ld}.glb`
 
   // ⛔ NO FALLBACK. If the atlas fails to build there is no second dressing to

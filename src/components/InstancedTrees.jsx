@@ -26,6 +26,9 @@ import {
   applyDeformerUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
+  stampWindTier,
+  stampWindRadialNorm,
+  measureChassisRadius,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
@@ -150,40 +153,13 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
       if (barkRegion === 'trunk') aBarkRegionArr.fill(1)
       g.setAttribute('aBarkRegion', new THREE.BufferAttribute(aBarkRegionArr, 1))
       // Brief 9a (Sough) per-vertex wind tier (0=trunk, 1=branch, 2=twig,
-      // 3=leaf) — drives multi-scale damping in the shared shader's sway
-      // block. Computed at runtime-merge time so chassis GLBs +
-      // trees-atlas.json stay byte-identical (AC #12). Leaves always get
-      // tier 3; bark vertices classify by radial distance from the
-      // tree-local Y-axis (we read g.attributes.position AFTER applyMatrix4,
-      // so XZ is tree-local thanks to the bake's clean coordinate frame —
-      // trunks sit at X≈Z≈0). The runtime-merge per-vertex slot stays open
-      // for the next consumer; Brief 10A explored using it for an aerial-tier
-      // gradient axis but retired the attribute in favor of per-pixel
-      // luminance after operator review (camera-angle independence).
-      const aWindTierArr = new Float32Array(pos.count)
-      const gpos = g.attributes.position
-      if (!isBark) {
-        // Leaf cards: tier 3 unconditionally.
-        aWindTierArr.fill(3)
-      } else {
-        for (let i = 0; i < gpos.count; i++) {
-          const x = gpos.getX(i)
-          const y = gpos.getY(i)
-          const z = gpos.getZ(i)
-          const r = Math.sqrt(x * x + z * z)
-          // Thresholds tuned against the v1.5 chassis stock (alaskan_cedar,
-          // broadleaf_rt3, generic_leaf_tree, etc.) — trunk radii sit at
-          // ~0.15–0.5m, secondary branches 0.05–0.15m, twigs <0.05m. The
-          // Y<3.0 gate on trunk-class prevents tall thick trunks above
-          // ~3m being misread as twigs.
-          let tier
-          if (r > 0.15 && y < 3.0) tier = 0  // trunk
-          else if (r > 0.06)       tier = 1  // major branch
-          else                     tier = 2  // twig
-          aWindTierArr[i] = tier
-        }
-      }
-      g.setAttribute('aWindTier', new THREE.BufferAttribute(aWindTierArr, 1))
+      // 3=leaf). ⛔ ONE definition, shared with the Salon preview / diorama —
+      // see stampWindTier in treeAtlasMaterial.js. It lived here as a hand-kept
+      // duplicate until 2026-08-24. Computed at runtime-merge time so chassis
+      // GLBs + trees-atlas.json stay byte-identical (AC #12). We read
+      // g.attributes.position AFTER applyMatrix4, so XZ is tree-local thanks to
+      // the bake's clean coordinate frame (trunks sit at X≈Z≈0).
+      stampWindTier(g, isBark)
       collected.push(g)
     })
     if (collected.length === 0) return []
@@ -207,6 +183,10 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
     }
     if (!Number.isFinite(chassisMinY)) chassisMinY = 0
     const chassisYRange = Math.max(1e-4, chassisMaxY - chassisMinY)
+    // Chassis-wide canopy radius — the second axis of the continuous wind ramp
+    // (see `treeWindTiering`). Measured across ALL collected primitives for the
+    // same reason chassisYRange is: bark and leaf must land on one scale.
+    const chassisRadius = measureChassisRadius(collected)
     for (const g of collected) {
       const gp = g.attributes.position
       const arr = new Float32Array(gp.count)
@@ -215,6 +195,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
         arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
       }
       g.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
+      stampWindRadialNorm(g, chassisRadius)
     }
 
     // Verify all geometries share the same attribute keys before merging.

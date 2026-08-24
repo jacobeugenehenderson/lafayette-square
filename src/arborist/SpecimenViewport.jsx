@@ -30,6 +30,7 @@ import {
   injectOverheadStamp,
   overheadLightUniforms,
   stampTreeVertexAttrs,
+  measureChassisRadius,
   treeSwayUniforms,
   treeBarkTierUniform,
   treeBarkTierPinned,
@@ -898,12 +899,17 @@ function Skeleton({
     })
     const chassisMinY = Number.isFinite(chMinY) ? chMinY : 0
     const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
+    // Chassis-wide canopy radius — the whip ramp's radial axis, scanned over
+    // the same meshes as the Y range so bark and leaf share one scale.
+    const chassisGeoms = []
+    scene.traverse((o) => { if (o.isMesh && o.geometry?.attributes?.position) chassisGeoms.push(o.geometry) })
+    const chassisRadius = measureChassisRadius(chassisGeoms)
     scene.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
       if (o.geometry) {
-        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange }, o)
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange, chassisRadius }, o)
         // Strip vertex colors — they flip USE_COLOR in three.js's shader
         // cache, which would compile a parallel program; the shared
         // material expects no vertex colors.

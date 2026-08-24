@@ -106,6 +106,66 @@ export function setTrunkGround({ blend, blendTop, shadowStr } = {}) {
   }
 }
 
+// ⭐ WIND TIERING — how per-vertex sway amplitude is distributed through the
+// tree. Shared, module-scoped, defaulting to TODAY'S values so every tree in
+// the map is bit-identical until someone turns `blend`. Same pattern as
+// treeSwayUniforms / treeTrunkGround: one write drives every mounted tree.
+//
+// blend = 0 → the legacy FOUR BUCKETS (aWindTier 0/1/2/3 → 0.05/0.30/0.60/1.00).
+// blend = 1 → a CONTINUOUS ramp from a near-still bole to whipping tips, driven
+//             by height × radial distance:
+//                 whip = pow(clamp(wH*aTreeHeightNorm + wR*aWindRadialNorm), gamma)
+//                 amp  = mix(ampMin, ampMax, whip)
+//
+// Why the buckets were wrong: they classified by RADIUS ALONE, so an outer
+// branch tip 5 m from the axis read "branch" (0.30) while the upper trunk core
+// within 6 cm of the axis read "twig" (0.60) — the whippiest parts moved least,
+// the bole moved more than they did, and leaves at a flat 1.00 moved 3x the
+// branches they hang on. Height × radial is the physical axis: sway grows with
+// distance travelled from the base along the structure, whether that distance
+// is up the bole or out along a cantilever.
+//
+// leafFlutter is the leaf card's OWN motion, ADDED to the whip of the branch it
+// hangs on — so a leaf rides its branch instead of moving independently of it.
+export const treeWindTiering = {
+  blendUniform:       { value: 0 },     // 0 = legacy buckets, 1 = continuous ramp
+  heightWUniform:     { value: 0.55 },  // how much HEIGHT contributes to whip
+  radialWUniform:     { value: 0.45 },  // how much RADIAL DISTANCE contributes
+  gammaUniform:       { value: 1.6 },   // >1 keeps the bole still, tips loose
+  ampMinUniform:      { value: 0.04 },  // amplitude at the base of the bole
+  ampMaxUniform:      { value: 1.15 },  // amplitude at the whippiest tip
+  tempoMinUniform:    { value: 0.65 },  // slow, heavy period at the bole
+  tempoMaxUniform:    { value: 1.70 },  // quick, light period at the tips
+  leafFlutterUniform: { value: 0.35 },  // leaf's own flutter, ON TOP of its branch
+}
+const _wtClamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v))
+export function setWindTiering(opts = {}) {
+  const t = treeWindTiering
+  const set = (key, uni, lo, hi) => {
+    if (Number.isFinite(opts[key])) uni.value = _wtClamp(opts[key], lo, hi)
+  }
+  set('blend',       t.blendUniform,       0, 1)
+  set('heightW',     t.heightWUniform,     0, 4)
+  set('radialW',     t.radialWUniform,     0, 4)
+  set('gamma',       t.gammaUniform,    0.05, 8)
+  set('ampMin',      t.ampMinUniform,      0, 4)
+  set('ampMax',      t.ampMaxUniform,      0, 8)
+  set('tempoMin',    t.tempoMinUniform, 0.05, 8)
+  set('tempoMax',    t.tempoMaxUniform, 0.05, 8)
+  set('leafFlutter', t.leafFlutterUniform, 0, 4)
+  return {
+    blend: t.blendUniform.value,
+    heightW: t.heightWUniform.value,
+    radialW: t.radialWUniform.value,
+    gamma: t.gammaUniform.value,
+    ampMin: t.ampMinUniform.value,
+    ampMax: t.ampMaxUniform.value,
+    tempoMin: t.tempoMinUniform.value,
+    tempoMax: t.tempoMaxUniform.value,
+    leafFlutter: t.leafFlutterUniform.value,
+  }
+}
+
 // Brief 13 refinement (Vantage 2026-05-23) — auto-tier binding from
 // Salon camera distance + preset. The Salon viewport drives the uniform
 // per-frame from `cameraStateRef` (Overhead → 0, Ground+distance>20 → 1,
@@ -244,6 +304,17 @@ export function injectFoliageSway(material) {
     shader.uniforms.uGustsScale        = treeSwayUniforms.uGustsScale
     shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
     shader.uniforms.uRustleAmplitude   = treeSwayUniforms.uRustleAmplitude
+    // Wind tiering — shared by REFERENCE (see `treeWindTiering`). Defaults
+    // reproduce the legacy buckets exactly; uWhipBlend=0 is bit-identical.
+    shader.uniforms.uWhipBlend         = treeWindTiering.blendUniform
+    shader.uniforms.uWhipHeightW       = treeWindTiering.heightWUniform
+    shader.uniforms.uWhipRadialW       = treeWindTiering.radialWUniform
+    shader.uniforms.uWhipGamma         = treeWindTiering.gammaUniform
+    shader.uniforms.uWhipAmpMin        = treeWindTiering.ampMinUniform
+    shader.uniforms.uWhipAmpMax        = treeWindTiering.ampMaxUniform
+    shader.uniforms.uWhipTempoMin      = treeWindTiering.tempoMinUniform
+    shader.uniforms.uWhipTempoMax      = treeWindTiering.tempoMaxUniform
+    shader.uniforms.uWhipLeafFlutter   = treeWindTiering.leafFlutterUniform
     // Shared by REFERENCE, so one write drives every mounted tree.
     shader.uniforms.uLeafTransmission          = treeLeafTransmission
     shader.uniforms.uLeafTransmissionSharpness = treeLeafTransmissionSharpness
@@ -396,6 +467,16 @@ export function injectFoliageSway(material) {
          attribute float aBarkRegion;
          attribute float aWindTier;
          attribute float aTreeHeightNorm;
+         attribute float aWindRadialNorm;
+         uniform float uWhipBlend;
+         uniform float uWhipHeightW;
+         uniform float uWhipRadialW;
+         uniform float uWhipGamma;
+         uniform float uWhipAmpMin;
+         uniform float uWhipAmpMax;
+         uniform float uWhipTempoMin;
+         uniform float uWhipTempoMax;
+         uniform float uWhipLeafFlutter;
          attribute float aHeroTier;
          uniform vec2 uDeformLeanRange;
          uniform vec2 uDeformTwistRange;
@@ -551,16 +632,33 @@ export function injectFoliageSway(material) {
            // Per-tier amplitude scale (aWindTier: 0=trunk, 1=branch,
            // 2=twig, 3=leaf — assigned at runtime-merge time in
            // InstancedTrees.jsx). Trunks stay still; leaves flutter.
-           float ampScale;
-           if (aWindTier < 0.5)      ampScale = 0.05;  // trunk
-           else if (aWindTier < 1.5) ampScale = 0.30;  // branch
-           else if (aWindTier < 2.5) ampScale = 0.60;  // twig
-           else                      ampScale = 1.00;  // leaf
-           float tempoScale;
-           if (aWindTier < 0.5)      tempoScale = 0.7;
-           else if (aWindTier < 1.5) tempoScale = 1.0;
-           else if (aWindTier < 2.5) tempoScale = 1.3;
-           else                      tempoScale = 1.6;
+           // LEGACY path (uWhipBlend = 0) — the four buckets, kept verbatim so
+           // the map is bit-identical until the knob is turned.
+           float ampLegacy, tempoLegacy;
+           if (aWindTier < 0.5)      { ampLegacy = 0.05; tempoLegacy = 0.7; }  // trunk
+           else if (aWindTier < 1.5) { ampLegacy = 0.30; tempoLegacy = 1.0; }  // branch
+           else if (aWindTier < 2.5) { ampLegacy = 0.60; tempoLegacy = 1.3; }  // twig
+           else                      { ampLegacy = 1.00; tempoLegacy = 1.6; }  // leaf
+           // CONTINUOUS path (uWhipBlend = 1) — one smooth ramp, no buckets.
+           // whip is how far this vertex has travelled from the base ALONG
+           // THE STRUCTURE: up the bole (aTreeHeightNorm) and out along a
+           // cantilever (aWindRadialNorm). A branch tip is far out AND high, so
+           // it whips; the bole core is high but at r=0, so it stays heavy.
+           float whip = clamp(uWhipHeightW * clamp(aTreeHeightNorm, 0.0, 1.0)
+                            + uWhipRadialW * clamp(aWindRadialNorm, 0.0, 1.0),
+                            0.0, 1.0);
+           whip = pow(whip, max(uWhipGamma, 1e-3));
+           float ampCont   = mix(uWhipAmpMin,   uWhipAmpMax,   whip);
+           float tempoCont = mix(uWhipTempoMin, uWhipTempoMax, whip);
+           // A leaf RIDES ITS BRANCH: it takes the whip of the wood it hangs on
+           // and adds its own small flutter on top, rather than moving at an
+           // unrelated flat amplitude.
+           if (aWindTier > 2.5) {
+             ampCont   += uWhipLeafFlutter;
+             tempoCont *= 1.25;
+           }
+           float ampScale   = mix(ampLegacy,   ampCont,   uWhipBlend);
+           float tempoScale = mix(tempoLegacy, tempoCont, uWhipBlend);
            {
              float rt = uTime * 2.5 * tempoScale;
              float rphase = phase + position.y * 0.3;
@@ -1471,6 +1569,71 @@ export function useSalonPreviewAtlas(manifestUrl) {
   }, [manifestUrl, bump, entry?.status])
 }
 
+// Brief 9a (Sough) — per-vertex wind TIER. Kept as the leaf/wood flag and as
+// the legacy bucket axis (see `treeWindTiering`): the continuous ramp reads
+// aTreeHeightNorm x aWindRadialNorm, and uses this only to know which vertices
+// are leaf cards so they can ride their branch and flutter on top of it.
+//
+// ⛔ ONE definition, called by BOTH the LS runtime (InstancedTrees#meshes) and
+// the Salon preview / diorama (stampTreeVertexAttrs). It was duplicated in the
+// two files until 2026-08-24 and the copies had to be kept in step by hand.
+export function stampWindTier(geometry, isBark) {
+  if (!geometry?.attributes?.position) return
+  if (geometry.attributes.aWindTier) return
+  const p = geometry.attributes.position
+  const arr = new Float32Array(p.count)
+  if (!isBark) {
+    arr.fill(3)  // leaf cards
+  } else {
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i), z = p.getZ(i)
+      const r = Math.sqrt(x * x + z * z)
+      arr[i] = (r > 0.15 && y < 3.0) ? 0 : (r > 0.06 ? 1 : 2)
+    }
+  }
+  geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
+}
+
+// Chassis-wide max radial distance from the tree's local Y-axis, in metres.
+// Shared by the LS runtime and the Salon preview so bark and leaf primitives
+// normalize against the SAME canopy radius — they have different extents, and
+// normalizing each on its own would put a leaf tip and the branch tip it hangs
+// on at different points on the whip ramp, which is the very independence we
+// are removing. Base sits at X=Z=0 thanks to the clean chassis-bake frame.
+export function measureChassisRadius(geometries) {
+  let r2Max = 0
+  for (const g of geometries) {
+    const p = g?.attributes?.position
+    if (!p) continue
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i)
+      const r2 = x * x + z * z
+      if (r2 > r2Max) r2Max = r2
+    }
+  }
+  return Math.max(1e-4, Math.sqrt(r2Max))
+}
+
+// Per-vertex radial distance from the trunk axis, normalized to the chassis
+// radius. The second axis of the continuous wind ramp (see `treeWindTiering`);
+// aTreeHeightNorm is the first. Falls back to this geometry's own extent when
+// no chassis-wide radius is supplied, matching aTreeHeightNorm's contract.
+export function stampWindRadialNorm(geometry, chassisRadius) {
+  if (!geometry?.attributes?.position) return
+  if (geometry.attributes.aWindRadialNorm) return
+  const p = geometry.attributes.position
+  const rMax = (typeof chassisRadius === 'number' && chassisRadius > 0)
+    ? chassisRadius
+    : measureChassisRadius([geometry])
+  const arr = new Float32Array(p.count)
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), z = p.getZ(i)
+    const t = Math.sqrt(x * x + z * z) / rMax
+    arr[i] = t < 0 ? 0 : t > 1 ? 1 : t
+  }
+  geometry.setAttribute('aWindRadialNorm', new THREE.BufferAttribute(arr, 1))
+}
+
 // Per-vertex attribute stamper shared between the LS runtime
 // (InstancedTrees#meshes) and the Salon preview (SpecimenViewport#Skeleton).
 // Reads atlasKind / barkRegion from prim extras (geometry.userData populated
@@ -1514,31 +1677,7 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
   if (!geometry.attributes.aHeroTier) {
     geometry.setAttribute('aHeroTier', new THREE.BufferAttribute(new Float32Array(pos.count), 1))
   }
-  // Brief 9a (Sough) — per-vertex wind tier for multi-scale sway. Mirrors
-  // InstancedTrees.jsx's classifier so Salon preview and LS see the same
-  // tier per vertex. Leaves: tier 3. Bark: tier from radial distance
-  // around the tree's local Y-axis (trunk ≈ X=Z=0 thanks to clean
-  // chassis-bake coordinate frame). Stamped once per geometry.
-  if (!geometry.attributes.aWindTier) {
-    const arr = new Float32Array(pos.count)
-    const isBark = atlasKind === 'bark'
-    if (!isBark) {
-      arr.fill(3)
-    } else {
-      for (let i = 0; i < pos.count; i++) {
-        const x = pos.getX(i)
-        const y = pos.getY(i)
-        const z = pos.getZ(i)
-        const r = Math.sqrt(x * x + z * z)
-        let tier
-        if (r > 0.15 && y < 3.0) tier = 0
-        else if (r > 0.06)       tier = 1
-        else                     tier = 2
-        arr[i] = tier
-      }
-    }
-    geometry.setAttribute('aWindTier', new THREE.BufferAttribute(arr, 1))
-  }
+  stampWindTier(geometry, atlasKind === 'bark')
   // Brief 3A (Cant) — normalized trunk-base→top height [0,1], drives the
   // per-instance deformer's lean/twist angle ramp. The chassis-wide (minY,
   // yRange) is passed in via fallback so the Salon preview shares the exact
@@ -1566,6 +1705,9 @@ export function stampTreeVertexAttrs(geometry, fallback = {}, owner = null) {
     }
     geometry.setAttribute('aTreeHeightNorm', new THREE.BufferAttribute(arr, 1))
   }
+  // The whip ramp's radial axis. `fallback.chassisRadius` carries the
+  // chassis-wide value the same way chassisMinY/chassisYRange do.
+  stampWindRadialNorm(geometry, fallback.chassisRadius)
 }
 
 // Brief 3A (Cant) — per-draw deformer ranges. Sibling of applyBarkUniforms
