@@ -52,7 +52,17 @@ const LODS = [
   // - lod2 stays loose (0.05): the BROWSE/overhead far LOD where leaf sparsity
   //   reads fine + DoF covers it, and the weight win matters most.
   // - lod0 tight (near/focal silhouette is an eye-call to keep).
-  { id: 'lod0', ratio: 0.85, textureSize: 2048, error: 0.0005 },
+  // ⭐ lod0 IS THE SOLO LOD — never instanced. Nothing in the map loads it
+  //   (`InstancedTrees#lodForRole` returns 'lod1' for every role); its only
+  //   consumers are the Grove tile, the diorama/embed and the coming street
+  //   view, and each shows ONE tree. Its budget is "one model on a desktop
+  //   GPU", not 5,000 placements — so it is emitted from a PRISTINE document,
+  //   before the destructive levers (Jacob, 2026-08-23: "street view is a heavy
+  //   model, but it's solo"). Measured before the change: publish cut the
+  //   linden canopy to 41,688 cards against the Salon's 208,444 — exactly
+  //   `leafDecimation.targetRatio` 0.20 — which is the whole of "the diorama is
+  //   a sad facsimile of the Salon".
+  { id: 'lod0', ratio: 1.0, textureSize: 2048, error: 0.0005, solo: true },
   { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0020 },
   { id: 'lod2', ratio: 0.10, textureSize: 512,  error: 0.0500 },
 ]
@@ -808,6 +818,18 @@ async function main() {
 
     // Brief 6 Lever 3: pre-decimate leaf cards on card-based topologies.
     const triBefore = countTris(variantDoc)
+    // ⭐ SMOOTH-WELD FIRST, then snapshot. The weld is a QUALITY op (recomputes
+    // smooth normals on flat-shaded vendor soup) and it touches BARK only, so
+    // hoisting it above the leaf levers is behaviour-neutral for lod1/lod2 —
+    // and it means the solo lod0 keeps proper normals instead of the raw
+    // flat-shaded soup. ⛔ Do not "simplify" this back below the levers.
+    const smoothReportsPre = smoothWeldBark(variantDoc)
+    for (const r of smoothReportsPre.filter(r => r.reason === 'welded')) {
+      console.log(`  bark smooth-weld: ${r.mesh}: verts ${r.vBefore.toLocaleString()} → ${r.vAfter.toLocaleString()}`)
+    }
+    // The pristine, smooth-welded document the SOLO lod0 is emitted from.
+    const soloDoc = cloneDocument(variantDoc)
+
     const decimReports = decimateLeafPrimitives(variantDoc, decimationConfig)
     const triAfterLeaf = countTris(variantDoc)
     if (triAfterLeaf < triBefore) {
@@ -824,6 +846,8 @@ async function main() {
     // an atlas UV-lock). Recompute smooth normals + weld by (pos+UV) so the
     // Lever 5 + emitLod simplifiers below can finally reduce. No re-UV, no
     // texture re-bake. Self-targets flat-normal soup; clean bark untouched.
+    // (hoisted above Lever 3 — see the snapshot there). Re-running is a no-op
+    // on already-welded bark, so this stays only to keep the log shape.
     const smoothReports = smoothWeldBark(variantDoc)
     for (const r of smoothReports.filter(r => r.reason === 'welded')) {
       console.log(`  bark smooth-weld: ${r.mesh}: ${r.vBefore.toLocaleString()} → ${r.vAfter.toLocaleString()} verts (uniq pos ${r.uniqPos.toLocaleString()}, ${r.tcount.toLocaleString()} tris) — topology unlocked`)
@@ -870,7 +894,8 @@ async function main() {
     for (const lod of LODS) {
       const t0 = Date.now()
       const bracket = decimationConfig.qualityBracket?.[lod.id]
-      const { doc: lodDoc, ratioApplied, startTris, finalTris, inBracket } = await emitLod(variantDoc, lod, bracket)
+      const srcDoc = lod.solo ? soloDoc : variantDoc
+      const { doc: lodDoc, ratioApplied, startTris, finalTris, inBracket } = await emitLod(srcDoc, lod, bracket)
       const filename = `skeleton-${variantId}-${lod.id}.glb`
       const outPath = path.join(outDir, filename)
       await io.write(outPath, lodDoc)
