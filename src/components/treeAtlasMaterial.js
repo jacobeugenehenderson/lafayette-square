@@ -166,6 +166,24 @@ export function setWindTiering(opts = {}) {
   }
 }
 
+if (typeof window !== 'undefined') {
+  window.__setWindTiering = setWindTiering
+  // URL opt-in so the PAN can boot straight into the ramp — the eye-gate for
+  // this knob is the cinematic pan (/preview, shot 'hero'), not the diorama,
+  // and that surface has no dial of its own. Same pattern as ?heroTierQC=1.
+  //   /preview?whip=1              the ramp
+  //   /preview?whip=1&whipGamma=2.4
+  try {
+    const q = new URLSearchParams(window.location.search)
+    const n = (k) => { const v = parseFloat(q.get(k)); return Number.isFinite(v) ? v : undefined }
+    if (q.has('whip')) setWindTiering({
+      blend: n('whip'), heightW: n('whipH'), radialW: n('whipR'), gamma: n('whipGamma'),
+      ampMin: n('whipAmpMin'), ampMax: n('whipAmpMax'),
+      tempoMin: n('whipTempoMin'), tempoMax: n('whipTempoMax'), leafFlutter: n('whipLeaf'),
+    })
+  } catch { /* no URL, no dial */ }
+}
+
 // Brief 13 refinement (Vantage 2026-05-23) — auto-tier binding from
 // Salon camera distance + preset. The Salon viewport drives the uniform
 // per-frame from `cameraStateRef` (Overhead → 0, Ground+distance>20 → 1,
