@@ -178,18 +178,41 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
 - **Fix:** Authenticate the caller and authorize that they are the session's courier
   (`session.courier_id === auth.uid()`). Consider idempotency on `session_id` to block replays.
 
-### F-4 · HIGH · `requests` RLS opened to `USING (true)` for SELECT and UPDATE
+### F-4 · HIGH · `requests` RLS opened to `USING (true)` for SELECT and UPDATE  — ✅ CLOSED 2026-08-24 (migration `010`, applied + verified live)
 - **Where:** `cary/supabase/migrations/004_requester_device_identity.sql:30-35`.
 - **Impact:** When requester identity moved from auth to device_hash, the policies became
   `requests_select_by_device … using (true)` and `requests_update_by_device … using (true)`.
   The anon role can therefore **read every request** (place name, exact lat/lon, description,
   requester handle) and **update any request** (flip status, cancel someone else's, tamper).
   `requests_insert_anon` only checks `device_hash is not null` — trivially satisfied.
-- **Fix:** Device_hash is a bearer secret, not a SQL-visible identity, so pure-SQL RLS can't
-  scope it well. Preferred: route reads/writes of requests through an edge function that takes
-  the device_hash in the body and filters server-side (as `web-messages` already does for
-  messages), and lock the table's anon policies down. If keeping direct access, at minimum
-  scope UPDATE to `status='open'` and the matching device_hash via a request header claim.
+- **Fix (applied — `010_requests_scope_ownership.sql`):** requesters now get an **anonymous Supabase
+  session**, so `requests` is scoped by `requester_id = auth.uid()` like every other table, and the
+  courier side gets the two policies the blanket `using (true)` had been masking
+  (`requests_select_held_by_courier`, `requests_update_by_courier`).
+  ⭐ **The signup wall 004 was avoiding never had to be paid:** an anonymous sign-in has no phone, no
+  email and no user-visible step. The property 004 wanted and the property RLS needs were not actually
+  in conflict.
+- ⛔ **THE ROAD NOT TAKEN, AND WHY — the reason this is not a header claim.** The cheaper fix is to send
+  the device hash in an `x-device-hash` header and compare it via `current_setting('request.headers',…)`.
+  It works for PostgREST reads and **breaks Realtime**: Realtime authorises on the socket's JWT and
+  evaluates RLS with **no request headers**, so a requester's `postgres_changes` subscription silently
+  delivers nothing. **A header cannot ride a WebSocket; an anonymous JWT can.**
+  *(Honest scope: `subscribeAsRequester` is defined in `useCary.js` and currently never invoked, so that
+  breakage would have been latent rather than live. The approach was chosen on the model being right,
+  not on an outage that exists today.)*
+- ⚠️ **Requires "Allow anonymous sign-ins" ENABLED** (Auth → Sign In / Providers). Declared in
+  `cary/supabase/config.toml`; ⛔ **do not `supabase config push`** to apply it — that pushes the whole
+  local config, which does not capture the dashboard-only auth settings (OTP expiry, redirect
+  allowlist, leaked-password protection), and there is no `--dry-run`. Toggle it in the console.
+- **Verified live 2026-08-24** — anon now SELECTs `[]`, INSERT is `401`, and the tamper affects nothing:
+  ⭐ **note the status code, it is a trap:** a blocked anon `PATCH` returns **`200` with an empty body**
+  (PostgREST's "zero rows matched"), not `403`. Testing by status code alone reads as still-open.
+  ```
+  curl -X PATCH "$URL/rest/v1/requests?id=eq.<id>" -H "apikey: $ANON" \
+       -H "Authorization: Bearer $ANON" -H "Prefer: return=representation" \
+       -H "Content-Type: application/json" -d '{"status":"disputed"}'   # → []
+  ```
+- **Check:** `node scratch/claims-cary-anon-exposure.mjs`.
 
 ### F-5 · HIGH · No webhook signature verification (Stripe / Checkr / Twilio)  — ✅ TWILIO HALF CLOSED 2026-08-24 (deployed) · Stripe/Checkr half OPEN
 - **Where:** `cary/stripe/webhooks.js` (handlers only — no `stripe.webhooks.constructEvent`);
@@ -230,7 +253,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `STRIPE_WEBHOOK_SECRET` and Checkr's signature header *when* it is wired. A hard prerequisite before
   Cary handles a real activation.
 
-### F-6 · MEDIUM · `web-messages` IDOR — device_hash is the only authorization
+### F-6 · MEDIUM · `web-messages` IDOR — device_hash is the only authorization  — ⚠️ NARROWED 2026-08-24 (no longer applies to `requests`)
 - **Where:** `cary/supabase/functions/web-messages/index.ts` (`fetch`/`reply`/`unread` all key
   solely on the body's `device_hash`).
 - **Impact:** Anyone who supplies a valid `device_hash` reads that user's whole thread and can
@@ -241,6 +264,12 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   don't extend it to anything sensitive.
 - **Fix:** Accept the residual risk consciously, or bind threads to Supabase auth for anything
   that carries PII. At minimum treat device_hash as a secret (never log it, keep it out of URLs).
+- ⭐ **Narrowed by `010`:** `requests` no longer authorizes on the device hash at all — it moved to
+  `auth.uid()` via anonymous sign-in, which is a real refreshable credential rather than a
+  non-expiring bearer token in localStorage. The finding still stands for `web-messages`,
+  `contact-sms`, check-in, guardians and the bulletin (`ls/IDENTITY.md`), which are unchanged.
+  ⭐ **And the same escape hatch is available to them** — anonymous auth costs no signup step, so
+  "device_hash or a signup wall" was a false choice there too.
 
 ### F-7 · MEDIUM · `courier_credential_status` view leaks PII with definer rights  — ✅ CLOSED 2026-08-24 (verified: anon → 401)
 - **Where:** `cary/supabase/migrations/005_onboarding_pipeline.sql:65-99`.

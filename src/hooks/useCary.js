@@ -29,18 +29,36 @@ const useCary = create((set, get) => ({
   init: async () => {
     set({ loading: true, error: null })
     try {
-      // Check for courier auth session
-      const { data: { session } } = await supabase.auth.getSession()
-      if (session?.user) {
+      // Check for an existing session (courier phone-OTP, or a previous
+      // anonymous requester session).
+      let { data: { session } } = await supabase.auth.getSession()
+
+      // ⭐ Requesters get an ANONYMOUS session — no phone, no email, no
+      // user-visible step. It exists so `requests` can be scoped by
+      // `auth.uid()` (migration 010 / SECURITY.md F-4) instead of by a
+      // device hash, which RLS cannot verify and Realtime cannot see at all.
+      // ⛔ Never replaces a real session: a signed-in courier keeps theirs.
+      if (!session) {
+        const { data: anon, error: anonErr } = await supabase.auth.signInAnonymously()
+        if (anonErr) {
+          // Loudly, not silently: without a session the requester flow simply
+          // cannot work, and RLS will correctly show them nothing. Saying
+          // "no requests" here would be a lie about an outage.
+          console.error('[cary] anonymous sign-in failed — requester features unavailable:', anonErr.message)
+          set({ error: 'Could not start a session. Please reload.' })
+        }
+        session = anon?.session ?? null
+      }
+
+      if (session?.user && !session.user.is_anonymous) {
         await get()._loadProfile(session.user)
       }
 
-      // Restore active request for this device (regardless of auth)
-      const deviceHash = await getDeviceHash()
+      // Restore this requester's active request.
       const { data: activeReq } = await supabase
         .from('requests')
         .select('*')
-        .eq('requester_device_hash', deviceHash)
+        .eq('requester_id', session?.user?.id ?? '00000000-0000-0000-0000-000000000000')
         .in('status', ['open', 'accepted', 'in_progress'])
         .order('created_at', { ascending: false })
         .limit(1)
@@ -197,13 +215,22 @@ const useCary = create((set, get) => ({
     }
   },
 
-  // ── Requester: create request (uses device hash, no auth) ──
+  // ── Requester: create request (anonymous auth session) ──────
   createRequest: async ({ deviceHash, handle, placeId, placeName, placeLat, placeLon, type, description }) => {
     set({ error: null })
+
+    // requester_id is the authorization key (migration 010). deviceHash is
+    // still stored, but only to correlate with check-in / bulletin identity.
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      set({ error: 'No session — please reload.' })
+      return null
+    }
 
     const { data, error } = await supabase
       .from('requests')
       .insert({
+        requester_id: user.id,
         requester_device_hash: deviceHash,
         requester_handle: handle,
         place_id: placeId,
@@ -348,17 +375,25 @@ const useCary = create((set, get) => ({
   // ── Real-time subscriptions ─────────────────────────────────
   _subscriptions: [],
 
-  subscribeAsRequester: (deviceHash) => {
-    if (!deviceHash) return
+  subscribeAsRequester: async () => {
+    // ⭐ Filter on requester_id, not the device hash. Realtime authorises on
+    // the socket's JWT and evaluates RLS with NO request headers — so an
+    // identity the database can only learn from a header (the device hash)
+    // makes the subscription silently deliver nothing. The anonymous session's
+    // uid is in the JWT, so `requests_select_own` matches and events flow.
+    // This is the whole reason F-4 closed with anonymous auth rather than an
+    // `x-device-hash` header (migration 010).
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) return
 
-    // Watch own requests for status changes (by device hash)
+    // Watch own requests for status changes
     const reqSub = supabase
       .channel('requester-requests')
       .on('postgres_changes', {
         event: 'UPDATE',
         schema: 'public',
         table: 'requests',
-        filter: `requester_device_hash=eq.${deviceHash}`,
+        filter: `requester_id=eq.${user.id}`,
       }, (payload) => {
         const updated = payload.new
         const active = get().activeRequest

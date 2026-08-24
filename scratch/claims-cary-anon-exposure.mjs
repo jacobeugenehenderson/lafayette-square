@@ -98,6 +98,18 @@ function readMigrations() {
       if (!openPolicies.has(rel)) openPolicies.set(rel, []);
       openPolicies.get(rel).push({ name: rawName.trim(), cmd, file: f, write: cmd !== 'select' });
     }
+
+    // ⛔ …and DROP POLICY, or this check reports ghosts forever. Migrations are
+    // cumulative: a later one replacing an open policy leaves the `create` in
+    // the older file, so a parser that only accumulates keeps failing on a
+    // finding that was fixed. A detector that cries wolf gets switched off.
+    const reDrop =
+      /drop\s+policy\s+(?:if\s+exists\s+)?"?([^"\n;]+?)"?\s+on\s+(?:public\.)?"?([a-z0-9_]+)"?/gim;
+    for (let m; (m = reDrop.exec(sql)); ) {
+      const [, dropName, rel] = m;
+      const list = openPolicies.get(rel);
+      if (list) openPolicies.set(rel, list.filter((x) => x.name !== dropName.trim()));
+    }
   }
 
   for (const [name, r] of rels) {

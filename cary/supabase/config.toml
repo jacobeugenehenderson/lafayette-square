@@ -12,6 +12,19 @@ enabled = true
 enabled = true
 site_url = "https://lafayette-square.com"
 
+# ⭐ REQUIRED by migration 010 / SECURITY.md F-4. Requesters get an anonymous
+# session so `requests` can be scoped by auth.uid(); there is no phone, email or
+# user-visible step. Without it the requester flow fails CLOSED — they see no
+# requests, which is correct behaviour for a missing session but is an outage.
+#
+# ⛔⛔ DO NOT run `supabase config push` to apply this. That pushes this ENTIRE
+# file, and this file does NOT capture the dashboard-side auth settings (OTP
+# expiry, redirect allowlist, leaked-password protection) that SECURITY.md flags
+# as console-only — so pushing it would silently reset them, and there is no
+# --dry-run to check first. Toggle it in the dashboard:
+#   Authentication → Sign In / Providers → Allow anonymous sign-ins
+enable_anonymous_sign_ins = true
+
 [auth.sms]
 max_frequency = "60s"
 
