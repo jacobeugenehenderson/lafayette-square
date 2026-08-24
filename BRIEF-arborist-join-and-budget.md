@@ -127,22 +127,39 @@ smaller canopy card sits inside a shadow sized for the mesh tree it replaced —
 led with the shadows.** Nothing about the impostor split can be judged honestly until the
 shadow and the drawn tree agree.
 
-### ⛔ ② WHITE BANDS AROUND TRUNK BASES — a REGRESSION of a fix that already landed
-Jacob: *"The trunks also have white bands around their bases, a problem we already fixed."*
-**CAUSE NOT ESTABLISHED — I ran out of session before measuring. Do not trust the lead below.**
-1. The trunk base blends toward the ground colour sampled at the tree's world-XZ
-   (`treeAtlasMaterial.js:356-375` — `uTrunkBlend`, `uTrunkBlendTop`, `uGroundColorMap` +
-   `uGroundColorMin/Span`, plus the FX map so it blends toward the COMBINED colour). Fed by
-   `BakedGround.jsx:157,176`.
-2. ⭐ **MY FIRST SUSPECT, UNVERIFIED:** the land-use pour regenerated
-   **`ground.colormap.png`, `ground.poolmap.png` and `ground.json`** — which carries the
-   `min`/`span` decode meta. If that encoding moved, the decoded ground colour is wrong and the
-   trunk blends toward it. ▶ **Diff `ground.json`'s colormap/poolmap meta across `29955e46`
-   and decide from the numbers, not from this sentence.**
-3. `treeTrunkGround` is a **shared** knob and the Diorama writes it on mount / restores map
-   defaults on unmount (diorama 0.8/0.75/0.95 vs map 0.55/1.5/0.5). Cheap to rule out.
-4. **Find the ORIGINAL fix before rebuilding one** — Jacob says it was solved, so something
-   un-did it. `git log -S uTrunkBlend`, and `c7c00d41` / `8473a29c`.
+### ⛔ ② WHITE BANDS AT TRUNK BASES — ROOT FOUND. ⚠️ TREES FIRST, THEN THIS.
+
+⭐⭐ **IT IS NOT A REGRESSION. The trunk-ground seam blend was DORMANT on the map and my
+land-use pour switched it on for the first time.**
+▶ `node -e "const {execSync}=require('child_process');const o=JSON.parse(execSync('git show 29955e46~1:public/baked/lafayette-square/ground.json'));const n=require('./public/baked/lafayette-square/ground.json');console.log('before:',JSON.stringify({c:o.colormap,p:o.poolmap}));console.log('after :',JSON.stringify({c:!!n.colormap,p:!!n.poolmap}))"`
+→ **before: `{}`** — no `colormap` key, no `poolmap` key. `BakedGround.jsx:166`
+(`manifest.colormap || null`) → no texture → `hasUniform.value = 0` → **`uHasGroundColor` was
+0 and the blend never ran.** The bake produced both maps, so it is now live on defaults
+nobody has ever eye-tested (`blend 0.55`, `blendTop 1.5 m`, `shadowStr 0.5`). The fix Jacob
+remembers was real — it was tuned on the **Diorama**, which supplies its own ground textures
+and runs much tighter (`0.8 / 0.75 / 0.95`).
+
+### ⭐⭐⭐ AND THE SPEC — a LIGHT band is a WRONG ANSWER, not a mistuned one
+**Jacob, 2026-08-24: the band is *"supposed to be equal or darker to the value of the tree
+trunk and should be a contact-shadow dark AO on the LU."*** ⇒ **The seam DARKENS. It must
+never lighten.** The mechanism is already designed for that: `uGroundFxMap` (G = contact
+shadow) exists so the trunk blends toward the **COMBINED EFFECTIVE** ground colour — albedo ×
+AO — *"not raw albedo"* (`treeAtlasMaterial.js:369-371`). Blending toward raw albedo over
+bright grass or pavement is exactly how you get a pale ring.
+⇒ **So a light band means the FX/AO term is not reaching the blend, NOT that 0.55 is too
+strong.** ⛔ Do not "fix" it by lowering `blend` — that hides a wrong sign behind a small
+number. ⚠️ Note `poolmap` was ALSO absent before the pour, so the FX map was dormant too;
+confirm it is actually loading and non-zero under a trunk before touching any dial.
+
+⭐ **THE CHECK THIS WANTS** (the deliverable is the check, `CLAUDE.md` Layer 0): sample the
+rendered trunk-base value against the trunk value above the blend band. **base ≤ trunk, always.**
+That is a one-line invariant, it is kit-generic, it fails loudly, and it turns "the bands look
+wrong" into a detector that works in a town nobody has looked at.
+
+⛔⛔ **ORDER: TREES FIRST.** *(Jacob's call.)* A seam tuned against impostors will be wrong for
+mesh trees — an impostor's bark is a single rear card with no real trunk at the base, so there
+is nothing to blend. Get the trees where they go, then tune the seam against real trunks.
+Dials when you get there: `?trunk=` (strength) and `?trunkTop=` (metres).
 
 ⚠️ **These two may be the same event.** Both trunk-blend and the contact shadow read the same
 regenerated ground maps. If ② turns out to be the colormap meta, check ① against it before
