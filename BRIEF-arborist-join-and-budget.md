@@ -51,9 +51,39 @@ SUPERIOR.** The "defect" was load-bearing for the look.
 ⛔ **That is `CLAUDE.md` Layer 0 question 3 in a form I did not recognise: I measured COST,
 declared a DEFECT, and the operator's eye says the output was BETTER.** Before you "fix" any
 tree-count number on this surface, ask what it looks like — not what it costs.
-⇒ **So the 747 oaks are not the bug to undo in isolation. The question is: how much REAL
-GEOMETRY does hero need to look right, and what does that cost?** That is an eye number
-(`?heroGeom=`), and nobody has ever set it by looking.
+### ⭐⭐⭐ AND HERE IS THE ACTUAL DIRECTION — ⛔ NOT "tallest N"
+⛔ **`?heroGeom=` is the TALLEST-N dial (dbh). Jacob: "the tallest rule is dumb and that's not
+what we've been talking about."** It is a diagnostic lever ONLY — use it to see how much real
+geometry hero wants, then throw the axis away. Do not build on it.
+
+**What Jacob actually settled on, across the whole afternoon, is a FOCUS BAND:**
+> **Real geometry where the camera actually is; impostors everywhere else.** *"Several tree
+> species would be ok if they only occupied the exact in-focus track the camera is on
+> (rendering everything else as impostors) — we'd only be rendering a single canopy's-depth of
+> leaves."* And: *"maybe we impostor ALL the trees and we only activate meshes as they enter
+> the focus zone."*
+
+**Why the band and not the species/height axes — measured, not asserted:**
+- Species popularity does not predict cost: `linden_american` has **48%** of `maple_red`'s
+  placements and **169%** of its triangles. Jacob spotted this himself ("fails if the common
+  tree is 1000x").
+- Height does not predict visibility: a fat tree 900 m behind camera bills full geometry for
+  ~30 px. Median tree distance on the hero pan is **583–782 m**; a 300 m band is only **4–13%**
+  of placements.
+- ⭐ **The cost is LEAF FRAGMENTS, not trees.** Foliage is `alphaTest 0.5`, which defeats
+  early-Z, so overlapping canopies pay for every layer. That is why *distance* is the axis
+  that matters — near trees own the pixels AND the overdraw.
+
+⭐⭐ **AND THE PIECE THAT MAKES IT SELL — Jacob's idea, and it is the good one.** Bake **two
+extra impostors per mesh tree**, captured at the exact azimuths where the mesh is **picked up**
+and **set down**. Captured *at* the handoff, card and mesh are the same image, so the swap is
+invisible; only one is ever on screen. **Full spec, sizing and the `rotY` gotcha are in §3
+"OWED — handoff captures". Read that before designing anything.**
+
+⛔ **Do NOT re-land my pan-distance band as-is.** The axis was right, the BUDGET was mine and
+wrong (15e6 tris → 403 trees, never eye-gated), and I shipped it ON BY DEFAULT. It is behind
+`?heroBand=1` now. The bake still stamps `heroRole`/`heroBandMeta`, so the data is there when
+the budget is set **by looking at a frame, on the pan.**
 
 ### ⛔ WHAT IS ALREADY PUSHED — so do not "fix" it twice
 `origin/land-use-derivation` is at **`57e811f3`**, in sync. It ALREADY contains **`cb14c29c`**,
