@@ -176,10 +176,15 @@ is ~0 by day and real at night. **A tree standing in a lamp pool SHOULD be lit a
 That brightening is correct and must not be clamped away.**
 ⇒ So the fix separates three terms rather than clamping the whole expression:
 **ground ALBEDO → darken-only (or gone) · contact AO (G) → darkens · lamp pool (R) → brightens, keep.**
-⚠️ Unverified: whether **G is the TREE ring or a LAMP ring** — Jacob says lamps have their own
-rings *and* pools, and the code comment calls G a generic "baked contact shadow". **Confirm
-which system owns G before touching it**, or a darken-only fix may silently disable the lamps'
-contact shadow along with the trees'.
+✅ **ANSWERED by Jacob, 2026-08-24: "both the lamps and the trunks get darkening at the
+ground."** So **G is not owned by one system — it is the CONTACT SHADOW for both.** A lamp
+post has a shadow where it meets the ground exactly as a trunk does. ⇒ The two channels split
+cleanly by ROLE, not by object:
+- **G = contact shadow** — where any upright object MEETS the ground. Serves lamps AND trunks.
+  **Always darkens.** ⛔ A darken-only fix must keep it for both.
+- **R = lamp pool** — the light a lamp CASTS onto the ground. **Always brightens.** Rides the
+  lamp TOD curve, so ~0 by day.
+⭐ That is the invariant to build to: **contact darkens, pool brightens, albedo does neither.**
 
 ⭐ **THE FIX, matching the spec: make the seam DARKEN-ONLY.** Jacob: *"equal or darker to the
 value of the tree trunk"* and *"a contact-shadow dark AO on the LU"*. So the seam applies the
