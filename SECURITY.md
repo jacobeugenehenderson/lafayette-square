@@ -252,12 +252,15 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   `cary/supabase/config.toml`** so the setting travels with the repo instead of living in whoever last
   typed the flag. ⭐ That is only safe because the function now authenticates its own caller: turning
   the gate off on a function with no auth of its own is how F-2 happened.
-- ⚠️ **The positive path is NOT verified.** Rejecting forgeries is confirmed live; *accepting a genuine
-  Twilio request* cannot be, because signing one needs the auth token. The residual risk is a **URL
-  mismatch** — Twilio signs the exact URL configured in its console, so a proxy rewriting host/proto
-  makes real texts fail. The rejection log now prints the URL the HMAC was computed over, so that
-  shows up as one readable line instead of "SMS stopped working"; the fix is to set
-  `TWILIO_WEBHOOK_URL`. ▶ **Owed: send a real text and confirm it lands.**
+- ✅ **Positive path VERIFIED 2026-08-24** — Jacob texted the public number and it landed in the site's
+  SMS Inbox. The signature check runs **before** anything writes or sends, so a row existing proves a
+  genuine Twilio request passed it: `req.url` matches the console-configured URL and no
+  `TWILIO_WEBHOOK_URL` override is needed. ⭐ This was the one thing that could not be verified from
+  here (signing a request needs the auth token), and it closes F-5's Twilio half completely.
+- ▶ **If real texts ever start failing**, the cause is almost certainly a URL mismatch — Twilio signs
+  the exact string configured in its console. The rejection log prints the URL the HMAC was computed
+  over, so it reads as one line in the dashboard rather than "SMS stopped working"; set
+  `TWILIO_WEBHOOK_URL` to the configured URL.
 - **Check:** `node scratch/claims-twilio-webhook-guard.mjs` — loads the real helpers **out of the
   function's source** (never a re-implementation) and asserts that forged, misrouted, mis-keyed and
   unverifiable requests are all rejected. The HMAC is pinned against the official `twilio` package's

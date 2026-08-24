@@ -11,7 +11,8 @@
 - **Enter admin** by appending `?admin` to the URL → passphrase prompt (`AdminPrompt`, mounts before the scene). The passphrase is **not in code** — it's a Google Apps Script *Script Property* (`ADMIN_PASSPHRASE`), set manually in the GAS project.
 - A correct passphrase returns a **6-hour token**, cached in `localStorage` (`lsq_admin_token`) and re-verified async on reload.
 - **Exit / reset identity:** `?logout` clears all identity keys (admin token, guardian list, handle).
-- **What admin unlocks:** auto-verify any residence claim; generate/fetch a listing's QR claim secret (and auto-provision a listing on the fly); run one-time `setup-photo-folder` (creates the Drive folder for photos).
+- **What admin unlocks:** auto-verify any residence claim; generate/fetch a listing's QR claim secret (and auto-provision a listing on the fly); run one-time `setup-photo-folder` (creates the Drive folder for photos); and an **Admin** section at the foot of the account menu holding **QR Generator** and **SMS Inbox**.
+  > ⭐ **The SMS Inbox is the ONLY way to answer someone who used "Text us".** It is invisible until you are admin, and nothing in the UI announces it — the operator who commissioned it did not know it existed (2026-08-24). See §4a.
 
 > ⚠️ **Security:** the admin token is trusted for the session and passed in request bodies. Treat it like a root password — anyone who captures it has 6 hours of those powers. Hardening (signed/ephemeral JWT, per-action re-verify, rate-limiting, audit log) is a tracked arc: `project_ls_security_arc`, sequenced after doc-formalization. Privileged *writes* are otherwise sound — the backend re-verifies the caller against the Guardians/Residents/Checkins sheet on 25+ endpoints before mutating.
 
@@ -61,6 +62,18 @@
 
 ---
 
+## 4a. Messaging — who can answer whom
+
+⛔ **REPLYING BY TEXT DOES NOT REACH A WEB VISITOR.** This is the one that costs an afternoon.
+
+- Someone presses **"Text us"** on the site → you get an SMS from the Lafayette Square number. **Replying to that text goes nowhere the visitor can see.** Their chat window only shows rows that are all of: their device id, `phone='web'`, `direction='outbound'` — and a text from your phone has none of those. It *cannot* carry them: a reply from your handset contains nothing that says which visitor it answers.
+- **Answer from the SMS Inbox instead** (§1). It groups web threads by device and phone threads by number, and replies go out through the **Twilio number — your personal number is never exposed.** That is the whole reason replies route through the app rather than your handset.
+- The visitor's side is already handled: their chat **auto-opens** on their next visit if a reply is waiting, and pops open live if they are on the site. *(⚠️ The live path is currently broken — see §7.)*
+- **Texting the public number directly works** and lands in the same inbox. Twilio hands us the sender's number, so no form is needed for that route.
+- ⛔ **Inbound texts are NOT forwarded to email** — `SENDGRID_API_KEY` is unset, and the code guards the forward with a bare `if` and no `else`. The inbox is the only place they appear.
+
+---
+
 ## 5. Runtime knobs (what's live vs authored)
 
 - **Time of day** is *live wall-clock* in production (`ClockCalendarPump`, mode=`live`, 60s tick). The scrub UI (`DawnTimeline`) exists only in Stage/Preview authoring — production has no time-scrub. Geography (lat/lon/tz) is fixed per instance in `src/instance.js`, **not** slab-authored.
@@ -70,6 +83,7 @@
 - **Look / framing / sky / post-FX / lighting / neon / arch** are all operator-authored in Cartograph's Stage and travel through `scene.json` — production replays them; it does not re-author. To change them, re-bake the Look, don't edit the runtime.
 - **The embeddable scenes** (`?embed=sky`, `?embed=tree`) are FRAMED-only and carry no chrome — a direct visit shows nothing, by design. `?embed=tree` takes `?species=` / `?lod=` / `?variant=` so a host page can frame a different specimen without a rebuild; it defaults to the Look's baked `linden_american` at lod0. ⛔ It reads the **bake** (`public/baked/<look>/trees/…`), never the Arborist's source pool (`public/trees/` is gitignored authoring-only), so anything it shows is a thing that actually deploys. The operator's own view of the same scene is the Arborist's `?view=fullmonte`.
 - **The public contact fields are AUTHORED PER INSTALLATION and there are three** — `contact.email`, `cary.email`, `cary.smsNumber` (`src/instances/<look>.js`). ⭐ **They are PUBLIC**: they render on the legal page, which every installation shows and which **no module flag gates** — so an unset field is visible to the public, not hidden by an off switch. ⛔ **Use an alias, not a personal address** — LS ships `jacob@lafayette-square.com`, forwarded, so the operator's real mailbox is one layer removed from a scraped page. ⚠️ **Unset, the page now renders a labelled gap** (`[not set for this installation]`) and `src/instance.js:90` logs which fields are missing at boot; **before 2026-08-23 it emitted a dead `mailto:null` link and said nothing** — a plausible-looking success, which is the failure mode a kit can least afford. ▶ `node -e "…"` is not needed: open the legal page of a fresh pour and the check prints to the console.
+- **The contact endpoint's abuse caps are runtime knobs, and they are the only thing bounding a Twilio bill.** "Text us" is public and unauthenticated *by design* — the point is that a stranger can reach the Host — so there is no caller to authenticate and the caps ARE the control. Set as Supabase secrets, no redeploy: **`CONTACT_CAP_GLOBAL_DAY`** (default 200 — the real backstop; per-source limits are speed bumps because addresses rotate), **`CONTACT_CAP_IP_HOUR`** (10), **`CONTACT_CAP_DEVICE_HOUR`** (5). ⛔ **Unset or nonsense values fall back to the DEFAULT, never to unlimited**, and an unreadable counter **refuses** — an outage on the contact button is recoverable, an unbounded bill is not. ⚠️ So the symptom of setting these too low is neighbours quietly getting "you've sent a lot of messages"; check the function logs, which name the window that tripped. ▶ `node scratch/claims-contact-sms-rate-limit.mjs`
 - **Mobile vs desktop** diverge by design: mobile = linear depth, no soft shadows, untextured, 1× DPR; desktop = log depth, soft shadows, full textures, up to 1.5× DPR. The `logarithmicDepthBuffer: !IS_MOBILE` gate is load-bearing.
 
 ---
@@ -87,6 +101,9 @@
 ---
 
 ## 7. Known operational gaps (from the inventory)
+
+- ⛔ **The SMS Inbox has no unread indicator anywhere.** Messages accumulate with nothing in the UI saying so, and the inbox itself is invisible until you enter admin via `?admin`. The visitor's side already computes an unread count (`web-messages` action `unread`); the operator's side does not use it. Until it does, answering depends on remembering to look.
+- ⚠️ **A visitor's chat no longer pops open in real time** when you reply — only on their next page load. The live path subscribes to `sms_messages`, and migration `009` locked that table down (RLS on, zero policies, grants revoked) to close a PII leak; Realtime enforces RLS, so the subscription now matches nothing. ⭐ The on-load check still works because it goes through an edge function on the service role. Fix is to poll the existing `unread` action, or re-key web messaging onto the anonymous session added in `010`. *(Reasoned from the mechanism, not yet measured on a socket.)*
 
 - **Security arc** (post-doc): admin-token hotspot (ship-blocker), no rate-limiting, no audit log — `project_ls_security_arc`.
 - **No review edit/delete, no event delete** UI — Sheet-only.
