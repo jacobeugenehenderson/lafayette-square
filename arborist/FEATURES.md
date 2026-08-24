@@ -214,6 +214,17 @@ says so by name**; it must never look like the override ran.
 ⛔ **`design.json` is NOT `scene.json`** — `CelestialBodies` reads the BAKED slab, so an experiment
 edited into `design.json` changes nothing until a bake. That trap produces false negatives.
 
+⭐ **THE HERO GEOMETRY BUDGET is an operator knob, and it is measured in TRIANGLES.**
+`bake-trees.js` takes `heroTriangleBudget` (default 15e6) and `heroBandMaxM` (default 250m):
+who keeps real mesh in the hero shot is decided AT BAKE by distance to the authored camera
+path, spending that budget nearest-first. LS: 2323 mesh / ~86M tris → **403 mesh / 15.0M
+tris**, cutoff 181m. ⛔ A COUNT budget lets one heavy species eat the frame — trunk diameter,
+the old axis, predicts neither cost nor visibility.
+▶ `node -e "console.log(require('./public/baked/lafayette-square/trees.json').heroBandMeta)"`
+- ◻ **A species with no baked hero impostor still keeps MESH regardless of size** — an absent
+  asset upgraded to the most expensive role. It is now REPORTED (`mesh=Nearned+Mleaked`, with
+  the species named), never silent. The fix is to compose + capture the species, ⛔ never to
+  widen the budget, which would relabel the leak as "earned".
 - ◻ **Wind is FLOORED, not authored**: the meteorologist still does not author a `wind` block into
   the directive.
 

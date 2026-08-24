@@ -4,8 +4,9 @@
 which artifact each one reads, and what is done / owed / abandoned. Everything else in
 `arborist/` is detail hanging off this page.
 
-*Measured against the code 2026-08-23. What is still owed to make it true:
-`LEDGER-exorcism-wren.md`. Prior versions + the measurements: `_archive/`.*
+*Measured against the code 2026-08-23; §2 and §7 re-measured 2026-08-24. What is still owed
+to make it true: `LEDGER-exorcism-wren.md`. The night-shift baton:
+`BRIEF-arborist-join-and-budget.md` (repo root). Prior versions: `_archive/`.*
 
 > ⛔ **Every number below is a COMMAND, not a figure.** A count written into prose is stale
 > the day it is written and is then quoted for months (`CLAUDE.md`). Run the line.
@@ -57,6 +58,19 @@ had a model of — **precisely the need the mixer exists to remove.**
 
 ⇒ **When the map routes a species at a generic tree, that is not a routing bug. It is this
 join being empty.** Repointing routes without filling the join is an instance patch.
+
+⭐⭐ **AND THE JOIN'S CHEAPEST WIN IS ALREADY BUILT AND UNFED** *(measured 2026-08-24)*: the
+bark **gradient-map** path — a LUT indexed by the texture's Rec.601 luminance, so structure
+survives and only the palette changes, i.e. **one greyscale bark × N maps = N species**. Every
+stage exists (`compileGradientLUT` → `barkGradient` atlas tile → `barkGradientByVariant` →
+the shader) and **no composition has ever carried `bark.gradientStops`**, so the bark selector
+does nothing and every variant falls through to the legacy single-tint path.
+▶ `node -e "const a=require('./public/baked/lafayette-square/trees-atlas.json');const by={};for(const t of a.tiles)by[t.classification]=(by[t.classification]||0)+1;console.log(by,'gradient',Object.keys(a.barkGradientByVariant||{}).length)"`
+⭐ Dossiers already hold the botanical description this hangs off (*"smooth grey-brown bark"*).
+**Best effort, best guess, overridable** — the kit's own doctrine, and the Arborist is not
+exempt from it. ⚠️ 2026-08-24: a gate requiring *ratified* parts was landed and reverted the
+same day (`69e04e39`→`42db0450`) — it treated an un-overridden best guess as invalid and
+flattened the readiness board to identical rows, destroying the "what do I go get" signal.
 
 ### ⭐ The operator is a NON-BOTANIST. That decides the keys.
 *(Jacob, 2026-08-23.)* The operator works in **chassis · bark · leaf (+ season)** and in
@@ -213,6 +227,12 @@ The publish→bake→slab spine, deterministic and byte-verified. The single mas
 sha1 tile dedupe — **atlas cost scales with distinct PARTS, not species count**, so a dozen
 pines sharing one bark and one needle pack are nearly free.
 ▶ `node -e "const j=require('./public/baked/lafayette-square/trees-atlas.json');const b={};for(const t of j.tiles)b[t.classification]=(b[t.classification]||0)+1;console.log(b,'rosterSize',j.rosterSize)"`
+The **geometry budget** (2026-08-24): who keeps mesh in the hero shot is decided at BAKE by
+distance to the authored camera path, spending a **triangle** budget — not a tree count, not
+trunk diameter, which predicts neither cost nor visibility (`arborist/hero-band.mjs`;
+`role-at-bake` preserved, so no pop). And the runtime now says out loud when a placement kept
+mesh **because its species has no baked impostor** rather than because it earned it.
+▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json');console.log(t.heroBandMeta)"`
 The **impostor foundation**: every placement paints as a captured canopy billboard and the
 tallest fraction keeps real `lod1` mesh as anchors (`?heroGeom=`); two capture systems split
 by viewing hemisphere, overhead for browse and azimuthal bands for the side-on pan, both RTT
@@ -223,7 +243,10 @@ heights ship. The NO-FILLER gate keeps generic and procedural assets out of the 
 - ⭐ **The join (§2)** — dossiers, and a ratified habit per chassis. **This is the app's
   real backlog; everything else is downstream of it.**
 - ⭐ **A completeness state.** The kit models `composed` / `not-available` / `unauthored`,
-  where **`composed` means only that a chassis is set**. Defaults silently supply the rest,
+  where **`composed` means only that a chassis is set** (`roster-coverage.js:220`) — measured
+  2026-08-24, **0 of 14 species have chassis AND bark AND leaf actually chosen**; `maple_sugar`,
+  the canary, has no authored bark. ⭐ **Jacob's ruling: NO promotion button — composition IS
+  promotion.** *"If a tree has a chassis, leaf and bark selected it's done."* Defaults silently supply the rest,
   so **an untouched species and a finished one look identical on every surface** — you
   cannot see what you have not done. The resolver already computes whether each field was
   **authored** or **defaulted** and discards it; keeping that one fact yields *complete /

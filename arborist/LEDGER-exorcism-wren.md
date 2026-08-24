@@ -105,13 +105,19 @@ author an ambient night key — would have **changed LS at night across the whol
 nothing to the tree**. That is the signature shape: measured without the surface's actual
 state loaded, and wrong in the direction that looks authoritative.
 
-**What the tree IS lit by: cause not established.** An unconditional stack at
-`CelestialBodies.jsx:1318-1326`, led by a hardcoded `0.45` white ambient floor that this
-surface pins at ×1.0. Which term dominates the canopy pixel is unmeasured. ⛔ Tune nothing
-until it is.
+✅ **RESOLVED 2026-08-24 (`22e5e0c3`).** The premise this entry rested on was wrong twice
+over, and both corrections are worth keeping:
+- **The diorama DOES read the Look's channels.** `scene` is not a prop — it comes from
+  `useSceneJson(resolveLookId(lookId))`, and `resolveLookId` falls back to `INSTANCE.lookId`
+  (`CelestialBodies.jsx:48-53`). The "flat 1.0 defaults" claim was false.
+- ⛔ **`design.json` is NOT `scene.json`.** `CelestialBodies` reads the BAKED slab, so a probe
+  edited into the authored source changes nothing and every null result is a **false
+  negative**. That trap is what produced the false claim above.
 
-⭐ **THE OPEN QUESTION IS NOT THE ONE THE BRIEF POSED.** It is: *should the diorama be given
-the Look's channels at all?* — see `BRIEF-tree-motion-and-light.md §2`. Jacob's call.
+⭐ **Jacob's ruling settled the design question:** *"the Diorama should have no impact on the
+larger product."* So the night key is overlaid on an **in-memory copy** and passed through
+`ambientOverride`/`hemiOverride` — the seam the Stage already drives. `public/looks/**` is
+untouched. Dials `?nightAmbient=` `?nightHemi=`.
 
 ---
 
@@ -180,12 +186,13 @@ run** — they are browser-GPU authored inside the Grove and the CLI bake cannot
 
 ## E. ⛔ ASPIRATION — needs Jacob before anyone touches it
 
-**E1 · The left-column bar (`groveThreshold`).** A top-N-with-pins build-eligibility dial,
-built as UI + persistence and **read by nothing** — no baker, no runtime.
-▶ `grep -rn "groveThreshold" arborist/ cartograph/` → only the endpoint that stores it
-It also measures the wrong cost: atlas inclusion is already near-free per species (tiles
-dedupe by sha1), so a dozen pines sharing a bark and a needle pack cost ~2 tiles.
-**Wire it to geometry weight, or remove it — it must not stay looking live.**
+**E1 · The left-column bar (`groveThreshold`).** ✅ **RULED + WIRED 2026-08-24 (`b01fdffb`).**
+The verdict here — *"wire it to geometry weight"* — is now real: `arborist/hero-band.mjs`
+spends a **TRIANGLE budget** (`heroTriangleBudget`, `heroBandMaxM`) down a list sorted by
+distance to the authored camera path. Measured on LS: 2323 mesh / ~86M tris → **403 mesh /
+15.0M tris**, cutoff 181m. A count budget lets one heavy species eat the frame; this cannot.
+◻ **Still owed: the BAR ITSELF is not bound to that budget** — it remains UI + persistence
+read by nothing. It now has something true to read, which it never had before.
 
 **E2 · `Native` is already taken.** In the app it means *the leaf this species actually has*
 (`Bare · Native · Synthetic`). **No regional-nativeness concept exists.** Grouping by region
