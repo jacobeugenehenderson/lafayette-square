@@ -651,6 +651,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // Geometry budget = fraction of trees (tallest-first by dbh) that KEEP mesh geometry;
   // the rest drop to the impostor foundation. A pyramid bracket / the Phase-4 Stage
   // knob. Tunable live via ?heroGeom=0.15. (The "∩ foreground" axis lands with the bake.)
+  // Opt-in to the baked pan-distance band (hero-band.mjs). Off → the legacy dbh
+  // split, i.e. exactly what shipped before 2026-08-24.
+  const useBakedBand = useMemo(() => {
+    try { return new URLSearchParams(window.location.search).get('heroBand') === '1' } catch { return false }
+  }, [])
   const heroGeomFraction = useMemo(() => {
     const q = new URLSearchParams(window.location.search).get('heroGeom')
     const v = q != null ? parseFloat(q) : 0.15
@@ -804,10 +809,19 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         // distance to the authored camera path, spending a TRIANGLE budget.
         // `dbh < cut` is the LEGACY axis and predicts neither cost nor
         // visibility — kept only for slabs baked before the band existed.
-        const wantsImpostor = inst.heroRole
+        // ⛔ DEFAULT OFF. The baked band is the better AXIS — distance to the pan
+        // predicts cost and visibility, dbh predicts neither — but the budget it
+        // spends is an EYE call and mine was wrong: 15M tris took hero from 2323
+        // real trees to 403 in one step, and everything removed became a canopy
+        // card. Sparse, small, with the ground still carrying a contact shadow
+        // for all 5127 placements. Landing it as the DEFAULT broke the rule this
+        // surface runs on: a shared change ships as a knob defaulting to TODAY'S
+        // values, so the map is unchanged until someone turns it.
+        // Turn it on with ?heroBand=1 once the budget has been eye-gated.
+        const wantsImpostor = (useBakedBand && inst.heroRole)
           ? inst.heroRole === 'impostor'
           : ((Number(inst.dbh) || 0) < heroDbhCut)
-        if (inst.heroRole) bandRoles++; else legacyRoles++
+        if (useBakedBand && inst.heroRole) bandRoles++; else legacyRoles++
         if (heroImpostorRecords[renderSpecies] && wantsImpostor) {
           if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])
           heroImpostors.get(renderSpecies).push(inst)
