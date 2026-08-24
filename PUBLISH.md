@@ -218,12 +218,25 @@ The Cary courier system uses Supabase for:
 # Link to the hosted project (one-time)
 supabase link --project-ref ngbvgjzrpnfrqmzkqvch
 
+# ⛔ ALWAYS check the history FIRST — an empty "Remote" column means db push
+#    will replay the WHOLE stack, die on migration 001, and apply NOTHING.
+#    (That was the live state until 2026-08-24; repaired then, so it should
+#    now list every applied migration in both columns.)
+supabase migration list
+
 # Push schema changes
 supabase db push
 
 # Deploy edge functions
 supabase functions deploy
+
+# Which functions are actually live? Several in the repo have NEVER been
+# deployed — do not assume a file under supabase/functions/ is running.
+supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
 ```
+
+⛔ **`supabase db dump` / `db diff` need Docker.** `migration list`, `db push`, `functions list` and
+`inspect db *` all talk to the remote directly and do not.
 
 Currently behind "coming soon" placeholders in the UI. When ready to launch:
 1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to GitHub Secrets

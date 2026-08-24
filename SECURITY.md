@@ -37,9 +37,26 @@ match in our migrations. Fix these and the emails stop.
 the only public table in the schema with RLS switched off, and it holds PII. See
 [F-1](#f-1-critical--sms_messages-has-no-row-level-security).
 
-> ✅ **Remediated (drafted):** F-1, F-7, and F-8 are fixed in
-> `cary/supabase/migrations/009_security_advisor_fixes.sql` — pending `supabase db push`
-> (or `db reset`) against the live project. Apply it and re-run the Advisor to confirm.
+> ✅ **CLOSED 2026-08-24 (Wren).** `009_security_advisor_fixes.sql` is **applied to prod**
+> (`ngbvgjzrpnfrqmzkqvch`). F-1 and F-7 are verified shut against the live API — anon now gets
+> **HTTP 401** on `sms_messages` and on `courier_credential_status`, with `requests` still
+> answering 200 as the control that proves the probe works. ⛔ Don't take that on trust — re-derive it:
+>
+> ```
+> SUPABASE_URL=… SUPABASE_ANON_KEY=… node scratch/claims-cary-anon-exposure.mjs
+> ```
+>
+> F-8 is confirmed only by the DDL applying (a failed `create or replace function` aborts the whole
+> migration); the catalog was not read. **Re-run the Advisor in the dashboard for the last word** — the
+> Advisor API is not reachable from the CLI.
+>
+> ### ⚠️ `supabase db push` alone does NOT apply a migration here — it did not on 2026-08-24
+> The remote **migration history table was empty** while 001–008 were genuinely applied (all ten tables
+> live, `sms_messages` holding 23 real rows). So push tried the whole stack, hit `create table profiles`
+> in `001`, and would have applied **nothing** — a no-op that reads like a run. The sequence that works:
+> `supabase migration repair --status applied 001 … 008`, **then** `db push`. History is now tracked, so
+> the next migration is a plain push. **Check it before pushing, every time:** `supabase migration list`
+> — an empty *Remote* column means you are about to no-op.
 
 ---
 
@@ -92,7 +109,7 @@ reports, home ZIP. No raw card PANs, no SSNs, no license numbers are stored (see
 
 Severity = impact × exposure. IDs are stable; cite them in fixes.
 
-### F-1 · CRITICAL · `sms_messages` has no Row-Level Security  — ✅ fixed in `009` (pending apply)
+### F-1 · CRITICAL · `sms_messages` has no Row-Level Security  — ✅ CLOSED 2026-08-24 (verified: anon → 401)
 - **Where:** `cary/supabase/migrations/007_sms_messages.sql` (table created, RLS never enabled); `008_web_messaging.sql` (columns added, still no RLS).
 - **Impact:** The anon key can `GET /rest/v1/sms_messages?select=*` and read every SMS/web
   message — **phone numbers, message bodies, device_hash, handle** — and `INSERT`/`UPDATE`
@@ -162,7 +179,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
 - **Fix:** Accept the residual risk consciously, or bind threads to Supabase auth for anything
   that carries PII. At minimum treat device_hash as a secret (never log it, keep it out of URLs).
 
-### F-7 · MEDIUM · `courier_credential_status` view leaks PII with definer rights  — ✅ fixed in `009` (pending apply)
+### F-7 · MEDIUM · `courier_credential_status` view leaks PII with definer rights  — ✅ CLOSED 2026-08-24 (verified: anon → 401)
 - **Where:** `cary/supabase/migrations/005_onboarding_pipeline.sql:65-99`.
 - **Impact:** The view joins `courier_profiles` + `profiles` to expose **display_name, email,
   phone** and all credential dates. Views run with the **owner's** rights and bypass the
@@ -172,7 +189,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   as …`, and confirm no anon `GRANT SELECT` on it. It is only consumed by the service-role
   `credential-check` function, so it needs no anon access at all.
 
-### F-8 · MEDIUM · `security definer` functions without `set search_path`  — ✅ fixed in `009` (pending apply)
+### F-8 · MEDIUM · `security definer` functions without `set search_path`  — ✅ CLOSED 2026-08-24 (DDL applied; catalog not read)
 - **Where:** `005:105,132,189`; `006:18,110`.
 - **Impact:** A `security definer` function with a mutable `search_path` can be hijacked by a
   caller who shadows a referenced object in a schema earlier on their path — privilege
@@ -257,12 +274,25 @@ Credit where due — these are already correct and should be preserved:
 
 ## 5. Remediation priority
 
-1. ~~**F-1** — enable RLS on `sms_messages`~~ ✅ done in `009` — **apply it** (`supabase db push`) to stop the ERROR & the emails.
-2. ~~**F-7, F-8** — `security_invoker` view + `set search_path` on the definer functions~~ ✅ done in `009` (same apply).
-3. **F-2, F-3, F-5** — before Cary touches a real user or a real dollar: authenticate the
-   privileged edge functions and verify all webhook signatures.
-4. **F-4, F-10** — scope the `requests` and `courier_locations` policies to real ownership.
-5. **F-6, F-9, F-11, F-12, F-13** — harden as the surfaces mature.
+⭐ **Ranked by LIVE exposure, not by finding number** *(re-ordered 2026-08-24, Wren)*. `supabase functions list`
+shows only **six** of the nine edge functions are deployed — `complete-session`, `dispatch` and
+`credential-check` have **never been deployed**, so the findings against them are latent, not live. That
+inverts part of the old ordering, which ranked F-3 alongside F-2. ⛔ Re-derive before trusting this
+sentence; a function can be deployed at any time:
+
+```
+supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
+```
+
+1. **F-2** — `onboarding` is **ACTIVE** and takes `courier_id` off the request body. One POST marks any
+   courier's insurance `passed`. The highest live exposure in the register.
+2. **F-5 (Twilio half)** + **F-9** — `sms-webhook` is **ACTIVE** with no `X-Twilio-Signature` check and
+   unescaped TwiML interpolation. One edit closes both.
+3. **F-4** — `requests` carries an open **UPDATE** policy and is handing rows to anon right now
+   (`scratch/claims-cary-anon-exposure.mjs` fails on it).
+4. **F-3** + **F-5 (Stripe/Checkr half)** — money and vendor-trust. Not deployed today; a hard
+   prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
+5. **F-10, F-6, F-11, F-12, F-13** — harden as the surfaces mature.
 
 _Also check the Supabase **Auth** dashboard settings (OTP expiry, leaked-password protection,
 allowed redirect URLs) — those Advisor lints live in the console, not this repo._

@@ -92,7 +92,7 @@
 - **No review edit/delete, no event delete** UI — Sheet-only.
 - **`savedesign` (QR design) endpoint has no auth gate** — low risk (cosmetic), but open.
 - ⛔ **`contact-sms` is an unauthenticated endpoint that SPENDS MONEY** — `cary/supabase/functions/contact-sms/index.ts` has `Access-Control-Allow-Origin: '*'`, no caller auth, and no rate limit, and it calls Twilio and SendGrid. So the exposure is not a data leak but **billable abuse from any origin**. Higher priority than `savedesign` above, which is merely cosmetic. Tracked with the security arc.
-- ⛔ **`009_security_advisor_fixes.sql` is written and NOT APPLIED** — it enables RLS on `sms_messages` and revokes `anon`/`authenticated`. Until `supabase db push` runs, the anon key can read message bodies and phone numbers. ⚠️ Application state is **not verifiable from the repo** — the migration file on disk proves nothing about the live database. Jacob owns running it.
+- ✅ **`009_security_advisor_fixes.sql` APPLIED 2026-08-24** — `sms_messages` and `courier_credential_status` now answer the anon key with **401**. ⭐ Application state is no longer unverifiable from the repo: `SUPABASE_URL=… SUPABASE_ANON_KEY=… node scratch/claims-cary-anon-exposure.mjs` asks the live API, per relation, and fails loudly. ▶ Still open on the anon wall: **`requests` hands rows to anon and carries an open UPDATE policy** (`SECURITY.md` F-4).
 - **Milky Way** is mounted-disabled (`CelestialBodies.jsx` ~1194) — **keep / re-enable** (one-line uncomment), do not delete.
 - **`HERO_CENTER`/`HERO_TARGET`** — removable vestigial fallback (hero framing is slab-authored now).
 - **Community stats go stale until reload** (`useCommunityStats` hydrates once at boot; courier count is the only live one).
