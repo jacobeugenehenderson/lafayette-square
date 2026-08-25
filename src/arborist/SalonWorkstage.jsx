@@ -1792,6 +1792,25 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
   // must never render a mesh bar below the impostor bar, which would be incoherent.
   const effMeshTopN = Math.min(meshDragging ? dragMesh : (groveThreshold?.meshTopN ?? 0), effTopN)
 
+  // ⛔⛔ THE BAR LABEL IS A COUNT, NOT A RANK, AND IT SAID THE RANK.
+  // `mesh 5` meant "the bar sits at row 5" while only 3 of those 5 rows were green — the
+  // list is ordered by DEMAND and includes red species, so a bar position and a species
+  // count are different numbers. Reading a position as a count is exactly the class this
+  // subsystem keeps producing: a number that means something other than what it says.
+  // Recomputed from the LIVE dragged positions, so the count moves while you drag rather
+  // than lagging on the persisted value.
+  const liveCounts = useMemo(() => {
+    const live = { ...(groveThreshold || {}), topN: effTopN, meshTopN: effMeshTopN }
+    const board = resolveGrove(species || [], live)
+    let mesh = 0, impostor = 0, out = 0
+    for (const b of board) {
+      if (b.tier === 'mesh') mesh++
+      else if (b.tier === 'impostor') impostor++
+      else out++
+    }
+    return { mesh, impostor, out }
+  }, [species, groveThreshold, effTopN, effMeshTopN])
+
   useEffect(() => {
     if (!barDragging) return
     const idxFrom = (clientY) => {
@@ -1829,14 +1848,14 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
 
   const Bar = (
     <div onPointerDown={(e) => { e.preventDefault(); setDragTopN(effTopN) }}
-      title="Drag to set how many species build in the Grove — the rest substitute to a same-category neighbour"
+      title={`Impostor bar — at row ${effTopN} of ${species.length}. ${liveCounts.mesh + liveCounts.impostor} GREEN species ship their own identity; ${liveCounts.out} substitute to a neighbour. The row number and the species count differ because the list is demand-ordered and includes red species.`}
       style={{
         display: 'flex', alignItems: 'center', gap: 6, cursor: 'ns-resize',
         padding: '3px 8px', background: 'rgba(232,184,96,0.16)',
         borderTop: '2px solid #e8b860', borderBottom: '2px solid #e8b860', userSelect: 'none',
       }}>
       <span style={{ fontSize: 9, color: '#e8c878', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        ▲ build {effTopN} · substitute ▼
+        ▲ {liveCounts.mesh + liveCounts.impostor} ship · {liveCounts.out} substitute ▼
       </span>
       <span style={{ marginLeft: 'auto', fontSize: 12, color: '#e8b860' }}>⇳</span>
     </div>
@@ -1844,14 +1863,14 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
 
   const MeshBar = (
     <div onPointerDown={(e) => { e.preventDefault(); setDragMesh(effMeshTopN) }}
-      title="Drag to set how many species ship real GEOMETRY. Everything between this bar and the gold one ships as an impostor only. Geometry costs ~34x an impostor per species, so this is the tight budget."
+      title={`Mesh bar — at row ${effMeshTopN} of ${species.length}. ${liveCounts.mesh} GREEN species ship real geometry (~19 MB each); the ${liveCounts.impostor} between the bars ship as impostors (~0.56 MB each).`}
       style={{
         display: 'flex', alignItems: 'center', gap: 6, cursor: 'ns-resize',
         padding: '3px 8px', background: 'rgba(120,180,255,0.14)',
         borderTop: '2px solid #6aa6e8', borderBottom: '2px solid #6aa6e8', userSelect: 'none',
       }}>
       <span style={{ fontSize: 9, color: '#9cc6f0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
-        ▲ mesh {effMeshTopN} · impostor ▼
+        ▲ {liveCounts.mesh} mesh · {liveCounts.impostor} impostor ▼
       </span>
       <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6aa6e8' }}>⇳</span>
     </div>
