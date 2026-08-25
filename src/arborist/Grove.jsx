@@ -66,92 +66,9 @@ export default function Grove() {
   const groveThreshold = useArboristStore(s => s.groveThreshold)
   const rosterSpecies = rosterCoverage?.species || []
   const warnedNoBoardRef = useRef(false)
-  const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
-  const bakeGroveToSlab = useArboristStore(s => s.bakeGroveToSlab)
-  const groveBaking = useArboristStore(s => s.groveBaking)
-  const groveBakeResult = useArboristStore(s => s.groveBakeResult)
-  const activeLookTrees = looksRosters[activeLookId] || []
-
-  // The neighbourhoods behind the Looks — the axis the picker above runs on.
-  // Deduped by scene, so two Looks over one neighbourhood collapse to one entry
-  // rather than showing the operator the same trees twice.
-  const neighborhoods = useMemo(() => {
-    const byScene = new Map()
-    for (const l of looks) {
-      const scene = l.scene || l.id
-      if (!byScene.has(scene)) byScene.set(scene, { scene, name: l.name, lookIds: [] })
-      byScene.get(scene).lookIds.push(l.id)
-    }
-    return [...byScene.values()]
-  }, [looks])
-  const activeScene = looks.find(l => l.id === activeLookId)?.scene || activeLookId
-  // Scene → the Look whose roster + atlas the Grove edits. One Look per scene
-  // today; if that ever stops being true this silently picks the first, which is
-  // the moment this needs a real sub-picker rather than a guess.
-  const lookIdForScene = (scene) =>
-    neighborhoods.find(n => n.scene === scene)?.lookIds[0] || scene
-
-  // Two scopes (both populated by published compositions — visibility is
-  // never gated on a Fill/Mid/Hero rating; see file header / Brief 27):
-  //   'look'   — only the active Look's roster (curation review)
-  //   'all'    — every published composition in the library (browse + the
-  //              surface for adding a library composition to this Look)
-  // Click action mirrors the scope: in 'look' the card removes from the
-  // active Look; in 'all' it adds/removes membership.
-  // Top-level view: 'gallery' (the by-model 3D crop) ↔ 'coverage'
-  // (Brief 24 — roster-anchored have-vs-need table).
-  const [view, setView] = useState('gallery')
-  const [ringScale, setRingScale] = useState(1)   // Spread: cluster (small) ↔ separate (large)
-  const [scope, setScope] = useState('look')
-  // Hero↔Browse transition — the Grove TAKES the universal player's camera
-  // animation (createCameraTween, the same easeInOutCubic + up-vector tilt the
-  // player runs Hero↔Browse) for a realistic preview; its eased progress ALSO
-  // crossfades the tree forms (3D specimen ↔ overhead disc). Fixed, no knobs.
-  const [transitioning, setTransitioning] = useState(false)
-  const transitionGuard = useRef(null)   // failsafe timer — see startTransition
-  const [blend, setBlend] = useState(0)           // 0 = Hero, 1 = Browse (crossfade weight)
-  const tweenRef = useRef(null)
-  if (!tweenRef.current) tweenRef.current = createCameraTween()
-  const poseRef = useRef({ pos: new THREE.Vector3(0, 30, 60), target: new THREE.Vector3(0, 4, 0), up: new THREE.Vector3(0, 1, 0), fov: 40 })
-  const groveControlsRef = useRef()
-  const [hovered, setHovered] = useState(null)
-  const [selected, setSelected] = useState(null)  // {speciesId, variantId} — click-selected tile; drives the fixed editor panel
-  const [toast, setToast] = useState(null)
-  // Overhead bake — the Grove Bake→Slab ALSO captures each roster species' 3-slice
-  // overhead snapshot (GPU, in this Canvas) and POSTs it into the look's slab. Runs
-  // AFTER the HTTP bake (so it merges into the fresh manifest). One per species.
-  const [overheadTick, setOverheadTick] = useState(0)
-  const [overheadProg, setOverheadProg] = useState(null)   // {done,total} | 'done' | null
-  // Hero canopy-impostor bake — the SAME Bake→Slab captures each roster species' side-on
-  // hero impostor (all N azimuths = the variety pool). Chained AFTER the overhead bake
-  // so only one GPU capture loop runs at a time (crash-safe). Same species list.
-  const [heroTick, setHeroTick] = useState(0)
-  const [heroProg, setHeroProg] = useState(null)           // {done,total} | 'done' | null
-  // ⚠️ The per-species TALLY, kept apart from the progress sentinel. The status line
-  // used to print "overhead ✓ · hero ✓" off `prog === 'done'` alone — i.e. "the pass
-  // FINISHED", not "every species shipped" — while the `fail` count went to
-  // console.log and nowhere else. A bake that refused 3 of 10 species still read as
-  // two green checks, so the slab looked healthy and the missing trees showed up
-  // much later as holes in the render. A capture that fails must be visible where
-  // the operator is looking. (2026-07-22)
-  const [overheadResult, setOverheadResult] = useState(null)  // {ok,fail} | null
-  const [heroResult, setHeroResult] = useState(null)          // {ok,fail} | null
-  // ⛔⛔ THE BARS GATE THE BAKE. This used to capture whatever sat in design.json's
-  // trees[] — the per-variant checkbox list — so an UNCOMPOSED species could be checked
-  // in and shot. platanus_acerifolia was: no composition, no barkDetail, both bakes
-  // refused it for rendering 0.00% opaque, and it burned two retries every bake.
-  // Eligibility now comes from the ONE shared rule (arborist/grove-eligibility.mjs), the
-  // same one the Salon rail draws, so the rail and the bake cannot disagree about what
-  // ships. ⭐ A `withheld` species is skipped here by construction — that is the whole
-  // point of the gesture.
-  const groveBoard = useMemo(
-    () => resolveGrove(rosterSpecies || [], groveThreshold || {}),
-    [rosterSpecies, groveThreshold],
-  )
-  const eligibleNames = useMemo(
-    () => new Set(groveBoard.filter(b => b.tier !== 'out').map(b => b.species)),
-    [groveBoard],
-  )
+  // slab library id → the dossier's canonicalId, so the owner lookup works when the two
+  // disagree (`maple_sugar` on the slab, `acer_saccharum` in the roster).
+  const unownedRef = useRef(new Set())
 
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
@@ -171,7 +88,7 @@ export default function Grove() {
           warnedNoBoardRef.current = true
           console.warn('[grove-bake] roster board not loaded — capturing the FULL look roster ungated. The bars are not being applied.')
         }
-      } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard)) continue
+      } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) continue
       out.push({ species: t.species, glbUrl: `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb` })
     }
     return out
@@ -229,7 +146,7 @@ export default function Grove() {
   const recaptureImpostors = () => {
     if (!overheadSpecies.length) return
     forceAll.current = true          // repair gesture — ignore the fingerprints
-    setOverheadResult(null); setHeroResult(null)
+    setOverheadResult(null); setHeroResult(null); setImpostorGapDismissed(false)
     setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1)
   }
 
@@ -474,22 +391,42 @@ export default function Grove() {
               {groveBakeResult.error
                 ? `bake failed: ${groveBakeResult.error}`
                 : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
-              {overheadProg === 'done' && (
-                overheadResult?.fail
-                  ? <span style={{ color: '#f88' }}>{` · overhead ✗ ${overheadResult.fail} of ${overheadResult.ok + overheadResult.fail} species FAILED`}</span>
-                  : ` · overhead ✓ ${overheadResult?.ok ?? ''}`)}
-              {heroProg === 'done' && (
-                heroResult?.fail
-                  ? <span style={{ color: '#f88' }}>{` · hero ✗ ${heroResult.fail} of ${heroResult.ok + heroResult.fail} species FAILED`}</span>
-                  : ` · hero ✓ ${heroResult?.ok ?? ''}`)}
-              {(overheadResult?.fail || heroResult?.fail) ? (
-                <span style={{ color: '#f88' }}> — those species fall back to mesh; see console for which.</span>
-              ) : null}
+              {/* ⛔ "3 of 4 species FAILED" printed an INTERNAL BATCH SIZE as if it were the
+                  operator's species count. 4 was however many the drain-on-bake happened to
+                  re-shoot — the other six were skipped as already-captured — so the
+                  denominator meant nothing to the person reading it, and the ratio changed
+                  bake to bake while the same three species kept failing. Same defect as the
+                  bar label printing a row where a count belonged.
+                  ⭐ Name the trees instead. An operator needs WHICH and WHAT NEXT, never a
+                  ratio over a batch they cannot see. Kept loud enough to not be silent —
+                  this is a real gap in the slab — but it is one line and it dismisses. */}
+              {overheadProg === 'done' && !overheadResult?.fail && ` · overhead ✓ ${overheadResult?.ok ?? ''}`}
+              {heroProg === 'done' && !heroResult?.fail && ` · hero ✓ ${heroResult?.ok ?? ''}`}
             </span>
           )}
         </span>
         )}
       </header>
+
+      {(() => {
+        const names = [...new Set([...(overheadResult?.failedNames || []), ...(heroResult?.failedNames || [])])]
+        if (!names.length || impostorGapDismissed) return null
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+            background: 'rgba(200,120,60,0.10)', borderBottom: '1px solid rgba(200,120,60,0.25)',
+            fontSize: 11, color: '#e0b088',
+          }}>
+            <span>
+              no impostor: <b style={{ color: '#f0c8a0' }}>{names.join(', ')}</b>
+              <span style={{ color: '#9a8878' }}> — these render as mesh at every distance. Withhold them, or fix the capture.</span>
+            </span>
+            <button onClick={() => setImpostorGapDismissed(true)}
+              title="Dismiss until the next bake"
+              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#9a8878', cursor: 'pointer', fontSize: 13, padding: '0 2px' }}>×</button>
+          </div>
+        )
+      })()}
 
       <div
         style={{ flex: 1, position: 'relative', minHeight: 0 }}
@@ -736,13 +673,26 @@ function TransitionDriver({ tween, poseRef, controlsRef }) {
 // display name (`Maple, Red`). Match through the board's covering ids rather than
 // slugifying a name — the two have drifted before and a wrong match here silently drops a
 // species from the bake.
-function eligibleByLibId(libId, board) {
-  for (const b of board) {
-    if (b.tier === 'out') continue
-    if ((b.covering || []).some(v => v.libId === libId)) return true
-    if (b.canonicalId === libId) return true
+// ⛔⛔ THIS GATE ONLY EXCLUDES WHEN IT IS CERTAIN, AND THE UNCERTAINTY IS A NAMING BUG.
+// A chassis asset is named for a SPECIES (`maple_sugar`), so every lookup has to answer
+// "is this an asset or a species?" — a question that should not exist. The roster calls
+// sugar maple `acer_saccharum` while the slab ships `maple_sugar`, so NO roster row owns
+// that asset and the only rows claiming it are species SUBSTITUTING onto it. Two
+// successive heuristics here resolved `maple_sugar` first to a cultivar row and then to
+// Maple, Norway — both red, both would have silently dropped a green species from the bake
+// while the bake reported ALL GREEN because it never tried.
+// ⭐ Jacob's fix (2026-08-25, parked): strip species names from chassis after native
+// instantiation so a chassis is a FORM (`oval`), not a species. That deletes this entire
+// question. Until then this refuses to guess: exclude ONLY on an exact owner match,
+// otherwise include and say so once.
+function eligibleByLibId(libId, board, warnRef) {
+  const owner = board.find(b => b.canonicalId === libId)
+  if (owner) return owner.tier !== 'out'
+  if (warnRef && !warnRef.current.has(libId)) {
+    warnRef.current.add(libId)
+    console.warn(`[grove-bake] "${libId}" has no owning roster row — the chassis is named for a species the roster keys differently. INCLUDED rather than dropped; the bars are not gating it.`)
   }
-  return false
+  return true                       // ⛔ fail OPEN: never drop a tree on a guess
 }
 
 function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
