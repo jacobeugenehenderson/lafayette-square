@@ -43,11 +43,36 @@ other is silently thrown away.** No number of extra terms fixes that — it has 
 | `leaf.silhouette` (10, mixed) | **`leaf.type`** | Simple · Compound-pinnate · Compound-bipinnate · Compound-palmate · Needle · Scale · Frond | standard [3+] |
 | | **`leaf.shape`** | Acicular · Cordate · Deltoid · Elliptical · **Flabellate** · Lanceolate · Linear · Oblanceolate · Oblong · Obovate · Orbicular · Ovate · Reniform · Rhomboid · Spatulate | standard Latin [3+] |
 | | **`leaf.margin`** | Entire · Serrate · Doubly-serrate · Dentate · Doubly-dentate · Crenate · Lobed · Sinuate · Undulate · Spinose | standard Latin [3+] |
-| `leaf.ways` (5) | **`leaf.arrangement`** | Alternate · Opposite · Whorled · Rosulate · Fascicled | ≡ already [3+] |
+| `leaf.ways` (5) | ⛔ **SPLITS — it is TWO axes, see §2a** | | **NOT ≡** |
 | `bark.type` (8) | **`bark.texture`** | Smooth · Fissured · Furrowed · Ridged · Plated · Scaly · Shaggy · Exfoliating · Papery · Lenticellate · Mottled · Fibrous · Warty | standard dendrology [3+] |
 | | **`bark.plate_geometry`** | *(⚠️ see §4 — concept borrowed, list to be derived)* | ⛔ single-source |
 | `bark.color` (unbuilt, "sample-pending") | **`bark.color`** | *(⚠️ see §4 — define against gradient ramps, not word buckets)* | ⛔ editorial |
 | `chassis.habit` (9) | **`chassis.habit`** | Columnar · Fastigiate · Oval · Ovoid · Rounded · Spreading · Vase · Weeping · Pyramidal · Conical · Irregular · Multi-stem · Arching · Ascending · Horizontal | standard [3+] |
+
+### ⛔ §2a — `leaf.ways` IS NOT BOTANICAL ARRANGEMENT. It is the GROWTHWAY.
+*(Jacob, 2026-08-24, with the shipped Salon control: "leaf arrangement is the growthway.")*
+The live dropdown offers: **As modeled (the model's own) · Alternate (scatter)·native ·
+Opposite (maple/ash) · Drooping (willow) · Sprays (compound) · Clusters (ginkgo)**.
+
+⛔ **I had this marked "≡ already" and it is wrong.** Botanical `leaf_arrangement` is
+phyllotaxis — *where leaves attach to the stem*: **Alternate · Opposite · Whorled · Rosulate**.
+But **Drooping** is a branchlet habit, **Sprays** is compound-leaf geometry, and **Clusters**
+is fascicled. **Three of our six are not arrangement terms at all.** Aliasing onto a botanical
+source would silently drop Drooping and Sprays and mis-key Clusters.
+
+⇒ **We need BOTH, and they are different kinds of thing:**
+| axis | what it is | sourced? |
+|---|---|---|
+| **`leaf.arrangement`** | botanical phyllotaxis — Alternate · Opposite · Whorled · Rosulate | ✅ from the survey [3+] |
+| **`leaf.growthway`** | ⭐ **OURS — a RENDERING DIRECTIVE.** How foliage is placed/hangs on the chassis. Alternate-scatter · Opposite · Drooping · Sprays · Clusters, **plus `As modeled`** | ⛔ no source has it |
+
+⭐ **`As modeled (the model's own)` is a first-class value and no botanical source can ever
+supply it** — it is a statement about OUR ASSET ("use the chassis's native geometry"), not
+about the tree. It is the passthrough that keeps a good vendor model from being re-arranged.
+⚠️ **And a live doc/code mismatch:** `rubric.json` calls it **`all-one-direction`**; the shipped
+UI calls it **`Drooping (willow)`**. Same value, two names. **Fix in the cut.**
+⭐ Note the UI also tags Alternate as **"· native"** — that is `ORIENTATION §2`'s warning word:
+in this app *native* means **the leaf this species actually has**, never regional nativeness.
 
 ⭐ `leaf.size` should also split — **length and width are separate**, and the aspect ratio *is*
 the species read (the survey notes MLA records `LAMINAR L:W RATIO` explicitly). A leaf card has
