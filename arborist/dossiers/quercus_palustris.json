@@ -2,33 +2,111 @@
   "key": "Pin Oak",
   "scientific": "Quercus palustris",
   "canonicalId": "quercus_palustris",
-  "inventoryNames": ["Oak, Pin"],
+  "inventoryNames": [
+    "Oak, Pin"
+  ],
   "count": 42,
   "forces": "lobed (LeafSet016 in hand) + the pyramidal three-tier silhouette",
   "descriptor": "Pyramidal oak; ascending-upper / horizontal-mid / descending-lower branches; glossy bristle-lobed leaves; deep-red persisting fall; smooth grey-brown bark.",
   "identityNotes": "Diagnostic three-tier branching (upper ascending, middle horizontal, lower descending/pendulous) — unmistakable winter silhouette. Red-oak group, bristle-tipped lobes; dead lower 'pin' stubs persist.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris", "credit": "Wikimedia Commons — Quercus palustris category", "caption": "Pyramidal crown with descending lower limbs; deeply cut bristle-lobed leaves." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris", "credit": "Wikimedia Commons — Quercus palustris category", "caption": "Deep red-to-bronze autumn foliage." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris", "credit": "Wikimedia Commons — Quercus palustris category", "caption": "Smooth grey-brown trunk with shallow young ridging." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Pyramidal crown with descending lower limbs; deeply cut bristle-lobed leaves."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Deep red-to-bronze autumn foliage."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
+      "credit": "Wikimedia Commons — Quercus palustris category",
+      "caption": "Smooth grey-brown trunk with shallow young ridging."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "pyramidal", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 18, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 8 },
-    "bark.type":       { "target": "smooth", "hardness": "soft", "tol": 1, "note": "relatively smooth for an oak; shallow ridging only with age" },
-    "leaf.silhouette": { "target": "lobed", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "alternate", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 12, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#2E6B33", "back": "#4A8048", "strength": "none" },
-    "leaf.season":     { "anchors": { "buds": "#9aab6a", "spring": "#7ea760", "summer": "#2e6b33", "fall": "#9e2b25", "winter": null } },
-    "overlay.type":    { "target": "fruit", "note": "small acorns with shallow saucer cap" }
+    "chassis.habit": {
+      "target": "pyramidal",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 18,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 8
+    },
+    "leaf.face": {
+      "front": "#2E6B33",
+      "back": "#4A8048",
+      "strength": "none"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#9aab6a",
+        "spring": "#7ea760",
+        "summer": "#2e6b33",
+        "fall": "#9e2b25",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "fruit",
+      "note": "small acorns with shallow saucer cap"
+    },
+    "leaf.margin": {
+      "target": "lobed",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "smooth",
+      "hardness": "soft",
+      "tol": 1,
+      "note": "relatively smooth for an oak; shallow ridging only with age"
+    },
+    "leaf.length": {
+      "target": 12,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "lobed", "ways": "alternate", "sizeMult": 1.0, "note": "LeafSet016 lobed pack in hand" },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "lobed",
+      "ways": "alternate",
+      "sizeMult": 1,
+      "note": "LeafSet016 lobed pack in hand"
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Seeded leaf.silhouette from the in-hand lobed pack (quercus_alba was the species-map oak proxy, barkMorph scaly; pin oak bark refined to smooth per reference)." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier. Seeded leaf.silhouette from the in-hand lobed pack (quercus_alba was the species-map oak proxy, barkMorph scaly; pin oak bark refined to smooth per reference)."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "have"
+  }
 }

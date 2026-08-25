@@ -2,33 +2,104 @@
   "key": "Sugar Maple",
   "scientific": "Acer saccharum",
   "canonicalId": "acer_saccharum",
-  "inventoryNames": ["Maple, Sugar"],
+  "inventoryNames": [
+    "Maple, Sugar"
+  ],
   "count": 88,
   "forces": "palmate · THE vertical-slice hero (the proof)",
   "descriptor": "Dense oval shade tree; opposite palmate leaves with rounded sinuses; brilliant yellow-orange-red fall; grey shaggy-plated bark.",
   "identityNotes": "Rounded (U-shaped) leaf sinuses with few large teeth and a green (not silver) underside separate it from silver/red maple. Classic mixed yellow-orange-red autumn, often all on one tree.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Acer_saccharum", "credit": "Wikimedia Commons — Acer saccharum gallery", "caption": "Full oval crown in leaf; rounded-sinus palmate leaves visible." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum", "credit": "Wikimedia Commons — Acer saccharum category (Newark, Ohio fall set)", "caption": "Mixed yellow-orange-red autumn canopy, the classic sugar-maple display." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum", "credit": "Wikimedia Commons — Acer saccharum category", "caption": "Mature grey plated/shaggy bark with vertical lifting strips." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum gallery",
+      "caption": "Full oval crown in leaf; rounded-sinus palmate leaves visible."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum category (Newark, Ohio fall set)",
+      "caption": "Mixed yellow-orange-red autumn canopy, the classic sugar-maple display."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
+      "credit": "Wikimedia Commons — Acer saccharum category",
+      "caption": "Mature grey plated/shaggy bark with vertical lifting strips."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "oval", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 21, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 9 },
-    "bark.type":       { "target": "plated", "hardness": "soft", "tol": 1, "seedWas": "furrowed" },
-    "leaf.silhouette": { "target": "palmate", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "opposite", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 12, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#3E7A3A", "back": "#5E8F50", "strength": "none" },
-    "leaf.season":     { "anchors": { "buds": "#a8c870", "spring": "#7eba5e", "summer": "#3a7b30", "fall": "#d4801f", "winter": null } },
-    "overlay.type":    { "target": "none" }
+    "chassis.habit": {
+      "target": "oval",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 21,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 9
+    },
+    "leaf.face": {
+      "front": "#3E7A3A",
+      "back": "#5E8F50",
+      "strength": "none"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#a8c870",
+        "spring": "#7eba5e",
+        "summer": "#3a7b30",
+        "fall": "#d4801f",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "none"
+    },
+    "leaf.arrangement": {
+      "target": "opposite",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "plated",
+      "hardness": "soft",
+      "tol": 1,
+      "seedWas": "furrowed"
+    },
+    "leaf.length": {
+      "target": 12,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": "Bark007", "band": null },
-    "leaf": { "pack": "palmate", "ways": "opposite", "sizeMult": 1.0 },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": "Bark007",
+      "band": null
+    },
+    "leaf": {
+      "pack": "palmate",
+      "ways": "opposite",
+      "sizeMult": 1
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": true, "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have" }
+  "provenance": {
+    "fromSpeciesMap": true,
+    "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "have"
+  }
 }

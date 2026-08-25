@@ -2,33 +2,114 @@
   "key": "Red Maple",
   "scientific": "Acer rubrum",
   "canonicalId": "acer_rubrum",
-  "inventoryNames": ["Maple, Red"],
+  "inventoryNames": [
+    "Maple, Red"
+  ],
   "count": 33,
   "forces": "palmate/lobed — kit mileage (shared maple parts); red through-season theme",
   "descriptor": "Oval maple, red in every season; 3–5 lobed toothed leaves with red petioles; fire-engine-red fall; grey vertically-ridged bark.",
   "identityNotes": "V-shaped (sharp/angular) sinuses, serrated/toothed margins, and red twigs/petioles separate it from sugar maple. The most reliable bright-red fall of the three maples; red recurs in twigs, early flowers, fruit, and fall.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Acer_rubrum", "credit": "Wikimedia Commons — Acer rubrum", "caption": "Rounded-oval crown; 3–5 lobed toothed leaves with red petioles." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum_(leaves)", "credit": "Wikimedia Commons — Acer rubrum (leaves) category", "caption": "Brilliant red autumn foliage, the species' signature." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum", "credit": "Wikimedia Commons — Acer rubrum category", "caption": "Grey bark, smooth on young trees becoming vertically ridged/striped." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Acer_rubrum",
+      "credit": "Wikimedia Commons — Acer rubrum",
+      "caption": "Rounded-oval crown; 3–5 lobed toothed leaves with red petioles."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum_(leaves)",
+      "credit": "Wikimedia Commons — Acer rubrum (leaves) category",
+      "caption": "Brilliant red autumn foliage, the species' signature."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum",
+      "credit": "Wikimedia Commons — Acer rubrum category",
+      "caption": "Grey bark, smooth on young trees becoming vertically ridged/striped."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "oval", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 15, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 7 },
-    "bark.type":       { "target": "ridged", "hardness": "soft", "tol": 1, "seedWas": "furrowed" },
-    "leaf.silhouette": { "target": "lobed", "hardness": "hard", "tol": 1, "note": "palmate↔lobed near; red maple is shallowly palmate-lobed — palmate pack is workable" },
-    "leaf.ways":       { "target": "opposite", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 9, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#3F7E3C", "back": "#7FA070", "strength": "mild", "note": "whitish/glaucous underside, less silver than silver maple" },
-    "leaf.season":     { "anchors": { "buds": "#c44a4a", "spring": "#8aba6a", "summer": "#3a7b30", "fall": "#d32414", "winter": null } },
-    "overlay.type":    { "target": "fruit", "note": "showy small red flowers very early; red paired samaras late spring" }
+    "chassis.habit": {
+      "target": "oval",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 15,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 7
+    },
+    "leaf.face": {
+      "front": "#3F7E3C",
+      "back": "#7FA070",
+      "strength": "mild",
+      "note": "whitish/glaucous underside, less silver than silver maple"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#c44a4a",
+        "spring": "#8aba6a",
+        "summer": "#3a7b30",
+        "fall": "#d32414",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "fruit",
+      "note": "showy small red flowers very early; red paired samaras late spring"
+    },
+    "leaf.margin": {
+      "target": "lobed",
+      "hardness": "hard",
+      "tol": 1,
+      "note": "palmate↔lobed near; red maple is shallowly palmate-lobed — palmate pack is workable"
+    },
+    "leaf.arrangement": {
+      "target": "opposite",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "ridged",
+      "hardness": "soft",
+      "tol": 1,
+      "seedWas": "furrowed"
+    },
+    "leaf.length": {
+      "target": 9,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "palmate", "ways": "opposite", "sizeMult": 0.85, "note": "kit-mileage: shares the palmate pack; smaller card" },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "palmate",
+      "ways": "opposite",
+      "sizeMult": 0.85,
+      "note": "kit-mileage: shares the palmate pack; smaller card"
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": true, "notes": "Migrated from species-map acer_rubrum (tier cousin, tints verbatim incl. red buds #c44a4a + fall #c8311a→refined #d32414). barkMorph 'furrowed' refined to 'ridged'." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: Bark003 is an exact ridged match (the live matcher found it)" }
+  "provenance": {
+    "fromSpeciesMap": true,
+    "notes": "Migrated from species-map acer_rubrum (tier cousin, tints verbatim incl. red buds #c44a4a + fall #c8311a→refined #d32414). barkMorph 'furrowed' refined to 'ridged'."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "have",
+    "_barkNote": "stretch→have 2026-06-18: Bark003 is an exact ridged match (the live matcher found it)"
+  }
 }

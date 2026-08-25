@@ -2,33 +2,117 @@
   "key": "Redbud",
   "scientific": "Cercis canadensis",
   "canonicalId": "cercis_canadensis",
-  "inventoryNames": ["Redbud"],
+  "inventoryNames": [
+    "Redbud"
+  ],
   "count": 23,
   "forces": "heart leaf (LeafSet004 in hand) + flowers/ornamental + multi-stem habit",
   "descriptor": "Small multi-trunked understory tree; rose-pink pea-flowers borne ON the bare branches in early spring; heart-shaped leaves; pale-yellow fall; scaly reddish-grey bark.",
   "identityNotes": "Heart-shaped (cordate) leaf + cauliflorous pink flowers blooming directly on bare branches and trunk are unmistakable. Missouri native; frequently multi-trunked and leaning.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Category:Cercis_canadensis", "credit": "Wikimedia Commons — Cercis canadensis category", "caption": "Multi-trunked spreading form with heart-shaped leaves; seedpods may be visible." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Cercis_canadensis", "credit": "Wikimedia Commons — Cercis canadensis", "caption": "Pale greenish-yellow autumn foliage (modest fall display)." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_16zz.jpg", "credit": "Wikimedia Commons — 'Cercis canadensis 16zz.jpg'", "caption": "Scaly grey-brown trunk; note frequent lean / multiple stems. (Spring-bloom plate strongly recommended — the flowering trunk is the defining image.)" }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Category:Cercis_canadensis",
+      "credit": "Wikimedia Commons — Cercis canadensis category",
+      "caption": "Multi-trunked spreading form with heart-shaped leaves; seedpods may be visible."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Cercis_canadensis",
+      "credit": "Wikimedia Commons — Cercis canadensis",
+      "caption": "Pale greenish-yellow autumn foliage (modest fall display)."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_16zz.jpg",
+      "credit": "Wikimedia Commons — 'Cercis canadensis 16zz.jpg'",
+      "caption": "Scaly grey-brown trunk; note frequent lean / multiple stems. (Spring-bloom plate strongly recommended — the flowering trunk is the defining image.)"
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "multi-stem", "hardness": "soft", "tol": 1, "note": "vase/spreading near; single-stem core workable as a stretch" },
-    "chassis.size":    { "target": 7, "hardness": "hard", "tol": 0.4, "canopyRadiusM": 4, "note": "SMALL ornamental — same chassis gap as crabapple" },
-    "bark.type":       { "target": "scaly", "hardness": "soft", "tol": 1 },
-    "leaf.silhouette": { "target": "heart", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "alternate", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 10, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#4E7A55", "back": "#6E9470", "strength": "none" },
-    "leaf.season":     { "anchors": { "buds": "#8a4a6a", "spring": "#6a9a55", "summer": "#4e7a55", "fall": "#e7d86a", "winter": null }, "note": "buds anchor seeds the cauliflorous pink-flower overlay color" },
-    "overlay.type":    { "target": "flowers", "note": "profuse rose-purple pea-flowers ON bare branches/trunk before leaves; flat brown bean pods in summer" }
+    "chassis.habit": {
+      "target": "multi-stem",
+      "hardness": "soft",
+      "tol": 1,
+      "note": "vase/spreading near; single-stem core workable as a stretch"
+    },
+    "chassis.size": {
+      "target": 7,
+      "hardness": "hard",
+      "tol": 0.4,
+      "canopyRadiusM": 4,
+      "note": "SMALL ornamental — same chassis gap as crabapple"
+    },
+    "leaf.face": {
+      "front": "#4E7A55",
+      "back": "#6E9470",
+      "strength": "none"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#8a4a6a",
+        "spring": "#6a9a55",
+        "summer": "#4e7a55",
+        "fall": "#e7d86a",
+        "winter": null
+      },
+      "note": "buds anchor seeds the cauliflorous pink-flower overlay color"
+    },
+    "overlay.type": {
+      "target": "flowers",
+      "note": "profuse rose-purple pea-flowers ON bare branches/trunk before leaves; flat brown bean pods in summer"
+    },
+    "leaf.shape": {
+      "target": "cordate",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "scaly",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.length": {
+      "target": 10,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "heart", "ways": "alternate", "sizeMult": 1.0, "note": "LeafSet004 heart pack in hand" },
-    "overlay": null, "deformer": { "range": { "lean": "morph — redbud leans as a variety trait" } }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "heart",
+      "ways": "alternate",
+      "sizeMult": 1,
+      "note": "LeafSet004 heart pack in hand"
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {
+        "lean": "morph — redbud leans as a variety trait"
+      }
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean)." },
-  "partAvailability": { "chassis": "stretch", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) scaly", "_chassisNote": "gap→stretch 2026-06-18: common_birch_d (multi-stem, 8.26m) + small ovals are workable stand-ins; an ideal multi-stem redbud core is polish, not a blocker" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean)."
+  },
+  "partAvailability": {
+    "chassis": "stretch",
+    "bark": "have",
+    "leaf": "have",
+    "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) scaly",
+    "_chassisNote": "gap→stretch 2026-06-18: common_birch_d (multi-stem, 8.26m) + small ovals are workable stand-ins; an ideal multi-stem redbud core is polish, not a blocker"
+  }
 }

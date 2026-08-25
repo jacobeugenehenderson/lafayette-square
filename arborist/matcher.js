@@ -20,11 +20,19 @@
  * pick (a pack can be arranged any way), so they don't filter part selection.
  */
 
+// ⛔ HARDCODED AXIS IDS. Renaming an axis in rubric.json and not updating this list makes
+// `axes` come back EMPTY — so `concrete` is false, every part scores 0, and readiness reports
+// GAP for a species whose parts match perfectly. It does not throw. That is the third place
+// axis ids are stored (dossiers · part-index · here) and it cost the longest to find during the
+// 19→31 cutover. ▶ `node scratch/claims-axis-keys-resolve.mjs` covers all three now.
 const MATCH_AXES = {
   chassis: ['chassis.habit', 'chassis.size'],
-  bark: ['bark.type'],
-  leaf: ['leaf.silhouette', 'leaf.size'],
-  overlay: ['overlay.type'],
+  bark: ['bark.texture'],
+  // The 2026-08-24 split: leaf.silhouette conflated type/shape/margin, so a part must be
+  // comparable on each. A part tagged on only one still matches — the others read as untagged,
+  // which never disqualifies a SOFT axis (see compareAxis).
+  leaf: ['leaf.type', 'leaf.shape', 'leaf.margin', 'leaf.arrangement', 'leaf.length', 'leaf.width'],
+  overlay: ['overlay.type', 'overlay.fruit_type', 'overlay.appendage'],
 }
 const HARD_WEIGHT = 2, SOFT_WEIGHT = 1, PROVISIONAL_PENALTY = 0.85
 // Closeness normalizer for enums. The tolerance test uses the rubric's far=9

@@ -2,33 +2,107 @@
   "key": "Silver Maple",
   "scientific": "Acer saccharinum",
   "canonicalId": "acer_saccharinum",
-  "inventoryNames": ["Maple, Silver"],
+  "inventoryNames": [
+    "Maple, Silver"
+  ],
   "count": 48,
   "forces": "palmate — kit mileage (shared maple parts) + the leaf.face hero (strong silver underside)",
   "descriptor": "Fast, broad-spreading maple; deeply-cut palmate leaves flashing silver-white below; pale-yellow fall; shaggy reddish-grey peeling bark.",
   "identityNotes": "Deeply cut, sharply pointed lobes with very deep U-sinuses and a VIVID silvery-white underside — the whole canopy flashes silver in wind (the defining trait). Often weak-wooded, ascending-then-arching limbs.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Acer_saccharinum", "credit": "Wikimedia Commons — Acer saccharinum", "caption": "Broad spreading crown; deeply lobed leaves with silver undersides catching light." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum", "credit": "Wikimedia Commons — Acer saccharinum category", "caption": "Pale yellow autumn foliage (less vivid than sugar/red maple)." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum", "credit": "Wikimedia Commons — Acer saccharinum category", "caption": "Mature shaggy grey-to-reddish-brown peeling bark strips." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum",
+      "caption": "Broad spreading crown; deeply lobed leaves with silver undersides catching light."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum category",
+      "caption": "Pale yellow autumn foliage (less vivid than sugar/red maple)."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
+      "credit": "Wikimedia Commons — Acer saccharinum category",
+      "caption": "Mature shaggy grey-to-reddish-brown peeling bark strips."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "spreading", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 21, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 11 },
-    "bark.type":       { "target": "scaly", "hardness": "soft", "tol": 1 },
-    "leaf.silhouette": { "target": "palmate", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "opposite", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 14, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#5A8C4A", "back": "#D7E2CE", "strength": "strong", "note": "THE leaf.face case — bright silvery-white underside" },
-    "leaf.season":     { "anchors": { "buds": "#a8c870", "spring": "#86bb64", "summer": "#5a8c4a", "fall": "#e8d44a", "winter": null } },
-    "overlay.type":    { "target": "fruit", "note": "large paired samaras, the biggest of native maples" }
+    "chassis.habit": {
+      "target": "spreading",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 21,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 11
+    },
+    "leaf.face": {
+      "front": "#5A8C4A",
+      "back": "#D7E2CE",
+      "strength": "strong",
+      "note": "THE leaf.face case — bright silvery-white underside"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#a8c870",
+        "spring": "#86bb64",
+        "summer": "#5a8c4a",
+        "fall": "#e8d44a",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "fruit",
+      "note": "large paired samaras, the biggest of native maples"
+    },
+    "leaf.arrangement": {
+      "target": "opposite",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "scaly",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.length": {
+      "target": 14,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "palmate", "ways": "opposite", "sizeMult": 1.15, "note": "kit-mileage: shares the palmate pack with sugar/red maple" },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "palmate",
+      "ways": "opposite",
+      "sizeMult": 1.15,
+      "note": "kit-mileage: shares the palmate pack with sugar/red maple"
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Kit-mileage proof — re-uses the palmate pack. The leaf.face axis is load-bearing here (strong two-tone)." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) is a real scaly bark" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier. Kit-mileage proof — re-uses the palmate pack. The leaf.face axis is load-bearing here (strong two-tone)."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "have",
+    "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) is a real scaly bark"
+  }
 }

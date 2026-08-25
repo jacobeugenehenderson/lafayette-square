@@ -2,33 +2,114 @@
   "key": "Green Ash",
   "scientific": "Fraxinus pennsylvanica",
   "canonicalId": "fraxinus_pennsylvanica",
-  "inventoryNames": ["Ash, Green"],
+  "inventoryNames": [
+    "Ash, Green"
+  ],
   "count": 50,
   "forces": "⚠️ compound leaf — NO pack (coverageGaps: compound) + Leaf Ways: sprays",
   "descriptor": "Upright-oval shade tree; opposite pinnately-compound leaves (5–9 leaflets); clear golden-yellow fall; diamond-furrowed grey bark.",
   "identityNotes": "Opposite COMPOUND leaves + the interlacing diamond-pattern ridged bark are diagnostic. Highly vulnerable to emerald ash borer in Missouri — model the HEALTHY form, not the dead-topped decline.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Fraxinus_pennsylvanica", "credit": "Wikimedia Commons — Fraxinus pennsylvanica", "caption": "Pinnately compound 5–9 leaflet leaves; rounded dense crown." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica_(autumn_leaves)", "credit": "Wikimedia Commons — Fraxinus pennsylvanica (autumn leaves)", "caption": "Uniform golden-yellow autumn foliage." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica", "credit": "Wikimedia Commons — Fraxinus pennsylvanica category", "caption": "Diamond-pattern ridged-and-furrowed grey-brown bark." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Fraxinus_pennsylvanica",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica",
+      "caption": "Pinnately compound 5–9 leaflet leaves; rounded dense crown."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica_(autumn_leaves)",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica (autumn leaves)",
+      "caption": "Uniform golden-yellow autumn foliage."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica",
+      "credit": "Wikimedia Commons — Fraxinus pennsylvanica category",
+      "caption": "Diamond-pattern ridged-and-furrowed grey-brown bark."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "oval", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 18, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 8 },
-    "bark.type":       { "target": "ridged", "hardness": "soft", "tol": 1 },
-    "leaf.silhouette": { "target": "compound", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "sprays", "hardness": "soft", "tol": 1, "note": "leaflets in a frond, fronds oppositely arranged on the twig" },
-    "leaf.size":       { "target": 25, "hardness": "soft", "tol": 0.4, "note": "whole compound-leaf length; leaflet ~8cm" },
-    "leaf.face":       { "front": "#4C8C3F", "back": "#6FA45E", "strength": "mild" },
-    "leaf.season":     { "anchors": { "buds": "#9ab85e", "spring": "#7eb45a", "summer": "#4c8c3f", "fall": "#f2c014", "winter": null } },
-    "overlay.type":    { "target": "fruit", "note": "single-winged paddle samaras in dense clusters (female trees)" }
+    "chassis.habit": {
+      "target": "oval",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 18,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 8
+    },
+    "leaf.face": {
+      "front": "#4C8C3F",
+      "back": "#6FA45E",
+      "strength": "mild"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#9ab85e",
+        "spring": "#7eb45a",
+        "summer": "#4c8c3f",
+        "fall": "#f2c014",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "fruit",
+      "note": "single-winged paddle samaras in dense clusters (female trees)"
+    },
+    "leaf.type": {
+      "target": "compound-pinnate",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.growthway": {
+      "target": "sprays",
+      "hardness": "soft",
+      "tol": 1,
+      "note": "leaflets in a frond, fronds oppositely arranged on the twig"
+    },
+    "bark.texture": {
+      "target": "ridged",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.length": {
+      "target": 25,
+      "hardness": "soft",
+      "tol": 0.4,
+      "note": "whole compound-leaf length; leaflet ~8cm"
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": null, "ways": "sprays", "sizeMult": 1.0, "gap": "compound pack must be procured — Stage 3" },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": null,
+      "ways": "sprays",
+      "sizeMult": 1,
+      "gap": "compound pack must be procured — Stage 3"
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound)." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "stretch", "_barkNote": "Bark003 ridged is an exact match", "_leafNote": "gap→stretch 2026-06-18: fine_compound placeholder pack wired; vendor compound frond is the Stage-2/3 quality piece" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound)."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "stretch",
+    "_barkNote": "Bark003 ridged is an exact match",
+    "_leafNote": "gap→stretch 2026-06-18: fine_compound placeholder pack wired; vendor compound frond is the Stage-2/3 quality piece"
+  }
 }

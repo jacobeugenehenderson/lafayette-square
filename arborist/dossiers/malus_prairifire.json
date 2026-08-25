@@ -2,33 +2,113 @@
   "key": "Flowering Crabapple",
   "scientific": "Malus 'Prairifire'",
   "canonicalId": "malus_prairifire",
-  "inventoryNames": ["Crabapple, Flowering"],
+  "inventoryNames": [
+    "Crabapple, Flowering"
+  ],
   "count": 28,
   "forces": "⚠️ ornamental chassis = 0 (habit gap) + flowers overlay (Stage 3)",
   "descriptor": "Small broad-rounded ornamental; deep pink-red spring blossom; dark green (maroon-flushed new growth); golden-bronze fall; persistent small red crabapples; scaly reddish bark.",
   "identityNotes": "Modeled on Malus 'Prairifire', the dominant disease-resistant ornamental cultivar in the St. Louis region (MoBot Plant Finder). If actual park trees are another cv., genus-level traits (broad-rounded habit, spring blossom, small persistent pomes) still hold. SMALL tree (~6 m) — the ornamental-chassis gap.",
   "referenceImages": [
-    { "state": "summer", "url": "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderDetails.aspx?kempercode=u360", "credit": "Missouri Botanical Garden Plant Finder — Malus 'Prairifire'", "caption": "Broad-rounded habit, dark green summer foliage; authoritative cultivar profile (pull the spring-bloom plate here)." },
-    { "state": "fall", "url": "https://www.chicagobotanic.org/plant-information/plant-finder/malus-prairifire-prairifire-crabapple", "credit": "Chicago Botanic Garden — Malus 'Prairifire'", "caption": "Golden-bronze fall foliage with persistent purplish-red fruit clusters." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Malus", "credit": "Wikimedia Commons — Malus category (genus-level)", "caption": "Ornamental crabapple scaly reddish-brown bark; no cultivar-specific Commons file confirmed." }
+    {
+      "state": "summer",
+      "url": "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderDetails.aspx?kempercode=u360",
+      "credit": "Missouri Botanical Garden Plant Finder — Malus 'Prairifire'",
+      "caption": "Broad-rounded habit, dark green summer foliage; authoritative cultivar profile (pull the spring-bloom plate here)."
+    },
+    {
+      "state": "fall",
+      "url": "https://www.chicagobotanic.org/plant-information/plant-finder/malus-prairifire-prairifire-crabapple",
+      "credit": "Chicago Botanic Garden — Malus 'Prairifire'",
+      "caption": "Golden-bronze fall foliage with persistent purplish-red fruit clusters."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Malus",
+      "credit": "Wikimedia Commons — Malus category (genus-level)",
+      "caption": "Ornamental crabapple scaly reddish-brown bark; no cultivar-specific Commons file confirmed."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "rounded", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 6, "hardness": "hard", "tol": 0.4, "canopyRadiusM": 3, "note": "SMALL — ornamental chassis gap; most cores are too big" },
-    "bark.type":       { "target": "scaly", "hardness": "soft", "tol": 1 },
-    "leaf.silhouette": { "target": "ovate", "hardness": "hard", "tol": 0 },
-    "leaf.ways":       { "target": "alternate", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 7, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#3C5E34", "back": "#56714A", "strength": "none", "note": "new growth flushes maroon — a season/age color shift, not an underside" },
-    "leaf.season":     { "anchors": { "buds": "#7a3b4a", "spring": "#5a7a40", "summer": "#3c5e34", "fall": "#b07a2a", "winter": null } },
-    "overlay.type":    { "target": "flowers", "note": "showy deep pink-red spring blossom + persistent small red crabapples; can bear short spur-thorns" }
+    "chassis.habit": {
+      "target": "rounded",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 6,
+      "hardness": "hard",
+      "tol": 0.4,
+      "canopyRadiusM": 3,
+      "note": "SMALL — ornamental chassis gap; most cores are too big"
+    },
+    "leaf.face": {
+      "front": "#3C5E34",
+      "back": "#56714A",
+      "strength": "none",
+      "note": "new growth flushes maroon — a season/age color shift, not an underside"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#7a3b4a",
+        "spring": "#5a7a40",
+        "summer": "#3c5e34",
+        "fall": "#b07a2a",
+        "winter": null
+      }
+    },
+    "overlay.type": {
+      "target": "flowers",
+      "note": "showy deep pink-red spring blossom + persistent small red crabapples; can bear short spur-thorns"
+    },
+    "leaf.shape": {
+      "target": "ovate",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "scaly",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.length": {
+      "target": 7,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "ovate", "ways": "alternate", "sizeMult": 0.7 },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "ovate",
+      "ways": "alternate",
+      "sizeMult": 0.7
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud." },
-  "partAvailability": { "chassis": "stretch", "bark": "have", "leaf": "have", "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) scaly", "_chassisNote": "gap→stretch 2026-06-18: small workable cores exist (oak_winter_fall rounded ~7.5m etc.); chassis is free geometry so any core serves — an ideal ornamental crabapple core is polish, not a blocker" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud."
+  },
+  "partAvailability": {
+    "chassis": "stretch",
+    "bark": "have",
+    "leaf": "have",
+    "_barkNote": "stretch→have 2026-06-18: bark_platanus (Poly Haven CC0) scaly",
+    "_chassisNote": "gap→stretch 2026-06-18: small workable cores exist (oak_winter_fall rounded ~7.5m etc.); chassis is free geometry so any core serves — an ideal ornamental crabapple core is polish, not a blocker"
+  }
 }

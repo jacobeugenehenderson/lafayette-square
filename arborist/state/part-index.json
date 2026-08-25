@@ -6815,13 +6815,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/american_sweetgum",
       "tags": {
-        "leaf.silhouette": {
-          "value": "star",
-          "ratified": false,
-          "confidence": "high",
-          "source": "pack-meta.morphology"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 15,
           "ratified": false,
           "confidence": "high",
@@ -6850,13 +6844,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/bigleaf_maple",
       "tags": {
-        "leaf.silhouette": {
-          "value": "palmate",
-          "ratified": false,
-          "confidence": "high",
-          "source": "pack-meta.morphology"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 20,
           "ratified": false,
           "confidence": "high",
@@ -6885,13 +6873,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/california_black_oak",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.margin": {
           "value": "lobed",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 14,
           "ratified": false,
           "confidence": "high",
@@ -6920,13 +6908,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/eastern_black_oak",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.margin": {
           "value": "lobed",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 13,
           "ratified": false,
           "confidence": "high",
@@ -6955,14 +6943,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/elm_autumn",
       "tags": {
-        "leaf.silhouette": {
-          "value": null,
-          "ratified": false,
-          "confidence": "low",
-          "source": "pack-meta.morphology(seasonal_elm) — not a silhouette (season/variant pack?)",
-          "unresolved": "seasonal_elm"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 8,
           "ratified": false,
           "confidence": "high",
@@ -6991,13 +6972,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/fine_compound",
       "tags": {
-        "leaf.silhouette": {
-          "value": "compound",
+        "leaf.type": {
+          "value": "compound-pinnate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology(fine_compound→compound)"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 25,
           "ratified": false,
           "confidence": "high",
@@ -7026,13 +7007,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/ginkgo",
       "tags": {
-        "leaf.silhouette": {
-          "value": "fan",
+        "leaf.shape": {
+          "value": "flabellate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 8,
           "ratified": false,
           "confidence": "high",
@@ -7061,13 +7042,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/heart",
       "tags": {
-        "leaf.silhouette": {
-          "value": "heart",
+        "leaf.shape": {
+          "value": "cordate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 10,
           "ratified": false,
           "confidence": "high",
@@ -7098,13 +7079,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/lanceolate",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.shape": {
           "value": "lanceolate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 8,
           "ratified": false,
           "confidence": "high",
@@ -7134,13 +7115,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/lobed",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.margin": {
           "value": "lobed",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 12,
           "ratified": false,
           "confidence": "high",
@@ -7170,13 +7151,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/long_needle",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.type": {
           "value": "needle",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology(long_needle→needle)"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 15,
           "ratified": false,
           "confidence": "high",
@@ -7206,14 +7187,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/oak_autumn",
       "tags": {
-        "leaf.silhouette": {
-          "value": null,
-          "ratified": false,
-          "confidence": "low",
-          "source": "pack-meta.morphology(seasonal_oak) — not a silhouette (season/variant pack?)",
-          "unresolved": "seasonal_oak"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 12,
           "ratified": false,
           "confidence": "high",
@@ -7243,13 +7217,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/ovate",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.shape": {
           "value": "ovate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 8,
           "ratified": false,
           "confidence": "high",
@@ -7280,13 +7254,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/ovate_large",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.shape": {
           "value": "ovate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology(ovate_large→ovate)"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 15,
           "ratified": false,
           "confidence": "high",
@@ -7317,13 +7291,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/palmate",
       "tags": {
-        "leaf.silhouette": {
-          "value": "palmate",
-          "ratified": false,
-          "confidence": "high",
-          "source": "pack-meta.morphology"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 10,
           "ratified": false,
           "confidence": "high",
@@ -7354,13 +7322,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/serrate_ovate",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.shape": {
           "value": "ovate",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology(serrate_ovate→ovate)"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 8,
           "ratified": false,
           "confidence": "high",
@@ -7390,13 +7358,13 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/short_needle",
       "tags": {
-        "leaf.silhouette": {
+        "leaf.type": {
           "value": "needle",
           "ratified": false,
           "confidence": "high",
           "source": "pack-meta.morphology(short_needle→needle)"
         },
-        "leaf.size": {
+        "leaf.length": {
           "value": 5,
           "ratified": false,
           "confidence": "high",
@@ -7425,13 +7393,7 @@
       "source": "authored",
       "sourcePath": "public/textures/leaves/shapes/sycamore",
       "tags": {
-        "leaf.silhouette": {
-          "value": "palmate",
-          "ratified": false,
-          "confidence": "high",
-          "source": "pack-meta.morphology"
-        },
-        "leaf.size": {
+        "leaf.length": {
           "value": 15,
           "ratified": false,
           "confidence": "high",
@@ -7460,17 +7422,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/Bark003",
       "tags": {
-        "bark.type": {
-          "value": "ridged",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(Bark003)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "ridged",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(Bark003)"
         }
       },
       "conformReport": null,
@@ -7483,17 +7445,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/Bark004",
       "tags": {
-        "bark.type": {
-          "value": "smooth",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(Bark004)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "smooth",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(Bark004)"
         }
       },
       "conformReport": null,
@@ -7506,17 +7468,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/Bark007",
       "tags": {
-        "bark.type": {
-          "value": "plated",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(Bark007)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "plated",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(Bark007)"
         }
       },
       "conformReport": null,
@@ -7529,17 +7491,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/Bark012",
       "tags": {
-        "bark.type": {
-          "value": null,
-          "ratified": false,
-          "confidence": "low",
-          "source": "barkDirMap(Bark012) unassigned — needs ratify"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "barkDirMap(Bark012) unassigned — needs ratify"
         }
       },
       "conformReport": null,
@@ -7552,17 +7514,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/Bark015",
       "tags": {
-        "bark.type": {
-          "value": null,
-          "ratified": false,
-          "confidence": "low",
-          "source": "barkDirMap(Bark015) unassigned — needs ratify"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": null,
+          "ratified": false,
+          "confidence": "low",
+          "source": "barkDirMap(Bark015) unassigned — needs ratify"
         }
       },
       "conformReport": null,
@@ -7575,17 +7537,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/bark_brown_01",
       "tags": {
-        "bark.type": {
-          "value": "furrowed",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(bark_brown_01)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "furrowed",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(bark_brown_01)"
         }
       },
       "conformReport": null,
@@ -7598,17 +7560,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/bark_platanus",
       "tags": {
-        "bark.type": {
-          "value": "scaly",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(bark_platanus)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "scaly",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(bark_platanus)"
         }
       },
       "conformReport": null,
@@ -7621,17 +7583,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/chinese_cedar_bark",
       "tags": {
-        "bark.type": {
-          "value": "fibrous",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(chinese_cedar_bark)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "fibrous",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(chinese_cedar_bark)"
         }
       },
       "conformReport": null,
@@ -7644,17 +7606,17 @@
       "source": "authored",
       "sourcePath": "public/textures/bark/chinese_hackberry_bark",
       "tags": {
-        "bark.type": {
-          "value": "exfoliating",
-          "ratified": false,
-          "confidence": "low",
-          "source": "rubric.barkDirMap(chinese_hackberry_bark)"
-        },
         "bark.color": {
           "value": null,
           "ratified": false,
           "confidence": "low",
           "source": "texture-sample-pending (no decoder this stage)"
+        },
+        "bark.texture": {
+          "value": "exfoliating",
+          "ratified": false,
+          "confidence": "low",
+          "source": "rubric.barkDirMap(chinese_hackberry_bark)"
         }
       },
       "conformReport": null,

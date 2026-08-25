@@ -2,33 +2,106 @@
   "key": "Sweetgum",
   "scientific": "Liquidambar styraciflua",
   "canonicalId": "liquidambar_styraciflua",
-  "inventoryNames": ["Sweetgum (undesirable)"],
+  "inventoryNames": [
+    "Sweetgum (undesirable)"
+  ],
   "count": 27,
   "forces": "⚠️ star leaf — likely gap (placeholder star.png only, no shapes/ pack)",
   "descriptor": "Pyramidal-to-oval shade tree; glossy 5–7-point star leaves (alternate); spectacular multi-color fall; deeply furrowed bark + corky-winged twigs + spiky gumball fruit.",
   "identityNotes": "Unmistakable 5–7-pointed STAR-shaped leaf, arranged ALTERNATELY (unlike maples' opposite), plus spiky 'gumball' fruit and corky-winged twigs. Aromatic when crushed.",
   "referenceImages": [
-    { "state": "summer", "url": "https://commons.wikimedia.org/wiki/Liquidambar_styraciflua", "credit": "Wikimedia Commons — Liquidambar styraciflua", "caption": "Pyramidal-to-oval crown of glossy star-shaped leaves." },
-    { "state": "fall", "url": "https://commons.wikimedia.org/wiki/File:Sweetgum_in_autumn.JPG", "credit": "Wikimedia Commons — 'Sweetgum in autumn.JPG'", "caption": "Multi-color autumn canopy (yellow/orange/red/purple), the star leaf shape clear." },
-    { "state": "bark", "url": "https://commons.wikimedia.org/wiki/Category:Liquidambar_styraciflua", "credit": "Wikimedia Commons — Liquidambar styraciflua category", "caption": "Deeply furrowed grey-brown bark; corky-winged twigs and spiky gumballs in related files." }
+    {
+      "state": "summer",
+      "url": "https://commons.wikimedia.org/wiki/Liquidambar_styraciflua",
+      "credit": "Wikimedia Commons — Liquidambar styraciflua",
+      "caption": "Pyramidal-to-oval crown of glossy star-shaped leaves."
+    },
+    {
+      "state": "fall",
+      "url": "https://commons.wikimedia.org/wiki/File:Sweetgum_in_autumn.JPG",
+      "credit": "Wikimedia Commons — 'Sweetgum in autumn.JPG'",
+      "caption": "Multi-color autumn canopy (yellow/orange/red/purple), the star leaf shape clear."
+    },
+    {
+      "state": "bark",
+      "url": "https://commons.wikimedia.org/wiki/Category:Liquidambar_styraciflua",
+      "credit": "Wikimedia Commons — Liquidambar styraciflua category",
+      "caption": "Deeply furrowed grey-brown bark; corky-winged twigs and spiky gumballs in related files."
+    }
   ],
   "required": {
-    "chassis.habit":   { "target": "pyramidal", "hardness": "soft", "tol": 1 },
-    "chassis.size":    { "target": 21, "hardness": "soft", "tol": 0.4, "canopyRadiusM": 8 },
-    "bark.type":       { "target": "furrowed", "hardness": "soft", "tol": 1 },
-    "leaf.silhouette": { "target": "star", "hardness": "hard", "tol": 0, "note": "star↔palmate near (tol 1 would accept palmate as a STRETCH) but identity wants the true star" },
-    "leaf.ways":       { "target": "alternate", "hardness": "soft", "tol": 1 },
-    "leaf.size":       { "target": 15, "hardness": "soft", "tol": 0.4 },
-    "leaf.face":       { "front": "#2F6B36", "back": "#4C8049", "strength": "none" },
-    "leaf.season":     { "anchors": { "buds": "#9ab85e", "spring": "#5a8a40", "summer": "#2f6b36", "fall": "#8e1e4d", "winter": null }, "note": "fall is multi-color yellow/orange/red/purple; #8e1e4d burgundy is the deepest anchor" },
-    "overlay.type":    { "target": "fruit", "note": "hard spiky brown gumballs that persist and drop — a signature feature" }
+    "chassis.habit": {
+      "target": "pyramidal",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "chassis.size": {
+      "target": 21,
+      "hardness": "soft",
+      "tol": 0.4,
+      "canopyRadiusM": 8
+    },
+    "leaf.face": {
+      "front": "#2F6B36",
+      "back": "#4C8049",
+      "strength": "none"
+    },
+    "leaf.season": {
+      "anchors": {
+        "buds": "#9ab85e",
+        "spring": "#5a8a40",
+        "summer": "#2f6b36",
+        "fall": "#8e1e4d",
+        "winter": null
+      },
+      "note": "fall is multi-color yellow/orange/red/purple; #8e1e4d burgundy is the deepest anchor"
+    },
+    "overlay.type": {
+      "target": "fruit",
+      "note": "hard spiky brown gumballs that persist and drop — a signature feature"
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "bark.texture": {
+      "target": "furrowed",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.length": {
+      "target": 15,
+      "hardness": "soft",
+      "tol": 0.4
+    }
   },
   "recipe": {
     "chassis": null,
-    "bark": { "ref": null, "band": null },
-    "leaf": { "pack": "american_sweetgum", "ways": "alternate", "sizeMult": 1.0 },
-    "overlay": null, "deformer": { "range": {} }, "transform": {}, "age": null
+    "bark": {
+      "ref": null,
+      "band": null
+    },
+    "leaf": {
+      "pack": "american_sweetgum",
+      "ways": "alternate",
+      "sizeMult": 1
+    },
+    "overlay": null,
+    "deformer": {
+      "range": {}
+    },
+    "transform": {},
+    "age": null
   },
-  "provenance": { "fromSpeciesMap": false, "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match." },
-  "partAvailability": { "chassis": "have", "bark": "have", "leaf": "have", "_leafNote": "gap→have 2026-06-19: real scanned sweetgum star pack" }
+  "provenance": {
+    "fromSpeciesMap": false,
+    "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match."
+  },
+  "partAvailability": {
+    "chassis": "have",
+    "bark": "have",
+    "leaf": "have",
+    "_leafNote": "gap→have 2026-06-19: real scanned sweetgum star pack"
+  }
 }
