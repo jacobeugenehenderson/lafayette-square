@@ -62,6 +62,7 @@ function readMigrations() {
   const rlsOn = new Set();
   const invokerViews = new Set();
   const openPolicies = new Map(); // relation -> [policy names with `using (true)`]
+  const declaredPublic = new Set(); // relations the operator ruled public, in the schema
 
   for (const f of files) {
     const sql = readFileSync(join(MIGRATIONS, f), 'utf8');
@@ -99,6 +100,20 @@ function readMigrations() {
       openPolicies.get(rel).push({ name: rawName.trim(), cmd, file: f, write: cmd !== 'select' });
     }
 
+
+    // ⭐ A world-readable table is either deliberate public reference data or an
+    // oversight, and only the operator knows which. Let them RULE IN THE SCHEMA:
+    // a `comment on table` carrying the marker below settles it.
+    // ⛔ This is not a skip list. The checker names no table — it reads a
+    // declaration the operator wrote about their OWN schema, so it ships to
+    // town #2 knowing nothing about Cary. A skip list would be the opposite.
+    const reDecl =
+      /comment\s+on\s+table\s+(?:public\.)?"?([a-z0-9_]+)"?\s+is\s+([\s\S]*?);/gim;
+    for (let m; (m = reDecl.exec(sql)); ) {
+      if (/PUBLIC\s+REFERENCE\s+DATA/i.test(m[2])) declaredPublic.add(m[1]);
+      else declaredPublic.delete(m[1]); // a later comment without it retracts
+    }
+
     // ⛔ …and DROP POLICY, or this check reports ghosts forever. Migrations are
     // cumulative: a later one replacing an open policy leaves the `create` in
     // the older file, so a parser that only accumulates keeps failing on a
@@ -116,8 +131,98 @@ function readMigrations() {
     r.rlsEnabled = rlsOn.has(name);
     r.invoker = invokerViews.has(name);
     r.openPolicies = openPolicies.get(name) ?? [];
+    r.declaredPublic = declaredPublic.has(name);
   }
   return [...rels.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+
+// ── STATIC: the SECURITY DEFINER functions, read out of the migrations ─────
+/**
+ * ⭐ The table census above is blind to RPC. A definer function in the exposed
+ * schema is an endpoint at /rest/v1/rpc/<name>, it runs with the OWNER's rights
+ * (so RLS is bypassed by construction), and Postgres grants EXECUTE to PUBLIC on
+ * every new function BY DEFAULT — so a definer function is anon-callable the
+ * moment it is created unless someone remembers to revoke. That default is the
+ * whole class: it needs no mistake to go wrong, only silence.
+ *
+ * Migrations are cumulative and `create or replace` re-declares, so the LAST
+ * declaration wins and the volatility/args are read from it.
+ */
+function readDefinerFunctions() {
+  const files = readdirSync(MIGRATIONS).filter((f) => f.endsWith('.sql')).sort();
+  const fns = new Map(); // name -> { args, volatile, file, revokedFrom:Set }
+
+  for (const f of files) {
+    const sql = readFileSync(join(MIGRATIONS, f), 'utf8');
+
+    // create [or replace] function [public.]name(args) ... security definer
+    const re =
+      /create\s+(?:or\s+replace\s+)?function\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\(([^)]*)\)([\s\S]{0,400}?)\bas\s+\$\$/gim;
+    for (let m; (m = re.exec(sql)); ) {
+      const [, name, rawArgs, head] = m;
+      if (!/\bsecurity\s+definer\b/i.test(head)) continue;
+      const args = rawArgs
+        .split(',')
+        .map((a) => a.trim())
+        .filter(Boolean)
+        .map((a) => {
+          const parts = a.split(/\s+/);
+          return { name: parts[0], type: parts.slice(1).join(' ').toLowerCase() };
+        });
+      // no `stable`/`immutable` marker => VOLATILE (the Postgres default)
+      // ⛔ VOLATILE IS NOT PROOF OF A WRITE — plpgsql defaults to volatile, so a
+      //    read-only function lands here too. Only the 25006 abort in probeRpc
+      //    proves a write; the label must not claim more than was observed.
+      const volatile = !/\b(stable|immutable)\b/i.test(head);
+      fns.set(name, { args, volatile, file: f, revokedFrom: new Set() });
+    }
+
+    // revoke ... on function name(types) from a, b
+    const reRev =
+      /revoke\s+(?:all|execute)[^;]*?\bon\s+function\s+(?:public\.)?"?([a-z0-9_]+)"?\s*\([^)]*\)\s*from\s+([^;]+);/gim;
+    for (let m; (m = reRev.exec(sql)); ) {
+      const fn = fns.get(m[1]);
+      if (!fn) continue;
+      for (const role of m[2].split(',')) fn.revokedFrom.add(role.trim().toLowerCase());
+    }
+  }
+  return [...fns.entries()].sort(([a], [b]) => a.localeCompare(b));
+}
+
+/**
+ * ⛔ NEVER call a definer function with POST from this checker. POST EXECUTES it,
+ * and two of these WRITE — a reachability probe that mutates courier_profiles to
+ * prove it can is the exploit, not the test.
+ *
+ * ⭐ GET is the safe probe: PostgREST runs a GET rpc inside a READ-ONLY
+ * transaction, so a volatile function that tries to write aborts with SQLSTATE
+ * 25006 (HTTP 405) — which still proves EXECUTE was granted, without the write
+ * ever landing. Permission denial answers 401/403 (42501) instead, and an
+ * unexposed/unknown function answers PGRST202. Those three are distinguishable,
+ * which is the only reason this probe is honest.
+ */
+async function probeRpc(fn, name, bearer = KEY) {
+  const qs = fn.args
+    .map((a) => `${encodeURIComponent(a.name)}=${a.type.includes('uuid') ? '00000000-0000-0000-0000-000000000000' : ''}`)
+    .join('&');
+  const url = `${URL_.replace(/\/$/, '')}/rest/v1/rpc/${name}${qs ? '?' + qs : ''}`;
+  let res, body;
+  try {
+    res = await fetch(url, { headers: { apikey: KEY, Authorization: `Bearer ${bearer}` } });
+    body = await res.text();
+  } catch (err) {
+    return { state: 'UNREACHABLE', detail: err.message };
+  }
+  const code = (() => { try { return JSON.parse(body)?.code ?? null; } catch { return null; } })();
+
+  if (res.status === 200) return { state: 'EXECUTED', detail: `HTTP 200 → ${body.slice(0, 24)}` };
+  if (res.status === 405 && code === '25006')
+    return { state: 'EXECUTED', proved: 'write', detail: 'HTTP 405 — write aborted by the read-only tx; EXECUTE granted' };
+  if (res.status === 401 || res.status === 403 || code === '42501')
+    return { state: 'DENIED', detail: `HTTP ${res.status} (execute revoked)` };
+  if (code === 'PGRST202') return { state: 'ABSENT', detail: 'PGRST202 (not in the exposed schema)' };
+  return { state: 'UNEXPECTED', detail: `HTTP ${res.status} ${code ?? ''} ${body.slice(0, 60)}` };
 }
 
 // ── The two roles a stranger can hold ──────────────────────────────────────
@@ -133,6 +238,23 @@ function readMigrations() {
  * says so and refuses to report a pass. Checking half the surface and printing
  * PASS is the silent substitution this whole file exists to prevent.
  */
+/**
+ * ⭐ Ask the SERVER what the auth providers are, never the dashboard toggle.
+ * Twice on 2026-08-25 that page showed a state the project was not in: a
+ * Pro-gated toggle rendered ON after its save had failed, and a save that
+ * carried one card's change but not another's. `/auth/v1/settings` is public,
+ * unauthenticated, and is the thing GoTrue actually enforces.
+ */
+async function authProviders() {
+  try {
+    const res = await fetch(`${URL_.replace(/\/$/, '')}/auth/v1/settings`, { headers: { apikey: KEY } });
+    if (!res.ok) return { error: `HTTP ${res.status}` };
+    return { external: (await res.json())?.external ?? {} };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
 async function anonymousSessionToken() {
   try {
     const res = await fetch(`${URL_.replace(/\/$/, '')}/auth/v1/signup`, {
@@ -232,7 +354,13 @@ function adjudicate(name, r, p) {
   // it does not own, and an empty table proves nothing about that.
   if (writeOpen.length) return { level: 'FINDING', why: `anon can WRITE — open policy: ${fmt(writeOpen)}` };
 
-  if (readOpen.length) return { level: 'OPEN-READ', why: `open read policy: ${fmt(readOpen)}` };
+  if (readOpen.length) {
+    // ⛔ The declaration excuses an open READ and nothing else. An open WRITE is
+    //    tested above and is never waivable by a comment.
+    if (r.declaredPublic)
+      return { level: 'ok', why: `open read policy, DECLARED public reference data in the schema: ${fmt(readOpen)}` };
+    return { level: 'OPEN-READ', why: `open read policy: ${fmt(readOpen)}` };
+  }
 
   return {
     level: 'ok',
@@ -264,9 +392,21 @@ console.log('');
 const anonAuth = await anonymousSessionToken();
 if (anonAuth.error) {
   console.log(`⚠️  COULD NOT check the \`authenticated\` role: ${anonAuth.error}`);
-  console.log('    Anonymous sign-in appears to be disabled on this project. Since migration 010');
-  console.log('    the requester flow needs it, and a policy reading `auth.uid() is not null` is');
-  console.log('    invisible to the anon-only pass above.');
+  const prov = await authProviders();
+  if (prov.error) {
+    console.log(`    (could not read /auth/v1/settings either: ${prov.error})`);
+  } else {
+    console.log(`    /auth/v1/settings says: anonymous_users=${prov.external.anonymous_users} ` +
+      `email=${prov.external.email} phone=${prov.external.phone}`);
+    if (prov.external.anonymous_users === false) {
+      console.log('    ⛔ ROOT: anonymous sign-in is OFF on the project, but config.toml:26 declares');
+      console.log('       `enable_anonymous_sign_ins = true` and migration 010 scopes `requests` by');
+      console.log('       auth.uid() on that basis. The requester flow fails CLOSED — SECURITY.md F-16.');
+      console.log('       Fix: Authentication → Sign In / Providers → "Allow anonymous sign-ins"');
+      console.log('       (its OWN card, its OWN Save — a neighbouring card\'s Save does not carry it).');
+      console.log('       ⛔ NOT via `supabase config push` — that resets the console-only auth settings.');
+    }
+  }
   console.log('    ⛔ This run has checked HALF the surface. It is not a pass.');
   brokenRows.push(['<authenticated role>', 'anonymous sign-in unavailable — half the surface unchecked']);
 } else {
@@ -285,6 +425,39 @@ if (anonAuth.error) {
   }
 }
 
+
+// ── Third pass: the RPC surface — SECURITY DEFINER functions ───────────────
+// ⭐ A definer function bypasses RLS by construction, so the table census above
+//    says NOTHING about it. Six of these were anon-callable on 2026-08-25 while
+//    that census read all-but-clean — which is exactly why this pass exists.
+const definers = readDefinerFunctions();
+console.log('');
+console.log(`SECURITY DEFINER functions — ${definers.length} read from the migrations, probed as anon:`);
+
+for (const [name, fn] of definers) {
+  const p = await probeRpc(fn, name);
+  let level = 'ok', why;
+
+  if (p.state === 'UNREACHABLE' || p.state === 'UNEXPECTED') {
+    level = 'BROKEN';
+    why = `probe failed (${p.detail}) — this row proves nothing`;
+    brokenRows.push([`rpc:${name}`, why]);
+  } else if (p.state === 'EXECUTED') {
+    level = 'FINDING';
+    why = p.proved
+      ? 'anon can execute a definer function that WRITES (proved: the write aborted only because the probe forced a read-only tx) — revoke from public, anon, authenticated'
+      : fn.volatile
+        ? 'anon can execute a volatile definer function (RLS bypassed inside it; may write) — revoke from public, anon, authenticated'
+        : 'anon can execute a definer function (RLS bypassed inside it) — revoke, or move it out of the exposed schema';
+    findings.push([`rpc:${name}`, why]);
+  } else {
+    why = p.state === 'ABSENT' ? 'not exposed' : 'execute revoked';
+  }
+
+  const vol = p.proved === 'write' ? 'WRITES' : fn.volatile ? 'volatile' : 'stable';
+  console.log(`[${MARK[level]}] ${name.padEnd(30)} ${vol.padEnd(7)} ${p.detail.padEnd(46)} ${why ?? ''}`);
+}
+
 console.log('');
 if (brokenRows.length) {
   console.log(`FAIL — ${brokenRows.length} relation(s) could not be probed. Do NOT read this run as a pass.`);
@@ -300,4 +473,7 @@ if (openReads.length) {
   console.log('  Scope the policy, or record that the table is deliberately public reference data.');
 }
 if (brokenRows.length || findings.length || openReads.length) process.exit(1);
-console.log(`PASS — all ${rels.length} relations: RLS declared in migrations AND anon handed nothing.`);
+console.log(
+  `PASS — all ${rels.length} relations: RLS declared in migrations AND anon handed nothing;\n` +
+    `       all ${definers.length} SECURITY DEFINER functions: anon cannot execute.`
+);

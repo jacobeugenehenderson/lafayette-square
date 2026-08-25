@@ -4,7 +4,9 @@
 
 _Forensic pass: 2026-07-01 (Boz, solo analytic pass). **Remediation pass: 2026-08-24 (Wren)** — F-1,
 F-2, F-4, F-5-Twilio, F-7, F-8, F-9, F-10 closed and verified against the live project; F-3 fixed in
-source; F-14 opened. ⛔ **Findings marked CLOSED were verified by running something, and the command is
+source; F-14 opened. **Advisor pass: 2026-08-25** — F-15 opened (definer functions executable by
+`anon`); its business-function half fixed in source by `014`, the policy-helper half held for its own
+migration; F-16 and F-17 opened (both console-side, neither in the repo). ⛔ **Findings marked CLOSED were verified by running something, and the command is
 recorded with each — re-run it rather than trusting the tick.** Scope: the whole repo,
 with emphasis on the **Cary** courier backend (`cary/supabase/**`) — that is where the
 sensitive data and the money movement live, and it is the subsystem Supabase's Security
@@ -35,7 +37,8 @@ table on purpose; the live state is [§3](#3-findings--gaps-ranked))*.
 | `rls_disabled_in_public` | **ERROR** | `sms_messages` had no RLS — the anon key could `select *` (phones, message bodies, device_hash). **The ERROR that triggered the email.** | ✅ fixed by `009` (F-1) |
 | `security_definer_view` | ERROR/WARN | `courier_credential_status` exposed name/email/phone with definer rights | ✅ fixed by `009` (F-7) |
 | `function_search_path_mutable` | WARN | `suspend_expired_couriers`, `try_activate_courier`, `get_onboarding_status` had no `set search_path` | ✅ fixed by `009` (F-8) |
-| `auth_*` (OTP expiry / leaked-password protection) | WARN | Auth-console settings, not in repo | ⚠️ **still owed — verify in the dashboard** |
+| `anon_/authenticated_security_definer_function_executable` | WARN | 6 definer functions callable via `/rest/v1/rpc/*` — **the `PUBLIC` default-grant class** | ✅ all 6 closed by `014`+`015`+`016` (F-15) |
+| `auth_leaked_password_protection` | WARN | Auth-console setting, not in repo | 🚫 **UNFIXABLE ON THE CURRENT PLAN — and MOOT.** See F-17 |
 
 > ✅ **CLOSED 2026-08-24 (Wren).** `009_security_advisor_fixes.sql` is **applied to prod**
 > (`ngbvgjzrpnfrqmzkqvch`). F-1 and F-7 are verified shut against the live API — anon now gets
@@ -360,6 +363,108 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   also strip a courier's access to their own row via `courier_profiles_select_own`.
 - **Not fixed here:** what counts as "basic info" for dispatch display is a product decision, and
   guessing it is how an authoring decision gets called a defect. Needs a ruling.
+
+### F-15 · HIGH · Six `SECURITY DEFINER` functions are executable by `anon`  *(new, 2026-08-25)*
+- **Where:** `005`/`006`/`009` (`try_activate_courier`, `suspend_expired_couriers`,
+  `get_onboarding_status`) and `010`/`011` (`is_active_courier`, `courier_holds_request`,
+  `viewer_shares_live_trip_with`). Advisor lints `0028`/`0029`.
+- **Root, and it is the whole class:** **Postgres grants `EXECUTE` to `PUBLIC` on every new function
+  by default.** A definer function in the exposed schema is therefore an anon-callable
+  `/rest/v1/rpc/<name>` endpoint that **bypasses RLS by construction**, from the moment it is created,
+  unless someone remembers to revoke. ⭐ It needs no mistake to go wrong — only silence. That is why
+  F-8 (search_path) touched these same three functions and left this untouched: F-8 asked whether the
+  body could be hijacked, never who could call it.
+- **Measured, not inferred** (anon key, 2026-08-25): all six answered HTTP 200 with real return values.
+  `suspend_expired_couriers` answered **405/SQLSTATE 25006** — its `UPDATE` aborted *only* because the
+  probe forced a read-only transaction.
+- **Two classes, two different fixes — and the linter's advice is wrong for one of them:**
+  - **Business functions** (`try_activate_courier` · `suspend_expired_couriers` · `get_onboarding_status`)
+    — a privileged unauthenticated **write**, an unauthenticated **mass write**, and a definer **read of
+    any courier's** status/tier/verification history. Legit callers are service-role edge functions,
+    ⚠️ except `get_onboarding_status`, which has a live browser caller on the anon key
+    (`src/hooks/useCary.js:210`) — so a blanket revoke would break the courier onboarding UI.
+    **✅ FIXED by `014` + `015`, applied to prod 2026-08-25** — revoke from `public, anon, authenticated` (⛔ revoking from
+    `anon, authenticated` alone leaves the `PUBLIC` default standing and changes nothing), grant back
+    to `service_role`; `get_onboarding_status` keeps `authenticated` behind an `auth.uid()` self-guard
+    written with `is distinct from` (a plain `<>` against a NULL `auth.uid()` yields NULL and would
+    **not** raise — the classic way such a guard ships already broken).
+  - **RLS policy helpers** (`is_active_courier` · `courier_holds_request` · `viewer_shares_live_trip_with`)
+    — ⛔ **`revoke execute` is the WRONG fix and would fail RLS closed:** a policy expression is
+    evaluated as the *querying* role, so `anon`/`authenticated` must keep `EXECUTE`. All three are
+    `stable`, read-only and scoped to `auth.uid()`, so they leak nothing today (anon gets `false`).
+    **✅ CLOSED by `016`, applied 2026-08-25** — moved to a `private` schema PostgREST does not expose;
+    all three now answer **PGRST202**, gone from the API rather than merely denied. The three policies in
+    `010`/`011` (not four — that was a miscount of function *references*) were recreated pointing at
+    `private.*`. ⚠️ **`grant usage on schema private` + `grant execute` are load-bearing** — without them
+    every policy silently returns false, which in an empty database is indistinguishable from "no data".
+    ⛔ **So this run does NOT prove the policies still ADMIT the right rows.** Confirming the admit side
+    needs a real courier holding a real request; owed, not assumed.
+- **⛔ `014`'s self-guard was INERT, and reading the SQL would never have shown it.** It tested
+  `current_user` — which inside a `SECURITY DEFINER` function is the function's **OWNER**, not the
+  caller. It was always `postgres`, so the role test was always false and the guard never raised: any
+  signed-in user could still read any courier's record. Fixed by `015`, which reads the JWT `role`
+  claim and `session_user` — the two places the caller's identity survives the definer switch.
+  ⭐ **It was caught only by calling the function with a real `authenticated` token**, which required
+  F-16 to be fixed first. The `anon` probe passed the whole time — anon is stopped by the GRANT, which
+  holds whether or not the guard works. **Probing anon and calling it a pass is the silent substitution.**
+  ⚠️ **The `service_role` exemption is UNVERIFIED** — no service-role key locally. If it is wrong the
+  onboarding edge function and the Stripe webhooks 42501 on every courier. `claims-onboarding-guard.sh`
+  exits 1 until someone runs it with the key.
+
+  ```
+  SUPABASE_SERVICE_ROLE_KEY=… bash scratch/claims-onboarding-guard.sh
+  ```
+
+- **The detector, which is the actual deliverable:** `claims-cary-anon-exposure` probed **tables only** —
+  it read all-but-clean while six definer functions sat open. It now parses definer functions out of the
+  migrations and probes the RPC surface too. ⛔ It probes with **GET, never POST**: PostgREST runs a GET
+  rpc in a read-only transaction, so a write aborts with 25006 — proving `EXECUTE` was granted **without
+  the write ever landing**. A reachability probe that mutates `courier_profiles` to prove it can is the
+  exploit, not the test.
+
+  ```
+  SUPABASE_URL=… SUPABASE_ANON_KEY=… node scratch/claims-cary-anon-exposure.mjs
+  ```
+
+### F-16 · HIGH (launch blocker) · Anonymous sign-in is DISABLED in prod, and the requester flow needs it  *(new, 2026-08-25)*
+- **The disagreement:** `cary/supabase/config.toml:26` declares `enable_anonymous_sign_ins = true`, and
+  migration `010` / F-4 rebuilt `requests` authorization around `auth.uid()` on that basis. **The live
+  project has it off.** Measured — `/auth/v1/signup` answers *"Anonymous sign-ins are disabled"*.
+- **Class: REGRESSION**, not rot. The doc describes what should still be true; the dashboard was never
+  toggled. `config.toml` even names the path and warns off the shortcut — ⛔ **do not `supabase config
+  push`**: it pushes the whole file and silently resets the console-only auth settings, with no
+  `--dry-run`. Toggle by hand: **Authentication → Sign In / Providers → Allow anonymous sign-ins.**
+- **Impact:** every requester takes the `anonErr` branch at `src/hooks/useCary.js:43` and is shown
+  *"Could not start a session. Please reload."* The flow fails **closed**, which is the correct shape for
+  a missing session — and is an outage. ⭐ Latent only because Cary is pre-public; it blocks launch.
+- **⭐ It also blinds the detector.** `claims-cary-anon-exposure` cannot obtain an `authenticated` token
+  without it, so it has been refusing to score half the surface — including whether F-15's
+  `get_onboarding_status` self-guard admits a real signed-in courier. **This finding is why that run
+  says FAIL, and fixing it is what lets the census speak.**
+
+### F-17 · MEDIUM · Email/password provider is enabled, and nothing uses it  *(new, 2026-08-25)*
+- **Measured:** the codebase makes exactly ONE auth call — `supabase.auth.signInWithOtp({ phone })`
+  (`src/hooks/useCary.js:77`), plus anonymous sessions. No password sign-in, no magic link, no email OTP.
+  `grep -rn "signInWith\|signUp(\|resetPassword" src cary`
+- **Impact:** with the provider on, anyone can self-register an email/password account and hold the
+  **`authenticated`** role — the role every post-`010` policy keys on. Compounded by two console
+  settings: **minimum password length 6**, and **"Require current password when updating" OFF** (a
+  hijacked session can rotate the password without knowing the old one).
+- **Fix — and it is the fix for the `auth_leaked_password_protection` lint too:** **disable the email
+  provider.** ⛔ Do not buy the Pro plan for that lint: leaked-password protection is Pro-gated, it guards
+  password sign-in, and **we have no password sign-in** — it would harden a door that is not in the
+  building. Disabling the provider removes the surface instead, costs nothing, and drops the lint.
+- **Check before flipping:** if any account was created by email, disabling locks it out
+  (Authentication → Users). `auth.users` is not readable with the anon key, so this was NOT verified here.
+
+
+### fare_config · RULED PUBLIC 2026-08-25 (not a finding)
+`fare_config_select_all [for select using (true)]` is **deliberate**. It is the price list — base fare,
+per-minute, per-mile, minimum — and a rider must see the fare before booking. Recorded **in the schema**
+by `017` as a `comment on table` carrying the marker `PUBLIC REFERENCE DATA`, which the census reads.
+⛔ Deliberately NOT an exception inside the checker: a skip list would ship to town #2 carrying our table
+names, whereas a schema declaration lets each town rule on its own tables. ⛔ The declaration excuses an
+open READ only — an open WRITE stays an unconditional finding.
 
 ### F-11 · LOW · `credential-check` cron auth is fail-open
 - **Where:** `cary/supabase/functions/credential-check/index.js` (`if (cronSecret && authHeader !== …)`).
