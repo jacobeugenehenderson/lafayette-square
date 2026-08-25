@@ -192,7 +192,7 @@ for (const o of obs) {
   let target = null
   if (axisKind.get(axis) === 'scalar') {
     if (FEET_AXES.has(axis)) {
-      const m = sizeMetres(o.value)
+      const m = sizeMetres(o.value, o.unit)
       if (m == null) { const k = `${axis} :: ${o.value}  (not a height row, or unparseable)`; discarded.set(k, (discarded.get(k) || 0) + 1); continue }
       target = m
     } else {

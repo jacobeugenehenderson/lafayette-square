@@ -16,7 +16,39 @@
  *
  * Consumed by ingest.js (the orchestrator). rubric.json + dossiers are ratified
  * and read-only here; leaf-pack-bindings.json / roster-coverage.js are untouched.
+ *
+ * ⛔⛔ 2026-08-25 — THIS FILE IS A STORE OF AXIS IDS AND THE 19→31 CUTOVER MISSED IT.
+ * `cutover-taxonomy.mjs` migrated rubric.json, dossiers/ and part-index.json — the
+ * ARTIFACTS — and never the PRODUCER. This file still wrote `bark.type`,
+ * `leaf.silhouette` and `leaf.size`, none of which the rubric carries, so
+ * `claims-axis-keys-resolve` read the migrated artifact and said PASS while
+ * **re-running ingest.js would have reverted the cutover for all 266 parts.**
+ * Neither dead id threw. Both degraded into a plausible-looking wrong answer, and the
+ * bark one is the worse kind of wrong: with `bark.type` gone the lookup returned
+ * undefined and every part fell to the else branch writing
+ * `"barkDirMap(X) unassigned — needs ratify"` — a CONFIDENT FALSE CAUSE. The dirs are
+ * assigned; the axis moved. Someone reading that goes and ratifies what was never broken.
+ *
+ * ⭐ Fixed by deleting the second vocabulary rather than renaming keys. `normalizeVocab`
+ * was a parallel resolver reading rubric-embedded `vocabNormalization`, and it could not
+ * express the thing the cutover made necessary: `leaf.silhouette` split across
+ * shape/type/margin, so THE VALUE DECIDES THE AXIS (`cordate`→shape, `compound-pinnate`
+ * →type). vocabulary.mjs already does exactly that. One resolver, not two.
  */
+import { resolveTerm, TERM_REDIRECTS, normalize } from './vocabulary.mjs'
+
+/**
+ * Resolve one raw token to {axis, value} using THE shared vocabulary, honouring the
+ * value-decides-the-axis redirects. Returns null when nothing resolves — ⛔ never a guess.
+ */
+function resolveTagged(axisId, raw) {
+  if (raw == null || raw === '') return null
+  const nv = normalize(raw)
+  const redir = TERM_REDIRECTS[axisId]?.[nv]
+  if (redir) return { axis: redir.axis, value: redir.value, via: 'redirect' }
+  const r = resolveTerm(axisId, raw)
+  return r.resolved ? { axis: axisId, value: r.value, via: r.via } : null
+}
 
 // ── vocabulary normalization ────────────────────────────────────────────────
 // Map a raw source token to the canonical rubric value for an enum axis, using
@@ -97,12 +129,22 @@ export function tagChassis(rubric, meta, curationEntry) {
 // ── leaf ────────────────────────────────────────────────────────────────────
 export function tagLeaf(rubric, packMeta) {
   const tags = {}
-  const sil = normalizeVocab(rubric, 'leaf.silhouette', packMeta.morphology)
-  tags['leaf.silhouette'] = sil.known
-    ? tag(sil.value, 'high', `pack-meta.morphology${sil.normalizedFrom ? `(${sil.normalizedFrom}→${sil.value})` : ''}`, false)
-    : tag(null, 'low', `pack-meta.morphology(${packMeta.morphology}) — not a silhouette (season/variant pack?)`, false, { unresolved: sil.unresolved })
+  // ⭐ THE VALUE DECIDES THE AXIS. The cutover split `leaf.silhouette` into
+  // shape / type / margin, and pack morphology is a single token that may be any of them
+  // (`cordate` is a shape, `compound-pinnate` is a type). The old normalizeVocab could
+  // not express that and wrote everything back under one dead key.
+  const hit = resolveTagged('leaf.shape', packMeta.morphology)
+  if (hit) {
+    tags[hit.axis] = tag(hit.value, 'high',
+      `pack-meta.morphology${hit.via === 'redirect' ? `(${packMeta.morphology}→${hit.axis})` : ''}`, false)
+  } else {
+    tags['leaf.shape'] = tag(null, 'low',
+      `pack-meta.morphology(${packMeta.morphology}) — not a leaf shape (season/variant pack?)`, false)
+  }
   if (packMeta.naturalSize != null) {
-    tags['leaf.size'] = tag(packMeta.naturalSize, 'high', 'pack-meta.naturalSize(cm)', false)
+    // `leaf.size` became `leaf.length`, and the rubric declares it cm — which is what
+    // pack-meta already publishes, so no conversion.
+    tags['leaf.length'] = tag(packMeta.naturalSize, 'high', 'pack-meta.naturalSize(cm)', false)
   }
   // leaf.ways is human-only — never auto-tagged (not in the card geometry).
   return tags
@@ -113,16 +155,18 @@ export function tagLeaf(rubric, packMeta) {
 // decoder we don't run this stage → honest null, source 'texture-sample-pending'.
 export function tagBark(rubric, barkId) {
   const tags = {}
-  const barkAxis = rubric.axes.find(a => a.id === 'bark.type')
+  // ⚠️ `barkDirMap` moved to bark.texture with the cutover. Looking it up on the dead
+  // `bark.type` returned undefined and manufactured the false "unassigned" cause above.
+  const barkAxis = rubric.axes.find(a => a.id === 'bark.texture')
   const mapEntry = barkAxis && barkAxis.barkDirMap && barkAxis.barkDirMap[barkId]
   const typeWord = mapEntry && /^([a-z]+)/.exec(mapEntry)
   if (typeWord && typeWord[1] !== 'unassigned') {
-    const n = normalizeVocab(rubric, 'bark.type', typeWord[1])
-    tags['bark.type'] = n.known
-      ? tag(n.value, 'low', `rubric.barkDirMap(${barkId})`, false)
+    const hit = resolveTagged('bark.texture', typeWord[1])
+    tags['bark.texture'] = hit
+      ? tag(hit.value, 'low', `rubric.barkDirMap(${barkId})`, false)
       : tag(null, 'low', `barkDirMap(${barkId})→${typeWord[1]} not in vocab`, false)
   } else {
-    tags['bark.type'] = tag(null, 'low', `barkDirMap(${barkId}) unassigned — needs ratify`, false)
+    tags['bark.texture'] = tag(null, 'low', `barkDirMap(${barkId}) unassigned — needs ratify`, false)
   }
   tags['bark.color'] = tag(null, 'low', 'texture-sample-pending (no decoder this stage)', false)
   return tags

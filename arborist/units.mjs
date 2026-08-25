@@ -65,8 +65,31 @@ export function parseSizeMetres(raw) {
   return n * FT_TO_M          // bare numbers from these sources are feet
 }
 
-/** Rounded to 0.1 m — the precision the sources actually justify. */
-export const sizeMetres = (raw) => {
+/**
+ * Rounded to 0.1 m — the precision the sources actually justify.
+ *
+ * ⛔⛔ HONOUR THE OBSERVATION'S OWN UNIT. The comment above FEET_AXES states the rule —
+ * "it is the source that ships feet, not the axis" — and this function did the opposite,
+ * keying conversion off the AXIS alone. The Urban Tree Database emits `unit: 'm'` per row,
+ * so the moment its fields were mapped a 2.5 m crown base would have become 0.8 m: the
+ * original feet-in-a-metre-axis bug, reproduced by the fix for it. Found by the
+ * adversarial pass BEFORE the mapping landed, which is the only reason it never shipped.
+ *
+ * @param declaredUnit the observation's own `unit`, when it has one. Absent means the
+ *   source did not say, and today every botanical source that does not say ships feet —
+ *   which is a fact about the sources we have, ⛔ not a licence to guess. When a source
+ *   declares something we do not understand, REFUSE rather than assume.
+ */
+export const sizeMetres = (raw, declaredUnit) => {
+  if (declaredUnit != null) {
+    const u = String(declaredUnit).trim().toLowerCase()
+    const n = parseFloat(String(raw).replace(/[^\d.-]/g, ''))
+    if (!Number.isFinite(n)) return null
+    if (u === 'm' || u === 'metre' || u === 'meter' || u === 'metres' || u === 'meters') return Math.round(n * 10) / 10
+    if (u === 'ft' || u === 'feet' || u === 'foot') return Math.round(n * FT_TO_M * 10) / 10
+    if (u === 'cm') return Math.round((n / 100) * 10) / 10
+    return null                     // ⛔ an undeclared-to-us unit is a refusal, not a guess
+  }
   const m = parseSizeMetres(raw)
   return m == null ? null : Math.round(m * 10) / 10
 }

@@ -425,12 +425,12 @@ Species are worked **in placement order** — the count is the whole argument fo
 ### 4. Harvest — the guards are per source, and they differ
 - **USDA** — queried by symbol; the returned `ScientificName` is checked genus+epithet against `row.taxon`. On mismatch it emits `_taxon_mismatch` and **takes nothing**. ▶ two symbols were wrong on first use (an aster for a lilac, a rush for a juniper); both skipped clean.
 - **SelecTree** — queried by name, then: exact non-cultivar match → **any non-cultivar record** → first result.
-  > ⛔⛔ **THE ONE REMAINING FALLBACK IN THE PIPELINE IS THAT MIDDLE STEP.** "Any non-cultivar record" can be *a different species*: a `Sorbus americana` query returned **`Sorbus decora`**, and its traits were emitted behind an `unverified` flag. That is a fallback in the Layer 0 sense — no exact match became a plausible-looking wrong answer — and it produced the only bad data in batch 2. It is contained downstream (§7) but **containment is not the fix**; USDA's skip-on-mismatch is the shape SelecTree should take.
+  > ⛔⛔ **THAT MIDDLE STEP IS A FALLBACK, AND `|| res[0]` BEHIND IT IS A SECOND ONE** that can return a cultivar. "Any non-cultivar record" can be *a different species*: a `Sorbus americana` query returned **`Sorbus decora`**, and its traits were emitted behind an `unverified` flag. That is a fallback in the Layer 0 sense — no exact match became a plausible-looking wrong answer — and it produced the only bad data in batch 2. It is contained downstream (§7) but **containment is not the fix**; USDA's skip-on-mismatch is the shape SelecTree should take.
 - **NCSU** — slug-addressed record; no taxon assertion to check, so no guard is possible here.
 - ⛔ **Oregon State is never fetched** (robots: ClaudeBot `Disallow: /`). Morton/MOBOT: schema shape only, never content. **Nothing is mirrored** — we store URLs and credit.
 
 ### 5. Vocabulary — one resolver, four outcomes
-`resolveTerm(axis, raw)` tries, in order: **exact → plural → alias → contains → alias-contains**, else **unresolved** (`vocabulary.mjs:321-348`). Beyond it:
+`resolveTerm(axis, raw)` tries, in order: **exact → plural → alias → contains → alias-contains**, else **unresolved** (`vocabulary.mjs`, `grep -n "via: '" arborist/vocabulary.mjs`). Beyond it:
 - **`TERM_REDIRECTS`** — the *value* decides the axis, because sources ship one multi-valued field mixing concepts (USDA `Growth Form` carries silhouette, orientation, spread and trunk count at once).
 - **`NOT_A_TRAIT`** — carries no morphology; **discarded with a counted reason, never silently**. A large discard count is how a *mismapped field* surfaces.
 - ⛔ **A term unmappable ON PURPOSE belongs in `NOT_A_TRAIT`, not in the unresolved list.** Listing a settled decision as owed alias work is how the bad alias gets re-added by someone without the context.
@@ -464,7 +464,7 @@ So the disagreement **is the artifact**. Every candidate is written with the sou
 
 ### The checks — run these, do not trust prose
 ```
-node scratch/claims-axis-keys-resolve.mjs        # axis ids AND enum values, all four stores
+node scratch/claims-axis-keys-resolve.mjs        # axis ids, enum values, scalar units — SEVEN stores
 node scratch/claims-verify-taxon.mjs             # every verdict branch, mutation-tested
 node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence
 node scratch/claims-cutover-casualties.mjs       # authored values the old rubric could not express

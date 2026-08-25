@@ -143,6 +143,31 @@ console.log('')
   }
 }
 
+// 2g. ⛔⛔ THE PRODUCERS, NOT JUST THE ARTIFACTS — the SEVENTH store, and the worst.
+// RECEIPT, 2026-08-25 (adversarial pass): `cutover-taxonomy.mjs` migrated rubric.json,
+// dossiers/ and part-index.json — the ARTIFACTS — and never `ingest-tagger.js`, which
+// PRODUCES part-index.json. It still wrote bark.type / leaf.silhouette / leaf.size, so
+// this check read the migrated artifact and said PASS while re-running ingest.js would
+// have reverted the cutover for all 266 parts. Checking output and never the thing that
+// writes it is the sharpest form of asking the same incomplete question.
+// ⛔ Any file that WRITES an axis id is a store. Grep them from source.
+{
+  const producers = ['arborist/ingest-tagger.js', 'arborist/readiness.js', 'arborist/salon-options.js']
+  let scanned = 0
+  for (const rel of producers) {
+    const f = path.join(ROOT, rel)
+    if (!existsSync(f)) continue
+    const src = readFileSync(f, 'utf8')
+    // Strip block comments and line comments — a doc comment naming a RETIRED id on
+    // purpose is not a store, and treating it as one trains people to delete the receipts.
+    const code = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
+    const ids = new Set([...code.matchAll(/['"`]((?:chassis|bark|leaf|crown|overlay|tree)\.[a-z_0-9]+)['"`]/g)].map(m => m[1]))
+    scanned += ids.size
+    for (const id of ids) if (!live.has(id)) report(`producer ${rel}`, id)
+  }
+  console.log(`producer axis ids scanned: ${scanned} across ${producers.length} file(s)`)
+}
+
 // 2f. ⭐⭐ EVERY SCALAR AXIS MUST DECLARE ITS UNIT.
 // ⛔ RECEIPT, 2026-08-25: chassis.size is METRES and every botanical source ships FEET. A
 // raw parseFloat wrote 30 for flowering dogwood — 30 ft is the right tree, 30 m is a tree

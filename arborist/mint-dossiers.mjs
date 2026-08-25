@@ -125,7 +125,7 @@ for (const o of obs) {
   if (axisKind.get(axis) === 'scalar') {
     // ⛔ mint used a raw parseFloat here while hydrate converted feet→metres, so the same
     // species got 24.4 from one writer and 80 from the other depending on run order.
-    if (FEET_AXES.has(axis)) { val = sizeMetres(o.value) }
+    if (FEET_AXES.has(axis)) { val = sizeMetres(o.value, o.unit) }
     else { const n = parseFloat(String(o.value).replace(/[^\d.-]/g, '')); val = Number.isFinite(n) ? n : null }
   } else {
     val = forced ?? (resolveTerm(axis, o.value).resolved ? resolveTerm(axis, o.value).value : null)
