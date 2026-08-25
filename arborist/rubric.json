@@ -687,6 +687,74 @@
         "leaf.arrangement",
         "leaf.growthway"
       ]
-    }
+    },
+    "valuesBefore": {
+      "chassis.habit": [
+        "vase",
+        "columnar",
+        "oval",
+        "spreading",
+        "weeping",
+        "multi-stem",
+        "pyramidal",
+        "rounded",
+        "irregular"
+      ],
+      "chassis.size": [],
+      "chassis.lean": [],
+      "chassis.density": [
+        "sparse",
+        "medium",
+        "dense"
+      ],
+      "bark.type": [
+        "smooth",
+        "furrowed",
+        "plated",
+        "scaly",
+        "ridged",
+        "exfoliating",
+        "fibrous",
+        "mottled"
+      ],
+      "bark.color": [],
+      "bark.groove_depth": [],
+      "bark.plate_size": [],
+      "bark.scale_frequency": [],
+      "bark.exfoliation_density": [],
+      "leaf.silhouette": [
+        "palmate",
+        "lobed",
+        "heart",
+        "ovate",
+        "lanceolate",
+        "compound",
+        "fan",
+        "star",
+        "needle",
+        "scale"
+      ],
+      "leaf.ways": [
+        "alternate",
+        "all-one-direction",
+        "opposite",
+        "sprays",
+        "clusters"
+      ],
+      "leaf.size": [],
+      "leaf.face": [],
+      "leaf.color": [],
+      "leaf.season": [],
+      "leaf.occupancy": [],
+      "overlay.type": [
+        "flowers",
+        "fruit",
+        "thorns",
+        "seasonal-props",
+        "none"
+      ],
+      "tree.age": []
+    },
+    "valuesBeforeNote": "The 19-axis value sets as they stood immediately before the cutover, recovered from git (undefined^). Recorded HERE so the cutover-casualty class stays computable without git archaeology: an authored value that was the NEAREST AVAILABLE term in the old set is not a considered choice, and the new set may now hold the right one."
   }
 }
