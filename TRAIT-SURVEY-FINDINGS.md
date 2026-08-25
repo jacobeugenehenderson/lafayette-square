@@ -1230,9 +1230,8 @@ answer with an email, not something to resolve by scraping quietly.**
 
 ## 4. WHAT REMAINS UNVERIFIED
 
-- ⚠️⚠️ **Missouri Botanical Garden Plant Finder — nothing fetched. The highest-value gap, being
-  St. Louis.** No field list, no facet vocabularies, no licence text. Everything anyone believes about
-  MOBOT's schema is currently unverified.
+- ✅ **Missouri Botanical Garden Plant Finder — VERIFIED 2026-08-24. Gap closed, and it does NOT
+  displace NC State.** Details below.
 - **Licences to ask about, not guess at:** NC State (reuse unstated), SelecTree (none found),
   NYC (`license` null), DC (`copyrightText` empty), OpenTreeMap (LICENSE not fetched), FIA DataMart
   (no explicit text), BIEN, efloras.
@@ -1253,3 +1252,43 @@ answer with an email, not something to resolve by scraping quietly.**
 - **Miscellaneous unresolved:** any live EOL predicate URI (500/404); World Flora Online (TLS failure);
   efloras licence; LEDA's status; DBpedia entirely; SelecTree filter-parameter names beyond those
   observed; the exact USA-NPN CC variant; whether a single-file bulk USDA Characteristics CSV exists.
+
+---
+
+## 5. MISSOURI BOTANICAL GARDEN — verified 2026-08-24 (the closed gap)
+
+⚠️ **It MOVED.** `missouribotanicalgarden.org/PlantFinder/*` now **301s to `plantfinder.mobot.org`**.
+Any stored link to the old path is stale.
+
+**Record fields, verbatim and in order:** `Common Name · Type · Family · Native Range · Zone ·
+Height · Spread · Bloom Time · Bloom Description · Sun · Water · Maintenance · Suggested Use ·
+Flower · Leaf · Fruit · Attracts · Tolerate · Invasive`, then prose: `Garden locations · Culture ·
+Noteworthy Characteristics · Problems · Uses`. Fields render only when populated.
+
+### ⛔ THE VERDICT: it is a GARDEN-SELECTION schema, not a morphological one
+- **Bark is NOT A FIELD AT ALL** — it appears only inside `Noteworthy Characteristics` prose.
+- **Leaf is ONE field with FOUR tokens**: `Colorful · Fragrant · Good Fall · Evergreen`.
+  Compare NC State: 13 leaf fields, 25 shapes, 12 margins, and a 9-value fall-colour vocabulary.
+- **No fall-colour facet**, no height/spread facet (those are record-only).
+⇒ **Being St. Louis made it feel promising. It is not the vocabulary source.**
+
+### ⛔ AND THE LICENCE IS THE MOST EXPLICIT REFUSAL OF ALL SIX
+`https://www.missouribotanicalgarden.org/conditions`, verbatim:
+> *"may not be used for any commercial purpose without permission"* ·
+> *"**Users are not permitted to download our web pages, texts, and images in order to mount them
+> on their own servers**"* · *"not in our interest… to have uncontrolled subsets of our holdings
+> available elsewhere"*
+
+⚠️ **Which forecloses the one thing it was uniquely good for:** numeric `Height`/`Spread` **in feet**
+(`40.00 to 50.00 feet`) and a USDA `Zone` range — the dimensional fields NC State carries only as a
+coarse band. **We cannot use them.** ⭐ *(The Urban Tree Database already covers dimensional data
+with no licence question — go there instead.)*
+
+⭐ **Worth carrying forward:** only **two** sources have a *street tree* concept at all — MOBOT's
+`Uses → Street Tree` (with `Urban Conditions`, `Salt`) and Morton's `tp_planting_site`
+(`City parkway`, `Wide median`, `Under utility lines`). **Morton's is the best-designed and the
+worst-licensed.** Take the CONCEPT — a planting-site axis — and derive our own terms.
+
+⭐⭐ **THE BINDING CONSTRAINT IS LICENSING, NOT SCRAPING, ON FIVE OF SIX.** NC State is the only
+source usable beyond manual reference — and even there the grant covers *citation*, not
+*redistribution*. That gap is unconfirmed and needs a direct ask.
