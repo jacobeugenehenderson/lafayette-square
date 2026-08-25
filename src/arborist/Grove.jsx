@@ -21,6 +21,7 @@
  * crop and judge.
  */
 import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { resolveGrove } from '../../arborist/grove-eligibility.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
