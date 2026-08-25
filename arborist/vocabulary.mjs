@@ -264,9 +264,30 @@ export const NOT_A_TRAIT = {
     yes: 'usda Leaf Retention Y/N — not a foliage class',
   },
   'chassis.habit': {
-    'single stem': 'trunk COUNT, not crown form — complement of multi-stem',
-    'single crown': 'trunk COUNT, not crown form — complement of multi-stem',
-    'single trunk': 'trunk COUNT, not crown form — complement of multi-stem',
+    // ⛔⛔ ASYMMETRIC, AND THAT IS A MEASURED SKEW — NOT A TIDY DISCARD.
+    // These are discarded while `Multiple Stem`/`Multi-trunked` ARE accepted, aliased onto
+    // chassis.habit as `multi-stem`. So one end of the trunk-count scale writes a value and
+    // the other writes nothing:
+    //   sources call 11 species single-stemmed → nothing recorded
+    //   sources call  4 species multi-stemmed  → chassis.habit = multi-stem
+    // ▶ re-measure: grep the JSONL for Single Stem|Single Crown|Multiple Stem|Multi-trunked
+    // Same shape as the Foliage Porosity skew the harvest session found: map only one end
+    // of a scale and the axis reads biased, with nothing reporting it. Worse here, because
+    // for those 4 species `multi-stem` OCCUPIES the habit slot and competes with real
+    // silhouettes — zelkova's contested habit reads multi-stem / vase / rounded, as though
+    // trunk count were a silhouette. It is the identical category error we fixed for
+    // orientation.
+    // ⛔ NOT FIXED HERE, and deliberately: the clean fix is a chassis.trunks axis, and
+    // betula_nigra carries `multi-stem` HAND-AUTHORED and hard inside chassis.habit.
+    // Moving the operator's authoring is not ours to do, and the alternative — new sourced
+    // data to a new axis while authored data stays in the old one — is two homes for one
+    // concept, which is the exact defect that blanked the Salon rail. Both paths cost
+    // something real. Jacob's ruling, with the numbers above.
+    // ⭐ Corroborated independently: USDA's Growth Form surfaces `Multiple Stem` out of its
+    // own vocabulary, so this is not an artefact of how either instrument mapped things.
+    'single stem': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above (Jacob\'s ruling)',
+    'single crown': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above',
+    'single trunk': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above',
     // ⛔ DELIBERATELY UNMAPPABLE — and it belongs HERE, not in the unresolved list.
     // `Erect` is an ORIENTATION (USDA: Climbing/Decumbent/Erect/Prostrate/Semi-Erect),
     // and NCSU ships `Erect` AND `Columnar` as separate options in the same field. It was
