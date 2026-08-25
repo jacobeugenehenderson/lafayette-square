@@ -11,20 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 9.1,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 4.6,
-        "hi": 9.1
-      },
-      "askedAs": [
-        "ncsu: Dimensions",
-        "selectree: height_high"
-      ]
-    },
     "chassis.density": {
       "target": "dense",
       "hardness": "soft",
@@ -267,6 +253,20 @@
         "selectree: flower_showiness"
       ]
     },
+    "chassis.size": {
+      "target": 9.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 4.6,
+        "hi": 9.1
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
+    },
     "chassis.size_20yr": {
       "target": 7.6,
       "hardness": "soft",
@@ -304,7 +304,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.trunks, crown.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.trunks, crown.texture. See .candidates; an author must choose.",
     "sources disagree on: leaf.shape, bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",

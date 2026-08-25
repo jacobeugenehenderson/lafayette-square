@@ -11,19 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 10.7,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 4.6,
-        "hi": 10.7
-      },
-      "askedAs": [
-        "ncsu: Dimensions"
-      ]
-    },
     "chassis.density": {
       "target": null,
       "hardness": "soft",
@@ -158,6 +145,28 @@
         "usda: Growth Form"
       ]
     },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
+    },
+    "chassis.size": {
+      "target": 10.7,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 4.6,
+        "hi": 10.7
+      },
+      "askedAs": [
+        "ncsu: Dimensions"
+      ]
+    },
     "chassis.size_20yr": {
       "target": 9.1,
       "hardness": "soft",
@@ -182,15 +191,6 @@
       },
       "askedAs": [
         "usda: Height, Mature (feet)"
-      ]
-    },
-    "chassis.orientation": {
-      "target": "erect",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "askedAs": [
-        "usda: Shape and Orientation"
       ]
     }
   },

@@ -11,20 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 24.4,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 15.2,
-        "hi": 24.4
-      },
-      "askedAs": [
-        "ncsu: Dimensions",
-        "selectree: height_high"
-      ]
-    },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
@@ -277,6 +263,20 @@
         "usda: Growth Form"
       ]
     },
+    "chassis.size": {
+      "target": 24.4,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 15.2,
+        "hi": 24.4
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
+    },
     "chassis.size_20yr": {
       "target": 11,
       "hardness": "soft",
@@ -314,7 +314,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, overlay.fruit_type, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: overlay.fruit_type, bark.texture. See .candidates; an author must choose.",
     "sources disagree on: chassis.habit, leaf.shape — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",

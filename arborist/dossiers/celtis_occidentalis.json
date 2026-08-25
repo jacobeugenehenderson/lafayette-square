@@ -11,20 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 30.5,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 12.2,
-        "hi": 30.5
-      },
-      "askedAs": [
-        "ncsu: Dimensions",
-        "selectree: height_high"
-      ]
-    },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
@@ -327,6 +313,29 @@
         "usda: Growth Form"
       ]
     },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
+    },
+    "chassis.size": {
+      "target": 30.5,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 30.5
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
+    },
     "chassis.size_20yr": {
       "target": 7.9,
       "hardness": "soft",
@@ -352,15 +361,6 @@
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
-    },
-    "chassis.orientation": {
-      "target": "erect",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "askedAs": [
-        "usda: Shape and Orientation"
-      ]
     }
   },
   "recipe": null,
@@ -373,7 +373,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: leaf.margin, bark.texture. See .candidates; an author must choose.",
     "sources disagree on: chassis.habit, overlay.fruit_type, leaf.shape — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",

@@ -11,20 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 12.2,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 9.1,
-        "hi": 12.2
-      },
-      "askedAs": [
-        "ncsu: Dimensions",
-        "selectree: height_high"
-      ]
-    },
     "chassis.density": {
       "target": null,
       "hardness": "soft",
@@ -357,6 +343,20 @@
       "sourced": true,
       "askedAs": [
         "usda: Growth Form"
+      ]
+    },
+    "chassis.size": {
+      "target": 12.2,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 9.1,
+        "hi": 12.2
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
       ]
     },
     "chassis.size_20yr": {

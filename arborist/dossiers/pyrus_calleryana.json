@@ -11,20 +11,6 @@
   "identityNotes": null,
   "referenceImages": [],
   "required": {
-    "chassis.size": {
-      "target": 15.2,
-      "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "band": {
-        "lo": 9.1,
-        "hi": 15.2
-      },
-      "askedAs": [
-        "ncsu: Dimensions",
-        "selectree: height_high"
-      ]
-    },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
@@ -276,6 +262,20 @@
       "sourced": true,
       "askedAs": [
         "selectree: flower_showiness"
+      ]
+    },
+    "chassis.size": {
+      "target": 15.2,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "band": {
+        "lo": 9.1,
+        "hi": 15.2
+      },
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
       ]
     }
   },

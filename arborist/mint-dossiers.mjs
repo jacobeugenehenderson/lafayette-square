@@ -21,7 +21,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
-import { sizeMetres, FEET_AXES } from './units.mjs'
+import { sizeMetres, parseSizeBandMetres, mergeBands, FEET_AXES } from './units.mjs'
 import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const WRITE = process.argv.includes('--write')
@@ -103,7 +103,7 @@ const slug = (t) => normalize(cleanTaxon(t)).replace(/[^a-z0-9]+/g, '_').replace
 
 const bySpecies = new Map()
 for (const o of obs) {
-  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, queried: null, matched: new Map(), cells: new Map(), sources: new Set() })
+  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, queried: null, matched: new Map(), cells: new Map(), bands: new Map(), sources: new Set() })
   const rec = bySpecies.get(o.species)
   // Per SOURCE, not first-wins. Batch 2: SelecTree answered a `Sorbus americana` query
   // with `Sorbus decora` while USDA answered correctly — taking the first match refused
@@ -125,7 +125,20 @@ for (const o of obs) {
   if (axisKind.get(axis) === 'scalar') {
     // ⛔ mint used a raw parseFloat here while hydrate converted feet→metres, so the same
     // species got 24.4 from one writer and 80 from the other depending on run order.
-    if (FEET_AXES.has(axis)) { val = sizeMetres(o.value, o.unit) }
+    if (FEET_AXES.has(axis)) {
+      // ⭐ Same band rule as hydrate — a size RANGE is the species' natural size band, not
+      // two competing candidates. Kept identical to hydrate deliberately: the writers-agree
+      // check exists because these two drifting apart blanks the operator's rail, and it
+      // caught this exact divergence the moment hydrate learned bands and mint had not.
+      const b = parseSizeBandMetres(o.value, o.unit)
+      if (b) {
+        if (!rec.bands.has(axis)) rec.bands.set(axis, { bands: [], askedAs: new Set() })
+        rec.bands.get(axis).bands.push(b)
+        rec.bands.get(axis).askedAs.add(`${o.source}: ${o.field}`)
+        continue
+      }
+      val = sizeMetres(o.value, o.unit)
+    }
     else { const n = parseFloat(String(o.value).replace(/[^\d.-]/g, '')); val = Number.isFinite(n) ? n : null }
   } else {
     val = forced ?? (resolveTerm(axis, o.value).resolved ? resolveTerm(axis, o.value).value : null)
@@ -255,6 +268,17 @@ for (const [species, rec] of bySpecies) {
       ;(tied ? ties : contested).push(axis)
     }
     if (HARD.has(axis)) required[axis].owedHardness = 'identity axis — author must confirm and promote to hard'
+  }
+
+  // Band cells, written the same shape hydrate writes them.
+  for (const [axis, rb] of rec.bands) {
+    const band = mergeBands(rb.bands)
+    if (!band) continue
+    required[axis] = {
+      target: band.hi, hardness: 'soft', tol: 0.4, sourced: true,
+      band: { lo: band.lo, hi: band.hi },
+      askedAs: [...rb.askedAs].sort(),
+    }
   }
 
   const doc = {
