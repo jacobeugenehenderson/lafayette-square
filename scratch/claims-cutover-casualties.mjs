@@ -41,8 +41,23 @@ if (!existsSync(obsPath)) { console.error('⛔ no harvest at scratch/dossier-raw
 
 // Same field map the hydrator uses, read from ITS source so the two cannot drift.
 const hydSrc = readFileSync(path.join(root, 'arborist/hydrate-dossiers.mjs'), 'utf8')
+
+// ⛔ A PARTIAL PARSE IS THE `-1` DEFECT IN ANOTHER COSTUME: it fails by returning a
+// usable-looking value. This regex once read 18 of 22 FIELD_MAP entries and nothing said
+// so -- the check simply had a smaller idea of the field map than the code did. Count the
+// assignment lines in the block and refuse to run on a mismatch.
+function assertFullParse(block, parsedCount, what) {
+  const lines = block.split('\n').filter(l => /^\s*'?[A-Za-z][^:]*'?:\s*'[^']*',/.test(l)).length
+  if (lines !== parsedCount) {
+    console.error(`⛔ ${what}: source has ${lines} entries, parsed ${parsedCount}. The parse is silently partial; fix the regex before trusting any result.`)
+    process.exit(1)
+  }
+}
+
 const fmBlock = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)
-const FIELD_MAP = Object.fromEntries([...fmBlock[0].matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z.]+)',/gm)].map(m => [m[1], m[2]]))
+const fmEntries = [...fmBlock[0].matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._]+)',/gm)]
+assertFullParse(fmBlock[0], fmEntries.length, 'FIELD_MAP (claims-cutover-casualties)')
+const FIELD_MAP = Object.fromEntries(fmEntries.map(m => [m[1], m[2]]))
 
 // ⚠️ `resolveSpecies` returns the DISPLAY name ("Red Maple"), not the canonicalId
 // ("acer_rubrum"). Index every name a dossier answers to, the way the hydrator does --

@@ -230,6 +230,18 @@ export const NOT_A_TRAIT = {
     // scales, and folding them under one axis would make the axis mean nothing.
     dense: 'crown-form tag, not the foliage-porosity scale — two different measurements',
     colonizing: 'spread behaviour, not crown form',
+    // ⛔ DELIBERATELY UNMAPPABLE — and it belongs HERE, not in the unresolved list.
+    // `Erect` is an ORIENTATION (USDA: Climbing/Decumbent/Erect/Prostrate/Semi-Erect),
+    // and NCSU ships `Erect` AND `Columnar` as separate options in the same field. It was
+    // aliased to `columnar` and wrote that into red oak at tol 0.
+    // Listing it as unresolved made a settled decision look like owed alias work, 20x per
+    // run — which is precisely how someone re-adds the alias in six months. Discarded with
+    // a reason instead. See the no-`erect`-row note in TERM_ALIASES above.
+    erect: 'ORIENTATION, not crown form — see the no-erect note in TERM_ALIASES',
+    'semi erect': 'ORIENTATION, not crown form',
+    prostrate: 'ORIENTATION, not crown form',
+    decumbent: 'ORIENTATION, not crown form',
+    climbing: 'ORIENTATION, not crown form',
   },
 }
 

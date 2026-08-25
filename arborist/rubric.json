@@ -522,6 +522,7 @@
         "cone",
         "capsule",
         "follicle",
+        "achene",
         "nut",
         "berry",
         "none"

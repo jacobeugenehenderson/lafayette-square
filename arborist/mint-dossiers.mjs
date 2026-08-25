@@ -36,9 +36,23 @@ const rubric = JSON.parse(readFileSync(path.join(root, 'arborist/rubric.json'), 
 const axisKind = new Map((rubric.axes || []).map(a => [a.id, a.kind || (a.values ? 'enum' : 'scalar')]))
 
 const hydSrc = readFileSync(path.join(root, 'arborist/hydrate-dossiers.mjs'), 'utf8')
-const FIELD_MAP = Object.fromEntries(
-  [...hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)[0]
-    .matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._]+)',/gm)].map(m => [m[1], m[2]]))
+
+// ⛔ A PARTIAL PARSE IS THE `-1` DEFECT IN ANOTHER COSTUME: it fails by returning a
+// usable-looking value. This regex once read 18 of 22 FIELD_MAP entries and nothing said
+// so -- the check simply had a smaller idea of the field map than the code did. Count the
+// assignment lines in the block and refuse to run on a mismatch.
+function assertFullParse(block, parsedCount, what) {
+  const lines = block.split('\n').filter(l => /^\s*'?[A-Za-z][^:]*'?:\s*'[^']*',/.test(l)).length
+  if (lines !== parsedCount) {
+    console.error(`⛔ ${what}: source has ${lines} entries, parsed ${parsedCount}. The parse is silently partial; fix the regex before trusting any result.`)
+    process.exit(1)
+  }
+}
+
+const fmBlock2 = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)[0]
+const fmEntries = [...fmBlock2.matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._]+)',/gm)]
+assertFullParse(fmBlock2, fmEntries.length, 'FIELD_MAP (mint-dossiers)')
+const FIELD_MAP = Object.fromEntries(fmEntries.map(m => [m[1], m[2]]))
 const AUTHORED = new Set([...hydSrc.match(/const AUTHORED = new Set\(\[[\s\S]*?\]\)/)[0]
   .matchAll(/'([a-z._]+)'/g)].map(m => m[1]))
 
