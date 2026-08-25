@@ -60,3 +60,17 @@ verify_jwt = false
 # gate at all and executed with no apikey and no Authorization header.
 [functions.onboarding]
 verify_jwt = true
+
+# contact-sms is the QR → website → "text me directly" path: the one flow that
+# must work for the public. Every legitimate caller is our own browser client
+# via supabase.functions.invoke, which always sends the anon key — so the
+# gateway gate is satisfied and is a cheap outer filter, exactly as for
+# onboarding. ⚠️ It is NOT a security layer: the anon key is public. The wall is
+# the per-device/per-IP rate limiting inside the function (SECURITY.md F-13).
+#
+# ⛔ Pinned because it was NOT pinned and was riding the deploy-time default —
+# the same shape that took sms-webhook down for a minute on 2026-08-24. A flow
+# this important must not depend on what `supabase functions deploy` happens to
+# default to.
+[functions.contact-sms]
+verify_jwt = true

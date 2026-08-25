@@ -33,6 +33,15 @@ const DEFAULT_ORIGINS = [
   'https://jacobhenderson.studio',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
+  // Staging: .github/workflows/staging.yml publishes dist to
+  // jacobeugenehenderson/lafayette-square-staging via GitHub Pages.
+  // ⚠️ An Origin is scheme+host with NO path, so this admits every page on that
+  // github.io account, not just /lafayette-square-staging/. Accepted knowingly:
+  // the caps below are the actual wall, and CORS only ever stopped a stranger's
+  // site from using a VISITOR's browser — never curl, which does not ask.
+  // ⭐ Without this, a QR tested on staging fails with "Couldn't reach the
+  // message service" — a blocked origin that reads exactly like a Twilio outage.
+  'https://jacobeugenehenderson.github.io',
 ]
 
 function allowedOrigins() {
