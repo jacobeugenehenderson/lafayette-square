@@ -120,6 +120,7 @@ const TERM_ALIASES = {
     'heart shaped': 'cordate', heart: 'cordate',
     'fan shaped': 'flabellate', fanshaped: 'flabellate', fan: 'flabellate',
     'diamond shaped': 'rhomboid', diamond: 'rhomboid', rhombic: 'rhomboid',
+    rhomboidal: 'rhomboid',
     'spear shaped': 'lanceolate', lance: 'lanceolate', 'lance shaped': 'lanceolate',
     oval: 'elliptical', elliptic: 'elliptical', ellipse: 'elliptical',
     'egg shaped': 'ovate', egg: 'ovate',
@@ -172,6 +173,13 @@ export const TERM_REDIRECTS = {
     'palmately lobed': { axis: 'leaf.margin', value: 'lobed' },
     'pinnately lobed': { axis: 'leaf.margin', value: 'lobed' },
     lobed: { axis: 'leaf.margin', value: 'lobed' },
+    // NC State's precise lobing depths. `-fid` = cut toward the middle, `-sect` = cut to
+    // the midrib. Both are LOBING, which our taxonomy keeps on the margin axis; the depth
+    // itself is a distinction we do not model and deliberately flatten.
+    palmatifid: { axis: 'leaf.margin', value: 'lobed' },
+    palmasect: { axis: 'leaf.margin', value: 'lobed' },
+    pinnatifid: { axis: 'leaf.margin', value: 'lobed' },
+    pinnatisect: { axis: 'leaf.margin', value: 'lobed' },
     'pinnately compound': { axis: 'leaf.type', value: 'compound-pinnate' },
     'bipinnately compound': { axis: 'leaf.type', value: 'compound-bipinnate' },
     'palmately compound': { axis: 'leaf.type', value: 'compound-palmate' },
@@ -189,6 +197,7 @@ export const NOT_A_TRAIT = {
     shrub: 'ncsu category tag', tree: 'ncsu category tag',
     herb: 'ncsu category tag', vine: 'ncsu category tag',
     wildflower: 'ncsu category tag', 'ground cover': 'ncsu category tag',
+    weed: 'ncsu category tag', 'native plant tree': 'ncsu category tag',
     no: 'usda Leaf Retention Y/N — not a foliage class',
     yes: 'usda Leaf Retention Y/N — not a foliage class',
   },
