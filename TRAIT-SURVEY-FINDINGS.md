@@ -1334,7 +1334,28 @@ Tree Database does, and worth cross-checking against it.
 **NC State: 4,701 plants · 1,047 trees · 175 tagged Street Tree.** 4 bark fields, 10 stem, 13
 leaf, 25 leaf shapes, 12 margins, 15 bark surface terms, 9-value fall colour. **The only source
 that affirmatively invites reuse.**
-⭐⭐ **Licensing blocks five of six.** MOBOT forbids mounting on your own server; Morton is
-all-rights-reserved non-commercial; RHS publishes no site-wide terms (so nothing is granted);
-Oregon State names ClaudeBot. **NC State is the only one usable beyond manual reference — and its
-grant covers CITATION, not REDISTRIBUTION. That gap is unconfirmed and needs a direct ask.**
+### ⛔⛔ CORRECTED 2026-08-24 — "LICENSING BLOCKS FIVE OF SIX" IS WRONG FOR OUR USE
+*(Jacob: "we are not in any way redistributing or even using the info for commercial purposes.")*
+**He is right, and the earlier framing over-stated it.** That verdict would hold if we were
+building a competing plant database. **We are not.**
+
+- **Redistribution — we do none.** Nothing of theirs is republished, mirrored or served.
+- **Commercial use — the restrictions attach to THEIR EXPRESSION, not to facts.** MOBOT's clause
+  forbids downloading *their web pages, texts and images* to mount on your servers. It does not
+  reach *"a maple has opposite leaves."* ⭐ **Facts are not ownable; the COMPILATION is.**
+
+⭐⭐ **So the rule is not "blocked", it is: TAKE THE FACTS, NEVER THE COMPILATION.** Read a value,
+resolve it into our own closed vocabulary, and their expression never enters the pipeline —
+**which is exactly the boundary `arborist/vocabulary.mjs` already enforces.** By the time a value
+is one of our tokens there is nothing of theirs left in it.
+
+**Two things DO survive, and they are different in kind:**
+1. ⛔ **Oregon State is an ACCESS restriction, not a licence one** — `Disallow: /` naming
+   ClaudeBot plus `ai-train=no` is a request not to FETCH AT ALL, and it stands regardless of what
+   we would do with the result. It costs us nothing: that source was prose-only anyway.
+2. ⛔ **Do not bulk-mirror any of them.** ~50 species of trait values is using facts; cloning a
+   record set is taking the compilation. **The volume we need is comfortably the former.**
+
+⭐ NC State remains the recommendation on MERIT — most granular, machine-readable vocabulary,
+and the only one that affirmatively invites citation. Credit it, SelecTree, USDA and the Urban
+Tree Database in inputs acknowledgements; do not mirror prose.
