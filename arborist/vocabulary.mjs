@@ -93,7 +93,16 @@ function loadAxes() {
 const TERM_ALIASES = {
   'chassis.habit': {
     conic: 'pyramidal', 'pyramidal conical': 'pyramidal',
-    upright: 'columnar', erect: 'columnar',
+    upright: 'columnar',
+    // ⛔ NO `erect` ROW, AND THIS IS DELIBERATE — do not re-add it.
+    // `Erect` is an ORIENTATION, not a silhouette: USDA's list is Climbing ·
+    // Decumbent · Erect · Prostrate · Semi-Erect, i.e. "grows upward" vs "creeps",
+    // and nearly every tree is erect. NCSU offers `Erect` AND `Columnar` as separate
+    // options in the same field — a source that ships both is saying they differ.
+    // Aliasing it wrote `columnar` into quercus_rubra and tilia_americana at
+    // hardness `hard`, so a broad rounded oak could only ever match a columnar
+    // chassis. It resolves to nothing now; the cell stays empty and the species
+    // stays red, which is the correct outcome for a term we cannot map.
     globose: 'rounded', globular: 'rounded', round: 'rounded', ball: 'rounded',
     egg: 'oval', 'egg shaped': 'oval',
     'v shaped': 'vase', vaselike: 'vase', urn: 'vase',
@@ -162,6 +171,16 @@ const TERM_ALIASES = {
     'deciduous conifer': 'deciduous-conifer',
   },
   'crown.texture': { bold: 'coarse', delicate: 'fine', moderate: 'medium' },
+  // USDA's `Foliage Porosity Summer/Winter` is a closed 3-term scale — Porous ·
+  // Moderate · Dense — and it runs the OPPOSITE way to ours: porous foliage is a
+  // SPARSE crown. Only `Dense` matched by exact spelling before, so the axis took
+  // the dense end of the scale and dropped the rest, reading denser than the source.
+  // Observed across the pilot's 20: Dense ×12, Moderate ×2. `porous` is the third
+  // documented term, unobserved here and expected in the corpus run.
+  'chassis.density': { porous: 'sparse', open: 'sparse', moderate: 'medium', average: 'medium' },
+  // SelecTree `flower_showiness` is Inconspicuous · Low · Showy against our
+  // showy · present · insignificant — a 3-to-3 alignment, middle term to middle term.
+  'overlay.conspicuous': { inconspicuous: 'insignificant', low: 'present', none: 'insignificant' },
 }
 
 // ⭐ VALUE-LEVEL AXIS REDIRECT. A source files a value under one heading; our taxonomy
