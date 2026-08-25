@@ -417,11 +417,128 @@ export function aliasesFor(canonical) {
   return rec ? [...rec.aliases] : [String(canonical)]
 }
 
-/** Do two names denote the same species? The ≡ this module exists for. */
+/**
+ * Do two names denote the same species IN OUR ROSTER VOCABULARY? The ≡ this module
+ * exists for — it reasons over the census alias graph, so operator curation wins.
+ * ⛔ For "did the database return the binomial I asked for?", use `verifyTaxon`;
+ * that is nomenclature, not our aliases, and the two deliberately disagree.
+ */
 export function sameSpecies(a, b) {
   const ra = resolveSpecies(a), rb = resolveSpecies(b)
   if (ra.resolved && rb.resolved) return ra.value === rb.value
   return tokenKey(a) === tokenKey(b) && tokenKey(a) !== ''
+}
+
+
+// ── BOTANICAL NOMENCLATURE — a different question from `sameSpecies` ─────────
+/**
+ * Parse a scientific name into its parts. Tolerant of what the databases
+ * actually return: HTML italics, `&times;` with or without its semicolon,
+ * authorities, infraspecific ranks and quoted cultivars.
+ */
+function parseBinomial(raw) {
+  let s = String(raw ?? '')
+  s = s.replace(/<[^>]+>/g, ' ')                                  // USDA italicises
+  s = s.replace(/&times;?|&#0*215;?|&#x0*d7;?/gi, ' × ')          // SelecTree omits the ;
+  s = s.replace(/&nbsp;?/gi, ' ').replace(/&amp;?/gi, '&')
+  s = stripAccents(s).replace(/\s+/g, ' ').trim()
+
+  const cultivar = (s.match(/['"’]([^'"’]+)['"’]/) || [])[1] || null
+  s = s.replace(/['"’][^'"’]*['"’]/g, ' ')                        // cultivar out of the way
+  s = s.replace(/\[[^\]]*\]/g, ' ')                               // [rubrum × saccharinum]
+  s = s.replace(/\s+/g, ' ').trim()
+
+  const toks = s.split(' ').filter(Boolean)
+  let i = 0, hybrid = false
+  const isMark = (t) => /^[×x]$/i.test(t)
+  if (toks[i] && isMark(toks[i])) { hybrid = true; i++ }          // ×Cupressocyparis
+  let genus = toks[i++] || ''
+  if (/^×/.test(genus)) { hybrid = true; genus = genus.slice(1) }
+
+  if (toks[i] && isMark(toks[i])) { hybrid = true; i++ }          // Acer × freemanii
+  let epithet = toks[i] || ''
+  if (/^×/.test(epithet)) { hybrid = true; epithet = epithet.slice(1) }
+  // An epithet is lowercase by convention; an uppercase token here is the authority.
+  if (!epithet || !/^[a-z][a-z-]*$/.test(epithet)) epithet = ''
+  else i++
+
+  let infraspecific = null
+  const RANK = /^(var|subsp|ssp|f|forma|cv)\.?$/i
+  while (toks[i] && RANK.test(toks[i]) && toks[i + 1]) { infraspecific = toks[i + 1].toLowerCase(); i += 2 }
+
+  const authority = toks.slice(i).join(' ').trim() || null
+  return { genus: genus.toLowerCase(), epithet, hybrid, infraspecific, cultivar, authority }
+}
+
+/**
+ * Is the record a database returned actually the taxon we asked it for?
+ *
+ * ⛔ THIS IS NOT `sameSpecies`, AND THE TWO MUST NOT BE MERGED. `sameSpecies`
+ * asks whether two NAMES denote the same tree in OUR roster vocabulary, over the
+ * census alias graph — it will happily tell you `Birch` ≡ `betula_nigra`, because
+ * the operator's curation says so. This asks a question about BOTANICAL
+ * NOMENCLATURE: did the record that came back carry the binomial we requested?
+ * Nomenclature would refuse `Birch` ≡ `Betula nigra`. The answers legitimately
+ * diverge, and collapsing them is a category error.
+ *
+ * ⭐ WHY IT EXISTS. A database key is a guess until the returned NAME confirms it.
+ * USDA PLANTS symbol `TICO` is *Tiarella cordifolia*, a foamflower — not *Tilia
+ * cordata*. Nothing rejected it; a linden was one call away from being described
+ * by a herb's traits, on axes the operator cannot eyeball.
+ *
+ * ⛔ NOT A BOOLEAN, deliberately. A strict genus+epithet test rejects things that
+ * are fine — `Acer freemanii` against `Acer ×freemanii`, or a database more
+ * current than our dossier. A boolean forces a choice between letting TICO
+ * through and rejecting real hybrids, so the verdict names WHAT differed and the
+ * caller decides. Precedence, strongest first: mismatch › hybrid-mark ›
+ * authority-only › exact; `reason` carries the rest when more than one applies.
+ *
+ * ⚠️ `returnedRank` is advisory and does NOT change the verdict. A cultivar on the
+ * returned side is nomenclaturally consistent but a real hazard: SelecTree's top
+ * hit for *Acer rubrum* was `'Armstrong'`, which is Columnar where the species is
+ * not — a cultivar-specific silhouette on a hard identity axis. Callers taking
+ * morphology should treat a non-null `returnedRank` as a reason to look again.
+ *
+ * @returns {{match:'exact'|'hybrid-mark'|'authority-only'|'mismatch',
+ *            queried:string, returned:string, reason:string,
+ *            returnedRank:{cultivar:string|null,infraspecific:string|null}|null}}
+ */
+export function verifyTaxon(queried, returned) {
+  const q = parseBinomial(queried), r = parseBinomial(returned)
+  const out = (match, reason) => ({
+    match, reason,
+    queried: String(queried ?? ''), returned: String(returned ?? ''),
+    returnedRank: (r.cultivar || r.infraspecific)
+      ? { cultivar: r.cultivar, infraspecific: r.infraspecific } : null,
+  })
+
+  if (!q.genus || !r.genus) return out('mismatch', 'a name is empty or unparseable')
+  if (q.genus !== r.genus) return out('mismatch', `genus differs: "${q.genus}" vs "${r.genus}"`)
+  // A genus-only query cannot disagree on an epithet it never had.
+  if (q.epithet && r.epithet && q.epithet !== r.epithet) {
+    return out('mismatch', `epithet differs: "${q.epithet}" vs "${r.epithet}"`)
+  }
+  if (q.epithet && !r.epithet) return out('mismatch', `returned no epithet for "${q.epithet}"`)
+
+  const notes = []
+  if (!q.epithet && !r.epithet) notes.push('genus-level on both sides')
+  else if (!q.epithet) notes.push(`genus-level query matched "${r.epithet}"`)
+  if (r.cultivar) notes.push(`returned a cultivar '${r.cultivar}'`)
+  if (r.infraspecific && r.infraspecific !== q.infraspecific) notes.push(`returned ${r.infraspecific} below species`)
+
+  const hybridDiffers = q.hybrid !== r.hybrid
+  const authorityDiffers = (q.authority || null) !== (r.authority || null)
+  const tail = notes.length ? ` (${notes.join('; ')})` : ''
+
+  if (hybridDiffers) {
+    return out('hybrid-mark',
+      `same binomial; × present on ${r.hybrid ? 'the returned' : 'the queried'} side only${tail}`)
+  }
+  if (authorityDiffers) {
+    return out('authority-only',
+      `same binomial; authority ${r.authority ? `"${r.authority}" on the returned side` : 'dropped'}${tail}`)
+  }
+  return out('exact', `genus and epithet agree${tail}`)
 }
 
 /** Free-text search over every known alias — what the species search bar wants. */
