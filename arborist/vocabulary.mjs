@@ -217,12 +217,35 @@ export function axisTerms(axisId) { return loadAxes().get(axisId) || [] }
  * Resolve a TERM onto its axis's closed vocabulary.
  * @returns {{value:string, resolved:boolean, via:string}}
  */
+/**
+ * Candidate singulars for a normalized word. Conservative on purpose: the caller only
+ * accepts a candidate that is an exact term, so an over-eager guess costs nothing, but a
+ * wrong REWRITE would. Applies to the last word only — "compound leaves" keeps its head.
+ */
+function depluralize(n) {
+  const parts = n.split(' ')
+  const w = parts[parts.length - 1]
+  const stems = []
+  if (/ies$/.test(w)) stems.push(w.slice(0, -3) + 'y')
+  if (/(ches|shes|sses|xes|zes)$/.test(w)) stems.push(w.slice(0, -2))
+  if (/s$/.test(w) && !/ss$/.test(w)) stems.push(w.slice(0, -1))
+  return stems.map(st => [...parts.slice(0, -1), st].join(' '))
+}
+
 export function resolveTerm(axisId, raw) {
   const terms = axisTerms(axisId)
   const n = normalize(raw)
   if (!n) return { value: raw, resolved: false, via: 'empty' }
   const byNorm = new Map(terms.map(t => [normalize(t), t]))
   if (byNorm.has(n)) return { value: byNorm.get(n), resolved: true, via: 'exact' }
+  // ⭐ PLURALS ARE A CLASS, NOT AN ALIAS. Sources publish "Follicles", "Samaras",
+  // "Scales" against our singular terms. Adding one alias per plural is an instance
+  // patch that town #2 never benefits from; depluralize once, here, and only accept
+  // the result when the singular is an EXACT term -- no fuzzy widening.
+  for (const sing of depluralize(n)) {
+    if (byNorm.has(sing)) return { value: byNorm.get(sing), resolved: true, via: 'plural' }
+  }
+
   const alias = TERM_ALIASES[axisId]?.[n]
   if (alias && byNorm.has(normalize(alias))) {
     return { value: byNorm.get(normalize(alias)), resolved: true, via: 'alias' }

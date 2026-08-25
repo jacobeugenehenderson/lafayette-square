@@ -52,6 +52,10 @@ const byName = new Map()
 let nDossier = 0
 for (const f of readdirSync(dDir).filter(f => f.endsWith('.json'))) {
   const d = JSON.parse(readFileSync(path.join(dDir, f), 'utf8'))
+  // ⛔ A minted stub was built TODAY from the current rubric with the current vocabulary.
+  // It cannot be a casualty of a cutover that predates it, and flagging one is a category
+  // error -- the class is specifically an AUTHORED value the old value set could not hold.
+  if (d.provenance?.minted) continue
   nDossier++
   const rec = { file: f, d }
   const id = d.canonicalId || f.replace('.json', '')

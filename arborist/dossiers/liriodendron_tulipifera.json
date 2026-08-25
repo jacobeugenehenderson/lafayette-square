@@ -131,6 +131,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": "follicle",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": null,
