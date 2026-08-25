@@ -12,55 +12,14 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 50,
       "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": 30,
-          "seen": 2
-        },
-        {
-          "value": 20,
-          "seen": 2
-        },
-        {
-          "value": 50,
-          "seen": 1
-        }
-      ]
+      "tol": 0.4
     },
     "chassis.habit": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "5-way tie at 2 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "columnar",
-          "seen": 2
-        },
-        {
-          "value": "rounded",
-          "seen": 2
-        },
-        {
-          "value": "multi-stem",
-          "seen": 1
-        },
-        {
-          "value": "oval",
-          "seen": 1
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1
-        }
-      ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "target": "rounded",
+      "hardness": "hard",
+      "tol": 0
     },
     "crown.texture": {
       "target": "medium",
@@ -82,50 +41,14 @@
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
-      "target": null,
+      "target": "undulate",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "crenate",
-          "seen": 1
-        },
-        {
-          "value": "serrate",
-          "seen": 1
-        },
-        {
-          "value": "undulate",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "bark.texture": {
-      "target": null,
+      "target": "ridged",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "furrowed",
-          "seen": 2
-        },
-        {
-          "value": "ridged",
-          "seen": 2
-        },
-        {
-          "value": "lenticellate",
-          "seen": 1
-        },
-        {
-          "value": "plated",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "leaf.type": {
       "target": "simple",
@@ -172,6 +95,13 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "leaf.margin",
+      "bark.texture"
+    ]
   }
 }

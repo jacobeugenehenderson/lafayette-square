@@ -53,21 +53,9 @@
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
-      "target": null,
+      "target": "fine",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "medium",
-          "seen": 1
-        },
-        {
-          "value": "fine",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -76,26 +64,9 @@
       "sourced": true
     },
     "leaf.shape": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "cordate",
-          "seen": 1
-        },
-        {
-          "value": "ovate",
-          "seen": 1
-        },
-        {
-          "value": "elliptical",
-          "seen": 1
-        }
-      ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "target": "elliptical",
+      "hardness": "hard",
+      "tol": 0
     },
     "leaf.margin": {
       "target": "serrate",
@@ -104,25 +75,9 @@
       "sourced": true
     },
     "bark.texture": {
-      "target": null,
+      "target": "fissured",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "furrowed",
-          "seen": 1
-        },
-        {
-          "value": "ridged",
-          "seen": 1
-        },
-        {
-          "value": "fissured",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "leaf.type": {
       "target": "simple",
@@ -170,6 +125,12 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.shape",
+      "bark.texture"
+    ]
   }
 }

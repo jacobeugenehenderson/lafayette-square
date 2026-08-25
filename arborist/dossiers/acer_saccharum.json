@@ -73,6 +73,31 @@
       "target": 12,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "crown.texture": {
+      "target": "coarse",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.margin": {
+      "target": "lobed",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "samara",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -95,7 +120,15 @@
   },
   "provenance": {
     "fromSpeciesMap": true,
-    "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research."
+    "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.margin",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "have",

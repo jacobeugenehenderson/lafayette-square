@@ -82,6 +82,31 @@
       "target": 7,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.margin": {
+      "target": "doubly-serrate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "nut",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -107,7 +132,15 @@
   },
   "provenance": {
     "fromSpeciesMap": true,
-    "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap."
+    "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.margin",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "have",

@@ -80,6 +80,36 @@
       "hardness": "soft",
       "tol": 0.4,
       "note": "whole compound-leaf length; leaflet ~8cm"
+    },
+    "crown.texture": {
+      "target": "coarse",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.arrangement": {
+      "target": "opposite",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.shape": {
+      "target": "lanceolate",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.margin": {
+      "target": "serrate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "samara",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -103,7 +133,16 @@
   },
   "provenance": {
     "fromSpeciesMap": false,
-    "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound)."
+    "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound).",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.arrangement",
+      "leaf.shape",
+      "leaf.margin",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "have",

@@ -79,6 +79,31 @@
       "target": 12,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.shape": {
+      "target": "elliptical",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "acorn",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -102,7 +127,15 @@
   },
   "provenance": {
     "fromSpeciesMap": false,
-    "notes": "New dossier. Seeded leaf.silhouette from the in-hand lobed pack (quercus_alba was the species-map oak proxy, barkMorph scaly; pin oak bark refined to smooth per reference)."
+    "notes": "New dossier. Seeded leaf.silhouette from the in-hand lobed pack (quercus_alba was the species-map oak proxy, barkMorph scaly; pin oak bark refined to smooth per reference).",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.shape",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "have",

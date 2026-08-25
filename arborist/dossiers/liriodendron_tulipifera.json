@@ -53,21 +53,9 @@
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
-      "target": null,
+      "target": "medium",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "coarse",
-          "seen": 1
-        },
-        {
-          "value": "medium",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -95,29 +83,9 @@
       ]
     },
     "bark.texture": {
-      "target": null,
+      "target": "fissured",
       "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "furrowed",
-          "seen": 1
-        },
-        {
-          "value": "ridged",
-          "seen": 1
-        },
-        {
-          "value": "smooth",
-          "seen": 1
-        },
-        {
-          "value": "fissured",
-          "seen": 1
-        }
-      ]
+      "tol": 1
     },
     "leaf.type": {
       "target": "simple",
@@ -165,6 +133,11 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "bark.texture"
+    ]
   }
 }

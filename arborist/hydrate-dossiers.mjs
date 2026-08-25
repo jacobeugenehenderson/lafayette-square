@@ -20,7 +20,12 @@ import { resolveTerm, resolveSpecies, aliasesFor, normalize, TERM_REDIRECTS, NOT
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const args = process.argv.slice(2)
 const WRITE = args.includes('--write')
-const IN = args[args.indexOf('--in') + 1] || 'scratch/dossier-raw-observations.jsonl'
+// ⚠️ `indexOf` returns -1 when the flag is absent and -1 + 1 is 0, so the old form read
+// args[0] -- which on a real run is `--write`. Dry runs pass no positional argument, so
+// this looked correct every single time until the one invocation that mattered.
+const inFlag = args.indexOf('--in')
+const IN = (inFlag >= 0 ? args[inFlag + 1] : null) || 'scratch/dossier-raw-observations.jsonl'
+if (inFlag >= 0 && !IN) { console.error('⛔ --in given with no path'); process.exit(1) }
 const rd = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
 // ── source field → our axis ─────────────────────────────────────────────────

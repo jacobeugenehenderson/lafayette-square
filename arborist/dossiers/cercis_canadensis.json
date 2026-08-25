@@ -81,6 +81,31 @@
       "target": 10,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "leaf.margin": {
+      "target": "entire",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "legume",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "crown.texture": {
+      "target": "coarse",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -106,7 +131,15 @@
   },
   "provenance": {
     "fromSpeciesMap": false,
-    "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean)."
+    "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean).",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "leaf.margin",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type",
+      "crown.texture"
+    ]
   },
   "partAvailability": {
     "chassis": "stretch",

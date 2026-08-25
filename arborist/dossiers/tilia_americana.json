@@ -12,59 +12,14 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 100,
       "hardness": "soft",
-      "tol": 0.4,
-      "sourced": true,
-      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": 60,
-          "seen": 2
-        },
-        {
-          "value": 30,
-          "seen": 2
-        },
-        {
-          "value": 70,
-          "seen": 1
-        },
-        {
-          "value": 100,
-          "seen": 1
-        }
-      ]
+      "tol": 0.4
     },
     "chassis.habit": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "unresolved": "5-way tie at 2 vote(s) — no plurality, so no target",
-      "candidates": [
-        {
-          "value": "conical",
-          "seen": 2
-        },
-        {
-          "value": "columnar",
-          "seen": 2
-        },
-        {
-          "value": "oval",
-          "seen": 1
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1
-        },
-        {
-          "value": "rounded",
-          "seen": 1
-        }
-      ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "target": "columnar",
+      "hardness": "hard",
+      "tol": 0
     },
     "crown.texture": {
       "target": "medium",
@@ -163,6 +118,11 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit"
+    ]
   }
 }

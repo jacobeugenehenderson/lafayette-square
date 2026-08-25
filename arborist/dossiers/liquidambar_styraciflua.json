@@ -74,6 +74,36 @@
       "target": 15,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.shape": {
+      "target": "deltoid",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.margin": {
+      "target": "lobed",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "capsule",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -96,7 +126,16 @@
   },
   "provenance": {
     "fromSpeciesMap": false,
-    "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match."
+    "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.shape",
+      "leaf.margin",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "have",

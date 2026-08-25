@@ -80,6 +80,31 @@
       "target": 7,
       "hardness": "soft",
       "tol": 0.4
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.margin": {
+      "target": "serrate",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "hard",
+      "tol": 0
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1
+    },
+    "overlay.fruit_type": {
+      "target": "pome",
+      "hardness": "soft",
+      "tol": 1
     }
   },
   "recipe": {
@@ -102,7 +127,15 @@
   },
   "provenance": {
     "fromSpeciesMap": false,
-    "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud."
+    "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "crown.texture",
+      "leaf.margin",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
+    ]
   },
   "partAvailability": {
     "chassis": "stretch",
