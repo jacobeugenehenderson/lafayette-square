@@ -19,17 +19,23 @@
       "contested": true,
       "candidates": [
         {
-          "value": 50,
+          "value": 24.4,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         },
         {
-          "value": 70,
+          "value": 21.3,
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: height_high"
           ]
         }
       ],
@@ -47,6 +53,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -54,6 +63,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],
@@ -84,6 +96,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -91,6 +106,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         }
       ],
@@ -128,6 +146,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape",
+            "selectree: leaflet_shape"
           ]
         },
         {
@@ -135,6 +157,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -142,6 +167,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         }
       ],

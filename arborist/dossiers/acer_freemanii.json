@@ -19,24 +19,23 @@
       "contested": true,
       "candidates": [
         {
-          "value": 45,
+          "value": 21.3,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         },
         {
-          "value": 35,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 60,
+          "value": 18.3,
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: height_high"
           ]
         }
       ],
@@ -67,6 +66,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -74,6 +76,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         }
       ],
@@ -115,6 +120,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -122,6 +130,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         },
         {
@@ -129,6 +140,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],

@@ -12,35 +12,10 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 9.1,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 25,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 15,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 30,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "sourced": true
     },
     "chassis.density": {
       "target": "dense",
@@ -74,6 +49,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
           ]
         },
         {
@@ -81,6 +60,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],
@@ -124,6 +106,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment",
+            "selectree: bark_texture"
           ]
         },
         {
@@ -132,6 +118,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment",
+            "selectree: bark_texture"
           ]
         },
         {
@@ -139,6 +129,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -146,6 +139,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         }
       ],
@@ -181,7 +177,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: bark.texture. See .candidates; an author must choose.",
     "sources disagree on: chassis.habit — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",

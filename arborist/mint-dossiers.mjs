@@ -21,6 +21,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
+import { sizeMetres, FEET_AXES } from './units.mjs'
 import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const WRITE = process.argv.includes('--write')
@@ -122,16 +123,20 @@ for (const o of obs) {
 
   let val = null
   if (axisKind.get(axis) === 'scalar') {
-    const n = parseFloat(String(o.value).replace(/[^\d.-]/g, ''))
-    val = Number.isFinite(n) ? n : null
+    // ⛔ mint used a raw parseFloat here while hydrate converted feet→metres, so the same
+    // species got 24.4 from one writer and 80 from the other depending on run order.
+    if (FEET_AXES.has(axis)) { val = sizeMetres(o.value) }
+    else { const n = parseFloat(String(o.value).replace(/[^\d.-]/g, '')); val = Number.isFinite(n) ? n : null }
   } else {
     val = forced ?? (resolveTerm(axis, o.value).resolved ? resolveTerm(axis, o.value).value : null)
   }
   if (val == null) continue
   if (!rec.cells.has(axis)) rec.cells.set(axis, new Map())
   const tally = rec.cells.get(axis)
-  if (!tally.has(val)) tally.set(val, new Set())
-  tally.get(val).add(o.source)
+  // Same shape as hydrate — the source AND the field it answered. See the note there:
+  // sources often are not disagreeing, they are answering different questions.
+  if (!tally.has(val)) tally.set(val, new Map())
+  tally.get(val).set(o.source, o.field)
 }
 
 const minted = []
@@ -212,7 +217,7 @@ for (const [species, rec] of bySpecies) {
   for (const [axis, tally] of rec.cells) {
       // Candidates keep only the sources that verified; a value claimed ONLY by a rejected
     // source disappears with it.
-    const ranked = [...tally].map(([v, srcs]) => [v, new Set([...srcs].filter(x => !rejected.has(x)))])
+    const ranked = [...tally].map(([v, srcs]) => [v, new Map([...srcs].filter(([x]) => !rejected.has(x)))])
       .filter(([, srcs]) => srcs.size)
       .sort((a, b) => b[1].size - a[1].size)
     if (!ranked.length) continue
@@ -238,7 +243,10 @@ for (const [species, rec] of bySpecies) {
     // defect as disagreeing about its value, and it hid behind run order.
     if (ranked.length > 1) {
       required[axis].contested = true
-      required[axis].candidates = ranked.map(([value, srcs]) => ({ value, seen: srcs.size, sources: [...srcs].sort() }))
+      required[axis].candidates = ranked.map(([value, srcs]) => ({
+        value, seen: srcs.size, sources: [...srcs.keys()].sort(),
+        askedAs: [...srcs].map(([src, field]) => `${src}: ${field}`).sort(),
+      }))
       required[axis].settle = tied
         ? 'sources tie - no target. Pick one in the Salon; that pick is authoring.'
         : 'plurality shown as target, but sources disagree. Confirm or pick another.'

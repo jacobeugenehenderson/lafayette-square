@@ -133,6 +133,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape",
+            "selectree: leaflet_shape"
           ]
         },
         {
@@ -140,6 +144,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         },
         {
@@ -147,6 +154,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         }
       ],

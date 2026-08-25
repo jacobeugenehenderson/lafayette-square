@@ -12,42 +12,36 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 15.2,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 40,
-          "seen": 1,
+          "value": 15.2,
+          "seen": 2,
           "sources": [
-            "ncsu"
+            "ncsu",
+            "usda"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions",
+            "usda: Height, Mature (feet)"
           ]
         },
         {
-          "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 60,
+          "value": 18.3,
           "seen": 1,
           "sources": [
             "selectree"
-          ]
-        },
-        {
-          "value": 50,
-          "seen": 1,
-          "sources": [
-            "usda"
+          ],
+          "askedAs": [
+            "selectree: height_high"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": "rounded",
@@ -68,6 +62,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Texture"
           ]
         },
         {
@@ -75,6 +72,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Texture"
           ]
         }
       ],
@@ -105,6 +105,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin",
+            "selectree: leaflet_shape"
           ]
         },
         {
@@ -112,6 +116,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         }
       ],
@@ -129,6 +136,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -136,6 +146,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],
@@ -177,8 +190,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, crown.texture, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: leaf.margin — see .alternatives",
+    "⛔ NO TARGET — sources tied on: crown.texture, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size, leaf.margin — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],

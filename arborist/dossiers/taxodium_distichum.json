@@ -132,6 +132,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Arrangement",
+            "selectree: leaf_arrangement"
           ]
         },
         {
@@ -139,6 +143,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Arrangement"
           ]
         }
       ],
@@ -158,6 +165,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape",
+            "selectree: leaflet_shape"
           ]
         },
         {
@@ -165,6 +176,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         }
       ],
@@ -194,6 +208,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -201,6 +218,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
           ]
         }
       ],

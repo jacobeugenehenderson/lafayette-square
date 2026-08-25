@@ -158,6 +158,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -165,6 +168,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
           ]
         }
       ],

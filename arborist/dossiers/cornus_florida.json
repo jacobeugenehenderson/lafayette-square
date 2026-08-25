@@ -12,25 +12,32 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": 30,
+      "target": 9.1,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 30,
+          "value": 9.1,
           "seen": 2,
           "sources": [
             "selectree",
             "usda"
+          ],
+          "askedAs": [
+            "selectree: height_high",
+            "usda: Height, Mature (feet)"
           ]
         },
         {
-          "value": 15,
+          "value": 7.6,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         }
       ],
@@ -49,6 +56,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -56,6 +66,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -63,6 +76,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -70,6 +86,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -77,6 +96,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         }
       ],
@@ -101,6 +123,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type",
+            "selectree: fruit_type"
           ]
         },
         {
@@ -108,6 +134,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type"
           ]
         }
       ],
@@ -132,6 +161,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -139,6 +171,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: leaflet_shape"
           ]
         }
       ],
@@ -162,6 +197,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -169,6 +207,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],

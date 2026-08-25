@@ -152,6 +152,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type"
           ]
         },
         {
@@ -159,6 +162,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: fruit_type"
           ]
         }
       ],

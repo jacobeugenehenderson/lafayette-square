@@ -12,35 +12,36 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 24.4,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 70,
-          "seen": 1,
+          "value": 24.4,
+          "seen": 2,
           "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 80,
-          "seen": 1,
-          "sources": [
+            "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions",
+            "selectree: height_high"
           ]
         },
         {
-          "value": 100,
+          "value": 30.5,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.density": {
       "target": null,
@@ -54,6 +55,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -61,6 +65,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
           ]
         }
       ],
@@ -80,6 +87,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
           ]
         },
         {
@@ -87,6 +98,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],
@@ -104,6 +118,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Texture"
           ]
         },
         {
@@ -111,6 +128,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Texture"
           ]
         }
       ],
@@ -128,6 +148,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type"
           ]
         },
         {
@@ -135,6 +158,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: fruit_type"
           ]
         }
       ],
@@ -159,6 +185,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -166,6 +195,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -173,6 +205,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: leaflet_shape"
           ]
         }
       ],
@@ -196,6 +231,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -203,6 +241,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],
@@ -244,8 +285,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.density, crown.texture, overlay.fruit_type, leaf.shape, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.habit — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.density, crown.texture, overlay.fruit_type, leaf.shape, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size, chassis.habit — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"

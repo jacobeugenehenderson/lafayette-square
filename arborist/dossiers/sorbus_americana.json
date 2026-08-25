@@ -19,24 +19,23 @@
       "contested": true,
       "candidates": [
         {
-          "value": 15,
+          "value": 10.7,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         },
         {
-          "value": 8,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 40,
+          "value": 12.2,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
@@ -54,6 +53,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -61,6 +63,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
           ]
         }
       ],
@@ -79,6 +84,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -86,6 +94,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],

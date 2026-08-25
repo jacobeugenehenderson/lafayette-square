@@ -15,6 +15,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
+import { sizeMetres, FEET_AXES } from './units.mjs'
 import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
@@ -105,6 +106,9 @@ const axisKind = new Map(rubric.axes.map(a => [a.id, a.kind]))
 // mint-dossiers.mjs already had this right -- soft, with `owedHardness` naming the
 // promotion as the authoring step. Two scripts writing the same dossiers under opposite
 // rules is its own defect; hydrate now follows mint.
+// Source scalars → our units. ⛔ One home, shared with mint — see arborist/units.mjs
+// for why (two writers had two answers and only the writers-agree check noticed).
+
 const spec = (axis, target) => {
   const scalar = axisKind.get(axis) === 'scalar'
   const cell = { target, hardness: 'soft', tol: scalar ? 0.4 : 1, sourced: true }
@@ -184,8 +188,14 @@ for (const o of obs) {
 
   let target = null
   if (axisKind.get(axis) === 'scalar') {
-    const n = parseFloat(String(o.value).replace(/[^\d.-]/g, ''))
-    target = Number.isFinite(n) ? n : null
+    if (FEET_AXES.has(axis)) {
+      const m = sizeMetres(o.value)
+      if (m == null) { const k = `${axis} :: ${o.value}  (not a height row, or unparseable)`; discarded.set(k, (discarded.get(k) || 0) + 1); continue }
+      target = m
+    } else {
+      const n = parseFloat(String(o.value).replace(/[^\d.-]/g, ''))
+      target = Number.isFinite(n) ? n : null
+    }
   } else {
     if (forced != null) { target = forced }
     else { const r = resolveTerm(axis, o.value); target = r.resolved ? r.value : null }
@@ -231,8 +241,15 @@ for (const o of obs) {
   const perFile = tally.get(file)
   if (!perFile.has(axis)) perFile.set(axis, new Map())
   const votes = perFile.get(axis)
-  if (!votes.has(target)) votes.set(target, new Set())
-  votes.get(target).add(o.source)
+  // ⭐ RECORD THE FIELD, NOT JUST THE SOURCE. Sources often are not disagreeing — they are
+  // answering different questions. USDA's `Height, Mature (feet)` is the MAXIMUM a species
+  // attains over a full lifespan in the wild; NCSU and SelecTree publish TYPICAL LANDSCAPE
+  // size. Eastern white pine: 45.7 m against 24.4 m, and both are correct. Measured across
+  // the corpus, USDA reads higher on 11 of 17 species where they overlap.
+  // ⛔ This is NOT source-priority — that rule is dead. The operator settles it; our job is
+  // to make sure they can see WHICH QUESTION each number answered before they choose.
+  if (!votes.has(target)) votes.set(target, new Map())
+  votes.get(target).set(o.source, o.field)
   ;(perAxis.get(axis) || perAxis.set(axis, new Set()).get(axis)).add(sp)
 }
 
@@ -288,7 +305,10 @@ if (skippedAuthored) console.log(`\nskipped ${skippedAuthored} observation(s) on
 for (const [file, perAxis2] of tally) {
   for (const [axis, votes] of perAxis2) {
     const ranked = [...votes].sort((a, b) => b[1].size - a[1].size)
-    const candidates = ranked.map(([value, srcs]) => ({ value, seen: srcs.size, sources: [...srcs].sort() }))
+    const candidates = ranked.map(([value, srcs]) => ({
+      value, seen: srcs.size, sources: [...srcs.keys()].sort(),
+      askedAs: [...srcs].map(([src, field]) => `${src}: ${field}`).sort(),
+    }))
     const tied = ranked.length > 1 && ranked[0][1].size === ranked[1][1].size
     const contested = ranked.length > 1
 

@@ -19,31 +19,33 @@
       "contested": true,
       "candidates": [
         {
-          "value": 40,
+          "value": 22.9,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         },
         {
-          "value": 25,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 60,
+          "value": 18.3,
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: height_high"
           ]
         },
         {
-          "value": 100,
+          "value": 30.5,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
@@ -69,6 +71,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
           ]
         },
         {
@@ -76,6 +82,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],
@@ -99,6 +108,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type"
           ]
         },
         {
@@ -106,6 +118,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: fruit_type"
           ]
         }
       ],
@@ -131,6 +146,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape",
+            "selectree: leaflet_shape"
           ]
         },
         {
@@ -138,6 +157,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         }
       ],
@@ -155,6 +177,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         },
         {
@@ -162,6 +187,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         }
       ],
@@ -180,6 +208,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment",
+            "selectree: bark_texture"
           ]
         },
         {
@@ -187,6 +219,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -194,6 +229,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],

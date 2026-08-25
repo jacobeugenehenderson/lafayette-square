@@ -12,35 +12,36 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 12.2,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 30,
-          "seen": 1,
+          "value": 12.2,
+          "seen": 2,
           "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 40,
-          "seen": 1,
-          "sources": [
+            "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions",
+            "selectree: height_high"
           ]
         },
         {
-          "value": 45,
+          "value": 13.7,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.density": {
       "target": null,
@@ -54,6 +55,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -61,6 +65,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Porosity Summer"
           ]
         }
       ],
@@ -86,6 +93,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
           ]
         },
         {
@@ -94,6 +105,10 @@
           "sources": [
             "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form",
+            "selectree: tree_shape"
           ]
         },
         {
@@ -101,6 +116,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         }
       ],
@@ -118,6 +136,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Texture"
           ]
         },
         {
@@ -125,6 +146,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Texture"
           ]
         }
       ],
@@ -155,6 +179,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -162,6 +189,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -169,6 +199,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: leaflet_shape"
           ]
         }
       ],
@@ -186,6 +219,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         },
         {
@@ -193,6 +229,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         },
         {
@@ -200,6 +239,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin"
           ]
         }
       ],
@@ -217,6 +259,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -224,6 +269,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -231,6 +279,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -238,6 +289,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],
@@ -279,7 +333,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.density, chassis.habit, crown.texture, leaf.shape, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.density, chassis.habit, crown.texture, leaf.shape, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"

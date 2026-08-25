@@ -175,13 +175,27 @@ function ContestedAxes({ dossier, speciesId }) {
               ? <span style={{ color: '#d08a3a' }}> · tied, no value chosen</span>
               : <span style={{ color: '#8a93a0' }}> · showing {String(c.target)}</span>}
           </div>
+          {(() => {
+            // ⭐ Sources often are not disagreeing — they are answering different questions.
+            // USDA's `Height, Mature` is the maximum a species reaches in the wild; NCSU and
+            // SelecTree publish typical landscape size. Say so where the fields differ, so the
+            // operator is choosing between QUESTIONS rather than between numbers.
+            const fields = new Set((c.candidates || []).flatMap(x => (x.askedAs || []).map(a => a.split(': ')[1])))
+            return fields.size > 1 ? (
+              <div style={{ fontSize: 9, color: '#8a93a0', marginTop: 1 }}>
+                sources answered different fields: {[...fields].join(' · ')} — hover a value
+              </div>
+            ) : null
+          })()}
           {done[axis] ? (
             <div style={{ fontSize: 10, color: '#7fb069', marginTop: 2 }}>✅ settled: {done[axis]}</div>
           ) : (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
               {(c.candidates || []).map((cand, i) => (
                 <button key={i} disabled={busy === axis} onClick={() => settle(axis, cand.value)}
-                  title={`claimed by: ${(cand.sources || []).join(', ')}`}
+                  title={(cand.askedAs || []).length
+                    ? `asked as —\n${cand.askedAs.join('\n')}`
+                    : `claimed by: ${(cand.sources || []).join(', ')}`}
                   style={{
                     fontSize: 10, padding: '2px 6px', borderRadius: 3, cursor: 'pointer',
                     background: String(cand.value) === String(c.target) ? 'rgba(200,168,58,0.18)' : 'rgba(255,255,255,0.05)',

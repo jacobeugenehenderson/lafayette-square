@@ -12,36 +12,44 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": 50,
+      "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 50,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
-        {
-          "value": 35,
+          "value": 18.3,
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions"
           ]
         },
         {
-          "value": 100,
+          "value": 15.2,
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ],
+          "askedAs": [
+            "selectree: height_high"
+          ]
+        },
+        {
+          "value": 30.5,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.orientation": {
       "target": "erect",
@@ -62,6 +70,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -69,6 +80,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -76,6 +90,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         },
         {
@@ -83,6 +100,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         }
       ],
@@ -100,6 +120,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Texture"
           ]
         },
         {
@@ -107,6 +130,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Texture"
           ]
         }
       ],
@@ -124,6 +150,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Fruit Type"
           ]
         },
         {
@@ -131,6 +160,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: fruit_type"
           ]
         }
       ],
@@ -155,6 +187,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -162,6 +197,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Shape"
           ]
         },
         {
@@ -169,6 +207,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: leaflet_shape"
           ]
         }
       ],
@@ -192,6 +233,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -199,6 +243,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -206,6 +253,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],
@@ -253,8 +303,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.habit, crown.texture, overlay.fruit_type, leaf.shape, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, crown.texture, overlay.fruit_type, leaf.shape, bark.texture. See .candidates; an author must choose.",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"

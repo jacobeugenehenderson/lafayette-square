@@ -12,42 +12,36 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 18.3,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 40,
-          "seen": 1,
+          "value": 18.3,
+          "seen": 2,
           "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 20,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 60,
-          "seen": 1,
-          "sources": [
+            "ncsu",
             "selectree"
+          ],
+          "askedAs": [
+            "ncsu: Dimensions",
+            "selectree: height_high"
           ]
         },
         {
-          "value": 120,
+          "value": 36.6,
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Height, Mature (feet)"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": null,
@@ -62,6 +56,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -69,6 +66,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -76,6 +76,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Habit/Form"
           ]
         },
         {
@@ -83,6 +86,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: tree_shape"
           ]
         },
         {
@@ -90,6 +96,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Shape and Orientation"
           ]
         }
       ],
@@ -119,6 +128,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Texture"
           ]
         },
         {
@@ -126,6 +138,9 @@
           "seen": 1,
           "sources": [
             "usda"
+          ],
+          "askedAs": [
+            "usda: Foliage Texture"
           ]
         }
       ],
@@ -143,6 +158,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -150,6 +168,9 @@
           "seen": 1,
           "sources": [
             "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Surface/Attachment"
           ]
         },
         {
@@ -157,6 +178,9 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ],
+          "askedAs": [
+            "selectree: bark_texture"
           ]
         }
       ],
@@ -198,7 +222,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, crown.texture, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.habit, crown.texture, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],
