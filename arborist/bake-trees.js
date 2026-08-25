@@ -170,6 +170,17 @@ function parseArgs() {
   return args
 }
 
+// ⛔ A numeric flag with no value parses as `true`, and Number(true) is 1 — a
+// budget of one triangle that bakes an all-impostor slab and says nothing. Any
+// non-finite/non-positive value is a LOUD failure, never a quiet default.
+function numFlag(name, raw) {
+  const v = typeof raw === 'string' ? Number(raw) : NaN
+  if (!Number.isFinite(v) || v <= 0) {
+    throw new Error(`[bake-trees] --${name} needs a positive number, got ${JSON.stringify(raw)}`)
+  }
+  return v
+}
+
 function hash01(seed, salt = 0) {
   let h = (seed | 0) ^ (salt * 0x9e3779b1)
   h = Math.imul(h ^ (h >>> 16), 2246822507)
@@ -1018,6 +1029,13 @@ if (isDirect) {
     styles: (args.styles || 'realistic').split(',').map(s => s.trim()).filter(Boolean),
     lod: args.lod,
     heroLook: args.heroLook,
+    // ⭐ The geometry budget + its distance ceiling, reachable from the CLI. Both
+    // default to the function's own defaults when the flag is absent, so a bake
+    // with no flags is byte-identical to one before they existed.
+    ...(args['hero-triangle-budget'] != null
+      ? { heroTriangleBudget: numFlag('hero-triangle-budget', args['hero-triangle-budget']) } : {}),
+    ...(args['hero-band-max-m'] != null
+      ? { heroBandMaxM: numFlag('hero-band-max-m', args['hero-band-max-m']) } : {}),
     placements: typeof args.placements === 'string'
       ? args.placements.split(',').map(s => s.trim()).filter(Boolean)
       : sceneInputs.placements,

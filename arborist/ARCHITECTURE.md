@@ -50,7 +50,7 @@ src/components/InstancedTrees.jsx
 
 **Foundational stages stay untouched across the v1.5 arc.** `publish-glb.js`, `bake-look.js`, `bake-trees.js`, `atlas-pack.js`, `atlas-survey.js`, and the runtime `treeAtlasMaterial.js` did not fork in any phase — generator output adapts to what they expect. This is the no-parallel-pipeline rule (`feedback_no_parallel_pipeline_for_scenes`) applied to a helper: one publishing channel, one runtime consumer. **Brief 6 (Spindle, 2026-05-22) + Brief 6.2 (Adze, 2026-05-23) + Brief 6.3 (Gnomon, 2026-05-23) extend `publish-glb.js`** with tree-aware decimation: leaf-card reduction (Lever 3, importable from `decimate-tree.mjs`), connected-mesh bark decimation (Lever 5, ditto), connected-mesh leaf decimation (Lever 6, ditto), adaptive simplify-to-bracket (Lever 4 inside `emitLod`). The pipeline shape and the no-parallel rule are preserved — the publish step gets richer, but the publishing channel stays singular. **Topology discriminator across the leaf levers:** all three leaf-touching levers gate on `extras.atlasKind === 'leaf'`, then split on `max-vert-use`: Lever 3 owns card-based (`=== 1`, e.g. Robinia's 4-vert quads), Lever 6 owns connected-mesh (`> 1`, e.g. Linden's sculpted leaves). Disjoint by construction — a leaf prim is never touched by both. Lever 5 (bark) and Lever 6 (leaf) gate on disjoint `atlasKind`, so their order is irrelevant. **Decimation-arc floor finding (Gnomon, Brief 6.3):** with Levers 5+6 both firing, Linden's lod2 still misses bracket — but the floor-bearer is now provably the **bark** prim, whose attribute-aware (UV-locked) simplify floor is ~57.7K tris regardless of error budget; the post-Lever-6 leaf prim collapses freely to ~100 tris under emitLod and is no longer a floor-bearer at any LoD. Clearing lod2 on Linden-class connected-mesh chassis is a Lever-5/Lever-4/bracket problem, not a leaf problem — see `scratch/brief-6.3-leaf-decimation-survey-gnomon.md`. **`arborist/atlas-kind-classifier.js`** is the single source of truth for LEAF/WOOD/AMBIGUOUS keyword classification, imported by both `publish-glb.js` (stamps `extras.atlasKind` on raw vendor variantDocs so the decimation gates fire) and `survey-deleaf.js` (chassis emission). Per [[feedback_classifier_keyword_cross_check]] — one keyword set, two consumers.
 
-**Botanical mature height ships through `publish-glb.js#normalizeScale` (2026-06-25, `393c3646`/`bac11a43`).** `normalizeScale` now targets each species' **dossier mature height** (`required["chassis.size"].target`) instead of a per-category `TARGET_HEIGHT` — so trees render relatively-correct in LS (a sugar maple ~21m towers over an ~8m dogwood), matching what the Salon preview shows. For roster species without a full dossier yet, `arborist/mature-heights.json` is an explicit **stopgap** (only `chassis.size` for `oak_bur`/`oak_white`/`blackgum`/`linden`) until real dossiers land (`project_dossier_annotation_is_first_class_ip`). ⚠️ **Flat-key gotcha:** dossier `required` uses rubric-axis-id keys (`required["chassis.size"]`), NOT nested (`required.chassis.size`) — the nested path silently no-op'd both the preview scale and the bake until corrected. A slab baked before this lands shows the old 12m-category trees → fix is a clean full `/grove/bake`.
+**Botanical mature height ships through `publish-glb.js#normalizeScale` (2026-06-25, `393c3646`/`bac11a43`).** `normalizeScale` now targets each species' **dossier mature height** (`required["chassis.size"].target`) instead of a per-category `TARGET_HEIGHT` — so trees render relatively-correct in LS (a sugar maple ~21m towers over an ~8m dogwood), matching what the Salon preview shows. `arborist/mature-heights.json` is an explicit **stopgap** for species whose dossier carries no usable height. ⚠️ **"Until real dossiers land" is the WRONG TEST, and it now reads as false comfort.** `oak_bur`, `blackgum` and `linden_american` all HAVE dossiers as of 2026-08-25 — and all three carry `chassis.size: null`, because the sources disagreed and the cell is **contested awaiting the operator** (§The species pipeline §8). Publishing the disagreement made these heights *less* determined, not more. **The stopgap is still load-bearing; retiring a row because a dossier exists would silently break scale for that species.** The real condition is a **settled** `chassis.size`. ▶ check before retiring any row: `node -e "const d=require('./arborist/dossiers/<id>.json');console.log(d.required['chassis.size'])"` (`project_dossier_annotation_is_first_class_ip`). ⚠️ **Flat-key gotcha:** dossier `required` uses rubric-axis-id keys (`required["chassis.size"]`), NOT nested (`required.chassis.size`) — the nested path silently no-op'd both the preview scale and the bake until corrected. A slab baked before this lands shows the old 12m-category trees → fix is a clean full `/grove/bake`.
 
 **⭐ Weight vs. canopy-density are SEPARATE owners — do not conflate (2026-06-24).** The tree-**weight** win is the **bark smooth-weld** (`smoothWeldBark`, decimate-tree.mjs — recomputes smooth normals + welds the flat-shaded vendor soup so `simplify` can collapse bark by *topology*; **independent of the per-LOD `error`**). **Canopy density** is owned by each LOD's `error` in `publish-glb.js#LODS` (looser error → the bracket walk collapses more leaf CARDS). These are orthogonal: you can have light bark AND a full canopy. **`LODS` is the per-LOD policy, and lod1 is the HERO LOD** — both the Grove gallery (`serve.js#/grove` renders lod0/lod1) and the LS hero view render it, so **lod1 must keep a full canopy** (`error` 0.002). **lod2 is the far/overhead browse LOD** where leaf sparsity reads fine + DoF covers it, so it stays loose (`error` 0.05) for weight. ⛔ Regression bankrolled: `6c3ff5e5` loosened lod1 `error` 0.002→0.02 to shed weight via leaf-collapse — but that thinned the hero canopy ~90% (birch lod1 1,620 of 15,659 cards), surfacing as "Grove/hero trees are sparse specks" while the live Salon (no `publish-glb` decimation) looked correct. Reverted in `4f9c9a77`. The right place to shed lod1 weight is *not* the leaf `error` — and as of 2026-06-25 it's *not* the per-context cull arc either (see the tree-render reality below).
 
@@ -403,6 +403,76 @@ Per `project_authoring_is_live_production_is_static`:
 The boundary lives at the **`bake-look.js` + `bake-trees.js` invocation** — every authored channel travels through into the per-Look artifact (`trees-atlas.json` carries the `barkBySpecies` block, manifest carries the `bark` spec, etc.). Anything authored-but-not-baked is silently invisible to deployed users (`project_slab_carries_full_authored_product`).
 
 ---
+
+## The species pipeline — census name → placeable tree, end to end (2026-08-25)
+
+**Every stage either RESOLVES or REFUSES. There is exactly one fallback left in the chain and it is named below.** Written by reading the code, not from memory — the last procedure written from memory invented its own field names.
+
+| # | Stage | Code | Refuses by |
+|---|---|---|---|
+| 1 | **Roster, demand-ordered** | `roster-coverage.js` (`CENSUS_WELLS`) | — |
+| 2 | **Batch selection** | `scratch/dossier-harvest.mjs` `ROWS` | exclusions, recorded in-source |
+| 3 | **Taxon determination** | `ROWS[].taxon` + `taxonBasis` | `taxonAmbiguous` |
+| 4 | **Harvest** | `dossier-harvest.mjs` | per-source taxon guards |
+| 5 | **Vocabulary** | `vocabulary.mjs` | unresolved · discarded · redirected |
+| 6 | **Mint identity** | `mint-dossiers.mjs` | two taxon layers + cultivar stop |
+| 7 | **Hydrate traits** | `hydrate-dossiers.mjs` | per-source taxon gate · `sourced` |
+| 8 | **Settle** | `POST /salon/:species/settle` | the operator |
+
+### 1–3. Roster → batch → taxon
+Species are worked **in placement order** — the count is the whole argument for which twenty come next. A roster name is **not** a taxon, and turning one into the other is a **human determination recorded in `taxonBasis`**, never inferred silently. A name that is a genus, a cultivar *group*, or a census artifact is marked `taxonAmbiguous` or excluded with its reason written at the exclusion.
+
+### 4. Harvest — the guards are per source, and they differ
+- **USDA** — queried by symbol; the returned `ScientificName` is checked genus+epithet against `row.taxon`. On mismatch it emits `_taxon_mismatch` and **takes nothing**. ▶ two symbols were wrong on first use (an aster for a lilac, a rush for a juniper); both skipped clean.
+- **SelecTree** — queried by name, then: exact non-cultivar match → **any non-cultivar record** → first result.
+  > ⛔⛔ **THE ONE REMAINING FALLBACK IN THE PIPELINE IS THAT MIDDLE STEP.** "Any non-cultivar record" can be *a different species*: a `Sorbus americana` query returned **`Sorbus decora`**, and its traits were emitted behind an `unverified` flag. That is a fallback in the Layer 0 sense — no exact match became a plausible-looking wrong answer — and it produced the only bad data in batch 2. It is contained downstream (§7) but **containment is not the fix**; USDA's skip-on-mismatch is the shape SelecTree should take.
+- **NCSU** — slug-addressed record; no taxon assertion to check, so no guard is possible here.
+- ⛔ **Oregon State is never fetched** (robots: ClaudeBot `Disallow: /`). Morton/MOBOT: schema shape only, never content. **Nothing is mirrored** — we store URLs and credit.
+
+### 5. Vocabulary — one resolver, four outcomes
+`resolveTerm(axis, raw)` tries, in order: **exact → plural → alias → contains → alias-contains**, else **unresolved** (`vocabulary.mjs:321-348`). Beyond it:
+- **`TERM_REDIRECTS`** — the *value* decides the axis, because sources ship one multi-valued field mixing concepts (USDA `Growth Form` carries silhouette, orientation, spread and trunk count at once).
+- **`NOT_A_TRAIT`** — carries no morphology; **discarded with a counted reason, never silently**. A large discard count is how a *mismapped field* surfaces.
+- ⛔ **A term unmappable ON PURPOSE belongs in `NOT_A_TRAIT`, not in the unresolved list.** Listing a settled decision as owed alias work is how the bad alias gets re-added by someone without the context.
+- ⚠️ **An alias is only half a mapping.** Two axes read 0/20 with correct aliases because no field in `FIELD_MAP` fed them. `FIELD_MAP` is keyed on the field names sources **actually emit**.
+
+### 6. Mint — identity, and only identity
+Mints the **sourced skeleton** for a species nobody has authored. Judgment fields (`identityNotes`, `forces`, `leaf.face`, the recipe) mint **null** and are named in `owed`; the species reads **red** until a human authors it. Identity axes mint **soft** with `owedHardness` — a database plurality is not a commitment about what a tree *is*.
+
+Three refusals, and they answer three different questions:
+1. **Binomial** — `verifyTaxon(queried, returned)` → `exact` · `hybrid-mark` · `authority-only` · `mismatch`. ⛔ Verdict, never a boolean: a strict match would reject legitimate hybrids to catch cultivars.
+2. **Cultivar** — `returnedRank` is *advisory in the library and decisive here*, because mint takes **morphology** from the record. `Acer rubrum 'Armstrong'` is nomenclaturally exact and **columnar where the species is not**.
+3. **Census qualifier** — ⛔ `verifyTaxon` **cannot** answer this: it compares two binomials, and `Elm, Hybrid` is a roster name. `verifyTaxon('Ulmus','Ulmus americana')` returns `exact` and is *right to* — the wrongness lives in the census name it never sees.
+
+⛔ **REJECT SOURCES, NOT SPECIES.** A source that answered with the wrong plant loses **its own** observations; identity is taken from a source that verified; the species is refused only when **nothing** verifies. Refusing the whole species discarded 68 good observations to avoid 22 bad ones.
+⛔ **A binomial is genus + epithet.** The filename **is** the identity — `Sorbus americana Marshall` once minted `sorbus_americana_marshall.json`.
+
+### 7. Hydrate — and the line that everything turns on
+⭐⭐ **`sourced: true` IS THE LINE BETWEEN MACHINE OUTPUT AND AUTHORING.** "The override is the product" governs the **operator's** decisions; a scraped value is not an override. Stamped on **every** machine write:
+- **sourced** cells always re-derive — so correcting a bad alias actually undoes what it wrote.
+- **unsourced** cells are the operator's and are **never** touched; a disagreement is reported, not applied.
+- ⛔ Without it a wrong machine value is **permanent and self-protecting**, and the cells must be cleared by hand.
+
+Also here: the **per-source taxon gate** that contains §4's fallback, and ⛔ **a scraped value is never `hard`** — that is what turned a wrong word into a tol-0 lock on a broad rounded oak.
+
+### ⭐⭐ 8. Publish the disagreement; the operator settles it *(Jacob, 2026-08-25)*
+Sources disagree constantly and **every automatic rule lies in its own way**: most-frequent invents a consensus that does not exist, source-priority asserts an authority we never established, and writing nothing leaves a cell **indistinguishable from one nobody has scraped**.
+
+So the disagreement **is the artifact**. Every candidate is written with the sources that claimed it, the cell is marked `contested`, and hydrate stops. A tie writes no target but **does** write the candidates — *empty-and-silent was the defect, not empty.* The Salon rail renders them; `settle` ends it, drops `sourced` (the pick is authoring, never re-derived) and keeps what was overruled in `settledOver`.
+
+⛔ **Both writers must speak this vocabulary.** mint rebuilds a stub's whole `required` block, so when it used different names the rail silently went blank for nine species — behind run order, so checking one order proved nothing.
+
+### The checks — run these, do not trust prose
+```
+node scratch/claims-axis-keys-resolve.mjs        # axis ids AND enum values, all four stores
+node scratch/claims-verify-taxon.mjs             # every verdict branch, mutation-tested
+node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence
+node scratch/claims-cutover-casualties.mjs       # authored values the old rubric could not express
+node scratch/claims-reference-credits.mjs        # plate credits, generated from the dossiers
+```
+⚠️ **`claims-verify-taxon` is RED on purpose right now.** It asserts no mismatched taxon reaches the observations file, and §4's SelecTree fallback puts one there. The assertion is right and the harvest is inconsistent — USDA skips, SelecTree flags. **Do not silence it; fix the fallback.**
+
+> ⭐ **The lesson worth more than any single fix, from five instances in one day:** *a check agrees with its author because it asks the same incomplete question.* One knew three stores of axis ids and not the fourth. One resolved each field to its nominal axis and reported working code as broken. One passed with its own subject deleted. One validated keys but never values. One had its pass/fail gate above half its assertions. **None reported a problem.** Poison the input; mutate the guard; make the check fail for the right reason before believing it.
 
 ## Cross-references
 

@@ -1,7 +1,7 @@
 /**
  * hydrate-dossiers.mjs — turn the pilot's RAW observations into dossier `required` blocks.
  *
- * The agent emits raw source values and never writes a dossier (BRIEF-dossier-hydration.md §0).
+ * The agent emits raw source values and never writes a dossier (arborist/ARCHITECTURE.md §The species pipeline).
  * This is the other half: it decides what a raw value MEANS, using `vocabulary.mjs` and nothing
  * else. ⭐ That split is what makes the no-heuristics rule structural — an unmappable term
  * cannot become a wrong token, because the only thing that can mint a token is the resolver.

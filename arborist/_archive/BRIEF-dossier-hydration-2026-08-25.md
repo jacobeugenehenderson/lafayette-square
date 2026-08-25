@@ -1,3 +1,9 @@
+> ⛔ **RETIRED 2026-08-25.** The hydration it briefed SHIPPED. The live procedure — all
+> eight stages, every guard, and the one remaining fallback — is
+> **`arborist/ARCHITECTURE.md` §The species pipeline**. Kept for the design record only
+> (`feedback_it_already_exists_find_what_broke_it`): archived is retired for CURRENCY, not
+> for truth.
+
 # BRIEF — hydrate the dossiers: PILOT (first 20 species)
 
 **This is a PILOT, and its real deliverable is a MEASURED RESOLVE RATE, not 20 files.**

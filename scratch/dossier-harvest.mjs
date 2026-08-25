@@ -5,7 +5,7 @@
  *      { species, source, field, value, ... }
  *    where `field` is the SOURCE's own field name and `value` is the SOURCE's own string.
  *    `arborist/vocabulary.mjs` decides what (if anything) each resolves to. See
- *    BRIEF-dossier-hydration.md §0.
+ *    arborist/ARCHITECTURE.md §The species pipeline.
  *
  * Sources: ncsu (Plant Toolbox record HTML) · selectree (Cal Poly JSON API) ·
  *          usda (PLANTS Services API) · utd (Urban Tree Database RDS-2016-0005).
