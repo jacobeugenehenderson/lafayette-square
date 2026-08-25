@@ -100,10 +100,14 @@ two dimensions; our one scalar cannot describe it.
 3. **`bark.color` as a gradient ramp rather than a term list** — agree?
 4. ✅ **`star` and `fan` RETIRED.**
    - **`fan` → `Flabellate`** — the standard term, and exactly what ginkgo is. Straight swap.
-   - ⭐ **`star` has NO replacement, because it was never a shape.** Sweetgum is
-     `shape: Orbicular` **+** `margin: Lobed` (palmately, 5–7). One token was trying to say two
-     things — **the split dissolves it rather than renaming it.** That is the whole argument for
-     §1 in one example.
+   - ⭐ **`star` has NO replacement, because it was never a shape.** *(Jacob: "when I think of
+     star I think of plum or maple.")* A maple is `type: Simple` + `shape: Orbicular` +
+     `margin: Lobed` (palmately, 5 lobes). One token was trying to say three things —
+     **the split dissolves it rather than renaming it.**
+   - ⭐⭐ **AND IT IS WORSE THAN THAT, WHICH IS THE ARGUMENT FOR §1 IN ONE LINE:
+     `leaf.silhouette` already contains BOTH `palmate` AND `star` — and both are maple.** Two
+     tokens, one tree, the same axis, neither able to say `margin: Lobed`. A conflated axis does
+     not just lose information; **it duplicates itself trying to compensate.**
 
 ---
 
