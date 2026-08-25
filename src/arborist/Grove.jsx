@@ -64,6 +64,7 @@ export default function Grove() {
   const rosterCoverage = useArboristStore(s => s.rosterCoverage)
   const groveThreshold = useArboristStore(s => s.groveThreshold)
   const rosterSpecies = rosterCoverage?.species || []
+  const warnedNoBoardRef = useRef(false)
   const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
   const bakeGroveToSlab = useArboristStore(s => s.bakeGroveToSlab)
   const groveBaking = useArboristStore(s => s.groveBaking)
@@ -161,7 +162,15 @@ export default function Grove() {
       // ⛔ A species with no baked GLB cannot be captured at all — the pool is
       // eligible ∩ published. An eligible species missing its GLB is a WORK ITEM
       // (it needs publishing), never a silent omission: it is reported below.
-      if (eligibleNames.size && !eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard)) continue
+      // ⛔ FAILS OPEN, AND SAYS SO. If the roster board has not loaded there is nothing to
+      // gate with, and baking NOTHING would be worse than baking everything — but a
+      // silent fall-through is how the gate quietly stops existing. Warn, then proceed.
+      if (!eligibleNames.size) {
+        if (!warnedNoBoardRef.current) {
+          warnedNoBoardRef.current = true
+          console.warn('[grove-bake] roster board not loaded — capturing the FULL look roster ungated. The bars are not being applied.')
+        }
+      } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard)) continue
       out.push({ species: t.species, glbUrl: `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb` })
     }
     return out
