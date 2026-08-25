@@ -1284,11 +1284,57 @@ Noteworthy Characteristics · Problems · Uses`. Fields render only when populat
 coarse band. **We cannot use them.** ⭐ *(The Urban Tree Database already covers dimensional data
 with no licence question — go there instead.)*
 
-⭐ **Worth carrying forward:** only **two** sources have a *street tree* concept at all — MOBOT's
-`Uses → Street Tree` (with `Urban Conditions`, `Salt`) and Morton's `tp_planting_site`
-(`City parkway`, `Wide median`, `Under utility lines`). **Morton's is the best-designed and the
-worst-licensed.** Take the CONCEPT — a planting-site axis — and derive our own terms.
+⭐ **Worth carrying forward: THREE sources have a *street tree* concept** — NC State's
+`Design Feature → Street Tree` (**175 records**), MOBOT's `Uses → Street Tree` (with
+`Urban Conditions`, `Salt`), and Morton's `tp_planting_site` (`City parkway`, `Wide median`,
+`Under utility lines`). **Morton's is the best-designed and the worst-licensed.** Take the
+CONCEPT — a planting-site axis — and derive our own terms.
+*(Corrected 2026-08-24: an earlier line here said "only two". NC State has one too.)*
 
 ⭐⭐ **THE BINDING CONSTRAINT IS LICENSING, NOT SCRAPING, ON FIVE OF SIX.** NC State is the only
 source usable beyond manual reference — and even there the grant covers *citation*, not
 *redistribution*. That gap is unconfirmed and needs a direct ask.
+
+---
+
+## 6. THE VOCABULARY IS REPRODUCIBLE — the endpoint contract
+
+⭐⭐ **This is the `PRUNE AS YOU GO` pattern the repo asks for: a checker can RE-DERIVE the
+vocabulary from source instead of embedding a copy that goes stale.**
+```
+curl -s https://plants.ces.ncsu.edu/ajax_filters/      # 288 rows — gardener/landscape facets
+curl -s https://plants.ces.ncsu.edu/ajax_id_filters/   # 249 rows — bark/stem/leaf morphology
+```
+**Row shape:** `[section, field_key, printed_label, option_value, id, live_count, "", query_param, null, null]`
+Found by tracing `main.f27e08c0e70a.js`. **Undocumented, unauthenticated, and they carry LIVE
+COUNTS** — so a check reads the source rather than restating it.
+⚠️ Undocumented means unstable: pin nothing to them without a failure path.
+
+### ⛔ Three corrections to the brief's own premises (confirm-then-build, working)
+1. **MOBOT moved** — `/PlantFinder/*` 301s to `plantfinder.mobot.org`; the terms page is
+   `/conditions` and `/copyright.aspx` is a **404**.
+2. **MOBOT has no bark fields and no fall-colour facet** — the brief anticipated granularity that
+   does not exist. It *does* have an `Invasive:` field the brief never listed.
+3. ⭐ **NC State's exact labels differ from the brief** — `Surface/Attachment` (**not**
+   "Surface/Texture") · `Bark Plate Shape` · `Stem Is Aromatic` (**not** "Is Stem Aromatic") ·
+   `Woody Plant Leaf Characteristics` (**not** "Leaf Characteristics"). ⛔ **Key on the endpoint's
+   `field_key`, never on a label copied from prose.**
+
+### ⛔ Oregon State — DO NOT INGEST, and it is explicit
+**`Disallow: /` naming ClaudeBot, plus an explicit `ai-train=no` reservation of rights.** Not a
+grey area and not a licence question — a named refusal. ⛔ **No fetching without written
+permission.**
+
+### Arnold Arboretum — question answered: it is a REGISTER, not trait data
+142 fields, **16,406 records**, open ArcGIS REST. The only trait-shaped field is `HABIT` with six
+values. ⭐ **Its value is measured DBH / height / spread ground truth** — the same job the Urban
+Tree Database does, and worth cross-checking against it.
+
+### Final scoreboard
+**NC State: 4,701 plants · 1,047 trees · 175 tagged Street Tree.** 4 bark fields, 10 stem, 13
+leaf, 25 leaf shapes, 12 margins, 15 bark surface terms, 9-value fall colour. **The only source
+that affirmatively invites reuse.**
+⭐⭐ **Licensing blocks five of six.** MOBOT forbids mounting on your own server; Morton is
+all-rights-reserved non-commercial; RHS publishes no site-wide terms (so nothing is granted);
+Oregon State names ClaudeBot. **NC State is the only one usable beyond manual reference — and its
+grant covers CITATION, not REDISTRIBUTION. That gap is unconfirmed and needs a direct ask.**
