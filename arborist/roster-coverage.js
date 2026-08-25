@@ -48,7 +48,18 @@ const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 // authored — do NOT resolve it to LS's. DEFAULT_SCENE keeps pre-scene callers working.
 export const DEFAULT_SCENE = 'lafayette-square'
 export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
-const parkTreesForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'clean', 'park_census.json')
+// ⛔⛔ THE CENSUS IS SEVERAL WELLS, NOT ONE FILE (`ORIENTATION §6`): park_census · park_trees ·
+// forest_park_trees · osm_trees · derived_trees. This read ONLY `park_census.json` — 756 of
+// 5,127 LS placements, 15% of the town — so the DEMAND ORDER, which is the operator's work
+// queue, was computed from a fraction of the data and was simply wrong:
+//   actual #1 maple_red 728          → coverage ranked it #5 at 33
+//   actual #2 platanus_acerifolia 453 → not in coverage's top 8 AT ALL
+// ⭐ That is why `platanus_acerifolia` went unnoticed until 2026-08-24 while leaking 921
+// placements to full mesh: the list that exists to surface it was reading a well it is not in.
+// ⇒ Read every well the BAKE reads, so the queue cannot drift from what actually gets placed.
+const CENSUS_WELLS = ['park_census.json', 'park_trees.json', 'forest_park_trees.json', 'osm_trees.json', 'derived_trees.json']
+const parkTreesForScene = (scene) =>
+  CENSUS_WELLS.map(f => join(ROOT, 'cartograph', 'data', scene, 'clean', f))
 const INDEX_PATH   = join(PUBLIC_TREES, 'index.json')
 
 function readJsonOrNull(p) {
@@ -83,7 +94,10 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
   const PARK_TREES = parkTreesForScene(scene)
   const PARK_MAP   = parkMapForScene(scene)
   // ── Roster (what we're supposed to have) ────────────────────────────────
-  const trees = readJsonOrNull(PARK_TREES)?.trees || []
+  // Union across every well present. A missing well is skipped, not an error — a scene opting
+  // real-only has no derived_trees, and not every town has a Forest Park.
+  const trees = (Array.isArray(PARK_TREES) ? PARK_TREES : [PARK_TREES])
+    .flatMap(f => readJsonOrNull(f)?.trees || [])
   const canon = readJsonOrNull(ROSTER_CANON)?.canon || {}
   // ⭐ ONE RESOLVER (`arborist/vocabulary.mjs`). This was `canon[raw] || raw` — an EXACT string
   // match against a five-row hand-typed table, so `London Plane`, `Platanus acerifolia`,

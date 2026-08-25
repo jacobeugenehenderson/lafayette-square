@@ -32,8 +32,13 @@ decides, **an unmappable value CANNOT become a wrong token.** The rule enforces 
 ## 1. THE ROWS — first 20, in DEMAND ORDER
 ▶ `curl -s localhost:3334/coverage | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>{const j=JSON.parse(d);j.species.slice(0,20).forEach((s,i)=>console.log(String(i+1).padStart(2),String(s.count).padStart(4),s.species,'|',(s.mergedFrom||[]).join(' / ')))})"`
 
-⭐ **20 rows is 24% of species but 71% of placements.** Demand order is the work queue — it is
+⭐ **20 rows is ~12% of species but ~44% of placements.** Demand order is the work queue — it is
 why the first 20 is most of the map, not a sample.
+⚠️ **These numbers CHANGED on 2026-08-24 and the earlier ones were wrong.** Coverage read only
+`park_census.json` — 756 of 5,127 placements, **15% of the town** — so the demand order was
+computed from a fraction of the data (`ORIENTATION §6`: *"the census is several WELLS, not one
+file"*). It now reads every well: **172 rows, 6,767 placements.** ⭐ Under the true order
+`Oak, Pin` is **#2 at 459** — the species Jacob's eye picked out as wrongly yellow.
 ⚠️ Use `mergedFrom` for searching: the census spells one tree several ways, and the resolver has
 already merged them. Search each source with whichever spelling it is likely to know.
 
