@@ -70,6 +70,44 @@ if (mBlock) {
   console.log(`matcher MATCH_AXES: ${ids.length} ids`)
 } else console.error('  ⚠️ could not parse MATCH_AXES from matcher.js — check by hand')
 
+// 2d. ⭐⭐ THE VOCABULARY. `vocabulary.mjs` keys TERM_ALIASES / TERM_REDIRECTS / NOT_A_TRAIT
+// by axis id — the FOURTH store, and the one this check did not know about.
+//   ⚠️ RECEIPT, 2026-08-24: the 19→31 cutover left TERM_ALIASES keyed on `bark.type`,
+//   `leaf.silhouette`, `leaf.ways`. Every alias in it had been DEAD since the cutover, and
+//   nothing said so — `Blocky`→`plated` simply stopped firing. Found only when a hydration
+//   dry-run reported 28 unresolved values that all had aliases sitting right there.
+// ⛔ It also checks the alias TARGETS, not just the axis keys: an alias pointing at a term
+// the rubric no longer carries is the same failure one level down.
+{
+  const vocab = await import('../arborist/vocabulary.mjs')
+  const tables = { TERM_ALIASES: null, TERM_REDIRECTS: vocab.TERM_REDIRECTS, NOT_A_TRAIT: vocab.NOT_A_TRAIT }
+  // TERM_ALIASES is module-private by design — read it from source rather than exporting
+  // internals just to test them.
+  const vSrc = readFileSync(new URL('../arborist/vocabulary.mjs', import.meta.url), 'utf8')
+  const aBlock = vSrc.match(/const TERM_ALIASES = \{[\s\S]*?\n\}/)
+  if (aBlock) {
+    tables.TERM_ALIASES = Object.fromEntries(
+      [...aBlock[0].matchAll(/^  '([^']+)':\s*\{/gm)].map(m => [m[1], {}]))
+  } else console.error('  ⚠️ could not parse TERM_ALIASES from vocabulary.mjs — check by hand')
+
+  let nAx = 0, nTerm = 0
+  for (const [name, tbl] of Object.entries(tables)) {
+    for (const ax of Object.keys(tbl || {})) {
+      nAx++
+      if (!live.has(ax)) report(`vocabulary.mjs ${name}`, ax)
+    }
+  }
+  // alias/redirect targets must be live TERMS of their axis
+  for (const [ax, map] of Object.entries(vocab.TERM_REDIRECTS || {})) {
+    for (const [, r] of Object.entries(map)) {
+      nTerm++
+      if (!live.has(r.axis)) report('TERM_REDIRECTS target axis', r.axis)
+      else if (!vocab.axisTerms(r.axis).includes(r.value)) report(`TERM_REDIRECTS target term (${r.axis})`, r.value)
+    }
+  }
+  console.log(`vocabulary: ${nAx} axis keys across 3 tables, ${nTerm} redirect targets`)
+}
+
 // 3. the reverse — axes nothing uses (not fatal, but worth seeing)
 const used = new Set()
 for (const f of readdirSync(dDir).filter(x => x.endsWith('.json')))

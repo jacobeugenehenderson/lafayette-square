@@ -82,41 +82,122 @@ function loadAxes() {
 
 // Aliases INTO those closed sets — the words botanical descriptions actually
 // use. ⛔ The target must already exist in the rubric; `axisTerms` asserts it.
+// Aliases INTO those closed sets — the words botanical descriptions actually use.
+// ⛔ The target must already exist in the rubric; `axisTerms` asserts it, and
+// `scratch/claims-axis-keys-resolve.mjs` asserts the AXIS ids too.
+//
+// ⚠️ REGRESSION, found 2026-08-24: this table was keyed on the PRE-CUTOVER axis ids
+// (`bark.type`, `leaf.silhouette`, `leaf.ways`) and had therefore been dead since the
+// 19→31 cutover — `blocky`→`plated` et al. never fired. The claims check knew about
+// three axis-id stores and not this, the fourth. It knows about it now.
 const TERM_ALIASES = {
-  "chassis.habit": {
-    conical: 'pyramidal', conic: 'pyramidal', 'pyramidal conical': 'pyramidal',
-    fastigiate: 'columnar', upright: 'columnar', erect: 'columnar',
+  'chassis.habit': {
+    conic: 'pyramidal', 'pyramidal conical': 'pyramidal',
+    upright: 'columnar', erect: 'columnar',
     globose: 'rounded', globular: 'rounded', round: 'rounded', ball: 'rounded',
-    ovoid: 'oval', elliptic: 'oval', elliptical: 'oval', egg: 'oval',
+    egg: 'oval', 'egg shaped': 'oval',
     'v shaped': 'vase', vaselike: 'vase', urn: 'vase',
-    horizontal: 'spreading', wide: 'spreading', broad: 'spreading', umbrella: 'spreading',
+    wide: 'spreading', broad: 'spreading', umbrella: 'spreading',
     pendulous: 'weeping', pendent: 'weeping', drooping: 'weeping',
     clumping: 'multi-stem', multistem: 'multi-stem', 'multi stem': 'multi-stem',
-    clump: 'multi-stem', asymmetric: 'irregular', open: 'irregular',
+    'multi trunked': 'multi-stem', 'multiple stem': 'multi-stem',
+    'multi stemmed': 'multi-stem', 'multiple trunk': 'multi-stem', clump: 'multi-stem',
+    asymmetric: 'irregular', open: 'irregular',
   },
-  'bark.type': {
-    striate: 'ridged', striated: 'ridged', grooved: 'ridged', fissured: 'furrowed',
-    corrugated: 'furrowed', blocky: 'plated', platy: 'plated', plates: 'plated',
-    flaking: 'exfoliating', peeling: 'exfoliating', papery: 'exfoliating',
-    shaggy: 'exfoliating', stringy: 'fibrous', shreddy: 'fibrous',
+  'bark.texture': {
+    striate: 'ridged', striated: 'ridged', grooved: 'ridged', ridges: 'ridged',
+    corrugated: 'furrowed', furrows: 'furrowed',
+    blocky: 'plated', platy: 'plated', plates: 'plated',
+    flaking: 'exfoliating', peeling: 'exfoliating', shredding: 'exfoliating',
+    stringy: 'fibrous', shreddy: 'fibrous',
     patchy: 'mottled', camouflage: 'mottled', blotchy: 'mottled',
     glabrous: 'smooth', tight: 'smooth',
+    lenticels: 'lenticellate', 'lenticels prominent': 'lenticellate',
+    warts: 'warty', scales: 'scaly',
   },
-  'leaf.silhouette': {
-    'palmately lobed': 'lobed', 'bristle lobed': 'lobed', 'deeply lobed': 'lobed',
-    maple: 'palmate', 'palmately compound': 'palmate',
-    cordate: 'heart', 'heart shaped': 'heart',
-    oval: 'ovate', egg: 'ovate', elliptic: 'ovate',
-    lance: 'lanceolate', linear: 'lanceolate', narrow: 'lanceolate',
-    pinnate: 'compound', 'pinnately compound': 'compound', bipinnate: 'compound',
-    fanshaped: 'fan', flabellate: 'fan',
+  // ── the three axes the cutover split `leaf.silhouette` into ──
+  'leaf.shape': {
+    'heart shaped': 'cordate', heart: 'cordate',
+    'fan shaped': 'flabellate', fanshaped: 'flabellate', fan: 'flabellate',
+    'diamond shaped': 'rhomboid', diamond: 'rhomboid', rhombic: 'rhomboid',
+    'spear shaped': 'lanceolate', lance: 'lanceolate', 'lance shaped': 'lanceolate',
+    oval: 'elliptical', elliptic: 'elliptical', ellipse: 'elliptical',
+    'egg shaped': 'ovate', egg: 'ovate',
+    'kidney shaped': 'reniform', kidney: 'reniform',
+    'spoon shaped': 'spatulate', spoon: 'spatulate',
+    triangular: 'deltoid', triangle: 'deltoid',
+    circular: 'orbicular', 'round shaped': 'orbicular',
+    needlelike: 'acicular', 'needle like': 'acicular', needles: 'acicular',
+    strap: 'linear', narrow: 'linear',
+  },
+  'leaf.type': {
+    'pinnately compound': 'compound-pinnate', pinnate: 'compound-pinnate',
+    'odd pinnate': 'compound-pinnate', 'even pinnate': 'compound-pinnate',
+    'bipinnately compound': 'compound-bipinnate', bipinnate: 'compound-bipinnate',
+    'twice compound': 'compound-bipinnate',
+    'palmately compound': 'compound-palmate', palmate: 'compound-palmate',
     needles: 'needle', acicular: 'needle',
     scalelike: 'scale', 'scale like': 'scale', imbricate: 'scale',
+    entire: 'simple', undivided: 'simple',
   },
-  'leaf.ways': {
-    alternating: 'alternate', spiral: 'alternate', 'sub opposite': 'opposite',
-    whorled: 'clusters', clustered: 'clusters', fascicled: 'clusters',
-    spray: 'sprays', frond: 'sprays', 'one direction': 'all-one-direction',
+  'leaf.margin': {
+    'palmately lobed': 'lobed', 'pinnately lobed': 'lobed',
+    'bristle lobed': 'lobed', 'deeply lobed': 'lobed', lobes: 'lobed',
+    toothed: 'serrate', 'sharply toothed': 'serrate', saw: 'serrate',
+    'twice serrate': 'doubly-serrate', biserrate: 'doubly-serrate',
+    smooth: 'entire', 'not toothed': 'entire',
+    wavy: 'undulate', scalloped: 'crenate', spiny: 'spinose',
+  },
+  'leaf.arrangement': {
+    alternating: 'alternate', spiral: 'alternate', spirally: 'alternate',
+    'sub opposite': 'opposite', subopposite: 'opposite',
+    clustered: 'whorled', fascicled: 'whorled',
+    rosette: 'rosulate',
+  },
+  'leaf.foliage_type': {
+    'broadleaf evergreen': 'broadleaf-evergreen', broadleaved: 'broadleaf-evergreen',
+    'needled evergreen': 'needled-evergreen', conifer: 'needled-evergreen',
+    'semi evergreen': 'semi-evergreen', tardily: 'semi-evergreen',
+    'deciduous conifer': 'deciduous-conifer',
+  },
+  'crown.texture': { bold: 'coarse', delicate: 'fine', moderate: 'medium' },
+}
+
+// ⭐ VALUE-LEVEL AXIS REDIRECT. A source files a value under one heading; our taxonomy
+// keeps it under another. The cutover moved lobing out of shape and into MARGIN, so
+// NC State's `Leaf Shape :: Palmately-lobed` must land on `leaf.margin :: lobed`.
+// A field→axis map alone cannot express this — the VALUE decides the axis.
+export const TERM_REDIRECTS = {
+  'leaf.shape': {
+    'palmately lobed': { axis: 'leaf.margin', value: 'lobed' },
+    'pinnately lobed': { axis: 'leaf.margin', value: 'lobed' },
+    lobed: { axis: 'leaf.margin', value: 'lobed' },
+    'pinnately compound': { axis: 'leaf.type', value: 'compound-pinnate' },
+    'bipinnately compound': { axis: 'leaf.type', value: 'compound-bipinnate' },
+    'palmately compound': { axis: 'leaf.type', value: 'compound-palmate' },
+  },
+}
+
+// ⛔ NOT A TRAIT. Values a source publishes under a heading we mapped, that carry no
+// morphology at all — NC State's `Plant Type` is a multi-valued CATEGORY tag where only
+// `Deciduous` is a foliage fact. These are DISCARDED WITH A COUNTED REASON, never
+// silently: the hydrator prints them, so a mismapped field still shows up loudly.
+export const NOT_A_TRAIT = {
+  'leaf.foliage_type': {
+    'native plant': 'ncsu category tag', perennial: 'ncsu category tag',
+    edible: 'ncsu category tag', poisonous: 'ncsu category tag',
+    shrub: 'ncsu category tag', tree: 'ncsu category tag',
+    herb: 'ncsu category tag', vine: 'ncsu category tag',
+    wildflower: 'ncsu category tag', 'ground cover': 'ncsu category tag',
+    no: 'usda Leaf Retention Y/N — not a foliage class',
+    yes: 'usda Leaf Retention Y/N — not a foliage class',
+  },
+  'chassis.habit': {
+    'single stem': 'trunk COUNT, not crown form — complement of multi-stem',
+    'single crown': 'trunk COUNT, not crown form — complement of multi-stem',
+    'single trunk': 'trunk COUNT, not crown form — complement of multi-stem',
+    dense: 'crown DENSITY, not crown form',
+    colonizing: 'spread behaviour, not crown form',
   },
 }
 
