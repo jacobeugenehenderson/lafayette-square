@@ -10,7 +10,7 @@
  * "a check must READ the source, never restate it").
  */
 import { readFileSync } from 'node:fs'
-import { resolveTerm, axisTerms, TERM_REDIRECTS as REDIRECTS, normalize } from '../arborist/vocabulary.mjs'
+import { resolveTerm, axisTerms, TERM_REDIRECTS as REDIRECTS, NOT_A_TRAIT, normalize } from '../arborist/vocabulary.mjs'
 
 const rubric = JSON.parse(readFileSync('arborist/rubric.json', 'utf8'))
 const AXES = rubric.axes.map(a => a.id)
@@ -51,6 +51,8 @@ const species = [...new Set(obs.map(o => o.species))]
 // axis -> species -> { resolved:Set, raw:Set }
 const grid = new Map()
 const unresolved = new Map()   // axis -> Map(rawValue -> {n, sources:Set})
+const discarded = new Map()    // same shape, for values NOT_A_TRAIT explains
+const discardReason = new Map()
 for (const o of obs) {
   if (String(o.field).startsWith('_')) continue
   const axis = CANDIDATE[`${o.source}|${o.field}`]
@@ -69,8 +71,16 @@ for (const o of obs) {
   const r = rd ? { ...resolveTerm(rd.axis, rd.value), redirectedTo: rd.axis } : resolveTerm(axis, o.value)
   if (r.resolved) cell.resolved.add(r.value)
   else {
-    if (!unresolved.has(axis)) unresolved.set(axis, new Map())
-    const u = unresolved.get(axis)
+    // ⛔ A REASONED DISCARD IS NOT OWED WORK. `Erect` is deliberately unmappable —
+    // it is an orientation, and aliasing it wrote `columnar` into red oak at tol 0.
+    // Printing it under "add an alias for these", 20x every run, is exactly how the
+    // bad alias gets re-added in six months by someone following this report. It is
+    // NOT_A_TRAIT with a reason; file it there, and keep this section for real gaps.
+    const why = NOT_A_TRAIT[axis]?.[normalize(o.value)]
+    const bucket = why ? discarded : unresolved
+    if (why) discardReason.set(`${axis}::${o.value}`, why)
+    if (!bucket.has(axis)) bucket.set(axis, new Map())
+    const u = bucket.get(axis)
     const k = String(o.value)
     if (!u.has(k)) u.set(k, { n: 0, sources: new Set() })
     u.get(k).n++; u.get(k).sources.add(o.source)
@@ -103,7 +113,16 @@ for (const s of species) {
   console.log(pad(s, 24), pad(`${r}/${collectible}`, 13), `${w}/${collectible}`)
 }
 
-console.log('\n══ ⭐ THE ALIAS WORK — source terms that DO NOT RESOLVE ══')
+console.log('\n══ 🗑  REASONED DISCARDS — settled, NOT owed work ══')
+{
+  const rows = []
+  for (const [axis, u] of discarded) for (const [val, meta] of u) rows.push({ axis, val, n: meta.n, src: [...meta.sources].join(',') })
+  rows.sort((a, b) => a.axis.localeCompare(b.axis) || b.n - a.n)
+  for (const r of rows) console.log(`  ${pad(r.axis, 16)} ${pad(r.val, 12)} ×${pad(r.n, 4)} ${pad(r.src, 12)} ${discardReason.get(`${r.axis}::${r.val}`)}`)
+  if (!rows.length) console.log('  (none)')
+}
+
+console.log('\n══ ⭐ THE ALIAS WORK — source terms that DO NOT RESOLVE AND HAVE NO REASON ══')
 const rows = []
 for (const [axis, u] of unresolved) for (const [val, meta] of u) rows.push({ axis, val, n: meta.n, src: [...meta.sources].join(',') })
 rows.sort((a, b) => a.axis.localeCompare(b.axis) || b.n - a.n)
