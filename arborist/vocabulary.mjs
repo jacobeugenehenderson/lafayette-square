@@ -180,6 +180,21 @@ function speciesIndex() {
       for (const inv of d.inventoryNames || []) add(canon, inv)
     }
   }
+  // ⭐ THE COMPOSITION DIRECTORIES ARE A NAME STORE TOO. `arborist/state/<id>/` is keyed by the
+  // ROSTER slug (`maple_red`) while the dossier is keyed by the common name (`Red Maple`) and
+  // the scientific one (`Acer rubrum`). Seed from it as well and the merge pass unifies them —
+  // `maple_red` and `Red Maple` share the token key `maple red`.
+  // ⛔ Without this a COMPOSED species reports `unauthored`, because the lookup never finds the
+  // directory holding its recipe. Measured: composed 9 → 8 with this missing.
+  const stateDir = path.join(ROOT, 'arborist', 'state')
+  if (existsSync(stateDir)) {
+    for (const d of readdirSync(stateDir, { withFileTypes: true })) {
+      if (!d.isDirectory() || d.name.startsWith('_')) continue
+      if (!existsSync(path.join(stateDir, d.name, 'compositions.json'))) continue
+      add(d.name, d.name)
+    }
+  }
+
   // Operator hand-merges LAST so they overwrite anything derived.
   const canonFile = readJSON(path.join(ROOT, 'arborist', 'roster-name-canon.json'))
   for (const [raw, target] of Object.entries(canonFile?.canon || {})) {
@@ -216,7 +231,18 @@ function speciesIndex() {
   }
   const merged = new Map()
   for (const members of groups.values()) {
-    const rep = members.find(m => handTargets.has(m)) || members.slice().sort((a, b) => b.length - a.length)[0]
+    // ⭐ THE REPRESENTATIVE IS WHAT THE OPERATOR SEES, so it must be the COMMON NAME.
+    // `ORIENTATION §2`: "A species' identity, everywhere the operator can see it, is its common
+    // name… Botanical slugs are SUPPLY-SIDE METADATA — provenance on a part, never a name on a
+    // surface." ⛔ Picking the LONGEST string made `acer_saccharum` beat `Sugar Maple`, which is
+    // exactly the inversion that doctrine forbids.
+    // Order: the operator's hand-canon target · a human common name (has a space, no underscore)
+    // · anything without an underscore · longest.
+    const humanish = (m) => /\s/.test(m) && !/_/.test(m)
+    const rep = members.find(m => handTargets.has(m))
+      || members.find(humanish)
+      || members.find(m => !/_/.test(m))
+      || members.slice().sort((a, b) => b.length - a.length)[0]
     const aliases = new Set()
     for (const m of members) for (const a of canonical.get(m).aliases) aliases.add(a)
     merged.set(rep, { canonical: rep, aliases, mergedFrom: members })
@@ -241,6 +267,18 @@ export function resolveSpecies(raw) {
   if (byKey.has(n)) return { value: byKey.get(n), resolved: true, via: 'name' }
   if (byKey.has(t)) return { value: byKey.get(t), resolved: true, via: 'word-order' }
   return { value: raw, resolved: false, via: 'unresolved' }
+}
+
+/**
+ * Every name known for a canonical — the merged alias set.
+ * ⭐ Needed because a species is keyed DIFFERENTLY in different stores: the dossier says
+ * `Sugar Maple`, the state directory says `maple_sugar`. A consumer holding one must be able
+ * to find the other, or it silently stops matching.
+ */
+export function aliasesFor(canonical) {
+  const { canonical: recs } = speciesIndex()
+  const rec = recs.get(canonical)
+  return rec ? [...rec.aliases] : [String(canonical)]
 }
 
 /** Do two names denote the same species? The ≡ this module exists for. */

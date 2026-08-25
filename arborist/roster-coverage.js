@@ -31,6 +31,7 @@ import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { listChassis } from './generate-salon.js'
+import { resolveSpecies, aliasesFor } from './vocabulary.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT        = join(__dirname, '..')
@@ -84,7 +85,17 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
   // ── Roster (what we're supposed to have) ────────────────────────────────
   const trees = readJsonOrNull(PARK_TREES)?.trees || []
   const canon = readJsonOrNull(ROSTER_CANON)?.canon || {}
-  const canonize = (raw) => canon[raw] || raw
+  // ⭐ ONE RESOLVER (`arborist/vocabulary.mjs`). This was `canon[raw] || raw` — an EXACT string
+  // match against a five-row hand-typed table, so `London Plane`, `Platanus acerifolia`,
+  // `Sycamore, American` and `london_plane` were four unrelated strings and one tree showed up
+  // as four disconnected rows. The resolver folds case, strips cultivars/parentheticals/
+  // `spp.`, normalises word order (`Oak, Pin` ≡ `Pin Oak`) and merges canonicals that share any
+  // key — seeded from what the repo already knows (every dossier's key/scientific/
+  // inventoryNames) with the operator's hand merges winning over anything derived.
+  // ⛔ BEST EFFORT, OVERRIDABLE: an unresolved name is returned UNCHANGED so it still gets a
+  // row — it is a species the town HAS and we cannot name, which is the red list, not a
+  // reason to drop it. `nameResolved` records which, so a surface can show the difference.
+  const canonize = (raw) => resolveSpecies(raw).value
   const byCanon = new Map()   // canonical -> { count, rawNames:Set }
   for (const t of trees) {
     const raw = t.species || 'unknown'
@@ -93,6 +104,7 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     const e = byCanon.get(c)
     e.count++
     e.rawNames.add(raw)
+    if (resolveSpecies(raw).resolved) e.nameResolved = true
   }
 
   // ── Routing (park_species_map, keyed by raw name) ───────────────────────
@@ -173,7 +185,7 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
 
   // ── Join ────────────────────────────────────────────────────────────────
   const species = []
-  for (const [canonical, { count, rawNames }] of byCanon) {
+  for (const [canonical, { count, rawNames, nameResolved }] of byCanon) {
     // Routed library ids: union across merged raw names, order-preserving.
     const routed = []
     let hasMapKey = false
@@ -205,7 +217,19 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     }))
 
     // ── Brief 26 fields ────────────────────────────────────────────────────
-    const canonicalId = slugifyRoster(canonical)
+    // ⛔ A species is keyed DIFFERENTLY in different stores — the dossier says `Sugar Maple`,
+    // the composition directory says `maple_sugar`. Slugifying the display name alone finds
+    // neither reliably, and a miss does not throw: it silently reports `unauthored` for a
+    // species that IS composed. (Measured: composed 9 → 5 when this looked up the display
+    // name only.) So try every known alias and take the id that actually holds the data.
+    // ⛔ ORDER MATTERS AND I GOT IT WRONG ONCE: a single `has(comp) || has(published)` lets a
+    // PUBLISHED-but-uncomposed alias (`acer_rubrum`) win over the COMPOSED one (`maple_red`),
+    // and the species then reports `unauthored` while its recipe sits on disk. Compositions
+    // are the stronger evidence — check them across ALL aliases first, published only after.
+    const idCandidates = [canonical, ...aliasesFor(canonical)].map(slugifyRoster)
+    const canonicalId = idCandidates.find(id => compositionsBySpecies.has(id))
+      || idCandidates.find(id => published.has(id))
+      || slugifyRoster(canonical)
     // Recommended chassis = chassis whose source.species is one of the covering
     // (routed-existing) library ids — the literal/cousin candidates for this
     // roster species. De-duped, order follows covering (literal-ish first).
@@ -228,8 +252,16 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     const publishedCanonical = published.has(canonicalId)
 
     species.push({
-      species: canonical,
+      // ⭐ THE OPERATOR SEES A COMMON NAME, NEVER A SLUG (`ORIENTATION §2`). The canonical is an
+      // ID and for a species with no dossier it is the state-dir slug (`linden_american`). The
+      // census already calls it something human (`Linden, American`) and that name is right
+      // here in rawNames — so prefer it for display. ⛔ Identity is unchanged: `canonicalId`
+      // still keys the data; this is the LABEL only.
+      species: [...rawNames].find(n => /\s/.test(n) && !/_/.test(n)) || canonical,
       count,
+      // ⛔ false = the town asks for this and the library cannot NAME it. That is the RED LIST,
+      // not an error — surfaces should show it rather than hide the row.
+      nameResolved: !!nameResolved,
       mergedFrom: [...rawNames].sort(),
       coverage,
       covering,
