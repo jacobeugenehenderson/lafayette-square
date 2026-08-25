@@ -45,7 +45,7 @@ other is silently thrown away.** No number of extra terms fixes that — it has 
 | | **`leaf.margin`** | Entire · Serrate · Doubly-serrate · Dentate · Doubly-dentate · Crenate · Lobed · Sinuate · Undulate · Spinose | standard Latin [3+] |
 | `leaf.ways` (5) | ⛔ **SPLITS — it is TWO axes, see §2a** | | **NOT ≡** |
 | `bark.type` (8) | **`bark.texture`** | Smooth · Fissured · Furrowed · Ridged · Plated · Scaly · Shaggy · Exfoliating · Papery · Lenticellate · Mottled · Fibrous · Warty | standard dendrology [3+] |
-| | **`bark.plate_geometry`** | *(⚠️ see §4 — concept borrowed, list to be derived)* | ⛔ single-source |
+| | **`bark.plate_outline`** | *(⚠️ see §4 — concept borrowed, list to be derived)* | ⛔ single-source |
 | `bark.color` (unbuilt, "sample-pending") | **`bark.color`** | *(⚠️ see §4 — define against gradient ramps, not word buckets)* | ⛔ editorial |
 | `chassis.habit` (9) | **`chassis.habit`** | Columnar · Fastigiate · Oval · Ovoid · Rounded · Spreading · Vase · Weeping · Pyramidal · Conical · Irregular · Multi-stem · Arching · Ascending · Horizontal | standard [3+] |
 
@@ -95,9 +95,30 @@ two dimensions; our one scalar cannot describe it.
 
 ## 4. ⛔ THREE THINGS TO DERIVE OURSELVES, NOT COPY
 
-1. **Plate geometry.** The concept (bark plates have a describable shape) is real and useful for
+1. **Plate outline.** The concept (bark plates have a describable shape) is real and useful for
    the gradient-map work. But the six-term list found is **single-source curation** — derive our
    own from standard dendrology.
+
+### ⛔ §4a — `plate_outline` vs `plate_size`: RENAMED so they cannot be conflated
+*(Jacob, 2026-08-24.)* They sat adjacent as `plate_geometry` / `plate_size` — two abstract nouns
+under the same prefix, which is **exactly the shape of the `leaf.silhouette` mistake**: adjacent
+columns whose KIND is not visible in the name.
+
+| axis | kind | filled by |
+|---|---|---|
+| **`bark.plate_outline`** | **TERM** — a closed vocabulary (diamond · rectangle · oval · irregular…) | ✅ sourced concept |
+| **`bark.plate_size`** | **MAGNITUDE** — a scalar | ⛔ **GAP** — no source records it; authored dial |
+
+⭐ `outline` and `size` cannot be mistaken for each other; `geometry` and `size` could.
+⛔ Not `plate_scale` — it would read as kin to `bark.scale_frequency`, which is about **scales**
+(a bark type), not magnitude.
+
+⭐⭐ **AND THE GENERAL RULE THIS SUGGESTS, worth applying across all 31 columns:** the existing
+magnitude axes already share a convention — `groove_depth`, `scale_frequency`,
+`exfoliation_density`, `plate_size` all name a **physical quantity**. The term axes name a
+**category** — `habit`, `type`, `margin`, `outline`. **Keep that split visible in every name, so
+a column's KIND is legible without opening the rubric.** A sourced term and an authored dial
+should never be distinguishable only by context.
 2. **Colour buckets.** `Brown/Copper`, `Gray/Silver` are editorial groupings, not botanical
    terms. ⭐ **Define `bark.color` against the actual gradient-map ramps** (`bark.gradientStops`)
    rather than word buckets — the renderer wants a ramp, not a noun.
