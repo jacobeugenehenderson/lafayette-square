@@ -23,6 +23,12 @@ const CANDIDATE = {
   'ncsu|Habit/Form':'chassis.habit', 'selectree|tree_shape':'chassis.habit', 'usda|Shape and Orientation':'chassis.habit',
   'ncsu|Texture':'crown.texture', 'usda|Foliage Texture':'crown.texture',
   'usda|Foliage Porosity Summer':'chassis.density',
+  // ⛔ HARVESTED SINCE THE FIRST RUN AND MAPPED TO NOTHING. 14 observations of USDA
+  // `Growth Form` sat in the JSONL feeding no axis, so chassis.spread read
+  // NO SOURCE FETCHED while the source was already in the file. An alias is only half
+  // a mapping — the field has to arrive. (Rook found the mirror of this in the
+  // hydrator's FIELD_MAP the same night: three axes fed by no field at all.)
+  'usda|Growth Form':'chassis.spread',
   'ncsu|Woody Plant Leaf Characteristics':'leaf.foliage_type', 'selectree|foliage_type':'leaf.foliage_type',
   // ⛔ USDA 'Leaf Retention' is NOT a foliage type — it is a Yes/No boolean, and the
   // survey warns it is scored BY DEFAULT for woody plants. Mapping it here produced 14
@@ -55,20 +61,24 @@ const discarded = new Map()    // same shape, for values NOT_A_TRAIT explains
 const discardReason = new Map()
 for (const o of obs) {
   if (String(o.field).startsWith('_')) continue
-  const axis = CANDIDATE[`${o.source}|${o.field}`]
-  if (!axis) continue
+  const nominal = CANDIDATE[`${o.source}|${o.field}`]
+  if (!nominal) continue
+  // ⭐⭐ A VALUE CHOOSES ITS OWN AXIS, AND THE CREDIT MUST FOLLOW IT THERE.
+  // vocabulary.mjs sends `Shape and Orientation :: Erect` to chassis.ORIENTATION and
+  // `Leaf Shape :: Palmately-lobed` to leaf.MARGIN. Resolving against the target while
+  // crediting the nominal axis — which is what this did — is worse than not following
+  // the redirect at all: it credited `Erect` ×20 to chassis.habit, the single axis that
+  // value must never touch, and reported chassis.orientation as NO SOURCE FETCHED while
+  // 15 species had one. Both halves of the redirect, or neither.
+  const rd = REDIRECTS[nominal]?.[normalize(o.value)]
+  const axis = rd ? rd.axis : nominal
   if (!grid.has(axis)) grid.set(axis, new Map())
   const per = grid.get(axis)
   if (!per.has(o.species)) per.set(o.species, { resolved: new Set(), raw: new Set() })
   const cell = per.get(o.species)
   cell.raw.add(String(o.value))
   if (SCALARISH.has(axis)) { cell.resolved.add(String(o.value)); continue }
-  // ⭐ A VALUE CAN CHANGE ITS OWN AXIS. vocabulary.mjs's TERM_REDIRECTS sends
-  // `Leaf Shape :: Palmately-lobed` to `leaf.margin :: lobed`, so measuring only the
-  // field's nominal axis under-reports: the term reads unresolved on leaf.shape while
-  // it is in fact landing on leaf.margin. Ask the redirect target too.
-  const rd = REDIRECTS[axis]?.[normalize(o.value)]
-  const r = rd ? { ...resolveTerm(rd.axis, rd.value), redirectedTo: rd.axis } : resolveTerm(axis, o.value)
+  const r = rd ? resolveTerm(rd.axis, rd.value) : resolveTerm(axis, o.value)
   if (r.resolved) cell.resolved.add(r.value)
   else {
     // ⛔ A REASONED DISCARD IS NOT OWED WORK. `Erect` is deliberately unmappable —
@@ -138,8 +148,10 @@ console.log('\n══ WHICH SOURCE ANSWERS WHICH AXIS (species covered, resolved
 const bySrc = new Map()
 for (const o of obs) {
   if (String(o.field).startsWith('_')) continue
-  const axis = CANDIDATE[`${o.source}|${o.field}`]; if (!axis) continue
-  const ok = SCALARISH.has(axis) || resolveTerm(axis, o.value).resolved
+  const nominal = CANDIDATE[`${o.source}|${o.field}`]; if (!nominal) continue
+  const rd = REDIRECTS[nominal]?.[normalize(o.value)]      // same redirect, same credit
+  const axis = rd ? rd.axis : nominal
+  const ok = SCALARISH.has(axis) || (rd ? resolveTerm(rd.axis, rd.value) : resolveTerm(axis, o.value)).resolved
   if (!ok) continue
   if (!bySrc.has(axis)) bySrc.set(axis, {})
   const m = bySrc.get(axis); (m[o.source] = m[o.source] || new Set()).add(o.species)
