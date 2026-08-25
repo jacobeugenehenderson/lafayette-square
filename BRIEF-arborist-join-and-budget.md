@@ -83,10 +83,25 @@ shared — the chassis ratified for `maple_red` (728) is likely the one `maple_s
 already sorts `b.count - a.count`. **Every surface that lists species must preserve that order**
 — it is the work queue, and it is what makes ratify-as-you-go converge instead of sprawl.
 
-⚠️ **Still genuinely unbuilt** (not a framing error): there is **no approval gesture for bark or
-leaf at all** — `arborist/state/` holds only `_chassis-curation.json`, and bark/leaf are 0-of-9
-and 0-of-18 ratified because **nothing can ratify them.** Ratify-as-you-go needs a control to
-ratify WITH. That is a small build on the Shelves and it gates the whole loop.
+### ⛔ AND THE "MISSING BARK/LEAF APPROVAL" WAS MY ERROR TOO — nothing is unbuilt here
+I wrote that bark/leaf ratification was *"genuinely unbuilt… it gates the whole loop."* **It is
+not, and it does not.** *(Jacob: "look at how the bark and leaves are already in the panel.")*
+**`SalonWorkstage.jsx:20` — "Per-slot controls rail: Chassis / Bark / Leaves"**, and `:121` —
+*"bark swatch = `color.jpg`, leaf cutout = `shape.png`. Clickable grid."* ⭐ **The affirmative
+act already exists: you PICK a bark and a leaf per species, and the selection IS the
+ratification** — the same rule as *composition IS promotion*.
+
+⛔ **I went looking for a `_bark-curation.json`, did not find one, and concluded a gesture was
+missing.** Absence of a state file is not absence of a surface.
+
+⭐ **And the asymmetry with chassis is CORRECT, not a gap:**
+| part | count | needs a curation pass? |
+|---|---:|---|
+| chassis | **239** | ✅ yes — `_chassis-curation.json`, the "tagging gauntlet" (`SalonWorkstage.jsx:329`) |
+| bark | **9** | ❌ no — the whole library fits in one grid |
+| leaf | **18** | ❌ no — same |
+**Chassis needed approve/setAside because of VOLUME.** Nine barks and eighteen leaf packs have no
+gauntlet to survive. ⇒ **Ratify-as-you-go can start today; nothing gates it.**
 
 ---
 
