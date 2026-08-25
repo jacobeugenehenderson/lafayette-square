@@ -224,7 +224,11 @@ export const NOT_A_TRAIT = {
     'single stem': 'trunk COUNT, not crown form — complement of multi-stem',
     'single crown': 'trunk COUNT, not crown form — complement of multi-stem',
     'single trunk': 'trunk COUNT, not crown form — complement of multi-stem',
-    dense: 'crown DENSITY, not crown form',
+    // ⛔ NOT redirected to chassis.density, and the reason matters (pilot session,
+    // 2026-08-25): NCSU's Habit/Form `Dense` is a crown-FORM tag, while USDA's Foliage
+    // Porosity is a 3-point Porous/Moderate/Dense measurement. They are two different
+    // scales, and folding them under one axis would make the axis mean nothing.
+    dense: 'crown-form tag, not the foliage-porosity scale — two different measurements',
     colonizing: 'spread behaviour, not crown form',
   },
 }
