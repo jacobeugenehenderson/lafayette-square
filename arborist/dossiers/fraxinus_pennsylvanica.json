@@ -116,10 +116,28 @@
       "note": "whole compound-leaf length; leaflet ~8cm"
     },
     "crown.texture": {
-      "target": "coarse",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "coarse",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.arrangement": {
       "target": "opposite",
@@ -133,22 +151,63 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lanceolate",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "elliptical",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "ovate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.margin": {
-      "target": "serrate",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "crenate",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "entire",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "serrate",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.foliage_type": {
       "target": "deciduous",
@@ -187,8 +246,10 @@
     "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "crown.texture",
       "leaf.arrangement",
       "leaf.shape",
+      "leaf.margin",
       "leaf.foliage_type",
       "overlay.fruit_type"
     ]

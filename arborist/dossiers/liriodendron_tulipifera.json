@@ -69,16 +69,32 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": 80,
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": 30,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 120,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": "rounded",
@@ -86,26 +102,63 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "rounded",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "oval",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "pyramidal",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "conical",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "crown.texture": {
-      "target": "medium",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "coarse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -125,18 +178,63 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lobed",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "entire",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "bark.texture": {
-      "target": "fissured",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "ridged",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "smooth",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "fissured",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -189,9 +287,11 @@
     "hydratedAxes": [
       "chassis.size",
       "chassis.habit",
+      "crown.texture",
       "leaf.arrangement",
       "leaf.shape",
       "leaf.margin",
+      "bark.texture",
       "leaf.type",
       "leaf.foliage_type",
       "overlay.fruit_type"

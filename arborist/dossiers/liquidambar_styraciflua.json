@@ -125,16 +125,32 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lobed",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "dentate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "serrate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
       "target": "simple",

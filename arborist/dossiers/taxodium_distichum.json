@@ -124,12 +124,25 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "alternate",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "whorled",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.shape": {
       "target": "lanceolate",
@@ -137,12 +150,25 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lanceolate",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "linear",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.foliage_type": {
       "target": "deciduous",

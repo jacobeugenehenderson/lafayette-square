@@ -69,12 +69,25 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": 60,
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": 70,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": "rounded",
@@ -82,16 +95,33 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "rounded",
+          "seen": 3,
+          "sources": [
+            "ncsu",
+            "selectree",
+            "usda"
+          ]
+        },
         {
           "value": "arching",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "spreading",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -106,10 +136,42 @@
       "sourced": true
     },
     "bark.texture": {
-      "target": "scaly",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lenticellate",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "furrowed",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        },
+        {
+          "value": "ridged",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        },
+        {
+          "value": "scaly",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "compound-bipinnate",
@@ -177,6 +239,7 @@
       "chassis.habit",
       "leaf.arrangement",
       "leaf.margin",
+      "bark.texture",
       "leaf.type",
       "leaf.shape",
       "leaf.foliage_type",

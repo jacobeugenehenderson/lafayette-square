@@ -65,23 +65,67 @@
   ],
   "required": {
     "chassis.size": {
-      "target": 50,
+      "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": 50,
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
         {
           "value": 70,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
-      "target": "rounded",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
+      "candidates": [
+        {
+          "value": "multi-stem",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "irregular",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "vase",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "rounded",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "crown.texture": {
       "target": "coarse",
@@ -101,16 +145,32 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "ovate",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "elliptical",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "oblong",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.margin": {
       "target": "serrate",
@@ -173,6 +233,7 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
+      "chassis.habit",
       "crown.texture",
       "leaf.arrangement",
       "leaf.shape",

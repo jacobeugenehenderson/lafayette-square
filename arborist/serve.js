@@ -1307,6 +1307,56 @@ const server = createServer(async (req, res) => {
       }
     }
 
+    // POST /salon/:species/settle — ⭐ THE OPERATOR SETTLES A CONTESTED AXIS.
+    //
+    // Jacob, 2026-08-25: "if there's disagreement perhaps we publish the disagreement and
+    // the operator settles." Sources disagree constantly and no automatic rule is honest --
+    // most-frequent invents a consensus, source-priority asserts an authority we have not
+    // established, and writing nothing leaves a cell indistinguishable from un-scraped.
+    // So hydrate publishes every candidate WITH its sources, and this is where a human
+    // ends it.
+    //
+    // ⛔ Settling is AUTHORING, and the write says so: `sourced` is dropped, so the cell
+    // stops being machine output and hydrate will never re-derive it again. What was
+    // rejected is kept in `settledOver` -- the operator overruled real sources and that
+    // record is worth more than the losing values.
+    // Body: { axis: string, value: string|number|null }  (null = "none of these")
+    if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/settle$/))) {
+      try {
+        const body = await readBody(req)
+        const axis = String(body.axis || '')
+        if (!axis) return jsonRes(res, 400, { error: 'axis required' })
+
+        const { dossierFileForSalonSpecies } = await import('./salon-options.js')
+        const file = dossierFileForSalonSpecies(decodeURIComponent(m[1]))
+        if (!file) return jsonRes(res, 404, { error: 'no dossier for species' })
+
+        const d = JSON.parse(readFileSync(file, 'utf8'))
+        const cell = d.required?.[axis]
+        if (!cell) return jsonRes(res, 404, { error: 'axis not on this dossier', axis })
+
+        const candidates = cell.candidates || []
+        if (body.value !== null && candidates.length &&
+            !candidates.some(c => String(c.value) === String(body.value))) {
+          // Not a refusal -- the operator may know something the sources do not. Recorded.
+          cell.offRoster = true
+        }
+        cell.target = body.value === null ? null : body.value
+        cell.settledBy = 'operator'
+        if (candidates.length) cell.settledOver = candidates
+        delete cell.sourced          // ⛔ no longer machine output; never re-derived
+        delete cell.contested
+        delete cell.candidates
+        delete cell.settle
+        delete cell.owedHardness
+
+        writeFileSync(file, JSON.stringify(d, null, 2) + '\n')
+        return jsonRes(res, 200, { ok: true, axis, value: cell.target, cell })
+      } catch (err) {
+        return jsonRes(res, 500, { error: err.message })
+      }
+    }
+
     // ── Salon chassis curation (Brief 1.5b, Quill 2026-05-21) ─────────
     //
     // Operator-authored sidecar at `arborist/state/_chassis-curation.json`

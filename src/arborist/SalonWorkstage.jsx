@@ -130,6 +130,81 @@ function ReferencePlate({ p }) {
   )
 }
 
+// ⭐⭐ THE DISAGREEMENT, PUBLISHED — and the control that ends it.
+//
+// Jacob, 2026-08-25: "if there's disagreement perhaps we publish the disagreement and the
+// operator settles." Botanical sources disagree constantly (NCSU's Habit/Form is
+// multi-select and returns five habits for one tree), and every automatic rule lies in a
+// different way: most-frequent invents a consensus, source-priority asserts an authority
+// we never established, and writing nothing leaves a cell that looks exactly like one
+// nobody has scraped yet. So hydrate writes every candidate WITH its sources and marks
+// the cell `contested`; this is where a human ends it.
+//
+// ⛔ Settling is AUTHORING. The pick drops `sourced`, so hydrate will never re-derive that
+// cell again, and what was overruled is kept in `settledOver`.
+function ContestedAxes({ dossier, speciesId }) {
+  const [busy, setBusy] = useState(null)
+  const [done, setDone] = useState({})
+  const rows = Object.entries(dossier.required || {}).filter(([, c]) => c && c.contested)
+  if (!rows.length) return null
+
+  const settle = async (axis, value) => {
+    setBusy(axis)
+    try {
+      const r = await fetch(`/api/arborist/salon/${encodeURIComponent(speciesId)}/settle`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ axis, value }),
+      })
+      const j = await r.json()
+      setDone(p => ({ ...p, [axis]: j.ok ? (value === null ? 'none of these' : String(value)) : `⛔ ${j.error}` }))
+    } catch (e) {
+      setDone(p => ({ ...p, [axis]: `⛔ ${e.message}` }))
+    } finally { setBusy(null) }
+  }
+
+  return (
+    <div style={{ marginTop: 8, paddingTop: 7, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ fontSize: 10, fontWeight: 600, color: '#d08a3a', marginBottom: 5 }}>
+        ⚖️ {rows.length} axis/axes where the sources disagree — your call
+      </div>
+      {rows.map(([axis, c]) => (
+        <div key={axis} style={{ marginBottom: 7 }}>
+          <div style={{ fontSize: 10, color: '#cdd6df' }}>
+            <b>{axis}</b>
+            {c.target == null
+              ? <span style={{ color: '#d08a3a' }}> · tied, no value chosen</span>
+              : <span style={{ color: '#8a93a0' }}> · showing {String(c.target)}</span>}
+          </div>
+          {done[axis] ? (
+            <div style={{ fontSize: 10, color: '#7fb069', marginTop: 2 }}>✅ settled: {done[axis]}</div>
+          ) : (
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 3 }}>
+              {(c.candidates || []).map((cand, i) => (
+                <button key={i} disabled={busy === axis} onClick={() => settle(axis, cand.value)}
+                  title={`claimed by: ${(cand.sources || []).join(', ')}`}
+                  style={{
+                    fontSize: 10, padding: '2px 6px', borderRadius: 3, cursor: 'pointer',
+                    background: String(cand.value) === String(c.target) ? 'rgba(200,168,58,0.18)' : 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.14)', color: '#e6e9ee',
+                  }}>
+                  {String(cand.value)}
+                  <i style={{ color: '#8a93a0', fontStyle: 'normal' }}> · {(cand.sources || []).join('+')}</i>
+                </button>
+              ))}
+              <button disabled={busy === axis} onClick={() => settle(axis, null)}
+                title="none of the sources is right — leave it empty for authoring"
+                style={{
+                  fontSize: 10, padding: '2px 6px', borderRadius: 3, cursor: 'pointer',
+                  background: 'transparent', border: '1px dashed rgba(255,255,255,0.2)', color: '#8a93a0',
+                }}>none of these</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function ReferencePanel() {
   const d = useArboristStore(s => s.salonDossier)
   const [open, setOpen] = useState(true)
@@ -157,6 +232,7 @@ function ReferencePanel() {
               <ReferencePlate key={i} p={p} />
             ))}
           </div>
+          <ContestedAxes dossier={d} speciesId={d.canonicalId} />
         </>
       )}
     </div>

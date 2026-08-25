@@ -109,22 +109,53 @@
       "tol": 0.4
     },
     "crown.texture": {
-      "target": "coarse",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "coarse",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.margin": {
       "target": "lobed",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": "lobed",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "entire",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
       "target": "simple",
@@ -169,6 +200,7 @@
     "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "crown.texture",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",

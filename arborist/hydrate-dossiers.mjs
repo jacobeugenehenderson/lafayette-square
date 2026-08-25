@@ -198,7 +198,8 @@ for (const o of obs) {
   const perFile = tally.get(file)
   if (!perFile.has(axis)) perFile.set(axis, new Map())
   const votes = perFile.get(axis)
-  votes.set(target, (votes.get(target) || 0) + 1)
+  if (!votes.has(target)) votes.set(target, new Set())
+  votes.get(target).add(o.source)
   ;(perAxis.get(axis) || perAxis.set(axis, new Set()).get(axis)).add(sp)
 }
 
@@ -231,23 +232,45 @@ if (conflicts.length) {
 if (noDossier.size) console.log(`\n⚠️ NO DOSSIER for ${noDossier.size} species (create them, then re-run): ${[...noDossier].join(' · ')}`)
 if (skippedAuthored) console.log(`\nskipped ${skippedAuthored} observation(s) on AUTHORED axes — correct, those are not researched`)
 
-// Resolve the tallies. A plurality wins; a tie writes nothing and is reported.
+// ⭐⭐ PUBLISH THE DISAGREEMENT; THE OPERATOR SETTLES IT (Jacob, 2026-08-25).
+//
+// Sources disagree constantly -- NCSU's Habit/Form is multi-select and returned five
+// habits for green ash in one record -- and none of the obvious rules is honest. Taking
+// the most frequent invents a consensus that does not exist. Ranking by source priority
+// asserts an authority we have not established. Writing nothing leaves the operator an
+// EMPTY CELL that looks identical to "nobody has scraped this yet", which is the silent
+// substitution this kit exists to refuse.
+//
+// So the disagreement itself is the artifact. Every candidate is written with the sources
+// that claimed it, the cell is marked `contested`, and it renders in the Salon for the
+// operator to settle. Settling it is authoring: the operator's pick drops `sourced` and
+// the cell stops being ours.
+//
+// ⛔ A tie still writes NO TARGET -- but it now writes the CANDIDATES, which is the part
+// that was missing. Empty-and-silent was the defect, not empty.
 for (const [file, perAxis2] of tally) {
   for (const [axis, votes] of perAxis2) {
-    const ranked = [...votes].sort((a, b) => b[1] - a[1])
-    if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) {
-      ties.push(`${file}  ${axis}  ${ranked.filter(r => r[1] === ranked[0][1]).map(r => r[0]).join(' / ')}  (${ranked[0][1]} vote(s) each)`)
-      continue
-    }
+    const ranked = [...votes].sort((a, b) => b[1].size - a[1].size)
+    const candidates = ranked.map(([value, srcs]) => ({ value, seen: srcs.size, sources: [...srcs].sort() }))
+    const tied = ranked.length > 1 && ranked[0][1].size === ranked[1][1].size
+    const contested = ranked.length > 1
+
     if (!pending.has(file)) pending.set(file, {})
-    const cell = spec(axis, ranked[0][0])
-    if (ranked.length > 1) cell.alternatives = ranked.slice(1).map(([v, n]) => ({ value: v, seen: n }))
+    const cell = spec(axis, tied ? null : ranked[0][0])
+    if (contested) {
+      cell.contested = true
+      cell.candidates = candidates
+      cell.settle = tied
+        ? 'sources tie — no target. Pick one in the Salon; that pick is authoring.'
+        : 'plurality shown as target, but sources disagree. Confirm or pick another.'
+    }
+    if (tied) ties.push(`${file}  ${axis}  ${candidates.map(c => `${c.value} (${c.sources.join('+')})`).join(' / ')}`)
     pending.get(file)[axis] = cell
     applied++
   }
 }
 if (ties.length) {
-  console.log(`\n⛔ ${ties.length} TIED AXIS/AXES — no plurality, so NO TARGET written:`)
+  console.log(`\n⚖️  ${ties.length} TIED AXIS/AXES — no target written, candidates PUBLISHED for the operator:`)
   for (const t of ties) console.log(`   ${t}`)
 }
 

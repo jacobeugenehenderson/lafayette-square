@@ -31,6 +31,22 @@ export function dossierForSalonSpecies(speciesId) {
   return null
 }
 
+/**
+ * The same lookup, returning the PATH rather than the parsed dossier — the settle
+ * endpoint has to write the file back, and re-deriving the filename from canonicalId
+ * would guess where dossierForSalonSpecies knows.
+ */
+export function dossierFileForSalonSpecies(speciesId) {
+  if (!speciesId || !existsSync(DOSSIERS)) return null
+  for (const f of readdirSync(DOSSIERS).filter(n => n.endsWith('.json'))) {
+    const p = join(DOSSIERS, f)
+    const d = readJSON(p)
+    if (d.canonicalId === speciesId) return p
+    for (const inv of (d.inventoryNames || [])) if (slugifyRoster(inv) === speciesId) return p
+  }
+  return null
+}
+
 /** matcher options + the (slim) dossier for one Salon species. */
 export function salonOptionsForSpecies(speciesId) {
   const dossier = dossierForSalonSpecies(speciesId)
