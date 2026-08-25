@@ -37,16 +37,6 @@
           "askedAs": [
             "selectree: height_high"
           ]
-        },
-        {
-          "value": 18.3,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ],
-          "askedAs": [
-            "usda: Height, Mature (feet)"
-          ]
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
@@ -302,6 +292,18 @@
       "tol": 1,
       "sourced": true
     },
+    "chassis.size_20yr": {
+      "target": 7.9,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 18.3,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
@@ -350,6 +352,8 @@
       "overlay.conspicuous",
       "chassis.density",
       "chassis.trunks",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   }

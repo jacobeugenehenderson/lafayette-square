@@ -121,6 +121,28 @@ console.log('')
 // (gate moved below — it must cover the VALUE checks too; it used to sit above them,
 // so a reported stale value still printed ✅ PASS. A gate that runs before half the
 // assertions is the same defect as no gate.)
+// 2e. ⭐ FIELD_MAP — the SIXTH store, and it was invisible.
+// ⛔ RECEIPT, 2026-08-25: hydrate's FIELD_MAP was repointed at `chassis.size_max` and
+// `chassis.size_20yr` BEFORE those axes existed in the rubric, and this check reported
+// ✅ PASS. A field mapped to a non-existent axis does not throw — hydrate skips it — so
+// the field silently produces nothing and reads as "no source carries this". Exactly the
+// failure the rest of this file exists to catch, in a store it did not know about.
+{
+  const hydSrc = readFileSync(path.join(ROOT, 'arborist/hydrate-dossiers.mjs'), 'utf8')
+  const block = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)
+  if (!block) console.error('  ⚠️ could not parse FIELD_MAP from hydrate-dossiers.mjs — check by hand')
+  else {
+    const entries = [...block[0].matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._0-9]+)',/gm)]
+    const declared = block[0].split('\n').filter(l => /^\s*'?[A-Za-z][^:]*'?:\s*'[^']*',/.test(l)).length
+    if (declared !== entries.length) {
+      console.error(`  ⛔ FIELD_MAP parse is SILENTLY PARTIAL: ${declared} in source, ${entries.length} parsed`)
+      bad++
+    }
+    for (const [, , axis] of entries) if (!live.has(axis)) report('hydrate FIELD_MAP', axis)
+    console.log(`FIELD_MAP: ${entries.length} source fields`)
+  }
+}
+
 // 3. ⭐⭐ AND THE VALUES, NOT JUST THE KEYS.
 // ⛔ RECEIPT, 2026-08-25: migrating trunk count out of chassis.habit meant REMOVING the
 // value `multi-stem` from that axis. Five chassis parts were tagged with it and two

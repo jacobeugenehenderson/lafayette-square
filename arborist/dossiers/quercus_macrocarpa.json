@@ -15,33 +15,7 @@
       "target": 24.4,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 24.4,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ],
-          "askedAs": [
-            "ncsu: Dimensions",
-            "selectree: height_high"
-          ]
-        },
-        {
-          "value": 30.5,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ],
-          "askedAs": [
-            "usda: Height, Mature (feet)"
-          ]
-        }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "sourced": true
     },
     "chassis.density": {
       "target": null,
@@ -268,6 +242,18 @@
       "tol": 1,
       "sourced": true
     },
+    "chassis.size_20yr": {
+      "target": 7.6,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 30.5,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
@@ -286,7 +272,7 @@
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
     "⛔ NO TARGET — sources tied on: chassis.density, crown.texture, overlay.fruit_type, leaf.shape, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size, chassis.habit — see .alternatives",
+    "sources disagree on: chassis.habit — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -315,6 +301,8 @@
       "leaf.type",
       "overlay.conspicuous",
       "chassis.trunks",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   }

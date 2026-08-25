@@ -20,14 +20,18 @@
  * not of fact: USDA's `Height, Mature` is the maximum a species attains in the wild
  * (eastern white pine 45.7 m), while NCSU and SelecTree publish typical landscape size
  * (24.4 m). Both correct. USDA reads higher on 11 of the 17 species where they overlap.
- * ⛔ Do NOT resolve that by preferring a source — that rule is dead. Candidates carry
- * `askedAs` so the operator settles it knowing which question each number answered.
+ * ⭐ RESOLVED 2026-08-25 (Jacob): "why not have separate columns?" — three questions get
+ * three axes, so none of them has to lose. chassis.size is TYPICAL LANDSCAPE height (what
+ * we place), chassis.size_max is the MAXIMUM ATTAINABLE (USDA), chassis.size_20yr is the
+ * juvenile figure that had been sitting in the corpus unmapped since the first harvest.
+ * The contested cell was never a disagreement — it was three answers crammed into one
+ * column. Candidates still carry `askedAs` for the real disagreements that remain.
  */
 
 export const FT_TO_M = 0.3048
 
 /** Axes whose sources publish feet and whose rubric unit is metres. */
-export const FEET_AXES = new Set(['chassis.size', 'crown.base_height'])
+export const FEET_AXES = new Set(['chassis.size', 'chassis.size_max', 'chassis.size_20yr', 'crown.base_height'])
 
 /**
  * Parse a source's size string to METRES.

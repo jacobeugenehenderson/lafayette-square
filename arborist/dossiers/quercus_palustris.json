@@ -193,6 +193,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.size_20yr": {
+      "target": 12.2,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 30.5,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
     }
   },
   "recipe": {
@@ -227,6 +239,8 @@
       "overlay.conspicuous",
       "chassis.density",
       "chassis.spread",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   },

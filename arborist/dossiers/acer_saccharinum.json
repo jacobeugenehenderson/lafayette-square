@@ -187,6 +187,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.size_20yr": {
+      "target": 13.7,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 27.4,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
     }
   },
   "recipe": {
@@ -221,7 +233,9 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.trunks"
+      "chassis.trunks",
+      "chassis.size_20yr",
+      "chassis.size_max"
     ]
   },
   "partAvailability": {

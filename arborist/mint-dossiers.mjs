@@ -51,11 +51,11 @@ function assertFullParse(block, parsedCount, what) {
 }
 
 const fmBlock2 = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)[0]
-const fmEntries = [...fmBlock2.matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._]+)',/gm)]
+const fmEntries = [...fmBlock2.matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._0-9]+)',/gm)]
 assertFullParse(fmBlock2, fmEntries.length, 'FIELD_MAP (mint-dossiers)')
 const FIELD_MAP = Object.fromEntries(fmEntries.map(m => [m[1], m[2]]))
 const AUTHORED = new Set([...hydSrc.match(/const AUTHORED = new Set\(\[[\s\S]*?\]\)/)[0]
-  .matchAll(/'([a-z._]+)'/g)].map(m => m[1]))
+  .matchAll(/'([a-z._0-9]+)'/g)].map(m => m[1]))
 
 // ⚠️ Built from AUTHORED dossiers only. Including our own minted stubs here made the
 // script idempotent in the worst way -- a stub minted with a bug could never be re-minted

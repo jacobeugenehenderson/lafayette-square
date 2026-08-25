@@ -12,24 +12,12 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": 9.1,
+      "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
-        {
-          "value": 9.1,
-          "seen": 2,
-          "sources": [
-            "selectree",
-            "usda"
-          ],
-          "askedAs": [
-            "selectree: height_high",
-            "usda: Height, Mature (feet)"
-          ]
-        },
         {
           "value": 7.6,
           "seen": 1,
@@ -39,9 +27,19 @@
           "askedAs": [
             "ncsu: Dimensions"
           ]
+        },
+        {
+          "value": 9.1,
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ],
+          "askedAs": [
+            "selectree: height_high"
+          ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
       "target": null,
@@ -246,6 +244,18 @@
       "tol": 1,
       "sourced": true
     },
+    "chassis.size_20yr": {
+      "target": 6.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 9.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
@@ -263,8 +273,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.habit, leaf.shape, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size, overlay.fruit_type — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, leaf.shape, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: overlay.fruit_type — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -294,6 +304,8 @@
       "overlay.conspicuous",
       "chassis.density",
       "chassis.trunks",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   }

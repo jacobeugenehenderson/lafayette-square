@@ -217,6 +217,18 @@
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.size_20yr": {
+      "target": 10.7,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 21.3,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
     }
   },
   "recipe": {
@@ -253,6 +265,8 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   },

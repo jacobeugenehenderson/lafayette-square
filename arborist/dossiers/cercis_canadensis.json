@@ -170,6 +170,18 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "chassis.size_20yr": {
+      "target": 7.6,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 9.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
     }
   },
   "recipe": {
@@ -206,6 +218,8 @@
       "overlay.conspicuous",
       "chassis.density",
       "crown.texture",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation"
     ]
   },

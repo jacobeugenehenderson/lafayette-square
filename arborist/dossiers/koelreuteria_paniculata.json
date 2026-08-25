@@ -15,33 +15,7 @@
       "target": 12.2,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 12.2,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ],
-          "askedAs": [
-            "ncsu: Dimensions",
-            "selectree: height_high"
-          ]
-        },
-        {
-          "value": 13.7,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ],
-          "askedAs": [
-            "usda: Height, Mature (feet)"
-          ]
-        }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "sourced": true
     },
     "chassis.density": {
       "target": null,
@@ -321,6 +295,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.size_20yr": {
+      "target": 9.1,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
+    },
+    "chassis.size_max": {
+      "target": 13.7,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true
     }
   },
   "recipe": null,
@@ -334,7 +320,6 @@
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
     "⛔ NO TARGET — sources tied on: chassis.density, chassis.habit, crown.texture, leaf.shape, leaf.margin, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -364,7 +349,9 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.trunks"
+      "chassis.trunks",
+      "chassis.size_20yr",
+      "chassis.size_max"
     ]
   }
 }

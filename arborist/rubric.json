@@ -100,7 +100,18 @@
       "home": "tree-bounds.js → canopyByVariant (live, sole consumer bake-look.js:29); Brief-20 recenter sets Y-min 0 so height is the real metric extent",
       "tagging": "auto",
       "orthogonality": "Independent of habit and of leaf.size — the WHOLE-tree extent, not the leaf's.",
-      "seededFrom": "_chassis meta.heightRange (e.g. london_plane variant [0, 25.04])"
+      "seededFrom": "_chassis meta.heightRange (e.g. london_plane variant [0, 25.04])",
+      "why": "TYPICAL LANDSCAPE mature height in METRES — the size we actually place. Fed by NCSU Dimensions (Height, high bound) and SelecTree height_high. Metres, not feet: sources ship feet and normalizeScale bakes this as metres. Not the maximum a species can attain — that is chassis.size_max."
+    },
+    {
+      "id": "chassis.size_20yr",
+      "kind": "scalar",
+      "why": "Height in metres at 20 years (USDA \"Height at 20 Years, Maximum\"). The juvenile figure — a street tree spends most of its life short of mature height. Sat in the corpus UNMAPPED from the first harvest; a third distinct question, not a weaker answer to the first two."
+    },
+    {
+      "id": "chassis.size_max",
+      "kind": "scalar",
+      "why": "MAXIMUM ATTAINABLE height in metres — what the species reaches in the wild over a full lifespan (USDA \"Height, Mature\"). NOT what we place: an eastern white pine is 45.7 m in forest and 24.4 m as a street tree. Its own column because it is a real known number, and making it compete with landscape height manufactured a fake disagreement (Jacob, 2026-08-25: the trees are average and we know what the outlier numbers are)."
     },
     {
       "id": "chassis.lean",

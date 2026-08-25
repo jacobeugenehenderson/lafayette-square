@@ -55,7 +55,7 @@ function assertFullParse(block, parsedCount, what) {
 }
 
 const fmBlock = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)
-const fmEntries = [...fmBlock[0].matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._]+)',/gm)]
+const fmEntries = [...fmBlock[0].matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._0-9]+)',/gm)]
 assertFullParse(fmBlock[0], fmEntries.length, 'FIELD_MAP (claims-cutover-casualties)')
 const FIELD_MAP = Object.fromEntries(fmEntries.map(m => [m[1], m[2]]))
 

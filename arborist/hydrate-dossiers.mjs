@@ -76,7 +76,10 @@ const FIELD_MAP = {
   'Shape and Orientation': 'chassis.habit',
   'Foliage Texture': 'crown.texture',
   'Leaf Retention': 'leaf.foliage_type',
-  'Height, Mature (feet)': 'chassis.size',
+  // ⭐ THREE QUESTIONS, THREE COLUMNS (Jacob, 2026-08-25). These were all landing on
+  // chassis.size and manufacturing a disagreement out of three different measurements.
+  'Height, Mature (feet)': 'chassis.size_max',
+  'Height at 20 Years, Maximum (feet)': 'chassis.size_20yr',
   // ── Urban Tree Database ──
   crown_base_height: 'crown.base_height',
   crown_ratio: 'crown.ratio',
