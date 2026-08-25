@@ -38,7 +38,7 @@ table on purpose; the live state is [§3](#3-findings--gaps-ranked))*.
 | `security_definer_view` | ERROR/WARN | `courier_credential_status` exposed name/email/phone with definer rights | ✅ fixed by `009` (F-7) |
 | `function_search_path_mutable` | WARN | `suspend_expired_couriers`, `try_activate_courier`, `get_onboarding_status` had no `set search_path` | ✅ fixed by `009` (F-8) |
 | `anon_/authenticated_security_definer_function_executable` | WARN | 6 definer functions callable via `/rest/v1/rpc/*` — **the `PUBLIC` default-grant class** | ✅ all 6 closed by `014`+`015`+`016` (F-15) |
-| `auth_leaked_password_protection` | WARN | Auth-console setting, not in repo | 🚫 **UNFIXABLE ON THE CURRENT PLAN — and MOOT.** See F-17 |
+| `auth_leaked_password_protection` | WARN | Auth-console setting, not in repo | ✅ **GONE — the SURFACE was removed, not the lint suppressed** (F-17). Pro-gated and moot; ⛔ do not buy Pro for it |
 
 > ✅ **CLOSED 2026-08-24 (Wren).** `009_security_advisor_fixes.sql` is **applied to prod**
 > (`ngbvgjzrpnfrqmzkqvch`). F-1 and F-7 are verified shut against the live API — anon now gets
@@ -60,6 +60,20 @@ table on purpose; the live state is [§3](#3-findings--gaps-ranked))*.
 > `supabase migration repair --status applied 001 … 008`, **then** `db push`. History is now tracked, so
 > the next migration is a plain push. **Check it before pushing, every time:** `supabase migration list`
 > — an empty *Remote* column means you are about to no-op.
+
+> ### ✅ ADVISOR CLEAN — 0 errors, 0 warnings (Jacob, dashboard, 2026-08-25)
+> Every row in the table above is closed. ⛔ **Re-run it rather than trusting this line** — the Advisor is
+> dashboard-only and unreachable from the CLI, which is why the repo's own detectors exist alongside it:
+>
+> ```
+> SUPABASE_URL=… SUPABASE_ANON_KEY=… node scratch/claims-cary-anon-exposure.mjs   # PASS
+> SUPABASE_SERVICE_ROLE_KEY=… bash scratch/claims-onboarding-guard.sh             # exits 1 until run with the key
+> ```
+>
+> ⭐ The leaked-password WARN cleared because **the email/password provider was turned off** — the surface
+> is gone, so the lint has nothing to fire on. It was never suppressed and no plan was bought. ⛔ Turning
+> that provider back on re-arms it, and it is Pro-gated, so the fix would then cost money for a door Cary
+> does not use (one auth call in the whole codebase: `signInWithOtp({ phone })`).
 
 ---
 
