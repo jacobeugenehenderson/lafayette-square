@@ -86,6 +86,14 @@ branches**. The near row exists precisely so trees the camera can see a trunk on
 canopy-only trees are reaching the foreground, they read as shrunken. That is the line being
 in the wrong place, not the impostor being wrong.
 
+### ⛔⛔ AND THE ORDERING CORRECTION — the join is NOT the fix for this
+I wrote that the botanical/roster twins were "the join showing up as a render defect, one key
+fixes both." **Backwards.** `InstancedTrees.jsx:825` → a species with no baked capture falls
+through to **MESH**, never blank (`:848`, verbatim: *"real geometry, never blank"*).
+⇒ **The join gap IS the 1893 "leak", and those are the trees Jacob called superior.** Filling
+the join makes MORE impostors — more of the symptom. ⭐ **Build the join as foundation; do NOT
+land it ahead of the impostor reading right.**
+
 ### 🔧 THE FAST LEVERS — URL only, no re-bake, use these to find it in minutes
 - **`?heroGeom=0.5`** ⭐ the single most useful dial. It is the legacy fraction that decides
   how many trees keep REAL GEOMETRY (default **0.15** = only the tallest 15%). Raising it puts

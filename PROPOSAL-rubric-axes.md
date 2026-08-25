@@ -131,11 +131,21 @@ should never be distinguishable only by context.
 - **~6 green trees.** Re-labelling is a rounding error. ⛔ Do it in one cut, not by aliasing.
 - `arborist/vocabulary.mjs` already resolves terms per axis and returns `resolved:false` rather
   than guessing — the new axes drop straight in; `TERM_ALIASES` gains entries, loses nothing.
-- ⭐ **This is on the critical path for the TREE RENDER BUG, not adjacent to it.** The species
-  with no hero impostor are the botanical/roster twins — `quercus_alba`/`oak_white`,
-  `acer_saccharum`/`maple_sugar`, `tilia_americana`/`linden_american`, `betula_pendula`/`birch`.
-  The roster twin has a capture; the botanical one does not. **The join is showing up as a
-  render defect**, and one key fixes both.
+- ⛔⛔ **CORRECTED 2026-08-24 — I had this BACKWARDS.** I wrote *"the join is showing up as a
+  render defect, and one key fixes both."* **It is not a fix for the render symptom; it makes it
+  worse first.** Verified in code: `InstancedTrees.jsx:825` gates impostor on
+  `heroImpostorRecords[renderSpecies] && wantsImpostor`; everything else **falls through to
+  MESH**, and the comment at `:848` says it outright — *"Impostor with no baked record also falls
+  through here → real geometry, never blank."*
+  ⇒ **No capture means FULL MESH, never a blank. So the join gap IS the "1893 leak" — and
+  Jacob's eye ruled those the SUPERIOR trees.** Filling the join converts them to impostors, i.e.
+  produces MORE of the thing he is complaining about.
+  ⭐ **The join is still the foundation and still worth building. It is NOT the fix for "small and
+  sparse", and it must NOT land ahead of the impostor reading right.**
+  Sizing (measured against the committed slab by the night shift): **1986/5127 (38.7%) have no
+  capture; 1104 are recoverable by merging twins alone** — `betula_pendula` 444, `quercus_alba`
+  203, `acer_saccharum_multistem` 186, `nyssa_sylvatica` 91, `acer_saccharum` 90,
+  `tilia_americana` 90 — **882 are real supply gaps.**
 
 ---
 
