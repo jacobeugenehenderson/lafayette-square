@@ -16,6 +16,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -46,13 +50,22 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "selectree: tree_shape",
+        "usda: Shape and Orientation"
+      ]
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -82,19 +95,32 @@
       "target": "samara",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type"
+      ]
     },
     "leaf.arrangement": {
       "target": "opposite",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Arrangement",
+        "selectree: leaf_arrangement"
+      ]
     },
     "leaf.margin": {
       "target": "lobed",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin",
+        "selectree: leaflet_shape",
+        "ncsu: Leaf Margin"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -127,6 +153,10 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -157,37 +187,55 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
     },
     "chassis.density": {
       "target": "dense",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.trunks": {
       "target": "single",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
     },
     "chassis.size_20yr": {
       "target": 7.6,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 15.2,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     }
   },
   "recipe": null,

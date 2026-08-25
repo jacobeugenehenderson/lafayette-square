@@ -15,7 +15,11 @@
       "target": 18.3,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
     },
     "chassis.habit": {
       "target": null,
@@ -23,6 +27,13 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "selectree: tree_shape",
+        "usda: Shape and Orientation"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -82,19 +93,30 @@
       "target": "dense",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form"
+      ]
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -125,6 +147,11 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -165,37 +192,55 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: leaf_arrangement"
+      ]
     },
     "overlay.fruit_type": {
       "target": "cone",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: fruit_type"
+      ]
     },
     "chassis.trunks": {
       "target": "single",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
     },
     "chassis.size_20yr": {
       "target": 10.7,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 36.6,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     }
   },
   "recipe": null,

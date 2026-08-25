@@ -16,6 +16,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -47,6 +51,13 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "selectree: tree_shape"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -106,13 +117,22 @@
       "target": "medium",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ]
     },
     "overlay.fruit_type": {
       "target": "drupe",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type",
+        "ncsu: Fruit Type"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -144,7 +164,11 @@
       "target": "opposite",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Arrangement",
+        "selectree: leaf_arrangement"
+      ]
     },
     "leaf.shape": {
       "target": null,
@@ -152,6 +176,10 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -181,13 +209,20 @@
       "target": "entire",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -218,49 +253,73 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
     },
     "overlay.conspicuous": {
       "target": "showy",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: flower_showiness"
+      ]
     },
     "chassis.density": {
       "target": "sparse",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.trunks": {
       "target": "multi",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
     },
     "chassis.size_20yr": {
       "target": 6.1,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 9.1,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
     }
   },
   "recipe": null,

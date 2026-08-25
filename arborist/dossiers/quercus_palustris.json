@@ -118,33 +118,51 @@
       "target": "medium",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ]
     },
     "leaf.shape": {
       "target": "elliptical",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape"
+      ]
     },
     "leaf.type": {
       "target": "simple",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
     },
     "overlay.fruit_type": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -174,37 +192,55 @@
       "target": "insignificant",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: flower_showiness"
+      ]
     },
     "chassis.density": {
       "target": "dense",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.spread": {
       "target": "colonizing",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
     },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
     },
     "chassis.size_20yr": {
       "target": 12.2,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 30.5,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     }
   },
   "recipe": {

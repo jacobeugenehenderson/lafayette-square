@@ -241,6 +241,8 @@ for (const [species, rec] of bySpecies) {
     // those cells with a shape nothing displays -- nine species showing no disagreement
     // while having ties. Two writers disagreeing about what to CALL a thing is the same
     // defect as disagreeing about its value, and it hid behind run order.
+    // Same rule as hydrate: every sourced cell carries where it came from, agreed or not.
+    required[axis].askedAs = ranked.flatMap(([, srcs]) => [...srcs].map(([src, field]) => `${src}: ${field}`)).sort()
     if (ranked.length > 1) {
       required[axis].contested = true
       required[axis].candidates = ranked.map(([value, srcs]) => ({

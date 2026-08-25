@@ -15,26 +15,41 @@
       "target": 18.3,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
     },
     "chassis.habit": {
       "target": "conical",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "selectree: tree_shape"
+      ]
     },
     "crown.texture": {
       "target": "medium",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture"
+      ]
     },
     "leaf.arrangement": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Arrangement",
+        "selectree: leaf_arrangement"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -65,6 +80,14 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture",
+        "ncsu: Surface/Attachment",
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture",
+        "selectree: bark_texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -127,13 +150,19 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "overlay.fruit_type": {
       "target": "cone",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: fruit_type"
+      ]
     }
   },
   "recipe": null,

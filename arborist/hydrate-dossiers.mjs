@@ -329,6 +329,15 @@ for (const [file, perAxis2] of tally) {
 
     if (!pending.has(file)) pending.set(file, {})
     const cell = spec(axis, tied ? null : ranked[0][0])
+    // ⭐⭐ PROVENANCE ON EVERY SOURCED CELL, NOT ONLY CONTESTED ONES (Jacob, 2026-08-25).
+    // `askedAs` was written only when sources disagreed, so an AGREED value carried no
+    // trace of where it came from — and agreement is the common case. Asked to defend
+    // "white pine 24.4 m" the only answer was re-running the harvest, which makes every
+    // uncontested value rest on someone's say-so rather than on its sources.
+    // It is two sources agreeing exactly: NCSU "Height: 50-80 ft" and SelecTree
+    // height_high "80", both 80 ft, x 0.3048. That is a derivation and the cell should
+    // say so without anyone going back to the JSONL.
+    cell.askedAs = candidates.flatMap(c => c.askedAs || [])
     if (contested) {
       cell.contested = true
       cell.candidates = candidates

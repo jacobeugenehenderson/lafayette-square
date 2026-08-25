@@ -112,50 +112,75 @@
       "target": "entire",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
     },
     "leaf.type": {
       "target": "simple",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
     },
     "overlay.fruit_type": {
       "target": "legume",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type"
+      ]
     },
     "crown.texture": {
       "target": "coarse",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Texture"
+      ]
     },
     "overlay.conspicuous": {
       "target": "showy",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: flower_showiness"
+      ]
     },
     "chassis.density": {
       "target": "medium",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
     },
     "chassis.trunks": {
       "target": "multi",
@@ -169,19 +194,29 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "selectree: tree_shape"
+      ]
     },
     "chassis.size_20yr": {
       "target": 7.6,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 9.1,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     }
   },
   "recipe": {

@@ -16,6 +16,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -46,6 +50,10 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -75,13 +83,19 @@
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form"
+      ]
     },
     "chassis.trunks": {
       "target": "multi",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Habit/Form"
+      ]
     },
     "chassis.habit": {
       "target": null,
@@ -89,6 +103,10 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "selectree: tree_shape"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -118,19 +136,30 @@
       "target": "coarse",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Texture"
+      ]
     },
     "overlay.fruit_type": {
       "target": "drupe",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Fruit Type",
+        "selectree: fruit_type"
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Arrangement",
+        "selectree: leaf_arrangement"
+      ]
     },
     "leaf.shape": {
       "target": "ovate",
@@ -138,6 +167,12 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape",
+        "ncsu: Leaf Shape",
+        "ncsu: Leaf Shape"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -179,32 +214,48 @@
       "target": "serrate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
     },
     "bark.texture": {
       "target": "smooth",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture"
+      ]
     },
     "leaf.type": {
       "target": "simple",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: foliage_type"
+      ]
     },
     "overlay.conspicuous": {
       "target": "insignificant",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: flower_showiness"
+      ]
     }
   },
   "recipe": null,

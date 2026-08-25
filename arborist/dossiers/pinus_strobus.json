@@ -15,7 +15,11 @@
       "target": 24.4,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Dimensions",
+        "selectree: height_high"
+      ]
     },
     "chassis.habit": {
       "target": "conical",
@@ -23,6 +27,14 @@
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Habit/Form",
+        "selectree: tree_shape",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form",
+        "ncsu: Habit/Form"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -85,6 +97,10 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Texture",
+        "usda: Foliage Texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -114,13 +130,22 @@
       "target": "entire",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "ncsu: Leaf Margin"
+      ]
     },
     "bark.texture": {
       "target": "furrowed",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "askedAs": [
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture",
+        "ncsu: Surface/Attachment",
+        "selectree: bark_texture"
+      ],
       "contested": true,
       "candidates": [
         {
@@ -163,49 +188,73 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "selectree: leaf_form"
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: leaf_arrangement"
+      ]
     },
     "overlay.fruit_type": {
       "target": "cone",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "selectree: fruit_type"
+      ]
     },
     "chassis.density": {
       "target": "dense",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Foliage Porosity Summer"
+      ]
     },
     "chassis.trunks": {
       "target": "single",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Growth Form"
+      ]
     },
     "chassis.size_20yr": {
       "target": 12.2,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height at 20 Years, Maximum (feet)"
+      ]
     },
     "chassis.size_max": {
       "target": 45.7,
       "hardness": "soft",
       "tol": 0.4,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Height, Mature (feet)"
+      ]
     },
     "chassis.orientation": {
       "target": "erect",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true
+      "sourced": true,
+      "askedAs": [
+        "usda: Shape and Orientation"
+      ]
     }
   },
   "recipe": null,
