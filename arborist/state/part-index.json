@@ -2155,8 +2155,8 @@
           "confidence": "high",
           "source": "tree-bounds(heightRange)"
         },
-        "chassis.habit": {
-          "value": "multi-stem",
+        "chassis.trunks": {
+          "value": "multi",
           "ratified": false,
           "confidence": "low",
           "source": "source.species-botany(betula_pendula)"
@@ -2183,8 +2183,8 @@
           "confidence": "high",
           "source": "tree-bounds(heightRange)"
         },
-        "chassis.habit": {
-          "value": "multi-stem",
+        "chassis.trunks": {
+          "value": "multi",
           "ratified": false,
           "confidence": "low",
           "source": "source.species-botany(betula_pendula)"
@@ -2211,8 +2211,8 @@
           "confidence": "high",
           "source": "tree-bounds(heightRange)"
         },
-        "chassis.habit": {
-          "value": "multi-stem",
+        "chassis.trunks": {
+          "value": "multi",
           "ratified": false,
           "confidence": "low",
           "source": "source.species-botany(betula_pendula)"
@@ -2239,8 +2239,8 @@
           "confidence": "high",
           "source": "tree-bounds(heightRange)"
         },
-        "chassis.habit": {
-          "value": "multi-stem",
+        "chassis.trunks": {
+          "value": "multi",
           "ratified": false,
           "confidence": "low",
           "source": "source.species-botany(betula_pendula)"
@@ -2267,8 +2267,8 @@
           "confidence": "high",
           "source": "tree-bounds(heightRange)"
         },
-        "chassis.habit": {
-          "value": "multi-stem",
+        "chassis.trunks": {
+          "value": "multi",
           "ratified": false,
           "confidence": "low",
           "source": "source.species-botany(betula_pendula)"

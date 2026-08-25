@@ -62,12 +62,6 @@
     }
   ],
   "required": {
-    "chassis.habit": {
-      "target": "multi-stem",
-      "hardness": "soft",
-      "tol": 1,
-      "note": "vase/spreading near; single-stem core workable as a stretch"
-    },
     "chassis.size": {
       "target": 7,
       "hardness": "hard",
@@ -162,6 +156,20 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "multi",
+      "hardness": "soft",
+      "tol": 1,
+      "migratedFrom": "chassis.habit — trunk count was never a silhouette (2026-08-25)",
+      "note": "vase/spreading near; single-stem core workable as a stretch"
+    },
+    "chassis.habit": {
+      "target": "rounded",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     }
   },
   "recipe": {
@@ -190,6 +198,7 @@
     "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.habit",
       "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",

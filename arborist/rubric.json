@@ -40,7 +40,6 @@
         "pyramidal",
         "conical",
         "irregular",
-        "multi-stem",
         "arching",
         "ascending",
         "horizontal"
@@ -51,6 +50,15 @@
       "orthogonality": "Independent of size — a small and a large tree can both be 'spreading'.",
       "seededFrom": "_chassis-curation.json displayNames (Weeping Willow→weeping, Red Maple/Maple→oval, European Linden→oval) + meta.morphology; species-map implicit habit",
       "note": "Picking a different chassis-core IS the habit assignment; there is no per-part compatibility matrix (chassis is free geometry). Silhouette variety = pick a different core, NOT limb surgery (§2.1, locked)."
+    },
+    {
+      "id": "chassis.trunks",
+      "kind": "enum",
+      "values": [
+        "single",
+        "multi"
+      ],
+      "why": "How many stems leave the ground. ⛔ NOT a silhouette — it lived inside chassis.habit as the value 'multi-stem', where it competed with rounded/vase/pyramidal as though it were one of them, and only ONE end of the scale was ever recorded (11 species called single-stemmed wrote nothing; 4 called multi-stemmed wrote multi-stem). Migrated to its own axis 2026-08-25 on Jacob's ruling. Values are only what the sources actually supply — no 'few-stemmed', which nothing emits."
     },
     {
       "id": "chassis.orientation",
@@ -587,7 +595,6 @@
     "chassis.habit": {
       "vase": {
         "spreading": 1,
-        "multi-stem": 1,
         "rounded": 2,
         "irregular": 2
       },
@@ -609,13 +616,7 @@
       },
       "weeping": {
         "irregular": 2,
-        "vase": 2,
-        "multi-stem": 2
-      },
-      "multi-stem": {
-        "vase": 1,
-        "irregular": 1,
-        "spreading": 2
+        "vase": 2
       },
       "pyramidal": {
         "columnar": 1,
@@ -629,7 +630,6 @@
         "pyramidal": 2
       },
       "irregular": {
-        "multi-stem": 1,
         "spreading": 2,
         "vase": 2,
         "weeping": 2

@@ -188,6 +188,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -221,6 +227,7 @@
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.density",
+      "chassis.trunks",
       "chassis.orientation"
     ]
   },

@@ -108,9 +108,9 @@ const TERM_ALIASES = {
     'v shaped': 'vase', vaselike: 'vase', urn: 'vase',
     wide: 'spreading', broad: 'spreading', umbrella: 'spreading',
     pendulous: 'weeping', pendent: 'weeping', drooping: 'weeping',
-    clumping: 'multi-stem', multistem: 'multi-stem', 'multi stem': 'multi-stem',
-    'multi trunked': 'multi-stem', 'multiple stem': 'multi-stem',
-    'multi stemmed': 'multi-stem', 'multiple trunk': 'multi-stem', clump: 'multi-stem',
+    // ⛔ NO multi-stem ROW — trunk count left chassis.habit on 2026-08-25. It is
+    // chassis.trunks now; see TERM_REDIRECTS. Re-adding it here puts a stem count back in
+    // competition with rounded/vase/pyramidal, which is what it was doing before.
     asymmetric: 'irregular', open: 'irregular',
   },
   'bark.texture': {
@@ -211,6 +211,23 @@ export const TERM_REDIRECTS = {
     trailing: { axis: 'chassis.orientation', value: 'prostrate' },
     climbing: { axis: 'chassis.orientation', value: 'climbing' },
     vining: { axis: 'chassis.orientation', value: 'climbing' },
+    // ⭐ TRUNK COUNT — BOTH ENDS, onto its own axis (Jacob's ruling, 2026-08-25).
+    // Only the multi end used to be recorded, aliased onto chassis.habit: 11 species the
+    // sources call single-stemmed wrote nothing, 4 called multi-stemmed wrote `multi-stem`
+    // into the SILHOUETTE slot, where it competed with rounded/vase/pyramidal. One end of
+    // a scale mapped is a skew nothing reports — the same shape as the Foliage Porosity
+    // finding. Now symmetric, and out of the silhouette's way.
+    'single stem': { axis: 'chassis.trunks', value: 'single' },
+    'single crown': { axis: 'chassis.trunks', value: 'single' },
+    'single trunk': { axis: 'chassis.trunks', value: 'single' },
+    'multiple stem': { axis: 'chassis.trunks', value: 'multi' },
+    'multiple trunk': { axis: 'chassis.trunks', value: 'multi' },
+    'multi trunked': { axis: 'chassis.trunks', value: 'multi' },
+    'multi stemmed': { axis: 'chassis.trunks', value: 'multi' },
+    'multi stem': { axis: 'chassis.trunks', value: 'multi' },
+    multistem: { axis: 'chassis.trunks', value: 'multi' },
+    clumping: { axis: 'chassis.trunks', value: 'multi' },
+    clump: { axis: 'chassis.trunks', value: 'multi' },
     // Spread behaviour — same argument, same field. A thicket-forming sumac or a suckering
     // aspen is a different object to place than a single-crown oak.
     colonizing: { axis: 'chassis.spread', value: 'colonizing' },
@@ -264,30 +281,7 @@ export const NOT_A_TRAIT = {
     yes: 'usda Leaf Retention Y/N — not a foliage class',
   },
   'chassis.habit': {
-    // ⛔⛔ ASYMMETRIC, AND THAT IS A MEASURED SKEW — NOT A TIDY DISCARD.
-    // These are discarded while `Multiple Stem`/`Multi-trunked` ARE accepted, aliased onto
-    // chassis.habit as `multi-stem`. So one end of the trunk-count scale writes a value and
-    // the other writes nothing:
-    //   sources call 11 species single-stemmed → nothing recorded
-    //   sources call  4 species multi-stemmed  → chassis.habit = multi-stem
-    // ▶ re-measure: grep the JSONL for Single Stem|Single Crown|Multiple Stem|Multi-trunked
-    // Same shape as the Foliage Porosity skew the harvest session found: map only one end
-    // of a scale and the axis reads biased, with nothing reporting it. Worse here, because
-    // for those 4 species `multi-stem` OCCUPIES the habit slot and competes with real
-    // silhouettes — zelkova's contested habit reads multi-stem / vase / rounded, as though
-    // trunk count were a silhouette. It is the identical category error we fixed for
-    // orientation.
-    // ⛔ NOT FIXED HERE, and deliberately: the clean fix is a chassis.trunks axis, and
-    // betula_nigra carries `multi-stem` HAND-AUTHORED and hard inside chassis.habit.
-    // Moving the operator's authoring is not ours to do, and the alternative — new sourced
-    // data to a new axis while authored data stays in the old one — is two homes for one
-    // concept, which is the exact defect that blanked the Salon rail. Both paths cost
-    // something real. Jacob's ruling, with the numbers above.
-    // ⭐ Corroborated independently: USDA's Growth Form surfaces `Multiple Stem` out of its
-    // own vocabulary, so this is not an artefact of how either instrument mapped things.
-    'single stem': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above (Jacob\'s ruling)',
-    'single crown': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above',
-    'single trunk': 'TRUNK COUNT — asymmetric with multi-stem; see the skew note above',
+    // (trunk-count terms are no longer discarded — see chassis.trunks in TERM_REDIRECTS)
     // ⛔ DELIBERATELY UNMAPPABLE — and it belongs HERE, not in the unresolved list.
     // `Erect` is an ORIENTATION (USDA: Climbing/Decumbent/Erect/Prostrate/Semi-Erect),
     // and NCSU ships `Erect` AND `Columnar` as separate options in the same field. It was

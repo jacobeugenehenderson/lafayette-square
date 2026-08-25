@@ -60,11 +60,6 @@
     }
   ],
   "required": {
-    "chassis.habit": {
-      "target": "multi-stem",
-      "hardness": "soft",
-      "tol": 1
-    },
     "chassis.size": {
       "target": 14,
       "hardness": "soft",
@@ -179,6 +174,37 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "multi",
+      "hardness": "soft",
+      "tol": 1,
+      "migratedFrom": "chassis.habit — trunk count was never a silhouette (2026-08-25)"
+    },
+    "chassis.habit": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
+      "candidates": [
+        {
+          "value": "pyramidal",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "conical",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     }
   },
   "recipe": {
@@ -208,6 +234,7 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.density",
+      "chassis.habit",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",

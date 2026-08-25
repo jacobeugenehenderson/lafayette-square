@@ -118,5 +118,48 @@ const unused = [...live].filter(a => !used.has(a))
 if (unused.length) console.log(`\nℹ️  axes no dossier or part references yet (${unused.length}): ${unused.join(' ')}`)
 
 console.log('')
-if (bad) { console.error(`❌ FAIL — ${bad} stale key(s). A stale key does not throw; it silently stops matching.`); process.exit(1) }
-console.log('✅ PASS — every stored axis key resolves to a live rubric axis.')
+// (gate moved below — it must cover the VALUE checks too; it used to sit above them,
+// so a reported stale value still printed ✅ PASS. A gate that runs before half the
+// assertions is the same defect as no gate.)
+// 3. ⭐⭐ AND THE VALUES, NOT JUST THE KEYS.
+// ⛔ RECEIPT, 2026-08-25: migrating trunk count out of chassis.habit meant REMOVING the
+// value `multi-stem` from that axis. Five chassis parts were tagged with it and two
+// dossiers targeted it. This check validated axis IDS only, so every one of those would
+// have become a tag naming a value the rubric no longer carries — matching nothing,
+// forever, without a word. A stale VALUE fails exactly like a stale KEY: silently.
+{
+  const enumValues = new Map()
+  for (const a of (rubric.axes || [])) if (Array.isArray(a.values)) enumValues.set(a.id, new Set(a.values))
+  let checked = 0
+
+  for (const f of readdirSync(dDir).filter(n => n.endsWith('.json'))) {
+    const d = JSON.parse(readFileSync(path.join(dDir, f), 'utf8'))
+    for (const [axis, cell] of Object.entries(d.required || {})) {
+      const vals = enumValues.get(axis)
+      if (!vals || !cell || cell.target == null) continue
+      checked++
+      if (!vals.has(cell.target)) report(`dossier value (${f} ${axis})`, String(cell.target))
+      for (const c of (cell.candidates || [])) {
+        checked++
+        if (!vals.has(c.value)) report(`dossier candidate (${f} ${axis})`, String(c.value))
+      }
+    }
+  }
+
+  if (existsSync(pi)) {
+    const partIndex = JSON.parse(readFileSync(pi, 'utf8'))
+    for (const part of (partIndex.parts || [])) {
+      for (const [axis, tag] of Object.entries(part.tags || {})) {
+        const vals = enumValues.get(axis)
+        const v = tag && typeof tag === 'object' ? tag.value : tag
+        if (!vals || v == null || typeof v !== 'string') continue
+        checked++
+        if (!vals.has(v)) report(`part tag value (${axis})`, v)
+      }
+    }
+  }
+  console.log(`enum values checked: ${checked} across ${enumValues.size} enum axes`)
+}
+
+if (bad) { console.error(`\n❌ FAIL — ${bad} stale key(s)/value(s). Neither throws; both silently stop matching.`); process.exit(1) }
+console.log('✅ PASS — every stored axis key AND enum value resolves to the live rubric.')

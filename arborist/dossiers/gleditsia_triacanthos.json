@@ -41,7 +41,6 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
       "contested": true,
       "candidates": [
         {
@@ -68,7 +67,8 @@
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another.",
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "overlay.fruit_type": {
       "target": "legume",
@@ -124,7 +124,7 @@
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "compound-bipinnate",
@@ -163,6 +163,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": null,
@@ -191,21 +197,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "overlay.fruit_type",
-      "leaf.arrangement",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type",
-      "overlay.conspicuous",
-      "chassis.density",
-      "crown.texture"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

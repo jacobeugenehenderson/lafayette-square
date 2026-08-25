@@ -26,7 +26,11 @@
 // axis ids are stored (dossiers · part-index · here) and it cost the longest to find during the
 // 19→31 cutover. ▶ `node scratch/claims-axis-keys-resolve.mjs` covers all three now.
 const MATCH_AXES = {
-  chassis: ['chassis.habit', 'chassis.size'],
+  // chassis.trunks joins the match axes — UNLIKE orientation and spread, which are
+  // recorded-not-matched. A multi-stem chassis is genuinely different geometry, and it was
+  // already matching under this part-type when it lived inside chassis.habit; dropping it
+  // from MATCH_AXES would be a silent capability loss, not a neutral migration.
+  chassis: ['chassis.habit', 'chassis.trunks', 'chassis.size'],
   bark: ['bark.texture'],
   // The 2026-08-24 split: leaf.silhouette conflated type/shape/margin, so a part must be
   // comparable on each. A part tagged on only one still matches — the others read as untagged,

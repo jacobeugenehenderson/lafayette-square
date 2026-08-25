@@ -205,6 +205,12 @@
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -236,7 +242,8 @@
       "leaf.arrangement",
       "leaf.shape",
       "leaf.foliage_type",
-      "overlay.fruit_type"
+      "overlay.fruit_type",
+      "chassis.trunks"
     ]
   },
   "partAvailability": {
