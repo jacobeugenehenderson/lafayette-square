@@ -25,25 +25,51 @@ asking.** The slab carries the first land-use pour (`unknown`→`underived`, gro
 
 ---
 
-## 0a. ⛔ RE-POINTED 2026-08-24 — **THE JOB IS THE ROSTER, NOT HERO**
+## 0a. ⭐⭐ THE JOB IS THE ROSTER — and the roster IS the taxonomy
 
-*(Jacob: "I am confused; why are we dispatching that agent to do that stuff? Don't we need to
-build the roster?" — and he is right. This section led with Hero because a staging regression
-appeared, part of it mine. That was MY framing, not his priority.)*
+**Goal, in Jacob's words: "finally finish the foundation so we can finally publish an actual
+grove."**
 
-⭐ **THE GOAL, in his words: "finally finish the foundation so we can finally publish an actual
-grove."** That is the ROSTER. Three concrete steps, in order:
+### ⛔ FIRST, A CORRECTION I MADE TWICE AND HE CAUGHT BOTH TIMES
+I framed Hero as "the job" (it is a symptom on a branch with **no public exposure** — `main` /
+lafayette-square.com still serves the good trees), and then I claimed wiring name resolution
+alone "gets an honest green/red board." **It does not.**
+> *Jacob: "how can we say what we can build and not until we have a final list of qualities?"*
 
-| # | step | needs | gets you |
+**He is right. GREEN/RED IS A CLAIM ABOUT CAPABILITY, and capability needs the whole chain.**
+Name resolution gets you the **ROW LIST** — which species the town contains, in demand order,
+with London Plane finally appearing at all. Real, and currently missing. **But it is not
+"can we build it."**
+
+### ⭐⭐ TWO DIFFERENT REDS — do not conflate them, I did
+| red | means | needs | knowable today? |
 |---|---|---|---|
-| **1** | **Wire `arborist/vocabulary.mjs`** into `roster-coverage.js` | nothing else — it is built and tested | ⭐ **An honest green/red board.** Today 160 of 180 census names resolve to NOTHING, so the library cannot even NAME what the town contains (London Plane is heavily represented in LS and appears in no look, no grove, no library row). |
-| **2** | **Execute the rubric cutover**, `PROPOSAL-rubric-axes.md` §7 | ⛔ the stale-key CHECK first | 19 → 31 columns; `leaf.silhouette` stops conflating four axes |
-| **3** | **Hydrate** from NC State + SelecTree | step 2 done | red → green automatically |
+| **`unauthored`** | nobody has composed it | nothing | ✅ yes — this is the ~6-green board you already see |
+| ⭐ **`unbuildable`** | **we lack parts matching its requirements** | steps 2·3·4 below | ❌ **not yet — and this is the one Jacob has been asking for all along** |
 
-⛔ **Only ONE ordering constraint binds: cutover BEFORE hydration**, or you hydrate into
-conflated axes. **Step 1 depends on neither** — it is the cheapest honest win on the board.
-⭐ **The 31 columns are NOT a prerequisite for the roster.** They are for composing a species
-WELL; name resolution is for listing it CORRECTLY. Do not block 1 on 2.
+⇒ *"Using the parts we have"* and *"knowing what I need to go get"* — his two questions — are
+**both** the second red. The first red cannot answer either.
+
+### THE CHAIN. Only step 1 is genuinely a prerequisite; 2–4 ARE the job.
+| # | step | state today |
+|---|---|---|
+| **1** | **Wire `arborist/vocabulary.mjs`** into `roster-coverage.js` | built + tested, **unwired**. 160 of 180 census names resolve to nothing |
+| **2** | **Cut over the taxonomy**, 19 → 31 (`PROPOSAL-rubric-axes.md` §7) | approved, **unexecuted**. ⛔ stale-key check FIRST |
+| **3** | **Dossiers — what each species NEEDS** | ⚠️ **10 of 180** |
+| **4** | **Tag parts on those axes** | ⚠️ **4 of 239 chassis ratified · 0 of 9 bark · 0 of 18 leaf** |
+| **5** | green/red finally means something | — |
+
+⛔ **Step 1 is first only because everything else is keyed PER SPECIES** — you cannot write 180
+dossiers against names that do not resolve. It is not first because it is sufficient.
+⛔ **Cutover (2) before hydration (3)**, or you hydrate into conflated axes.
+
+### ⚠️ THE UNCOSTED LONG POLE IS STEP 4
+Steps 3 and 4 are the two halves of `ORIENTATION §2`'s join — *"the app's real backlog;
+everything else is downstream of it."* **Step 3 is a scrape** (NC State + SelecTree, sources
+verified, `TRAIT-SURVEY-FINDINGS.md`). ⭐⭐ **Step 4 is NOT.** 239 chassis each needing a
+ratified habit is **human judgement on the Shelves**, and nobody has costed it.
+⚠️ And there is no approval gesture for bark or leaf at all — `arborist/state/` holds only
+`_chassis-curation.json`. **That is unbuilt work, not a checkbox someone forgot to tick.**
 
 ---
 
