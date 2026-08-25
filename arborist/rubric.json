@@ -101,17 +101,20 @@
       "tagging": "auto",
       "orthogonality": "Independent of habit and of leaf.size — the WHOLE-tree extent, not the leaf's.",
       "seededFrom": "_chassis meta.heightRange (e.g. london_plane variant [0, 25.04])",
-      "why": "TYPICAL LANDSCAPE mature height in METRES — the size we actually place. Fed by NCSU Dimensions (Height, high bound) and SelecTree height_high. Metres, not feet: sources ship feet and normalizeScale bakes this as metres. Not the maximum a species can attain — that is chassis.size_max."
+      "why": "TYPICAL LANDSCAPE mature height in METRES — the size we actually place. Fed by NCSU Dimensions (Height, high bound) and SelecTree height_high. Metres, not feet: sources ship feet and normalizeScale bakes this as metres. Not the maximum a species can attain — that is chassis.size_max.",
+      "unit": "m"
     },
     {
       "id": "chassis.size_20yr",
       "kind": "scalar",
-      "why": "Height in metres at 20 years (USDA \"Height at 20 Years, Maximum\"). The juvenile figure — a street tree spends most of its life short of mature height. Sat in the corpus UNMAPPED from the first harvest; a third distinct question, not a weaker answer to the first two."
+      "why": "Height in metres at 20 years (USDA \"Height at 20 Years, Maximum\"). The juvenile figure — a street tree spends most of its life short of mature height. Sat in the corpus UNMAPPED from the first harvest; a third distinct question, not a weaker answer to the first two.",
+      "unit": "m"
     },
     {
       "id": "chassis.size_max",
       "kind": "scalar",
-      "why": "MAXIMUM ATTAINABLE height in metres — what the species reaches in the wild over a full lifespan (USDA \"Height, Mature\"). NOT what we place: an eastern white pine is 45.7 m in forest and 24.4 m as a street tree. Its own column because it is a real known number, and making it compete with landscape height manufactured a fake disagreement (Jacob, 2026-08-25: the trees are average and we know what the outlier numbers are)."
+      "why": "MAXIMUM ATTAINABLE height in metres — what the species reaches in the wild over a full lifespan (USDA \"Height, Mature\"). NOT what we place: an eastern white pine is 45.7 m in forest and 24.4 m as a street tree. Its own column because it is a real known number, and making it compete with landscape height manufactured a fake disagreement (Jacob, 2026-08-25: the trees are average and we know what the outlier numbers are).",
+      "unit": "m"
     },
     {
       "id": "chassis.lean",
@@ -239,7 +242,8 @@
       "home": "master bark shader knob (§6, barkDetail machinery — shipped)",
       "tagging": "operator",
       "orthogonality": "One detail knob of the furrowed/ridged types; independent of plate_size and scale_frequency.",
-      "seededFrom": "barkDetail / barkPosterized (extract-bark-detail.mjs, extract-bark-posterized.mjs)"
+      "seededFrom": "barkDetail / barkPosterized (extract-bark-detail.mjs, extract-bark-posterized.mjs)",
+      "unit": "ratio-0-1"
     },
     {
       "id": "bark.plate_size",
@@ -254,7 +258,8 @@
       "home": "master bark shader knob (§6)",
       "tagging": "operator",
       "orthogonality": "Detail knob of the plated type only.",
-      "seededFrom": "barkDetail machinery"
+      "seededFrom": "barkDetail machinery",
+      "unit": "ratio-0-1"
     },
     {
       "id": "bark.scale_frequency",
@@ -269,7 +274,8 @@
       "home": "master bark shader knob (§6)",
       "tagging": "operator",
       "orthogonality": "Detail knob of the scaly type only.",
-      "seededFrom": "barkDetail machinery"
+      "seededFrom": "barkDetail machinery",
+      "unit": "ratio-0-1"
     },
     {
       "id": "bark.exfoliation_density",
@@ -284,7 +290,8 @@
       "home": "master bark shader knob — the mottled/exfoliating HARD CASE; needs a SECOND mask channel for spatial color variation (§6, Stage 3)",
       "tagging": "operator",
       "orthogonality": "Detail knob of exfoliating/mottled types; Birch (species #10) forces it.",
-      "seededFrom": "Birch dossier (salmon/cinnamon peeling) — the Stage-3 bark gap"
+      "seededFrom": "Birch dossier (salmon/cinnamon peeling) — the Stage-3 bark gap",
+      "unit": "ratio-0-1"
     },
     {
       "id": "leaf.type",
@@ -389,14 +396,16 @@
       "home": "DERIVE at bake from canopyByVariant (live) + pack.meta.naturalSize (cm, PRESENT but UNUSED today). The carried-forward Espalier §3.1 fix, demoted from a patch to an axis.",
       "tagging": "auto",
       "orthogonality": "The LEAF's metric extent, independent of chassis.size (whole-tree extent). The bug today: BASE_CARD_SIZE (0.5m) × scale is unitless, so a leaf on a 30m Linden equals one on an 8m Magnolia and small leaves fall below a pixel → bare winter chassis.",
-      "seededFrom": "pack meta.naturalSize (palmate 10cm, lobed 12cm, heart 10cm, lanceolate 8cm, needle 15cm, ovate_large 15cm)"
+      "seededFrom": "pack meta.naturalSize (palmate 10cm, lobed 12cm, heart 10cm, lanceolate 8cm, needle 15cm, ovate_large 15cm)",
+      "unit": "cm"
     },
     {
       "id": "leaf.width",
       "partType": "leaf",
       "name": "Leaf width",
       "kind": "scalar",
-      "plain": "Leaf width. With length it gives the aspect ratio, which is the species read."
+      "plain": "Leaf width. With length it gives the aspect ratio, which is the species read.",
+      "unit": "cm"
     },
     {
       "id": "leaf.face",
@@ -476,7 +485,8 @@
       "home": "composition.leaves.occupancy",
       "tagging": "operator",
       "orthogonality": "Canopy FILL, independent of chassis.density (wood fill) and leaf.size. Owns leaf-shed; a true dead-leaf SHAPE change (curl) is a deferred edge, not v1.",
-      "seededFrom": "composition.leaves.occupancy (existing)"
+      "seededFrom": "composition.leaves.occupancy (existing)",
+      "unit": "ratio-0-1"
     },
     {
       "id": "overlay.type",
@@ -510,7 +520,8 @@
       "home": "composes deformer envelope + chassis.size + bark coarseness TOGETHER (brief §1.1)",
       "tagging": "operator",
       "orthogonality": "The one deliberate 'conductor' axis — orthogonal to every other (a young and a mature tree can share habit/silhouette/bark type) but DRIVES several at once, so the operator turns one dial, not three kept-in-sync.",
-      "seededFrom": "not in current data — drafted as the cross-cutting master dial"
+      "seededFrom": "not in current data — drafted as the cross-cutting master dial",
+      "unit": "years"
     },
     {
       "id": "leaf.foliage_type",
@@ -531,14 +542,16 @@
       "partType": "chassis",
       "name": "Crown base height",
       "kind": "scalar",
-      "plain": "How far up the trunk the canopy starts, in metres."
+      "plain": "How far up the trunk the canopy starts, in metres.",
+      "unit": "m"
     },
     {
       "id": "crown.ratio",
       "partType": "chassis",
       "name": "Live crown ratio",
       "kind": "scalar",
-      "plain": "Fraction of total height carrying canopy."
+      "plain": "Fraction of total height carrying canopy.",
+      "unit": "ratio-0-1"
     },
     {
       "id": "crown.texture",

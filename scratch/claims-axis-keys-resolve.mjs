@@ -143,6 +143,19 @@ console.log('')
   }
 }
 
+// 2f. ⭐⭐ EVERY SCALAR AXIS MUST DECLARE ITS UNIT.
+// ⛔ RECEIPT, 2026-08-25: chassis.size is METRES and every botanical source ships FEET. A
+// raw parseFloat wrote 30 for flowering dogwood — 30 ft is the right tree, 30 m is a tree
+// three times too tall, baked into the slab. Nothing anywhere DECLARED the unit: it lived
+// in a comment and in the fact that an authored value happened to look like metres. An
+// undeclared unit is not a small omission; it is the precondition for that whole class.
+{
+  const scalars = (rubric.axes || []).filter(a => a.kind === 'scalar')
+  const missing = scalars.filter(a => !a.unit)
+  for (const a of missing) report('scalar axis with no declared unit', a.id)
+  console.log(`scalar units declared: ${scalars.length - missing.length}/${scalars.length}`)
+}
+
 // 3. ⭐⭐ AND THE VALUES, NOT JUST THE KEYS.
 // ⛔ RECEIPT, 2026-08-25: migrating trunk count out of chassis.habit meant REMOVING the
 // value `multi-stem` from that axis. Five chassis parts were tagged with it and two

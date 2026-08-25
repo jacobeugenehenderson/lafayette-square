@@ -31,7 +31,17 @@
 export const FT_TO_M = 0.3048
 
 /** Axes whose sources publish feet and whose rubric unit is metres. */
-export const FEET_AXES = new Set(['chassis.size', 'chassis.size_max', 'chassis.size_20yr', 'crown.base_height'])
+// ⛔ DERIVED FROM THE RUBRIC, never restated. The rubric now DECLARES `unit` on every
+// scalar axis (claims-axis-keys-resolve asserts it), so this list cannot drift from the
+// axes it converts — which is how a metre axis came to hold feet in the first place.
+// ⚠️ It is the source that ships feet, not the axis: an axis in metres whose sources
+// publish metres would need no entry here. Today every botanical source ships feet.
+import { readFileSync } from 'node:fs'
+const rubricPath = new URL('./rubric.json', import.meta.url)
+export const FEET_AXES = new Set(
+  (JSON.parse(readFileSync(rubricPath, 'utf8')).axes || [])
+    .filter(a => a.kind === 'scalar' && a.unit === 'm')
+    .map(a => a.id))
 
 /**
  * Parse a source's size string to METRES.
