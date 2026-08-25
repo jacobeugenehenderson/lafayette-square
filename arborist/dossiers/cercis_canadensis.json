@@ -11,22 +11,51 @@
   "identityNotes": "Heart-shaped (cordate) leaf + cauliflorous pink flowers blooming directly on bare branches and trunk are unmistakable. Missouri native; frequently multi-trunked and leaning.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Category:Cercis_canadensis",
-      "credit": "Wikimedia Commons — Cercis canadensis category",
-      "caption": "Multi-trunked spreading form with heart-shaped leaves; seedpods may be visible."
+      "state": "bark",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/b/b8/Cercis_canadensis_16zz.jpg",
+      "credit": "Photo by David J. Stang — CC BY-SA 4.0 (Wikimedia Commons)",
+      "caption": "Scaly grey-brown trunk; note frequent lean / multiple stems. (Spring-bloom plate strongly recommended — the flowering trunk is the defining image.)",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_16zz.jpg",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Photo by David J. Stang",
+      "file": "File:Cercis canadensis 16zz.jpg",
+      "confirmed": true
+    },
+    {
+      "state": "leaves",
+      "caption": "A18 2 Cercis Canadensis (Eastern Redbud)",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/A18-2-Cercis_Canadensis_%28Eastern_Redbud%29.JPG/960px-A18-2-Cercis_Canadensis_%28Eastern_Redbud%29.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A18-2-Cercis_Canadensis_(Eastern_Redbud).JPG",
+      "credit": "Mohamed Rezk — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Mohamed Rezk",
+      "file": "File:A18-2-Cercis Canadensis (Eastern Redbud).JPG",
+      "confirmed": false,
+      "fromCategory": "Cercis canadensis leaves"
     },
     {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Cercis_canadensis",
-      "credit": "Wikimedia Commons — Cercis canadensis",
-      "caption": "Pale greenish-yellow autumn foliage (modest fall display)."
+      "caption": "2019 11 02 13 12 02 A Redbud sapling in late autumn along Tranquility Court in the Franklin Farm section of Oak Hill, Fa",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2019-11-02 13 12 02 A Redbud sapling in late autumn along Tranquility Court in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "confirmed": false,
+      "fromCategory": "Cercis canadensis in autumn"
     },
     {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_16zz.jpg",
-      "credit": "Wikimedia Commons — 'Cercis canadensis 16zz.jpg'",
-      "caption": "Scaly grey-brown trunk; note frequent lean / multiple stems. (Spring-bloom plate strongly recommended — the flowering trunk is the defining image.)"
+      "state": "summer",
+      "caption": "Cercis canadensis Infotafel",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Cercis_canadensis_Infotafel.jpg/960px-Cercis_canadensis_Infotafel.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_Infotafel.jpg",
+      "credit": "Schubbay — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Schubbay",
+      "file": "File:Cercis canadensis Infotafel.jpg",
+      "confirmed": false,
+      "fromCategory": "Cercis canadensis"
     }
   ],
   "required": {

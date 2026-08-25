@@ -9,7 +9,56 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "(MAD) P. calleryana bark 3",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/%28MAD%29_P._calleryana_-bark-3.jpg/960px-%28MAD%29_P._calleryana_-bark-3.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:(MAD)_P._calleryana_-bark-3.jpg",
+      "credit": "Philmarin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Philmarin",
+      "file": "File:(MAD) P. calleryana -bark-3.jpg",
+      "confirmed": false,
+      "fromCategory": "Pyrus calleryana (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "CalleryPearA",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/CalleryPearA.jpg/960px-CalleryPearA.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:CalleryPearA.jpg",
+      "credit": "Rlevse — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": "Rlevse",
+      "file": "File:CalleryPearA.jpg",
+      "confirmed": false,
+      "fromCategory": "Pyrus calleryana leaves"
+    },
+    {
+      "state": "fall",
+      "caption": "2014 11 02 14 11 35 Bradford Pear during autumn along Hunters Ridge Drive in Hopewell Township, New Jersey",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/2014-11-02_14_11_35_Bradford_Pear_during_autumn_along_Hunters_Ridge_Drive_in_Hopewell_Township%2C_New_Jersey.jpg/960px-2014-11-02_14_11_35_Bradford_Pear_during_autumn_along_Hunters_Ridge_Drive_in_Hopewell_Township%2C_New_Jersey.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2014-11-02_14_11_35_Bradford_Pear_during_autumn_along_Hunters_Ridge_Drive_in_Hopewell_Township,_New_Jersey.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2014-11-02 14 11 35 Bradford Pear during autumn along Hunters Ridge Drive in Hopewell Township, New Jersey.jpg",
+      "confirmed": false,
+      "fromCategory": "Pyrus calleryana in autumn"
+    },
+    {
+      "state": "summer",
+      "caption": "2015 06 18 17 11 17 Large branch broken off of a Bradford Pear during a severe thunderstorm on Tranquility Court in the ",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/2015-06-18_17_11_17_Large_branch_broken_off_of_a_Bradford_Pear_during_a_severe_thunderstorm_on_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Virginia.jpg/960px-thumbnail.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2015-06-18_17_11_17_Large_branch_broken_off_of_a_Bradford_Pear_during_a_severe_thunderstorm_on_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2015-06-18 17 11 17 Large branch broken off of a Bradford Pear during a severe thunderstorm on Tranquility Court in the Franklin Farm section of Oak Hill, Virginia.jpg",
+      "confirmed": false,
+      "fromCategory": "Pyrus calleryana"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 50,

@@ -9,7 +9,44 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "Liriodendron tulipifera 02",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/13/Liriodendron_tulipifera_02.JPG/960px-Liriodendron_tulipifera_02.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Liriodendron_tulipifera_02.JPG",
+      "credit": "Dalgial — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Dalgial",
+      "file": "File:Liriodendron tulipifera 02.JPG",
+      "confirmed": false,
+      "fromCategory": "Liriodendron tulipifera (bark)"
+    },
+    {
+      "state": "fall",
+      "caption": "20141023Liriodendron tulipifera1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/20141023Liriodendron_tulipifera1.jpg/960px-20141023Liriodendron_tulipifera1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20141023Liriodendron_tulipifera1.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20141023Liriodendron tulipifera1.jpg",
+      "confirmed": false,
+      "fromCategory": "Liriodendron tulipifera in autumn"
+    },
+    {
+      "state": "summer",
+      "caption": "2013 05 04 17 24 28 Liriodendron tulipifera in the woods along the West Branch Shabakunk Creek near Dunmore Avenue",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e5/2013-05-04_17_24_28_Liriodendron_tulipifera_in_the_woods_along_the_West_Branch_Shabakunk_Creek_near_Dunmore_Avenue.jpg/960px-2013-05-04_17_24_28_Liriodendron_tulipifera_in_the_woods_along_the_West_Branch_Shabakunk_Creek_near_Dunmore_Avenue.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2013-05-04_17_24_28_Liriodendron_tulipifera_in_the_woods_along_the_West_Branch_Shabakunk_Creek_near_Dunmore_Avenue.jpg",
+      "credit": "Famartin — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Famartin",
+      "file": "File:2013-05-04 17 24 28 Liriodendron tulipifera in the woods along the West Branch Shabakunk Creek near Dunmore Avenue.jpg",
+      "confirmed": false,
+      "fromCategory": "Liriodendron tulipifera"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 80,

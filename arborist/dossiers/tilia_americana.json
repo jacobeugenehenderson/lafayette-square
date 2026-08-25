@@ -9,7 +9,44 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "American Linden bark detail",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/American_Linden_bark_detail.jpg/960px-American_Linden_bark_detail.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_bark_detail.jpg",
+      "credit": "MONGO — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": "MONGO",
+      "file": "File:American Linden bark detail.jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia americana (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "American Linden or Basswood",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/American_Linden_or_Basswood_%2834058253493%29.jpg/960px-American_Linden_or_Basswood_%2834058253493%29.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_or_Basswood_(34058253493).jpg",
+      "credit": "Dan Keck from Ohio — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "Dan Keck from Ohio",
+      "file": "File:American Linden or Basswood (34058253493).jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia americana (leaves)"
+    },
+    {
+      "state": "summer",
+      "caption": "American Linden or Basswood",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/American_Linden_or_Basswood_%2834058254523%29.jpg/960px-American_Linden_or_Basswood_%2834058254523%29.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_or_Basswood_(34058254523).jpg",
+      "credit": "Dan Keck from Ohio — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "Dan Keck from Ohio",
+      "file": "File:American Linden or Basswood (34058254523).jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia americana"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 100,

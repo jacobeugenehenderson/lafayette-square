@@ -9,7 +9,44 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "Gleditsia triacanthos 16zz",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Gleditsia_triacanthos_16zz.jpg/960px-Gleditsia_triacanthos_16zz.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gleditsia_triacanthos_16zz.jpg",
+      "credit": "Photo by David J. Stang — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Photo by David J. Stang",
+      "file": "File:Gleditsia triacanthos 16zz.jpg",
+      "confirmed": false,
+      "fromCategory": "Gleditsia triacanthos (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "20120827Gleditsia triacanthos4",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/20120827Gleditsia_triacanthos4.jpg/960px-20120827Gleditsia_triacanthos4.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20120827Gleditsia_triacanthos4.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20120827Gleditsia triacanthos4.jpg",
+      "confirmed": false,
+      "fromCategory": "Gleditsia triacanthos (leaves)"
+    },
+    {
+      "state": "summer",
+      "caption": "2016 05 28 080208 Gleditsia triacanthos",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/2016-05-28-080208_-_Gleditsia_triacanthos.jpg/960px-2016-05-28-080208_-_Gleditsia_triacanthos.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016-05-28-080208_-_Gleditsia_triacanthos.jpg",
+      "credit": "S. Rouchaléou — CC BY 3.0 (Wikimedia Commons)",
+      "licence": "CC BY 3.0",
+      "artist": "S. Rouchaléou",
+      "file": "File:2016-05-28-080208 - Gleditsia triacanthos.jpg",
+      "confirmed": false,
+      "fromCategory": "Gleditsia triacanthos"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 60,

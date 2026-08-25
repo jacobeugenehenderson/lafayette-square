@@ -73,6 +73,63 @@ const MORPH_TO_TARGET_CATEGORY = {
 // referenceImages are external source URLs (Wikimedia / MoBot / arboretum) —
 // the captions are the ground truth; clicking opens the plate. (In-repo
 // thumbnails are the Stage-1 ingest download step; manifests carry the URLs.)
+// One plate. Three kinds, and the difference matters:
+//   citationOnly — a non-Commons source (MoBot, Chicago Botanic). ⛔ Licence forbids us
+//                  embedding their photographs, so this renders as a credited LINK and
+//                  never as an <img>.
+//   confirmed    — a human chose this exact photo and wrote its caption.
+//   proposed     — machine-picked from a category. Badged, because an unreviewed plate
+//                  presented as ground truth is worse than no plate.
+//
+// ⛔⛔ 2026-08-24: this used to be `onError={hide the element}`. Every URL in the repo was
+// a wiki PAGE serving text/html, so ALL 28 plates failed and vanished, and the pane read
+// as "no references for this species" instead of "these URLs are wrong." The panel whose
+// entire job is ground truth was silently showing nothing. A broken plate is now LOUD.
+function ReferencePlate({ p }) {
+  const [failed, setFailed] = useState(false)
+  const label = (
+    <span style={{ fontSize: 9, color: '#8a93a0' }}>
+      <b style={{ textTransform: 'uppercase', color: '#c8a83a' }}>{p.state}</b>{' '}
+      {p.confirmed === false && (
+        <b style={{ color: '#d08a3a' }} title="machine-picked from a category — not yet reviewed">UNREVIEWED </b>
+      )}
+      {p.caption}
+      {p.credit && <i style={{ color: '#67707c' }}> · {p.credit}</i>}
+    </span>
+  )
+
+  if (p.citationOnly || !p.url) {
+    return (
+      <a href={p.sourceUrl} target="_blank" rel="noreferrer"
+        style={{ display: 'block', textDecoration: 'none', padding: '3px 0' }}
+        title={p.reason || 'cited source'}>
+        <span style={{ fontSize: 9, color: '#8a93a0' }}>🔗 </span>{label}
+      </a>
+    )
+  }
+
+  return (
+    <a href={p.sourceUrl || p.url} target="_blank" rel="noreferrer"
+      style={{ display: 'block', textDecoration: 'none' }}
+      title={`${p.state} — ${p.caption}\n${p.credit || ''}`}>
+      {failed ? (
+        <div style={{
+          padding: '6px 8px', borderRadius: 4, fontSize: 10, lineHeight: 1.35,
+          background: 'rgba(200,60,60,0.10)', border: '1px solid rgba(200,60,60,0.35)', color: '#e0a0a0',
+        }}>
+          ⛔ plate failed to load — the stored URL is not an image. Re-run{' '}
+          <code>node arborist/fetch-reference-images.mjs</code>
+        </div>
+      ) : (
+        <img src={p.url} alt={p.caption} loading="lazy"
+          style={{ width: '100%', borderRadius: 4, display: 'block', border: '1px solid rgba(255,255,255,0.08)' }}
+          onError={() => setFailed(true)} />
+      )}
+      {label}
+    </a>
+  )
+}
+
 function ReferencePanel() {
   const d = useArboristStore(s => s.salonDossier)
   const [open, setOpen] = useState(true)
@@ -97,16 +154,7 @@ function ReferencePanel() {
                 — show the reference photos inline (click opens the source). An
                 image that fails to load (CORS/404) hides itself. */}
             {(d.referenceImages || []).map((p, i) => (
-              <a key={i} href={p.url} target="_blank" rel="noreferrer"
-                style={{ display: 'block', textDecoration: 'none' }}
-                title={`${p.state} — ${p.caption}\n${p.credit}`}>
-                <img src={p.url} alt={p.caption} loading="lazy"
-                  style={{ width: '100%', borderRadius: 4, display: 'block', border: '1px solid rgba(255,255,255,0.08)' }}
-                  onError={(e) => { e.currentTarget.style.display = 'none' }} />
-                <span style={{ fontSize: 9, color: '#8a93a0' }}>
-                  <b style={{ textTransform: 'uppercase', color: '#c8a83a' }}>{p.state}</b> {p.caption}
-                </span>
-              </a>
+              <ReferencePlate key={i} p={p} />
             ))}
           </div>
         </>

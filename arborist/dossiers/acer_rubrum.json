@@ -11,22 +11,52 @@
   "identityNotes": "V-shaped (sharp/angular) sinuses, serrated/toothed margins, and red twigs/petioles separate it from sugar maple. The most reliable bright-red fall of the three maples; red recurs in twigs, early flowers, fruit, and fall.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Acer_rubrum",
-      "credit": "Wikimedia Commons — Acer rubrum",
-      "caption": "Rounded-oval crown; 3–5 lobed toothed leaves with red petioles."
+      "state": "bark",
+      "caption": "2021 02 23 16 39 32 Red Maple bark along Franklin Farm Road in the Franklin Farm section of Oak Hill, Fairfax County, Vi",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ca/2021-02-23_16_39_32_Red_Maple_bark_along_Franklin_Farm_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2021-02-23_16_39_32_Red_Maple_bark_along_Franklin_Farm_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2021-02-23_16_39_32_Red_Maple_bark_along_Franklin_Farm_Road_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2021-02-23 16 39 32 Red Maple bark along Franklin Farm Road in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer rubrum (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "Acer rubrum (summertime)",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ee/Acer_rubrum_%28summertime%29.JPG/960px-Acer_rubrum_%28summertime%29.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_rubrum_(summertime).JPG",
+      "credit": "Bmerva — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Bmerva",
+      "file": "File:Acer rubrum (summertime).JPG",
+      "confirmed": false,
+      "fromCategory": "Acer rubrum (leaves)"
     },
     {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum_(leaves)",
-      "credit": "Wikimedia Commons — Acer rubrum (leaves) category",
-      "caption": "Brilliant red autumn foliage, the species' signature."
+      "caption": "2024 10 06 14 35 15 Sugar and Red Maples changing color in autumn along Windybush Way in the Mountainview section of Ewi",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/2024-10-06_14_35_15_Sugar_and_Red_Maples_changing_color_in_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg/960px-thumbnail.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-10-06_14_35_15_Sugar_and_Red_Maples_changing_color_in_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2024-10-06 14 35 15 Sugar and Red Maples changing color in autumn along Windybush Way in the Mountainview section of Ewing Township, Mercer County, New Jersey.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer rubrum in autumn"
     },
     {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_rubrum",
-      "credit": "Wikimedia Commons — Acer rubrum category",
-      "caption": "Grey bark, smooth on young trees becoming vertically ridged/striped."
+      "state": "summer",
+      "caption": "2013 05 05 15 03 27 Closer view of an Acer rubrum full of new seeds along the Forest View Trail in Palisades Interstate ",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/34/2013-05-05_15_03_27_Closer_view_of_an_Acer_rubrum_full_of_new_seeds_along_the_Forest_View_Trail_in_Palisades_Interstate_Park.jpg/960px-2013-05-05_15_03_27_Closer_view_of_an_Acer_rubrum_full_of_new_seeds_along_the_Forest_View_Trail_in_Palisades_Interstate_Park.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2013-05-05_15_03_27_Closer_view_of_an_Acer_rubrum_full_of_new_seeds_along_the_Forest_View_Trail_in_Palisades_Interstate_Park.jpg",
+      "credit": "Famartin — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Famartin",
+      "file": "File:2013-05-05 15 03 27 Closer view of an Acer rubrum full of new seeds along the Forest View Trail in Palisades Interstate Park.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer rubrum"
     }
   ],
   "required": {

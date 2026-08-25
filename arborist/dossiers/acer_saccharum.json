@@ -11,22 +11,52 @@
   "identityNotes": "Rounded (U-shaped) leaf sinuses with few large teeth and a green (not silver) underside separate it from silver/red maple. Classic mixed yellow-orange-red autumn, often all on one tree.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Acer_saccharum",
-      "credit": "Wikimedia Commons — Acer saccharum gallery",
-      "caption": "Full oval crown in leaf; rounded-sinus palmate leaves visible."
+      "state": "bark",
+      "caption": "Acer saccharum 'Green Mountain' Trunk Bark",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG/960px-Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG",
+      "credit": "Photo by and (c)2014 Derek Ramsey ( Ram-Man ) — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Photo by and (c)2014 Derek Ramsey ( Ram-Man )",
+      "file": "File:Acer saccharum 'Green Mountain' Trunk Bark.JPG",
+      "confirmed": false,
+      "fromCategory": "Acer saccharum (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "Acer saccharum (sugar maple) 3",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Acer_saccharum_%28sugar_maple%29_3_%2846329100361%29.jpg/960px-Acer_saccharum_%28sugar_maple%29_3_%2846329100361%29.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_saccharum_(sugar_maple)_3_(46329100361).jpg",
+      "credit": "James St. John — CC BY 2.0 (Wikimedia Commons)",
+      "licence": "CC BY 2.0",
+      "artist": "James St. John",
+      "file": "File:Acer saccharum (sugar maple) 3 (46329100361).jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharum (leaves)"
     },
     {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
-      "credit": "Wikimedia Commons — Acer saccharum category (Newark, Ohio fall set)",
-      "caption": "Mixed yellow-orange-red autumn canopy, the classic sugar-maple display."
+      "caption": "2024 09 27 12 54 04 Sugar Maples changing color in early autumn along Windybush Way in the Mountainview section of Ewing",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg/960px-2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2024-09-27 12 54 04 Sugar Maples changing color in early autumn along Windybush Way in the Mountainview section of Ewing Township, Mercer County, New Jersey.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharum in autumn"
     },
     {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharum",
-      "credit": "Wikimedia Commons — Acer saccharum category",
-      "caption": "Mature grey plated/shaggy bark with vertical lifting strips."
+      "state": "summer",
+      "caption": "2019 04 10 13 02 11 Sugar Maple blooming along Old Dairy Road in the Franklin Farm section of Oak Hill, Fairfax County, ",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2019-04-10 13 02 11 Sugar Maple blooming along Old Dairy Road in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharum"
     }
   ],
   "required": {

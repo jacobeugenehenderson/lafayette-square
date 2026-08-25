@@ -9,7 +9,56 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "20140212Tilia cordata1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8d/20140212Tilia_cordata1.jpg/960px-20140212Tilia_cordata1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20140212Tilia_cordata1.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20140212Tilia cordata1.jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia cordata (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "20130502Tilia cordata2",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/20130502Tilia_cordata2.jpg/960px-20130502Tilia_cordata2.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20130502Tilia_cordata2.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20130502Tilia cordata2.jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia cordata (leaves)"
+    },
+    {
+      "state": "fall",
+      "caption": "20131010Tilia cordata",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/20131010Tilia_cordata.jpg/960px-20131010Tilia_cordata.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20131010Tilia_cordata.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20131010Tilia cordata.jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia cordata in autumn"
+    },
+    {
+      "state": "summer",
+      "caption": "NÖ Naturdenkmal KO 033 3 Winterlinden sl1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/N%C3%96-Naturdenkmal_KO-033_3_Winterlinden_sl1.jpg/960px-N%C3%96-Naturdenkmal_KO-033_3_Winterlinden_sl1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:N%C3%96-Naturdenkmal_KO-033_3_Winterlinden_sl1.jpg",
+      "credit": "Stefan.lefnaer — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Stefan.lefnaer",
+      "file": "File:NÖ-Naturdenkmal KO-033 3 Winterlinden sl1.jpg",
+      "confirmed": false,
+      "fromCategory": "Tilia cordata"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 50,

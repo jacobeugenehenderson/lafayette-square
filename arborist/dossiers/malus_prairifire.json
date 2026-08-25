@@ -12,21 +12,21 @@
   "referenceImages": [
     {
       "state": "summer",
-      "url": "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderDetails.aspx?kempercode=u360",
+      "caption": "Broad-rounded habit, dark green summer foliage; authoritative cultivar profile (pull the spring-bloom plate here).",
+      "url": null,
+      "sourceUrl": "https://www.missouribotanicalgarden.org/PlantFinder/PlantFinderDetails.aspx?kempercode=u360",
       "credit": "Missouri Botanical Garden Plant Finder — Malus 'Prairifire'",
-      "caption": "Broad-rounded habit, dark green summer foliage; authoritative cultivar profile (pull the spring-bloom plate here)."
+      "citationOnly": true,
+      "reason": "non-Commons source — cited, never embedded (licence)"
     },
     {
       "state": "fall",
-      "url": "https://www.chicagobotanic.org/plant-information/plant-finder/malus-prairifire-prairifire-crabapple",
+      "caption": "Golden-bronze fall foliage with persistent purplish-red fruit clusters.",
+      "url": null,
+      "sourceUrl": "https://www.chicagobotanic.org/plant-information/plant-finder/malus-prairifire-prairifire-crabapple",
       "credit": "Chicago Botanic Garden — Malus 'Prairifire'",
-      "caption": "Golden-bronze fall foliage with persistent purplish-red fruit clusters."
-    },
-    {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Malus",
-      "credit": "Wikimedia Commons — Malus category (genus-level)",
-      "caption": "Ornamental crabapple scaly reddish-brown bark; no cultivar-specific Commons file confirmed."
+      "citationOnly": true,
+      "reason": "non-Commons source — cited, never embedded (licence)"
     }
   ],
   "required": {

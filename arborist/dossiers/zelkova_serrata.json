@@ -9,7 +9,20 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "summer",
+      "caption": "Zelkova serrata, Bercy",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Zelkova_serrata%2C_Bercy.jpg/960px-Zelkova_serrata%2C_Bercy.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zelkova_serrata,_Bercy.jpg",
+      "credit": "Tangopaso — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": "Tangopaso",
+      "file": "File:Zelkova serrata, Bercy.jpg",
+      "confirmed": false,
+      "fromCategory": "Zelkova serrata"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 50,

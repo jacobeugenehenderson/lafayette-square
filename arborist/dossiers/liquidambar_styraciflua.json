@@ -11,22 +11,51 @@
   "identityNotes": "Unmistakable 5–7-pointed STAR-shaped leaf, arranged ALTERNATELY (unlike maples' opposite), plus spiky 'gumball' fruit and corky-winged twigs. Aromatic when crushed.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Liquidambar_styraciflua",
-      "credit": "Wikimedia Commons — Liquidambar styraciflua",
-      "caption": "Pyramidal-to-oval crown of glossy star-shaped leaves."
-    },
-    {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/File:Sweetgum_in_autumn.JPG",
-      "credit": "Wikimedia Commons — 'Sweetgum in autumn.JPG'",
-      "caption": "Multi-color autumn canopy (yellow/orange/red/purple), the star leaf shape clear."
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Sweetgum_in_autumn.JPG/960px-Sweetgum_in_autumn.JPG",
+      "credit": "Ontologicalpuppy — CC BY-SA 4.0 (Wikimedia Commons)",
+      "caption": "Multi-color autumn canopy (yellow/orange/red/purple), the star leaf shape clear.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sweetgum_in_autumn.JPG",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Ontologicalpuppy",
+      "file": "File:Sweetgum in autumn.JPG",
+      "confirmed": true
     },
     {
       "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Liquidambar_styraciflua",
-      "credit": "Wikimedia Commons — Liquidambar styraciflua category",
-      "caption": "Deeply furrowed grey-brown bark; corky-winged twigs and spiky gumballs in related files."
+      "caption": "American Sweetgum Liquidambar styraciflua 'Worplesdon' Trunk 2000px",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/American_Sweetgum_Liquidambar_styraciflua_%27Worplesdon%27_Trunk_2000px.jpg/960px-American_Sweetgum_Liquidambar_styraciflua_%27Worplesdon%27_Trunk_2000px.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Sweetgum_Liquidambar_styraciflua_%27Worplesdon%27_Trunk_2000px.jpg",
+      "credit": "Photo (c)2007 Derek Ramsey ( Ram-Man ) — CC BY-SA 2.5 (Wikimedia Commons)",
+      "licence": "CC BY-SA 2.5",
+      "artist": "Photo (c)2007 Derek Ramsey ( Ram-Man )",
+      "file": "File:American Sweetgum Liquidambar styraciflua 'Worplesdon' Trunk 2000px.jpg",
+      "confirmed": false,
+      "fromCategory": "Liquidambar styraciflua (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "20140324Liquidambar styraciflua1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/20140324Liquidambar_styraciflua1.jpg/960px-20140324Liquidambar_styraciflua1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20140324Liquidambar_styraciflua1.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20140324Liquidambar styraciflua1.jpg",
+      "confirmed": false,
+      "fromCategory": "Liquidambar styraciflua (leaves)"
+    },
+    {
+      "state": "summer",
+      "caption": "Amberboom (Liquidambar styraciflua). Detail. 01 05 2022 (d.j.b.) 02",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Amberboom_%28Liquidambar_styraciflua%29._Detail._01-05-2022_%28d.j.b.%29_02.jpg/960px-Amberboom_%28Liquidambar_styraciflua%29._Detail._01-05-2022_%28d.j.b.%29_02.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Amberboom_(Liquidambar_styraciflua)._Detail._01-05-2022_(d.j.b.)_02.jpg",
+      "credit": "Dominicus Johannes Bergsma — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Dominicus Johannes Bergsma",
+      "file": "File:Amberboom (Liquidambar styraciflua). Detail. 01-05-2022 (d.j.b.) 02.jpg",
+      "confirmed": false,
+      "fromCategory": "Liquidambar styraciflua"
     }
   ],
   "required": {

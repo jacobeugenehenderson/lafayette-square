@@ -11,22 +11,16 @@
   "identityNotes": "Diagnostic three-tier branching (upper ascending, middle horizontal, lower descending/pendulous) — unmistakable winter silhouette. Red-oak group, bristle-tipped lobes; dead lower 'pin' stubs persist.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
-      "credit": "Wikimedia Commons — Quercus palustris category",
-      "caption": "Pyramidal crown with descending lower limbs; deeply cut bristle-lobed leaves."
-    },
-    {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
-      "credit": "Wikimedia Commons — Quercus palustris category",
-      "caption": "Deep red-to-bronze autumn foliage."
-    },
-    {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Quercus_palustris",
-      "credit": "Wikimedia Commons — Quercus palustris category",
-      "caption": "Smooth grey-brown trunk with shallow young ridging."
+      "caption": "2002 10 Pin Oak (Quercus palustris) during Autumn along Terrace Boulevard in Ewing, New Jersey",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/e/ea/2002-10_Pin_Oak_%28Quercus_palustris%29_during_Autumn_along_Terrace_Boulevard_in_Ewing%2C_New_Jersey.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2002-10_Pin_Oak_(Quercus_palustris)_during_Autumn_along_Terrace_Boulevard_in_Ewing,_New_Jersey.jpg",
+      "credit": "unknown — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": null,
+      "file": "File:2002-10 Pin Oak (Quercus palustris) during Autumn along Terrace Boulevard in Ewing, New Jersey.jpg",
+      "confirmed": false,
+      "fromCategory": "Quercus palustris in autumn"
     }
   ],
   "required": {

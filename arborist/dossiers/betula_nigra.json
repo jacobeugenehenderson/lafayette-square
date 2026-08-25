@@ -12,21 +12,49 @@
   "referenceImages": [
     {
       "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra.JPG",
-      "credit": "Wikimedia Commons — 'River Birch Betula nigra.JPG'",
-      "caption": "Multi-stem habit with fine open canopy; diamond-shaped doubly-toothed leaves (leaf detail: File:River_Birch_Betula_nigra_Leaf_2500px.jpg)."
-    },
-    {
-      "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Betula_nigra",
-      "credit": "Wikimedia Commons — Betula nigra category",
-      "caption": "Yellow autumn foliage on the airy crown."
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/River_Birch_Betula_nigra.JPG/960px-River_Birch_Betula_nigra.JPG",
+      "credit": "SEWilco — CC BY-SA 3.0 (Wikimedia Commons)",
+      "caption": "Multi-stem habit with fine open canopy; diamond-shaped doubly-toothed leaves (leaf detail: File:River_Birch_Betula_nigra_Leaf_2500px.jpg).",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra.JPG",
+      "licence": "CC BY-SA 3.0",
+      "artist": "SEWilco",
+      "file": "File:River Birch Betula nigra.JPG",
+      "confirmed": true
     },
     {
       "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra_Bark_Vertical.JPG",
-      "credit": "Wikimedia Commons — 'River Birch Betula nigra Bark Vertical.JPG'",
-      "caption": "Signature salmon/cinnamon exfoliating papery curling bark — the defining ID trait."
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/River_Birch_Betula_nigra_Bark_Vertical.JPG/960px-River_Birch_Betula_nigra_Bark_Vertical.JPG",
+      "credit": "Photo by and (c)2016 Derek Ramsey ( Ram-Man ) — CC BY-SA 4.0 (Wikimedia Commons)",
+      "caption": "Signature salmon/cinnamon exfoliating papery curling bark — the defining ID trait.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra_Bark_Vertical.JPG",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Photo by and (c)2016 Derek Ramsey ( Ram-Man )",
+      "file": "File:River Birch Betula nigra Bark Vertical.JPG",
+      "confirmed": true
+    },
+    {
+      "state": "leaves",
+      "caption": "Betula nigra0",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/5/53/Betula_nigra0.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Betula_nigra0.jpg",
+      "credit": "unknown — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": null,
+      "file": "File:Betula nigra0.jpg",
+      "confirmed": false,
+      "fromCategory": "Betula nigra (leaves)"
+    },
+    {
+      "state": "fall",
+      "caption": "Betula nigra Heritage",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/1/17/Betula_nigra_Heritage.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Betula_nigra_Heritage.jpg",
+      "credit": "unknown — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": null,
+      "file": "File:Betula nigra Heritage.jpg",
+      "confirmed": false,
+      "fromCategory": "Betula nigra in autumn"
     }
   ],
   "required": {

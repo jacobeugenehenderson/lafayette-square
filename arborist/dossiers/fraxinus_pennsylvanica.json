@@ -11,22 +11,52 @@
   "identityNotes": "Opposite COMPOUND leaves + the interlacing diamond-pattern ridged bark are diagnostic. Highly vulnerable to emerald ash borer in Missouri — model the HEALTHY form, not the dead-topped decline.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Fraxinus_pennsylvanica",
-      "credit": "Wikimedia Commons — Fraxinus pennsylvanica",
-      "caption": "Pinnately compound 5–9 leaflet leaves; rounded dense crown."
+      "state": "bark",
+      "caption": "Green Ash Fraxinus pennsylvanica Bark 2000px",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f7/Green_Ash_Fraxinus_pennsylvanica_Bark_2000px.jpg/960px-Green_Ash_Fraxinus_pennsylvanica_Bark_2000px.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Green_Ash_Fraxinus_pennsylvanica_Bark_2000px.jpg",
+      "credit": "Photo by and (c)2007 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
+      "licence": "GFDL 1.2",
+      "artist": "Photo by and (c)2007 Derek Ramsey ( Ram-Man )",
+      "file": "File:Green Ash Fraxinus pennsylvanica Bark 2000px.jpg",
+      "confirmed": false,
+      "fromCategory": "Fraxinus pennsylvanica (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "Fraxinus pennsylvanica",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Fraxinus_pennsylvanica.jpg/960px-Fraxinus_pennsylvanica.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica.jpg",
+      "credit": "unknown — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": null,
+      "file": "File:Fraxinus pennsylvanica.jpg",
+      "confirmed": false,
+      "fromCategory": "Fraxinus pennsylvanica (leaves)"
     },
     {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica_(autumn_leaves)",
-      "credit": "Wikimedia Commons — Fraxinus pennsylvanica (autumn leaves)",
-      "caption": "Uniform golden-yellow autumn foliage."
+      "caption": "Fraxinus pennsylvanica tree",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Fraxinus_pennsylvanica_tree.jpg/960px-Fraxinus_pennsylvanica_tree.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica_tree.jpg",
+      "credit": "Steven Katovich, USDA Forest Service — CC BY 3.0 us (Wikimedia Commons)",
+      "licence": "CC BY 3.0 us",
+      "artist": "Steven Katovich, USDA Forest Service",
+      "file": "File:Fraxinus pennsylvanica tree.jpg",
+      "confirmed": false,
+      "fromCategory": "Fraxinus pennsylvanica in autumn"
     },
     {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Fraxinus_pennsylvanica",
-      "credit": "Wikimedia Commons — Fraxinus pennsylvanica category",
-      "caption": "Diamond-pattern ridged-and-furrowed grey-brown bark."
+      "state": "summer",
+      "caption": "Fraxinus pennsylvanica",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Fraxinus_pennsylvanica_%285107490717%29.jpg/960px-Fraxinus_pennsylvanica_%285107490717%29.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica_(5107490717).jpg",
+      "credit": "Matt Lavin from Bozeman, Montana, USA — CC BY-SA 2.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 2.0",
+      "artist": "Matt Lavin from Bozeman, Montana, USA",
+      "file": "File:Fraxinus pennsylvanica (5107490717).jpg",
+      "confirmed": false,
+      "fromCategory": "Fraxinus pennsylvanica"
     }
   ],
   "required": {

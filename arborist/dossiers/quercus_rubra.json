@@ -9,7 +9,44 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "bark",
+      "caption": "20140212Quercus rubra1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/20140212Quercus_rubra1.jpg/960px-20140212Quercus_rubra1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20140212Quercus_rubra1.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20140212Quercus rubra1.jpg",
+      "confirmed": false,
+      "fromCategory": "Quercus rubra (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "Quercus rubra leaves Palmengarten Frankfurt",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Quercus_rubra_-_leaves_-_Palmengarten_Frankfurt.jpg/960px-Quercus_rubra_-_leaves_-_Palmengarten_Frankfurt.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quercus_rubra_-_leaves_-_Palmengarten_Frankfurt.jpg",
+      "credit": "Jutta234 — CC BY-SA 3.0 de (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0 de",
+      "artist": "Jutta234",
+      "file": "File:Quercus rubra - leaves - Palmengarten Frankfurt.jpg",
+      "confirmed": false,
+      "fromCategory": "Quercus rubra (leaves)"
+    },
+    {
+      "state": "summer",
+      "caption": "A large northern red oak tree in Glen Abbey, Oakville, Ontario",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/A_large_northern_red_oak_tree_in_Glen_Abbey%2C_Oakville%2C_Ontario.jpg/960px-A_large_northern_red_oak_tree_in_Glen_Abbey%2C_Oakville%2C_Ontario.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_large_northern_red_oak_tree_in_Glen_Abbey,_Oakville,_Ontario.jpg",
+      "credit": "Bay &amp; Gables — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Bay &amp; Gables",
+      "file": "File:A large northern red oak tree in Glen Abbey, Oakville, Ontario.jpg",
+      "confirmed": false,
+      "fromCategory": "Quercus rubra"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 50,

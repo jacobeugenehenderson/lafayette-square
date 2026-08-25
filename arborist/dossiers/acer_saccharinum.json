@@ -11,22 +11,52 @@
   "identityNotes": "Deeply cut, sharply pointed lobes with very deep U-sinuses and a VIVID silvery-white underside — the whole canopy flashes silver in wind (the defining trait). Often weak-wooded, ascending-then-arching limbs.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Acer_saccharinum",
-      "credit": "Wikimedia Commons — Acer saccharinum",
-      "caption": "Broad spreading crown; deeply lobed leaves with silver undersides catching light."
+      "state": "bark",
+      "caption": "20120828Acer saccharinum4",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/20120828Acer_saccharinum4.jpg/960px-20120828Acer_saccharinum4.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20120828Acer_saccharinum4.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20120828Acer saccharinum4.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharinum (bark)"
+    },
+    {
+      "state": "leaves",
+      "caption": "0 Acer saccharinum Tervueren",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/0_Acer_saccharinum_-_Tervueren.JPG/960px-0_Acer_saccharinum_-_Tervueren.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:0_Acer_saccharinum_-_Tervueren.JPG",
+      "credit": "Jean-Pol GRANDMONT — CC BY 3.0 (Wikimedia Commons)",
+      "licence": "CC BY 3.0",
+      "artist": "Jean-Pol GRANDMONT",
+      "file": "File:0 Acer saccharinum - Tervueren.JPG",
+      "confirmed": false,
+      "fromCategory": "Acer saccharinum (leaves)"
     },
     {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
-      "credit": "Wikimedia Commons — Acer saccharinum category",
-      "caption": "Pale yellow autumn foliage (less vivid than sugar/red maple)."
+      "caption": "20121028Acer saccharinum1",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/20121028Acer_saccharinum1.jpg/960px-20121028Acer_saccharinum1.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:20121028Acer_saccharinum1.jpg",
+      "credit": "AnRo0002 — CC0 (Wikimedia Commons)",
+      "licence": "CC0",
+      "artist": "AnRo0002",
+      "file": "File:20121028Acer saccharinum1.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharinum in autumn"
     },
     {
-      "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/Category:Acer_saccharinum",
-      "credit": "Wikimedia Commons — Acer saccharinum category",
-      "caption": "Mature shaggy grey-to-reddish-brown peeling bark strips."
+      "state": "summer",
+      "caption": "2016 02 08 12 57 56 A silver maple along the Gerry Connolly Cross County Trail between Miller Heights Road and Vale Road",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/bd/2016-02-08_12_57_56_A_silver_maple_along_the_Gerry_Connolly_Cross_County_Trail_between_Miller_Heights_Road_and_Vale_Road_in_Oakton%2C_Fairfax_County%2C_Virginia.jpg/960px-2016-02-08_12_57_56_A_silver_maple_along_the_Gerry_Connolly_Cross_County_Trail_between_Miller_Heights_Road_and_Vale_Road_in_Oakton%2C_Fairfax_County%2C_Virginia.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2016-02-08_12_57_56_A_silver_maple_along_the_Gerry_Connolly_Cross_County_Trail_between_Miller_Heights_Road_and_Vale_Road_in_Oakton,_Fairfax_County,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2016-02-08 12 57 56 A silver maple along the Gerry Connolly Cross County Trail between Miller Heights Road and Vale Road in Oakton, Fairfax County, Virginia.jpg",
+      "confirmed": false,
+      "fromCategory": "Acer saccharinum"
     }
   ],
   "required": {

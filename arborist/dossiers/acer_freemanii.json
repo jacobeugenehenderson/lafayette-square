@@ -9,7 +9,44 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [],
+  "referenceImages": [
+    {
+      "state": "leaves",
+      "caption": "Lipstick maple",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Lipstick_maple.JPG/960px-Lipstick_maple.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Lipstick_maple.JPG",
+      "credit": "unknown — GFDL (Wikimedia Commons)",
+      "licence": "GFDL",
+      "artist": null,
+      "file": "File:Lipstick maple.JPG",
+      "confirmed": false,
+      "fromCategory": "Acer × freemanii (leaves)"
+    },
+    {
+      "state": "fall",
+      "caption": "2014 10 02 08 01 04 Glaze ice from a sprinkler left on during a sub freezing night on a Freeman's Maple in Elko, Nevada",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/2014-10-02_08_01_04_Glaze_ice_from_a_sprinkler_left_on_during_a_sub-freezing_night_on_a_Freeman%27s_Maple_in_Elko%2C_Nevada.JPG/960px-2014-10-02_08_01_04_Glaze_ice_from_a_sprinkler_left_on_during_a_sub-freezing_night_on_a_Freeman%27s_Maple_in_Elko%2C_Nevada.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2014-10-02_08_01_04_Glaze_ice_from_a_sprinkler_left_on_during_a_sub-freezing_night_on_a_Freeman%27s_Maple_in_Elko,_Nevada.JPG",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2014-10-02 08 01 04 Glaze ice from a sprinkler left on during a sub-freezing night on a Freeman's Maple in Elko, Nevada.JPG",
+      "confirmed": false,
+      "fromCategory": "Acer × freemanii in autumn"
+    },
+    {
+      "state": "summer",
+      "caption": "2013 04 18 15 19 35 Freeman's Maple flowering in Elko, Nevada",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e7/2013-04-18_15_19_35_Freeman%27s_Maple_flowering_in_Elko%2C_Nevada.JPG/960px-2013-04-18_15_19_35_Freeman%27s_Maple_flowering_in_Elko%2C_Nevada.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2013-04-18_15_19_35_Freeman%27s_Maple_flowering_in_Elko,_Nevada.JPG",
+      "credit": "Famartin — CC BY-SA 3.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 3.0",
+      "artist": "Famartin",
+      "file": "File:2013-04-18 15 19 35 Freeman's Maple flowering in Elko, Nevada.JPG",
+      "confirmed": false,
+      "fromCategory": "Acer × freemanii"
+    }
+  ],
   "required": {
     "chassis.size": {
       "target": 60,

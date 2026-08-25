@@ -11,22 +11,50 @@
   "identityNotes": "A conifer that goes BARE in winter. Soft needle-like leaves in flat, two-ranked feathery sprays. Trunk strongly buttressed/fluted at the flared base; 'knees' only near standing water (a park-lawn specimen usually lacks them). Botanically NEEDLE-like (linear), not broad scale.",
   "referenceImages": [
     {
-      "state": "summer",
-      "url": "https://commons.wikimedia.org/wiki/Taxodium_distichum",
-      "credit": "Wikimedia Commons — Taxodium distichum",
-      "caption": "Pyramidal habit with feathery soft-green foliage; buttressed trunk base."
-    },
-    {
       "state": "fall",
-      "url": "https://commons.wikimedia.org/wiki/File:Taxodium_distichum_BotGardBln1105LeavesFall.JPG",
-      "credit": "Wikimedia Commons — Berlin Botanical Garden",
-      "caption": "Rusty coppery-orange autumn foliage of the feathery needle sprays."
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Taxodium_distichum_BotGardBln1105LeavesFall.JPG/960px-Taxodium_distichum_BotGardBln1105LeavesFall.JPG",
+      "credit": "unknown — CC BY-SA 3.0 (Wikimedia Commons)",
+      "caption": "Rusty coppery-orange autumn foliage of the feathery needle sprays.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Taxodium_distichum_BotGardBln1105LeavesFall.JPG",
+      "licence": "CC BY-SA 3.0",
+      "artist": null,
+      "file": "File:Taxodium distichum BotGardBln1105LeavesFall.JPG",
+      "confirmed": true
     },
     {
       "state": "bark",
-      "url": "https://commons.wikimedia.org/wiki/File:Bald_Cypress_(Taxodium_distichum)_bark_detail.jpg",
-      "credit": "Wikimedia Commons — 'Bald Cypress bark detail.jpg'",
-      "caption": "Reddish-brown vertically fibrous exfoliating bark."
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/Bald_Cypress_%28Taxodium_distichum%29_bark_detail.jpg/960px-Bald_Cypress_%28Taxodium_distichum%29_bark_detail.jpg",
+      "credit": "MONGO — Public domain (Wikimedia Commons)",
+      "caption": "Reddish-brown vertically fibrous exfoliating bark.",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald_Cypress_(Taxodium_distichum)_bark_detail.jpg",
+      "licence": "Public domain",
+      "artist": "MONGO",
+      "file": "File:Bald Cypress (Taxodium distichum) bark detail.jpg",
+      "confirmed": true
+    },
+    {
+      "state": "leaves",
+      "caption": "Bald Cypress",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Bald-Cypress_%282883842076%29.png",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald-Cypress_(2883842076).png",
+      "credit": "Homer Edward Price — CC BY 2.0 (Wikimedia Commons)",
+      "licence": "CC BY 2.0",
+      "artist": "Homer Edward Price",
+      "file": "File:Bald-Cypress (2883842076).png",
+      "confirmed": false,
+      "fromCategory": "Taxodium distichum (leaves)"
+    },
+    {
+      "state": "summer",
+      "caption": "Bald cypress knees rising above water covered with duckweed swamp and mud",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg/960px-Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg",
+      "credit": "Hillebrand Steve, U.S. Fish and Wildlife Service — Public domain (Wikimedia Commons)",
+      "licence": "Public domain",
+      "artist": "Hillebrand Steve, U.S. Fish and Wildlife Service",
+      "file": "File:Bald cypress knees rising above water covered with duckweed swamp and mud.jpg",
+      "confirmed": false,
+      "fromCategory": "Taxodium distichum"
     }
   ],
   "required": {
