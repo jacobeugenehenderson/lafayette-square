@@ -13,20 +13,42 @@ let fail = 0
 const check = (label, got, want) => {
   const ok = got === want
   if (!ok) fail++
-  console.log(`  ${ok ? '✅' : '❌'} ${label.padEnd(62)} ${got}${ok ? '' : `  (expected ${want})`}`)
+  console.log(`  ${ok ? '✅' : '❌'} ${label.padEnd(58)} ${got}${ok ? '' : `  (expected ${want})`}`)
 }
 
-console.log('── literals: cases the harvest did not produce ──')
+// ⛔ EACH CASE MUST ISOLATE ONE GUARD. Mutation-tested 2026-08-25: disabling the
+// genus test did NOT fail this check, because the original TICO literal
+// (Tilia cordata / Tiarella cordifolia) differs in genus AND epithet, so the
+// epithet guard caught it and the check could not tell which one was working.
+// A case that two guards catch proves neither. Hence the genus-ONLY and
+// epithet-ONLY rows below.
+console.log('── verdicts: one guard per case ──')
 for (const [q, r, want, why] of [
-  ['Tilia cordata', 'Tiarella cordifolia L.', 'mismatch', 'THE TICO CASE — a foamflower for a linden'],
-  ['Quercus rubra', 'Quercus palustris', 'mismatch', 'epithet differs'],
-  ['Acer freemanii', 'Acer ×freemanii A.E. Murray', 'hybrid-mark', '× on the returned side only'],
-  ['Acer ×freemanii', 'Acer freemanii', 'hybrid-mark', '× on the queried side only'],
-  ['Tilia cordata', 'Tilia cordata', 'exact', 'identical'],
+  ['Tilia cordata', 'Tiarella cordata',      'mismatch', 'GENUS ONLY differs — isolates the genus guard'],
+  ['Quercus rubra', 'Quercus palustris',     'mismatch', 'EPITHET ONLY differs — isolates the epithet guard'],
+  ['Tilia cordata', 'Tiarella cordifolia L.','mismatch', 'the real TICO string (both differ)'],
+  ['Acer freemanii', 'Acer \u00d7freemanii A.E. Murray', 'hybrid-mark', '\u00d7 on the returned side only'],
+  ['Acer \u00d7freemanii', 'Acer freemanii', 'hybrid-mark', '\u00d7 on the queried side only'],
+  ['Acer x freemanii', 'Acer &times freemanii', 'exact', 'SelecTree ships &times with NO semicolon'],
+  ['Tilia cordata', 'Tilia cordata Mill.',   'authority-only', 'authority on the returned side'],
+  ['Tilia cordata', 'Tilia cordata',         'exact', 'identical'],
   ['Cercis canadensis', 'Cercis canadensis var. texensis', 'exact', 'infraspecific below a matching species'],
-  ['Malus', "Malus 'Beverly'", 'exact', 'genus-level query, cultivar returned'],
-  ['Tilia cordata', '', 'mismatch', 'empty returned name'],
-]) check(`${why}`, verifyTaxon(q, r).match, want)
+  ['Malus', "Malus 'Beverly'",               'exact', 'genus-level query, cultivar returned'],
+  ['Ulmus', 'Ulmus americana',               'exact', 'genus-level query, species returned'],
+  ['Tilia cordata', '',                      'mismatch', 'empty returned name'],
+  ['', 'Tilia cordata',                      'mismatch', 'empty queried name'],
+]) check(why, verifyTaxon(q, r).match, want)
+
+// ⚠️ returnedRank is ADVISORY — it never moves the verdict, so nothing above can
+// assert it. Rook's mint treats a non-null rank as DISQUALIFYING, which means this
+// is load-bearing and untested until here. Mutation-tested: deleting the flag
+// passed the old check silently.
+console.log('\n── returnedRank: advisory, and the only thing guarding the cultivar class ──')
+const rank = (q, r) => { const v = verifyTaxon(q, r); return v.returnedRank ? (v.returnedRank.cultivar || v.returnedRank.infraspecific) : null }
+check("'Armstrong' cultivar is FLAGGED (columnar where the species is not)", rank('Acer rubrum', "Acer rubrum 'Armstrong'"), 'Armstrong')
+check('var. texensis is FLAGGED below a matching species', rank('Cercis canadensis', 'Cercis canadensis var. texensis'), 'texensis')
+check('a clean species record is NOT flagged', rank('Tilia cordata', 'Tilia cordata Mill.'), null)
+check('a genus-level cultivar record is FLAGGED', rank('Malus', "Malus 'Beverly'"), 'Beverly')
 
 console.log('\n── live: every _matched_taxon the harvest actually recorded ──')
 const P = 'scratch/dossier-raw-observations.jsonl'

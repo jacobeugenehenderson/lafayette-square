@@ -195,7 +195,16 @@ function utdRows() {
     out.push(cur); return out
   }
   const hdr = csv(lines[0]).map(s => s.trim())
-  const ix = (n) => hdr.indexOf(n)
+  // ⛔ indexOf RETURNS -1, AND -1 IS A SILENT FALLBACK. A renamed or misspelled
+  // column would make `f[-1]` undefined, parseFloat NaN, and the field would simply
+  // produce zero observations — which reads as "no source carries this" rather than
+  // "this script is broken". That exact shape already cost a re-run here when a
+  // naive CSV split shifted every column. Fail loudly instead.
+  const ix = (n) => {
+    const i = hdr.indexOf(n)
+    if (i < 0) throw new Error(`TS3 column "${n}" not found. Header is: ${hdr.join(' | ')}`)
+    return i
+  }
   const cols = { sci: ix('ScientificName'), ht: ix('TreeHt (m)'), cb: ix('CrnBase'), ch: ix('CrnHt (m)'),
                  cd: ix('AvgCdia (m)'), shape: ix('Shape'), type: ix('TreeType'), dbh: ix('DBH (cm)'), age: ix('Age') }
   const byTaxon = new Map()
