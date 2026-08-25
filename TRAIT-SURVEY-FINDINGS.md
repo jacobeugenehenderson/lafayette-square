@@ -656,4 +656,500 @@ absent**. Licence **unconfirmed**.
 ⭐ **The useful connection: this is the corpus FLOPO was text-mined from. FLOPO is what you get when
 someone has already done the NLP pass over prose like this.**
 
-<!-- PENDING: forestry/arboricultural vocabularies (FIA, ISA/TRAQ, i-Tree, municipal inventories) -->
+---
+
+### 1.18 ⭐⭐ FORESTRY & ARBORICULTURAL VOCABULARIES — **the brief was right; this section changed two verdicts**
+
+The brief's steer that crown density is a formal forestry metric and that lean lives in tree-risk
+standards is **confirmed**. Both were about to be written down as GAPs and both are ALIGNED.
+
+#### 1.18a USFS FIA — National Core Field Guide v9.5 (Sept 2025) + FIADB v9.4 (Aug 2025)
+`https://research.fs.usda.gov/sites/default/files/2026-04/v9-5_sep2025_fg_nfi_natl.pdf` ·
+`https://research.fs.usda.gov/sites/default/files/2025-08/wo-v9-4_Aug2025_UG_FIADB_database_description_NFI.pdf`
+Access: **FIA DataMart**, `https://apps.fs.usda.gov/fia/datamart/datamart.html` — per-state CSV and
+SQLite, no login, US federal work (explicit licence text **unconfirmed**).
+
+**Crown variables — the ones that matter, verbatim with their code lists:**
+
+| FIADB field | guide § | vocabulary |
+|---|---|---|
+| ⭐ **`CDENCD` Crown density** | P3 | **5-percent classes**: `00`=0% · `05`=1–5% · `10`=6–10% … `95`=91–95% · `99`=96–100% |
+| ⭐ **`TRANSCD` Foliage transparency** | P3 | same 5-percent class scheme |
+| **`CDIEBKCD` Crown dieback** | 5.21 | same 5-percent class scheme |
+| ⭐ **`CCLCD` Crown class** | 5.18 | `1` Open grown · `2` Dominant · `3` Codominant · `4` Intermediate · `5` Overtopped |
+| ⭐ **`UNCRCD` Uncompacted live crown ratio** | 5.19 | `00`–`99` percent |
+| **`CR` Compacted crown ratio** | 5.20 | `00`–`99` percent |
+| ⭐ **`CLIGHTCD` Crown light exposure** | — | `0` no direct sunlight · `1` full light from top or 1 side · `2` top + 1 side · `3` top + 2 sides · `4` top + 3 sides · `5` top + 4 sides |
+| `CPOSCD` Crown position | P3 | `1` Superstory · `2` Overstory · `3` Understory · `4` Open canopy |
+| `CVIGORCD` Crown vigor (saplings) | — | `1` UNCRCD ≥35, <5% dieback, ≥80% normal foliage · `2` neither · `3` 1–20% normal foliage |
+| `DECAYCD` Decay class | 5.25 | 1–5, defined by a five-column table (Limbs/branches · Top · % Bark Remaining · Sapwood · Heartwood) |
+| `TREECLCD` Tree class | — | `2` Growing stock · `3` Rough cull · `4` Rotten cull |
+| `DAMLOC1` Damage location | 5.22 | `0` No damage · `1` Roots (exposed) and stump · `2` Roots, stump, lower bole · `3` Lower bole · `4` Lower and upper bole · `5` Upper bole · `6` Crownstem · `7` Branches · `8` Buds and shoots · `9` Foliage |
+| `DAMTYP1` Damage type | 5.22 | `01` Canker/gall · `02` Conk/fruiting body/advanced decay · `03` Open wound · `04` Resinosis/gumosis · `05` Crack or seam · `11` Broken bole · `12` Broom on root/bole · `13` Broken/dead root · `20` Vines in the crown · `21` Loss of apical dominance, dead terminal · `22` Broken or dead branches · `23` Excessive branching/brooms · `24` Damaged shoots/buds/foliage · `25` Discoloration of foliage · `31` Other |
+| `MIST_CL_CD` Dwarf mistletoe | 5.28 | Hawksworth `0`–`6` |
+| `DAMAGE_AGENT_CD1/2/3` | 5.22 | `0` · `10000` General insects · `11000` Bark beetles · `12000` Defoliators · `14000` Sucking insects · `15000` Boring insects · `19000` General diseases · `21000` Root/butt diseases · `22000` Cankers · `22500` Stem decays · `23000` Parasitic/Epiphytic · `24000` Decline complexes/Dieback · `25000` Foliage diseases · `26000` Stem rusts · `27000` Broom rusts · `30000` Fire · `41000` Wild animals · `42000` Domestic animals · `50000` Abiotic · `60000` Competition · `70000` Human activities · `71000` Harvest · `90000` Other · `99000` Unknown |
+
+⛔ **There is NO `LEAN` field in FIA.** Lean appears only as a threshold criterion — a standing dead
+tree must *"lean less than 45 degrees from vertical"* (`STANDING_DEAD_CD`). **Confirmed by grep:
+"transparency" returns 0 hits in the core guide** — CROWN DENSITY / FOLIAGE TRANSPARENCY / CROWN LIGHT
+EXPOSURE / CROWN POSITION / CROWN VIGOR are **Phase 3** variables, present in FIADB but collected under
+a separate P3 protocol whose current home is **unconfirmed**.
+
+**`REF_SPECIES` (Ch. 11.5) — every field named in the brief exists**, verbatim in order:
+`SPCD · COMMON_NAME · SHARED_COMMON_NAME_IND · GENUS · SPECIES · VARIETY · SUBSPECIES ·
+SCIENTIFIC_NAME · SPECIES_SYMBOL · E_/W_/C_/P_SPGRPCD · MAJOR_SPGRPCD · STOCKING_SPGRPCD ·
+FOREST_TYPE_SPGRPCD · JENKINS_SPGRPCD · JENKINS_SAPLING_ADJUSTMENT · SITETREE · SFTWD_HRDWD ·
+WOODLAND · WOOD_SPGR_GREENVOL_DRYWT (+_CIT) · BARK_SPGR_GREENVOL_DRYWT (+_CIT) · MC_PCT_GREEN_WOOD
+(+_CIT) · MC_PCT_GREEN_BARK (+_CIT) · BARK_VOL_PCT (+_CIT) · CWD_DECAY_RATIO1..5 · DWM_CARBON_RATIO ·
+CARBON_RATIO_LIVE · DRYWT_TO_GREENWT_CONVERSION`
+⭐ **`BARK_VOL_PCT` — bark volume as a percent of the bole — is a per-species number, and it is the
+only quantitative bark trait found anywhere in this survey.**
+`MAJOR_SPGRPCD` = `1` Pines · `2` Other softwoods · `3` Soft hardwoods · `4` Hard hardwoods.
+`JENKINS_SPGRPCD` = `1` Cedar/larch · `2` Douglas-fir · `3` True fir/hemlock · `4` Pine · `5` Spruce ·
+`6` Aspen/alder/cottonwood-willow · `7` Soft maple/birch · `8` Mixed hardwood · `9` Hard maple/oak/
+hickory/beech · `10` Juniper/oak/mesquite. ⚠️ `SFTWD_HRDWD`'s letter domain is described but **not
+enumerated in the code table — unconfirmed**.
+
+#### 1.18b ⭐⭐⭐ Urban FIA Field Manual v9.5 (PNW 2026) — **the kit's own vocabulary, in a federal manual**
+`https://research.fs.usda.gov/sites/default/files/2026-03/pnw-2026_v9-5_pnw_urban_fia_field_manual.pdf`
+
+- ⭐⭐ **`STREET TREE` (7.6.0.11)** is a defined field with a **verbatim geometric definition**:
+  *"a MAINTAINED AREA TREE, natural or planted, that is located within 8 ft. of the edge of a
+  maintained surfaced road (as measured from the pith of the tree to the edge of the flat surface of
+  the road). Trees located in the space between the edge of the road and the sidewalk, or within a
+  median strip between roads regardless of distance from the road are also defined as STREET TREES."*
+  ⭐ **That is a rule the kit could evaluate directly against its own section geometry** — and it
+  explicitly names the median case.
+- **`CROWN LIGHT EXPOSURE` (7.4.2.1)** — crown in four vertical quarters; a quarter counts only if its
+  uncompacted live crown ratio ≥35%. `0`–`5`. **For lean >45° do not count quarters facing the ground.**
+- ⭐ **`URBAN SPECIFIC DAMAGE VARIABLE 1–7` (7.5.1.1–7)** — the arboricultural damage vocabulary:
+  `0` None · `1` Stem Girdling · `2` Bark Inclusion · `3` Severe Topping or Poor Pruning ·
+  `4` Excessive Mulch · `5` Conflict with Roots · `6` Conflict with Tree Crown · `7` Improper Planting.
+- **`URBAN NONFOREST LAND USE` (4.7.0.3)** — 30 codes: `100` Agricultural · `110` Cropland · `120`
+  Pasture · `130` Idle farmland · `140` Orchard/Nursery · `150` Christmas tree plantation · `160`
+  Maintained wildlife opening · `170` Windbreak/Shelterbelt · `200` Rangeland · `300` Developed ·
+  `310` Cultural · `311` Residential · `312` Multi-family residential · `313` Institutional ·
+  `314` Commercial/Industrial · `316` Cemetery · **`320` Rights-of-way** · `321` Transportation ·
+  `322` Utility · `330` Recreation · `331` Park · `332` Golf courses · `340` Mining and wasteland ·
+  `400` Other · `410` Nonvegetated · `420` Wetland · `430` Beach · `450` Nonforest-Chaparral · `900`/`910`.
+- **`i-TREE LAND USE` (4.8.0.1)** — `10` Agriculture · `20` Residential · `21` Multi-family · `22`
+  Institutional · `23` Commercial/Industrial · `24` Unused · `25` Cemetery · `30` Transportation ·
+  `31` Utility · `40` Park · `41` Golf Course · `50` Water/wetland · `60` Other. ⭐ **Each code carries
+  an explicit list of which URBAN NONFOREST LAND USE codes it is valid with — a published crosswalk
+  between two land-use vocabularies**, which is exactly the artefact the kit's own land-use work needs.
+- ⚠️ Urban FIA tables are **not** in the NFI FIADB description; the urban database schema is **unconfirmed**.
+
+#### 1.18c ⭐⭐⭐ ISA Basic Tree Risk Assessment Form (TRAQ) — **`chassis.density` and `chassis.lean`, verbatim**
+`https://www.isa-arbor.com/Portals/0/Assets/PDF/Certification-Applications/ISA-Basic-Tree-Risk-Assessment-Form-Instructions.pdf`
+© 2025 ISA. Verbatim: *"This Basic Tree Risk Assessment Form supersedes any previous version used in
+the TRAQ class."* Licence: all rights reserved, but *"Tree risk assessors are welcome to use this Form
+in their practice… this Form may be used as presented or adapted for specific requirements."*
+
+**§4 Crown — the block that matters:**
+- ⭐⭐⭐ **`Density`: `Sparse` · `Average` · `Dense`** — **three terms, and two of the three are ours
+  verbatim.** Our `chassis.density` is `sparse · medium · dense`. `Average` → `medium` is a one-row alias.
+- **`Tree Health`: `Dead` · `Poor` · `Fair` · `Good`**
+- **`Foliage`: `None (dead)` · `None (seasonal)` · `Normal ___%` · `Chlorotic ___%` · `Necrotic ___%`**
+- **`Relative size crown/trunk`: `Small` · `Medium` · `Large`**
+- flags: `Unbalanced` · `Crown dieback` · `Excessive end weight` · `Vines/mistletoe/moss`
+- **`Wind Exposure`: `Protected` · `Partial` · `Full` · `Wind funneling`**
+- ⭐ **`Pruning`: `Topped` · `Thinned` · `Lion tailed` · `Raised` · `Other`** — the *human* history
+  written into a crown's shape, as a closed vocabulary
+- **`Live crown ratio (LCR)` ___%** — *"LCR = (crown height/tree height) × 100"*
+
+**§6 Trunk — the lean field:**
+- ⭐⭐⭐ **`Lean ____°`** — an angle from vertical, *"visually estimated or measured with a digital level
+  such as found in cell phone apps"* — **plus a binary `Corrected` flag.**
+  ⭐⭐ **That is our `chassis.lean` dual, in the world's own form.** Their `Corrected` checkbox and our
+  `mode: correct | morph` are the same distinction: has the tree already compensated for its lean, or
+  is it still leaning? ⚠️ **There is no lean DIRECTION field on the Basic form** — our `azimuthDeg` has
+  no counterpart; direction is captured implicitly via the Target Zone. **Lean direction as a coded
+  TRAQ field is unconfirmed.**
+- also: `Codominant stems #___` · `Included bark` · `Decay` · `Conks/mushrooms` · `Cavity opening (% circ.)` ·
+  `Poor taper` · `Dead/missing bark` · `Cracks` · `Ooze` · `Lightning damage` · `Response growth`
+
+**§2 Target:** `Target Zone` = `Drip line` · `1 × Ht` · `1.5 × Ht` · `>1.5 × Ht`;
+`Occupancy Rate` = `Rare` · `Occasional` · `Frequent` · `Constant`.
+**§7 Roots/soil:** `Soil:` `Often saturated` · `Limited volume` · **`Pavement/compaction`**.
+**§8–9 risk terms:** `Likelihood of Failure` = Improbable · Possible · Probable · Imminent ·
+`Likelihood of Impact` = Very low · Low · Medium · High · `Likelihood of Failure & Impact` = Unlikely ·
+Somewhat likely · Likely · Very likely · `Consequences` = Negligible · Minor · Significant · Severe ·
+`Risk Rating` = Low · Moderate · High · Extreme · `Tree Part` = Branches · Trunk · Root Collar · Roots · Soil.
+(Both 4×4 matrices were read off the form.)
+
+**ANSI A300 (Part 9)-2011** (verified text, PG&E-hosted copy) defines the *terms and levels*, not the
+matrices: `crown area`, **`crown density`**, **`crown symmetry`**, `live crown ratio`, `included bark`,
+`reaction wood`, `buttress roots`, `target`, `tree risk`. §93.4 Levels 1/2/3, with Level 3 listing
+**"Lean assessment"** among its methods. ⚠️ Current edition is **2017** (sold by TCIA); whether any term
+list changed is **unconfirmed**.
+
+#### 1.18d i-Tree — ⛔ the downloadable species list is four columns; the values are not published
+- `https://www.itreetools.org/documents/864/i-Tree_Eco_species_list_1.17.2023.csv` — **10,556 rows**,
+  header verbatim: `"ID","Code","Scientific Name","Common Name"`. **That is all of it.** No leaf type,
+  no LAI, no leaf-on/off, no growth rate, no longevity, no tolerances, no BVOC.
+- The **per-species schema does exist** — Eco v6 *Guide to International Projects*, "Table 1—Species
+  fields for i-Tree Database": `Genus Name · Species Name · Family · Order · Class · Common Name ·
+  Growth Form · Percent Leaf Type · Leaf Type` (all required) + `Growth Rate` (in/yr) · `Longevity`
+  (years) · `Height at Maturity` (ft) · `Native Continent` (optional). ⚠️ **Their dropdown values are
+  unconfirmed** (the submission app is a JS shell). ⛔ **No drought/salt/shade tolerance field exists.**
+- ⚠️ **Leaf On / Leaf Off Day of Year are LOCATION fields, not species fields** — Table 2, verbatim:
+  *"Day of the year (1-365) in spring when frost ends locally"*. **A correction to a natural assumption.**
+- ⭐⭐ **i-Tree Species Selector Methods** (Nowak, Feb 2008,
+  `https://www.itreetools.org/species/resources/SpeciesSelectorMethod.pdf`) — 1,585 species, and it
+  carries **the most render-shaped ordinal set in the whole survey**: six particle-capture scores,
+  each **0–2**:
+  - **Crown density**: Open `0` / medium `1` / dense `2`
+  - **Crown texture**: Coarse `0` / Medium `1` / Fine `2`
+  - **Leaf complexity**: Simple `0` / pinnate·palmate compound·trifoliate `1` / bi-·tri-pinnate `2`
+  - **Leaf size**: >4″ `0` / 2–4″ `1` / <2″ `2`
+  - **Leaf surface roughness**: dull·smooth·glossy·glabrous `0` / ciliate·silky·velvety·pubescent·
+    glaucous·waxy `1` / rough·resinous·tomentose·scabrous·scaly·villous `2`
+  - **Leaf margins**: entire·spiny·sinuate·undulate `0` / crenate·dentate·incised·lobed·serrate `1` /
+    ciliate·serrulate·double serrate·filamentous `2`
+  plus `Leaf persistence` = deciduous / semi-deciduous / evergreen · median height and crown width at
+  maturity (**crown height = 0.78 × median height**, height:width clamped 0.5–2.0, LAI clamped 1–15) ·
+  a 7-value water-use class (`H`1.50 · `MH`1.25 · `M`1.00 · `ML`0.75 · `L`0.50 · `LVL`0.35 · `VL`0.20) ·
+  isoprene and monoterpene base emission factors · pollutant sensitivity `S`/`I`/`S/I` ·
+  **pollen allergenicity 1–10** (Ogren 2000).
+  ⚠️ **Appendix A publishes only scientific + common name. The attribute VALUES are not published.**
+  ⚠️ i-Tree's own docs disagree on species count (6,500+ vs "over 7,000" vs 10,556 vs 1,585).
+  **Cause not established.**
+- **Eco Field Guide v6.0** field vocabulary (for completeness): Crown Light Exposure `0`–`5` ·
+  `Percent Crown Missing` at 5%-interval midpoints (3, 8, 13, 18…) · **22 crown-health dieback classes** ·
+  Maintenance Recommended (6) · Maintenance Task (7) · **Sidewalk Conflict** `0–¾″` · `¾–1½″` · `1½″` ·
+  **Utility Conflict** `No lines` · `Present and no potential conflict` · `Present and conflicting` ·
+  Land use (14 single-letter codes) · Ground cover (11 classes).
+  Licence: *"i-Tree software is in the public domain"*, use governed by a EULA; no CC licence.
+
+#### 1.18e ⭐ Urban Tree Database (McPherson et al., **RDS-2016-0005**) — **open, and it has crown geometry**
+`https://www.fs.usda.gov/rds/archive/catalog/RDS-2016-0005` · DOI `10.2737/RDS-2016-0005`
+**Licence, verbatim:** *"These data were collected using funding from the U.S. Government and can be
+used without additional permissions or fees."* Access constraints: **"None"**. Citation requested.
+**Coverage:** 17 cities, 13 states, 1998–2012. `TS3_Raw_tree_data.csv` = **14,487 measured trees**,
+175 distinct scientific names; `TS6` = 2,402 growth-coefficient rows.
+
+⭐ **`TS3` carries per-tree crown geometry**, header verbatim:
+`DbaseID,Region,City,Source,TreeID,Zone,Park/Street,SpCode,ScientificName,CommonName,TreeType,address,
+street,side,cell,OnStreet,FromStreet,ToStreet,Age,DBH (cm),TreeHt (m),CrnBase,CrnHt (m),CdiaPar (m),
+CDiaPerp (m),AvgCdia (m),Leaf (m2),Setback,TreeOr,CarShade,LandUse,Shape,WireConf,dbh1…dbh8`
+
+⭐⭐ **`Shape` is a coded CROWN FORM field**: `1` cylinder · `2` ellipsoid/spherical · `3` paraboloid ·
+`4` inverted paraboloid · `−1` not collected. ⚠️ **A value `5` occurs 43 times and is undefined in the
+metadata — unconfirmed.**
+⭐ **`Tree Type`** is a 3-character habit+size code: `BD` broadleaf deciduous · `BE` broadleaf evergreen ·
+`CE` coniferous evergreen · `PE` palm evergreen, third char `S` small <8 m · `M` medium 8–15 m ·
+`L` large >15 m. Observed: BDL BDM BDS BEL BEM BES CEL CEM CES PEL PEM PES.
+`WireConf`: `0` no lines · `1` present, no conflict · `2` present, conflicting · `3` potential conflict.
+`Setback`: `1` 0–8 m · `2` 8.1–12 m · `3` 12.1–18 m · `4` >18 m.
+`LandUse`: `1` single-family residential · `2` multi-family · `3` industrial/institutional/commercial ·
+`4` park/vacant · `5` small commercial · `6` transportation corridor.
+`TS6` predicts, keyed on dbh / cdia / age: **`crown dia` · `crown ht` · `leaf area` · `tree ht` · `age`
+· `dbh`** via 12 named equation forms (`TS4`). ⚠️ `TS6` writes `CenFla` where `TS1` writes `Cen Fla` —
+a real join hazard. ⚠️ `side`'s documented domain (F/M/S/P) **does not match the data**.
+⛔ Not present: BVOC, tolerances, longevity, growth-rate class, leaf-on/off, pollution removal.
+
+#### 1.18f Municipal street-tree inventories — five verified schemas
+
+| city | rows | licence | the fields that matter |
+|---|---|---|---|
+| **NYC** 2015 TreesCount (`uvpi-gqnh`) | **683,788** | ⚠️ `license` is **null** in the view metadata | `status` {Alive 652,173 · Stump 17,654 · Dead 13,961} · `health` {Good · Fair · Poor · blank-when-dead} · **`curb_loc` {OnCurb · OffsetFromCurb}** · `steward` {None · 1or2 · 3or4 · 4orMore} · `guards` {None · Helpful · Harmful · Unsure} · **`sidewalk` {Damage · NoDamage}** · `user_type` · 9 problem flags + a concatenated `problems` string {None, Stones, BranchLights, RootOther, TrunkOther, BranchOther, WiresRope, MetalGrates, TrunkLights} · `tree_dbh` (circumference ÷ 3.14159) |
+| **San Francisco** (`tkzw-k3nq`) | 198,436 | ✅ **ODC PDDL** | ⭐ **`qSiteInfo`** = a compound `"<site> : <container>"` string, 34 distinct — sites {Sidewalk: Curb side · Sidewalk: Property side · Median · Front Yard · Side Yard · Back Yard · Unaccepted Street · Hanging basket}, containers {Cutout · Yard · Pot · Hanging Pot · Silva Cell}; dominant = `Sidewalk: Curb side : Cutout` 156,191 · `qLegalStatus` (13) · `PlantType` · `qCaretaker` (27) · `PlotSize` |
+| **Washington DC** (UFA, ArcGIS layer 23) | 221,979 | ⚠️ `copyrightText` empty — **unconfirmed** | ⭐⭐ **the only inventory with LiDAR crown geometry**: `MBG_WIDTH` · `MBG_LENGTH` · **`MBG_ORIENTATION`** · `CROWN_AREA` · `PERIM` · `MAX_CROWN_HEIGHT` · `MIN_CROWN_BASE` · `DTM_MEAN`. Plus `TBOX_L`/`TBOX_W` · `CONDITION` {Excellent · Good · Fair · Poor · Dead} · `TBOX_STAT` (8) · `WIRES` {None · Low Voltage · High Voltage · Both} · `CURB`/`SIDEWALK` {Permanent · Temporary · None · Flexipave} · `ELEVATION` {Level · Raised · Raised with Structure · Below Grade · Grate · Unknown} |
+| **Cambridge MA** (`82zb-7qc9` / ArcGIS) | 43,164 | ✅ **ODC PDDL v1.0** | ⭐ the only one with **`TreeWellLength`/`TreeWellWidth`/`TreeWellDepth`** + `TreeWellCover` {Tree Grate · Flexi-Pave} · `StructuralSoil` · `Biochar_Added` · `SolarRating` · `ExposedRootFlare` · `ADACompliant` · **`TreeGrateActionReq`** {1 Priority Removal · 2 Priority Maintenance · 3 Ok Inspect Annually, <2″ clearance · 4 Good No Action} · `SiteType` (11) · `Location` (12, incl. `Street Tree` 21,908 · `Planting Strip` · `Back of Sidewalk`) · `RemovalReason` (10) |
+| **Melbourne** (Urban Forest) | 82,064 | ✅ **CC BY 4.0** | thinnest schema. ⭐ `located_in` {**Park** 48,262 · **Street** 33,802} · `age_description` {Mature · Semi-mature · Unestablished} · `useful_life_expectency` {<10 · 11–20 · 21–30 · 31–40 · >41 years} |
+
+**OpenTreeMap (`otm-core`)** — `https://raw.githubusercontent.com/OpenTreeMap/otm-core/master/opentreemap/treemap/models.py`.
+⭐⭐ **The key structural fact: OTM separates `Plot` (a planting site) from `Tree`**, with the geometry on
+the plot and the plot able to exist with no tree — verbatim `_terminology = {'singular': _('Planting
+Site')}`. `Plot` has only `width`, `length`, `owner_orig_id`. `Tree` has `species`, `diameter`,
+`height`, `canopy_height`, `date_planted`, `date_removed` — **no condition, health or sidewalk field in
+core; all of that is a per-instance UDF.** `Species` carries `otm_code`, `is_native`,
+`flowering_period`, `fruit_or_nut_period`, `fall_conspicuous`, `flower_conspicuous`, `palatable_human`,
+`has_wildlife_value`, `max_diameter` (default 200), `max_height` (default 800). Default UDF
+`Stewardship` choices — Plot: `Enlarged · Changed to Include a Guard · Changed to Remove a Guard ·
+Filled with Herbaceous Plantings`; Tree: `Watered · Pruned · Mulched, Had Compost Added, or Soil
+Amended · Cleared of Trash or Debris`. ⚠️ LICENSE file **not fetched — unconfirmed**.
+
+⛔ **TreePlotter (PlanIT Geo) has NO published schema.** The API tutorial states verbatim that *"The API
+responses will contain the back end names of fields"* — **field names are per-customer.** Only the
+entity model is public (Trees · Inspections · Work Records · Work Orders · Service Requests).
+**Any "TreePlotter standard field list" would be invention.**
+
+#### 1.18g ⭐ Eight cross-cutting observations from the inventory schemas
+
+These are about *how the world models a street tree*, and several bear directly on the kit:
+
+1. ⭐⭐ **Two different objects are being inventoried and the schemas disagree about which.** NYC is
+   per tree point (stumps and dead trees are rows); SF, DC and Cambridge are per **site**
+   (`Permitted Site` · `TBOX_STAT: Open/Proposed` · `SiteType: Planting Site/Retired`); OTM makes the
+   split explicit and structural. **A schema that cannot represent an empty site cannot represent half
+   of what these cities record.**
+2. **Site geometry is carried under five different names**: NYC has no bed dimensions but a **stated
+   point-placement convention** — *"a tree identified as being on the curb will have the point placed
+   2.5 feet from the blockface line; a tree identified as being offset will have the point placed 12
+   feet from the curb line"* — and `block_id` links to a **blockface**, *"a slightly simplified curb
+   line … for one side of a street between two intersections."* ⭐⭐ **That is the kit's own side-chain
+   concept, in a municipal data dictionary.** SF `PlotSize` + container token; DC `TBOX_L`/`TBOX_W`;
+   Cambridge `TreeWell{Length,Width,Depth}`; OTM `Plot.width`/`Plot.length`; UTD `Setback` bands.
+3. ⚠️⚠️ **Sidewalk/curb relationship is modelled three incompatible ways under the same words.**
+   NYC `sidewalk` = *damage state*; DC `SIDEWALK` = *material/permanence*; Cambridge = ADA compliance
+   + a graded grate clearance; i-Tree = a 3-band *lift measurement*. ⛔ **Never join across cities on
+   field name.**
+4. **Overhead-wire conflict is the one near-consensus field**, in four flavours; UTD's `WireConf`
+   codes and i-Tree's Utility Conflict labels are the *same* vocabulary, one coded and one spelled.
+5. **Health vocabularies are small and nearly aligned** (`Good/Fair/Poor` ± `Dead`/`Excellent`), but
+   ⛔ **FIA uses 5% numeric classes and never a word grade — the two traditions do not interconvert.**
+   OTM core, SF and Melbourne have no health field at all.
+6. ⭐ **Crown light exposure is the most portable trait in the entire survey** — `0`–`5`, identical
+   across FIA `CLIGHTCD`, Urban FIA CLE and i-Tree Eco CLE.
+7. ⭐⭐ **The trait a renderer actually wants — crown footprint — exists in exactly two places:** DC's
+   LiDAR bounding box, and the UTD's measured `CdiaPar`/`CDiaPerp`/`AvgCdia`/`CrnHt`/`CrnBase` plus
+   TS6's dbh-keyed equations. **Everywhere else it must be modelled from DBH.**
+8. ⚠️ **Free text where a vocabulary was intended recurs everywhere** — Cambridge `SiteRetiredReason`
+   (622 distinct values), `WateringResponsibility` (72), DC `VICINITY` (≥2,000). And DC has **editor
+   usernames leaking into six coded columns** (`jbuff`, `jconlon`, …), a column-misalignment class in
+   the source editing workflow. ⭐ A cautionary note for our own intake: *a controlled vocabulary that
+   is not enforced becomes free text within a few years.*
+
+---
+
+## 2. THE MAPPING — ALIGNED · GAP · ⭐ SURPLUS
+
+### 2.1 ALIGNED — our axis, and the source field that fills it
+
+| our axis | source field(s) | their vocabulary | alias work needed |
+|---|---|---|---|
+| **`chassis.habit`** (vase · columnar · oval · spreading · weeping · multi-stem · pyramidal · rounded · irregular) | **SelecTree `tree_shape`** (12) · **NC State `Habit/Form`** (24) · **USDA `Shape and Orientation`** (11) · Morton `tp_plant_shape` (17) · RHS `Habits` (12) · ⭐⭐ **UTD `TS3.Shape`**: `1` cylinder · `2` ellipsoid/spherical · `3` paraboloid · `4` inverted paraboloid *(⚠️ an undefined `5` occurs 43×)* · ⭐ **UTD `Tree Type`** `BD`/`BE`/`CE`/`PE` × `S`/`M`/`L` · **Arnold `HABIT`** (6: Geophyte · Herbaceous · Intermediate (shrub/tree) · Shrub · Tree · Vine) | see §1 | ⭐ **Nearly free.** All nine of ours appear verbatim or under an alias `vocabulary.mjs` already carries: `Conical`/`Pyramid`→`pyramidal` (alias `conic`/`conical` present) · `Multi-stemmed`/`Multi-trunked`/`Clumping`→`multi-stem` (aliases present) · `Erect`/`Ascending`→`columnar` (`erect`,`upright` present) · `Broad`/`Horizontal`→`spreading` (both present) · `Cascading`/`Pendulous weeping`→`weeping`. **Missing aliases to add:** `arching`, `mounding`, `open`(→irregular, already present), `dense`, `narrow`, `thicket-forming`, `sprawling`, `prostrate`, `decumbent`, `semi-erect`, `creeping`, `palm`, `sword palm`. ⚠️ **Their lists are richer than ours (24 vs 9).** Aliasing *into* nine is lossy but deterministic — which is exactly what the no-confidence-score rule wants. |
+| **`chassis.size`** ([2,35] m) | **SelecTree `height_high`/`width_high`** (ft, maxima) · **USDA `Height, Mature (feet)`** + ⭐ `Height at 20 Years, Maximum (feet)` · **NC State `Dimensions`** (a min–max range) · **i-Tree `Height at Maturity`** + Species Selector's median height/crown width (**crown height = 0.78 × median height**, h:w clamped 0.5–2.0) · ⭐⭐ **UTD `TS3`** measured `TreeHt`/`CrnBase`/`CrnHt`/`CdiaPar`/`CDiaPerp`/`AvgCdia`/`Leaf (m2)` for **14,487 real street trees**, plus `TS6` dbh-keyed equations predicting `crown dia`·`crown ht`·`leaf area`·`tree ht` · ⭐⭐ **DC UFA** LiDAR `MBG_WIDTH`/`MBG_LENGTH`/`MBG_ORIENTATION`/`CROWN_AREA`/`MAX_CROWN_HEIGHT`/`MIN_CROWN_BASE` for 221,979 trees · **Arnold** measured `DBH`/`Height`/`Spread` · ⭐ **UTD `Tree Type`** 3-char code with an explicit size class: `S` <8 m · `M` 8–15 m · `L` >15 m | numeric | ⭐⭐ **This is the best-evidenced axis in the survey.** Not one authority but *measured populations* — and two sources give **crown width and crown base separately from total height**, which our single height scalar plus `canopyRadiusM` only half-expresses. ⭐ **UTD's `TS6` is a growth curve, not a number** — it predicts crown dimensions from dbh, i.e. it can render a *young* and an *old* specimen of the same species from one equation. |
+| ⭐⭐⭐ **`chassis.density`** (sparse · medium · dense) | ⭐⭐⭐ **ISA/TRAQ Crown `Density`: `Sparse · Average · Dense`** · ⭐⭐ **i-Tree Species Selector `Crown density`: `Open`(0) · `medium`(1) · `dense`(2)** · ⭐⭐ **USDA `Foliage Porosity Summer`/`Winter`**: `Porous · Moderate · Dense` · **FIA `CDENCD`** (5% classes 00–99) · **ANSI A300 Pt.9 defines `crown density` as a term** · NC State `Texture` · EOL relays the USDA pair | closed 3-term (FIA: 20 numeric classes) | ⭐⭐⭐ **The strongest alignment in the survey — and it was about to be called a GAP.** TRAQ's list is *two of our three words verbatim*; `Average`→`medium` and `Open`/`Porous`→`sparse` are two alias rows. ⚠️ **What we would be conflating, and it is worth a ruling:** our axis is *wood* density (branch fill in the silhouette); TRAQ's and i-Tree's is the **crown as seen**, and USDA's is *foliage* porosity. ⭐ **USDA's WINTER porosity is the wood one** — a deciduous tree's winter porosity IS its bare-branch fill — so the clean split is **winter → `chassis.density`, summer → `leaf.occupancy`**. ⚠️ FIA's 5% numeric classes do **not** interconvert with any word grade; do not mix the traditions. |
+| **`bark.type`** (smooth · furrowed · plated · scaly · ridged · exfoliating · fibrous · mottled) | ⭐⭐ **SelecTree `bark_texture`** (17, **multi-valued**) · ⭐⭐ **NC State `Surface/Attachment`** (15) · FLOPO bark terms | see §1 | ⭐ **Excellent.** Every one of our 8 has a direct or aliased partner. Already in `TERM_ALIASES`: `fissured`→furrowed, `platy`/`blocky`→plated, `striate`→ridged, `flaking`/`peeling`/`papery`/`shaggy`→exfoliating, `patchy`→mottled. **Missing aliases to add:** `Ridges`→ridged, `Corky`, `Rough`, `Spiny`, `Warty`, `Wrinkled`, `Bumpy`, `Shiny`, `Shredding`, `Spongy`, `Lenticels`. ⚠️⚠️ **Their field is MULTI-VALUED and ours is single-valued** — `Platanus` is `["Exfoliating","Smooth"]`, `Quercus oblongifolia` is `["Furrowed","Ridged","Scaly"]`. Collapsing to one term is a real information loss and needs a stated rule (or a second axis). |
+| **`bark.color`** (tint band) | ⭐ **NC State `Bark Color`** (9 closed terms) · SelecTree `bark_color` (⚠️ free compound string) · FLOPO `bark color` + colour value terms | NC State: Black · Dark Brown · Dark Gray · Green · Light Brown · Light Gray · Orange · Red/Burgundy · White | ⭐ **NC State's 9-term list is the only clean bark-colour vocabulary found.** SelecTree's is unusable as-is (`"Dark Gray, Light Gray, Reddish Brown"`, `"Striking, Cream or Light Gray"`). |
+| **`leaf.silhouette`** (palmate · lobed · heart · ovate · lanceolate · compound · fan · star · needle · scale) | ⭐⭐ **NC State `Leaf Shape`** (25) + **`Leaf Type`** (5) · **SelecTree `leaflet_shape`** (17) + `leaf_form` (5) · ⭐⭐⭐ **MLA `LAMINAR SHAPE` + `LOBATION` + `BASE SHAPE` + `APEX SHAPE`** · OSU leaf/leaflet characteristics | see §1 | ⭐ Good but **structurally different**: the world separates **compound-ness** (`Leaf Type`/`leaf_form`) from **leaflet outline** (`Leaf Shape`/`leaflet_shape`), and separates **lobation** from **shape** again. Our single 10-term axis mixes all three (`compound` and `palmate` and `lobed` are not the same kind of fact). ⚠️ **This is the axis most in need of a decision** — aliasing 25 shapes into 10 is doable, but `Palmatifid`/`Palmasect`/`Pinnatifid`/`Pinnatisect` collapsing to `lobed` throws away exactly the distinction between a maple and a plane that `vocabulary.mjs`'s own header calls out as unfixable. |
+| **`leaf.ways`** (alternate · all-one-direction · opposite · sprays · clusters) | **SelecTree `leaf_arrangement`** (5) · **NC State `Leaf Arrangement`** (5) · ⭐ **MLA #14 `LEAF ATTACHMENT`** (alternate · decussate · opposite · whorled) · OSU leaf attachment | closed | ⭐ **Direct.** `Whorled`→`clusters` (alias present) · `Alternate/Whorled`, `Opposite/Whorled`, `Rosulate`, `Other/more complex`, `decussate` need aliases. ⚠️ **`all-one-direction` and `sprays` are OURS, not botany's** — they describe *card orientation in the renderer*, not attachment. Those two are GAPs inside an otherwise ALIGNED axis. |
+| **`leaf.size`** ([0.5, 30] cm) | ⭐⭐⭐ **MLA #17 `LAMINAR SIZE`** (Webb 1955 classes, by **area**: leptophyll <25 mm² · nanophyll 25–225 · microphyll 225–2,025 · notophyll 2,025–4,500 · mesophyll 4,500–18,225 · macrophyll 18,225–164,025 · megaphyll >164,025) · **NC State `Leaf Length`/`Leaf Width`** (4 bands each) · **EOL `leaf area`** (numeric) | closed classes / bands | ⭐ Two mismatches worth naming: the formal class system is by **AREA**, ours is a linear **extent**; and NC State gives **length AND width separately**, which is more useful for a leaf card than a single scalar. |
+| **`leaf.color`** (band) | **NC State `Leaf Color`** (14-colour palette) · **SelecTree `foliage_growth_color`** (19, = *new growth*) · **USDA `Foliage Color`** (6) · **RHS `Colour by season` × Foliage** | closed | ⭐ RHS's **season × part colour grid** is the right *shape* for this axis (see SURPLUS). |
+| **`leaf.season`** ([0,365] curve) | ⭐⭐⭐ **USA-NPN phenophases** (20 leaf phases + dated observations) · ⭐⭐ **NC State `Deciduous Leaf Fall Color`** (9 closed terms) · **SelecTree `foliage_type`** (Deciduous/Evergreen/Partly Deciduous) + `foliage_fall_color` (bool) · **USDA `Active Growth Period`** (9) + `Fall Conspicuous` (Y/N) + `Leaf Retention` (Y/N) · **USA-NPN `functional_type`** (Deciduous broadleaf · Semi-evergreen broadleaf · Drought deciduous broadleaf · Evergreen conifer · Deciduous conifer …) · Morton `tp_seasons_of_interest` (early/mid/late × 4) | mixed | ⭐⭐ **This axis is well served, from two directions:** NC State gives the *fall colour value* (which SelecTree does not); USA-NPN gives the *timing*. ⚠️ Our axis is a curve; every source gives either a class or an observation set. Deriving a curve is an aggregation, not a lookup. |
+| ⭐⭐ **`leaf.occupancy`** ([0.25, 0.95]) | ⭐⭐ **USDA `Foliage Porosity Summer`** (`Porous · Moderate · Dense`) · ⭐⭐ **TRAQ `Foliage`: `Normal ___%` / `Chlorotic ___%` / `Necrotic ___%`** and `Crown dieback` flag · ⭐⭐ **FIA `TRANSCD` foliage transparency** and **`CDIEBKCD` crown dieback**, both in 5% classes · **i-Tree Eco `Percent Crown Missing`** (5%-interval midpoints) and **22 crown-health dieback classes** · NC State `Habit/Form` values `Dense`/`Open` | closed 3-term, or 20 numeric classes | ⭐⭐ **Much better served than expected.** ⭐ **`TRANSCD` is literally "how much light passes through the foliated crown" as a percentage — that is our `[0.25,0.95]` scalar, in the world's units.** Ordinal→scalar for the word grades needs a stated mapping, not interpolation. **See the `chassis.density` note — summer porosity belongs here, winter porosity belongs there.** |
+| **`overlay.type`** (flowers · fruit · thorns · seasonal-props · none) | **SelecTree `fruit_type`** (15) + `flower_showiness` (3) + `flower_color` (21) + `fruit_size` (12) · **USDA `Flower Conspicuous`** / `Fruit/Seed Conspicuous` / `Fruit/Seed Persistence` (Y/N) · **NC State `appendage`** (Prickles · Spines · Tendrils · Thorns) + `Problems` → `Spines/Thorns` · `Flower Inflorescence` (11) | closed | ⭐ **All four of our non-`none` values are directly derivable**, and *conspicuousness* is recorded separately from *presence* — which is the distinction an overlay actually needs (a tree has flowers; only a showy one deserves an overlay). |
+| ⭐⭐ **`tree.age`** ([0,1] young↔mature) | **USDA `Lifespan`** (Short <100 yr · Moderate 100–250 · Long >250) · **USDA `Height at 20 Years, Maximum`** vs `Height, Mature` · ⭐⭐⭐ **UTD `TS6` growth equations** — `age` is both an independent and a predicted variable, over 12 named equation forms, per species per climate region · **UTD `TS3.Age`** measured per tree (0 = newly planted) · ⭐ **Melbourne `age_description`** {`Mature` · `Semi-mature` · `Unestablished`} and `useful_life_expectency` {`<10` · `11–20` · `21–30` · `31–40` · `>41 years`} · **i-Tree `Longevity`** (years) + `Growth Rate` (in/yr) · **FIA `BHAGE`/`TOTAGE`** · **RHS `Time to ultimate height`** · **NC State `Problems`→`Short-lived`** | mixed | ⭐⭐⭐ **Our axis is a 0–1 dial; the world has an actual growth model.** UTD's `TS6` predicts height, crown diameter, crown height and leaf area *as functions of age or dbh*, fitted per species per climate region — that is a far better basis for an age dial than a knob, and it would age the tree *correctly* rather than by uniform scaling. ⭐ Melbourne's 3-term `age_description` is the cheapest usable ordinal. |
+
+### 2.2 GAP — our axis, and nothing in the world records it
+
+| our axis | verdict |
+|---|---|
+| ⛔ **`bark.groove_depth`** | **GAP.** No source records furrow depth as a magnitude. FLOPO has `bark grooved` as a *term*; nothing has a scale. |
+| ⛔ **`bark.plate_size`** | **GAP for the magnitude** — ⭐ but NOT for the *shape*: **NC State `Bark Plate Shape` (Diamond · Irregular · Oval · Rectangle · Round · Square)** is a real closed vocabulary we have no axis for. See SURPLUS. |
+| ⛔ **`bark.scale_frequency`** | **GAP.** `Scaly` exists as a term everywhere; a frequency exists nowhere. |
+| ⛔ **`bark.exfoliation_density`** | **GAP.** `Exfoliating`/`Peeling`/`Papery`/`Shredding`/`Shaggy` are all *terms*; none is a magnitude. ⭐ Note that the term list itself is an implicit ordinal — `Papery` (birch) vs `Shredding` (juniper) vs `Exfoliating` (plane) read as different amounts. |
+| ⛔ **`leaf.face`** (adaxial/abaxial two-tone) | **GAP as a colour pair.** Nothing surveyed records an underside colour as a field. ⭐ The *concept* is formalised — MLA #56 `CUTICULAR FEATURES` and NC State `Leaf Feel` (Glossy · Velvety · Waxy) and FLOPO `bark pilosity`/`glabrous` all encode surface character — but **no source gives front and back colours.** |
+| ⭐⭐ **`chassis.lean`** — **VERDICT CORRECTED: partly ALIGNED, not a GAP** | **The brief was right and I was about to be wrong.** ⭐⭐⭐ **ISA/TRAQ §6 Trunk carries `Lean ____°` — an angle from vertical — plus a binary `Corrected` flag.** Their `Corrected` and our `mode: correct \| morph` are **the same distinction**: has the tree compensated for its lean, or is it still leaning? Our `angleDeg [0,15]` maps to their degree field directly. **ANSI A300 (Part 9) §93.4 lists "Lean assessment" as a Level 3 method**, so the concept is standardised. **Urban FIA** uses lean operationally too (*"for lean >45° do not count quarters facing the ground"*). ⛔ **But: (a) FIA has NO lean field** — only a 45° threshold in `STANDING_DEAD_CD`; (b) **no source records lean at SPECIES level** — it is per-specimen everywhere, which is correct and is what our axis already implies; (c) ⚠️ **`azimuthDeg` has no counterpart** — the TRAQ Basic form has no lean-direction field (direction is implicit in Target Zone). **Lean direction as a coded TRAQ field is unconfirmed.** ⇒ **The magnitude and the correct/morph split are ALIGNED to a real standard; the azimuth is a GAP; the species-level value is an authoring knob.** |
+| ⚠️ **`leaf.ways` values `all-one-direction` and `sprays`** | **GAP.** These are renderer-card facts, not botanical attachment. Nothing records them. Authoring knobs. |
+| ⚠️ **`bark.color` / `leaf.color` as continuous bands** | **Partial GAP.** The world gives *named colour terms* (9, 14, 16, 19-term palettes); it does not give a tint-band handle. Aliasing a term to a band value is a decision we make once. |
+
+**⇒ The honest count after the forestry pass: 5 clean GAPs — the four `bark.*` scalars and
+`leaf.face` — plus `chassis.lean`'s azimuth and two `leaf.ways` values. `chassis.lean` itself moved
+OUT of the GAP column.** Every remaining GAP is an art-direction control, not a fact about a species.
+That is a useful result: the Arborist's authoring surface and its research surface turn out to be
+already cleanly separated, and **nobody needs to go looking for peeling-magnitude data that does not
+exist.**
+
+⚠️ **Worth stating plainly, because it nearly went the other way:** `chassis.density` and
+`chassis.lean` were both drafted as GAPs from the botanical and horticultural sources alone. **Both
+are formal, standardised, closed-vocabulary fields in the arboricultural and forestry literature** —
+TRAQ's `Sparse · Average · Dense` is two-thirds our own wording, and TRAQ's `Lean °` + `Corrected`
+is our `correct`/`morph` dual. **The brief's instruction to look outside botany is the reason this
+survey has the right answer for two of nineteen axes.**
+
+### 2.3 ⭐ SURPLUS — the world records these and we have no axis
+
+**This is the largest column, as the brief predicted.** Grouped by whether a renderer could use it.
+
+#### A. Directly renderable — a knob could read this tomorrow
+
+| trait | source & vocabulary | what it would let us do |
+|---|---|---|
+| ⭐⭐⭐ **Foliage Porosity WINTER** | USDA, `Porous · Moderate · Dense` | **A separate winter silhouette.** Today `leaf.season` goes to bare and the tree is whatever the chassis is. This says how dense the *bare* crown reads — the difference between a winter hackberry and a winter plane. |
+| ⭐⭐⭐ **Bark Plate Shape** | NC State, `Diamond · Irregular · Oval · Rectangle · Round · Square` | Picks a *bark tiling pattern*, not just a type. Diamond is ash; rectangle is persimmon/dogwood; irregular is oak. Our `bark.plate_size` scalar cannot express any of this. |
+| ⭐⭐ **Leaf Margin** | NC State (12): Crenate · Crenulate · Dentate · Denticulate · Doubly Crenate · Doubly Dentate · Doubly Serrate · Entire · Lobed · Serrate · Sinuate · Undulate. MLA #26 (6) + tooth block #47–52 | The **edge** of the leaf card, independent of its outline. A serrated vs entire card at the same silhouette reads as a different species. |
+| ⭐⭐ **Leaf Feel / texture** | NC State `Leaf Feel` (12): Fleshy · Glossy · Leathery · Papery · Prickly · Rough · Rubbery · Slippery · Smooth · Soft · Velvety · Waxy. MLA #54 `LEAF TEXTURE` (7, coriaceous/chartaceous/membranaceous × cuticle) | **A specularity/roughness dial for the leaf material.** Glossy magnolia vs matte oak is a shader fact we currently have no input for. |
+| ⭐⭐ **Foliage Texture** (whole-plant) | USDA + NC State, `Fine · Medium · Coarse` | The coarseness a crown reads at from across the street — LOD/impostor-relevant, and orthogonal to both density and leaf size. |
+| ⭐⭐ **Deciduous Leaf Fall Color** | NC State (9): Brown/Copper · Cream/Tan · Gold/Yellow · Gray/Silver · Insignificant · Orange · Pink · Purple/Lavender · Red/Burgundy | ⭐ **The fall anchor in `leaf.season` currently comes from a hand-written dossier hex.** This is the same fact, as a closed term, for 1,047 trees. Note `Insignificant` — an explicit "this tree does not colour", which SelecTree's boolean cannot say. |
+| ⭐⭐ **Colour by SEASON × PART grid** | RHS: 16 colours × {Stem, Flower, Foliage, Fruit} × {Spring, Summer, Autumn, Winter} | ⭐ **This is the shape our `leaf.season` curve wants** — and it extends the idea to *stem* colour, which is a real winter read (red-twig, yellow willow) we have no axis for at all. |
+| ⭐ **New Growth Color** | SelecTree `foliage_growth_color` (19) | A *spring* anchor distinct from summer green — bronze new oak, red new maple. Our season curve has a `spring` anchor filled by hand. |
+| ⭐ **Stem/twig colour** | NC State `Stem Color` (14) · RHS stem colour by season | Winter twig read. No axis. |
+| ⭐ **Stem Lenticels / bark Lenticels** | NC State `Surface/Attachment` → `Lenticels`; Wojtech's key makes lenticels one of seven top-level bark classes | Cherry/birch bark is *defined* by horizontal lenticels. Our `bark.type` calls it `smooth`. |
+| ⭐ **Foliage type / functional type** | SelecTree (3): Deciduous · Evergreen · Partly Deciduous. NC State `Woody Plant Leaf Characteristics` (4): Broadleaf Evergreen · Deciduous · Needled Evergreen · Semi-evergreen. USA-NPN `functional_type` (19) incl. **Drought deciduous broadleaf**, **Deciduous conifer** | ⭐ **We have no axis for this at all**, and it is the single most consequential seasonal fact. `taxodium_distichum` is a *deciduous conifer*; nothing in the rubric can say so. |
+| ⭐ **Flower Inflorescence** | NC State (11): Catkin · Corymb · Cyme · Head · Insignificant · Panicle · Raceme · Solitary · Spadix · Spike · Umbel. PO `PO:0030115–0030135` | Our `overlay.type: flowers` is one bit. A catkin and an umbel are different geometry. |
+| ⭐ **Flower Shape / Petals** | NC State `Flower Shape` (15) · `Flower Petals` (10) | Same argument, one level finer. |
+| ⭐ **Fruit Type / Size** | SelecTree `fruit_type` (15: Samara, Acorn, Drupe, Legume, Pome, Cone…) + `fruit_size` (12) · NC State `Fruit Type` (13) | Our `overlay.type: fruit` is one bit. A samara and an acorn are different props. |
+| ⭐ **Conspicuousness, separate from presence** | USDA `Flower Conspicuous` / `Fruit/Seed Conspicuous` / `Fall Conspicuous` (Y/N) · SelecTree `flower_showiness` (Inconspicuous · Low · Showy) | ⭐ **Decides whether an overlay is worth spawning at all** — a gate we currently have no data for. |
+| ⭐ **Fruit/Seed Persistence** | USDA (Y/N) | Whether fruit stays on through winter. Directly a winter-render fact. |
+| ⭐ **Hairs Present / pubescence** | NC State (Y/N) · MLA #56 (hair bases · multicellular · papillae · peltate · simple · stellate · unicellular hairs · trichomes) · FLOPO `bark pilosity`/`bark glabrous` | Silhouette softness; leaf-edge shader. |
+| ⭐ **Leaf Length AND Width separately** | NC State, 4 bands each | Our `leaf.size` is one scalar. A leaf card has two dimensions and the aspect ratio is the species read (MLA also records `LAMINAR L:W RATIO` explicitly). |
+| ⭐ **Appendages** | NC State (4): Prickles · Spines · Tendrils · Thorns | Our `overlay.type: thorns` is one value; this is four distinct geometries. |
+
+#### B. Structural / siting — no direct render, but real product surface
+
+| trait | source | note |
+|---|---|---|
+| ⭐⭐ **Planting site** | Morton `tp_planting_site`: City parkway · Residential and parks · Restricted sites · Under utility lines · Wide median | ⭐⭐ **This is the only vocabulary in the whole survey that speaks the kit's own language** — it is keyed to *where in the street section the tree stands*. A kit that pours neighbourhoods and places trees in a parkway could use this directly as a placement filter. |
+| ⭐⭐ **Design Feature / Landscape Location** | NC State `Design Feature` (15, incl. **Street Tree**, Shade Tree, Small Tree, Understory Tree) · `Landscape Location` (19, incl. **Walkways**) | Same idea, second source. `Street Tree` = 175 species is effectively a ready-made candidate list for town #2. |
+| ⭐ **Available Space To Plant** | NC State (7 bands) · SelecTree `planting_area` (2–4 ft · 4–7 ft · >7 ft · Urban areas) | ⭐ **Parkway width in feet.** The kit already knows the parkway width from the section — this is a join it could actually make. |
+| ⭐ **Utility friendly** | SelecTree `utility_friendly` (bool) · Morton `Under utility lines` | Overhead-wire clearance. |
+| ⭐ **Root Damage Potential** | SelecTree (Low · Moderate · High) · Morton `roots prone to invading sewer pipes` | Sidewalk heave — a *visible* street condition. |
+| ⭐ **Branch Strength / Weak Wood** | SelecTree `branch_strength_low`/`_high` (Weak · Medium Weak · Medium · Medium Strong · Strong) · NC State `Problems`→`Weak Wood` · Morton `weak wood and branch structure`, `highly susceptible to ice damage` | Storm-damage character; also a plausible input to a "battered specimen" variant. |
+| ⭐ **Litter Type** | SelecTree (8): Bark · Dry Fruit · Flowers · Fruit · Leaf · Leaves · Twigs · Wet Fruit · NC State `Problems`→`Messy` · Morton `messy fruit/plant parts` | ⭐ **Ground scatter.** What falls under the tree is a renderable ground-decal fact and we have no axis for it. |
+| ⭐ **Resistance to urban challenges** | NC State (24): **Compaction · Foot Traffic · Pollution · Salt · Storm damage · Urban Conditions** + Deer/Drought/Heat/Wind… · Morton `Road salt` · SelecTree `salt_tolerance`, `wind_resistance` | The urban-tolerance axis a street-tree kit would want when choosing species for a town it has never seen. |
+| ⭐ **Growth Rate** | USDA (Slow·Moderate·Rapid) · NC State (Slow·Medium·Rapid) · Morton (Slow·Moderate·Fast) · SelecTree `growth_rate_high` (in/yr, banded) | Feeds `tree.age` as a *rate*, which our 0–1 dial has no way to express. |
+| ⭐ **Lifespan** | USDA (Short<100 · Moderate 100–250 · Long>250 yr) · NC State `Short-lived` | Same. |
+| ⭐ **Shade Tolerance** | USDA (Intolerant · Intermediate · Tolerant) · SelecTree `shade_tolerant` | Where in a canopy a species plausibly sits — an understory/overstory placement fact. |
+| ⭐ **Native locale / range** | Morton `tp_native_locale` · SelecTree `native_range`, `california_native` · USDA distribution · EOL `native range includes` | ⭐⭐ **The portability lever.** A kit pouring town #2 needs to know which species belong *there*. This is the single most kit-relevant surplus after planting site. |
+| ⭐ **Hardiness zone** | USDA zones everywhere; SelecTree carries **both** `usda_zone` and Sunset `sunset_zone`; NC State 1a–13b | Same argument. Geographic gating for a town nobody has looked at. |
+| ⭐ **Wood density** | EOL / Global Wood Density Database (numeric) · USDA `Fuelwood Product` (lb/ft³ bands) | A real physical number behind `chassis.density` if we ever wanted one. |
+| ⭐ **Health hazard / toxicity / allergen** | SelecTree `health_hazard` (Allergy · Irritant · None Known · Poisonous) · USDA `Toxicity` (None·Slight·Moderate·Severe) · NC State poison block (6 fields) · USA-NPN `species_type`→`Allergen` | Product surface, not render. |
+| ⭐ **Invasiveness** | SelecTree `ca_invasive`/`pi_invasive` · NC State `Problems`→`Invasive Species` · USA-NPN `species_type`→`Invasive Plants` | Ditto — and a plausible authoring warning. |
+| ⭐ **Biogenic emissions (VOC)** | SelecTree (Low · Moderate · High) | i-Tree-lineage metric. Not renderable; notable that it exists. |
+| ⭐ **Attracts wildlife** | SelecTree (6) · NC State `Attracts` (12) · Morton `tp_wildlife` (20) | Ambient-life / fauna hooks. |
+| ⭐ **Commercial availability** | USDA (No known source · Routinely available · Contracting only · Field collections only) | Would tell an operator whether a species they picked is plantable in reality. |
+| ⭐ **Fragrance** | SelecTree `fragrance` (bool) · NC State `Flower/Leaf Value To Gardener`→`Fragrant` · RHS `Noted for fragrance` | — |
+| ⭐ **Transplants well / Maintenance** | Morton `Transplants well` · NC State `Maintenance` (High·Low·Medium) | — |
+| ⭐ **Sex / dioecy** | SelecTree `sex`, `sex_explanation` | Ginkgo. Determines whether the fruit overlay applies at all. |
+
+#### C. Deep morphology — no renderer today, but formally coded and cheap to carry
+
+MLA gives ~40 more coded characters we have no axis for and could record once: `LAMINAR SYMMETRY` ·
+`BASE ANGLE` / `APEX ANGLE` · `BASE SHAPE` (12) · `APEX SHAPE` (9) · `POSITION OF PETIOLAR ATTACHMENT` ·
+`LAMINAR L:W RATIO` · the full **venation hierarchy** (1°–5° category, course, angle, spacing,
+areolation, FEVs, marginal ultimate venation, **LEAF RANK 1r–4r**) · the **tooth block** (# of orders,
+teeth/cm, spacing, a 25-value tooth-shape matrix, sinus angular/rounded, 8 apex types) · `STOMATA` (32) ·
+`CUTICULAR FEATURES` (10). NC State adds the whole **stem block** — `Stem Form` (Straight · Zig Zags),
+`Stem Buds`, `Stem Bud Terminal`, `Stem Bud Scales`, `Stem Cross Section`, `Stem Is Aromatic` — which is
+the winter-twig identification key. TRY adds `Woodiness` / `WoodinessDetail` / `NumberOfLeaflets`.
+
+⭐ **`NumberOfLeaflets` deserves a call-out**: for a compound leaf that is the difference between an ash
+card and a locust card, and it is a plain integer.
+
+**⇒ Rough count: ~35 SURPLUS traits are directly or plausibly renderable, ~25 more are product/siting
+surface, and 60+ more are formally coded deep morphology. Against 19 axes, of which 12 are ALIGNED and
+7 are GAPs that turn out to be authoring knobs.** Jacob's steer held: there are a great many more than
+19, and the interesting ones are not the ones we guessed.
+
+---
+
+## 3. RECOMMENDATION — build on **NC State Plant Toolbox** first, **SelecTree** second
+
+### The two, and why
+
+**① ⭐⭐ NC State Extension Gardener Plant Toolbox — the vocabulary source.**
+- **Granularity is unmatched**: bark is 4 fields (including `Bark Plate Shape`, which exists nowhere
+  else), leaf is 13, stem is 10. Every other horticultural source treats bark as one prose sentence.
+- **Its vocabularies come out as JSON from two open endpoints with no parameters** — the entire
+  controlled-vocabulary layer is one `curl` away, and it carries **live counts**, so a check reads it
+  rather than restating it (the `PRUNE AS YOU GO` rule's own pattern).
+- **Region is right**: eastern North America plus ornamentals, `Tree = 1,047`, `Street Tree = 175`.
+- **It invites citation.** Verbatim: *"We strongly encourage you to cite or reference the Plant Toolbox
+  as you would any other publication."*
+- ⚠️ **The one open question is reuse.** There is no explicit licence grant on the trait text. **Ask
+  before ingesting at scale** — the citation language is an invitation, not a grant.
+
+**② ⭐ SelecTree (Cal Poly UFEI) — the coverage and cultivar source.**
+- **89/89** of the LS census's distinct species names return a record. **2,087 taxa, cultivars as
+  first-class records** — and cultivar-level habit is real (`Acer rubrum 'Armstrong'` = Columnar).
+  That matters because a street census names cultivars.
+- `bark_texture` is **multi-valued** (17 terms) — richer than anything else found.
+- Full open JSON API including a **glossary endpoint that defines all 51 characteristics**, i.e. the
+  authority for its own vocabulary ships with the data.
+- ⚠️ **No open-data licence.** Only a warranty disclaimer. **Reuse terms must be asked for**
+  (ufei@calpoly.edu). Californian in emphasis. `bark_color` is not a controlled vocabulary and there
+  is no fall-colour value.
+
+### Why not the others
+
+- **USDA PLANTS** is the only one that is unambiguously **public domain**, has 83 coded fields, and
+  contributes two traits nothing else has (`Foliage Porosity Summer`/`Winter`). ⭐ **Take it as the
+  third source specifically for those two fields plus `Height at 20 Years` — but not as the spine**,
+  because its ~610 trees are NRCS conservation plants, not street trees, and its `No`-by-default
+  booleans are a trap.
+- **EOL TraitBank** has the widest predicate list and a clean **CC BY 4.0** bulk file — but its
+  predicates are un-deduplicated across providers (`shedability` vs `leaf sheddability`), and its
+  backbone *is* USDA PLANTS, so it mostly re-serves ①/③ with extra ambiguity.
+- **Morton** has the best *street-tree* vocabulary in existence (`City parkway`, `Wide median`,
+  `Under utility lines`) but is **all-rights-reserved, non-commercial**. ⭐ **Adopt its schema shape;
+  do not ingest its content.**
+- **TRY** yields exactly seven categorical morphology fields from a 2012 test release. **Skip.**
+- **Wikidata** (52 leaf-shape statements globally), **GBIF** (no trait class), **Silvics**, **FEIS**,
+  **efloras**, **Plant Guides** (all prose), **Kew SID** (seed only), **BGCI** (CC BY-NC-ND) — **skip.**
+- **Oregon State** — ⛔ **ClaudeBot disallowed. Do not ingest.**
+- **MOBOT is unverified** and, being St. Louis, is the highest-value thing still unchecked.
+
+### How this lands in `vocabulary.mjs` — the intake-contract check
+
+⛔ The brief's binding constraint: *"whatever is recommended must be expressible as terms that resolve
+through `vocabulary.mjs`, or it becomes a 20th set of names nobody can match."* Measured against the
+live `TERM_ALIASES`:
+
+- **`chassis.habit`** — NC State's 24 and SelecTree's 12 alias into our 9 with **~13 new alias rows**
+  (`arching`, `mounding`, `dense`, `narrow`, `thicket-forming`, `sprawling`, `prostrate`, `decumbent`,
+  `semi-erect`, `creeping`, `ascending`, `palm`, `sword palm`). `conical`, `erect`, `broad`,
+  `horizontal`, `clumping`, `multi-stemmed`, `open` are **already there**.
+- **`bark.type`** — the 15+17 terms alias into our 8 with **~11 new rows**; `fissured`, `platy`,
+  `blocky`, `flaking`, `peeling`, `papery`, `shaggy`, `patchy`, `striate` are **already there**.
+- **`leaf.ways`** — 4 new rows (`decussate`, `rosulate`, `alternate/whorled`, `opposite/whorled`);
+  `whorled` already aliases to `clusters`.
+- ⚠️ **`leaf.silhouette` is the one that does not fall out cleanly.** 25 NC State shapes + 5 leaf types +
+  17 SelecTree leaflet shapes have to collapse into 10 tokens that mix *compound-ness*, *lobation* and
+  *outline*. `resolveTerm`'s `contains` pass will resolve many of them by accident and some of those
+  will be wrong (`Palmatifid` contains neither `palmate` nor `lobed` as a word; `Oblanceolate` contains
+  `lanceolate` and would resolve — correctly here, but by luck). **This axis needs a ruling, not an
+  alias table.**
+
+⭐ **Everything else in the SURPLUS column arrives as a NEW closed term set, which is the cheap case** —
+a new axis with a source-supplied vocabulary needs no aliasing at all, because there is nothing to
+reconcile it against yet. That is the argument for collecting breadth now: the traits we already have
+axes for are the expensive ones.
+
+### The two things to settle before phase 2
+
+1. ⚠️ **`bark.type` is single-valued and the world's is multi-valued.** `Platanus` is
+   `["Exfoliating","Smooth"]`. Either we pick a collapse rule or we widen the axis. **Not a research
+   question — a design one.**
+2. ⚠️ **`leaf.silhouette` conflates three orthogonal facts** that every external source keeps apart
+   (compound-ness · lobation · outline). Aliasing into 10 tokens will silently mis-resolve.
+
+### Licence position, plainly
+
+| source | status |
+|---|---|
+| **USDA PLANTS** | ✅ **Public domain** — *"not copyrighted and is free for any use"* (images excepted) |
+| **USA-NPN** | ✅ Open access, CC (⚠️ exact variant unconfirmed) |
+| **EOL TraitBank** | ✅ **CC BY 4.0**, attribute original sources |
+| **Kew SID** | ✅ CC BY 2.0 (seed only) |
+| **FLOPO / TO / PO / PPO** | ✅ CC0 / CC BY |
+| **TRY File Archive** | ✅ CC BY 3.0 for dataset 3; free registration |
+| **NC State Plant Toolbox** | ⚠️ **Citation invited, reuse unstated — ASK** |
+| **SelecTree** | ⚠️ **No licence found, disclaimer only — ASK** |
+| **Arnold Arboretum** | ⚠️ Credit + notification requested |
+| **Morton** | ⛔ All-rights-reserved, **non-commercial only** |
+| **RHS** | ⛔ Nothing granted |
+| **BGCI GlobalTreeSearch** | ⛔ CC BY-**NC-ND** |
+| **Oregon State** | ⛔ **ClaudeBot disallowed, `ai-train=no`** |
+
+⛔ **Two of the three recommended sources have unresolved reuse terms. That is a question for Jacob to
+answer with an email, not something to resolve by scraping quietly.**
+
+---
+
+## 4. WHAT REMAINS UNVERIFIED
+
+- **Missouri Botanical Garden Plant Finder — nothing fetched.** The highest-value gap, being St. Louis.
+- **Forestry / arboricultural vocabularies — FIA crown metrics (CROWN DENSITY, CROWN RATIO, CROWN CLASS,
+  FOLIAGE TRANSPARENCY, CROWN DIEBACK, LEAN), ISA/TRAQ tree-risk terms, i-Tree species tables, and
+  municipal street-tree inventory schemas (NYC census, TreePlotter, OpenTreeMap).** Not delivered in
+  time for this pass. ⭐ **This is the one section most likely to change the verdict on `chassis.lean`
+  and `chassis.density`**, because the brief is right that those are formal FIA/ISA metrics — but
+  **nothing here should be asserted about them until they are actually fetched.** Cause not established.
+- NC State's **stem block** option lists (not exposed in either filter endpoint).
+- TOP Thesaurus archived content; any live EOL predicate URI; BIEN's licence; LEDA's status;
+  TRY main-database policy; DBpedia; World Flora Online (TLS failure); efloras licence;
+  SelecTree filter-parameter names beyond those observed; the exact USA-NPN CC variant.
+- Whether a single-file bulk USDA Characteristics CSV exists anywhere.

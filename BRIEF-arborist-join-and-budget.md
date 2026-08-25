@@ -51,62 +51,40 @@ SUPERIOR.** The "defect" was load-bearing for the look.
 ⛔ **That is `CLAUDE.md` Layer 0 question 3 in a form I did not recognise: I measured COST,
 declared a DEFECT, and the operator's eye says the output was BETTER.** Before you "fix" any
 tree-count number on this surface, ask what it looks like — not what it costs.
-### ⭐⭐⭐ AND HERE IS THE ACTUAL DIRECTION — ⛔ NOT "tallest N"
-⛔ **`?heroGeom=` is the TALLEST-N dial (dbh). Jacob: "the tallest rule is dumb and that's not
-what we've been talking about."** It is a diagnostic lever ONLY — use it to see how much real
-geometry hero wants, then throw the axis away. Do not build on it.
+### ⭐⭐⭐ THE REGIME ALREADY EXISTS — ▶ `_handoffs/HANDOFF-hero-impostor-and-startup-weight.md`
+**Design settled 2026-07-17. Read it before touching anything.** I did not, and everything I
+got wrong below follows from that.
 
-**What Jacob actually settled on, across the whole afternoon, is a FOCUS BAND:**
-> **Real geometry where the camera actually is; impostors everywhere else.** *"Several tree
-> species would be ok if they only occupied the exact in-focus track the camera is on
-> (rendering everything else as impostors) — we'd only be rendering a single canopy's-depth of
-> leaves."* And: *"maybe we impostor ALL the trees and we only activate meshes as they enter
-> the focus zone."*
+⛔⛔ **THE INVARIANT, and it is not negotiable** (`TREE-INTAKE.md:155`):
+> **"Perf is the impostor lane's job — NOT thinning trees."**
+> *(Jacob, 2026-08-24: "every tree in browse has a counterpart in hero. We have spots on the
+> ground to accommodate trees everywhere.")*
 
-**Why the band and not the species/height axes — measured, not asserted:**
-- Species popularity does not predict cost: `linden_american` has **48%** of `maple_red`'s
-  placements and **169%** of its triangles. Jacob spotted this himself ("fails if the common
-  tree is 1000x").
-- Height does not predict visibility: a fat tree 900 m behind camera bills full geometry for
-  ~30 px. Median tree distance on the hero pan is **583–782 m**; a 300 m band is only **4–13%**
-  of placements.
-- ⭐ **The cost is LEAF FRAGMENTS, not trees.** Foliage is `alphaTest 0.5`, which defeats
-  early-Z, so overlapping canopies pay for every layer. That is why *distance* is the axis
-  that matters — near trees own the pixels AND the overdraw.
+⇒ **EVERY PLACEMENT DRAWS A TREE, IN EVERY SHOT. Always.** The census is real IRL density and
+the ground is baked with a contact shadow for all 5127 of them. **Only the REPRESENTATION
+changes — near is mesh, far is a canopy-only impostor. The COUNT never changes.**
 
-⭐⭐ **AND THE PIECE THAT MAKES IT SELL — Jacob's idea, and it is the good one.** Bake **two
-extra impostors per mesh tree**, captured at the exact azimuths where the mesh is **picked up**
-and **set down**. Captured *at* the handoff, card and mesh are the same image, so the swap is
-invisible; only one is ever on screen. **Full spec, sizing and the `rotY` gotcha are in §3
-"OWED — handoff captures". Read that before designing anything.**
+⚠️ **The doc's 85/15 split is STALE — Jacob, 2026-08-24: "the 85/15% is a lie now, but the
+placement is the same."** So: ⛔ **no percentage is the spec.** Near→mesh, far→impostor is the
+rule; where the line sits is an eye call on the pan, and it moves with the hero camera move
+(itself a dial — the doc has it at 764 m of travel).
 
-⛔ **Do NOT re-land my pan-distance band as-is.** The axis was right, the BUDGET was mine and
-wrong (15e6 tris → 403 trees, never eye-gated), and I shipped it ON BY DEFAULT. It is behind
-`?heroBand=1` now. The bake still stamps `heroRole`/`heroBandMeta`, so the data is there when
-the budget is set **by looking at a frame, on the pan.**
+⛔ **MY BAND WAS THE WRONG INSTRUMENT, not a wrong number.** It spent a TRIANGLE budget and
+**dropped trees** to meet it. That is thinning, which the doctrine forbids outright. It is off
+(`?heroBand=1`), and it should not be re-landed as a culler. If the pan-distance ordering is
+reused, it may only decide **which representation** a tree gets — never whether it draws.
 
-### ⛔ WHAT IS ALREADY PUSHED — so do not "fix" it twice
-`origin/land-use-derivation` is at **`57e811f3`**, in sync. It ALREADY contains **`cb14c29c`**,
-which put my geometry band behind `?heroBand=1` (default OFF). ⚠️ **So if the site is still
-bad, the band is NOT the remaining cause** — either the deploy has not rebuilt since
-`cb14c29c`, or something else is doing it. ▶ **First move: read the console on the live site.**
-- `role=legacy-dbh` → the band is off; you are seeing something else. **Keep reading below.**
-- `role=band` → the build predates `cb14c29c`. **Redeploy, then re-look.** Nothing to debug yet.
+⭐ **Two things from the regime that change the weight argument:**
+- A species only stops loading its `lod1` GLB when it goes **FULLY** impostor — the runtime
+  loads a GLB per mesh-role species. **A partial split saves nothing**, which is why "how many
+  trees keep mesh" was never the lever.
+- ⛔ The analytic "+"-card was **built and killed** ("floating dark leaf-slabs and a stone
+  trunk", 2026-06-25). Do not revive it.
 
-### ⭐⭐ THREE THINGS CHANGED HERO TODAY. Only one was mine, and it is already off.
-| # | change | effect on hero | status |
-|---|---|---|---|
-| 1 | my pan-distance band (`b01fdffb`) | 2323 mesh → **403** | ✅ **OFF** by default (`cb14c29c`) |
-| 2 | **Jacob's oak capture in the Grove** | **747 trees moved MESH → CANOPY CARD** | ⚠️ **LIVE, and nobody has looked at it** |
-| 3 | the land-use pour (`29955e46`) | +126 trees, ground rebuilt | ⚠️ live |
-
-⭐⭐⭐ **#2 IS THE ONE I WOULD LOOK AT FIRST, AND I RECOMMENDED IT.** `oak_bur` (389) and
-`oak_white` (358) had **no hero impostor record**, so they leaked to **full lod1 geometry** —
-48,415 tris each. Shooting them gave them records, which is *correct* and removed ~47M tris —
-**and in the same stroke turned 747 big foreground oaks into flat canopy cards.** That is a
-textbook "smaller and sparser", it is live, and **no eye has been on it.** ⛔ It is not a bug —
-it is the impostor foundation doing exactly what it says — but it was never eye-gated.
-▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json').instances;const b={};for(const i of t)b[i.species]=(b[i.species]||0)+1;console.log(b.oak_bur,b.oak_white)"`
+⭐ **"Small" is explained too:** the far role is **canopy-only by design — no trunk, no
+branches**. The near row exists precisely so trees the camera can see a trunk on keep one. If
+canopy-only trees are reaching the foreground, they read as shrunken. That is the line being
+in the wrong place, not the impostor being wrong.
 
 ### 🔧 THE FAST LEVERS — URL only, no re-bake, use these to find it in minutes
 - **`?heroGeom=0.5`** ⭐ the single most useful dial. It is the legacy fraction that decides
