@@ -220,6 +220,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "insignificant",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -247,11 +259,13 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "crown.texture",
+      "overlay.fruit_type",
       "leaf.arrangement",
       "leaf.shape",
       "leaf.margin",
       "leaf.foliage_type",
-      "overlay.fruit_type"
+      "overlay.conspicuous",
+      "chassis.density"
     ]
   },
   "partAvailability": {

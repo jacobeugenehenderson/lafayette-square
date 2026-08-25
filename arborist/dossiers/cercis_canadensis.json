@@ -144,6 +144,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -172,10 +184,12 @@
     "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",
-      "overlay.fruit_type",
+      "overlay.conspicuous",
+      "chassis.density",
       "crown.texture"
     ]
   },

@@ -111,6 +111,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -137,10 +143,11 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "crown.texture",
+      "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",
-      "overlay.fruit_type"
+      "overlay.conspicuous"
     ]
   },
   "partAvailability": {

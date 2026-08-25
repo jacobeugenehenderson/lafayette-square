@@ -237,11 +237,23 @@ export const NOT_A_TRAIT = {
     // Listing it as unresolved made a settled decision look like owed alias work, 20x per
     // run — which is precisely how someone re-adds the alias in six months. Discarded with
     // a reason instead. See the no-`erect`-row note in TERM_ALIASES above.
-    erect: 'ORIENTATION, not crown form — see the no-erect note in TERM_ALIASES',
-    'semi erect': 'ORIENTATION, not crown form',
-    prostrate: 'ORIENTATION, not crown form',
-    decumbent: 'ORIENTATION, not crown form',
-    climbing: 'ORIENTATION, not crown form',
+    // ⭐ THESE ARE REAL BOTANICAL TERMS AND A REAL AXIS (Jacob asked, 2026-08-25) — USDA
+    // Growth Form: Climbing · Decumbent · Erect · Prostrate · Semi-Erect. Juniperus is the
+    // proof: J. horizontalis is prostrate creeping ground cover, J. scopulorum is erect,
+    // same genus. Roses likewise — climbing, shrub, groundcover.
+    // ⛔ We discard them for a NARROWER reason than "not a real trait": for TREES,
+    // orientation is near-constant. Nearly every tree is erect, so the term carries no
+    // discriminating signal for chassis selection, while `columnar` does.
+    // ⚠️ THIS DECISION HAS AN EXPIRY DATE. The moment the Arborist covers shrubs,
+    // creeping junipers, or anything below tree form, orientation becomes load-bearing and
+    // these belong on their own axis — NOT aliased onto chassis.habit, which is what
+    // started this. A town census carrying Juniperus horizontalis would lose the one trait
+    // that distinguishes it from an upright juniper, silently.
+    erect: 'ORIENTATION axis (real, but near-constant for trees) — see the no-erect note in TERM_ALIASES',
+    'semi erect': 'ORIENTATION axis — real; not discriminating for trees',
+    prostrate: 'ORIENTATION axis — real; would be load-bearing for shrubs/creeping junipers',
+    decumbent: 'ORIENTATION axis — real; not discriminating for trees',
+    climbing: 'ORIENTATION axis — real; would be load-bearing for climbing roses',
   },
 }
 

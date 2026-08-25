@@ -49,6 +49,18 @@ const FIELD_MAP = {
   'Texture': 'crown.texture',
   'Plant Type': 'leaf.foliage_type',
   'Dimensions': 'chassis.size',
+  // ⚠️ Added 2026-08-25. NCSU's fruit field was never mapped, so 18 observations sat in
+  // UNMAPPED and this hydrator had never read an NCSU fruit type. `Achene` -- the term
+  // Jacob just ruled into the rubric -- reaches us ONLY through here; the peer session's
+  // instrument had the field and mine did not, which is why they could see a term my
+  // unresolved list never mentioned.
+  'Fruit Type': 'overlay.fruit_type',
+  // ⚠️ Same class as 'Fruit Type', found the same way: the harvest session wired aliases
+  // for chassis.density and overlay.conspicuous, and BOTH read 0/20 here because no field
+  // in this map fed those axes. Their alias work was stranded — correct, and unreachable.
+  // An alias is only half a mapping; the field has to arrive.
+  'Foliage Porosity Summer': 'chassis.density',
+  flower_showiness: 'overlay.conspicuous',
   // ── SelecTree ──
   bark_texture: 'bark.texture',
   tree_shape: 'chassis.habit',

@@ -16,59 +16,95 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": 50,
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": 35,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 100,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
       "candidates": [
         {
           "value": "oval",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "pyramidal",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "conical",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         },
         {
           "value": "rounded",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
       ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "medium",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "fine",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -81,22 +117,32 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
       "candidates": [
         {
           "value": "cordate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "ovate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "elliptical",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
       ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.margin": {
       "target": "serrate",
@@ -109,21 +155,31 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "ridged",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "fissured",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -139,7 +195,37 @@
       "sourced": true
     },
     "overlay.fruit_type": {
-      "target": "capsule",
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "achene",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "capsule",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -171,6 +257,21 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "crown.texture",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.shape",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.conspicuous",
+      "chassis.density"
+    ]
   }
 }

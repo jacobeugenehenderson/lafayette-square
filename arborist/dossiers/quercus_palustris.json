@@ -141,7 +141,37 @@
       "sourced": true
     },
     "overlay.fruit_type": {
-      "target": "acorn",
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "nut",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "acorn",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "overlay.conspicuous": {
+      "target": "insignificant",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -172,10 +202,12 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "crown.texture",
+      "overlay.fruit_type",
       "leaf.shape",
       "leaf.type",
       "leaf.foliage_type",
-      "overlay.fruit_type"
+      "overlay.conspicuous",
+      "chassis.density"
     ]
   },
   "partAvailability": {

@@ -16,29 +16,59 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "alternatives": [
+      "contested": true,
+      "candidates": [
+        {
+          "value": 60,
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": 70,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
-      ]
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
+      "candidates": [
+        {
+          "value": "rounded",
+          "seen": 3,
+          "sources": [
+            "ncsu",
+            "selectree",
+            "usda"
+          ]
+        },
         {
           "value": "arching",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "spreading",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
       ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -57,25 +87,38 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "lenticellate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "furrowed",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         },
         {
           "value": "ridged",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         },
         {
           "value": "scaly",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "compound-bipinnate",
@@ -108,6 +151,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "insignificant",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": null,
@@ -136,6 +191,21 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.shape",
+      "leaf.foliage_type",
+      "overlay.conspicuous",
+      "chassis.density",
+      "crown.texture"
+    ]
   }
 }

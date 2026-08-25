@@ -16,39 +16,56 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": 45,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 35,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 60,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
       "candidates": [
         {
           "value": "oval",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "rounded",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
       ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "crown.texture": {
       "target": "medium",
@@ -73,21 +90,31 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "fissured",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "exfoliating",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         },
         {
           "value": "scaly",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -104,6 +131,12 @@
     },
     "overlay.fruit_type": {
       "target": "samara",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -132,6 +165,19 @@
       "selectree",
       "usda"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "crown.texture",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.conspicuous"
+    ]
   }
 }

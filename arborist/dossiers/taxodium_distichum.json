@@ -181,6 +181,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -211,7 +217,8 @@
       "leaf.arrangement",
       "leaf.shape",
       "leaf.foliage_type",
-      "overlay.fruit_type"
+      "overlay.fruit_type",
+      "chassis.density"
     ]
   },
   "partAvailability": {
