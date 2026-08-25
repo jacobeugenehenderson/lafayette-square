@@ -16,46 +16,78 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": 30,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 20,
-          "seen": 2
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": 50,
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "alternatives": [
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
+      "candidates": [
+        {
+          "value": "rounded",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
         {
           "value": "columnar",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "multi-stem",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "oval",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "pyramidal",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
       ],
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.orientation": {
       "target": "erect",
@@ -93,46 +125,71 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "crenate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "serrate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "undulate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
+      "contested": true,
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 2
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
         },
         {
           "value": "ridged",
-          "seen": 2
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
         },
         {
           "value": "lenticellate",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
         },
         {
           "value": "plated",
-          "seen": 1
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
         }
-      ]
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -180,6 +237,21 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "chassis.orientation",
+      "crown.texture",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.shape",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.conspicuous"
+    ]
   }
 }

@@ -112,7 +112,8 @@ for (const o of obs) {
   if (val == null) continue
   if (!rec.cells.has(axis)) rec.cells.set(axis, new Map())
   const tally = rec.cells.get(axis)
-  tally.set(val, (tally.get(val) || 0) + 1)
+  if (!tally.has(val)) tally.set(val, new Set())
+  tally.get(val).add(o.source)
 }
 
 const minted = []
@@ -171,12 +172,12 @@ for (const [species, rec] of bySpecies) {
   const contested = []
   const ties = []
   for (const [axis, tally] of rec.cells) {
-    const ranked = [...tally].sort((a, b) => b[1] - a[1])
+    const ranked = [...tally].sort((a, b) => b[1].size - a[1].size)
     // ⛔⛔ NO PLURALITY, NO TARGET. Zelkova's habit came back columnar/multi-stem/
     // irregular/vase/rounded at one vote each; taking the first would dress an arbitrary
     // pick as a sourced answer, which is the fallback this kit exists to refuse. A tie
     // stays NULL and stays RED, with every candidate listed for the author.
-    const tied = ranked.length > 1 && ranked[0][1] === ranked[1][1]
+    const tied = ranked.length > 1 && ranked[0][1].size === ranked[1][1].size
     // ⛔ Sourced axes only ever get SOFT hardness at mint, even the identity ones. A
     // hard target is a commitment about what this tree IS; a database majority is not
     // that commitment. Promotion to hard is the authoring step.
@@ -186,13 +187,19 @@ for (const [species, rec] of bySpecies) {
       tol: axisKind.get(axis) === 'scalar' ? 0.4 : 1,
       sourced: true,
     }
-    if (tied) {
-      required[axis].unresolved = `${ranked.length}-way tie at ${ranked[0][1]} vote(s) — no plurality, so no target`
-      required[axis].candidates = ranked.map(([v, n]) => ({ value: v, seen: n }))
-      ties.push(axis)
-    } else if (ranked.length > 1) {
-      required[axis].alternatives = ranked.slice(1).map(([v, n]) => ({ value: v, seen: n }))
-      contested.push(axis)
+    // ONE VOCABULARY FOR ONE CONCEPT. mint said `unresolved`/`alternatives` where hydrate
+    // says `contested`/`candidates`/`settle`, and the Salon's rail renders only hydrate's.
+    // mint rebuilds a stub's whole `required` block, so running it AFTER hydrate replaced
+    // those cells with a shape nothing displays -- nine species showing no disagreement
+    // while having ties. Two writers disagreeing about what to CALL a thing is the same
+    // defect as disagreeing about its value, and it hid behind run order.
+    if (ranked.length > 1) {
+      required[axis].contested = true
+      required[axis].candidates = ranked.map(([value, srcs]) => ({ value, seen: srcs.size, sources: [...srcs].sort() }))
+      required[axis].settle = tied
+        ? 'sources tie - no target. Pick one in the Salon; that pick is authoring.'
+        : 'plurality shown as target, but sources disagree. Confirm or pick another.'
+      ;(tied ? ties : contested).push(axis)
     }
     if (HARD.has(axis)) required[axis].owedHardness = 'identity axis — author must confirm and promote to hard'
   }
