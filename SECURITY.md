@@ -379,11 +379,27 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
 - **Fix:** Validate `id` against `^[a-z0-9-]+$` before use, or drop `shell: true` and pass argv
   arrays. Confirm the server binds to `127.0.0.1`, not `0.0.0.0`.
 
-### F-13 · LOW · Broad CORS (`Access-Control-Allow-Origin: *`) on data functions
+### F-13 · LOW→**HIGH for `contact-sms`** · Broad CORS + no rate limiting  — ✅ `contact-sms` CLOSED 2026-08-24 · the other three OPEN
 - **Where:** `sms-inbox`, `sms-reply`, `web-messages`, `contact-sms`.
-- **Impact:** Any origin can call these. For the admin functions this is mitigated by the
-  Apps-Script admin-token check; for `web-messages`/`contact-sms` it widens CSRF/abuse surface.
-- **Fix:** Restrict to the known site origin(s) where feasible; keep rate limiting in mind.
+- ⭐ **`contact-sms` was never a LOW.** It is reachable from the Ward's public **"Text us"** button
+  *and* directly with **no key and no `Authorization` header at all**, and every call sends a real SMS
+  to `CONTACT_PHONE` and spends money. There was **no limit of any kind** — `sendCount` in
+  `ContactModal` only varies the confirmation wording. A `while true; do curl` flooded the Host's
+  personal phone and the Twilio balance. Filing that under "broad CORS" understated it by a category.
+- **Fix (applied + deployed):** a **global daily ceiling** (`CONTACT_CAP_GLOBAL_DAY`, default 200 — the
+  only control that bounds the bill, since addresses rotate and device hashes are client-invented),
+  with per-IP and per-device windows under it, keyed on a **salted hash of the IP, never the IP**
+  (migration `012`). ⛔ Fails **closed**: an unreadable counter refuses, and a missing or nonsense cap
+  falls back to the default, never to unlimited.
+- **Origin lock** replaces `*` on `contact-sms`. ⚠️ Documented at the code as **browser-only** — it
+  stops another site driving *our visitors'* browsers at the endpoint and does nothing about `curl`,
+  which never asks. Free, worth having, **not the wall**. Extend per installation with
+  `CONTACT_ALLOWED_ORIGINS`; ⭐ the staging origin had to be added this way after the lock silently
+  broke the button there, which is the knob paying for itself.
+- ⭐ The same allowlist is reused as the safety boundary for the reply deep-link's origin — see F-2.
+- **Check:** `node scratch/claims-contact-sms-rate-limit.mjs`.
+- **Still OPEN:** `sms-inbox`, `sms-reply`, `web-messages` remain `Access-Control-Allow-Origin: *`.
+  Lower stakes (admin-token gated, or no spend), but the same treatment applies.
 
 ---
 
@@ -450,7 +466,8 @@ supabase functions list --project-ref ngbvgjzrpnfrqmzkqvch
    means before it can be built.
 6. **F-3** + **F-5 (Stripe/Checkr half)** — money and vendor-trust. Not deployed today; a hard
    prerequisite before either is. `cary/stripe/webhooks.js` has no HTTP entrypoint at all.
-7. **F-6, F-11, F-12, F-13** — harden as the surfaces mature.
+7. ~~**F-13** (`contact-sms` half)~~ ✅ capped + origin-locked 2026-08-24.
+8. **F-6, F-11, F-12, F-13 (the other three functions)** — harden as the surfaces mature.
 
 _Also check the Supabase **Auth** dashboard settings (OTP expiry, leaked-password protection,
 allowed redirect URLs) — those Advisor lints live in the console, not this repo._
