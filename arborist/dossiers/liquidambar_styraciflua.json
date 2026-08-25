@@ -245,6 +245,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 13.7,
+        "hi": 13.7
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -254,6 +258,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 30.5,
+        "hi": 30.5
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -282,6 +290,8 @@
     "notes": "New dossier. Star-leaf gap CLEARED 2026-06-19 — american_sweetgum vendor pack (scanned Liquidambar, Jacob) wired as the star silhouette. Inventory string carries '(undesirable)' verbatim — kept for the exact park_trees.json match.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.shape",
@@ -291,8 +301,6 @@
       "overlay.conspicuous",
       "chassis.density",
       "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   },

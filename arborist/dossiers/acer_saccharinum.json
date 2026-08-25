@@ -224,6 +224,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 13.7,
+        "hi": 13.7
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -233,6 +237,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 27.4,
+        "hi": 27.4
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -262,6 +270,8 @@
     "notes": "New dossier. Kit-mileage proof — re-uses the palmate pack. The leaf.face axis is load-bearing here (strong two-tone).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.orientation",
       "chassis.density",
       "crown.texture",
@@ -270,9 +280,7 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max"
+      "chassis.trunks"
     ]
   },
   "partAvailability": {

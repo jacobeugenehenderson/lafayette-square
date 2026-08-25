@@ -48,6 +48,50 @@ export const FEET_AXES = new Set(
  * @returns {number|null} null REFUSES the value — it is not a height at all, or is
  *   unparseable. ⛔ Never a guess: the caller discards it with a counted reason.
  */
+/**
+ * ⭐⭐ THE RANGE IS THE ANSWER, NOT NOISE AROUND IT (Jacob, 2026-08-25).
+ * NCSU publishes `Height: 80 ft. - 120 ft.` — that is the species' natural size BAND, and
+ * a tuliptree placed 300 times should be 300 sizes inside it. Taking the high bound threw
+ * half the measurement away, and then two sources' HIGHS looked like a disagreement to
+ * settle when they were only two points in one range.
+ * @returns {{lo:number,hi:number}|null} both bounds in METRES. A single value yields
+ *   lo === hi — honest: that source published a point, not a band.
+ */
+export function parseSizeBandMetres(raw, declaredUnit) {
+  const t = String(raw).trim()
+  if (/^\s*width\s*:/i.test(t)) return null
+  const body = t.replace(/^\s*height\s*:\s*/i, '')
+  const toM = (n) => {
+    const u = declaredUnit == null ? 'ft' : String(declaredUnit).trim().toLowerCase()
+    if (u === 'm' || u.startsWith('met')) return n
+    if (u === 'cm') return n / 100
+    if (u === 'ft' || u === 'feet' || u === 'foot') return n * FT_TO_M
+    return null                      // ⛔ a unit we do not understand is a refusal
+  }
+  const fi = [...body.matchAll(/(\d+(?:\.\d+)?)\s*ft\.?\s*(?:(\d+(?:\.\d+)?)\s*in\.?)?/gi)]
+  let vals
+  if (fi.length) vals = fi.map(m => parseFloat(m[1]) + (m[2] ? parseFloat(m[2]) / 12 : 0)).map(v => v * FT_TO_M)
+  else {
+    const nums = [...body.matchAll(/-?\d+(?:\.\d+)?/g)].map(m => parseFloat(m[0])).filter(Number.isFinite)
+    if (!nums.length) return null
+    vals = nums.map(toM).filter(v => v != null)
+  }
+  if (!vals.length) return null
+  const r1 = (v) => Math.round(v * 10) / 10
+  return { lo: r1(Math.min(...vals)), hi: r1(Math.max(...vals)) }
+}
+
+/**
+ * Merge every source's band into ONE band: the widest span any source claims.
+ * ⛔ Not an average and not a vote — a UNION. Two sources saying 24.4 and 36.6 are not
+ * disagreeing; they are each naming a point in the same population.
+ */
+export function mergeBands(bands) {
+  const ok = bands.filter(Boolean)
+  if (!ok.length) return null
+  return { lo: Math.min(...ok.map(b => b.lo)), hi: Math.max(...ok.map(b => b.hi)) }
+}
+
 export function parseSizeMetres(raw) {
   const t = String(raw).trim()
   // NCSU prefixes the subject. A Width row is a different measurement, not a weaker one.

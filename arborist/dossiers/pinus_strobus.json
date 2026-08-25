@@ -16,6 +16,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 15.2,
+        "hi": 24.4
+      },
       "askedAs": [
         "ncsu: Dimensions",
         "selectree: height_high"
@@ -234,6 +238,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 12.2
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -243,6 +251,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 45.7,
+        "hi": 45.7
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -285,6 +297,8 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.habit",
       "crown.texture",
       "leaf.margin",
@@ -294,8 +308,6 @@
       "overlay.fruit_type",
       "chassis.density",
       "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   }

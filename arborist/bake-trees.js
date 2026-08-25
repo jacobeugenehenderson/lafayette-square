@@ -581,6 +581,35 @@ export async function bakeTrees({
   // Built from THIS scene's real trees only — the census is per-hood, so HPDM
   // samples HPDM's own trees, never LS's. `source` still marks measured vs
   // estimated, so a size/age BENCHMARK reads only the real ones.
+  // ⭐⭐ PER-TREE SIZE FROM THE SPECIES BAND × THIS TREE'S OWN DBH (Jacob, 2026-08-25):
+  // "if a tree is placed 300x it should be a bunch of sizes within that band."
+  // Both halves are MEASURED: the band is the union of the sources' published height
+  // ranges (NCSU ships `Height: 80 ft - 120 ft` — that IS the band, and taking only its
+  // high threw half the measurement away), and each placement carries its own census DBH.
+  // ⛔ Nothing is invented: a tree is never scaled outside what a source actually claimed.
+  const bandBySpecies = new Map()
+  let dossierLookup = null
+  try { ({ dossierForSalonSpecies: dossierLookup } = await import('./salon-options.js')) }
+  catch (err) { console.error('[bake-trees] ⛔ dossier lookup unavailable — every tree renders 1:1:', err.message) }
+  // Resolved lazily per species, so this needs no variant list in scope. ⛔ The failure
+  // that hid here was `variants is not defined` swallowed by a bare catch — a load error
+  // reading exactly like "no bands found".
+  const bandFor = (sp) => {
+    if (bandBySpecies.has(sp)) return bandBySpecies.get(sp)
+    let band = null
+    try { band = dossierLookup?.(sp)?.required?.['chassis.size']?.band ?? null } catch { band = null }
+    if (band && !(band.hi > 0)) band = null
+    bandBySpecies.set(sp, band)
+    return band
+  }
+
+  // Sorted per-species DBH, for the percentile lookup above.
+  const dbhSorted = new Map()
+  let dbhGlobalSorted = null
+  const fillDbhSorted = () => {
+    for (const [sp, arr] of dbhBySpecies) dbhSorted.set(sp, [...arr].sort((a, b) => a - b))
+    dbhGlobalSorted = [...dbhGlobal].sort((a, b) => a - b)
+  }
   const dbhBySpecies = new Map()
   const dbhGlobal = []
   for (const t of park.trees) {
@@ -755,8 +784,27 @@ export async function bakeTrees({
     const finalZ = tz + pz
     // DBH: measured for real inventory, else sampled from the empirical per-species
     // distribution (deterministic by seed) so OSM/derived trees get a believable size.
+    if (!dbhSorted.size) fillDbhSorted()
     const measuredDbh = (REAL_DBH_SOURCES.has(tree.__source) && Number.isFinite(tree.dbh)) ? tree.dbh : null
     const dbh = measuredDbh ?? sampleDbh(tree.species, seed)
+    // Where this tree sits in its species' DBH spread → where it sits in the size band.
+    let instScale = null
+    const band = bandFor(v.species)
+    if (band && band.hi > band.lo) {
+      // ⚠️ dbhBySpecies is keyed by the CENSUS species (`tree.species`), the variant by the
+      // LIBRARY id (`v.species`) — they are not the same key and looking up the wrong one
+      // silently yielded undefined, so every tree stayed 1:1. Try the census key, then the
+      // library key, then the global distribution; a species substituted onto another
+      // still deserves a size drawn from its OWN measured trunks.
+      const per = dbhSorted.get(tree.species) || dbhSorted.get(v.species) || dbhGlobalSorted
+      if (per && per.length) {
+        let lo = 0, hi = per.length
+        while (lo < hi) { const mid = (lo + hi) >> 1; if (per[mid] < dbh) lo = mid + 1; else hi = mid }
+        const pct = per.length > 1 ? lo / (per.length - 1) : 1
+        const h = band.lo + Math.max(0, Math.min(1, pct)) * (band.hi - band.lo)
+        instScale = +(h / band.hi).toFixed(4)
+      }
+    }
     instances.push({
       x: +finalX.toFixed(4),
       // Ground reverted to flat (#19); trees plant at y=0 + override.
@@ -773,8 +821,12 @@ export async function bakeTrees({
         lod1: v.skeletons.lod1 || v.skeletons.lod0 || lodUrl,
         lod2: v.skeletons.lod2 || v.skeletons.lod1 || lodUrl,
       },
-      // Scale is baked into the GLB at Arborist publish (bake-look). Runtime
-      // always renders at 1:1.
+      // ⭐ PER-INSTANCE SCALE. The GLB is normalised at publish to the band's HIGH — the
+      // mature specimen — so every instance scales DOWN from it by where its own DBH sits
+      // in that species' measured DBH distribution. A tree is therefore never rendered
+      // larger than the tallest figure any source published for its species.
+      // ⛔ Absent band → scale omitted → 1:1, exactly the previous behaviour.
+      ...(instScale != null ? { scale: instScale } : {}),
       rotY: +rotY.toFixed(4),
       species: v.species,
       variantId: v.variantId,

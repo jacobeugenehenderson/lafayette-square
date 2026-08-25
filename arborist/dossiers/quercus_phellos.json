@@ -12,38 +12,18 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 22.9,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 22.9
+      },
       "askedAs": [
         "ncsu: Dimensions",
         "selectree: height_high"
-      ],
-      "contested": true,
-      "candidates": [
-        {
-          "value": 22.9,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ],
-          "askedAs": [
-            "ncsu: Dimensions"
-          ]
-        },
-        {
-          "value": 18.3,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ],
-          "askedAs": [
-            "selectree: height_high"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.density": {
       "target": "dense",
@@ -309,6 +289,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 18.3,
+        "hi": 18.3
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -318,6 +302,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 30.5,
+        "hi": 30.5
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -361,6 +349,8 @@
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.density",
       "chassis.habit",
       "crown.texture",
@@ -373,8 +363,6 @@
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   }

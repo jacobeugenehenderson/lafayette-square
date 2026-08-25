@@ -15,7 +15,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
-import { sizeMetres, FEET_AXES } from './units.mjs'
+import { sizeMetres, parseSizeBandMetres, mergeBands, FEET_AXES } from './units.mjs'
 import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
@@ -177,11 +177,13 @@ const unmapped = new Map()     // source field -> count
 const conflicts = []
 const pending = new Map()      // file -> { [axis]: spec }
 const tally = new Map()        // file -> axis -> value -> votes
+const bandTally = new Map()    // file -> axis -> { bands[], askedAs } — SIZE axes only
 const ties = []
 const noDossier = new Set()
 let applied = 0, skippedAuthored = 0
 
 for (const o of obs) {
+  let pendingBand = null            // a size RANGE parsed this iteration, applied once `file` resolves
   if (IGNORE.has(o.field)) continue
   if (rejectedSources.has(`${o.species}|${o.source}`)) { taxonDropped++; continue }
   let axis = FIELD_MAP[o.field]
@@ -204,6 +206,12 @@ for (const o of obs) {
   let target = null
   if (axisKind.get(axis) === 'scalar') {
     if (FEET_AXES.has(axis)) {
+      // ⭐⭐ A SIZE RANGE IS A BAND, NOT TWO CANDIDATES. Every source's range is unioned
+      // into the species' natural size band, and per-placement height is drawn from it
+      // using each tree's own census DBH. Two sources naming 24.4 and 36.6 are not in
+      // conflict — they are two points in one population, and treating them as a tie
+      // wrote `null`, which fell to a 12 m default SHORTER THAN ANYTHING EITHER SAID.
+      pendingBand = parseSizeBandMetres(o.value, o.unit)
       const m = sizeMetres(o.value, o.unit)
       if (m == null) { const k = `${axis} :: ${o.value}  (not a height row, or unparseable)`; discarded.set(k, (discarded.get(k) || 0) + 1); continue }
       target = m
@@ -223,6 +231,15 @@ for (const o of obs) {
 
   const sp = resolveSpecies(o.species).value
   const file = [sp, ...aliasesFor(sp), o.species].map(normalize).map(n => fileFor.get(n)).find(Boolean)
+  // ⭐ Band capture happens HERE, where the dossier file is finally known.
+  if (pendingBand && file) {
+    if (!bandTally.has(file)) bandTally.set(file, new Map())
+    const pa = bandTally.get(file)
+    if (!pa.has(axis)) pa.set(axis, { bands: [], askedAs: new Set() })
+    pa.get(axis).bands.push(pendingBand)
+    pa.get(axis).askedAs.add(`${o.source}: ${o.field}`)
+    continue                        // ⛔ a band never also votes as a point
+  }
   if (!file) { noDossier.add(sp); continue }
 
   const d = rd(path.join(dDir, file))
@@ -300,6 +317,27 @@ if (conflicts.length) {
 }
 if (noDossier.size) console.log(`\n⚠️ NO DOSSIER for ${noDossier.size} species (create them, then re-run): ${[...noDossier].join(' · ')}`)
 if (skippedAuthored) console.log(`\nskipped ${skippedAuthored} observation(s) on AUTHORED axes — correct, those are not researched`)
+
+// Resolve SIZE BANDS. ⛔ Never contested: the band IS the answer, so there is nothing for
+// the operator to settle. `target` is the band's HIGH — the mature specimen the GLB is
+// normalised to — and per-instance scale draws DOWN from it by census DBH, so no tree is
+// ever scaled beyond what a source actually claims.
+for (const [file, perAxis3] of bandTally) {
+  for (const [axis, rec] of perAxis3) {
+    const band = mergeBands(rec.bands)
+    if (!band) continue
+    let existing = null
+    try { existing = rd(path.join(dDir, file))?.required?.[axis] } catch {}
+    if (existing && existing.target != null && !existing.sourced) continue   // ⛔ operator's
+    if (!pending.has(file)) pending.set(file, {})
+    pending.get(file)[axis] = {
+      ...spec(axis, band.hi),
+      band: { lo: band.lo, hi: band.hi },
+      askedAs: [...rec.askedAs].sort(),
+    }
+    applied++
+  }
+}
 
 // ⭐⭐ PUBLISH THE DISAGREEMENT; THE OPERATOR SETTLES IT (Jacob, 2026-08-25).
 //

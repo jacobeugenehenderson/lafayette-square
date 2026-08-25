@@ -229,6 +229,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 12.2,
+        "hi": 12.2
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -238,6 +242,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 30.5,
+        "hi": 30.5
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -267,6 +275,8 @@
     "notes": "New dossier. Seeded leaf.silhouette from the in-hand lobed pack (quercus_alba was the species-map oak proxy, barkMorph scaly; pin oak bark refined to smooth per reference).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.shape",
@@ -275,8 +285,6 @@
       "overlay.conspicuous",
       "chassis.density",
       "chassis.spread",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   },

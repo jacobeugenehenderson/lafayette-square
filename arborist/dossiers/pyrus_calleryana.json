@@ -16,6 +16,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 9.1,
+        "hi": 15.2
+      },
       "askedAs": [
         "ncsu: Dimensions",
         "selectree: height_high"

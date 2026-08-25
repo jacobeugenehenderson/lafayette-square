@@ -234,13 +234,26 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
   // rotation only.
   const matrices = useMemo(() => {
     const arr = new Array(instances.length)
-    const T = new THREE.Matrix4(), R = new THREE.Matrix4()
+    const T = new THREE.Matrix4(), R = new THREE.Matrix4(), S = new THREE.Matrix4()
     const M = new THREE.Matrix4()
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i]
       T.makeTranslation(inst.x, inst.y || 0, inst.z)
       R.makeRotationY(inst.rotY)
-      M.identity().multiply(T).multiply(R)
+      // ⭐⭐ PER-TREE SIZE (Jacob, 2026-08-25): "if a tree is placed 300x it should be a
+      // bunch of sizes within that band." The bake writes `scale` from the species' MEASURED
+      // height band (the union of the sources' published ranges) and this tree's OWN census
+      // DBH percentile. Both halves are measured; nothing is invented, and no tree is ever
+      // scaled above the tallest figure a source published for its species.
+      // ⛔ Absent scale → 1:1, exactly the previous behaviour. The old comment here said
+      // "Runtime always renders at 1:1" and that was why 728 red maples were identical.
+      const sc = Number(inst.scale)
+      if (Number.isFinite(sc) && sc > 0 && sc !== 1) {
+        S.makeScale(sc, sc, sc)
+        M.identity().multiply(T).multiply(R).multiply(S)
+      } else {
+        M.identity().multiply(T).multiply(R)
+      }
       arr[i] = M.clone()
     }
     return arr

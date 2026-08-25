@@ -205,6 +205,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 7.6,
+        "hi": 7.6
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -214,6 +218,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 9.1,
+        "hi": 9.1
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -245,6 +253,8 @@
     "notes": "New dossier. heart pack in hand (LeafSet004). Ornamental-chassis + flowers gap, paired with Crabapple in Stage 3. chassis.lean mode=morph (variety lean).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.habit",
       "overlay.fruit_type",
       "leaf.margin",
@@ -253,8 +263,6 @@
       "overlay.conspicuous",
       "chassis.density",
       "crown.texture",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   },

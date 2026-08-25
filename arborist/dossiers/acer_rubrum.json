@@ -197,6 +197,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 10.7,
+        "hi": 10.7
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -206,6 +210,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 20.7,
+        "hi": 20.7
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -235,6 +243,8 @@
     "notes": "Migrated from species-map acer_rubrum (tier cousin, tints verbatim incl. red buds #c44a4a + fall #c8311a→refined #d32414). barkMorph 'furrowed' refined to 'ridged'.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.shape",
@@ -242,9 +252,7 @@
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.density",
-      "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max"
+      "chassis.trunks"
     ]
   },
   "partAvailability": {

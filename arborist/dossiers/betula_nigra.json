@@ -254,6 +254,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 10.7,
+        "hi": 10.7
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -263,6 +267,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 21.3,
+        "hi": 21.3
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -294,6 +302,8 @@
     "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.density",
       "chassis.habit",
       "crown.texture",
@@ -302,8 +312,6 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   },

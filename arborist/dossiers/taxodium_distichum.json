@@ -264,6 +264,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 13.7,
+        "hi": 13.7
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -273,6 +277,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 39.6,
+        "hi": 39.6
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -302,15 +310,15 @@
     "notes": "New dossier. THE deciduous-conifer / needle-spray gap. Forces the needle+scale enum addition (see rubric.json leaf.silhouette FINDING) and the deciduous-conifer season ramp.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.density",
       "crown.texture",
       "leaf.arrangement",
       "leaf.shape",
       "leaf.foliage_type",
       "overlay.fruit_type",
-      "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max"
+      "chassis.trunks"
     ]
   },
   "partAvailability": {

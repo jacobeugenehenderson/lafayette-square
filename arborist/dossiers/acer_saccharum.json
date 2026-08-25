@@ -250,6 +250,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 6.1,
+        "hi": 6.1
+      },
       "askedAs": [
         "usda: Height at 20 Years, Maximum (feet)"
       ]
@@ -259,6 +263,10 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
+      "band": {
+        "lo": 30.5,
+        "hi": 30.5
+      },
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
@@ -287,6 +295,8 @@
     "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.size_20yr",
+      "chassis.size_max",
       "chassis.density",
       "crown.texture",
       "overlay.fruit_type",
@@ -295,8 +305,6 @@
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.trunks",
-      "chassis.size_20yr",
-      "chassis.size_max",
       "chassis.orientation"
     ]
   },
