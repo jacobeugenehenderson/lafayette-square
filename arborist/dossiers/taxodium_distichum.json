@@ -116,27 +116,45 @@
     "crown.texture": {
       "target": "fine",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.arrangement": {
       "target": "alternate",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": "whorled",
+          "seen": 1
+        }
+      ]
     },
     "leaf.shape": {
       "target": "lanceolate",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "alternatives": [
+        {
+          "value": "linear",
+          "seen": 1
+        }
+      ]
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "overlay.fruit_type": {
       "target": "cone",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {

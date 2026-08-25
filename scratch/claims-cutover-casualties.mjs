@@ -89,6 +89,11 @@ for (const o of obs) {
   if (!hit) continue
   const cell = hit.d.required?.[axis]
   if (!cell || cell.target == null) continue   // empty stays red; that is a hydration job
+  // ⛔ A `sourced` cell is MACHINE output written today, not an authored value the old
+  // rubric constrained. Skipping minted DOSSIERS was not enough -- a hydrated cell inside
+  // a hand-authored dossier is the same category error one level down, and it took the
+  // count from 9 to 15.
+  if (cell.sourced) continue
 
   const r = forced != null ? { resolved: true, value: forced } : resolveTerm(axis, o.value)
   if (!r.resolved || r.value === cell.target) continue

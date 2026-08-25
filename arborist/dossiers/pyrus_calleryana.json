@@ -67,12 +67,33 @@
     "chassis.size": {
       "target": 50,
       "hardness": "soft",
-      "tol": 0.4
+      "tol": 0.4,
+      "sourced": true
     },
     "chassis.habit": {
       "target": "rounded",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "alternatives": [
+        {
+          "value": "columnar",
+          "seen": 1
+        },
+        {
+          "value": "multi-stem",
+          "seen": 1
+        },
+        {
+          "value": "oval",
+          "seen": 1
+        },
+        {
+          "value": "pyramidal",
+          "seen": 1
+        }
+      ]
     },
     "crown.texture": {
       "target": "medium",
@@ -96,12 +117,14 @@
     "leaf.margin": {
       "target": "undulate",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "bark.texture": {
       "target": "ridged",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.type": {
       "target": "simple",
@@ -151,10 +174,13 @@
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
-      "chassis.size",
       "chassis.habit",
-      "leaf.margin",
-      "bark.texture"
+      "crown.texture",
+      "leaf.arrangement",
+      "leaf.shape",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.fruit_type"
     ]
   }
 }

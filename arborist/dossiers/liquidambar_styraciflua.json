@@ -110,32 +110,50 @@
     "crown.texture": {
       "target": "medium",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.shape": {
       "target": "deltoid",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "lobed",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": "dentate",
+          "seen": 1
+        },
+        {
+          "value": "serrate",
+          "seen": 1
+        }
+      ]
     },
     "leaf.type": {
       "target": "simple",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "overlay.fruit_type": {
       "target": "capsule",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {

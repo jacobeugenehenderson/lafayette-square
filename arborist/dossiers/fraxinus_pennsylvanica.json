@@ -118,32 +118,49 @@
     "crown.texture": {
       "target": "coarse",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.arrangement": {
       "target": "opposite",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.shape": {
       "target": "lanceolate",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "alternatives": [
+        {
+          "value": "elliptical",
+          "seen": 1
+        },
+        {
+          "value": "ovate",
+          "seen": 1
+        }
+      ]
     },
     "leaf.margin": {
       "target": "serrate",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "overlay.fruit_type": {
       "target": "samara",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -170,10 +187,8 @@
     "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
-      "crown.texture",
       "leaf.arrangement",
       "leaf.shape",
-      "leaf.margin",
       "leaf.foliage_type",
       "overlay.fruit_type"
     ]

@@ -117,27 +117,33 @@
     "leaf.margin": {
       "target": "entire",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "leaf.type": {
       "target": "simple",
-      "hardness": "hard",
-      "tol": 0
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.foliage_type": {
       "target": "deciduous",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "overlay.fruit_type": {
       "target": "legume",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     },
     "crown.texture": {
       "target": "coarse",
       "hardness": "soft",
-      "tol": 1
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {

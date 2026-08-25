@@ -80,10 +80,24 @@ const HARD = new Set(['leaf.type', 'leaf.shape', 'chassis.habit'])
 
 const rubric = rd(path.join(ROOT, 'arborist/rubric.json'))
 const axisKind = new Map(rubric.axes.map(a => [a.id, a.kind]))
+// ⭐⭐ `sourced: true` IS THE LINE BETWEEN MACHINE OUTPUT AND AUTHORING, and it must be on
+// EVERY machine write. "The override is the product" is about the OPERATOR's decisions; a
+// scraped value is not an override, and treating it as one makes every machine error
+// permanent and self-protecting. mint-dossiers.mjs already stamps this; hydrate did not,
+// so its own bad writes could never be re-derived.
+// ⛔⛔ A SCRAPED VALUE IS NEVER HARD. Jacob's "hard for identity axes" ruling governs what
+// an AUTHORED dossier asserts; applying it to unratified machine output turns a database
+// guess into a tol-0 constraint. That is what made the bad `erect → columnar` alias fatal
+// rather than merely wrong: quercus_rubra could only ever match a columnar chassis. 18
+// cells were written hard this way.
+// mint-dossiers.mjs already had this right -- soft, with `owedHardness` naming the
+// promotion as the authoring step. Two scripts writing the same dossiers under opposite
+// rules is its own defect; hydrate now follows mint.
 const spec = (axis, target) => {
-  const hard = HARD.has(axis)
   const scalar = axisKind.get(axis) === 'scalar'
-  return { target, hardness: hard ? 'hard' : 'soft', tol: hard ? 0 : (scalar ? 0.4 : 1) }
+  const cell = { target, hardness: 'soft', tol: scalar ? 0.4 : 1, sourced: true }
+  if (HARD.has(axis)) cell.owedHardness = 'identity axis — author must confirm and promote to hard'
+  return cell
 }
 
 // ── load observations ───────────────────────────────────────────────────────
@@ -105,11 +119,14 @@ for (const f of readdirSync(dDir).filter(x => x.endsWith('.json'))) {
 
 // ── resolve ─────────────────────────────────────────────────────────────────
 const perAxis = new Map()      // axis -> Set(species) that got a value
+let rederived = 0
 const unresolved = new Map()   // "axis :: rawvalue" -> count
 const discarded = new Map()    // "axis :: rawvalue (reason)" -> count
 const unmapped = new Map()     // source field -> count
 const conflicts = []
 const pending = new Map()      // file -> { [axis]: spec }
+const tally = new Map()        // file -> axis -> value -> votes
+const ties = []
 const noDossier = new Set()
 let applied = 0, skippedAuthored = 0
 
@@ -152,16 +169,37 @@ for (const o of obs) {
 
   const d = rd(path.join(dDir, file))
   const existing = d.required?.[axis]
-  if (existing && existing.target != null && String(existing.target) !== String(target)) {
-    conflicts.push(`${file}  ${axis}  authored="${existing.target}"  ${o.source} says "${target}"`)
-    continue                                   // ⛔ the operator's value stands
+  // ⛔ A FILLED CELL IS NOT AUTOMATICALLY THE OPERATOR'S. This used to `continue` on any
+  // non-null target, so a wrong MACHINE value protected itself forever: correcting the bad
+  // `erect → columnar` alias could not undo the `columnar` it had already written into
+  // quercus_rubra, and the cells had to be cleared by hand. `sourced` distinguishes them --
+  // machine output is re-derivable, authored values are untouchable.
+  if (existing && existing.target != null && !existing.sourced) {
+    if (String(existing.target) !== String(target)) {
+      conflicts.push(`${file}  ${axis}  authored="${existing.target}"  ${o.source} says "${target}"`)
+    }
+    continue                                   // ⛔ the operator's value stands, always
   }
-  if (existing && existing.target != null) continue   // already there, same answer
+  // A sourced cell ALWAYS re-derives. Skipping when only the target matched left 11 cells
+  // carrying the old `hardness: hard` after that rule was corrected -- the value was right
+  // and the constraint was still wrong.
+  if (existing && existing.sourced) rederived++
 
-  if (!pending.has(file)) pending.set(file, {})
-  pending.get(file)[axis] = spec(axis, target)
+  // ⛔⛔ FIRST-WRITER-WINS DISCARDED THE MAJORITY. Habit and shape are MULTI-SELECT at the
+  // source -- NCSU returned five habits for green ash in one record -- so whichever value
+  // happened to appear first in the JSONL won. Red oak's sources say Rounded x2, Conical
+  // x1; hydrate wrote `conical`, purely on line order.
+  // Tally instead, and take the plurality. ⛔ NO PLURALITY, NO TARGET -- the same rule
+  // mint-dossiers.mjs already ships. This is not a new selection policy: it is the rule
+  // the sibling script committed, applied to a path that had none.
+  // ▶ Any ranking BEYOND plurality (source priority, trusting NCSU over USDA) is Jacob's
+  //   ruling and is deliberately NOT made here.
+  if (!tally.has(file)) tally.set(file, new Map())
+  const perFile = tally.get(file)
+  if (!perFile.has(axis)) perFile.set(axis, new Map())
+  const votes = perFile.get(axis)
+  votes.set(target, (votes.get(target) || 0) + 1)
   ;(perAxis.get(axis) || perAxis.set(axis, new Set()).get(axis)).add(sp)
-  applied++
 }
 
 // ── report ──────────────────────────────────────────────────────────────────
@@ -193,6 +231,26 @@ if (conflicts.length) {
 if (noDossier.size) console.log(`\n⚠️ NO DOSSIER for ${noDossier.size} species (create them, then re-run): ${[...noDossier].join(' · ')}`)
 if (skippedAuthored) console.log(`\nskipped ${skippedAuthored} observation(s) on AUTHORED axes — correct, those are not researched`)
 
+// Resolve the tallies. A plurality wins; a tie writes nothing and is reported.
+for (const [file, perAxis2] of tally) {
+  for (const [axis, votes] of perAxis2) {
+    const ranked = [...votes].sort((a, b) => b[1] - a[1])
+    if (ranked.length > 1 && ranked[0][1] === ranked[1][1]) {
+      ties.push(`${file}  ${axis}  ${ranked.filter(r => r[1] === ranked[0][1]).map(r => r[0]).join(' / ')}  (${ranked[0][1]} vote(s) each)`)
+      continue
+    }
+    if (!pending.has(file)) pending.set(file, {})
+    const cell = spec(axis, ranked[0][0])
+    if (ranked.length > 1) cell.alternatives = ranked.slice(1).map(([v, n]) => ({ value: v, seen: n }))
+    pending.get(file)[axis] = cell
+    applied++
+  }
+}
+if (ties.length) {
+  console.log(`\n⛔ ${ties.length} TIED AXIS/AXES — no plurality, so NO TARGET written:`)
+  for (const t of ties) console.log(`   ${t}`)
+}
+
 console.log('')
 if (!WRITE) { console.log(`DRY RUN — would set ${applied} cell(s) across ${pending.size} dossier(s). Re-run with --write.`); process.exit(0) }
 for (const [file, add] of pending) {
@@ -201,5 +259,6 @@ for (const [file, add] of pending) {
   d.provenance = { ...(d.provenance || {}), hydratedAt: '2026-08-24', hydratedAxes: Object.keys(add) }
   writeFileSync(p, JSON.stringify(d, null, 2) + '\n')
 }
-console.log(`✅ wrote ${applied} cell(s) across ${pending.size} dossier(s).`)
+console.log(`✅ wrote ${applied} cell(s) across ${pending.size} dossier(s).` +
+  (rederived ? `  (${rederived} re-derived over prior MACHINE values; authored cells untouched)` : ''))
 console.log('▶ node scratch/claims-axis-keys-resolve.mjs   — confirm no key went stale')
