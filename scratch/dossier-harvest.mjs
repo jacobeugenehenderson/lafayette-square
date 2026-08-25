@@ -13,7 +13,14 @@
  */
 import { writeFileSync, readFileSync, existsSync } from 'node:fs'
 
-const OUT = 'scratch/dossier-raw-observations.jsonl'
+// ⛔ writeFileSync TRUNCATES. Batch 2 must not destroy batch 1's 2,094 observations, and
+// re-fetching 20 species we already have is needless load on sources that are doing us a
+// favour. `--out` writes elsewhere; `--from <rank>` harvests only rows at or above a rank.
+// Merge afterwards rather than re-running the world.
+const argv = process.argv.slice(2)
+const flag = (n) => { const i = argv.indexOf(`--${n}`); return i >= 0 ? argv[i + 1] : null }
+const OUT = flag('out') || 'scratch/dossier-raw-observations.jsonl'
+const FROM = flag('from') ? Number(flag('from')) : null
 const UTD = process.env.UTD_DIR || ''
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36'
 const obs = []
@@ -57,6 +64,35 @@ const ROWS = [
   { rank:18, species:'Birch',                taxon:'Betula nigra',           usda:'BENI',  ncsu:'betula-nigra',           taxonBasis:"arborist/references/betula_nigra (the repo's own plate); roster name is bare GENUS", taxonAmbiguous:'GENUS-level - no single taxon' },
   { rank:19, species:'Linden, American',     taxon:'Tilia americana',        usda:'TIAM',  ncsu:'tilia-americana',        taxonBasis:'arborist/species-map.json (tilia_americana)' },
   { rank:20, species:'Zelkova, Japanese',    taxon:'Zelkova serrata',        usda:null,  ncsu:'zelkova-serrata',        taxonBasis:'unambiguous common name' },
+
+  // ── BATCH 2, 2026-08-25 (Rook). Next by demand, EXCLUDING four classes that a naive
+  // "next 20" would have harvested and that are recorded here rather than silently dropped:
+  //   `stump` (68 placements)          — not a species; a census artifact
+  //   `honeylocust` (65)               — duplicate of rank 10, already held as Gleditsia triacanthos
+  //   `Elm, Hybrid` (120) · `Elm, Frontier` (55) · `Cherry/Plum, spp.` (33)
+  //                                    — genuinely ambiguous; a cultivar GROUP or a genus, not one taxon
+  //   `Ginkgo 'Princeton Sentry'` (30) · `Serviceberry, Apple 'Autumn Brilliance'` (36)
+  //                                    — cultivars; mint refuses cultivar records because their
+  //                                      morphology is not the species' (the 'Armstrong' class)
+  // ⚠️ USDA symbols below are BEST DETERMINATIONS, not verified facts. usda() checks the
+  // returned ScientificName against `taxon` and SKIPS on mismatch, so a wrong symbol costs
+  // us that source for that species and never yields a wrong value.
+  { rank:21, species:'Maple, Norway',        taxon:'Acer platanoides',       usda:'ACPL',  ncsu:'acer-platanoides',       taxonBasis:'unambiguous common name' },
+  { rank:22, species:'blackgum',             taxon:'Nyssa sylvatica',        usda:'NYSY',  ncsu:'nyssa-sylvatica',        taxonBasis:'unambiguous common name' },
+  { rank:23, species:'sycamore, American',   taxon:'Platanus occidentalis',  usda:'PLOC',  ncsu:'platanus-occidentalis',  taxonBasis:'unambiguous common name' },
+  { rank:24, species:'Hackberry',            taxon:'Celtis occidentalis',    usda:'CEOC',  ncsu:'celtis-occidentalis',    taxonBasis:'unambiguous common name (common hackberry)' },
+  { rank:25, species:'mountainash, American',taxon:'Sorbus americana',       usda:'SOAM3', ncsu:'sorbus-americana',       taxonBasis:'unambiguous common name' },
+  { rank:26, species:'serviceberry, downy',  taxon:'Amelanchier arborea',    usda:'AMAR3', ncsu:'amelanchier-arborea',    taxonBasis:'unambiguous common name' },
+  { rank:27, species:'goldenraintree',       taxon:'Koelreuteria paniculata',usda:'KOPA',  ncsu:'koelreuteria-paniculata',taxonBasis:'unambiguous common name' },
+  { rank:28, species:'Dogwood, Flowering',   taxon:'Cornus florida',         usda:'COFL2', ncsu:'cornus-florida',         taxonBasis:'unambiguous common name' },
+  { rank:29, species:"Lilac, Japanese Tree 'Ivory Silk'", taxon:'Syringa reticulata', usda:'SYRE3', ncsu:'syringa-reticulata', taxonBasis:"roster name is the 'Ivory Silk' cultivar; SPECIES-level record queried", taxonAmbiguous:'cultivar rolled up to species' },
+  { rank:30, species:'Pine, White',          taxon:'Pinus strobus',          usda:'PIST',  ncsu:'pinus-strobus',          taxonBasis:'unambiguous common name (eastern white pine)' },
+  { rank:31, species:'oak, bur',             taxon:'Quercus macrocarpa',     usda:'QUMA2', ncsu:'quercus-macrocarpa',     taxonBasis:'unambiguous common name' },
+  { rank:32, species:'Pine, Austrian',       taxon:'Pinus nigra',            usda:'PINI',  ncsu:'pinus-nigra',            taxonBasis:'unambiguous common name' },
+  { rank:33, species:'Oak, Willow',          taxon:'Quercus phellos',        usda:'QUPH',  ncsu:'quercus-phellos',        taxonBasis:'unambiguous common name' },
+  // ⭐ THE ORIENTATION AXIS'S FIRST REAL TEST. Juniperus is the genus where erect and
+  // prostrate genuinely diverge, which is the argument that created chassis.orientation.
+  { rank:34, species:'juniper, Chinese',     taxon:'Juniperus chinensis',    usda:'JUCH',  ncsu:'juniperus-chinensis',    taxonBasis:'unambiguous common name' },
 ]
 
 // ── NC State Plant Toolbox ──────────────────────────────────────────────────
@@ -260,7 +296,7 @@ function utd(row, db) {
 
 // ── run ─────────────────────────────────────────────────────────────────────
 const db = utdRows()
-for (const row of ROWS) {
+for (const row of ROWS.filter(r => FROM == null || r.rank >= FROM)) {
   console.error(`[${row.rank}/20] ${row.species}  (${row.taxon})`)
   emit({ species: row.species, source: 'harvest', field: '_taxon_queried', value: row.taxon,
          note: row.taxonBasis, ...(row.taxonAmbiguous ? { ambiguous: row.taxonAmbiguous } : {}) })
@@ -276,5 +312,6 @@ for (const row of ROWS) {
   await usda(row);      await sleep(400)
   utd(row, db)
 }
+if (!obs.length) { console.error('⛔ no observations produced — refusing to write an empty file over anything'); process.exit(1) }
 writeFileSync(OUT, obs.map(o => JSON.stringify(o)).join('\n') + '\n')
 console.error(`\nwrote ${obs.length} observations -> ${OUT}`)

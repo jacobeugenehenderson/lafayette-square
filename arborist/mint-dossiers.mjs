@@ -80,16 +80,34 @@ const obs = readFileSync(path.isAbsolute(IN) ? IN : path.join(root, IN), 'utf8')
 // cosmetic here -- the × IS the identity claim that this is a hybrid.
 const decode = (t) => String(t)
   .replace(/&times;?/g, '×').replace(/&amp;/g, '&').replace(/&#(\d+);?/g, (_, n) => String.fromCharCode(+n))
-const cleanTaxon = (t) => decode(t).replace(/\s*\[.*?\]\s*/g, ' ')
-  .split(/\s+/).filter(w => /^[a-zà-ÿ×]/.test(w) || /^[A-Z][a-z]+$/.test(w))
-  .slice(0, 3).join(' ').replace(/\s+/g, ' ').replace(/×\s+/g, '×').trim()
+// ⛔ A BINOMIAL IS GENUS + EPITHET. Nothing after it belongs in an identity.
+// The old form kept "the first three word-ish tokens", which let the AUTHORITY through
+// whenever it looked like a genus: `Sorbus americana Marshall` minted
+// sorbus_americana_marshall.json. `Acer rubrum L.` survived only because "L." carries a
+// period. The filename IS the identity here, so this is not cosmetic.
+// Take the genus, then the first epithet-shaped token after it (lowercase, or ×-marked).
+const cleanTaxon = (t) => {
+  const words = decode(t).replace(/\s*\[.*?\]\s*/g, ' ').split(/\s+/).filter(Boolean)
+  const gi = words.findIndex(w => /^[A-Z][a-zà-ÿ-]+$/.test(w))
+  if (gi < 0) return decode(t).trim()
+  const genus = words[gi]
+  let rest = words.slice(gi + 1)
+  let hybrid = ''
+  if (rest[0] === '×' || rest[0] === 'x') { hybrid = '×'; rest = rest.slice(1) }
+  const epithet = rest.find(w => /^×?[a-zà-ÿ][a-zà-ÿ-]+$/.test(w))
+  if (!epithet) return genus
+  return `${genus} ${hybrid}${epithet}`.replace(/×\s+/g, '×')
+}
 const slug = (t) => normalize(cleanTaxon(t)).replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
 
 const bySpecies = new Map()
 for (const o of obs) {
-  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, queried: null, cells: new Map(), sources: new Set() })
+  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, queried: null, matched: new Map(), cells: new Map(), sources: new Set() })
   const rec = bySpecies.get(o.species)
-  if (o.field === '_matched_taxon' && !rec.taxon) rec.taxon = o.value
+  // Per SOURCE, not first-wins. Batch 2: SelecTree answered a `Sorbus americana` query
+  // with `Sorbus decora` while USDA answered correctly — taking the first match refused
+  // the whole species and threw away 68 good observations to avoid 22 bad ones.
+  if (o.field === '_matched_taxon') { rec.matched.set(o.source, o.value); if (!rec.taxon) rec.taxon = o.value }
   if (o.field === '_taxon_queried' && !rec.queried) rec.queried = o.value
   rec.sources.add(o.source)
 
@@ -118,6 +136,7 @@ for (const o of obs) {
 
 const minted = []
 const suspect = []
+const sourceRejects = []
 for (const [species, rec] of bySpecies) {
   const resolved = resolveSpecies(species).value
   if (have.has(normalize(species)) || have.has(normalize(resolved))) continue
@@ -127,8 +146,27 @@ for (const [species, rec] of bySpecies) {
   // vocabulary.mjs's verifyTaxon, written by the harvest session. Catches the class that
   // poisons an identity axis silently: USDA symbol TICO returns Tiarella cordifolia (a
   // foamflower) for a Tilia cordata query.
+  // ⛔ REJECT SOURCES, NOT SPECIES. A source that answered with the wrong plant loses ITS
+  // observations; the species is only refused when NOTHING verifies. Identity is taken
+  // from a source that DID verify, never from a rejected one.
+  const rejected = new Map()
+  let identity = null, identityVerdict = null
+  if (rec.queried) {
+    for (const [src, got] of rec.matched) {
+      const v = verifyTaxon(rec.queried, got)
+      if (v.match === 'mismatch') { rejected.set(src, `${src} answered "${v.returned}" — ${v.reason}`); continue }
+      if (!identity) { identity = got; identityVerdict = v }
+    }
+    if (rec.matched.size && !identity) {
+      suspect.push({ species, why: `every source mismatched the queried taxon: ${[...rejected.values()].join(' · ')}` })
+      continue
+    }
+    if (identity) rec.taxon = identity
+  }
+  if (rejected.size) sourceRejects.push({ species, rejected: [...rejected.values()] })
+
   if (rec.queried && rec.taxon) {
-    const v = verifyTaxon(rec.queried, rec.taxon)
+    const v = identityVerdict || verifyTaxon(rec.queried, rec.taxon)
     if (v.match === 'mismatch') {
       suspect.push({ species, why: `taxon mismatch — asked ${v.queried}, got ${v.returned}: ${v.reason}` })
       continue
@@ -172,7 +210,12 @@ for (const [species, rec] of bySpecies) {
   const contested = []
   const ties = []
   for (const [axis, tally] of rec.cells) {
-    const ranked = [...tally].sort((a, b) => b[1].size - a[1].size)
+      // Candidates keep only the sources that verified; a value claimed ONLY by a rejected
+    // source disappears with it.
+    const ranked = [...tally].map(([v, srcs]) => [v, new Set([...srcs].filter(x => !rejected.has(x)))])
+      .filter(([, srcs]) => srcs.size)
+      .sort((a, b) => b[1].size - a[1].size)
+    if (!ranked.length) continue
     // ⛔⛔ NO PLURALITY, NO TARGET. Zelkova's habit came back columnar/multi-stem/
     // irregular/vase/rounded at one vote each; taking the first would dress an arbitrary
     // pick as a sourced answer, which is the fallback this kit exists to refuse. A tie
@@ -235,6 +278,10 @@ for (const [species, rec] of bySpecies) {
   minted.push({ species, id, file, doc, cells: Object.keys(required).filter(a => required[a].target != null).length, contested, ties })
 }
 
+if (sourceRejects.length) {
+  console.log(`\n⛔ ${sourceRejects.length} SPECIES with a REJECTED SOURCE — minted from the sources that verified:`)
+  for (const r of sourceRejects) console.log(`   "${r.species}"  ${r.rejected.join(' · ')}`)
+}
 if (suspect.length) {
   console.log(`\n⛔ REFUSED TO MINT (${suspect.length}) — a wrong taxon becomes a wrong FILENAME:`)
   for (const s2 of suspect) console.log(`   "${s2.species}"  ${s2.why}`)

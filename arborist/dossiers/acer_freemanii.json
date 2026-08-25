@@ -40,7 +40,7 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.density": {
       "target": "dense",
@@ -59,6 +59,7 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
       "contested": true,
       "candidates": [
         {
@@ -76,8 +77,7 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring.",
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "crown.texture": {
       "target": "medium",
@@ -132,7 +132,7 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -177,6 +177,21 @@
       "selectree",
       "usda"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.density",
+      "chassis.orientation",
+      "chassis.habit",
+      "crown.texture",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.conspicuous"
+    ]
   }
 }

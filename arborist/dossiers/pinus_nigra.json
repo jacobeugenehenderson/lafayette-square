@@ -1,9 +1,9 @@
 {
-  "key": "Ginkgo",
-  "scientific": "Ginkgo biloba",
-  "canonicalId": "ginkgo_biloba",
+  "key": "Pine, Austrian",
+  "scientific": "Pinus nigra",
+  "canonicalId": "pinus_nigra",
   "inventoryNames": [
-    "Ginkgo"
+    "Pine, Austrian"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -19,14 +19,14 @@
       "contested": true,
       "candidates": [
         {
-          "value": 50,
+          "value": 40,
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": 30,
+          "value": 20,
           "seen": 1,
           "sources": [
             "ncsu"
@@ -37,6 +37,13 @@
           "seen": 1,
           "sources": [
             "selectree"
+          ]
+        },
+        {
+          "value": 120,
+          "seen": 1,
+          "sources": [
+            "usda"
           ]
         }
       ],
@@ -50,6 +57,13 @@
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "contested": true,
       "candidates": [
+        {
+          "value": "spreading",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
         {
           "value": "horizontal",
           "seen": 1,
@@ -70,21 +84,52 @@
           "sources": [
             "selectree"
           ]
+        },
+        {
+          "value": "rounded",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
-    "crown.texture": {
-      "target": "medium",
+    "chassis.density": {
+      "target": "dense",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
     },
-    "leaf.arrangement": {
-      "target": "alternate",
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "crown.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "coarse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "bark.texture": {
       "target": null,
@@ -93,6 +138,13 @@
       "sourced": true,
       "contested": true,
       "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
         {
           "value": "ridged",
           "seen": 1,
@@ -117,15 +169,20 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
-    "leaf.shape": {
-      "target": "flabellate",
+    "leaf.arrangement": {
+      "target": "alternate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "sourced": true
     },
-    "leaf.foliage_type": {
-      "target": "deciduous",
+    "overlay.fruit_type": {
+      "target": "cone",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "single",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -141,32 +198,32 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, crown.texture, bark.texture. See .candidates; an author must choose.",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
-    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Ginkgo biloba",
+    "matchedTaxon": "Pinus nigra",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
       "chassis.habit",
+      "chassis.density",
+      "chassis.orientation",
       "crown.texture",
-      "leaf.arrangement",
       "bark.texture",
       "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type"
+      "leaf.arrangement",
+      "overlay.fruit_type",
+      "chassis.trunks"
     ]
   }
 }

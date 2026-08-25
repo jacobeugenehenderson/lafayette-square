@@ -1,9 +1,9 @@
 {
-  "key": "Ginkgo",
-  "scientific": "Ginkgo biloba",
-  "canonicalId": "ginkgo_biloba",
+  "key": "mountainash, American",
+  "scientific": "Sorbus americana",
+  "canonicalId": "sorbus_americana",
   "inventoryNames": [
-    "Ginkgo"
+    "mountainash, American"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -19,24 +19,48 @@
       "contested": true,
       "candidates": [
         {
-          "value": 50,
+          "value": 15,
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": 30,
+          "value": 8,
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": 60,
+          "value": 40,
           "seen": 1,
           "sources": [
-            "selectree"
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.density": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "sparse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "usda"
           ]
         }
       ],
@@ -51,31 +75,30 @@
       "contested": true,
       "candidates": [
         {
-          "value": "horizontal",
+          "value": "rounded",
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": "pyramidal",
+          "value": "spreading",
           "seen": 1,
           "sources": [
             "ncsu"
-          ]
-        },
-        {
-          "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
           ]
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "crown.texture": {
-      "target": "medium",
+      "target": "fine",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": "pome",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -86,46 +109,33 @@
       "tol": 1,
       "sourced": true
     },
-    "bark.texture": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
-    },
-    "leaf.type": {
-      "target": "simple",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
-    },
     "leaf.shape": {
-      "target": "flabellate",
+      "target": "lanceolate",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
-    "leaf.foliage_type": {
-      "target": "deciduous",
+    "leaf.margin": {
+      "target": "serrate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "bark.texture": {
+      "target": "scaly",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -141,32 +151,33 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
-    "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.density, chassis.habit. See .candidates; an author must choose.",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Ginkgo biloba",
+    "matchedTaxon": "Sorbus americana Marshall",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
+      "chassis.density",
       "chassis.habit",
       "crown.texture",
+      "overlay.fruit_type",
       "leaf.arrangement",
-      "bark.texture",
-      "leaf.type",
       "leaf.shape",
-      "leaf.foliage_type"
+      "leaf.margin",
+      "bark.texture",
+      "chassis.trunks",
+      "chassis.orientation"
     ]
   }
 }

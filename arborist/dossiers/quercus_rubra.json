@@ -40,13 +40,14 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
       "contested": true,
       "candidates": [
         {
@@ -65,8 +66,7 @@
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another.",
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "chassis.density": {
       "target": "dense",
@@ -108,7 +108,7 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -121,6 +121,7 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
       "contested": true,
       "candidates": [
         {
@@ -146,8 +147,7 @@
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another.",
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.margin": {
       "target": "lobed",
@@ -184,7 +184,7 @@
           ]
         }
       ],
-      "settle": "sources tie - no target. Pick one in the Salon; that pick is authoring."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
       "target": "simple",
@@ -238,6 +238,23 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
+    "hydratedAt": "2026-08-24",
+    "hydratedAxes": [
+      "chassis.size",
+      "chassis.habit",
+      "chassis.density",
+      "chassis.orientation",
+      "crown.texture",
+      "overlay.fruit_type",
+      "leaf.arrangement",
+      "leaf.shape",
+      "leaf.margin",
+      "bark.texture",
+      "leaf.type",
+      "leaf.foliage_type",
+      "overlay.conspicuous",
+      "chassis.trunks"
+    ]
   }
 }

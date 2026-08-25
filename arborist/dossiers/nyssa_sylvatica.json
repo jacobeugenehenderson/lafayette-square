@@ -1,9 +1,9 @@
 {
-  "key": "tuliptree",
-  "scientific": "Liriodendron tulipifera",
-  "canonicalId": "liriodendron_tulipifera",
+  "key": "blackgum",
+  "scientific": "Nyssa sylvatica",
+  "canonicalId": "nyssa_sylvatica",
   "inventoryNames": [
-    "tuliptree"
+    "blackgum"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -12,36 +12,42 @@
   "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": 80,
+      "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": 80,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
-        {
-          "value": 30,
+          "value": 40,
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": 120,
+          "value": 20.8,
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": 50,
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        },
+        {
+          "value": 95,
           "seen": 1,
           "sources": [
             "usda"
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
       "target": "rounded",
@@ -60,7 +66,14 @@
           ]
         },
         {
-          "value": "oval",
+          "value": "columnar",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "irregular",
           "seen": 1,
           "sources": [
             "ncsu"
@@ -68,6 +81,13 @@
         },
         {
           "value": "pyramidal",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "spreading",
           "seen": 1,
           "sources": [
             "ncsu"
@@ -83,6 +103,30 @@
       ],
       "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
+    "chassis.density": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "sparse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "dense",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
@@ -91,14 +135,14 @@
       "contested": true,
       "candidates": [
         {
-          "value": "coarse",
+          "value": "medium",
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": "medium",
+          "value": "coarse",
           "seen": 1,
           "sources": [
             "usda"
@@ -108,28 +152,10 @@
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "overlay.fruit_type": {
-      "target": null,
+      "target": "drupe",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "samara",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "follicle",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "sourced": true
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -138,25 +164,49 @@
       "sourced": true
     },
     "leaf.shape": {
-      "target": "orbicular",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "contested": true,
+      "candidates": [
+        {
+          "value": "elliptical",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "obovate",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "ovate",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.margin": {
-      "target": "lobed",
+      "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
       "contested": true,
       "candidates": [
         {
-          "value": "lobed",
-          "seen": 2,
+          "value": "dentate",
+          "seen": 1,
           "sources": [
-            "ncsu",
-            "selectree"
+            "ncsu"
           ]
         },
         {
@@ -167,10 +217,10 @@
           ]
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "bark.texture": {
-      "target": null,
+      "target": "furrowed",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
@@ -178,9 +228,10 @@
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1,
+          "seen": 2,
           "sources": [
-            "ncsu"
+            "ncsu",
+            "selectree"
           ]
         },
         {
@@ -191,21 +242,21 @@
           ]
         },
         {
-          "value": "smooth",
+          "value": "plated",
           "seen": 1,
           "sources": [
-            "ncsu"
+            "selectree"
           ]
         },
         {
-          "value": "fissured",
+          "value": "scaly",
           "seen": 1,
           "sources": [
             "selectree"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
       "target": "simple",
@@ -221,13 +272,7 @@
       "sourced": true
     },
     "overlay.conspicuous": {
-      "target": "showy",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true
-    },
-    "chassis.density": {
-      "target": "dense",
+      "target": "insignificant",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -255,8 +300,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: crown.texture, overlay.fruit_type, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size, chassis.habit, leaf.margin — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.density, crown.texture, leaf.shape, leaf.margin. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit, bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -264,18 +309,18 @@
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Liriodendron tulipifera",
+    "matchedTaxon": "Nyssa sylvatica",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
       "chassis.habit",
+      "chassis.density",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.arrangement",
@@ -285,7 +330,6 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.density",
       "chassis.trunks",
       "chassis.orientation"
     ]

@@ -1,9 +1,9 @@
 {
-  "key": "Ginkgo",
-  "scientific": "Ginkgo biloba",
-  "canonicalId": "ginkgo_biloba",
+  "key": "juniper, Chinese",
+  "scientific": "Juniperus chinensis",
+  "canonicalId": "juniperus_chinensis",
   "inventoryNames": [
-    "Ginkgo"
+    "juniper, Chinese"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -26,7 +26,7 @@
           ]
         },
         {
-          "value": 30,
+          "value": 10,
           "seen": 1,
           "sources": [
             "ncsu"
@@ -43,36 +43,11 @@
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
-      "target": null,
+      "target": "conical",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "horizontal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -81,12 +56,6 @@
       "sourced": true
     },
     "leaf.arrangement": {
-      "target": "alternate",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true
-    },
-    "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
@@ -94,14 +63,14 @@
       "contested": true,
       "candidates": [
         {
-          "value": "ridged",
+          "value": "opposite",
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": "fissured",
+          "value": "whorled",
           "seen": 1,
           "sources": [
             "selectree"
@@ -110,6 +79,52 @@
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
+    "bark.texture": {
+      "target": "exfoliating",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "exfoliating",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
+        {
+          "value": "fissured",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "ridged",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "furrowed",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        },
+        {
+          "value": "smooth",
+          "seen": 1,
+          "sources": [
+            "selectree"
+          ]
+        }
+      ],
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+    },
     "leaf.type": {
       "target": "simple",
       "hardness": "soft",
@@ -117,15 +132,8 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
-    "leaf.shape": {
-      "target": "flabellate",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
-    },
-    "leaf.foliage_type": {
-      "target": "deciduous",
+    "overlay.fruit_type": {
+      "target": "cone",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -141,20 +149,19 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, leaf.arrangement. See .candidates; an author must choose.",
+    "sources disagree on: bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
-    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Ginkgo biloba",
+    "matchedTaxon": "Juniperus chinensis",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
@@ -165,8 +172,7 @@
       "leaf.arrangement",
       "bark.texture",
       "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type"
+      "overlay.fruit_type"
     ]
   }
 }

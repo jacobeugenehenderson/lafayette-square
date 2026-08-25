@@ -15,7 +15,7 @@
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync } from 'node:fs'
 import path from 'node:path'
-import { resolveTerm, resolveSpecies, aliasesFor, normalize, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
+import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..')
 const args = process.argv.slice(2)
@@ -131,7 +131,27 @@ for (const f of readdirSync(dDir).filter(x => x.endsWith('.json'))) {
 
 // ── resolve ─────────────────────────────────────────────────────────────────
 const perAxis = new Map()      // axis -> Set(species) that got a value
-let rederived = 0
+let rederived = 0, taxonDropped = 0
+// ⛔⛔ PER-SOURCE TAXON GATE. hydrate had NONE — mint got one and hydrate did not, purely
+// because mint was where the Elm/Ulmus case surfaced. Batch 2 produced the live instance
+// the moment it ran: SelecTree answered a `Sorbus americana` query with `Sorbus decora`
+// (showy mountain-ash, a different species) and emitted its traits anyway behind a warning
+// flag. mint refuses that species, so nothing reached a dossier — but only because no
+// dossier existed yet. Containment by accident is not containment.
+//
+// Drop every observation from a (species, source) pair whose `_matched_taxon` does not
+// verify against that species' `_taxon_queried`. Reported, never silent.
+const queried = new Map()          // species -> queried binomial
+const rejectedSources = new Map()  // "species|source" -> reason
+for (const o of obs) if (o.field === '_taxon_queried') queried.set(o.species, o.value)
+for (const o of obs) {
+  if (o.field !== '_matched_taxon') continue
+  const q = queried.get(o.species)
+  if (!q) continue
+  const v = verifyTaxon(q, o.value)
+  if (v.match === 'mismatch') rejectedSources.set(`${o.species}|${o.source}`, `${o.source} answered "${v.returned}" — ${v.reason}`)
+}
+
 const unresolved = new Map()   // "axis :: rawvalue" -> count
 const discarded = new Map()    // "axis :: rawvalue (reason)" -> count
 const unmapped = new Map()     // source field -> count
@@ -144,6 +164,7 @@ let applied = 0, skippedAuthored = 0
 
 for (const o of obs) {
   if (IGNORE.has(o.field)) continue
+  if (rejectedSources.has(`${o.species}|${o.source}`)) { taxonDropped++; continue }
   let axis = FIELD_MAP[o.field]
   if (!axis) { unmapped.set(o.field, (unmapped.get(o.field) || 0) + 1); continue }
 
@@ -224,6 +245,10 @@ for (const a of rubric.axes.map(x => x.id)) {
   if (AUTHORED.has(a)) continue
   const n = perAxis.get(a)?.size || 0
   console.log(`  ${a.padEnd(22)} ${String(n).padStart(3)} / ${speciesSeen}${n === 0 ? '   ⛔ nothing resolved' : ''}`)
+}
+if (rejectedSources.size) {
+  console.log(`\n⛔ ${rejectedSources.size} SOURCE(S) REJECTED ON TAXON — ${taxonDropped} observation(s) dropped:`)
+  for (const [k, why] of rejectedSources) console.log(`   ${k.split('|')[0]}: ${why}`)
 }
 if (discarded.size) {
   console.log(`\n🗑  DISCARDED — not traits (${discarded.size} distinct). A big count here means a MISMAPPED FIELD:`)

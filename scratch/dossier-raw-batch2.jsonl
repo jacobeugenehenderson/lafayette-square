@@ -1,0 +1,1429 @@
+{"species":"Maple, Norway","source":"harvest","field":"_taxon_queried","value":"Acer platanoides","note":"unambiguous common name"}
+{"species":"Maple, Norway","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 50 ft. 0 in.","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 50 ft. 0 in.","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Plant Type","value":"Tree"}
+{"species":"Maple, Norway","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Maple, Norway","source":"ncsu","field":"Habit/Form","value":"Rounded"}
+{"species":"Maple, Norway","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"Maple, Norway","source":"ncsu","field":"Maintenance","value":"High"}
+{"species":"Maple, Norway","source":"ncsu","field":"Texture","value":"Coarse"}
+{"species":"Maple, Norway","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Maple, Norway","source":"ncsu","field":"Fruit Type","value":"Samara"}
+{"species":"Maple, Norway","source":"ncsu","field":"Fruit Length","value":"1-3 inches"}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Color","value":"Insignificant","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Inflorescence","value":"Corymb","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Maple, Norway","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Maple, Norway","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Arrangement","value":"Opposite"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Shape","value":"Palmatifid"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Margin","value":"Lobed","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Margin","value":"Serrate","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Length","value":"> 6 inches"}
+{"species":"Maple, Norway","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"Maple, Norway","source":"ncsu","field":"Bark Color","value":"Black","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Surface/Attachment","value":"Ridges"}
+{"species":"Maple, Norway","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Stem Color","value":"Red/Burgundy","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Maple, Norway","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Resistance To Challenges","value":"Heat","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Problems","value":"Messy","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Problems","value":"Weedy","multi":true}
+{"species":"Maple, Norway","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 50 ft. 0 in."}
+{"species":"Maple, Norway","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 50 ft. 0 in."}
+{"species":"Maple, Norway","source":"selectree","field":"_matched_taxon","value":"Acer platanoides","note":"queried \"Acer platanoides\"; tree_id 78"}
+{"species":"Maple, Norway","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Maple, Norway","source":"selectree","field":"bark_texture","value":"Fissured"}
+{"species":"Maple, Norway","source":"selectree","field":"bark_color","value":"Dark Brown or Dark Gray"}
+{"species":"Maple, Norway","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Maple, Norway","source":"selectree","field":"leaflet_shape","value":"Palmately-lobed"}
+{"species":"Maple, Norway","source":"selectree","field":"leaf_arrangement","value":"Opposite"}
+{"species":"Maple, Norway","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Maple, Norway","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Maple, Norway","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Maple, Norway","source":"selectree","field":"height_high","value":"60"}
+{"species":"Maple, Norway","source":"selectree","field":"width_high","value":"65"}
+{"species":"Maple, Norway","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Maple, Norway","source":"selectree","field":"fruit_type","value":"Samara"}
+{"species":"Maple, Norway","source":"selectree","field":"fruit_size","value":"Large"}
+{"species":"Maple, Norway","source":"selectree","field":"flower_color","value":"Green","multi":true}
+{"species":"Maple, Norway","source":"selectree","field":"flower_color","value":"Yellow","multi":true}
+{"species":"Maple, Norway","source":"selectree","field":"litter_type","value":"Dry Fruit","multi":true}
+{"species":"Maple, Norway","source":"selectree","field":"litter_type","value":"Twigs","multi":true}
+{"species":"Maple, Norway","source":"selectree","field":"family","value":"Sapindaceae"}
+{"species":"Maple, Norway","source":"usda","field":"_matched_taxon","value":"Acer platanoides L.","note":"symbol ACPL, id 92843"}
+{"species":"Maple, Norway","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Maple, Norway","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Maple, Norway","source":"usda","field":"Flower Color","value":"Green"}
+{"species":"Maple, Norway","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Maple, Norway","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Maple, Norway","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Maple, Norway","source":"usda","field":"Foliage Porosity Winter","value":"Moderate"}
+{"species":"Maple, Norway","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Maple, Norway","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Maple, Norway","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Maple, Norway","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Maple, Norway","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Maple, Norway","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"25"}
+{"species":"Maple, Norway","source":"usda","field":"Height, Mature (feet)","value":"50.0"}
+{"species":"Maple, Norway","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Maple, Norway","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"Maple, Norway","source":"usda","field":"Shape and Orientation","value":"Rounded"}
+{"species":"Maple, Norway","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"Maple, Norway","source":"usda","field":"Bloom Period","value":"Early Spring"}
+{"species":"blackgum","source":"harvest","field":"_taxon_queried","value":"Nyssa sylvatica","note":"unambiguous common name"}
+{"species":"blackgum","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 70 ft. 0 in.","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 8 in. - 35 ft. 6 in.","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Columnar","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Irregular","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Open","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"blackgum","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"blackgum","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"blackgum","source":"ncsu","field":"Fruit Color","value":"Black","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Fruit Color","value":"Blue","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible"}
+{"species":"blackgum","source":"ncsu","field":"Fruit Type","value":"Drupe"}
+{"species":"blackgum","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"blackgum","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"blackgum","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Flower Color","value":"White","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Flower Inflorescence","value":"Umbel","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Flower Bloom Time","value":"Spring","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Flower Bloom Time","value":"Summer","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Feel","value":"Glossy","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Feel","value":"Leathery","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Feel","value":"Waxy","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"blackgum","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Orange","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Purple/Lavender","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Shape","value":"Elliptical","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Shape","value":"Obovate","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Margin","value":"Dentate","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Leaf Margin","value":"Entire","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"blackgum","source":"ncsu","field":"Leaf Width","value":"1-3 inches"}
+{"species":"blackgum","source":"ncsu","field":"Bark Color","value":"Black","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Bark Plate Shape","value":"Rectangle","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Bark Plate Shape","value":"Square","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"blackgum","source":"ncsu","field":"Landscape Location","value":"Coastal","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Landscape Location","value":"Riparian","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Bees","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Frogs","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Reptiles","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Attracts","value":"Specialized Bees","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Black Walnut","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Dry Soil","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Fire","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Heat","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Wet Soil","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Resistance To Challenges","value":"Wind","multi":true}
+{"species":"blackgum","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 70 ft. 0 in."}
+{"species":"blackgum","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 8 in. - 35 ft. 6 in."}
+{"species":"blackgum","source":"selectree","field":"_matched_taxon","value":"Nyssa sylvatica","note":"queried \"Nyssa sylvatica\"; tree_id 968"}
+{"species":"blackgum","source":"selectree","field":"tree_shape","value":"Conical","multi":true}
+{"species":"blackgum","source":"selectree","field":"tree_shape","value":"Rounded","multi":true}
+{"species":"blackgum","source":"selectree","field":"bark_texture","value":"Blocky","multi":true}
+{"species":"blackgum","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"blackgum","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"blackgum","source":"selectree","field":"bark_color","value":"Black, Dark Brown or Red Brown"}
+{"species":"blackgum","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"blackgum","source":"selectree","field":"leaflet_shape","value":"Ovate"}
+{"species":"blackgum","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"blackgum","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"blackgum","source":"selectree","field":"foliage_growth_color","value":"Dark Green"}
+{"species":"blackgum","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"blackgum","source":"selectree","field":"height_high","value":"50"}
+{"species":"blackgum","source":"selectree","field":"width_high","value":"30"}
+{"species":"blackgum","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"blackgum","source":"selectree","field":"fruit_type","value":"Drupe"}
+{"species":"blackgum","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"blackgum","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"blackgum","source":"selectree","field":"flower_color","value":"Yellow"}
+{"species":"blackgum","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"blackgum","source":"selectree","field":"landscape_application","value":"Riparian"}
+{"species":"blackgum","source":"selectree","field":"family","value":"Nyssaceae"}
+{"species":"blackgum","source":"usda","field":"_matched_taxon","value":"Nyssa sylvatica Marshall","note":"symbol NYSY, id 75248"}
+{"species":"blackgum","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"blackgum","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"blackgum","source":"usda","field":"Flower Color","value":"Green"}
+{"species":"blackgum","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"blackgum","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"blackgum","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"blackgum","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"blackgum","source":"usda","field":"Foliage Texture","value":"Coarse"}
+{"species":"blackgum","source":"usda","field":"Fruit/Seed Color","value":"Blue"}
+{"species":"blackgum","source":"usda","field":"Fruit/Seed Conspicuous","value":"No"}
+{"species":"blackgum","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"blackgum","source":"usda","field":"Growth Rate","value":"Moderate"}
+{"species":"blackgum","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"30"}
+{"species":"blackgum","source":"usda","field":"Height, Mature (feet)","value":"95.0"}
+{"species":"blackgum","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"blackgum","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"blackgum","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"blackgum","source":"usda","field":"Shade Tolerance","value":"Low"}
+{"species":"blackgum","source":"usda","field":"Bloom Period","value":"Late Spring"}
+{"species":"sycamore, American","source":"harvest","field":"_taxon_queried","value":"Platanus occidentalis","note":"unambiguous common name"}
+{"species":"sycamore, American","source":"ncsu","field":"Dimensions","value":"Height: 75 ft. 0 in. - 100 ft. 0 in.","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Dimensions","value":"Width: 75 ft. 0 in. - 100 ft. 0 in.","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Horizontal","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Irregular","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"sycamore, American","source":"ncsu","field":"Maintenance","value":"High"}
+{"species":"sycamore, American","source":"ncsu","field":"Texture","value":"Coarse"}
+{"species":"sycamore, American","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"sycamore, American","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy"}
+{"species":"sycamore, American","source":"ncsu","field":"Fruit Type","value":"Achene"}
+{"species":"sycamore, American","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"sycamore, American","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"sycamore, American","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Flower Color","value":"Red/Burgundy","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant"}
+{"species":"sycamore, American","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"sycamore, American","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Feel","value":"Smooth"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"sycamore, American","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Brown/Copper","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Shape","value":"Ovate"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Margin","value":"Dentate","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Margin","value":"Lobed","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"sycamore, American","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Color","value":"Red/Burgundy","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Color","value":"White","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Surface/Attachment","value":"Exfoliating","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Surface/Attachment","value":"Patchy","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Surface/Attachment","value":"Smooth","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Bark Plate Shape","value":"Round"}
+{"species":"sycamore, American","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Stem Color","value":"Orange","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"sycamore, American","source":"ncsu","field":"Stem Form","value":"Zig Zags"}
+{"species":"sycamore, American","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Design Feature","value":"Screen/Privacy","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Black Walnut","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Urban Conditions","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Voles","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Resistance To Challenges","value":"Wet Soil","multi":true}
+{"species":"sycamore, American","source":"ncsu","field":"Dimensions","value":"Height: 75 ft. 0 in. - 100 ft. 0 in."}
+{"species":"sycamore, American","source":"ncsu","field":"Dimensions","value":"Width: 75 ft. 0 in. - 100 ft. 0 in."}
+{"species":"sycamore, American","source":"selectree","field":"_matched_taxon","value":"Platanus occidentalis","note":"queried \"Platanus occidentalis\"; tree_id 1104"}
+{"species":"sycamore, American","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"sycamore, American","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"bark_texture","value":"Rough","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"bark_color","value":"Striking, Cream, Dark Brown, Light Gray or Multicolored"}
+{"species":"sycamore, American","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"sycamore, American","source":"selectree","field":"leaflet_shape","value":"Palmately-lobed"}
+{"species":"sycamore, American","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"sycamore, American","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"sycamore, American","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"sycamore, American","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"sycamore, American","source":"selectree","field":"height_high","value":"80"}
+{"species":"sycamore, American","source":"selectree","field":"width_high","value":"50"}
+{"species":"sycamore, American","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"sycamore, American","source":"selectree","field":"fruit_type","value":"Achene"}
+{"species":"sycamore, American","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"sycamore, American","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"sycamore, American","source":"selectree","field":"litter_type","value":"Bark","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"litter_type","value":"Dry Fruit","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"litter_type","value":"Leaves","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"litter_type","value":"Twigs","multi":true}
+{"species":"sycamore, American","source":"selectree","field":"landscape_application","value":"Riparian"}
+{"species":"sycamore, American","source":"selectree","field":"family","value":"Platanaceae"}
+{"species":"sycamore, American","source":"usda","field":"_matched_taxon","value":"Platanus occidentalis L.","note":"symbol PLOC, id 70568"}
+{"species":"sycamore, American","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"sycamore, American","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"sycamore, American","source":"usda","field":"Flower Color","value":"Red"}
+{"species":"sycamore, American","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"sycamore, American","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"sycamore, American","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"sycamore, American","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"sycamore, American","source":"usda","field":"Foliage Texture","value":"Coarse"}
+{"species":"sycamore, American","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"sycamore, American","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"sycamore, American","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"sycamore, American","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"sycamore, American","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"65"}
+{"species":"sycamore, American","source":"usda","field":"Height, Mature (feet)","value":"100.0"}
+{"species":"sycamore, American","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"sycamore, American","source":"usda","field":"Lifespan","value":"Long"}
+{"species":"sycamore, American","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"sycamore, American","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"sycamore, American","source":"usda","field":"Bloom Period","value":"Spring"}
+{"species":"Hackberry","source":"harvest","field":"_taxon_queried","value":"Celtis occidentalis","note":"unambiguous common name (common hackberry)"}
+{"species":"Hackberry","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 100 ft. 0 in.","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Dimensions","value":"Width: 40 ft. 0 in. - 60 ft. 0 in.","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Plant Type","value":"Edible","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Plant Type","value":"Shrub","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Hackberry","source":"ncsu","field":"Habit/Form","value":"Arching","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Habit/Form","value":"Ascending","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Habit/Form","value":"Broad","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"Hackberry","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"Hackberry","source":"ncsu","field":"Texture","value":"Coarse"}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Color","value":"Orange","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Color","value":"Purple/Lavender","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Color","value":"Red/Burgundy","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible"}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Type","value":"Berry","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Type","value":"Drupe","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Hackberry","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Hackberry","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Flower Color","value":"Insignificant","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Flower Color","value":"Orange","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Flower Color","value":"Purple/Lavender","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant"}
+{"species":"Hackberry","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Hackberry","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Feel","value":"Rough"}
+{"species":"Hackberry","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Shape","value":"Lanceolate","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Shape","value":"Oblong","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Margin","value":"Entire","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Margin","value":"Serrate","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Hackberry","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Hackberry","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Surface/Attachment","value":"Ridges"}
+{"species":"Hackberry","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Stem Color","value":"Green","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Hackberry","source":"ncsu","field":"Stem Form","value":"Zig Zags"}
+{"species":"Hackberry","source":"ncsu","field":"Stem Lenticels","value":"Conspicuous"}
+{"species":"Hackberry","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Hackberry","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area"}
+{"species":"Hackberry","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Resistance To Challenges","value":"Poor Soil","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Resistance To Challenges","value":"Wet Soil","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Resistance To Challenges","value":"Wind","multi":true}
+{"species":"Hackberry","source":"ncsu","field":"Problems","value":"Messy"}
+{"species":"Hackberry","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 100 ft. 0 in."}
+{"species":"Hackberry","source":"ncsu","field":"Dimensions","value":"Width: 40 ft. 0 in. - 60 ft. 0 in."}
+{"species":"Hackberry","source":"selectree","field":"_matched_taxon","value":"Celtis occidentalis","note":"queried \"Celtis occidentalis\"; tree_id 298"}
+{"species":"Hackberry","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Hackberry","source":"selectree","field":"bark_texture","value":"Blocky","multi":true}
+{"species":"Hackberry","source":"selectree","field":"bark_texture","value":"Rough","multi":true}
+{"species":"Hackberry","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"Hackberry","source":"selectree","field":"bark_color","value":"Dark Gray or Light Gray"}
+{"species":"Hackberry","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Hackberry","source":"selectree","field":"leaflet_shape","value":"Ovate"}
+{"species":"Hackberry","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Hackberry","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Hackberry","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Hackberry","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Hackberry","source":"selectree","field":"height_high","value":"80"}
+{"species":"Hackberry","source":"selectree","field":"width_high","value":"50"}
+{"species":"Hackberry","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Hackberry","source":"selectree","field":"fruit_type","value":"Drupe"}
+{"species":"Hackberry","source":"selectree","field":"fruit_size","value":"Small"}
+{"species":"Hackberry","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"Hackberry","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Hackberry","source":"selectree","field":"family","value":"Cannabaceae"}
+{"species":"Hackberry","source":"usda","field":"_matched_taxon","value":"Celtis occidentalis L.","note":"symbol CEOC, id 70944"}
+{"species":"Hackberry","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Hackberry","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Hackberry","source":"usda","field":"Flower Color","value":"Green"}
+{"species":"Hackberry","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Hackberry","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Hackberry","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Hackberry","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Hackberry","source":"usda","field":"Foliage Texture","value":"Coarse"}
+{"species":"Hackberry","source":"usda","field":"Fruit/Seed Color","value":"Purple"}
+{"species":"Hackberry","source":"usda","field":"Fruit/Seed Conspicuous","value":"No"}
+{"species":"Hackberry","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Hackberry","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Hackberry","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"26"}
+{"species":"Hackberry","source":"usda","field":"Height, Mature (feet)","value":"60.0"}
+{"species":"Hackberry","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Hackberry","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"Hackberry","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Hackberry","source":"usda","field":"Shade Tolerance","value":"Low"}
+{"species":"Hackberry","source":"usda","field":"Bloom Period","value":"Mid Spring"}
+{"species":"mountainash, American","source":"harvest","field":"_taxon_queried","value":"Sorbus americana","note":"unambiguous common name"}
+{"species":"mountainash, American","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 35 ft. 0 in.","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Dimensions","value":"Width: 8 ft. 0 in. - 20 ft. 0 in.","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Plant Type","value":"Shrub","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"mountainash, American","source":"ncsu","field":"Habit/Form","value":"Open","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Growth Rate","value":"Slow"}
+{"species":"mountainash, American","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"mountainash, American","source":"ncsu","field":"Texture","value":"Fine"}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Color","value":"Orange","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Color","value":"Red/Burgundy","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Value To Gardener","value":"Long-lasting","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Type","value":"Pome"}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"mountainash, American","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"mountainash, American","source":"ncsu","field":"Flower Color","value":"White"}
+{"species":"mountainash, American","source":"ncsu","field":"Flower Inflorescence","value":"Corymb"}
+{"species":"mountainash, American","source":"ncsu","field":"Flower Value To Gardener","value":"Showy"}
+{"species":"mountainash, American","source":"ncsu","field":"Flower Bloom Time","value":"Summer"}
+{"species":"mountainash, American","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Color","value":"Gold/Yellow","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Color","value":"Gray/Silver","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Type","value":"Compound (Pinnately , Bipinnately, Palmately)"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Shape","value":"Lanceolate"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Margin","value":"Serrate"}
+{"species":"mountainash, American","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"mountainash, American","source":"ncsu","field":"Leaf Width","value":"1-3 inches"}
+{"species":"mountainash, American","source":"ncsu","field":"Bark Color","value":"Light Gray"}
+{"species":"mountainash, American","source":"ncsu","field":"Surface/Attachment","value":"Scaly"}
+{"species":"mountainash, American","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"mountainash, American","source":"ncsu","field":"Stem Surface","value":"Hairy (pubescent)"}
+{"species":"mountainash, American","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Landscape Location","value":"Slope/Bank","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Design Feature","value":"Flowering Tree","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Attracts","value":"Bees","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"mountainash, American","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 35 ft. 0 in."}
+{"species":"mountainash, American","source":"ncsu","field":"Dimensions","value":"Width: 8 ft. 0 in. - 20 ft. 0 in."}
+{"species":"mountainash, American","source":"selectree","field":"_matched_taxon","value":"Sorbus decora","note":"queried \"Sorbus americana\"; tree_id 1772 — ⚠️ NO species-level record matched; this is a CULTIVAR or near-match, traits may be cultivar-specific","unverified":"taxon match is not species-level exact"}
+{"species":"mountainash, American","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"mountainash, American","source":"selectree","field":"bark_texture","value":"Smooth","multi":true}
+{"species":"mountainash, American","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"mountainash, American","source":"selectree","field":"bark_color","value":"Dark Gray, Dark Brown"}
+{"species":"mountainash, American","source":"selectree","field":"leaf_form","value":"Pinnately Compound"}
+{"species":"mountainash, American","source":"selectree","field":"leaflet_shape","value":"Ovate"}
+{"species":"mountainash, American","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"mountainash, American","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"mountainash, American","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"mountainash, American","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"mountainash, American","source":"selectree","field":"height_high","value":"50"}
+{"species":"mountainash, American","source":"selectree","field":"width_high","value":"20"}
+{"species":"mountainash, American","source":"selectree","field":"growth_rate_high","value":"0"}
+{"species":"mountainash, American","source":"selectree","field":"fruit_type","value":"Pome"}
+{"species":"mountainash, American","source":"selectree","field":"fruit_size","value":"Small"}
+{"species":"mountainash, American","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"mountainash, American","source":"selectree","field":"flower_color","value":"White"}
+{"species":"mountainash, American","source":"selectree","field":"litter_type","value":"Wet Fruit"}
+{"species":"mountainash, American","source":"selectree","field":"landscape_application","value":"Ornamental","multi":true}
+{"species":"mountainash, American","source":"selectree","field":"landscape_application","value":"Stree Tree","multi":true}
+{"species":"mountainash, American","source":"selectree","field":"family","value":"Rosaceae"}
+{"species":"mountainash, American","source":"usda","field":"_matched_taxon","value":"Sorbus americana Marshall","note":"symbol SOAM3, id 91750"}
+{"species":"mountainash, American","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"mountainash, American","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"mountainash, American","source":"usda","field":"Flower Color","value":"White"}
+{"species":"mountainash, American","source":"usda","field":"Flower Conspicuous","value":"Yes"}
+{"species":"mountainash, American","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"mountainash, American","source":"usda","field":"Foliage Porosity Summer","value":"Moderate"}
+{"species":"mountainash, American","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"mountainash, American","source":"usda","field":"Foliage Texture","value":"Fine"}
+{"species":"mountainash, American","source":"usda","field":"Fruit/Seed Color","value":"Orange"}
+{"species":"mountainash, American","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"mountainash, American","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"mountainash, American","source":"usda","field":"Growth Rate","value":"Moderate"}
+{"species":"mountainash, American","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"30"}
+{"species":"mountainash, American","source":"usda","field":"Height, Mature (feet)","value":"40.0"}
+{"species":"mountainash, American","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"mountainash, American","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"mountainash, American","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"mountainash, American","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"mountainash, American","source":"usda","field":"Bloom Period","value":"Early Summer"}
+{"species":"serviceberry, downy","source":"harvest","field":"_taxon_queried","value":"Amelanchier arborea","note":"unambiguous common name"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 25 ft. 0 in.","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Dimensions","value":"Width: 10 ft. 0 in. - 15 ft. 0 in.","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Plant Type","value":"Shrub","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Habit/Form","value":"Multi-stemmed","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Growth Rate","value":"Slow"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Color","value":"Green","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Color","value":"Purple/Lavender","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Color","value":"Red/Burgundy","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Type","value":"Pome"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Flower Color","value":"White"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Flower Inflorescence","value":"Raceme"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Flower Value To Gardener","value":"Fragrant","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Flower Value To Gardener","value":"Showy","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Orange","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Shape","value":"Elliptical","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Shape","value":"Obovate","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Margin","value":"Serrate"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Length","value":"1-3 inches"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Leaf Width","value":"1-3 inches"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Surface/Attachment","value":"Fissured","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Surface/Attachment","value":"Smooth","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Coastal","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Meadow","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Patio","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Pond","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Slope/Bank","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Small Space","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Walkways","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Accent","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Barrier","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Border","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Flowering Tree","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Mass Planting","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Small groups","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Small Tree","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Design Feature","value":"Understory Tree","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Attracts","value":"Bees","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Resistance To Challenges","value":"Erosion","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Resistance To Challenges","value":"Fire","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Resistance To Challenges","value":"Wet Soil","multi":true}
+{"species":"serviceberry, downy","source":"ncsu","field":"Problems","value":"Weedy"}
+{"species":"serviceberry, downy","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 25 ft. 0 in."}
+{"species":"serviceberry, downy","source":"ncsu","field":"Dimensions","value":"Width: 10 ft. 0 in. - 15 ft. 0 in."}
+{"species":"serviceberry, downy","source":"selectree","field":"_matched_taxon","value":"Amelanchier arborea","note":"queried \"Amelanchier arborea\"; tree_id 158"}
+{"species":"serviceberry, downy","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"serviceberry, downy","source":"selectree","field":"bark_texture","value":"Fissured"}
+{"species":"serviceberry, downy","source":"selectree","field":"bark_color","value":"Light Gray"}
+{"species":"serviceberry, downy","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"serviceberry, downy","source":"selectree","field":"leaflet_shape","value":"Oval"}
+{"species":"serviceberry, downy","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"serviceberry, downy","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"serviceberry, downy","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"serviceberry, downy","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"serviceberry, downy","source":"selectree","field":"height_high","value":"30"}
+{"species":"serviceberry, downy","source":"selectree","field":"width_high","value":"30"}
+{"species":"serviceberry, downy","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"serviceberry, downy","source":"selectree","field":"fruit_type","value":"Pome"}
+{"species":"serviceberry, downy","source":"selectree","field":"fruit_size","value":"Small"}
+{"species":"serviceberry, downy","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"serviceberry, downy","source":"selectree","field":"flower_color","value":"White"}
+{"species":"serviceberry, downy","source":"selectree","field":"litter_type","value":"Wet Fruit"}
+{"species":"serviceberry, downy","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"serviceberry, downy","source":"selectree","field":"family","value":"Rosaceae"}
+{"species":"serviceberry, downy","source":"usda","field":"_matched_taxon","value":"Amelanchier arborea (Michx. f.) Fernald","note":"symbol AMAR3, id 88664"}
+{"species":"serviceberry, downy","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"serviceberry, downy","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"serviceberry, downy","source":"usda","field":"Flower Color","value":"White"}
+{"species":"serviceberry, downy","source":"usda","field":"Flower Conspicuous","value":"Yes"}
+{"species":"serviceberry, downy","source":"usda","field":"Foliage Color","value":"Dark Green"}
+{"species":"serviceberry, downy","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"serviceberry, downy","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"serviceberry, downy","source":"usda","field":"Foliage Texture","value":"Fine"}
+{"species":"serviceberry, downy","source":"usda","field":"Fruit/Seed Color","value":"Red"}
+{"species":"serviceberry, downy","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"serviceberry, downy","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"serviceberry, downy","source":"usda","field":"Growth Rate","value":"Slow"}
+{"species":"serviceberry, downy","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"25"}
+{"species":"serviceberry, downy","source":"usda","field":"Height, Mature (feet)","value":"36.0"}
+{"species":"serviceberry, downy","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"serviceberry, downy","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"serviceberry, downy","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"serviceberry, downy","source":"usda","field":"Shade Tolerance","value":"Low"}
+{"species":"serviceberry, downy","source":"usda","field":"Bloom Period","value":"Mid Spring"}
+{"species":"goldenraintree","source":"harvest","field":"_taxon_queried","value":"Koelreuteria paniculata","note":"unambiguous common name"}
+{"species":"goldenraintree","source":"ncsu","field":"Dimensions","value":"Height: 30 ft. 0 in. - 40 ft. 0 in.","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 40 ft. 0 in.","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"goldenraintree","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Habit/Form","value":"Vase","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"goldenraintree","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"goldenraintree","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Color","value":"Brown/Copper","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Color","value":"Gold/Yellow","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Color","value":"Green","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Value To Gardener","value":"Good Dried","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Type","value":"Capsule"}
+{"species":"goldenraintree","source":"ncsu","field":"Fruit Length","value":"1-3 inches"}
+{"species":"goldenraintree","source":"ncsu","field":"Flower Color","value":"Gold/Yellow"}
+{"species":"goldenraintree","source":"ncsu","field":"Flower Inflorescence","value":"Panicle"}
+{"species":"goldenraintree","source":"ncsu","field":"Flower Value To Gardener","value":"Showy"}
+{"species":"goldenraintree","source":"ncsu","field":"Flower Bloom Time","value":"Summer"}
+{"species":"goldenraintree","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Color","value":"Brown/Copper","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Color","value":"Purple/Lavender","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Orange","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Type","value":"Compound (Pinnately , Bipinnately, Palmately)"}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Shape","value":"Oblong","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Margin","value":"Crenate","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Margin","value":"Lobed","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Margin","value":"Serrate","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Length","value":"> 6 inches"}
+{"species":"goldenraintree","source":"ncsu","field":"Leaf Width","value":"1-3 inches"}
+{"species":"goldenraintree","source":"ncsu","field":"Bark Color","value":"Light Brown","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Surface/Attachment","value":"Lenticels","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Stem Color","value":"Brown/Copper"}
+{"species":"goldenraintree","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"goldenraintree","source":"ncsu","field":"Stem Form","value":"Zig Zags"}
+{"species":"goldenraintree","source":"ncsu","field":"Stem Lenticels","value":"Conspicuous"}
+{"species":"goldenraintree","source":"ncsu","field":"Stem Surface","value":"Hairy (pubescent)"}
+{"species":"goldenraintree","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Landscape Location","value":"Patio","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Landscape Location","value":"Pool/Hardscape","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Landscape Location","value":"Small Space","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Design Feature","value":"Flowering Tree","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Attracts","value":"Bees","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Heat","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Urban Conditions","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Resistance To Challenges","value":"Wind","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Problems","value":"Weak Wood","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Problems","value":"Weedy","multi":true}
+{"species":"goldenraintree","source":"ncsu","field":"Dimensions","value":"Height: 30 ft. 0 in. - 40 ft. 0 in."}
+{"species":"goldenraintree","source":"ncsu","field":"Dimensions","value":"Width: 30 ft. 0 in. - 40 ft. 0 in."}
+{"species":"goldenraintree","source":"selectree","field":"_matched_taxon","value":"Koelreuteria paniculata","note":"queried \"Koelreuteria paniculata\"; tree_id 779"}
+{"species":"goldenraintree","source":"selectree","field":"tree_shape","value":"Rounded","multi":true}
+{"species":"goldenraintree","source":"selectree","field":"tree_shape","value":"Vase","multi":true}
+{"species":"goldenraintree","source":"selectree","field":"bark_texture","value":"Fissured"}
+{"species":"goldenraintree","source":"selectree","field":"bark_color","value":"Dark Brown or Light Green"}
+{"species":"goldenraintree","source":"selectree","field":"leaf_form","value":"Pinnately Compound"}
+{"species":"goldenraintree","source":"selectree","field":"leaflet_shape","value":"Oval"}
+{"species":"goldenraintree","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"goldenraintree","source":"selectree","field":"foliage_type","value":"Partly Deciduous"}
+{"species":"goldenraintree","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"goldenraintree","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"goldenraintree","source":"selectree","field":"height_high","value":"40"}
+{"species":"goldenraintree","source":"selectree","field":"width_high","value":"40"}
+{"species":"goldenraintree","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"goldenraintree","source":"selectree","field":"fruit_type","value":"Capsule"}
+{"species":"goldenraintree","source":"selectree","field":"fruit_size","value":"Large"}
+{"species":"goldenraintree","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"goldenraintree","source":"selectree","field":"flower_color","value":"Yellow"}
+{"species":"goldenraintree","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"goldenraintree","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"goldenraintree","source":"selectree","field":"family","value":"Sapindaceae"}
+{"species":"goldenraintree","source":"usda","field":"_matched_taxon","value":"Koelreuteria paniculata Laxm.","note":"symbol KOPA, id 93756"}
+{"species":"goldenraintree","source":"usda","field":"Active Growth Period","value":"Spring"}
+{"species":"goldenraintree","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"goldenraintree","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"goldenraintree","source":"usda","field":"Flower Conspicuous","value":"Yes"}
+{"species":"goldenraintree","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"goldenraintree","source":"usda","field":"Foliage Porosity Summer","value":"Moderate"}
+{"species":"goldenraintree","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"goldenraintree","source":"usda","field":"Foliage Texture","value":"Fine"}
+{"species":"goldenraintree","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"goldenraintree","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"goldenraintree","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"goldenraintree","source":"usda","field":"Growth Rate","value":"Slow"}
+{"species":"goldenraintree","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"30"}
+{"species":"goldenraintree","source":"usda","field":"Height, Mature (feet)","value":"45.0"}
+{"species":"goldenraintree","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"goldenraintree","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"goldenraintree","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"goldenraintree","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"goldenraintree","source":"usda","field":"Bloom Period","value":"Late Spring"}
+{"species":"Dogwood, Flowering","source":"harvest","field":"_taxon_queried","value":"Cornus florida","note":"unambiguous common name"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 25 ft. 0 in.","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Dimensions","value":"Width: 15 ft. 0 in. - 30 ft. 0 in.","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Plant Type","value":"Shrub","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Habit/Form","value":"Ascending","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Color","value":"Green","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Color","value":"Red/Burgundy","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Type","value":"Berry","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Type","value":"Drupe","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Color","value":"Pink","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Color","value":"White","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Inflorescence","value":"Cyme","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Value To Gardener","value":"Showy"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Purple/Lavender","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Arrangement","value":"Opposite"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Shape","value":"Cuneate","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Margin","value":"Entire"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Surface/Attachment","value":"Ridges"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Bark Plate Shape","value":"Rectangle","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Bark Plate Shape","value":"Square","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Stem Color","value":"Purple/Lavender","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Stem Color","value":"Red/Burgundy","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Stem Form","value":"Straight"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Landscape Location","value":"Patio","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Accent","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Border","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Flowering Tree","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Mass Planting","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Small Tree","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Design Feature","value":"Understory Tree","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Attracts","value":"Specialized Bees","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Resistance To Challenges","value":"Compaction","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Resistance To Challenges","value":"Fire","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Resistance To Challenges","value":"Storm damage","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Resistance To Challenges","value":"Wind","multi":true}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Problems","value":"Frequent Disease Problems"}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Dimensions","value":"Height: 15 ft. 0 in. - 25 ft. 0 in."}
+{"species":"Dogwood, Flowering","source":"ncsu","field":"Dimensions","value":"Width: 15 ft. 0 in. - 30 ft. 0 in."}
+{"species":"Dogwood, Flowering","source":"selectree","field":"_matched_taxon","value":"Cornus florida","note":"queried \"Cornus florida\"; tree_id 396"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"tree_shape","value":"Conical"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"bark_texture","value":"Blocky"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"bark_color","value":"Dark Gray or Light Gray"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"leaflet_shape","value":"Oval"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"leaf_arrangement","value":"Opposite"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"foliage_growth_color","value":"Light Green"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"height_high","value":"30"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"width_high","value":"30"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"fruit_type","value":"Drupe"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"fruit_size","value":"Small"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"flower_color","value":"Pink","multi":true}
+{"species":"Dogwood, Flowering","source":"selectree","field":"flower_color","value":"Rose","multi":true}
+{"species":"Dogwood, Flowering","source":"selectree","field":"flower_color","value":"White","multi":true}
+{"species":"Dogwood, Flowering","source":"selectree","field":"flower_color","value":"Yellow","multi":true}
+{"species":"Dogwood, Flowering","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"Dogwood, Flowering","source":"selectree","field":"family","value":"Cornaceae"}
+{"species":"Dogwood, Flowering","source":"usda","field":"_matched_taxon","value":"Cornus florida L.","note":"symbol COFL2, id 75171"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Flower Color","value":"White"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Flower Conspicuous","value":"Yes"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Foliage Porosity Summer","value":"Porous"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Fruit/Seed Color","value":"Red"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Growth Form","value":"Multiple Stem"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Growth Rate","value":"Moderate"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"20"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Height, Mature (feet)","value":"30.0"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Lifespan","value":"Short"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Shade Tolerance","value":"Low"}
+{"species":"Dogwood, Flowering","source":"usda","field":"Bloom Period","value":"Early Spring"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"harvest","field":"_taxon_queried","value":"Syringa reticulata","note":"roster name is the 'Ivory Silk' cultivar; SPECIES-level record queried","ambiguous":"cultivar rolled up to species"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Dimensions","value":"Height: 25 ft. 0 in. - 30 ft. 0 in.","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Dimensions","value":"Width: 15 ft. 0 in. - 20 ft. 0 in.","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Plant Type","value":"Shrub","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Habit/Form","value":"Multi-stemmed","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Habit/Form","value":"Oval","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Color","value":"Gold/Yellow","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Color","value":"Green","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Value To Gardener","value":"Long-lasting"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Type","value":"Capsule"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Color","value":"Cream/Tan","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Color","value":"White","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Inflorescence","value":"Panicle"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Value To Gardener","value":"Fragrant","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Value To Gardener","value":"Good Cut","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Value To Gardener","value":"Showy","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Flower Bloom Time","value":"Summer"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Color","value":"Gray/Silver","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Insignificant"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Arrangement","value":"Opposite"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Shape","value":"Ovate"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Margin","value":"Entire"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Leaf Width","value":"1-3 inches"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Bark Color","value":"Red/Burgundy","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Surface/Attachment","value":"Exfoliating","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Surface/Attachment","value":"Lenticels","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Surface/Attachment","value":"Scaly","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Surface/Attachment","value":"Smooth","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Stem Color","value":"Brown/Copper"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Landscape Location","value":"Patio","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Flowering Tree","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Foundation Planting","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Hedge","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Small groups","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Small Tree","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Attracts","value":"Hummingbirds","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Resistance To Challenges","value":"Deer"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Dimensions","value":"Height: 25 ft. 0 in. - 30 ft. 0 in."}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"ncsu","field":"Dimensions","value":"Width: 15 ft. 0 in. - 20 ft. 0 in."}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"_matched_taxon","value":"Syringa reticulata","note":"queried \"Syringa reticulata\"; tree_id 1365"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"bark_texture","value":"Scaly","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"bark_texture","value":"Smooth","multi":true}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"bark_color","value":"Dark Gray, Light Gray or Red Brown"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"leaflet_shape","value":"Ovate"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"leaf_arrangement","value":"Opposite"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"height_high","value":"30"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"width_high","value":"25"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"fruit_type","value":"Capsule"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"flower_showiness","value":"Showy"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"flower_color","value":"White"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"selectree","field":"family","value":"Oleaceae"}
+{"species":"Lilac, Japanese Tree 'Ivory Silk'","source":"usda","field":"_taxon_mismatch","value":"Symphyotrichum retroflexum (Lindl. ex DC.) G.L. Nesom","note":"symbol SYRE3 resolved to the wrong taxon; no USDA values taken for this species","unverified":"symbol wrong"}
+{"species":"Pine, White","source":"harvest","field":"_taxon_queried","value":"Pinus strobus","note":"unambiguous common name (eastern white pine)"}
+{"species":"Pine, White","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 80 ft. 0 in.","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 40 ft. 0 in.","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pine, White","source":"ncsu","field":"Habit/Form","value":"Conical","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Habit/Form","value":"Horizontal","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Habit/Form","value":"Oval","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"Pine, White","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"Pine, White","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"Pine, White","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Pine, White","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy"}
+{"species":"Pine, White","source":"ncsu","field":"Fruit Length","value":"> 3 inches"}
+{"species":"Pine, White","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Flower Color","value":"Insignificant","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Flower Color","value":"Red/Burgundy","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Pine, White","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Color","value":"Blue","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Feel","value":"Soft"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Value To Gardener","value":"Fragrant"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Type","value":"Needles","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Type","value":"Simple","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Shape","value":"Filiform"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Margin","value":"Entire"}
+{"species":"Pine, White","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Pine, White","source":"ncsu","field":"Leaf Width","value":"< 1 inch"}
+{"species":"Pine, White","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Bark Color","value":"Light Gray","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Surface/Attachment","value":"Smooth","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Bark Plate Shape","value":"Round"}
+{"species":"Pine, White","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Stem Color","value":"Green","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Stem Color","value":"Orange","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Pine, White","source":"ncsu","field":"Landscape Location","value":"Woodland"}
+{"species":"Pine, White","source":"ncsu","field":"Design Feature","value":"Hedge","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Design Feature","value":"Screen/Privacy","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Resistance To Challenges","value":"Rabbits","multi":true}
+{"species":"Pine, White","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 80 ft. 0 in."}
+{"species":"Pine, White","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 40 ft. 0 in."}
+{"species":"Pine, White","source":"selectree","field":"_matched_taxon","value":"Pinus strobus","note":"queried \"Pinus strobus\"; tree_id 1074"}
+{"species":"Pine, White","source":"selectree","field":"tree_shape","value":"Conical"}
+{"species":"Pine, White","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"Pine, White","source":"selectree","field":"bark_texture","value":"Ridged","multi":true}
+{"species":"Pine, White","source":"selectree","field":"bark_color","value":"Dark Brown, Dark Gray, Light Gray or Purple"}
+{"species":"Pine, White","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Pine, White","source":"selectree","field":"leaflet_shape","value":"Needle"}
+{"species":"Pine, White","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Pine, White","source":"selectree","field":"foliage_type","value":"Evergreen"}
+{"species":"Pine, White","source":"selectree","field":"foliage_growth_color","value":"Bluish Green","multi":true}
+{"species":"Pine, White","source":"selectree","field":"foliage_growth_color","value":"Silver","multi":true}
+{"species":"Pine, White","source":"selectree","field":"foliage_growth_color","value":"Gray Green","multi":true}
+{"species":"Pine, White","source":"selectree","field":"foliage_fall_color","value":"0"}
+{"species":"Pine, White","source":"selectree","field":"height_high","value":"80"}
+{"species":"Pine, White","source":"selectree","field":"width_high","value":"60"}
+{"species":"Pine, White","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Pine, White","source":"selectree","field":"fruit_type","value":"Cone"}
+{"species":"Pine, White","source":"selectree","field":"fruit_size","value":"Very Large"}
+{"species":"Pine, White","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Pine, White","source":"selectree","field":"family","value":"Pinaceae"}
+{"species":"Pine, White","source":"usda","field":"_matched_taxon","value":"Pinus strobus L.","note":"symbol PIST, id 15568"}
+{"species":"Pine, White","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Pine, White","source":"usda","field":"Fall Conspicuous","value":"No"}
+{"species":"Pine, White","source":"usda","field":"Flower Color","value":"Red"}
+{"species":"Pine, White","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Pine, White","source":"usda","field":"Foliage Color","value":"Dark Green"}
+{"species":"Pine, White","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Pine, White","source":"usda","field":"Foliage Porosity Winter","value":"Dense"}
+{"species":"Pine, White","source":"usda","field":"Foliage Texture","value":"Fine"}
+{"species":"Pine, White","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Pine, White","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Pine, White","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Pine, White","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Pine, White","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"40"}
+{"species":"Pine, White","source":"usda","field":"Height, Mature (feet)","value":"150.0"}
+{"species":"Pine, White","source":"usda","field":"Leaf Retention","value":"Yes"}
+{"species":"Pine, White","source":"usda","field":"Lifespan","value":"Moderate"}
+{"species":"Pine, White","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Pine, White","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"Pine, White","source":"usda","field":"Bloom Period","value":"Late Spring"}
+{"species":"oak, bur","source":"harvest","field":"_taxon_queried","value":"Quercus macrocarpa","note":"unambiguous common name"}
+{"species":"oak, bur","source":"ncsu","field":"Dimensions","value":"Height: 70 ft. 0 in. - 80 ft. 0 in.","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Dimensions","value":"Width: 70 ft. 0 in. - 80 ft. 0 in.","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Plant Type","value":"Poisonous","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"oak, bur","source":"ncsu","field":"Habit/Form","value":"Open","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"oak, bur","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"oak, bur","source":"ncsu","field":"Texture","value":"Coarse"}
+{"species":"oak, bur","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"oak, bur","source":"ncsu","field":"Fruit Value To Gardener","value":"Showy"}
+{"species":"oak, bur","source":"ncsu","field":"Fruit Type","value":"Nut"}
+{"species":"oak, bur","source":"ncsu","field":"Fruit Length","value":"1-3 inches"}
+{"species":"oak, bur","source":"ncsu","field":"Fruit Width","value":"1-3 inches"}
+{"species":"oak, bur","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Flower Inflorescence","value":"Catkin","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"oak, bur","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Color","value":"Gray/Silver","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Feel","value":"Leathery"}
+{"species":"oak, bur","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Brown/Copper","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Shape","value":"Elliptical","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Shape","value":"Ovate","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Margin","value":"Lobed"}
+{"species":"oak, bur","source":"ncsu","field":"Hairs Present","value":"Yes"}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Length","value":"> 6 inches"}
+{"species":"oak, bur","source":"ncsu","field":"Leaf Width","value":"3-6 inches"}
+{"species":"oak, bur","source":"ncsu","field":"Bark Color","value":"Dark Gray"}
+{"species":"oak, bur","source":"ncsu","field":"Surface/Attachment","value":"Ridges"}
+{"species":"oak, bur","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"oak, bur","source":"ncsu","field":"Stem Surface","value":"Corky Ridges"}
+{"species":"oak, bur","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Landscape Location","value":"Meadow","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"oak, bur","source":"ncsu","field":"Problems","value":"Problem for Horses"}
+{"species":"oak, bur","source":"ncsu","field":"Dimensions","value":"Height: 70 ft. 0 in. - 80 ft. 0 in."}
+{"species":"oak, bur","source":"ncsu","field":"Dimensions","value":"Width: 70 ft. 0 in. - 80 ft. 0 in."}
+{"species":"oak, bur","source":"selectree","field":"_matched_taxon","value":"Quercus macrocarpa","note":"queried \"Quercus macrocarpa\"; tree_id 1248"}
+{"species":"oak, bur","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"oak, bur","source":"selectree","field":"bark_texture","value":"Fissured"}
+{"species":"oak, bur","source":"selectree","field":"bark_color","value":"Light Gray or Red Brown"}
+{"species":"oak, bur","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"oak, bur","source":"selectree","field":"leaflet_shape","value":"Obovate"}
+{"species":"oak, bur","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"oak, bur","source":"selectree","field":"foliage_type","value":"Evergreen"}
+{"species":"oak, bur","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"oak, bur","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"oak, bur","source":"selectree","field":"height_high","value":"80"}
+{"species":"oak, bur","source":"selectree","field":"width_high","value":"30"}
+{"species":"oak, bur","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"oak, bur","source":"selectree","field":"fruit_type","value":"Acorn"}
+{"species":"oak, bur","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"oak, bur","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"oak, bur","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"oak, bur","source":"selectree","field":"family","value":"Fagaceae"}
+{"species":"oak, bur","source":"usda","field":"_matched_taxon","value":"Quercus macrocarpa Michx.","note":"symbol QUMA2, id 70362"}
+{"species":"oak, bur","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"oak, bur","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"oak, bur","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"oak, bur","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"oak, bur","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"oak, bur","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"oak, bur","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"oak, bur","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"oak, bur","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"oak, bur","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"oak, bur","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"oak, bur","source":"usda","field":"Growth Rate","value":"Slow"}
+{"species":"oak, bur","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"25"}
+{"species":"oak, bur","source":"usda","field":"Height, Mature (feet)","value":"100.0"}
+{"species":"oak, bur","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"oak, bur","source":"usda","field":"Lifespan","value":"Long"}
+{"species":"oak, bur","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"oak, bur","source":"usda","field":"Shade Tolerance","value":"Medium"}
+{"species":"oak, bur","source":"usda","field":"Bloom Period","value":"Mid Spring"}
+{"species":"Pine, Austrian","source":"harvest","field":"_taxon_queried","value":"Pinus nigra","note":"unambiguous common name"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 60 ft. 0 in.","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 40 ft. 0 in.","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Broad","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Erect","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Horizontal","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Mounding","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Pyramidal","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Habit/Form","value":"Spreading","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Maintenance","value":"Medium"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Texture","value":"Coarse"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Fruit Length","value":"1-3 inches"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Fruit Width","value":"1-3 inches"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Flower Color","value":"Insignificant","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Flower Color","value":"Purple/Lavender","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Color","value":"Blue","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Feel","value":"Prickly"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Type","value":"Needles"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Shape","value":"Filiform"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Leaf Width","value":"< 1 inch"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Bark Color","value":"Black","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Stem Color","value":"Gray/Silver","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Stem Color","value":"Green","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Pine, Austrian","source":"ncsu","field":"Landscape Location","value":"Coastal","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Landscape Location","value":"Lawn","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Landscape Location","value":"Meadow","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Accent","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Barrier","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Border","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Hedge","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Mass Planting","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Screen/Privacy","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Design Feature","value":"Specimen","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Resistance To Challenges","value":"Drought","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"Pine, Austrian","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 60 ft. 0 in."}
+{"species":"Pine, Austrian","source":"ncsu","field":"Dimensions","value":"Width: 20 ft. 0 in. - 40 ft. 0 in."}
+{"species":"Pine, Austrian","source":"selectree","field":"_matched_taxon","value":"Pinus nigra","note":"queried \"Pinus nigra\"; tree_id 1059"}
+{"species":"Pine, Austrian","source":"selectree","field":"tree_shape","value":"Conical"}
+{"species":"Pine, Austrian","source":"selectree","field":"bark_texture","value":"Fissured"}
+{"species":"Pine, Austrian","source":"selectree","field":"bark_color","value":"Dark Gray or Light Green"}
+{"species":"Pine, Austrian","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Pine, Austrian","source":"selectree","field":"leaflet_shape","value":"Needle"}
+{"species":"Pine, Austrian","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Pine, Austrian","source":"selectree","field":"foliage_type","value":"Evergreen"}
+{"species":"Pine, Austrian","source":"selectree","field":"foliage_growth_color","value":"Dark Green"}
+{"species":"Pine, Austrian","source":"selectree","field":"foliage_fall_color","value":"0"}
+{"species":"Pine, Austrian","source":"selectree","field":"height_high","value":"60"}
+{"species":"Pine, Austrian","source":"selectree","field":"width_high","value":"35"}
+{"species":"Pine, Austrian","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"Pine, Austrian","source":"selectree","field":"fruit_type","value":"Cone"}
+{"species":"Pine, Austrian","source":"selectree","field":"fruit_size","value":"Very Large"}
+{"species":"Pine, Austrian","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Pine, Austrian","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"Pine, Austrian","source":"selectree","field":"family","value":"Pinaceae"}
+{"species":"Pine, Austrian","source":"usda","field":"_matched_taxon","value":"Pinus nigra Arnold","note":"symbol PINI, id 15511"}
+{"species":"Pine, Austrian","source":"usda","field":"Active Growth Period","value":"Spring"}
+{"species":"Pine, Austrian","source":"usda","field":"Fall Conspicuous","value":"No"}
+{"species":"Pine, Austrian","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"Pine, Austrian","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Pine, Austrian","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Pine, Austrian","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Pine, Austrian","source":"usda","field":"Foliage Porosity Winter","value":"Dense"}
+{"species":"Pine, Austrian","source":"usda","field":"Foliage Texture","value":"Medium"}
+{"species":"Pine, Austrian","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Pine, Austrian","source":"usda","field":"Fruit/Seed Conspicuous","value":"No"}
+{"species":"Pine, Austrian","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Pine, Austrian","source":"usda","field":"Growth Rate","value":"Moderate"}
+{"species":"Pine, Austrian","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"35"}
+{"species":"Pine, Austrian","source":"usda","field":"Height, Mature (feet)","value":"120.0"}
+{"species":"Pine, Austrian","source":"usda","field":"Leaf Retention","value":"Yes"}
+{"species":"Pine, Austrian","source":"usda","field":"Lifespan","value":"Long"}
+{"species":"Pine, Austrian","source":"usda","field":"Shape and Orientation","value":"Rounded"}
+{"species":"Pine, Austrian","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"Pine, Austrian","source":"usda","field":"Bloom Period","value":"Late Spring"}
+{"species":"Oak, Willow","source":"harvest","field":"_taxon_queried","value":"Quercus phellos","note":"unambiguous common name"}
+{"species":"Oak, Willow","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 75 ft. 0 in.","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Dimensions","value":"Width: 25 ft. 0 in. - 50 ft. 0 in.","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Plant Type","value":"Native Plant","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Plant Type","value":"Poisonous","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Oak, Willow","source":"ncsu","field":"Habit/Form","value":"Dense","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Habit/Form","value":"Oval","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Habit/Form","value":"Rounded","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Growth Rate","value":"Rapid"}
+{"species":"Oak, Willow","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"Oak, Willow","source":"ncsu","field":"Texture","value":"Fine"}
+{"species":"Oak, Willow","source":"ncsu","field":"Fruit Color","value":"Brown/Copper"}
+{"species":"Oak, Willow","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible"}
+{"species":"Oak, Willow","source":"ncsu","field":"Fruit Type","value":"Nut"}
+{"species":"Oak, Willow","source":"ncsu","field":"Fruit Length","value":"< 1 inch"}
+{"species":"Oak, Willow","source":"ncsu","field":"Fruit Width","value":"< 1 inch"}
+{"species":"Oak, Willow","source":"ncsu","field":"Flower Color","value":"Gold/Yellow","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Flower Color","value":"Green","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Flower Inflorescence","value":"Catkin","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Flower Inflorescence","value":"Insignificant","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Flower Bloom Time","value":"Spring"}
+{"species":"Oak, Willow","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Deciduous"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Color","value":"Green"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Feel","value":"Smooth"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"Oak, Willow","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Brown/Copper","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Gold/Yellow","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Orange","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Deciduous Leaf Fall Color","value":"Red/Burgundy","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Type","value":"Simple"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Arrangement","value":"Alternate"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Shape","value":"Lanceolate","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Shape","value":"Linear","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Margin","value":"Entire","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Margin","value":"Undulate","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Length","value":"3-6 inches"}
+{"species":"Oak, Willow","source":"ncsu","field":"Leaf Width","value":"< 1 inch"}
+{"species":"Oak, Willow","source":"ncsu","field":"Bark Color","value":"Dark Brown","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Bark Color","value":"Dark Gray","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Surface/Attachment","value":"Furrowed","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Color","value":"Brown/Copper","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Color","value":"Green","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Color","value":"Red/Burgundy","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Cross Section","value":"Round"}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Form","value":"Straight"}
+{"species":"Oak, Willow","source":"ncsu","field":"Stem Surface","value":"Smooth (glabrous)"}
+{"species":"Oak, Willow","source":"ncsu","field":"Landscape Location","value":"Coastal","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Landscape Location","value":"Naturalized Area","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Landscape Location","value":"Pond","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Landscape Location","value":"Recreational Play Area","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Landscape Location","value":"Woodland","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Design Feature","value":"Shade Tree","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Design Feature","value":"Street Tree","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Attracts","value":"Butterflies","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Attracts","value":"Moths","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Attracts","value":"Pollinators","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Attracts","value":"Small Mammals","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Attracts","value":"Songbirds","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Resistance To Challenges","value":"Wet Soil","multi":true}
+{"species":"Oak, Willow","source":"ncsu","field":"Problems","value":"Problem for Horses"}
+{"species":"Oak, Willow","source":"ncsu","field":"Dimensions","value":"Height: 40 ft. 0 in. - 75 ft. 0 in."}
+{"species":"Oak, Willow","source":"ncsu","field":"Dimensions","value":"Width: 25 ft. 0 in. - 50 ft. 0 in."}
+{"species":"Oak, Willow","source":"selectree","field":"_matched_taxon","value":"Quercus phellos","note":"queried \"Quercus phellos\"; tree_id 1254"}
+{"species":"Oak, Willow","source":"selectree","field":"tree_shape","value":"Rounded"}
+{"species":"Oak, Willow","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"Oak, Willow","source":"selectree","field":"bark_texture","value":"Smooth","multi":true}
+{"species":"Oak, Willow","source":"selectree","field":"bark_color","value":"Dark Gray, Light Gray or Red Brown"}
+{"species":"Oak, Willow","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"Oak, Willow","source":"selectree","field":"leaflet_shape","value":"Spear-shaped"}
+{"species":"Oak, Willow","source":"selectree","field":"leaf_arrangement","value":"Alternate"}
+{"species":"Oak, Willow","source":"selectree","field":"foliage_type","value":"Deciduous"}
+{"species":"Oak, Willow","source":"selectree","field":"foliage_growth_color","value":"Green"}
+{"species":"Oak, Willow","source":"selectree","field":"foliage_fall_color","value":"1"}
+{"species":"Oak, Willow","source":"selectree","field":"height_high","value":"60"}
+{"species":"Oak, Willow","source":"selectree","field":"width_high","value":"50"}
+{"species":"Oak, Willow","source":"selectree","field":"growth_rate_high","value":"36"}
+{"species":"Oak, Willow","source":"selectree","field":"fruit_type","value":"Acorn"}
+{"species":"Oak, Willow","source":"selectree","field":"fruit_size","value":"Medium"}
+{"species":"Oak, Willow","source":"selectree","field":"flower_showiness","value":"Inconspicuous"}
+{"species":"Oak, Willow","source":"selectree","field":"flower_color","value":"Green"}
+{"species":"Oak, Willow","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"Oak, Willow","source":"selectree","field":"family","value":"Fagaceae"}
+{"species":"Oak, Willow","source":"usda","field":"_matched_taxon","value":"Quercus phellos L.","note":"symbol QUPH, id 70432"}
+{"species":"Oak, Willow","source":"usda","field":"Active Growth Period","value":"Spring and Summer"}
+{"species":"Oak, Willow","source":"usda","field":"Fall Conspicuous","value":"Yes"}
+{"species":"Oak, Willow","source":"usda","field":"Flower Color","value":"Yellow"}
+{"species":"Oak, Willow","source":"usda","field":"Flower Conspicuous","value":"No"}
+{"species":"Oak, Willow","source":"usda","field":"Foliage Color","value":"Green"}
+{"species":"Oak, Willow","source":"usda","field":"Foliage Porosity Summer","value":"Dense"}
+{"species":"Oak, Willow","source":"usda","field":"Foliage Porosity Winter","value":"Porous"}
+{"species":"Oak, Willow","source":"usda","field":"Foliage Texture","value":"Fine"}
+{"species":"Oak, Willow","source":"usda","field":"Fruit/Seed Color","value":"Brown"}
+{"species":"Oak, Willow","source":"usda","field":"Fruit/Seed Conspicuous","value":"Yes"}
+{"species":"Oak, Willow","source":"usda","field":"Growth Form","value":"Single Stem"}
+{"species":"Oak, Willow","source":"usda","field":"Growth Rate","value":"Rapid"}
+{"species":"Oak, Willow","source":"usda","field":"Height at 20 Years, Maximum (feet)","value":"60"}
+{"species":"Oak, Willow","source":"usda","field":"Height, Mature (feet)","value":"100.0"}
+{"species":"Oak, Willow","source":"usda","field":"Leaf Retention","value":"No"}
+{"species":"Oak, Willow","source":"usda","field":"Lifespan","value":"Long"}
+{"species":"Oak, Willow","source":"usda","field":"Shape and Orientation","value":"Erect"}
+{"species":"Oak, Willow","source":"usda","field":"Shade Tolerance","value":"High"}
+{"species":"Oak, Willow","source":"usda","field":"Bloom Period","value":"Mid Spring"}
+{"species":"juniper, Chinese","source":"harvest","field":"_taxon_queried","value":"Juniperus chinensis","note":"unambiguous common name"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 60 ft. 0 in.","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Dimensions","value":"Width: 10 ft. 0 in. - 20 ft. 0 in.","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Plant Type","value":"Perennial","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Plant Type","value":"Tree","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Habit/Form","value":"Conical"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Growth Rate","value":"Medium"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Maintenance","value":"Low"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Texture","value":"Medium"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Fruit Value To Gardener","value":"Edible"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Woody Plant Leaf Characteristics","value":"Needled Evergreen"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Color","value":"Blue","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Color","value":"Green","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Feel","value":"Prickly"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Value To Gardener","value":"Showy"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Type","value":"Needles"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Arrangement","value":"Opposite"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Hairs Present","value":"No"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Leaf Length","value":"1-3 inches"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Bark Color","value":"Light Brown"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Surface/Attachment","value":"Exfoliating","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Surface/Attachment","value":"Fissured","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Surface/Attachment","value":"Ridges","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Stem Is Aromatic","value":"No"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Landscape Location","value":"Lawn"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Design Feature","value":"Accent","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Design Feature","value":"Hedge","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Resistance To Challenges","value":"Deer","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Resistance To Challenges","value":"Pollution","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Resistance To Challenges","value":"Salt","multi":true}
+{"species":"juniper, Chinese","source":"ncsu","field":"Problems","value":"Malodorous"}
+{"species":"juniper, Chinese","source":"ncsu","field":"Dimensions","value":"Height: 50 ft. 0 in. - 60 ft. 0 in."}
+{"species":"juniper, Chinese","source":"ncsu","field":"Dimensions","value":"Width: 10 ft. 0 in. - 20 ft. 0 in."}
+{"species":"juniper, Chinese","source":"selectree","field":"_matched_taxon","value":"Juniperus chinensis","note":"queried \"Juniperus chinensis\"; tree_id 751"}
+{"species":"juniper, Chinese","source":"selectree","field":"tree_shape","value":"Conical"}
+{"species":"juniper, Chinese","source":"selectree","field":"bark_texture","value":"Exfoliating","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"bark_texture","value":"Furrowed","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"bark_texture","value":"Smooth","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"bark_color","value":"Light Green, Light Gray or Red Brown"}
+{"species":"juniper, Chinese","source":"selectree","field":"leaf_form","value":"Simple"}
+{"species":"juniper, Chinese","source":"selectree","field":"leaflet_shape","value":"Scale-like"}
+{"species":"juniper, Chinese","source":"selectree","field":"leaf_arrangement","value":"Whorled"}
+{"species":"juniper, Chinese","source":"selectree","field":"foliage_type","value":"Evergreen"}
+{"species":"juniper, Chinese","source":"selectree","field":"foliage_growth_color","value":"Bluish Green","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"foliage_growth_color","value":"Silver","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"foliage_growth_color","value":"Gray Green","multi":true}
+{"species":"juniper, Chinese","source":"selectree","field":"foliage_fall_color","value":"0"}
+{"species":"juniper, Chinese","source":"selectree","field":"height_high","value":"60"}
+{"species":"juniper, Chinese","source":"selectree","field":"width_high","value":"25"}
+{"species":"juniper, Chinese","source":"selectree","field":"growth_rate_high","value":"24"}
+{"species":"juniper, Chinese","source":"selectree","field":"fruit_type","value":"Cone"}
+{"species":"juniper, Chinese","source":"selectree","field":"fruit_size","value":"Small"}
+{"species":"juniper, Chinese","source":"selectree","field":"litter_type","value":"Dry Fruit"}
+{"species":"juniper, Chinese","source":"selectree","field":"landscape_application","value":"Screen"}
+{"species":"juniper, Chinese","source":"selectree","field":"family","value":"Cupressaceae"}
+{"species":"juniper, Chinese","source":"usda","field":"_taxon_mismatch","value":"Juncus chlorocephalus Engelm.","note":"symbol JUCH resolved to the wrong taxon; no USDA values taken for this species","unverified":"symbol wrong"}

@@ -1,9 +1,9 @@
 {
-  "key": "Ginkgo",
-  "scientific": "Ginkgo biloba",
-  "canonicalId": "ginkgo_biloba",
+  "key": "Pine, White",
+  "scientific": "Pinus strobus",
+  "canonicalId": "pinus_strobus",
   "inventoryNames": [
-    "Ginkgo"
+    "Pine, White"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -26,24 +26,31 @@
           ]
         },
         {
-          "value": 30,
+          "value": 20,
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": 60,
+          "value": 80,
           "seen": 1,
           "sources": [
             "selectree"
+          ]
+        },
+        {
+          "value": 150,
+          "seen": 1,
+          "sources": [
+            "usda"
           ]
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "chassis.habit": {
-      "target": null,
+      "target": "conical",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
@@ -51,7 +58,22 @@
       "contested": true,
       "candidates": [
         {
+          "value": "conical",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
+        {
           "value": "horizontal",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "oval",
           "seen": 1,
           "sources": [
             "ncsu"
@@ -65,28 +87,16 @@
           ]
         },
         {
-          "value": "conical",
+          "value": "spreading",
           "seen": 1,
           "sources": [
-            "selectree"
+            "ncsu"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "crown.texture": {
-      "target": "medium",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true
-    },
-    "leaf.arrangement": {
-      "target": "alternate",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true
-    },
-    "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
@@ -94,21 +104,59 @@
       "contested": true,
       "candidates": [
         {
-          "value": "ridged",
+          "value": "medium",
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": "fissured",
+          "value": "fine",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "leaf.margin": {
+      "target": "entire",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "bark.texture": {
+      "target": "furrowed",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
+        {
+          "value": "smooth",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "ridged",
           "seen": 1,
           "sources": [
             "selectree"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
       "target": "simple",
@@ -117,15 +165,32 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
-    "leaf.shape": {
-      "target": "flabellate",
+    "leaf.arrangement": {
+      "target": "alternate",
       "hardness": "soft",
       "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
+      "sourced": true
     },
-    "leaf.foliage_type": {
-      "target": "deciduous",
+    "overlay.fruit_type": {
+      "target": "cone",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "single",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -141,20 +206,19 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, crown.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit, bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
-    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
   ],
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Ginkgo biloba",
+    "matchedTaxon": "Pinus strobus",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
@@ -162,11 +226,14 @@
       "chassis.size",
       "chassis.habit",
       "crown.texture",
-      "leaf.arrangement",
+      "leaf.margin",
       "bark.texture",
       "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type"
+      "leaf.arrangement",
+      "overlay.fruit_type",
+      "chassis.density",
+      "chassis.trunks",
+      "chassis.orientation"
     ]
   }
 }

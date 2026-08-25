@@ -1,9 +1,9 @@
 {
-  "key": "Ginkgo",
-  "scientific": "Ginkgo biloba",
-  "canonicalId": "ginkgo_biloba",
+  "key": "Lilac, Japanese Tree 'Ivory Silk'",
+  "scientific": "Syringa reticulata",
+  "canonicalId": "syringa_reticulata",
   "inventoryNames": [
-    "Ginkgo"
+    "Lilac, Japanese Tree 'Ivory Silk'"
   ],
   "identityConfirmed": false,
   "forces": null,
@@ -19,7 +19,14 @@
       "contested": true,
       "candidates": [
         {
-          "value": 50,
+          "value": 25,
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": 15,
           "seen": 1,
           "sources": [
             "ncsu"
@@ -29,21 +36,32 @@
           "value": 30,
           "seen": 1,
           "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": 60,
-          "seen": 1,
-          "sources": [
             "selectree"
           ]
         }
       ],
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.trunks": {
+      "target": "multi",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
     "chassis.habit": {
-      "target": null,
+      "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
@@ -51,37 +69,44 @@
       "contested": true,
       "candidates": [
         {
-          "value": "horizontal",
-          "seen": 1,
+          "value": "rounded",
+          "seen": 2,
           "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "conical",
-          "seen": 1,
-          "sources": [
+            "ncsu",
             "selectree"
+          ]
+        },
+        {
+          "value": "oval",
+          "seen": 1,
+          "sources": [
+            "ncsu"
           ]
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
-    "crown.texture": {
-      "target": "medium",
+    "overlay.fruit_type": {
+      "target": "capsule",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
     },
     "leaf.arrangement": {
-      "target": "alternate",
+      "target": "opposite",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "leaf.shape": {
+      "target": "ovate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.margin": {
+      "target": "entire",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -94,17 +119,33 @@
       "contested": true,
       "candidates": [
         {
-          "value": "ridged",
+          "value": "scaly",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
+        {
+          "value": "smooth",
+          "seen": 2,
+          "sources": [
+            "ncsu",
+            "selectree"
+          ]
+        },
+        {
+          "value": "exfoliating",
           "seen": 1,
           "sources": [
             "ncsu"
           ]
         },
         {
-          "value": "fissured",
+          "value": "lenticellate",
           "seen": 1,
           "sources": [
-            "selectree"
+            "ncsu"
           ]
         }
       ],
@@ -117,15 +158,14 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard"
     },
-    "leaf.shape": {
-      "target": "flabellate",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard"
-    },
     "leaf.foliage_type": {
       "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.conspicuous": {
+      "target": "showy",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -141,7 +181,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -149,24 +190,28 @@
   "provenance": {
     "minted": true,
     "mintedAt": "2026-08-24",
-    "matchedTaxon": "Ginkgo biloba",
+    "matchedTaxon": "Syringa reticulata",
     "sources": [
       "ncsu",
       "selectree",
-      "usda",
-      "utd"
+      "usda"
     ],
     "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
       "chassis.size",
+      "chassis.density",
+      "chassis.orientation",
+      "chassis.trunks",
       "chassis.habit",
-      "crown.texture",
+      "overlay.fruit_type",
       "leaf.arrangement",
+      "leaf.shape",
+      "leaf.margin",
       "bark.texture",
       "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type"
+      "leaf.foliage_type",
+      "overlay.conspicuous"
     ]
   }
 }
