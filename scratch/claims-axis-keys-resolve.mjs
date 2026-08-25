@@ -196,9 +196,20 @@ console.log('')
     const d = JSON.parse(readFileSync(path.join(dDir, f), 'utf8'))
     for (const [axis, cell] of Object.entries(d.required || {})) {
       const vals = enumValues.get(axis)
-      if (!vals || !cell || cell.target == null) continue
-      checked++
-      if (!vals.has(cell.target)) report(`dossier value (${f} ${axis})`, String(cell.target))
+      if (!vals || !cell) continue
+      // ⛔⛔ A TIED CONTESTED CELL HAS `target: null` — AND ITS CANDIDATES STILL MATTER.
+      // RECEIPT, 2026-08-25 (adversarial pass): this used to read
+      //   `if (!vals || !cell || cell.target == null) continue`
+      // so a null target skipped the WHOLE cell, candidates included. 78 tied cells ⇒ 191
+      // candidate values never validated against 103 that were. Those are exactly the §8
+      // cells the Salon renders for the operator to settle, so a stale value there is
+      // PRESENTED AS A CHOICE, and settling it writes a dead token into an authored cell —
+      // the worst reachable consequence in this subsystem, behind the one shape the check
+      // was blind to. Target and candidates are two assertions; neither gates the other.
+      if (cell.target != null) {
+        checked++
+        if (!vals.has(cell.target)) report(`dossier value (${f} ${axis})`, String(cell.target))
+      }
       for (const c of (cell.candidates || [])) {
         checked++
         if (!vals.has(c.value)) report(`dossier candidate (${f} ${axis})`, String(c.value))

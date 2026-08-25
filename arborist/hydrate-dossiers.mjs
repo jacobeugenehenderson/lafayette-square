@@ -24,9 +24,21 @@ const WRITE = args.includes('--write')
 // ⚠️ `indexOf` returns -1 when the flag is absent and -1 + 1 is 0, so the old form read
 // args[0] -- which on a real run is `--write`. Dry runs pass no positional argument, so
 // this looked correct every single time until the one invocation that mattered.
+// ⛔⛔ AND THE GUARD BELOW USED TO SIT AFTER THE DEFAULT, WHERE IT COULD NEVER FIRE.
+// RECEIPT, 2026-08-25 (adversarial pass): it read `if (inFlag >= 0 && !IN)` — but IN had
+// already been defaulted on the line above, so it was never falsy and the branch was dead.
+// MEASURED: `node arborist/hydrate-dossiers.mjs --in` silently read the default corpus and
+// reported "observations: 3523 from 5 source(s)" — an operator asking for one file, handed
+// another, told nothing. A fallback inside the argument parser, sitting directly beneath
+// the comment explaining the LAST `--in` bug. Check the ARGUMENT, before the default.
+// `--in --write` is the same error wearing a path's clothes, so a flag is refused too.
 const inFlag = args.indexOf('--in')
-const IN = (inFlag >= 0 ? args[inFlag + 1] : null) || 'scratch/dossier-raw-observations.jsonl'
-if (inFlag >= 0 && !IN) { console.error('⛔ --in given with no path'); process.exit(1) }
+const inArg = inFlag >= 0 ? args[inFlag + 1] : null
+if (inFlag >= 0 && (!inArg || inArg.startsWith('--'))) {
+  console.error(`⛔ --in given with no path${inArg ? ` (got the flag "${inArg}")` : ''}`)
+  process.exit(1)
+}
+const IN = inArg || 'scratch/dossier-raw-observations.jsonl'
 const rd = (p) => JSON.parse(readFileSync(p, 'utf8'))
 
 // ── source field → our axis ─────────────────────────────────────────────────

@@ -37,22 +37,33 @@ const snapshot = () => {
   return out
 }
 
-// 1. shared vocabulary
+// 1. shared vocabulary.
+// ⛔⛔ THIS MUST RUN ON WHAT THE WRITERS PRODUCE, NOT ON WHAT IS COMMITTED.
+// RECEIPT, 2026-08-25 (adversarial pass): this pass used to run ONCE, here, against the
+// dossiers as they sat on disk at start — and §2 below then ran the writers and restored
+// from backup, so their output was discarded before this ever saw it. Making BOTH writers
+// emit `sources: []` on every candidate — the exact condition the loop below declares it
+// guards — passed, exit 0. A check that reads committed state cannot assert anything about
+// the code that writes it, which is the thing this file's own docstring exists for.
+// It is called three times now: the committed state, then after EACH run ordering.
 const LEGACY = ['unresolved', 'alternatives']
-for (const f of readdirSync(dDir).filter(f => f.endsWith('.json'))) {
-  const d = JSON.parse(readFileSync(path.join(dDir, f), 'utf8'))
-  for (const [axis, c] of Object.entries(d.required || {})) {
-    if (!c || typeof c !== 'object') continue
-    for (const k of LEGACY) if (k in c) { console.error(`  ⛔ ${f} ${axis}: legacy key \`${k}\` — the Salon rail does not render it`); fail++ }
-    if (c.contested) {
-      if (!Array.isArray(c.candidates) || !c.candidates.length) { console.error(`  ⛔ ${f} ${axis}: contested with no candidates`); fail++ }
-      else for (const cand of c.candidates) {
-        if (!Array.isArray(cand.sources) || !cand.sources.length) { console.error(`  ⛔ ${f} ${axis}: candidate ${cand.value} carries no sources — the operator cannot judge it`); fail++ }
+const assertVocabulary = (label) => {
+  for (const f of readdirSync(dDir).filter(f => f.endsWith('.json'))) {
+    const d = JSON.parse(readFileSync(path.join(dDir, f), 'utf8'))
+    for (const [axis, c] of Object.entries(d.required || {})) {
+      if (!c || typeof c !== 'object') continue
+      for (const k of LEGACY) if (k in c) { console.error(`  ⛔ [${label}] ${f} ${axis}: legacy key \`${k}\` — the Salon rail does not render it`); fail++ }
+      if (c.contested) {
+        if (!Array.isArray(c.candidates) || !c.candidates.length) { console.error(`  ⛔ [${label}] ${f} ${axis}: contested with no candidates`); fail++ }
+        else for (const cand of c.candidates) {
+          if (!Array.isArray(cand.sources) || !cand.sources.length) { console.error(`  ⛔ [${label}] ${f} ${axis}: candidate ${cand.value} carries no sources — the operator cannot judge it`); fail++ }
+        }
       }
+      if (Array.isArray(c.candidates) && !c.contested && !c.settledOver) { console.error(`  ⛔ [${label}] ${f} ${axis}: candidates present but not marked contested — invisible in the Salon`); fail++ }
     }
-    if (Array.isArray(c.candidates) && !c.contested && !c.settledOver) { console.error(`  ⛔ ${f} ${axis}: candidates present but not marked contested — invisible in the Salon`); fail++ }
   }
 }
+assertVocabulary('committed')
 
 // 2. order independence. Runs against a COPY; the live dossiers are never touched.
 const backup = mkdtempSync(path.join(tmpdir(), 'dossiers-'))
@@ -61,8 +72,10 @@ const run = (script) => execFileSync('node', [path.join(root, 'arborist', script
 try {
   run('mint-dossiers.mjs'); run('hydrate-dossiers.mjs')
   const a = snapshot()
+  assertVocabulary('mint-then-hydrate')
   run('hydrate-dossiers.mjs'); run('mint-dossiers.mjs')
   const b = snapshot()
+  assertVocabulary('hydrate-then-mint')
   const keys = new Set([...a.keys(), ...b.keys()])
   for (const k of keys) {
     if (a.get(k) !== b.get(k)) { console.error(`  ⛔ order-dependent: ${k}\n      mint-last:    ${b.get(k) ?? '(absent)'}\n      hydrate-last: ${a.get(k) ?? '(absent)'}`); fail++ }
