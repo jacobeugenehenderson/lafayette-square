@@ -12,51 +12,55 @@
   "referenceImages": [
     {
       "state": "bark",
-      "caption": "Acer saccharum 'Green Mountain' Trunk Bark",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG/960px-Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_saccharum_%27Green_Mountain%27_Trunk_Bark.JPG",
-      "credit": "Photo by and (c)2014 Derek Ramsey ( Ram-Man ) — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Photo by and (c)2014 Derek Ramsey ( Ram-Man )",
-      "file": "File:Acer saccharum 'Green Mountain' Trunk Bark.JPG",
+      "caption": "Sugar Maple Acer saccharum Bark Horizontal 3008px",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Sugar_Maple_Acer_saccharum_Bark_Horizontal_3008px.jpg/960px-Sugar_Maple_Acer_saccharum_Bark_Horizontal_3008px.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sugar_Maple_Acer_saccharum_Bark_Horizontal_3008px.jpg",
+      "credit": "Photo (c)2007 Derek Ramsey ( Ram-Man ) — CC BY-SA 2.5 (Wikimedia Commons)",
+      "licence": "CC BY-SA 2.5",
+      "artist": "Photo (c)2007 Derek Ramsey ( Ram-Man )",
+      "file": "File:Sugar Maple Acer saccharum Bark Horizontal 3008px.jpg",
+      "via": "search: \"Acer saccharum\" bark",
       "confirmed": false,
-      "fromCategory": "Acer saccharum (bark)"
+      "fromCategory": "search: \"Acer saccharum\" bark"
     },
     {
       "state": "leaves",
-      "caption": "Acer saccharum (sugar maple) 3",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Acer_saccharum_%28sugar_maple%29_3_%2846329100361%29.jpg/960px-Acer_saccharum_%28sugar_maple%29_3_%2846329100361%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_saccharum_(sugar_maple)_3_(46329100361).jpg",
-      "credit": "James St. John — CC BY 2.0 (Wikimedia Commons)",
-      "licence": "CC BY 2.0",
-      "artist": "James St. John",
-      "file": "File:Acer saccharum (sugar maple) 3 (46329100361).jpg",
+      "caption": "Maple leaves in focus, Capen Hill Nature Sanctuary 2025 10 11",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Maple_leaves_in_focus%2C_Capen_Hill_Nature_Sanctuary_2025-10-11.jpg/960px-Maple_leaves_in_focus%2C_Capen_Hill_Nature_Sanctuary_2025-10-11.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Maple_leaves_in_focus,_Capen_Hill_Nature_Sanctuary_2025-10-11.jpg",
+      "credit": "Peter Cooper Jr. — CC BY 4.0 (Wikimedia Commons)",
+      "licence": "CC BY 4.0",
+      "artist": "Peter Cooper Jr.",
+      "file": "File:Maple leaves in focus, Capen Hill Nature Sanctuary 2025-10-11.jpg",
+      "via": "search: \"Acer saccharum\" leaf",
       "confirmed": false,
-      "fromCategory": "Acer saccharum (leaves)"
+      "fromCategory": "search: \"Acer saccharum\" leaf"
     },
     {
       "state": "fall",
-      "caption": "2024 09 27 12 54 04 Sugar Maples changing color in early autumn along Windybush Way in the Mountainview section of Ewing",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg/960px-2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-09-27_12_54_04_Sugar_Maples_changing_color_in_early_autumn_along_Windybush_Way_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
+      "caption": "2014 11 02 15 26 08 Sugar Maple during autumn along Patton Drive in Ewing, New Jersey",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/2014-11-02_15_26_08_Sugar_Maple_during_autumn_along_Patton_Drive_in_Ewing%2C_New_Jersey.jpg/960px-2014-11-02_15_26_08_Sugar_Maple_during_autumn_along_Patton_Drive_in_Ewing%2C_New_Jersey.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2014-11-02_15_26_08_Sugar_Maple_during_autumn_along_Patton_Drive_in_Ewing,_New_Jersey.jpg",
       "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
       "licence": "CC BY-SA 4.0",
       "artist": "Famartin",
-      "file": "File:2024-09-27 12 54 04 Sugar Maples changing color in early autumn along Windybush Way in the Mountainview section of Ewing Township, Mercer County, New Jersey.jpg",
+      "file": "File:2014-11-02 15 26 08 Sugar Maple during autumn along Patton Drive in Ewing, New Jersey.jpg",
+      "via": "search: \"Acer saccharum\" autumn",
       "confirmed": false,
-      "fromCategory": "Acer saccharum in autumn"
+      "fromCategory": "search: \"Acer saccharum\" autumn"
     },
     {
       "state": "summer",
-      "caption": "2019 04 10 13 02 11 Sugar Maple blooming along Old Dairy Road in the Franklin Farm section of Oak Hill, Fairfax County, ",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/aa/2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-04-10_13_02_11_Sugar_Maple_blooming_along_Old_Dairy_Road_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
-      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "caption": "Sugar maple tree in Prospect Park (92375p)",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Sugar_maple_tree_in_Prospect_Park_%2892375p%29.jpg/960px-Sugar_maple_tree_in_Prospect_Park_%2892375p%29.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Sugar_maple_tree_in_Prospect_Park_(92375p).jpg",
+      "credit": "Rhododendrites — CC BY-SA 4.0 (Wikimedia Commons)",
       "licence": "CC BY-SA 4.0",
-      "artist": "Famartin",
-      "file": "File:2019-04-10 13 02 11 Sugar Maple blooming along Old Dairy Road in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "artist": "Rhododendrites",
+      "file": "File:Sugar maple tree in Prospect Park (92375p).jpg",
+      "via": "search: \"Acer saccharum\" tree",
       "confirmed": false,
-      "fromCategory": "Acer saccharum"
+      "fromCategory": "search: \"Acer saccharum\" tree"
     }
   ],
   "required": {

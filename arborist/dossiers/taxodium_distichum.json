@@ -34,27 +34,29 @@
     },
     {
       "state": "leaves",
-      "caption": "Bald Cypress",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Bald-Cypress_%282883842076%29.png",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald-Cypress_(2883842076).png",
-      "credit": "Homer Edward Price — CC BY 2.0 (Wikimedia Commons)",
-      "licence": "CC BY 2.0",
-      "artist": "Homer Edward Price",
-      "file": "File:Bald-Cypress (2883842076).png",
+      "caption": "Bald Cypress Leaf Closeup 1848px",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Bald_Cypress_Leaf_Closeup_1848px.jpg/960px-Bald_Cypress_Leaf_Closeup_1848px.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald_Cypress_Leaf_Closeup_1848px.jpg",
+      "credit": "Photo by and (c)2006 Derek Ramsey ( Ram-Man ) — CC BY-SA 2.5 (Wikimedia Commons)",
+      "licence": "CC BY-SA 2.5",
+      "artist": "Photo by and (c)2006 Derek Ramsey ( Ram-Man )",
+      "file": "File:Bald Cypress Leaf Closeup 1848px.jpg",
+      "via": "search: \"Taxodium distichum\" leaf",
       "confirmed": false,
-      "fromCategory": "Taxodium distichum (leaves)"
+      "fromCategory": "search: \"Taxodium distichum\" leaf"
     },
     {
       "state": "summer",
-      "caption": "Bald cypress knees rising above water covered with duckweed swamp and mud",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3c/Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg/960px-Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bald_cypress_knees_rising_above_water_covered_with_duckweed_swamp_and_mud.jpg",
-      "credit": "Hillebrand Steve, U.S. Fish and Wildlife Service — Public domain (Wikimedia Commons)",
-      "licence": "Public domain",
-      "artist": "Hillebrand Steve, U.S. Fish and Wildlife Service",
-      "file": "File:Bald cypress knees rising above water covered with duckweed swamp and mud.jpg",
+      "caption": "Tree 102 Baldcypress Taxodium distichum habit summer",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Tree_102_Baldcypress_Taxodium_distichum_habit_summer.jpg/960px-Tree_102_Baldcypress_Taxodium_distichum_habit_summer.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tree_102_Baldcypress_Taxodium_distichum_habit_summer.jpg",
+      "credit": "Cossey25 — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Cossey25",
+      "file": "File:Tree 102 Baldcypress Taxodium distichum habit summer.jpg",
+      "via": "search: \"Taxodium distichum\" tree",
       "confirmed": false,
-      "fromCategory": "Taxodium distichum"
+      "fromCategory": "search: \"Taxodium distichum\" tree"
     }
   ],
   "required": {

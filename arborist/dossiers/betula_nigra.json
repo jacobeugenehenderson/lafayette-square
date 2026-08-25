@@ -34,27 +34,29 @@
     },
     {
       "state": "leaves",
-      "caption": "Betula nigra0",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/5/53/Betula_nigra0.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Betula_nigra0.jpg",
-      "credit": "unknown — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": null,
-      "file": "File:Betula nigra0.jpg",
+      "caption": "River Birch Betula nigra Leaf 2500px",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4d/River_Birch_Betula_nigra_Leaf_2500px.jpg/960px-River_Birch_Betula_nigra_Leaf_2500px.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:River_Birch_Betula_nigra_Leaf_2500px.jpg",
+      "credit": "Photo (c)2007 Derek Ramsey ( Ram-Man ) — CC BY-SA 2.5 (Wikimedia Commons)",
+      "licence": "CC BY-SA 2.5",
+      "artist": "Photo (c)2007 Derek Ramsey ( Ram-Man )",
+      "file": "File:River Birch Betula nigra Leaf 2500px.jpg",
+      "via": "search: \"Betula nigra\" leaf",
       "confirmed": false,
-      "fromCategory": "Betula nigra (leaves)"
+      "fromCategory": "search: \"Betula nigra\" leaf"
     },
     {
       "state": "fall",
-      "caption": "Betula nigra Heritage",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/1/17/Betula_nigra_Heritage.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Betula_nigra_Heritage.jpg",
-      "credit": "unknown — Public domain (Wikimedia Commons)",
-      "licence": "Public domain",
-      "artist": null,
-      "file": "File:Betula nigra Heritage.jpg",
+      "caption": "2020 11 13 11 16 18 River Birch leaves in autumn along Birch Bark Court in the Franklin Glen section of Chantilly, Fairf",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9a/2020-11-13_11_16_18_River_Birch_leaves_in_autumn_along_Birch_Bark_Court_in_the_Franklin_Glen_section_of_Chantilly%2C_Fairfax_County%2C_Virginia.jpg/960px-2020-11-13_11_16_18_River_Birch_leaves_in_autumn_along_Birch_Bark_Court_in_the_Franklin_Glen_section_of_Chantilly%2C_Fairfax_County%2C_Virginia.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2020-11-13_11_16_18_River_Birch_leaves_in_autumn_along_Birch_Bark_Court_in_the_Franklin_Glen_section_of_Chantilly,_Fairfax_County,_Virginia.jpg",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2020-11-13 11 16 18 River Birch leaves in autumn along Birch Bark Court in the Franklin Glen section of Chantilly, Fairfax County, Virginia.jpg",
+      "via": "search: \"Betula nigra\" autumn",
       "confirmed": false,
-      "fromCategory": "Betula nigra in autumn"
+      "fromCategory": "search: \"Betula nigra\" autumn"
     }
   ],
   "required": {

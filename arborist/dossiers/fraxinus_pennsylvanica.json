@@ -19,44 +19,48 @@
       "licence": "GFDL 1.2",
       "artist": "Photo by and (c)2007 Derek Ramsey ( Ram-Man )",
       "file": "File:Green Ash Fraxinus pennsylvanica Bark 2000px.jpg",
+      "via": "search: \"Fraxinus pennsylvanica\" bark",
       "confirmed": false,
-      "fromCategory": "Fraxinus pennsylvanica (bark)"
+      "fromCategory": "search: \"Fraxinus pennsylvanica\" bark"
     },
     {
       "state": "leaves",
-      "caption": "Fraxinus pennsylvanica",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ad/Fraxinus_pennsylvanica.jpg/960px-Fraxinus_pennsylvanica.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica.jpg",
-      "credit": "unknown — Public domain (Wikimedia Commons)",
-      "licence": "Public domain",
-      "artist": null,
-      "file": "File:Fraxinus pennsylvanica.jpg",
+      "caption": "2014 10 29 12 51 30 Green Ash foliage during autumn leaf coloration and other small tree foliage in Ewing, New Jersey",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/2014-10-29_12_51_30_Green_Ash_foliage_during_autumn_leaf_coloration_and_other_small_tree_foliage_in_Ewing%2C_New_Jersey.JPG/960px-2014-10-29_12_51_30_Green_Ash_foliage_during_autumn_leaf_coloration_and_other_small_tree_foliage_in_Ewing%2C_New_Jersey.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2014-10-29_12_51_30_Green_Ash_foliage_during_autumn_leaf_coloration_and_other_small_tree_foliage_in_Ewing,_New_Jersey.JPG",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2014-10-29 12 51 30 Green Ash foliage during autumn leaf coloration and other small tree foliage in Ewing, New Jersey.JPG",
+      "via": "search: \"Fraxinus pennsylvanica\" leaf",
       "confirmed": false,
-      "fromCategory": "Fraxinus pennsylvanica (leaves)"
+      "fromCategory": "search: \"Fraxinus pennsylvanica\" leaf"
     },
     {
       "state": "fall",
-      "caption": "Fraxinus pennsylvanica tree",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Fraxinus_pennsylvanica_tree.jpg/960px-Fraxinus_pennsylvanica_tree.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica_tree.jpg",
-      "credit": "Steven Katovich, USDA Forest Service — CC BY 3.0 us (Wikimedia Commons)",
-      "licence": "CC BY 3.0 us",
-      "artist": "Steven Katovich, USDA Forest Service",
-      "file": "File:Fraxinus pennsylvanica tree.jpg",
+      "caption": "2014 10 29 13 08 10 Green Ash foliage during autumn coloration in Ewing, New Jersey",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/2014-10-29_13_08_10_Green_Ash_foliage_during_autumn_coloration_in_Ewing%2C_New_Jersey.JPG/960px-2014-10-29_13_08_10_Green_Ash_foliage_during_autumn_coloration_in_Ewing%2C_New_Jersey.JPG",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2014-10-29_13_08_10_Green_Ash_foliage_during_autumn_coloration_in_Ewing,_New_Jersey.JPG",
+      "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Famartin",
+      "file": "File:2014-10-29 13 08 10 Green Ash foliage during autumn coloration in Ewing, New Jersey.JPG",
+      "via": "search: \"Fraxinus pennsylvanica\" autumn",
       "confirmed": false,
-      "fromCategory": "Fraxinus pennsylvanica in autumn"
+      "fromCategory": "search: \"Fraxinus pennsylvanica\" autumn"
     },
     {
       "state": "summer",
-      "caption": "Fraxinus pennsylvanica",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Fraxinus_pennsylvanica_%285107490717%29.jpg/960px-Fraxinus_pennsylvanica_%285107490717%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica_(5107490717).jpg",
-      "credit": "Matt Lavin from Bozeman, Montana, USA — CC BY-SA 2.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 2.0",
-      "artist": "Matt Lavin from Bozeman, Montana, USA",
-      "file": "File:Fraxinus pennsylvanica (5107490717).jpg",
+      "caption": "Fraxinus pennsylvanica (green ash tree) 2",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Fraxinus_pennsylvanica_%28green_ash_tree%29_2.jpg/960px-Fraxinus_pennsylvanica_%28green_ash_tree%29_2.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Fraxinus_pennsylvanica_(green_ash_tree)_2.jpg",
+      "credit": "James St. John — CC BY 2.0 (Wikimedia Commons)",
+      "licence": "CC BY 2.0",
+      "artist": "James St. John",
+      "file": "File:Fraxinus pennsylvanica (green ash tree) 2.jpg",
+      "via": "search: \"Fraxinus pennsylvanica\" tree",
       "confirmed": false,
-      "fromCategory": "Fraxinus pennsylvanica"
+      "fromCategory": "search: \"Fraxinus pennsylvanica\" tree"
     }
   ],
   "required": {

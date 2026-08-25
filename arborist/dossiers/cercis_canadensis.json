@@ -23,39 +23,42 @@
     },
     {
       "state": "leaves",
-      "caption": "A18 2 Cercis Canadensis (Eastern Redbud)",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/A18-2-Cercis_Canadensis_%28Eastern_Redbud%29.JPG/960px-A18-2-Cercis_Canadensis_%28Eastern_Redbud%29.JPG",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A18-2-Cercis_Canadensis_(Eastern_Redbud).JPG",
-      "credit": "Mohamed Rezk — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": "Mohamed Rezk",
-      "file": "File:A18-2-Cercis Canadensis (Eastern Redbud).JPG",
+      "caption": "155 Cercis canadiensis Eastern Redbud Tree LEAF epidermis print",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/155_Cercis_canadiensis_Eastern_Redbud_Tree_LEAF_epidermis_print.jpg/960px-155_Cercis_canadiensis_Eastern_Redbud_Tree_LEAF_epidermis_print.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:155_Cercis_canadiensis_Eastern_Redbud_Tree_LEAF_epidermis_print.jpg",
+      "credit": "ChrisInMilton — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "ChrisInMilton",
+      "file": "File:155 Cercis canadiensis Eastern Redbud Tree LEAF epidermis print.jpg",
+      "via": "search: \"Cercis canadensis\" leaf",
       "confirmed": false,
-      "fromCategory": "Cercis canadensis leaves"
+      "fromCategory": "search: \"Cercis canadensis\" leaf"
     },
     {
       "state": "fall",
-      "caption": "2019 11 02 13 12 02 A Redbud sapling in late autumn along Tranquility Court in the Franklin Farm section of Oak Hill, Fa",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg/960px-2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill%2C_Fairfax_County%2C_Virginia.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2019-11-02_13_12_02_A_Redbud_sapling_in_late_autumn_along_Tranquility_Court_in_the_Franklin_Farm_section_of_Oak_Hill,_Fairfax_County,_Virginia.jpg",
+      "caption": "2024 10 27 14 41 39 Kanzan Cherry (left), Flowering Dogwood (center) and Eastern Redbud (right) changing color in autumn",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/2024-10-27_14_41_39_Kanzan_Cherry_%28left%29%2C_Flowering_Dogwood_%28center%29_and_Eastern_Redbud_%28right%29_changing_color_in_autumn_along_Lochatong_Road_in_the_Mountainview_section_of_Ewing_Township%2C_Mercer_County%2C_New_Jersey.jpg/960px-thumbnail.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:2024-10-27_14_41_39_Kanzan_Cherry_(left),_Flowering_Dogwood_(center)_and_Eastern_Redbud_(right)_changing_color_in_autumn_along_Lochatong_Road_in_the_Mountainview_section_of_Ewing_Township,_Mercer_County,_New_Jersey.jpg",
       "credit": "Famartin — CC BY-SA 4.0 (Wikimedia Commons)",
       "licence": "CC BY-SA 4.0",
       "artist": "Famartin",
-      "file": "File:2019-11-02 13 12 02 A Redbud sapling in late autumn along Tranquility Court in the Franklin Farm section of Oak Hill, Fairfax County, Virginia.jpg",
+      "file": "File:2024-10-27 14 41 39 Kanzan Cherry (left), Flowering Dogwood (center) and Eastern Redbud (right) changing color in autumn along Lochatong Road in the Mountainview section of Ewing Township, Mercer County, New Jersey.jpg",
+      "via": "search: \"Cercis canadensis\" autumn",
       "confirmed": false,
-      "fromCategory": "Cercis canadensis in autumn"
+      "fromCategory": "search: \"Cercis canadensis\" autumn"
     },
     {
       "state": "summer",
-      "caption": "Cercis canadensis Infotafel",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Cercis_canadensis_Infotafel.jpg/960px-Cercis_canadensis_Infotafel.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Cercis_canadensis_Infotafel.jpg",
-      "credit": "Schubbay — CC BY-SA 4.0 (Wikimedia Commons)",
+      "caption": "Redbud Tree Wisconsin",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Redbud_Tree_Wisconsin.jpg/960px-Redbud_Tree_Wisconsin.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Redbud_Tree_Wisconsin.jpg",
+      "credit": "Downspec — CC BY-SA 4.0 (Wikimedia Commons)",
       "licence": "CC BY-SA 4.0",
-      "artist": "Schubbay",
-      "file": "File:Cercis canadensis Infotafel.jpg",
+      "artist": "Downspec",
+      "file": "File:Redbud Tree Wisconsin.jpg",
+      "via": "search: \"Cercis canadensis\" tree",
       "confirmed": false,
-      "fromCategory": "Cercis canadensis"
+      "fromCategory": "search: \"Cercis canadensis\" tree"
     }
   ],
   "required": {

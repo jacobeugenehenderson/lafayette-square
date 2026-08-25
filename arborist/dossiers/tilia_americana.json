@@ -12,39 +12,42 @@
   "referenceImages": [
     {
       "state": "bark",
-      "caption": "American Linden bark detail",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/American_Linden_bark_detail.jpg/960px-American_Linden_bark_detail.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_bark_detail.jpg",
-      "credit": "MONGO — Public domain (Wikimedia Commons)",
-      "licence": "Public domain",
-      "artist": "MONGO",
-      "file": "File:American Linden bark detail.jpg",
+      "caption": "Basswood (Tilia americana) Bark Guelph, Ontario 2013 11 30",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Basswood_%28Tilia_americana%29_Bark_-_Guelph%2C_Ontario_2013-11-30.jpg/960px-Basswood_%28Tilia_americana%29_Bark_-_Guelph%2C_Ontario_2013-11-30.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basswood_(Tilia_americana)_Bark_-_Guelph,_Ontario_2013-11-30.jpg",
+      "credit": "Ryan Hodnett — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Ryan Hodnett",
+      "file": "File:Basswood (Tilia americana) Bark - Guelph, Ontario 2013-11-30.jpg",
+      "via": "search: \"Tilia americana\" bark",
       "confirmed": false,
-      "fromCategory": "Tilia americana (bark)"
+      "fromCategory": "search: \"Tilia americana\" bark"
     },
     {
       "state": "leaves",
-      "caption": "American Linden or Basswood",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/American_Linden_or_Basswood_%2834058253493%29.jpg/960px-American_Linden_or_Basswood_%2834058253493%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_or_Basswood_(34058253493).jpg",
-      "credit": "Dan Keck from Ohio — CC0 (Wikimedia Commons)",
-      "licence": "CC0",
-      "artist": "Dan Keck from Ohio",
-      "file": "File:American Linden or Basswood (34058253493).jpg",
+      "caption": "Leaf Tilia americana 01",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Leaf_Tilia_americana_01.jpg/960px-Leaf_Tilia_americana_01.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Leaf_Tilia_americana_01.jpg",
+      "credit": "Rohit Naniwadekar — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Rohit Naniwadekar",
+      "file": "File:Leaf Tilia americana 01.jpg",
+      "via": "search: \"Tilia americana\" leaf",
       "confirmed": false,
-      "fromCategory": "Tilia americana (leaves)"
+      "fromCategory": "search: \"Tilia americana\" leaf"
     },
     {
       "state": "summer",
-      "caption": "American Linden or Basswood",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/American_Linden_or_Basswood_%2834058254523%29.jpg/960px-American_Linden_or_Basswood_%2834058254523%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:American_Linden_or_Basswood_(34058254523).jpg",
-      "credit": "Dan Keck from Ohio — CC0 (Wikimedia Commons)",
-      "licence": "CC0",
-      "artist": "Dan Keck from Ohio",
-      "file": "File:American Linden or Basswood (34058254523).jpg",
+      "caption": "Thirlstane House American Lime tree",
+      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Thirlstane_House_American_Lime_tree.jpg/960px-Thirlstane_House_American_Lime_tree.jpg",
+      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Thirlstane_House_American_Lime_tree.jpg",
+      "credit": "Victuallers — CC BY-SA 4.0 (Wikimedia Commons)",
+      "licence": "CC BY-SA 4.0",
+      "artist": "Victuallers",
+      "file": "File:Thirlstane House American Lime tree.jpg",
+      "via": "search: \"American Linden\" tree",
       "confirmed": false,
-      "fromCategory": "Tilia americana"
+      "fromCategory": "search: \"American Linden\" tree"
     }
   ],
   "required": {
