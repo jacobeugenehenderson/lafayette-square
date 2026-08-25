@@ -21,7 +21,16 @@ const live = new Set((rubric.axes || []).map(a => a.id).filter(Boolean))
 console.log(`rubric axes: ${live.size}`)
 
 let bad = 0
-const report = (where, key) => { bad++; console.error(`  ⛔ ${where}: "${key}" is not a rubric axis`) }
+// ⛔ THE MESSAGE MUST NAME WHAT IS ACTUALLY WRONG. This said "is not a rubric axis" for
+// every failure, including VALUE failures — so a stale candidate reported as a missing
+// AXIS, sending the reader to look for an axis that is perfectly fine. Same severity tier
+// as ingest-tagger's "unassigned — needs ratify": not silence, a confident wrong cause,
+// and worse than silence because IT DISPATCHES SOMEONE. A silent null wastes nobody's
+// afternoon. (Named by the adversarial pass, 2026-08-25.)
+const report = (where, key, kind = 'axis') => {
+  bad++
+  console.error(`  ⛔ ${where}: "${key}" is not a live rubric ${kind}`)
+}
 
 // 1. dossiers — what each species REQUIRES
 const dDir = path.join(ROOT, 'arborist/dossiers')
@@ -102,7 +111,7 @@ if (mBlock) {
     for (const [, r] of Object.entries(map)) {
       nTerm++
       if (!live.has(r.axis)) report('TERM_REDIRECTS target axis', r.axis)
-      else if (!vocab.axisTerms(r.axis).includes(r.value)) report(`TERM_REDIRECTS target term (${r.axis})`, r.value)
+      else if (!vocab.axisTerms(r.axis).includes(r.value)) report(`TERM_REDIRECTS target term (${r.axis})`, r.value, 'value')
     }
   }
   console.log(`vocabulary: ${nAx} axis keys across 3 tables, ${nTerm} redirect targets`)
@@ -177,7 +186,7 @@ console.log('')
 {
   const scalars = (rubric.axes || []).filter(a => a.kind === 'scalar')
   const missing = scalars.filter(a => !a.unit)
-  for (const a of missing) report('scalar axis with no declared unit', a.id)
+  for (const a of missing) report('scalar axis with no declared unit', a.id, 'unit declaration')
   console.log(`scalar units declared: ${scalars.length - missing.length}/${scalars.length}`)
 }
 
@@ -208,11 +217,11 @@ console.log('')
       // was blind to. Target and candidates are two assertions; neither gates the other.
       if (cell.target != null) {
         checked++
-        if (!vals.has(cell.target)) report(`dossier value (${f} ${axis})`, String(cell.target))
+        if (!vals.has(cell.target)) report(`dossier value (${f} ${axis})`, String(cell.target), 'value')
       }
       for (const c of (cell.candidates || [])) {
         checked++
-        if (!vals.has(c.value)) report(`dossier candidate (${f} ${axis})`, String(c.value))
+        if (!vals.has(c.value)) report(`dossier candidate (${f} ${axis})`, String(c.value), 'value')
       }
     }
   }
@@ -225,7 +234,7 @@ console.log('')
         const v = tag && typeof tag === 'object' ? tag.value : tag
         if (!vals || v == null || typeof v !== 'string') continue
         checked++
-        if (!vals.has(v)) report(`part tag value (${axis})`, v)
+        if (!vals.has(v)) report(`part tag value (${axis})`, v, 'value')
       }
     }
   }
