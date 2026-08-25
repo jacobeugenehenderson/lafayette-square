@@ -60,6 +60,10 @@ export default function Grove() {
   const setActiveLook = useArboristStore(s => s.setActiveLook)
   const looksRosters = useArboristStore(s => s.looksRosters)
   const toggleInLook = useArboristStore(s => s.toggleInLook)
+  // The demand-ordered roster board + the two bars — the same inputs the Salon rail uses.
+  const rosterCoverage = useArboristStore(s => s.rosterCoverage)
+  const groveThreshold = useArboristStore(s => s.groveThreshold)
+  const rosterSpecies = rosterCoverage?.species || []
   const setGroveVariantOverride = useArboristStore(s => s.setGroveVariantOverride)
   const bakeGroveToSlab = useArboristStore(s => s.bakeGroveToSlab)
   const groveBaking = useArboristStore(s => s.groveBaking)
@@ -130,6 +134,23 @@ export default function Grove() {
   // the operator is looking. (2026-07-22)
   const [overheadResult, setOverheadResult] = useState(null)  // {ok,fail} | null
   const [heroResult, setHeroResult] = useState(null)          // {ok,fail} | null
+  // ⛔⛔ THE BARS GATE THE BAKE. This used to capture whatever sat in design.json's
+  // trees[] — the per-variant checkbox list — so an UNCOMPOSED species could be checked
+  // in and shot. platanus_acerifolia was: no composition, no barkDetail, both bakes
+  // refused it for rendering 0.00% opaque, and it burned two retries every bake.
+  // Eligibility now comes from the ONE shared rule (arborist/grove-eligibility.mjs), the
+  // same one the Salon rail draws, so the rail and the bake cannot disagree about what
+  // ships. ⭐ A `withheld` species is skipped here by construction — that is the whole
+  // point of the gesture.
+  const groveBoard = useMemo(
+    () => resolveGrove(rosterSpecies || [], groveThreshold || {}),
+    [rosterSpecies, groveThreshold],
+  )
+  const eligibleNames = useMemo(
+    () => new Set(groveBoard.filter(b => b.tier !== 'out').map(b => b.species)),
+    [groveBoard],
+  )
+
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
@@ -137,12 +158,14 @@ export default function Grove() {
     for (const t of activeLookTrees) {
       if (seen.has(t.species)) continue
       seen.add(t.species)
-      // The BAKED per-look GLB (UVs rewritten to the unified atlas) — capture parity
-      // with the runtime, which loads this same GLB + the baked atlas material.
+      // ⛔ A species with no baked GLB cannot be captured at all — the pool is
+      // eligible ∩ published. An eligible species missing its GLB is a WORK ITEM
+      // (it needs publishing), never a silent omission: it is reported below.
+      if (eligibleNames.size && !eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard)) continue
       out.push({ species: t.species, glbUrl: `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb` })
     }
     return out
-  }, [activeLookId, activeLookTrees])
+  }, [activeLookId, activeLookTrees, eligibleNames, groveBoard])
 
   // ⭐ DRAIN-ON-BAKE (Jacob, 2026-07-22). Bake→Slab re-captures only what's DIRTY;
   // a species whose fingerprint still matches its stored capture is skipped. The
@@ -699,6 +722,19 @@ function TransitionDriver({ tween, poseRef, controlsRef }) {
 // the SAME OverheadSpecies disc-stacks (one instance per species at its ring slot).
 // So what renders here IS the map's plan-view draw — no separate path, true parity.
 // Reads the LAST Bake→Slab (the disc is a baked artifact); re-bake to refresh.
+// The slab keys trees by LIB id (`maple_red`) while the roster board keys by the census
+// display name (`Maple, Red`). Match through the board's covering ids rather than
+// slugifying a name — the two have drifted before and a wrong match here silently drops a
+// species from the bake.
+function eligibleByLibId(libId, board) {
+  for (const b of board) {
+    if (b.tier === 'out') continue
+    if ((b.covering || []).some(v => v.libId === libId)) return true
+    if (b.canonicalId === libId) return true
+  }
+  return false
+}
+
 function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
   const atlas = useTreeAtlas(lookId)
   const overheadBySpecies = atlas?.manifest?.overheadBySpecies || null

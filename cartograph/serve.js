@@ -1915,7 +1915,7 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/grove-threshold$/))) {
     const id = m[1]
     const design = readJsonOrNull(lookDesignPath(id)) || {}
-    const gt = design.groveThreshold || { topN: null, pinned: [], withheld: [] }
+    const gt = design.groveThreshold || { topN: null, meshTopN: null, pinned: [], withheld: [] }
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(gt))
     return
@@ -1945,7 +1945,13 @@ createServer(async (req, res) => {
         const withheld = list(parsed.withheld)
         const pinnedClean = pinned.filter(s => !withheld.includes(s))
         const existing = readJsonOrNull(lookDesignPath(id)) || {}
-        const merged = { ...existing, groveThreshold: { topN, pinned: pinnedClean, withheld } }
+        // ⛔ THE MESH BAR IS NESTED INSIDE THE IMPOSTOR BAR and the server enforces it.
+        // A mesh species still needs an impostor — only its TALLEST placements keep
+        // geometry, the rest of that same species render as impostors — so meshTopN above
+        // topN is not a preference, it is incoherent.
+        let meshTopN = Number.isFinite(parsed.meshTopN) ? Math.max(0, Math.floor(parsed.meshTopN)) : null
+        if (meshTopN != null && topN != null && meshTopN > topN) meshTopN = topN
+        const merged = { ...existing, groveThreshold: { topN, meshTopN, pinned: pinnedClean, withheld } }
         mkdirSync(lookDir(id), { recursive: true })
         writeJson(lookDesignPath(id), merged)
         const idx2 = readLooksIndex()

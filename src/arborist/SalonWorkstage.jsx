@@ -41,6 +41,7 @@
  *     mismatches fall through to 'broadleaf' default — visually fine.
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { resolveGrove } from '../../arborist/grove-eligibility.mjs'
 import useArboristStore from './stores/useArboristStore.js'
 import SpecimenViewport from './SpecimenViewport.jsx'
 import { useCanaryTree } from '../lib/canaryTree.js'
@@ -367,6 +368,8 @@ export default function SalonWorkstage() {
   const activeRosterName    = useArboristStore(s => s.activeRosterName)
   const selectRosterSpecies = useArboristStore(s => s.selectRosterSpecies)
   const groveThreshold      = useArboristStore(s => s.groveThreshold)
+  const setGroveMeshTopN    = useArboristStore(s => s.setGroveMeshTopN)
+  const setGroveOverride    = useArboristStore(s => s.setGroveOverride)
   const setGroveTopN        = useArboristStore(s => s.setGroveTopN)
   const toggleGrovePin      = useArboristStore(s => s.toggleGrovePin)
   const setRosterRouting    = useArboristStore(s => s.setRosterRouting)
@@ -529,6 +532,8 @@ export default function SalonWorkstage() {
           activeRosterName={activeRosterName}
           onSelect={selectRosterSpecies}
           groveThreshold={groveThreshold}
+          onSetMeshTopN={setGroveMeshTopN}
+          onSetOverride={setGroveOverride}
           onSetTopN={setGroveTopN}
           onTogglePin={toggleGrovePin}
         />
@@ -1748,7 +1753,14 @@ function rosterDot(s) {
 // their own asset — everything below substitutes to a same-category built
 // neighbour at runtime (the perf lever). A PIN keeps a species IN below the bar
 // (the once-appearing special tree). A tally shows in / substitute counts.
-function RosterNavigator({ species, loading, activeRosterName, onSelect, groveThreshold, onSetTopN, onTogglePin }) {
+function RosterNavigator({ species, loading, activeRosterName, onSelect, groveThreshold, onSetTopN, onSetMeshTopN, onTogglePin, onSetOverride }) {
+  // ⛔ ONE ELIGIBILITY RULE, shared with the bake (arborist/grove-eligibility.mjs). The rail
+  // must never compute this itself — two writers disagreeing about a name blanked the
+  // contested rail for nine species, and this decides which trees exist on the map.
+  const eligByName = useMemo(() => {
+    const board = resolveGrove(species || [], groveThreshold || {})
+    return new Map(board.map(b => [b.species, b]))
+  }, [species, groveThreshold])
   const [q, setQ] = useState('')
   const filtering = q.trim().length > 0
   const rows = species.filter(s => !filtering || s.species.toLowerCase().includes(q.toLowerCase()))
@@ -1774,6 +1786,11 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
   const [dragTopN, setDragTopN] = useState(null)
   const barDragging = dragTopN != null
   const effTopN = barDragging ? dragTopN : (persistedTopN ?? species.length)
+  const [dragMesh, setDragMesh] = useState(null)
+  const meshDragging = dragMesh != null
+  // ⛔ Clamped to the impostor bar on read as well as on write — a stale persisted value
+  // must never render a mesh bar below the impostor bar, which would be incoherent.
+  const effMeshTopN = Math.min(meshDragging ? dragMesh : (groveThreshold?.meshTopN ?? 0), effTopN)
 
   useEffect(() => {
     if (!barDragging) return
@@ -1791,6 +1808,25 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [barDragging, species.length])
 
+  // The MESH bar drags the same way, and is CLAMPED to the impostor bar while dragging —
+  // you cannot pull geometry below the impostor cut, because the constraint is structural
+  // rather than a preference. Committed on release, like the gold bar.
+  useEffect(() => {
+    if (!meshDragging) return
+    const idxFrom = (clientY) => {
+      const el = listRef.current; if (!el) return effMeshTopN
+      const rect = el.getBoundingClientRect()
+      const y = clientY - rect.top + el.scrollTop
+      return Math.max(0, Math.min(effTopN, Math.round(y / (rowHRef.current || 44))))
+    }
+    const move = (e) => setDragMesh(idxFrom(e.clientY))
+    const up = () => setDragMesh(v => { if (v != null) onSetMeshTopN(v); return null })
+    window.addEventListener('pointermove', move)
+    window.addEventListener('pointerup', up)
+    return () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up) }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [meshDragging, effTopN, species.length])
+
   const Bar = (
     <div onPointerDown={(e) => { e.preventDefault(); setDragTopN(effTopN) }}
       title="Drag to set how many species build in the Grove — the rest substitute to a same-category neighbour"
@@ -1806,11 +1842,27 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
     </div>
   )
 
+  const MeshBar = (
+    <div onPointerDown={(e) => { e.preventDefault(); setDragMesh(effMeshTopN) }}
+      title="Drag to set how many species ship real GEOMETRY. Everything between this bar and the gold one ships as an impostor only. Geometry costs ~34x an impostor per species, so this is the tight budget."
+      style={{
+        display: 'flex', alignItems: 'center', gap: 6, cursor: 'ns-resize',
+        padding: '3px 8px', background: 'rgba(120,180,255,0.14)',
+        borderTop: '2px solid #6aa6e8', borderBottom: '2px solid #6aa6e8', userSelect: 'none',
+      }}>
+      <span style={{ fontSize: 9, color: '#9cc6f0', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
+        ▲ mesh {effMeshTopN} · impostor ▼
+      </span>
+      <span style={{ marginLeft: 'auto', fontSize: 12, color: '#6aa6e8' }}>⇳</span>
+    </div>
+  )
+
   const renderRow = (s) => {
     const active = s.species === activeRosterName
     const d = rosterDot(s)
-    const inGrove = isIn(s)
-    const isPinned = pinned.has(s.species)
+    const elig = eligByName.get(s.species) || { tier: 'out', why: '', locked: false }
+    const inGrove = elig.tier !== 'out'
+    const isPinned = elig.locked
     return (
       <div key={s.species} ref={(el) => { if (el) rowHRef.current = el.offsetHeight }}
         style={{
@@ -1828,13 +1880,35 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
           <span style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 12, color: active ? '#e8c878' : '#ddd', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{s.species}</div>
             <div style={{ fontSize: 10, color: '#7d848d' }}>
-              {s.count} placements{!inGrove ? ' · substitutes' : (isPinned ? ' · pinned' : '')}
+              {s.count} placements
+              {elig.tier === 'mesh' ? ' · mesh' : elig.tier === 'impostor' ? ' · impostor' : ' · substitutes'}
+              {elig.aspirational ? <span style={{ color: '#d08a3a' }}> · WANTED</span> : null}
             </div>
           </span>
         </button>
-        <button onClick={() => onTogglePin(s.species)}
-          title={isPinned ? 'Pinned into the Grove (kept even below the bar) — click to unpin' : 'Pin into the Grove (keep even if below the bar)'}
-          style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '0 8px', fontSize: 12, opacity: isPinned ? 1 : 0.28 }}>
+        {/* ⭐ EYE = the OUTCOME · PIN = the INTENT. Two orthogonal controls, one meaning
+            each (Jacob, 2026-08-25). The eye always reads as what HAPPENS; the pin says
+            why it will not change when the bar moves. A thumbtack alone showed the
+            exception and made you do arithmetic against the bar in your head.
+            ⛔ Dimmed vs solid is the whole record: "ships because the bar says so" must
+            look different from "ships because I insisted", or dragging the bar tells you
+            nothing. */}
+        <button onClick={() => onSetOverride(s.species, elig.tier === 'out' ? 'pinned' : 'withheld')}
+          title={elig.tier === 'out'
+            ? `${elig.why} — click to pin it IN`
+            : `${elig.why} — click to withhold (we have it; it is not good enough)`}
+          style={{
+            border: 'none', background: 'transparent', cursor: 'pointer', padding: '0 4px 0 8px',
+            fontSize: 12, opacity: elig.tier === 'out' ? 0.3 : (elig.locked ? 1 : 0.6),
+          }}>
+          {elig.tier === 'out' ? '👁' : '👁'}
+          {elig.tier === 'out' && <span style={{ position: 'absolute', marginLeft: -13, fontSize: 13, color: '#c66' }}>╱</span>}
+        </button>
+        <button onClick={() => onSetOverride(s.species, elig.locked ? 'none' : (elig.tier === 'out' ? 'pinned' : 'withheld'))}
+          title={elig.locked
+            ? `Locked against the bar (${elig.why}) — click to release`
+            : 'Pin: lock this species against the bar. A pin on a RED species is a DIRECTIVE — it reads as wanted-not-yet-buildable.'}
+          style={{ border: 'none', background: 'transparent', cursor: 'pointer', padding: '0 8px', fontSize: 12, opacity: elig.locked ? 1 : 0.22 }}>
           📌
         </button>
       </div>
@@ -1870,7 +1944,14 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
           rows.map(renderRow)
         ) : (
           <>
-            {rows.slice(0, effTopN).map(renderRow)}
+            {/* ⭐ TWO NESTED BARS. mesh ⊂ impostor — a mesh species still needs an impostor
+                because only its TALLEST placements keep geometry and the rest of that same
+                species render as impostors. Measured 2026-08-25: a species costs ~19 MB as
+                geometry and ~0.56 MB as an impostor, so the mesh bar is the tight budget
+                and the impostor bar should run deep. */}
+            {rows.slice(0, effMeshTopN).map(renderRow)}
+            {rows.length > 0 && MeshBar}
+            {rows.slice(effMeshTopN, effTopN).map(renderRow)}
             {rows.length > 0 && Bar}
             {rows.slice(effTopN).map(renderRow)}
           </>

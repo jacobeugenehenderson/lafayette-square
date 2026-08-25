@@ -5,6 +5,7 @@
  * demand, autosave debounced, derived flags).
  */
 import { create } from 'zustand'
+import { clampBars } from '../../../arborist/grove-eligibility.mjs'
 import { writeCanaryTree } from '../../lib/canaryTree.js'
 
 // activeLookId persists across sessions so the operator returns to the
@@ -568,7 +569,11 @@ const useArboristStore = create((set, get) => ({
   // ⭐ The immediate customer is platanus_acerifolia: a legitimate London Plane match, now
   // green, that renders BLANK (no barkDetail, both impostor bakes refused it). Without
   // `withheld` the only way to keep it out is to un-green a true statement.
-  groveThreshold: { topN: null, pinned: [], withheld: [] },
+  //   topN     — the IMPOSTOR bar: how deep gets its own composed identity (cheap)
+  //   meshTopN — the MESH bar: which of those also ship geometry (expensive, ~34x)
+  // ⛔ NESTED: meshTopN can never exceed topN. A mesh species still needs an impostor,
+  // because only its TALLEST placements keep geometry and the rest render as impostors.
+  groveThreshold: { topN: null, meshTopN: null, pinned: [], withheld: [] },
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
@@ -596,13 +601,20 @@ const useArboristStore = create((set, get) => ({
   // built neighbour at runtime. `pinned` species stay IN even below the bar (the
   // once-appearing SPECIAL tree). Persisted per-Look in design.groveThreshold.
   setGroveTopN: (n) => {
-    const gt = { ...get().groveThreshold, topN: n }
+    const gt = clampBars({ ...get().groveThreshold, topN: n })
     set({ groveThreshold: gt })
     get()._saveGroveThreshold(gt)
   },
   // ⭐ THREE STATES, ONE GESTURE. Cycles neutral → pinned → withheld → neutral, because
   // those are the only three things an operator can mean about one species and the bar:
   // let the bar decide · always in · never in. A species is never in both lists.
+  // The MESH bar. Clamped to the impostor bar on every move — the constraint is
+  // structural, so it is enforced here rather than left to the UI to respect.
+  setGroveMeshTopN: (n) => {
+    const gt = clampBars({ ...get().groveThreshold, meshTopN: n })
+    set({ groveThreshold: gt })
+    get()._saveGroveThreshold(gt)
+  },
   cycleGroveOverride: (species) => {
     const cur = get().groveThreshold
     const pinned = new Set(cur.pinned || [])
@@ -632,7 +644,7 @@ const useArboristStore = create((set, get) => ({
     try {
       await fetch(`/api/cartograph/looks/${encodeURIComponent(look)}/grove-threshold`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topN: gt.topN, pinned: gt.pinned, withheld: gt.withheld || [] }),
+        body: JSON.stringify({ topN: gt.topN, meshTopN: gt.meshTopN ?? null, pinned: gt.pinned, withheld: gt.withheld || [] }),
       })
     } catch (err) { set({ rosterError: String(err) }) }
   },
