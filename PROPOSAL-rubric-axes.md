@@ -1,6 +1,7 @@
-# PROPOSAL — the rubric axes, rebuilt on standard botanical vocabulary
+# APPROVED SPEC — the rubric axes, rebuilt on standard botanical vocabulary
 
-**STATUS: PROPOSAL. Does NOT overwrite `arborist/rubric.json`.** Jacob reads, then we cut over.
+**STATUS: ✅ APPROVED by Jacob 2026-08-24 — all four questions YES.** Not yet executed:
+`arborist/rubric.json` is unchanged. §7 is the cutover surface.
 **Evidence:** `TRAIT-SURVEY-FINDINGS.md` (13 sources) · vocabularies pulled live from the two
 open NC State endpoints, 2026-08-24.
 
@@ -40,7 +41,7 @@ other is silently thrown away.** No number of extra terms fixes that — it has 
 | today | becomes | terms | attestation |
 |---|---|---|---|
 | `leaf.silhouette` (10, mixed) | **`leaf.type`** | Simple · Compound-pinnate · Compound-bipinnate · Compound-palmate · Needle · Scale · Frond | standard [3+] |
-| | **`leaf.shape`** | Acicular · Cordate · Deltoid · Elliptical · Lanceolate · Linear · Oblanceolate · Oblong · Obovate · Orbicular · Ovate · Reniform · Rhomboid · Spatulate | standard Latin [3+] |
+| | **`leaf.shape`** | Acicular · Cordate · Deltoid · Elliptical · **Flabellate** · Lanceolate · Linear · Oblanceolate · Oblong · Obovate · Orbicular · Ovate · Reniform · Rhomboid · Spatulate | standard Latin [3+] |
 | | **`leaf.margin`** | Entire · Serrate · Doubly-serrate · Dentate · Doubly-dentate · Crenate · Lobed · Sinuate · Undulate · Spinose | standard Latin [3+] |
 | `leaf.ways` (5) | **`leaf.arrangement`** | Alternate · Opposite · Whorled · Rosulate · Fascicled | ≡ already [3+] |
 | `bark.type` (8) | **`bark.texture`** | Smooth · Fissured · Furrowed · Ridged · Plated · Scaly · Shaggy · Exfoliating · Papery · Lenticellate · Mottled · Fibrous · Warty | standard dendrology [3+] |
@@ -97,6 +98,32 @@ two dimensions; our one scalar cannot describe it.
 1. **Adopt §2 wholesale?** (My read of your ruling: yes.)
 2. **Which of §3's new axes make the first cut** — all six, or `foliage_type` + `crown.base_height` only?
 3. **`bark.color` as a gradient ramp rather than a term list** — agree?
-4. ⚠️ **`leaf.silhouette` currently carries `star` and `fan`.** Neither is standard; `fan` is
-   ginkgo (flabellate) and `star` is probably sweetgum (a lobed shape). Both look like
-   descriptions of two specific trees rather than vocabulary. **Retire them?**
+4. ✅ **`star` and `fan` RETIRED.**
+   - **`fan` → `Flabellate`** — the standard term, and exactly what ginkgo is. Straight swap.
+   - ⭐ **`star` has NO replacement, because it was never a shape.** Sweetgum is
+     `shape: Orbicular` **+** `margin: Lobed` (palmately, 5–7). One token was trying to say two
+     things — **the split dissolves it rather than renaming it.** That is the whole argument for
+     §1 in one example.
+
+---
+
+## 7. ⛔ THE CUTOVER SURFACE — what an execution actually touches
+
+Data cost is a rounding error (~6 green trees). **The CODE surface is wider, and that is the
+risk.** Anything keyed on an axis id changes:
+
+| file | what changes | note |
+|---|---|---|
+| `arborist/rubric.json` | the axes themselves | ⛔ authored state — the source of truth |
+| `arborist/dossiers/*.json` | every `required` key (`leaf.silhouette` → three keys, etc.) | 10 files; **a dossier with a stale key silently stops matching** |
+| `arborist/vocabulary.mjs` | `TERM_ALIASES` keys + new axes | additive; nothing lost |
+| `arborist/matcher.js` | reads `required` per axis | verify it is axis-agnostic before assuming |
+| `arborist/readiness.js` | `PART_TYPES` / per-part status | it groups by part, not axis — probably untouched, **confirm** |
+| `arborist/state/part-index.json` | chassis/bark/leaf `tags` keyed by axis id | ⭐ **239 chassis carry `chassis.habit` tags** — a rename orphans them |
+
+⭐ **DO IT AS ONE CUT, NOT AN ALIAS LAYER** *(Jacob's ruling)* — an alias layer would preserve
+exactly the conflation we are removing.
+⛔ **The check that must exist before the cut lands:** every `required` key in every dossier
+resolves to a live axis id, and every `tags` key in `part-index.json` does too. A stale key
+does not throw — **it silently stops matching**, which is the failure mode this whole day has
+been about.
