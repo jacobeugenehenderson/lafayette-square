@@ -25,7 +25,29 @@ asking.** The slab carries the first land-use pour (`unknown`→`underived`, gro
 
 ---
 
-## 0a. 🔥 START HERE — HERO'S TREES REGRESSED. NO PUBLIC EXPOSURE. THIS IS THE JOB.
+## 0a. ⛔ RE-POINTED 2026-08-24 — **THE JOB IS THE ROSTER, NOT HERO**
+
+*(Jacob: "I am confused; why are we dispatching that agent to do that stuff? Don't we need to
+build the roster?" — and he is right. This section led with Hero because a staging regression
+appeared, part of it mine. That was MY framing, not his priority.)*
+
+⭐ **THE GOAL, in his words: "finally finish the foundation so we can finally publish an actual
+grove."** That is the ROSTER. Three concrete steps, in order:
+
+| # | step | needs | gets you |
+|---|---|---|---|
+| **1** | **Wire `arborist/vocabulary.mjs`** into `roster-coverage.js` | nothing else — it is built and tested | ⭐ **An honest green/red board.** Today 160 of 180 census names resolve to NOTHING, so the library cannot even NAME what the town contains (London Plane is heavily represented in LS and appears in no look, no grove, no library row). |
+| **2** | **Execute the rubric cutover**, `PROPOSAL-rubric-axes.md` §7 | ⛔ the stale-key CHECK first | 19 → 31 columns; `leaf.silhouette` stops conflating four axes |
+| **3** | **Hydrate** from NC State + SelecTree | step 2 done | red → green automatically |
+
+⛔ **Only ONE ordering constraint binds: cutover BEFORE hydration**, or you hydrate into
+conflated axes. **Step 1 depends on neither** — it is the cheapest honest win on the board.
+⭐ **The 31 columns are NOT a prerequisite for the roster.** They are for composing a species
+WELL; name resolution is for listing it CORRECTLY. Do not block 1 on 2.
+
+---
+
+## 0b. HERO'S TREES — a PARALLEL LANE, not the headline
 
 **Jacob, 2026-08-24 evening: Hero's trees are "small and sparse".** Browse is fine.
 **Hero is the whole problem.** Treat it as the only ticket until it is closed.
