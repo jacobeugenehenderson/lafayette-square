@@ -9,123 +9,50 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Ginkgo Tree Ginkgo biloba Trunk Bark 2000px",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Ginkgo_Tree_Ginkgo_biloba_Trunk_Bark_2000px.jpg/960px-Ginkgo_Tree_Ginkgo_biloba_Trunk_Bark_2000px.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ginkgo_Tree_Ginkgo_biloba_Trunk_Bark_2000px.jpg",
-      "credit": "Photo (c)2007 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
-      "licence": "GFDL 1.2",
-      "artist": "Photo (c)2007 Derek Ramsey ( Ram-Man )",
-      "file": "File:Ginkgo Tree Ginkgo biloba Trunk Bark 2000px.jpg",
-      "via": "search: \"Ginkgo biloba\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Ginkgo biloba\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Green Ginkgo Tree Leaf",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f2/Green_Ginkgo_Tree_Leaf.jpg/960px-Green_Ginkgo_Tree_Leaf.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Green_Ginkgo_Tree_Leaf.jpg",
-      "credit": "Brayden A. — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Brayden A.",
-      "file": "File:Green Ginkgo Tree Leaf.jpg",
-      "via": "search: \"Ginkgo biloba\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Ginkgo biloba\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "A golden Ginkgo biloba in autumn",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/16/A_golden_Ginkgo_biloba_in_autumn.jpg/960px-A_golden_Ginkgo_biloba_in_autumn.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:A_golden_Ginkgo_biloba_in_autumn.jpg",
-      "credit": "Benjamin Ceci — Public domain (Wikimedia Commons)",
-      "licence": "Public domain",
-      "artist": "Benjamin Ceci",
-      "file": "File:A golden Ginkgo biloba in autumn.jpg",
-      "via": "search: \"Ginkgo biloba\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Ginkgo biloba\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Ginkgo tree, Kew geograph.org.uk 5982576",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/6/68/Ginkgo_tree%2C_Kew_-_geograph.org.uk_-_5982576.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Ginkgo_tree,_Kew_-_geograph.org.uk_-_5982576.jpg",
-      "credit": "Paul Harrop — CC BY-SA 2.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 2.0",
-      "artist": "Paul Harrop",
-      "file": "File:Ginkgo tree, Kew - geograph.org.uk - 5982576.jpg",
-      "via": "search: \"Ginkgo biloba\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Ginkgo biloba\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 50,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 60,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "horizontal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -144,24 +71,17 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -209,17 +129,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "bark.texture",
-      "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

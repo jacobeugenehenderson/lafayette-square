@@ -9,116 +9,46 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Freeman maple trunk",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/0/05/Freeman_maple_trunk.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Freeman_maple_trunk.jpg",
-      "credit": "Nadiatalent — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Nadiatalent",
-      "file": "File:Freeman maple trunk.jpg",
-      "via": "search: \"Acer × freemanii\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Acer × freemanii\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Acer saccharinum (silver maple leaf in fall colors) (Newark campus of Ohio State University, Newark, Ohio, USA) (20 Octo",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/32/Acer_saccharinum_%28silver_maple_leaf_in_fall_colors%29_%28Newark_campus_of_Ohio_State_University%2C_Newark%2C_Ohio%2C_USA%29_%2820_October_2015%29_2_%2822320810526%29.jpg/960px-Acer_saccharinum_%28silver_maple_leaf_in_fall_colors%29_%28Newark_campus_of_Ohio_State_University%2C_Newark%2C_Ohio%2C_USA%29_%2820_October_2015%29_2_%2822320810526%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_saccharinum_(silver_maple_leaf_in_fall_colors)_(Newark_campus_of_Ohio_State_University,_Newark,_Ohio,_USA)_(20_October_2015)_2_(22320810526).jpg",
-      "credit": "James St. John — CC BY 2.0 (Wikimedia Commons)",
-      "licence": "CC BY 2.0",
-      "artist": "James St. John",
-      "file": "File:Acer saccharinum (silver maple leaf in fall colors) (Newark campus of Ohio State University, Newark, Ohio, USA) (20 October 2015) 2 (22320810526).jpg",
-      "via": "search: \"Acer × freemanii\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Acer × freemanii\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Acer freemanii Autumn Blaze 0zz",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1f/Acer_freemanii_Autumn_Blaze_0zz.jpg/960px-Acer_freemanii_Autumn_Blaze_0zz.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Acer_freemanii_Autumn_Blaze_0zz.jpg",
-      "credit": "Photo by David J. Stang — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Photo by David J. Stang",
-      "file": "File:Acer freemanii Autumn Blaze 0zz.jpg",
-      "via": "search: \"Acer × freemanii\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Acer × freemanii\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Red and green Maple Tree",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Red_and_green_Maple_Tree_%283972416112%29.jpg/960px-Red_and_green_Maple_Tree_%283972416112%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_and_green_Maple_Tree_(3972416112).jpg",
-      "credit": "Brady Smith; Coconino National Forest — CC BY-SA 2.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 2.0",
-      "artist": "Brady Smith; Coconino National Forest",
-      "file": "File:Red and green Maple Tree (3972416112).jpg",
-      "via": "search: \"Acer × freemanii\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Acer × freemanii\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 45,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 35,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 60,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "rounded",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -143,31 +73,21 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "exfoliating",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": "scaly",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -212,18 +132,6 @@
       "selectree",
       "usda"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

@@ -21,7 +21,7 @@
  */
 import { readFileSync, readdirSync, writeFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
-import { resolveTerm, resolveSpecies, aliasesFor, normalize, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
+import { resolveTerm, resolveSpecies, aliasesFor, normalize, verifyTaxon, TERM_REDIRECTS, NOT_A_TRAIT } from './vocabulary.mjs'
 
 const WRITE = process.argv.includes('--write')
 const root = path.join(import.meta.dirname, '..')
@@ -53,7 +53,12 @@ for (const f of readdirSync(dDir).filter(f => f.endsWith('.json'))) {
   for (const a of aliasesFor(d.canonicalId || '')) have.add(normalize(a))
 }
 
-const obs = readFileSync(path.join(root, 'scratch/dossier-raw-observations.jsonl'), 'utf8')
+// ⚠️ Explicit flag check. hydrate-dossiers had `args[args.indexOf('--in') + 1]`, and
+// indexOf returns -1 when the flag is absent, so -1 + 1 read args[0] -- `--write`.
+const inFlag = process.argv.indexOf('--in')
+const IN = inFlag >= 0 ? process.argv[inFlag + 1] : 'scratch/dossier-raw-observations.jsonl'
+if (inFlag >= 0 && !IN) { console.error('⛔ --in given with no path'); process.exit(1) }
+const obs = readFileSync(path.isAbsolute(IN) ? IN : path.join(root, IN), 'utf8')
   .split('\n').filter(Boolean).map(l => JSON.parse(l))
 
 // Strip the botanical authority ("Acer rubrum L." → "Acer rubrum"); keep the hybrid ×.
@@ -68,9 +73,10 @@ const slug = (t) => normalize(cleanTaxon(t)).replace(/[^a-z0-9]+/g, '_').replace
 
 const bySpecies = new Map()
 for (const o of obs) {
-  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, cells: new Map(), sources: new Set() })
+  if (!bySpecies.has(o.species)) bySpecies.set(o.species, { taxon: null, queried: null, cells: new Map(), sources: new Set() })
   const rec = bySpecies.get(o.species)
   if (o.field === '_matched_taxon' && !rec.taxon) rec.taxon = o.value
+  if (o.field === '_taxon_queried' && !rec.queried) rec.queried = o.value
   rec.sources.add(o.source)
 
   let axis = FIELD_MAP[o.field]
@@ -102,7 +108,34 @@ for (const [species, rec] of bySpecies) {
   if (have.has(normalize(species)) || have.has(normalize(resolved))) continue
   if (!rec.taxon) { suspect.push({ species, why: 'no matched taxon in the harvest' }); continue }
 
-  // ⛔ SUSPECT MATCH. The census name carries a qualifier the matched taxon does not
+  // ── LAYER 1: is the returned record the binomial we asked for? ──
+  // vocabulary.mjs's verifyTaxon, written by the harvest session. Catches the class that
+  // poisons an identity axis silently: USDA symbol TICO returns Tiarella cordifolia (a
+  // foamflower) for a Tilia cordata query.
+  if (rec.queried && rec.taxon) {
+    const v = verifyTaxon(rec.queried, rec.taxon)
+    if (v.match === 'mismatch') {
+      suspect.push({ species, why: `taxon mismatch — asked ${v.queried}, got ${v.returned}: ${v.reason}` })
+      continue
+    }
+    // ⛔ A CULTIVAR IS NOT THE SPECIES, and `returnedRank` is advisory precisely so this
+    // decision lands here. SelecTree's top hit for Acer rubrum was `'Armstrong'`, which is
+    // Columnar where the species is not -- on the #1 species by demand. Nomenclaturally
+    // that record is `exact` and the peer was right not to force it into the verdict; but
+    // MINT TAKES MORPHOLOGY from it, so for us a cultivar record is a stop.
+    if (v.returnedRank && (v.returnedRank.cultivar || v.returnedRank.infraspecific)) {
+      const r = v.returnedRank.cultivar || v.returnedRank.infraspecific
+      suspect.push({ species, why: `returned record is the cultivar/infraspecific "${r}", not the species — its morphology is not the species' morphology` })
+      continue
+    }
+  }
+
+  // ── LAYER 2: does the CENSUS name carry a qualifier the taxon does not account for? ──
+  // ⛔ A SEPARATE QUESTION, and verifyTaxon cannot answer it: it compares two binomials,
+  // and "Elm, Hybrid" is a roster name. Measured, not assumed --
+  // verifyTaxon('Ulmus', 'Ulmus americana') returns `exact`, and is RIGHT to: it IS a
+  // Ulmus. What is wrong lives in the census name, which verifyTaxon never sees. Two
+  // layers because there are genuinely two questions.
   // account for. "Elm, Hybrid" matched `Ulmus americana` -- a hybrid elm is not an
   // American elm, and minting it would put the WRONG IDENTITY IN THE FILENAME, where
   // identityConfirmed:false cannot undo it. Refuse; a human supplies the taxon.

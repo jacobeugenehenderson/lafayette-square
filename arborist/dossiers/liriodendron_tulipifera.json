@@ -9,156 +9,61 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Tulip Tree Liriodendron tulipifera Trunk Bark 3000px",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2c/Tulip_Tree_Liriodendron_tulipifera_Trunk_Bark_3000px.jpg/960px-Tulip_Tree_Liriodendron_tulipifera_Trunk_Bark_3000px.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulip_Tree_Liriodendron_tulipifera_Trunk_Bark_3000px.jpg",
-      "credit": "Photo by and (c)2006 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
-      "licence": "GFDL 1.2",
-      "artist": "Photo by and (c)2006 Derek Ramsey ( Ram-Man )",
-      "file": "File:Tulip Tree Liriodendron tulipifera Trunk Bark 3000px.jpg",
-      "via": "search: \"Liriodendron tulipifera\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Liriodendron tulipifera\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Tulip Tree Liriodendron tulipifera Leaf Underside Red Mite 2700px",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg/960px-Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg",
-      "credit": "Photo by and (c)2007 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
-      "licence": "GFDL 1.2",
-      "artist": "Photo by and (c)2007 Derek Ramsey ( Ram-Man )",
-      "file": "File:Tulip Tree Liriodendron tulipifera Leaf Underside Red Mite 2700px.jpg",
-      "via": "search: \"Liriodendron tulipifera\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Liriodendron tulipifera\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Golden autumn leaves of the Liriodendron",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Golden_autumn_leaves_of_the_Liriodendron.jpg/960px-Golden_autumn_leaves_of_the_Liriodendron.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Golden_autumn_leaves_of_the_Liriodendron.jpg",
-      "credit": "Jules Grandgagnage — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Jules Grandgagnage",
-      "file": "File:Golden autumn leaves of the Liriodendron.jpg",
-      "via": "search: \"Liriodendron tulipifera\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Liriodendron tulipifera\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Tulip Tree Liriodendron tulipifera Leaf Underside Red Mite 2700px",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c6/Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg/960px-Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tulip_Tree_Liriodendron_tulipifera_Leaf_Underside_Red_Mite_2700px.jpg",
-      "credit": "Photo by and (c)2007 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
-      "licence": "GFDL 1.2",
-      "artist": "Photo by and (c)2007 Derek Ramsey ( Ram-Man )",
-      "file": "File:Tulip Tree Liriodendron tulipifera Leaf Underside Red Mite 2700px.jpg",
-      "via": "search: \"Liriodendron tulipifera\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Liriodendron tulipifera\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": 80,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 80,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 120,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "coarse",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "medium",
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -178,63 +83,37 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "lobed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "entire",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "smooth",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -282,19 +161,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

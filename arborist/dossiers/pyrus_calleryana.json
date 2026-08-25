@@ -9,138 +9,53 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Pyrus Calleryana bark",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/33/Pyrus_Calleryana_bark.jpg/960px-Pyrus_Calleryana_bark.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pyrus_Calleryana_bark.jpg",
-      "credit": "Downtowngal — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Downtowngal",
-      "file": "File:Pyrus Calleryana bark.jpg",
-      "via": "search: \"Pyrus calleryana\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Pyrus calleryana\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Pyrus calleryana leaf 1",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/8f/Pyrus_calleryana_leaf_1.jpg/960px-Pyrus_calleryana_leaf_1.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pyrus_calleryana_leaf_1.jpg",
-      "credit": "Downtowngal — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Downtowngal",
-      "file": "File:Pyrus calleryana leaf 1.jpg",
-      "via": "search: \"Pyrus calleryana\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Pyrus calleryana\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Pyrus calleryana (autumn leaves)",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Pyrus_calleryana_%28autumn_leaves%29.jpg/960px-Pyrus_calleryana_%28autumn_leaves%29.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Pyrus_calleryana_(autumn_leaves).jpg",
-      "credit": "Alpsdake — CC0 (Wikimedia Commons)",
-      "licence": "CC0",
-      "artist": "Alpsdake",
-      "file": "File:Pyrus calleryana (autumn leaves).jpg",
-      "via": "search: \"Pyrus calleryana\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Pyrus calleryana\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Bradford pear tree, Reidsville",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/Bradford_pear_tree%2C_Reidsville.jpg/960px-Bradford_pear_tree%2C_Reidsville.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bradford_pear_tree,_Reidsville.jpg",
-      "credit": "Michael Rivera — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Michael Rivera",
-      "file": "File:Bradford pear tree, Reidsville.jpg",
-      "via": "search: \"Pyrus calleryana\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Pyrus calleryana\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 20,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 50,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "columnar",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "multi-stem",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -166,71 +81,46 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "crenate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "serrate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "undulate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
+          "seen": 2
         },
         {
           "value": "ridged",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
+          "seen": 2
         },
         {
           "value": "lenticellate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "plated",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -262,7 +152,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -277,19 +168,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

@@ -9,85 +9,53 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Basswood (Tilia americana) Bark Guelph, Ontario 2013 11 30",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/40/Basswood_%28Tilia_americana%29_Bark_-_Guelph%2C_Ontario_2013-11-30.jpg/960px-Basswood_%28Tilia_americana%29_Bark_-_Guelph%2C_Ontario_2013-11-30.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Basswood_(Tilia_americana)_Bark_-_Guelph,_Ontario_2013-11-30.jpg",
-      "credit": "Ryan Hodnett — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Ryan Hodnett",
-      "file": "File:Basswood (Tilia americana) Bark - Guelph, Ontario 2013-11-30.jpg",
-      "via": "search: \"Tilia americana\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Tilia americana\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Leaf Tilia americana 01",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Leaf_Tilia_americana_01.jpg/960px-Leaf_Tilia_americana_01.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Leaf_Tilia_americana_01.jpg",
-      "credit": "Rohit Naniwadekar — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Rohit Naniwadekar",
-      "file": "File:Leaf Tilia americana 01.jpg",
-      "via": "search: \"Tilia americana\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Tilia americana\" leaf"
-    },
-    {
-      "state": "summer",
-      "caption": "Thirlstane House American Lime tree",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dc/Thirlstane_House_American_Lime_tree.jpg/960px-Thirlstane_House_American_Lime_tree.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Thirlstane_House_American_Lime_tree.jpg",
-      "credit": "Victuallers — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Victuallers",
-      "file": "File:Thirlstane House American Lime tree.jpg",
-      "via": "search: \"American Linden\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"American Linden\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": null,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 60,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 70,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": 100,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": "conical",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": "oval",
+          "seen": 1
+        },
+        {
+          "value": "pyramidal",
+          "seen": 1
+        },
+        {
+          "value": "rounded",
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -106,26 +74,13 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "cordate",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "ovate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "serrate",
@@ -138,39 +93,20 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "furrowed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "lenticellate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": "scaly",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -190,46 +126,6 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
-    },
-    "chassis.habit": {
-      "target": "conical",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "conical",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
-        {
-          "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "rounded",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     }
   },
   "recipe": null,
@@ -242,8 +138,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit. See .candidates; an author must choose.",
-    "sources disagree on: leaf.shape, bark.texture — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.size. See .candidates; an author must choose.",
+    "sources disagree on: chassis.habit, leaf.shape, bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -258,19 +154,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

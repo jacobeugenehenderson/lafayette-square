@@ -9,116 +9,66 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Tilia cordata bark 2 beentree",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Tilia_cordata_bark_2_beentree.jpg/960px-Tilia_cordata_bark_2_beentree.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tilia_cordata_bark_2_beentree.jpg",
-      "credit": "unknown — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": null,
-      "file": "File:Tilia cordata bark 2 beentree.jpg",
-      "via": "search: \"Tilia cordata\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Tilia cordata\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Tilia trunk and leaves",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fe/Tilia_trunk_and_leaves.jpg/960px-Tilia_trunk_and_leaves.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tilia_trunk_and_leaves.jpg",
-      "credit": "Pietro Voso — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Pietro Voso",
-      "file": "File:Tilia trunk and leaves.jpg",
-      "via": "search: \"Littleleaf Linden\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Littleleaf Linden\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Autumn leaves Все краски осени Желтый Tilia cordata Липа сердцевидная",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/60/Autumn_leaves_%D0%92%D1%81%D0%B5_%D0%BA%D1%80%D0%B0%D1%81%D0%BA%D0%B8_%D0%BE%D1%81%D0%B5%D0%BD%D0%B8_%D0%96%D0%B5%D0%BB%D1%82%D1%8B%D0%B9_Tilia_cordata_%D0%9B%D0%B8%D0%BF%D0%B0_%D1%81%D0%B5%D1%80%D0%B4%D1%86%D0%B5%D0%B2%D0%B8%D0%B4%D0%BD%D0%B0%D1%8F.jpg/960px-Autumn_leaves_%D0%92%D1%81%D0%B5_%D0%BA%D1%80%D0%B0%D1%81%D0%BA%D0%B8_%D0%BE%D1%81%D0%B5%D0%BD%D0%B8_%D0%96%D0%B5%D0%BB%D1%82%D1%8B%D0%B9_Tilia_cordata_%D0%9B%D0%B8%D0%BF%D0%B0_%D1%81%D0%B5%D1%80%D0%B4%D1%86%D0%B5%D0%B2%D0%B8%D0%B4%D0%BD%D0%B0%D1%8F.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Autumn_leaves_%D0%92%D1%81%D0%B5_%D0%BA%D1%80%D0%B0%D1%81%D0%BA%D0%B8_%D0%BE%D1%81%D0%B5%D0%BD%D0%B8_%D0%96%D0%B5%D0%BB%D1%82%D1%8B%D0%B9_Tilia_cordata_%D0%9B%D0%B8%D0%BF%D0%B0_%D1%81%D0%B5%D1%80%D0%B4%D1%86%D0%B5%D0%B2%D0%B8%D0%B4%D0%BD%D0%B0%D1%8F.jpg",
-      "credit": "Tsyganov Sergey — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Tsyganov Sergey",
-      "file": "File:Autumn leaves Все краски осени Желтый Tilia cordata Липа сердцевидная.jpg",
-      "via": "search: \"Tilia cordata\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Tilia cordata\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Tilia cordata tree illustration",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/2/21/Tilia_cordata_tree_illustration.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Tilia_cordata_tree_illustration.jpg",
-      "credit": "G.Bernetti/EUFORGEN — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "G.Bernetti/EUFORGEN",
-      "file": "File:Tilia cordata tree illustration.jpg",
-      "via": "search: \"Littleleaf Linden\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Littleleaf Linden\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": 50,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 50,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": 35,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 100,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "oval",
+          "seen": 1
+        },
+        {
+          "value": "pyramidal",
+          "seen": 1
+        },
+        {
+          "value": "conical",
+          "seen": 1
+        },
+        {
+          "value": "rounded",
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "medium",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fine",
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -131,32 +81,22 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "cordate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ovate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "elliptical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "serrate",
@@ -169,31 +109,21 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -213,45 +143,6 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
-    },
-    "chassis.habit": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        },
-        {
-          "value": "rounded",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     }
   },
   "recipe": null,
@@ -264,8 +155,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: crown.texture, leaf.shape, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size, chassis.habit — see .alternatives",
+    "⛔ NO TARGET — sources tied on: chassis.habit, crown.texture, leaf.shape, bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -280,19 +171,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

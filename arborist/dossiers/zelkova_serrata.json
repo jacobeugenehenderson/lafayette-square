@@ -9,123 +9,45 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Japanese Zelkova serrata (81 502 L) Lower Trunk Bark",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/Japanese_Zelkova_serrata_%2881-502-L%29_Lower_Trunk_Bark.JPG/960px-Japanese_Zelkova_serrata_%2881-502-L%29_Lower_Trunk_Bark.JPG",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Japanese_Zelkova_serrata_(81-502-L)_Lower_Trunk_Bark.JPG",
-      "credit": "Photo by and (c)2014 Derek Ramsey ( Ram-Man ) — GFDL 1.2 (Wikimedia Commons)",
-      "licence": "GFDL 1.2",
-      "artist": "Photo by and (c)2014 Derek Ramsey ( Ram-Man )",
-      "file": "File:Japanese Zelkova serrata (81-502-L) Lower Trunk Bark.JPG",
-      "via": "search: \"Zelkova, Japanese\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Zelkova, Japanese\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Zelkova serrata leaf with holes 2018",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/51/Zelkova_serrata_leaf_with_holes_2018.jpg/960px-Zelkova_serrata_leaf_with_holes_2018.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zelkova_serrata_leaf_with_holes_2018.jpg",
-      "credit": "Jidanni — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Jidanni",
-      "file": "File:Zelkova serrata leaf with holes 2018.jpg",
-      "via": "search: \"Zelkova, Japanese\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Zelkova, Japanese\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Zelkova serrata autumn foliage",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Zelkova-serrata-autumn-foliage.jpg/960px-Zelkova-serrata-autumn-foliage.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zelkova-serrata-autumn-foliage.jpg",
-      "credit": "Sten Porse — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": "Sten Porse",
-      "file": "File:Zelkova-serrata-autumn-foliage.jpg",
-      "via": "search: \"Zelkova, Japanese\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"Zelkova, Japanese\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Zelkova serrata in Golden Valley Tree Park, May 2022 01",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Zelkova_serrata_in_Golden_Valley_Tree_Park%2C_May_2022_01.jpg/960px-Zelkova_serrata_in_Golden_Valley_Tree_Park%2C_May_2022_01.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Zelkova_serrata_in_Golden_Valley_Tree_Park,_May_2022_01.jpg",
-      "credit": "Calistemon — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Calistemon",
-      "file": "File:Zelkova serrata in Golden Valley Tree Park, May 2022 01.jpg",
-      "via": "search: \"Zelkova, Japanese\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"Zelkova, Japanese\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 50,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 50,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
+      "alternatives": [
         {
           "value": 70,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "multi-stem",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "irregular",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "vase",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "rounded",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "coarse",
@@ -144,33 +66,17 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "ovate",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "elliptical",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "oblong",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "serrate",
@@ -229,19 +135,6 @@
       "selectree",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

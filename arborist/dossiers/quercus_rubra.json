@@ -9,91 +9,36 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Bark of the northern red oak",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Bark_of_the_northern_red_oak.jpg/960px-Bark_of_the_northern_red_oak.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Bark_of_the_northern_red_oak.jpg",
-      "credit": "Sebastian Martin Dicke — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Sebastian Martin Dicke",
-      "file": "File:Bark of the northern red oak.jpg",
-      "via": "search: \"northern red oak\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"northern red oak\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Red oak autumn leaves (Quercus rubra) close up, Gunnersbury Park geograph.org.uk 6640198",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7a/Red_oak_autumn_leaves_%28Quercus_rubra%29_close-up%2C_Gunnersbury_Park_-_geograph.org.uk_-_6640198.jpg/960px-Red_oak_autumn_leaves_%28Quercus_rubra%29_close-up%2C_Gunnersbury_Park_-_geograph.org.uk_-_6640198.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Red_oak_autumn_leaves_(Quercus_rubra)_close-up,_Gunnersbury_Park_-_geograph.org.uk_-_6640198.jpg",
-      "credit": "David Hawgood — CC BY-SA 2.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 2.0",
-      "artist": "David Hawgood",
-      "file": "File:Red oak autumn leaves (Quercus rubra) close-up, Gunnersbury Park - geograph.org.uk - 6640198.jpg",
-      "via": "search: \"Quercus rubra\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"Quercus rubra\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Quercus rubra autumn selection",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Quercus_rubra_autumn_selection.jpg/960px-Quercus_rubra_autumn_selection.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quercus_rubra_autumn_selection.jpg",
-      "credit": "Lynk media — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": "Lynk media",
-      "file": "File:Quercus rubra autumn selection.jpg",
-      "via": "search: \"oak, northern red\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"oak, northern red\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Quercus rubra and Platanus orientalis in Golden Valley Tree Park, May 2022",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Quercus_rubra_and_Platanus_orientalis_in_Golden_Valley_Tree_Park%2C_May_2022.jpg/960px-Quercus_rubra_and_Platanus_orientalis_in_Golden_Valley_Tree_Park%2C_May_2022.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Quercus_rubra_and_Platanus_orientalis_in_Golden_Valley_Tree_Park,_May_2022.jpg",
-      "credit": "Calistemon — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Calistemon",
-      "file": "File:Quercus rubra and Platanus orientalis in Golden Valley Tree Park, May 2022.jpg",
-      "via": "search: \"oak, northern red\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"oak, northern red\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
-      "target": null,
+      "target": 50,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 50,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
+      "alternatives": [
         {
           "value": 80,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": 81,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": "rounded",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": "conical",
+          "seen": 1
         }
       ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": "medium",
@@ -112,33 +57,17 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "elliptical",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "oblong",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "obovate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "lobed",
@@ -151,31 +80,21 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "scaly",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -195,32 +114,6 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
-    },
-    "chassis.habit": {
-      "target": "rounded",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
-        {
-          "value": "conical",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     }
   },
   "recipe": null,
@@ -233,8 +126,8 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.habit, bark.texture. See .candidates; an author must choose.",
-    "sources disagree on: chassis.size, leaf.shape — see .alternatives",
+    "⛔ NO TARGET — sources tied on: bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size, chassis.habit, leaf.shape — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
     "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
@@ -249,19 +142,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.fruit_type"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

@@ -9,119 +9,36 @@
   "forces": null,
   "descriptor": null,
   "identityNotes": null,
-  "referenceImages": [
-    {
-      "state": "bark",
-      "caption": "Gleditsia triacanthos bark",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Gleditsia_triacanthos_bark.jpg/960px-Gleditsia_triacanthos_bark.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gleditsia_triacanthos_bark.jpg",
-      "credit": "Bostonian13 — CC BY-SA 3.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 3.0",
-      "artist": "Bostonian13",
-      "file": "File:Gleditsia triacanthos bark.jpg",
-      "via": "search: \"Gleditsia triacanthos\" bark",
-      "confirmed": false,
-      "fromCategory": "search: \"Gleditsia triacanthos\" bark"
-    },
-    {
-      "state": "leaves",
-      "caption": "Gleditsia triacanthos, leaves folded",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/Gleditsia_triacanthos%2C_leaves_folded.jpg/960px-Gleditsia_triacanthos%2C_leaves_folded.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gleditsia_triacanthos,_leaves_folded.jpg",
-      "credit": "Eiku — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Eiku",
-      "file": "File:Gleditsia triacanthos, leaves folded.jpg",
-      "via": "search: \"honeylocust, thornless\" leaf",
-      "confirmed": false,
-      "fromCategory": "search: \"honeylocust, thornless\" leaf"
-    },
-    {
-      "state": "fall",
-      "caption": "Gmina Zabierzów Balice pomnik przyrody Iglicznia trójcierniowa Gleditsia triacanthos",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Gmina_Zabierz%C3%B3w_Balice_pomnik_przyrody_Iglicznia_tr%C3%B3jcierniowa_Gleditsia_triacanthos.jpg/960px-Gmina_Zabierz%C3%B3w_Balice_pomnik_przyrody_Iglicznia_tr%C3%B3jcierniowa_Gleditsia_triacanthos.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gmina_Zabierz%C3%B3w_Balice_pomnik_przyrody_Iglicznia_tr%C3%B3jcierniowa_Gleditsia_triacanthos.jpg",
-      "credit": "Janusz Krzyżek — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Janusz Krzyżek",
-      "file": "File:Gmina Zabierzów Balice pomnik przyrody Iglicznia trójcierniowa Gleditsia triacanthos.jpg",
-      "via": "search: \"honeylocust, thornless\" autumn",
-      "confirmed": false,
-      "fromCategory": "search: \"honeylocust, thornless\" autumn"
-    },
-    {
-      "state": "summer",
-      "caption": "Gleditsia triacanthos pods on tree",
-      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Gleditsia_triacanthos_pods_on_tree.jpg/960px-Gleditsia_triacanthos_pods_on_tree.jpg",
-      "sourceUrl": "https://commons.wikimedia.org/wiki/File:Gleditsia_triacanthos_pods_on_tree.jpg",
-      "credit": "Cbarlow — CC BY-SA 4.0 (Wikimedia Commons)",
-      "licence": "CC BY-SA 4.0",
-      "artist": "Cbarlow",
-      "file": "File:Gleditsia triacanthos pods on tree.jpg",
-      "via": "search: \"honeylocust, thornless\" tree",
-      "confirmed": false,
-      "fromCategory": "search: \"honeylocust, thornless\" tree"
-    }
-  ],
+  "referenceImages": [],
   "required": {
     "chassis.size": {
       "target": 60,
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 60,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": 70,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 3,
-          "sources": [
-            "ncsu",
-            "selectree",
-            "usda"
-          ]
-        },
+      "alternatives": [
         {
           "value": "arching",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "spreading",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -140,38 +57,25 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "lenticellate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "furrowed",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": "scaly",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "compound-bipinnate",
@@ -232,19 +136,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "leaf.arrangement",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.shape",
-      "leaf.foliage_type",
-      "overlay.fruit_type",
-      "crown.texture"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }
