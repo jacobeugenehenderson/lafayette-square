@@ -79,6 +79,20 @@ about a tree; their pages, prose and record set are theirs. ⛔ **Do not bulk-mi
 
 ---
 
+## 3a. ⭐ HARDNESS AND TOLERANCE — Jacob's ruling, 2026-08-24
+The dossier `required` schema is `{ target, hardness, tol }`. **No source supplies hardness or
+tol** — they are authored judgement, and the ruling is:
+
+> **`hard` for the IDENTITY axes · `soft` for everything else.**
+
+| hardness | axes | meaning |
+|---|---|---|
+| **`hard`, tol 0** | `leaf.type` · `leaf.shape` · `chassis.habit` | get these wrong and it is **not that tree**. A part missing the tag cannot satisfy it. |
+| **`soft`, tol 1** (enum) / **0.4** (scalar) | everything else | flexes. ⭐ A part that is untagged on a soft axis is **never disqualified** — it reads as unknown, which is what lets ratify-as-you-go converge instead of stalling. |
+
+⛔ **You do not set these — the resolving script does.** They are listed so you understand why a
+missing value is survivable on most axes and fatal on three.
+
 ## 4. DELIVERABLE
 1. **`scratch/dossier-raw-observations.jsonl`** — one raw observation per line, schema in §0.
    Include EVERY value you find, even ones you doubt map to anything.
