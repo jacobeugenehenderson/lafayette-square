@@ -63,13 +63,30 @@ with London Plane finally appearing at all. Real, and currently missing. **But i
 dossiers against names that do not resolve. It is not first because it is sufficient.
 ⛔ **Cutover (2) before hydration (3)**, or you hydrate into conflated axes.
 
-### ⚠️ THE UNCOSTED LONG POLE IS STEP 4
-Steps 3 and 4 are the two halves of `ORIENTATION §2`'s join — *"the app's real backlog;
-everything else is downstream of it."* **Step 3 is a scrape** (NC State + SelecTree, sources
-verified, `TRAIT-SURVEY-FINDINGS.md`). ⭐⭐ **Step 4 is NOT.** 239 chassis each needing a
-ratified habit is **human judgement on the Shelves**, and nobody has costed it.
-⚠️ And there is no approval gesture for bark or leaf at all — `arborist/state/` holds only
-`_chassis-curation.json`. **That is unbuilt work, not a checkbox someone forgot to tick.**
+### ⭐⭐ STEP 4 IS NOT A BATCH JOB — RATIFY AS YOU GO, IN DEMAND ORDER
+*(Jacob, 2026-08-24: "We will do what we have all along, we will ratify as we go. That's why
+listing by frequency of placement (demand) is correct.")*
+
+⛔ **I had written step 4 up as an "uncosted long pole" — 239 chassis needing human judgement.
+Wrong framing. Nobody ever ratifies 239.** You ratify the parts the TOP species need, and
+coverage follows. Measured on the committed slab:
+```
+top  3 species →  32% of all placements     top 10 →  78%
+top  5 species →  48%                       top 15 →  93%
+top  8 species →  69%                       22 species = 100%
+```
+⭐ **Ten species cover 78% of what is on the ground**, and it amortises TWICE, because parts are
+shared — the chassis ratified for `maple_red` (728) is likely the one `maple_silver` and
+`maple_sugar` browse to.
+
+⇒ ⭐⭐ **THIS IS WHY DEMAND ORDER IS LOAD-BEARING, NOT COSMETIC.** `roster-coverage.js:249`
+already sorts `b.count - a.count`. **Every surface that lists species must preserve that order**
+— it is the work queue, and it is what makes ratify-as-you-go converge instead of sprawl.
+
+⚠️ **Still genuinely unbuilt** (not a framing error): there is **no approval gesture for bark or
+leaf at all** — `arborist/state/` holds only `_chassis-curation.json`, and bark/leaf are 0-of-9
+and 0-of-18 ratified because **nothing can ratify them.** Ratify-as-you-go needs a control to
+ratify WITH. That is a small build on the Shelves and it gates the whole loop.
 
 ---
 
