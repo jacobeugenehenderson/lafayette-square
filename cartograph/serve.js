@@ -1915,7 +1915,7 @@ createServer(async (req, res) => {
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/grove-threshold$/))) {
     const id = m[1]
     const design = readJsonOrNull(lookDesignPath(id)) || {}
-    const gt = design.groveThreshold || { topN: null, pinned: [] }
+    const gt = design.groveThreshold || { topN: null, pinned: [], withheld: [] }
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(gt))
     return
@@ -1937,11 +1937,15 @@ createServer(async (req, res) => {
       try {
         const parsed = JSON.parse(body || '{}')
         const topN = Number.isFinite(parsed.topN) ? Math.max(0, Math.floor(parsed.topN)) : null
-        const pinned = Array.isArray(parsed.pinned)
-          ? [...new Set(parsed.pinned.filter(Boolean).map(String))]
-          : []
+        const list = (v) => Array.isArray(v) ? [...new Set(v.filter(Boolean).map(String))] : []
+        const pinned = list(parsed.pinned)
+        // ⛔ WITHHELD WINS. "We have this model and it is not good enough to go out" is a
+        // judgement no ranking overrides, so a species in both lists is withheld — and the
+        // server enforces that rather than trusting the client to keep them disjoint.
+        const withheld = list(parsed.withheld)
+        const pinnedClean = pinned.filter(s => !withheld.includes(s))
         const existing = readJsonOrNull(lookDesignPath(id)) || {}
-        const merged = { ...existing, groveThreshold: { topN, pinned } }
+        const merged = { ...existing, groveThreshold: { topN, pinned: pinnedClean, withheld } }
         mkdirSync(lookDir(id), { recursive: true })
         writeJson(lookDesignPath(id), merged)
         const idx2 = readLooksIndex()

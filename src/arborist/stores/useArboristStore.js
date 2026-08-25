@@ -558,7 +558,17 @@ const useArboristStore = create((set, get) => ({
   rosterLoading: false,
   rosterError: null,
   activeRosterName: null,          // canonical roster name of the selected row
-  groveThreshold: { topN: null, pinned: [] },  // the Grove build-eligibility bar (per active Look)
+  // The Grove build-eligibility bar (per active Look), with per-species overrides in BOTH
+  // directions. ⛔ A pin alone is half a control: it can only promote. Jacob, 2026-08-25:
+  // "even as I talked myself into the pin we still need a way to DISQUALIFY."
+  //   pinned   — ships even BELOW the bar (the grotto's memorial tree: one placement,
+  //              would never clear a demand-ordered cut, and must render anyway)
+  //   withheld — never ships even ABOVE the bar (we HAVE a model and judge it not good
+  //              enough — distinct from `not-available`, which means we have nothing)
+  // ⭐ The immediate customer is platanus_acerifolia: a legitimate London Plane match, now
+  // green, that renders BLANK (no barkDetail, both impostor bakes refused it). Without
+  // `withheld` the only way to keep it out is to un-green a true statement.
+  groveThreshold: { topN: null, pinned: [], withheld: [] },
   loadRosterCoverage: async () => {
     set({ rosterLoading: true, rosterError: null })
     try {
@@ -590,21 +600,39 @@ const useArboristStore = create((set, get) => ({
     set({ groveThreshold: gt })
     get()._saveGroveThreshold(gt)
   },
-  toggleGrovePin: (species) => {
+  // ⭐ THREE STATES, ONE GESTURE. Cycles neutral → pinned → withheld → neutral, because
+  // those are the only three things an operator can mean about one species and the bar:
+  // let the bar decide · always in · never in. A species is never in both lists.
+  cycleGroveOverride: (species) => {
     const cur = get().groveThreshold
-    const has = (cur.pinned || []).includes(species)
-    const pinned = has ? cur.pinned.filter(s => s !== species) : [...(cur.pinned || []), species]
-    const gt = { ...cur, pinned }
+    const pinned = new Set(cur.pinned || [])
+    const withheld = new Set(cur.withheld || [])
+    if (pinned.has(species)) { pinned.delete(species); withheld.add(species) }
+    else if (withheld.has(species)) { withheld.delete(species) }
+    else { pinned.add(species) }
+    const gt = { ...cur, pinned: [...pinned], withheld: [...withheld] }
     set({ groveThreshold: gt })
     get()._saveGroveThreshold(gt)
   },
+  // Kept as an explicit setter for a UI that offers two affordances rather than a cycle.
+  setGroveOverride: (species, state) => {
+    const cur = get().groveThreshold
+    const pinned = (cur.pinned || []).filter(s => s !== species)
+    const withheld = (cur.withheld || []).filter(s => s !== species)
+    if (state === 'pinned') pinned.push(species)
+    if (state === 'withheld') withheld.push(species)
+    const gt = { ...cur, pinned, withheld }
+    set({ groveThreshold: gt })
+    get()._saveGroveThreshold(gt)
+  },
+  toggleGrovePin: (species) => get().cycleGroveOverride(species),
   _saveGroveThreshold: async (gt) => {
     const look = get().activeLookId
     if (!look) return
     try {
       await fetch(`/api/cartograph/looks/${encodeURIComponent(look)}/grove-threshold`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ topN: gt.topN, pinned: gt.pinned }),
+        body: JSON.stringify({ topN: gt.topN, pinned: gt.pinned, withheld: gt.withheld || [] }),
       })
     } catch (err) { set({ rosterError: String(err) }) }
   },

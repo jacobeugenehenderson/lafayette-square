@@ -1758,7 +1758,12 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
   const rankOf = useMemo(() => {
     const m = new Map(); species.forEach((s, i) => m.set(s.species, i)); return m
   }, [species])
-  const isIn = (s) => pinned.has(s.species) || persistedTopN == null || (rankOf.get(s.species) ?? 0) < persistedTopN
+  const withheld = new Set(groveThreshold?.withheld || [])
+  // ⛔ WITHHELD WINS OVER EVERYTHING, including the pin and the bar. It is the operator
+  // saying "we have this model and it is not good enough to go out" — a judgement no
+  // ranking can override. Distinct from `not-available` (we have nothing at all).
+  const isIn = (s) => !withheld.has(s.species)
+    && (pinned.has(s.species) || persistedTopN == null || (rankOf.get(s.species) ?? 0) < persistedTopN)
   const inCount = species.reduce((n, s) => n + (isIn(s) ? 1 : 0), 0)
   const outCount = species.length - inCount
 

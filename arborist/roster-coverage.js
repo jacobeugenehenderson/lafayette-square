@@ -169,6 +169,20 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     const e = libById.get(id)
     return norm([id, e?.label, e?.scientific].filter(Boolean).join(' '))
   }
+  // ⛔⛔ A GENERIC LIBRARY WORD MAY NEVER SATISFY A SPECIES TOKEN.
+  // The match below accepts `t.includes(w)` — the species token containing the library
+  // word — because compound common names need it: `planetree` must match a library word
+  // `plane`. But it also made "tuliptree".includes("tree") true, so EVERY species whose
+  // name contains "tree" matched `Generic Tree 2` — a model with scientific:null that is
+  // no species at all. tuliptree (117 placements) and goldenraintree (75) both reported a
+  // LITERAL match against it. The moment a literal match counts toward green (Jacob's
+  // ruling, 2026-08-25) that becomes 192 placements shipping as "we have this species".
+  // ⚠️ Same class as `project_atlaskind_classifier_substring_bug` — a substring test
+  // letting a short generic token stand in for a specific one.
+  const LIB_GENERIC = new Set([
+    'tree', 'trees', 'generic', 'plant', 'shrub', 'model', 'low', 'poly', 'lowpoly',
+    'stylized', 'variant', 'var', 'sp', 'spp', 'a', 'b', 'c', 'd', 'e',
+  ])
   const literalMatch = (parkName, routedExisting) => {
     const ptoks = toks(parkName)
     const distinct = ptoks.filter(t => !GENUS_STOP.has(t))
@@ -178,7 +192,14 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
       const words = text.split(' ').filter(Boolean)
       const concat = text.replace(/\s+/g, '')
       const ok = need.every(t =>
-        words.some(w => w === t || w.includes(t) || t.includes(w)) || concat.includes(t))
+        words.some(w =>
+          w === t
+          // a library word CONTAINING the token is specific enough on its own
+          || w.includes(t)
+          // ⛔ the reverse only when the library word is DISTINCTIVE and substantial —
+          // otherwise `tree` swallows every compound name in the census
+          || (t.includes(w) && w.length >= 4 && !LIB_GENERIC.has(w) && !/^\d+$/.test(w)))
+        || concat.includes(t))
       if (ok) return id
     }
     return null
@@ -261,8 +282,25 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     const markedNotAvailable = [...rawNames].some(
       raw => (raw in speciesMap) && Array.isArray(speciesMap[raw]) && speciesMap[raw].length === 0,
     )
-    const authoringState = hasAuthoredChassis ? 'composed'
+    // ⭐⭐ A NATIVE MODEL IS ALREADY DRESSED (Jacob, 2026-08-25). Green means "we can ship
+    // this species as itself" and there are TWO ways to earn it: an operator composed it
+    // from parts, OR the library already holds a model that IS that species — which the
+    // literal token-match above detects from the model's own id/label/scientific name.
+    // ⛔ Requiring a composition for the second case was the defect: we own a tuliptree
+    // model, it is a tuliptree, it reported `unauthored`, and 117 tuliptrees were
+    // substituted into something that is not a tuliptree. Six species, 217 placements,
+    // red while holding a model of themselves — the kit discarding identity it already had.
+    // The absence of an override is not a defect (`CLAUDE.md` Layer 0 Q3): asking the
+    // operator to re-dress a tree that arrives correct is asking for a gesture the model
+    // does not need.
+    const nativeModel = coverage === 'literal'
+    const authoringState = (hasAuthoredChassis || nativeModel) ? 'composed'
       : (markedNotAvailable ? 'not-available' : 'unauthored')
+    // ⭐ HOW it went green, never collapsed into the verdict — an operator's composition
+    // and an off-the-shelf match are both shippable and are NOT the same fact. The Salon
+    // needs to show which, and `withheld` (a model we have but judge not good enough) will
+    // need to attach to the native ones specifically.
+    const greenBy = hasAuthoredChassis ? 'composed' : (nativeModel ? 'native-model' : null)
     const publishedCanonical = published.has(canonicalId)
 
     species.push({
@@ -273,6 +311,7 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
       // still keys the data; this is the LABEL only.
       species: [...rawNames].find(n => /\s/.test(n) && !/_/.test(n)) || canonical,
       count,
+      greenBy,          // 'composed' | 'native-model' | null — HOW it earned green
       // ⛔ false = the town asks for this and the library cannot NAME it. That is the RED LIST,
       // not an error — surfaces should show it rather than hide the row.
       nameResolved: !!nameResolved,
@@ -303,6 +342,12 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
     gap:       species.filter(s => s.coverage === 'gap').length,
     merges:    Object.keys(canon).length,
     composed:     species.filter(s => s.authoringState === 'composed').length,
+    // ⭐ Split the headline. "15 green" hides that 6 of them are off-the-shelf models
+    // nobody has looked at, and those are exactly the ones a `withheld` gesture will need
+    // to reach. A single number would make an unreviewed native match indistinguishable
+    // from a composition the operator built.
+    greenByComposition:  species.filter(s => s.greenBy === 'composed').length,
+    greenByNativeModel:  species.filter(s => s.greenBy === 'native-model').length,
     notAvailable: species.filter(s => s.authoringState === 'not-available').length,
   }
   return { summary, species }
