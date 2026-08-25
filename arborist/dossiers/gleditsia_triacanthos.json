@@ -1,0 +1,141 @@
+{
+  "key": "honeylocust, thornless",
+  "scientific": "Gleditsia triacanthos",
+  "canonicalId": "gleditsia_triacanthos",
+  "inventoryNames": [
+    "honeylocust, thornless"
+  ],
+  "identityConfirmed": false,
+  "forces": null,
+  "descriptor": null,
+  "identityNotes": null,
+  "referenceImages": [],
+  "required": {
+    "chassis.size": {
+      "target": 60,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": 70,
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": "rounded",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "alternatives": [
+        {
+          "value": "arching",
+          "seen": 1
+        },
+        {
+          "value": "spreading",
+          "seen": 1
+        }
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "leaf.margin": {
+      "target": "entire",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "bark.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "lenticellate",
+          "seen": 1
+        },
+        {
+          "value": "furrowed",
+          "seen": 1
+        },
+        {
+          "value": "ridged",
+          "seen": 1
+        },
+        {
+          "value": "scaly",
+          "seen": 1
+        }
+      ]
+    },
+    "leaf.type": {
+      "target": "compound-bipinnate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.shape": {
+      "target": "lanceolate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": "legume",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    }
+  },
+  "recipe": null,
+  "partAvailability": null,
+  "owed": [
+    "⚠️ identityConfirmed:false — the matched taxon is a CLAIM. Confirm it before authoring.",
+    "forces — judgment, not derivable from a database",
+    "descriptor — judgment, not derivable from a database",
+    "identityNotes — judgment, not derivable from a database",
+    "referenceImages — judgment, not derivable from a database",
+    "recipe — judgment, not derivable from a database",
+    "partAvailability — judgment, not derivable from a database",
+    "⛔ NO TARGET — sources tied on: bark.texture. See .candidates; an author must choose.",
+    "sources disagree on: chassis.size, chassis.habit — see .alternatives",
+    "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
+    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
+    "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
+  ],
+  "provenance": {
+    "minted": true,
+    "mintedAt": "2026-08-24",
+    "matchedTaxon": "Gleditsia triacanthos",
+    "sources": [
+      "ncsu",
+      "selectree",
+      "usda",
+      "utd"
+    ],
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+  }
+}

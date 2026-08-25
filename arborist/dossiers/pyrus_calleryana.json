@@ -1,0 +1,177 @@
+{
+  "key": "Pear, Callery",
+  "scientific": "Pyrus calleryana",
+  "canonicalId": "pyrus_calleryana",
+  "inventoryNames": [
+    "Pear, Callery"
+  ],
+  "identityConfirmed": false,
+  "forces": null,
+  "descriptor": null,
+  "identityNotes": null,
+  "referenceImages": [],
+  "required": {
+    "chassis.size": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": 30,
+          "seen": 2
+        },
+        {
+          "value": 20,
+          "seen": 2
+        },
+        {
+          "value": 50,
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "5-way tie at 2 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "columnar",
+          "seen": 2
+        },
+        {
+          "value": "rounded",
+          "seen": 2
+        },
+        {
+          "value": "multi-stem",
+          "seen": 1
+        },
+        {
+          "value": "oval",
+          "seen": 1
+        },
+        {
+          "value": "pyramidal",
+          "seen": 1
+        }
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "leaf.shape": {
+      "target": "ovate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.margin": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "crenate",
+          "seen": 1
+        },
+        {
+          "value": "serrate",
+          "seen": 1
+        },
+        {
+          "value": "undulate",
+          "seen": 1
+        }
+      ]
+    },
+    "bark.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "furrowed",
+          "seen": 2
+        },
+        {
+          "value": "ridged",
+          "seen": 2
+        },
+        {
+          "value": "lenticellate",
+          "seen": 1
+        },
+        {
+          "value": "plated",
+          "seen": 1
+        }
+      ]
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": "pome",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    }
+  },
+  "recipe": null,
+  "partAvailability": null,
+  "owed": [
+    "⚠️ identityConfirmed:false — the matched taxon is a CLAIM. Confirm it before authoring.",
+    "forces — judgment, not derivable from a database",
+    "descriptor — judgment, not derivable from a database",
+    "identityNotes — judgment, not derivable from a database",
+    "referenceImages — judgment, not derivable from a database",
+    "recipe — judgment, not derivable from a database",
+    "partAvailability — judgment, not derivable from a database",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, leaf.margin, bark.texture. See .candidates; an author must choose.",
+    "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
+    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
+    "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
+  ],
+  "provenance": {
+    "minted": true,
+    "mintedAt": "2026-08-24",
+    "matchedTaxon": "Pyrus calleryana",
+    "sources": [
+      "ncsu",
+      "selectree",
+      "usda",
+      "utd"
+    ],
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+  }
+}

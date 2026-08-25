@@ -1,0 +1,134 @@
+{
+  "key": "Ginkgo",
+  "scientific": "Ginkgo biloba",
+  "canonicalId": "ginkgo_biloba",
+  "inventoryNames": [
+    "Ginkgo"
+  ],
+  "identityConfirmed": false,
+  "forces": null,
+  "descriptor": null,
+  "identityNotes": null,
+  "referenceImages": [],
+  "required": {
+    "chassis.size": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 0.4,
+      "sourced": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": 50,
+          "seen": 2
+        },
+        {
+          "value": 30,
+          "seen": 2
+        },
+        {
+          "value": 60,
+          "seen": 1
+        }
+      ]
+    },
+    "chassis.habit": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "horizontal",
+          "seen": 1
+        },
+        {
+          "value": "pyramidal",
+          "seen": 1
+        },
+        {
+          "value": "conical",
+          "seen": 1
+        }
+      ],
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "crown.texture": {
+      "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "leaf.arrangement": {
+      "target": "alternate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "bark.texture": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "ridged",
+          "seen": 1
+        },
+        {
+          "value": "fissured",
+          "seen": 1
+        }
+      ]
+    },
+    "leaf.type": {
+      "target": "simple",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.shape": {
+      "target": "flabellate",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "leaf.foliage_type": {
+      "target": "deciduous",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    }
+  },
+  "recipe": null,
+  "partAvailability": null,
+  "owed": [
+    "⚠️ identityConfirmed:false — the matched taxon is a CLAIM. Confirm it before authoring.",
+    "forces — judgment, not derivable from a database",
+    "descriptor — judgment, not derivable from a database",
+    "identityNotes — judgment, not derivable from a database",
+    "referenceImages — judgment, not derivable from a database",
+    "recipe — judgment, not derivable from a database",
+    "partAvailability — judgment, not derivable from a database",
+    "⛔ NO TARGET — sources tied on: chassis.size, chassis.habit, bark.texture. See .candidates; an author must choose.",
+    "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
+    "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
+    "chassis.habit — identity axis minted SOFT; promote to hard when confirmed"
+  ],
+  "provenance": {
+    "minted": true,
+    "mintedAt": "2026-08-24",
+    "matchedTaxon": "Ginkgo biloba",
+    "sources": [
+      "ncsu",
+      "selectree",
+      "usda",
+      "utd"
+    ],
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
+  }
+}
