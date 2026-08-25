@@ -187,6 +187,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -212,13 +218,14 @@
     "notes": "Migrated from species-map acer_saccharum (heroSpecies acer_saccharum_procedural, qualityOverride 4, bark Bark007/Bark003, tints verbatim). barkMorph 'furrowed' refined to 'plated' per reference research.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.density",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.density"
+      "chassis.orientation"
     ]
   },
   "partAvailability": {

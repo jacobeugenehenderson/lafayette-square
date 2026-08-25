@@ -16,84 +16,75 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 60,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 70,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": 100,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": "conical",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "conical",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "rounded",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     },
     "crown.texture": {
       "target": "medium",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "nut",
+          "seen": 1
+        },
+        {
+          "value": "drupe",
+          "seen": 1
+        }
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -106,26 +97,13 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "cordate",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "ovate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "leaf.margin": {
       "target": "serrate",
@@ -138,39 +116,20 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "furrowed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "lenticellate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         },
         {
           "value": "scaly",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -184,30 +143,6 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
-    },
-    "overlay.fruit_type": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "nut",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "drupe",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "overlay.conspicuous": {
       "target": "present",
@@ -232,7 +167,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: chassis.size. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: chassis.size, overlay.fruit_type. See .candidates; an author must choose.",
     "sources disagree on: chassis.habit, leaf.shape, bark.texture — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
@@ -248,21 +183,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "overlay.fruit_type",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.conspicuous",
-      "chassis.density"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

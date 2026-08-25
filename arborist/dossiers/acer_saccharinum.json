@@ -147,7 +147,31 @@
       "sourced": true
     },
     "chassis.density": {
-      "target": "dense",
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "sparse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "dense",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -177,13 +201,14 @@
     "notes": "New dossier. Kit-mileage proof — re-uses the palmate pack. The leaf.face axis is load-bearing here (strong two-tone).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.orientation",
+      "chassis.density",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",
-      "overlay.conspicuous",
-      "chassis.density"
+      "overlay.conspicuous"
     ]
   },
   "partAvailability": {

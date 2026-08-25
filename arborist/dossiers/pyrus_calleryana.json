@@ -16,81 +16,61 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 20,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 50,
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "columnar",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "multi-stem",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     },
     "crown.texture": {
       "target": "medium",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "overlay.fruit_type": {
+      "target": "pome",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -113,71 +93,46 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "3-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "crenate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "serrate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "undulate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 2 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
+          "seen": 2
         },
         {
           "value": "ridged",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
+          "seen": 2
         },
         {
           "value": "lenticellate",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "plated",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -188,12 +143,6 @@
     },
     "leaf.foliage_type": {
       "target": "deciduous",
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true
-    },
-    "overlay.fruit_type": {
-      "target": "pome",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -231,20 +180,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "overlay.fruit_type",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.conspicuous"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

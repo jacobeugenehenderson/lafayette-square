@@ -16,96 +16,71 @@
       "hardness": "soft",
       "tol": 0.4,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": 80,
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": 30,
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 2
         },
         {
           "value": 120,
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "chassis.habit": {
       "target": "rounded",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "owedHardness": "identity axis — author must confirm and promote to hard",
-      "contested": true,
-      "candidates": [
-        {
-          "value": "rounded",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "oval",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "pyramidal",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "conical",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
       ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      "owedHardness": "identity axis — author must confirm and promote to hard"
     },
     "crown.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "coarse",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "medium",
-          "seen": 1,
-          "sources": [
-            "usda"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
+    },
+    "overlay.fruit_type": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "unresolved": "2-way tie at 1 vote(s) — no plurality, so no target",
+      "candidates": [
+        {
+          "value": "samara",
+          "seen": 1
+        },
+        {
+          "value": "follicle",
+          "seen": 1
+        }
+      ]
     },
     "leaf.arrangement": {
       "target": "alternate",
@@ -125,63 +100,37 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "lobed",
-          "seen": 2,
-          "sources": [
-            "ncsu",
-            "selectree"
-          ]
-        },
+      "alternatives": [
         {
           "value": "entire",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
+      ]
     },
     "bark.texture": {
       "target": null,
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
-      "contested": true,
+      "unresolved": "4-way tie at 1 vote(s) — no plurality, so no target",
       "candidates": [
         {
           "value": "furrowed",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "ridged",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "smooth",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
+          "seen": 1
         },
         {
           "value": "fissured",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
+          "seen": 1
         }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+      ]
     },
     "leaf.type": {
       "target": "simple",
@@ -196,30 +145,6 @@
       "tol": 1,
       "sourced": true
     },
-    "overlay.fruit_type": {
-      "target": null,
-      "hardness": "soft",
-      "tol": 1,
-      "sourced": true,
-      "contested": true,
-      "candidates": [
-        {
-          "value": "samara",
-          "seen": 1,
-          "sources": [
-            "ncsu"
-          ]
-        },
-        {
-          "value": "follicle",
-          "seen": 1,
-          "sources": [
-            "selectree"
-          ]
-        }
-      ],
-      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
-    },
     "overlay.conspicuous": {
       "target": "showy",
       "hardness": "soft",
@@ -228,6 +153,12 @@
     },
     "chassis.density": {
       "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -243,7 +174,7 @@
     "referenceImages — judgment, not derivable from a database",
     "recipe — judgment, not derivable from a database",
     "partAvailability — judgment, not derivable from a database",
-    "⛔ NO TARGET — sources tied on: crown.texture, bark.texture. See .candidates; an author must choose.",
+    "⛔ NO TARGET — sources tied on: crown.texture, overlay.fruit_type, bark.texture. See .candidates; an author must choose.",
     "sources disagree on: chassis.size, chassis.habit, leaf.margin — see .alternatives",
     "leaf.type — identity axis minted SOFT; promote to hard when confirmed",
     "leaf.shape — identity axis minted SOFT; promote to hard when confirmed",
@@ -259,21 +190,6 @@
       "usda",
       "utd"
     ],
-    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored.",
-    "hydratedAt": "2026-08-24",
-    "hydratedAxes": [
-      "chassis.size",
-      "chassis.habit",
-      "crown.texture",
-      "overlay.fruit_type",
-      "leaf.arrangement",
-      "leaf.shape",
-      "leaf.margin",
-      "bark.texture",
-      "leaf.type",
-      "leaf.foliage_type",
-      "overlay.conspicuous",
-      "chassis.density"
-    ]
+    "note": "Sourced skeleton only. Every judgment field is null by construction — this species is RED until authored."
   }
 }

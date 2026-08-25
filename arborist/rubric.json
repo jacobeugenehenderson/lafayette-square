@@ -53,6 +53,31 @@
       "note": "Picking a different chassis-core IS the habit assignment; there is no per-part compatibility matrix (chassis is free geometry). Silhouette variety = pick a different core, NOT limb surgery (§2.1, locked)."
     },
     {
+      "id": "chassis.orientation",
+      "kind": "enum",
+      "values": [
+        "erect",
+        "semi-erect",
+        "decumbent",
+        "prostrate",
+        "climbing"
+      ],
+      "why": "USDA Growth Form orientation — how the plant addresses gravity, distinct from crown SILHOUETTE (chassis.habit). Near-universally erect for trees, and that is precisely why it is recorded: the axis carries no information for the 99% and ALL of it for the variant. Juniperus horizontalis is prostrate creeping ground cover where J. scopulorum is erect, same genus; roses run climbing/shrub/groundcover the same way. ⛔ Never alias these onto chassis.habit — that mistake wrote columnar into red oak at tol 0."
+    },
+    {
+      "id": "chassis.spread",
+      "kind": "enum",
+      "values": [
+        "single",
+        "colonizing",
+        "thicket-forming",
+        "rhizomatous",
+        "stoloniferous",
+        "suckering"
+      ],
+      "why": "USDA Growth Form spread behaviour — whether the plant stays put or makes more of itself. Same reasoning as chassis.orientation: near-universally single for street trees, and the variant is the whole point (a thicket-forming sumac or a suckering aspen is a different object to place than a single-crown oak). ⛔ Recorded, not matched."
+    },
+    {
       "id": "chassis.size",
       "partType": "chassis",
       "name": "Size (height)",

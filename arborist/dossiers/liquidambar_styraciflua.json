@@ -182,6 +182,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -214,7 +220,8 @@
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.density"
+      "chassis.density",
+      "chassis.orientation"
     ]
   },
   "partAvailability": {

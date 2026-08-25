@@ -188,6 +188,49 @@ const TERM_ALIASES = {
 // NC State's `Leaf Shape :: Palmately-lobed` must land on `leaf.margin :: lobed`.
 // A field→axis map alone cannot express this — the VALUE decides the axis.
 export const TERM_REDIRECTS = {
+  // ⭐⭐ ORIENTATION IS ITS OWN AXIS (Jacob, 2026-08-25). USDA ships Growth Form as one
+  // multi-valued field mixing SILHOUETTE (Conical, Rounded) with ORIENTATION (Erect,
+  // Prostrate), so the value decides the axis.
+  //
+  // These were discarded as "near-constant for trees, no discriminating signal." Jacob:
+  // "It's *nearly* universal; and in 1 example we found a variant." That is the argument.
+  // A near-universal trait WITH variants carries no information for the 99% and ALL of it
+  // for the one row that matters — judging the axis by its average is the same error shape
+  // as a fallback, cheapest exactly where it is wrong. We found the variant (Juniperus
+  // horizontalis, prostrate) in the first place we looked, off a roster of 20 street trees.
+  //
+  // ⛔ Recorded, NOT matched: chassis.orientation is deliberately absent from matcher.js
+  // MATCH_AXES. Scoring every tree on a value they nearly all share would dilute the axes
+  // that discriminate. Capture now, match if and when the roster grows past tree form.
+  'chassis.habit': {
+    erect: { axis: 'chassis.orientation', value: 'erect' },
+    'semi erect': { axis: 'chassis.orientation', value: 'semi-erect' },
+    decumbent: { axis: 'chassis.orientation', value: 'decumbent' },
+    prostrate: { axis: 'chassis.orientation', value: 'prostrate' },
+    creeping: { axis: 'chassis.orientation', value: 'prostrate' },
+    trailing: { axis: 'chassis.orientation', value: 'prostrate' },
+    climbing: { axis: 'chassis.orientation', value: 'climbing' },
+    vining: { axis: 'chassis.orientation', value: 'climbing' },
+    // Spread behaviour — same argument, same field. A thicket-forming sumac or a suckering
+    // aspen is a different object to place than a single-crown oak.
+    colonizing: { axis: 'chassis.spread', value: 'colonizing' },
+    'thicket forming': { axis: 'chassis.spread', value: 'thicket-forming' },
+    rhizomatous: { axis: 'chassis.spread', value: 'rhizomatous' },
+    stoloniferous: { axis: 'chassis.spread', value: 'stoloniferous' },
+    suckering: { axis: 'chassis.spread', value: 'suckering' },
+    // ⭐ `Dense` — the harvest session discarded this, reasoning that NCSU's Habit/Form
+    // `Dense` is a crown-FORM tag while USDA's Foliage Porosity is a 3-point measurement,
+    // and folding two scales under one axis makes the axis meaningless. That was right
+    // BEFORE Jacob's publish-the-disagreement ruling, because someone had to decide
+    // whether NCSU's "Dense" means USDA's "Dense" — a calibration question with no
+    // answer available to us.
+    // ⭐⭐ That ruling dissolves it. We no longer have to decide: both land on
+    // chassis.density as candidates carrying their source, and if they disagree the cell
+    // is CONTESTED and the operator settles it. Discarding real data to avoid a judgment
+    // call we are no longer required to make is the wrong trade.
+    dense: { axis: 'chassis.density', value: 'dense' },
+    open: { axis: 'chassis.density', value: 'sparse' },
+  },
   'leaf.shape': {
     'palmately lobed': { axis: 'leaf.margin', value: 'lobed' },
     'pinnately lobed': { axis: 'leaf.margin', value: 'lobed' },
@@ -224,12 +267,6 @@ export const NOT_A_TRAIT = {
     'single stem': 'trunk COUNT, not crown form — complement of multi-stem',
     'single crown': 'trunk COUNT, not crown form — complement of multi-stem',
     'single trunk': 'trunk COUNT, not crown form — complement of multi-stem',
-    // ⛔ NOT redirected to chassis.density, and the reason matters (pilot session,
-    // 2026-08-25): NCSU's Habit/Form `Dense` is a crown-FORM tag, while USDA's Foliage
-    // Porosity is a 3-point Porous/Moderate/Dense measurement. They are two different
-    // scales, and folding them under one axis would make the axis mean nothing.
-    dense: 'crown-form tag, not the foliage-porosity scale — two different measurements',
-    colonizing: 'spread behaviour, not crown form',
     // ⛔ DELIBERATELY UNMAPPABLE — and it belongs HERE, not in the unresolved list.
     // `Erect` is an ORIENTATION (USDA: Climbing/Decumbent/Erect/Prostrate/Semi-Erect),
     // and NCSU ships `Erect` AND `Columnar` as separate options in the same field. It was
@@ -237,23 +274,7 @@ export const NOT_A_TRAIT = {
     // Listing it as unresolved made a settled decision look like owed alias work, 20x per
     // run — which is precisely how someone re-adds the alias in six months. Discarded with
     // a reason instead. See the no-`erect`-row note in TERM_ALIASES above.
-    // ⭐ THESE ARE REAL BOTANICAL TERMS AND A REAL AXIS (Jacob asked, 2026-08-25) — USDA
-    // Growth Form: Climbing · Decumbent · Erect · Prostrate · Semi-Erect. Juniperus is the
-    // proof: J. horizontalis is prostrate creeping ground cover, J. scopulorum is erect,
-    // same genus. Roses likewise — climbing, shrub, groundcover.
-    // ⛔ We discard them for a NARROWER reason than "not a real trait": for TREES,
-    // orientation is near-constant. Nearly every tree is erect, so the term carries no
-    // discriminating signal for chassis selection, while `columnar` does.
-    // ⚠️ THIS DECISION HAS AN EXPIRY DATE. The moment the Arborist covers shrubs,
-    // creeping junipers, or anything below tree form, orientation becomes load-bearing and
-    // these belong on their own axis — NOT aliased onto chassis.habit, which is what
-    // started this. A town census carrying Juniperus horizontalis would lose the one trait
-    // that distinguishes it from an upright juniper, silently.
-    erect: 'ORIENTATION axis (real, but near-constant for trees) — see the no-erect note in TERM_ALIASES',
-    'semi erect': 'ORIENTATION axis — real; not discriminating for trees',
-    prostrate: 'ORIENTATION axis — real; would be load-bearing for shrubs/creeping junipers',
-    decumbent: 'ORIENTATION axis — real; not discriminating for trees',
-    climbing: 'ORIENTATION axis — real; would be load-bearing for climbing roses',
+    // (orientation terms moved to their own axis — see TERM_REDIRECTS chassis.orientation)
   },
 }
 

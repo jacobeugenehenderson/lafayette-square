@@ -117,6 +117,18 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.density": {
+      "target": "dense",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -142,6 +154,8 @@
     "notes": "New dossier. Cultivar judgment-call (Prairifire) per reference research. THE ornamental-chassis gap (habit=0) + flowers overlay — Stage 3 with Redbud.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.density",
+      "chassis.orientation",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",

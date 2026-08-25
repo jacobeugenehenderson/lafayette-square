@@ -232,6 +232,12 @@
       "hardness": "soft",
       "tol": 1,
       "sourced": true
+    },
+    "chassis.orientation": {
+      "target": "erect",
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true
     }
   },
   "recipe": {
@@ -258,6 +264,7 @@
     "notes": "New dossier (not in species-map). leaf.season anchors drafted from reference summer/fall colors. THE compound-leaf gap (leaf-pack-bindings coverageGaps: compound).",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.orientation",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.arrangement",

@@ -151,7 +151,31 @@
       "sourced": true
     },
     "chassis.density": {
-      "target": "medium",
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "contested": true,
+      "candidates": [
+        {
+          "value": "sparse",
+          "seen": 1,
+          "sources": [
+            "ncsu"
+          ]
+        },
+        {
+          "value": "medium",
+          "seen": 1,
+          "sources": [
+            "usda"
+          ]
+        }
+      ],
+      "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
+    },
+    "chassis.orientation": {
+      "target": "erect",
       "hardness": "soft",
       "tol": 1,
       "sourced": true
@@ -183,13 +207,14 @@
     "notes": "Evolved from species-map betula_pendula ('Common Birch', barkMorph papery, tints verbatim). Re-keyed to betula_nigra (River Birch) per reference research — the correct St. Louis urban-park birch. barkMorph 'papery' normalized to 'exfoliating'. THE Stage-3 bark gap.",
     "hydratedAt": "2026-08-24",
     "hydratedAxes": [
+      "chassis.density",
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",
       "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.density"
+      "chassis.orientation"
     ]
   },
   "partAvailability": {
