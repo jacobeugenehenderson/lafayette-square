@@ -21,7 +21,7 @@ A long hunt that finally closed the recurring **"chips in straight lines / repea
 A long, load-bearing session. Three arcs: **(A)** fix what shipped wrong at HiPointe/LS, **(B)** settle the Arborist **operating model** in prose (the aspirational direction), **(C)** a piece-by-piece Salon interface cleanup. All uncommitted at session end — commit in logical groups.
 
 **A — render/data fixes (LANDED):**
-- **Species-key seam FIXED + VERIFIED** (`b7e887dc` + rebake). `park_species_map` routed to a **stale id namespace** (`quercus_alba`, `acer_saccharum`…) not in the live roster → every oak/maple substituted even though the right tree existed. Repointed to live roster ids (`oak_white`/`oak_bur`, `maple_red`/`maple_sugar`…). ⚠️ ~~The canonical LS tree bake is `bake-trees --look default` → `baked/default.json`, NOT `--look lafayette-square` (a phantom nothing reads).~~ **OBSOLETE 2026-07-15 — the fossil this warned about is retired.** The canonical LS tree bake is now `bake-trees --scene lafayette-square` → `baked/lafayette-square/trees.json`, like every other neighborhood; `--look` no longer exists (it always meant `--scene`), and there is no phantom and no `default.json` left to fall back to. See `SLAB-CONTRACT §8` + `HANDOFF-grove-neighborhood-axis.md`. See [[project_far_leaves_coverage_mipmaps]] neighbour + [[project_no_filler_gate_and_chassis_curation]].
+- **Species-key seam FIXED + VERIFIED** (`b7e887dc` + rebake). `park_species_map` routed to a **stale id namespace** (`quercus_alba`, `acer_saccharum`…) not in the live roster → every oak/maple substituted even though the right tree existed. Repointed to live roster ids (`oak_white`/`oak_bur`, `maple_red`/`maple_sugar`…). The canonical LS tree bake is `bake-trees --scene lafayette-square` → `baked/lafayette-square/trees.json`, like every other neighborhood; `--look` no longer exists (it always meant `--scene`), and there is no phantom and no `default.json` left to fall back to. See `SLAB-CONTRACT §8` + `HANDOFF-grove-neighborhood-axis.md`. See [[project_far_leaves_coverage_mipmaps]] neighbour + [[project_no_filler_gate_and_chassis_curation]].
 - **Far leaves "grey" = mip COLOR-BLEED, not alpha/density.** The unified leaf atlas is ~51% **pure-black transparent gutter**; straight RGB mip averaging (the GPU's *and* our first pass) bled black into leaves → grey at distance, green on pan-in. Fix in `treeAtlasMaterial.js`: coverage-preserving **+ alpha-weighted** CPU mip downsample, **capped** before the tile-bleed level. But the *visible* "bad trees" turned out to be mostly the procedural fillers (below), not the mip. Full trail: [[project_far_leaves_coverage_mipmaps]].
 - **⭐ NO-FILLER gate (the structural one).** Procedural/generic placeholder trees leaked into HiPointe (the "~40% filler") because **`build-index.js` gated only on quality≥2 + `excluded` — no procedural concept.** "No procedurals" had only hidden the *UI*; the rated procedural GLBs stayed in the pool, and HiPointe's intake map routed 144 census species straight onto them. Added the missing gate (`isFillerSpecies` → excluded from `public/trees/index.json`; also mirrored in `serve.js#/grove`). Then: **rated a starter set of REAL conifer/columnar/weeping chassis that existed at quality 0, invisible** — White Fir, Norway Spruce, Douglas Fir, Italian Cypress (the Ginkgo stand-in), Weeping Willow — swapped HiPointe's `design.json` roster, re-baked its atlas + trees. **Result: 6967 trees, ZERO procedural** (Cypress×309 / Spruce×55 / Fir×43 / Douglas Fir×39 / Willow×11). Substitution to nearest real chassis is automatic via `bake-trees CATEGORY_FALLBACK` once fillers leave the pool. Full: [[project_no_filler_gate_and_chassis_curation]].
 - **Chassis relabel:** 49 chassis given proper common + botanical names; **17 wrong evergreen/deciduous flags fixed** (firs/spruces were `deciduous:true`).
@@ -92,6 +92,66 @@ Confirmed with Jacob (full capture → `_archive/HANDOFF-visibility-cull-lods-20
 - ⛔ **Do not swap geometry by live camera distance** ("asking for trouble"). **RETIRE `GeoTierDriver`** (the runtime altitude-swap, already moot) rather than extend it.
 - **Impostors now sanctioned, by role** (supersedes "operator skeptical / hold them" — it was a scoping answer, not a no). The classifier (`classifyHeroTiers`) + the `aHeroTier` attribute are plumbed; the billboard *render* is the unbuilt piece.
 - Also fixed today: Preview's in-app Reload now invalidates the tree-atlas module cache (`eb1dc38f`) — the "stale leaves in Preview after rebake" trap (the atlas `_cache` only re-fetched on a full browser reload; `invalidateTreeAtlas` existed but was never called).
+
+## 2026-08-26 — CLOSEOUT: the red leaves, the scattered trees, and the gate I walked past
+
+**Two operator-reported symptoms, neither closed. What follows is what is MEASURED, what is
+NOT, and the one process failure that cost the night.**
+
+### ⛔⛔ THE PROCESS FAILURE, FIRST, BECAUSE IT IS THE REUSABLE PART
+Jacob's opening report was *"something happened in the grove — White Oak is suddenly all
+fall/red leaves."* **"Suddenly" is a bisection anchor**, and this file already says so, in the
+entry immediately below this one, after this exact symptom on this exact surface:
+> *"when the operator says it worked before, that's a regression signal — ask it FIRST, then
+> `git log`/diff the pipeline, don't build an authoring/save theory."*
+⭐ **I built the authoring theory anyway** — a mixed-season leaf pack, then a chassis-rename
+seed theory — and measured both to death instead of bisecting. Both were wrong. **The lesson
+was written down after it cost a day in June and it cost a night in August because nobody
+routed to it.** `[[feedback_every_question_asks_the_docs_first]]`
+
+### ⭐ WHAT IS MEASURED (trust these)
+- `eastern_black_oak`, White Oak's leaf pack, is genuinely **full-season**: 1 green, 1
+  brown-red, 1 bright red, 1 turning. ▶ `node scratch/claims-leaf-pack-cells-agree.mjs` — 5 of
+  15 multi-cell packs fail; `generate-salon#rewriteCardUVs` picks a cell **per card at random**,
+  so a mixed pack paints a canopy in whatever proportion its cells happen to be.
+- The live GLB and the baked slab **sample different cell pairs** from that pack — live
+  `{green, brown-red}`, baked `{green, bright red}`. Reproducible; that IS the visible symptom.
+- ⛔ **AND THAT SHOULD BE IMPOSSIBLE:** `bake-look` applies a **linear** UV transform
+  (`transformUVs`, `bake-look.js:748`), which cannot change WHICH cell a card lands on. Either
+  the bake regenerates rather than transforms, or one of the two readings is wrong.
+  **CAUSE NOT ESTABLISHED. This is the next measurement, and it is one question.**
+- White Oak's chassis is **a single tree** (1 mesh, 1 node) — so the scattered ring is **NOT**
+  a group-shot chassis. That hypothesis is dead; do not re-run it.
+- The 2026-08-25 chassis rename moved **identity without assets**: `rounded_06` has **zero
+  files on disk** and resolves only via `derivedFrom` → `white_oak_a.glb`
+  (`generate-salon#resolveChassisPath`). It works, and it means **the fallback is load-bearing
+  for all 154 renamed chassis** — a silent single point of failure.
+
+### ⛔ WHAT IS NOT ESTABLISHED (do not repeat these as fact)
+- **Why the Salon and the Grove disagree.** The class is old and already diagnosed —
+  *"the two surfaces read different artifacts"* (2026-08-23 entry, `BACKLOG`) and the
+  *publish ≠ bake* staleness banked in the entry below. ⭐ **The canonical resync is the
+  `/grove/bake` endpoint** (generate-salon → bakeLook → bakeTrees), **never a partial CLI
+  bake** — that is banked twice in this file and was not tried tonight.
+- **The scattered ring of small trees.** Unexplained. ⛔ Not investigated beyond killing the
+  group-shot theory. Adjacent recorded leads, unverified: the `park_species_map` **species-key
+  seam** (NOTES 2026-07, substitution when the id namespace goes stale) and the **no-filler
+  gate** (`[[project_no_filler_gate_and_chassis_curation]]`).
+
+### ⚠️ DOC ↔ CODE CONTRADICTION FOUND, UNRESOLVED — say which before you edit either
+The entry below records an **eye-gated fix**: *"`serve.js#/grove`: render **lod0** instead of
+lod1"*, because lod1's canopy had been decimated ~90% and read as sparse specks. **`Grove.jsx`
+fetches `lod1` unconditionally** (`:93`, `:228`, `:278`); `serve.js:337` still carries only the
+OOM-fallback comment. ⛔ **Which is wrong is NOT established** — `serve.js#/grove` and the React
+Grove may simply be different surfaces (ROT), or the lod0 decision never reached the React
+rewrite (**REGRESSION — a bug returned in a different form**). ⭐ It bears directly on tonight's
+symptom and is the second-cheapest thing to settle.
+
+### ▶ PICK UP HERE, IN THIS ORDER
+1. **Bisect, don't theorise.** `git log` the pipeline back to when the Grove was right.
+2. **Run `/grove/bake`** — the canonical resync — before measuring anything else.
+3. Settle the lod0/lod1 contradiction above; name ROT or REGRESSION.
+4. Only then: the 5 cell-inconsistent packs (curation) and the scattered ring.
 
 ## 2026-06-24 — the lod1 leaf-decimation regression (Grove/hero trees went to sparse specks) + fixes
 
