@@ -1,3 +1,15 @@
+> ⛔⛔ **RETIRED 2026-08-26 — THIS BRIEF'S CENTRAL PREMISE WAS MEASURED FALSE.**
+> It framed 318 placements as a leaf-PROCUREMENT question. After the expedition (which
+> correctly acquired nothing) and the fixes that followed, **33 remain — one scale pack for
+> Chinese juniper.** The rest were a wrong CELL (`ARCHITECTURE §8a` — the pines read `simple`
+> from a source with no needle vocabulary) and a missing MATRIX (`BACKLOG` 2026-08-26 —
+> serviceberry cannot reach the `serrate_ovate` we already own).
+> ⭐ **Kept for the METHOD, not the numbers:** the expedition's discipline — confirm every
+> premise, acquire nothing until the join is proven — is what surfaced both root causes.
+> ▶ Live homes: `arborist/BACKLOG.md` (2026-08-26) · `arborist/ARCHITECTURE.md §8a`.
+
+---
+
 # BRIEF — leaf-pack expedition: find the leaves that turn red lights green
 
 You are a **fresh agent**. Read `CLAUDE.md`, then `ORIENTATION.md`, then

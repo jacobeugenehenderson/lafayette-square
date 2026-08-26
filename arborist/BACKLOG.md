@@ -32,7 +32,7 @@ the matcher does **not** score. ⛔ So the owed list is not the scope; **the che
 green and passes cell agreement. Its dossier says `elliptical` + `serrate`; `elliptical`
 cannot reach `ovate`, so the pack we hold is invisible to it. ⭐ **That is not a procurement
 problem wearing a matcher's clothes — it is the reverse**, and it is why the 2026-08-25 leaf
-expedition was right to acquire nothing (`BRIEF-leaf-pack-expedition.md`).
+expedition was right to acquire nothing (`cartograph/_archive/BRIEF-leaf-pack-expedition-2026-08-26.md`, retired — its 318-placement premise is the thing that was false).
 
 ⛔⛔ **A MATRIX IS TASTE, NOT DATA. NOTHING CAN GENERATE ONE.** `rubric.similarityMatrices._doc`:
 *"the single place human taste re-enters (§15.1)"*. Shape is `value → { neighbor: distance }`,

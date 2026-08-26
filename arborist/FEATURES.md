@@ -131,6 +131,29 @@ Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR �
 
 **Bark plumbing (Brief 1.5a):** `generate-salon.js#patchManifestForSalon` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` after `publish-glb.js` completes, in the exact shape `bake-look.js#flatten` expects (`materialRef`/`uvScale`/`tintBase`/`tintJitterRange`/`roughnessOverride`). Runtime `InstancedTrees.jsx#applyBarkUniforms` then drives per-draw uniforms — the operator's tintBase / uvScale / roughnessOverride / per-instance jitter visibly land at LS. Single bark spec per species (procedural's model); per-composition bark texture variation lives in each variant's GLB. `qualityOverride: 4` (Hero tier) so Salon variants win their bucket's quality lottery vs the procedural fillers. Salon's `main()` also calls `syncLookRoster('lafayette-square', ...)` so the published variants appear in LS placements after the next bake-look + bake-trees (Brief 1 deferred this; 1.5a closed the loop).
 
+### The species dossier — what the machine knows, and what it admits it does not
+
+Each species carries a **dossier** of required traits (habit, bark texture, leaf type/shape/margin,
+mature size) harvested from NCSU, SelecTree, USDA and the Urban Tree Database. What the operator
+sees in the Salon is not a set of confident answers — it is the **state of the evidence**:
+
+- **Agreed** — one value, with the sources and the FIELD each answered (`askedAs`). Two sources
+  saying 80 ft under different question headings is a derivation, and the cell says so.
+- **Contested** — sources disagree, so **every candidate is published** with who claimed it. The
+  operator picks; the pick is authoring and is never re-derived. No invented consensus, no
+  ranking by source authority, and never a cell that looks unscraped when it is disputed.
+- **Narrowed** — no source could answer at our resolution, so the cell says **what was ruled out**
+  and lists what survives. SelecTree's `leaf_form` only knows simple-vs-compound; against our
+  seven leaf types its "Simple" means *not compound*, which is four values, not one. A hint
+  narrows; it does not decide (`ARCHITECTURE §8a`).
+- **Authored** — the operator's own value. Machine writes carry `sourced: true` and re-derive
+  freely; an authored cell is never touched by any harvest.
+
+⭐ **The point: a wrong confident cell is more expensive than an empty one.** Three species read
+`leaf.type: simple` from a source with no word for "needle", scored as having no matchable leaf,
+and reached a procurement brief as 100 placements of leaves to go buy — against a needle pack
+already on the shelf.
+
 ## Full monte (`?view=fullmonte` → `src/components/TreeDiorama.jsx`)
 
 **The first view anywhere in the product that shows a FINISHED tree.** One

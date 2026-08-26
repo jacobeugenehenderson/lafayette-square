@@ -13,14 +13,21 @@
  * ⭐ TWO KINDS OF VOCABULARY, and they behave differently (Jacob, 2026-08-24):
  *   NAMES — open-ended. `London Plane` ≡ `Platanus acerifolia` ≡ `Sycamore,
  *           American`. Needs synonyms; new towns bring new ones forever.
- *   TERMS — CLOSED sets from rubric.json. habit(9) · bark.type(8) ·
- *           leaf.silhouette(10) · leaf.ways(5) · density(3) · overlay(5).
- *           Equivalence here is ALIASING INTO A FIXED SET — `striate`→`ridged`,
+ *   TERMS — CLOSED sets from rubric.json. ⛔ Never listed here: the counts went
+ *           stale the day the cutover split `leaf.silhouette` into type/shape/
+ *           margin, and this header still named it and `leaf.ways` two months on.
+ *           ▶ `node -e "…axisTerms(id)…"`, or read rubric.json.
+ *           Equivalence is ALIASING INTO A FIXED SET — `striate`→`ridged`,
  *           `conical`→`pyramidal` — so a botanical description resolves without
- *           anyone rewriting it into our nine words.
- *   ⭐ Habit and bark SATURATE (9 and 8 terms cover every tree there is). Leaves
- *     do not: a lobed maple and a lobed plane are both "lobed" and read nothing
- *     alike, so LEAF PACKS stay a procurement problem no vocabulary can fix.
+ *           anyone rewriting it into our words.
+ *   ⛔⛔ THIS HEADER USED TO SAY "leaf packs stay a PROCUREMENT problem no
+ *     vocabulary can fix." That belief is FALSE and it was expensive: it framed
+ *     the 2026-08-25 leaf expedition around buying 318 placements' worth of
+ *     leaves. Measured after, 33 remain — one scale pack. The rest were a wrong
+ *     CELL (pines read `simple` from a source with no needle vocabulary,
+ *     ARCHITECTURE §8a) and a missing MATRIX (serviceberry cannot reach the
+ *     `serrate_ovate` we own; BACKLOG 2026-08-26). ⭐ Both are vocabulary work.
+ *     Reach for the join before the wallet.
  *
  * ⛔ BEST EFFORT, OVERRIDABLE — the kit's doctrine (NEIGHBORHOOD-INPUTS §0.0).
  * An unresolved input is RETURNED UNCHANGED with `resolved:false`, never dropped
