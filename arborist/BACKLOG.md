@@ -10,6 +10,46 @@
 
 ---
 
+## ▶ 2026-08-26 — THE SIMILARITY MATRICES ARE OWED, AND THE OWED LIST IS SHORT
+
+⛔⛔ **THE MATCHER SCORES 8 ENUM AXES THAT HAVE NO SIMILARITY MATRIX.** Without one,
+`enumDistance` returns `farDistance` (9) for *any* non-identical pair (`matcher.js:53-57`),
+so the axis is **exact-match-or-nothing** and a near miss scores as far as an absurd one.
+▶ `node scratch/claims-matched-axes-have-matrices.mjs` — the list, the term counts, and the
+pairs to author. ⛔ Never quote the numbers; re-run it.
+
+⭐⭐ **THIS IS THE ASPIRATION CASE** (`CLAUDE.md`'s smell detector): `rubric.json`'s
+`_cutover.similarityMatrices.owed` **lists five leaf axes and none was built.** Filed as
+owed, read as done. Neither rot to evict nor a doc to quietly correct — **unbuilt work.**
+
+⭐ **AND THE OWED LIST IS ITSELF INCOMPLETE — the check found more than was filed.**
+`overlay.type`, `overlay.fruit_type`, `overlay.appendage` and `chassis.trunks` are scored by
+the matcher and were never recorded as owed at all. It also lists `leaf.growthway`, which
+the matcher does **not** score. ⛔ So the owed list is not the scope; **the check is.**
+
+**The measured consequence, one instance, and it is not the only one:** `serviceberry, downy`
+(70 placements) reports *"leaf — no matchable asset"* while we own `serrate_ovate`, which is
+green and passes cell agreement. Its dossier says `elliptical` + `serrate`; `elliptical`
+cannot reach `ovate`, so the pack we hold is invisible to it. ⭐ **That is not a procurement
+problem wearing a matcher's clothes — it is the reverse**, and it is why the 2026-08-25 leaf
+expedition was right to acquire nothing (`BRIEF-leaf-pack-expedition.md`).
+
+⛔⛔ **A MATRIX IS TASTE, NOT DATA. NOTHING CAN GENERATE ONE.** `rubric.similarityMatrices._doc`:
+*"the single place human taste re-enters (§15.1)"*. Shape is `value → { neighbor: distance }`,
+`0` identity, `1` near/workable, `2` stretch, unlisted = far; **symmetric by construction**
+(`enumDistance` tries both orders, so author each pair once). The two built matrices —
+`chassis.habit`, `bark.texture` — are the worked examples.
+
+▶ **THE REAL QUESTION IS WHERE THE OPERATOR AUTHORS THEM, and there is no surface today.**
+Jacob, 2026-08-26: *"I have wondered if we should make a little leaf studio or bark studio…
+I guess it's a bit like the shelf we have for the chassises, but that's not perfect/totally
+finished now."* ⭐ The matrices, the **5 cell-inconsistent leaf packs**
+(`node scratch/claims-leaf-pack-cells-agree.mjs`) and the stale part-index are all the same
+job — **curating the library we already own** — and all three are currently authored by
+editing JSON or not at all. ⛔ **Not designed, not scoped, not started.** Standup before code.
+
+---
+
 ## ▶ 2026-08-23 — THE DIORAMA IS LIVE ON THE SITE; JACOB'S PUNCH LIST
 
 ⛔⛔ **THE SPECIMEN VIEWER IS NOT THE PROBLEM — THE BAKE IS. Measured 2026-08-23**
