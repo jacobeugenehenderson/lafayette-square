@@ -67,6 +67,40 @@ export default function Grove() {
   const groveThreshold = useArboristStore(s => s.groveThreshold)
   const rosterSpecies = rosterCoverage?.species || []
   const unownedRef = useRef(new Set())
+
+  // ⭐⭐ THE CAPTURE POOL IS WHAT THE SLAB PLACES — which is what the button has always
+  // said it is: "Bake this neighborhood's ROSTER to the slab … what the map renders."
+  // ⛔ It used to be the LOOK's ~10 species while the slab places 24 via substitution, so
+  // 14 species — 2,251 of 5,127 placements, 44% OF THE MAP — could never be captured and
+  // permanently rendered as MESH. Falling back to the most expensive asset in a system
+  // built to eliminate it, because the cheap one was never offered.
+  const [slabSpecies, setSlabSpecies] = useState([])
+  const loadSlabSpecies = useMemo(() => async (lookId) => {
+    if (!lookId) { setSlabSpecies([]); return }
+    try {
+      const r = await fetch(`${import.meta.env.BASE_URL}baked/${lookId}/trees.json?t=${Date.now()}`)
+      if (!r.ok) throw new Error(`HTTP ${r.status}`)
+      const j = await r.json()
+      const seen = new Set(), out = []
+      for (const i of (j.instances || [])) {
+        const key = `${i.species}|${i.variantId}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        // ⭐ Carry the RUNTIME's own lod1 url. Only the Look's species have a baked,
+        // atlas-rewritten GLB; the other 12 the slab places are loaded by the runtime
+        // straight from /trees/<species>/, and that file is what must be captured — a
+        // pool that can only name baked GLBs can never reach them.
+        out.push({ species: i.species, variantId: i.variantId, runtimeUrl: i.lods?.lod1 || i.url || null })
+      }
+      setSlabSpecies(out)
+    } catch (err) {
+      // ⛔ LOUD. An empty pool captures nothing and reports success — the exact shape of
+      // "all green" meaning "did not try".
+      console.error('[grove-bake] could not read the slab to build the capture pool:', err.message)
+      setSlabSpecies([])
+    }
+  }, [])
+  useEffect(() => { loadSlabSpecies(activeLookId) }, [activeLookId, loadSlabSpecies])
   const warnedNoBoardRef = useRef(false)
   const [impostorGapDismissed, setImpostorGapDismissed] = useState(false)
   const groveBoard = useMemo(
@@ -151,7 +185,16 @@ export default function Grove() {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
     const seen = new Set(), out = []
-    for (const t of activeLookTrees) {
+    // ⭐ Every species the SLAB places, falling back to the Look's list only if the slab
+    // has not been read yet. ⛔ The Look is a SUBSET — substitution routes 167 census
+    // species onto whatever carries assets, so capturing only the Look guarantees a
+    // permanent mesh population that no bake can ever reach.
+    const lookSpeciesSet = new Set(activeLookTrees.map(t => t.species))
+    const source = slabSpecies.length ? slabSpecies : activeLookTrees
+    if (!slabSpecies.length && activeLookTrees.length) {
+      console.warn('[grove-bake] slab not read yet — falling back to the Look roster, which is a SUBSET of what the map renders.')
+    }
+    for (const t of source) {
       if (seen.has(t.species)) continue
       seen.add(t.species)
       // ⛔ THE BARS GATE THE BAKE. This used to capture whatever sat in design.json's
@@ -166,10 +209,29 @@ export default function Grove() {
       } else if (!eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) continue
       // The BAKED per-look GLB (UVs rewritten to the unified atlas) — capture parity
       // with the runtime, which loads this same GLB + the baked atlas material.
-      out.push({ species: t.species, glbUrl: `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb` })
+      // Prefer the BAKED per-look GLB (UVs rewritten to the unified atlas) — that is what
+      // the ten Look species capture from today and it works, so it is not being changed.
+      // ⛔ Fall back to the runtime's own url for the species that have no baked GLB,
+      // because capturing nothing is how 2,251 placements ended up permanently on mesh.
+      // ⚠️ Those captures do NOT have atlas-rewritten UVs; if that shows, the fix is to
+      // bake their GLBs into the Look, not to drop them from the pool again.
+      // ⭐ WHICH GLB TO SHOOT. Only the LOOK's species get a baked, atlas-rewritten GLB
+      // from bake-look; the other 12 the slab places have none, and building a baked path
+      // for them yields a 404 — which is how they were silently never captured.
+      // Look member → the baked GLB (what the ten capture from today; not changing what
+      // works). Otherwise → the runtime's own url, which is the file the map actually
+      // loads for that species and therefore the only honest thing to capture.
+      // ⚠️ Those lack atlas-rewritten UVs. If that shows in the capture, the fix is to
+      // bake their GLBs into the Look — NOT to drop them from the pool again.
+      const inLook = lookSpeciesSet.has(t.species)
+      const glbUrl = inLook
+        ? `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb`
+        : (t.runtimeUrl ? `${base.replace(/\/$/, '')}${t.runtimeUrl}` : null)
+      if (!glbUrl) { console.warn(`[grove-bake] "${t.species}" has no GLB url in the slab — cannot capture.`); continue }
+      out.push({ species: t.species, glbUrl })
     }
     return out
-  }, [activeLookId, activeLookTrees])
+  }, [activeLookId, activeLookTrees, slabSpecies, eligibleNames, groveBoard])
 
   // ⭐ DRAIN-ON-BAKE (Jacob, 2026-07-22). Bake→Slab re-captures only what's DIRTY;
   // a species whose fingerprint still matches its stored capture is skipped. The
@@ -204,6 +266,10 @@ export default function Grove() {
     forceAll.current = false
     setOverheadProg(null)
     await bakeGroveToSlab()
+    // ⛔ RE-READ THE SLAB FIRST. The roster bake just rewrote trees.json, and the capture
+    // pool IS that file's species list — capturing off a stale read would shoot the
+    // PREVIOUS bake's species.
+    await loadSlabSpecies(activeLookId)
     // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
     // species whose inputs moved becomes dirty exactly here.
     if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadBatch.length }); setOverheadTick((t) => t + 1) }
