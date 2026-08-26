@@ -626,9 +626,44 @@ export async function bakeTrees({
     return pool.length ? pool[Math.floor(hash01(seed, 7) * pool.length)] : null
   }
 
+  // ⭐⭐ THE SELECTION IS THE PALETTE (Jacob, 2026-08-25): "Demand is 80, supply is 20,
+  // we select 10 … then out of the 1000 or however many, we split that number by the
+  // statistical value split using the library we provide as the whole pie."
+  // ⛔ The pool was EVERY published variant, so the bars selected 13 species and the bake
+  // drew from 22 — 1,715 placements (33% of the map) dressed as species nobody selected.
+  // Those species were never in the impostor capture pool either, so they rendered as
+  // GEOMETRY, which is how the mesh bar came to order 166 and the slab render 1,896.
+  // One omission, three symptoms.
+  // ⛔ Fails OPEN and loudly: if the selection cannot be computed we bake with the full
+  // pool exactly as before, rather than silently emptying the map.
+  let variantPool = index.variants
+  try {
+    const [{ resolveGrove }, { computeCoverage }] = await Promise.all([
+      import('./grove-eligibility.mjs'), import('./roster-coverage.js'),
+    ])
+    const design = JSON.parse(await fs.readFile(path.join(REPO_ROOT, 'public/looks', scene, 'design.json'), 'utf8'))
+    const board = resolveGrove((await computeCoverage(scene)).species, design.groveThreshold || {})
+    const selected = new Set()
+    for (const b of board) if (b.tier !== 'out') for (const l of (b.ownsLibIds || [])) selected.add(l)
+    if (!selected.size) {
+      console.warn('[bake-trees] ⚠️ selection is EMPTY — baking with the full pool (bars not applied)')
+    } else {
+      const filtered = index.variants.filter(v => selected.has(v.species))
+      if (!filtered.length) {
+        console.warn(`[bake-trees] ⚠️ selection (${selected.size} species) matched NO published variant — baking with the full pool`)
+      } else {
+        console.log(`[bake-trees] selection: ${selected.size} species → ${filtered.length} of ${index.variants.length} variants`)
+        variantPool = filtered
+      }
+    }
+  } catch (err) {
+    console.warn('[bake-trees] ⚠️ could not compute the selection — baking with the full pool:', err.message)
+  }
+
   if (verbose) {
     console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
-    console.log(`[bake-trees] pool: ${index.variants.length} variants, ${park.trees.length} placements`)
+    console.log(`[bake-trees] pool: ${variantPool.length} variants, ${park.trees.length} placements`)
+
     if (deduped) console.log(`[bake-trees] cross-well dedup: dropped ${deduped} coincident records (kept the richest source per trunk)`)
     if (dbhGlobal.length) console.log(`[bake-trees] dbh: ${dbhGlobal.length} measured (${dbhBySpecies.size} species) → ${park.trees.length - dbhGlobal.length} estimated by empirical sampling`)
   }
@@ -732,7 +767,7 @@ export async function bakeTrees({
     const tree = park.trees[i]
     const cat = SHAPE_TO_CATEGORY[tree.shape] || 'broadleaf'
     const seed = treeSeed(tree, i)
-    const v = pickVariant(tree.species, cat, index.variants, activeStyles, speciesMap, seed)
+    const v = pickVariant(tree.species, cat, variantPool, activeStyles, speciesMap, seed)
     if (!v) { unmatched++; continue }
     const lodUrl = v.skeletons[targetLod] || v.skeletons.lod1 || v.skeletons.lod0
     if (!lodUrl) { unmatched++; continue }
