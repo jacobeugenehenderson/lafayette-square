@@ -142,6 +142,7 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
     let cancelled = false
     ;(async () => {
       let ok = 0, fail = 0
+      const failedNames = []
       for (let i = 0; i < species.length; i++) {
         if (cancelled) break
         const sp = species[i]
@@ -203,12 +204,13 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
         } catch (e) {
           console.warn('[hero-impostor-bake] failed', sp.species, e)
           fail++
+          failedNames.push(sp.species)
         } finally {
           try { gltf?.scene?.traverse((o) => { if (o.isMesh) o.geometry?.dispose?.() }) } catch {}
         }
         onProgress?.(i + 1, species.length)
       }
-      if (!cancelled) onDone?.({ ok, fail })
+      if (!cancelled) onDone?.({ ok, fail, failedNames })
     })()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps

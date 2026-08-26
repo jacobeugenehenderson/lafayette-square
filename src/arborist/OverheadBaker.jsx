@@ -147,6 +147,7 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
     let cancelled = false
     ;(async () => {
       let ok = 0, fail = 0
+      const failedNames = []
       for (let i = 0; i < species.length; i++) {
         if (cancelled) break
         const sp = species[i]
@@ -219,13 +220,14 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
         } catch (e) {
           console.warn('[overhead-bake] failed', sp.species, e)
           fail++
+          failedNames.push(sp.species)
         } finally {
           // Free the loaded GLB's GPU buffers so N species don't accumulate copies.
           try { gltf?.scene?.traverse((o) => { if (o.isMesh) o.geometry?.dispose?.() }) } catch {}
         }
         onProgress?.(i + 1, species.length)
       }
-      if (!cancelled) onDone?.({ ok, fail })
+      if (!cancelled) onDone?.({ ok, fail, failedNames })
     })()
     return () => { cancelled = true }
     // eslint-disable-next-line react-hooks/exhaustive-deps
