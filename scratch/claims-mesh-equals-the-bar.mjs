@@ -42,14 +42,28 @@ for (const b of board.filter(b => b.tier === 'mesh')) for (const l of (b.ownsLib
 
 const dbhs = instances.map(i => Number(i.dbh) || 0).sort((a, b) => a - b)
 const cut = dbhs[Math.floor((1 - HERO_GEOM_FRACTION) * (dbhs.length - 1))]
-const ordered = instances.filter(i => meshSpecies.has(i.species) && (Number(i.dbh) || 0) >= cut).length
-const forced = instances.filter(i => !hero.has(i.species))
+// ⛔⛔ TWO DIFFERENT NUMBERS, AND I CONFLATED THEM (Jacob caught it, 2026-08-25):
+// "How are the meshes being selected? Your leak might just be what I asked for."
+// He was right. What the RUNTIME implements is `heroGeomFraction` — the tallest 15% of
+// ALL placements by dbh keep geometry as anchors. It NEVER READS meshTopN: the mesh bar
+// persists, gates the capture pool, and does not control geometry at all.
+// So ANCHORS are ordered and correct; only the no-impostor placements are the breach.
+// My first version measured "mesh-tier species ∧ tallest 15%", which is the INTENDED
+// model and not the built one, and reported 253 ordered against 463 — both wrong.
+const anchors = instances.filter(i => (Number(i.dbh) || 0) >= cut)
+const forced = instances.filter(i => (Number(i.dbh) || 0) < cut && !hero.has(i.species))
+const ordered = anchors.length
+// ⚠️ The mesh bar's intended contract, reported so the gap between built and intended is
+// visible rather than assumed either way.
+const intended = instances.filter(i => meshSpecies.has(i.species) && (Number(i.dbh) || 0) >= cut).length
 
 console.log(`scene ${SCENE} — ${instances.length} placements`)
 console.log(`  bars: mesh rows ${threshold.meshTopN ?? '(unset)'} / impostor rows ${threshold.topN ?? '(unset)'}`)
 console.log(`  mesh-tier species: ${[...meshSpecies].join(', ') || '(none)'}`)
-console.log(`  ORDERED mesh: ${ordered}`)
-console.log(`  FORCED  mesh: ${forced.length}   (species with no hero impostor)`)
+console.log(`  ANCHORS (heroGeomFraction ${HERO_GEOM_FRACTION}, dbh ≥ ${cut}): ${ordered}   ← ordered, correct`)
+console.log(`  FORCED  (dbh < cut, no impostor)              : ${forced.length}   ← the breach`)
+console.log(`  total geometry drawn: ${ordered + forced.length} of ${instances.length}`)
+console.log(`  ⚠️ if the mesh BAR controlled geometry it would order ${intended} — it does not; the runtime never reads meshTopN`)
 
 if (forced.length) {
   const bySpecies = new Map()
@@ -72,7 +86,7 @@ if (forced.length) {
         : 'not routed from any census row — why is the slab placing it?'
     console.error(`   ${String(n).padStart(5)}  ${sp.padEnd(26)} ${why}`)
   }
-  console.error(`\n❌ FAIL — ordered ${ordered}, rendered ${forced.length}. A smaller breach is not progress.`)
+  console.error(`\n❌ FAIL — ${forced.length} placement(s) draw geometry nobody ordered (on top of ${ordered} legitimate anchors).`)
   process.exit(1)
 }
 console.log('\n✅ PASS — the slab renders exactly the geometry the bars ordered.')
