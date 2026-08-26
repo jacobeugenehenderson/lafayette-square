@@ -50,20 +50,27 @@ const cut = dbhs[Math.floor((1 - HERO_GEOM_FRACTION) * (dbhs.length - 1))]
 // So ANCHORS are ordered and correct; only the no-impostor placements are the breach.
 // My first version measured "mesh-tier species ∧ tallest 15%", which is the INTENDED
 // model and not the built one, and reported 253 ordered against 463 — both wrong.
-const anchors = instances.filter(i => (Number(i.dbh) || 0) >= cut)
-const forced = instances.filter(i => (Number(i.dbh) || 0) < cut && !hero.has(i.species))
+// ⭐ THE BAR IS WIRED NOW (2026-08-25). `meshTier` is stamped at bake from the mesh bar:
+// false means the species may never carry geometry. An anchor is mesh-tier ∧ tallest
+// fraction — which is the contract, so ANCHORS is what the operator ordered.
+// ⛔ `meshTier === undefined` means a slab baked before the wiring; treat it as allowed so
+// an old slab reads as it did rather than as a phantom breach.
+const meshAllowed = (i) => i.meshTier !== false
+const anchors = instances.filter(i => meshAllowed(i) && (Number(i.dbh) || 0) >= cut)
+const forced = instances.filter(i => !(meshAllowed(i) && (Number(i.dbh) || 0) >= cut) && !hero.has(i.species))
 const ordered = anchors.length
 // ⚠️ The mesh bar's intended contract, reported so the gap between built and intended is
 // visible rather than assumed either way.
-const intended = instances.filter(i => meshSpecies.has(i.species) && (Number(i.dbh) || 0) >= cut).length
+const stamped = instances.filter(i => i.meshTier !== undefined).length
 
 console.log(`scene ${SCENE} — ${instances.length} placements`)
 console.log(`  bars: mesh rows ${threshold.meshTopN ?? '(unset)'} / impostor rows ${threshold.topN ?? '(unset)'}`)
 console.log(`  mesh-tier species: ${[...meshSpecies].join(', ') || '(none)'}`)
-console.log(`  ANCHORS (heroGeomFraction ${HERO_GEOM_FRACTION}, dbh ≥ ${cut}): ${ordered}   ← ordered, correct`)
+console.log(`  ANCHORS (mesh-tier ∧ dbh ≥ ${cut}): ${ordered}   ← what the bars ordered`)
 console.log(`  FORCED  (dbh < cut, no impostor)              : ${forced.length}   ← the breach`)
 console.log(`  total geometry drawn: ${ordered + forced.length} of ${instances.length}`)
-console.log(`  ⚠️ if the mesh BAR controlled geometry it would order ${intended} — it does not; the runtime never reads meshTopN`)
+console.log(`  meshTier stamped on ${stamped}/${instances.length} placements` +
+  (stamped ? '' : '  ⚠️ SLAB PREDATES THE WIRING — the mesh bar is not bounding this slab'))
 
 if (forced.length) {
   const bySpecies = new Map()

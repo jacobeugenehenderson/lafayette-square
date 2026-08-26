@@ -831,9 +831,21 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         // surface runs on: a shared change ships as a knob defaulting to TODAY'S
         // values, so the map is unchanged until someone turns it.
         // Turn it on with ?heroBand=1 once the budget has been eye-gated.
-        const wantsImpostor = (useBakedBand && inst.heroRole)
-          ? inst.heroRole === 'impostor'
-          : ((Number(inst.dbh) || 0) < heroDbhCut)
+        // ⭐⭐ THE MESH BAR OWNS THE GEOMETRY BUDGET (Jacob, 2026-08-25). `meshTier` is
+        // stamped at bake from the operator's mesh bar: false means this species may NEVER
+        // carry geometry, however tall the tree. heroGeomFraction then chooses WHICH
+        // placements among the eligible species keep it.
+        // ⛔ Before this the bar controlled nothing — dragging a bar labelled "mesh" left
+        // the geometry count unmoved, because the cut was taken over ALL placements
+        // regardless of which species the operator had selected for geometry.
+        // ⛔ Absent `meshTier` (a slab baked before this) → previous behaviour, so an old
+        // slab is not silently stripped of every anchor.
+        const meshAllowed = inst.meshTier !== false
+        const wantsImpostor = !meshAllowed
+          ? true
+          : (useBakedBand && inst.heroRole)
+            ? inst.heroRole === 'impostor'
+            : ((Number(inst.dbh) || 0) < heroDbhCut)
         if (useBakedBand && inst.heroRole) bandRoles++; else legacyRoles++
         if (heroImpostorRecords[renderSpecies] && wantsImpostor) {
           if (!heroImpostors.has(renderSpecies)) heroImpostors.set(renderSpecies, [])

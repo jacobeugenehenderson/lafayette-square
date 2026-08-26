@@ -637,6 +637,7 @@ export async function bakeTrees({
   // ⛔ Fails OPEN and loudly: if the selection cannot be computed we bake with the full
   // pool exactly as before, rather than silently emptying the map.
   let variantPool = index.variants
+  const meshTierSpecies = new Set()
   try {
     const [{ resolveGrove }, { computeCoverage }] = await Promise.all([
       import('./grove-eligibility.mjs'), import('./roster-coverage.js'),
@@ -645,6 +646,13 @@ export async function bakeTrees({
     const board = resolveGrove((await computeCoverage(scene)).species, design.groveThreshold || {})
     const selected = new Set()
     for (const b of board) if (b.tier !== 'out') for (const l of (b.ownsLibIds || [])) selected.add(l)
+    // ⭐⭐ THE MESH BAR OWNS THE GEOMETRY BUDGET (Jacob, 2026-08-25). Only species above the
+    // MESH bar may carry geometry at all; heroGeomFraction then chooses WHICH of their
+    // placements do. Decided at BAKE per the role-at-bake doctrine — the runtime must not
+    // re-derive eligibility from a roster it cannot read.
+    // ⛔ Before this the bar controlled nothing: InstancedTrees never read meshTopN, so
+    // dragging a bar labelled "mesh" left the geometry count unmoved.
+    for (const b of board) if (b.tier === 'mesh') for (const l of (b.ownsLibIds || [])) meshTierSpecies.add(l)
     if (!selected.size) {
       console.warn('[bake-trees] ⚠️ selection is EMPTY — baking with the full pool (bars not applied)')
     } else {
@@ -856,6 +864,12 @@ export async function bakeTrees({
         lod1: v.skeletons.lod1 || v.skeletons.lod0 || lodUrl,
         lod2: v.skeletons.lod2 || v.skeletons.lod1 || lodUrl,
       },
+      // ⭐ MESH ELIGIBILITY from the mesh bar. `false` means this species may NEVER carry
+      // geometry however tall the tree; the runtime's dbh cut then chooses only among
+      // species the operator already put above the bar.
+      // ⛔ Absent (no selection computed) → the runtime keeps its previous behaviour
+      // rather than silently forbidding geometry everywhere.
+      ...(meshTierSpecies.size ? { meshTier: meshTierSpecies.has(v.species) } : {}),
       // ⭐ PER-INSTANCE SCALE. The GLB is normalised at publish to the band's HIGH — the
       // mature specimen — so every instance scales DOWN from it by where its own DBH sits
       // in that species' measured DBH distribution. A tree is therefore never rendered
