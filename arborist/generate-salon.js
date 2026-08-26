@@ -42,7 +42,7 @@ import { NodeIO, Document } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { weld, dedup, simplify as gltfSimplify } from '@gltf-transform/functions'
 import { MeshoptSimplifier } from 'meshoptimizer'
-import { promises as fs } from 'node:fs'
+import { promises as fs, default as fsSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
@@ -56,6 +56,7 @@ function makeIO() { return new NodeIO().registerExtensions(ALL_EXTENSIONS) }
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO_ROOT = path.resolve(__dirname, '..')
 const CHASSIS_DIR = path.join(REPO_ROOT, 'public/trees/_chassis')
+const PART_INDEX_PATH = path.join(REPO_ROOT, 'arborist/state/part-index.json')
 const BARK_DIR    = path.join(REPO_ROOT, 'public/textures/bark')
 const LEAF_SHAPES_DIR_NEW = path.join(REPO_ROOT, 'public/textures/leaves/shapes')
 const LEAF_SHAPES_DIR_FLAT = path.join(REPO_ROOT, 'public/textures/leaves')
@@ -212,7 +213,10 @@ export async function listChassis() {
 }
 
 async function loadChassisMeta(chassisName) {
-  const p = path.join(CHASSIS_DIR, `${chassisName}.meta.json`)
+  // Same identity-then-provenance resolution as the GLB — the sidecar sits beside it and
+  // is named the same way, so it must be found the same way. Missing this was the second
+  // half of the same bug and it failed one line later.
+  const p = resolveChassisPath(chassisName).replace(/\.glb$/, '.meta.json')
   return JSON.parse(await fs.readFile(p, 'utf8'))
 }
 
@@ -1135,8 +1139,37 @@ function bakeAuthoredTransform(doc, transform) {
   }
 }
 
+/**
+ * ⭐⭐ A CHASSIS ID IS AN IDENTITY; THE FILE ON DISK KEEPS ITS ORIGINAL NAME.
+ * Chassis were renamed to FORMS on 2026-08-25 (`red_maple_c` → `oval_28`) so a chassis
+ * stops claiming to be a species and correct compositions stop reading as mistakes. The
+ * 1.8 GB of GLBs under public/trees/_chassis are GIT-IGNORED and therefore unrecoverable,
+ * so renaming them would risk assets that cannot be restored — and it is unnecessary:
+ * `derivedFrom` on the part IS the filename. Identity and path are two different facts.
+ * ⛔ Resolve by identity first, then by provenance, and FAIL LOUDLY naming both if neither
+ * exists — never silently skip a chassis, which would compose a tree with no trunk.
+ */
+function resolveChassisPath(chassis) {
+  const direct = path.join(CHASSIS_DIR, `${chassis}.glb`)
+  if (fsSync.existsSync(direct)) return direct
+  let derivedFrom = null
+  try {
+    const pi = JSON.parse(fsSync.readFileSync(PART_INDEX_PATH, 'utf8'))
+    const rec = (pi.parts || []).find(p => p.partId === chassis)
+    derivedFrom = rec?.derivedFrom || null
+  } catch { /* no part index → nothing to map through */ }
+  if (derivedFrom) {
+    const viaProvenance = path.join(CHASSIS_DIR, `${derivedFrom}.glb`)
+    if (fsSync.existsSync(viaProvenance)) return viaProvenance
+  }
+  throw new Error(
+    `chassis "${chassis}" has no GLB — looked for ${path.basename(direct)}` +
+    (derivedFrom ? ` and ${derivedFrom}.glb (its derivedFrom)` : ' and it records no derivedFrom') +
+    ` in ${CHASSIS_DIR}`)
+}
+
 async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideLeaves = false }) {
-  const chassisPath = path.join(CHASSIS_DIR, `${chassis}.glb`)
+  const chassisPath = resolveChassisPath(chassis)
   const io = makeIO()
   const chassisDoc = await io.read(chassisPath)
   const meta = await loadChassisMeta(chassis)

@@ -223,7 +223,7 @@ export default function Grove() {
   const recaptureImpostors = () => {
     if (!overheadSpecies.length) return
     forceAll.current = true          // repair gesture — ignore the fingerprints
-    setOverheadResult(null); setHeroResult(null)
+    setOverheadResult(null); setHeroResult(null); setImpostorGapDismissed(false)
     setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1)
   }
 
@@ -470,20 +470,44 @@ export default function Grove() {
                 : `✓ ${groveBakeResult.count} trees placed (${groveBakeResult.uniqueVariants} variants, ${(groveBakeResult.totalMs/1000).toFixed(0)}s)`}
               {overheadProg === 'done' && (
                 overheadResult?.fail
-                  ? <span style={{ color: '#f88' }}>{` · overhead ✗ ${overheadResult.fail} of ${overheadResult.ok + overheadResult.fail} species FAILED`}</span>
+                  ? null
                   : ` · overhead ✓ ${overheadResult?.ok ?? ''}`)}
               {heroProg === 'done' && (
                 heroResult?.fail
-                  ? <span style={{ color: '#f88' }}>{` · hero ✗ ${heroResult.fail} of ${heroResult.ok + heroResult.fail} species FAILED`}</span>
+                  ? null
                   : ` · hero ✓ ${heroResult?.ok ?? ''}`)}
-              {(overheadResult?.fail || heroResult?.fail) ? (
-                <span style={{ color: '#f88' }}> — those species fall back to mesh; see console for which.</span>
-              ) : null}
+
             </span>
           )}
         </span>
         )}
       </header>
+
+      {(() => {
+        // ⛔ "3 of 4 species FAILED" printed an INTERNAL BATCH SIZE as if it were the
+        // operator's species count — 4 was however many the drain-on-bake happened to
+        // re-shoot, so the denominator meant nothing to the reader and the ratio changed
+        // every bake while the SAME species kept failing.
+        // ⭐ Name the trees. An operator needs WHICH and WHAT NEXT, never a ratio over a
+        // batch they cannot see. Loud enough not to be silent, but one line, and it
+        // dismisses until the next bake.
+        const names = [...new Set([...(overheadResult?.failedNames || []), ...(heroResult?.failedNames || [])])]
+        if (!names.length || impostorGapDismissed) return null
+        return (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 8, padding: '4px 12px',
+            background: 'rgba(200,120,60,0.10)', borderBottom: '1px solid rgba(200,120,60,0.25)',
+            fontSize: 11, color: '#e0b088',
+          }}>
+            <span>
+              no impostor: <b style={{ color: '#f0c8a0' }}>{names.join(', ')}</b>
+              <span style={{ color: '#9a8878' }}> — these render as mesh at every distance. Withhold them, or fix the capture.</span>
+            </span>
+            <button onClick={() => setImpostorGapDismissed(true)} title="Dismiss until the next bake"
+              style={{ marginLeft: 'auto', border: 'none', background: 'transparent', color: '#9a8878', cursor: 'pointer', fontSize: 13, padding: '0 2px' }}>×</button>
+          </div>
+        )
+      })()}
 
       <div
         style={{ flex: 1, position: 'relative', minHeight: 0 }}
@@ -526,8 +550,8 @@ export default function Grove() {
             lookId={activeLookId}
             species={overheadBatch}
             onProgress={(done, total) => setOverheadProg({ done, total })}
-            onDone={({ ok, fail }) => {
-              setOverheadProg('done'); setOverheadResult({ ok, fail })
+            onDone={({ ok, fail, failedNames }) => {
+              setOverheadProg('done'); setOverheadResult({ ok, fail, failedNames })
               console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
               // Chain the hero capture (one GPU loop at a time). Same species list.
               if (heroBatch.length) { setHeroProg({ done: 0, total: heroBatch.length }); setHeroTick((t) => t + 1) }
@@ -541,8 +565,8 @@ export default function Grove() {
             lookId={activeLookId}
             species={heroBatch}
             onProgress={(done, total) => setHeroProg({ done, total })}
-            onDone={({ ok, fail }) => {
-              setHeroProg('done'); setHeroResult({ ok, fail })
+            onDone={({ ok, fail, failedNames }) => {
+              setHeroProg('done'); setHeroResult({ ok, fail, failedNames })
               console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`)
             }}
           />
