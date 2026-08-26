@@ -106,8 +106,53 @@ const AUTHORED = new Set([
 // Jacob's ruling 2026-08-24: hard for the IDENTITY axes, soft for the rest.
 const HARD = new Set(['leaf.type', 'leaf.shape', 'chassis.habit'])
 
+// ⛔⛔ COARSE EVIDENCE — A HINT NARROWS; IT DOES NOT DECIDE (Jacob's ruling, 2026-08-26).
+//
+// Some source fields have a vocabulary COARSER than the axis we map them onto. SelecTree's
+// `leaf_form` is the case that exposed it: three values in the entire corpus — Simple (30),
+// Pinnately Compound (3), Bipinnately Compound (1). It answers SIMPLE-VS-COMPOUND and has
+// no needle or scale vocabulary at all, so `Simple` is its default for every conifer.
+// Our `leaf.type` has seven terms, four of which are "not compound".
+//
+// ⭐ So `Simple` maps to a SET, not a point: {simple, needle, scale, frond}. Storing it as
+// the single value `simple` looked right for 26 broadleaves — where the set happens to
+// collapse to one member — and was WRONG for White Pine, Austrian Pine and Chinese
+// Juniper, which then scored GAP against `long_needle`, a pack already on the shelf, and
+// reached a procurement brief as 100 placements of leaves to go buy.
+//
+// ⛔ THE OBVIOUS FIX IS A TRAP AND WAS MEASURED AS ONE: discarding `Simple` outright fixes
+// 4 conifers by destroying 26 correct broadleaf cells. The value is not wrong — it is
+// UNDER-SPECIFIED, and the honest record of it is the set it admits.
+//
+// A constraint eliminates candidates. It never votes. Where it collapses to one member,
+// that IS a derivation and it votes. Where it does not, the cell is written with NO TARGET
+// and the admitted set PUBLISHED — the same publish-the-disagreement rule, one level up:
+// we say what we ruled out and admit we cannot name the answer. ⛔ Never a plausible guess.
+const COARSE_FIELDS = {
+  leaf_form: { axis: 'leaf.type', admits: { simple: ['simple', 'needle', 'scale', 'frond'] } },
+}
+
+// ⭐ CROSS-AXIS IMPLICATION. A resolved BLADE shape rules out the non-blade leaf types —
+// nothing acicular, scale-like or frond-like is described as `ovate`. This is what keeps
+// the 26 broadleaves resolving: leaf_form says "not compound", the blade shape says "not
+// needle/scale/frond", and the intersection is exactly {simple}. One answer, derived from
+// two sources neither of which stated it.
+// ⛔ `acicular` and `linear` ABSTAIN — both are used for needle-like foliage, so they are
+// not evidence of a blade. Abstaining leaves the cell open for the operator; asserting
+// would re-commit the original error in the opposite direction.
+const NEEDLE_LIKE_SHAPES = new Set(['acicular', 'linear'])
+const BLADE_IMPLIES = ['simple', 'compound-pinnate', 'compound-bipinnate', 'compound-palmate']
+// ⭐ A MARGIN IMPLIES A BLADE TOO — and it has to, because of an interaction between two
+// mechanisms: NCSU's `Palmately Lobed` is REDIRECTED off leaf.shape onto leaf.margin, so
+// for every maple the shape evidence leaves the shape axis entirely and the leaf.type cell
+// was left open on four species we plainly know are simple.
+// ⛔ `entire` ABSTAINS — a needle is entire, so it is the one margin that is not evidence
+// of a blade.
+
 const rubric = rd(path.join(ROOT, 'arborist/rubric.json'))
 const axisKind = new Map(rubric.axes.map(a => [a.id, a.kind]))
+// (declared here, not with its siblings above: it READS the rubric, which loads on the line above.)
+const BLADE_MARGINS = new Set(rubric.axes.find(a => a.id === 'leaf.margin')?.values?.filter(v => v !== 'entire') || [])
 // ⭐⭐ `sourced: true` IS THE LINE BETWEEN MACHINE OUTPUT AND AUTHORING, and it must be on
 // EVERY machine write. "The override is the product" is about the OPERATOR's decisions; a
 // scraped value is not an override, and treating it as one makes every machine error
@@ -180,6 +225,19 @@ const tally = new Map()        // file -> axis -> value -> votes
 const bandTally = new Map()    // file -> axis -> { bands[], askedAs } — SIZE axes only
 const ties = []
 const noDossier = new Set()
+const constraints = new Map()  // file -> axis -> { sets: string[][], askedAs: Set }
+let narrowed = 0, collapsed = 0
+const addConstraint = (file, axis, admits, askedAs) => {
+  if (!constraints.has(file)) constraints.set(file, new Map())
+  const pa = constraints.get(file)
+  if (!pa.has(axis)) pa.set(axis, { sets: [], askedAs: new Set() })
+  pa.get(axis).sets.push(admits)
+  pa.get(axis).askedAs.add(askedAs)
+}
+const fileForSpecies = (raw) => {
+  const sp = resolveSpecies(raw).value
+  return [sp, ...aliasesFor(sp), raw].map(normalize).map(n => fileFor.get(n)).find(Boolean)
+}
 let applied = 0, skippedAuthored = 0
 
 for (const o of obs) {
@@ -202,6 +260,17 @@ for (const o of obs) {
 
   if (AUTHORED.has(axis)) { skippedAuthored++; continue }
   if (!axisKind.has(axis)) { console.error(`  ⛔ FIELD_MAP points at "${axis}", which is not a live rubric axis`); continue }
+
+  // ⭐⭐ COARSE EVIDENCE — record as a CONSTRAINT and stop. It must not reach the tally,
+  // because a tally is a vote and this value is not one.
+  const coarse = COARSE_FIELDS[o.field]
+  const admits = coarse && coarse.axis === axis ? coarse.admits[nv] : null
+  if (admits && admits.length > 1) {
+    const f = fileForSpecies(o.species)
+    if (!f) { noDossier.add(resolveSpecies(o.species).value); continue }
+    addConstraint(f, axis, admits, `${o.source}: ${o.field}="${o.value}"`)
+    continue
+  }
 
   let target = null
   if (axisKind.get(axis) === 'scalar') {
@@ -241,6 +310,14 @@ for (const o of obs) {
     continue                        // ⛔ a band never also votes as a point
   }
   if (!file) { noDossier.add(sp); continue }
+
+  // ⭐ A resolved blade shape constrains leaf.type. See NEEDLE_LIKE_SHAPES.
+  if (axis === 'leaf.margin' && BLADE_MARGINS.has(target)) {
+    addConstraint(file, 'leaf.type', BLADE_IMPLIES, `${o.source}: ${o.field}="${o.value}" (a blade margin)`)
+  }
+  if (axis === 'leaf.shape' && !NEEDLE_LIKE_SHAPES.has(target)) {
+    addConstraint(file, 'leaf.type', BLADE_IMPLIES, `${o.source}: ${o.field}="${o.value}" (a blade shape)`)
+  }
 
   const d = rd(path.join(dDir, file))
   const existing = d.required?.[axis]
@@ -289,12 +366,6 @@ for (const o of obs) {
 const speciesSeen = new Set(obs.map(o => resolveSpecies(o.species).value)).size
 console.log(`species in file: ${speciesSeen}`)
 console.log('')
-console.log('RESOLVE RATE — species with a value, per axis:')
-for (const a of rubric.axes.map(x => x.id)) {
-  if (AUTHORED.has(a)) continue
-  const n = perAxis.get(a)?.size || 0
-  console.log(`  ${a.padEnd(22)} ${String(n).padStart(3)} / ${speciesSeen}${n === 0 ? '   ⛔ nothing resolved' : ''}`)
-}
 if (rejectedSources.size) {
   console.log(`\n⛔ ${rejectedSources.size} SOURCE(S) REJECTED ON TAXON — ${taxonDropped} observation(s) dropped:`)
   for (const [k, why] of rejectedSources) console.log(`   ${k.split('|')[0]}: ${why}`)
@@ -355,6 +426,65 @@ for (const [file, perAxis3] of bandTally) {
 //
 // ⛔ A tie still writes NO TARGET -- but it now writes the CANDIDATES, which is the part
 // that was missing. Empty-and-silent was the defect, not empty.
+// ⭐⭐ INTERSECT THE HINTS, THEN NARROW. Runs BEFORE the tally is turned into cells, so a
+// constraint can eliminate a candidate that would otherwise have won a plurality.
+const openCells = []
+const hintConflicts = []
+for (const [file, perAxisC] of constraints) {
+  for (const [axis, rec] of perAxisC) {
+    let admits = null
+    for (const set of rec.sets) {
+      admits = admits == null ? new Set(set) : new Set([...admits].filter(v => set.includes(v)))
+    }
+    const askedAs = [...rec.askedAs].sort()
+    // ⛔ LOUD. Hints that exclude each other mean a source is wrong or a mapping is — never
+    // resolve it by preferring one; the whole point of a constraint is that it cannot lie
+    // quietly.
+    if (!admits || admits.size === 0) {
+      hintConflicts.push(`${file}  ${axis}  hints exclude each other — ${askedAs.join(' · ')}`)
+      continue
+    }
+    const votes = tally.get(file)?.get(axis)
+    if (votes && votes.size) {
+      for (const v of [...votes.keys()]) if (!admits.has(v)) { votes.delete(v); narrowed++ }
+      if (votes.size === 0) {
+        hintConflicts.push(`${file}  ${axis}  every sourced value was excluded by the hints — ${askedAs.join(' · ')}`)
+      }
+      continue
+    }
+    // ⭐ THE HINTS COLLAPSED TO ONE MEMBER. That is a derivation, not a guess, so it votes
+    // like any other evidence — and `askedAs` names the hints it came from, so the operator
+    // can see it was inferred rather than stated.
+    if (admits.size === 1) {
+      // ⛔⛔ THE AUTHORED GUARD MUST BE REPEATED HERE. The guard that protects an operator's
+      // cell lives in the OBSERVATION loop, which `continue`s before anything reaches the
+      // tally — so an authored axis simply never has votes. This path injects a vote AFTER
+      // that loop and therefore walks straight past it.
+      // Measured, not theorised: the first run of this code overwrote Taxodium's authored
+      // `needle` (hard, with a note recording the needle↔scale call) with a derived
+      // `simple`. Deriving a value is not a licence to overwrite a decision.
+      let ex = null
+      try { ex = rd(path.join(dDir, file))?.required?.[axis] } catch {}
+      if (ex && ex.target != null && !ex.sourced) {
+        if (String(ex.target) !== [...admits][0]) {
+          conflicts.push(`${file}  ${axis}  authored="${ex.target}"  hints derive "${[...admits][0]}"`)
+        }
+        continue
+      }
+      if (!tally.has(file)) tally.set(file, new Map())
+      const pf = tally.get(file)
+      if (!pf.has(axis)) pf.set(axis, new Map())
+      const m = new Map()
+      for (const a of askedAs) { const i = a.indexOf(': '); m.set(a.slice(0, i), a.slice(i + 2)) }
+      pf.get(axis).set([...admits][0], m)
+      ;(perAxis.get(axis) || perAxis.set(axis, new Set()).get(axis)).add(file)
+      collapsed++
+      continue
+    }
+    openCells.push({ file, axis, admits: [...admits], askedAs })
+  }
+}
+
 for (const [file, perAxis2] of tally) {
   for (const [axis, votes] of perAxis2) {
     const ranked = [...votes].sort((a, b) => b[1].size - a[1].size)
@@ -387,6 +517,37 @@ for (const [file, perAxis2] of tally) {
     pending.get(file)[axis] = cell
     applied++
   }
+}
+// ⛔ NARROWED BUT STILL PLURAL — no target, and the admitted set is PUBLISHED. This is the
+// cell that used to be a confident wrong answer.
+for (const oc of openCells) {
+  let existing = null
+  try { existing = rd(path.join(dDir, oc.file))?.required?.[oc.axis] } catch {}
+  if (existing && existing.target != null && !existing.sourced) continue   // ⛔ operator's
+  if (pending.get(oc.file)?.[oc.axis]) continue
+  if (!pending.has(oc.file)) pending.set(oc.file, {})
+  const cell = spec(oc.axis, null)
+  cell.askedAs = oc.askedAs
+  cell.admits = oc.admits
+  cell.contested = true
+  cell.settle = `sources NARROWED this to ${oc.admits.length} (${oc.admits.join(' / ')}) but none named one. Pick in the Salon; that pick is authoring.`
+  pending.get(oc.file)[oc.axis] = cell
+  applied++
+}
+if (narrowed || collapsed || openCells.length) {
+  console.log(`\n🔎 HINTS — ${collapsed} cell(s) DERIVED by intersection · ${narrowed} candidate(s) eliminated · ${openCells.length} left open with the admitted set published`)
+}
+// ⛔ PRINTED HERE, NOT EARLIER. This ran BEFORE the intersection and so reported leaf.type
+// at 5/34 while 21 more cells were about to be derived — a report understating its own run.
+console.log('\nRESOLVE RATE — species with a value, per axis:')
+for (const a of rubric.axes.map(x => x.id)) {
+  if (AUTHORED.has(a)) continue
+  const n = perAxis.get(a)?.size || 0
+  console.log(`  ${a.padEnd(22)} ${String(n).padStart(3)} / ${speciesSeen}${n === 0 ? '   ⛔ nothing resolved' : ''}`)
+}
+if (hintConflicts.length) {
+  console.log(`\n⛔ ${hintConflicts.length} HINT CONFLICT(S) — a source or a mapping is wrong:`)
+  for (const c of hintConflicts) console.log('   ' + c)
 }
 if (ties.length) {
   console.log(`\n⚖️  ${ties.length} TIED AXIS/AXES — no target written, candidates PUBLISHED for the operator:`)

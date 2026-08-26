@@ -257,7 +257,8 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape=\"Ovate\" (a blade shape)",
+        "selectree: leaflet_shape=\"Obovate\" (a blade shape)"
       ]
     },
     "overlay.conspicuous": {
@@ -367,10 +368,10 @@
       "leaf.shape",
       "leaf.margin",
       "bark.texture",
-      "leaf.type",
       "overlay.conspicuous",
       "chassis.trunks",
-      "chassis.orientation"
+      "chassis.orientation",
+      "leaf.type"
     ]
   }
 }

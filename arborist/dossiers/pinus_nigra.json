@@ -178,13 +178,14 @@
       "settle": "sources tie — no target. Pick one in the Salon; that pick is authoring."
     },
     "leaf.type": {
-      "target": "simple",
+      "target": "needle",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape"
       ]
     },
     "leaf.arrangement": {
@@ -288,8 +289,8 @@
       "chassis.density",
       "chassis.orientation",
       "crown.texture",
-      "bark.texture",
       "leaf.type",
+      "bark.texture",
       "leaf.arrangement",
       "overlay.fruit_type",
       "chassis.trunks"

@@ -134,7 +134,8 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape=\"Rhomboidal\" (a blade shape)",
+        "selectree: leaflet_shape=\"Diamond-shaped\" (a blade shape)"
       ]
     },
     "leaf.foliage_type": {
@@ -309,10 +310,10 @@
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",
-      "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
-      "chassis.orientation"
+      "chassis.orientation",
+      "leaf.type"
     ]
   },
   "partAvailability": {

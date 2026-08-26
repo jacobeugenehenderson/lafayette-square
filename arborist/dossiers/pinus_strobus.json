@@ -174,13 +174,14 @@
       "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
-      "target": "simple",
+      "target": "needle",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape",
+        "selectree: leaflet_shape"
       ]
     },
     "leaf.arrangement": {
@@ -301,9 +302,9 @@
       "chassis.size_max",
       "chassis.habit",
       "crown.texture",
+      "leaf.type",
       "leaf.margin",
       "bark.texture",
-      "leaf.type",
       "leaf.arrangement",
       "overlay.fruit_type",
       "chassis.density",

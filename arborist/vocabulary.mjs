@@ -259,6 +259,17 @@ export const TERM_REDIRECTS = {
     palmasect: { axis: 'leaf.margin', value: 'lobed' },
     pinnatifid: { axis: 'leaf.margin', value: 'lobed' },
     pinnatisect: { axis: 'leaf.margin', value: 'lobed' },
+    // ⭐⭐ NOT SHAPES — LEAF TYPES ARRIVING IN A SHAPE FIELD (2026-08-26). NCSU publishes
+    // `Needle`, `Filiform` and `Scale-like` under Leaf Shape, and none of the three is a
+    // blade shape: they answer leaf.TYPE. All three sat UNRESOLVED, so the only thing our
+    // corpus knew about a pine's foliage was SelecTree's `leaf_form: Simple` — which is
+    // that source's "not compound" default and carries no needle/scale vocabulary at all.
+    // ⛔ The cost was not an empty cell: White Pine, Austrian Pine and Chinese Juniper were
+    // written `leaf.type: simple`, scored GAP against `long_needle` — a pack we already
+    // own — and reached a procurement brief as 100 placements of leaves to go buy.
+    needle: { axis: 'leaf.type', value: 'needle' },
+    filiform: { axis: 'leaf.type', value: 'needle' },
+    'scale like': { axis: 'leaf.type', value: 'scale' },
     'pinnately compound': { axis: 'leaf.type', value: 'compound-pinnate' },
     'bipinnately compound': { axis: 'leaf.type', value: 'compound-bipinnate' },
     'palmately compound': { axis: 'leaf.type', value: 'compound-palmate' },

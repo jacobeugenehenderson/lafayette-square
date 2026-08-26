@@ -124,7 +124,8 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape=\"Ovate\" (a blade shape)",
+        "selectree: leaflet_shape=\"Oval\" (a blade shape)"
       ]
     },
     "leaf.foliage_type": {
@@ -258,12 +259,12 @@
       "chassis.habit",
       "overlay.fruit_type",
       "leaf.margin",
-      "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.density",
       "crown.texture",
-      "chassis.orientation"
+      "chassis.orientation",
+      "leaf.type"
     ]
   },
   "partAvailability": {

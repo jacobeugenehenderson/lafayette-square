@@ -117,7 +117,7 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "selectree: leaflet_shape=\"Fan-shaped\" (a blade shape)"
       ]
     },
     "leaf.shape": {
@@ -187,9 +187,9 @@
       "crown.texture",
       "leaf.arrangement",
       "bark.texture",
-      "leaf.type",
       "leaf.shape",
-      "leaf.foliage_type"
+      "leaf.foliage_type",
+      "leaf.type"
     ]
   }
 }

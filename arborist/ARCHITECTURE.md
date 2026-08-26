@@ -462,8 +462,27 @@ So the disagreement **is the artifact**. Every candidate is written with the sou
 
 ⛔ **Both writers must speak this vocabulary.** mint rebuilds a stub's whole `required` block, so when it used different names the rail silently went blank for nine species — behind run order, so checking one order proved nothing.
 
+### ⭐⭐⭐ 8a. A HINT NARROWS; IT DOES NOT DECIDE *(Jacob, 2026-08-26)*
+§8 handles sources that **disagree**. This handles a source that **cannot answer the question at the resolution we asked it** — the commoner and quieter failure, because it produces no disagreement to publish.
+
+A field's vocabulary can be **coarser than the axis** it maps onto. SelecTree's `leaf_form` carries three values in the whole corpus (Simple · Pinnately Compound · Bipinnately Compound): it answers *simple-vs-compound* and has **no needle or scale vocabulary at all**, so `Simple` is its default for every conifer. Against our seven-term `leaf.type` that value does not name a term — it names the **set** `{simple, needle, scale, frond}`.
+
+⛔ Stored as the point value `simple` it read correct on 26 broadleaves, where the set happens to collapse to one member, and wrote **`leaf.type: simple` onto White Pine, Austrian Pine and Chinese Juniper.** Those then scored GAP against `long_needle` — a pack already on the shelf — and reached a procurement brief as **100 placements of leaves to go buy.** ⭐ The signature: *cleanest on the common case, wrong exactly where the axis has more to say.*
+
+⛔⛔ **AND THE OBVIOUS FIX IS A TRAP — measured, not theorised.** Discarding `Simple` outright fixes 4 conifers by **destroying 26 correct broadleaf cells.** The value is not wrong, it is **under-specified**, and the honest record of it is the set it admits.
+
+So: a coarse value is declared in `COARSE_FIELDS` (`hydrate-dossiers.mjs`) and becomes a **constraint**. It eliminates candidates; it never votes.
+- Constraints **intersect**, and cross-axis: a resolved **blade shape** or a **blade margin** rules out needle/scale/frond (`acicular`, `linear` and `entire` abstain — all three describe needles). "Not compound" ∩ "not needle/scale/frond" = **`simple`**, an answer neither source stated. This derives **25 cells** and is what keeps the 26 broadleaves.
+- Where the intersection **collapses to one member** that is a derivation, and it votes — `askedAs` names the hints, so the operator sees it was inferred, not stated.
+- Where it does not collapse, the cell is written with **no target and the admitted set published** (`admits`) — §8's rule one level up: *say what was ruled out, admit we cannot name the answer.* ⛔ Never a plausible guess.
+- ⛔ **The authored guard must be repeated in the collapse path.** It lives in the observation loop, which `continue`s before anything reaches the tally, so an authored axis simply never has votes — and this path injects a vote *after* that loop. The first run walked straight past it and overwrote Taxodium's authored `needle` (hard, with a note recording the needle↔scale call) with a derived `simple`. **Deriving a value is not a licence to overwrite a decision.**
+
+**Result, measured before/after on the readiness board:** Pine White + Pine Austrian 🔴 → 🟢 CLEAN, from packs already held. `juniper, Chinese` stays 🔴 — it needs a `scale` pack we do not own, which is now the *true* remaining procurement question instead of being hidden behind a wrong `simple`. `leaf.type` resolves 30/34, was 5.
+
 ### The checks — run these, do not trust prose
 ```
+node scratch/claims-no-coarse-value-decides.mjs   # §8a — and REPORTS every field that is sole
+                                                  # evidence for an axis it cannot fully reach
 node scratch/claims-axis-keys-resolve.mjs        # axis ids, enum values, scalar units — SEVEN stores
 node scratch/claims-verify-taxon.mjs             # every verdict branch, mutation-tested
 node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence

@@ -192,6 +192,25 @@
       "askedAs": [
         "usda: Height, Mature (feet)"
       ]
+    },
+    "leaf.type": {
+      "target": null,
+      "hardness": "soft",
+      "tol": 1,
+      "sourced": true,
+      "owedHardness": "identity axis — author must confirm and promote to hard",
+      "askedAs": [
+        "ncsu: Leaf Margin=\"Serrate\" (a blade margin)",
+        "ncsu: Leaf Shape=\"Lanceolate\" (a blade shape)"
+      ],
+      "admits": [
+        "simple",
+        "compound-pinnate",
+        "compound-bipinnate",
+        "compound-palmate"
+      ],
+      "contested": true,
+      "settle": "sources NARROWED this to 4 (simple / compound-pinnate / compound-bipinnate / compound-palmate) but none named one. Pick in the Salon; that pick is authoring."
     }
   },
   "recipe": null,
@@ -232,7 +251,8 @@
       "leaf.margin",
       "bark.texture",
       "chassis.trunks",
-      "chassis.orientation"
+      "chassis.orientation",
+      "leaf.type"
     ]
   }
 }

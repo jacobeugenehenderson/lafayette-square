@@ -186,7 +186,8 @@
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "ncsu: Leaf Shape=\"Palmasect\" (a blade margin)",
+        "selectree: leaflet_shape=\"Palmately-lobed\" (a blade margin)"
       ]
     },
     "leaf.foliage_type": {
@@ -301,11 +302,11 @@
       "crown.texture",
       "overlay.fruit_type",
       "leaf.margin",
-      "leaf.type",
       "leaf.foliage_type",
       "overlay.conspicuous",
       "chassis.trunks",
-      "chassis.orientation"
+      "chassis.orientation",
+      "leaf.type"
     ]
   },
   "partAvailability": {

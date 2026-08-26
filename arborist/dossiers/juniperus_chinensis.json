@@ -136,13 +136,13 @@
       "settle": "plurality shown as target, but sources disagree. Confirm or pick another."
     },
     "leaf.type": {
-      "target": "simple",
+      "target": "scale",
       "hardness": "soft",
       "tol": 1,
       "sourced": true,
       "owedHardness": "identity axis — author must confirm and promote to hard",
       "askedAs": [
-        "selectree: leaf_form"
+        "selectree: leaflet_shape"
       ]
     },
     "overlay.fruit_type": {
