@@ -1149,7 +1149,7 @@ function bakeAuthoredTransform(doc, transform) {
  * ⛔ Resolve by identity first, then by provenance, and FAIL LOUDLY naming both if neither
  * exists — never silently skip a chassis, which would compose a tree with no trunk.
  */
-function resolveChassisPath(chassis) {
+export function resolveChassisPath(chassis) {
   const direct = path.join(CHASSIS_DIR, `${chassis}.glb`)
   if (fsSync.existsSync(direct)) return direct
   let derivedFrom = null

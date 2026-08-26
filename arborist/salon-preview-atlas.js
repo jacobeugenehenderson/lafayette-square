@@ -33,6 +33,7 @@
 
 import fs from 'node:fs/promises'
 import path from 'node:path'
+import { resolveChassisPath } from './generate-salon.js'
 import { fileURLToPath } from 'node:url'
 import crypto from 'node:crypto'
 import sharp from 'sharp'
@@ -120,10 +121,19 @@ async function fullRebuild({ species, slot, composition, dir, cur, t0 }) {
   // exists; otherwise generateSingleCompositionGLB's gltf-transform read
   // throws an ENOENT bubble that surfaces in the workstage as an opaque
   // 500. A 404 with the missing chassis name is easier to read.
-  const chassisPath = path.join(REPO_ROOT, 'public/trees/_chassis', `${composition.chassis}.glb`)
-  try { await fs.access(chassisPath) }
-  catch {
-    const err = new Error(`chassis '${composition.chassis}' not found at ${chassisPath}`)
+  // ⛔ ONE RESOLVER. This built its own `_chassis/<id>.glb` path while the BUILDER it
+  // guards resolves identity-then-provenance — so after chassis were renamed to forms
+  // (`white_oak_a` → `rounded_06`) the pre-flight rejected every composition the builder
+  // could have handled perfectly well. A guard stricter than the thing it guards is not a
+  // guard, it is an outage: the Salon showed "PREVIEW-ATLAS BUILD FAILED" for a tree that
+  // builds fine.
+  // ⚠️ My rename fixed generate-salon and never grepped for the SECOND consumer. Same
+  // omission as MANIFEST.json earlier in the same rename — I fixed the site that shouted
+  // and did not go looking for the next one.
+  let chassisPath
+  try { chassisPath = resolveChassisPath(composition.chassis) }
+  catch (e) {
+    const err = new Error(e.message)
     err.statusCode = 404
     throw err
   }
