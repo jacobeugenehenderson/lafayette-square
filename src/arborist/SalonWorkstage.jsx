@@ -1776,7 +1776,12 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
   // ranking can override. Distinct from `not-available` (we have nothing at all).
   const isIn = (s) => !withheld.has(s.species)
     && (pinned.has(s.species) || persistedTopN == null || (rankOf.get(s.species) ?? 0) < persistedTopN)
-  const inCount = species.reduce((n, s) => n + (isIn(s) ? 1 : 0), 0)
+  // ⛔ THE HEADER AND THE BAR ANSWERED THE SAME QUESTION DIFFERENTLY: "95 in Grove" beside
+  // "10 SHIP". `isIn` counts every ROW above the bar — a row position again, the same
+  // defect fixed on the bar labels and missed one line up — while the bar counts species
+  // the shared rule actually admits. Two numbers for one fact in one panel, and the bigger
+  // one is the wrong one.
+  const inCount = liveCounts.mesh + liveCounts.impostor
   const outCount = species.length - inCount
 
   // Drag the bar: live position in dragTopN, persisted on release only (so a
