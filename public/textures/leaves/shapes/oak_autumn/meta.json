@@ -1,7 +1,10 @@
 {
-  "morphology": "seasonal_oak",
+  "morphology": "obovate",
   "naturalSize": 12,
-  "tileGrid": [2, 4],
+  "tileGrid": [
+    2,
+    4
+  ],
   "recommendedSpecies": [
     "quercus_alba",
     "quercus_rubra"
@@ -9,5 +12,10 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet012"
+  },
+  "morphologyWas": "seasonal_oak",
+  "leafAxes": {
+    "leaf.shape": "obovate",
+    "leaf.margin": "lobed"
   }
 }

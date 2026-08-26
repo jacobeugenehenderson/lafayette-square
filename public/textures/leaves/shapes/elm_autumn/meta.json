@@ -1,12 +1,20 @@
 {
-  "morphology": "seasonal_elm",
+  "morphology": "ovate",
   "naturalSize": 8,
-  "tileGrid": [2, 3],
+  "tileGrid": [
+    2,
+    3
+  ],
   "recommendedSpecies": [
     "ulmus_americana"
   ],
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet007"
+  },
+  "morphologyWas": "seasonal_elm",
+  "leafAxes": {
+    "leaf.shape": "ovate",
+    "leaf.margin": "doubly-serrate"
   }
 }

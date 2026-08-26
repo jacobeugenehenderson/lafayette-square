@@ -1,7 +1,10 @@
 {
-  "morphology": "ovate_large",
+  "morphology": "ovate",
   "naturalSize": 15,
-  "tileGrid": [2, 1],
+  "tileGrid": [
+    2,
+    1
+  ],
   "recommendedSpecies": [
     "morus_alba",
     "hydrangea_macrophylla",
@@ -10,5 +13,9 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "Leaf001"
+  },
+  "morphologyWas": "ovate_large",
+  "leafAxes": {
+    "leaf.shape": "ovate"
   }
 }

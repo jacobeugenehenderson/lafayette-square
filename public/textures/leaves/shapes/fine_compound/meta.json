@@ -1,8 +1,21 @@
 {
-  "morphology": "fine_compound",
+  "morphology": "compound-pinnate",
   "naturalSize": 25,
-  "tileGrid": [1, 1],
+  "tileGrid": [
+    1,
+    1
+  ],
   "quality": "placeholder",
-  "recommendedSpecies": ["fraxinus_pennsylvanica"],
-  "source": { "vendor": "in-kit placeholder", "pack": "fine_compound.png", "note": "wired 2026-06-18 to fill the Green Ash compound gap; placeholder fidelity — Stage 2/3 replaces with a vendor compound frond. morphology→compound via rubric vocabNormalization." }
+  "recommendedSpecies": [
+    "fraxinus_pennsylvanica"
+  ],
+  "source": {
+    "vendor": "in-kit placeholder",
+    "pack": "fine_compound.png",
+    "note": "wired 2026-06-18 to fill the Green Ash compound gap; placeholder fidelity — Stage 2/3 replaces with a vendor compound frond. morphology→compound via rubric vocabNormalization."
+  },
+  "morphologyWas": "fine_compound",
+  "leafAxes": {
+    "leaf.type": "compound-pinnate"
+  }
 }

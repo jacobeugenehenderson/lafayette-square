@@ -1,7 +1,10 @@
 {
-  "morphology": "palmate",
+  "morphology": "orbicular",
   "naturalSize": 10,
-  "tileGrid": [2, 2],
+  "tileGrid": [
+    2,
+    2
+  ],
   "recommendedSpecies": [
     "acer_saccharum",
     "acer_rubrum",
@@ -10,5 +13,10 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet010"
+  },
+  "morphologyWas": "palmate",
+  "leafAxes": {
+    "leaf.shape": "orbicular",
+    "leaf.margin": "lobed"
   }
 }

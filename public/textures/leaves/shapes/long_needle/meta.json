@@ -1,7 +1,10 @@
 {
-  "morphology": "long_needle",
+  "morphology": "needle",
   "naturalSize": 15,
-  "tileGrid": [1, 3],
+  "tileGrid": [
+    1,
+    3
+  ],
   "recommendedSpecies": [
     "pinus_strobus",
     "larix_decidua"
@@ -9,5 +12,9 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet019"
+  },
+  "morphologyWas": "long_needle",
+  "leafAxes": {
+    "leaf.type": "needle"
   }
 }

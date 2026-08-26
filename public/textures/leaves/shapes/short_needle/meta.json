@@ -1,8 +1,21 @@
 {
-  "morphology": "short_needle",
+  "morphology": "needle",
   "naturalSize": 5,
-  "tileGrid": [1, 1],
+  "tileGrid": [
+    1,
+    1
+  ],
   "quality": "placeholder",
-  "recommendedSpecies": ["taxodium_distichum"],
-  "source": { "vendor": "in-kit placeholder", "pack": "short_needle.png", "note": "wired 2026-06-18 to fill the Bald Cypress needle gap; placeholder fidelity. The feathery two-ranked SPRAY is leaf.ways=sprays at authoring (Stage 2), not the silhouette. morphology→needle via rubric vocabNormalization." }
+  "recommendedSpecies": [
+    "taxodium_distichum"
+  ],
+  "source": {
+    "vendor": "in-kit placeholder",
+    "pack": "short_needle.png",
+    "note": "wired 2026-06-18 to fill the Bald Cypress needle gap; placeholder fidelity. The feathery two-ranked SPRAY is leaf.ways=sprays at authoring (Stage 2), not the silhouette. morphology→needle via rubric vocabNormalization."
+  },
+  "morphologyWas": "short_needle",
+  "leafAxes": {
+    "leaf.type": "needle"
+  }
 }

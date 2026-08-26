@@ -1,7 +1,10 @@
 {
-  "morphology": "heart",
+  "morphology": "cordate",
   "naturalSize": 10,
-  "tileGrid": [3, 2],
+  "tileGrid": [
+    3,
+    2
+  ],
   "recommendedSpecies": [
     "cercis_canadensis",
     "syringa_vulgaris",
@@ -10,5 +13,9 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet004"
+  },
+  "morphologyWas": "heart",
+  "leafAxes": {
+    "leaf.shape": "cordate"
   }
 }

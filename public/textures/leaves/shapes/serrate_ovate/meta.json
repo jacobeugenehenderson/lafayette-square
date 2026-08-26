@@ -1,7 +1,10 @@
 {
-  "morphology": "serrate_ovate",
+  "morphology": "ovate",
   "naturalSize": 8,
-  "tileGrid": [3, 2],
+  "tileGrid": [
+    3,
+    2
+  ],
   "recommendedSpecies": [
     "ulmus_americana",
     "carpinus_caroliniana"
@@ -9,5 +12,10 @@
   "source": {
     "vendor": "botanical-reference-hires",
     "pack": "LeafSet001"
+  },
+  "morphologyWas": "serrate_ovate",
+  "leafAxes": {
+    "leaf.shape": "ovate",
+    "leaf.margin": "serrate"
   }
 }
