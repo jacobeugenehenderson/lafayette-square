@@ -209,8 +209,54 @@
         "compound-bipinnate",
         "compound-palmate"
       ],
+      "candidates": [
+        {
+          "value": "simple",
+          "seen": 0,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin=\"Serrate\" (a blade margin)",
+            "ncsu: Leaf Shape=\"Lanceolate\" (a blade shape)"
+          ]
+        },
+        {
+          "value": "compound-pinnate",
+          "seen": 0,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin=\"Serrate\" (a blade margin)",
+            "ncsu: Leaf Shape=\"Lanceolate\" (a blade shape)"
+          ]
+        },
+        {
+          "value": "compound-bipinnate",
+          "seen": 0,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin=\"Serrate\" (a blade margin)",
+            "ncsu: Leaf Shape=\"Lanceolate\" (a blade shape)"
+          ]
+        },
+        {
+          "value": "compound-palmate",
+          "seen": 0,
+          "sources": [
+            "ncsu"
+          ],
+          "askedAs": [
+            "ncsu: Leaf Margin=\"Serrate\" (a blade margin)",
+            "ncsu: Leaf Shape=\"Lanceolate\" (a blade shape)"
+          ]
+        }
+      ],
       "contested": true,
-      "settle": "sources NARROWED this to 4 (simple / compound-pinnate / compound-bipinnate / compound-palmate) but none named one. Pick in the Salon; that pick is authoring."
+      "settle": "⚠️ NO SOURCE NAMED A VALUE. The listed sources RULED OUT the others (see askedAs), leaving these 4: simple / compound-pinnate / compound-bipinnate / compound-palmate. Pick one; that pick is authoring."
     }
   },
   "recipe": null,

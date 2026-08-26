@@ -54,6 +54,24 @@ const fmBlock2 = hydSrc.match(/const FIELD_MAP = \{[\s\S]*?\n\}/)[0]
 const fmEntries = [...fmBlock2.matchAll(/^\s*'?([A-Za-z_/ ,()0-9-]+?)'?:\s*'([a-z._0-9]+)',/gm)]
 assertFullParse(fmBlock2, fmEntries.length, 'FIELD_MAP (mint-dossiers)')
 const FIELD_MAP = Object.fromEntries(fmEntries.map(m => [m[1], m[2]]))
+
+// ⛔⛔ COARSE FIELDS — PARSED FROM HYDRATE, NEVER RESTATED (see ARCHITECTURE §8a).
+// A value whose source vocabulary is coarser than our axis names a SET, not a term, and
+// must not become a candidate. hydrate turns these into constraints and intersects them;
+// mint's job is narrower — it must simply not PUBLISH one as if a source had named it.
+// ⛔ Without this, mint re-added `simple:selectree` to White Pine's leaf.type the moment
+// it ran last, and claims-dossier-writers-agree went order-dependent. Two writers, two
+// rules — the same drift units.mjs was extracted to end.
+const cfBlock = hydSrc.match(/const COARSE_FIELDS = \{[\s\S]*?\n\}/)
+if (!cfBlock) throw new Error('mint: COARSE_FIELDS not found in hydrate-dossiers.mjs — it moved or was renamed, and mint would silently republish coarse values as candidates')
+const COARSE = new Map()   // field -> Map(normalized value -> admits[])
+for (const m of cfBlock[0].matchAll(/(\w+):\s*\{\s*axis:\s*'([^']+)',\s*admits:\s*\{([^}]*)\}/g)) {
+  const vals = new Map()
+  for (const v of m[3].matchAll(/(\w+):\s*\[([^\]]*)\]/g)) {
+    vals.set(v[1], v[2].split(',').map(x => x.trim().replace(/'/g, '')).filter(Boolean))
+  }
+  COARSE.set(m[1], { axis: m[2], vals })
+}
 const AUTHORED = new Set([...hydSrc.match(/const AUTHORED = new Set\(\[[\s\S]*?\]\)/)[0]
   .matchAll(/'([a-z._0-9]+)'/g)].map(m => m[1]))
 
@@ -115,6 +133,9 @@ for (const o of obs) {
   let axis = FIELD_MAP[o.field]
   if (!axis || AUTHORED.has(axis)) continue
   const nv = normalize(o.value)
+  // ⛔ A coarse value admits a SET; it is not a candidate. See COARSE above.
+  const cf = COARSE.get(o.field)
+  if (cf && cf.axis === axis && (cf.vals.get(nv)?.length > 1)) continue
   if (NOT_A_TRAIT[axis]?.[nv]) continue
   let forced = null
   const redir = TERM_REDIRECTS[axis]?.[nv]

@@ -529,8 +529,18 @@ for (const oc of openCells) {
   const cell = spec(oc.axis, null)
   cell.askedAs = oc.askedAs
   cell.admits = oc.admits
+  // ⛔⛔ A CONTESTED CELL WITHOUT CANDIDATES IS A BLANK RAIL — the exact defect
+  // claims-dossier-writers-agree exists to catch, and this cell shape reintroduced it.
+  // The admitted set IS the candidate list: these are the values the operator picks
+  // between. `seen: 0` is honest — no source NAMED any of them; they are what survived.
+  // ⛔ EVERY CANDIDATE CARRIES ITS SOURCES, or the operator cannot judge it — the rail's
+  // contract, enforced by claims-dossier-writers-agree. The source here is the one whose
+  // hint kept the value ADMISSIBLE, not one that named it, and `askedAs` says so in
+  // words ('a blade shape'), so the attribution is not overstated.
+  const hintSources = [...new Set(oc.askedAs.map(a => a.slice(0, Math.max(0, a.indexOf(': ')))).filter(Boolean))].sort()
+  cell.candidates = oc.admits.map(v => ({ value: v, seen: 0, sources: hintSources, askedAs: oc.askedAs }))
   cell.contested = true
-  cell.settle = `sources NARROWED this to ${oc.admits.length} (${oc.admits.join(' / ')}) but none named one. Pick in the Salon; that pick is authoring.`
+  cell.settle = `⚠️ NO SOURCE NAMED A VALUE. The listed sources RULED OUT the others (see askedAs), leaving these ${oc.admits.length}: ${oc.admits.join(' / ')}. Pick one; that pick is authoring.`
   pending.get(oc.file)[oc.axis] = cell
   applied++
 }
