@@ -1,0 +1,29 @@
+{
+  "partId": "sugar_maple_low_poly_forest_o",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "oval",
+  "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_o.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 10.95,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "oval",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(acer_saccharum_lowpoly)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "sugar_maple_low_poly_forest_o",
+  "id": "oval_40"
+}

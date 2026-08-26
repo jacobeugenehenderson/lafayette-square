@@ -1,0 +1,29 @@
+{
+  "partId": "italian_cypress_k",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "columnar",
+  "sourcePath": "public/trees/_chassis/italian_cypress_k.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 5.96,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "columnar",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(cupressus_sempervirens)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "italian_cypress_k",
+  "id": "columnar_21"
+}

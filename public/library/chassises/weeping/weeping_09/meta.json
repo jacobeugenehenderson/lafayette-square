@@ -1,0 +1,29 @@
+{
+  "partId": "weeping_willow_b",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "weeping",
+  "sourcePath": "public/trees/_chassis/weeping_willow_b.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 3.76,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "weeping",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(salix_babylonica)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "weeping_willow_b",
+  "id": "weeping_09"
+}

@@ -1,0 +1,29 @@
+{
+  "partId": "alaskan_cedar_k",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "pyramidal",
+  "sourcePath": "public/trees/_chassis/alaskan_cedar_k.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 26.28,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "pyramidal",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(callitropsis_nootkatensis)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "alaskan_cedar_k",
+  "id": "pyramidal_10"
+}

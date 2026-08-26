@@ -1,0 +1,29 @@
+{
+  "partId": "acer_saccharum_procedural_a",
+  "partType": "chassis",
+  "source": "procedural",
+  "canonicalValue": "oval",
+  "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_a.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 27.72,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "oval",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(acer_saccharum_procedural)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "acer_saccharum_procedural_a",
+  "id": "oval_14"
+}

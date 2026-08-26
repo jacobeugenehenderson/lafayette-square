@@ -1,0 +1,29 @@
+{
+  "partId": "garden_trees_mix_b",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "weeping",
+  "sourcePath": "public/trees/_chassis/garden_trees_mix_b.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 7.16,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "weeping",
+      "ratified": true,
+      "confidence": "high",
+      "source": "curation.displayName(\"Weeping Willow\")"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "garden_trees_mix_b",
+  "id": "weeping_01"
+}

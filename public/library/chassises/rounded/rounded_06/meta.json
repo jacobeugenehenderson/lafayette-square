@@ -1,0 +1,29 @@
+{
+  "partId": "white_oak_a",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "rounded",
+  "sourcePath": "public/trees/_chassis/white_oak_a.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 17.45,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "rounded",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(quercus_alba)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "white_oak_a",
+  "id": "rounded_06"
+}

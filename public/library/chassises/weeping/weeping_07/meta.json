@@ -1,0 +1,29 @@
+{
+  "partId": "stylized_willow_l",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "weeping",
+  "sourcePath": "public/trees/_chassis/stylized_willow_l.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 0,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "weeping",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(willow_stylized)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "stylized_willow_l",
+  "id": "weeping_07"
+}

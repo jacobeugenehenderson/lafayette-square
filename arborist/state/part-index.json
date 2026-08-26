@@ -13,7 +13,7 @@
   },
   "parts": [
     {
-      "partId": "acer_saccharum_a",
+      "partId": "oval_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_a.glb",
@@ -38,10 +38,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_a"
+      "path": "public/library/chassises/oval/acer_saccharum_a",
+      "derivedFrom": "acer_saccharum_a"
     },
     {
-      "partId": "acer_saccharum_c",
+      "partId": "oval_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_c.glb",
@@ -66,10 +67,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_c"
+      "path": "public/library/chassises/oval/acer_saccharum_c",
+      "derivedFrom": "acer_saccharum_c"
     },
     {
-      "partId": "acer_saccharum_d",
+      "partId": "oval_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_d.glb",
@@ -94,10 +96,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_d"
+      "path": "public/library/chassises/oval/acer_saccharum_d",
+      "derivedFrom": "acer_saccharum_d"
     },
     {
-      "partId": "acer_saccharum_e",
+      "partId": "oval_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_e.glb",
@@ -122,10 +125,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_e"
+      "path": "public/library/chassises/oval/acer_saccharum_e",
+      "derivedFrom": "acer_saccharum_e"
     },
     {
-      "partId": "acer_saccharum_h",
+      "partId": "oval_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_h.glb",
@@ -150,10 +154,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_h"
+      "path": "public/library/chassises/oval/acer_saccharum_h",
+      "derivedFrom": "acer_saccharum_h"
     },
     {
-      "partId": "acer_saccharum_i",
+      "partId": "oval_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_i.glb",
@@ -178,10 +183,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_i"
+      "path": "public/library/chassises/oval/acer_saccharum_i",
+      "derivedFrom": "acer_saccharum_i"
     },
     {
-      "partId": "acer_saccharum_j",
+      "partId": "oval_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_j.glb",
@@ -206,10 +212,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_j"
+      "path": "public/library/chassises/oval/acer_saccharum_j",
+      "derivedFrom": "acer_saccharum_j"
     },
     {
-      "partId": "acer_saccharum_k",
+      "partId": "oval_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_k.glb",
@@ -234,10 +241,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_k"
+      "path": "public/library/chassises/oval/acer_saccharum_k",
+      "derivedFrom": "acer_saccharum_k"
     },
     {
-      "partId": "acer_saccharum_l",
+      "partId": "oval_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_l.glb",
@@ -262,10 +270,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_l"
+      "path": "public/library/chassises/oval/acer_saccharum_l",
+      "derivedFrom": "acer_saccharum_l"
     },
     {
-      "partId": "acer_saccharum_m",
+      "partId": "oval_10",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_m.glb",
@@ -290,10 +299,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_m"
+      "path": "public/library/chassises/oval/acer_saccharum_m",
+      "derivedFrom": "acer_saccharum_m"
     },
     {
-      "partId": "acer_saccharum_n",
+      "partId": "oval_11",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_n.glb",
@@ -318,10 +328,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_n"
+      "path": "public/library/chassises/oval/acer_saccharum_n",
+      "derivedFrom": "acer_saccharum_n"
     },
     {
-      "partId": "acer_saccharum_o",
+      "partId": "oval_12",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_o.glb",
@@ -346,10 +357,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_o"
+      "path": "public/library/chassises/oval/acer_saccharum_o",
+      "derivedFrom": "acer_saccharum_o"
     },
     {
-      "partId": "acer_saccharum_p",
+      "partId": "oval_13",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_p.glb",
@@ -374,10 +386,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_p"
+      "path": "public/library/chassises/oval/acer_saccharum_p",
+      "derivedFrom": "acer_saccharum_p"
     },
     {
-      "partId": "acer_saccharum_procedural_a",
+      "partId": "oval_14",
       "partType": "chassis",
       "source": "procedural",
       "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_a.glb",
@@ -402,10 +415,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_procedural_a"
+      "path": "public/library/chassises/oval/acer_saccharum_procedural_a",
+      "derivedFrom": "acer_saccharum_procedural_a"
     },
     {
-      "partId": "acer_saccharum_procedural_b",
+      "partId": "oval_15",
       "partType": "chassis",
       "source": "procedural",
       "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_b.glb",
@@ -430,10 +444,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_procedural_b"
+      "path": "public/library/chassises/oval/acer_saccharum_procedural_b",
+      "derivedFrom": "acer_saccharum_procedural_b"
     },
     {
-      "partId": "acer_saccharum_procedural_c",
+      "partId": "oval_16",
       "partType": "chassis",
       "source": "procedural",
       "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_c.glb",
@@ -458,10 +473,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_procedural_c"
+      "path": "public/library/chassises/oval/acer_saccharum_procedural_c",
+      "derivedFrom": "acer_saccharum_procedural_c"
     },
     {
-      "partId": "acer_saccharum_procedural_d",
+      "partId": "oval_17",
       "partType": "chassis",
       "source": "procedural",
       "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_d.glb",
@@ -486,10 +502,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_procedural_d"
+      "path": "public/library/chassises/oval/acer_saccharum_procedural_d",
+      "derivedFrom": "acer_saccharum_procedural_d"
     },
     {
-      "partId": "acer_saccharum_procedural_e",
+      "partId": "oval_18",
       "partType": "chassis",
       "source": "procedural",
       "sourcePath": "public/trees/_chassis/acer_saccharum_procedural_e.glb",
@@ -514,10 +531,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_procedural_e"
+      "path": "public/library/chassises/oval/acer_saccharum_procedural_e",
+      "derivedFrom": "acer_saccharum_procedural_e"
     },
     {
-      "partId": "acer_saccharum_q",
+      "partId": "oval_19",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_q.glb",
@@ -542,10 +560,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_q"
+      "path": "public/library/chassises/oval/acer_saccharum_q",
+      "derivedFrom": "acer_saccharum_q"
     },
     {
-      "partId": "acer_saccharum_r",
+      "partId": "oval_20",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_r.glb",
@@ -570,10 +589,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_r"
+      "path": "public/library/chassises/oval/acer_saccharum_r",
+      "derivedFrom": "acer_saccharum_r"
     },
     {
-      "partId": "acer_saccharum_s",
+      "partId": "oval_21",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_s.glb",
@@ -598,10 +618,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_s"
+      "path": "public/library/chassises/oval/acer_saccharum_s",
+      "derivedFrom": "acer_saccharum_s"
     },
     {
-      "partId": "acer_saccharum_t",
+      "partId": "oval_22",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_t.glb",
@@ -626,10 +647,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_t"
+      "path": "public/library/chassises/oval/acer_saccharum_t",
+      "derivedFrom": "acer_saccharum_t"
     },
     {
-      "partId": "acer_saccharum_u",
+      "partId": "oval_23",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/acer_saccharum_u.glb",
@@ -654,10 +676,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/acer_saccharum_u"
+      "path": "public/library/chassises/oval/acer_saccharum_u",
+      "derivedFrom": "acer_saccharum_u"
     },
     {
-      "partId": "alaskan_cedar_b",
+      "partId": "pyramidal_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_b.glb",
@@ -682,10 +705,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_b"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_b",
+      "derivedFrom": "alaskan_cedar_b"
     },
     {
-      "partId": "alaskan_cedar_c",
+      "partId": "pyramidal_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_c.glb",
@@ -710,10 +734,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_c"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_c",
+      "derivedFrom": "alaskan_cedar_c"
     },
     {
-      "partId": "alaskan_cedar_d",
+      "partId": "pyramidal_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_d.glb",
@@ -738,10 +763,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_d"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_d",
+      "derivedFrom": "alaskan_cedar_d"
     },
     {
-      "partId": "alaskan_cedar_e",
+      "partId": "pyramidal_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_e.glb",
@@ -766,10 +792,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_e"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_e",
+      "derivedFrom": "alaskan_cedar_e"
     },
     {
-      "partId": "alaskan_cedar_f",
+      "partId": "pyramidal_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_f.glb",
@@ -794,10 +821,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_f"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_f",
+      "derivedFrom": "alaskan_cedar_f"
     },
     {
-      "partId": "alaskan_cedar_g",
+      "partId": "pyramidal_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_g.glb",
@@ -822,10 +850,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_g"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_g",
+      "derivedFrom": "alaskan_cedar_g"
     },
     {
-      "partId": "alaskan_cedar_h",
+      "partId": "pyramidal_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_h.glb",
@@ -850,10 +879,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_h"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_h",
+      "derivedFrom": "alaskan_cedar_h"
     },
     {
-      "partId": "alaskan_cedar_i",
+      "partId": "pyramidal_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_i.glb",
@@ -878,10 +908,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_i"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_i",
+      "derivedFrom": "alaskan_cedar_i"
     },
     {
-      "partId": "alaskan_cedar_j",
+      "partId": "pyramidal_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_j.glb",
@@ -906,10 +937,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_j"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_j",
+      "derivedFrom": "alaskan_cedar_j"
     },
     {
-      "partId": "alaskan_cedar_k",
+      "partId": "pyramidal_10",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_k.glb",
@@ -934,10 +966,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_k"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_k",
+      "derivedFrom": "alaskan_cedar_k"
     },
     {
-      "partId": "alaskan_cedar_l",
+      "partId": "pyramidal_11",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_l.glb",
@@ -962,10 +995,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_l"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_l",
+      "derivedFrom": "alaskan_cedar_l"
     },
     {
-      "partId": "alaskan_cedar_m",
+      "partId": "pyramidal_12",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_m.glb",
@@ -990,10 +1024,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_m"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_m",
+      "derivedFrom": "alaskan_cedar_m"
     },
     {
-      "partId": "alaskan_cedar_n",
+      "partId": "pyramidal_13",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/alaskan_cedar_n.glb",
@@ -1018,10 +1053,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/alaskan_cedar_n"
+      "path": "public/library/chassises/pyramidal/alaskan_cedar_n",
+      "derivedFrom": "alaskan_cedar_n"
     },
     {
-      "partId": "american_linden_a",
+      "partId": "oval_24",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/american_linden_a.glb",
@@ -1049,10 +1085,11 @@
         "approved": true,
         "displayName": "European Linden"
       },
-      "path": "public/library/chassises/oval/american_linden_a"
+      "path": "public/library/chassises/oval/american_linden_a",
+      "derivedFrom": "american_linden_a"
     },
     {
-      "partId": "black_gum_a",
+      "partId": "pyramidal_14",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_a.glb",
@@ -1077,10 +1114,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_a"
+      "path": "public/library/chassises/pyramidal/black_gum_a",
+      "derivedFrom": "black_gum_a"
     },
     {
-      "partId": "black_gum_e",
+      "partId": "pyramidal_15",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_e.glb",
@@ -1105,10 +1143,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_e"
+      "path": "public/library/chassises/pyramidal/black_gum_e",
+      "derivedFrom": "black_gum_e"
     },
     {
-      "partId": "black_gum_f",
+      "partId": "pyramidal_16",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_f.glb",
@@ -1133,10 +1172,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_f"
+      "path": "public/library/chassises/pyramidal/black_gum_f",
+      "derivedFrom": "black_gum_f"
     },
     {
-      "partId": "black_gum_g",
+      "partId": "pyramidal_17",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_g.glb",
@@ -1161,10 +1201,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_g"
+      "path": "public/library/chassises/pyramidal/black_gum_g",
+      "derivedFrom": "black_gum_g"
     },
     {
-      "partId": "black_gum_h",
+      "partId": "pyramidal_18",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_h.glb",
@@ -1189,10 +1230,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_h"
+      "path": "public/library/chassises/pyramidal/black_gum_h",
+      "derivedFrom": "black_gum_h"
     },
     {
-      "partId": "black_gum_i",
+      "partId": "pyramidal_19",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/black_gum_i.glb",
@@ -1217,7 +1259,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/black_gum_i"
+      "path": "public/library/chassises/pyramidal/black_gum_i",
+      "derivedFrom": "black_gum_i"
     },
     {
       "partId": "black_locust_a",
@@ -1332,7 +1375,7 @@
       "path": "public/library/chassises/_unassigned/black_locust_d"
     },
     {
-      "partId": "blue_spruce_winter_c",
+      "partId": "pyramidal_20",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_c.glb",
@@ -1357,10 +1400,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_c"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_c",
+      "derivedFrom": "blue_spruce_winter_c"
     },
     {
-      "partId": "blue_spruce_winter_d",
+      "partId": "pyramidal_21",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_d.glb",
@@ -1385,10 +1429,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_d"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_d",
+      "derivedFrom": "blue_spruce_winter_d"
     },
     {
-      "partId": "blue_spruce_winter_e",
+      "partId": "pyramidal_22",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_e.glb",
@@ -1413,10 +1458,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_e"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_e",
+      "derivedFrom": "blue_spruce_winter_e"
     },
     {
-      "partId": "blue_spruce_winter_f",
+      "partId": "pyramidal_23",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_f.glb",
@@ -1441,10 +1487,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_f"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_f",
+      "derivedFrom": "blue_spruce_winter_f"
     },
     {
-      "partId": "blue_spruce_winter_g",
+      "partId": "pyramidal_24",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_g.glb",
@@ -1469,10 +1516,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_g"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_g",
+      "derivedFrom": "blue_spruce_winter_g"
     },
     {
-      "partId": "blue_spruce_winter_h",
+      "partId": "pyramidal_25",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/blue_spruce_winter_h.glb",
@@ -1497,7 +1545,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/blue_spruce_winter_h"
+      "path": "public/library/chassises/pyramidal/blue_spruce_winter_h",
+      "derivedFrom": "blue_spruce_winter_h"
     },
     {
       "partId": "bonsai_a",
@@ -2455,7 +2504,7 @@
       "path": "public/library/chassises/_unassigned/garden_trees_mix_a"
     },
     {
-      "partId": "garden_trees_mix_b",
+      "partId": "weeping_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/garden_trees_mix_b.glb",
@@ -2483,7 +2532,8 @@
         "approved": true,
         "displayName": "Weeping Willow"
       },
-      "path": "public/library/chassises/weeping/garden_trees_mix_b"
+      "path": "public/library/chassises/weeping/garden_trees_mix_b",
+      "derivedFrom": "garden_trees_mix_b"
     },
     {
       "partId": "garden_trees_mix_e",
@@ -2542,7 +2592,7 @@
       "path": "public/library/chassises/_unassigned/garden_trees_mix_f"
     },
     {
-      "partId": "garden_trees_mix_g",
+      "partId": "oval_25",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/garden_trees_mix_g.glb",
@@ -2570,7 +2620,8 @@
         "approved": true,
         "displayName": "Red Maple"
       },
-      "path": "public/library/chassises/oval/garden_trees_mix_g"
+      "path": "public/library/chassises/oval/garden_trees_mix_g",
+      "derivedFrom": "garden_trees_mix_g"
     },
     {
       "partId": "generic_tree_1_a",
@@ -2629,7 +2680,7 @@
       "path": "public/library/chassises/_unassigned/generic_tree_2_a"
     },
     {
-      "partId": "gray_poplar_a_trunk22",
+      "partId": "columnar_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_a_trunk22.glb",
@@ -2654,10 +2705,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_a_trunk22"
+      "path": "public/library/chassises/columnar/gray_poplar_a_trunk22",
+      "derivedFrom": "gray_poplar_a_trunk22"
     },
     {
-      "partId": "gray_poplar_a_trunk33",
+      "partId": "columnar_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_a_trunk33.glb",
@@ -2682,10 +2734,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_a_trunk33"
+      "path": "public/library/chassises/columnar/gray_poplar_a_trunk33",
+      "derivedFrom": "gray_poplar_a_trunk33"
     },
     {
-      "partId": "gray_poplar_a_trunk44",
+      "partId": "columnar_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_a_trunk44.glb",
@@ -2710,10 +2763,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_a_trunk44"
+      "path": "public/library/chassises/columnar/gray_poplar_a_trunk44",
+      "derivedFrom": "gray_poplar_a_trunk44"
     },
     {
-      "partId": "gray_poplar_b_trunk11",
+      "partId": "columnar_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_b_trunk11.glb",
@@ -2738,10 +2792,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_b_trunk11"
+      "path": "public/library/chassises/columnar/gray_poplar_b_trunk11",
+      "derivedFrom": "gray_poplar_b_trunk11"
     },
     {
-      "partId": "gray_poplar_b_trunk33",
+      "partId": "columnar_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_b_trunk33.glb",
@@ -2766,10 +2821,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_b_trunk33"
+      "path": "public/library/chassises/columnar/gray_poplar_b_trunk33",
+      "derivedFrom": "gray_poplar_b_trunk33"
     },
     {
-      "partId": "gray_poplar_b_trunk44",
+      "partId": "columnar_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_b_trunk44.glb",
@@ -2794,10 +2850,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_b_trunk44"
+      "path": "public/library/chassises/columnar/gray_poplar_b_trunk44",
+      "derivedFrom": "gray_poplar_b_trunk44"
     },
     {
-      "partId": "gray_poplar_c_trunk11",
+      "partId": "columnar_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_c_trunk11.glb",
@@ -2822,10 +2879,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_c_trunk11"
+      "path": "public/library/chassises/columnar/gray_poplar_c_trunk11",
+      "derivedFrom": "gray_poplar_c_trunk11"
     },
     {
-      "partId": "gray_poplar_c_trunk22",
+      "partId": "columnar_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_c_trunk22.glb",
@@ -2850,10 +2908,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_c_trunk22"
+      "path": "public/library/chassises/columnar/gray_poplar_c_trunk22",
+      "derivedFrom": "gray_poplar_c_trunk22"
     },
     {
-      "partId": "gray_poplar_c_trunk44",
+      "partId": "columnar_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_c_trunk44.glb",
@@ -2878,10 +2937,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_c_trunk44"
+      "path": "public/library/chassises/columnar/gray_poplar_c_trunk44",
+      "derivedFrom": "gray_poplar_c_trunk44"
     },
     {
-      "partId": "gray_poplar_d_trunk11",
+      "partId": "columnar_10",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_d_trunk11.glb",
@@ -2906,10 +2966,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_d_trunk11"
+      "path": "public/library/chassises/columnar/gray_poplar_d_trunk11",
+      "derivedFrom": "gray_poplar_d_trunk11"
     },
     {
-      "partId": "gray_poplar_d_trunk22",
+      "partId": "columnar_11",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_d_trunk22.glb",
@@ -2934,10 +2995,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_d_trunk22"
+      "path": "public/library/chassises/columnar/gray_poplar_d_trunk22",
+      "derivedFrom": "gray_poplar_d_trunk22"
     },
     {
-      "partId": "gray_poplar_d_trunk33",
+      "partId": "columnar_12",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/gray_poplar_d_trunk33.glb",
@@ -2962,7 +3024,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/gray_poplar_d_trunk33"
+      "path": "public/library/chassises/columnar/gray_poplar_d_trunk33",
+      "derivedFrom": "gray_poplar_d_trunk33"
     },
     {
       "partId": "hollywood_juniper_a",
@@ -3089,7 +3152,7 @@
       "path": "public/library/chassises/_unassigned/hollywood_juniper_f"
     },
     {
-      "partId": "honey_locust_a_bark2",
+      "partId": "spreading_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_a_bark2.glb",
@@ -3114,10 +3177,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_a_bark2"
+      "path": "public/library/chassises/spreading/honey_locust_a_bark2",
+      "derivedFrom": "honey_locust_a_bark2"
     },
     {
-      "partId": "honey_locust_a_bark3",
+      "partId": "spreading_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_a_bark3.glb",
@@ -3142,10 +3206,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_a_bark3"
+      "path": "public/library/chassises/spreading/honey_locust_a_bark3",
+      "derivedFrom": "honey_locust_a_bark3"
     },
     {
-      "partId": "honey_locust_a_stem2",
+      "partId": "spreading_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_a_stem2.glb",
@@ -3170,10 +3235,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_a_stem2"
+      "path": "public/library/chassises/spreading/honey_locust_a_stem2",
+      "derivedFrom": "honey_locust_a_stem2"
     },
     {
-      "partId": "honey_locust_a_stem3",
+      "partId": "spreading_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_a_stem3.glb",
@@ -3198,10 +3264,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_a_stem3"
+      "path": "public/library/chassises/spreading/honey_locust_a_stem3",
+      "derivedFrom": "honey_locust_a_stem3"
     },
     {
-      "partId": "honey_locust_b_bark1",
+      "partId": "spreading_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_b_bark1.glb",
@@ -3226,10 +3293,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_b_bark1"
+      "path": "public/library/chassises/spreading/honey_locust_b_bark1",
+      "derivedFrom": "honey_locust_b_bark1"
     },
     {
-      "partId": "honey_locust_b_bark3",
+      "partId": "spreading_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_b_bark3.glb",
@@ -3254,10 +3322,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_b_bark3"
+      "path": "public/library/chassises/spreading/honey_locust_b_bark3",
+      "derivedFrom": "honey_locust_b_bark3"
     },
     {
-      "partId": "honey_locust_b_stem1",
+      "partId": "spreading_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_b_stem1.glb",
@@ -3282,10 +3351,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_b_stem1"
+      "path": "public/library/chassises/spreading/honey_locust_b_stem1",
+      "derivedFrom": "honey_locust_b_stem1"
     },
     {
-      "partId": "honey_locust_b_stem3",
+      "partId": "spreading_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_b_stem3.glb",
@@ -3310,10 +3380,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_b_stem3"
+      "path": "public/library/chassises/spreading/honey_locust_b_stem3",
+      "derivedFrom": "honey_locust_b_stem3"
     },
     {
-      "partId": "honey_locust_c_bark1",
+      "partId": "spreading_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_c_bark1.glb",
@@ -3338,10 +3409,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_c_bark1"
+      "path": "public/library/chassises/spreading/honey_locust_c_bark1",
+      "derivedFrom": "honey_locust_c_bark1"
     },
     {
-      "partId": "honey_locust_c_bark2",
+      "partId": "spreading_10",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_c_bark2.glb",
@@ -3366,10 +3438,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_c_bark2"
+      "path": "public/library/chassises/spreading/honey_locust_c_bark2",
+      "derivedFrom": "honey_locust_c_bark2"
     },
     {
-      "partId": "honey_locust_c_stem1",
+      "partId": "spreading_11",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_c_stem1.glb",
@@ -3394,10 +3467,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_c_stem1"
+      "path": "public/library/chassises/spreading/honey_locust_c_stem1",
+      "derivedFrom": "honey_locust_c_stem1"
     },
     {
-      "partId": "honey_locust_c_stem2",
+      "partId": "spreading_12",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/honey_locust_c_stem2.glb",
@@ -3422,7 +3496,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/honey_locust_c_stem2"
+      "path": "public/library/chassises/spreading/honey_locust_c_stem2",
+      "derivedFrom": "honey_locust_c_stem2"
     },
     {
       "partId": "hz_tree_a",
@@ -3453,7 +3528,7 @@
       "path": "public/library/chassises/_unassigned/hz_tree_a"
     },
     {
-      "partId": "italian_cypress_c",
+      "partId": "columnar_13",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_c.glb",
@@ -3478,10 +3553,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_c"
+      "path": "public/library/chassises/columnar/italian_cypress_c",
+      "derivedFrom": "italian_cypress_c"
     },
     {
-      "partId": "italian_cypress_d",
+      "partId": "columnar_14",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_d.glb",
@@ -3506,10 +3582,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_d"
+      "path": "public/library/chassises/columnar/italian_cypress_d",
+      "derivedFrom": "italian_cypress_d"
     },
     {
-      "partId": "italian_cypress_e",
+      "partId": "columnar_15",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_e.glb",
@@ -3534,10 +3611,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_e"
+      "path": "public/library/chassises/columnar/italian_cypress_e",
+      "derivedFrom": "italian_cypress_e"
     },
     {
-      "partId": "italian_cypress_f",
+      "partId": "columnar_16",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_f.glb",
@@ -3562,10 +3640,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_f"
+      "path": "public/library/chassises/columnar/italian_cypress_f",
+      "derivedFrom": "italian_cypress_f"
     },
     {
-      "partId": "italian_cypress_g",
+      "partId": "columnar_17",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_g.glb",
@@ -3590,10 +3669,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_g"
+      "path": "public/library/chassises/columnar/italian_cypress_g",
+      "derivedFrom": "italian_cypress_g"
     },
     {
-      "partId": "italian_cypress_h",
+      "partId": "columnar_18",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_h.glb",
@@ -3618,10 +3698,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_h"
+      "path": "public/library/chassises/columnar/italian_cypress_h",
+      "derivedFrom": "italian_cypress_h"
     },
     {
-      "partId": "italian_cypress_i",
+      "partId": "columnar_19",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_i.glb",
@@ -3646,10 +3727,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_i"
+      "path": "public/library/chassises/columnar/italian_cypress_i",
+      "derivedFrom": "italian_cypress_i"
     },
     {
-      "partId": "italian_cypress_j",
+      "partId": "columnar_20",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_j.glb",
@@ -3674,10 +3756,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_j"
+      "path": "public/library/chassises/columnar/italian_cypress_j",
+      "derivedFrom": "italian_cypress_j"
     },
     {
-      "partId": "italian_cypress_k",
+      "partId": "columnar_21",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_k.glb",
@@ -3702,10 +3785,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_k"
+      "path": "public/library/chassises/columnar/italian_cypress_k",
+      "derivedFrom": "italian_cypress_k"
     },
     {
-      "partId": "italian_cypress_l",
+      "partId": "columnar_22",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_l.glb",
@@ -3730,10 +3814,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_l"
+      "path": "public/library/chassises/columnar/italian_cypress_l",
+      "derivedFrom": "italian_cypress_l"
     },
     {
-      "partId": "italian_cypress_m",
+      "partId": "columnar_23",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_m.glb",
@@ -3758,10 +3843,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_m"
+      "path": "public/library/chassises/columnar/italian_cypress_m",
+      "derivedFrom": "italian_cypress_m"
     },
     {
-      "partId": "italian_cypress_n",
+      "partId": "columnar_24",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_n.glb",
@@ -3786,10 +3872,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_n"
+      "path": "public/library/chassises/columnar/italian_cypress_n",
+      "derivedFrom": "italian_cypress_n"
     },
     {
-      "partId": "italian_cypress_o",
+      "partId": "columnar_25",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/italian_cypress_o.glb",
@@ -3814,10 +3901,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/columnar/italian_cypress_o"
+      "path": "public/library/chassises/columnar/italian_cypress_o",
+      "derivedFrom": "italian_cypress_o"
     },
     {
-      "partId": "london_plane_a",
+      "partId": "spreading_13",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_a.glb",
@@ -3842,10 +3930,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_a"
+      "path": "public/library/chassises/spreading/london_plane_a",
+      "derivedFrom": "london_plane_a"
     },
     {
-      "partId": "london_plane_b",
+      "partId": "spreading_14",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_b.glb",
@@ -3870,10 +3959,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_b"
+      "path": "public/library/chassises/spreading/london_plane_b",
+      "derivedFrom": "london_plane_b"
     },
     {
-      "partId": "london_plane_c",
+      "partId": "spreading_15",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_c.glb",
@@ -3901,10 +3991,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_c"
+      "path": "public/library/chassises/spreading/london_plane_c",
+      "derivedFrom": "london_plane_c"
     },
     {
-      "partId": "london_plane_d",
+      "partId": "spreading_16",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_d.glb",
@@ -3932,10 +4023,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_d"
+      "path": "public/library/chassises/spreading/london_plane_d",
+      "derivedFrom": "london_plane_d"
     },
     {
-      "partId": "london_plane_e",
+      "partId": "spreading_17",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_e.glb",
@@ -3960,10 +4052,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_e"
+      "path": "public/library/chassises/spreading/london_plane_e",
+      "derivedFrom": "london_plane_e"
     },
     {
-      "partId": "london_plane_f",
+      "partId": "spreading_18",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_f.glb",
@@ -3991,10 +4084,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_f"
+      "path": "public/library/chassises/spreading/london_plane_f",
+      "derivedFrom": "london_plane_f"
     },
     {
-      "partId": "london_plane_g",
+      "partId": "spreading_19",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_g.glb",
@@ -4022,10 +4116,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_g"
+      "path": "public/library/chassises/spreading/london_plane_g",
+      "derivedFrom": "london_plane_g"
     },
     {
-      "partId": "london_plane_h",
+      "partId": "spreading_20",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_h.glb",
@@ -4053,10 +4148,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_h"
+      "path": "public/library/chassises/spreading/london_plane_h",
+      "derivedFrom": "london_plane_h"
     },
     {
-      "partId": "london_plane_i",
+      "partId": "spreading_21",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_i.glb",
@@ -4084,10 +4180,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_i"
+      "path": "public/library/chassises/spreading/london_plane_i",
+      "derivedFrom": "london_plane_i"
     },
     {
-      "partId": "london_plane_j",
+      "partId": "spreading_22",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_j.glb",
@@ -4112,10 +4209,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_j"
+      "path": "public/library/chassises/spreading/london_plane_j",
+      "derivedFrom": "london_plane_j"
     },
     {
-      "partId": "london_plane_k",
+      "partId": "spreading_23",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_k.glb",
@@ -4143,10 +4241,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_k"
+      "path": "public/library/chassises/spreading/london_plane_k",
+      "derivedFrom": "london_plane_k"
     },
     {
-      "partId": "london_plane_l",
+      "partId": "spreading_24",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_l.glb",
@@ -4174,10 +4273,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/spreading/london_plane_l"
+      "path": "public/library/chassises/spreading/london_plane_l",
+      "derivedFrom": "london_plane_l"
     },
     {
-      "partId": "london_plane_m_whitebirchbark_g2",
+      "partId": "spreading_25",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_m_whitebirchbark_g2.glb",
@@ -4202,10 +4302,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_m_whitebirchbark_g2"
+      "path": "public/library/chassises/spreading/london_plane_m_whitebirchbark_g2",
+      "derivedFrom": "london_plane_m_whitebirchbark_g2"
     },
     {
-      "partId": "london_plane_n_whitebirchbark_f2",
+      "partId": "spreading_26",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/london_plane_n_whitebirchbark_f2.glb",
@@ -4230,10 +4331,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/spreading/london_plane_n_whitebirchbark_f2"
+      "path": "public/library/chassises/spreading/london_plane_n_whitebirchbark_f2",
+      "derivedFrom": "london_plane_n_whitebirchbark_f2"
     },
     {
-      "partId": "oak_winter_fall_c",
+      "partId": "rounded_01",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/oak_winter_fall_c.glb",
@@ -4258,10 +4360,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/oak_winter_fall_c"
+      "path": "public/library/chassises/rounded/oak_winter_fall_c",
+      "derivedFrom": "oak_winter_fall_c"
     },
     {
-      "partId": "oak_winter_fall_d",
+      "partId": "rounded_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/oak_winter_fall_d.glb",
@@ -4286,10 +4389,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/oak_winter_fall_d"
+      "path": "public/library/chassises/rounded/oak_winter_fall_d",
+      "derivedFrom": "oak_winter_fall_d"
     },
     {
-      "partId": "oak_winter_fall_e",
+      "partId": "rounded_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/oak_winter_fall_e.glb",
@@ -4314,10 +4418,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/oak_winter_fall_e"
+      "path": "public/library/chassises/rounded/oak_winter_fall_e",
+      "derivedFrom": "oak_winter_fall_e"
     },
     {
-      "partId": "oak_winter_fall_f",
+      "partId": "rounded_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/oak_winter_fall_f.glb",
@@ -4342,10 +4447,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/oak_winter_fall_f"
+      "path": "public/library/chassises/rounded/oak_winter_fall_f",
+      "derivedFrom": "oak_winter_fall_f"
     },
     {
-      "partId": "oak_winter_fall_g",
+      "partId": "rounded_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/oak_winter_fall_g.glb",
@@ -4370,7 +4476,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/oak_winter_fall_g"
+      "path": "public/library/chassises/rounded/oak_winter_fall_g",
+      "derivedFrom": "oak_winter_fall_g"
     },
     {
       "partId": "paper_birch_b",
@@ -5125,7 +5232,7 @@
       "path": "public/library/chassises/_unassigned/quaking_aspen_e"
     },
     {
-      "partId": "red_maple_a",
+      "partId": "oval_26",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/red_maple_a.glb",
@@ -5153,10 +5260,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/oval/red_maple_a"
+      "path": "public/library/chassises/oval/red_maple_a",
+      "derivedFrom": "red_maple_a"
     },
     {
-      "partId": "red_maple_b",
+      "partId": "oval_27",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/red_maple_b.glb",
@@ -5184,10 +5292,11 @@
         "approved": true,
         "displayName": "Maple"
       },
-      "path": "public/library/chassises/oval/red_maple_b"
+      "path": "public/library/chassises/oval/red_maple_b",
+      "derivedFrom": "red_maple_b"
     },
     {
-      "partId": "red_maple_c",
+      "partId": "oval_28",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/red_maple_c.glb",
@@ -5212,7 +5321,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/red_maple_c"
+      "path": "public/library/chassises/oval/red_maple_c",
+      "derivedFrom": "red_maple_c"
     },
     {
       "partId": "stylized_trees_1_a",
@@ -5299,7 +5409,7 @@
       "path": "public/library/chassises/_unassigned/stylized_trees_1_c"
     },
     {
-      "partId": "stylized_willow_b",
+      "partId": "weeping_02",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_b.glb",
@@ -5324,10 +5434,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_b"
+      "path": "public/library/chassises/weeping/stylized_willow_b",
+      "derivedFrom": "stylized_willow_b"
     },
     {
-      "partId": "stylized_willow_d",
+      "partId": "weeping_03",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_d.glb",
@@ -5352,10 +5463,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_d"
+      "path": "public/library/chassises/weeping/stylized_willow_d",
+      "derivedFrom": "stylized_willow_d"
     },
     {
-      "partId": "stylized_willow_f",
+      "partId": "weeping_04",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_f.glb",
@@ -5380,10 +5492,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_f"
+      "path": "public/library/chassises/weeping/stylized_willow_f",
+      "derivedFrom": "stylized_willow_f"
     },
     {
-      "partId": "stylized_willow_h",
+      "partId": "weeping_05",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_h.glb",
@@ -5408,10 +5521,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_h"
+      "path": "public/library/chassises/weeping/stylized_willow_h",
+      "derivedFrom": "stylized_willow_h"
     },
     {
-      "partId": "stylized_willow_j",
+      "partId": "weeping_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_j.glb",
@@ -5436,10 +5550,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_j"
+      "path": "public/library/chassises/weeping/stylized_willow_j",
+      "derivedFrom": "stylized_willow_j"
     },
     {
-      "partId": "stylized_willow_l",
+      "partId": "weeping_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/stylized_willow_l.glb",
@@ -5464,10 +5579,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/stylized_willow_l"
+      "path": "public/library/chassises/weeping/stylized_willow_l",
+      "derivedFrom": "stylized_willow_l"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_a",
+      "partId": "oval_29",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_a.glb",
@@ -5495,10 +5611,11 @@
         "approved": true,
         "displayName": "Red Maple 2"
       },
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_a"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_a",
+      "derivedFrom": "sugar_maple_low_poly_forest_a"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_c",
+      "partId": "oval_30",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_c.glb",
@@ -5523,10 +5640,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_c"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_c",
+      "derivedFrom": "sugar_maple_low_poly_forest_c"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_d",
+      "partId": "oval_31",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_d.glb",
@@ -5551,10 +5669,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_d"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_d",
+      "derivedFrom": "sugar_maple_low_poly_forest_d"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_e",
+      "partId": "oval_32",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_e.glb",
@@ -5579,10 +5698,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_e"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_e",
+      "derivedFrom": "sugar_maple_low_poly_forest_e"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_h",
+      "partId": "oval_33",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_h.glb",
@@ -5607,10 +5727,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_h"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_h",
+      "derivedFrom": "sugar_maple_low_poly_forest_h"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_i",
+      "partId": "oval_34",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_i.glb",
@@ -5635,10 +5756,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_i"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_i",
+      "derivedFrom": "sugar_maple_low_poly_forest_i"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_j",
+      "partId": "oval_35",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_j.glb",
@@ -5663,10 +5785,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_j"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_j",
+      "derivedFrom": "sugar_maple_low_poly_forest_j"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_k",
+      "partId": "oval_36",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_k.glb",
@@ -5691,10 +5814,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_k"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_k",
+      "derivedFrom": "sugar_maple_low_poly_forest_k"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_l",
+      "partId": "oval_37",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_l.glb",
@@ -5719,10 +5843,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_l"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_l",
+      "derivedFrom": "sugar_maple_low_poly_forest_l"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_m",
+      "partId": "oval_38",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_m.glb",
@@ -5747,10 +5872,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_m"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_m",
+      "derivedFrom": "sugar_maple_low_poly_forest_m"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_n",
+      "partId": "oval_39",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_n.glb",
@@ -5775,10 +5901,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_n"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_n",
+      "derivedFrom": "sugar_maple_low_poly_forest_n"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_o",
+      "partId": "oval_40",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_o.glb",
@@ -5803,10 +5930,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_o"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_o",
+      "derivedFrom": "sugar_maple_low_poly_forest_o"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_p",
+      "partId": "oval_41",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_p.glb",
@@ -5831,10 +5959,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_p"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_p",
+      "derivedFrom": "sugar_maple_low_poly_forest_p"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_q",
+      "partId": "oval_42",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_q.glb",
@@ -5859,10 +5988,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_q"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_q",
+      "derivedFrom": "sugar_maple_low_poly_forest_q"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_r",
+      "partId": "oval_43",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_r.glb",
@@ -5887,10 +6017,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_r"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_r",
+      "derivedFrom": "sugar_maple_low_poly_forest_r"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_s",
+      "partId": "oval_44",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_s.glb",
@@ -5915,10 +6046,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_s"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_s",
+      "derivedFrom": "sugar_maple_low_poly_forest_s"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_t",
+      "partId": "oval_45",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_t.glb",
@@ -5943,10 +6075,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_t"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_t",
+      "derivedFrom": "sugar_maple_low_poly_forest_t"
     },
     {
-      "partId": "sugar_maple_low_poly_forest_u",
+      "partId": "oval_46",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/sugar_maple_low_poly_forest_u.glb",
@@ -5971,7 +6104,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_u"
+      "path": "public/library/chassises/oval/sugar_maple_low_poly_forest_u",
+      "derivedFrom": "sugar_maple_low_poly_forest_u"
     },
     {
       "partId": "sugar_maple_multistem_a",
@@ -6058,7 +6192,7 @@
       "path": "public/library/chassises/_unassigned/sycamore_stump_field_a"
     },
     {
-      "partId": "tall_pine_a",
+      "partId": "pyramidal_26",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/tall_pine_a.glb",
@@ -6086,10 +6220,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/pyramidal/tall_pine_a"
+      "path": "public/library/chassises/pyramidal/tall_pine_a",
+      "derivedFrom": "tall_pine_a"
     },
     {
-      "partId": "tall_pine_b",
+      "partId": "pyramidal_27",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/tall_pine_b.glb",
@@ -6114,10 +6249,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/tall_pine_b"
+      "path": "public/library/chassises/pyramidal/tall_pine_b",
+      "derivedFrom": "tall_pine_b"
     },
     {
-      "partId": "tall_pine_c",
+      "partId": "pyramidal_28",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/tall_pine_c.glb",
@@ -6142,10 +6278,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/pyramidal/tall_pine_c"
+      "path": "public/library/chassises/pyramidal/tall_pine_c",
+      "derivedFrom": "tall_pine_c"
     },
     {
-      "partId": "tall_pine_d",
+      "partId": "pyramidal_29",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/tall_pine_d.glb",
@@ -6173,10 +6310,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/pyramidal/tall_pine_d"
+      "path": "public/library/chassises/pyramidal/tall_pine_d",
+      "derivedFrom": "tall_pine_d"
     },
     {
-      "partId": "tall_pine_e",
+      "partId": "pyramidal_30",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/tall_pine_e.glb",
@@ -6204,10 +6342,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/pyramidal/tall_pine_e"
+      "path": "public/library/chassises/pyramidal/tall_pine_e",
+      "derivedFrom": "tall_pine_e"
     },
     {
-      "partId": "weeping_willow_a",
+      "partId": "weeping_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/weeping_willow_a.glb",
@@ -6232,10 +6371,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/weeping_willow_a"
+      "path": "public/library/chassises/weeping/weeping_willow_a",
+      "derivedFrom": "weeping_willow_a"
     },
     {
-      "partId": "weeping_willow_b",
+      "partId": "weeping_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/weeping_willow_b.glb",
@@ -6260,10 +6400,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/weeping_willow_b"
+      "path": "public/library/chassises/weeping/weeping_willow_b",
+      "derivedFrom": "weeping_willow_b"
     },
     {
-      "partId": "weeping_willow_c",
+      "partId": "weeping_10",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/weeping_willow_c.glb",
@@ -6288,10 +6429,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/weeping_willow_c"
+      "path": "public/library/chassises/weeping/weeping_willow_c",
+      "derivedFrom": "weeping_willow_c"
     },
     {
-      "partId": "weeping_willow_d",
+      "partId": "weeping_11",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/weeping_willow_d.glb",
@@ -6316,10 +6458,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/weeping_willow_d"
+      "path": "public/library/chassises/weeping/weeping_willow_d",
+      "derivedFrom": "weeping_willow_d"
     },
     {
-      "partId": "weeping_willow_e",
+      "partId": "weeping_12",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/weeping_willow_e.glb",
@@ -6344,7 +6487,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/weeping_willow_e"
+      "path": "public/library/chassises/weeping/weeping_willow_e",
+      "derivedFrom": "weeping_willow_e"
     },
     {
       "partId": "western_juniper_a",
@@ -6434,7 +6578,7 @@
       "path": "public/library/chassises/_unassigned/white_fir_c"
     },
     {
-      "partId": "white_oak_a",
+      "partId": "rounded_06",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_oak_a.glb",
@@ -6462,10 +6606,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/rounded/white_oak_a"
+      "path": "public/library/chassises/rounded/white_oak_a",
+      "derivedFrom": "white_oak_a"
     },
     {
-      "partId": "white_oak_b",
+      "partId": "rounded_07",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_oak_b.glb",
@@ -6493,10 +6638,11 @@
         "approved": true,
         "displayName": null
       },
-      "path": "public/library/chassises/rounded/white_oak_b"
+      "path": "public/library/chassises/rounded/white_oak_b",
+      "derivedFrom": "white_oak_b"
     },
     {
-      "partId": "white_oak_d",
+      "partId": "rounded_08",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_oak_d.glb",
@@ -6521,10 +6667,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/white_oak_d"
+      "path": "public/library/chassises/rounded/white_oak_d",
+      "derivedFrom": "white_oak_d"
     },
     {
-      "partId": "white_oak_e",
+      "partId": "rounded_09",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_oak_e.glb",
@@ -6549,10 +6696,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/rounded/white_oak_e"
+      "path": "public/library/chassises/rounded/white_oak_e",
+      "derivedFrom": "white_oak_e"
     },
     {
-      "partId": "white_willow_a",
+      "partId": "weeping_13",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_a.glb",
@@ -6577,10 +6725,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_a"
+      "path": "public/library/chassises/weeping/white_willow_a",
+      "derivedFrom": "white_willow_a"
     },
     {
-      "partId": "white_willow_b",
+      "partId": "weeping_14",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_b.glb",
@@ -6605,10 +6754,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_b"
+      "path": "public/library/chassises/weeping/white_willow_b",
+      "derivedFrom": "white_willow_b"
     },
     {
-      "partId": "white_willow_c",
+      "partId": "weeping_15",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_c.glb",
@@ -6633,10 +6783,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_c"
+      "path": "public/library/chassises/weeping/white_willow_c",
+      "derivedFrom": "white_willow_c"
     },
     {
-      "partId": "white_willow_d",
+      "partId": "weeping_16",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_d.glb",
@@ -6661,10 +6812,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_d"
+      "path": "public/library/chassises/weeping/white_willow_d",
+      "derivedFrom": "white_willow_d"
     },
     {
-      "partId": "white_willow_e",
+      "partId": "weeping_17",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_e.glb",
@@ -6689,10 +6841,11 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_e"
+      "path": "public/library/chassises/weeping/white_willow_e",
+      "derivedFrom": "white_willow_e"
     },
     {
-      "partId": "white_willow_f",
+      "partId": "weeping_18",
       "partType": "chassis",
       "source": "authored",
       "sourcePath": "public/trees/_chassis/white_willow_f.glb",
@@ -6717,7 +6870,8 @@
         "oriented": false
       },
       "curation": null,
-      "path": "public/library/chassises/weeping/white_willow_f"
+      "path": "public/library/chassises/weeping/white_willow_f",
+      "derivedFrom": "white_willow_f"
     },
     {
       "partId": "yellow_autumn_tree_a",

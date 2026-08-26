@@ -1,0 +1,29 @@
+{
+  "partId": "honey_locust_a_bark2",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "spreading",
+  "sourcePath": "public/trees/_chassis/honey_locust_a_bark2.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 12.51,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "spreading",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(gleditsia_triacanthos)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "honey_locust_a_bark2",
+  "id": "spreading_01"
+}

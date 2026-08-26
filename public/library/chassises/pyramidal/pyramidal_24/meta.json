@@ -1,0 +1,29 @@
+{
+  "partId": "blue_spruce_winter_g",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "pyramidal",
+  "sourcePath": "public/trees/_chassis/blue_spruce_winter_g.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 26.26,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "pyramidal",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(blue_spruce_winter)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "blue_spruce_winter_g",
+  "id": "pyramidal_24"
+}

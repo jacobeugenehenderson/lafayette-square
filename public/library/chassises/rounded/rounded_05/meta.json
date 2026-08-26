@@ -1,0 +1,29 @@
+{
+  "partId": "oak_winter_fall_g",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "rounded",
+  "sourcePath": "public/trees/_chassis/oak_winter_fall_g.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 7.36,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "rounded",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(quercus_winter_fall)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "oak_winter_fall_g",
+  "id": "rounded_05"
+}

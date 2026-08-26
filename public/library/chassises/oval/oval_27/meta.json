@@ -1,0 +1,29 @@
+{
+  "partId": "red_maple_b",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "oval",
+  "sourcePath": "public/trees/_chassis/red_maple_b.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 11.9,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "oval",
+      "ratified": true,
+      "confidence": "high",
+      "source": "curation.displayName(\"Maple\")"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "red_maple_b",
+  "id": "oval_27"
+}

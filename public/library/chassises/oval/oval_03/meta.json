@@ -1,0 +1,29 @@
+{
+  "partId": "acer_saccharum_d",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "oval",
+  "sourcePath": "public/trees/_chassis/acer_saccharum_d.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 13.14,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "oval",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(acer_saccharum)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "acer_saccharum_d",
+  "id": "oval_03"
+}

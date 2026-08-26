@@ -1,0 +1,29 @@
+{
+  "partId": "gray_poplar_d_trunk22",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "columnar",
+  "sourcePath": "public/trees/_chassis/gray_poplar_d_trunk22.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 6.43,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "columnar",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(populus_canescens)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "gray_poplar_d_trunk22",
+  "id": "columnar_11"
+}

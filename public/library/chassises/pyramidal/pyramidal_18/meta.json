@@ -1,0 +1,29 @@
+{
+  "partId": "black_gum_h",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "pyramidal",
+  "sourcePath": "public/trees/_chassis/black_gum_h.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 8.52,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "pyramidal",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(nyssa_sylvatica)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "black_gum_h",
+  "id": "pyramidal_18"
+}

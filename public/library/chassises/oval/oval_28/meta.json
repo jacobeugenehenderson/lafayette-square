@@ -1,0 +1,29 @@
+{
+  "partId": "red_maple_c",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "oval",
+  "sourcePath": "public/trees/_chassis/red_maple_c.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 11.75,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "oval",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(acer_rubrum)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "red_maple_c",
+  "id": "oval_28"
+}

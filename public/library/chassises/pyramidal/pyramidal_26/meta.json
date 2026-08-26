@@ -1,0 +1,29 @@
+{
+  "partId": "tall_pine_a",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "pyramidal",
+  "sourcePath": "public/trees/_chassis/tall_pine_a.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 24.27,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "pyramidal",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(pinus_sp)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "tall_pine_a",
+  "id": "pyramidal_26"
+}

@@ -1,0 +1,29 @@
+{
+  "partId": "white_willow_e",
+  "partType": "chassis",
+  "source": "authored",
+  "canonicalValue": "weeping",
+  "sourcePath": "public/trees/_chassis/white_willow_e.glb",
+  "tags": {
+    "chassis.size": {
+      "value": 6.4,
+      "ratified": false,
+      "confidence": "high",
+      "source": "tree-bounds(heightRange)"
+    },
+    "chassis.habit": {
+      "value": "weeping",
+      "ratified": false,
+      "confidence": "low",
+      "source": "source.species-botany(salix_alba)"
+    }
+  },
+  "conformReport": {
+    "recentered": true,
+    "rescaled": false,
+    "forestSplit": false,
+    "oriented": false
+  },
+  "derivedFrom": "white_willow_e",
+  "id": "weeping_17"
+}
