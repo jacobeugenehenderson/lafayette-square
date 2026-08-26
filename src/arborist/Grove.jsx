@@ -685,14 +685,24 @@ function TransitionDriver({ tween, poseRef, controlsRef }) {
 // instantiation so a chassis is a FORM (`oval`), not a species. That deletes this entire
 // question. Until then this refuses to guess: exclude ONLY on an exact owner match,
 // otherwise include and say so once.
+// ⭐ WHO OWNS THE LIB, answered by the server rather than guessed here.
+// Substitution means many roster species route to one library, so "covering contains X"
+// cannot answer "who owns X" — asked that way it resolved maple_sugar to a cultivar row
+// and then to Maple, Norway, both red, both silently dropping a green species while the
+// bake reported ALL GREEN because it never tried. roster-coverage now emits `ownsLibIds`,
+// computed with vocabulary.mjs (filesystem-bound, browser-unsafe), so the two generations
+// of library for one species — `acer_saccharum` and `maple_sugar` — resolve to one row.
+// ⛔ Still fails OPEN on an unowned asset: dropping a tree on a guess is invisible, an
+// extra capture attempt is loud and cheap.
 function eligibleByLibId(libId, board, warnRef) {
-  const owner = board.find(b => b.canonicalId === libId)
+  const owner = board.find(b => (b.ownsLibIds || []).includes(libId))
+    || board.find(b => b.canonicalId === libId)
   if (owner) return owner.tier !== 'out'
   if (warnRef && !warnRef.current.has(libId)) {
     warnRef.current.add(libId)
-    console.warn(`[grove-bake] "${libId}" has no owning roster row — the chassis is named for a species the roster keys differently. INCLUDED rather than dropped; the bars are not gating it.`)
+    console.warn(`[grove-bake] "${libId}" has no owning roster row — INCLUDED rather than dropped; the bars are not gating it.`)
   }
-  return true                       // ⛔ fail OPEN: never drop a tree on a guess
+  return true
 }
 
 function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {

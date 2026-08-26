@@ -236,7 +236,29 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
       compositionCount: (compositionsBySpecies.get(id) || []).length,
       dangling: !libExists(id),
     }))
-    const routedExisting = routed.filter(libExists)
+    // ⭐⭐ ALIAS SIBLINGS ARE THE SAME SPECIES (Jacob, 2026-08-25).
+    // public/trees holds TWO generations of library for four species — botanical-named
+    // (`acer_saccharum`, 56 glb) and roster-slug (`maple_sugar`, 3 glb) — and the slab
+    // ships BOTH as separate species. The routing map, which is the operator's authoring,
+    // names only one. So `maple_sugar` had no owning roster row, which broke the bake gate
+    // three times and blocked `withheld` from reaching it at all.
+    // ⛔ DERIVED, never authored: the sibling is added to COVERING, the routing map is not
+    // touched, and no asset is chosen over another. vocabulary.mjs already knows they are
+    // one species; this lets the roster know it too.
+    const routedExisting = (() => {
+      const base = routed.filter(libExists)
+      const out = [...base]
+      for (const id of base) {
+        const canon = resolveSpecies(id)
+        if (!canon.resolved) continue
+        for (const sib of libById.keys()) {
+          if (out.includes(sib) || !libExists(sib)) continue
+          const sc = resolveSpecies(sib)
+          if (sc.resolved && sc.value === canon.value) out.push(sib)
+        }
+      }
+      return out
+    })()
     const dangling = routing.filter(r => r.dangling).map(r => r.libId)
 
     const coverage = routedExisting.length === 0
@@ -326,6 +348,16 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
       forestBuilder: fbByRoster.get(canonical) || null,
       // Brief 26
       canonicalId,
+      // ⭐ WHICH LIBS THIS ROW *IS*, versus which it merely borrows. Substitution means
+      // many roster species route to one library, so "covering contains X" cannot answer
+      // "who owns X" — asking it that way resolved maple_sugar first to a cultivar row and
+      // then to Maple, Norway, both red, both silently dropping a green species from the
+      // bake. Computed HERE because it needs vocabulary.mjs, which reads the filesystem and
+      // cannot run in the browser; the Grove gate just reads this.
+      ownsLibIds: routedExisting.filter(id => {
+        const a = resolveSpecies(id), b = resolveSpecies(canonical)
+        return a.resolved && b.resolved && a.value === b.value
+      }),
       recommendedChassis,
       authoringState,
       publishedCanonical,
