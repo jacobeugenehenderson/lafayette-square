@@ -73,6 +73,39 @@ for (const rel of FILES) {
 
   const missing = [...used].filter(n => !declared.has(n))
   if (missing.length) { console.error(`  ⛔ ${rel}: ${missing.join(', ')}`); bad += missing.length }
+
+  // ⛔⛔ USE BEFORE DECLARATION — the third black screen, and the first two checks missed
+  // it because the name IS declared, just later. `const` sits in the temporal dead zone,
+  // so referencing it above its own line throws at RENDER while vite build reports zero
+  // errors. `const inCount = liveCounts.mesh + …` sat 23 lines above `const liveCounts`.
+  // ⚠️ Line-order only, within a file, for hook-assigned consts — enough for the class
+  // that keeps biting and quiet on everything else.
+  // ⛔ PER-COMPONENT, not per-file. A file-wide comparison flagged `scene` used in one
+  // component and declared in another 470 lines away — four false positives, and a noisy
+  // alarm is one nobody runs. Components here are top-level `function Name(`, so split on
+  // that and compare only within a block.
+  const allLines = code.split('\n')
+  const bounds = []
+  allLines.forEach((l, i) => { if (/^function\s+[A-Za-z]\w*\s*\(/.test(l)) bounds.push(i) })
+  bounds.push(allLines.length)
+  for (let b = 0; b < bounds.length - 1; b++) {
+    const from = bounds[b], to = bounds[b + 1]
+    const lines = allLines.slice(from, to)
+    const declLine = new Map()
+    lines.forEach((l, i) => {
+      const m = /^\s*const\s+(\w+)\s*=\s*(?:use[A-Z]\w*\s*\()/.exec(l)
+      if (m && !declLine.has(m[1])) declLine.set(m[1], i)
+    })
+    for (const [name, dl] of declLine) {
+      for (let i = 0; i < dl; i++) {
+        if (new RegExp(`(^|[^.\\w$])${name}\\s*[.[(]`).test(lines[i]) && !/=>|function|\\bif\\b/.test(lines[i])) {
+          console.error(`  ⛔ ${rel}: "${name}" used on line ${from + i + 1} but declared on line ${from + dl + 1} — temporal dead zone, throws on render`)
+          bad++
+          break
+        }
+      }
+    }
+  }
 }
 
 if (bad) { console.error(`\n❌ FAIL — ${bad} hook binding(s) referenced but not declared. vite build does NOT catch these; the component throws on mount and the operator sees a black screen.`); process.exit(1) }
