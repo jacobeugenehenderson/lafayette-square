@@ -653,31 +653,26 @@ export async function bakeTrees({
     // ⛔ Before this the bar controlled nothing: InstancedTrees never read meshTopN, so
     // dragging a bar labelled "mesh" left the geometry count unmoved.
     for (const b of board) if (b.tier === 'mesh') for (const l of (b.ownsLibIds || [])) meshTierSpecies.add(l)
+    let dressableCheck = null
+    try {
+      const atlasJson = JSON.parse(await fs.readFile(path.join(REPO_ROOT, 'public/baked', scene, 'trees-atlas.json'), 'utf8'))
+      const imp = atlasJson.impostorBySpecies || {}
+      dressableCheck = new Set(Object.keys(imp).filter(k => imp[k]?.leafRect))
+    } catch { /* first pour: no atlas yet */ }
     if (!selected.size) {
       console.warn('[bake-trees] ⚠️ selection is EMPTY — baking with the full pool (bars not applied)')
     } else {
-      // ⛔⛔ ONLY PLACE WHAT THE ATLAS CAN DRESS. bake-look builds leaf/bark UV rects for
-      // the LOOK's species only, so selecting a species the atlas has never seen puts
-      // trees on the map whose leaf cards have NO atlas mapping — they render dark maroon.
-      // ⚠️ MY REGRESSION, tonight: filtering the pool to the SELECTION was right, but the
-      // selection can name species bake-look never processed. 964 placements, 19% of the
-      // map, and Jacob caught it by eye after I had twice explained it as something else.
-      // leafRect presence tracks Look membership EXACTLY — verified across all 12 slab
-      // species, no exceptions.
-      // ⭐ The real fix is for bake-look to process the SLAB's species rather than the
-      // Look's — the same wrong-set defect one layer down. This makes the map correct now
-      // and reports precisely what it had to drop and why.
-      let dressable = null
-      try {
-        const atlasJson = JSON.parse(await fs.readFile(path.join(REPO_ROOT, 'public/baked', scene, 'trees-atlas.json'), 'utf8'))
-        const imp = atlasJson.impostorBySpecies || {}
-        dressable = new Set(Object.keys(imp).filter(k => imp[k]?.leafRect))
-      } catch { /* no atlas yet (first pour) → nothing to check against */ }
-      if (dressable) {
-        const undressed = [...selected].filter(sp => !dressable.has(sp))
+      // ⛔ The atlas-dressable guard that stood here is RETIRED. It existed only because
+      // bake-look built rects from `design.trees` while the pool came from the bars — two
+      // lists, so a selected species could arrive undressed. Both now read THE SELECTION
+      // (arborist/selection.mjs), so a species in this pool has a rect by construction.
+      // ⚠️ The check below is the receipt: if it ever fires again the two sets have drifted
+      // apart, which is the bug, not the trees.
+      if (dressableCheck) {
+        const undressed = [...selected].filter(sp => !dressableCheck.has(sp))
         if (undressed.length) {
-          console.warn(`[bake-trees] ⛔ EXCLUDED ${undressed.length} selected species with NO leaf UV rect in the atlas (they would render untextured): ${undressed.join(', ')}`)
-          console.warn("[bake-trees]    bake-look builds rects for the Look's species only — add them to the Look and re-bake the look to ship them.")
+          console.warn(`[bake-trees] ⛔ ${undressed.length} selected species have NO leaf UV rect: ${undressed.join(', ')}`)
+          console.warn('[bake-trees]    bake-look and bake-trees have DRIFTED — they must read the same selection. Excluding to keep the map textured.')
           for (const sp of undressed) selected.delete(sp)
         }
       }
