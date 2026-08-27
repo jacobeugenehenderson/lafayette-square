@@ -664,11 +664,45 @@ async function buildViz(rosterTiles, baked, atlasName, outDir) {
 }
 
 // ── GLB UV rewriter ──────────────────────────────────────────────────────
+// ⛔⛔ `frac()` IS FOR TILING, AND A RECTANGLE IS NOT TILING (2026-08-26).
+//
+// Bark UVs deliberately run outside [0,1] — they REPEAT up the trunk (oak_white's bark
+// spans U[-0.18, 2.0]) — and an atlas cannot repeat: the texture is ClampToEdge, and
+// RepeatWrapping would wrap the whole atlas image and land in another species' tile. So
+// the whole numbers are folded off here, on the CPU, before the linear pack-into-tile
+// transform. That stays exactly as it was; it is the deferred Phase B.2 question
+// (`ARCHITECTURE §"Bark tile wrap is the open shader question"`).
+//
+// ⭐ But a UV set already inside [0,1] is a RECTANGLE, not a repeat. Every composed leaf
+// canopy is one cell of one pack. For those, `frac()` changes exactly ONE value —
+// `frac(1.0) === 0` — which teleports the rectangle's far edge onto its near edge.
+//
+// ⛔ THE DEFECT THAT PAID FOR THIS (Jacob's eye, 2026-08-26). oak_white's leaf UVs are
+// binary: exactly 0.5 or exactly 1.0, 221,668 verts each. The wrap moved every 1.0 to 0,
+// sliding the whole canopy one cell over in a MIXED-SEASON pack. The Salon rewrites
+// through this same helper (`salon-preview-atlas.js` → `rewriteGLB`) while the Grove
+// renders the published bytes raw — so the two surfaces painted the same tree from
+// different cells, green in one and red in the other, and the Salon's green was a bug
+// wearing the look of the correct answer.
+//
+// ⛔ Measured, not assumed: for v in [0,1], `Math.floor(v)` is 0 everywhere except
+// v === 1, so declining the wrap on an in-range axis CANNOT change any other value.
+// Per-axis, because a set can repeat in one axis and be a rectangle in the other.
+// ▶ node scratch/claims-atlas-uv-rect-survives-the-bake.mjs
 function transformUVs(uvArr, t) {
   const { offsetU, offsetV, scaleU, scaleV } = t
+  const EPS = 1e-6
+  let tilesU = false, tilesV = false
+  for (let i = 0; i < uvArr.length; i += 2) {
+    const u = uvArr[i], v = uvArr[i + 1]
+    if (u < -EPS || u > 1 + EPS) tilesU = true
+    if (v < -EPS || v > 1 + EPS) tilesV = true
+    if (tilesU && tilesV) break
+  }
   for (let i = 0; i < uvArr.length; i += 2) {
     let u = uvArr[i], v = uvArr[i + 1]
-    u = u - Math.floor(u); v = v - Math.floor(v)
+    if (tilesU) u = u - Math.floor(u)
+    if (tilesV) v = v - Math.floor(v)
     uvArr[i]     = u * scaleU + offsetU
     uvArr[i + 1] = v * scaleV + offsetV
   }
@@ -749,6 +783,23 @@ export async function rewriteGLB(srcFile, dstFile, lookupKey, lookupIdx, scale =
           const arr = uvAttr.getArray()
           // Make sure we have a writable typed array; replace if needed.
           const writable = (arr instanceof Float32Array) ? arr : new Float32Array(arr)
+          // ⛔ LOUD, and a report only — it changes no behaviour. A LEAF prim whose UVs
+          // leave [0,1] was never composed onto one of our packs: its UVs still point
+          // into the VENDOR's own atlas layout, so no wrap and no transform can dress it
+          // correctly, and it takes the tiling path below by default. Say so, per
+          // species and material, rather than letting it look handled.
+          if (tile.classification === 'leaf') {
+            let lo = Infinity, hi = -Infinity
+            for (let k = 0; k < writable.length; k++) {
+              if (writable[k] < lo) lo = writable[k]
+              if (writable[k] > hi) hi = writable[k]
+            }
+            if (lo < -1e-6 || hi > 1 + 1e-6) {
+              console.warn(`[bake-look] ⚠️ leaf UVs outside [0,1] in ${path.basename(srcFile)} `
+                + `material "${mat.getName()}" [${lo.toFixed(4)}, ${hi.toFixed(4)}] — this chassis `
+                + `was never composed onto a leaf pack; the atlas cannot dress it faithfully.`)
+            }
+          }
           transformUVs(writable, tile.uvTransform)
           if (writable !== arr) uvAttr.setArray(writable)
           seenUV.set(uvAttr, tile.uvTransform)
@@ -840,7 +891,28 @@ export async function bakeLook(lookName, opts = {}) {
   try { design = JSON.parse(await fs.readFile(designPath, 'utf8')) }
   catch (err) { return { ok: false, error: `cannot read ${designPath}: ${err.message}` } }
 
-  const roster = Array.isArray(design.trees) ? design.trees : []
+  // ⭐⭐ ONE SET, THREE CONSUMERS (Jacob, 2026-08-25: "Right now each consumer reads a
+  // different set — fix it"). The atlas is built for THE SELECTION, the same set
+  // bake-trees places from and the Salon captures impostors for.
+  // ⛔ This read `design.trees` — the Look's hand-maintained checkbox list — so a species
+  // the operator selected but never checked into the Look got NO leaf UV rect, and its
+  // placements rendered untextured. 964 of them, and it took an operator's eye to catch.
+  // ⛔ It cannot read "the slab's species": bake-look runs FIRST and builds the atlas the
+  // slab is dressed from. The selection is knowable before either bake; the slab is not.
+  // ⛔ Falls back to design.trees LOUDLY — an empty atlas is worse than a stale one.
+  let roster = Array.isArray(design.trees) ? design.trees : []
+  try {
+    const { selectionForScene } = await import('./selection.mjs')
+    const sel = await selectionForScene(lookName)
+    if (sel.variants.length) {
+      console.log(`[bake-look] selection: ${sel.reason}`)
+      roster = sel.variants
+    } else {
+      console.warn('[bake-look] ⚠️ selection resolved to NO variants — falling back to the Look roster')
+    }
+  } catch (err) {
+    console.warn('[bake-look] ⚠️ could not resolve the selection — falling back to the Look roster:', err.message)
+  }
   const outDir = path.join(BAKED_DIR, lookName)
 
   if (roster.length === 0) {

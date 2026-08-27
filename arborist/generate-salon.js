@@ -80,6 +80,16 @@ function hashString(s) {
   return h
 }
 
+/**
+ * The composition RNG seed. Exported so a check can call the real thing instead of
+ * restating the formula (a check that copies its subject cannot catch its subject
+ * drifting). `chassisAsset` is the resolved GLB basename — see the call site for why
+ * it is the asset and not the chassis identity.
+ */
+export function compositionSeed({ chassisAsset, bark, leaves }) {
+  return hashString(`${chassisAsset}|${bark?.ref}|${leaves?.pack}`)
+}
+
 // ── Kit-wide DEFAULTS (lowest layer; merged below chassis-defaults + overlay)
 //
 // Per `feedback_effective_payload_layering`: `DEFAULTS → CHASSIS_DEFAULTS → operator overlay`.
@@ -1254,10 +1264,28 @@ async function buildCompositionDocument({ chassis, bark, leaves, slotName, hideL
     return chassisDoc
   }
 
-  // Determinism: hash(chassis|bark.ref|leaves.pack) seeds mulberry32 for
-  // both UV-rewrite (vendor path) and spray (fallback) so byte-identical
-  // GLB across re-runs.
-  const seed = hashString(`${chassis}|${bark.ref}|${leaves.pack}`)
+  // Determinism: the seed drives BOTH the vendor UV-rewrite (which leaf-pack cell a
+  // canopy samples) and the spray fallback, so re-runs are byte-identical.
+  //
+  // ⭐⭐ SEED ON THE ASSET, NOT ON THE IDENTITY. Which cell a canopy draws is a property
+  // of THIS GEOMETRY with this bark and this pack — and `resolveChassisPath` above
+  // already settles that identity and path are two different facts ("`derivedFrom` on
+  // the part IS the filename").
+  //
+  // ⛔ THE DEFECT THAT PAID FOR THIS (Jacob's eye, 2026-08-26). This hashed `chassis`,
+  // the IDENTITY. The 2026-08-25 rename to forms (`white_oak_a` → `rounded_06`, 154
+  // chassis) declared itself pure identity movement with provenance preserved — and
+  // silently re-rolled every one of those compositions' cell draws. White Oak moved off
+  // the single green cell of the four-cell `eastern_black_oak` pack onto a red one and
+  // began shipping autumn leaves in August. Nothing in a rename says it may repaint the
+  // map, and no operator in town #2 will connect a red tree to a rename days earlier.
+  //
+  // ⭐ Keyed on the resolved FILE, a rename cannot move the draw — by construction, in
+  // any town: the renamed chassis resolve through `derivedFrom` to the same GLB they
+  // always did (154 of them), and a chassis that was never renamed resolves to itself,
+  // so nothing else in the library repaints.
+  // ▶ node scratch/claims-a-rename-cannot-repaint.mjs
+  const seed = compositionSeed({ chassisAsset: path.basename(chassisPath, '.glb'), bark, leaves })
   const rng = mulberry32(seed)
 
   // Leaf source (operator 2026-06-19 compromise): leaves render either as
