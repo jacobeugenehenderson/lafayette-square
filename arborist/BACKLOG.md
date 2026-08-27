@@ -10,6 +10,111 @@
 
 ---
 
+## ▶ 2026-08-27 — BARK: VECTOR COLOUR OVER TESSELLATED GREYSCALE *(Jacob's arc)*
+
+**The proposal, in his words:** *"do the heaviest/most expensive colour work with the vectors
+and then we have a bunch of tessellated greyscale texture files."* Vector carries **colour and
+form** at street/LOD0 where nothing may pixelate; a shared library of **tileable greyscale**
+carries grain and relief everywhere. ⭐ The standing constraint over all of it: *"a premium
+viewing experience is 50% of the project. It has to look perfect and gorgeous, but if it
+doesn't load that's irrelevant."*
+
+**Why it is the right split, and it is not mainly about bytes.** Colour is what breaks the
+atlas's own economics. `ORIENTATION §7 DONE`: *"atlas cost scales with distinct PARTS, not
+species count."* Two species with the same furrow structure and different colour need two
+photographs today; split, they share ONE greyscale tile and differ only in vector. The rubric's
+~8 bark **types** becomes a literal count of greyscale tiles. Colour also stops being welded
+into a photograph and becomes the thing the operator turns — which `bark.tintBase` and the
+posterize colour axis were both reaching for and could not get.
+
+⚠️ **The technique risk, named up front:** photographic bark carries CORRELATED colour and
+structure — the dark is dark *because* it is a furrow. Drive the vector colour off the
+greyscale luminance (what `compileGradientLUT` already does) or it reads as tinted plastic.
+This is `SALON-INTERFACE §2`'s leaf near-tier pattern — *posterize substrate carrying form +
+high-pass detail overlay carrying grain* — with the substrate promoted from raster to vector.
+
+### ⛔ THE ORDER IS LOAD-BEARING. Steps 2–3 measured before step 1 are measured through a defect.
+
+**1. TILING — `ARCHITECTURE §"Bark tile wrap is the open shader question (Phase B.2)"`, option 1:
+WebGL2 texture arrays.** Everything here needs *"stitching to be a blasé operation"* and we do
+not have it. The atlas is `ClampToEdge`; `RepeatWrapping` would wrap the whole sheet into
+another species' tile; so `bake-look#transformUVs` folds tiling away with a per-vertex `frac()`.
+⭐ **It also kills the tear for free** — most of a trunk's triangles straddle a repeat line and
+run the texture backwards across the tile.
+▶ `node scratch/claims-atlas-uv-rect-survives-the-bake.mjs`
+⛔ Option 3 (a texture per species) breaks Bloom's single-program constraint. Not viable.
+
+**2. THE GREYSCALE LIBRARY** — sized against the rubric's bark **types**, not per species. One
+channel, not three; tileable, so a tile stops needing to be large — repetition supplies area.
+
+**3. VECTOR COLOUR** — the new work. Today's posterize is an indexed PNG: quantised raster, not
+resolution-independent. `extract-bark-posterized.mjs` is the producer to grow, not replace.
+⚠️ **This inverts a LOOK decision, not just a budget.** Today `treeBarkTierUniform` sends
+street (<20 m) → tier 2 → **vendor bitmap**, hero/browse → tiers 0/1 → **posterized**, and the
+comment records that as deliberate: the kit illustrated look far, PBR realism near. Jacob's
+order is the reverse — stylised near, photographic far — because a vector does not degrade as
+you walk up to it and a bitmap is least useful when minified. **Confirm the look intent when
+this step starts; it is an artistic call, not a perf one.**
+
+**4. REPACK THE SHEET** — independent of 1–3, do it whenever. Half the atlas is empty.
+▶ `node scratch/atlas-occupancy.mjs`
+
+### What is already built — do not rebuild it
+- **Posterize**: `arborist/extract-bark-posterized.mjs` (Brief 10B), bound for every composed
+  species, and far smaller than the vendor bitmap it stands in for.
+- **View-aware tiering**: `treeBarkTierUniform` + the tier gate in `treeAtlasMaterial`.
+- **A detail-overlay slot**: `barkDetailBySpecies` — the grain half of the near tier already
+  has a home.
+▶ `node -e "const a=require('./public/baked/lafayette-square/trees-atlas.json');for(const k of ['barkBySpecies','barkPosterizedBySpecies','barkDetailBySpecies'])console.log(k,Object.keys(a[k]||{}).length)"`
+
+### Absorbed from the 2026-08-23 punch list
+**"The trunks look too artificial."** Already diagnosed there and it is this arc's root: the
+trunk is **not** low-poly — it reads smooth because its bark is a *slice of one sheet shared
+across every species*. ⛔ Do NOT fix it by binding the raw kit texture: that was tried and
+reverted — it discards `tintBase`/`tintJitterRange`/`roughnessOverride` and the
+gradient/detail/posterized slots, i.e. the operator's authored bark TREATMENT. Any fix belongs
+inside that path — which is what steps 2–3 build.
+
+---
+
+## ▶ 2026-08-27 — ⛔ THE MAP'S PER-SPECIES BARK UNIFORMS HAVE NEVER REACHED THE GPU
+
+⛔⛔ **`InstancedTrees.jsx`'s Phase-B `onBeforeRender` does not do what its comment says.**
+Verbatim: *"we overwrite right before three.js submits the draw, and three.js uploads uniform
+values per draw."* **It does not.** three.js uploads a material's uniforms only when the program
+changed or `material.id !== _currentMaterialId`:
+
+```
+three.module.js:30289-30310   let refreshMaterial = false
+                              if (state.useProgram(program.program)) refreshMaterial = true
+                              if (material.id !== _currentMaterialId) refreshMaterial = true
+                              ... if (refreshMaterial) WebGLUniforms.upload(...)
+```
+
+Every mesh-role tree draws with the **one shared** `treeMaterial`, so for the second and every
+subsequent species in a frame the write is silently dropped. **Whichever species draws first
+paints its bark onto all of them**, and three depth-sorts opaque meshes, so the winner changes
+with the camera.
+
+⭐ **WHY NOBODY HAS EVER SEEN IT, AND WHY THAT IS THE DANGEROUS PART.** Every LS species carries
+the *same* bark defaults — `tintBase #ffffff`, `tintJitterRange 0.08`, `roughnessOverride 0.85`.
+The only per-species value that differs is the gradient slot, and exactly one species has one.
+**The path has never been exercised with values that differ, so it has never visibly failed.**
+The first authored bark tint on a second species turns it on.
+▶ `node -e "const a=require('./public/baked/lafayette-square/trees-atlas.json');console.log(a.barkBySpecies)"`
+
+**Found by:** the Grove, 2026-08-27 — the first surface to draw ten species side by side. Jacob's
+eye: *"they look great until the trunks switch to red."* The Grove is fixed by giving each species
+its own material instance in one shader program (`treeAtlasMaterial#cloneTreeMaterial`); **the map
+is NOT fixed and this item is that work.** ⛔ Do not "fix" it by deleting the comment — the
+uniforms are meant to be per-species; the delivery is what is broken.
+
+⚠️ **The same question hangs over every other per-draw write on that material** —
+`applyDeformerUniforms`, `setWhipRadius` — which ride the identical `onBeforeRender`. Not
+measured. ⛔ Do not assume they are fine because bark was the one that showed.
+
+---
+
 ## ▶ 2026-08-26 — THE SIMILARITY MATRICES ARE OWED, AND THE OWED LIST IS SHORT
 
 ⛔⛔ **THE MATCHER SCORES 8 ENUM AXES THAT HAVE NO SIMILARITY MATRIX.** Without one,
@@ -148,12 +253,8 @@ around tree? Work on luminance and back lighting, pump up color saturation."
     source: the meteorologist does not author a `wind` block into the directive
     (`ls/OPERATIONS.md §5`), so `uWindIntensity` is 0 and only the 5 mm rustle
     floor runs. ▶ `node -e "const a=require('./public/clouds/almanac.json');console.log(a.rules.filter(r=>JSON.stringify(r).includes('\"wind\"')).length+'/'+a.rules.length)"`
-  - **trunk shading** — the trunk is NOT low-poly (115,123 tris). It reads smooth
-    because its bark is a slice of a 1824×1032 sheet shared across every species.
-    ⛔ Do NOT bind the raw kit: that was tried and reverted — it discards
-    `tintBase`/`tintJitterRange`/`roughnessOverride` and the
-    gradient/detail/posterized slots `applyBarkUniforms` carries, i.e. the
-    operator's authored bark TREATMENT. Any fix belongs inside that path.
+  - **trunk shading** — ▶ absorbed into `▶ 2026-08-27 BARK: VECTOR COLOUR OVER
+    TESSELLATED GREYSCALE`, which is its root and its fix.
   - **ground shading + a real grass texture around the tree** — the ground is
     currently a flat `makeGrassMaterial` disc with a radial fade. It is scenery,
     not the Ward's ground.
