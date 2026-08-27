@@ -30,25 +30,44 @@ This widens the sanctioned axis. ⛔ It is NOT a revival of runtime geometry swa
 truncated all the way to a billboard. The ladder jumps from *full mesh + full shader* to *2D
 card* with nothing between. "Keep the mesh, collapse the shading" is the missing middle.
 
-### ⛔⛔ MEASURE THE BUDGET FIRST — IT DOES NOT RECONCILE, AND EVERYTHING HERE DEPENDS ON IT
+### ✅ SETTLED 2026-08-27 — the counts, and the budget arithmetic
 
-▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json');const I=t.instances;const f={};for(const i of I)for(const k of ['meshTier','heroTier'])if(i[k]!==undefined)f[k+'='+i[k]]=(f[k+'='+i[k]]||0)+1;console.log(f);console.log(t.heroBandMeta)"`
+**FOUR fields, three meanings, ONE authority.** They read alike; they answer different questions.
+▶ `node -e "const I=require('./public/baked/lafayette-square/trees.json').instances;const f={};for(const i of I)for(const k of ['meshTier','heroTier','heroRole'])if(i[k]!==undefined)f[k+'='+i[k]]=(f[k+'='+i[k]]||0)+1;console.log(f)"`
 
-**THREE mesh counts in ONE artifact:** `meshTier:true` = **2,282** · `heroBandMeta.mesh` = **399**
-· `heroTier:'mesh'` = **114**. ⛔ Re-derive, never quote — and find out which is the answer.
+| field | LS | what it is | authority |
+|---|---|---|---|
+| `meshTier` | 2,282 true | **species**-level operator eligibility, from the Grove bar (`b.tier==='mesh'`) | not a render decision |
+| `heroTier` | 114 mesh / 5,013 cull | the Phase-A classifier | **QC tint only** (`aHeroTier`) |
+| `heroRole` | **399 mesh / 4,728 impostor** | the geometry budget | ⭐ **the one the runtime obeys** (`InstancedTrees.jsx:859`) |
 
-**The budget is saturated and its arithmetic does not close.** `triangleBudget` 15,000,000,
-`trianglesSpent` 14,979,130 — **99.9% spent**. But **every mesh placement is `lod2`** (all 2,282),
-and an `lod2` specimen is ~1.5k triangles. 2,282 × 1.5k ≈ 3.4M, not 15M. **CAUSE NOT ESTABLISHED.**
+⛔ **AND THE BUDGET RECONCILES EXACTLY — I claimed otherwise and was wrong.**
+Σ lod1 triangles of the 399 = **14,979,130** = `trianglesSpent`, to the triangle. The error was
+assuming the runtime draws each instance's `url` (lod2); `InstancedTrees#lodForRole` overrides it
+to **lod1** for mesh role, so weighing lod1 is correct.
+▶ `node scratch/hero-band-reconcile.mjs`
 
-⭐⭐ **WHY THIS GATES THE WHOLE ARC: the budget's CURRENCY may be the wrong one.** Triangles proxy
-*vertex* cost. At distance the cost that actually hurts is **fragments and overdraw** — alpha-tested
-leaf cards defeat early-Z, which `treeAtlasMaterial`'s own `opaqueCanopyMaterial` comment states as
-the reason that tier exists. **Jacob's proposal reduces FRAGMENT cost. If the budget only counts
-triangles, the savings never become more meshes — the cut still lands in the same place.**
-⚠️ Triangles were chosen deliberately over tree-count and trunk-diameter, *"which predicts neither
-cost nor visibility"* (`ORIENTATION §7`). Whether it predicts cost **at distance** is a different
-question and is the one to answer.
+### ⭐⭐ AND THE MEASUREMENT FOUND THE LEVER
+
+Same 399 placements, both ladders:
+```
+Σ lod1   14,979,130   ← charged AND drawn
+Σ lod2      878,524   ← 17× cheaper
+```
+**`lodForRole = (_inst) => 'lod1'`** (`InstancedTrees.jsx:770`) takes the instance and throws it
+away. Every placement already carries **`panDist`**, baked — its distance to the authored hero pan.
+⇒ A distance-graded LOD is **already plumbed and unused**, and grading by `panDist` is role-at-bake
+(a baked distance, not a live camera), so it is on the sanctioned side of the LOD line.
+
+⚠️ **The same 15M budget would afford roughly 17× more mesh trees** if the far half of the band drew
+lod2. ⛔ NOT a licence to change the constant — what lod2 looks like at band distance is an eye
+question, and the 2026-06-24 regression (lod1 decimated to specks) is what that mistake looks like.
+
+⭐ **This does NOT displace Jacob's proposal — it is the geometry half of the same idea.** His is the
+shading half. Triangles are a *vertex*-cost proxy; the cost that hurts at distance is fragments and
+overdraw, which alpha-tested leaf cards make worse by defeating early-Z (`opaqueCanopyMaterial`'s
+own comment). **Whether the budget's currency should be fragments rather than triangles is still
+open, and still question 2.**
 
 ### Already built — ⛔ do not rebuild
 - **lod2 for mesh-role placements** — done. All 2,282 already point at `lod2`.
