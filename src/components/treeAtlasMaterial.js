@@ -1440,6 +1440,53 @@ async function buildMaterials(lookName) {
 }
 
 /**
+ * A SECOND MATERIAL IN THE SAME PROGRAM FAMILY, for a consumer that draws several species
+ * side by side.
+ *
+ * ⛔ THE DEFECT THIS EXISTS FOR (Jacob's eye, 2026-08-27). `applyBarkUniforms` in an
+ * `onBeforeRender` does NOT reach the GPU for consecutive draws of ONE material. three.js
+ * uploads a material's uniforms only when the program changed or `material.id !==
+ * _currentMaterialId` (`three.module.js:30289-30310`); draw two meshes in a row with the same
+ * material and the second one's uniform writes are silently dropped. So whichever mesh drew
+ * FIRST painted its bark onto every other mesh in the batch — and because three depth-sorts
+ * opaque meshes, orbiting the camera changed which one was first and flipped the whole Grove's
+ * trunks at once.
+ *
+ * ⚠️ `InstancedTrees.jsx`'s Phase-B comment asserts the opposite ("three.js uploads uniform
+ * values per draw"). It is a wrong belief the map has run on since Phase B, invisible only
+ * because every LS species carries the SAME bark defaults — `tintBase #ffffff`,
+ * `tintJitterRange 0.08`, `roughnessOverride 0.85` — so the path has never been exercised
+ * with values that differ. Tracked separately; this helper does not fix the map.
+ *
+ * ⭐ Per-species MATERIALS restore the upload by construction (`material.id` differs, so
+ * `refreshMaterial` goes true) while staying in ONE shader program: three caches programs by
+ * shader source + defines, and these clones differ in neither. That is the same reasoning
+ * `opaqueCanopyMaterial` above records — it is a separate program ONLY because its `alphaTest`
+ * differs. Textures are shared by reference, so this costs no VRAM.
+ *
+ * ⛔ Dispose what you make: the caller owns the returned material.
+ */
+export function cloneTreeMaterial(src) {
+  if (!src) return null
+  const m = new THREE.MeshStandardMaterial({
+    map: src.map,
+    normalMap: src.normalMap,
+    roughness: src.roughness,
+    metalness: src.metalness,
+    side: src.side,
+    transparent: src.transparent,
+    alphaTest: src.alphaTest,
+  })
+  m.name = `${src.name || 'tree-atlas'}#per-species`
+  // ⛔ SAME patches, SAME order — that is what keeps the shader source byte-identical and
+  // therefore the program shared. Diverging here silently multiplies programs and is exactly
+  // what Bloom cannot take.
+  injectFoliageSway(m)
+  patchTerrainInstancedBaked(m)
+  return m
+}
+
+/**
  * Resolve atlas materials for a Look. Returns:
  *   { status: 'idle' | 'loading' | 'ready' | 'error',
  *     barkMaterial, leavesMaterial, manifest, error }

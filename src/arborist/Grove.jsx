@@ -20,7 +20,7 @@
  * Camera is OrbitControls (free fly) — operator wants to walk around the
  * crop and judge.
  */
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import { Component, Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import { resolveGrove } from '../../arborist/grove-eligibility.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls, useGLTF } from '@react-three/drei'
@@ -30,7 +30,11 @@ import { OverheadBaker } from './OverheadBaker.jsx'
 import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
 import { partitionByDirt } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
-import { useTreeAtlas, treeSwayUniforms } from '../components/treeAtlasMaterial.js'
+import {
+  useTreeAtlas, treeSwayUniforms,
+  stampTreeVertexAttrs, measureChassisRadius, applyBarkUniforms, invalidateTreeAtlas,
+  cloneTreeMaterial,
+} from '../components/treeAtlasMaterial.js'
 import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
@@ -225,7 +229,7 @@ export default function Grove() {
       // bake their GLBs into the Look — NOT to drop them from the pool again.
       const inLook = lookSpeciesSet.has(t.species)
       const glbUrl = inLook
-        ? `${base}baked/${activeLookId}/trees/${t.species}/skeleton-${t.variantId}-lod1.glb`
+        ? bakedGlbUrl(activeLookId, t.species, t.variantId, 'lod1')
         : (t.runtimeUrl ? `${base.replace(/\/$/, '')}${t.runtimeUrl}` : null)
       if (!glbUrl) { console.warn(`[grove-bake] "${t.species}" has no GLB url in the slab — cannot capture.`); continue }
       out.push({ species: t.species, glbUrl })
@@ -247,6 +251,66 @@ export default function Grove() {
   // don't trust the fingerprint (changed capture code, a suspect asset on disk).
   const forceAll = useRef(false)
   const groveAtlas = useTreeAtlas(activeLookId)
+  // ⭐ The four per-species slots the shared material needs, read straight off the Look's
+  // manifest — the same four `InstancedTrees` reads for the map. Bound PER DRAW inside each
+  // Tile, because one material serves every tile.
+  const barkUniformsBySpecies = useMemo(() => {
+    const m = groveAtlas?.manifest
+    if (!m) return {}
+    const out = {}
+    for (const species of Object.keys(m.barkBySpecies || {})) {
+      out[species] = {
+        barkSettings:   m.barkBySpecies[species] || null,
+        // ⛔ Per VARIANT, resolved by the tile's own id — `InstancedTrees` looks it up the
+        // same way (string and number key, because JSON objects stringify their keys).
+        // Guessing "the first one" would paint variant 2 with variant 1's gradient.
+        gradientByVariant: m.barkGradientByVariant?.[species] || null,
+        detailSlot:     m.barkDetailBySpecies?.[species] || null,
+        posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
+      }
+    }
+    return out
+  }, [groveAtlas?.manifest])
+  // ⭐ ONE MATERIAL PER SPECIES, one shader program. A single shared material cannot carry
+  // ten species' bark: three.js skips the uniform upload for consecutive draws of the same
+  // material, so the first-drawn tile painted all of them. See `cloneTreeMaterial`.
+  const speciesMaterials = useMemo(() => {
+    const base = groveAtlas?.treeMaterial
+    if (!base) return {}
+    // ⛔ Keyed off `variants` (the full /grove list), NOT `visible` — `visible` is declared
+    // further down the component, so reading it here is a temporal-dead-zone ReferenceError
+    // at render, which in this file means a black screen. Materials for a scope-filtered-out
+    // species are simply unused.
+    const out = {}
+    for (const v of variants) {
+      if (out[v.speciesId]) continue
+      out[v.speciesId] = cloneTreeMaterial(base)
+    }
+    return out
+  }, [groveAtlas?.treeMaterial, variants])
+  // ⛔ The caller owns these — drop them when the set is replaced, or an authoring session
+  // leaks a material per species per re-bake.
+  const prevMaterials = useRef(null)
+  useEffect(() => {
+    const stale = prevMaterials.current
+    prevMaterials.current = speciesMaterials
+    if (stale && stale !== speciesMaterials) {
+      for (const m of Object.values(stale)) { try { m.dispose() } catch {} }
+    }
+  }, [speciesMaterials])
+
+  // The Hero↔Browse crossfade, applied to every per-species material (see the note in Tile).
+  useEffect(() => {
+    const mats = Object.values(speciesMaterials)
+    if (!mats.length) return
+    const o = 1 - blend
+    const t = o < 1
+    for (const mat of mats) {
+      if (mat.transparent !== t) { mat.transparent = t; mat.needsUpdate = true }
+      mat.opacity = o
+      mat.depthWrite = !t
+    }
+  }, [speciesMaterials, blend])
   const heroDials = useMemo(() => ({ azimuths: HERO_AZIMUTHS, shells: HERO_SHELLS }), [])
   const overheadDirty = useMemo(() => {
     if (!groveAtlas?.manifest) return overheadSpecies
@@ -270,10 +334,35 @@ export default function Grove() {
     // pool IS that file's species list — capturing off a stale read would shoot the
     // PREVIOUS bake's species.
     await loadSlabSpecies(activeLookId)
+    // ⭐ The tiles are now rendering the PREVIOUS bake's bytes. Drop the atlas cache and
+    // re-read the gallery so the Grove settles onto what was just baked — otherwise the
+    // waiting room never stops showing the thing you were waiting to replace.
+    invalidateTreeAtlas(activeLookId)
+    await loadGrove()
     // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
     // species whose inputs moved becomes dirty exactly here.
     if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadBatch.length }); setOverheadTick((t) => t + 1) }
   }
+  // ⭐⭐ ARRIVAL IS THE BAKE (Jacob, 2026-08-26). The Grove is "a little courtesy waiting area
+  // so you can peruse and shop while the bake is happening" — so the tens of seconds the bake
+  // already costs are paid on ENTRY, in the background, instead of being paid later while the
+  // operator sits and watches. Tiles paint immediately from what is on disk; the button carries
+  // the truth (Baking… → Ready); when it lands, the atlas and the tiles refresh onto the fresh
+  // artifacts. That is what makes ORIENTATION §7's Grove invariant reachable — a tree in the
+  // Grove is baked and slab-ready — without a gesture anybody has to remember.
+  //
+  // ⛔ Once per Look, not once per render. The bake's own drain-on-bake fingerprinting means a
+  // re-entry with nothing dirty shoots nothing, so this taper to near-zero rather than
+  // re-paying on every visit.
+  const autoBakedFor = useRef(null)
+  useEffect(() => {
+    if (!activeLookId || groveBaking) return
+    if (autoBakedFor.current === activeLookId) return
+    autoBakedFor.current = activeLookId
+    bakeAll()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeLookId])
+
   // Re-capture BOTH impostor pools onto the ALREADY-baked slab (no 30s roster
   // re-bake) — off the current baked lod1 GLBs → POSTed into the slab.
   //
@@ -329,9 +418,18 @@ export default function Grove() {
   const downRef = useRef(null)
 
   const activeLook = looks.find(l => l.id === activeLookId)
-  const inLook = (v) => activeLookTrees.some(
-    t => t.species === v.speciesId && Number(t.variantId) === Number(v.variantId),
-  )
+  // ⭐⭐ THE BARS PRECEDE THE GROVE (Jacob, 2026-08-25). The order in time is
+  // roster → BARS → GROVE → bake: the operator selects with the bars, and the Grove is
+  // where they see the selected species TOGETHER and check the ensemble goes.
+  // ⛔ This asked `design.trees` — the Look's republish-populated list — which runs
+  // INDEPENDENTLY of the bars and in the opposite direction. Two lists, and every bug
+  // tonight lived in the gap: species above the bar but absent from design.trees got no
+  // atlas rect and rendered maroon; platanus_acerifolia sat in design.trees without being
+  // green and was captured anyway; and 13 published meshes were invisible in the plenum.
+  // ⭐ The Grove now shows THE SELECTION. One set, and the Grove is its view.
+  const inLook = (v) => eligibleNames.size
+    ? (eligibleNames.has(v.speciesId) || eligibleByLibId(v.speciesId, groveBoard, unownedRef))
+    : activeLookTrees.some(t => t.species === v.speciesId && Number(t.variantId) === Number(v.variantId))
 
   const visible = useMemo(() => {
     let rows = variants
@@ -510,6 +608,10 @@ export default function Grove() {
             {groveBaking ? 'Baking…'
               : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
               : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
+              /* Arrival already fired the bake — once it lands these trees ARE the slab, and
+                 the button says so instead of inviting a gesture that has already happened.
+                 It stays clickable as the deliberate re-bake. */
+              : (groveBakeResult && !groveBakeResult.error) ? 'Ready ✓'
               : 'Bake → Slab'}
           </button>
           {/* RE-CAPTURE both impostor pools onto the already-baked slab (no roster
@@ -663,18 +765,27 @@ export default function Grove() {
           {(view === 'gallery' || transitioning) && (
             <Suspense fallback={null}>
               {visible.map((v, i) => (
-                <Tile
+                <TileBoundary
                   key={`${v.speciesId}:${v.variantId}`}
+                  label={`${v.speciesLabel || v.speciesId} (variant ${v.variantId})`}
+                  position={positions[i]}
+                >
+                <Tile
                   variant={v}
                   position={positions[i]}
                   opacity={1 - blend}
                   inLook={inLook(v)}
+                  atlas={groveAtlas}
+                  material={speciesMaterials[v.speciesId] || null}
+                  lookId={activeLookId}
+                  barkUniforms={barkUniformsBySpecies[v.speciesId] || null}
                   hovered={hovered?.speciesId === v.speciesId && Number(hovered?.variantId) === Number(v.variantId)}
                   selected={selected?.speciesId === v.speciesId && Number(selected?.variantId) === Number(v.variantId)}
                   onHoverIn={() => setHovered({ speciesId: v.speciesId, variantId: v.variantId })}
                   onHoverOut={() => setHovered(h => (h?.speciesId === v.speciesId && Number(h?.variantId) === Number(v.variantId) ? null : h))}
                   onSelect={() => setSelected({ speciesId: v.speciesId, variantId: v.variantId })}
                 />
+                </TileBoundary>
               ))}
             </Suspense>
           )}
@@ -823,6 +934,44 @@ function TransitionDriver({ tween, poseRef, controlsRef }) {
 // ALL GREEN because it never tried. roster-coverage emits `ownsLibIds`, computed with
 // vocabulary.mjs (filesystem-bound, browser-unsafe), so `acer_saccharum` and `maple_sugar`
 // resolve to one row.
+// ⛔ A TILE THAT CANNOT LOAD MUST SAY SO. The Grove now renders the BAKED specimen, which
+// may legitimately not exist yet — first entry to a Look, or a species that ships but has
+// never been baked (`nyssa_sylvatica` places 230 times on LS and has no baked GLB today).
+// Without this, `useGLTF`'s throw escapes to the gallery's single Suspense boundary and takes
+// EVERY tile down with it — one missing file reads as "the Grove is broken", or worse, as an
+// empty grove that looks calm. One dead tile, named, on its own plot.
+class TileBoundary extends Component {
+  constructor(props) { super(props); this.state = { failed: false } }
+  static getDerivedStateFromError() { return { failed: true } }
+  componentDidCatch(err) {
+    console.error(`[grove] "${this.props.label}" could not load its baked specimen — `
+      + `it is not in this Look's bake. ${err?.message || err}`)
+  }
+  render() {
+    if (!this.state.failed) return this.props.children
+    const [x, , z] = this.props.position
+    return (
+      <group position={[x, 0, z]}>
+        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, 0]}>
+          <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
+          <meshBasicMaterial color="#a33" transparent opacity={0.5} toneMapped={false} />
+        </mesh>
+        <mesh position={[0, 3, 0]}>
+          <boxGeometry args={[0.35, 6, 0.35]} />
+          <meshStandardMaterial color="#a33" roughness={1} />
+        </mesh>
+      </group>
+    )
+  }
+}
+
+// ⭐ ONE definition of where a baked specimen lives. The capture pool built this path
+// inline and the Tile now needs the same one; a second spelling is how a surface ends up
+// silently loading a different artifact than the one it is judging.
+function bakedGlbUrl(lookId, species, variantId, lod = 'lod0') {
+  return `${import.meta.env.BASE_URL}baked/${lookId}/trees/${species}/skeleton-${variantId}-${lod}.glb`
+}
+
 function eligibleByLibId(libId, board, warnRef) {
   const owner = board.find(b => (b.ownsLibIds || []).includes(libId))
     || board.find(b => b.canonicalId === libId)
@@ -889,38 +1038,91 @@ function GroveBrowse({ species, positions, lookId, opacity = 1, inLook, hovered,
   )
 }
 
-function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect }) {
-  const { glbUrl, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
-  const { scene } = useGLTF(glbUrl)
+// ⭐⭐ THE GROVE INVARIANT (Jacob, 2026-08-23; ORIENTATION §7 OWED): *a tree in the Grove
+// should already be baked and ready for the slab.* The Grove is where the operator culls in
+// context — a judgment surface — so it has to sit on the FAR side of the slab boundary.
+//
+// ⛔ IT DID NOT. This tile loaded `/trees/<sp>/…` (the PUBLISHED GLB) and rendered it with the
+// GLB's OWN materials — the first entry in `ARCHITECTURE §Salon preview ↔ LS runtime material
+// parity`'s "wrong shapes to avoid": *"Preview renders raw GLB materials; runtime renders
+// through treeAtlasMaterial. Two materials, two implementations, drift inevitable."* Everything
+// atlas-driven was therefore invisible here — bark gradient, tint base, tint jitter, the
+// posterize substrate, the detail overlay, the region split — so the Grove could show a tree
+// green while the slab shipped it otherwise, and did.
+//
+// ⭐ Now it loads the BAKED per-Look GLB and mounts the SAME shared material the map mounts,
+// stamped by the SAME `stampTreeVertexAttrs` the Salon, the Diorama, the impostor capture and
+// the Meteorologist already share. No new implementation — the Grove was simply the one
+// surface nobody connected to it.
+function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHoverIn, onHoverOut, onSelect,
+                atlas, material, lookId, barkUniforms }) {
+  const { speciesId, normalizeScale, position: posOv, rotation: rotOv, quality, excluded, speciesLabel, variantId } = variant
+  // ⛔ The baked GLB, not the published one — this is what the map loads.
+  const url = bakedGlbUrl(lookId, speciesId, variantId)
+  const { scene } = useGLTF(url)
   // Clone so each tile has its own scene graph (drei caches by URL).
   const cloned = useMemo(() => scene.clone(true), [scene])
-  useEffect(() => {
-    cloned.traverse(o => {
+
+  // Mirror SpecimenViewport's stamping block exactly (same helper, same fallbacks, same
+  // chassis-wide scan) so the Grove, the Salon and the map read one tree the same way.
+  // ⛔ This tile's OWN material — never the Look's shared one; see cloneTreeMaterial.
+  const treeMaterial = material || null
+  const gradientSlot = barkUniforms?.gradientByVariant
+    ? (barkUniforms.gradientByVariant[variantId] ?? barkUniforms.gradientByVariant[String(variantId)] ?? null)
+    : null
+  useMemo(() => {
+    if (!treeMaterial) return
+    let chMinY = Infinity, chMaxY = -Infinity
+    const geoms = []
+    cloned.traverse((o) => {
+      if (!o.isMesh || !o.geometry?.attributes?.position) return
+      o.geometry.computeBoundingBox()
+      const bb = o.geometry.boundingBox
+      if (bb) { chMinY = Math.min(chMinY, bb.min.y); chMaxY = Math.max(chMaxY, bb.max.y) }
+      geoms.push(o.geometry)
+    })
+    const chassisMinY = Number.isFinite(chMinY) ? chMinY : 0
+    const chassisYRange = Math.max(1e-4, chMaxY - chMinY)
+    const chassisRadius = measureChassisRadius(geoms)
+    cloned.traverse((o) => {
       if (!o.isMesh) return
       o.castShadow = true
       o.receiveShadow = true
-      const mats = Array.isArray(o.material) ? o.material : [o.material]
-      for (const m of mats) {
-        if (m?.vertexColors) { m.vertexColors = false; m.needsUpdate = true }
+      if (o.geometry) {
+        stampTreeVertexAttrs(o.geometry, { chassisMinY, chassisYRange, chassisRadius }, o)
+        // Vertex colors flip USE_COLOR and would compile a parallel program; the shared
+        // material expects none. (Same reason as SpecimenViewport.)
+        if (o.geometry.attributes?.color) o.geometry.deleteAttribute('color')
+      }
+      o.material = treeMaterial
+      // ⭐ PER-DRAW bark uniforms. The Salon can bind these in a useFrame because it shows ONE
+      // species; the Grove shows ten against ONE shared material, so the values must be written
+      // immediately before this tile's draw — exactly what `InstancedTrees` does, and for the
+      // same reason (its comment: "the prior draw's species values are still on the uniforms").
+      // ⛔ ALWAYS CALL IT — never skip on "this species has nothing authored".
+      // `applyBarkUniforms(mat, null, …)` RESETS the uniforms to identity
+      // (treeAtlasMaterial.js:1996); an early return leaves the PREVIOUS draw's species on
+      // the shared material. Three.js sorts opaque meshes by distance, so draw order changes
+      // as the camera orbits — which is how every trunk in the Grove flipped red halfway
+      // round the circle: it was inheriting `acer_saccharum`'s bark gradient, the only one in
+      // the atlas. Skipping the write is the fallback shape; resetting is the honest one.
+      o.onBeforeRender = () => {
+        applyBarkUniforms(
+          treeMaterial,
+          barkUniforms?.barkSettings ?? null,
+          gradientSlot,
+          barkUniforms?.detailSlot ?? null,
+          barkUniforms?.posterizedSlot ?? null,
+        )
       }
     })
-  }, [cloned])
+  }, [cloned, treeMaterial, barkUniforms, gradientSlot])
 
-  // Crossfade the specimen (the Grove Hero↔Browse transition). Default 1 leaves it
-  // normal; flip `transparent` only on change (a recompile), set `opacity` cheaply.
-  useEffect(() => {
-    const t = opacity < 1
-    cloned.traverse(o => {
-      if (!o.isMesh) return
-      const mats = Array.isArray(o.material) ? o.material : [o.material]
-      for (const m of mats) {
-        if (!m) continue
-        if (m.transparent !== t) { m.transparent = t; m.needsUpdate = true }
-        m.opacity = opacity
-        m.depthWrite = !t
-      }
-    })
-  }, [cloned, opacity])
+  // Crossfade the specimen (the Grove Hero↔Browse transition).
+  // ⛔ NOT per-tile any more. Every tile now draws with the ONE shared atlas material, so
+  // mutating "its" material here would mutate every other tile's too. The crossfade is a
+  // GLOBAL transition (one `blend`, passed identically to all tiles), so it is applied once
+  // on the shared material by the parent — see `useGroveCrossfade`.
 
   // Mirror Workstage's Skeleton transform stack EXACTLY. GLB-source
   // trees are already Y-up after publish-glb.js, so Workstage passes
@@ -937,10 +1139,19 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
   const [px, py, pz] = position
   const ox = posOv?.x ?? 0, oy = posOv?.y ?? 0, oz = posOv?.z ?? 0
   const rx = rotOv?.x ?? 0, ry = rotOv?.y ?? 0, rz = rotOv?.z ?? 0
-  // Tiles not in the active Look render slightly smaller so the eye
-  // separates "in roster" from "available". Excluded variants get an
-  // additional tint (kill-switched at species level, beats Look opt-in).
-  const effScale = inLook ? normalizeScale : normalizeScale * 0.82
+  // ⛔ SCALE IS ALREADY IN THE BAKED GLB. `bake-look` applies
+  // `scaleOverride ?? normalizeScale` to the bytes so the runtime renders at 1:1
+  // (bake-look.js:1377 → rewriteGLB's `scale` arg). The published GLB does NOT carry it,
+  // which is why this used to multiply by `normalizeScale` — re-applying it now would
+  // double every tree.
+  //
+  // ⛔ AND THE 82% SHRINK IS GONE (Jacob, 2026-08-26: "Nobody asked for that, it doesn't
+  // even make sense"). It rendered an unselected tile at 0.82 with a base circle at 0.22
+  // opacity — invisible on the pale ground — so trees appeared with no circle and read as
+  // strays. It dates to e5d69a86 (2026-04-30) and was never requested. Under the Grove
+  // invariant there is no "available but not selected" tier to encode: a tree in the Grove
+  // is baked and slab-ready, or it is not in the Grove.
+  const effScale = 1
   const baseColor = QUALITY_COLOR[quality] || '#666'
 
   return (
@@ -959,11 +1170,7 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
         <circleGeometry args={[TILE_SPACING * 0.42, 48]} />
         <meshStandardMaterial
           color={excluded ? '#3a3a3a' : baseColor}
-          opacity={(
-            excluded ? 0.35 :
-            inLook   ? ((hovered || selected) ? 0.95 : 0.78) :
-                       ((hovered || selected) ? 0.45 : 0.22)
-          ) * opacity}
+          opacity={(excluded ? 0.35 : ((hovered || selected) ? 0.95 : 0.78)) * opacity}
           transparent
           roughness={0.85}
         />

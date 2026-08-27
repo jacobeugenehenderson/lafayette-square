@@ -378,11 +378,24 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
     invalidate()   // demand-mode: paint the just-filled matrices (see note at top of component)
   }, [placementMatrices, localMatrix, invalidate])
 
-  // Phase B onBeforeRender — mutate the shared material's bark uniforms
-  // for THIS draw call only. Since the material is shared across every
-  // species' InstancedMesh, the prior draw's species values are still on
-  // the uniforms; we overwrite right before three.js submits the draw,
-  // and three.js uploads uniform values per draw.
+  // Phase B onBeforeRender — mutate the shared material's bark uniforms for THIS draw.
+  //
+  // ⛔⛔ THIS DOES NOT REACH THE GPU FOR THE 2nd AND LATER SPECIES IN A FRAME, and the
+  // sentence that used to sit here — "three.js uploads uniform values per draw" — is false.
+  // three.js uploads a material's uniforms only when the program changed or
+  // `material.id !== _currentMaterialId` (three.module.js:30289-30310). Every mesh-role tree
+  // shares ONE material, so whichever species draws first paints its bark onto all of them,
+  // and three depth-sorts opaque meshes, so the winner changes with the camera.
+  //
+  // ⭐ Invisible to date only because every LS species carries the SAME bark defaults
+  // (tintBase #ffffff, jitter 0.08, roughness 0.85) — the path has never been exercised with
+  // values that differ. The first authored tint on a second species turns it on.
+  //
+  // ⛔ NOT FIXED HERE. The fix is per-species material instances in one shader program (see
+  // `treeAtlasMaterial#cloneTreeMaterial`, which the Grove now uses); doing it for the map is
+  // its own change. ▶ BACKLOG.md 2026-08-27. Deleting this note is not the fix either — the
+  // uniforms are MEANT to be per-species; the delivery is what is broken.
+  // ⚠️ applyDeformerUniforms and setWhipRadius below ride the same call and are UNMEASURED.
   const onBeforeRender = useMemo(() => {
     return () => {
       applyBarkUniforms(material, barkSettings, gradientSlot, detailSlot, posterizedSlot)
