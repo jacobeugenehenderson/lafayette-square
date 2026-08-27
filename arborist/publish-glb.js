@@ -62,8 +62,23 @@ const LODS = [
   //   linden canopy to 41,688 cards against the Salon's 208,444 — exactly
   //   `leafDecimation.targetRatio` 0.20 — which is the whole of "the diorama is
   //   a sad facsimile of the Salon".
+  // ⭐⭐ AND THE LADDER HAD A HOLE (2026-08-27). Between lod1 (48K tris, full trunk) and
+  //   lod2 (1.5K, TRUNK CUT) there was nothing — and nothing cheap that keeps a trunk at
+  //   all. `lod2` is not a distance tier: `trunkCutBark` below removes the
+  //   canopy-occluded trunk for the OVERHEAD browse view, measured 1.15 m of missing
+  //   trunk on oak_white and 2.67 m on linden_american. Spend it on a side-on pan and
+  //   every tree floats. So `lodForRole` had exactly one legal value to return, and the
+  //   hero band's whole population was priced at lod1 because there was no other choice.
+  //   ⇒ `lod1far` — lod2's canopy density with lod1's INTACT TRUNK. Not a new mechanism:
+  //   the trunk cut is applied by lod id below, so this tier is the same emit with the
+  //   cut not called. It exists to be swept against lod1 by eye at band distance
+  //   (`?meshLod=`), which is the only way its `error` can honestly be chosen.
+  //   ⛔ Its error starts at lod2's 0.05 — the SAME value that, applied to lod1 on
+  //   2026-06-23, collapsed the canopy to sparse specks and was caught by the operator,
+  //   not by a gate. That is a starting point for the sweep, NOT a shipped decision.
   { id: 'lod0', ratio: 1.0, textureSize: 2048, error: 0.0005, solo: true },
   { id: 'lod1', ratio: 0.40, textureSize: 1024, error: 0.0020 },
+  { id: 'lod1far', ratio: 0.10, textureSize: 512, error: 0.0500 },
   { id: 'lod2', ratio: 0.10, textureSize: 512,  error: 0.0500 },
 ]
 
@@ -681,8 +696,10 @@ async function emitLod(doc, lod, bracket) {
   if (lod.id === 'lod2') {
     trunkCutBark(lodDoc)
     for (const r of crushFlooredBark(lodDoc, 1500, CRUSH_FLOOR)) if (r.reason === 'crushed') console.log(`  [lod2] crush floored bark: ${r.tBefore.toLocaleString()} → ${r.tAfter.toLocaleString()} tris`)
-  } else if (lod.id === 'lod1') {
-    for (const r of crushFlooredBark(lodDoc, 4000, CRUSH_FLOOR)) if (r.reason === 'crushed') console.log(`  [lod1] crush floored bark: ${r.tBefore.toLocaleString()} → ${r.tAfter.toLocaleString()} tris`)
+  } else if (lod.id === 'lod1' || lod.id === 'lod1far') {
+    // ⛔ lod1far takes lod1's treatment deliberately: crush floored bark, but NEVER
+    // trunkCutBark. Keeping the trunk is the entire reason this tier exists.
+    for (const r of crushFlooredBark(lodDoc, 4000, CRUSH_FLOOR)) if (r.reason === 'crushed') console.log(`  [${lod.id}] crush floored bark: ${r.tBefore.toLocaleString()} → ${r.tAfter.toLocaleString()} tris`)
   }
 
   const startTris = countTris(lodDoc)

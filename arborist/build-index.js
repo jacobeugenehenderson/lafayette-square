@@ -77,7 +77,7 @@ export async function rebuildIndex() {
 
     const entryOf = (v, quality) => {
       const skeletons = {}
-      for (const lod of ['lod0', 'lod1', 'lod2']) {
+      for (const lod of ['lod0', 'lod1', 'lod1far', 'lod2']) {
         if (v.skeletons?.[lod]) skeletons[lod] = `/trees/${manifest.species}/${v.skeletons[lod]}`
       }
       const entry = {

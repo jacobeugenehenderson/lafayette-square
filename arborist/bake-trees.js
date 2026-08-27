@@ -883,6 +883,9 @@ export async function bakeTrees({
         lod0: v.skeletons.lod0 || lodUrl,
         lod1: v.skeletons.lod1 || v.skeletons.lod0 || lodUrl,
         lod2: v.skeletons.lod2 || v.skeletons.lod1 || lodUrl,
+        // The hero band's distance tier — lod2 canopy density, lod1 INTACT TRUNK.
+        // ⛔ Falls back to lod1, never to lod2: lod2 is trunk-cut and would float.
+        lod1far: v.skeletons.lod1far || v.skeletons.lod1 || lodUrl,
       },
       // ⭐ MESH ELIGIBILITY from the mesh bar. `false` means this species may NEVER carry
       // geometry however tall the tree; the runtime's dbh cut then chooses only among

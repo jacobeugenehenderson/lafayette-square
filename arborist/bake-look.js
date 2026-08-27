@@ -51,7 +51,10 @@ const REPO_ROOT = path.resolve(__dirname, '..')
 const LOOKS_DIR = path.join(REPO_ROOT, 'public/looks')
 const TREES_DIR = path.join(REPO_ROOT, 'public/trees')
 const BAKED_DIR = path.join(REPO_ROOT, 'public/baked')
-const LODS = ['lod0', 'lod1', 'lod2']
+// ⛔ EVERY tier the runtime can load must be atlas-rewritten here, or it renders with
+// pack-local UVs against the master atlas — the maroon-leaves failure. lod1far is the
+// hero band's distance tier (publish-glb#LODS, 2026-08-27).
+const LODS = ['lod0', 'lod1', 'lod1far', 'lod2']
 
 const ATLAS_NAMES = { bark: 'AtlasBark', leaves: 'AtlasLeaves' }
 const ATLAS_DEFAULTS = {
@@ -1424,7 +1427,18 @@ export async function bakeLook(lookName, opts = {}) {
             impostorTrunkFracBySpecies[v.species] = r.impostor.trunkFrac
           }
         } catch (err) {
-          rewriteStats.push({ species: v.species, variantId: v.variantId, lod, error: err.message })
+          // ⛔ A MISSING TIER IS NOT AN ERROR — an ABSENT one is a different fact from a
+          // BROKEN one, and conflating them buries the broken. `lod1far` (2026-08-27) only
+          // exists for variants republished since it was added, and a species with no
+          // composition is never republished — so it legitimately has lod0/1/2 and no
+          // lod1far. The slab falls back `lod1far || lod1` (bake-trees), so the runtime is
+          // safe; what would NOT be safe is this looking like a failure every bake until
+          // someone stops reading the list.
+          if (err?.code === 'ENOENT' || /ENOENT/.test(err.message)) {
+            rewriteStats.push({ species: v.species, variantId: v.variantId, lod, absent: true })
+          } else {
+            rewriteStats.push({ species: v.species, variantId: v.variantId, lod, error: err.message })
+          }
         }
       }
     }

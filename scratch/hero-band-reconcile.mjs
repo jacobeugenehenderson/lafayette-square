@@ -6,7 +6,8 @@
  * not, having assumed the runtime drew the `url` (lod2) when `InstancedTrees#lodForRole`
  * overrides it to lod1 for mesh role.
  *
- * ⭐ The number worth having: Σ lod1 vs Σ lod2 for the same placements. That ratio is what a
+ * ⭐ The number worth having: Σ lod1 vs Σ lod1far for the same placements — lod2 is NOT a
+ * candidate (it is trunk-cut for overhead browse; on a side-on pan every tree floats). That ratio is what a
  * distance-graded LOD would buy, and `lodForRole` currently takes the instance and ignores it.
  *
  *   node scratch/hero-band-reconcile.mjs
@@ -26,12 +27,12 @@ let sum1 = 0, sum2 = 0, n = 0, unk = 0
 for (const i of t.instances) {
   if (i.heroRole !== 'mesh') continue
   n++
-  const a = tris(i.lods?.lod1), b = tris(i.lods?.lod2)
+  const a = tris(i.lods?.lod1), b = tris(i.lods?.lod1far)
   if (a == null) { unk++; continue }
   sum1 += a; sum2 += (b ?? 0)
 }
 console.log(`heroRole=mesh: ${n}  (unweighable ${unk})`)
 console.log(`  Σ lod1 triangles  ${sum1.toLocaleString()}   ← what the budget charged`)
-console.log(`  Σ lod2 triangles  ${sum2.toLocaleString()}`)
+console.log(`  Σ lod1far triangles ${sum2.toLocaleString()}   ← same trunk, cheaper canopy`)
 console.log(`  heroBandMeta.trianglesSpent ${t.heroBandMeta.trianglesSpent.toLocaleString()}  budget ${t.heroBandMeta.triangleBudget.toLocaleString()}`)
 console.log(`  reconciles with lod1? ${sum1 === t.heroBandMeta.trianglesSpent ? 'YES — exactly' : 'NO, delta ' + (sum1 - t.heroBandMeta.trianglesSpent)}`)

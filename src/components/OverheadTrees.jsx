@@ -36,6 +36,9 @@ import useCamera from '../hooks/useCamera'
 // InstancedTrees.jsx (noMesh/noImpostor/noOverhead). Kit-generic, any scene.
 const _DBG = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
 export const treeDbg = (k) => { const v = _DBG.get('treeDebug'); return v ? v.split(',').includes(k) : false }
+// Valued sibling — `?meshLod=2` / `?meshLod=auto:60`. treeDbg answers yes/no; some
+// instruments need a NUMBER, and an eye-gate that cannot be swept is not an instrument.
+export const treeDbgVal = (k) => _DBG.get(k)
 const BAND_DEBUG_COLOR = [[1, 0.15, 0.15], [0.15, 1, 0.15], [0.3, 0.5, 1]]  // branch / mid / canopy
 
 // Overhead discs are impostor billboards, never pick targets — disabling raycast

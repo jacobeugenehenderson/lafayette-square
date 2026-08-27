@@ -31,7 +31,7 @@ import {
   measureChassisRadius,
 } from './treeAtlasMaterial'
 import { buildImpostorGeometry } from './impostorGeometry.js'
-import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg } from './OverheadTrees.jsx'
+import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
 import { getElevationRaw } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
@@ -767,7 +767,39 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // camera angle can pull a cut trunk into view. The impostor record is keyed
     // by SPECIES (impostorBySpecies in the atlas manifest); a per-species
     // impostor geometry is instanced across all impostor-role placements.
-    const lodForRole = (_inst) => 'lod1'   // mesh role → full-trunk lod1
+    // ⭐⭐ THE EYE-GATE SWITCH (2026-08-27). Default is UNCHANGED — lod1 for every mesh
+    // placement, exactly as before — so nothing about the shipped map moves.
+    //
+    //   ?meshLod=1          lod1 everywhere (the default, stated explicitly)
+    //   ?meshLod=far        lod1far everywhere — the extreme, to see the tier bare
+    //   ?meshLod=auto:60    lod1 within 60 m of the authored pan, lod1far beyond it
+    //
+    // ⛔ lod2 IS DELIBERATELY NOT OFFERED. It is trunk-cut for the overhead browse view
+    // (publish-glb#trunkCutBark) — measured 1.15 m of missing trunk on oak_white, 2.67 m
+    // on linden_american — so on a side-on pan every tree floats. Its 17× triangle saving
+    // is real and unspendable here, and offering it as a "cheaper LOD" is how someone
+    // spends an afternoon eye-gating a shape error.
+    //
+    // ⭐ `panDist` is BAKED — each placement's distance to the authored hero pan — so
+    // grading by it is role-at-bake, not the retired runtime camera swap (`GeoTierDriver`).
+    const meshLodParam = treeDbgVal('meshLod')
+    const lodForRole = (inst) => {
+      if (!meshLodParam || meshLodParam === '1') return 'lod1'
+      if (meshLodParam === 'far') return 'lod1far'
+      if (meshLodParam.startsWith('auto')) {
+        const cut = Number(meshLodParam.split(':')[1])
+        if (!Number.isFinite(cut)) {
+          console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} has no distance — use auto:<metres>. Falling back to lod1.`)
+          return 'lod1'
+        }
+        // ⛔ No panDist means this slab predates the hero band. Do not guess it is far.
+        const d = inst?.panDist
+        if (typeof d !== 'number') return 'lod1'
+        return d > cut ? 'lod1far' : 'lod1'
+      }
+      console.warn(`[InstancedTrees] ?meshLod=${meshLodParam} is not a value I know (1 | far | auto:<m>). Using lod1.`)
+      return 'lod1'
+    }
     const lodUrlOf = (o, inst) => (o && o.lods && o.lods[lodForRole(inst)]) || (o && o.url)
 
     // HERO foundation split threshold — the dbh cut so the TALLEST `heroGeomFraction`
