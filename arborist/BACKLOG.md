@@ -10,6 +10,68 @@
 
 ---
 
+## ▶ 2026-08-27 — ⭐⭐ THOUSANDS OF TREES IS THE PERMANENT CONDITION *(Jacob: "the next unblocker")*
+
+*"We are going to consistently have thousands of trees to show, so tackling that fact head
+on is now the next unblocker."* ⛔ **Not an LS problem — a KIT constraint.** HiPointe already
+places **more** trees than LS.
+▶ `for t in lafayette-square hipointe-demun ksi-y-m-yn; do node -e "console.log('$t',require('./public/baked/'+'$t'+'/trees.json').instances.length)"; done`
+
+**The proposal (Jacob):** reduce *rendering complexity* with distance — "an extremely truncated
+colour/texture/alpha overwrite profile for the most distant trees" — so that **more** trees can
+stay mesh rather than fewer. Not only size and perf: **flicker and artifacting**.
+
+⭐ **It is on the SANCTIONED side of the LOD line, and that matters.** `ARCHITECTURE §View-aware
+bark tiering` disambiguates explicitly: the **shader** tier is *"legitimately selected at runtime
+by camera"*; **geometry** is role-at-bake and never camera-swapped (`GeoTierDriver` is retired).
+This widens the sanctioned axis. ⛔ It is NOT a revival of runtime geometry swapping.
+
+⭐ **And it fills a rung that does not exist.** An impostor is already a truncated profile —
+truncated all the way to a billboard. The ladder jumps from *full mesh + full shader* to *2D
+card* with nothing between. "Keep the mesh, collapse the shading" is the missing middle.
+
+### ⛔⛔ MEASURE THE BUDGET FIRST — IT DOES NOT RECONCILE, AND EVERYTHING HERE DEPENDS ON IT
+
+▶ `node -e "const t=require('./public/baked/lafayette-square/trees.json');const I=t.instances;const f={};for(const i of I)for(const k of ['meshTier','heroTier'])if(i[k]!==undefined)f[k+'='+i[k]]=(f[k+'='+i[k]]||0)+1;console.log(f);console.log(t.heroBandMeta)"`
+
+**THREE mesh counts in ONE artifact:** `meshTier:true` = **2,282** · `heroBandMeta.mesh` = **399**
+· `heroTier:'mesh'` = **114**. ⛔ Re-derive, never quote — and find out which is the answer.
+
+**The budget is saturated and its arithmetic does not close.** `triangleBudget` 15,000,000,
+`trianglesSpent` 14,979,130 — **99.9% spent**. But **every mesh placement is `lod2`** (all 2,282),
+and an `lod2` specimen is ~1.5k triangles. 2,282 × 1.5k ≈ 3.4M, not 15M. **CAUSE NOT ESTABLISHED.**
+
+⭐⭐ **WHY THIS GATES THE WHOLE ARC: the budget's CURRENCY may be the wrong one.** Triangles proxy
+*vertex* cost. At distance the cost that actually hurts is **fragments and overdraw** — alpha-tested
+leaf cards defeat early-Z, which `treeAtlasMaterial`'s own `opaqueCanopyMaterial` comment states as
+the reason that tier exists. **Jacob's proposal reduces FRAGMENT cost. If the budget only counts
+triangles, the savings never become more meshes — the cut still lands in the same place.**
+⚠️ Triangles were chosen deliberately over tree-count and trunk-diameter, *"which predicts neither
+cost nor visibility"* (`ORIENTATION §7`). Whether it predicts cost **at distance** is a different
+question and is the one to answer.
+
+### Already built — ⛔ do not rebuild
+- **lod2 for mesh-role placements** — done. All 2,282 already point at `lod2`.
+- **`opaqueCanopyMaterial`** (`treeAtlasMaterial.js`) — a sibling material with `alphaTest` OFF,
+  deliberately opaque for early-Z and near-zero overdraw. **That is a truncated alpha profile,
+  built, in the same program family — and NOTHING in `src/` consumes it.** ⛔ Whether it was
+  abandoned, superseded or simply never wired is NOT established; finding out is cheaper than
+  designing the tier from scratch, and it is the first place to look.
+  ▶ `grep -rn "opaqueCanopyMaterial" src/`
+- **The bark shader tier** — `treeBarkTierUniform`, camera-selected, three tiers, live.
+
+### Order
+1. **Settle the three mesh counts and the budget arithmetic.** Nothing below can be evaluated
+   through an instrument that does not close.
+2. **Answer whether the budget's currency should be fragments/overdraw rather than triangles.**
+3. **Find out why `opaqueCanopyMaterial` is dark**, then wire or retire it.
+4. **Then** the truncated distance profile, against a budget that measures what it costs.
+
+⚠️ Interacts with the bark arc above: a vector/greyscale bark IS a cheaper distant profile. Do not
+build two distance-tier mechanisms.
+
+---
+
 ## ▶ 2026-08-27 — BARK: VECTOR COLOUR OVER TESSELLATED GREYSCALE *(Jacob's arc)*
 
 **The proposal, in his words:** *"do the heaviest/most expensive colour work with the vectors
