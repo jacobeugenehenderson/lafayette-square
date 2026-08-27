@@ -1,0 +1,30 @@
+{
+  "species": "acer_saccharum",
+  "compositions": [
+    {
+      "slot": 1,
+      "name": "Brief 7 smoke test",
+      "chassis": "oval_40",
+      "bark": {
+        "ref": "Bark004",
+        "gradientStops": [
+          {
+            "t": 0,
+            "color": "#ff0000"
+          },
+          {
+            "t": 1,
+            "color": "#0000ff"
+          }
+        ],
+        "gradientHashAmp": 0
+      },
+      "leaves": {
+        "mode": "synthesized"
+      },
+      "deformer": {},
+      "transform": {}
+    }
+  ],
+  "savedAt": 1787763569969
+}
