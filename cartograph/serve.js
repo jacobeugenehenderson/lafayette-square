@@ -2265,9 +2265,36 @@ createServer(async (req, res) => {
         `node bake-ground-ao.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
       const ms = Date.now() - t0
+      // ⛔⛔ THE SLAB'S FRESHNESS KEY MUST ADVANCE WHENEVER ANY ARTIFACT DOES (2026-08-28).
+      // `scene.json#bakedAt` is the cache-bust key for the WHOLE slab — every cold consumer
+      // busts its fetches with it (`BakedGround.jsx:458`, `InstancedTrees.jsx:617`:
+      // `bakeLastMs ?? scene?.bakedAt ?? null`). But it was written ONLY by bake-scene.js,
+      // i.e. only when the `scene` step happened to be dirty. A pour that rewrote ground and
+      // trees and skipped `scene` left the key pinned to an old value, so browsers kept
+      // serving the PREVIOUS slab from cache under a URL that never changed — for good.
+      // ⭐ WHY ONLY PREVIEW SHOWED IT (Jacob: "it's all there up until the Preview"): Stage
+      // passes an explicit `bakeLastMs` and is immune; Preview and PRODUCTION fall back to
+      // this field. The bake already knew the slab had changed — it stamped the looks index
+      // one line below — and the surface that needed to know was never told.
+      // ⛔ It is a property of THE POUR, not of the scene layer, so it is stamped here,
+      // unconditionally, with the SAME instant the index gets.
+      const stampedAt = Date.now()
+      try {
+        const scenePath = join(LOOK_DIR, 'scene.json')
+        if (existsSync(scenePath)) {
+          const sc = JSON.parse(readFileSync(scenePath, 'utf-8'))
+          sc.bakedAt = stampedAt
+          writeFileSync(scenePath, JSON.stringify(sc, null, 2))
+        }
+      } catch (e) {
+        // ⛔ Loud: an unstamped key means every cold consumer serves a STALE slab from cache
+        // and no reload dislodges it. Never swallow this.
+        console.error(`[bake] ⛔ could not stamp scene.json#bakedAt for "${id}" — cold consumers ` +
+          `(Preview, production) will keep serving the PREVIOUS slab from cache: ${e.message}`)
+      }
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
-      if (entry) { entry.bakedAt = Date.now(); saveLooksIndex(idx2) }
+      if (entry) { entry.bakedAt = stampedAt; saveLooksIndex(idx2) }
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force }))
     } catch (err) {
