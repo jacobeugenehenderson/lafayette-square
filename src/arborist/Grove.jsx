@@ -334,11 +334,14 @@ export default function Grove() {
     // pool IS that file's species list — capturing off a stale read would shoot the
     // PREVIOUS bake's species.
     await loadSlabSpecies(activeLookId)
-    // ⭐ The tiles are now rendering the PREVIOUS bake's bytes. Drop the atlas cache and
-    // re-read the gallery so the Grove settles onto what was just baked — otherwise the
-    // waiting room never stops showing the thing you were waiting to replace.
-    invalidateTreeAtlas(activeLookId)
-    await loadGrove()
+    // ⛔ THE ATLAS REFRESH MOVED — it used to happen HERE, immediately before the capture
+    // kick below, and that is what stalled the bake at "Overhead 0/10…". Invalidating swaps
+    // `atlas.treeMaterial`, which is one of the baker effect's deps, so the reload landed
+    // MID-CAPTURE, aborted it, and the retry guard then refused to restart it.
+    // ⭐ It now runs after BOTH captures (see the hero baker's onDone), which is also more
+    // correct: the captures POST into the manifest, so re-reading before them would read a
+    // manifest they are about to rewrite. The tiles show the previous bytes until then —
+    // that is the waiting room, and the button says so.
     // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
     // species whose inputs moved becomes dirty exactly here.
     if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadBatch.length }); setOverheadTick((t) => t + 1) }
@@ -736,6 +739,11 @@ export default function Grove() {
             onDone={({ ok, fail, failedNames }) => {
               setHeroProg('done'); setHeroResult({ ok, fail, failedNames })
               console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`)
+              // ⭐ The LAST step, and only now: both captures have POSTed into the manifest,
+              // so this is the first moment the atlas on disk is the one the Grove should
+              // render. Doing it earlier is what aborted the capture (see bakeAll).
+              invalidateTreeAtlas(activeLookId)
+              loadGrove()
             }}
           />
           {/* Ambient breeze — advances the shared foliage-sway clock so the Grove

@@ -141,9 +141,27 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
   const lastTick = useRef(0)
 
   useEffect(() => {
-    if (!runTick || runTick === lastTick.current) return
-    if (!gl || !atlas?.treeMaterial || !lookId || !species?.length) return
+    if (!runTick) return
+    // ⛔⛔ A CAPTURE THAT NEVER STARTS MUST NOT LOOK LIKE ONE THAT IS RUNNING.
+    // This effect had four silent `return`s. When any of them fired, the Grove header sat
+    // on "Overhead 0/10…" forever — no error, no timeout, no line — and the operator was
+    // left to notice that a number never moved. (Jacob, 2026-08-27: "it stopped baking.")
+    // Same defect shape as a fallback: a failure wearing the costume of progress.
+    if (runTick === lastTick.current) return          // already consumed — not a fault
+    const blocked = !gl ? 'no GL context'
+      : !atlas?.treeMaterial ? 'the atlas material is not ready (loading, or invalidated)'
+      : !lookId ? 'no active Look'
+      : !species?.length ? 'the batch is EMPTY — nothing was dirty, or the pool resolved to nothing'
+      : null
+    if (blocked) {
+      console.warn(`[overhead-bake] tick ${runTick} did NOT start: ${blocked}. `
+        + `Waiting for it to change; if this is the last line you see, the capture is stuck here.`)
+      return
+    }
     lastTick.current = runTick
+    let finished = false
+    console.log(`[overhead-bake] tick ${runTick}: capturing ${species.length} species — `
+      + species.map(s => s.species || s).join(', '))
     let cancelled = false
     ;(async () => {
       let ok = 0, fail = 0
@@ -227,9 +245,22 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
         }
         onProgress?.(i + 1, species.length)
       }
-      if (!cancelled) onDone?.({ ok, fail, failedNames })
+      if (!cancelled) { finished = true; onDone?.({ ok, fail, failedNames }) }
     })()
-    return () => { cancelled = true }
+    return () => {
+      // ⛔ A re-render mid-run ABORTS the capture, and `lastTick` is already consumed, so
+      // the retry guard above blocks the restart — the run dies for good, silently. Say so.
+      cancelled = true
+      if (finished) return
+      // ⛔⛔ RELEASE THE TICK. `lastTick` is consumed BEFORE the async work, so a re-render
+      // mid-run aborted the capture AND the retry guard then blocked the restart — the run
+      // died for good, showing "0/10…" forever. Handing the tick back lets the effect
+      // re-enter once its deps settle, which is the only reason a re-render happened.
+      if (lastTick.current === runTick) lastTick.current = null
+      console.warn(`[overhead-bake] tick ${runTick} aborted mid-run by a re-render `
+        + `(deps changed: atlas material, look, or batch). Tick released — it will retry `
+        + `when they settle. If this repeats forever, something upstream is thrashing.`)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runTick, gl, atlas?.treeMaterial, lookId, species])
 

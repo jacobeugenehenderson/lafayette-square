@@ -136,9 +136,26 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
   const lastTick = useRef(0)
 
   useEffect(() => {
-    if (!runTick || runTick === lastTick.current) return
-    if (!gl || !atlas?.treeMaterial || !lookId || !species?.length) return
+    if (!runTick) return
+    // ⛔⛔ SAME DEFECT AS OverheadBaker (2026-08-27) — one class, two sites. Four silent
+    // returns, and a tick consumed BEFORE the async work: a re-render mid-run aborted the
+    // capture and the retry guard then blocked the restart, leaving the header on
+    // "Hero 0/N…" forever with no error. Say why it did not start; release the tick if it
+    // dies mid-run.
+    if (runTick === lastTick.current) return          // already consumed — not a fault
+    const blocked = !gl ? 'no GL context'
+      : !atlas?.treeMaterial ? 'the atlas material is not ready (loading, or invalidated)'
+      : !lookId ? 'no active Look'
+      : !species?.length ? 'the batch is EMPTY — nothing was dirty, or the pool resolved to nothing'
+      : null
+    if (blocked) {
+      console.warn(`[hero-impostor-bake] tick ${runTick} did NOT start: ${blocked}. `
+        + `If this is the last line you see, the capture is stuck here.`)
+      return
+    }
     lastTick.current = runTick
+    let finished = false
+    console.log(`[hero-impostor-bake] tick ${runTick}: capturing ${species.length} species`)
     let cancelled = false
     ;(async () => {
       let ok = 0, fail = 0
@@ -210,9 +227,15 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
         }
         onProgress?.(i + 1, species.length)
       }
-      if (!cancelled) onDone?.({ ok, fail, failedNames })
+      if (!cancelled) { finished = true; onDone?.({ ok, fail, failedNames }) }
     })()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      if (finished) return
+      if (lastTick.current === runTick) lastTick.current = null   // release — allow restart
+      console.warn(`[hero-impostor-bake] tick ${runTick} aborted mid-run by a re-render. `
+        + `Tick released — it will retry when its deps settle.`)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [runTick, gl, atlas?.treeMaterial, lookId, species, azimuths, shells, albedoSize, aoSize])
 
