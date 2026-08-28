@@ -408,6 +408,14 @@ export default function SalonWorkstage() {
   // coverage join). The navigator drives salonActiveSpecies = row.canonicalId.
   const rosterSpecies   = rosterCoverage?.species || []
   const activeRosterRow = rosterSpecies.find(s => s.species === activeRosterName) || null
+  // ⛔ ONE ELIGIBILITY RULE — the same `resolveGrove` the rail and the bake use, never a
+  // second opinion computed here. The header's dot needs it for the same reason the rail's
+  // does: a species BELOW the bar substitutes to a neighbour and is supposed to have no
+  // impostor of its own, so it must not be flagged for missing one.
+  const eligForHeader = useMemo(() => {
+    const board = resolveGrove(rosterSpecies || [], groveThreshold || {})
+    return new Map(board.map(b => [b.species, b]))
+  }, [rosterSpecies, groveThreshold])
   const recommendedNames = activeRosterRow?.recommendedChassis || []
 
   // Brief 8 (Linnet): published-variant set for the active species, used to
@@ -551,6 +559,7 @@ export default function SalonWorkstage() {
             <>
               <InsideHeader
                 row={activeRosterRow}
+                elig={eligForHeader.get(activeRosterName)}
                 candidateScope={candidateScope}
                 onCandidateScope={setCandidateScope}
                 recommendedCount={recommendedNames.length}
@@ -1737,13 +1746,51 @@ const STATE_META = {
 //   🔴 gap           — unauthored AND no library coverage → a real hole
 //   ➖ not-available — deliberately marked no-tree
 const ROSTER_DOT = {
-  composed:        { dot: '🟢', title: 'composed — an authored tree ships' },
+  composed:        { dot: '🟢', title: 'composed and EXPORTED — an authored tree ships, impostors and all' },
   buildable:       { dot: '🟡', title: 'unauthored, but the library can cover it — ready to build' },
   gap:             { dot: '🔴', title: 'gap — no library coverage yet' },
   'not-available': { dot: '➖', title: 'marked not-available — routes to no tree' },
 }
-function rosterDot(s) {
-  if (s.authoringState === 'composed') return ROSTER_DOT.composed
+
+// ⛔ GREEN IS A CLAIM ABOUT THE OUTPUT, NOT THE INGREDIENTS (Jacob, 2026-08-27:
+// "the light shouldn't be green in the Salon if it's not going to export the impostor").
+// `authoringState` is derived entirely from INPUTS — a chassis exists, or we own a model
+// that literally is this species. Whether the impostor actually CAME OUT lives in the
+// baked atlas, which this surface never opened. So a species could be composed, green, and
+// render as mesh at every distance, and the rail said nothing.
+// ⭐ THIS IS THE SAME LIE ONE RUNG DOWN FROM THE ONE ALREADY FIXED HERE. The dot used to key
+// on botanical `coverage` — "the library COULD cover it" — until Tuliptree lit green and
+// opened blank. That moved it to "a composition exists". This moves it to "it EXPORTED".
+// ⛔⛔ IT IS YELLOW. NO NEW STATE, NO EXTRA TEXT (Jacob, 2026-08-27: "why does this get a new
+// light? it should just be a yellow light"). The first draft added a 🟠 fifth colour, then a
+// row annotation — both were me encoding MY diagnosis into the operator's vocabulary. Yellow
+// already means "NOT READY, AND YOU CAN ACT", which is exactly what this is. The rail stays a
+// four-state rail; the tooltip carries why, because that costs nobody who is not asking.
+// ⛔ `tier === 'out'` is NOT a defect: a species below the bar substitutes to a neighbour and
+// is SUPPOSED to have no impostor of its own. Flagging it would call the operator's own bar
+// a bug (CLAUDE.md Layer 0 Q3). Eligibility unknown → treat as in, which is the loud side.
+// ⛔ `null` means this look has no baked atlas AT ALL — unknown, not missing; a look before
+// its first bake must not light up as work.
+// ▶ Offline, every look and both directions: node scratch/claims-the-roster-light-tells-the-truth.mjs
+function unexportedCarriers(s, elig) {
+  if (s.authoringState !== 'composed') return null
+  if (elig && elig.tier === 'out') return null
+  const ex = s.impostorExport
+  if (!ex) return null
+  const missing = [ex.overhead === false && 'overhead', ex.hero === false && 'hero'].filter(Boolean)
+  return missing.length ? missing : null
+}
+function rosterDot(s, elig) {
+  if (s.authoringState === 'composed') {
+    const missing = unexportedCarriers(s, elig)
+    if (missing) return {
+      ...ROSTER_DOT.buildable,
+      title: `composed, but its ${missing.join(' + ')} impostor did NOT export — this tree ships as MESH `
+        + `at every distance. Nothing to author: re-bake it in the Grove, and if it keeps failing the `
+        + `CAPTURE is the defect, not the composition.`,
+    }
+    return ROSTER_DOT.composed
+  }
   if (s.authoringState === 'not-available') return ROSTER_DOT['not-available']
   return s.coverage === 'gap' ? ROSTER_DOT.gap : ROSTER_DOT.buildable
 }
@@ -1884,8 +1931,8 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
 
   const renderRow = (s) => {
     const active = s.species === activeRosterName
-    const d = rosterDot(s)
     const elig = eligByName.get(s.species) || { tier: 'out', why: '', locked: false }
+    const d = rosterDot(s, elig)
     const inGrove = elig.tier !== 'out'
     const isPinned = elig.locked
     return (
@@ -1989,14 +2036,14 @@ function RosterNavigator({ species, loading, activeRosterName, onSelect, groveTh
 // Inside-view header strip: roster species identity + coverage badge +
 // authoring state, the recommended ↔ show-all candidate toggle, and the
 // mark-not-available action.
-function InsideHeader({ row, candidateScope, onCandidateScope, recommendedCount, onNotAvailable }) {
+function InsideHeader({ row, elig, candidateScope, onCandidateScope, recommendedCount, onNotAvailable }) {
   if (!row) return null
   return (
     <div style={{
       padding: '8px 18px', borderBottom: '1px solid rgba(255,255,255,0.06)',
       display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
     }}>
-      <span style={{ fontSize: 13, color: '#fff' }} title={rosterDot(row).title}>{rosterDot(row).dot} {row.species}</span>
+      <span style={{ fontSize: 13, color: '#fff' }} title={rosterDot(row, elig).title}>{rosterDot(row, elig).dot} {row.species}</span>
       <span style={{ fontSize: 11, color: '#888' }}>
         {row.count} placements
       </span>

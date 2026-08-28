@@ -23,6 +23,11 @@
  *   - `authoringState` = 'composed' (an authored composition exists under the
  *     canonical id) / 'not-available' (operator marked it a deliberate gap —
  *     park_species_map[rosterName] === []) / 'unauthored' (neither).
+ *   - `impostorExport` = `{overhead, hero}` — whether this canonical id actually CAME OUT
+ *     of the Grove bakers, read off the baked atlas. ⛔ The only OUTPUT fact on the row;
+ *     every other field says an ingredient exists. Added 2026-08-27 because the Salon's
+ *     readiness light was derived from inputs alone and reported green for a tree that
+ *     ships as mesh at every distance.
  *
  * No writes here (pure read). The routing write (park_species_map) lives in
  * serve.js's POST /coverage/:rosterName/routing.
@@ -37,6 +42,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT        = join(__dirname, '..')
 const STATE_DIR   = join(__dirname, 'state')
 const PUBLIC_TREES = join(ROOT, 'public', 'trees')
+const BAKED       = join(ROOT, 'public', 'baked')
 const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 // Roster + routing are per-NEIGHBOURHOOD (scene): each scene keeps its own census
 // + species-map under cartograph/data/<scene>/. ⛔ NEVER falls back to another
@@ -93,6 +99,24 @@ const toks = (s) => norm(s).split(' ').filter(Boolean)
 export async function computeCoverage(scene = DEFAULT_SCENE) {
   const PARK_TREES = parkTreesForScene(scene)
   const PARK_MAP   = parkMapForScene(scene)
+  // ── What actually EXPORTED (the output axis) ────────────────────────────
+  // ⛔ THE DEFECT THIS CLOSES (Jacob, 2026-08-27): "the light shouldn't be green in the
+  // Salon if it's not going to export the impostor." Every other field on this row is an
+  // INPUT fact — a chassis exists, the library covers it, a composition is on disk. The
+  // roster light was derived from those alone, so it reported the INGREDIENTS and the
+  // operator read it as the MEAL. `maple_silver` is composed, has a real authored chassis,
+  // and its overhead capture fails: green, and shipping as mesh at every distance.
+  // ⭐ This is the SAME lie one rung down from the one already fixed here — the dot used to
+  // key on botanical `coverage` ("the library COULD cover it") until Tuliptree lit green and
+  // opened blank. That moved it from "could" to "is composed"; this moves it to "it EXPORTS."
+  // ⛔ The impostors are BROWSER-GPU authored and carried by bake-look — they cannot be
+  // re-derived here, only READ. Absent file → `null`, never `false`: "we have not baked this
+  // look yet" and "this species failed to capture" are different facts and must not collapse.
+  // ⚠️ scene ≡ look id TODAY only (`SLAB-CONTRACT.md`); the day one hood carries two Looks
+  // this must ride the Look axis, like `heroTier` already has to.
+  const atlas = readJsonOrNull(join(BAKED, scene, 'trees-atlas.json'))
+  const exportedOverhead = atlas?.overheadBySpecies ? new Set(Object.keys(atlas.overheadBySpecies)) : null
+  const exportedHero     = atlas?.heroImpostorBySpecies ? new Set(Object.keys(atlas.heroImpostorBySpecies)) : null
   // ── Roster (what we're supposed to have) ────────────────────────────────
   // Union across every well present. A missing well is skipped, not an error — a scene opting
   // real-only has no derived_trees, and not every town has a Forest Park.
@@ -361,6 +385,12 @@ export async function computeCoverage(scene = DEFAULT_SCENE) {
       recommendedChassis,
       authoringState,
       publishedCanonical,
+      // The OUTPUT axis, keyed by canonicalId (the same key the bakers POST under).
+      // `null` = this look has no baked atlas at all — unknown, not missing.
+      impostorExport: {
+        overhead: exportedOverhead ? exportedOverhead.has(canonicalId) : null,
+        hero:     exportedHero     ? exportedHero.has(canonicalId)     : null,
+      },
     })
   }
   species.sort((a, b) => b.count - a.count || a.species.localeCompare(b.species))
