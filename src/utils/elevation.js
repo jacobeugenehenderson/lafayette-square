@@ -42,9 +42,22 @@ export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 //   3. the smooth terrain field — the honest fallback, and the one the mesh path has
 //      been quietly using all along.
 export function treeGroundY(inst) {
-  if (typeof inst.groundRaw === 'number') return inst.groundRaw
+  // ⛔⛔ RAW IS NOT THE DRAWN GROUND — V_EXAG (Jacob's eye, 2026-08-28, against the very
+  // fix that had just un-buried these trees: "is it possible the trees are still anchored
+  // at y0 and not on the ground surface?"). The heightmap is in raw metres; the ground
+  // MESH is displaced by `getElevation` = raw × V_EXAG, and the mesh trees are lifted in
+  // the vertex shader by `aGroundRaw * uExag` (terrainShader.js:345). So a raw value put
+  // straight into a world matrix lands 0.5 × raw BELOW the surface — ~11.6 m at LS's
+  // median, up to ~17 m. It looked plausible, which is why only the eye caught it.
+  // ⭐ `groundRaw` is a RAW anchor (same units the shader multiplies), so it exaggerates
+  // here too — the difference between the two paths is WHERE the multiply happens, never
+  // whether it happens.
+  if (typeof inst.groundRaw === 'number') return inst.groundRaw * V_EXAG
+  // ⚠️ ASSUMPTION, UNTESTABLE TODAY: a stamped `inst.y` is taken as an already-drawn world
+  // height, not a raw one. No slab stamps this column (see `slabYIsUnstamped`), so there is
+  // nothing to measure against; the day a bake stamps it, CONFIRM the units before trusting.
   if (typeof inst.y === 'number' && inst.y !== 0) return inst.y
-  return getElevationRaw(inst.x, inst.z)
+  return getElevation(inst.x, inst.z)   // already × V_EXAG — the surface the eye sees
 }
 
 // ⭐ THE DETECTOR, not a patch. Answers "is this slab's y column stamped at all?" for a
