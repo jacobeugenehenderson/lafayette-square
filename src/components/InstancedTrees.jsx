@@ -33,7 +33,7 @@ import {
 import { buildImpostorGeometry } from './impostorGeometry.js'
 import { useOverheadMode, useOverheadWarm, useOverheadAssets, OverheadSpecies, OverheadLightDriver, treeDbg, treeDbgVal } from './OverheadTrees.jsx'
 import { useHeroImpostorAssets, HeroImpostorSpecies } from './HeroImpostorTrees.jsx'
-import { getElevationRaw } from '../utils/elevation'
+import { getElevationRaw, slabYIsUnstamped } from '../utils/elevation'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
@@ -649,6 +649,31 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         const anchors = anchorsDoc?.anchors
         if (j?.instances && Array.isArray(anchors) && anchors.length === j.instances.length) {
           for (let i = 0; i < j.instances.length; i++) j.instances[i].groundRaw = anchors[i]
+        } else if (j?.instances && Array.isArray(anchors)) {
+          // ⛔⛔ ALL-OR-NOTHING, AND IT WAS SILENT. A length mismatch discards EVERY anchor
+          // and drops the whole scene onto the smooth field — a real degradation of the
+          // thing the anchors exist for (seating trunks on the DRAWN ground). It said
+          // nothing, so a stale file survived the 2026-08-24 land-use re-pour (which took
+          // LS 5001 → 5127 placements) and went unnoticed until the buried-impostor hunt.
+          console.warn(
+            `[InstancedTrees] ⛔ tree-anchors.json is STALE for "${lookName}" — ${anchors.length} anchors ` +
+            `vs ${j.instances.length} placements. ALL anchors discarded; every tree falls back to the smooth ` +
+            `terrain field instead of the drawn ground. Re-bake this look's tree anchors (groundSampler).`
+          )
+        } else if (j?.instances && !anchors) {
+          console.warn(`[InstancedTrees] ⛔ no tree-anchors.json for "${lookName}" — trees seat on the smooth ` +
+            `terrain field, not the drawn ground. Re-bake this look's tree anchors (groundSampler).`)
+        }
+        // ⛔ AND SAY WHEN THE SLAB'S y COLUMN IS UNSTAMPED. `y: 0` is a SENTINEL meaning
+        // "look it up"; read as a value it buried 4867 hero cards under the terrain for four
+        // days. Consumers now resolve through `treeGroundY`, but the operator should still be
+        // told that the bake is not stamping heights. `[[project_a_sentinel_is_not_a_value]]`
+        if (j?.instances && slabYIsUnstamped(j.instances)) {
+          console.warn(
+            `[InstancedTrees] ⚠️ "${lookName}" slab has an UNSTAMPED y column — all ${j.instances.length} ` +
+            `placements carry y:0, which is a sentinel, not sea level. Ground is being resolved from anchors ` +
+            `or the terrain field. A bake that stamps real heights will silence this.`
+          )
         }
         setBake(j)
       })

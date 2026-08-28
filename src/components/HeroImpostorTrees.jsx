@@ -22,7 +22,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildHeroImpostorCard } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
-import { getElevationRaw } from '../utils/elevation'
+import { treeGroundY } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
@@ -222,7 +222,10 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       if (!im) continue
       for (let i = 0; i < d.instances.length; i++) {
         const inst = d.instances[i]
-        const y = typeof inst.y === 'number' ? inst.y : getElevationRaw(inst.x, inst.z)
+        // ⛔ WAS `typeof inst.y === 'number' ? inst.y : …` — and `inst.y` is the 0 SENTINEL
+        // on every slab, so the fallback never fired and every card sat 2.6–34.8 m UNDER
+        // the terrain. One shared rule now, same ground the mesh path seats on.
+        const y = treeGroundY(inst)
         const s = inst.scale || 1
         pos.set(inst.x, y, inst.z); scl.set(s, s, s)
         M.compose(pos, _IDENTITY_QUAT, scl)

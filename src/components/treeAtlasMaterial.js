@@ -1094,9 +1094,11 @@ export function injectImpostorBillboard(material) {
     shader.uniforms.uGustEnvelope      = treeSwayUniforms.uGustEnvelope
     // Per-instance lamp glow (same per-Look TOD uniform + per-tree baked attr).
     shader.uniforms.uLampGlow          = _lampGlow.treesUniform
-    // Hero-tier QC overlay (shared module uniform) so ?heroTierQC=1 tints the
-    // captured-impostor billboards magenta too — the operator's eye-gate for the
-    // mesh/impostor split must cover impostors (these ARE the impostor tier).
+    // ⚠️ This is `injectImpostorBillboard` — the KILLED octahedral impostor, which has
+    // ZERO instances on every slab. This comment claimed ?heroTierQC=1 thereby covered
+    // "the captured-impostor billboards"; it never did, and that false claim is what made
+    // the eye-gate read as authoritative. The LIVE impostor tier is the hero foundation,
+    // and its tint now lives in `injectHeroImpostorStamp`, where it belongs.
     shader.uniforms.uHeroTierQC        = treeHeroTierQC
     material.userData.shader = shader
 
@@ -1974,6 +1976,16 @@ export function injectHeroImpostorStamp(material, aoTex) {
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
+    // ⛔⛔ THE EYE-GATE WAS BLIND TO THE ONLY TIER IT EXISTS TO CHECK (2026-08-27).
+    // `?heroTierQC=1` is the operator's mesh-vs-impostor eye-gate, and its magenta was
+    // wired ONLY into `injectImpostorBillboard` — the KILLED octahedral impostor
+    // (`ARCHITECTURE.md`: "killed, not parked"), which has ZERO instances on every slab.
+    // So the QC view painted nothing for the impostors, and the operator read the absence
+    // of magenta as the absence of IMPOSTORS. That is the worst shape an instrument can
+    // fail in: silent, and confidently wrong in the direction of "nothing is there."
+    // ⭐ Measured the day it was found: 4867 of 5127 placements were drawing as hero cards
+    // — visible, textured, correct — while the gate said none were.
+    shader.uniforms.uHeroTierQC = treeHeroTierQC
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
@@ -1982,11 +1994,17 @@ export function injectHeroImpostorStamp(material, aoTex) {
       .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
-         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;`)
+         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
+         uniform float uHeroTierQC;`)
       .replace('#include <map_fragment>', `#include <map_fragment>
          // RELIGHT — albedo × (ambient + sun·AO), same as the overhead disc.
          float ovAO = texture2D(uAO, vMapUv).r;
-         diffuseColor.rgb *= (uAmbient + uSun * ovAO);`)
+         diffuseColor.rgb *= (uAmbient + uSun * ovAO);
+         // Hero-tier QC overlay — these cards ARE the impostor tier, so they take the
+         // same magenta the mesh material paints for tier 1. Gated → no-op when off.
+         if (uHeroTierQC > 0.5) {
+           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.20, 0.85), 0.65);
+         }`)
   }
 }
 

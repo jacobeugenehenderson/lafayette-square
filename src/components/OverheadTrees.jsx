@@ -25,7 +25,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
-import { getElevationRaw } from '../utils/elevation'
+import { treeGroundY } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useCamera from '../hooks/useCamera'
 
@@ -237,7 +237,9 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
     const fract = (x) => x - Math.floor(x)
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i]
-      const y0 = typeof inst.y === 'number' ? inst.y : getElevationRaw(inst.x, inst.z)
+      // ⛔ Same 0-sentinel bug as the hero cards — a browse disc under the terrain is
+      // invisible in plan view exactly like a buried card is in the pan.
+      const y0 = treeGroundY(inst)
       const y = y0 + fract(Math.sin(inst.x * 12.9898 + inst.z * 78.233) * 43758.5453) * AXIAL_SPREAD_M
       const s = inst.scale || 1
       T.makeTranslation(inst.x, y, inst.z)
