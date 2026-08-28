@@ -975,6 +975,29 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         `Shoot these in the Grove: ` + worst.map(([sp, n]) => `${sp}(${n})`).join(' ')
       )
     }
+    // ⛔ THE CULL, SAID OUT LOUD. `heroTier === 'cull'` can only fire with the foundation
+    // OFF — a legitimate branch (`ARCHITECTURE.md §Tree-render reality at LS`: the cull is
+    // retired "in foundation mode" only) that was nonetheless the quietest number here. It
+    // sat mid-string in the info log below while its two LESSER siblings above
+    // (`meshNoRecord`, `legacyRoles`) each got their own ⛔ warn.
+    // ⭐ WHY IT MUST BE LOUD: the ground stamps a contact-shadow ring for EVERY placement,
+    // unconditionally, at bake. So a foundation-off look renders rings over bare ground and
+    // still looks like a map — the operator sees circles without trees and has to work out
+    // that four trees in five never hydrated. That is the tell Jacob named (2026-08-27) and
+    // the one ARCHITECTURE.md already records for HPDM: "bare ground with shadow-spots."
+    // ▶ Offline, every look at once: node scratch/claims-every-shadowed-placement-renders.mjs
+    if (heroCulled > 0) {
+      console.warn(
+        `[InstancedTrees] ⛔ ${heroCulled} of ${bake.instances.length} placements ` +
+        `(${(100 * heroCulled / bake.instances.length).toFixed(1)}%) were CULLED and never render, ` +
+        `because "${lookName}" has no baked \`heroImpostorBySpecies\` — the hero foundation is OFF, ` +
+        `so the legacy prominence path decides, and its \`cull\` verdict drops the placement. ` +
+        `The ground still carries a contact-shadow ring for ALL ${bake.instances.length}: ` +
+        `circles on bare ground is this defect. ` +
+        `Fix: shoot this look's hero impostors in the Grove (browser-GPU; the CLI bake cannot ` +
+        `reproduce them). ⛔ Never widen the cull — it is retired, not a density lever.`
+      )
+    }
     console.log(`[InstancedTrees] roster=${atlas.roster.size} placements=${bake.instances.length} substituted=${substituted} dropped=${dropped} heroCulled=${heroCulled}(hero-only) heroFoundation=${heroFoundationCount}(${heroImpostors.size}sp, dbhCut=${heroDbhCut === Infinity ? 'off' : heroDbhCut.toFixed(2)}) mesh=${meshAnchor}earned+${meshNoRecord}leaked role=${bandRoles ? 'band' : 'legacy-dbh'} impostors=${impostorCount}(${impostors.size}sp) meshVariants=${m.size} tiles=${tileSet.size} meshGroups=${meshCount} overhead=${overheadTotal}/${bySpecies.size}sp (${tileMeta ? `${tileMeta.cols}×${tileMeta.rows} bake-tiles` : 'no tiles in bake'})`)
     return { meshGroups: m, impostors, bySpecies, heroImpostors }
   }, [bake, maxVariants, atlas, lookName, impostorRecords, heroImpostorRecords, heroFoundationEnabled, heroGeomFraction])
