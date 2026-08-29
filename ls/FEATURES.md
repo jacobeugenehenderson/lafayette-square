@@ -81,6 +81,17 @@ always said the slab and the reader are separate payloads; these make that
 watchable rather than merely true, and a framed consumer switches between them
 live, by message, without reloading.
 
+**And it can ask which shot to open on.** `?shot=hero|browse|street` picks the
+starting camera — so a page that wants an overhead of the whole neighbourhood
+frames `?layer=slab&shot=browse` and gets one. ⭐ **The page sends a NAME; the
+slab supplies the geometry.** The framing itself is authored per look in Stage's
+Camera/Shots card, so re-framing Browse there moves every page that frames it,
+and a new town's overhead is that town's, not this one's. ⛔ Without this the only
+route open to an embedding page was to carry a centre and a zoom of its own —
+which forks the product it is embedding and hard-codes one neighbourhood's
+framing into every installation after it. Framed only, and an unknown name is
+loud rather than quietly showing the default.
+
 **Any single part of the commons can be mounted on its own.** Beyond the two
 halves, an embedding page can ask for one *piece*: the neighborhood directory
 from its search bar down, the four role counts, or a single place card. Each
