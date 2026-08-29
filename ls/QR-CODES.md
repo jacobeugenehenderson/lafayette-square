@@ -58,6 +58,8 @@ Printable cards are designed in the **QR Studio** — a standalone static app un
 - **Engine files** (`public/codedesk/`): `qr_app-bootstrapper.js`, `qr_render_engine.js` (canvas), `qr_state_engine.js`, `qr_sync_pipeline.js` (persistence), `qr_ui_toolkit.js`, plus `qr_type_manifest.json` + `qr_templates.json`.
 - **Customizable:** campaign + caption text, text/body colors, background gradient (top/bottom + alpha or transparent), module/eye-ring/eye-center shapes (Square or Emoji mode), a center logo/emoji, scales. Font is fixed (IBM Plex Sans).
 
+⚠️ **OPEN (2026-08-29, Jacob) — A MODULE BRIGHTNESS EDIT DOES NOT REACH THE RENDER.** He set the module values to 5% brightness deliberately; the rendered code came out unchanged. ⛔ **Cause not established** — not measured, so nothing here says why. ▶ First place to look: the `style` shape below carries `bodyColor`, `eyeRingColor` and `eyeCenterColor` but **no module colour of its own**, so it is worth confirming which field the modules actually draw from in `qr_render_engine.js` before assuming the edit was lost in state or in persistence. ⚠️ Contrast is not cosmetic here: the code shipped on `theward.online` decoded only after thresholding at native size (Chrome BarcodeDetector, 2026-08-29), so the brightness control is the one that governs whether a code scans at all.
+
 ### Design object + persistence
 The design shape (`qr_sync_pipeline.js`):
 ```js
