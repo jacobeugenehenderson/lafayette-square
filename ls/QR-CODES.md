@@ -105,7 +105,8 @@ The design shape (`qr_sync_pipeline.js`):
 | Claim flow | `src/pages/ClaimPage.jsx` | 9–27 |
 | Device link | `src/pages/LinkPage.jsx` · `src/App.jsx` | 6–50 · 100–128 |
 | QR Studio host | `src/components/CodeDeskModal.jsx` | store 6–21 · iframe 169 · postMessage 83–114 |
-| QR Studio app | `public/codedesk/` | `qr_sync_pipeline.js` (design shape, persistence) + engine files |
+| QR Studio app — ⛔ **the in-app COPY, not production** (§4) | `public/codedesk/` | `qr_sync_pipeline.js` (design shape, persistence) + engine files |
+| QR Studio app — ⭐ **PRODUCTION**, framed by jacobhenderson.studio | repo `jacobeugenehenderson/codedesk` (outside this repo) | its own `README.md` carries the payload rules + the two-builder trap |
 | Claim secret | `apps-script/Code.js` | `getClaimSecret` 792–831 (gen 800/822) · validate `postClaim` 614 |
 | Designs backend | `apps-script/Code.js` | `getDesign` 1556 · `saveDesign` 1569 · sheet 1940 · routes 194/246 |
 | Device-link backend | `apps-script/Code.js` | `createLinkToken` 1035 · `postClaimLinkToken` 1059 · `checkLinkToken` 1109 |
