@@ -10,6 +10,53 @@
 
 ---
 
+## ▶ 2026-08-28 — ⛔⛔ ONE TREE, TWO LIBRARY IDS — AND THE FALLBACK PICKS THE UNCOMPOSED ONE
+
+> Jacob: *"Sugar maple is definitely on the list, so that's a naming problem… is that other tree
+> from the master library that might be invoked in another neighborhood?"* — yes, and it is in
+> **every** town.
+
+**The pairs.** One tree, two ids: a COMPOSED common-named asset and a RAW Latin-named twin.
+
+| | composed twin | raw twin | LS | staging | HPDM | toy |
+|---|---|---|---|---|---|---|
+| Sugar Maple | `maple_sugar` ✅ | `acer_saccharum` ⛔ | 616 / 251 | 300 / 132 | 488 / 101 | — / 3 |
+| Blackgum | `blackgum` ✅ | `nyssa_sylvatica` ⛔ | 338 / 231 | 132 / 133 | 369 / 124 | — |
+
+⛔ **~990 placements kit-wide land on the UNCOMPOSED twin.** `bake-trees#pickVariant`'s **category
+fallback** can reach any asset in the category, including raw ones nobody authored. When it does,
+that tree is **guaranteed to ship as permanent mesh**: no composition → no `barkDetailBySpecies`
+record → `uBarkTileScale` (0,0) → blank band → `OverheadBaker` correctly refuses to POST. The Grove
+banner has been reporting the symptom (`no impostor: maple_silver, nyssa_sylvatica`) for months.
+⛔ **And the raw twin has NO ROSTER ROW**, so it has no light of any colour — the operator cannot
+see it, judge it, or withhold it. It is a tree on the map nobody chose.
+
+⭐⭐ **THE NAMING IS ALREADY WIRED — THIS IS A FOLLOW-THROUGH, NOT NEW MACHINERY.**
+`arborist/vocabulary.mjs#resolveSpecies` **already collapses every pair**:
+```
+acer_saccharum → "Sugar Maple"   ≡  maple_sugar → "Sugar Maple"
+nyssa_sylvatica → "blackgum"     ≡  blackgum    → "blackgum"
+quercus_alba   → "Oak, White"    ≡  oak_white   → "Oak, White"
+```
+`pickVariant` simply never asks. ⚠️ **The two vocabulary functions DISAGREE and the fix must key on
+the right one:** `aliasesFor('blackgum')` returns `["blackgum","nyssa_sylvatica","Nyssa sylvatica"]`,
+but `aliasesFor('maple_sugar')` returns only `["maple_sugar"]` — the Latin twin is missing from the
+alias list even though `resolveSpecies` unifies them.
+
+**Two moves, and the first is the load-bearing one:**
+1. ⭐ **CATEGORY FALLBACK MAY ONLY SELECT A COMPOSED ASSET.** An unauthored asset reached by an
+   automatic path is guaranteed to ship as mesh forever — the same principle as the **NO-FILLER
+   gate**. This makes the class *impossible* rather than repaired, in every town, and it needs no
+   per-pair authoring. ⛔ It must fail LOUDLY when a category has no composed candidate, never
+   silently drop the placement.
+2. Resolve candidate ids through `resolveSpecies` so the two halves of a pair are one candidate,
+   and repair `aliasesFor`'s sugar-maple entry so the two functions agree.
+
+▶ `node scratch/claims-the-roster-light-tells-the-truth.mjs` reports these as **direction B**
+("PLACED BUT UNEXPORTED — selected by CATEGORY FALLBACK, no roster row routes to it").
+
+---
+
 ## ▶ 2026-08-28 — ⭐⭐ A SPECIES HAS TWO SIZE WINDOWS, AND THE TOWN PICKS ONE *(Jacob's arc)*
 
 > **"This isn't an old growth forest… is that a new column we should add to the dossiers? `urbanMax` `naturalMax`? …you know, altadena, other places, maybe they do in fact have old-growth versions of things."**
