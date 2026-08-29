@@ -44,6 +44,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
 import { DEFAULT_SCENE } from '../cartograph/config.js'
+import { resolveSpecies } from './vocabulary.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 // Shared hero-pan math — the SAME Catmull-Rom the runtime plays
@@ -194,14 +195,71 @@ function treeSeed(tree, idx) {
                    ((tree.z * 1000) | 0) ^ 19349663)
 }
 
+// ⛔⛔ THE FALLBACK MUST NOT LAND ON THE RAW TWIN OF A COMPOSED SPECIES.
+//
+// The library carries the SAME TREE under two library ids: a composed, common-named
+// asset and a RAW LATIN twin — `blackgum`/`nyssa_sylvatica`, `oak_white`/`quercus_alba`,
+// `maple_sugar`/`acer_saccharum`, `linden_american`/`tilia_americana`. The raw one has
+// no Salon composition, so a placement that lands on it is GUARANTEED permanent mesh:
+// no composition → no `barkDetailBySpecies` → `uBarkTileScale` stays (0,0) → every bark
+// sample hits an empty atlas region → a blank band → `OverheadBaker` correctly refuses
+// to POST. The Grove has reported the symptom for months ("no impostor:
+// nyssa_sylvatica, quercus_alba — these render as mesh at every distance") and no
+// re-bake could ever clear it, because the cause is upstream of the capture.
+// LS: 670 of 5,146 placements. `BACKLOG.md` 2026-08-28.
+//
+// ⭐ `resolveSpecies` ALREADY COLLAPSES EVERY PAIR — pickVariant simply never asked.
+// So the test is "does a COMPOSED sibling resolve to my canonical", which needs no pair
+// list and covers a town whose twins are different ones.
+//
+// ⛔⛔ AND IT IS DELIBERATELY NARROWER THAN "PREFER COMPOSED", WHICH IS A WORSE BUG.
+// Every composed asset in the library today is broadleaf, so a blanket preference would
+// send `picea_abies` through CATEGORY_FALLBACK and render a spruce as a maple — and on
+// HPDM it would restyle 4,375 of 8,346 placements, most of them genuine gaps
+// (`magnolia_sp`, `platanus_acerifolia`) rather than twins. A missing composition for a
+// species we do not have is a PROCUREMENT fact; it is not a licence to change what a
+// town is planted with. ⇒ correct species on mesh beats wrong species with an impostor.
+// Those keep rendering as themselves and keep being reported by the Grove banner.
+const _composedCache = new Map()
+function isComposedSpecies(species) {
+  if (_composedCache.has(species)) return _composedCache.get(species)
+  let composed = false
+  try {
+    const m = JSON.parse(readFileSync(path.join(REPO_ROOT, 'public', 'trees', species, 'manifest.json'), 'utf8'))
+    composed = !!m?.bark
+  } catch { composed = false }
+  _composedCache.set(species, composed)
+  return composed
+}
+
+// Drop any candidate that is the raw twin of a composed candidate in the SAME set.
+// A species with no composed sibling is left exactly where it is.
+function dropRawTwins(candidates) {
+  if (candidates.length < 2) return candidates
+  const canon = (sp) => { const r = resolveSpecies(sp); return r.resolved ? String(r.value) : null }
+  const composedCanon = new Set()
+  for (const v of candidates) if (isComposedSpecies(v.species)) { const c = canon(v.species); if (c) composedCanon.add(c) }
+  if (!composedCanon.size) return candidates
+  const kept = candidates.filter(v => {
+    if (isComposedSpecies(v.species)) return true
+    const c = canon(v.species)
+    return !(c && composedCanon.has(c))
+  })
+  return kept.length ? kept : candidates
+}
+
 function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed) {
   const preferred = speciesMap.map?.[parkSpecies]
   if (preferred?.length) {
     const speciesSet = new Set(preferred)
-    const candidates = pool.filter(v =>
+    // ⭐ The operator's routing is HONOURED, not overridden: a raw twin resolves to the
+    // SAME canonical as its composed sibling, so swapping `quercus_alba` for `oak_white`
+    // delivers the white oak the map asked for, dressed. A routed species with no
+    // composed sibling is left exactly as routed.
+    const candidates = dropRawTwins(pool.filter(v =>
       speciesSet.has(v.species) &&
       v.styles?.some(s => activeStyles.has(s)),
-    )
+    ))
     if (candidates.length) {
       // Per ARCHITECTURE.md "Two-tier substitution": heroes win their
       // bucket's quality lottery automatically (`4 > 2`). Restrict the hash
@@ -216,10 +274,10 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
     }
   }
   for (const cat of [category, ...(CATEGORY_FALLBACK[category] || [])]) {
-    const candidates = pool.filter(v =>
+    const candidates = dropRawTwins(pool.filter(v =>
       v.category === cat &&
       v.styles?.some(s => activeStyles.has(s)),
-    )
+    ))
     if (candidates.length) {
       const idx = Math.floor(hash01(seed, 1) * candidates.length)
       return candidates[idx]
