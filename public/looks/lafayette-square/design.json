@@ -152,6 +152,18 @@
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 9.985907072931257,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 9.842483192413447,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
         }
       },
       "left": {
@@ -187,6 +199,18 @@
         },
         "5": {
           "pavementHW": 10.552510244416608,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "6": {
+          "pavementHW": 10.057165564109665,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "sidewalk"
+        },
+        "7": {
+          "pavementHW": 10.057165564109665,
           "treelawn": 1.5,
           "sidewalk": 1.5,
           "terminal": "sidewalk"
@@ -495,6 +519,16 @@
             "outer": "LU",
             "inner": "LU"
           }
+        }
+      }
+    },
+    "park-avenue-0": {
+      "right": {
+        "5": {
+          "pavementHW": 8.965996382871872,
+          "treelawn": 1.5,
+          "sidewalk": 1.5,
+          "terminal": "none"
         }
       }
     }

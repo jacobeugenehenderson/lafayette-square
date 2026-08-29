@@ -69,17 +69,6 @@ const MANIFESTS = {
     // loadInstanceData returns null and consumers guard (empty events, no facade
     // photo, streets stat 0). Park/labels/lamps are LS-guarded off for non-LS looks.
   },
-
-  'ksi-y-m-yn': {
-    // Installation #3 — Łódź / Księży Młyn (the first non-US pour). Content in
-    // its own payload; merged listings.json = Overture eateries (→dining) +
-    // landmark adds + 5 elaborated restaurant patches, §5.1.1 shape
-    // (normalizeEnvelope unwraps {meta,listings} → {landmarks}). Feeds
-    // useListings → neon + place cards. Categories mapped to CATEGORY_HEX keys.
-    // menus/roster/render geometry absent → loadInstanceData returns null, guarded.
-    landmarks: () => import('../../cartograph/data/ksi-y-m-yn/content/listings.json'),
-    menus:     () => import('../../cartograph/data/ksi-y-m-yn/content/menus.json'),
-  },
 }
 
 // Different installations wrap their content differently (LS: `{landmarks}` / flat

@@ -6,8 +6,8 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1787714219017,
-      "updatedAt": 1787696600023
+      "bakedAt": 1787962430797,
+      "updatedAt": 1787967453643
     },
     {
       "id": "toy",
@@ -32,22 +32,6 @@
       "createdAt": 1784014203676,
       "bakedAt": 1784097709671,
       "updatedAt": 1784097375258
-    },
-    {
-      "id": "ksi-y-m-yn",
-      "name": "ksi-y-m-yn",
-      "scene": "ksi-y-m-yn",
-      "createdAt": 1784435448888,
-      "bakedAt": 1784571843969,
-      "updatedAt": 1784572162839
-    },
-    {
-      "id": "centrum",
-      "name": "centrum",
-      "scene": "centrum",
-      "createdAt": 1784592746607,
-      "bakedAt": 1784613972068,
-      "updatedAt": 1784613237116
     },
     {
       "id": "lafayette-square-staging",

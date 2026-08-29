@@ -275,3 +275,13 @@ scratch/.lab-probe/
 scratch/.arc-probe/
 scratch/.ramp-probe/
 scratch/_snapshots/
+
+# ⛔⛔ lod0 IS NOT PUBLISHED — 56% of a town's payload that the map never requests.
+# `InstancedTrees#lodForRole` can return ONLY lod1 / lod1far; the camera-distance
+# LOD swap (GeoTierDriver) was retired under role-at-bake. Measured on LS:
+# lod0 202.9 MB vs lod1 27.4 · lod1far 3.2 · lod2 2.0. At 100 towns that is 20 GB
+# of files no visitor ever fetches. The files are still PRODUCED by bake-look and
+# stay on the authoring machine — they are simply not tracked, so they never reach
+# a deploy. ⚠️ The Meteorologist canary resolves lod0 from this path and will 404
+# on a deployed site until it is pointed at lod1 (which is what actually ships).
+public/baked/*/trees/**/*-lod0.glb
