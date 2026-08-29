@@ -52,13 +52,32 @@ Flow: `createLinkToken` → `postClaimLinkToken` (`Code.js:1059`) → `checkLink
 
 ## 4. The QR Studio (Code Desk)
 
-Printable cards are designed in the **QR Studio** — a standalone static app under `public/codedesk/`, embedded as an iframe by `CodeDeskModal.jsx` and opened from a card's QR tab ("Design in QR Studio", `PlaceCard.jsx:2477`). It opens in **guardian mode** (locked to one listing) or **admin mode** (full place picker).
+Printable cards are designed in the **QR Studio**, embedded as an iframe by `CodeDeskModal.jsx` and opened from a card's QR tab ("Design in QR Studio", `PlaceCard.jsx:2477`). It opens in **guardian mode** (locked to one listing) or **admin mode** (full place picker).
+
+> ### ⛔⛔ THERE ARE THREE DEPLOYED CODEDESKS AND THEY ALL DIFFER *(measured 2026-08-29)*
+> `public/codedesk/` in THIS repo is **an in-app copy**, not the tool Jacob authors in.
+> A fix applied here reaches the LS place-card modal and nothing else.
+>
+> | build | source | who uses it |
+> |---|---|---|
+> | `github.io/**codedesk**/` | repo `jacobeugenehenderson/codedesk` | ⭐ **PRODUCTION** — framed by `jacobhenderson.studio` (`?mode=embed`) |
+> | `<app>/codedesk/` | `public/codedesk/` here | the LS place-card QR tab |
+> | `github.io/ascend-portal/…` · `ascend.jacobhenderson.studio/…` | repo `ascend-portal` | ⚰️ **dead siblings** — Jacob: *"I don't care about the ascend version"* |
+>
+> ⚠️ **They are not the same file and none matches another.** On 2026-08-29 they measured
+> 95,884 / 80,350 / 77,586 bytes for `qr_sync_pipeline.js`, and the Cloudflare one matched
+> **no commit in any checkout**. ⛔ **So "the live tool" is a question with three answers —
+> certify which one before editing.** A whole fix was applied to the wrong copy that day
+> because the repo that happened to be open was named `codedesk`.
+> ▶ `curl -s <base>/codedesk/qr_sync_pipeline.js | md5` against your working copy.
+> ⭐ The payload rules, the two-builder trap and how to check a code's scanning margin live
+> in the PRODUCTION repo's own `README.md` — not here, and not in `public/codedesk/`.
 
 - **Host ↔ studio** talk over `postMessage` (`CodeDeskModal.jsx:83–114`): `lsq-set-qr-type` (Townie/Resident/Guardian), `lsq-set-businesses`, `lsq-set-listing`, `lsq-set-claim-secret`, `lsq-save` → `lsq-saved`.
 - **Engine files** (`public/codedesk/`): `qr_app-bootstrapper.js`, `qr_render_engine.js` (canvas), `qr_state_engine.js`, `qr_sync_pipeline.js` (persistence), `qr_ui_toolkit.js`, plus `qr_type_manifest.json` + `qr_templates.json`.
 - **Customizable:** campaign + caption text, text/body colors, background gradient (top/bottom + alpha or transparent), module/eye-ring/eye-center shapes (Square or Emoji mode), a center logo/emoji, scales. Font is fixed (IBM Plex Sans).
 
-⚠️ **OPEN (2026-08-29, Jacob) — A MODULE BRIGHTNESS EDIT DOES NOT REACH THE RENDER.** He set the module values to 5% brightness deliberately; the rendered code came out unchanged. ⛔ **Cause not established** — not measured, so nothing here says why. ▶ First place to look: the `style` shape below carries `bodyColor`, `eyeRingColor` and `eyeCenterColor` but **no module colour of its own**, so it is worth confirming which field the modules actually draw from in `qr_render_engine.js` before assuming the edit was lost in state or in persistence. ⚠️ Contrast is not cosmetic here: the code shipped on `theward.online` decoded only after thresholding at native size (Chrome BarcodeDetector, 2026-08-29), so the brightness control is the one that governs whether a code scans at all.
+⚠️ **OPEN (2026-08-29, Jacob) — A MODULE BRIGHTNESS EDIT DOES NOT REACH THE RENDER.** He set the module values to 5% brightness deliberately; the rendered code came out unchanged. ⭐ **Raising ERROR CORRECTION in the same session did take effect and is measurable** — the same design went from decoding on 1 of 24 preprocessing variants to **8 of 18, first try, unprocessed** — so the ECC pill is wired and this is specific to the module colour path. ⛔ **Cause not established** — not measured, so nothing here says why. ▶ First place to look: the `style` shape below carries `bodyColor`, `eyeRingColor` and `eyeCenterColor` but **no module colour of its own**, so it is worth confirming which field the modules actually draw from in `qr_render_engine.js` before assuming the edit was lost in state or in persistence. ⚠️ Contrast is not cosmetic here: the code shipped on `theward.online` decoded only after thresholding at native size (Chrome BarcodeDetector, 2026-08-29), so the brightness control is the one that governs whether a code scans at all.
 
 ### Design object + persistence
 The design shape (`qr_sync_pipeline.js`):

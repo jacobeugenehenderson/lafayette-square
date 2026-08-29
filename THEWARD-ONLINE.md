@@ -74,6 +74,18 @@ words in the site's own vocabulary and must not be "corrected" here.
 
 ---
 
+## What else the site now takes from this product
+
+- ⭐ **The contact QR is `sms:` to `INSTANCE.cary.smsNumber`** (`src/instances/<look>.js`).
+  So the code on that page is **per-installation by construction** — town #2's QR reaches
+  town #2. ⛔ It is NOT generated here: it is authored in the QR Studio, which is its own
+  repo and has three deployed copies (`ls/QR-CODES.md §4` — read that before fixing one).
+  ⚠️ US carriers do not permit an alphanumeric sender ID, so a recipient always sees a bare
+  number; the **pre-filled body is the only text that identifies who is being texted.**
+- **A legal page** (`legal.html` on the site) and **a link preview** (`assets/og.png`,
+  the band mark at 1200×630) landed 2026-08-29. Neither depends on this product — noted
+  so nobody looks for them here.
+
 ## Generated from this repo, so it cannot drift
 
 Two blocks on that page are built from source in *this* repo:
