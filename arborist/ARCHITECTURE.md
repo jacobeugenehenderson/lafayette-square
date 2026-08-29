@@ -281,6 +281,19 @@ v' = T_autocenter⁻¹ · R · S · T_posOffset · T_autocenter · v
 | `uBarkUVScale` (vec2) | manifest | Tile repetition factor (broadleaf [1.5, 4], weeping [1.5, 2], etc.) |
 | `uBarkTileOffset` / `uBarkTileScale` (vec2) | atlas `uvTransform` | Wrap-within-tile bounds |
 
+## leaf.face — the paler leaf UNDERSIDE (LIVE 2026-08-28)
+
+**Silver maple's whole canopy flashing silver in wind.** A declared rubric axis (`rubric.json#leaf.face`, `kind: dual`) that was **authored on 10 of 34 dossiers and reached no pixel for months** — the aspiration `SALON-INTERFACE.md` filed as decided on 2026-06-25. Now wired end to end, **mirroring the deformer's seam exactly** (Brief 3A): author coordinates, resolve parts, uniform-driven, nothing baked.
+
+`dossier#leaf.face` → `generate-salon#resolveFace` → `manifest.json#leafFace` → `bake-look#leafFaceBySpecies` → `applyLeafFaceUniforms` (a **sibling** of `applyDeformerUniforms`, never a widened `applyBarkUniforms`) → the fragment's `gl_FrontFacing` branch.
+
+- ⭐ **The operator overrides it** — Salon → Leaves → Tint front / Tint back / **Underside**. The dossier pours the default; the picker wins. Resolution takes the **RAW** composition, never the merged one: `DEFAULTS.leaves` carries non-null tints on every composition ever made, so reading the merged object lets a generic `#3a7530` beat the dossier's authored `#5A8C4A`. (It did, on the first run.)
+- ⛔ **Strength is dossier-or-explicit, never inferred from the tints** — for the same reason. `strong`→1, `mild`→0.45, `none`→0; a strength with no colour pair resolves to 0 rather than shipping a dead control.
+- **The front face is IDENTITY.** The front colour is the white-point the back's luminance is recast against — a two-COLOUR select, not the two-PALETTE swap, which still needs the unbuilt posterized leaf substrate.
+- **Costs no vertex attribute.** `gl_FrontFacing` is a built-in and both ramps are uniforms — the only reason this fits, since the tree shader sits at exactly `MAX_VERTEX_ATTRIBS = 16`. Leaves are already `doubleSided` (`bake-look.js#leaves`), which is what makes the facing test meaningful.
+- ⛔⛔ **TWO UNRELATED "FRONT/BACK"s LIVE IN TREE CODE.** *This* is leaf faces (adaxial/abaxial). The hero impostor's front/back **SHELLS** (`HeroImpostorTrees.jsx`) are DEPTH slices of the canopy and have nothing to do with which side of a leaf you see. Someone chasing "fronts and backs" will land in the wrong file.
+- ▶ `node scratch/claims-the-leaf-face-axis-reaches-the-shader.mjs` — pins all 8 links, and asserts **every draw site that binds bark also binds the face** (the shared material carries the previous species' values; it found two unbound sites the hour it was written).
+
 **Per-vertex gate:** `aBark` attribute baked at runtime-merge time in `InstancedTrees.jsx` from `geometry.userData.atlasKind` (`'bark'` or `'leaf'`). Leaves bypass the retint path; bark fragments retint.
 
 **Fragment shader patches** (via `onBeforeCompile`):

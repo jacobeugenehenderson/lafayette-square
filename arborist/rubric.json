@@ -417,7 +417,7 @@
         "back": "second ramp off the same silhouette"
       },
       "plain": "Two-tone shimmer (silver maple, poplar) — the paler underside flashing in wind.",
-      "home": "orphaned tintFront / tintBack + doubleSided:true — WIRE them to this axis (§6)",
+      "home": "LIVE 2026-08-28 — dossier leaf.face → generate-salon#resolveFace → manifest.leafFace → bake-look#leafFaceBySpecies → applyLeafFaceUniforms → the shader gl_FrontFacing branch. Operator overrides via the Salon Leaves panel (Tint front / Tint back / Underside). The front ramp is the white-point, not a recolour — the full two-ramp palette swap still awaits the posterized LEAF substrate (SALON-INTERFACE near-tier technique, unbuilt).",
       "tagging": "operator",
       "orthogonality": "Two ramps off ONE silhouette; independent of the silhouette shape and of leaf.color's harmonization band (which applies to both ramps).",
       "seededFrom": "Silver Maple dossier (STRONG silver underside — the defining trait) + Green Ash/Red Maple/Birch (mild)"

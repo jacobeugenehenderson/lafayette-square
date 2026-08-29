@@ -44,6 +44,7 @@ import {
   useTreeAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
+  applyLeafFaceUniforms,
   stampTreeVertexAttrs,
   treeSwayUniforms,
 } from '../components/treeAtlasMaterial.js'
@@ -443,6 +444,7 @@ function HeroTree({ lookId }) {
       detailSlot:     m.barkDetailBySpecies?.[species] || null,
       posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
       deformerRange:  m.deformerBySpecies?.[species]?.range || null,
+      leafFace:       m.leafFaceBySpecies?.[species] || null,
     }
   }, [atlas.manifest, species, variantId])
 
@@ -459,6 +461,7 @@ function HeroTree({ lookId }) {
       barkUniforms.posterizedSlot,
     )
     applyDeformerUniforms(atlas.treeMaterial, barkUniforms.deformerRange, null)
+    applyLeafFaceUniforms(atlas.treeMaterial, barkUniforms.leafFace)
   })
 
   // Wind → shared foliage-sway uniforms (SwayDriver pattern). Sourced from

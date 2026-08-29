@@ -18,7 +18,7 @@ import { useThree } from '@react-three/fiber'
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js'
-import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms } from '../components/treeAtlasMaterial.js'
+import { useTreeAtlas, applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms } from '../components/treeAtlasMaterial.js'
 import { prepareOverheadBands, captureOverheadBand } from '../components/captureImpostor.js'
 
 // ⛔ MESHOPT DECODER REQUIRED. This baker reads the BAKED per-look GLBs, which
@@ -195,11 +195,13 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
             }
             const posterizedSlot = man?.barkPosterizedBySpecies?.[sp.species] || null
             const deformerRange = man?.deformerBySpecies?.[sp.species]?.range || null
+            const leafFace = man?.leafFaceBySpecies?.[sp.species] || null
             prep.scene.traverse((o) => {
               if (!o.isMesh) return
               o.onBeforeRender = () => {
                 applyBarkUniforms(atlas.treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
                 applyDeformerUniforms(atlas.treeMaterial, deformerRange)
+                applyLeafFaceUniforms(atlas.treeMaterial, leafFace)
               }
             })
             // RETRY on blank. The capture is FLAKY, not merely fragile: species

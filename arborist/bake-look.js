@@ -1112,6 +1112,10 @@ export async function bakeLook(lookName, opts = {}) {
   // baked into the atlas or GLB, so this is a pass-through, single-spec-per-
   // species like barkBySpecies.
   const deformerBySpecies = {}
+  // leaf.face (adaxial/abaxial two-tone) — same pass-through shape as the
+  // deformer above: manifest.json#leafFace → uniforms, nothing baked. Written
+  // even when strength is 0, so "authored none" reads differently from absent.
+  const leafFaceBySpecies = {}
   const speciesSeen = new Set()
   for (const v of roster) {
     if (speciesSeen.has(v.species)) continue
@@ -1121,6 +1125,13 @@ export async function bakeLook(lookName, opts = {}) {
       const m = JSON.parse(await fs.readFile(mPath, 'utf8'))
       if (m?.deformer?.range) {
         deformerBySpecies[v.species] = { range: m.deformer.range }
+      }
+      if (m?.leafFace) {
+        leafFaceBySpecies[v.species] = {
+          front: m.leafFace.front || null,
+          back: m.leafFace.back || null,
+          strength: Number.isFinite(m.leafFace.strength) ? m.leafFace.strength : 0,
+        }
       }
       if (m?.bark) {
         // Per-region bark binding (Phase L Cycle 2): manifest.bark may
@@ -1292,6 +1303,7 @@ export async function bakeLook(lookName, opts = {}) {
     barkDetailBySpecies,
     barkPosterizedBySpecies,
     deformerBySpecies,
+    leafFaceBySpecies,
     // Hero-tier canopy dims (Azimuth) — real-metre bounding sphere per rendered
     // roster variant, consumed by bake-trees' prominence pass. {species:{variantId:
     // {heightM, canopyRadiusM}}}. Measured from the clean scale-applied lod2 GLB.

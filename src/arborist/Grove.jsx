@@ -32,7 +32,7 @@ import { partitionByDirt } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import {
   useTreeAtlas, treeSwayUniforms,
-  stampTreeVertexAttrs, measureChassisRadius, applyBarkUniforms, invalidateTreeAtlas,
+  stampTreeVertexAttrs, measureChassisRadius, applyBarkUniforms, applyLeafFaceUniforms, invalidateTreeAtlas,
   cloneTreeMaterial,
 } from '../components/treeAtlasMaterial.js'
 import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
@@ -267,6 +267,9 @@ export default function Grove() {
         gradientByVariant: m.barkGradientByVariant?.[species] || null,
         detailSlot:     m.barkDetailBySpecies?.[species] || null,
         posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
+        // leaf.face — the paler underside, per species. Bound in the same per-draw
+        // call for the same reason the bark slots are: ten species, one material.
+        leafFace:       m.leafFaceBySpecies?.[species] || null,
       }
     }
     return out
@@ -1126,6 +1129,9 @@ function Tile({ variant, position, opacity = 1, inLook, hovered, selected, onHov
           barkUniforms?.detailSlot ?? null,
           barkUniforms?.posterizedSlot ?? null,
         )
+        // ⛔ ALWAYS CALL IT, for the reason spelled out above: a null resets to
+        // identity, an early return leaves the previous tile's underside bound.
+        applyLeafFaceUniforms(treeMaterial, barkUniforms?.leafFace ?? null)
       }
     })
   }, [cloned, treeMaterial, barkUniforms, gradientSlot])

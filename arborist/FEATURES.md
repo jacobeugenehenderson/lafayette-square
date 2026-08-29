@@ -137,6 +137,16 @@ Fourth top-level mode. The Salon pivots from *generation* (Procedural / LiDAR �
 
 **Bark plumbing (Brief 1.5a):** `generate-salon.js#patchManifestForSalon` writes the first composition's bark spec into `public/trees/<species>/manifest.json#bark` after `publish-glb.js` completes, in the exact shape `bake-look.js#flatten` expects (`materialRef`/`uvScale`/`tintBase`/`tintJitterRange`/`roughnessOverride`). Runtime `InstancedTrees.jsx#applyBarkUniforms` then drives per-draw uniforms — the operator's tintBase / uvScale / roughnessOverride / per-instance jitter visibly land at LS. Single bark spec per species (procedural's model); per-composition bark texture variation lives in each variant's GLB. `qualityOverride: 4` (Hero tier) so Salon variants win their bucket's quality lottery vs the procedural fillers. Salon's `main()` also calls `syncLookRoster('lafayette-square', ...)` so the published variants appear in LS placements after the next bake-look + bake-trees (Brief 1 deferred this; 1.5a closed the loop).
 
+### Leaf undersides — the silver flash (2026-08-28)
+
+Real leaves are paler underneath, and a wind that turns them makes a whole canopy flash — **silver maple is the extreme case and the reason this exists.** The Salon's **Leaves** panel now carries three controls that reach the render: **Tint front**, **Tint back**, and **Underside** (0–100%, the strength of the effect).
+
+**You usually will not have to touch them.** The species dossier already carries the pair for the trees that need it, and the pickers open showing *that* colour — silver maple at 100%, red maple / green ash / river birch at 45%, sugar maple and pin oak at 0 because their undersides barely differ. Change a picker and yours wins.
+
+⚠️ **Underside at 0 means the effect is off**, and a front tint alone does nothing — the front colour is only the reference the back is measured against, so the front face renders unchanged. If you want an underside on a species whose dossier has none, raise **Underside** first.
+
+⛔ **It is a live uniform, so the Salon preview updates as you drag** — no re-bake to see it. But it only reaches the map after **Bake → Slab**. ▶ `node scratch/claims-the-leaf-face-axis-reaches-the-shader.mjs` names any Look whose slab is missing an underside its dossier authors.
+
 ### The species dossier — what the machine knows, and what it admits it does not
 
 Each species carries a **dossier** of required traits (habit, bark texture, leaf type/shape/margin,

@@ -15,7 +15,7 @@ import { SwayDriver } from './InstancedTrees.jsx'
 import { treeSwayUniforms } from './treeAtlasMaterial'
 import {
   useTreeAtlas, stampTreeVertexAttrs, measureChassisRadius, setLeafTransmission, treeBarkTierUniform,
-  applyBarkUniforms, applyDeformerUniforms, setTrunkGround, setWindTiering,
+  applyBarkUniforms, applyDeformerUniforms, applyLeafFaceUniforms, setTrunkGround, setWindTiering,
 } from './treeAtlasMaterial'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useCanaryTree } from '../lib/canaryTree.js'
@@ -556,6 +556,7 @@ function BarkSlots({ atlas, species, variantId }) {
       detailSlot:     m.barkDetailBySpecies?.[species] || null,
       posterizedSlot: m.barkPosterizedBySpecies?.[species] || null,
       deformerRange:  m.deformerBySpecies?.[species]?.range || null,
+      leafFace:       m.leafFaceBySpecies?.[species] || null,
     }
   }, [atlas?.manifest, species, variantId])
 
@@ -566,6 +567,7 @@ function BarkSlots({ atlas, species, variantId }) {
       slots.gradientSlot, slots.detailSlot, slots.posterizedSlot,
     )
     applyDeformerUniforms(atlas.treeMaterial, slots.deformerRange, null)
+    applyLeafFaceUniforms(atlas.treeMaterial, slots.leafFace)
   })
   return null
 }

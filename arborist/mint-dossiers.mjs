@@ -31,7 +31,12 @@ const dDir = path.join(root, 'arborist/dossiers')
 // Jacob's ruling, 2026-08-24: hard for identity axes, soft for the rest.
 const HARD = new Set(['leaf.type', 'leaf.shape', 'chassis.habit'])
 // The judgment a database cannot supply. Minted null, listed in `owed`.
-const OWED = ['forces', 'descriptor', 'identityNotes', 'referenceImages', 'recipe', 'partAvailability']
+// ⛔ `leaf.face` is HERE because this file's own header has always claimed it was — and it
+// was not, so a minted species got the axis neither minted nor named as owed, and the
+// readiness board could not show a gap for a field that never existed. (Measured
+// 2026-08-28: 24 minted dossiers, 0 carrying leaf.face, 0 naming it.) It is judgment —
+// no source in the trait survey records an underside colour (TRAIT-SURVEY-FINDINGS §948).
+const OWED = ['forces', 'descriptor', 'identityNotes', 'referenceImages', 'recipe', 'partAvailability', 'leaf.face']
 
 const rubric = JSON.parse(readFileSync(path.join(root, 'arborist/rubric.json'), 'utf8'))
 const axisKind = new Map((rubric.axes || []).map(a => [a.id, a.kind || (a.values ? 'enum' : 'scalar')]))

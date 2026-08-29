@@ -26,6 +26,7 @@ import {
   useSalonPreviewAtlas,
   applyBarkUniforms,
   applyDeformerUniforms,
+  applyLeafFaceUniforms,
   injectOverheadWiggle,
   injectOverheadStamp,
   overheadLightUniforms,
@@ -839,6 +840,7 @@ function Skeleton({
   windStrength = 0,
   deformerRange = null,
   deformerSeed = null,
+  leafFace = null,
   variantCount = 1,
   variantHeightSpread = false,
   overheadMode = false,           // Browse preset → show the overhead snapshot stamps
@@ -967,6 +969,9 @@ function Skeleton({
   useFrame(() => {
     if (!atlas.treeMaterial) return
     applyDeformerUniforms(atlas.treeMaterial, deformerRange, deformerSeed)
+    // leaf.face — same live-authored binding as the deformer beside it (uniform-
+    // driven, so the underside updates with no preview-atlas re-bake).
+    applyLeafFaceUniforms(atlas.treeMaterial, leafFace)
   })
 
   // Auto-anchor on the DOMINANT trunk, not the centroid of all trunks.
@@ -1502,6 +1507,7 @@ export default function SpecimenViewport({
   // Brief 3A (Cant): live authored deformer range + preview re-roll seed.
   deformerRange = null,
   deformerSeed = null,
+  leafFace = null,              // leaf.face { front, back, strength } — the paler underside
   overhead = null,              // overhead hula impostor knobs { ruffleDepth, hulaAmount }
   variantHeightSpread = false,  // 3-variants also vary in HEIGHT (a real stand isn't size-cloned)
   // Brief 7 (Cambium): SpecimenViewport now mounts the shared
@@ -1613,6 +1619,7 @@ export default function SpecimenViewport({
               onTopY={(y) => { topYRef.current = y; setTopY(y) }}
               windStrength={windStrength}
               deformerRange={deformerRange}
+              leafFace={leafFace}
               deformerSeed={deformerSeed}
               overheadMode={camPreset === 'browse'}
               heroMode={camPreset === 'heroimp'}

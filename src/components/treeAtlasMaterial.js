@@ -442,6 +442,16 @@ export function injectFoliageSway(material) {
     // at the same Brief 2.1 luminance axis as hero but skips the Brief 2.1a
     // detail composite; hero is the existing path; street currently falls
     // back to hero (10C wires full PBR).
+    // ⭐ leaf.face (adaxial/abaxial two-tone) — the rubric axis that was declared,
+    // authored on 10 dossiers and wired to NOTHING until 2026-08-28. Silver maple's
+    // silvery underside is the seed case ("the whole canopy flashes silver in wind").
+    // ⛔ NOT the hero impostor's front/back SHELLS (HeroImpostorTrees.jsx) — that is
+    // a depth-shell value split and has nothing to do with which face of a leaf you
+    // are looking at. Two unrelated front/backs live in tree code; keep them apart.
+    // Strength 0 ⇒ bit-exact identity, which is what 24 of 34 species get.
+    shader.uniforms.uLeafFaceFront    = { value: new THREE.Color('#ffffff') }
+    shader.uniforms.uLeafFaceBack     = { value: new THREE.Color('#ffffff') }
+    shader.uniforms.uLeafFaceStrength = { value: 0.0 }
     shader.uniforms.uBarkShaderTier = treeBarkTierUniform
     // Phase A (Azimuth) — hero-tier QC overlay gate (shared module-scope uniform).
     shader.uniforms.uHeroTierQC = treeHeroTierQC
@@ -823,6 +833,9 @@ export function injectFoliageSway(material) {
          uniform vec2  uBarkPosterizedTileOffset;
          uniform vec2  uBarkPosterizedTileScale;
          uniform float uBarkShaderTier;
+         uniform vec3  uLeafFaceFront;
+         uniform vec3  uLeafFaceBack;
+         uniform float uLeafFaceStrength;
          uniform float uHeroTierQC;
          uniform float uTreeSanitizeOn;
          uniform float uCaptureMask;
@@ -960,6 +973,31 @@ export function injectFoliageSway(material) {
            float tierDetail = step(0.5, uBarkShaderTier);
            barkColor = mix(barkColor, composite, uBarkDetailStrength * tierDetail);
            diffuseColor.rgb = mix(diffuseColor.rgb, barkColor, vBark);
+           // ── leaf.face — the paler UNDERSIDE, flashing in wind ────────────────
+           // The mirror of the bark retint above, on the other side of the same
+           // vBark gate: bark fragments took the block above, leaf fragments take
+           // this one. Leaf cards are already doubleSided (bake-look.js#leaves), so
+           // gl_FrontFacing is meaningful and costs no vertex attribute — which is
+           // the only reason this fits: the tree shader sits AT MAX_VERTEX_ATTRIBS=16.
+           //
+           // ⭐ SAMPLING AXIS IS LUMINANCE, the same choice the bark gradient made
+           // (and for the same reason): it is camera-independent, and it keeps the
+           // leaf's own venation + shading detail instead of flooding the card with
+           // a flat colour. The albedo's luma is measured RELATIVE to the authored
+           // FRONT colour, then re-cast onto the BACK colour — so a leaf whose luma
+           // matches the front reference maps exactly to the authored underside.
+           //
+           // ⛔ THE FRONT FACE IS IDENTITY, DELIBERATELY. The front colour is the white-point
+           // the back is measured against, NOT a recolour of the canopy: recolouring
+           // fronts would silently restyle 10 species the operator never asked about.
+           // (The full two-ramp palette swap needs the posterized leaf substrate,
+           // which is NOT built — see SALON-INTERFACE.md's near-tier leaf technique.)
+           if (uLeafFaceStrength > 0.0 && vBark < 0.5 && !gl_FrontFacing) {
+             float lf = dot(uLeafFaceFront, vec3(0.2126, 0.7152, 0.0722));
+             float la = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
+             vec3 backLit = uLeafFaceBack * (la / max(lf, 0.001));
+             diffuseColor.rgb = mix(diffuseColor.rgb, backLit, uLeafFaceStrength);
+           }
            // Phase A (Azimuth) hero-tier QC overlay — read-only. Tints the whole
            // tree (bark + leaf) by its derived class so the operator eyeballs the
            // mesh/impostor split through the hero pan. Gated → no-op when off.
@@ -1803,6 +1841,26 @@ export function applyDeformerUniforms(material, deformerRange, seed = null) {
     if (Array.isArray(seed) && seed.length >= 2) shader.uniforms.uDeformSeed.value.set(seed[0], seed[1])
     else shader.uniforms.uDeformSeed.value.set(0, 0)
   }
+}
+
+// leaf.face — per-draw binding of the species' front/back leaf colours. A SIBLING of
+// applyDeformerUniforms, not a widened applyBarkUniforms (the Brief 3A precedent: bark
+// and the axes that ride beside it stay separable). Same per-draw mutation contract as
+// its siblings: the shared material carries the PREVIOUS species' values until this
+// overwrites them right before the draw — so ⛔ every site that calls applyBarkUniforms
+// must call this too, or a species inherits its neighbour's underside.
+// ▶ node scratch/claims-the-leaf-face-axis-reaches-the-shader.mjs asserts exactly that.
+// Absent/nullish → strength 0 → bit-exact identity.
+export function applyLeafFaceUniforms(material, leafFace) {
+  const shader = material?.userData?.shader
+  if (!shader) return
+  const f = leafFace || {}
+  const strength = Number.isFinite(f.strength) ? f.strength : 0
+  const on = strength > 0 && !!f.front && !!f.back
+  if (shader.uniforms.uLeafFaceStrength) shader.uniforms.uLeafFaceStrength.value = on ? strength : 0
+  if (!on) return
+  shader.uniforms.uLeafFaceFront?.value.set(f.front)
+  shader.uniforms.uLeafFaceBack?.value.set(f.back)
 }
 
 // Overhead "hula" impostor — per-draw knob binding (HANDOFF-overhead-hula-impostor.md).

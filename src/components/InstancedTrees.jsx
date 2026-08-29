@@ -24,6 +24,7 @@ import {
   treeSwayUniforms,
   applyBarkUniforms,
   applyDeformerUniforms,
+  applyLeafFaceUniforms,
   setWhipRadius,
   treeBarkTierUniform,
   treeBarkTierPinned,
@@ -84,7 +85,7 @@ function pumpFramesAfterLoad(invalidate, frames = 15) {
   return () => { if (id) cancelAnimationFrame(id) }
 }
 
-function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+function VariantInstances({ url, instances, treeMaterial, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace }) {
   const { scene } = useGLTF(url)
   // This component only mounts AFTER useGLTF resolves (it's inside <Suspense>),
   // so this effect runs exactly when the GLB has loaded — the moment we must
@@ -325,6 +326,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
           detailSlot={detailSlot}
           posterizedSlot={posterizedSlot}
           deformerRange={deformerRange}
+          leafFace={leafFace}
         />
       ))}
     </>
@@ -335,7 +337,7 @@ function VariantInstances({ url, instances, treeMaterial, barkSettings, gradient
 // Salon preview path (SpecimenViewport) reuses the SAME per-draw uniform
 // setup as the LS runtime. Imported above.
 
-function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, groundRaws, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange }) {
+function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, lampGlows, heroTiers, groundRaws, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace }) {
   const ref = useRef(null)
   // Canvas runs frameloop="demand": R3F auto-invalidates on React reconciliation
   // (mount) but NOT on the imperative matrix/attribute fills below. Without an
@@ -407,8 +409,11 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       // per-instance anchors supply the spread). Same shared-material per-draw
       // mutation as bark; a species with no authored deformer resets to (0,0).
       applyDeformerUniforms(material, deformerRange)
+      // leaf.face — the paler underside. Same per-draw contract as its siblings:
+      // a species with none resets to strength 0 rather than inheriting the last.
+      applyLeafFaceUniforms(material, leafFace)
     }
-  }, [material, geometry, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange])
+  }, [material, geometry, barkSettings, gradientSlot, detailSlot, posterizedSlot, deformerRange, leafFace])
 
   return (
     <instancedMesh
@@ -432,7 +437,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
 // cards get DoF'd/fogged/graded/terrain-lifted exactly like real geometry), and
 // the cards hula off the SHARED wind uniforms (base-anchored sway ∝ height) with
 // zero per-frame geometry cost — ~a dozen quads replace ~15K leaf cards.
-function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange }) {
+function ImpostorSpecies({ species, record, instances, treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange, leafFace }) {
   const ref = useRef(null)
   // demand-mode frame request after imperative fills — same reason as
   // SubmeshInstances (see the note there).
@@ -507,8 +512,9 @@ function ImpostorSpecies({ species, record, instances, treeMaterial, barkSetting
     return () => {
       applyBarkUniforms(treeMaterial, barkSettings, null, detailSlot, posterizedSlot)
       applyDeformerUniforms(treeMaterial, deformerRange)
+      applyLeafFaceUniforms(treeMaterial, leafFace)
     }
-  }, [treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange])
+  }, [treeMaterial, barkSettings, detailSlot, posterizedSlot, deformerRange, leafFace])
 
   if (!geometry || instances.length === 0) return null
 
@@ -1101,6 +1107,11 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   const deformerBySpecies = useMemo(() => {
     return atlas?.manifest?.deformerBySpecies || {}
   }, [atlas?.manifest?.deformerBySpecies])
+  // leaf.face — per-species {front, back, strength}, surfaced by bake-look from
+  // manifest.json#leafFace exactly as deformerBySpecies is. Absent → identity.
+  const leafFaceBySpecies = useMemo(() => {
+    return atlas?.manifest?.leafFaceBySpecies || {}
+  }, [atlas?.manifest?.leafFaceBySpecies])
 
   // ── Overhead SNAPSHOT (Browse) — whole-scene camera-height swap ─────────────
   // The 3-slice overhead asset (baked into the slab as overheadBySpecies) swaps in
@@ -1162,6 +1173,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           const detailSlot = species ? (barkDetailBySpecies[species] || null) : null
           const posterizedSlot = species ? (barkPosterizedBySpecies[species] || null) : null
           const deformerRange = species ? (deformerBySpecies[species]?.range || null) : null
+          const leafFace = species ? (leafFaceBySpecies[species] || null) : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
               <VariantInstances
@@ -1173,6 +1185,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
                 detailSlot={detailSlot}
                 posterizedSlot={posterizedSlot}
                 deformerRange={deformerRange}
+                leafFace={leafFace}
               />
             </Suspense>
           )
@@ -1186,6 +1199,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         const detailSlot = barkDetailBySpecies[species] || null
         const posterizedSlot = barkPosterizedBySpecies[species] || null
         const deformerRange = deformerBySpecies[species]?.range || null
+        const leafFace = leafFaceBySpecies[species] || null
         return (
           <ImpostorSpecies
             key={`impostor#${species}`}
@@ -1197,6 +1211,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
             detailSlot={detailSlot}
             posterizedSlot={posterizedSlot}
             deformerRange={deformerRange}
+            leafFace={leafFace}
           />
         )
       })}

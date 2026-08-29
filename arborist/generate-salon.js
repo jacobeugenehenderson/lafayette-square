@@ -47,6 +47,9 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFileSync } from 'node:child_process'
 import { smoothWeldBark } from './decimate-tree.mjs'
+// ⛔ ONE resolver, shared with the readiness checks — never a second species→dossier
+// mapping (salon ids like `maple_silver` reach `acer_saccharinum` only through it).
+import { dossierForSalonSpecies } from './salon-options.js'
 
 // Chassis GLBs (from Whittle's survey-deleaf.js) preserve vendor source
 // extensions including EXT_texture_webp; matching ALL_EXTENSIONS registration
@@ -360,9 +363,51 @@ function deformerForMorphology(morphology) {
   return { range: DEFORMER_BY_MORPHOLOGY[morphology] || DEFORMER_DEFAULT }
 }
 
+// ── leaf.face — the paler UNDERSIDE, resolved from the species DOSSIER ────────
+// Second instance of the rubric-forward rule (author coordinates, resolve parts),
+// after DEFORMER_BY_MORPHOLOGY above: the machine pours the axis from the dossier
+// and ⭐ THE OPERATOR MAY OVERRIDE ANY OF IT through the Salon's leaf tints.
+//
+// ⛔ STRENGTH IS DOSSIER-ONLY UNLESS THE OPERATOR SETS IT, AND THAT IS DELIBERATE.
+// `tintFront`/`tintBack` carry NON-NULL DEFAULTS on every composition ever made
+// (DEFAULTS.leaves below, and the client store's) — so "the composition has tints"
+// does NOT mean an operator chose them. Keying the effect off those defaults would
+// silently give all 34 species a pale-green underside nobody authored. The colours
+// are overridable; the DECISION TO HAVE THE EFFECT AT ALL comes from a dossier axis
+// a human wrote, or from an explicit `leaves.faceStrength`.
+const FACE_STRENGTH = { none: 0, mild: 0.45, strong: 1 }
+function faceFromDossier(species) {
+  if (!species) return null
+  let d = null
+  try { d = dossierForSalonSpecies(species) } catch { return null }
+  const f = d?.required?.['leaf.face'] || d?.optional?.['leaf.face']
+  if (!f?.front || !f?.back) return null
+  const strength = typeof f.strength === 'number' ? f.strength : FACE_STRENGTH[f.strength]
+  if (!(strength > 0)) return { front: f.front, back: f.back, strength: 0 }
+  return { front: f.front, back: f.back, strength }
+}
+// ⛔⛔ TAKES THE **RAW** COMPOSITION, NOT THE MERGED ONE, AND THAT IS THE WHOLE TRICK.
+// `merged` has already absorbed DEFAULTS.leaves, whose tints are non-null on every
+// composition ever made — so reading tints off it means the generic #3a7530 beats the
+// dossier's authored #5A8C4A and the axis silently resolves to a default nobody wrote.
+// (Measured: it did exactly that on the first run of this code.) The RAW composition
+// carries only what a human actually set, which is what an override means.
+// Precedence, top wins:  operator's explicit part  >  the species dossier  >  the generic default.
+function resolveFace(species, rawLeaves, mergedLeaves) {
+  const base = faceFromDossier(species)
+  const override = typeof rawLeaves?.faceStrength === 'number' ? rawLeaves.faceStrength : null
+  const strength = override !== null ? override : (base?.strength ?? 0)
+  if (!(strength > 0)) return { front: null, back: null, strength: 0 }
+  const front = rawLeaves?.tintFront || base?.front || mergedLeaves?.tintFront || null
+  const back  = rawLeaves?.tintBack  || base?.back  || mergedLeaves?.tintBack  || null
+  // ⛔ Strength with no pair to interpolate is a control that does nothing. Say 0.
+  if (!front || !back) return { front: null, back: null, strength: 0 }
+  return { front, back, strength }
+}
+
 // patches into both `params` and `effective` in the store so changes reflect
 // without a server round-trip (per the procedural-mode pattern).
-function resolveEffective(composition, chassisMeta) {
+function resolveEffective(composition, chassisMeta, species = null) {
   const chassisDefaults = (chassisMeta && chassisMeta.defaults) || {}
   return {
     chassis: composition.chassis || null,
@@ -371,11 +416,25 @@ function resolveEffective(composition, chassisMeta) {
       ...(chassisDefaults.bark || {}),
       ...(composition.bark || {}),
     },
-    leaves: {
-      ...DEFAULTS.leaves,
-      ...(chassisDefaults.leaves || {}),
-      ...(composition.leaves || {}),
-    },
+    leaves: (() => {
+      const merged = {
+        ...DEFAULTS.leaves,
+        ...(chassisDefaults.leaves || {}),
+        ...(composition.leaves || {}),
+      }
+      // `face` is DERIVED, never authored as a blob — the operator authors its
+      // parts (tintFront / tintBack / faceStrength) and this resolves them.
+      // ⭐ The resolved pair is written BACK onto the effective tints, so the Salon's
+      // colour pickers show the colour actually in use (the dossier's, until the
+      // operator overrides it) rather than a default the render is not using.
+      const face = resolveFace(species, composition.leaves || {}, merged)
+      return {
+        ...merged,
+        tintFront: face.front || merged.tintFront,
+        tintBack: face.back || merged.tintBack,
+        face,
+      }
+    })(),
     deformer: {
       ...DEFAULTS.deformer,
       ...deformerForMorphology(chassisMeta && chassisMeta.morphology),
@@ -409,7 +468,7 @@ export async function readEffectiveCompositions(species) {
       leaves:  c.leaves  || {},
       deformer: c.deformer || {},
       transform: c.transform || {},
-      effective: resolveEffective(c, meta),
+      effective: resolveEffective(c, meta, species),
     })
   }
   return out
@@ -1668,6 +1727,20 @@ async function patchManifestForSalon(species, compositions) {
       twist:  pair(firstDef.twist),
       wander: pair(firstDef.wander),
     } }
+  }
+  // leaf.face — single spec per species (first composition's effective face),
+  // matching the deformer + bark single-spec model. bake-look surfaces it into
+  // trees-atlas.json#leafFaceBySpecies; the runtime binds it per draw. Nothing is
+  // baked into the GLB or the atlas — it is a uniform, so re-authoring is instant.
+  // ⛔ Write it even when OFF: `{strength: 0}` is the honest record of "this species
+  // has no underside", and it lets the check tell "authored none" from "never asked".
+  const firstFace = compositions[0]?.effective?.leaves?.face
+  if (firstFace) {
+    m.leafFace = {
+      front: firstFace.front || null,
+      back: firstFace.back || null,
+      strength: Number.isFinite(firstFace.strength) ? firstFace.strength : 0,
+    }
   }
   const first = compositions[0]?.effective?.bark
   if (first) {

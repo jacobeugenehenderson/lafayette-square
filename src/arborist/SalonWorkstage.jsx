@@ -920,6 +920,18 @@ function SlotCard({
               tintFront: leaves?.tintFront,
               tintBack: leaves?.tintBack,
             }}
+            /* leaf.face — bound LIVE from the authored state, not from the preview
+               atlas, so the underside updates as the operator drags (the deformer's
+               precedent; `feedback_salon_preview_is_authoring_surface`).
+               ⛔ Only the OVERRIDE PRECEDENCE is mirrored here (explicit part wins over
+               the resolved blob) — the same optimistic mirror this store already does
+               for `effective`. The DOSSIER lookup stays server-side in
+               generate-salon#resolveFace; there is no second copy of that rule. */
+            leafFace={{
+              front: leaves?.tintFront || leaves?.face?.front || null,
+              back: leaves?.tintBack || leaves?.face?.back || null,
+              strength: leaves?.faceStrength ?? leaves?.face?.strength ?? 0,
+            }}
             onPerfSample={setPerfSample}
           />
         )}
@@ -1328,6 +1340,13 @@ function SalonControlsPanel({
               onCommit={(v) => onParams({ leaves: { scale: v } })}
               format={(v) => `${v.toFixed(2)}×`} />
           </Row>
+          {/* leaf.face — the paler UNDERSIDE flashing in wind (silver maple is the
+              seed case). ⭐ These two pickers existed for months and reached NO pixel;
+              they are live as of 2026-08-28. The dossier pours a default per species
+              and the operator overrides it here — the override IS the product.
+              ⛔ Underside strength 0 = the effect is OFF: `front` is only the
+              white-point `back` is measured against, so a front tint alone does
+              nothing. That is why the strength row sits directly under them. */}
           <Row label="Tint front">
             <input type="color" value={leaves?.tintFront || '#3a7530'}
               onChange={(e) => onParams({ leaves: { tintFront: e.target.value } })} style={colorStyle} />
@@ -1335,6 +1354,12 @@ function SalonControlsPanel({
           <Row label="Tint back">
             <input type="color" value={leaves?.tintBack || '#a8b89a'}
               onChange={(e) => onParams({ leaves: { tintBack: e.target.value } })} style={colorStyle} />
+          </Row>
+          <Row label="Underside">
+            <DraftSlider min={0} max={1} step={0.05}
+              value={leaves?.faceStrength ?? leaves?.face?.strength ?? 0}
+              onCommit={(v) => onParams({ leaves: { faceStrength: v } })}
+              format={(v) => (v > 0 ? `${Math.round(v * 100)}%` : 'off')} />
           </Row>
         </>
       )}
