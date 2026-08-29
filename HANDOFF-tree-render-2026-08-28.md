@@ -62,10 +62,14 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
    before today must re-bake.** Fixed in `captureImpostor.js`; ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`.
    ⚠️ **Jacob's *"silver maple leaves have fronts and backs"* hint is UNACCOUNTED FOR** — it points at
    colour and nothing measured here touches colour. Still open as its own question, not as this bug.
-2. **The duplicate-identity class** — `acer_saccharum`/`maple_sugar`, `nyssa_sylvatica`/`blackgum`.
-   ~990 placements kit-wide on the uncomposed twin, which **can never impostor**. ⭐ `resolveSpecies`
-   already collapses every pair; `pickVariant` never asks. Fix = *fallback may only select a COMPOSED
-   asset*. `BACKLOG.md` 2026-08-28 · [[project_one_tree_two_library_ids]]
+2. ✅ **The duplicate-identity class — CLOSED 2026-08-28** (`a56328dd` · corrected `deab54ed`).
+   `pickVariant` now swaps a raw twin for its composed sibling, looked up in the whole POOL and
+   gated by the same style filter. Verified by re-baking: LS 670 → **0** placements on a raw twin.
+   ⛔ Deliberately NOT the "fallback may only select a COMPOSED asset" this line prescribed — I built
+   that first and measured it: every composed asset is broadleaf, so it renders spruces as maples and
+   would have restyled 4,375 of HPDM's 8,346 placements, most of them genuine gaps rather than twins.
+   ⭐ Quality is not the discriminator either (all four species are quality 4); composed ⟺ the
+   manifest carries a `bark` record. [[project_one_tree_two_library_ids]]
 3. **`acer_saccharum`'s 123 m card** — its GLB is 65 × 106 m and 10.4 m tall: a merged **group shot**
    (`ROADMAP B7`). 251 placements each throwing a city-block-sized billboard. Its dossier says
    `canopyRadiusM: 9` against a measured 60 — trusting the authored radius may be a cheap interim.

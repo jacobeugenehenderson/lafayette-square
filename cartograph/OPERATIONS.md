@@ -172,11 +172,17 @@ The pool is **baked into the ground** (contour-correct), so its *shape* is a bak
 ### Bake — committing the look to the slab
 
 - **Bake buttons** — Designer's **"Stage →"** = navigate to your last Stage shot immediately, bake async in the background (the slab refreshes when done). Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).
+- **Tree anchors are part of the pour (since 2026-08-28)** — a `tree-anchors` step runs straight after the ground bake and re-seats every trunk on the *drawn* ground. It had never been in the chain, so only the one look somebody baked by hand had anchors at all and every other town's trees floated on the smooth terrain field (up to ~1.9 m). ⛔ **The runtime's check is all-or-nothing:** one stale count discards *every* anchor for that look, silently but for a console line — so if trees look like they are hovering or sunk after a re-pour, this step is what to re-run, not the tree bake.
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
 
 ## Preview — the publish-confidence gate
 
 GPU profiler · device frame · layer-toggle matrix · TOD scrub. Walks the *shipping* render with a profiler strapped on. **The layer-toggle matrix is *ephemeral inspection* ("what am I measuring") — never persisted as policy; "all-on" equals production.** Separately, the operator authors **deployment policy** here: the per-platform channel-listing (desktop vs. mobile inclusion), the one thing Preview writes. Keystone Reference: **`PREVIEW.md`** (the model — what it inspects + how to read the numbers). *(In flight — the virtual-device emulator + device-budget gauges + thermal/memory/transition readouts: `HANDOFF-preview-measurement.md`.)*
+
+### Publish — where the buttons actually push
+
+- **"Publish to Staging"** pushes your working branch to whichever branch `.github/workflows/staging.yml` deploys from. ⛔ It was pinned to a branch nothing had deployed since 2026-08-02, so the button ran, reported success, and staging never moved — a silent no-op at the gate. ▶ `node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives both halves from source and fails if they part company again. **Never take the branch from memory or from this page — the check is the answer.**
+- ⚠️ **"Promote to Prod" is not a slab publish — it ships the whole branch.** It fast-forwards `main` to your working HEAD, so every commit you are carrying goes to production, not just the baked look. That is a *release*, and it deserves its own moment rather than being reached for while re-pouring.
 
 Unlike Stage, **Preview authors almost nothing** — its knobs set up an *inspection*, not a look. The one thing it will write is deployment policy (below). What persists is the inspection *state* (which device, which layers shown), in `localStorage`, so a reload returns you to the same vantage.
 
