@@ -326,10 +326,14 @@ export default function Grove() {
   const heroBatch = forceAll.current ? overheadSpecies : heroDirty
 
   // Bake→Slab: run the HTTP roster bake, THEN kick the in-Canvas overhead capture.
-  const bakeAll = async () => {
+  const bakeAll = async ({ ifDirty = false } = {}) => {
     forceAll.current = false
     setOverheadProg(null)
-    await bakeGroveToSlab()
+    // ⛔ The roster bake is the EXPENSIVE half (~43 s) and it never tapered — only the
+    // captures did. Arrival now asks the server to skip it when every input is older
+    // than the baked slab; the button below still forces. (Jacob, 2026-08-28: "it
+    // rebakes every time you enter the grove. It should only bake dirty or new things.")
+    await bakeGroveToSlab({ ifDirty })
     // ⛔ RE-READ THE SLAB FIRST. The roster bake just rewrote trees.json, and the capture
     // pool IS that file's species list — capturing off a stale read would shoot the
     // PREVIOUS bake's species.
@@ -362,7 +366,7 @@ export default function Grove() {
     if (!activeLookId || groveBaking) return
     if (autoBakedFor.current === activeLookId) return
     autoBakedFor.current = activeLookId
-    bakeAll()
+    bakeAll({ ifDirty: true })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLookId])
 

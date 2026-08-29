@@ -9,7 +9,7 @@
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, statSync, createReadStream, readdirSync } from 'fs'
 import { execFile } from 'child_process'
-import { join, dirname } from 'path'
+import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
 import { treeBakeInputsForScene, sceneForLook } from '../cartograph/tree-bake-inputs.mjs'
@@ -1153,11 +1153,72 @@ const server = createServer(async (req, res) => {
     //   3. bakeTrees  — substitute placements
     // The slab is the contract — this is what LS renders. (/atlas/bake stays
     // atlas-only, for the per-toggle fire-and-forget auto-bake.)
+    // ── ARRIVAL MUST NOT RE-PAY THE WHOLE BAKE (Jacob, 2026-08-28) ─────────────
+    // "It's set up now to where it rebakes every time you enter the grove. It should
+    // only bake dirty or new things."
+    // ⛔ THE CLAIM THAT WAS WRONG. `Grove.jsx` says the arrival bake "tapers to
+    // near-zero" because of drain-on-bake fingerprinting. That fingerprinting is real
+    // but it governs only the CAPTURES; the roster bake in front of them
+    // (generate-salon ALL species → rebuildIndex → bakeLook → bakeTrees, ~43 s) ran
+    // unconditionally on every entry. Half the gesture tapered and the expensive half
+    // never did.
+    // ⭐ Same model as cartograph's `needsRebuild` (serve.js:137): max(input mtime) >
+    // min(output mtime) → dirty. Only the AUTO-arrival passes ?ifDirty=1; the explicit
+    // Bake→Slab button and ⟳ still force, because a deliberate operator gesture must
+    // never be second-guessed by a heuristic.
+    // ⛔ `public/trees` is an OUTPUT of generate-salon, NOT an input — including it
+    // would make the bake permanently self-dirtying.
+    // ⛔ Anything unreadable ⇒ DIRTY. Phase 1 exists so the bake never ships stale
+    // GLBs; a skip we are not certain of would re-open exactly that hole.
+    const maxMtimeOf = (paths) => {
+      let max = 0
+      const walk = (f) => {
+        let st; try { st = statSync(f) } catch { max = Infinity; return }   // unreadable ⇒ dirty
+        if (st.isDirectory()) { for (const e of readdirSync(f)) walk(join(f, e)); return }
+        if (st.mtimeMs > max) max = st.mtimeMs
+      }
+      for (const f of paths) { if (existsSync(f)) walk(f); }
+      return max
+    }
+    const groveBakeIsDirty = (lookName) => {
+      const LOOK_DIR = join(ROOT, 'public/baked', lookName)
+      const outputs = [join(LOOK_DIR, 'trees-atlas.json'), join(LOOK_DIR, 'trees.json')]
+      for (const o of outputs) if (!existsSync(o)) return { dirty: true, why: `${basename(o)} does not exist` }
+      const minOut = Math.min(...outputs.map(o => statSync(o).mtimeMs))
+      const inputs = [
+        join(__dirname, 'state'),            // the compositions the operator authors
+        join(__dirname, 'dossiers'),         // size bands feed bake-trees' per-instance scale
+        join(ROOT, 'public/library'),   // the parts a composition is built from
+        join(ROOT, 'public/looks', lookName, 'design.json'),
+        join(__dirname, 'generate-salon.js'), join(__dirname, 'build-index.js'),
+        join(__dirname, 'bake-look.js'), join(__dirname, 'bake-trees.js'),
+      ]
+      const maxIn = maxMtimeOf(inputs)
+      return maxIn > minOut
+        ? { dirty: true, why: `an input changed ${((maxIn - minOut) / 1000).toFixed(0)}s after the last bake` }
+        : { dirty: false, why: 'every input is older than the baked slab' }
+    }
+
     if (req.method === 'POST' && path === '/grove/bake') {
       const lookName = new URL(req.url, 'http://x').searchParams.get('look')
       if (!lookName) return jsonRes(res, 400, { error: 'missing ?look=<name>' })
       if (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.')) {
         return jsonRes(res, 400, { error: 'invalid look name' })
+      }
+      // ⭐ Only the ARRIVAL auto-bake asks to be skipped; buttons always force.
+      if (new URL(req.url, 'http://x').searchParams.get('ifDirty') === '1') {
+        const d = groveBakeIsDirty(lookName)
+        if (!d.dirty) {
+          let count = 0, uniqueVariants = 0
+          try {
+            const tj = JSON.parse(readFileSync(join(ROOT, 'public/baked', lookName, 'trees.json'), 'utf-8'))
+            count = tj.count ?? tj.instances?.length ?? 0
+            uniqueVariants = tj.uniqueVariants ?? 0
+          } catch { /* counts are cosmetic; the skip stands */ }
+          console.log(`[grove/bake] ⏭  "${lookName}" CLEAN — ${d.why}. Skipped generate-salon + bakeLook + bakeTrees.`)
+          return jsonRes(res, 200, { ok: true, skipped: true, why: d.why, totalMs: 0, placements: { count, uniqueVariants } })
+        }
+        console.log(`[grove/bake] "${lookName}" DIRTY — ${d.why}. Running the full roster bake.`)
       }
       try {
         const t0 = Date.now()

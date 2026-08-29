@@ -294,14 +294,17 @@ const useArboristStore = create((set, get) => ({
   // button's spinner reflects the operator's "ready to look in LS" moment.
   groveBaking: false,
   groveBakeResult: null,   // { count, uniqueVariants, totalMs } | { error }
-  bakeGroveToSlab: async () => {
+  // `ifDirty` is passed ONLY by the Grove's arrival auto-bake. An explicit operator
+  // gesture (Bake→Slab, ⟳) always forces — a deliberate press must never be
+  // second-guessed by a freshness heuristic.
+  bakeGroveToSlab: async ({ ifDirty = false } = {}) => {
     const lookId = get().activeLookId
     if (!lookId) { set({ groveBakeResult: { error: 'No active Look selected' } }); return }
     set({ groveBaking: true, groveBakeResult: null })
     // Flush any pending Salon autosave so the bake regenerates from current source.
     await get()._saveSalonDebounced.flush()
     try {
-      const r = await fetch(`/api/arborist/grove/bake?look=${encodeURIComponent(lookId)}`, { method: 'POST' })
+      const r = await fetch(`/api/arborist/grove/bake?look=${encodeURIComponent(lookId)}${ifDirty ? '&ifDirty=1' : ''}`, { method: 'POST' })
       const d = await r.json()
       if (!r.ok || !d.ok) throw new Error(d.error || `HTTP ${r.status}`)
       set({
