@@ -232,20 +232,36 @@ function isComposedSpecies(species) {
   return composed
 }
 
-// Drop any candidate that is the raw twin of a composed candidate in the SAME set.
-// A species with no composed sibling is left exactly where it is.
-function dropRawTwins(candidates) {
-  if (candidates.length < 2) return candidates
+// Swap a raw twin for its COMPOSED sibling. A species with no composed sibling is
+// left exactly where it is.
+//
+// ⛔⛔ THE SIBLING IS LOOKED UP IN THE WHOLE POOL, NOT IN `candidates` — and the first
+// version of this got that wrong. In the ROUTING path `candidates` is filtered to the
+// species the map named (`{"Oak, Red": ["quercus_alba"]}`), so a composed sibling is by
+// construction absent from it and the swap could never fire there; only the category
+// fallback, whose candidate set is the whole category, would have worked. Three LS
+// routes name a raw twin, so the hole was real.
+// ⭐ SUBSTITUTE, don't drop: the routed species IS the tree the operator asked for, and
+// its composed sibling is the same canonical — so `oak_white` delivers "Oak, Red"'s
+// white oak, dressed. Dropping would have silently thinned the routing instead.
+function preferComposedTwin(candidates, pool, activeStyles) {
+  if (!candidates.length) return candidates
   const canon = (sp) => { const r = resolveSpecies(sp); return r.resolved ? String(r.value) : null }
-  const composedCanon = new Set()
-  for (const v of candidates) if (isComposedSpecies(v.species)) { const c = canon(v.species); if (c) composedCanon.add(c) }
-  if (!composedCanon.size) return candidates
-  const kept = candidates.filter(v => {
-    if (isComposedSpecies(v.species)) return true
+  const composedByCanon = new Map()
+  for (const v of pool) {
+    if (!isComposedSpecies(v.species)) continue
+    if (!v.styles?.some((s) => activeStyles.has(s))) continue   // same style gate the caller applied
     const c = canon(v.species)
-    return !(c && composedCanon.has(c))
-  })
-  return kept.length ? kept : candidates
+    if (c && !composedByCanon.has(c)) composedByCanon.set(c, v)
+  }
+  if (!composedByCanon.size) return candidates
+  const out = [], seen = new Set()
+  for (const v of candidates) {
+    const c = isComposedSpecies(v.species) ? null : canon(v.species)
+    const use = (c && composedByCanon.get(c)) || v
+    if (!seen.has(use.species)) { seen.add(use.species); out.push(use) }
+  }
+  return out.length ? out : candidates
 }
 
 function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed) {
@@ -256,10 +272,10 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
     // SAME canonical as its composed sibling, so swapping `quercus_alba` for `oak_white`
     // delivers the white oak the map asked for, dressed. A routed species with no
     // composed sibling is left exactly as routed.
-    const candidates = dropRawTwins(pool.filter(v =>
+    const candidates = preferComposedTwin(pool.filter(v =>
       speciesSet.has(v.species) &&
       v.styles?.some(s => activeStyles.has(s)),
-    ))
+    ), pool, activeStyles)
     if (candidates.length) {
       // Per ARCHITECTURE.md "Two-tier substitution": heroes win their
       // bucket's quality lottery automatically (`4 > 2`). Restrict the hash
@@ -274,10 +290,10 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
     }
   }
   for (const cat of [category, ...(CATEGORY_FALLBACK[category] || [])]) {
-    const candidates = dropRawTwins(pool.filter(v =>
+    const candidates = preferComposedTwin(pool.filter(v =>
       v.category === cat &&
       v.styles?.some(s => activeStyles.has(s)),
-    ))
+    ), pool, activeStyles)
     if (candidates.length) {
       const idx = Math.floor(hash01(seed, 1) * candidates.length)
       return candidates[idx]
