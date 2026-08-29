@@ -2128,6 +2128,26 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin')],
         `node bake-ground.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 300000 })
+      // ⛔⛔ TREE ANCHORS — THE STEP THE CHAIN NEVER RAN (wired 2026-08-28).
+      // `cartograph/ARCHITECTURE.md:220` calls this ordering load-bearing and adds
+      // "⚠️ verify serve.js enforces this before relying on auto-bake." It did not:
+      // the step was absent from the pour entirely, so a repour moved the ground and
+      // left the anchors behind. The runtime's length check is ALL-OR-NOTHING — one
+      // stale count discards EVERY anchor and the whole scene drops onto the smooth
+      // terrain field instead of the drawn ground (measured on LS 2026-08-28: 4,995
+      // anchors against 5,146 placements ⇒ all 5,146 trees mis-seated, up to ~1.9 m
+      // of float). Runs immediately after bake-ground because it samples that mesh.
+      // ⚠️ `trees.json` is a DEP, not an output of this chain — the Grove's tree bake
+      // writes it — so a re-poured roster correctly marks the anchors dirty here.
+      // ⛔ Both flags are passed explicitly: bake-tree-anchors defaults BOTH look and
+      // scene to 'lafayette-square', so an omitted flag writes LS's trunk heights into
+      // another town's slab (the A00 class — that exact bug was fixed 2026-07-15).
+      await runIfDirty('tree-anchors',
+        [join(LOOK_DIR, 'ground.json'), join(LOOK_DIR, 'ground.bin'), join(LOOK_DIR, 'trees.json'),
+         join(here, 'bake-tree-anchors.js'), join(here, 'groundSampler.js'), join(here, 'terrainLoad.js')],
+        [join(LOOK_DIR, 'tree-anchors.json')],
+        `node bake-tree-anchors.js --look=${id} ${sceneFlag}`,
+        { cwd: here, timeout: 300000 })
       if (layerOn('building')) {
         await runIfDirty('buildings',
           [MAP_JSON, DESIGN, join(here, 'bake-buildings.js')],
