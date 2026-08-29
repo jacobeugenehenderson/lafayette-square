@@ -111,6 +111,45 @@ export function heroAnimPose(t01, keyframes, motion, outPos, outTgt) {
 let _startOffsetSec = 0
 export function randomizeHeroStart(period = 720) { _startOffsetSec = Math.random() * period }
 
+// ── END TRIM — ⛔ THE PAN MUST NEVER APPEAR TO STOP (Jacob, 2026-08-28) ───────
+// `sine` is a ping-pong whose derivative is ZERO at both turning points, so the
+// camera decelerates to a dead stop at each end of every cycle — and it opens on
+// one, because phase starts at 0. Measured on LS (period 1360 s): 0.013% of the
+// path covered in the first 5 s, 0.48% in 30 s. It reads as "the camera is stuck
+// loading." It is not loading; it is the wave shape.
+//
+// The trim cuts the flat ends out of the wave's DOMAIN and then renormalises the
+// output back to [0,1]. ⭐ Both halves matter:
+//   • domain trim  → the phase never enters the near-zero-speed bands
+//   • renormalise  → the camera STILL REACHES both outer keyframes. ⛔ Without it
+//     the trim quietly shortens the sweep and the operator's end keyframes stop
+//     being visited — discarding authored work to fix a timing complaint.
+// Position stays continuous at both seams (any symmetric ping-pong wave is mirror-
+// symmetric about 0.5, so the two sides meet at the same value); the reversal now
+// happens at ~37% of peak speed at the default trim rather than at 0.
+// ⚠️ Applies to Stage + Preview + production alike — one hero animation, staged is
+// what ships. Live-tunable for the eye-gate: `window.__heroEndTrim(0.1)`.
+let _endTrim = 0.06
+if (typeof window !== 'undefined') {
+  window.__heroEndTrim = (v) => {
+    if (v != null) _endTrim = Math.max(0, Math.min(0.2, v))
+    console.log(`[hero] end trim = ${_endTrim} (0 = the authored wave, stops at the ends)`)
+    return _endTrim
+  }
+}
+function shapePhase(t01, wave) {
+  if (!(_endTrim > 0)) return wave(t01)
+  const e = _endTrim
+  const half = t01 < 0.5 ? 0 : 0.5
+  const tt = half + e + (t01 - half) * (1 - 4 * e)
+  const lo = wave(e), hi = wave(0.5 - e)
+  const a = Math.min(lo, hi), b = Math.max(lo, hi)
+  const s = wave(tt)
+  if (!(b - a > 1e-6)) return s
+  const n = (s - a) / (b - a)
+  return n < 0 ? 0 : n > 1 ? 1 : n
+}
+
 // ── Arc-length reparam + per-keyframe dwell (heroKeyframeAnim ONLY) ─────────
 // Two problems with the raw uniform-param sweep: (1) Catmull-Rom's parameter
 // isn't proportional to distance, so unequal segments make the camera LURCH
@@ -178,7 +217,7 @@ export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
   const period = motion.period || 720
   const speed = motion.speed || 1
   const wave = WAVES[motion.easing] || WAVES.sine
-  const t = wave((((elapsedSec + _startOffsetSec) * speed) % period) / period)
+  const t = shapePhase((((elapsedSec + _startOffsetSec) * speed) % period) / period, wave)
 
   if (keyframes.length <= 1) {
     const p = keyframes[0]?.position || [0, 0, 0]

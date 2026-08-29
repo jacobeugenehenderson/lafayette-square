@@ -404,6 +404,19 @@ function CameraRig() {
   }, [scene?.heroKeyframes, heroSubject[0], heroSubject[1], heroSubject[2],
       browseBounds?.w, browseBounds?.h, heroFov])
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+  // ⭐ ARRIVAL VARIETY — a different part of the pan on every load (Jacob, 2026-08-28).
+  // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
+  // first load is not an entry: `prevMode` initialises to 'hero', so on arrival
+  // `vm !== prevMode.current` is false and the branch never runs — the offset stayed 0
+  // and every visitor opened on the identical frame. One shot, once the scene's authored
+  // period is known. ⛔ Depends on heroMotion.period only: re-randomising on any other
+  // dep would jump the camera mid-pan.
+  const didRandomizeArrival = useRef(false)
+  useEffect(() => {
+    if (didRandomizeArrival.current) return
+    didRandomizeArrival.current = true
+    randomizeHeroStart(heroMotion.period)
+  }, [heroMotion.period])
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
