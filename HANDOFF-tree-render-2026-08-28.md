@@ -52,6 +52,16 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
 
 ## ⛔ OPEN — in the order I would take them
 
+0. ⛔⛔ **THE CAPTURE-FRAME FIX HAS NOT PROPAGATED, AND IT WILL NOT ON ITS OWN** *(2026-08-29)*.
+   The code is right and `maple_silver` proves it — that species could never bake an overhead
+   before and now carries 3 bands. But every ALREADY-captured species still holds its pre-fix
+   height (LS 20 findings, HPDM 16): **drain-on-bake re-captures only what is DIRTY, and dirty
+   means the `captureKey` fingerprint moved.** The fix changed the *measurement*, not the
+   fingerprint, so the drain skips every one of them. ▶ Remedy today: the Grove's explicit
+   buttons still FORCE — use those, not the arrival bake. ⭐ Remedy for the kit: **fold a version
+   of the capture code into `captureKey`**, or every future capture fix fails silently the same
+   way and looks landed. ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`
+
 1. ✅ **`maple_silver`'s overhead capture — CLOSED.** The band cuts were computed in the chassis-LOCAL
    frame; the camera clips in WORLD (`camY − y`). Node scale <1 put the top cut above the crown:
    `maple_silver` (0.707) retained **2%** of its canopy band, `linden_american` (0.782) 27% — the
