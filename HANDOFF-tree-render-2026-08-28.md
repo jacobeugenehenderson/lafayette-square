@@ -52,13 +52,16 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
 
 ## ⛔ OPEN — in the order I would take them
 
-1. **`maple_silver`'s overhead capture.** Composed, all records, hero works, overhead fails repeatedly.
-   **Ruled out:** composition (identical to working `maple_red`), geometry, foliage distribution, face
-   culling (capture material is DoubleSide), bark record. Only distinguishing fact: **29.7 m, tallest
-   on the roster.** ⛔ **Cause NOT established.** A failed capture leaves no artifact — needs a probe
-   inside the live capture reporting per-band alpha coverage, ortho frame and Y slice.
-   ⚠️ Jacob's hint — *"silver maple leaves have fronts and backs"* — points at colour; the guard
-   measures **alpha**. Either the hint reaches it by a mechanism not yet found, or it is a separate truth.
+1. ✅ **`maple_silver`'s overhead capture — CLOSED.** The band cuts were computed in the chassis-LOCAL
+   frame; the camera clips in WORLD (`camY − y`). Node scale <1 put the top cut above the crown:
+   `maple_silver` (0.707) retained **2%** of its canopy band, `linden_american` (0.782) 27% — the
+   *"unexplained"* blank canopy of 2026-07-22, same mechanism — `tilia_americana` (0.004) nothing at
+   all. Scale ≥1 pushed the cuts inside the crown and passed, every time, which is why it looked
+   species-specific. ⭐ The same slip shipped the **card height** in the wrong frame roster-wide
+   (`maple_silver` 29.7 m for a 21.0 m tree; HPDM's `picea_abies` **681 m**) — ⛔ **every Look baked
+   before today must re-bake.** Fixed in `captureImpostor.js`; ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`.
+   ⚠️ **Jacob's *"silver maple leaves have fronts and backs"* hint is UNACCOUNTED FOR** — it points at
+   colour and nothing measured here touches colour. Still open as its own question, not as this bug.
 2. **The duplicate-identity class** — `acer_saccharum`/`maple_sugar`, `nyssa_sylvatica`/`blackgum`.
    ~990 placements kit-wide on the uncomposed twin, which **can never impostor**. ⭐ `resolveSpecies`
    already collapses every pair; `pickVariant` never asks. Fix = *fallback may only select a COMPOSED
@@ -89,6 +92,7 @@ node scratch/claims-every-shadowed-placement-renders.mjs      # rings without tr
 node scratch/claims-the-roster-light-tells-the-truth.mjs      # green-but-unexported / placed-but-unexported
 node scratch/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
 node scratch/claims-every-placed-asset-has-a-size-band.mjs    # flat 1:1 scale, ranked by PLACED demand
+node scratch/claims-the-capture-frame-is-the-clip-frame.mjs   # band cuts outside the tree; pre-fix card heights
 ```
 Each **pins** the runtime rule it models and exits 2 on drift rather than reporting green off a rule
 that moved. ⛔ `ksi-y-m-yn` rows are **noise** — the Polish pours are dead until deliberately resurrected.

@@ -288,8 +288,17 @@ function renderTreeToTexture(gl, glbScene, heightM, canopyRadiusM, opts = {}) {
  * the shared shader reads (aBark / aBarkRegion / aWindTier / aTreeHeightNorm /
  * aLampGlow / aHeroTier) — exactly as the Salon preview does
  * (SpecimenViewport#Skeleton), so bark + leaves render with full atlas parity.
- * Returns { scene, heightM } where heightM is the chassis Y-extent (the real
+ * Returns { scene, heightM } where heightM is the tree's WORLD Y-extent (the real
  * height the ortho frames + the billboard is sized to).
+ *
+ * ⛔⛔ TWO FRAMES LIVE IN THIS FUNCTION AND THEY ARE NOT INTERCHANGEABLE.
+ *  • `chassisMinY / chassisYRange` are LOCAL — `stampTreeVertexAttrs` normalizes
+ *    raw `position.y` against them, so a world number there corrupts the ramp.
+ *  • `heightM` is WORLD — every consumer (the ortho frame, the band near/far
+ *    clips, the POSTed card height) works in the frame the camera renders in.
+ * The GLB node carries a scale (0.004 → 1.9 across the live roster), so these two
+ * differ by that factor. Reading the local number as a world one is what silently
+ * blanked the overhead captures: see the frame note on `measureCanopyBaseWorld`.
  */
 function materializeForCapture(gltfScene, treeMaterial, { skipStamp = false } = {}) {
   const root = gltfScene.clone(true)
@@ -319,7 +328,14 @@ function materializeForCapture(gltfScene, treeMaterial, { skipStamp = false } = 
     o.castShadow = true      // leaves cast shadows on each other + the branches
     o.receiveShadow = true
   })
-  const heightM = Number.isFinite(chMaxY) ? Math.max(1, chMaxY) : 12
+  // ⭐ WORLD, not local. `chMaxY` above is the union of per-geometry bounding
+  // boxes with no node matrix applied; the camera clips in world space, so a
+  // scaled node made the frame and the clips disagree by exactly that scale.
+  // Box3(precise) pushes every vertex through its node's matrix — the same
+  // correction OverheadBaker#measureCanopyRadius already carries for the radius.
+  const worldBox = new THREE.Box3().setFromObject(root, true)
+  const worldMaxY = worldBox.isEmpty() ? NaN : worldBox.max.y
+  const heightM = Number.isFinite(worldMaxY) ? Math.max(1, worldMaxY) : 12
   return { scene: root, heightM }
 }
 
@@ -348,20 +364,38 @@ export function captureTreeOverhead(gl, gltfScene, treeMaterial, { canopyRadiusM
  * Measure the canopy-base Y (where foliage starts) off a MATERIALIZED capture
  * scene — the runtime twin of bake-impostors.js#measureCanopyBase, but reading
  * the stamped `aBark` vertex attribute (1 = bark, 0 = leaf) instead of a
- * gltf-transform doc. Returns { minY, maxY, canopyBaseY } in the scene's local
- * frame (chassis GLBs are baked flat, base ≈ 0 — the same frame the ortho
- * framing + band clips use). Falls back to a ~1/3-up broadleaf break when no
- * classified foliage is present.
+ * gltf-transform doc. Returns { minY, maxY, canopyBaseY } in WORLD space.
+ *
+ * ⛔⛔ THE FRAME IS THE WHOLE POINT — THE CUT AND THE CLIP MUST SHARE ONE.
+ * These numbers become the band cuts, and `renderTreeToTexture` turns a cut into
+ * a camera near/far pair as `camY − y` — i.e. it clips in WORLD space. This
+ * function used to read raw `position.y` (LOCAL) while the doc-comment asserted
+ * "chassis GLBs are baked flat, base ≈ 0 — the same frame the ortho framing +
+ * band clips use." That assertion was false: every roster GLB carries a node
+ * scale (0.004 → 1.9 measured), so the cuts were off by that factor. Scale > 1
+ * pushed the cuts INSIDE the crown and passed; scale < 1 pushed the top cut ABOVE
+ * it and the canopy band rendered empty space — a fully transparent PNG, which is
+ * a FAILED capture that looks exactly like a thin canopy. maple_silver (0.707)
+ * retained 2% of its canopy band and could never bake; linden_american (0.782)
+ * retained 27% and shipped the "unexplained" blank canopy of 2026-07-22;
+ * tilia_americana (0.004) retained nothing at all in any band.
+ * ⭐ It also fixes the POSTed card height, which was the local number: maple_silver
+ * shipped 29.7 m for a 21.0 m tree, maple_red 11.8 m for a 15.0 m one.
+ * ▶ node scratch/claims-the-capture-frame-is-the-clip-frame.mjs
+ *
+ * Falls back to a ~1/3-up broadleaf break when no classified foliage is present.
  */
-function measureCanopyBaseLocal(scene) {
+function measureCanopyBaseWorld(scene) {
   let minY = Infinity, maxY = -Infinity, leafMinY = Infinity, sawLeaf = false
+  const v = new THREE.Vector3()
+  scene.updateMatrixWorld(true)
   scene.traverse((o) => {
     const g = o.isMesh ? o.geometry : null
     const pos = g?.attributes?.position
     if (!pos) return
     const bark = g.attributes.aBark
     for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i)
+      const y = v.fromBufferAttribute(pos, i).applyMatrix4(o.matrixWorld).y
       if (y < minY) minY = y
       if (y > maxY) maxY = y
       const isLeaf = bark ? bark.getX(i) < 0.5 : false
@@ -408,7 +442,7 @@ export function prepareOverheadBands(gltfScene, treeMaterial, { canopyRadiusM, a
   // mutating those shared, live-rendered buffers.
   const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
   const rM = Math.max(1, canopyRadiusM || 5)
-  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseWorld(scene)
   const H = Math.max(1e-3, maxY - minY)
   const s = Math.max(1e-3, maxY - Cb)           // crown vertical span
   // Bottom→top. The branch band dips ~12% of tree height below the leaf base so
@@ -580,7 +614,7 @@ export function prepareHeroBands(gltfScene, treeMaterial, { canopyRadiusM, azimu
   if (!gltfScene || !treeMaterial) return null
   const { scene, heightM } = materializeForCapture(gltfScene, treeMaterial, { skipStamp: alreadyStamped })
   const rM = Math.max(1, canopyRadiusM || 5)
-  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseLocal(scene)
+  const { minY, maxY, canopyBaseY: Cb } = measureCanopyBaseWorld(scene)
   const N = Math.max(1, Math.round(azimuths))
   const M = Math.max(1, Math.round(shells))
   const shots = []

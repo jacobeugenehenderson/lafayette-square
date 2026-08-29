@@ -127,12 +127,19 @@ Both are **RTT captures of the real tree** — rendered from the actual `lod1` g
 - ⛔ **BLANK BANDS ARE TWO CAUSES, NOT ONE (2026-08-28).** ① **The duplicate-id class** —
   `nyssa_sylvatica` / `acer_saccharum` are the RAW Latin twins of composed `blackgum` / `maple_sugar`;
   category fallback picks them, they have no composition, so they *cannot* capture. Re-baking never
-  clears it. [[project_one_tree_two_library_ids]] · `BACKLOG.md` 2026-08-28. ② **`maple_silver` is a
-  REAL and separate bug** — composed, all records present, hero capture works, overhead fails
-  repeatedly. Ruled out: composition (identical to working `maple_red`), geometry, foliage
-  distribution, face culling (capture material is DoubleSide). Only distinguishing fact: it is 29.7 m,
-  the tallest on the roster. **Cause not established** — needs a probe inside the live capture.
-- **Three overhead bands baked BLANK and shipped undetected** — `platanus_acerifolia` canopy+branch, `linden_american` canopy (measured 2026-07-22, `scratch/overhead-band-coverage.mjs`). Root cause for the platanus: `applyBarkUniforms` sets `uBarkTileScale (0,0)` when a species has no `barkDetailBySpecies` record, so all its bark samples an empty atlas region — and only Salon-composed species get that record, which the merged London plane never was. `OverheadBaker` now **refuses to POST a species with any blank band** rather than shipping a hole. The linden's blank canopy is unexplained.
+  clears it. [[project_one_tree_two_library_ids]] · `BACKLOG.md` 2026-08-28. ② ✅ **THE FRAME BUG — FOUND AND
+  FIXED 2026-08-28.** `prepareOverheadBands` cut the bands from raw `position.y` (chassis-LOCAL)
+  while `renderTreeToTexture` clips `near`/`far` as `camY − y` (WORLD). Every GLB carries a node
+  scale, so the cuts were off by it: **scale ≥ 1 pushed them inside the crown and always passed;
+  scale < 1 pushed the top cut above it** and the canopy band rendered empty space — a transparent
+  PNG, indistinguishable from a thin canopy. `maple_silver` (0.707) retained **2%** of its canopy
+  band, which is why it "kept failing" and why a retry sometimes rescued it (the sliver's leaves
+  move under the live sway uniforms). Both measures are world now; `chassisMinY/YRange` stay LOCAL
+  because `stampTreeVertexAttrs` normalizes local positions against them.
+- **Three overhead bands baked BLANK and shipped undetected** — `platanus_acerifolia` canopy+branch, `linden_american` canopy (measured 2026-07-22, `scratch/overhead-band-coverage.mjs`). Root cause for the platanus: `applyBarkUniforms` sets `uBarkTileScale (0,0)` when a species has no `barkDetailBySpecies` record, so all its bark samples an empty atlas region — and only Salon-composed species get that record, which the merged London plane never was. `OverheadBaker` now **refuses to POST a species with any blank band** rather than shipping a hole. ✅ **The linden's canopy was the FRAME bug above** (scale 0.782 → 27% retained), not a second mystery.
+
+⭐⭐ **THE RULE, AND IT IS THE TRANSFERABLE PART: THE FRAME A BAND IS CUT IN MUST BE THE FRAME THE CAMERA CLIPS IN.** The same slip also shipped the card **height** in the wrong frame — `maple_silver` 29.7 m for a 21.0 m tree, `picea_abies` **681 m** on HPDM — because `heightM` came off un-transformed geometry bboxes while `canopyRadiusM` was already world-corrected. ⛔ One record, two frames, and nothing said a word. **A look baked before the fix carries wrong heights and must re-bake.**
+▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs` — pins both measures + the cut rule, and reports any stored height that is not the GLB's world height.
 
 > ⚠️ **The GPU "gauge" is NOT a perf signal.** The Preview emulator gauge is a count-vs-**interim-fake-budget** verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole tree-degradation arc (the impostor-tiering "gauge is red → geometry must go" reasoning) that was then reverted. **Gate tree perf on real device frame-ms + the operator's eye on the cinematic pan** ([[feedback_instrument_verdict_then_fix]], `[[project_smooth_pan_is_the_only_perf_target]]`) — the pan's visible set is fixed/predictable, so it's the only surface that must be smooth. Fixing the gauge's fake budgets is a backlog item, not a render trigger.
 
