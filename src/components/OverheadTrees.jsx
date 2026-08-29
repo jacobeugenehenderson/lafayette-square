@@ -76,8 +76,22 @@ export function OverheadLightDriver({ enabled = true }) {
 // carries (the LsoD's Street/Hero/Browse contexts; do NOT invent a parallel one).
 // If the user hot-key-overrides Browse into a tilt, billboarding the discs to face
 // the camera is a later refinement — for now the view context is the whole gate.
+// ⛔⛔ AND IT MUST HONOUR `shotOverride` OR PREVIEW NEVER SWAPS (Jacob, 2026-08-28:
+// "the radially arranged impostors from the hero shot are showing [in Browse]... I
+// believe I am seeing mesh trees in Browse *in preview*"). Preview owns its own camera
+// and DELIBERATELY does not drive `viewMode` — it publishes `shotOverride` instead
+// (`PreviewApp.jsx:932`), scoped so it "can't perturb terrain-exag / clouds / frameloop".
+// That scoping was right, but this consumer was never added to it: `viewMode` is pinned
+// to 'hero' in Preview forever, so `overheadMode` was ALWAYS false — the hero cards and
+// mesh trees never hid, and the overhead discs NEVER RENDERED AT ALL. Browse in Preview
+// has never shown the browse trees.
+// ⭐ It stayed invisible because the hero cards were themselves buried under the terrain
+// until `4486d0dc`/`2aaca5ca`; un-burying them is what exposed this, not what caused it.
+// ⛔ This is a PARITY break, and parity is Preview's entire job (`PREVIEW.md`: "renders
+// production's exact tree"). Same one-line idiom `useSceneJson.js:87` already uses —
+// production sets no `shotOverride`, so it falls through and is byte-identical there.
 export function useOverheadMode(enabled) {
-  const viewMode = useCamera(s => s.viewMode)
+  const viewMode = useCamera(s => s.shotOverride ?? s.viewMode)
   return enabled && viewMode === 'browse'
 }
 
