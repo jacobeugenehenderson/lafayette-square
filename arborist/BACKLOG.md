@@ -10,6 +10,23 @@
 
 ---
 
+## ▶ 2026-08-28 — ⛔ VOCABULARY RULING: **WE BAKE THE GROVE. THE GROVE IS POURED INTO THE SLAB.** *(Jacob)*
+
+> *"The Slab is a particular thing, and this isn't it. This is the Grove."*
+
+**The Slab is the INSTANCE** — the baked per-scene artifact that carries a town's identity
+(`SLAB-CONTRACT.md`, [[project_slab_is_the_instance_identity]]). **The Grove is the ROSTER** — the
+trees a Look carries. The bake gesture's subject is the **Grove**; the slab is where its output is
+**poured**. ⛔ "Bake → Slab" names the destination as the subject and demotes the Grove to a view
+onto the slab, which it is not.
+
+**Scope, measured:** ONE operator-facing string — the button label `Grove.jsx:622` and its tooltip
+`:629`. Everything else is comments/docs (`src/` 6 files, `arborist/` 8, root 20) and rides whatever
+touches them. ⛔ **Not a rename arc** — Jacob: *"not a topic for now."* Take the two strings when the
+Grove is next open; let the prose follow the traffic.
+
+---
+
 ## ▶ 2026-08-28 — ⛔⛔ ONE TREE, TWO LIBRARY IDS — AND THE FALLBACK PICKS THE UNCOMPOSED ONE
 
 > Jacob: *"Sugar maple is definitely on the list, so that's a naming problem… is that other tree
