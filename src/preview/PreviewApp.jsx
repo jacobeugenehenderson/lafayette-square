@@ -780,6 +780,35 @@ function PublishPanel({ lookId }) {
   }
   useEffect(() => { load() }, [lookId])  // eslint-disable-line react-hooks/exhaustive-deps
 
+  // ⛔⛔ READ THE WORLD ON MOUNT — DO NOT REMEMBER WHAT THIS SESSION DID.
+  // `deploys` used to be written ONLY by publishStaging/promoteProd, so it recorded an
+  // EVENT this tab witnessed rather than a FACT about the sites. Hard-refresh and the
+  // whole row vanished — Visit included — while the deploy was live and fine (Jacob,
+  // 2026-08-29). That is the same failure as trusting a cached iframe: the panel
+  // reporting its own history as the world's state.
+  // ⭐ So the state is DERIVED, every mount: ask each live site what slab it is actually
+  // serving and compare against ours. It survives a refresh, it is right when a deploy
+  // failed silently, and it is the answer in the operator's terms — "is the site showing
+  // my work?" — with no branch and no commit count anywhere near it.
+  useEffect(() => {
+    if (!status || status.bakedAt == null) return
+    let cancelled = false
+    ;(async () => {
+      for (const key of ['staging', 'prod']) {
+        try {
+          const j = await (await fetch(`${API}/deployed?target=${key}`)).json()
+          if (cancelled) return
+          setDeploys(prev => {
+            // Never clobber a push this session is still watching land.
+            if (prev[key]?.status === 'building') return prev
+            return { ...prev, [key]: { status: String(j.bakedAt) === String(status.bakedAt) ? 'ready' : 'behind', bakedAt: j.bakedAt, url: status.sites?.[key] } }
+          })
+        } catch { /* a site that cannot be reached stays unknown rather than claiming ready */ }
+      }
+    })()
+    return () => { cancelled = true }
+  }, [status, API])  // eslint-disable-line react-hooks/exhaustive-deps
+
   // Poll the LIVE site (server-side via the backend → no browser CORS) until its
   // bakedAt matches what we pushed → the deploy has propagated. Flips the row to
   // "ready" + reveals Visit; never auto-opens (no stale tab, no 10-min ambush).
@@ -875,20 +904,38 @@ function PublishPanel({ lookId }) {
   }
 
   if (!status) return null   // probing or no backend → render nothing
-  const aheadStaging = status.vsStaging?.ahead || 0
+  // ⛔ GATING ONLY, NEVER DISPLAYED. Promote is disabled when there is nothing to
+  // promote; that is the one thing the git counts are still load-bearing for. The
+  // moment one of these reaches the operator's eye, this panel is leaking git again.
   const aheadProd = status.vsProd?.ahead || 0
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
+  // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").
+  // A branch name and a commit count answer a question the operator does not have. The
+  // one they DO have is "is the site showing my work?", and that is `bakedAt` on the live
+  // site vs ours — see the derive-on-mount effect above.
+  // ⭐ VISIT ALWAYS RENDERS. It is a property of the look (every town gets its own staging
+  // site), not of a deploy this tab happened to watch, so it must not come and go with
+  // session state — that was the reported bug.
+  const DEPLOY_STATE = {
+    building: { dot: '○', color: '#fbbf24', text: 'publishing…' },
+    ready:    { dot: '✓', color: '#4ade80', text: 'showing your latest' },
+    behind:   { dot: '○', color: '#9a9691', text: 'behind' },
+    unknown:  { dot: '·', color: '#9a9691', text: 'not reachable' },
+  }
   const deployRow = (key, label) => {
     const d = deploys[key]
-    if (!d) return null
-    const ready = d.status === 'ready'
+    const st = DEPLOY_STATE[d?.status] || DEPLOY_STATE.unknown
+    const url = d?.url || status.sites?.[key]
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 6, fontSize: 11 }}>
-        <span style={{ color: ready ? '#4ade80' : '#fbbf24' }}>{ready ? '✓' : '○'} {label} {ready ? 'live' : 'deploying…'}</span>
-        {ready && <a href={d.url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', color: '#bfdbfe', textDecoration: 'underline' }}>Visit →</a>}
+      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 11 }}>
+        <span style={{ opacity: 0.75, minWidth: 46 }}>{label}</span>
+        <span style={{ color: st.color }}>{st.dot} {st.text}</span>
+        {url && <a href={url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', color: '#bfdbfe', textDecoration: 'underline' }}>Visit →</a>}
       </div>
     )
   }
+  // Past-tense when it is true: the button says what IS, and stays pressable to re-do it.
+  const stagingCurrent = deploys.staging?.status === 'ready' && !status.unbaked && !status.dirty?.length
   // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
   const sms = {
     capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
@@ -901,12 +948,11 @@ function PublishPanel({ lookId }) {
     <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 50, width: 236, background: 'rgba(16,14,12,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 12, color: '#e9e6e2', fontSize: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <span style={{ fontWeight: 700 }}>Publish</span>
-        <span style={{ opacity: 0.55, fontSize: 11 }}>{status.branch}</span>
       </div>
       {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
-      <div style={{ opacity: 0.7, lineHeight: 1.5 }}>
-        {aheadStaging > 0 ? `${aheadStaging} ahead of staging` : 'staging up to date'}<br />
-        {aheadProd > 0 ? `${aheadProd} ahead of prod` : 'prod up to date'}
+      <div style={{ marginBottom: 8 }}>
+        {deployRow('staging', 'Staging')}
+        {deployRow('prod', 'Live')}
       </div>
       <button disabled={!!busy || capturing || smsStage === 'pushing'} onClick={sms.onClick}
         style={btn({ background: sms.bg, color: sms.color, opacity: (busy || capturing || smsStage === 'pushing') ? 0.6 : 1 })}
@@ -915,14 +961,12 @@ function PublishPanel({ lookId }) {
       </button>
       <button disabled={!!busy} onClick={publishStaging}
         style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: busy ? 0.6 : 1 })}>
-        {busy === 'staging' ? 'Publishing…' : 'Publish to Staging'}
+        {busy === 'staging' ? 'Publishing…' : stagingCurrent ? '✓ Up to date — re-publish' : 'Publish to Staging'}
       </button>
-      {deployRow('staging', 'Staging')}
       <button disabled={!!busy || aheadProd === 0} onClick={promoteProd}
         style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || aheadProd === 0) ? 0.45 : 1 })}>
-        {busy === 'prod' ? 'Promoting…' : 'Promote to Prod'}
+        {busy === 'prod' ? 'Promoting…' : deploys.prod?.status === 'ready' ? '✓ Live is current — re-promote' : 'Promote to Prod'}
       </button>
-      {deployRow('prod', 'Prod')}
       {msg && <div style={{ marginTop: 8, color: msg.kind === 'err' ? '#f87171' : '#4ade80', wordBreak: 'break-word' }}>{msg.text}</div>}
     </div>
   )

@@ -2354,8 +2354,22 @@ createServer(async (req, res) => {
         const sMs = statSync(join(REPO_ROOT, `public/baked/${id}/scene.json`)).mtimeMs
         unbaked = dMs > sMs
       } catch { /* missing files → leave false */ }
+      // ⭐ THE OPERATOR'S QUESTION IS "IS THE SITE SHOWING MY WORK?", AND GIT CANNOT
+      // ANSWER IT (Jacob, 2026-08-29: "the user shouldn't know about the git").
+      // `bakedAt` can: the panel compares this local stamp against what each live
+      // site actually serves (`/deployed`), which is a truer answer than any commit
+      // count — it measures the ARTIFACT BEING SERVED, not the state of the repo, so
+      // it stays right when a deploy fails, and it survives a page refresh because
+      // it is read rather than remembered. The git fields above stay for the panel's
+      // own gating; they are not for display.
+      let bakedAt = null
+      try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, branch, unbaked, dirty, vsStaging, vsProd }))
+      res.end(JSON.stringify({
+        ok: true, branch, unbaked, dirty, vsStaging, vsProd, bakedAt,
+        // Per-look, because every town gets its own staging site.
+        sites: { staging: STAGING_SITE_URL, prod: PROD_SITE_URL },
+      }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
