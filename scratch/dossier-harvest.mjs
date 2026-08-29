@@ -93,6 +93,12 @@ const ROWS = [
   // ⭐ THE ORIENTATION AXIS'S FIRST REAL TEST. Juniperus is the genus where erect and
   // prostrate genuinely diverge, which is the argument that created chassis.orientation.
   { rank:34, species:'juniper, Chinese',     taxon:'Juniperus chinensis',    usda:'JUCH',  ncsu:'juniperus-chinensis',    taxonBasis:'unambiguous common name' },
+  // ⛔ RANKED BY ROSTER DEMAND, WHICH IS THE WRONG AXIS FOR RENDER LOAD (2026-08-28).
+  // "Oak, White" is 9 placements in the CENSUS and so fell below the original cut — but
+  // the SLAB places `oak_white` 519 times, because it is the substitution TARGET for
+  // Oak, Pin (459) and others. A species can be a rounding error in the roster and carry
+  // a tenth of the map. Harvest demand should follow PLACED assets, not roster counts.
+  { rank:35, species:'Oak, White',            taxon:'Quercus alba',           usda:'QUAL',  ncsu:'quercus-alba',           taxonBasis:'unambiguous common name; USDA PLANTS symbol QUAL' },
 ]
 
 // ── NC State Plant Toolbox ──────────────────────────────────────────────────

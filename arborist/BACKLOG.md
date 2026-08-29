@@ -10,6 +10,52 @@
 
 ---
 
+## ▶ 2026-08-28 — ⭐⭐ A SPECIES HAS TWO SIZE WINDOWS, AND THE TOWN PICKS ONE *(Jacob's arc)*
+
+> **"This isn't an old growth forest… is that a new column we should add to the dossiers? `urbanMax` `naturalMax`? …you know, altadena, other places, maybe they do in fact have old-growth versions of things."**
+
+⛔ **THE SOURCES WERE NEVER IN CONFLICT — THEY ANSWER DIFFERENT QUESTIONS.** `chassis.size` forces one
+number to mean two things, and the collapse is what manufactures the "contested" nulls
+(`ARCHITECTURE.md:53` — `oak_bur`, `blackgum`, `linden_american` all nulled for exactly this).
+Sugar maple makes it plain:
+
+| source | Sugar Maple | Oak, White | what it is |
+|---|---|---|---|
+| selectree `height_high` | 60 ft (18.3 m) | 60 ft (18.3 m) | a **landscape/street** planting figure |
+| ncsu `Dimensions` | 40–120 ft (12–37 m) | 50–135 ft (15–41 m) | **species potential**, forest-grown |
+| usda `Height, Mature` | 100 ft (30.5 m) | 100 ft (30.5 m) | between the two |
+
+A street sugar maple is **60 ft**; the same species in a forest reaches **120 ft**. 2×, and neither is wrong.
+
+⭐ **THE DATA IS ALREADY HARVESTED — ALL 34 SPECIES CARRY BOTH FIGURES.** Nothing needs re-fetching;
+▶ `node -e` over `scratch/dossier-raw-observations.jsonl` + `-batch2.jsonl` (34/34 have an ncsu range
+AND a selectree landscape height). The split is **derived from provenance** (`askedAs` records which
+database each cell came from), so it satisfies `bake-trees.js:589` — nothing invented.
+
+⭐⭐ **AND THE SELECTOR IS NOT ON THE SPECIES — IT IS ON THE INSTALLATION.** "Urban street grid or a
+place with old growth" is a fact about **Lafayette Square vs Altadena**, and belongs on the Look
+beside `heroLook` / `layerVis`. That is the kit-shaped half: town #2 gets the right window without
+re-authoring a single species. ⛔ Do not put a habitat flag on the dossier.
+
+**Shape:** two new sibling axes next to the three that already exist (`chassis.size`,
+`chassis.size_20yr`, `chassis.size_max` — the rubric carries 36 axes, so this is a fourth/fifth
+sibling, not a new concept). Consumers to touch: `rubric.json` (keystone), `units.mjs`, `matcher.js`,
+`publish-glb.js#normalizeScale`, `ingest-tagger.js`, `bake-trees.js#bandFor`. **Needs a standup** —
+it touches the rubric keystone.
+
+⚠️ **Blocked on this today:** `quercus_alba` was minted 2026-08-28 with `chassis.size` merged from
+ncsu+selectree to a **41.1 m target**, which would have rendered **519 white oaks at 41 m** — taller
+than any measured species on the map. Nulled as contested per precedent; `bandFor` now falls through
+to the USDA pair (7.6–30.5 m) and `normalizeScale` to `mature-heights.json`'s 25 m stopgap. The
+minted value is preserved under `chassis.size.mintedAs` for whoever settles it.
+
+⭐ **ALSO SURFACED, AND IT IS ITS OWN BUG:** the harvest's `ROWS` table is ranked by **roster demand**,
+but render load follows **placed** demand after substitution. "Oak, White" is **9** placements in the
+census and **519** on the slab — it is the substitution target for Oak, Pin (459). It fell below the
+harvest cut on the wrong axis. ▶ Re-rank the harvest by placed assets, and check what else that hid.
+
+---
+
 ## ▶ 2026-08-27 — ⭐⭐ THOUSANDS OF TREES IS THE PERMANENT CONDITION *(Jacob: "the next unblocker")*
 
 *"We are going to consistently have thousands of trees to show, so tackling that fact head
