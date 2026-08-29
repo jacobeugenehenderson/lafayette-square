@@ -58,6 +58,33 @@ The **Hero shot is the authored bounce**, replayed identically here, in Stage, a
 
 ---
 
+## 2a. ⛔⛔ THREE VISIBILITY SURFACES — and only one of them is the slab's
+
+*(2026-08-28. A whole session was lost to this: the map was correct everywhere and blank at the gate.)*
+
+| surface | lives in | who writes it | reaches Preview? |
+|---|---|---|---|
+| `scene.layerVis` | the baked slab | Designer / Stage | ✅ (mount-gates decorations) |
+| **Preview inspection toggles** | **`localStorage: preview.layers.v3`** | **Preview only** | ✅ **and nothing upstream can touch it** |
+| per-platform inclusion manifest | the Look | Preview's publish gate (§0.2) | deployment policy |
+
+⛔ **Turning layers on in the Designer does NOT turn them on in Preview.** Nor does a re-bake, nor a
+full re-pour from the Datawall. Ground/buildings/trees off in `preview.layers.v3` renders **identically
+to a broken slab**, with nothing on screen saying so — the operator reasonably concludes the pipeline
+broke. ⭐ **Preview should surface "N layers hidden" without expanding SCENE.** Not built.
+
+## 2b. ⛔ PARITY BREAK: the shot picker publishes `shotOverride`, and consumers must READ it
+
+Preview owns its own camera and **deliberately does not drive `useCamera.viewMode`** — it publishes
+`shotOverride`, scoped so it "can't perturb terrain-exag / clouds / frameloop" (`PreviewApp.jsx:932`).
+That scoping is right, but **every legitimate shot consumer must be added to it**, and one never was:
+`useOverheadMode` read `viewMode`, so in Preview it was pinned to `'hero'` forever ⇒ **Browse never
+swapped: the hero cards and mesh trees never hid and the overhead discs NEVER RENDERED AT ALL.**
+Fixed with the idiom `useSceneJson.js:87` already used — `s.shotOverride ?? s.viewMode` (production
+sets no override, so it falls through byte-identically).
+⛔ **Adding a shot consumer? Read `shotOverride ?? viewMode`, or Preview stops being a mirror** — and
+parity is this stage's entire job.
+
 ## 3. The toggle convention — why "all on" must equal production
 
 Every Scene-layer toggle gates `.visible` on a `<group>`, **never the mount** (the *Vernier convention*, `PreviewApp.jsx:339`). The rationale is load-bearing:
