@@ -916,26 +916,27 @@ function PublishPanel({ lookId }) {
   // ⭐ VISIT ALWAYS RENDERS. It is a property of the look (every town gets its own staging
   // site), not of a deploy this tab happened to watch, so it must not come and go with
   // session state — that was the reported bug.
-  const DEPLOY_STATE = {
-    building: { dot: '○', color: '#fbbf24', text: 'publishing…' },
-    ready:    { dot: '✓', color: '#4ade80', text: 'showing your latest' },
-    behind:   { dot: '○', color: '#9a9691', text: 'behind' },
-    unknown:  { dot: '·', color: '#9a9691', text: 'not reachable' },
+  // ⛔ ONE LINE PER TARGET (Jacob, 2026-08-29: "why are there two staging areas").
+  // A "Staging · Visit →" row above a "Publish to Staging" button named the same thing
+  // twice. The button IS the row: it says the state (past-tense and inert when the site
+  // is current) and carries that site's link beside it.
+  const visitLink = (key) => {
+    const url = deploys[key]?.url || status.sites?.[key]
+    if (!url) return null
+    return <a href={url} target="_blank" rel="noopener noreferrer"
+      style={{ flex: '0 0 auto', color: '#bfdbfe', textDecoration: 'underline', fontSize: 11 }}>Visit →</a>
   }
-  const deployRow = (key, label) => {
-    const d = deploys[key]
-    const st = DEPLOY_STATE[d?.status] || DEPLOY_STATE.unknown
-    const url = d?.url || status.sites?.[key]
-    return (
-      <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 4, fontSize: 11 }}>
-        <span style={{ opacity: 0.75, minWidth: 46 }}>{label}</span>
-        <span style={{ color: st.color }}>{st.dot} {st.text}</span>
-        {url && <a href={url} target="_blank" rel="noopener noreferrer" style={{ marginLeft: 'auto', color: '#bfdbfe', textDecoration: 'underline' }}>Visit →</a>}
-      </div>
-    )
-  }
-  // Past-tense when it is true: the button says what IS, and stays pressable to re-do it.
+  const targetRow = (key, button) => (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>{button}</div>
+      {visitLink(key)}
+    </div>
+  )
+  // ⛔ Past-tense AND INERT when it is true (Jacob, 2026-08-29). A live site already
+  // showing your latest has nothing to publish, so the button states that and stops
+  // being a button — it does not offer a re-do nobody asked for.
   const stagingCurrent = deploys.staging?.status === 'ready' && !status.unbaked && !status.dirty?.length
+  const prodCurrent = deploys.prod?.status === 'ready' && !status.unbaked && !status.dirty?.length
   // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
   const sms = {
     capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
@@ -950,23 +951,20 @@ function PublishPanel({ lookId }) {
         <span style={{ fontWeight: 700 }}>Publish</span>
       </div>
       {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
-      <div style={{ marginBottom: 8 }}>
-        {deployRow('staging', 'Staging')}
-        {deployRow('prod', 'Live')}
-      </div>
+
       <button disabled={!!busy || capturing || smsStage === 'pushing'} onClick={sms.onClick}
         style={btn({ background: sms.bg, color: sms.color, opacity: (busy || capturing || smsStage === 'pushing') ? 0.6 : 1 })}
         title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image, then ship to prod">
         {sms.label}
       </button>
-      <button disabled={!!busy} onClick={publishStaging}
-        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: busy ? 0.6 : 1 })}>
-        {busy === 'staging' ? 'Publishing…' : stagingCurrent ? '✓ Up to date — re-publish' : 'Publish to Staging'}
-      </button>
-      <button disabled={!!busy || aheadProd === 0} onClick={promoteProd}
-        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || aheadProd === 0) ? 0.45 : 1 })}>
-        {busy === 'prod' ? 'Promoting…' : deploys.prod?.status === 'ready' ? '✓ Live is current — re-promote' : 'Promote to Prod'}
-      </button>
+      {targetRow('staging', <button disabled={!!busy || stagingCurrent} onClick={publishStaging}
+        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingCurrent) ? 0.45 : 1, cursor: stagingCurrent ? 'default' : 'pointer' })}>
+        {busy === 'staging' ? 'Publishing…' : stagingCurrent ? 'Published to Staging' : 'Publish to Staging'}
+      </button>)}
+      {targetRow('prod', <button disabled={!!busy || aheadProd === 0 || prodCurrent} onClick={promoteProd}
+        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || aheadProd === 0 || prodCurrent) ? 0.45 : 1, cursor: prodCurrent ? 'default' : 'pointer' })}>
+        {busy === 'prod' ? 'Promoting…' : prodCurrent ? 'Promoted to Prod' : 'Promote to Prod'}
+      </button>)}
       {msg && <div style={{ marginTop: 8, color: msg.kind === 'err' ? '#f87171' : '#4ade80', wordBreak: 'break-word' }}>{msg.text}</div>}
     </div>
   )
