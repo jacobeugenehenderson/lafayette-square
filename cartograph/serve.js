@@ -71,7 +71,12 @@ function runCapture(cmd, opts = {}) {
 // Must match `staging.yml`'s trigger branch, or the Publish→staging push lands
 // where no workflow watches. Repointed to the trunk 2026-07-08 (26a62407);
 // this constant lagged until 2026-07-11. (Per-scene parameterization: PUBLISH.md §0.5.)
-const STAGING_BRANCH = 'curb-offset-draw'
+// ⛔ READ `.github/workflows/staging.yml`, NEVER MEMORY — this constant has been stale
+// before and it fails SILENTLY: the publish panel pushed HEAD to a branch nothing
+// deploys, reported success, and staging never moved. `curb-offset-draw` last saw a
+// commit on 2026-08-02 while the workflow had moved to `land-use-derivation`.
+// ▶ node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs
+const STAGING_BRANCH = 'land-use-derivation'
 const PROD_BRANCH = 'main'
 const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
 const PROD_SITE_URL = 'https://lafayette-square.com/'

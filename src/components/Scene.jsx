@@ -408,15 +408,23 @@ function CameraRig() {
   // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
   // first load is not an entry: `prevMode` initialises to 'hero', so on arrival
   // `vm !== prevMode.current` is false and the branch never runs — the offset stayed 0
-  // and every visitor opened on the identical frame. One shot, once the scene's authored
-  // period is known. ⛔ Depends on heroMotion.period only: re-randomising on any other
-  // dep would jump the camera mid-pan.
+  // and every visitor opened on the identical frame. (Diagnosed and prescribed to the
+  // line in `cartograph/BACKLOG.md` before it was applied: a one-shot ref-guarded mount
+  // effect here, dep `[heroMotion.period]`.)
+  //
+  // ⛔ GATED ON `scene`, AND THAT IS THE WHOLE CORRECTNESS OF IT. `heroMotion` is the
+  // 720 s DEFAULT until scene.json resolves, so firing on mount randomises against a
+  // period the pan does not use — on LS (authored 1360 s) the offset would only ever
+  // land in the first ~53% of the cycle. Waiting for the slab costs nothing: the pan is
+  // genuinely static until then anyway, because an unresolved scene yields the 1-length
+  // fallback keyframe and `heroKeyframeAnim` returns points[0] verbatim.
+  // ⛔ Still one-shot: re-randomising later would jump the camera mid-pan.
   const didRandomizeArrival = useRef(false)
   useEffect(() => {
-    if (didRandomizeArrival.current) return
+    if (didRandomizeArrival.current || !scene) return
     didRandomizeArrival.current = true
     randomizeHeroStart(heroMotion.period)
-  }, [heroMotion.period])
+  }, [scene, heroMotion.period])
 
   // Projection vertical offset (lens shift) for panel-aware reframe
 
