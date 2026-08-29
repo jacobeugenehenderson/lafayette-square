@@ -47,8 +47,9 @@ authority; `ls/FEATURES.md §Embedded` is the capability in the host's words.**
 
 | | |
 |---|---|
-| modes | `?layer=slab\|player` · `?embed=society\|masthead\|card\|sky` |
-| messages | `ward-layer` · `ward-time` · `ward-perf` |
+| modes | `?layer=slab\|player` · `?embed=society\|masthead\|card\|sky\|tree` |
+| framing | **`?shot=hero\|browse\|street`** *(2026-08-29)* — the page names an AUTHORED shot and this product supplies the geometry |
+| messages | `ward-layer` · `ward-time` · `ward-perf` · `ward-place` |
 | code | `src/App.jsx` (routes + handlers) · `src/components/SkyEmbed.jsx` · `src/lib/framedPresence.js` · `src/index.css` (`.embed-*`) |
 
 ⚠️ **Three of these carry measurements, not preferences. Changing them silently
@@ -60,6 +61,13 @@ breaks something that was expensive to learn:**
   `src/index.css` carries the numbers: 5624 ms vs 224 ms. Its partner is
   `SheetGround` in `Scene.jsx` — the two move together or not at all.
 - ⛔ **`ward-perf` idle is a lower frame rate, not a stop**, for the same reason.
+- ⛔ **A framing belongs to the SLAB, never to the page.** `?shot=` exists so an
+  embedding page can ask for a camera by NAME — the numbers live in
+  `scene.json#shots.values`, authored per look in Stage's Camera/Shots card. A page
+  that carried its own centre and zoom would fork the product it embeds, and would
+  hard-code *this* neighbourhood's framing into every installation after it.
+  ⚠️ **So re-framing Browse in Stage moves every page that frames it.** That is the
+  intent, and it is worth knowing before you drag the Browse camera.
 
 ⚠️ **`paper` / `plate` in `ward-layer` are the wire protocol.** They are retired
 words in the site's own vocabulary and must not be "corrected" here.
@@ -89,9 +97,20 @@ The site's own list is `BACKLOG.md`. **Nothing on it is blocked on this product.
 ⚠️ **This slot listed a blocker twice and was wrong both times** — first that the
 tree GLBs were undeployed, then that `?embed=sky` could not size. Both were
 retracted the same day, the second by the agent the brief was written for.
-**The open work is building `?embed=tree` as the diorama** — sky and tree in one
-Canvas, one clock, on the baked path. Brief: **`BRIEF-tree-and-sky-embed.md` §3**;
-its §2 is now a record of the two traps rather than a blocker.
+✅ **`?embed=tree` — the diorama — SHIPPED.** Sky and specimen in one Canvas, one
+clock, on the baked path; it is the live band under "A Day in the Life" on the page
+today. This slot called it "the open work" until 2026-08-29, which is the third time
+this section has described the world as it was rather than as it is.
+`BRIEF-tree-and-sky-embed.md` §2 remains a record of the two traps.
+
+⭐⭐ **AND ITS BIGGEST CATCH TO DATE, 2026-08-29: the embedded Ward was killing a
+phone tab, and it was the only surface that showed it.** The cause was not any recent
+commit — measured, the payload moved 0.5% across the six suspects — it was **1,006 MB
+of hero-impostor albedo, 78% of the whole texture budget**, in a pool whose encoder
+had been written and left switched off. The page did not diagnose it; it made a
+standing cost impossible to keep ignoring. ✅ Fixed by transcoding the pool
+(`arborist/FEATURES` ▸ the impostor pool), and confirmed by the only gate that
+counts — Jacob, on his own handset: *"It works fine on my phone."*
 
 ⭐ **The lesson this doc should carry: a marketing page is an unusually good
 detector, and an unusually good LIAR, about this product.** It found the real

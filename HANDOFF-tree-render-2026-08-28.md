@@ -62,24 +62,13 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
    of the capture code into `captureKey`**, or every future capture fix fails silently the same
    way and looks landed. ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`
 
-1. ✅ **`maple_silver`'s overhead capture — CLOSED.** The band cuts were computed in the chassis-LOCAL
-   frame; the camera clips in WORLD (`camY − y`). Node scale <1 put the top cut above the crown:
-   `maple_silver` (0.707) retained **2%** of its canopy band, `linden_american` (0.782) 27% — the
-   *"unexplained"* blank canopy of 2026-07-22, same mechanism — `tilia_americana` (0.004) nothing at
-   all. Scale ≥1 pushed the cuts inside the crown and passed, every time, which is why it looked
-   species-specific. ⭐ The same slip shipped the **card height** in the wrong frame roster-wide
-   (`maple_silver` 29.7 m for a 21.0 m tree; HPDM's `picea_abies` **681 m**) — ⛔ **every Look baked
-   before today must re-bake.** Fixed in `captureImpostor.js`; ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`.
-   ⚠️ **Jacob's *"silver maple leaves have fronts and backs"* hint is UNACCOUNTED FOR** — it points at
-   colour and nothing measured here touches colour. Still open as its own question, not as this bug.
-2. ✅ **The duplicate-identity class — CLOSED 2026-08-28** (`a56328dd` · corrected `deab54ed`).
-   `pickVariant` now swaps a raw twin for its composed sibling, looked up in the whole POOL and
-   gated by the same style filter. Verified by re-baking: LS 670 → **0** placements on a raw twin.
-   ⛔ Deliberately NOT the "fallback may only select a COMPOSED asset" this line prescribed — I built
-   that first and measured it: every composed asset is broadleaf, so it renders spruces as maples and
-   would have restyled 4,375 of HPDM's 8,346 placements, most of them genuine gaps rather than twins.
-   ⭐ Quality is not the discriminator either (all four species are quality 4); composed ⟺ the
-   manifest carries a `bark` record. [[project_one_tree_two_library_ids]]
+1–2. ✅ **The `maple_silver` overhead capture and the duplicate-identity class — CLOSED 2026-08-28,
+   and RETIRED from this list 2026-08-29** to `cartograph/_archive/HANDOFF-tree-render-closed-2026-08-29.md`.
+   ⛔ They sat here marked ✅ for a day, which is the anti-pattern `CLAUDE.md` names: a resolved item
+   left in an OPEN list is read as work by everyone who scans it. Live homes: the capture-frame rule
+   is enforced by `scratch/claims-the-capture-frame-is-the-clip-frame.mjs` (and what is still owed on
+   it is item 0 above); the twin rule is in `arborist/FEATURES` ▸ the roster light.
+
 3. **`acer_saccharum`'s 123 m card** — its GLB is 65 × 106 m and 10.4 m tall: a merged **group shot**
    (`ROADMAP B7`). 251 placements each throwing a city-block-sized billboard. Its dossier says
    `canopyRadiusM: 9` against a measured 60 — trusting the authored radius may be a cheap interim.
@@ -107,7 +96,10 @@ node scratch/claims-the-roster-light-tells-the-truth.mjs      # green-but-unexpo
 node scratch/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
 node scratch/claims-every-placed-asset-has-a-size-band.mjs    # flat 1:1 scale, ranked by PLACED demand
 node scratch/claims-the-capture-frame-is-the-clip-frame.mjs   # band cuts outside the tree; pre-fix card heights
+node scratch/claims-every-declared-page-ships.mjs             # declared pages + GLBs that never reach the deploy
 ```
+*(the last one written 2026-08-29, when the KTX2 pool landed — it is the check that
+would have caught both the six untracked pages and the gitignored `.ktx2` pool.)*
 Each **pins** the runtime rule it models and exits 2 on drift rather than reporting green off a rule
 that moved. ⛔ `ksi-y-m-yn` rows are **noise** — the Polish pours are dead until deliberately resurrected.
 

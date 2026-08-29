@@ -62,7 +62,7 @@ Buildings + ground + lamps + shape + scene run **20–35 MB** per scene. Everyth
 
 **3d. The LOD ladder.** Per species: 3 skeletons × 3 LODs = 9 files. `lod2` is ~150 KB while `lod0` is 12.7 MB — a 85× step. Is the ladder right? Is `lod0` ever actually loaded at the distances trees are seen? *(Cross-check `[[project_tree_lod_role_at_bake_not_distance]]` — role at bake, never a live distance swap.)*
 
-**3e. KTX2/Basis is absent entirely.** 97 MB of uncompressed atlas PNG across scenes (HPDM alone 73 MB). No `.ktx2`/`.basis` files, no `KTX2Loader` anywhere. Already scoped at `HANDOFF-hero-impostor-and-startup-weight.md:58` — *"27.6 MB → ~5 MB, smaller on wire AND in VRAM."* Say what it costs to land and what it breaks.
+**3e. KTX2/Basis.** ✅ **LANDED 2026-08-29 for the IMPOSTOR POOL** — encoder (`arborist/pack-impostor-ktx2.mjs`), loader (`src/components/impostorTexture.js`), transcoder (`public/basis/`), run as the pour's last step. ⛔ **The premise below is now false and is kept only to date the brief:** *"no `.ktx2`/`.basis` files, no `KTX2Loader` anywhere."* ⚠️ **Still open: the master ATLAS**, which is excluded on purpose — `treeAtlasMaterial#loadTexture` builds a coverage-preserving mip chain and basisu's box filter is what that pass exists to correct. Already scoped at `HANDOFF-hero-impostor-and-startup-weight.md:58` — *"27.6 MB → ~5 MB, smaller on wire AND in VRAM."* Say what it costs to land and what it breaks.
 
 **3f. Does METEOROLOGIST duplicate the same way?** `public/clouds` is 19 MB tracked and **nobody has looked.** Same question: per-scene copies of shared assets? Report it even if the answer is no.
 

@@ -92,6 +92,11 @@ the one place it must never happen — the detector itself. *(The fix is not a b
 **with** the scene's `blockCustoms`, and report an absent/degenerate ring as its own **loud** failure
 class. Until then Check A's aggregate is not evidence of anything.)*
 
+> *⭐ **Receipt RE-VERIFIED IN THE CODE 2026-08-29** and it still holds: `blockCustoms: null`
+> at `litmus-curb-parallel.mjs:77`, the silent `continue` at `:86` — both at the lines quoted
+> above, so Check A is still blind in both of Layer 0's failure modes. Nothing to re-arm; the
+> slot is doing its job. (Checked because this paragraph says to, and it has been wrong twice.)*
+>
 > *Receipt re-armed 2026-08-06, twice over. This slot cited `measureModel.js` bleeding LS widths into
 > every scene — **fixed 2026-07-31 (`08d61ce1`)**; it was then re-armed with A07's two-producer
 > disclosure — **which landed 2026-08-04** (`producer` + `producerReason` are stamped on every tile,
