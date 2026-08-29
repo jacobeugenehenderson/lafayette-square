@@ -19,7 +19,7 @@ export const getElevation    = (x, z) => sampler.getElevation(x, z)
 export const getElevationRaw = (x, z) => sampler.getElevationRaw(x, z)
 export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 
-// ── Where a tree placement actually sits on the ground ───────────────────────
+// ── Where a tree placement sits on the ground — RAW; the carrier applies uExag ──
 // ⛔⛔ ONE RULE, THREE CONSUMERS. The mesh path (`InstancedTrees`), the hero cards
 // (`HeroImpostorTrees`) and the browse discs (`OverheadTrees`) must seat a placement
 // on the SAME ground or the tiers do not line up — and for four days they did not.
@@ -41,23 +41,27 @@ export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 //      below reports that as its own loud fact rather than letting it masquerade.
 //   3. the smooth terrain field — the honest fallback, and the one the mesh path has
 //      been quietly using all along.
-export function treeGroundY(inst) {
-  // ⛔⛔ RAW IS NOT THE DRAWN GROUND — V_EXAG (Jacob's eye, 2026-08-28, against the very
-  // fix that had just un-buried these trees: "is it possible the trees are still anchored
-  // at y0 and not on the ground surface?"). The heightmap is in raw metres; the ground
-  // MESH is displaced by `getElevation` = raw × V_EXAG, and the mesh trees are lifted in
-  // the vertex shader by `aGroundRaw * uExag` (terrainShader.js:345). So a raw value put
-  // straight into a world matrix lands 0.5 × raw BELOW the surface — ~11.6 m at LS's
-  // median, up to ~17 m. It looked plausible, which is why only the eye caught it.
-  // ⭐ `groundRaw` is a RAW anchor (same units the shader multiplies), so it exaggerates
-  // here too — the difference between the two paths is WHERE the multiply happens, never
-  // whether it happens.
-  if (typeof inst.groundRaw === 'number') return inst.groundRaw * V_EXAG
-  // ⚠️ ASSUMPTION, UNTESTABLE TODAY: a stamped `inst.y` is taken as an already-drawn world
-  // height, not a raw one. No slab stamps this column (see `slabYIsUnstamped`), so there is
-  // nothing to measure against; the day a bake stamps it, CONFIRM the units before trusting.
+// ⛔ ALL THREE ARE RAW. Nothing here multiplies by V_EXAG; that is the carrier's job,
+//    per frame, from the live uniform — see the note on the function itself.
+export function treeGroundRaw(inst) {
+  // ⛔⛔ RAW, PRE-EXAG — AND THE EXAG IS NOT A CONSTANT (Jacob's eye, 2026-08-28, while
+  // dragging the ground in Browse: "the trees aren't stuck to or near the ground at all
+  // … rendered off the ground very high in the air").
+  // The ground's vertical exaggeration is a LIVE, PER-SHOT, ANIMATED uniform:
+  //     targetExag = street ? 1 : browse ? 0 : V_EXAG        (PreviewApp.jsx:1140)
+  // In BROWSE the ground is drawn FLAT. An earlier version of this returned
+  // `raw × V_EXAG` baked into the world matrix, which is right in Hero and wrong
+  // everywhere else — up to 52 m adrift in Browse, ~12 m in Street. A constant cannot
+  // follow a tween.
+  // ⭐ SO THE LIFT BELONGS IN THE SHADER, exactly where the mesh path has always put it
+  // (`terrainShader.js:345`: `transformed.y += aGroundRaw * uExag / _instYScale`). This
+  // returns the RAW anchor; the carrier multiplies by the live uExag per frame, and the
+  // trees ride the ground down when a shot flattens it. Placement matrices sit at y = 0.
+  if (typeof inst.groundRaw === 'number') return inst.groundRaw
+  // ⚠️ ASSUMPTION, UNTESTABLE TODAY: a stamped `inst.y` is taken as a RAW height. No slab
+  // stamps this column (see `slabYIsUnstamped`); confirm the units the day one does.
   if (typeof inst.y === 'number' && inst.y !== 0) return inst.y
-  return getElevation(inst.x, inst.z)   // already × V_EXAG — the surface the eye sees
+  return getElevationRaw(inst.x, inst.z)
 }
 
 // ⭐ THE DETECTOR, not a patch. Answers "is this slab's y column stamped at all?" for a

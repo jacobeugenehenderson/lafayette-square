@@ -25,7 +25,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
-import { treeGroundY } from '../utils/elevation'
+import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useCamera from '../hooks/useCamera'
 
@@ -251,9 +251,10 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
     const fract = (x) => x - Math.floor(x)
     for (let i = 0; i < instances.length; i++) {
       const inst = instances[i]
-      // ⛔ Same 0-sentinel bug as the hero cards — a browse disc under the terrain is
-      // invisible in plan view exactly like a buried card is in the pan.
-      const y0 = treeGroundY(inst)
+      // ⛔ 0, not the ground — the lift is applied in the SHADER from the live per-shot uExag
+      // (`OVERHEAD_GROUND_LIFT`). Browse tweens the ground FLAT, so anything baked here floats.
+      // The axial spread below stays world-metres, added on top of the shader's lift.
+      const y0 = 0
       const y = y0 + fract(Math.sin(inst.x * 12.9898 + inst.z * 78.233) * 43758.5453) * AXIAL_SPREAD_M
       const s = inst.scale || 1
       T.makeTranslation(inst.x, y, inst.z)
@@ -273,9 +274,14 @@ export function OverheadSpecies({ asset, instances, visible, opacity = 1 }) {
       if (!im) continue
       for (let i = 0; i < matrices.length; i++) im.setMatrixAt(i, matrices[i])
       im.instanceMatrix.needsUpdate = true
+      // The RAW ground under each disc (pre-exag); the shader lifts by the live uExag, so the
+      // discs ride the ground down when Browse tweens it flat instead of hanging in the air.
+      const raw = new Float32Array(instances.length)
+      for (let i = 0; i < instances.length; i++) raw[i] = treeGroundRaw(instances[i])
+      discs[d].geo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(raw, 1))
     }
     invalidate()
-  }, [matrices, discs, invalidate])
+  }, [matrices, discs, instances, invalidate])
 
   if (!instances.length) return null
   return (

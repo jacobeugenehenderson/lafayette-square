@@ -22,7 +22,7 @@ import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { buildHeroImpostorCard } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
-import { treeGroundY } from '../utils/elevation'
+import { treeGroundRaw } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
@@ -222,16 +222,21 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       if (!im) continue
       for (let i = 0; i < d.instances.length; i++) {
         const inst = d.instances[i]
-        // ⛔ WAS `typeof inst.y === 'number' ? inst.y : …` — and `inst.y` is the 0 SENTINEL
-        // on every slab, so the fallback never fired and every card sat 2.6–34.8 m UNDER
-        // the terrain. One shared rule now, same ground the mesh path seats on.
-        const y = treeGroundY(inst)
+        // ⛔ y = 0 — THE GROUND LIFT IS THE SHADER'S JOB (`OVERHEAD_GROUND_LIFT`), off the
+        // live per-shot `uExag`. It was `inst.y` (the 0 sentinel → cards 2.6-34.8 m UNDER the
+        // terrain), then a matrix-baked `raw × V_EXAG` (→ up to 52 m OVER it once Browse
+        // tweened the ground flat). A constant cannot follow an animated exag; the mesh path
+        // never tried to, and that is exactly why it has always seated correctly.
         const s = inst.scale || 1
-        pos.set(inst.x, y, inst.z); scl.set(s, s, s)
+        pos.set(inst.x, 0, inst.z); scl.set(s, s, s)
         M.compose(pos, _IDENTITY_QUAT, scl)
         im.setMatrixAt(i, M)
       }
       im.instanceMatrix.needsUpdate = true
+      // The RAW ground under each card (pre-exag); the shader multiplies by the live uExag.
+      const raw = new Float32Array(d.instances.length)
+      for (let i = 0; i < d.instances.length; i++) raw[i] = treeGroundRaw(d.instances[i])
+      d.geo.setAttribute('aGroundRaw', new THREE.InstancedBufferAttribute(raw, 1))
     }
     invalidate()
   }, [draws, invalidate])

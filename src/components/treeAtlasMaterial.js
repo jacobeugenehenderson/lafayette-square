@@ -16,7 +16,7 @@ import { useEffect, useState, useMemo } from 'react'
 import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { groundColor as _groundColor } from './groundColorState'
-import { patchTerrainInstancedBaked } from '../utils/terrainShader'
+import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -1835,6 +1835,9 @@ const OVERHEAD_WIND_COMMON = `
          uniform float uWindIntensity;
          uniform float uGustsScale;
          uniform float uGustEnvelope;
+         uniform float uWindFloor;
+         uniform float uExag;
+         attribute float aGroundRaw;
          attribute float aOverhead;
          attribute float aTreeHeightNorm;
          attribute float aLeafBody;   // 0 at the glued stem → 1 at the blade tip
@@ -1873,13 +1876,13 @@ const OVERHEAD_WIND_BEGIN = `
            float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
            float drift  = uTime * 0.25;
            vec2  hulaDir = vec2(cos(drift), sin(drift));
-           float amp    = (0.12 + 0.035 * wI + 0.07 * gust) * aTreeHeightNorm;  // 0.12 = ambient breeze FLOOR (calm ≠ dead); weather ADDS on top
+           float amp    = (0.12 * uWindFloor + 0.035 * wI + 0.07 * gust) * aTreeHeightNorm;  // ambient breeze FLOOR (calm ≠ dead), scaled PER CARRIER; weather ADDS on top
            float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
            vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
            vec2  lean   = wd * (amp * 0.7);
            // Flutter noise sampled at WORLD coords → advects downwind across the map.
            vec2  np      = (ovWorldXZ + position.xz) * 0.55 + wd * uTime * 1.2;
-           float flutAmp = (0.05 + 0.05 * wI) * aTreeHeightNorm;  // ambient flutter floor + weather
+           float flutAmp = (0.05 * uWindFloor + 0.05 * wI) * aTreeHeightNorm;  // ambient flutter floor (per carrier) + weather
            vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
            transformed.xz += hula + lean + flutter;
            if (aLeafBody > 0.001) {   // legacy per-leaf flutter (procedural relic)
@@ -1890,7 +1893,46 @@ const OVERHEAD_WIND_BEGIN = `
            }
          }`
 
-function bindOverheadWindUniforms(shader) {
+// ── The ambient wind FLOOR, per carrier (Jacob, 2026-08-28: "turn up the base-level
+// wind on the browse trees… still subtle, still the pre-weather base") ───────────
+// `OVERHEAD_WIND_BEGIN` is SHARED by the browse discs and the hero cards, so raising
+// its constants would move both. The wind itself stays ONE shared state (the doctrine
+// this file runs on); what differs is how much of the FLOOR each carrier expresses —
+// a disc read from 600 m up needs more motion to register than a card read side-on at
+// street distance. Weather still ADDS on top of whatever the floor is.
+// ⭐ SUBTLE IS AN EYE CALL, NOT A CONSTANT — dial it live and keep what looks right:
+//     window.__setBrowseWindFloor(1.8)   // browse discs
+//     window.__setHeroWindFloor(1.0)     // hero cards (1.0 = today's behaviour)
+export const browseWindFloor = { value: 1.5 }
+export const heroWindFloor   = { value: 1.0 }
+if (typeof window !== 'undefined') {
+  window.__setBrowseWindFloor = (v) => { browseWindFloor.value = Math.max(0, Number(v) || 0); return browseWindFloor.value }
+  window.__setHeroWindFloor   = (v) => { heroWindFloor.value   = Math.max(0, Number(v) || 0); return heroWindFloor.value }
+}
+
+
+// ⛔⛔ SEAT ON THE DRAWN GROUND, PER FRAME (Jacob's eye, 2026-08-28, dragging the ground in
+// Browse: "the trees aren't stuck to or near the ground at all... rendered off the ground
+// very high in the air"). The ground's exaggeration is a LIVE ANIMATED uniform, per shot —
+// browse tweens it to 0, so the ground goes FLAT while a matrix-baked constant leaves the
+// card up to 52 m in the air (street ~12 m; only hero happened to match).
+// ⭐ This is the IDENTICAL lift the mesh path has always used (`terrainShader.js:345`), which
+// is why mesh trees ride the ground down through a shot transition and the impostors did not.
+// Applied LAST so it seats whatever the billboard and the wind produced. Divided by the
+// instance Y-scale because the instance matrix scales `transformed` afterwards — so the lift
+// lands as world metres, not scaled metres.
+const OVERHEAD_GROUND_LIFT = `
+         #ifdef USE_INSTANCING
+         {
+           float _ovYScale = length(instanceMatrix[1].xyz);
+           transformed.y += aGroundRaw * uExag / max(_ovYScale, 0.0001);
+         }
+         #endif`
+
+function bindOverheadWindUniforms(shader, floorUniform) {
+  // ⛔ Default 1.0 → byte-identical for any caller that does not pass a floor.
+  shader.uniforms.uWindFloor     = floorUniform || { value: 1.0 }
+  shader.uniforms.uExag          = terrainExag   // LIVE per-shot exag; never a constant
   shader.uniforms.uTime          = treeSwayUniforms.uTime
   shader.uniforms.uWindForce     = treeSwayUniforms.uWindForce
   shader.uniforms.uWindIntensity = treeSwayUniforms.uWindIntensity
@@ -1904,7 +1946,7 @@ export function injectOverheadWiggle(material) {
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
   }
 }
 
@@ -1924,14 +1966,14 @@ export const overheadLightUniforms = {
 export function injectOverheadStamp(material, aoTex) {
   material.customProgramCacheKey = () => 'overheadStamp'   // distinct from heroImpostorStamp
   material.onBeforeCompile = (shader) => {
-    bindOverheadWindUniforms(shader)
+    bindOverheadWindUniforms(shader, browseWindFloor)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
          uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;`)
@@ -1972,7 +2014,7 @@ export function injectHeroImpostorStamp(material, aoTex) {
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
   material.customProgramCacheKey = () => 'heroImpostorStamp'
   material.onBeforeCompile = (shader) => {
-    bindOverheadWindUniforms(shader)
+    bindOverheadWindUniforms(shader, heroWindFloor)
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
@@ -1991,7 +2033,7 @@ export function injectHeroImpostorStamp(material, aoTex) {
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
       // Billboard FIRST (re-seat transformed facing the camera), THEN the shared wind
       // leans/gusts transformed.xz base-anchored on top.
-      .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN)
+      .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', `#include <common>
          uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
