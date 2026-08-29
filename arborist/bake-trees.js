@@ -596,12 +596,34 @@ export async function bakeTrees({
   // reading exactly like "no bands found".
   const bandFor = (sp) => {
     if (bandBySpecies.has(sp)) return bandBySpecies.get(sp)
-    let band = null
-    try { band = dossierLookup?.(sp)?.required?.['chassis.size']?.band ?? null } catch { band = null }
+    let band = null, via = null
+    try {
+      const req = dossierLookup?.(sp)?.required
+      band = req?.['chassis.size']?.band ?? null
+      if (band && band.hi > band.lo) via = 'chassis.size.band'
+      // ⛔⛔ THE BAND WE ALREADY HAD AND NEVER READ (Jacob, 2026-08-28: "I feel there's no
+      // way we didn't get the values for silver maple, for instance. We have a study, and
+      // we could go look again." He was right.)
+      // `chassis.size.band` came from ncsu/selectree and only 22 of 33 dossiers got it, so
+      // 7 of the 10 species on LS fell through to 1:1 — 69.4% of placements rendered at a
+      // FLAT scale. But EVERY dossier was hydrated with the USDA pair:
+      //     chassis.size_20yr  "usda: Height at 20 Years, Maximum (feet)"   → lo
+      //     chassis.size_max   "usda: Height, Mature (feet)"                → hi
+      // both carrying `sourced: true`. A real street population genuinely spans 20-year-old
+      // trees to mature ones, so this is not a substitute for the band — it IS one, from a
+      // citable source, which is what `Nothing is invented` requires.
+      if (!(band && band.hi > band.lo)) {
+        const lo = req?.['chassis.size_20yr']?.target
+        const hi = req?.['chassis.size_max']?.target
+        if (Number.isFinite(lo) && Number.isFinite(hi) && hi > lo) { band = { lo, hi }; via = 'usda 20yr–mature' }
+      }
+    } catch { band = null }
     if (band && !(band.hi > 0)) band = null
     bandBySpecies.set(sp, band)
+    if (band) bandVia.set(sp, via)
     return band
   }
+  const bandVia = new Map()
 
   // Sorted per-species DBH, for the percentile lookup above.
   const dbhSorted = new Map()
@@ -1124,6 +1146,26 @@ export async function bakeTrees({
       console.log(`[bake-trees]   hood: ${inHood} inside the neighborhood proper (literal) / ${outside} in the greater circle (GPU-managed)`)
       if (dissolved) console.log(`[bake-trees]   dissolved ${dissolved} invented trees toward the rim`)
       if (!membership.hasPolygon) console.log(`[bake-trees]   ⚠️  no boundary-street polygon — the disc is standing in for the neighborhood`)
+    }
+    // ⛔⛔ SAY WHICH SPECIES RENDER FLAT, AND HOW MANY TREES THAT IS (2026-08-28).
+    // There was a loud error when the dossier MODULE failed to load ("every tree renders
+    // 1:1") and complete silence when an individual species simply had no band — which is
+    // how 7 of 10 species and 69.4% of LS's placements went to a flat scale unnoticed.
+    // A per-species absence is the common case and the invisible one; it gets named.
+    {
+      const flat = new Map()
+      for (const inst of instances) if (inst.scale == null) flat.set(inst.species, (flat.get(inst.species) || 0) + 1)
+      if (flat.size) {
+        const n = [...flat.values()].reduce((a, b) => a + b, 0)
+        const worst = [...flat.entries()].sort((a, b) => b[1] - a[1])
+        console.log(`[bake-trees] ⛔ ${n} of ${instances.length} placements (${(100 * n / instances.length).toFixed(1)}%) render at a FLAT 1:1 — ` +
+          `no size band for: ` + worst.map(([sp, c]) => `${sp}(${c})`).join(' '))
+        console.log(`[bake-trees]    A band needs EITHER dossier chassis.size.band (ncsu/selectree) OR the USDA pair ` +
+          `chassis.size_20yr + chassis.size_max. A species with neither has no dossier at all — author one.`)
+      }
+      const viaCount = new Map()
+      for (const [, v] of bandVia) viaCount.set(v, (viaCount.get(v) || 0) + 1)
+      if (viaCount.size) console.log(`[bake-trees] size bands by source: ` + [...viaCount].map(([k, v]) => `${k}=${v}sp`).join(' · '))
     }
     console.log(`[bake-trees] ${variantUseCount.size} unique variants in use`)
     console.log(`[bake-trees] → ${outPath}`)
