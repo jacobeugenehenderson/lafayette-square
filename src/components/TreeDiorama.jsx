@@ -60,7 +60,13 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 // easy. URL wins (so a page can frame a different tree without a rebuild), then
 // props, then these.
 const DEFAULT_SPECIES = 'linden_american'
-const DEFAULT_LOD = '0'          // one hero specimen can afford the full mesh
+// ⛔ lod1, NOT lod0 — and this line is why theward.online's diorama went blank on
+// 2026-08-28. "One hero specimen can afford the full mesh" was true while lod0 shipped;
+// it does not ship any more (.gitignore — 56% of a town's payload the map can never
+// request). The 404 threw inside Suspense, the tree subtree died, and the SKY went with
+// it: "the sky flashes briefly on load but disappears." ⭐ lod1 IS the hero LOD the map
+// draws, so the diorama now shows the article the product actually ships.
+const DEFAULT_LOD = '1'
 const DEFAULT_VARIANT = '1'
 
 function readParam(name) {

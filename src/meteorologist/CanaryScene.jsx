@@ -61,7 +61,13 @@ const HERO_BREEZE_MPS = 3.0
 const _heroWindState = defaultWindState()
 
 const HERO_TREE_SPECIES = 'platanus_acerifolia'
-const HERO_TREE_SKELETON = 'skeleton-1-lod0.glb'
+// ⛔ lod1, NOT lod0 — and this is a correctness fix, not a downgrade (2026-08-28).
+// lod0 is NOT PUBLISHED (.gitignore): it is 56% of a town's payload and the map
+// can never request it, so it does not exist on any deployed build and the canary
+// 404'd there. This viewer's own doctrine is "both read the bake, so both show what
+// actually deploys" (src/lib/canaryTree.js) — lod0 was the one LOD that never does.
+// lod1 IS the hero LOD the map draws, so the canary now shows the real article.
+const HERO_TREE_SKELETON = 'skeleton-1-lod1.glb'
 
 // Display altitude for the authoring viewport. CANARY_CAMERAS are framed for
 // a cloud band at ~1200m (browse looks down from y=4000; ground looks up from
@@ -378,7 +384,7 @@ function HeroTree({ lookId }) {
   const pref = useCanaryTree()
   const species   = pref?.species ?? HERO_TREE_SPECIES
   const variantId = pref?.variantId ?? 1
-  const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod0.glb` : HERO_TREE_SKELETON
+  const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod1.glb` : HERO_TREE_SKELETON
   const treeLook  = pref?.lookId ?? lookId
   const url = `${import.meta.env.BASE_URL}baked/${treeLook}/trees/${species}/${variant}`
   const { scene } = useGLTF(url)

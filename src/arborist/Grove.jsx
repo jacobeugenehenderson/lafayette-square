@@ -983,7 +983,10 @@ class TileBoundary extends Component {
 // ⭐ ONE definition of where a baked specimen lives. The capture pool built this path
 // inline and the Tile now needs the same one; a second spelling is how a surface ends up
 // silently loading a different artifact than the one it is judging.
-function bakedGlbUrl(lookId, species, variantId, lod = 'lod0') {
+// ⛔ DEFAULT lod1, NOT lod0. lod0 is not published (.gitignore), so a caller that
+// omits the argument used to build a URL that 404s on every deployed build — the
+// same defect that blanked theward.online's diorama on 2026-08-28.
+function bakedGlbUrl(lookId, species, variantId, lod = 'lod1') {
   return `${import.meta.env.BASE_URL}baked/${lookId}/trees/${species}/skeleton-${variantId}-${lod}.glb`
 }
 

@@ -12,7 +12,7 @@ import { useEffect, useState } from 'react'
  *
  * ⚠ THE VIEWERS ARE ALREADY IDENTICAL AND THAT IS WHY THIS IS ONE THING, not
  * two that happen to rhyme. Both resolve the SAME artifact by the same rule —
- * `baked/<look>/trees/<species>/skeleton-<variantId>-lod0.glb` — and dress it
+ * `baked/<look>/trees/<species>/skeleton-<variantId>-lod1.glb` — and dress it
  * with the SAME shared per-Look atlas material. There is no
  * authoring-vs-baked difference between them to preserve: both read the bake,
  * so both show what actually deploys.
