@@ -265,8 +265,9 @@ heights ship. The NO-FILLER gate keeps generic and procedural assets out of the 
   they are data, not a design.** This needs a live home.
   ▶ `grep -h '"leaf.season"' arborist/dossiers/*.json | wc -l` · `grep -c "season\|uDayOfYear" src/components/treeAtlasMaterial.js`
 - **More parts** — leaf packs and chassis. Known and accepted.
-- **KTX2 for the impostor pool**, load-streaming along the pan, and a real height (not
-  `dbh`) driving the geometry split.
+- **Load-streaming along the pan**, and a real height (not `dbh`) driving the geometry
+  split. *(KTX2 for the impostor pool landed 2026-08-29 — the pour encodes it; what is
+  left is the master ATLAS, which needs coverage-preserving mips fed to the encoder.)*
 - **`OPERATIONS.md`** — the operator's manual. Named for months, never written; operator
   knobs still live in `FEATURES.md`.
 

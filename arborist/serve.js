@@ -1271,7 +1271,31 @@ const server = createServer(async (req, res) => {
           const { bakeTrees } = await import('./bake-trees.js')
           placements = await bakeTrees({ ...bakeArgs, lod: 'lod2', heroLook: lookName })
         }
-        return jsonRes(res, 200, { ok: true, look: lookName, scene, regenMs, regenLog, atlas, placements, totalMs: Date.now() - t0 })
+        // 4. Pages — encode the impostor pool to KTX2/ETC1S and repoint the
+        //    manifest. ⛔ THIS MUST BE LAST AND IT MUST NOT BE OPTIONAL. Step 2
+        //    rewrites trees-atlas.json from source, so it hands back a manifest
+        //    declaring .png; without this step every pour silently un-does the
+        //    compression and the look ships ~1,121 MB of impostor VRAM instead of
+        //    ~280 MB — a 4× regression that looks exactly like a clean bake,
+        //    because PNG pages render perfectly on the desktop doing the baking.
+        //    That is the failure Layer 0 forbids, so a pack failure FAILS THE POUR
+        //    rather than returning a green slab nobody can tell is heavy. The
+        //    encoder is a hard requirement (`brew install basis_universal`), the
+        //    same stance pack-impostor-ktx2.mjs already takes on its own CLI.
+        //    ⭐ Look-keyed, so town #2 gets it from its first pour with no list to
+        //    maintain: the packer walks whatever pages that look's manifest declares.
+        let ktx2
+        try {
+          const { stdout } = await execAsync('node', [join(__dirname, 'pack-impostor-ktx2.mjs'), `--look=${lookName}`])
+          ktx2 = { ok: true, log: String(stdout).trim().split('\n').slice(-3).join('\n') }
+          console.log(`[grove/bake] ${ktx2.log}`)
+        } catch (e) {
+          const detail = String(e.stderr || e.stdout || e.message).slice(0, 4000)
+          console.error(`[grove/bake] ⛔ KTX2 packing failed for "${lookName}" — the slab is baked but its pages are `
+            + `uncompressed PNG. Shipping this look would cost ~4× the impostor VRAM and kill the embed on a phone.\n${detail}`)
+          return jsonRes(res, 500, { error: 'KTX2 packing failed — the slab is baked but the pages are uncompressed', detail })
+        }
+        return jsonRes(res, 200, { ok: true, look: lookName, scene, regenMs, regenLog, atlas, placements, ktx2, totalMs: Date.now() - t0 })
       } catch (err) {
         return jsonRes(res, 500, { error: err.message, stack: err.stack?.split('\n').slice(0, 5) })
       }
