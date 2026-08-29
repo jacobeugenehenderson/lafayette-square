@@ -22,6 +22,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
+import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
@@ -127,21 +128,8 @@ export function useOverheadWarm(enabled) {
 }
 
 // ── Lazy asset load (behind the hero shot) ───────────────────────────────────
-// Loads every species' baked band layers (albedo + AO) via TextureLoader in the
-// background — no Suspense, so it never blocks the hero render; the discs simply
-// aren't ready until their textures resolve. AO is DATA (occlusion), so it loads
-// with linear colour space (no sRGB decode); albedo is colour (sRGB).
-const _texCache = new Map()   // `${look}:${url}` → THREE.Texture
-function loadTex(url, { srgb }) {
-  const key = url
-  if (_texCache.has(key)) return _texCache.get(key)
-  const t = new THREE.TextureLoader().load(url)
-  t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
-  t.anisotropy = 4
-  t.needsUpdate = true
-  _texCache.set(key, t)
-  return t
-}
+// Page loading lives in `impostorTexture.js` — shared with the hero cards, because
+// the baked pages are KTX2/ETC1S now and the two consumers must not diverge.
 
 /**
  * useOverheadAssets — resolve + lazy-load the baked overhead layers for every
@@ -153,6 +141,8 @@ function loadTex(url, { srgb }) {
 export function useOverheadAssets({ enabled, lookName, overheadBySpecies, species }) {
   const [ready, setReady] = useState(0)
   const base = import.meta.env.BASE_URL
+  // KTX2 needs the renderer to know the device's block formats before it can load.
+  const gl = useThree((st) => st.gl)
 
   const assets = useMemo(() => {
     if (!enabled || !overheadBySpecies || !species?.length) return null
@@ -165,15 +155,15 @@ export function useOverheadAssets({ enabled, lookName, overheadBySpecies, specie
         return {
           key: b.key,
           yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
-          albedoTex: loadTex(url(b.albedo), { srgb: true }),
-          aoTex: loadTex(url(b.ao), { srgb: false }),
+          albedoTex: loadImpostorTexture(url(b.albedo), { srgb: true, gl }),
+          aoTex: loadImpostorTexture(url(b.ao), { srgb: false, gl }),
         }
       })
       out.set(sp, { heightM: rec.heightM, canopyRadiusM: rec.canopyRadiusM, bands })
     }
     return out.size ? out : null
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, lookName, overheadBySpecies, species])
+  }, [enabled, lookName, overheadBySpecies, species, gl])
 
   // Re-render once the textures finish decoding (they load async; the map is
   // stable but the GPU upload lands later — poke a paint when any resolves).

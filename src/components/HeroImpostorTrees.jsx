@@ -19,6 +19,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
+import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
 import { buildHeroImpostorCard } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
@@ -59,22 +60,10 @@ const NO_RAYCAST = () => null
 const _IDENTITY_QUAT = new THREE.Quaternion()
 
 // ── Lazy asset load (behind the hero shot) — mirrors useOverheadAssets ──────────
-// Loads each species' baked layer PNGs (albedo + AO) via TextureLoader in the
-// background — no Suspense, so the hero first-frame paints as soon as each species'
-// textures resolve. AO is DATA (linear); albedo is colour (sRGB).
-const _texCache = new Map()   // url → THREE.Texture
-function loadTex(url, { srgb }) {
-  if (_texCache.has(url)) return _texCache.get(url)
-  // TextureLoader.load() returns the texture BEFORE the image loads and sets
-  // needsUpdate itself in its onLoad. Do NOT force needsUpdate here — it makes
-  // three try to upload an imageless texture every frame ("no image data found"
-  // flood) and the card's map never gets the real pixels → nothing paints.
-  const t = new THREE.TextureLoader().load(url)
-  t.colorSpace = srgb ? THREE.SRGBColorSpace : THREE.LinearSRGBColorSpace
-  t.anisotropy = 4
-  _texCache.set(url, t)
-  return t
-}
+// Page loading lives in `impostorTexture.js` — one place for both the hero cards
+// and the overhead discs, because the baked pages are KTX2/ETC1S now and the loader
+// choice must not diverge between the two consumers. AO is DATA (linear); albedo is
+// colour (sRGB). No Suspense: the hero first frame paints as each species resolves.
 
 /**
  * useHeroImpostorAssets — resolve + lazy-load the baked hero layers for every species
@@ -86,6 +75,8 @@ function loadTex(url, { srgb }) {
 export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies, species }) {
   const [ready, setReady] = useState(0)
   const base = import.meta.env.BASE_URL
+  // KTX2 needs the renderer to know the device's block formats before it can load.
+  const gl = useThree((st) => st.gl)
 
   const assets = useMemo(() => {
     if (!enabled || !heroImpostorBySpecies || !species?.length) return null
@@ -105,8 +96,8 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
           cardDepthFrac: (l.kind === 'bark' && heroImpostorStack.barkDepth != null)
             ? heroImpostorStack.barkDepth
             : l.cardDepthFrac,
-          albedoTex: loadTex(url(l.albedo), { srgb: true }),
-          aoTex: loadTex(url(l.ao), { srgb: false }),
+          albedoTex: loadImpostorTexture(url(l.albedo), { srgb: true, gl }),
+          aoTex: loadImpostorTexture(url(l.ao), { srgb: false, gl }),
         })
       }
       const azSets = [...byAz.entries()]
@@ -120,7 +111,7 @@ export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies
     }
     return out.size ? out : null
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, lookName, heroImpostorBySpecies, species])
+  }, [enabled, lookName, heroImpostorBySpecies, species, gl])
 
   // Re-render once textures finish decoding (async upload lands after the map builds).
   useEffect(() => {

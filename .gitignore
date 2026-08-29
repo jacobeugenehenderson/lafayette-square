@@ -285,3 +285,10 @@ scratch/_snapshots/
 # a deploy. ⚠️ The Meteorologist canary resolves lod0 from this path and will 404
 # on a deployed site until it is pointed at lod1 (which is what actually ships).
 public/baked/*/trees/**/*-lod0.glb
+
+# KTX2 pages are DERIVED — `node arborist/pack-impostor-ktx2.mjs --look=<id>` rebuilds
+# them from the baked PNGs in ~4 min. The encoder + loader are committed; the ~20 MB of
+# binaries are not, because nothing references them yet: the manifest still declares
+# .png and will until the fold-in lands as a set (bake ordering + the atlas's
+# coverage-preserving mip chain are the two open blockers).
+public/baked/*/trees/**/*.ktx2

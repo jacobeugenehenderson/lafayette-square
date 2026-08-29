@@ -46,7 +46,16 @@ for (const [file, well] of WELLS) {
 }
 console.log(`  ${'UNION'.padEnd(17)} ${String(trees.length).padStart(5)}\n`)
 
-const tester = makeZoneTester({ shapePath, mapPath, scene, quiet: false })
+// ⛔⛔ designPath IS NOT OPTIONAL — bake-trees.js:757 passes it so the rebuilt Section
+// surfaces match what the OPERATOR AUTHORED (blockCustoms + curbWidth). Without it this
+// harness ran the gate against UN-AUTHORED strips and reported a different verdict than
+// the bake takes: measured 2026-08-28, kept 4572 vs 4547, curb 39 vs 109, sidewalk 546
+// vs 511. That is Layer 0 question 3 committed by an instrument — the same shape as
+// litmus-curb-parallel's `blockCustoms: null`, and it fails WORST on the most-authored
+// town. The numbers in BAKE.md §4.6 were taken before this line existed.
+const designPath = path.join(ROOT, 'public', 'looks', scene, 'design.json')
+if (!existsSync(designPath)) console.warn(`  ⚠️ no design.json for '${scene}' — measuring the un-authored surfaces, which is NOT what the bake gates on`)
+const tester = makeZoneTester({ shapePath, mapPath, designPath: existsSync(designPath) ? designPath : undefined, scene, quiet: false })
 const zoneOf = tester.zoneOf || tester.classify?.zoneOf
 
 // ── classify every tree by the zone it stands on
