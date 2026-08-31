@@ -92,6 +92,20 @@ which forks the product it is embedding and hard-codes one neighbourhood's
 framing into every installation after it. Framed only, and an unknown name is
 loud rather than quietly showing the default.
 
+**And framed, it HOLDS that shot.** A drag or a wheel across the hero used to
+promote it into Browse; framed, it no longer does, and the hero's orbit controls
+are off. ⭐ **The point is that an authored framing stays the framing.** A page
+that asked for an overhead should not quietly be showing something else because
+a reader's thumb crossed it on the way down — the operator never sees that
+happen, and the picture they believe they published is not the one on screen.
+⛔ **The gesture half matters more than the camera half.** On a phone the scroll
+gesture and the drag gesture are the same gesture, so a hero that reacts to a
+passing swipe takes the page away from a reader who was only travelling. Held,
+the swipe belongs to the host page again. **theward.online deleted a "Click to
+browse" gate it had built for exactly this**, which is the shape to want: an
+embedding page working around us is a defect report, and the fix belongs here
+where every installation inherits it.
+
 **Any single part of the commons can be mounted on its own.** Beyond the two
 halves, an embedding page can ask for one *piece*: the neighborhood directory
 from its search bar down, the four role counts, or a single place card. Each

@@ -3729,57 +3729,72 @@ function PlaceCard({ listing: listingProp, building, onClose, allListings: allLi
 
   return (
     <div role="dialog" aria-modal="true" aria-label={name} data-scene-pause className="absolute left-3 right-3 bg-surface sm:bg-surface-glass sm:backdrop-blur-2xl sm:backdrop-saturate-150 rounded-2xl text-on-surface shadow-[0_8px_32px_rgba(0,0,0,0.4)] border border-outline overflow-hidden flex flex-col z-50" style={{ top: 'calc(env(safe-area-inset-top, 0px) + 12px)', bottom: panelState === 'browse' ? 'calc(var(--panel-browse) + 18px)' : `${(panelCollapsedPx || 76) + 18}px` }}>
-      {/* Hero Photo Area */}
-      <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden flex-shrink-0">
-        {heroPhoto ? (
-          <img src={assetUrl(heroPhoto)} alt={name} className="w-full h-full object-cover" decoding="async" loading="eager" />
-        ) : hasListingInfo ? (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${placeholderPhotos[0]}, ${placeholderPhotos[1]})` }}
-          >
-            <div className="text-center text-on-surface-disabled">
-              <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-              <p className="text-body-sm">No photos yet</p>
-            </div>
-          </div>
-        ) : (
-          <div
-            className="w-full h-full flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${styleGradient[0]}, ${styleGradient[1]})` }}
-          >
-            {styleName ? (
-              <span className="text-on-surface-disabled text-lg font-light tracking-wide">{styleName}</span>
-            ) : (
-              <svg className="w-16 h-16 text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-              </svg>
-            )}
-          </div>
-        )}
-
-        {/* Close button */}
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 w-9 h-9 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
-          aria-label="Close"
-        >
-          <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
-        {photos && photos.length > 1 && (
-          <div className="absolute bottom-2 right-3 bg-surface-dim  px-2 py-0.5 rounded text-caption text-on-surface-variant">
-            {photos.length} photos
-          </div>
-        )}
-      </div>
+      {/* ⛔ THE HERO SCROLLS. It used to sit OUTSIDE the scroll container as a
+          fixed 112px band, which is fine on a desktop card and indefensible on a
+          phone: framed at 4:3 it was half the visible card and it never moved,
+          so the reader paid for a photo they had already looked at on every
+          line of text they wanted to read. (Jacob, 2026-08-31: "the header takes
+          up half the screen and doesn't move.")
+          ⭐ ONE LAYOUT EVERYWHERE, not a small-screen fork — a photo that
+          scrolls away with its own content is the right behaviour on a desktop
+          card too, and a media query here would be two cards to reason about.
+          ⚠ The CLOSE BUTTON did not come with it. It was absolutely positioned
+          against the hero, so moving the hero into the scroller would have
+          scrolled the only way out of the card off the top. It is now a direct
+          child of the dialog — and deliberately the FIRST child, because
+          `.embed-card > [role="dialog"] > :last-child` in index.css hides the
+          claim bar and would have hidden a close button parked at the end. */}
+      {/* Close button */}
+      <button
+        onClick={onClose}
+        className="absolute top-2 right-2 z-20 w-9 h-9 rounded-full bg-rose-500/20 border border-rose-400/40 text-rose-300 transition-all duration-200 flex items-center justify-center hover:bg-rose-500/30"
+        aria-label="Close"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      </button>
 
       <EditProvider listingId={listingId}>
       <div ref={scrollRef} className="overflow-y-auto overflow-x-hidden flex-1">
+        {/* Hero Photo Area */}
+        <div className="relative h-28 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+          {heroPhoto ? (
+            <img src={assetUrl(heroPhoto)} alt={name} className="w-full h-full object-cover" decoding="async" loading="eager" />
+          ) : hasListingInfo ? (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${placeholderPhotos[0]}, ${placeholderPhotos[1]})` }}
+            >
+              <div className="text-center text-on-surface-disabled">
+                <svg className="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <p className="text-body-sm">No photos yet</p>
+              </div>
+            </div>
+          ) : (
+            <div
+              className="w-full h-full flex items-center justify-center"
+              style={{ background: `linear-gradient(135deg, ${styleGradient[0]}, ${styleGradient[1]})` }}
+            >
+              {styleName ? (
+                <span className="text-on-surface-disabled text-lg font-light tracking-wide">{styleName}</span>
+              ) : (
+                <svg className="w-16 h-16 text-on-surface-disabled" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+              )}
+            </div>
+          )}
+
+
+          {photos && photos.length > 1 && (
+            <div className="absolute bottom-2 right-3 bg-surface-dim  px-2 py-0.5 rounded text-caption text-on-surface-variant">
+              {photos.length} photos
+            </div>
+          )}
+        </div>
         {hasListingInfo ? (
           <>
             {/* ── Listing path ── */}

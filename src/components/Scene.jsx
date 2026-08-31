@@ -354,6 +354,11 @@ function CameraRig() {
   const controlsRef = useRef()
   const initialized = useRef(false)
 
+  /* Framed, the hero holds the shot it was given — see onMove/onWheel below,
+     and `enabled` on the OrbitControls at the foot of this component. */
+  const viewMode = useCamera((s) => s.viewMode)
+  const heldShot = FRAMED && viewMode === 'hero'
+
   // SC.5 — per-shot framing knobs come from the slab. Production passes
   // no override; the cartograph chunk's Stage live-wires via the store.
   const scene = useSceneJson(INSTANCE.lookId)
@@ -573,6 +578,19 @@ function CameraRig() {
       downXY = { x: e.clientX, y: e.clientY }
     }
 
+    /* ⛔ FRAMED, THE SHOT IS HELD. `?shot=` already says a framing is something
+       an embedding page AUTHORS — so a drag or a wheel promoting hero→browse
+       underneath it means the operator's framing is not what is on screen, and
+       nothing told them. Worse on a phone: a reader swiping PAST the frame on
+       their way down the page was panning the camera, because a swipe and a
+       drag are the same gesture there. (Jacob, 2026-08-31: "a touch on the
+       screen won't pan the camera to browse".)
+       ⭐ THIS IS WHY THE HOST PAGE NEEDS NO ARM BUTTON. theward.online was
+       holding `pointer-events: none` over the hero and asking for a click to
+       release it — a guard the product should never have made necessary. The
+       Ward is a universal player; every installation inherits this, rather than
+       each embedding page inventing its own gate.
+       ⚠ Unframed this is inert: a direct visitor still drags into Browse. */
     const onMove = (e) => {
       if (!downXY) return
       const cam = useCamera.getState()
@@ -581,6 +599,7 @@ function CameraRig() {
       const dy = e.clientY - downXY.y
       if (dx * dx + dy * dy > 36) { // >6px = drag
         downXY = null
+        if (FRAMED) return
         cam.setMode('browse')
         useUserLocation.getState().start()
       }
@@ -591,7 +610,7 @@ function CameraRig() {
     const onWheel = () => {
       const cam = useCamera.getState()
       cam.resetIdle()
-      if (cam.viewMode === 'hero') {
+      if (cam.viewMode === 'hero' && !FRAMED) {
         cam.setMode('browse')
         useUserLocation.getState().start()
       }
@@ -858,6 +877,25 @@ function CameraRig() {
     <OrbitControls
       ref={controlsRef}
       makeDefault
+      /* ⛔ OFF while a framed shot is held. `update()` is unaffected — the hero
+         keyframe path drives target and position directly above — so this only
+         stops POINTER input reaching a camera that is not the reader's to move. */
+      /* ⛔ OFF while a framed shot is held — this is the half that gives the
+         HOST PAGE ITS GESTURES BACK, and it is why theward.online could delete
+         its "Click to browse" arm gate. `update()` is unaffected: the hero
+         keyframe path drives target and position directly above and calls
+         `update()` itself, so the pan still runs with the controls disabled
+         (drei's own useFrame skips `update()` when `enabled` is false).
+         ⚠ MEASURED, AND IT CORRECTED A PLAUSIBLE-SOUNDING GUESS. The first
+         version of this change also wrote `touch-action: pan-y` onto the canvas,
+         reasoning that OrbitControls sets `touchAction: 'none'` in its
+         constructor — which `three/examples/jsm/controls/OrbitControls` line 36
+         really does. ⛔ THAT IS NOT THE CLASS DREI MOUNTS. It bundles
+         `three-stdlib`'s, which never touches the style, and a walk of the live
+         canvas's ancestor chain in a framed hero found `touch-action` at its
+         initial value on every node. There was nothing to undo, so the write is
+         gone rather than left in as a no-op with a false reason attached. */
+      enabled={!heldShot}
       enableDamping={true}
       dampingFactor={0.25}
     />

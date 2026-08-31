@@ -69,6 +69,31 @@ breaks something that was expensive to learn:**
   ⚠️ **So re-framing Browse in Stage moves every page that frames it.** That is the
   intent, and it is worth knowing before you drag the Browse camera.
 
+- ⛔ **FRAMED, THE HERO HOLDS ITS SHOT** *(2026-08-31, `Scene.jsx` → `CameraRig`)*.
+  `onMove` and `onWheel` promote hero→browse only when UNFRAMED, and the hero's
+  `OrbitControls` are `enabled={false}` while a framed shot is held. Double-tap
+  into street was already gated on `viewMode === 'browse'`, so it cannot fire
+  from a held hero. `update()` is unaffected — the hero keyframe path drives the
+  camera itself, so the pan still runs.
+  ⚠️ **A HOST PAGE NOW DEPENDS ON THIS.** theward.online deleted its "Click to
+  browse" arm gate — a pill holding the frame at `pointer-events: none` — on the
+  strength of it. Re-enable the promotion and that page becomes a camera a reader
+  nudges by scrolling past, with nothing on the site's side to catch it.
+  ⭐ **It is also the rule in miniature:** the site had built a gate because this
+  product moved a camera it was not asked to move. The gate was a fork of the
+  thing being embedded. The fix belonged here, where every installation inherits
+  it, and the site got to delete code.
+- ⛔ **The place card's hero photo SCROLLS** *(2026-08-31, `PlaceCard.jsx`)*. It
+  sat outside the scroll container as a fixed `h-28` band — fine on a desktop
+  card, half the visible card in a 4:3 frame on a phone, and it never moved. It
+  is now the scroller's first child. ⚠️ **The close button did NOT come with it**:
+  it was positioned against the hero, so moving it would have scrolled the only
+  way out of the card off the top. It is a direct child of the dialog now, and
+  deliberately its **FIRST** child — `.embed-card > [role="dialog"] > :last-child`
+  in `index.css` hides the claim bar and would have hidden a button parked at the
+  end. ⭐ Not a small-screen fork: one layout everywhere, which is what
+  `.embed-card`'s whole approach already insists on.
+
 ⚠️ **`paper` / `plate` in `ward-layer` are the wire protocol.** They are retired
 words in the site's own vocabulary and must not be "corrected" here.
 
@@ -85,6 +110,15 @@ words in the site's own vocabulary and must not be "corrected" here.
 - **A legal page** (`legal.html` on the site) and **a link preview** (`assets/og.png`,
   the band mark at 1200×630) landed 2026-08-29. Neither depends on this product — noted
   so nobody looks for them here.
+- ⛔ **A privacy page on the site was written and CUT** *(2026-08-31)*, and the reason
+  points back here: **this product already has one** — `PrivacyPage` in
+  `src/pages/LegalPage.jsx`. Everything load-bearing in the site's draft described
+  behaviour that lives in THIS repo — the `crypto.randomUUID()` device hash
+  (`src/lib/device.js`), coordinates never leaving the browser
+  (`useUserLocation` holds them; `postCheckin` sends the hash and a *place id*),
+  and contributed content being public. ⚠️ **So a privacy statement on the site is a
+  second copy of a statement that lives here, on a domain that collects nothing.**
+  If any of those three behaviours change, `LegalPage.jsx` is the page to change.
 
 ## Generated from this repo, so it cannot drift
 
