@@ -12,7 +12,16 @@
 const CORS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  // ⛔ `x-device-hash` IS NOT OPTIONAL. The browser client sends it on every
+  // request — `fetchWithDeviceHash` in src/lib/supabase.js attaches it whenever
+  // the device has a hash — and a header missing from this list makes the BROWSER
+  // block the call after an otherwise-successful preflight. The function never
+  // sees the request and logs nothing; the client reports only 'Failed to send a
+  // request to the Edge Function', which is indistinguishable from the service
+  // being down.
+  // ⚠️ It bites only devices that HAVE a hash, so it reads as working until a
+  // browser earns one — and from then on that browser alone is broken, for good.
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-device-hash',
 }
 
 async function verifyAdmin(token: string): Promise<boolean> {
