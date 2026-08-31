@@ -44,16 +44,26 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_URL')!,
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
     )
+    // ⛔ NEWEST THOUSAND, NOT OLDEST. This ordered `ascending: true` under the
+    // same limit, so past 1000 messages the inbox would have returned the
+    // earliest thousand and silently stopped showing anything new — the worst
+    // failure an inbox has, and one that arrives quietly on the day the count
+    // crosses over rather than announcing itself.
+    // ⭐ THE ORDER IT RETURNS IS STILL ASCENDING, deliberately: the client reads
+    // `msgs[msgs.length - 1]` as a thread's latest message and scrolls threads to
+    // the bottom. So the SELECT takes the newest 1000 and the reverse hands them
+    // back oldest-first — the window moves, the contract does not.
     const { data, error } = await sb
       .from('sms_messages')
       .select('*')
-      .order('created_at', { ascending: true })
+      .order('created_at', { ascending: false })
       .limit(1000)
 
     if (error) throw error
+    const messages = (data || []).slice().reverse()
 
     // Enrich with profile data for known phone numbers
-    const phones = [...new Set((data || []).map(m => m.phone))]
+    const phones = [...new Set(messages.map(m => m.phone))]
     let profiles: Record<string, { display_name: string; neighborhood_relationship: string | null }> = {}
     if (phones.length > 0) {
       const { data: pData } = await sb
@@ -67,7 +77,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    return json({ messages: data, profiles })
+    return json({ messages, profiles })
   } catch (err) {
     console.error('[sms-inbox] query failed:', err.message)
     return json({ error: 'Failed to load messages' }, 500)
