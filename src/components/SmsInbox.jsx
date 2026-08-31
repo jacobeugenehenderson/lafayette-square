@@ -183,6 +183,7 @@ function SmsInboxInner() {
   const [messages, setMessages] = useState([])
   const [profiles, setProfiles] = useState({})  // phone → { display_name, neighborhood_relationship }
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)   // a reachability failure, never an empty inbox
   const [selectedThread, setSelectedPhone] = useState(null)
   const [replyText, setReplyText] = useState('')
   const [sending, setSending] = useState(false)
@@ -192,16 +193,40 @@ function SmsInboxInner() {
   const close = () => useSmsInbox.getState().setOpen(false)
   const adminToken = localStorage.getItem('lsq_admin_token') || ''
 
+  /* ⛔ A FAILED FETCH IS NOT AN EMPTY INBOX, and this function used to render it
+     as one. `setMessages` was only called on success, so an auth rejection, a
+     dropped connection or a cold function left the list at its initial [] and
+     the operator read "No messages yet. Inbound texts will appear here." — a
+     sentence that says the system is fine and nobody has written.
+     ⭐ THE FILE ALREADY KNEW. `refreshInboxUnread` above carries the rule in as
+     many words — "a silent zero is how a message sits unanswered for a week" —
+     and leaves the badge alone rather than zeroing it on error. That guard was
+     written for the BADGE and never applied to the LIST it belongs to.
+     ⚠️ Worth keeping in mind when this fires: the token is minted by `adminAuth`
+     through Apps Script, and validated here by a SUPABASE function. Two
+     backends, one credential — so a passphrase that signed you in can still be
+     refused by the inbox, and that is an error, not an absence. */
   const fetchMessages = async () => {
+    setError(null)
     try {
       const { data, error } = await supabase.functions.invoke('sms-inbox', {
         body: { admin_token: adminToken },
       })
-      if (data?.messages) setMessages(data.messages)
-      if (data?.profiles) setProfiles(data.profiles)
-      if (error) console.error('[SmsInbox] fetch error:', error)
+      if (error) {
+        console.error('[SmsInbox] fetch error:', error)
+        setError(error.message || String(error))
+        return
+      }
+      if (!data?.messages) {
+        console.error('[SmsInbox] fetch returned no messages field:', data)
+        setError('The inbox replied without any messages.')
+        return
+      }
+      setMessages(data.messages)
+      setProfiles(data.profiles || {})
     } catch (err) {
       console.error('[SmsInbox] fetch failed:', err)
+      setError(err?.message || String(err))
     } finally {
       setLoading(false)
     }
@@ -357,7 +382,20 @@ function SmsInboxInner() {
         ) : !selectedThread ? (
           /* ── Conversation list ── */
           <div className="flex-1 overflow-y-auto min-h-0">
-            {sorted.length === 0 ? (
+            {/* ⛔ THE TWO STATES MUST NOT LOOK ALIKE. "Nobody has written" is
+                reassuring; "we could not ask" is a thing to act on. Reaching for
+                the same grey sentence for both is what let this sit unnoticed. */}
+            {error ? (
+              <div className="flex flex-col items-center justify-center h-full text-body-sm px-6 text-center gap-2">
+                <span className="text-amber-300/90">Couldn&rsquo;t reach the inbox.</span>
+                <span className="text-white/40">This is not an empty inbox &mdash; your messages may be fine. Your admin session may have expired; sign in again with <code className="text-white/60">?admin</code>.</span>
+                <span className="text-white/25 text-caption break-words max-w-full">{error}</span>
+                <button onClick={() => { setLoading(true); fetchMessages() }}
+                  className="mt-1 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/15 text-white/80 transition-colors">
+                  Try again
+                </button>
+              </div>
+            ) : sorted.length === 0 ? (
               <div className="flex items-center justify-center h-full text-white/30 text-body-sm px-4 text-center">
                 No messages yet. Inbound texts will appear here.
               </div>
