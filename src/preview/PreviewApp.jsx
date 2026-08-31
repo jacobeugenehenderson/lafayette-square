@@ -908,6 +908,16 @@ function PublishPanel({ lookId }) {
   // promote; that is the one thing the git counts are still load-bearing for. The
   // moment one of these reaches the operator's eye, this panel is leaking git again.
   const aheadProd = status.vsProd?.ahead || 0
+  const aheadStaging = status.vsStaging?.ahead || 0
+  // ⭐ ONE CONDITION DRIVES BOTH THE TENSE AND THE DISABLE (Jacob, 2026-08-31).
+  // They used to be two: `disabled` keyed on `ahead === 0`, the LABEL on the live
+  // site having finished building. So the moment after a promote the button was
+  // grey and still read "Promote to Prod" — inert but present-tense, which reads
+  // as "this failed" — and the only thing saying otherwise was a green line
+  // underneath. Nothing to ship IS the past tense; there is no third state.
+  const clean = !status.unbaked && !status.dirty?.length
+  const stagingDone = clean && aheadStaging === 0
+  const prodDone    = clean && aheadProd === 0
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
   // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").
   // A branch name and a commit count answer a question the operator does not have. The
@@ -932,11 +942,15 @@ function PublishPanel({ lookId }) {
       {visitLink(key)}
     </div>
   )
-  // ⛔ Past-tense AND INERT when it is true (Jacob, 2026-08-29). A live site already
-  // showing your latest has nothing to publish, so the button states that and stops
-  // being a button — it does not offer a re-do nobody asked for.
-  const stagingCurrent = deploys.staging?.status === 'ready' && !status.unbaked && !status.dirty?.length
-  const prodCurrent = deploys.prod?.status === 'ready' && !status.unbaked && !status.dirty?.length
+  // ⛔ Past-tense AND INERT when there is nothing to send (Jacob, 2026-08-29). A
+  // site already showing your latest has nothing to publish, so the button states
+  // that and stops being a button — it does not offer a re-do nobody asked for.
+  // ⚠️ The pair that used to live here — `stagingCurrent` / `prodCurrent`, keyed on
+  // the live deploy reaching 'ready' — is GONE, not renamed. Waiting on the site to
+  // finish building was the whole defect: for the minutes Pages takes, the button
+  // was inert AND present-tense, which reads as a failure. `stagingDone`/`prodDone`
+  // above answer the question the operator actually has — is there anything of mine
+  // still unsent — and that is true the instant the push lands.
   // The SMS-hero multistate button: Capture → Push (straight to prod) → Live.
   const sms = {
     capture: { label: capturing ? 'Capturing…' : '📷 Capture SMS Hero', onClick: smsCapture, bg: 'rgba(168,85,247,0.18)', color: '#e9d5ff' },
@@ -957,15 +971,20 @@ function PublishPanel({ lookId }) {
         title="Snapshot the current slab view (center-square, no UI) as the SMS/link-preview image, then ship to prod">
         {sms.label}
       </button>
-      {targetRow('staging', <button disabled={!!busy || stagingCurrent} onClick={publishStaging}
-        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingCurrent) ? 0.45 : 1, cursor: stagingCurrent ? 'default' : 'pointer' })}>
-        {busy === 'staging' ? 'Publishing…' : stagingCurrent ? 'Published to Staging' : 'Publish to Staging'}
+      {targetRow('staging', <button disabled={!!busy || stagingDone} onClick={publishStaging}
+        style={btn({ background: busy === 'staging' ? 'rgba(96,165,250,0.25)' : 'rgba(96,165,250,0.18)', color: '#bfdbfe', opacity: (busy || stagingDone) ? 0.45 : 1, cursor: stagingDone ? 'default' : 'pointer' })}>
+        {busy === 'staging' ? 'Publishing…' : stagingDone ? 'Published to Staging' : 'Publish to Staging'}
       </button>)}
-      {targetRow('prod', <button disabled={!!busy || aheadProd === 0 || prodCurrent} onClick={promoteProd}
-        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || aheadProd === 0 || prodCurrent) ? 0.45 : 1, cursor: prodCurrent ? 'default' : 'pointer' })}>
-        {busy === 'prod' ? 'Promoting…' : prodCurrent ? 'Promoted to Prod' : 'Promote to Prod'}
+      {targetRow('prod', <button disabled={!!busy || prodDone} onClick={promoteProd}
+        style={btn({ background: 'rgba(74,222,128,0.16)', color: '#bbf7d0', opacity: (busy || prodDone) ? 0.45 : 1, cursor: prodDone ? 'default' : 'pointer' })}>
+        {busy === 'prod' ? 'Promoting…' : prodDone ? 'Promoted to Prod' : 'Promote to Prod'}
       </button>)}
-      {msg && <div style={{ marginTop: 8, color: msg.kind === 'err' ? '#f87171' : '#4ade80', wordBreak: 'break-word' }}>{msg.text}</div>}
+      {/* ⛔ ERRORS ONLY. The success line was a second place the panel said what
+          the button already says — and it said it in GIT: "Promoted to prod ·
+          1032 commits" put a commit count in front of the operator, which the
+          note on `aheadProd` above forbids in as many words. A thing that
+          worked needs no receipt; a thing that failed does. */}
+      {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
     </div>
   )
 }
