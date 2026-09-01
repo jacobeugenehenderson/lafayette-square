@@ -34,6 +34,61 @@ The nonprofit is **national and multi-installation.** Its mission isn't disaster
 
 > **▸ Rationale (two tiers of money).** National program grants fund the *core capacity*; local co-raising funds each *instance* — mirroring the two-pocket structure. It also keeps national fundraising from depending on a single human writing a bespoke grant for every town.
 
+## The rate card (published, not negotiated) — DRAFT, unvalidated
+
+**The ability-to-pay split above, with numbers on it.** These are *list* prices, set once and published — **not** quoted per deal. The point of a card is that there is no conversation about price: there is a page.
+
+> ⚠️ **Unvalidated.** These are reasoned from comparable spends (architectural visualization, wayfinding programs, civic web builds), **not** from quotes anyone has given us. **Validate with three conversations — a BID director, a developer's marketing lead, a tourism board — asking what they'd expect something like this to cost, before publishing anything.** Asking that question is research, not selling.
+
+| tier | buyer | install | their frame |
+|---|---|---|---|
+| **Commercial I** | real-estate developer marketing a district; municipality | **$60–150k** | marketing budget / capital line |
+| **Commercial II** | BID, tourism board, chamber, campus | **$35–75k** | placemaking or wayfinding line item — *the expected centre of gravity* |
+| **Mission** | grant-funded nonprofit, historic district | **$15–35k** | the number **is** the grant ask; nonprofit pocket |
+| **Community** | neighborhood association, no budget | **$0 to them** | philanthropy-funded; someone is still paid for the pour |
+
+- **Annual: ~18% of install** — hosting, updates, content refresh. Expected by every buyer in this market; it is what funds the installation *staying alive*.
+- **Delivery and other monetized modules: free to switch on.** Fee is **5% of money crossing the platform's rails**; adequate insurance for the service being run is a **condition of enabling it** (see § the second bright line).
+- **Bespoke wiring:** built only if it generalizes to the next town. If it serves one installation only, it is contract work at a **day rate**, never fee-financed.
+
+> **▸ Rationale (why the anchor is replacement cost, not our hours).** A pour is realistically **3–8 weeks** of skilled authoring — Extent, intake, Survey block-by-block against the aerial, Section, land use, tree mix, look bake, eye-gate, then content. At any sustainable rate that is **$25–60k of labour at cost**, so a $10k install is below delivery cost and every one would make the company weaker. But cost is only the **floor**. The **ceiling is the buyer's alternative**, and their alternative is a bespoke build: the kit is ~120k lines of product code whose hard core is computational geometry, five authoring applications, a tree pipeline, and a runtime — plausibly **$1–3M and 1–2 years** to commission from nothing, to produce **one** non-repeatable neighborhood. ⭐ **We are not selling six weeks of work. We are selling a fraction of an alternative that costs millions — which is also why the number is not an appraisal of anything ethereal. It is a discount off an observable figure.**
+
+**The disciplines that keep a price from becoming a barrel** — these are the anti-extraction commitments, and they belong in the platform licence, not in anyone's good intentions:
+
+1. ⛔ **Published and identical for everyone. We do not negotiate.** Negotiation is where the squeeze lives.
+2. ⛔ **An existing installation is never re-priced upward.** The rate they came in at is the rate they keep.
+3. ⛔ **They can leave** — data portability and the right to take their neighborhood with them.
+4. ⛔ **No exclusivity.** A neighborhood may run delivery, or anything else, with an operator other than Cary.
+5. **Reviewed once a year, deliberately, in private.** Never in a conversation with a counterparty.
+
+> **▸ Rationale (the first few are discounted on purpose).** Reference customers are worth real money in a market with no comparables, so the first two or three should be priced low — **knowingly, as a stated decision.** The failure mode is not discounting; it is discounting *by accident*, because a number felt impolite, and thereby setting the anchor for everyone after.
+
+## What the alternative costs — the anchor under the card
+
+**Rebuilding the kit is the wrong comparison; nobody commissions a kit.** The buyer's real alternative is **one bespoke neighborhood, hand-built and non-repeatable.** That is the figure the rate card is a discount off.
+
+Strip everything that exists only so the thing works for **town #2** — Extent, Survey, Section, Stage, scene parameterization, the arborist kit-matcher, the meteorologist, the whole `--scene` apparatus — and a one-off hardcodes the boundary, hand-tunes the geometry, and bakes a single look. Smaller: perhaps 25–35k lines against our ~120k. Still genuinely hard:
+
+| work | estimate |
+|---|---|
+| data pipeline for one town (OSM, parcels, ML footprints, aerials, elevation) | 4–8 wks |
+| street / block / curb / sidewalk geometry — hand-tuned, still the hard part | 8–16 wks |
+| buildings: footprints → extrusion → aerial fortification | 4–8 wks |
+| trees: license a library, place, LOD for mobile | 6–12 wks |
+| runtime + mobile performance | 8–12 wks |
+| content layer: place cards, listings, editing | 6–10 wks |
+| **total** | **≈ 36–66 person-weeks (9–16 person-months)** |
+
+Two or three people over six to nine months. **At loaded cost $250–500k; quoted by a studio with margin, $400–800k.**
+
+⭐ **So a pour at $35–75k is roughly 5–15% of the bespoke alternative** — and it arrives in weeks rather than quarters, and it is maintainable, because the thing that produced it still exists.
+
+> **▸ Rationale (and this is the part that matters most).** **The expensive half of the kit is not the code — it is the discovery.** Everything the canon records as settled was wrong first: *everything is a shadow of the centerline · chains die at the wall · the curb has two producers · the override is the product.* A funded team starting fresh does not merely pay to write ~120k lines; **they pay to take the same wrong turns.** Rebuild cost is therefore north of **$1–3M and one to two years**, and the estimate understates it.
+>
+> ⭐⭐ **The corollary is the encouraging one, and it should govern what we do next: the expensive part is already done.** What remains between here and an asset worth seven figures to reproduce is *packaging*, not building — a handful of instance hardwires, a per-town `.gitignore` block that should be role-keyed, a front door that names the wrong product, and **a platform licence that does not exist.** Weeks, not years.
+>
+> ⛔ **And the standing risk, stated so it is not discovered late: spending another year perfecting the factory for a second customer nobody has asked to exist.** Three conversations about price would tell us more than three more weeks of portability work.
+
 ## The money flow (keep these channels distinct)
 The single discipline: **two pockets, kept clean, with documented arm's-length between them.** The channels:
 
@@ -50,6 +105,38 @@ The **for-profit owns the kit** (its core asset). The nonprofit *buys installati
 - Developers building the **core kit** are **for-profit** employees on **for-profit** money. (Grant money paying devs to build a private asset = private benefit = a problem.)
 - The nonprofit pays (as a customer) for a *deliverable* — the Altadena map — which the for-profit produces *using* its kit. The nonprofit buys the service; the for-profit keeps the asset.
 - **Restricted grants** reinforce this: an "Altadena memorial" grant can only fund *that* program's work, never general/commercial kit development.
+
+## ⚠️ The second bright line — infrastructure vs. operator (OPEN, undecided)
+
+**The two-pocket split sorts mission from commerce. It does not sort the two unlike things now sitting together in the for-profit pocket.** That pocket holds an **infrastructure business** (the kit, the slab, The Ward, the payment rails, and the standards a neighborhood must meet to use them) *and* an **operating business** (Cary — couriers, dispatch, POS integration, IC agreements, shift-end settlement). Those have different risk profiles, different customers, and different futures, and nothing currently separates them.
+
+**The test that would draw the line:**
+
+> **We are infrastructure. We are not the operator of anything that happens on it.**
+
+| | infrastructure | operator |
+|---|---|---|
+| **Is** | the kit, the slab, The Ward, the rails, the standards | Cary: a delivery service we run |
+| **Sells** | free platform; a fee on money crossing the rails | delivery, at a service charge |
+| **Carries** | the platform's own conduct | auto, IC classification, food, MOR/settlement |
+| **Customer** | any neighborhood | riders, senders, restaurants |
+
+Under that test **Cary is the exception** — the one place we *are* the operator — and it is currently the exception funding everything else.
+
+> **▸ Rationale (why this is a structure question and not a philosophy one).** Four exposures live in Cary and in nothing else: **non-owned/hired auto** (couriers driving on personal policies that exclude delivery use), **IC misclassification** (the whole subject of `courier-agreement.md`), **merchant-of-record and marketplace-facilitator status** (we collect from the customer and settle to restaurant and courier at shift's end), and **product liability on third-party food.** Today all four sit in the same entity that owns the **kit IP — the core asset.** A single courier accident, or one classification ruling, reaches the kit. That is the commingling the two-pocket discipline exists to prevent, one floor down.
+
+**A second argument, and it may matter more commercially: neutrality.** The platform's pitch is *free, and yours.* The day a neighborhood wants to run delivery with an operator other than Cary, "the kit is neutral infrastructure" is a much harder claim if the kit and the courier company are one legal entity. Separation is what lets Cary be **the first tenant on the rails and not the landlord.**
+
+**Three shapes, undecided:**
+1. **One entity (today).** Simplest, cheapest, no new filings. Commingles operating liability with the core asset; weakest neutrality claim.
+2. **Two entities — a kit/IP company and an operating company** — with the operating co licensing the kit at arm's length, mirroring the nonprofit↔for-profit discipline already established above. Isolates the four exposures; makes Cary spinnable or sellable; costs a second entity and a second set of books.
+3. **Holding company over both.** Cleanest long-term; most formation overhead now.
+
+> **▸ Rationale (why decide before building, not after).** The goods payment path is **unbuilt** — no `orders` table, no `place-order` function (`cary/ORDER-PIPELINE.md §"Build order"`). Whoever holds the merchant relationship is decided the day that function ships, and it is far cheaper to choose the entity now than to migrate a live payment topology and re-paper the courier and sender agreements later.
+
+**Where the insurance requirement lands.** The working model is that the platform is **free and requires adequate coverage for whatever services a neighborhood actually runs** — no delivery, no delivery insurance, no cost. That is a **contractual requirement** (minimum limits per service, additional-insured status, waiver of subrogation, a current certificate on file), **not** insurance we distribute — which keeps us entirely outside producer/MGA licensing. It belongs in the **infrastructure** entity's platform licence, because it is a standard for using the rails. Aggregating coverage into a program we place is a *later* option that would require licensed distribution; do not conflate the two.
+
+⛔ **Not resolved here, and not resolvable in this document:** whether Cary's model makes it a **marketplace facilitator** obligated to collect and remit sales tax on restaurant food (our own spec already computes food tax — `cary/pos/cary-order.md`, `tax_cents`), and whether collecting customer funds and settling at shift's end raises **money-transmission** questions. Both follow from commercial *function*, not from payment plumbing, and both constrain the entity choice. **Ask them together, in one conversation, before `place-order` is built.**
 
 ## Fiscal sponsorship (the bootstrap)
 Rather than incorporate a 501(c)(3) and wait 6–12+ months for IRS approval before raising a dollar, the project operates under a **fiscal sponsor** — an existing nonprofit that hosts it under its tax-exempt umbrella for a fee (~5–15%). Under it the project can **receive tax-deductible grants/donations immediately** and **pay staff through the sponsor's payroll** — collapsing runway-to-first-salary from a year to weeks. Form the standalone 501(c)(3) later, once there's traction. *(Confirm sponsor model — comprehensive vs. grantor — with counsel.)*
@@ -93,5 +180,9 @@ The federal funding environment is contracted — DOGE/retraction hit **federal*
 - Nonprofit attorney + hybrid-experienced CPA to paper: the two-pocket separation, conflict-of-interest policy, the inter-entity vendor/IP-license terms, the comp policy.
 - Recruit the independent board.
 - Confirm the for-profit raise vehicle (keeps it closely held — no equity partners).
+- **Decide the second bright line** (§ above): one entity, kit-co + operating-co, or a holdco. **Before `place-order` ships.**
+- **Marketplace-facilitator determination** for Cary in MO (sales tax on restaurant food) — tax attorney / SALT specialist.
+- **Money-transmission question** on collecting customer funds and settling at shift's end (agent-of-payee exemption; routing through Stripe rather than our own bank account).
+- **The platform licence itself does not exist** — no `LICENSE`, no grant of rights, no reservation of the platform fee. Every "free, take it and run" conversation is about a document that hasn't been written. Two clauses: broad free grant on the kit; fee + insurance requirement on services run atop it.
 
 *Authored 2026-06-20. Reference-kind; the financial/governance home for the Cary enterprise. Not legal/tax/financial advice.*
