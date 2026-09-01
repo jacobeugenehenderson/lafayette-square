@@ -24,6 +24,7 @@
 // collapsible but always findable. See cartograph/intake-rows.mjs `licence`.
 import { useState, useEffect } from 'react'
 import { INSTANCE } from '../instance.js'
+import { ASSET_BASE } from './bakedUrl.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -46,7 +47,7 @@ export function useSources(lookId) {
   useEffect(() => {
     let cancelled = false
     setState({ credits: [], owed: [], loaded: false })
-    fetch(`${import.meta.env.BASE_URL}baked/${resolved}/sources.json`)
+    fetch(`${ASSET_BASE}baked/${resolved}/sources.json`)
       .then(r => (r.ok ? r.json() : null))
       .then(j => {
         if (cancelled) return

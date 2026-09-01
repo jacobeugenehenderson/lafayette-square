@@ -30,6 +30,7 @@
 
 import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 export { V_EXAG } from '../lib/terrainCommon.js'
 
@@ -60,7 +61,7 @@ function resolveLookId() {
 }
 
 async function fetchTerrain(lookId) {
-  const base = import.meta.env.BASE_URL
+  const base = ASSET_BASE
   try {
     const meta = await fetch(`${base}baked/${lookId}/terrain.json`).then(r => { if (!r.ok) throw new Error(`terrain.json ${r.status}`); return r.json() })
     const buf  = await fetch(`${base}baked/${lookId}/terrain.bin`).then(r => { if (!r.ok) throw new Error(`terrain.bin ${r.status}`); return r.arrayBuffer() })

@@ -50,6 +50,7 @@ import {
 } from '../components/treeAtlasMaterial.js'
 import { CANARY_CAMERAS } from './canaryCamera.js'
 import { useCanaryTree } from '../lib/canaryTree.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // Gentle authoring breeze used when the active Condition's directive
 // carries no wind yet (Phase 5 directive→viewport wiring still pending).
@@ -386,7 +387,7 @@ function HeroTree({ lookId }) {
   const variantId = pref?.variantId ?? 1
   const variant   = pref?.variantId != null ? `skeleton-${pref.variantId}-lod1.glb` : HERO_TREE_SKELETON
   const treeLook  = pref?.lookId ?? lookId
-  const url = `${import.meta.env.BASE_URL}baked/${treeLook}/trees/${species}/${variant}`
+  const url = `${ASSET_BASE}baked/${treeLook}/trees/${species}/${variant}`
   const { scene } = useGLTF(url)
   const groupRef = useRef()
 

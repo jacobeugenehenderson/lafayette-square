@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import useCamera from '../hooks/useCamera'
 import { shotKeyForViewMode, resolveShotScene } from './shotScene.js'
+import { ASSET_BASE } from './bakedUrl.js'
 
 /**
  * useSceneJson — the production-side slab data adapter.
@@ -40,7 +41,7 @@ const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 function fetchSceneOnce(lookId, cacheBust) {
   const key = `${lookId}@${cacheBust}`
   if (_cache.has(key)) return _cache.get(key)
-  const url = `${import.meta.env.BASE_URL}baked/${lookId}/scene.json?t=${cacheBust}`
+  const url = `${ASSET_BASE}baked/${lookId}/scene.json?t=${cacheBust}`
   const p = fetch(url, _fetchOpts)
     .then(r => (r.ok ? r.json() : null))
     .catch(e => {

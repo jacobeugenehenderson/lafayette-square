@@ -39,6 +39,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import { defaultWindState, resolveWindState } from '../lib/wind-field.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -629,7 +630,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // baked/default.json was LS's census under a fossil name, and a "fallback"
   // that silently hands LS's 745 trees to a neighbourhood whose bake is missing
   // is a bug that hides a bug.
-  const placementsUrl = bakeUrl || `${import.meta.env.BASE_URL}baked/${lookName}/trees.json`
+  const placementsUrl = bakeUrl || `${ASSET_BASE}baked/${lookName}/trees.json`
 
   const [bake, setBake] = useState(null)
   useEffect(() => {
@@ -639,7 +640,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // (tree-anchors.json, groundSampler bake). Fetch placements + anchors and
     // inject groundRaw into each instance; if anchors are absent/stale, the
     // per-instance memos fall back to the smooth field.
-    const anchorsUrl = `${import.meta.env.BASE_URL}baked/${lookName}/tree-anchors.json`
+    const anchorsUrl = `${ASSET_BASE}baked/${lookName}/tree-anchors.json`
     // A missing placements file may 404 OR (on SPA-fallback hosts) return a 200
     // HTML page, so `instances` is validated rather than trusted. Absent → no
     // trees, which is the honest answer for a neighbourhood that has no census
@@ -955,7 +956,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       // open Preview/Stage tab picks up rewritten UVs after a rebake instead
       // of holding drei's useGLTF cache for the same path indefinitely.
       const lookUrl = url.startsWith('/trees/')
-        ? `${import.meta.env.BASE_URL}baked/${lookName}${url}${atlasVersion}`
+        ? `${ASSET_BASE}baked/${lookName}${url}${atlasVersion}`
         : url
       let byTile = m.get(lookUrl)
       if (!byTile) {

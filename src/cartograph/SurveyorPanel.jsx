@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import useCartographStore from './stores/useCartographStore.js'
 import landmarksData from '../data/landmarks.json'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // Roadway classes only. The dropdown writes st.type on a STREET
 // (ribbons.streets); paths/alleys render from ribbons.paths/ribbons.alleys keyed
@@ -32,7 +33,7 @@ function HeroSubjectPicker() {
     let ok = true
     setLandscape(null)
     if (!activeLookId) return
-    fetch(`${import.meta.env.BASE_URL}baked/${activeLookId}/landscape/landscape.json?t=${Date.now()}`, { cache: 'no-store' })
+    fetch(`${ASSET_BASE}baked/${activeLookId}/landscape/landscape.json?t=${Date.now()}`, { cache: 'no-store' })
       .then(r => r.ok ? r.json() : null)
       .then(m => { if (ok && m) setLandscape({ label: m.label || 'Mountain Backdrop' }) })
       .catch(() => {})

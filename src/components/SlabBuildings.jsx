@@ -39,6 +39,7 @@ import useCamera from '../hooks/useCamera'
 import { INSTANCE } from '../instance.js'
 
 import { IS_MOBILE as _IS_MOBILE } from '../lib/isMobile.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 const TEXTURE_BASE = `${import.meta.env.BASE_URL}textures/buildings/`
 
 // ── Camera x-ray — always on (2026-06-28) ─────────────────────────────────
@@ -139,7 +140,7 @@ export default function SlabBuildings({ lookId, interactive = true, renderGeomet
     let cancelled = false
     ;(async () => {
       try {
-        const base = import.meta.env.BASE_URL
+        const base = ASSET_BASE
         const t = Date.now()
         const m = await fetch(`${base}baked/${LOOK_ID}/buildings.json?t=${t}`).then(r => r.json())
         // Refuse unknown versions (SLAB-CONTRACT §0 / §10.3). v2 added the

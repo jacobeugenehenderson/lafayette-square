@@ -17,6 +17,7 @@ import * as THREE from 'three'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { groundColor as _groundColor } from './groundColorState'
 import { patchTerrainInstancedBaked, terrainExag } from '../utils/terrainShader'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // Module-level cache: one material set per look. Sharing materials across
 // component remounts keeps program count at 2 even if the tree component
@@ -1396,7 +1397,7 @@ function loadNormalTexture(url) {
 }
 
 async function buildMaterials(lookName) {
-  const manifestUrl = `${import.meta.env.BASE_URL}baked/${lookName}/trees-atlas.json?t=${Date.now()}`
+  const manifestUrl = `${ASSET_BASE}baked/${lookName}/trees-atlas.json?t=${Date.now()}`
   const designUrl = `${import.meta.env.BASE_URL}looks/${lookName}/design.json?t=${Date.now()}`
   const [manifestRes, designRes] = await Promise.all([
     fetch(manifestUrl),
@@ -1422,7 +1423,7 @@ async function buildMaterials(lookName) {
   // the atlas load rejects, and InstancedTrees gates ALL trees off. Mirrors the
   // base-join pattern used for every other baked asset. (treeAtlasMaterial bug
   // 2026-06-17: the lone runtime fetch that bypassed BASE_URL.)
-  const base = import.meta.env.BASE_URL
+  const base = ASSET_BASE
   const withBase = (p) => `${base}${String(p).replace(/^\//, '')}`
   const [color, normal] = await Promise.all([
     loadTexture(withBase(atlas.colorPath), { coveragePreserving: true, alphaTest: atlas.alphaTest ?? 0.5 }),

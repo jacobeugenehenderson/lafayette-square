@@ -25,6 +25,10 @@ jobs:
       - run: npm run build -- --base=/lafayette-square-staging/
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}
+          # Where the BAKED SLAB is served from (R2 custom domain). Unset ⇒ falls
+          # back to BASE_URL, i.e. the slab committed in this repo. See
+          # src/lib/bakedUrl.js and plans/r2-asset-offload.md.
+          VITE_ASSET_BASE: ${{ vars.VITE_ASSET_BASE }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 

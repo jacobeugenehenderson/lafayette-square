@@ -58,6 +58,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 import { IS_MOBILE } from '../lib/isMobile.js'
 import { INSTANCE } from '../instance.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -70,7 +71,7 @@ const _fetchOpts = import.meta.env.DEV ? { cache: 'no-store' } : undefined
 // generous enough for shallow pitches, steep enough to exclude walls.
 const ROOF_NORMAL_Y = 0.5
 
-const baseUrl = (lookId) => `${import.meta.env.BASE_URL}baked/${lookId}/citymodel/`
+const baseUrl = (lookId) => `${ASSET_BASE}baked/${lookId}/citymodel/`
 
 // Placeholder albedo until the city model gets its own Look channel — the vendor
 // ships no materials, so these two values ARE the palette right now. Brick wall /

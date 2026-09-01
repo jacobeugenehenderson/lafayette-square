@@ -16,7 +16,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 
-const BASE_URL = import.meta.env.BASE_URL || '/'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // Source → interface-color TOKEN. The color VALUES live in the master CSS
 // (src/cartograph/cartograph.css `--carto-tree-*`) — one place to re-theme
@@ -76,7 +76,7 @@ export default function DesignerTrees({ scene, hiddenLayers, bakeLastMs }) {
     if (hidden || !scene) { setInstances(null); return }
     let cancelled = false
     const bust = bakeLastMs ? `?t=${bakeLastMs}` : ''
-    fetch(`${BASE_URL}baked/${scene}/trees.json${bust}`)
+    fetch(`${ASSET_BASE}baked/${scene}/trees.json${bust}`)
       .then(r => (r.ok ? r.json() : null))
       .then(j => { if (!cancelled) setInstances(Array.isArray(j?.instances) ? j.instances : null) })
       .catch(() => { if (!cancelled) setInstances(null) })

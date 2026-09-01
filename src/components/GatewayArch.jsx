@@ -41,6 +41,7 @@ import {
   HORIZON_FLAT_DEFAULTS,
 } from '../cartograph/skyLightChannels.js'
 import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // NPS catenary equation converted to meters:
 const A = 211.5
@@ -474,7 +475,7 @@ function GroundDisc({ horizon, lookId, bakeLastMs }) {
   useEffect(() => {
     let cancelled = false
     const t = bakeLastMs ?? Date.now()
-    fetch(`${import.meta.env.BASE_URL}baked/${resolvedLookId}/ground.json?t=${t}`)
+    fetch(`${ASSET_BASE}baked/${resolvedLookId}/ground.json?t=${t}`)
       .then(r => r.ok ? r.json() : null)
       .then(m => {
         if (!cancelled && m?.stencil?.center) {

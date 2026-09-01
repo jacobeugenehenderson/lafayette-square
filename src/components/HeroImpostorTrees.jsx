@@ -25,6 +25,7 @@ import { buildHeroImpostorCard } from './impostorGeometry.js'
 import { injectHeroImpostorStamp } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import { treeDbg } from './OverheadTrees.jsx'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // ⭐ THE CARD STACK — canopy <> trunk/branches <> canopy.
 // Jacob's intended design is a SANDWICH: the trunk sits BETWEEN two canopy
@@ -74,7 +75,7 @@ const _IDENTITY_QUAT = new THREE.Quaternion()
  */
 export function useHeroImpostorAssets({ enabled, lookName, heroImpostorBySpecies, species }) {
   const [ready, setReady] = useState(0)
-  const base = import.meta.env.BASE_URL
+  const base = ASSET_BASE
   // KTX2 needs the renderer to know the device's block formats before it can load.
   const gl = useThree((st) => st.gl)
 

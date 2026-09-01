@@ -38,6 +38,7 @@ import {
 import { writeCanaryTree, useCanaryTree } from '../lib/canaryTree.js'
 import useArboristStore from './stores/useArboristStore.js'
 import { computeDominantTrunk } from './SpecimenViewport.jsx'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 const TILE_SPACING = 8        // meters between tiles, edge-to-edge centers
 const QUALITY_COLOR = {
@@ -82,7 +83,7 @@ export default function Grove() {
   const loadSlabSpecies = useMemo(() => async (lookId) => {
     if (!lookId) { setSlabSpecies([]); return }
     try {
-      const r = await fetch(`${import.meta.env.BASE_URL}baked/${lookId}/trees.json?t=${Date.now()}`)
+      const r = await fetch(`${ASSET_BASE}baked/${lookId}/trees.json?t=${Date.now()}`)
       if (!r.ok) throw new Error(`HTTP ${r.status}`)
       const j = await r.json()
       const seen = new Set(), out = []
@@ -987,7 +988,7 @@ class TileBoundary extends Component {
 // omits the argument used to build a URL that 404s on every deployed build — the
 // same defect that blanked theward.online's diorama on 2026-08-28.
 function bakedGlbUrl(lookId, species, variantId, lod = 'lod1') {
-  return `${import.meta.env.BASE_URL}baked/${lookId}/trees/${species}/skeleton-${variantId}-${lod}.glb`
+  return `${ASSET_BASE}baked/${lookId}/trees/${species}/skeleton-${variantId}-${lod}.glb`
 }
 
 function eligibleByLibId(libId, board, warnRef) {

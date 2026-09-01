@@ -39,6 +39,7 @@ import useSkyState from '../hooks/useSkyState'
 import { INSTANCE } from '../instance.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { LANDSCAPE_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 const LANDSCAPE_DEFAULT_CHANNEL = Object.freeze({ values: { ...LANDSCAPE_FLAT_DEFAULTS } })
 const PLACEMENT_KEYS = ['bearingX', 'bearingZ', 'distance', 'scale', 'rotation', 'yOffset']
@@ -73,7 +74,7 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
   useEffect(() => {
     let cancelled = false
     const t = cacheBust(bakeLastMs)
-    fetch(`${import.meta.env.BASE_URL}baked/${resolvedLookId}/landscape/landscape.json?t=${t}`, _fetchOpts)
+    fetch(`${ASSET_BASE}baked/${resolvedLookId}/landscape/landscape.json?t=${t}`, _fetchOpts)
       .then(r => (r.ok ? r.json() : null))
       .then(m => { if (!cancelled) setManifest(m) })
       .catch(() => { if (!cancelled) setManifest(null) })
@@ -176,7 +177,7 @@ export default function MountainBackdrop({ lookId, bakeLastMs, landscapeOverride
     if (!manifest?.asset) return
     let cancelled = false
     const t = cacheBust(bakeLastMs)
-    const url = `${import.meta.env.BASE_URL}baked/${resolvedLookId}/landscape/${manifest.asset}?t=${t}`
+    const url = `${ASSET_BASE}baked/${resolvedLookId}/landscape/${manifest.asset}?t=${t}`
     new GLTFLoader().load(
       url,
       (gltf) => {

@@ -15,6 +15,7 @@
 // [[project_preview_equals_ls_literally]], slab-is-the-contract.
 import { useState, useEffect } from 'react'
 import { INSTANCE } from '../instance.js'
+import { ASSET_BASE } from './bakedUrl.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -35,7 +36,7 @@ export function useStreetLabels(lookId, cacheBust) {
   useEffect(() => {
     let cancelled = false
     const bust = cacheBust != null ? `?t=${cacheBust}` : ''
-    fetch(`${import.meta.env.BASE_URL}baked/${resolved}/labels.json${bust}`)
+    fetch(`${ASSET_BASE}baked/${resolved}/labels.json${bust}`)
       .then(r => (r.ok ? r.json() : null))
       .then(j => { if (!cancelled) setLabels(j?.labels || []) })
       .catch(e => { console.warn('[streetLabels] load failed:', e); if (!cancelled) setLabels([]) })

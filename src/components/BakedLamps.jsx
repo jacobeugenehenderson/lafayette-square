@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react'
 import StreetLights from './StreetLights'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 function resolveLookId(propLookId) {
   if (propLookId) return propLookId
@@ -41,7 +42,7 @@ export default function BakedLamps({ lookId, bakeLastMs, lanternOverride } = {})
   useEffect(() => {
     if (cacheBust == null) return
     let cancelled = false
-    fetch(`${import.meta.env.BASE_URL}baked/${resolvedLookId}/lamps.json?t=${cacheBust}`)
+    fetch(`${ASSET_BASE}baked/${resolvedLookId}/lamps.json?t=${cacheBust}`)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setData(j) })
       .catch(e => console.warn('[BakedLamps] load failed:', e))

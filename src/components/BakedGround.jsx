@@ -30,6 +30,7 @@ import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // ── Surface treatment: albedo desaturation + value-range lift ────────────────
 // Jacob 2026-06-30 (Option A): surfaces should be DESATURATED and lit by
@@ -128,7 +129,7 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   // painted on the new geometry — the operator sees stale shadows that look
   // like the edit "didn't take" even though ground.bin is fresh.
   const lightmapUrl = manifest.lightmap
-    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? ASSET_BASE + 'baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
 
@@ -144,7 +145,7 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
   const poolMeta = manifest.poolmap || null
   const poolmapUrl = poolMeta
-    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + poolMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? ASSET_BASE + 'baked/' + manifest.look + '/' + poolMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const poolmap = poolmapUrl ? useLoader(THREE.TextureLoader, poolmapUrl) : null
   useEffect(() => {
@@ -165,7 +166,7 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   // sample decodes to linear and mixes correctly with the (linear) trunk diffuse.
   const colorMeta = manifest.colormap || null
   const colormapUrl = colorMeta
-    ? import.meta.env.BASE_URL + 'baked/' + manifest.look + '/' + colorMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
+    ? ASSET_BASE + 'baked/' + manifest.look + '/' + colorMeta.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const colormap = colormapUrl ? useLoader(THREE.TextureLoader, colormapUrl) : null
   useEffect(() => {
@@ -462,9 +463,9 @@ export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } 
     let cancelled = false
     ;(async () => {
       try {
-        const manifestUrl = `${import.meta.env.BASE_URL}baked/${resolvedLookId}/ground.json?t=${cacheBust}`
+        const manifestUrl = `${ASSET_BASE}baked/${resolvedLookId}/ground.json?t=${cacheBust}`
         const m = await fetch(manifestUrl).then(r => r.json())
-        const bin = await fetch(import.meta.env.BASE_URL + 'baked/' + m.look + '/' + m.bin + '?t=' + cacheBust)
+        const bin = await fetch(ASSET_BASE + 'baked/' + m.look + '/' + m.bin + '?t=' + cacheBust)
           .then(r => r.arrayBuffer())
         if (!cancelled) setData({ manifest: m, bin })
       } catch (e) {

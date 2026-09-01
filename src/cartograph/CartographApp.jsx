@@ -56,6 +56,7 @@ import toyLamps from '../data/toy/toy-lamps.json'
 import ToyBuildings from '../toy/ToyBuildings.jsx'
 import ToyTrees from '../toy/ToyTrees.jsx'
 import ToyTerrain from '../toy/ToyTerrain.jsx'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // UI
 import Toolbar from './Toolbar.jsx'
@@ -825,7 +826,7 @@ function genericSceneConfig(sceneBoundary) {
             <InstancedTrees
               lookId={lookId}
               bakeLastMs={bakeLastMs}
-              bakeUrl={`${import.meta.env.BASE_URL}baked/${lookId}/trees.json`}
+              bakeUrl={`${ASSET_BASE}baked/${lookId}/trees.json`}
             />
           </R3FErrorBoundary>
         )}
@@ -943,7 +944,7 @@ export default function CartographApp() {
   useEffect(() => {
     if (!activeLookId) return
     let cancelled = false
-    fetch(`${import.meta.env.BASE_URL}baked/${activeLookId}/scene.json?t=${Date.now()}`)
+    fetch(`${ASSET_BASE}baked/${activeLookId}/scene.json?t=${Date.now()}`)
       .then(r => r.ok ? r.json() : null)
       .then(j => { if (!cancelled) setBakedLayerVis(j?.layerVis || {}) })
       .catch(() => { if (!cancelled) setBakedLayerVis({}) })

@@ -29,6 +29,7 @@ import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.
 import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useCamera from '../hooks/useCamera'
+import { ASSET_BASE } from '../lib/bakedUrl.js'
 
 // ── Debug instrument (dev-only; ?treeDebug=flag,flag — NEVER affects prod) ────
 // Names the "chips": ?treeDebug=bandTint tints the 3 overhead bands branch=red /
@@ -140,7 +141,7 @@ export function useOverheadWarm(enabled) {
  */
 export function useOverheadAssets({ enabled, lookName, overheadBySpecies, species }) {
   const [ready, setReady] = useState(0)
-  const base = import.meta.env.BASE_URL
+  const base = ASSET_BASE
   // KTX2 needs the renderer to know the device's block formats before it can load.
   const gl = useThree((st) => st.gl)
 
