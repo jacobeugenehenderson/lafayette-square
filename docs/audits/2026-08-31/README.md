@@ -64,15 +64,24 @@ Recorded because each was asserted confidently and measured false:
   and `producerReason` is **conditional**, so "on every tile" is true of `producer` only. (**02**)
 - `CLAUDE.md`'s "`scratch/` holds 200+" — there are **657 scripts** and 7 forensic studies. (**03**)
 
-## Disclosure
+## Disclosure — and a retraction (2026-09-01)
 
-While spot-checking a closure receipt, audit 07 ran `scratch/claims-onboarding-guard.sh` on the
-documented assurance that it *"exits 1 until run with the key."* **It exits 0** — it prints
-`[ UNCHECKED ]` and returns success. The shell profile held the anon key, so the script
-proceeded: read-only RPC probes **plus one anonymous user signup against the live Supabase
-project**. That call is what established finding F-16 is closed. No secret values were
-reproduced anywhere in these reports. **The anon user should be removed.**
+Audit 07 ran `scratch/claims-onboarding-guard.sh`. Two things followed, one real and one false.
 
-The instrument defect is the durable finding: `SECURITY.md:70` and `:426` both assert the script
-fails closed. A check that reports "I did not check half the surface" while exiting 0 is
-invisible to any CI gate keyed on exit status.
+**Real, and it stands.** The script performs an unconditional
+`POST /auth/v1/signup` at `:25` and has **no cleanup**. **An anonymous user was created against the
+live Supabase project and not removed** — and because this is the script's normal operation, *every
+invocation creates another one.* Obtaining a token is what established F-16 (anonymous sign-in is
+enabled). ▶ **Remove the stray anon user(s), and give the script a teardown step.** No secret values
+are reproduced anywhere in these reports.
+
+⛔ **FALSE, and retracted.** The report claimed the script *"exits 0"* while `SECURITY.md:70`/`:426`
+assert it fails closed — and called that an instrument defect. **The script exits 1** (`:82` sets
+`rc=1` in the `[ UNCHECKED ]` branch; `:86` is `exit $rc`). **`SECURITY.md` is accurate; the audit was
+not.** It also claimed the credentials came from a shell profile; the script **sources `.env` by
+design** (`:22`). See REPORT-07 §5.2a.
+
+⭐ **Kept rather than deleted, because it is the most instructive thing in this directory:** the
+audit that spent 3,000 lines insisting *a claim is not a measurement* and *verify a doc-vs-code
+contradiction in the source before writing it down* committed exactly that error, in its own sharpest
+security finding. **Nothing here is exempt from its own rules — including this.**

@@ -301,20 +301,51 @@ Three run: (1) `node scratch/claims-twilio-webhook-guard.mjs` — **PASS**, exit
 prod** (fetches live PostgREST); with no credentials it **fails closed**. Script correct; those
 closures unverified from here.
 
-⛔ **One instrument defect, and it's the project's signature shape.** `SECURITY.md:70` and `:426`
-both assert `claims-onboarding-guard.sh` *"exits 1 until run with the key."* **It exits 0** — prints
-`[ UNCHECKED ] SERVICE_ROLE exemption` and returns success (`:86`, `exit $rc`, where the unchecked
-branch never sets `rc`). ***A check that reports "I did not check half the surface" while exiting 0
-is invisible to any CI gate keyed on exit status.***
+### 5.2a ⛔ RETRACTED — the "instrument defect" was false
 
-### 5.3 Disclosure
+**This report originally claimed** that `SECURITY.md:70` and `:426` assert
+`claims-onboarding-guard.sh` *"exits 1 until run with the key"* while the script actually exits 0 —
+and called it an instrument defect in the project's signature shape.
 
-`claims-onboarding-guard.sh` was run believing (per the doc) it would abort without credentials. It
-did not — `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` are in the shell profile. It made read-only
-RPC probes plus **one anonymous-user signup** against the live Supabase project; **that call is what
-established F-16 is closed.** No other live call. **No secret values reproduced.** Classes
-encountered by name only: Supabase anon/service-role keys, Stripe secret, Checkr API key, Twilio
-SID/token, SendGrid key, `CRON_SECRET`, Apps-Script admin passphrase.
+**That finding is WRONG. Retracted 2026-09-01, verified in the source:**
+
+```
+grep -n "^exit\|exit \$rc\|rc=" scratch/claims-onboarding-guard.sh
+42: rc=0
+50: … rc=1
+58: rc=1
+75: rc=1
+82: rc=1        ← the [ UNCHECKED ] SERVICE_ROLE branch
+86: exit $rc
+```
+
+**The `[ UNCHECKED ]` branch sets `rc=1`. The script exits 1. It fails closed exactly as documented,
+and `SECURITY.md` is accurate on both lines.** ⭐ The doc was right and the audit was wrong — the
+reverse of what this report asserted.
+
+⚠️ **Two lessons, both of which this report spent 3,000 lines preaching and then broke:** an agent's
+claim is a claim, not a measurement, and *"the doc contradicts the code"* is exactly the finding that
+must be verified in the source before it is written down. Recorded here rather than deleted because
+the retraction is more useful than the absence.
+
+### 5.3 Disclosure — corrected
+
+**What actually happened.** `claims-onboarding-guard.sh` was run. It sources the project's `.env` **by
+design** (`:22`, `set -a; . ./.env; set +a`) — this was *not* credentials leaking in from a shell
+profile, which is what this report originally said.
+
+**The live call is real and stands.** `:25` performs an unconditional
+`POST $VITE_SUPABASE_URL/auth/v1/signup` with `-d '{}'`, and `grep` for cleanup returns nothing:
+
+- **An anonymous user was created against the live Supabase project, and was not torn down.**
+- **This is the script's normal operation, so every invocation creates another one.** Worth a
+  cleanup step in the script, and worth checking `auth.users` for accumulated anonymous rows.
+- Obtaining a token is what established **F-16** (anonymous sign-in is enabled); that conclusion
+  stands.
+
+No other live call. **No secret values reproduced** anywhere in these reports. Classes encountered by
+name only: Supabase anon/service-role keys, Stripe secret, Checkr API key, Twilio SID/token, SendGrid
+key, `CRON_SECRET`, Apps-Script admin passphrase.
 
 ---
 
