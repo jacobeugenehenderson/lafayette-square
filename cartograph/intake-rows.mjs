@@ -177,6 +177,54 @@ export const ACQUIRE = {
  * panel is exactly the lie this whole manifest exists to stop.
  */
 /**
+ * ⭐ `licence` — WHO WE OWE, AND WHAT WE OWE THEM. The public credit is built
+ * from this field and from nothing else.
+ *
+ * ⛔ PRESENT ONLY WHERE THE ROW'S SOURCE IS FIXED BY THE KIT AND THE TERMS WERE
+ * READ AT THE SOURCE. A row whose well is chosen per town (elevation: "any
+ * GeoTIFF"; parcels: whichever assessor; canopy: NLCD *or* WorldCover) has no
+ * kit-global licence and MUST NOT get a guessed one — the file on that town's
+ * disk came from somewhere this module cannot know. Absent `licence` is not an
+ * omission, it is the honest answer, and `bake-sources.js` reports it as owed.
+ *
+ * ⭐ `requires` IS NOT DECORATION — THE TWO OBLIGATIONS ARE DIFFERENT ACTS.
+ *   'attribution'  — ODbL §4.3: a Produced Work must carry a notice naming the
+ *                    database and the licence, both linked. You must CREDIT.
+ *   'licence-text' — CDLA Permissive 2.0 §2.1: sharing the Data means you
+ *                    "make available the text of this agreement with the shared
+ *                    Data." You must SHIP THE TERMS. Crediting is not that, and
+ *                    a surface that renders both as one "© X" line has quietly
+ *                    substituted the easy obligation for the real one.
+ *
+ * ⚠️ VERIFIED 2026-09-01, at the source, by reading the bytes — not from a
+ * search summary, which got this wrong (it reported MSBF as ODbL, and so did
+ * this file until today):
+ *   curl -sL https://raw.githubusercontent.com/microsoft/GlobalMLBuildingFootprints/main/LICENSE
+ *   curl -sL https://raw.githubusercontent.com/microsoft/GlobalMLBuildingFootprints/main/README.md | grep -i licen
+ *   https://osmfoundation.org/wiki/Licence/Attribution_Guidelines
+ *   https://opendatacommons.org/licenses/odbl/1-0/   (§4.3)
+ * Re-run those before trusting this block; upstream terms change under you, and
+ * a stale licence on a public page is worse than no page.
+ */
+const OSM_ODBL = {
+  source: 'OpenStreetMap',
+  sourceUrl: 'https://www.openstreetmap.org/copyright',
+  credit: '© OpenStreetMap contributors',
+  name: 'Open Database License (ODbL)',
+  url: 'https://opendatacommons.org/licenses/odbl/1-0/',
+  requires: 'attribution',
+}
+
+const MSBF_CDLA = {
+  source: 'Microsoft Global ML Building Footprints',
+  sourceUrl: 'https://github.com/microsoft/GlobalMLBuildingFootprints',
+  credit: 'Building footprints by Microsoft',
+  name: 'CDLA Permissive 2.0',
+  url: 'https://cdla.dev/permissive-2-0/',
+  requires: 'licence-text',
+}
+
+/**
  * ⭐ `question` — the row in the operator's voice, not the pipeline's.
  *
  * Jacob, 2026-07-20, on the building-fabric row: *"this would be 'does your
@@ -230,6 +278,7 @@ export const INTAKE_ROWS = [
     unlocks: 'streets, land-use and buildings — the base geometry',
     absent: { kind: ABSENT.HONEST_ZERO, note: 'no streets, no land-use, no buildings' },
     acquisition: { kind: ACQUIRE.BUTTON, note: 'Overpass via fetch.js — ODbL, local copy fine' },
+    licence: OSM_ODBL,
     doc: 'cartograph/INTAKE.md',
   },
 
@@ -240,7 +289,14 @@ export const INTAKE_ROWS = [
     path: 'raw/msbf.json',
     unlocks: 'accurate building footprints in place of OSM outlines',
     absent: { kind: ABSENT.FALLBACK, note: 'OSM buildings — aborts off-continent, expected' },
-    acquisition: { kind: ACQUIRE.BUTTON, note: 'Microsoft GML footprints via fetch-msbf.js — ODbL' },
+    // ⛔ WAS RECORDED AS ODbL AND IT IS NOT — corrected 2026-09-01. `fetch-msbf.js:27`
+    // pulls `global-buildings/dataset-links.csv`, i.e. GlobalMLBuildingFootprints,
+    // whose LICENSE file reads "licensed by Microsoft under CLDA Permissive 2.0"
+    // and whose README §License says CDLA Permissive 2.0. (The older, genuinely
+    // ODbL dataset is USBuildingFootprints — a different repo we do not fetch.)
+    // A web search still answers "ODbL" for this; the raw bytes do not.
+    acquisition: { kind: ACQUIRE.BUTTON, note: 'Microsoft GML footprints via fetch-msbf.js — CDLA Permissive 2.0' },
+    licence: MSBF_CDLA,
     doc: 'cartograph/INTAKE.md',
   },
   {
@@ -275,6 +331,7 @@ export const INTAKE_ROWS = [
     // mean the authored well is unnecessary, and an authored-only scene is legal.
     absent: { kind: ABSENT.LS_BLEED, note: "LS's authored well still sits at the shared src/data path (guard closed; union since 2026-07-23)" },
     acquisition: { kind: ACQUIRE.BUTTON, note: 'Overpass highway=street_lamp — ODbL' },
+    licence: OSM_ODBL,
     doc: 'cartograph/INTAKE.md',
   },
   {
@@ -389,6 +446,7 @@ export const INTAKE_ROWS = [
     // User-Agent (`TREE-INTAKE.md §2`). Exactly the kind of gotcha the
     // one-button rule exists to swallow.
     acquisition: { kind: ACQUIRE.BUTTON, note: 'Overpass natural=tree — ODbL, real User-Agent required' },
+    licence: OSM_ODBL,
     doc: 'TREE-INTAKE.md',
   },
   {

@@ -36,6 +36,7 @@ public/baked/
 │   ├── ground.colormap.png          ← baked ground-albedo raster (trunk-base blend, 2026-06-22)
 │   ├── scene.json                   ← look-side palette, layer colors, vis flags, lamp glow + lantern, arch lighting
 │   ├── lamps.json                   ← lamp point cloud + scene-relative metadata
+│   ├── sources.json                 ← this town's data credits + licences, and what is still owed one
 │   ├── buildings.json               ← geometry manifest (foundation + wall + roof groups)
 │   ├── buildings.bin                ← binary positions + colors + UVs + centroidY + indices
 │   ├── trees-atlas.json             ← per-look tree material atlas manifest

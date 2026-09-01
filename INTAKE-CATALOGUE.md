@@ -17,6 +17,17 @@
 > **code-verified**. External URLs/licences are marked **[unverified]** where the specialist could not
 > confirm them live — **confirm before any of this ships on a panel.**
 >
+> ⭐ **Two are now confirmed, because they ship on a PUBLIC surface** (the visitor attribution,
+> 2026-09-01). They live as structured `licence` fields in `cartograph/intake-rows.mjs`, not as prose
+> here — one home per fact, and the credit is generated from them:
+> `node cartograph/bake-sources.js --look=<id> --scene=<id>`.
+> ⛔ **One was WRONG in this repo and the correction is the lesson: Microsoft's ML footprints are
+> CDLA Permissive 2.0, NOT ODbL.** `intake-rows.mjs` had said ODbL since it was written, and a web
+> search still answers ODbL — the dataset's own `LICENSE` file does not. `fetch-msbf.js:27` pulls
+> `GlobalMLBuildingFootprints`; the genuinely-ODbL Microsoft set is `USBuildingFootprints`, a
+> different repo we never fetch. **Read the licence at the source, from the bytes, or do not state
+> it** — a guessed licence on a public page is the one error that cannot be walked back quietly.
+>
 > *Produced 2026-07-20 by Boz + three dispatched specialists: **Cambium** (arborist), **Fathom**
 > (meteorologist), **Ledger** (content/player). Cartograph render-side enumerated by Boz — it lives in
 > `BRIEF-intake-manifest.md §5` and is not duplicated here (one home per fact).*

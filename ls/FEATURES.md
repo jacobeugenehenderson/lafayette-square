@@ -182,13 +182,18 @@ The neighborhood's trust ladder. Scanning a place's QR check-in card logs a visi
 ### Handles + avatars
 Your public face in the neighborhood: a chosen `@handle` plus an emoji avatar set on a colored "vignette" backdrop. Identity is tied to your device (anonymous by design — no email, no password) and can be carried to another device via a short linking token, so the same handle follows you across phone and laptop. → Specs: [`IDENTITY.md`](IDENTITY.md) (handle/avatar) · [`DEVICE-LINK.md`](DEVICE-LINK.md) (the cross-device handoff + sign-out). The public privacy/terms pages are [`PUBLIC-PAGES.md`](PUBLIC-PAGES.md).
 
+### Sources — the receipt for "the inputs are real"
+The panel footer carries a one-line credit for the data this map was actually built from, and clicking it opens **Sources** in the info panel: each dataset, the licence it is available under, and a link to both. It is the visible proof of the product's central claim — that the map is grounded in the real record rather than a generic extruded city — and it is also an obligation: OpenStreetMap's data is ODbL, a rendered map is a Produced Work, and the notice has to name the source and the licence and stay reachable.
+
+⭐ **It is per-installation and machine-generated, never a written list.** The credit is derived at bake time from the inputs actually on that town's disk (`cartograph/bake-sources.js` → `public/baked/<look>/sources.json`), so Lafayette Square credits Microsoft's ML footprints because it *has* them and a hand-mapped European town does not. An installation with no baked sources shows a visible to-do rather than borrowing another town's credits — a false provenance claim is worse than an absent one. Inputs whose terms were never recorded are listed as outstanding and are **not** credited; the kit never guesses a licence. → `cartograph/intake-rows.mjs` (`licence`), `src/lib/sources.js`.
+
 ---
 
 ## The slab contract from the LS side
 
 What LS trusts cartograph to publish, and what LS does *not* re-author (confirmed by the 2026-06-02 inventory):
 
-- **Trusts as immutable:** `public/baked/<look>/ground.{json,bin}` + `ground.lightmap.png`, `public/baked/<look>/buildings.{json,bin}` (**now the production building source — `SlabBuildings`, not Preview-only**), `public/baked/<look>/lamps.json`, `public/baked/<look>/scene.json`, `public/baked/<scene>/trees.json` (the neighborhood's own tree placements + GLB variants), `public/clouds/{presets,almanac,modulators}.json` (**the volumetric `<Atmosphere/>` consumer is now wired via the meteorologist directive — no longer "published but unconsumed" — though it is gated OFF by default; production ships the cheap `<CloudDome/>` and `<Atmosphere/>` only mounts under `?sky=volumetric`**).
+- **Trusts as immutable:** `public/baked/<look>/sources.json` (this town's data credits + what is still owed a licence), `public/baked/<look>/ground.{json,bin}` + `ground.lightmap.png`, `public/baked/<look>/buildings.{json,bin}` (**now the production building source — `SlabBuildings`, not Preview-only**), `public/baked/<look>/lamps.json`, `public/baked/<look>/scene.json`, `public/baked/<scene>/trees.json` (the neighborhood's own tree placements + GLB variants), `public/clouds/{presets,almanac,modulators}.json` (**the volumetric `<Atmosphere/>` consumer is now wired via the meteorologist directive — no longer "published but unconsumed" — though it is gated OFF by default; production ships the cheap `<CloudDome/>` and `<Atmosphere/>` only mounts under `?sky=volumetric`**).
 - **Live data still consumed at runtime (intentional or to-be-baked):** enumerated in `ls/ARCHITECTURE.md` §2 "could/should bake" table.
 - **Live data still consumed at runtime (load-bearing, won't ever bake):** GAS listings/events/reviews/bulletins/threads, Supabase Cary sessions, handles, residence + guardian claims, check-ins, community counts, and live Open-Meteo weather. These are dynamic by definition.
 

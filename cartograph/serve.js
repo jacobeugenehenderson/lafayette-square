@@ -2231,6 +2231,18 @@ createServer(async (req, res) => {
         [join(LOOK_DIR, 'scene.json')],
         `node bake-scene.js --look=${id} ${sceneFlag}`,
         { cwd: here, timeout: 30000 })
+      // Sources — this town's ATTRIBUTION, read off which inputs are actually on
+      // its disk (`bake-sources.js`). The public app is static: `/api/cartograph`
+      // is a Vite dev proxy and does not exist in production, so a visitor-facing
+      // credit can only reach them through the slab.
+      //
+      // ⛔ NOT under runIfDirty. Its inputs are ~20 scene files plus the row
+      // definitions; a dirty-graph that listed them incompletely would SKIP the
+      // step exactly when an input had just been acquired, and ship the previous
+      // town-state's credit. It reads file stats and costs milliseconds — always
+      // running it is both cheaper and honest. It prints what is still owed.
+      await runShell(`node bake-sources.js --look=${id} ${sceneFlag}`, { cwd: here, timeout: 30000 })
+      ranSteps.push('sources')
       // Street labels — bake the SCENE's own names (from its ribbons + boundary)
       // into the slab so the player reads baked/<look>/labels.json per-scene,
       // not a static LS ribbons import (src/lib/streetLabels.js reader).
