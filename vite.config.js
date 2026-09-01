@@ -98,6 +98,42 @@ function serveInstallationContent() {
   }
 }
 
+// Serve AUTHORING-ONLY assets (repo-root `authoring/`) in DEV. These are inputs
+// to the helper apps and the bake — never fetched by the shipped player — so
+// they deliberately do NOT live under public/, which Vite copies verbatim into
+// the build. Keeping them out is structural: the production bundle cannot
+// contain them, rather than being trusted not to.
+//
+// ⛔ Dev only. In a production build these paths 404, and that is correct: the
+// helper apps are local-authoring tools (they also need localhost backends on
+// :3333/:3334/:3335). A 404 here is a loud, honest failure, not a regression.
+//
+// Same shape as serveInstallationContent above — URL prefix → a repo directory,
+// with the identical path-traversal confinement.
+function serveAuthoringAssets() {
+  const MIME = {
+    '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+    '.svg': 'image/svg+xml', '.webp': 'image/webp', '.gif': 'image/gif',
+    '.avif': 'image/avif', '.json': 'application/json',
+  }
+  return {
+    name: 'serve-authoring-assets',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = (req.url || '').split('?')[0]
+        if (!url.startsWith('/authoring/')) return next()
+        const root = path.resolve('authoring')
+        const filePath = path.resolve(root, decodeURIComponent(url.slice('/authoring/'.length)))
+        // Confine to authoring/ (no path traversal).
+        if (filePath !== root && !filePath.startsWith(root + path.sep)) return next()
+        if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) return next()
+        res.setHeader('Content-Type', MIME[path.extname(filePath).toLowerCase()] || 'application/octet-stream')
+        res.end(fs.readFileSync(filePath))
+      })
+    },
+  }
+}
+
 // Build-time counterpart to serveInstallationContent (above): mirror each
 // installation's content payload (cartograph/data/<look>/content/) into
 // dist/content/<look>/ so the STATIC build (staging/prod) serves the same
@@ -136,7 +172,7 @@ function mirrorInstallationContent() {
 }
 
 export default defineConfig(({ command }) => ({
-  plugins: [serveHelperApps(), serveCodedesk(), serveInstallationContent(), mirrorInstallationContent(), react()],
+  plugins: [serveHelperApps(), serveCodedesk(), serveAuthoringAssets(), serveInstallationContent(), mirrorInstallationContent(), react()],
   define: {
     __BUILD_HASH__: JSON.stringify(new Date().toISOString().slice(0, 16)),
     // poly2tri's UMD shim references `global`; polyfill to globalThis so

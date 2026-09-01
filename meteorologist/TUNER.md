@@ -39,7 +39,7 @@ A two-designer conversation gated by an overseeing Critic. **The cast (4)** — 
 
 **Why the Critic is held out (resolved D3 — honesty + gap-detection):** the designers carry the edit history, so they're anchored on their own effort ("we turned the knob, so it *must* show"). The Critic is **intent-blind** — sees only the result + the references — so its look is honest. And the **disagreement between the designers' "this works" and the Critic's "doesn't read right" is the capability-gap signal** — the instrument is missing a knob, or the characteristics list a quality. Overfit-to-one-*photo* is handled by photo variety + judge-twice, not by hiding photos.
 
-**The dossier (the durable artifact, per species):** varied reference photos · the WMO descriptor · the **characteristic rubric** (named, scored axes) · notes mapping each characteristic → knob(s). Much of this already exists: `public/clouds/photos/` (43 images + `SOURCES.json`, which already flags `needs_photo` gaps), each preset's prose `description` + `tags`, and the knob→morphology notes in `CANON.md §Parameter conventions` (`warpAmp` = cauliflower-vs-smooth; `octaves` = structured-vs-sheet). The Tuner *formalizes* these into scored axes — it isn't gathering from zero.
+**The dossier (the durable artifact, per species):** varied reference photos · the WMO descriptor · the **characteristic rubric** (named, scored axes) · notes mapping each characteristic → knob(s). Much of this already exists: `authoring/cloud-photos/` (43 images + `SOURCES.json`, which already flags `needs_photo` gaps), each preset's prose `description` + `tags`, and the knob→morphology notes in `CANON.md §Parameter conventions` (`warpAmp` = cauliflower-vs-smooth; `octaves` = structured-vs-sheet). The Tuner *formalizes* these into scored axes — it isn't gathering from zero.
 
 **Rubric discipline:** decompose to **atomic, orthogonal characteristics** (a basis). Completeness = every atom has a knob that generates it. Orthogonality = each atom dial-able without disturbing the others (so "stacked qualities" are independently reachable). Holistic "looks the same" vibes drift run-to-run; per-axis scores don't.
 
@@ -227,7 +227,7 @@ The quartet = **Critic + Designer I + Designer II + Tinkerer** (Designer is one 
 
 **Build order:**
 1. `set-knobs` + `capture-render` (§8.1, §5) — the gate; nothing runs without it.
-2. `cumulus_humilis` `Dossier` (§8.2) — reference photos + descriptor + a starting characteristics list, from `public/clouds/photos/` + the preset's `description`/`tags` + CANON conventions.
+2. `cumulus_humilis` `Dossier` (§8.2) — reference photos + descriptor + a starting characteristics list, from `authoring/cloud-photos/` + the preset's `description`/`tags` + CANON conventions.
 3. The three briefs below — pasted by hand (v1); they become `.claude/agents/cloud-*.md` (frontmatter `tools:` + body) when automated.
 4. Run `cumulus_humilis` by hand off the run-sheet; refine the briefs empirically. Only then scale to the top 10, and only then harden the inner loop into a Workflow (§8.4 v2).
 

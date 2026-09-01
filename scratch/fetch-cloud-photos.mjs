@@ -6,7 +6,9 @@ import path from 'node:path';
 const PRESETS = JSON.parse(
   fs.readFileSync(new URL('../public/clouds/presets.json', import.meta.url), 'utf8'),
 );
-const OUT = new URL('../public/clouds/photos/', import.meta.url);
+// Authoring reference photos — repo-root authoring/cloud-photos/, NOT public/
+// (moved 2026-09-01 so the production build cannot contain them).
+const OUT = new URL('../authoring/cloud-photos/', import.meta.url);
 fs.mkdirSync(OUT, { recursive: true });
 
 // Per-id search query overrides where the literal id is too generic or too narrow.

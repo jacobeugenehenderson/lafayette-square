@@ -2,7 +2,7 @@
   "version": 1,
   "generatedAt": "2026-05-20T00:00:00Z",
   "specialist": "Nimbus",
-  "notes": "Calibrated against the 52 reference photos in public/clouds/photos/. Pass 1 surveyed the family ranges; Pass 2 tuned 12 dials per preset relative to family monotonicity (translucidus < perlucidus < opacus; calvus < capillatus; humilis < mediocris < congestus). Pass 3 wrote operator-facing descriptions. cumulus_humilis copied verbatim from public/clouds/presets.json with preserve_authored flag. Stub kinds (rain/snow/lightning) get 12 cloud-shader params seeded from their parent sky-state (nimbostratus or cumulonimbus); the cloud morphology is what gets rendered above the precip particles when those stubs ship in v1.x. Fog kinds also carry 12 cloud-shader params (low haze layer), in addition to the kind-specific tint that lives in presets.json.",
+  "notes": "Calibrated against the 52 reference photos in authoring/cloud-photos/ (moved there from public/clouds/photos/ 2026-09-01). Pass 1 surveyed the family ranges; Pass 2 tuned 12 dials per preset relative to family monotonicity (translucidus < perlucidus < opacus; calvus < capillatus; humilis < mediocris < congestus). Pass 3 wrote operator-facing descriptions. cumulus_humilis copied verbatim from public/clouds/presets.json with preserve_authored flag. Stub kinds (rain/snow/lightning) get 12 cloud-shader params seeded from their parent sky-state (nimbostratus or cumulonimbus); the cloud morphology is what gets rendered above the precip particles when those stubs ship in v1.x. Fog kinds also carry 12 cloud-shader params (low haze layer), in addition to the kind-specific tint that lives in presets.json.",
   "presets": [
     {
       "id": "clear_sky",

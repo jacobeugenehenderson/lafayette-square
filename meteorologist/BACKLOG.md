@@ -104,7 +104,7 @@ Reference photos surface in TeapotLibrary + Teacup; Nimbus's `specialist-seed.js
 
 Follow-ups:
 - Phase Seed.2 — operator hand-tune sweep against live render now that ref photos are visible
-- Photo wishlist — 5 needs_photo presets per `public/clouds/photos/SOURCES.json`
+- Photo wishlist — 5 needs_photo presets per `authoring/cloud-photos/SOURCES.json`
 
 ### ✅ Phase 4b.3 — CloudDome retirement (shipped 2026-05-20)
 
