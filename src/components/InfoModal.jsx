@@ -299,8 +299,14 @@ export default function InfoModal() {
             </div>
           </section>
 
-          {/* Bottom padding so last section can scroll to top */}
-          <div className="h-[40vh]" />
+          {/* Bottom padding so the last section can scroll to TOP — which is what
+              makes tab-clicking land correctly and the active-tab highlight agree
+              with what you are looking at. It must exceed the viewport minus the
+              SHORTEST final section, so it was sized against Privacy (long) and
+              became too small the moment Sources (short) went last: clicking
+              Sources hit max scroll, left it mid-view, and the observer then read
+              Privacy as active. */}
+          <div className="h-[70vh]" />
         </div>
       </div>
     </div>

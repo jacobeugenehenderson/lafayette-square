@@ -1084,7 +1084,7 @@ function SidePanel() {
 
       {/* ── Persistent footer — attribution + Contact, visible when not collapsed ── */}
       {!collapsed && (
-        <div className="flex-shrink-0 flex items-center justify-between gap-3 px-4 py-1.5 bg-surface border-t border-outline-variant">
+        <div className="relative flex-shrink-0 flex items-center justify-end px-4 py-1.5 bg-surface border-t border-outline-variant">
           {/* ⭐ THE MAP'S CREDIT. OpenStreetMap's data is ODbL and a rendered map
               is a Produced Work, so this notice is an obligation, not a nicety:
               it must name the source, say the data is available under the
@@ -1098,15 +1098,19 @@ function SidePanel() {
               one town and wrong for the next is a false legal notice that looks
               correct. An installation with no baked sources renders nothing here
               rather than borrowing another town's. */}
-          {creditText ? (
+          {/* Centred on the FOOTER, not between its contents: absolute so the
+              credit sits at the true middle of the panel regardless of how wide
+              the Contact button is. `max-w` + truncate keep it off that button
+              on a narrow phone. */}
+          {creditText && (
             <button
               onClick={() => useInfo.getState().openTo('sources')}
-              className="text-on-surface-disabled hover:text-on-surface-subtle transition-colors text-caption truncate text-left"
+              className="absolute left-1/2 -translate-x-1/2 max-w-[60%] truncate text-caption text-on-surface-subtle hover:text-on-surface-variant transition-colors"
               title="Where this map's data comes from"
             >
               {creditText}
             </button>
-          ) : <span />}
+          )}
           <button
             onClick={() => useContact.getState().setOpen(true)}
             className="text-yellow-300 hover:text-yellow-200 transition-colors flex items-center gap-1 text-caption"
