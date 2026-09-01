@@ -32,6 +32,7 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
+import { assertBakeTarget } from './bake-target.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
@@ -681,7 +682,7 @@ function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}
   return { positions, indices }
 }
 
-export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette-square', refine: refineOpts = {} } = {}) {
+export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {} } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -691,42 +692,11 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
   const refineMinEdge = refineOpts.minEdge != null ? refineOpts.minEdge : GROUND_REFINE_MIN_EDGE_M
   const refineMaxEdge = refineOpts.maxEdge != null ? refineOpts.maxEdge : GROUND_REFINE_MAX_EDGE_M
   const refineSampler = refineMode === 'adaptive' ? getTerrainSampler(scene) : null
-  // Bake-target guard (2026-06-01). The app reads `baked/<INSTANCE.lookId>` —
-  // for LS that's `baked/lafayette-square`. A bake into a look with no
-  // `looks/<look>/` directory silently produces a PHANTOM `baked/<look>/`
-  // that NOTHING reads, so every eval off it reads a stale ghost surface.
-  // (This is exactly what `look='default'` did: no `looks/default/` exists →
-  // empty design → phantom `baked/default/`.) Refuse it loudly. serve.js
-  // always passes an existing `--look=<id>`, so this only catches operator/
-  // agent CLI mistakes — the failure mode that cost a whole session.
-  if (!existsSync(join(ROOT, 'public', 'looks', look))) {
-    throw new Error(
-      `[bake-ground] no such look: public/looks/${look}/ does not exist. ` +
-      `Baking it would write a phantom baked/${look}/ that nothing reads. ` +
-      `Pass --look=lafayette-square (the real LS surface) or --look=toy.`
-    )
-  }
-  // SCENE≠LOOK cross-write guard (2026-07-21). A look declares its canonical
-  // scene in public/looks/index.json (`{id, scene}`). Baking scene-X geometry
-  // into a look whose declared scene is Y silently poured HPDM's ground/shape
-  // into public/baked/lafayette-square/ (the contamination committed in 25f50930,
-  // caught only by eye). serve.js DERIVES scene from the look so its endpoint is
-  // safe — this catches a CLI/agent bake with mismatched --look/--scene, the
-  // failure mode that actually happened. Refuse it loudly, BEFORE any write.
-  try {
-    const idxRaw = JSON.parse(readFileSync(join(ROOT, 'public', 'looks', 'index.json'), 'utf-8'))
-    const declared = (Array.isArray(idxRaw) ? idxRaw : (idxRaw.looks || [])).find(l => l.id === look)?.scene
-    if (declared && declared !== scene) {
-      throw new Error(
-        `[bake-ground] SCENE≠LOOK: refusing to bake scene '${scene}' geometry into look ` +
-        `'${look}' (its declared scene is '${declared}'). This is the cross-write that ` +
-        `poured HPDM into public/baked/lafayette-square/. Pass --scene=${declared} to bake ` +
-        `this look's own geometry, or target the look whose scene is '${scene}'.`
-      )
-    }
-  } catch (e) {
-    if (/SCENE≠LOOK/.test(e.message)) throw e   // re-throw the guard; swallow only a bad-index parse error
-  }
+  // Bake-target guards — phantom-look + SCENE≠LOOK. Both were written here, inline
+  // (2026-06-01 and 2026-07-21), each after a lost session; four other bakers never
+  // got them. Hoisted to ./bake-target.js so the rule has ONE home. Refuses BEFORE
+  // any write.
+  assertBakeTarget('bake-ground', look, scene)
   // Ribbons input is scene-keyed. LS still publishes to the canonical
   // src/data/ribbons.json (promote-ribbons.js writes there); other scenes
   // author/derive their own ribbon fixture under src/data/<scene>/.
@@ -1068,7 +1038,7 @@ export async function bakeGround({ look = 'lafayette-square', scene = 'lafayette
 
 // CLI
 async function main() {
-  let look = 'lafayette-square', scene = 'lafayette-square'
+  let look = null, scene = 'lafayette-square'
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m

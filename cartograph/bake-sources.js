@@ -41,6 +41,7 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { intakeStatusForScene, STATUS, ACQUIRE, KIND } from './intake-rows.mjs'
+import { assertBakeTarget } from './bake-target.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -128,6 +129,9 @@ if (!look || !scene) {
   console.error('[sources] ⛔ both --look and --scene are required. Refusing to guess: a defaulted look bakes over another town, a defaulted scene credits another town\'s sources.')
   process.exit(1)
 }
+
+  // …and the look must EXIST, or this writes a phantom nothing reads.
+  assertBakeTarget('bake-sources', look, scene)
 
 const { credits, owed } = creditsForScene(scene)
 

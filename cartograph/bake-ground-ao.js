@@ -15,6 +15,7 @@
 
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { writeIfChanged } from './io.js'
+import { assertBakeTarget } from './bake-target.js'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import * as THREE from 'three'
@@ -164,8 +165,9 @@ function makeRng(seed) {
 
 // ── Bake ────────────────────────────────────────────────────────────
 
-export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
+export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
                                      rays = RAYS_PER_TEXEL, scene = 'lafayette-square' } = {}) {
+  assertBakeTarget('bake-ground-ao', look, scene)
   const isDefaultScene = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
   const manifestPath = join(lookDir, 'ground.json')
@@ -435,7 +437,7 @@ export async function bakeGroundAO({ look = 'default', size = LIGHTMAP_SIZE,
 
 // CLI
 async function main() {
-  let look = 'default', size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, scene = 'lafayette-square'
+  let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/))) look = m[1]

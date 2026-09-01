@@ -22,6 +22,7 @@ import { readFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
+import { assertBakeTarget } from './bake-target.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
@@ -33,7 +34,8 @@ function readAB(p) {
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)
 }
 
-export async function bakeTreeAnchors({ look = 'lafayette-square', scene = 'lafayette-square' } = {}) {
+export async function bakeTreeAnchors({ look, scene = 'lafayette-square' } = {}) {
+  assertBakeTarget('bake-tree-anchors', look, scene)
   const outDir = join(ROOT, 'public', 'baked', look)
   const groundJsonPath = join(outDir, 'ground.json')
   const groundBinPath  = join(outDir, 'ground.bin')
@@ -59,7 +61,7 @@ export async function bakeTreeAnchors({ look = 'lafayette-square', scene = 'lafa
 }
 
 async function main() {
-  let look = 'lafayette-square', scene = 'lafayette-square'
+  let look = null, scene = 'lafayette-square'
   for (const a of process.argv.slice(2)) {
     let m
     if ((m = a.match(/^--look=(.+)$/)))       look  = m[1]

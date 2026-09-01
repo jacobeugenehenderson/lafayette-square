@@ -27,6 +27,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
+import { assertBakeTarget } from './bake-target.js'
 import { migrateSkyChannel } from '../src/cartograph/skyGrid.js'
 import {
   AMBIENT_FLAT_DEFAULTS, HEMI_FLAT_DEFAULTS,
@@ -60,7 +61,8 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
-export async function bakeScene({ look = 'default' } = {}) {
+export async function bakeScene({ look } = {}) {
+  assertBakeTarget('bake-scene', look)
   const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
   const outDir     = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -183,7 +185,7 @@ export async function bakeScene({ look = 'default' } = {}) {
 }
 
 async function main() {
-  let look = 'default', _scene = 'lafayette-square'
+  let look = null, _scene = 'lafayette-square'
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))      look   = m[1]

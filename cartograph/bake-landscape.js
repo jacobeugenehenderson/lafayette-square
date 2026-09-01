@@ -28,6 +28,7 @@
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { assertBakeTarget } from './bake-target.js'
 
 const here = dirname(fileURLToPath(import.meta.url))          // cartograph/
 const REPO_ROOT = join(here, '..')
@@ -36,6 +37,7 @@ const arg = (k) => { const m = process.argv.find(a => a.startsWith(`--${k}=`)); 
 const lookId = arg('look')
 const scene = arg('scene') || process.env.CARTOGRAPH_SCENE
 if (!lookId) { console.error('bake-landscape: need --look=<id>'); process.exit(1) }
+assertBakeTarget('bake-landscape', lookId)
 if (!scene) { console.error('bake-landscape: need --scene=<scene> or CARTOGRAPH_SCENE'); process.exit(1) }
 
 const sceneDir = join(here, 'data', scene)
