@@ -14,13 +14,24 @@
 
 Two load-bearing facts:
 
-1. **Preview is production's render tree + inspection bolt-ons — not a separate render path** (`project_preview_equals_ls_literally`).
+1. **Preview is production's render tree + inspection bolt-ons — not a separate render path** (`project_preview_equals_ls_literally`) — ⛔ **ON DESKTOP. NOT ON MOBILE, AND THE GAP IS FIVE PASSES.**
    > ⚠️ **AND SINCE 2026-09-01 THAT PARITY SPANS TWO COPIES.** The slab is gitignored and served from R2
    > (`PUBLISH.md §6`); Preview, running locally with `VITE_ASSET_BASE` unset, reads **your disk**, while
    > production reads **the bucket**. Byte-for-byte still holds — the pour uploads what it just wrote and
    > fails loudly if it cannot — but it is now an **invariant to verify**, not an identity to assume.
    > ▶ `node scripts/verify-baked-in-r2.mjs`. ⛔ **And do not set `VITE_ASSET_BASE` while authoring**, or
-   > Preview inspects R2's older slab and §7's "a wrong Preview is a wrong bake" fires on a bake that was fine. Whatever Preview draws, the deployed LS app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack. The *only* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the cost numbers honest — they measure the shipping render, not a proxy.
+   > Preview inspects R2's older slab and §7's "a wrong Preview is a wrong bake" fires on a bake that was fine. Whatever Preview draws, the **desktop** app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack.
+
+> ### ⛔⛔ THE PARITY CLAIM IS DESKTOP-ONLY, AND THIS PAGE USED TO STATE IT UNCONDITIONALLY *(corrected 2026-09-02)*
+> **Production drops five post-FX passes on mobile** — `renderPipeline.jsx:252`, `platform = IS_MOBILE ? 'mobile' : 'desktop'`, and the manifest marks **`ao` · `pyramid` · `dof` · `bloom` · `aerial`** as `platform: 'desktop'`. **A phone renders `grade` + `smaa` + `grain` and nothing else.**
+>
+> ⛔ **AND PREVIEW CANNOT SHOW YOU THAT.** `const included = inspect ? POSTFX_PIPELINE : …filter(…)` — **inspecting installs the WHOLE desktop pipeline regardless of tier**, by design, so the toggle matrix can reach every pass. `IS_MOBILE` is a user-agent sniff, so on the desktop doing the inspecting it is always `false`. **`phone-hi`/`phone-lo` are a desktop render at a phone-ish pyramid resolution inside a phone bezel** — the device selector swaps the *yardstick* (`deviceProfiles.js` budgets) and the pyramid *degree*, never the *pass set*. The code comment at `renderPipeline.jsx:253` says exactly this; only this doc overclaimed.
+>
+> ⭐ **Two consequences worth holding.** The **pyramid tuner's phone rungs tune a pass no phone runs** (`RENDER_TIERS['phone-lo'].pyramid` feeds `DownsamplePyramid`, which is desktop-only) — so a number read off them is not a mobile number. And the **all-on cost total is a DESKTOP cost**: §3's "all on == production" holds for desktop and overstates mobile, which runs five fewer passes.
+>
+> ▶ **This is a known arc, not an oversight** — `_handoffs/HANDOFF-mobile-profile.md` ("~20 `IS_MOBILE` branches across 6 files silently decide what mobile users get") plans `INSTANCE.mobileQuality` + per-profile slab channels, and the v0.2 regime (§0.2) is what would let Preview *honor* per-platform inclusion. ⚠️ **Both handoffs live in the gitignored `_handoffs/`, and neither arc is on `ROADMAP.md`** — so from inside the repo this reads as undecided when it is merely unreachable.
+
+The *only other* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the desktop cost numbers honest — they measure the shipping desktop render, not a proxy.
 
 2. **Preview mirrors the *Look*; it authors *deployment policy*** (amended 2026-06-17 — a scoped refinement of `feedback_stage_is_source_preview_is_mirror`, "we've grown"). Two halves:
    - **The Look mirrors** (unchanged). Stage authors the art → the Look serializes → Preview reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `BAKE.md §0`); no live re-derivation. If a *Look* looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
@@ -98,7 +109,7 @@ parity is this stage's entire job.
 
 Every Scene-layer toggle gates `.visible` on a `<group>`, **never the mount** (the *Vernier convention*, `PreviewApp.jsx:339`). The rationale is load-bearing:
 
-- **"All on" must equal production's literal mount list** — so the all-on cost number is the shipping cost. A toggle is a clean per-frame on/off, not a destructive unmount/dispose/re-upload that would churn the GPU meter and lie about steady-state cost.
+- **"All on" must equal production's literal mount list** — so the all-on cost number is the shipping cost. ⛔ **True of DESKTOP production only** (§0.1): mobile ships five fewer passes, so all-on *overstates* the mobile cost and no toggle state reproduces the mobile set. A toggle is a clean per-frame on/off, not a destructive unmount/dispose/re-upload that would churn the GPU meter and lie about steady-state cost.
 - A layer whose cost is a **draw** (geometry) → wrapped in `<group visible>`.
 - A layer that is a **scene property** (fog) → passed an `enabled` prop; the component nulls the property instead of unmounting.
 - **The one sanctioned mount-gate:** the live `LafayetteScene` buildings stay *unmounted*, exactly as in production where the merged-mesh **slab** replaces them (L1.3, 2026-05-26). The `Buildings` toggle gates the *slab's* `.visible`; `LafayetteScene` stays mounted only for `SceneNeon` + labels + markers + the click-catcher.
@@ -158,7 +169,7 @@ Preview closes the authoring loop without authoring anything: it is the operator
 
 ## 7. The doctrine, in one place
 
-- **Preview *is* production + bolt-ons.** Same render tree, byte-for-byte. The only additions are the profiler, the phone frame, and the toggle matrix. This is what makes the cost numbers honest.
+- **Preview *is* production + bolt-ons — on DESKTOP.** Same render tree, byte-for-byte, plus the profiler, phone frame and toggle matrix. ⛔ **On mobile it is not:** production drops `ao`/`pyramid`/`dof`/`bloom`/`aerial`, Preview installs them all regardless of tier, and no tier selector changes that (§0.1). The cost numbers are honest **desktop** numbers.
 - **Preview mirrors the Look; it authors deployment policy.** Stage authors the art, the Look serializes, Preview mirrors it cold (no store, no save, no re-derivation of the Look). But *per-platform inclusion* — what ships to desktop vs. mobile — is **authored in Preview**, the publish gate beside the cost instrument (§0.2, amended 2026-06-17).
 - **"All on" equals the shipping cost.** Toggles gate `.visible`, never the mount; the all-on total is the production render's cost.
 - **Trust the all-on total, not the sum of deltas.** Shared overdraw makes per-layer deltas non-additive; they isolate *causes*, the total measures *cost*.
