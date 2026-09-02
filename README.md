@@ -42,9 +42,25 @@
 ## Local development
 
 ```bash
+git clone --depth 1 git@github.com:jacobeugenehenderson/lafayette-square.git
+cd lafayette-square
+cp .env.example .env       # ⛔ read it — the map is blank without VITE_ASSET_BASE
 npm install
 npm run dev
 ```
+
+⭐ **`--depth 1` is the one you want: ~167 MB against 4.41 GB for the full history.**
+Nothing here needs the history, and it is not getting smaller — it keeps every version
+of every slab ever committed. Re-derive both numbers with
+`git count-objects -vH` and `git ls-files -z public | xargs -0 du -ch | tail -1`.
+
+⛔ **The baked slab is NOT in this repo** (since 2026-09-01). `public/baked/` is 516 MiB
+and grows 100–400 MB per neighborhood poured, against GitHub Pages' 1 GB limit, so it is
+served from `https://assets.theward.online/` instead. **A fresh clone has no ground,
+buildings, trees or terrain on disk** — `.env.example` points `VITE_ASSET_BASE` at the
+bucket so you see the real map immediately. Leave it unset only when you are authoring
+and want to see your OWN local bake. There is no automatic fallback between the two:
+a missing asset 404s, loudly, rather than silently resolving to something that renders.
 
 `npm run dev` launches **everything in one terminal** with prefixed colored logs:
 

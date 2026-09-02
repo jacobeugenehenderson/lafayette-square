@@ -86,7 +86,14 @@ const PROD_SITE_URL = 'https://lafayette-square.com/'
 // in-flight authoring code under src/cartograph or src/components).
 function slabPathspecs(id) {
   return [
-    `public/baked/${id}`,
+    // ⛔ `public/baked/${id}` is DELIBERATELY ABSENT (2026-09-01). The baked tree
+    // now lives in R2 and is gitignored; a publish uploads it (see the R2 step in
+    // the bake endpoint) rather than committing it. Re-adding it here would stage
+    // an ignored path — `git add` would match nothing, `git status --porcelain`
+    // would report nothing, and because design.json/index.json keep specs.length
+    // non-zero the `if (!specs.length) throw` guard below would NOT fire: the
+    // Publish button would return { ok: true } having shipped no slab at all.
+    // That is the exact silent success this whole arc exists to prevent.
     `public/looks/${id}/design.json`,
     `public/looks/index.json`,
     `src/data/ribbons.json`,
@@ -2332,8 +2339,32 @@ createServer(async (req, res) => {
       const idx2 = readLooksIndex()
       const entry = idx2.looks.find(l => l.id === id)
       if (entry) { entry.bakedAt = stampedAt; saveLooksIndex(idx2) }
+      // ⛔⛔ SHIP THE SLAB TO R2 — the last step of the pour (2026-09-01).
+      // public/baked/ is gitignored, so this upload is the ONLY thing that carries
+      // a pour to a visitor. If it is skipped, the pour lives nowhere: the map
+      // renders from the PREVIOUS slab and nothing says so.
+      // ⚠️ AND IT GOES LIVE IMMEDIATELY, EVERYWHERE. One bucket serves staging and
+      // production at the same URLs, so a re-pour reaches lafayette-square.com the
+      // moment it uploads — it no longer waits for a push to main. That is a real
+      // change to the release model; per-environment prefixes are the fix if it
+      // ever bites. Recorded here because it is invisible from the button.
+      let r2 = null
+      try {
+        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --look=${id}`,
+          { cwd: REPO_ROOT, timeout: 900000 })
+        if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
+        r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
+        console.log(`[bake] R2 ${r2}`)
+      } catch (e) {
+        // ⛔ Loud, and the request FAILS. A 200 here would tell the operator the pour
+        // shipped when it reached nothing.
+        console.error(`[bake] ⛔ R2 upload FAILED for "${id}" — the pour is on disk only: ${e.message}`)
+        res.writeHead(500, { 'Content-Type': 'application/json' })
+        res.end(JSON.stringify({ error: `baked, but the R2 upload failed — the slab reaches nobody: ${e.message}`, lookId: id }))
+        return
+      }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force }))
+      res.end(JSON.stringify({ ok: true, ms, lookId: id, ran: ranSteps, skipped, force, r2 }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
