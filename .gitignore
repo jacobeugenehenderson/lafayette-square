@@ -239,8 +239,21 @@ public/trees/
 # and is now SUBSUMED by `public/baked/` below and re-stated in upload-baked-to-r2.mjs's
 # EXCLUDE, which is what actually keeps them out of the published slab now.)
 
-# Local handoff/brief dispatch archive — kept on disk, out of git (Jacob, 2026-07-21)
-_handoffs/
+# Local handoff/brief dispatch archive — kept on disk, out of git (Jacob, 2026-07-21).
+# ⛔ The directory contents stay local: dispatch briefs are working state, and CARY-BRIEF.md
+# is program/legal material this repo is PUBLIC enough that it must not carry.
+#
+# ⭐ TWO EXCEPTIONS, TRACKED ON PURPOSE (2026-09-02, Jacob). These two are not dispatch
+# state — they are the DESIGN OF RECORD for an arc that is on the board (`ROADMAP.md H1`)
+# and cited from source (`src/lib/renderTiers.js`). While they were ignored, every pointer
+# to them was dead from a clone, so a scoped, designed, partly-built arc read as abandoned
+# to anyone but Jacob. Reviewed line-by-line before tracking: pure render architecture, no
+# credentials, clients or terms.
+# ⚠️ NOTE THE GLOB: `_handoffs/*`, NOT `_handoffs/`. Git does not descend into an ignored
+# DIRECTORY, so a negation under a `dir/` rule never fires. This is the shape that works.
+_handoffs/*
+!_handoffs/HANDOFF-mobile-profile.md
+!_handoffs/HANDOFF-preview-measurement.md
 
 # D2 gate working artifacts (agent Plumb, 2026-08-08). `.d2-before.json` is the
 # captured corner baseline (~1.4 MB) and `.d2-mutants/` holds generated COPIES of

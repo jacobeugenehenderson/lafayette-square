@@ -29,7 +29,7 @@ Two load-bearing facts:
 >
 > ⭐ **Two consequences worth holding.** The **pyramid tuner's phone rungs tune a pass no phone runs** (`RENDER_TIERS['phone-lo'].pyramid` feeds `DownsamplePyramid`, which is desktop-only) — so a number read off them is not a mobile number. And the **all-on cost total is a DESKTOP cost**: §3's "all on == production" holds for desktop and overstates mobile, which runs five fewer passes.
 >
-> ▶ **This is a known arc, not an oversight** — `_handoffs/HANDOFF-mobile-profile.md` ("~20 `IS_MOBILE` branches across 6 files silently decide what mobile users get") plans `INSTANCE.mobileQuality` + per-profile slab channels, and the v0.2 regime (§0.2) is what would let Preview *honor* per-platform inclusion. ⚠️ **Both handoffs live in the gitignored `_handoffs/`, and neither arc is on `ROADMAP.md`** — so from inside the repo this reads as undecided when it is merely unreachable.
+> ▶ **This is a known arc, not an oversight** — `_handoffs/HANDOFF-mobile-profile.md` ("~20 `IS_MOBILE` branches across 6 files silently decide what mobile users get") plans `INSTANCE.mobileQuality` + per-profile slab channels, and the v0.2 regime (§0.2) is what would let Preview *honor* per-platform inclusion. ⭐ **Both handoffs are now TRACKED (2026-09-02)** — they were in the gitignored `_handoffs/`, which is why this read as undecided rather than merely unbuilt. Board row: **`ROADMAP.md H1`**.
 
 The *only other* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the desktop cost numbers honest — they measure the shipping desktop render, not a proxy.
 

@@ -15,10 +15,10 @@
  * `platform` from an on/off drop into a RESOLUTION BRACKET (mobile ships every effect
  * at a low rung) and shipped everything except that. Until it lands, this file is a
  * Preview knob, not a device profile.
- * ⚠️ The fuller design is `_handoffs/HANDOFF-mobile-profile.md §2` — but `_handoffs/`
- * is GITIGNORED, so that pointer resolves only on Jacob's machine. Tracked homes:
- * `ROADMAP.md H1` (the board row) · `plans/clean-for-handoff.md §W1` ·
- * `cartograph/PREVIEW.md §0.1` · `AUDIT-MATRIX.md`. Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi /
+ * ▶ The fuller design is `_handoffs/HANDOFF-mobile-profile.md §2` — ⭐ TRACKED as of
+ * 2026-09-02 (it and HANDOFF-preview-measurement.md are the two exceptions to the
+ * `_handoffs/` ignore, precisely because source cites them). Board row: `ROADMAP.md H1`.
+ * Also: `plans/clean-for-handoff.md §W1` · `cartograph/PREVIEW.md §0.1` · `AUDIT-MATRIX.md`. Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi /
  * phone-lo) so the gauge budget and the render degree speak one vocabulary.
  *
  * This is "Preview = Pyramid" made data: each environment is a BRACKET POSITION
