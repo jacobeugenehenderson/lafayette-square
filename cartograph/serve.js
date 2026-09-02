@@ -78,6 +78,10 @@ function runCapture(cmd, opts = {}) {
 // ▶ node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs
 const STAGING_BRANCH = 'land-use-derivation'
 const PROD_BRANCH = 'main'
+// Where the baked slab is actually served from. Must match the VITE_ASSET_BASE the
+// deployed builds use (.github/workflows/*.yml → repo variable). One bucket serves
+// every environment, per PREVIEW.md §0.2.
+const ASSET_BASE_URL = process.env.ASSET_BASE || 'https://assets.theward.online/'
 const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
 const PROD_SITE_URL = 'https://lafayette-square.com/'
 // The coherent slab set a publish commits (SLAB-CONTRACT §9): the per-look
@@ -2464,12 +2468,27 @@ createServer(async (req, res) => {
   }
 
   // GET /looks/<id>/deployed?target=staging|prod — server-side read of the LIVE
-  // site's slab bakedAt (node fetch → no browser CORS). The Publish panel polls
-  // this after a push to detect when the deploy has actually propagated.
+  // slab's bakedAt (node fetch → no browser CORS). The Publish panel polls this to
+  // answer the operator's real question: "is the site showing my work?"
+  //
+  // ⛔ IT READS R2, NOT THE SITE (2026-09-01). It used to fetch
+  // `<SITE_URL>baked/<id>/scene.json`; since the baked tree left the repo, that path
+  // 404s on both sites and this endpoint would return bakedAt:null forever — the panel
+  // would poll and never confirm, so a successful publish would look like a hung one.
+  // Pointing it at ASSET_BASE is not a workaround: this endpoint's whole design is to
+  // measure THE ARTIFACT BEING SERVED rather than the state of the repo, and the
+  // artifact being served now comes from the bucket.
+  //
+  // ⚠️ SO staging AND prod NOW RETURN THE SAME VALUE, and it goes green at BAKE time,
+  // before either button. That is not a bug and not a lost gate: `PREVIEW.md §0.2` has
+  // been settled doctrine since 2026-06-30 — "staging is REDUNDANT for slab-data … the
+  // publish flow pushes straight to prod; staging-first applies only to code/structural
+  // changes." PREVIEW is the gate for a slab; the buttons ship CODE. Do not "restore"
+  // a per-environment slab gate here without reopening that decision first.
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/deployed$/))) {
     const id = m[1]
     const target = (req.url.match(/[?&]target=([^&]+)/) || [])[1]
-    const base = target === 'prod' ? PROD_SITE_URL : STAGING_SITE_URL
+    const base = ASSET_BASE_URL
     try {
       const r = await fetch(`${base}baked/${id}/scene.json?t=${Date.now()}`, { cache: 'no-store' })
       let bakedAt = null

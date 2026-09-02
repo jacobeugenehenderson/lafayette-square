@@ -44,7 +44,7 @@
 ```bash
 git clone --depth 1 git@github.com:jacobeugenehenderson/lafayette-square.git
 cd lafayette-square
-cp .env.example .env       # ⛔ read it — the map is blank without VITE_ASSET_BASE
+cp .env.example .env       # ⛔ READ IT — set VITE_ASSET_BASE to view, UNSET to author
 npm install
 npm run dev
 ```
@@ -58,9 +58,14 @@ of every slab ever committed. Re-derive both numbers with
 and grows 100–400 MB per neighborhood poured, against GitHub Pages' 1 GB limit, so it is
 served from `https://assets.theward.online/` instead. **A fresh clone has no ground,
 buildings, trees or terrain on disk** — `.env.example` points `VITE_ASSET_BASE` at the
-bucket so you see the real map immediately. Leave it unset only when you are authoring
-and want to see your OWN local bake. There is no automatic fallback between the two:
-a missing asset 404s, loudly, rather than silently resolving to something that renders.
+bucket so you see the real map immediately.
+
+⛔ **But comment it out the moment you start AUTHORING.** Stage and Preview read the slab
+through the same resolver as production, so with it set you would bake a scene locally and
+then inspect R2's older copy — which reads as a bake that didn't propagate (`PREVIEW.md §7`).
+Set = view the shipped map; unset = view your own bake. There is no automatic fallback
+between the two: a missing asset 404s loudly rather than silently resolving to something
+that renders.
 
 `npm run dev` launches **everything in one terminal** with prefixed colored logs:
 
