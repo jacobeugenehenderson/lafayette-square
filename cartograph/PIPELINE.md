@@ -81,7 +81,7 @@ By the time the operator leaves Survey, hold an extremely-simplified, polygon-re
 
 ### section · bake · stage *(downstream)*
 - **section** — the ped **FILL** off the frozen Survey shape (`sectionPass` / `sectionOpen`): treelawn/sidewalk, bent corner fills, ADA pads, cap wraps, strip materials, stroked INWARD off the frozen curb. **Built**; the FILL tail (perf/D6d, cap-wrap, thorns G12) + the Measure→Section rename remain. ⭐ **`SECTION.md`** (the FILL SSoT).
-- **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2. `BAKE.md`.
+- **bake** — freezes the **slab** (ground/buildings/lamps/scene → `public/baked/<id>/`) = wall #2, then **uploads it to R2**, which is what actually publishes it (the tree is gitignored; a failed upload fails the bake). `BAKE.md` · `PUBLISH.md §6`.
 - **stage** — the **LOOK** authoring tool; freezes `design.json` → `scene.json`. `STAGE.md`.
 - **preview** — the slab inspection surface (GPU profiler · phone-aspect · layer cost). `PREVIEW.md`.
 - **production** — the deployed LS runtime; trusts the slab cold. (LS app, downstream of this repo.)

@@ -4,6 +4,15 @@ The boundary spec between **cartograph** (producer) and **LS** (consumer).
 
 The slab is everything under `public/baked/`. Cartograph publishes; LS reads. Neither side imports the other's source code. Anything in this doc is the contract; anything outside it is implementation detail of one side or the other.
 
+⭐ **`public/baked/` IS THE PRODUCER'S PATH, NOT THE CONSUMER'S ADDRESS (2026-09-01).** The bake still
+writes there, and every path in this contract is still correct as a *layout*. But the tree is
+**gitignored and served from `https://assets.theward.online/baked/<look>/…`** — 516 MiB against a 1 GB
+GitHub Pages limit, growing 100–400 MB per town. The consumer resolves it through
+`src/lib/bakedUrl.js` (`ASSET_BASE`), **never `BASE_URL`**, which is where the *site* is deployed.
+⛔ **So the contract now spans two copies**, and "the producer wrote it" no longer implies "the consumer
+can read it" — the upload is the step in between, and it can fail. ▶ `node scripts/verify-baked-in-r2.mjs`
+proves the bucket matches disk. Mechanics: `PUBLISH.md §6`.
+
 This doc is owned by neither app — it lives at the repo root next to `PUBLISH.md` because it's the *interface*. Drift between sides is not allowed without revising this file.
 
 Last verified: 2026-05-26 (L1.3 shipped — `buildings.json` → **version 2** render-scoped index; §0/§1/§6/§11 updated; `SlabBuildings` is the Preview+production consumer; `BakedBuildings` deleted). Prior full pass: 2026-05-12 against `cartograph-looks-pass-ab @ b39834b`. Cross-refs: [`cartograph/ARCHITECTURE.md`](cartograph/ARCHITECTURE.md) (producer architecture), [`ls/ARCHITECTURE.md`](ls/ARCHITECTURE.md) §2 (consumer architecture), [`ls/reference/INVENTORY-DATA.md`](ls/reference/INVENTORY-DATA.md) §A (consumer mount status).

@@ -174,8 +174,15 @@ The pool is **baked into the ground** (contour-correct), so its *shape* is a bak
 
 - **Bake buttons** — Designer's **"Stage →"** = navigate to your last Stage shot immediately, bake async in the background (the slab refreshes when done). Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).
 - **Tree anchors are part of the pour (since 2026-08-28)** — a `tree-anchors` step runs straight after the ground bake and re-seats every trunk on the *drawn* ground. It had never been in the chain, so only the one look somebody baked by hand had anchors at all and every other town's trees floated on the smooth terrain field (up to ~1.9 m). ⛔ **The runtime's check is all-or-nothing:** one stale count discards *every* anchor for that look, silently but for a console line — so if trees look like they are hovering or sunk after a re-pour, this step is what to re-run, not the tree bake.
-- **The pour transcodes the impostor pages, LAST (since 2026-08-29)** — after the placements step, `pack-impostor-ktx2.mjs` encodes every hero + overhead page to KTX2/ETC1S and repoints `trees-atlas.json`. ⛔ **It has to be last and it is not optional:** the atlas step rewrites the manifest from source and hands back `.png`, so a pour that skipped this would silently ship ~4× the impostor VRAM (LS: 282 MB → 1,121 MB) and look exactly like a clean bake, because PNG pages render perfectly on the desktop doing the baking. A pack failure therefore **fails the whole pour** rather than returning a green slab nobody can tell is heavy — `basisu` is a hard requirement (`brew install basis_universal`). ⛔ **Do not gitignore the `.ktx2` pages:** the deploy is an `actions/checkout`, so an ignored page is a 404 in the canopy, not a rebuild. ▶ `node scratch/claims-every-declared-page-ships.mjs`
+- **The pour transcodes the impostor pages, LAST (since 2026-08-29)** — after the placements step, `pack-impostor-ktx2.mjs` encodes every hero + overhead page to KTX2/ETC1S and repoints `trees-atlas.json`. ⛔ **It has to be last and it is not optional:** the atlas step rewrites the manifest from source and hands back `.png`, so a pour that skipped this would silently ship ~4× the impostor VRAM (LS: 282 MB → 1,121 MB) and look exactly like a clean bake, because PNG pages render perfectly on the desktop doing the baking. A pack failure therefore **fails the whole pour** rather than returning a green slab nobody can tell is heavy — `basisu` is a hard requirement (`brew install basis_universal`). ⛔ **The pages must SHIP, and how that is enforced INVERTED on 2026-09-01.** This used to read *"do not gitignore the .ktx2 pages — the deploy is an actions/checkout, so an ignored page is a 404 in the canopy."* The whole baked tree is gitignored now and the pages ship from R2, so tracking has nothing to do with whether the canopy gets them. **The requirement is unchanged; the enforcement moved** — ▶ `node scripts/verify-baked-in-r2.mjs` reads the bucket and names any page that is absent. ▶ `node scratch/claims-every-declared-page-ships.mjs`
 - **The pour writes this town's public credits** — a `sources` step reads which inputs are actually on the scene's disk and bakes `public/baked/<look>/sources.json`, which is what the visitor's panel-footer credit and the info panel's **Sources** section render. ⭐ **Nothing to operate on a good day, and the one thing to read on a bad one: it prints what is still OWED.** An input that reached the render under terms the kit cannot state is listed there and is *not* credited — you close that by reading the licence **at the source** and recording it in `cartograph/intake-rows.mjs`'s `licence`. ⛔ **Never fill one in from memory or a search result** — the entry for Microsoft's footprints said ODbL for over a month and the dataset's own `LICENSE` says CDLA Permissive 2.0. ▶ `node cartograph/bake-sources.js --look=<id> --scene=<id>`
+- ⛔⛔ **THE POUR'S LAST STEP IS AN UPLOAD, AND IT CAN FAIL THE BAKE (2026-09-01).** `public/baked/` is
+  gitignored and served from R2, so **the upload — not a commit — is what carries a pour to a visitor.**
+  `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and a failure **fails the whole bake (500)**
+  rather than returning a green slab that reached nobody. ⚠️ **And the pour is then live EVERYWHERE
+  immediately** — one bucket serves staging and prod at the same URLs, so a re-pour reaches
+  lafayette-square.com without a push. That is the settled model (`PREVIEW.md §0.2`: staging is redundant
+  for slab-data — **Preview is the gate**), but it is new in mechanism. ▶ `node scripts/verify-baked-in-r2.mjs`
 - **Ground-contact effects** (baked; tune via the bake constants in **CLI / bake operations** below): the **lamp light pools**, the **dark contact rings** under trees + lamps (visible in daylight), and the **tree trunk-base ground blend** (the lowest of each trunk takes on the ground colour beneath it). All three bake into ground textures + sample in the ground/tree shaders — **re-bake to see them**, hard-refresh to pick up the slab.
 
 ## Preview — the publish-confidence gate
@@ -282,30 +289,38 @@ The dev server **autosaves** source on every edit (Survey/Stage debounce → `ov
 
 ### How it ships — local bake → commit → CI serves as-is
 
-**CI does not bake.** Both workflows run `npm ci` + `vite build` (+ `--base` for staging) and publish the committed `public/` as static files. There is **no `pipeline.js` / `bake-*.js` in CI.** Consequence: **whatever slab you committed is exactly what deploys** — a stale or un-baked commit ships stale geometry to the public. Bake + commit *before* you push.
+**CI does not bake.** Both workflows run `npm ci` + `vite build` (+ `--base` for staging) and publish the checked-out `public/` as static files. There is **no `pipeline.js` / `bake-*.js` in CI.**
+
+⛔⛔ **BUT "WHATEVER SLAB YOU COMMITTED IS WHAT DEPLOYS" IS NO LONGER TRUE (2026-09-01), AND ACTING ON IT SHIPS NOTHING.** `public/baked/` is gitignored and served from **R2** (`PUBLISH.md §6`). Two consequences that pull in opposite directions, so hold both:
+- **The slab needs no commit and no push.** The bake's last step uploads it and it is live on staging *and* prod immediately. "Bake + commit before you push" is retired for geometry.
+- **Everything else still does.** `design.json`, `looks/index.json`, `ribbons.json` and the OG image are tracked and ship the old way.
+
+⭐ **So a stale *slab* is now impossible-by-push and possible-by-upload:** if a pour looks stale, the question is no longer "did I commit it" but "did it reach the bucket" — ▶ `node scripts/verify-baked-in-r2.mjs`.
 
 | Branch | Workflow | Deploys to |
 |---|---|---|
 | `main` | `deploy.yml` | **lafayette-square.com (PROD)** |
-| `curb-offset-draw` (trunk) | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
+| **the trunk** — ⛔ derive it, never quote it | `staging.yml` | **`lafayette-square-staging` (GitHub Pages)** |
 | any other feature branch | — | **nothing** (pushing it deploys no site) |
 
-> ⚠️ **The trunk is `curb-offset-draw`, not `cartograph-looks-pass-ab`.** Staging was repointed 2026-07-08 (`26a62407`) because the old branch was 395 commits behind (pre-HPDM) and served stale LS geometry for HPDM. `cartograph-looks-pass-ab` now deploys **nothing**. *(Code lag caught 2026-07-11: `serve.js` `STAGING_BRANCH` still names the dead branch — see below.)*
+> ⛔ **THE TRUNK NAME IS NOT WRITTEN DOWN HERE ON PURPOSE.** It has moved twice, and both times a doc and a constant kept naming a branch that deployed nothing — the publish button reported success while staging never moved. ▶ `node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives it from `staging.yml` and fails if the code parts company with it. **The check is the answer; this page is not.**
 
 Promote to staging = commit on the trunk and push (or fast-forward a feature branch into it); promote to prod = merge/fast-forward the trunk into `main` and push.
 
-**The working loop (strategy B, chosen 2026-06-26; solo → work directly on the trunk).** Commit source+derived on `curb-offset-draw` → **push it** (auto-deploys staging) → eye-check staging → **fast-forward `main`** when you want it public. Prod (`main`) and the trunk are **both slab-era** and kept only a few commits apart, so a prod promotion is a clean fast-forward, not a big-bang. Quick commands: `git push origin curb-offset-draw` (staging), then `git push origin curb-offset-draw:main` (prod) once staging is verified.
+**The working loop (strategy B, chosen 2026-06-26; solo → work directly on the trunk).** Commit source on the trunk → **push it** (auto-deploys staging) → eye-check staging → **fast-forward `main`** when you want it public. Prod and the trunk are kept only a few commits apart, so a prod promotion is a clean fast-forward, not a big-bang. `git push origin <trunk>` (staging), then `git push origin <trunk>:main` (prod) once staging is verified.
 
 > ⚠️ **Reason about deploy state from the REMOTE, never a stale local ref.** Always `git fetch` and compare `origin/main` / `origin/curb-offset-draw` — not local `main`/trunk, which drift badly when you live on a feature branch. On 2026-06-26 local `main` (`b39834b4`) read **1123 commits + "pre-slab" behind** while `origin/main` was actually **4 commits behind and slab-era** — an entirely phantom gap that nearly derailed a publish decision until the remote was checked.
 
-*(Derived artifacts are intentionally **git-tracked**, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork; see the named levers below.)*
+⭐⭐ **AND THE FORK THIS PARAGRAPH CALLED "UN-TAKEN" WAS TAKEN — BY A THIRD ROUTE IT DID NOT CONTEMPLATE.** It read: *"Derived artifacts are intentionally git-tracked, not ignored — that's what lets CI stay a plain `vite build`. The alternative — gitignore them and bake in CI — is a deliberate, un-taken fork."* That framed it as a binary, and the binary was false. **We gitignored the slab and still did not bake in CI:** the authoring machine uploads it to R2, so CI stays a plain `vite build` *and* the 516 MiB leaves the repo. The reasoning that kept them tracked — "it's what lets CI stay simple" — turned out to be defending a constraint that had a third answer. ⚠️ Everything else derived (`ribbons.json`, `looks/index.json`) is **still tracked**; this applies to `public/baked/` alone.
 
 ### The troubleshooting door — symptom → knob
 
 | Symptom | The door (go here, no forensic) |
 |---|---|
 | Tree always dirty, but no geometry changed | Timestamp **noise** (`scene.json`/`index.json`/`trees.json`) — §"noise vs. real" above. Discard. |
-| Staging/prod shows **stale geometry** | You didn't bake+commit before push — CI serves the committed slab as-is (§"how it ships"). Re-bake, commit, push. |
+| Staging/prod shows **stale geometry** | ⛔ **The old answer ("you didn't bake+commit before push") is retired.** The slab is served from R2, not from the deploy — a commit has nothing to do with it. ▶ `node scripts/verify-baked-in-r2.mjs` reads the bucket and names what is absent or the wrong size. If the bucket is current, it is a **browser/CDN cache**: hard-refresh (`PUBLISH.md §6` — TTL 300 s). |
+| **A pour looks like it did nothing** | The bake fails loudly (500) when its R2 upload fails, so check the bake's own response first. A green bake means the bucket has it. |
+| **Blank map in a fresh clone / new machine** | `public/baked/` is not in the repo. `cp .env.example .env` and set `VITE_ASSET_BASE` (`README §Local development`). ⛔ **But comment it out again before you author**, or Stage/Preview will show you R2's slab instead of the one you just baked. |
 | Wrong in **Survey**, right in **Section/bake** | The **live-load path**, not the frozen geometry — measure-resolution / overlay / the vite bundle (`ARCHITECTURE.md §2.1`). |
 | Section shows **no change** after a CLI bake | The `shape.json` cache-buster (`?t=freezeTag`, `BlockGeometryV2Debug`) — a CLI bake can't bump client state. Exit Survey (autosave-freeze) or click **Bake** to bump it. |
 | A **baked artifact looks wrong** | First ask "is this the *live re-stroke's* defect, faithfully captured?" — the bake is the messenger, not the bug (`BAKE.md §4`). Diagnose **upstream** (the live construction), never patch the output. |
@@ -313,6 +328,21 @@ Promote to staging = commit on the trunk and push (or fast-forward a feature bra
 | A SHAPE/curb silhouette is wrong | Upstream — Survey · skeleton · prebake. *How a ribbon bends* is Section (FILL). Name the layer before you fix (`CLAUDE.md` route gate · `PIPELINE §Wall`). |
 | **Bloom (or another post effect) suddenly looks broken / no glow** right after you toggled **DoF or SMAA** | An **HMR artifact, not a real bug.** The `EffectComposer` is keyed `fx-${smaaOn}-${dofOn}`, so toggling DoF/SMAA rebuilds the composer and Vite HMR can leave it detached → **hard-refresh the page.** Don't chase a DoF↔Bloom coupling — they share the pyramid by design. |
 | **Trees don't show in Browse** | Known render "wake-up" — **nudge any look dial** and they pop in. It's the render/cull layer, not a look knob (tracked, unresolved). |
+
+### `VITE_ASSET_BASE` — where the slab is read from *(the one env knob you will actually touch)*
+
+| | |
+|---|---|
+| **Unset** (default) | falls back to `BASE_URL` → **whatever is on local disk** under `public/baked/`. |
+| **Set** | `https://assets.theward.online/` → the published slab in R2. |
+| Where prod/staging set it | a GitHub Actions **variable** (not a secret), read by both workflows. |
+| Where you set it | `.env` (see `.env.example`). |
+
+⭐ **The fork that matters, and it is easy to get backwards:**
+- **Viewing** the map (fresh clone, no local bake) → **SET** it, or you get a map with no ground, buildings or trees.
+- **Authoring** (Stage → Bake → Preview) → **COMMENT IT OUT**, or you will pour a scene and then inspect R2's *older* copy. That reads exactly like a bake that didn't propagate — the confusion `PREVIEW.md §7` warns about ("a wrong Preview is a wrong bake"), except the bake was fine.
+
+⛔ **There is deliberately no automatic fallback between the two.** A missing asset 404s loudly rather than resolving to something that renders, because a broken local bake that silently looks fine is the failure this whole arrangement exists to prevent.
 
 ### Named levers (deliberate)
 

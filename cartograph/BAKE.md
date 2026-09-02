@@ -8,7 +8,15 @@
 
 ## 0. What the bake is
 
-The **bake** is the publish stage: it turns the frozen pipeline (`map.json` → `ribbons.json`) plus the active Look's authored intent (`design.json`) into the **slab** — the read-only static artifacts under `public/baked/<look>/` that the LS runtime mounts. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
+The **bake** is the publish stage: it turns the frozen pipeline (`map.json` → `ribbons.json`) plus the active Look's authored intent (`design.json`) into the **slab** — the read-only static artifacts under `public/baked/<look>/` that the LS runtime mounts.
+
+⛔⛔ **AND THE POUR'S LAST STEP IS AN UPLOAD (2026-09-01).** `public/baked/` is gitignored; the slab is
+served from R2. `scripts/upload-baked-to-r2.mjs` runs at the end of the bake and **a failed upload fails
+the whole bake (500)** — a green bake that reached nobody is the one outcome worth refusing, and it is
+exactly the shape this pipeline refuses everywhere else. ⚠️ **The pour is then live on staging AND
+production immediately**, at the same URLs, without a push; `PREVIEW.md §0.2` settled that Preview — not
+staging — is the gate for slab data. Operator view: `cartograph/OPERATIONS.md §Bake`. Mechanics:
+`PUBLISH.md §6`. It is the boundary between the **authoring** world (cartograph: stores, live re-derivation, the operator's eye) and the **runtime** world (LS: trust the slab, never reach back).
 
 Two load-bearing facts:
 
@@ -25,7 +33,7 @@ Two load-bearing facts:
 | **Inputs (per scene)** | `clean/map.json` (skeleton+derive), `src/data/ribbons.json` (First Bake), the raw set (`osm.json`, `measurements.json`, `centerlines.json`, `elevation.json`, `overlay.json`, `skeleton.json`, `src/data/buildings.json`), `park_trees.json` / `park_water.json` / `street_lamps.json` (LS-only) |
 | **Input (per Look)** | `public/looks/<id>/design.json` — the operator's authored styling/shape intent (live autosave; see `STAGE.md §4`) |
 | **Who builds it** | the `/looks/:id/bake` handler (`serve.js:461`), running each `bake-*.js` via `runIfDirty` |
-| **Outputs (the slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format |
+| **Outputs (the slab)** | everything under `public/baked/<id>/` — see §2 for what each step writes, and **`SLAB-CONTRACT.md`** for the byte format. ⛔ **Written there, but PUBLISHED to R2** — the tree is gitignored and the pour's last step uploads it (below) |
 | **Who consumes it** | the **runtime** (LS app) and the cartograph **Stage** / **Preview** players — read-only, cache-busted by `?t=<bakedAt>` (Preview is the inspection surface — `PREVIEW.md`) |
 
 ⚠️ **Two-step rebuild discipline (inherited from prebake).** `pipeline.js` + `promote-ribbons.js` run *inside* the bake for the LS scene, so a Survey/Measure edit (which writes `overlay.json`) re-derives `map.json` → `ribbons.json` before the geometry bakes. The hand-authored **toy** scene skips both (no OSM, no pipeline). A **poured OSM neighborhood is different** — see the scene-generic note below.

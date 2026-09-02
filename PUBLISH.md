@@ -39,12 +39,14 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | commit, then `git push origin curb-offset-draw` → `staging.yml` deploys staging (the trunk IS the staging trigger) |
+| Frontend → **staging** | commit, then push the trunk → `staging.yml` deploys staging. ⛔ **Do not read the branch name off this page** — it has been wrong for four weeks before now: `node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives it from the workflow |
 | Promote **staging → prod** | once staging is verified: `git push origin <branch>:main` → `deploy.yml` deploys lafayette-square.com (clean fast-forward; main + trunk stay a few commits apart) |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
 | New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
+| **Re-poured a town** | nothing to push — the bake uploads the slab to R2 and it is **live immediately, on staging AND prod** (§6) |
+| **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
 
 ---
 
@@ -105,9 +107,11 @@ There is a **second** Pages target for previewing slab/look work before it reach
 | Branch | Workflow | Deploys to |
 |---|---|---|
 | `main` | `deploy.yml` | **lafayette-square.com** (prod, this section) |
-| `curb-offset-draw` (the trunk) | `staging.yml` | **`lafayette-square-staging`** (GitHub Pages preview) |
+| the trunk (⛔ derive it, never quote it — see the check above) | `staging.yml` | **`lafayette-square-staging`** (GitHub Pages preview) |
 
-Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` + serve the *committed* slab, so the artifacts you committed are exactly what deploys (bake + commit before you push). The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
+Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` over an `actions/checkout`.
+
+⛔⛔ **BUT THE SLAB IS NO LONGER WHAT YOU COMMIT (2026-09-01).** This line used to read *"serve the committed slab, so the artifacts you committed are exactly what deploys (bake + commit before you push)"* — **that instruction is now wrong and following it ships nothing.** `public/baked/` is gitignored and served from R2 (§6). The pour uploads it; git carries only `design.json`, `looks/index.json`, `ribbons.json` and the OG image. ⭐ **So a slab reaches production WITHOUT a push, and code still needs one.** The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
 
 ### Build-time environment (GitHub Secrets)
 
@@ -246,6 +250,69 @@ Currently behind "coming soon" placeholders in the UI. When ready to launch:
 1. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to GitHub Secrets
 2. Add them to `deploy.yml` env block
 3. Push to trigger rebuild
+
+## 6. Baked assets (Cloudflare R2)
+
+**The slab is not in the repo.** `public/baked/` — 1138 files, 516 MiB, growing 100–400 MB per town
+poured — is gitignored and served from **`https://assets.theward.online/baked/<look>/…`**. Tracked
+`public/` went 683 MB → 167 MB against GitHub Pages' 1 GB limit; one more Altadena-sized pour would
+have started the clock on a failing deploy.
+
+| | |
+|---|---|
+| Bucket | `theward-assets` (kit-level — it serves **every** look, not LS's) |
+| Custom domain | `assets.theward.online` (zone moved to Cloudflare 2026-09-01; the R2 record is **proxied/orange** — it must be) |
+| Read at runtime by | `src/lib/bakedUrl.js` → `ASSET_BASE`; **not** `BASE_URL`, which is where the *site* is deployed |
+| Build-time switch | `VITE_ASSET_BASE`, a GitHub Actions **variable** (not a secret), in both workflows |
+| Cache | `public, max-age=300, must-revalidate` — deliberately **not** `immutable`, see below |
+
+**Unset `VITE_ASSET_BASE` and everything falls back to `BASE_URL`** — i.e. whatever is on local disk.
+That is the rollback (delete the variable, redeploy) and it is also how an author sees their own bake.
+
+⛔ **NO FALLBACK BETWEEN THE TWO.** A missing asset 404s. It never silently resolves to another
+look — a town that fails to load and shows Lafayette Square is not a bug an operator can see.
+
+### How a pour reaches a visitor
+
+The bake endpoint runs `scripts/upload-baked-to-r2.mjs` as its **last step** and **fails the bake**
+(500) if the upload fails — a green bake that reached nothing is the one outcome worth refusing.
+
+⚠️ **One bucket serves staging and production at the same URLs, so a re-pour is live everywhere the
+moment it uploads — it does not wait for a push to `main`.** That is not a lost gate: `PREVIEW.md
+§0.2` settled in 2026-06-30 that *staging is redundant for slab-data* — **Preview is the gate for a
+slab; the buttons ship code.** Per-environment prefixes are the fix if it ever bites.
+
+```bash
+node scripts/upload-baked-to-r2.mjs --dry-run     # what would go, and what is excluded by rule
+node scripts/verify-baked-in-r2.mjs               # reads the BUCKET, compares to disk — run after every pour
+```
+
+⛔ **`upload-baked-to-r2.mjs`'s `EXCLUDE` list is load-bearing and is now the only home for two
+decisions `.gitignore` used to enforce**: `lod0` (353.3 MB the runtime cannot request) and the atlas
+viz sheets. Once the whole tree is ignored, per-file ignore rules discriminate nothing.
+
+### Why the cache TTL is short
+
+38.3 MB of the LS slab carries **no version token** in a production build — both atlas PNGs, all 360
+KTX2 impostor pages, and the terrain/ground maps — because `bakeLastMs` is an authoring prop and is
+undefined in prod. `immutable` would pin a stale canopy at a URL nothing can change. ⛔ **Do not
+lengthen this TTL until those carry a token** (`plans/r2-asset-offload.md §3.5`). Cloudflare's zone
+**Browser Cache TTL** overrides origin headers and must stay on *Respect Existing Headers*.
+
+### CORS
+
+Allowed origins are exactly: `lafayette-square.com`, `www.lafayette-square.com`,
+`jacobeugenehenderson.github.io` (staging is a *path* on that origin), and localhost `5173`/`4173`.
+⭐ **CORS is checked against the origin of the document making the request** — `theward.online`
+embeds the Ward from `lafayette-square.com`, so the marketing site is covered by that entry and does
+not need its own. ⚠️ Verify with a real page load; `curl` sends no `Origin` and R2 answers it happily
+while a browser still blocks.
+
+```bash
+npx wrangler r2 bucket cors list theward-assets     # the policy, read from the API not from a file
+```
+
+---
 
 ## Troubleshooting
 

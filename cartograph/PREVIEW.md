@@ -14,7 +14,13 @@
 
 Two load-bearing facts:
 
-1. **Preview is production's render tree + inspection bolt-ons — not a separate render path** (`project_preview_equals_ls_literally`). Whatever Preview draws, the deployed LS app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack. The *only* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the cost numbers honest — they measure the shipping render, not a proxy.
+1. **Preview is production's render tree + inspection bolt-ons — not a separate render path** (`project_preview_equals_ls_literally`).
+   > ⚠️ **AND SINCE 2026-09-01 THAT PARITY SPANS TWO COPIES.** The slab is gitignored and served from R2
+   > (`PUBLISH.md §6`); Preview, running locally with `VITE_ASSET_BASE` unset, reads **your disk**, while
+   > production reads **the bucket**. Byte-for-byte still holds — the pour uploads what it just wrote and
+   > fails loudly if it cannot — but it is now an **invariant to verify**, not an identity to assume.
+   > ▶ `node scripts/verify-baked-in-r2.mjs`. ⛔ **And do not set `VITE_ASSET_BASE` while authoring**, or
+   > Preview inspects R2's older slab and §7's "a wrong Preview is a wrong bake" fires on a bake that was fine. Whatever Preview draws, the deployed LS app draws, byte-for-byte: the same `BakedGround`, `SlabBuildings`, `InstancedTrees`, `BakedLamps`, `GatewayArch`, `CelestialBodies`, `SceneNeon`, post-FX stack. The *only* divergences are the GPU profiler, the phone frame, and the layer-toggle matrix laid over the top. This is what makes the cost numbers honest — they measure the shipping render, not a proxy.
 
 2. **Preview mirrors the *Look*; it authors *deployment policy*** (amended 2026-06-17 — a scoped refinement of `feedback_stage_is_source_preview_is_mirror`, "we've grown"). Two halves:
    - **The Look mirrors** (unchanged). Stage authors the art → the Look serializes → Preview reads the frozen `scene.json` + baked geometry cold (past **wall #2** — `BAKE.md §0`); no live re-derivation. If a *Look* looks right in Stage but wrong in Preview, the bug is the bake (it didn't propagate), never Preview.
