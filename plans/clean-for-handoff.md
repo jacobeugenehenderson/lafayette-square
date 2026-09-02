@@ -10,7 +10,7 @@
 
 Jacob, 2026-06-30: *"I want to hand this off to human developers and it must be clean."* This turns the standing code/doc debt from **someday-drag** into a **gating deliverable**. Cleanliness is no longer hygiene — it is the product requirement for the handoff. The good news: the targets are already enumerated in the corpse-lie ledger and the BACKLOG, so this is **execution, not discovery.**
 
-**The lead is `render-pipeline-install`** — it is the single arc that pays down the most handoff-debt per unit work: it retires the render fork (`PreviewPostFx`), makes "Preview == Production" *structural* instead of asserted, fixes the mobile on/off drop into a resolution *bracket*, AND produces the render manifest as a first-class documentation artifact. One arc, four liabilities.
+**The lead is `render-pipeline-install`** — it is the single arc that pays down the most handoff-debt per unit work: it retires the render fork (`PreviewPostFx`), makes "Preview == Production" *structural* instead of asserted, fixes the mobile on/off drop into a resolution *bracket*, AND produces the render manifest as a first-class documentation artifact. One arc, four liabilities. ⛔ **Three landed; the mobile bracket did not — W1's banner has the receipts. "Preview == Production" is therefore structural on DESKTOP only.**
 
 ## Definition of Done — the "stranger legibility" test
 
@@ -27,9 +27,20 @@ A new developer, given only the repo, can:
 
 ### W1 — `render-pipeline-install` (THE LEAD)
 The 5-phase arc in `HANDOFF-render-pipeline-install.md` (design draft, standup-gated). It is the spine of this plan.
-- **Grounded reality:** `PostProcessing.jsx:413` `if (IS_MOBILE) return` drops the whole pyramid stack (DoF/bloom/AO/aerial) as a binary; `PreviewApp.jsx` mounts `PreviewPostFx.jsx` (189 lines) — a forked composer whose DoF driver is silently wrong. The pyramid (`DownsamplePyramid.jsx`) is real and shared **on desktop only**.
-- **Delivers:** Phase 1 extract `usePostFxDriver` (pure refactor) → Phase 2 manifest + installer → Phase 3 **retire `PreviewPostFx`** (parity win) → Phase 4 scene tree onto the manifest → Phase 5 fold `render-conformance`/`preview-measurement` in as installer capabilities.
-- **Handoff payoff:** the `platform` field on each manifest entry converts the mobile on/off drop into a **resolution bracket** (mobile ships every effect at a low rung, not none) — retiring the mobile liability structurally. And the manifest is the recorded SSoT of *what the product renders* (a doc artifact across every register — see that HANDOFF §Documentation deliverable).
+> ### ⛔⛔ PARTLY LANDED — AND THE PART THAT DIDN'T IS THE PART THIS ARC WAS FOR *(verified in code 2026-09-02)*
+> **Phases 1–3 shipped.** `PostProcessing.jsx`'s `IS_MOBILE` branch is **gone** (`grep -c IS_MOBILE src/components/PostProcessing.jsx` → **0**); `src/preview/PreviewPostFx.jsx` is **deleted**; the manifest + installer are live in `src/components/renderPipeline.jsx` (`POSTFX_PIPELINE`). "Preview == Production" is structural now, exactly as promised.
+>
+> ⛔ **THE MOBILE PAYOFF DID NOT.** `platform` shipped as a **string in an equality filter**, not a bracket:
+> `renderPipeline.jsx:259` — `POSTFX_PIPELINE.filter((e) => !e.platform || e.platform === platform)` — with `ao` · `pyramid` · `dof` · `bloom` · `aerial` all marked `platform: 'desktop'`. **A phone still renders `grade` + `smaa` + `grain` and nothing else.**
+>
+> ⭐ **So the binary was RELOCATED, not retired** — from `PostProcessing.jsx:413` to `renderPipeline.jsx:259`. Better structured, identical behaviour. The arc's own justification ("fixes the mobile on/off drop into a resolution *bracket*", "retiring the mobile liability structurally") is **the one of its four liabilities still outstanding**, and this page described the *pre-refactor* code as "grounded reality," so a reader assumed all of it was ahead of them rather than one quarter of it.
+>
+> ▶ Downstream consequence, now written where operators read it: `cartograph/PREVIEW.md §0.1` — Preview installs the **whole desktop pipeline regardless of tier**, so the phone modes cannot show the mobile render, and the pyramid tuner's phone rungs tune a pass no phone runs.
+> ▶ Design for the finish: `_handoffs/HANDOFF-mobile-profile.md` (⚠️ **gitignored — unreachable from a clone**, and `src/lib/renderTiers.js` cites it as if it were not). Board rows: **`ROADMAP.md H1` · Publish-confidence / mobile-measurement** (names `mobile-profile B/C/E` + `render-conformance Ph4–7`; the hard gate is real per-tier device numbers — today `phone-hi==phone-lo`, both guessed) and `AUDIT-MATRIX.md` "mobile profile unauthored".
+
+- **Grounded reality *(as of the 2026-06-30 draft; superseded above)*:** `PostProcessing.jsx:413` `if (IS_MOBILE) return` dropped the whole pyramid stack (DoF/bloom/AO/aerial) as a binary; `PreviewApp.jsx` mounted `PreviewPostFx.jsx` (189 lines) — a forked composer whose DoF driver was silently wrong. The pyramid (`DownsamplePyramid.jsx`) is real and shared **on desktop only** — *this last clause is still true.*
+- **Delivers:** ✅ Phase 1 extract `usePostFxDriver` → ✅ Phase 2 manifest + installer → ✅ Phase 3 **retire `PreviewPostFx`** → ⬜ Phase 4 scene tree onto the manifest → ⬜ Phase 5 fold `render-conformance`/`preview-measurement` in as installer capabilities.
+- **Handoff payoff:** the `platform` field was to convert the mobile on/off drop into a **resolution bracket** (mobile ships every effect at a low rung, not none), retiring the mobile liability structurally. ⛔ **Unbuilt — see the banner above.** The manifest half *did* land and is the recorded SSoT of *what the product renders*.
 - **⚠️ Gate:** DESIGN DRAFT — standup on the manifest shape + `inspect` contract + the 4 open decisions **before any code**. High blast radius (`Scene.jsx` / `PostProcessing.jsx` / `PreviewApp.jsx`) — serialize with `render-conformance` + `preview-measurement`.
 - **⚠️ Depends on:** the mobile *brackets* need `preview-measurement`'s real per-device numbers to tune (today phone-hi==phone-lo, guessed). The installer can ship with a conservative bracket first; the tuning follows the instrument.
 
