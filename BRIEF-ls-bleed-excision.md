@@ -197,8 +197,137 @@ the class already went un-named for eleven days because site 4 had no category t
 | — | `promote-ribbons.js` | ⭐ **Found by re-committing the same crime while verifying.** The promote silently replaced the committed artifact with a materially different re-derivation — **three times on 2026-07-31, twice while merely "verifying" an unrelated change**. It now compares `{streets, tiles, faces, medians, nodes, caps}` and **refuses when any moved**, printing the delta; `--yes` to override. Verified firing on the real case (`nodes 233 → 228`). |
 
 **Not done, deliberately:**
-- **Site 10** (`LafayettePark.jsx`) — needs the verify step the brief asks for (does it mount outside LS?). Not touched on a guess.
+- **Site 10** (`LafayettePark.jsx`) — ▶ **now carried as `B7`/`B8` in Appendix B**, with the verify it was waiting on written up as **Act 0** (`§B.2`). Still not touched on a guess.
 - **Site 12** (`serve.js:902`, scene-less route ⇒ LS) — `api.js sceneUrl()` deliberately emits scene-less URLs for the default scene, so refusing would break the running app. Needs the client changed first; **sequence it with the client, don't cut it alone.**
 - **Sites 1–8** — the original absence-class sweep, untouched here.
 
 ⚠️ **`--scene=` is now required by the write paths.** `node cartograph/pipeline.js` alone exits(2) with the corrected command printed. This is the intended friction: the missing flag is exactly how a full day got spent building the wrong town.
+
+
+---
+
+
+# ⭐ APPENDIX B — THE STATIC `src/data/*` NAME-IMPORTS (added 2026-09-01)
+
+**Agent: FRESH.** A bounded, mechanical excision against a measured site list. No prior session
+context is worth inheriting — but ⛔ **read §1–§7 and Appendix A first**: this is the *same class* as
+site 9, and §5's three-way "what fixed means" is the acceptance criterion here too.
+
+> ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` → **`EXTENT-DESIGN.md`
+> §2.1 and §6**. This appendix IS `EXTENT-DESIGN §6` **step 4**, written as sites. The design of record
+> is that document; this is where the sites live (§A.5).
+
+## B.0 ⛔ PREMISES ARE CLAIMS — here is what was measured, and when
+
+Everything below was measured **2026-09-01**. ⛔ **Re-run before sizing anything on it.** The count for
+this exact job has been quoted at **19** (`EXTENT-DESIGN §2.1`, stale), **13** (`cartograph/NOTES.md:22`,
+re-measured 2026-08), **~90** (a loose filename grep, wrong — it counted doc mentions and runtime
+fetches), and **8** (below). Four values. §2.1 carries a standing ⛔ *count them, don't quote a figure*
+for precisely this reason.
+
+```
+grep -rn "data/\(ribbons\|buildings\|street_lamps\|landmarks\|park-feature-elev\)\.json" src cartograph \
+  --include="*.js" --include="*.jsx" --include="*.mjs" | grep -v _archive
+```
+→ 43 hits / 25 files total; **8 of them are static `import` sites across 7 files.** The rest are runtime
+fetches and comments and are **not** this ticket.
+
+## B.1 The sites
+
+| # | Site | Reads | Status / note |
+|---|---|---|---|
+| B1 | `src/cartograph/CartographApp.jsx:53` | `ribbons.json` | ⚠️ one of the three §2.1 names as **the live root**. Sits beside `:52`'s `toy/toy-ribbons.json` — the per-scene shape already exists next to it. |
+| B2 | `src/cartograph/MapLayers.jsx:14` | `ribbons.json` | ⚠️ §2.1 root. Already named `_lsRibbonsData` — someone knew. |
+| B3 | `src/cartograph/stores/useCartographStore.js:9` | `ribbons.json` | ⚠️ §2.1 root. **Land this one first** — site 9 (`measureModel.js`) was fixed by having *this store* register the active scene's fixture, so the pattern is already in this file's blast radius. |
+| B4 | `src/cartograph/SurveyorPanel.jsx:3` | `landmarks.json` | authoring-side, independent. |
+| B5 | `src/components/lampLightmap.js:5` | `street_lamps.json` | **LIVE in the player** — `ls/ARCHITECTURE.md §1`: *"Shader glow DataTexture still reads live `street_lamps.json`."* |
+| B6 | `src/components/StreetLights.jsx:12` | `street_lamps.json` | ⭐ **Probably an EXCISION, not a migration** — `ls/ARCHITECTURE.md §1` records *"StreetLights.jsx no longer mounted by Scene."* **Confirm it is unmounted, then delete the file** rather than migrating dead code (`feedback_dead_code_gets_excised_not_archived`). |
+| B7 | `src/components/LafayettePark.jsx:16` | `ribbons.json` | = **site 10**, logged in §A.6 as *"not done, deliberately — needs the verify step: does it mount outside LS?"* That verify is Act 0 below. |
+| B8 | `src/components/LafayettePark.jsx:28` | `park-feature-elev.json` | same file, same gate as B7. |
+
+⭐ `buildings.json` does **not** appear — it already loads dynamically through `src/data/buildings.js`.
+That file is the reference caller of the `loadInstanceData` seam; **copy its shape, don't invent one.**
+
+## B.2 ⛔ ACT 0 — THE MEASUREMENT THAT GATES THE WORK. Do this before touching a line.
+
+`EXTENT-DESIGN §2.1` carries an open flag, verbatim:
+
+> ⚠️ **UNMEASURED — establish before sizing step 4 on it:** whether those three imports are *live* with
+> a non-LS scene open, or superseded at runtime. **Cause not established.**
+
+**So Act 0 is: open the authoring app on HPDM and find out whether B1/B2/B3 reach anything.** Three
+outcomes, and they mean different jobs:
+
+- **Live** → HPDM is being authored against LS's ribbons. That is Class B, the site-9 defect, and it is
+  a real bug to report before fixing.
+- **Superseded at runtime** → the imports are inert ballast. Retiring them is cheap hygiene, not a cure,
+  and this appendix should say so rather than keep claiming a root.
+- **Mixed** → say which is which, per site.
+
+⛔ **Write the answer into §2.1 and delete the UNMEASURED flag.** A flag that outlives its question is
+the anti-pattern `CLAUDE.md` names. ⭐ And answer B7's twin question in the same sitting: **does
+`LafayettePark` mount on a non-LS look?** Site 10 has waited on that one question since 2026-07-31.
+
+## B.3 What "fixed" means here
+
+§5's three-way rule applies unchanged, and **site 9 is the worked example** — copy it:
+
+> the static LS import is gone; the store registers the **active scene's** fixture
+> (`setSceneMeasureSource`). No registration ⇒ **empty seed** ⇒ the generic type default, *which belongs
+> to no town*.
+
+⛔ **"Empty" is the honest zero. Never `|| lafayetteSquare`.** And ⛔ **a sentinel is not a value** —
+`0` / `null` / `''` must be distinguishable from *"not registered"* by the consumer, or you have built
+the same defect wearing a different hat (`project_a_sentinel_is_not_a_value`).
+
+⛔ **Not in scope: `blockCustoms` / `design.json` / per-scene authoring behaviour.** This is a *storage*
+change. If the map moves, you have changed something you were not asked to change — stop and say so.
+
+## B.4 ⭐⭐ THE DELIVERABLE IS THE CHECK — this is the part that reaches town #2
+
+Eight edits help nobody unless the ninth import can't be written. Per `CLAUDE.md` **Layer 0**, the fix
+is the **detector**, and per the prune rule a fact that can be checked by running something is a check,
+not prose.
+
+**Write `scratch/claims-no-static-shared-data-imports.mjs`:**
+- **PARSE** the source for static `import … from '…/data/<shared>.json'` — ⛔ never a hard-coded list of
+  the eight files, or it goes stale the day someone adds the ninth. Derive the shared-file set by
+  reading what actually sits at `src/data/*.json` versus what lives under `src/data/<look>/`.
+- **Exit 2** on any hit, naming file, line and the per-scene path it should use.
+- ⭐ **Pin the runtime rule it models** and refuse to report green if that rule has moved — the standing
+  pattern in `scratch/claims-*` (`HANDOFF-tree-render-2026-08-28`).
+- Add it to `§A.4`'s regression list as the **Class B static-import** arm.
+
+## B.5 Deliver
+
+1. **Act 0 answered and written into `EXTENT-DESIGN §2.1`**, flag deleted. Nothing else starts first.
+2. B1–B8 excised, **each landed separately, smallest first** (`EXTENT-DESIGN §6` step 4: *"Each import
+   is independent"*). B3 first — the pattern is already in that file's neighbourhood.
+3. B6 confirmed dead and **deleted**, or migrated if the confirmation fails.
+4. **`scratch/claims-no-static-shared-data-imports.mjs`** written, failing before and passing after.
+5. A short writeup: what landed, what Act 0 found, and whether any *new* bleed surfaced while looking.
+
+## B.6 Rules
+
+- ⛔ **Confirm alignment with Jacob before writing code** (`CLAUDE.md §Standup before code`).
+- ⛔ **Step 4 is NOT gated on `EXTENT-DESIGN §6` step 3.** Only step 5 ("conform LS, last") carries that
+  gate. Tomorrow is unblocked — do not wait on the two gate checks.
+- ⛔ **HPDM is the test surface, not LS** (§6 priority ruling, Jacob 2026-07-22): *"I can't abide HPDM
+  getting off on the wrong foot since it's the only actual commercially requested map."* LS is
+  production `lafayette-square.com` and is conformed **last**, ⛔ **never the night before a demo.**
+- ⛔ **The eye-gate is the operator's, on a non-LS scene.** A proxy render does not settle it
+  (`feedback_proxy_render_is_not_the_operator_eye`).
+- Everything inside the project folder. ⛔ **Do not start a dev server** — one is running.
+- ⚠️ **Do not `git restore public/baked/**`.**
+- B7/B8 share a file; B5/B6 share a data file. **Serialize within those pairs.**
+- Name yourself in the writeup.
+
+## B.7 ⛔ NOT IN SCOPE — the repo/folder rename
+
+Moving the project to `dev.nosync/the-ward/` and renaming the GitHub repo is a **separate, undocumented
+job** with a different risk profile (its only real coupling is the `lafayette-square-staging` external
+repo + its `--base=` in `.github/workflows/staging.yml`; nothing in `src/`, `cartograph/`, `arborist/`
+or `scripts/` references the folder name — only `scratch/*.mjs` absolute paths). ⛔ **Do not fold it in.**
+It has had no standup and no ruling. **Tracked as: nothing yet — it needs one.**
+
+**Tracked in `ROADMAP` as A00, and as `EXTENT-DESIGN §6` step 4.**
