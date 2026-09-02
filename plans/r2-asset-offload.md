@@ -245,6 +245,13 @@ the rest. `serve.js` is dev-only and local, so it can hold the R2 credentials in
    (§4), gitignore newly baked output, and remove the committed baked assets from HEAD
    (`git rm -r --cached public/baked` — HEAD only; ⛔ **no history rewrite**, the 4.41 GiB pack stays
    by decision).
+   ⛔⛔ **GATED ON A COMMAND, NOT A MEMORY: `node scripts/verify-baked-in-r2.mjs` must pass first.**
+   The uploader exits non-zero on a failed put, but that only covers *the run that happened* — it
+   cannot see an object deleted later, a pour never uploaded, or bytes that drifted. Once this step
+   lands, R2 is the ONLY copy a visitor reaches. The verifier re-walks the tree and re-applies the
+   exclusions itself rather than importing them, so it can DISAGREE with the uploader — a verifier
+   that shares its subject's definition of "everything" cannot catch a wrong definition
+   (`feedback_an_instrument_that_lies_toward_nothing_is_there`).
 6. **Verify again in a browser**, on staging then prod.
 7. Add `git clone --depth 1` to `README.md §Local development` (line 42). Full history stays
    4.41 GiB by decision; a shallow clone is what a new developer wants.
