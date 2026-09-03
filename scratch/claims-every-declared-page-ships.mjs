@@ -104,11 +104,18 @@ for (const look of looks) {
       if (gone.length > 6) console.log(`         … and ${gone.length - 6} more (not truncated silently: that is the count)`)
     }
     if (wontShip.length) {
-      console.log(`       ${wontShip.length} declared page(s) ON DISK BUT NOT IN GIT — they 404 on every deployed build,`)
-      console.log(`       and every local surface renders them, which is why this survives an eye-gate:`)
+      console.log(`       ${wontShip.length} declared page(s) ON DISK BUT NOT IN GIT.`)
+      console.log(`       ⚠️ THIS ARM'S PREMISE HAS MOVED AND THE VERDICT IS NOT SAFE TO ACT ON (2026-09-03).`)
+      console.log(`       It was written when the deploy was an actions/checkout. Since then .gitignore`)
+      console.log(`       ignores public/baked WHOLESALE and the slab is served from object storage`)
+      console.log(`       (src/lib/bakedUrl.js, VITE_ASSET_BASE), so "not in git" no longer implies "404s`)
+      console.log(`       on deploy" — it is now the EXPECTED state and this arm fires for every look.`)
+      console.log(`       ⛔ Left failing on purpose rather than quietly downgraded: the real ship test is`)
+      console.log(`       now "is the object in the bucket", which cannot be answered from this machine.`)
+      console.log(`       Re-point this at R2 or retire the arm — do not read it as a deploy verdict:`)
       for (const u of wontShip.slice(0, 6)) console.log(`         ${u}`)
       if (wontShip.length > 6) console.log(`         … and ${wontShip.length - 6} more (not truncated silently: that is the count)`)
-      console.log(`       ▶ git add public/baked/${look}/trees — and check .gitignore is not the reason`)
+      console.log(`       ▶ was: git add public/baked/${look}/trees — see the caveat above before doing that`)
     }
   } else {
     console.log(`  ✅ ${look.padEnd(24)} ${pages.length} declared (${mix}) — all ship — ${mb} MB resident`)
