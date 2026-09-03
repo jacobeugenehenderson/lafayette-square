@@ -146,11 +146,21 @@ export function HeroImpostorBaker({ runTick, lookId, species, azimuths = 6, shel
     const blocked = !gl ? 'no GL context'
       : !atlas?.treeMaterial ? 'the atlas material is not ready (loading, or invalidated)'
       : !lookId ? 'no active Look'
-      : !species?.length ? 'the batch is EMPTY — nothing was dirty, or the pool resolved to nothing'
       : null
     if (blocked) {
       console.warn(`[hero-impostor-bake] tick ${runTick} did NOT start: ${blocked}. `
         + `If this is the last line you see, the capture is stuck here.`)
+      return
+    }
+    // ⭐ AN EMPTY BATCH IS NOT A FAULT — IT IS A COMPLETED NO-OP, and conflating the two
+    // is what left the Grove sitting on "Hero 0/10…" forever with no error and no POST.
+    // Drain-on-bake means the steady state is "nothing is dirty", so this is the COMMON
+    // path, not an edge case. It must report DONE so the progress clears and the chain
+    // continues; only a real blocker above may warn and stall. (2026-09-03)
+    if (!species?.length) {
+      lastTick.current = runTick
+      console.log(`[hero-impostor-bake] tick ${runTick}: nothing dirty — no capture needed.`)
+      onDone?.({ ok: 0, fail: 0, failedNames: [], empty: true })
       return
     }
     lastTick.current = runTick

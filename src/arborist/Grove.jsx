@@ -352,7 +352,12 @@ export default function Grove() {
     // that is the waiting room, and the button says so.
     // Re-read dirt AFTER the roster bake — bake-look just rewrote the atlas, and a
     // species whose inputs moved becomes dirty exactly here.
-    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: overheadBatch.length }); setOverheadTick((t) => t + 1) }
+    // ⛔ NO TOTAL HERE. `overheadBatch` is this closure's STALE value — captured before the
+    // awaits above, when the atlas manifest had not loaded and `overheadDirty` therefore
+    // reported EVERY species dirty. That is where "Overhead 0/10…" came from while the
+    // baker was handed an empty batch: two different renders, two different answers.
+    // ⭐ The baker owns the total — it is the only party that knows the real batch.
+    if (overheadSpecies.length) { setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1) }
   }
   // ⭐⭐ ARRIVAL IS THE BAKE (Jacob, 2026-08-26). The Grove is "a little courtesy waiting area
   // so you can peruse and shop while the bake is happening" — so the tens of seconds the bake
@@ -390,7 +395,7 @@ export default function Grove() {
     if (!overheadSpecies.length) return
     forceAll.current = true          // repair gesture — ignore the fingerprints
     setOverheadResult(null); setHeroResult(null); setImpostorGapDismissed(false)
-    setOverheadProg({ done: 0, total: overheadSpecies.length }); setOverheadTick((t) => t + 1)
+    setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1)   // the baker owns the total
   }
 
   // Per-operator UI preference: tell the Meteorologist helper which tree
@@ -616,14 +621,13 @@ export default function Grove() {
               cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
               opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
             }}>
-            {groveBaking ? 'Baking…'
-              : (overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
-              : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
-              /* Arrival already fired the bake — once it lands these trees ARE the slab, and
-                 the button says so instead of inviting a gesture that has already happened.
-                 It stays clickable as the deliberate re-bake. */
-              : (groveBakeResult && !groveBakeResult.error) ? 'Ready ✓'
-              : 'Bake → Slab'}
+            {/* ⛔ A CONTROL MAY NOT LOSE ITS NAME. Both buttons used to overwrite their label
+                with the SAME capture-progress string, so mid-capture the operator faced two
+                identically-labelled buttons and no way to tell the bake from the repair
+                gesture — and the label was stale anyway. Progress belongs in the status
+                line, which already exists. (Jacob, 2026-09-03: "these controls are never
+                comprehensible.") */}
+            {groveBaking ? 'Baking…' : 'Bake → Slab'}
           </button>
           {/* RE-CAPTURE both impostor pools onto the already-baked slab (no roster
               re-bake). A repair/iteration gesture — Bake→Slab already runs both. */}
@@ -638,10 +642,24 @@ export default function Grove() {
               cursor: (groveBaking || !activeLookId) ? 'not-allowed' : 'pointer',
               opacity: (groveBaking || !activeLookId) ? 0.5 : 1,
             }}>
-            {(overheadProg && overheadProg !== 'done') ? `Overhead ${overheadProg.done}/${overheadProg.total}…`
-              : (heroProg && heroProg !== 'done') ? `Hero ${heroProg.done}/${heroProg.total}…`
-              : '⟳ Re-capture impostors'}
+            {'⟳ Re-capture impostors'}
           </button>
+          {/* ⭐ CAPTURE PROGRESS LIVES HERE NOW, and an empty batch says so in words. A
+              counter that sits at 0 is indistinguishable from a hang; "nothing to capture"
+              is the same fact an operator can act on. `total: null` = kicked, batch not
+              yet known — the baker fills it in on its first species. */}
+          {(() => {
+            const p = (overheadProg && overheadProg !== 'done') ? ['overhead', overheadProg]
+              : (heroProg && heroProg !== 'done') ? ['hero', heroProg]
+              : null
+            if (!p) return null
+            const [which, prog] = p
+            return (
+              <span style={{ color: '#bce0a0', fontSize: 11 }}>
+                capturing {which} {prog.total ? `${prog.done}/${prog.total}` : '…'}
+              </span>
+            )
+          })()}
           {groveBakeResult && !groveBaking && (
             <span style={{ color: groveBakeResult.error ? '#f88' : '#bce0a0', fontSize: 11 }}>
               {groveBakeResult.error
@@ -650,11 +668,15 @@ export default function Grove() {
               {overheadProg === 'done' && (
                 overheadResult?.fail
                   ? null
-                  : ` · overhead ✓ ${overheadResult?.ok ?? ''}`)}
+                  : overheadResult?.empty
+                    ? ' · overhead ✓ nothing to capture'
+                    : ` · overhead ✓ ${overheadResult?.ok ?? ''}`)}
               {heroProg === 'done' && (
                 heroResult?.fail
                   ? null
-                  : ` · hero ✓ ${heroResult?.ok ?? ''}`)}
+                  : heroResult?.empty
+                    ? ' · hero ✓ nothing to capture'
+                    : ` · hero ✓ ${heroResult?.ok ?? ''}`)}
 
             </span>
           )}
@@ -729,11 +751,11 @@ export default function Grove() {
             lookId={activeLookId}
             species={overheadBatch}
             onProgress={(done, total) => setOverheadProg({ done, total })}
-            onDone={({ ok, fail, failedNames }) => {
-              setOverheadProg('done'); setOverheadResult({ ok, fail, failedNames })
+            onDone={({ ok, fail, failedNames, empty }) => {
+              setOverheadProg('done'); setOverheadResult({ ok, fail, failedNames, empty })
               console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
               // Chain the hero capture (one GPU loop at a time). Same species list.
-              if (heroBatch.length) { setHeroProg({ done: 0, total: heroBatch.length }); setHeroTick((t) => t + 1) }
+              if (heroBatch.length) { setHeroProg({ done: 0, total: null }); setHeroTick((t) => t + 1) }
               else setHeroProg('done')
             }}
           />
@@ -744,8 +766,8 @@ export default function Grove() {
             lookId={activeLookId}
             species={heroBatch}
             onProgress={(done, total) => setHeroProg({ done, total })}
-            onDone={({ ok, fail, failedNames }) => {
-              setHeroProg('done'); setHeroResult({ ok, fail, failedNames })
+            onDone={({ ok, fail, failedNames, empty }) => {
+              setHeroProg('done'); setHeroResult({ ok, fail, failedNames, empty })
               console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`)
               // ⭐ The LAST step, and only now: both captures have POSTed into the manifest,
               // so this is the first moment the atlas on disk is the one the Grove should

@@ -143,7 +143,7 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
   useEffect(() => {
     if (!runTick) return
     // ⛔⛔ A CAPTURE THAT NEVER STARTS MUST NOT LOOK LIKE ONE THAT IS RUNNING.
-    // This effect had four silent `return`s. When any of them fired, the Grove header sat
+    // This effect had four silent `return`s (three remain; the fourth — an empty batch — is a no-op that now reports DONE, see below). When any of them fired, the Grove header sat
     // on "Overhead 0/10…" forever — no error, no timeout, no line — and the operator was
     // left to notice that a number never moved. (Jacob, 2026-08-27: "it stopped baking.")
     // Same defect shape as a fallback: a failure wearing the costume of progress.
@@ -151,11 +151,21 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
     const blocked = !gl ? 'no GL context'
       : !atlas?.treeMaterial ? 'the atlas material is not ready (loading, or invalidated)'
       : !lookId ? 'no active Look'
-      : !species?.length ? 'the batch is EMPTY — nothing was dirty, or the pool resolved to nothing'
       : null
     if (blocked) {
       console.warn(`[overhead-bake] tick ${runTick} did NOT start: ${blocked}. `
         + `Waiting for it to change; if this is the last line you see, the capture is stuck here.`)
+      return
+    }
+    // ⭐ AN EMPTY BATCH IS NOT A FAULT — IT IS A COMPLETED NO-OP, and conflating the two
+    // is what left the Grove sitting on "Overhead 0/10…" forever with no error and no POST.
+    // Drain-on-bake means the steady state is "nothing is dirty", so this is the COMMON
+    // path, not an edge case. It must report DONE so the progress clears and the chain
+    // continues; only a real blocker above may warn and stall. (2026-09-03)
+    if (!species?.length) {
+      lastTick.current = runTick
+      console.log(`[overhead-bake] tick ${runTick}: nothing dirty — no capture needed.`)
+      onDone?.({ ok: 0, fail: 0, failedNames: [], empty: true })
       return
     }
     lastTick.current = runTick
