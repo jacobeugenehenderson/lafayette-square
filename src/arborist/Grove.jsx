@@ -28,7 +28,7 @@ import * as THREE from 'three'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { OverheadBaker } from './OverheadBaker.jsx'
 import { HeroImpostorBaker } from './HeroImpostorBaker.jsx'
-import { partitionByDirt } from './captureKey.js'
+import { partitionByDirt, CAPTURE_FORMAT } from './captureKey.js'
 import { OverheadSpecies, useOverheadAssets } from '../components/OverheadTrees.jsx'
 import {
   useTreeAtlas, treeSwayUniforms,
@@ -318,11 +318,11 @@ export default function Grove() {
   const heroDials = useMemo(() => ({ azimuths: HERO_AZIMUTHS, shells: HERO_SHELLS }), [])
   const overheadDirty = useMemo(() => {
     if (!groveAtlas?.manifest) return overheadSpecies
-    return partitionByDirt(overheadSpecies, groveAtlas.manifest.overheadBySpecies, groveAtlas.manifest).dirty
+    return partitionByDirt(overheadSpecies, groveAtlas.manifest.overheadBySpecies, groveAtlas.manifest, () => null, CAPTURE_FORMAT.overhead).dirty
   }, [overheadSpecies, groveAtlas?.manifest])
   const heroDirty = useMemo(() => {
     if (!groveAtlas?.manifest) return overheadSpecies
-    return partitionByDirt(overheadSpecies, groveAtlas.manifest.heroImpostorBySpecies, groveAtlas.manifest, () => heroDials).dirty
+    return partitionByDirt(overheadSpecies, groveAtlas.manifest.heroImpostorBySpecies, groveAtlas.manifest, () => heroDials, CAPTURE_FORMAT.hero).dirty
   }, [overheadSpecies, groveAtlas?.manifest, heroDials])
   // What each baker actually receives this run — the dirty subset, or everything
   // when the operator forced a re-capture.

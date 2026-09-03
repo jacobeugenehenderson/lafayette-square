@@ -23,6 +23,35 @@
  * design exists to avoid.
  */
 
+/**
+ * ⭐⭐ THE CAPTURE FORMAT VERSION — bump this when the capture CODE changes what a page
+ * contains or how a stored measure is framed.
+ *
+ * ⛔ WHY IT EXISTS (2026-09-03). Every input below is a fact about the TREE — canopy dims,
+ * bark records, hero dials. None of them is a fact about the CAPTURE, so a record shot by
+ * older, buggier capture code was indistinguishable from a current one and was skipped
+ * forever. The 2026-08-28 frame fix (band cuts were made in the chassis-LOCAL frame while
+ * the camera clipped in WORLD metres) is the case that proved it: `FEATURES.md` promised
+ * "one Bake → Slab per Look clears it", and it could not, because nothing about that fix
+ * moved a fingerprint. LS was re-baked on 2026-09-03 and still carried three pre-fix
+ * records; `quercus_alba`'s overhead had not been re-shot since 08-25.
+ *
+ * ⭐ Kit-level, which is the whole point: a bump makes every affected record dirty BY
+ * CONSTRUCTION, in every town, on the next ordinary bake. No skip list, no per-town note,
+ * and no operator who has to know to press ⟳. The ⟳ repair gesture stays for the cases a
+ * fingerprint genuinely cannot see (a suspect asset on disk, a half-written capture).
+ *
+ * ⛔ A bump re-shoots EVERY species for that pool once, including records that happened to
+ * be fine. That is correct and not a cost to optimise away: we cannot tell post-hoc which
+ * code shot which record — that missing information IS the defect being closed.
+ *
+ * Per-pool so a hero-side change does not re-shoot every overhead band for nothing.
+ *   overhead 2 — 2026-08-28 capture frame (local-vs-world) + 2026-09-03 versioning
+ *   hero     2 — same
+ * (1 = the implicit, unversioned era: any record written before this constant existed.)
+ */
+export const CAPTURE_FORMAT = { overhead: 2, hero: 2 }
+
 // FNV-1a over the stable-stringified inputs. Short, dependency-free, and stable
 // across runs/machines (JSON.stringify with sorted keys — plain object key order
 // is insertion order, which differs between a fresh bake and a round-tripped file).
@@ -45,9 +74,10 @@ function fnv1a(str) {
  * @param {object} manifest  the look's trees-atlas.json
  * @param {string} species
  * @param {object} [dials]   capture parameters that change the output (hero: {azimuths, shells, albedoSize, aoSize})
+ * @param {number} [format]  the pool's CAPTURE_FORMAT version — see the constant above
  * @returns {string} the fingerprint
  */
-export function computeCaptureKey(manifest, species, dials = null) {
+export function computeCaptureKey(manifest, species, dials = null, format = null) {
   if (!manifest || !species) return ''
   const m = manifest
   return fnv1a(stableStringify({
@@ -57,6 +87,7 @@ export function computeCaptureKey(manifest, species, dials = null) {
     barkPosterized: m.barkPosterizedBySpecies?.[species] ?? null,
     deformer: m.deformerBySpecies?.[species] ?? null,
     dials: dials ?? null,
+    format: format ?? null,
   }))
 }
 
@@ -68,11 +99,11 @@ export function computeCaptureKey(manifest, species, dials = null) {
  *
  * @returns {{dirty: object[], current: object[]}}
  */
-export function partitionByDirt(speciesList, recordsBySpecies, manifest, dialsFor = () => null) {
+export function partitionByDirt(speciesList, recordsBySpecies, manifest, dialsFor = () => null, format = null) {
   const dirty = [], current = []
   for (const sp of speciesList) {
     const rec = recordsBySpecies?.[sp.species]
-    const key = computeCaptureKey(manifest, sp.species, dialsFor(sp))
+    const key = computeCaptureKey(manifest, sp.species, dialsFor(sp), format)
     if (!rec || !rec.captureKey || rec.captureKey !== key) dirty.push({ ...sp, captureKey: key })
     else current.push(sp)
   }
