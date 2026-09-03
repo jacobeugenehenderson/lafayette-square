@@ -114,11 +114,19 @@ for (const look of looks) {
     console.log(`  ✅ ${look.padEnd(24)} ${pages.length} declared (${mix}) — all ship — ${mb} MB resident`)
   }
 
-  // Not a failure: PNG is a first-class branch and a look that has never been packed
-  // legitimately declares it. But the cost is the difference between an embed that
-  // runs on a phone and one the browser kills, so it may not go unsaid.
+  // ⛔ A DECLARED .png IS A FAILURE. This used to be a ⭐ note that exit-0'd, on the
+  // reasoning that "a look that has never been packed legitimately declares PNG" —
+  // and that reasoning is how the regression below survived an instrument built to
+  // catch it. 2026-09-03: 420 of lafayette-square's 426 declared pages had reverted
+  // to PNG (77.9 MB where KTX2 is 22.3 MB) with every .ktx2 sitting un-referenced
+  // beside them; this check printed a star and passed. The pages are now born
+  // compressed at the capture handler (arborist/encode-ktx2.mjs), so a declared .png
+  // means one of two things and BOTH are defects: the page bypassed the encoder, or
+  // it predates it and the look has been shipping 4x its impostor VRAM since.
+  // ⭐ An instrument that whispers about the thing it exists to catch is the silence
+  // Layer 0 forbids — the operator sees a green run and never learns the map is heavy.
   if (byExt['.png']) {
-    const asKtx = (vram - (vram * 0)) // recompute honestly below
+    failed++
     let heavy = 0
     for (const url of pages) {
       if (path.extname(url).toLowerCase() !== '.png') continue
@@ -126,9 +134,10 @@ for (const look of looks) {
       const d = existsSync(abs) ? pngDims(abs) : null
       if (d) heavy += d[0] * d[1] * 3 * MIP   // the 4 bytes it costs now vs the 1 it would
     }
-    console.log(`     ⭐ ${byExt['.png']} page(s) still PNG — ${(heavy / 1e6).toFixed(0)} MB of resident memory that`)
-    console.log(`        transcoding would return.  ▶ node arborist/pack-impostor-ktx2.mjs --look=${look}`)
-    void asKtx
+    console.log(`     ⛔ ${byExt['.png']} declared page(s) are PNG, not KTX2 — ${(heavy / 1e6).toFixed(0)} MB of resident`)
+    console.log(`        memory this look pays for nothing. Pages are born compressed at capture;`)
+    console.log(`        a declared .png bypassed that or predates it.`)
+    console.log(`        ▶ node arborist/pack-impostor-ktx2.mjs --look=${look}`)
   }
 }
 

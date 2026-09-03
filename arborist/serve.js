@@ -12,6 +12,7 @@ import { execFile } from 'child_process'
 import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
+import { encodeToKtx2 } from './encode-ktx2.mjs'
 import { treeBakeInputsForScene, sceneForLook } from '../cartograph/tree-bake-inputs.mjs'
 import { DEFAULT_SCENE } from '../cartograph/config.js'
 import { publishLidarSpecies } from './lidar-publish.js'
@@ -1272,12 +1273,22 @@ const server = createServer(async (req, res) => {
           placements = await bakeTrees({ ...bakeArgs, lod: 'lod2', heroLook: lookName })
         }
         // 4. Pages — encode the impostor pool to KTX2/ETC1S and repoint the
-        //    manifest. ⛔ THIS MUST BE LAST AND IT MUST NOT BE OPTIONAL. Step 2
-        //    rewrites trees-atlas.json from source, so it hands back a manifest
-        //    declaring .png; without this step every pour silently un-does the
-        //    compression and the look ships ~1,121 MB of impostor VRAM instead of
-        //    ~280 MB — a 4× regression that looks exactly like a clean bake,
-        //    because PNG pages render perfectly on the desktop doing the baking.
+        //    manifest. Step 2 rewrites trees-atlas.json from source, so it hands
+        //    back a manifest declaring .png; without this the look ships ~1,121 MB
+        //    of impostor VRAM instead of ~280 MB — a 4× regression that looks
+        //    exactly like a clean bake, because PNG pages render perfectly on the
+        //    desktop doing the baking.
+        //    ⛔ THIS IS THE NET, NOT THE DEFENCE, and the difference is the whole
+        //    lesson. This comment used to read "THIS MUST BE LAST" — it IS last in
+        //    the request, and that was not last enough: the GPU capture passes run
+        //    in the BROWSER, after this response returns, and POST their own page
+        //    paths into the manifest (see the /overhead and /hero-impostor
+        //    handlers). Nothing re-packed after them, so every bake that captured
+        //    anything reverted the compression, and reverted MORE the better the
+        //    bake went. Measured 2026-09-03: 420 of LS's 426 declared pages back on
+        //    PNG. The real fix is that pages are now BORN compressed at those
+        //    handlers (encode-ktx2.mjs); this step stays because it is idempotent
+        //    and it repairs pages captured before that landed.
         //    That is the failure Layer 0 forbids, so a pack failure FAILS THE POUR
         //    rather than returning a green slab nobody can tell is heavy. The
         //    encoder is a hard requirement (`brew install basis_universal`), the
@@ -1558,10 +1569,15 @@ const server = createServer(async (req, res) => {
         mkdirSync(dir, { recursive: true })
         const decode = (dataUrl) => Buffer.from(String(dataUrl).replace(/^data:image\/png;base64,/, ''), 'base64')
         const bands = (body.bands || []).map((b) => {
+          // ⛔ ENCODE ON WRITE. The PNG stays on disk as the source of record;
+          // the MANIFEST declares the .ktx2, so this capture cannot un-do the
+          // compression the way it did before (see encode-ktx2.mjs). A failing
+          // encoder throws and fails the POST — never a .png fallback.
           const write = (kind, dataUrl) => {
             const file = `${b.key}.${kind}.png`
             writeFileSync(join(dir, file), decode(dataUrl))
-            return `/trees/overhead/${species}/${file}`
+            encodeToKtx2(join(dir, file), { force: true })
+            return `/trees/overhead/${species}/${file.replace(/\.png$/, '.ktx2')}`
           }
           return {
             key: b.key, yLoNorm: b.yLoNorm, yHiNorm: b.yHiNorm,
@@ -1615,10 +1631,12 @@ const server = createServer(async (req, res) => {
         const decode = (dataUrl) => Buffer.from(String(dataUrl).replace(/^data:image\/png;base64,/, ''), 'base64')
         const layers = (body.layers || []).map((l) => {
           const stem = `az${l.azimuthDeg}_${l.kind}${l.shellIdx}`
+          // ⛔ ENCODE ON WRITE — see the twin note in the overhead handler.
           const write = (chan, dataUrl) => {
             const file = `${stem}.${chan}.png`
             writeFileSync(join(dir, file), decode(dataUrl))
-            return `/trees/hero-impostor/${species}/${file}`
+            encodeToKtx2(join(dir, file), { force: true })
+            return `/trees/hero-impostor/${species}/${file.replace(/\.png$/, '.ktx2')}`
           }
           return {
             azIdx: l.azIdx, azimuthDeg: l.azimuthDeg,

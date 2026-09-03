@@ -35,7 +35,7 @@
  * --check reports what would change and exits 2 if any declared .ktx2 is missing.
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs'
-import { execFileSync } from 'node:child_process'
+import { assertEncoder, encodeToKtx2 } from './encode-ktx2.mjs'
 import path from 'node:path'
 
 const ROOT = path.join(import.meta.dirname, '..')
@@ -49,8 +49,8 @@ if (!existsSync(ATLAS)) { console.error(`[pack-ktx2] no trees-atlas.json for '${
 
 // ⛔ The encoder is a HARD requirement, not an optional accelerator. Silently
 // skipping would leave the manifest pointing at .ktx2 files that do not exist.
-try { execFileSync('basisu', ['-version'], { stdio: 'ignore' }) }
-catch { console.error('[pack-ktx2] `basisu` not on PATH — install it (brew install basis_universal). Refusing to rewrite paths without an encoder.'); process.exit(1) }
+try { assertEncoder() }
+catch (e) { console.error(`[pack-ktx2] ${e.message}`); process.exit(1) }
 
 const manifest = JSON.parse(readFileSync(ATLAS, 'utf8'))
 let encoded = 0, reused = 0, missing = 0, pngBytes = 0, ktxBytes = 0
@@ -69,13 +69,7 @@ for (const [holder, key] of pagePaths(manifest)) {
   const src = path.join(LOOK_DIR, rel)
   if (!existsSync(src)) { console.warn(`[pack-ktx2] ⛔ declared page missing on disk: ${declared}`); missing++; continue }
   const out = src.replace(/\.png$/i, '.ktx2')
-  if (!CHECK && (!existsSync(out) || statSync(out).mtimeMs < statSync(src).mtimeMs)) {
-    // ETC1S (basisu's default mode) + y_flip + mipmaps. -q 255 is the top ETC1S
-    // quality level; the pool is authored once and served forever, so encode time
-    // is irrelevant and quality is not.
-    execFileSync('basisu', ['-ktx2', '-y_flip', '-mipmap', '-q', '255', '-file', src, '-output_file', out], { stdio: 'ignore' })
-    encoded++
-  }
+  if (!CHECK && encodeToKtx2(src).encoded) encoded++
   if (existsSync(out)) { pngBytes += statSync(src).size; ktxBytes += statSync(out).size }
   else { missing++; continue }
   holder[key] = declared.replace(/\.png$/i, '.ktx2')
