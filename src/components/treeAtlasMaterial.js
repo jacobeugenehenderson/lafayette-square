@@ -2213,32 +2213,52 @@ const HERO_STAMP_FRAG = `
          diffuseColor.rgb *= litCardsRelight(ovN, ovAO);
          // ── THE TRUNK/GROUND JOINT ────────────────────────────────────────────
          // The operator's description: "a sample of the shadowed ground multiplied
-         // onto the trunk to blend the joint/connection point." That existed on the
-         // mesh path (injectFoliageSway) and died with the meshes — every card has
-         // met the ground as a hard edge since. This is the same construction on the
-         // card: sample the baked ground colour at the tree's world XZ, darken it by
-         // the FX map's G (its own contact-shadow ring) and lift it by R (lamp pool),
-         // then fade the card's lowest metres toward that effective ground colour.
+         // onto the trunk to blend the joint/connection point." It existed on the mesh
+         // path (injectFoliageSway) and died with the meshes — every card has met the
+         // ground as a hard edge since.
          //
-         // ⚠️ NOT A COPY-PASTE, AND THE DIFFERENCES ARE REAL. The mesh gates per-VERTEX
-         // on vBark; the card gates per-LAYER, because the hero stack already separates
-         // the woody layer (kind:'bark') into its own material — uCardIsBark is 1 only
-         // there. And the mesh's vLocalY is a mesh-local height while the card's is
-         // metres up a canopy-framed card, so a card whose frame starts ABOVE the blend
-         // band is correctly a no-op rather than a wrong answer.
+         // ⛔⛔ MULTIPLY, NEVER MIX — AND THE MESH PATH IS NOT THE MODEL TO COPY HERE.
+         // The mesh does mix(diffuseColor, groundColour, baseF), and on a mesh that is
+         // fine, because injectFoliageSway replaces <map_fragment> in a MeshStandard
+         // shader and every lighting chunk runs AFTER it: the mixed-in ground albedo is
+         // subsequently LIT along with everything else.
+         //
+         // A card has no subsequent lighting. Its relight already happened, two lines
+         // up. So lerping toward a raw ground albedo drops an UNLIT, UNDIMMED patch into
+         // an otherwise dimmed canopy — at night the trunk bases glow bright grass-green,
+         // brighter than anything around them, which is the opposite of a contact shadow.
+         // (Operator, 2026-09-04, with the picture: "It should be multiply. It should
+         // sample the color of the ground with the AO disc shadow.")
+         //
+         // ⭐ A MULTIPLY CANNOT GLOW. That is the structural reason it is the right
+         // operator here and not merely a nicer-looking one: it can only ever darken,
+         // so it composes with whatever light was already applied instead of competing
+         // with it. Sample the ground colour, darken it by the FX map's G — the baked
+         // contact-shadow disc under this very tree — and multiply that in over the
+         // lowest metres of the card.
+         //
+         // ⚠️ The other differences from the mesh are real too: the mesh gates
+         // per-VERTEX on vBark, the card per-LAYER (uCardIsBark, 1 only on the woody
+         // layer); and the card's vHeroLocalY is metres up a CANOPY-framed card, so a
+         // species whose frame starts above the band is correctly a no-op.
          if (uCardIsBark > 0.5 && uHasGroundColor > 0.5) {
            float baseF = smoothstep(uTrunkBlendTop, 0.0, vHeroLocalY) * uTrunkBlend;
            if (baseF > 0.001) {
              vec2 gcUV = (vHeroWorldXZ.xz - uGroundColorMin) / uGroundColorSpan;
              if (all(greaterThanEqual(gcUV, vec2(0.0))) && all(lessThanEqual(gcUV, vec2(1.0)))) {
                vec3 gcol = texture2D(uGroundColorMap, gcUV).rgb;
+               // The AO disc — the contact shadow this tree's own bake stamped into the
+               // ground (ground.poolmap.png G, the same channel the grass reads).
                vec2 fxUV = (vHeroWorldXZ.xz - uGroundFxMin) / uGroundFxSpan;
+               float contact = 0.0;
                if (all(greaterThanEqual(fxUV, vec2(0.0))) && all(lessThanEqual(fxUV, vec2(1.0)))) {
-                 vec4 gfx = texture2D(uGroundFxMap, fxUV);
-                 gcol *= (1.0 - gfx.g * uTrunkShadowStr);
-                 gcol += uTrunkPoolColor * gfx.r * uGroundFxScale * uTrunkPool;
+                 contact = texture2D(uGroundFxMap, fxUV).g;
                }
-               diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);
+               // ⛔ NO ADDITIVE LAMP-POOL TERM on the card. On the mesh it is added
+               // before lighting; here it would be added after, and an additive term
+               // after the relight is precisely the glow this fix removes.
+               vec3 shadowed = gcol * (1.0 - contact * uTrunkShadowStr);
+               diffuseColor.rgb *= mix(vec3(1.0), shadowed, baseF);
              }
            }
          }
@@ -2266,10 +2286,7 @@ const HERO_STAMP_FRAG_COMMON = LIT_CARDS_FRAG_COMMON + `
          uniform sampler2D uGroundFxMap;
          uniform vec2  uGroundFxMin;
          uniform vec2  uGroundFxSpan;
-         uniform float uGroundFxScale;
-         uniform float uTrunkShadowStr;
-         uniform float uTrunkPool;
-         uniform vec3  uTrunkPoolColor;`
+         uniform float uTrunkShadowStr;`
 
 // The hero VERTEX common — the shared wind block plus the two card axes the
 // fragment half needs. Declared here rather than in OVERHEAD_WIND_COMMON so the
@@ -2371,10 +2388,7 @@ export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}
     shader.uniforms.uGroundFxMap     = _groundColor.fxMapUniform
     shader.uniforms.uGroundFxMin     = _groundColor.fxMinUniform
     shader.uniforms.uGroundFxSpan    = _groundColor.fxSpanUniform
-    shader.uniforms.uGroundFxScale   = _groundColor.fxScaleUniform
     shader.uniforms.uTrunkShadowStr  = treeTrunkGround.shadowStrUniform
-    shader.uniforms.uTrunkPool       = _lampGlow.poolUniform
-    shader.uniforms.uTrunkPoolColor  = _lampGlow.colorUniform
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + HERO_VERT_COMMON)

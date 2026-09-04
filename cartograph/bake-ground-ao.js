@@ -265,6 +265,18 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   const POOL_MAX         = 3.0  // R encode headroom so overlaps build un-clipped
   const TREE_SHADOW_RADIUS_M = 4.5  // tree contact-shadow reach (m)
   const TREE_SHADOW_STR      = 0.7  // per-tree shadow contribution (0..1, summed)
+  // ⭐ THE FALLOFF SHAPE IS THE WHOLE DISC, NOT THE REACH. The reach has said 4.5 m
+  // since this was written, but the profile was (1−rn)² — quadratic, which puts
+  // essentially all of the darkening inside the first ~1.5 m and is down to 8% of
+  // peak at 70% of the radius. Measured on LS 2026-09-04, G along a radius from a
+  // strong centre: 207 → 61 (1.6 m) → 9 (3.2 m) → 0 (4.8 m). So a tree darkened a
+  // small patch directly under itself and the ground a metre away was untouched:
+  // the trunk went dark against bright grass with nothing between them.
+  // ⛔ It reads as "there is no disc", and the operator reported exactly that.
+  // A contact shadow wants a FLAT CORE and a SOFT SHOULDER — full strength under the
+  // crown, easing out at the rim — which is what smoothstep gives and a squared
+  // falloff cannot. CORE is the fraction of the radius held at full strength.
+  const TREE_SHADOW_CORE     = 0.15 // inner fraction held at full strength
   const LAMP_SHADOW_RADIUS_M = 2.5  // lamp-base contact-shadow reach (m)
   const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
   const FX_SIZE = 1024
@@ -368,11 +380,18 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         console.log(`[bake-ao] tree contact shadows: ${shadowTrees.length}/${trees.length} `
           + `(${trees.length - shadowTrees.length} withheld — they draw nothing)`)
       }
+      // Flat core → soft shoulder. See TREE_SHADOW_CORE above for why this is not
+      // the squared falloff it replaces.
+      const contactFalloff = (rn, core) => {
+        if (rn <= core) return 1
+        const t = (rn - core) / (1 - core)
+        return 1 - (t * t * (3 - 2 * t))          // smoothstep, inverted
+      }
       for (const t of shadowTrees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
-        accG[i] += (1 - rn) * (1 - rn) * TREE_SHADOW_STR
+        accG[i] += contactFalloff(rn, TREE_SHADOW_CORE) * TREE_SHADOW_STR
       })
       for (const l of lamps) splat(l.x, l.z, LAMP_SHADOW_RADIUS_M, (i, rn) => {
-        accG[i] += (1 - rn) * (1 - rn) * LAMP_SHADOW_STR
+        accG[i] += contactFalloff(rn, TREE_SHADOW_CORE) * LAMP_SHADOW_STR
       })
       const fpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
       for (let i = 0; i < accR.length; i++) {
