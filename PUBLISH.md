@@ -278,15 +278,36 @@ look — a town that fails to load and shows Lafayette Square is not a bug an op
 The bake endpoint runs `scripts/upload-baked-to-r2.mjs` as its **last step** and **fails the bake**
 (500) if the upload fails — a green bake that reached nothing is the one outcome worth refusing.
 
-⚠️ **One bucket serves staging and production at the same URLs, so a re-pour is live everywhere the
-moment it uploads — it does not wait for a push to `main`.** That is not a lost gate: `PREVIEW.md
-§0.2` settled in 2026-06-30 that *staging is redundant for slab-data* — **Preview is the gate for a
-slab; the buttons ship code.** Per-environment prefixes are the fix if it ever bites.
+⭐ **A bake may only ever write `staging/`; `--env=prod` is the separate, deliberate promotion.**
+*(The paragraph that stood here — "one bucket serves staging and production at the same URLs… per-
+environment prefixes are the fix if it ever bites" — is retired: it bit on 2026-09-03 and the
+prefixes landed. `--env` is now required and has no default.)*
+
+⭐ **The upload is INCREMENTAL.** It HEADs every key and re-puts only what is missing or whose bytes
+differ, comparing the local MD5 against R2's ETag — so a pour whose dirty-gate skipped every bake
+step now costs ~15 s instead of re-putting all 915 objects. ⛔ **Every uncertain answer uploads**
+(absent, wrong size, a multipart ETag it cannot compare, a network error): the check may only remove
+work it has *proven* redundant, so its failure mode is a slow pour, never a hole in the slab.
+
+⛔ **A failed put is RETRIED (4 attempts, backoff) before it counts as a failure.** R2 returns a
+transient 500 on a small fraction of puts; at 915 objects that reliably killed a whole pour and named
+a file that was perfectly fine (measured 2026-09-04: one run failed 3 objects, the next failed 1, a
+*different* one, and a hand re-put succeeded first try). ⛔ This is not a fallback — an exhausted put
+still names its key and still exits non-zero.
 
 ```bash
-node scripts/upload-baked-to-r2.mjs --dry-run     # what would go, and what is excluded by rule
-node scripts/verify-baked-in-r2.mjs               # reads the BUCKET, compares to disk — run after every pour
+node scripts/upload-baked-to-r2.mjs --env=staging --dry-run   # what would go, and what is already current
+node scripts/upload-baked-to-r2.mjs --env=staging --force     # re-put everything, skip the dirty-check
+
+# ⭐ Verify — the INDEPENDENT completeness gate; run after every pour. Note the env prefix:
+node scripts/verify-baked-in-r2.mjs --look=<look>                                    # prod keys
+ASSET_BASE=https://assets.theward.online/staging/ \
+  node scripts/verify-baked-in-r2.mjs --look=<look>                                  # staging keys
 ```
+
+⛔ **The uploader's dirty-check is not a completeness gate and cannot be used as one** — it shares the
+uploader's idea of "everything." `verify-baked-in-r2.mjs` re-walks the tree and re-applies the
+exclusions itself, which is the only reason it can catch a wrong definition.
 
 ⛔ **`upload-baked-to-r2.mjs`'s `EXCLUDE` list is load-bearing and is now the only home for two
 decisions `.gitignore` used to enforce**: `lod0` (353.3 MB the runtime cannot request) and the atlas

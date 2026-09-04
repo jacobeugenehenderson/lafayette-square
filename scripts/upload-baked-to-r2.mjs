@@ -5,6 +5,14 @@
  *   node scripts/upload-baked-to-r2.mjs --env=staging --dry-run   # plan only
  *   node scripts/upload-baked-to-r2.mjs --env=staging --look=altadena
  *   node scripts/upload-baked-to-r2.mjs --env=prod                # promote, all looks
+ *   node scripts/upload-baked-to-r2.mjs --env=staging --force     # re-put everything
+ *
+ * ⭐ INCREMENTAL BY DEFAULT. It HEADs each key first and puts only what is missing or
+ * whose bytes differ (`probe`); `--force` puts everything. Every uncertain answer
+ * uploads, so the check can only ever remove PROVEN-redundant work.
+ * ⛔ It is not a completeness gate and cannot be used as one — `verify-baked-in-r2.mjs`
+ * is, and it re-derives the answer independently:
+ *   ASSET_BASE=https://assets.theward.online/staging/ node scripts/verify-baked-in-r2.mjs --look=<look>
  *
  * ⛔⛔ `--env` IS REQUIRED AND HAS NO DEFAULT, and that is the whole point of this file
  * since 2026-09-03. Before it, every bake wrote the keys PRODUCTION reads: one bucket,
@@ -38,11 +46,12 @@
  * uploaded slab that reports success is the worst outcome available here: the map
  * renders and the canopy does not, and nobody is told (`CLAUDE.md` Layer 0, q2).
  */
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, statSync, createReadStream } from 'node:fs'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
+import { createHash } from 'node:crypto'
 
 const execFileAsync = promisify(execFile)
 const REPO_ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -50,6 +59,13 @@ const BAKED_ROOT = join(REPO_ROOT, 'public/baked')
 
 /** The bucket. Override with R2_BUCKET for a staging/scratch bucket. */
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
+
+/**
+ * The public origin the bucket is served from, used ONLY by the dirty-check to read
+ * back what is already there. Keys already carry their env prefix, so one base serves
+ * both environments. Same default as `verify-baked-in-r2.mjs`.
+ */
+const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/').replace(/\/?$/, '/')
 
 /**
  * ⭐ ONE BUCKET, TWO PREFIXES. `prod` keeps the historical un-prefixed keys so promoting
@@ -144,17 +160,87 @@ function plan({ look, prefix }) {
 
 const mb = (b) => (b / 1048576).toFixed(1) + ' MB'
 
+/**
+ * ⛔ RETRY. R2's API returns a transient 500 on a small fraction of puts, and at 915
+ * objects a sub-1% per-request failure rate reliably kills a whole pour: one casualty
+ * fails the bake (`cartograph/serve.js`), so the operator waits out the full upload and
+ * gets a red box naming a file that is perfectly fine. Measured 2026-09-04 — one run
+ * failed 3 objects, the next failed 1, a DIFFERENT one, and re-putting it by hand
+ * succeeded on the first attempt.
+ * ⭐ `verify-baked-in-r2.mjs` already learned exactly this ("a transient socket error is
+ * not a missing object… 418 false MISSINGs under concurrency") and the uploader — same
+ * bucket, same concurrency, same class of error — never got the lesson.
+ * ⛔ This is NOT a fallback: attempts are bounded, and an exhausted put still lands in
+ * `failures`, still names its key, and still exits non-zero. It converts a flaky
+ * transport into a slow one, never a failure into a success.
+ */
+const RETRIES = 4
+async function withRetry(label, fn) {
+  let lastErr
+  for (let attempt = 0; attempt < RETRIES; attempt++) {
+    try { return await fn() } catch (err) {
+      lastErr = err
+      if (attempt < RETRIES - 1) await new Promise((r) => setTimeout(r, 400 * 2 ** attempt))
+    }
+  }
+  throw lastErr
+}
+
 async function put({ abs, key }) {
   const args = ['wrangler', 'r2', 'object', 'put', `${BUCKET}/${key}`,
     '--file', abs, '--remote',
     '--content-type', MIME[extname(key).toLowerCase()] || 'application/octet-stream',
     '--cache-control', CACHE_CONTROL]
-  await execFileAsync('npx', args, { cwd: REPO_ROOT, maxBuffer: 1 << 24 })
+  await withRetry(key, () => execFileAsync('npx', args, { cwd: REPO_ROOT, maxBuffer: 1 << 24 }))
+}
+
+const md5 = (abs) => new Promise((res, rej) => {
+  const h = createHash('md5')
+  createReadStream(abs).on('data', (d) => h.update(d)).on('error', rej)
+    .on('end', () => res(h.digest('hex')))
+})
+
+/**
+ * ⭐ THE DIRTY-CHECK — ask the REMOTE what is already there, never a local memory of it.
+ * A manifest of "what we uploaded last time" is a memory, and it cannot see an object
+ * deleted out from under it; the ETag on the object can. For a single-part put R2's ETag
+ * IS the MD5 of the bytes, so a match is proof of identity, not a proxy for it.
+ *
+ * ⛔ EVERY UNCERTAIN ANSWER UPLOADS. Absent, wrong size, non-200, a multipart ETag we
+ * cannot compare (`<md5>-<n>`), or a network error that outlived its retries — all fall
+ * through to a re-put. The check may only ever REMOVE work it has positively proven
+ * redundant, so its failure mode is a slow pour, never a silent hole in the slab.
+ * ⚠️ It reads through the CDN, whose Cache-Control is 300s. A stale edge answer can only
+ * disagree with fresh local bytes, which uploads — the safe direction. `--force` skips
+ * the check entirely; `verify-baked-in-r2.mjs` remains the independent completeness gate.
+ */
+async function probe(files, conc) {
+  const fresh = new Set()
+  let done = 0
+  const queue = [...files]
+  await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
+    for (let f = queue.pop(); f; f = queue.pop()) {
+      try {
+        const r = await withRetry(f.key, () => fetch(PUBLIC_BASE + f.key, {
+          method: 'HEAD', headers: { 'accept-encoding': 'identity' },
+        }))
+        const etag = (r.headers.get('etag') || '').replace(/^W\//, '').replace(/"/g, '')
+        if (r.ok && Number(r.headers.get('content-length')) === f.bytes
+            && etag && !etag.includes('-') && etag === await md5(f.abs)) {
+          fresh.add(f.key)
+        }
+      } catch { /* uncertain ⇒ upload */ }
+      if (++done % 100 === 0 || done === files.length) process.stdout.write(`\r  probed ${done}/${files.length}`)
+    }
+  }))
+  process.stdout.write('\n')
+  return fresh
 }
 
 async function main() {
   const argv = process.argv.slice(2)
   const dryRun = argv.includes('--dry-run')
+  const force = argv.includes('--force')
   const look = argv.find((a) => a.startsWith('--look='))?.split('=')[1]
   const conc = Number(argv.find((a) => a.startsWith('--concurrency='))?.split('=')[1] || 8)
   const env = resolveEnv(argv)
@@ -180,16 +266,31 @@ async function main() {
   }
   console.log(`cache    ${CACHE_CONTROL}`)
 
+  // ⭐ Only put what is not already there, byte-for-byte. A pour whose dirty-gate skipped
+  // every bake step used to re-put all 915 objects anyway — ~915 `npx wrangler` spawns
+  // for zero changed bytes, which is most of the wait an operator sits through.
+  let pending = files
+  if (!force) {
+    console.log(`probe    reading ${files.length} objects back from ${PUBLIC_BASE}`)
+    const fresh = await probe(files, Math.max(conc, 16))
+    pending = files.filter((f) => !fresh.has(f.key))
+    console.log(`unchanged ${fresh.size} objects already identical in R2 — not re-uploaded`)
+    console.log(`to upload ${pending.length} files, ${mb(pending.reduce((s, f) => s + f.bytes, 0))}`)
+  } else {
+    console.log(`probe    SKIPPED (--force) — re-uploading every object`)
+  }
+
   if (dryRun) { console.log('\n--dry-run: nothing uploaded.'); return }
+  if (!pending.length) { console.log(`\n✅ ${files.length} objects, ${mb(total)} → ${BUCKET} (all already current)`); return }
 
   let done = 0
   const failures = []
-  const queue = [...files]
+  const queue = [...pending]
   await Promise.all(Array.from({ length: Math.max(1, conc) }, async () => {
     for (let f = queue.pop(); f; f = queue.pop()) {
       try { await put(f) } catch (err) { failures.push({ key: f.key, err: err.stderr || err.message }) }
-      if (++done % 50 === 0 || done === files.length) {
-        process.stdout.write(`\r  ${done}/${files.length}`)
+      if (++done % 50 === 0 || done === pending.length) {
+        process.stdout.write(`\r  ${done}/${pending.length}`)
       }
     }
   }))
@@ -197,12 +298,12 @@ async function main() {
 
   // ⛔ Loud. A partial slab must never exit 0.
   if (failures.length) {
-    console.error(`\n⛔ ${failures.length} of ${files.length} objects FAILED — the slab in R2 is INCOMPLETE.`)
+    console.error(`\n⛔ ${failures.length} of ${pending.length} objects FAILED after ${RETRIES} attempts each — the slab in R2 is INCOMPLETE.`)
     for (const f of failures.slice(0, 20)) console.error(`   ${f.key}\n     ${String(f.err).trim().split('\n')[0]}`)
     if (failures.length > 20) console.error(`   …and ${failures.length - 20} more`)
     process.exit(1)
   }
-  console.log(`\n✅ ${files.length} objects, ${mb(total)} → ${BUCKET}`)
+  console.log(`\n✅ ${files.length} objects, ${mb(total)} → ${BUCKET} (${pending.length} uploaded, ${files.length - pending.length} already current)`)
 }
 
 main().catch((err) => { console.error(`⛔ ${err.message}`); process.exit(1) })
