@@ -94,20 +94,17 @@ The scene DOES have soft shadow maps (`Scene.jsx:980` `shadows='soft'`, sun `cas
 ⚠️ Cards are `MeshBasicMaterial`, which cannot receive a shadow at all, so "receive" is
 blocked until the material question (Q1) is answered. "Cast" is not blocked the same way.
 
-**⛔⛔ AND A LIVE BUG, MEASURED 2026-09-03: 73% OF RENDERED TREES CAST NO GROUND SHADOW.**
-`cartograph/bake-ground-ao.js:335` splats the baked ground contact shadow for
-`trees.filter(t => t.heroTier !== 'cull')` — **1408 of 5146**. Its reasoning was sound when
-written ("cull placements draw nothing, so splatting their shadow leaves an orphan soft
-circle on bare grass", 2026-06-29) and is now FALSE: `heroTier` reaches no pixel on a
-foundation-on slab (it drives only the QC tint), it marks 3850 as cull, and all 5146
-placements render as impostors. The filter is the exact inverse of its own intent — it now
-REMOVES shadows from trees that are there.
-⭐ The honest predicate is "does this placement draw", which after 2026-09-03 is
-`meshTier`/`heroRole`, not `heroTier`. ⛔ Fix the predicate; do not delete the filter — the
-orphan-circle defect it prevents is real and will come straight back.
-▶ `node scratch/claims-every-shadowed-placement-renders.mjs` is the existing check for this
-class and it passes on LS today — because it asks whether shadowed placements RENDER, not
-whether rendered placements are SHADOWED. It is blind to this direction; sharpen it.
+**✅ FIXED 2026-09-03 (`b29201cc`) — the ground contact shadow now covers 5146/5146.** It
+had been `trees.filter(t => t.heroTier !== 'cull')` — 1408 of 5146 — a predicate that was
+correct when heroTier gated rendering and became the exact inverse of its own intent once
+the hero foundation took over. Recorded here because the LESSON is yours to inherit, not
+the bug: ⛔ **`heroTier` reaches no pixel on a foundation-on slab.** If you find yourself
+reading it, you are reading the wrong field; the ones that decide are `meshTier` and
+`heroRole`.
+⚠️ **Still owed:** `scratch/claims-every-shadowed-placement-renders.mjs` passes on LS and
+always would have — it asks whether SHADOWED placements render, never whether RENDERED
+placements are shadowed. Blind in exactly the direction that broke. Sharpening it is in
+scope for you.
 
 ## ⭐ THE TRUNK/GROUND JOINT BLEND — built, still in the code, and MESH-ONLY
 
