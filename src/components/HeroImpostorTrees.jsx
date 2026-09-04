@@ -40,9 +40,14 @@ import { ASSET_BASE } from '../lib/bakedUrl.js'
 //
 // ⛔ Placement is DECOUPLED from the capture (`impostorGeometry.js:359` — the
 // bark layer captures FULL depth), so this is a card-position change and needs
-// NO re-shoot. null = use the baked value, so the map is bit-identical until
-// someone turns it. Dial by eye: `?barkDepth=0.5`.
-export const heroImpostorStack = { barkDepth: null }
+// NO re-shoot. Dial by eye: `?barkDepth=`.
+//
+// ⭐ DEFAULT 0.5 SINCE 2026-09-04 — the sandwich is now what ships, on the
+// operator's direct call at the eye: "trunk is between front and back, like a
+// real tree." This slot used to default to null (= the baked 1.0, trunk behind
+// everything), which is the arrangement the paragraph above already described as
+// NOT the intended design. It is a card position, so nothing re-bakes.
+export const heroImpostorStack = { barkDepth: 0.5 }
 export function setHeroImpostorStack({ barkDepth } = {}) {
   heroImpostorStack.barkDepth = Number.isFinite(barkDepth)
     ? Math.max(0, Math.min(1, barkDepth))

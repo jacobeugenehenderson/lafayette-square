@@ -263,27 +263,24 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   const POOL_RING_SHARP  = 4.5  // ring sharpness; LOWER = blurrier ring
   const POOL_SHADOW_FRAC = 0.18 // center radius the pole blocks its own light
   const POOL_MAX         = 3.0  // R encode headroom so overlaps build un-clipped
-  // ⚠️ REACH AND PROFILE ARE COUPLED — changing one without the other is how this
-  // got wrong twice. 4.5 m was set when the falloff was (1−rn)², which threw away
-  // everything past ~1.5 m, so the number in the constant and the disc on the
-  // ground disagreed by 3×. Giving it a readable profile made the SAME 4.5 m read
-  // at its true size for the first time, and it was far too big (operator, at the
-  // eye, 2026-09-04). The reach now means what it says, so it is set to what a
-  // tree's contact shadow should actually cover.
-  const TREE_SHADOW_RADIUS_M = 2.75 // tree contact-shadow reach (m)
-  const TREE_SHADOW_STR      = 0.7  // per-tree shadow contribution (0..1, summed)
-  // ⭐ THE FALLOFF SHAPE IS THE WHOLE DISC, NOT THE REACH. The reach has said 4.5 m
-  // since this was written, but the profile was (1−rn)² — quadratic, which puts
-  // essentially all of the darkening inside the first ~1.5 m and is down to 8% of
-  // peak at 70% of the radius. Measured on LS 2026-09-04, G along a radius from a
-  // strong centre: 207 → 61 (1.6 m) → 9 (3.2 m) → 0 (4.8 m). So a tree darkened a
-  // small patch directly under itself and the ground a metre away was untouched:
-  // the trunk went dark against bright grass with nothing between them.
-  // ⛔ It reads as "there is no disc", and the operator reported exactly that.
-  // A contact shadow wants a FLAT CORE and a SOFT SHOULDER — full strength under the
-  // crown, easing out at the rim — which is what smoothstep gives and a squared
-  // falloff cannot. CORE is the fraction of the radius held at full strength.
-  const TREE_SHADOW_CORE     = 0.0  // inner fraction held at full strength
+  // ⭐⭐ A TREE GROUNDS ITSELF WITH TWO SHADOWS, NOT ONE (Jacob, 2026-09-04):
+  // "a large soft disc for generic depth but contact shadow at transition point."
+  // They are different phenomena and neither substitutes for the other:
+  //   AMBIENT  — the crown occluding the sky over its whole footprint. Broad, soft,
+  //              weak. Gives the tree depth on the ground; says nothing about where
+  //              the trunk is.
+  //   CONTACT  — the hard, dark, TIGHT darkening where trunk meets soil. Only a
+  //              little wider than the trunk. This is the one that reads as
+  //              "touching", and it is the one that was missing.
+  // ⛔ THE HISTORY, BECAUSE IT COST A ROUND: the ambient term has been correct since
+  // 79a2f43d — 4.5 m reach with a (1−rn)² falloff, a PAIR that was tuned together and
+  // deliberately concentrates inside ~1.5 m. Reading the reach without the profile, I
+  // "fixed" the falloff to smoothstep, which made that same 4.5 m read at full size
+  // and was immediately far too big. The ambient term below is restored EXACTLY as it
+  // was. What was actually missing was never the disc's size — it was the second term.
+  const TREE_SHADOW_RADIUS_M = 4.5  // ambient reach (m) — pairs with (1−rn)², do not split
+  const TREE_SHADOW_STR      = 0.7  // per-tree ambient contribution (0..1, summed)
+
   const LAMP_SHADOW_RADIUS_M = 2.5  // lamp-base contact-shadow reach (m)
   const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
   const FX_SIZE = 1024
@@ -387,18 +384,23 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
         console.log(`[bake-ao] tree contact shadows: ${shadowTrees.length}/${trees.length} `
           + `(${trees.length - shadowTrees.length} withheld — they draw nothing)`)
       }
-      // Flat core → soft shoulder. See TREE_SHADOW_CORE above for why this is not
-      // the squared falloff it replaces.
-      const contactFalloff = (rn, core) => {
-        if (rn <= core) return 1
-        const t = (rn - core) / (1 - core)
-        return 1 - (t * t * (3 - 2 * t))          // smoothstep, inverted
-      }
+      // ① AMBIENT — the broad soft disc. Untouched since 79a2f43d.
       for (const t of shadowTrees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
-        accG[i] += contactFalloff(rn, TREE_SHADOW_CORE) * TREE_SHADOW_STR
+        accG[i] += (1 - rn) * (1 - rn) * TREE_SHADOW_STR
       })
+      // ② CONTACT — ⛔ NOT HERE, AND THE REASON IS ARITHMETIC, NOT TASTE.
+      // Built, measured, removed 2026-09-04. This map is 1024² over 1639 m =
+      // 1.60 m PER TEXEL. A contact patch "slightly larger than the trunk" is ~0.9 m
+      // of radius — 0.56 of one texel. It cannot be drawn here: the splat only
+      // darkened the single centre texel (207 → 231) and bilinear filtering smeared
+      // that straight back into the soft blob it was meant to be distinct from.
+      // Expressing it would need ~0.25 m/texel, i.e. 6–8k² for one town's ground.
+      // ⭐ SO THE CONTACT TERM BELONGS ON THE TREE, NOT ON THE GROUND — the trunk-base
+      // ground multiply in treeAtlasMaterial's hero stamp, which is drawn at CARD
+      // resolution and has no texel budget to run out of. The ground owns the large
+      // soft ambient disc; the card owns the transition point.
       for (const l of lamps) splat(l.x, l.z, LAMP_SHADOW_RADIUS_M, (i, rn) => {
-        accG[i] += contactFalloff(rn, TREE_SHADOW_CORE) * LAMP_SHADOW_STR
+        accG[i] += (1 - rn) * (1 - rn) * LAMP_SHADOW_STR
       })
       const fpx = new Uint8Array(FX_SIZE * FX_SIZE * 4)
       for (let i = 0; i < accR.length; i++) {
