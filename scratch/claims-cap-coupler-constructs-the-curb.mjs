@@ -150,6 +150,13 @@ sh.tiles.forEach((t, ti) => {
     const st = stBySkel.get(c.skelId); if (!st) continue
     const tipAtStart = c.capEnd !== 'end'
     const tip = tipAtStart ? st.points[0] : st.points[st.points.length - 1]
+    // ⛔ LAYER 0 q3: the operator's cap-selector writes `capEnds`, which WINS over the
+    // derived `caps[k].cap` (tileGround.js:2966). A BLUNT cap has no bulb — building a
+    // round coupler there measures the operator's authoring and calls it a defect.
+    const kEnd = c.capEnd === 'end' ? 'end' : 'start'
+    const authoredCap = st.capEnds?.[kEnd] || (kEnd === 'start' ? st.capStart : st.capEnd)
+    const capStyle = (authoredCap && authoredCap !== 'none') ? authoredCap : (st.caps?.[kEnd]?.cap || 'round')
+    if (capStyle !== 'round') { rows.push({ id: c.skelId, skip: `cap style '${capStyle}'${authoredCap && authoredCap !== 'none' ? ' (AUTHORED)' : ''} — no round coupler to build` }); continue }
     const hw = hwAt(t, c.skelId, tip)
     if (!Number.isFinite(hw.left) || !Number.isFinite(hw.right)) { rows.push({ id: c.skelId, skip: 'no per-side run at the tip' }); continue }
     const A = buildAndScore(st.points, tipAtStart, hw.left, hw.right, rings, +1, t, c.skelId)
