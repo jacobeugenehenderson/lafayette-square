@@ -184,7 +184,11 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
           transparent: false, alphaTest: 0.4,
           side: THREE.DoubleSide, depthWrite: true, toneMapped: false,
         })
-        injectHeroImpostorStamp(mat, layer.aoTex)
+        // ⭐ Front canopy leads, rear shell and trunk trail — the wave's depth axis.
+        // `cardDepthFrac` already encodes where this layer sits front-to-back (0.25 front
+        // leaf shell, 0.75 rear leaf shell, 1.0 bark), so the depth the wave wants is the
+        // depth the capture already recorded. No new data, no new pages.
+        injectHeroImpostorStamp(mat, layer.aoTex, layer.cardDepthFrac ?? 0)
         out.push({ key: `az${azSet.azIdx}_${layer.kind}${layer.shellIdx}`, geo, mat, instances: groupInstances })
       }
     }
