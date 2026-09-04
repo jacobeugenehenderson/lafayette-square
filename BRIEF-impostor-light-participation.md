@@ -48,6 +48,36 @@ intentional.
 ⭐ So the test is a PAIR: same camera, same frame, before and after. The trees must be
 recognisably the same trees, differing only in how the light falls on them.
 
+## Wiring already traced (2026-09-03) — confirm, don't re-derive
+
+- **The sun's world direction exists and is NOT published.** `CelestialBodies.jsx:1280`
+  returns `sunDir: _sunD` from the `lighting` useMemo — the same value the sky dome and the
+  directional light consume. Nothing outside that component can see it.
+  ⛔ **PUBLISH IT FROM THERE; DO NOT RECOMPUTE IT.** Two derivations of one physical fact is
+  the exact defect class that produced BOTH the tree-height bug and the capture-frame bug
+  the same night — a second `sunAlt/sunAz` computation will drift and nothing will notice.
+- The card relight is bound in exactly **two** places, `injectOverheadStamp` and
+  `injectHeroImpostorStamp`, and both read the same `overheadLightUniforms {uAmbient, uSun}`
+  (`treeAtlasMaterial.js:2016`). That object is where a direction and a feature flag belong.
+- `OverheadTrees.jsx:60-68` drives those scalars per frame off
+  `useAtmosphere.getState().tweenedDirective.lightDome.ambientFloor`. Weather already
+  reaches the cards; only DIRECTION is missing.
+- **A card is a Y-axis billboard**, so it always faces camera: in VIEW space its facing is
+  +Z. A synthetic normal from the card UV (a hemisphere bulge) plus the sun direction taken
+  into view space is a real directional term needing NO new pages — worth measuring as a
+  first step before committing to a baked normal channel.
+
+⛔⛔ **SHIP IT BEHIND A FLAG, DEFAULTING TO TODAY'S LOOK.** The rule, from
+`InstancedTrees.jsx:938`: *a shared change ships as a knob defaulting to TODAY'S values, so
+the map is unchanged until someone turns it.* I broke that rule on the hero band the same
+night and it cost the operator two rounds of vanished trees. `?litCards=1` + a
+`window.__setLitCards()` setter, default 0.
+
+⚠️ **AND VERIFY THE SHADER LINKS.** GLSL here is assembled by string concatenation: a
+uniform declared in the wrong half links to nothing and the canopy silently DOES NOT DRAW —
+no exception, no error, just no trees. That happened twice tonight.
+▶ `node scratch/claims-shader-fragments-declare-what-they-use.mjs` before you ship.
+
 ## The work
 
 **Q1 — decide the lighting path and justify it.** (a) card material → MeshStandard /
