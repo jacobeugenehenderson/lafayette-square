@@ -596,7 +596,7 @@
         "spread": 0.02
       },
       "noon": {
-        "intensity": 1.06,
+        "intensity": 0.44,
         "threshold": 0.03,
         "smoothing": 0.96,
         "warmCool": 0.5,
@@ -647,7 +647,13 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "value": 2
+        "value": 1.75
+      },
+      "dawn": {
+        "value": 1
+      },
+      "night": {
+        "value": 1
       }
     }
   },
@@ -824,12 +830,14 @@
     "transitionIn": 0,
     "transitionOut": 0,
     "values": {
-      "dusk": {
-        "core": 0.72,
-        "tube": 0.36,
-        "bleed": 0.8,
-        "emissive": 7,
-        "tubeRadius": 0.25
+      "sunset": {
+        "core": 0.18,
+        "tube": 0.14,
+        "bleed": 0.5,
+        "emissive": 8,
+        "tubeRadius": 0.25,
+        "screenFloor": 2.5,
+        "screenCeil": 0
       }
     }
   },
