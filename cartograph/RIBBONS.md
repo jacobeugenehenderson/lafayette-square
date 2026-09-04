@@ -74,9 +74,6 @@
 >
 > ⛔ **AUTHORING DOES NOT CHANGE.** The operator authors the STREET, street-keyed (`A15`) — two chains
 > underneath does not mean two handles on top ⇒ **zero `blockCustoms` migration.**
-> ⚠️ **Open engineering question, not an objection:** an undivided street's two chains are *coincident*,
-> and coincident input is exactly where geometry libraries return degenerate results. **Verify the stroke
-> handles zero separation before building on it.**
 >
 > ### Why this is not a third option — it is the ANSWER to punch-out's blocking risk
 > `_handoffs/HANDOFF-deadend-face-resolution.md §4.1` risk 1 is what kept punch-out unshipped: *"a boolean
@@ -89,23 +86,81 @@
 > contradiction dissolves:** the objection to figure-ground was that streets-subtracted loses identity.
 > This does not.
 >
-> ### ⛔ §2.1's "second mouth corner" test IS NOT A DEFECT — measured 2026-08-12 (Tessel)
-> The test read: *both mouth passes are the same coordinate, so the second reads `south-18th →
-> south-18th` and `cornerAt` declines; give the spur width and they become two real corners.*
-> **The premise is a misreading of the node.** At `south-18th-street-3`'s mouth (386.30, 149.10)
-> `kennett-place` **ENDS** and `south-18th` **RUNS THROUGH**: pass 1 is `kennett → south-18th`
-> (a real corner, filleted) and pass 2 is `south-18th → south-18th` — **a genuine through node**,
-> the two directions collinear to ~1°. ⭐ **`cornerAt` declining is CORRECT, and a second corner
-> there would be a defect.** At a T only one side corners; that is what a T looks like.
-> ⭐⭐ **And the slit never reached the block.** The retrace lives in `tile.ring` alone — `iA` at that
-> tip already carries a real notch: sides standing off **5.50 / 6.94 m** against an authored
-> **5.49 / 6.9269** (`clean/overlay.json`, asymmetric BY AUTHORING), a round cap at r=6.93, and a
-> continuous leg→cap slope. ⇒ **Do not cite this tip as the thing the substrate fixes.**
-> ▶ `node scratch/claims-deadend-notch-standoff.mjs` — the general form: at every frozen cap, march
-> out from the spur centerline to `iA` and compare against the half-width **the producer itself was
-> handed** (`shape.json runs[].measure`), station by station on the cap leg. Asymmetric authoring
-> PASSES by construction. **31 of 49 caps clean at every station; 18 carry ≥1 station off by >0.1 m
-> — cause not established.**
+> ### ⭐⭐⭐ RULED 2026-09-04 (Jacob) — THE GROUT IS A **POSITIVE OBJECT**, AND WE OFFSET FROM **IT**, NOT THE CHAINS.
+> > *"In Illustrator we'd select the whole network of paths, give them a very small stroke, expand
+> > appearance, and then pathfinder — **to the grout itself**, first."* · *"**We offset from the grout, not
+> > the chains.**"*
+>
+> **The grout is a first-class COMPOUND PATH — stroke every chain at a very small width, unite, and the
+> blocks are its HOLES.** ⛔ Not the negative space between painted tiles, which is what *"the centerlines
+> are the grout"* has meant in the code since `PIPELINE §Tile`.
+>
+> #### ⭐⭐ ε IS A DECLARATION, NOT A TOLERANCE — and that is its entire content.
+> A zero-width grout and an ε-width grout **render identically and are mathematically different objects.**
+> Zero is an **ABSENCE**; ε is a **PRESENCE** with an interior, two sides, and **TWO nodes at every mouth**.
+> ⛔ **The value of ε carries no information; its NON-ZERO-NESS is the whole of it** — so it is not a fudge,
+> not a clamp, and not the forbidden cleanup shape. It asserts that the object exists.
+> ⭐ The rim doctrine one level in — **the grout is an object, never an absence** (`ARCHITECTURE:170`).
+> ⛔ And an absence that renders as a plausible presence is **Layer 0 q2 inside the geometry**, where there
+> is no code fallback for a reader to spot.
+> ⚠️ **THE ONE CONSTRAINT ON ε: it must exceed the integer floor of the stage that FREEZES it.** Clipper is
+> integer-space and every converter rounds; prebake is the coarse one. Below the floor the object you
+> asserted is silently rounded back into an absence **in the artifact**.
+> ▶ `node scratch/claims-zero-separation-offset.mjs` — floors read live from source, so they cannot go stale.
+>
+> #### ⭐⭐⭐ WE OFFSET FROM THE GROUT. The corners, the caps and the mouths FALL OUT.
+> ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
+> grout's contour instead: a **corner** is a join in one contour, a **cap** is where the contour turns
+> around, a **mouth** is two vertices because the object has width. **None of the three is constructed.**
+> ⭐ **The routine already exists and already carries both things the grout needs** —
+> `offsetRingVariable(ring, depthAt, cornerAt, capAt, clean, stamp)` (`tileGround.js:435`): `depthAt` is
+> per-edge and accepts a `[start,end]` linear ramp, the normal is winding-aware (`:443`), and it takes a
+> `stamp`. ⇒ **This is a change of SUBJECT, not a new construction** — today it is called on the tile ring
+> (`:288`). **`cornerAt` and `capAt` RETIRE:** they exist to tell the offset where a chain-derived ring has
+> a corner or a cap, and a grout contour already *is* its corners and caps.
+> ⭐ Winding is free: the contour dilates and every hole erodes from the same call, and the directed
+> side-chains supply the winding by construction.
+> ⭐ **A cap is a COUPLER WITH TANGENT HANDLES, not a shape** (Jacob) — blunt = handles broken to 90°;
+> round = handles continuing unbroken along the chain, symmetrically, bent back to the pair node. That is
+> the existing curve primitive (`{type:'bezier',c1,c2}`, `derive.js:40`) used at the tip, and it dissolves
+> the `roundTips`/`bluntTips` case split — 19 sites in `tileGround.js`, frozen into `shape.json` (`:4738`).
+> ⚠️ A single cubic cannot hold a half-turn; the coupler is **two** segments split at the apex, or the
+> bezier is ruled canonical and `bbf4adf6`'s circle becomes its approximation. **Jacob's call, not made.**
+> ▶ `_handoffs/HANDOFF-curve-primitive-skeleton.md` — its §72 (*"tangent directions = the bounding
+> straight-leg directions"*) is the same law, written for mid-chain.
+>
+> ⛔ **THE ONE CONSTRUCTION STILL OWED: the width STEP at a block boundary** — two adjacent grout edges
+> carrying different `pavementHW`. On the chains that is a datum defect at a through-node (`:178`); on the
+> grout it is an ordinary vertex where `depthAt` jumps, and the `[start,end]` ramp is either the answer or
+> the place that needs a rule.
+> ⚠️ **Cause not established for the offset's fold class under the new subject.** `POLYGON-FIRST D6a` marks
+> the offset NOT robust (the averaged-normal branch; `scratch/fold-branch-forensic.mjs`). Dilating a grout
+> fails by a narrow block **vanishing** — loud — rather than by a fold; **hypothesis, unmeasured.**
+> ⚠️ **OPEN, not decided:** whether the grout is ONE compound path at neighbourhood scale, or one per
+> connected component.
+>
+> #### ⭐⭐ AND THE ASYMMETRIC CASE DOES NOT EXIST — the grout has no sides.
+> > *"There is NO asymmetrical case for the CHAIN ITSELF, for the GROUT ITSELF."*
+>
+> `bbf4adf6` already rules that the chain is not the road's centreline and that asymmetric `pavementHW` is
+> what an off-centre trace looks like — but it applies that **only at the tip**. Applied to the whole chain
+> (recentre by `(hwR−hwL)/2`, stroke at `hwL+hwR`), asymmetry stops existing and what remains is **VARIABLE
+> WIDTH ALONG A STREET, WHICH IS AUTHORING.** ⛔ Two "cases" collapse into one authored parameter.
+> ▶ `node scratch/claims-recentre-removes-asymmetry.mjs` — ⛔ **town-dependent; re-run, never quote.** The
+> direction holds on both safeguarded towns; the share does not.
+>
+> #### ⛔ AN OFFSET IS MEASURED FROM A LEG, NEVER FROM A CAP.
+> A cap has **no authored value** — it is what falls out. Measuring one against an expected radius invents a
+> specification and then reports deviations from the invention as findings; that is how a session's worth of
+> cap "defects" was manufactured and struck (`fbf3fb84`). ⭐ **An AUTHORED feature is checked by DIMENSION; a
+> DERIVED feature is checked by CONTINUITY.** ⛔ And a zero gap at a tip is the COLLAPSED-node signature, not
+> a seamless join — `node scratch/coupler-slit-universal.mjs` prints `FACE=SLIT gap=0.000m` on every LS tip.
+> ▶ `node scratch/claims-spur-leg-offset.mjs` (leg offset, station-local, authoring-aware) ·
+> `node scratch/claims-deadend-notch-standoff.mjs` (the per-station ray-march form).
+>
+> *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):
+> the coincident-chains open question — answered, then made moot — and Tessel's "second mouth corner is not
+> a defect", which contradicted `POLYGON-FIRST §2.1` Check 5 and the substrate ruling above it.)*
 >
 > ### ⭐⭐ THE SPLIT THAT MAKES IT BUILDABLE — combinatorial at prebake, geometric after authoring
 > Punching with the *stroked* road makes tile topology **width-dependent** (risk 2). Prebake is blind to

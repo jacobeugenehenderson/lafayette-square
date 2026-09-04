@@ -84,6 +84,28 @@ walks the spur out and back over the same vertices, so the ring is the traversal
 (`PIPELINE §Wall`). These are the **content** checks, run **at the freeze**, failing the **bake** — never
 the eye:
 
+> ## ⛔⛔ 2026-09-04 — THESE FIVE ARE A **CRYPTO POSITIVE/NEGATIVE TEST**, AND THAT IS THE DEFECT IN THEM (Jacob)
+> **Every one is stated about a TILE RING or a FRONTAGE EDGE — the NEGATIVE — and infers the street.**
+> Nothing in this document asserts anything about the road as an object. ⇒ **figure-ground in the checks,
+> polygon-first on the letterhead**, in the doc whose own `PIPELINE §144` calls figure-ground dead.
+>
+> **Assert the GROUT instead** (home: `RIBBONS §1`, the 2026-09-04 ruling — the grout is a positive compound
+> path, stroked at ε, and we offset from *it*, not the chains):
+> | positive assertion | subsumes |
+> |---|---|
+> | the grout is **one compound path with nonzero area everywhere** | 1, 2 |
+> | **every chain contributes exactly two boundary sides** (so `side` is structural, never derived) | 3 |
+> | **hole count = block count** — the punch is total, nothing lost or invented | 4 |
+> | *(nothing — it stops existing)* | **5** |
+>
+> ⭐⭐ **CHECK 5 DISAPPEARS AS A RULE, AND THAT IS THE TELL THAT THE RECAST IS RIGHT.** *"Two mouth corners"*
+> is just *the grout has an interior at the mouth*, which is true of every point of a positive object. There
+> is no dead-end case. ⛔ Zero-width and ε-width **render identically and are different objects** — zero is an
+> ABSENCE, ε a PRESENCE with two nodes at every mouth — so ε is a **declaration, not a tolerance**, and it
+> must clear the freezing stage's integer floor (`node scratch/claims-zero-separation-offset.mjs`).
+> ⚠️ **The five below are NOT wrong** — they name real failures. They diagnose them from the wrong side.
+> **Keep running them until the grout exists; they are the negative-side shadow of the four above.**
+
 | # | Check | Violation means |
 |---|---|---|
 | 1 | every tile ring is **simple**, **nonzero area**, no repeated vertex | the ring doubled back — it's a traversal, not a shape |
