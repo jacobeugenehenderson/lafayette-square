@@ -109,6 +109,36 @@ orphan-circle defect it prevents is real and will come straight back.
 class and it passes on LS today — because it asks whether shadowed placements RENDER, not
 whether rendered placements are SHADOWED. It is blind to this direction; sharpen it.
 
+## ⭐ THE TRUNK/GROUND JOINT BLEND — built, still in the code, and MESH-ONLY
+
+Jacob, 2026-09-03: *"before when the trees were meshes we had a blurred contact shadow disc
+baked into the ground under the trees AND we had a sample of the shadowed ground multiplied
+onto the trunk of the tree to blend the 'joint'/connection point."*
+
+Both halves are real and only ONE survived the move to all-impostor:
+
+- **The ground disc** — the FX map's G channel, `bake-ground-ao.js`. Alive, and as of
+  2026-09-03 it covers all 5146 placements instead of 1408 (see that commit).
+- **The trunk blend** — `injectFoliageSway` in `treeAtlasMaterial.js` (~:1020): samples the
+  baked ground COLOUR map at the tree's world XZ, multiplies by the FX map's **G contact
+  shadow**, adds the **R lamp pool**, and blends the trunk base toward that combined
+  EFFECTIVE ground colour — gated by `vBark` and by height
+  (`smoothstep(uTrunkBlendTop, 0.0, vLocalY)`), so it fades out up the trunk.
+  ⛔ **It exists only in the MESH material.** `injectOverheadStamp` and
+  `injectHeroImpostorStamp` have nothing like it, so with meshes at zero the effect is gone
+  from the map entirely — every card now meets the ground as a hard edge.
+
+⭐ **It is portable, and cheaply.** The hero card stack already carries a dedicated BARK
+layer (`kind:'bark'`, `cardDepthFrac 1.0`) — the trunk is its own draw with its own
+material, which is exactly the gate `vBark` was providing. The card vertex shader already
+resolves world XZ (`instanceMatrix[3].xz`) and has local Y. The uniforms are module-level
+(`treeTrunkGround`, and the `_groundColor` map/min/span/fx set), so a card stamp can bind
+the same ones — no new data, no capture change, no manifest change.
+
+⚠️ Do not assume it transfers unchanged: the mesh gates on a per-vertex `vBark` attribute
+and the card gates on being the bark LAYER, and the card is billboarded while the mesh is
+not. Measure before claiming parity.
+
 ## The work
 
 **Q1 — decide the lighting path and justify it.** (a) card material → MeshStandard /
