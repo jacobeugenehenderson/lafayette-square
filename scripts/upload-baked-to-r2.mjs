@@ -2,13 +2,28 @@
 /**
  * upload-baked-to-r2.mjs — push the baked slab to R2.
  *
- *   node scripts/upload-baked-to-r2.mjs --dry-run          # every look, plan only
- *   node scripts/upload-baked-to-r2.mjs --look=altadena    # one look, upload
- *   node scripts/upload-baked-to-r2.mjs                    # every look, upload
+ *   node scripts/upload-baked-to-r2.mjs --env=staging --dry-run   # plan only
+ *   node scripts/upload-baked-to-r2.mjs --env=staging --look=altadena
+ *   node scripts/upload-baked-to-r2.mjs --env=prod                # promote, all looks
  *
- * Keys mirror the on-disk tree exactly — `public/baked/<look>/x` → `baked/<look>/x`
- * — so the runtime's `${ASSET_BASE}baked/<look>/…` join is a pure substitution and
- * pouring town #2 needs no code change and no entry in any table.
+ * ⛔⛔ `--env` IS REQUIRED AND HAS NO DEFAULT, and that is the whole point of this file
+ * since 2026-09-03. Before it, every bake wrote the keys PRODUCTION reads: one bucket,
+ * no prefix, both workflows resolving the same VITE_ASSET_BASE. So a pour went live on
+ * lafayette-square.com the instant it uploaded — no push, no gate, no preview, and no way
+ * back except re-baking a slab you may no longer have. Code had a staging loop; DATA had
+ * none. (Jacob, 2026-09-03: "the bigger issue is there's no way to preview it before it
+ * goes live.") The consequence was known and written at the bake's call site — "per-
+ * environment prefixes are the fix if it ever bites" — and it bit.
+ *
+ * ⛔ Defaulting this to `staging` would be as wrong as defaulting it to `prod`: a silent
+ * default is how the operator stops knowing which one they are shipping to. Say it.
+ *
+ * Keys mirror the on-disk tree exactly under the env's prefix —
+ * `public/baked/<look>/x` → `<prefix>baked/<look>/x` — so the runtime's
+ * `${ASSET_BASE}baked/<look>/…` join stays a pure substitution: the environment lives in
+ * ASSET_BASE, never in the app. Pouring town #2 still needs no code change.
+ *   prod    → `baked/<look>/…`            (unchanged, so nothing already live moves)
+ *   staging → `staging/baked/<look>/…`
  *
  * ⛔⛔ THE EXCLUSIONS BELOW ARE LOAD-BEARING AND THIS FILE IS NOW THEIR ONLY HOME.
  * Today they are enforced by `.gitignore` (an untracked file cannot reach a deploy,
@@ -35,6 +50,29 @@ const BAKED_ROOT = join(REPO_ROOT, 'public/baked')
 
 /** The bucket. Override with R2_BUCKET for a staging/scratch bucket. */
 const BUCKET = process.env.R2_BUCKET || 'theward-assets'
+
+/**
+ * ⭐ ONE BUCKET, TWO PREFIXES. `prod` keeps the historical un-prefixed keys so promoting
+ * writes exactly where the live site already reads — this change moves nothing that is
+ * already serving. `staging` is additive.
+ * ⛔ Keep in step with the VITE_ASSET_BASE repo variables the workflows read; the drift
+ * between them is the same class as the publish-branch drift that went unnoticed for four
+ * weeks. `scratch/claims-the-slab-envs-do-not-collide.mjs` is the guard.
+ */
+const ENV_PREFIX = { prod: '', staging: 'staging/' }
+
+function resolveEnv(argv) {
+  const raw = argv.find((a) => a.startsWith('--env='))?.split('=')[1]
+  if (!raw) {
+    throw new Error('--env is REQUIRED and has no default. Use --env=staging to publish a '
+      + 'preview, or --env=prod to promote it live. Guessing here is how a slab reaches '
+      + 'lafayette-square.com without anyone deciding it should.')
+  }
+  if (!(raw in ENV_PREFIX)) {
+    throw new Error(`unknown --env="${raw}" — expected one of: ${Object.keys(ENV_PREFIX).join(', ')}`)
+  }
+  return raw
+}
 
 /**
  * Files that are PRODUCED by the bake but deliberately NOT PUBLISHED.
@@ -77,7 +115,7 @@ const walk = (dir) => readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
   return e.isDirectory() ? walk(p) : e.isFile() ? [p] : []
 })
 
-function plan({ look }) {
+function plan({ look, prefix }) {
   let looks
   try {
     looks = readdirSync(BAKED_ROOT, { withFileTypes: true })
@@ -95,7 +133,7 @@ function plan({ look }) {
   for (const l of looks) {
     for (const abs of walk(join(BAKED_ROOT, l))) {
       const rel = relative(REPO_ROOT, abs).split('\\').join('/')   // public/baked/<look>/…
-      const key = rel.replace(/^public\//, '')                     // baked/<look>/…
+      const key = prefix + rel.replace(/^public\//, '')            // <prefix>baked/<look>/…
       const ex = EXCLUDE.find((e) => e.test('/' + key))
       if (ex) { skipped.push({ key, bytes: statSync(abs).size, why: ex.why }); continue }
       files.push({ abs, key, bytes: statSync(abs).size })
@@ -119,12 +157,20 @@ async function main() {
   const dryRun = argv.includes('--dry-run')
   const look = argv.find((a) => a.startsWith('--look='))?.split('=')[1]
   const conc = Number(argv.find((a) => a.startsWith('--concurrency='))?.split('=')[1] || 8)
+  const env = resolveEnv(argv)
+  const prefix = ENV_PREFIX[env]
 
-  const { looks, files, skipped } = plan({ look })
+  const { looks, files, skipped } = plan({ look, prefix })
   const total = files.reduce((s, f) => s + f.bytes, 0)
   const skipBytes = skipped.reduce((s, f) => s + f.bytes, 0)
 
+  // ⭐ SAY WHICH ENVIRONMENT, FIRST AND LOUDEST. The one thing an operator must never
+  // have to infer is whether they are about to overwrite what visitors are looking at.
+  console.log(env === 'prod'
+    ? `env      PROD — these keys are what lafayette-square.com serves. Live on upload.`
+    : `env      staging — preview only; promote with --env=prod when it looks right.`)
   console.log(`bucket   ${BUCKET}`)
+  console.log(`prefix   ${prefix || '(none — production keys)'}`)
   console.log(`looks    ${looks.join(', ')}`)
   console.log(`upload   ${files.length} files, ${mb(total)}`)
   console.log(`skip     ${skipped.length} files, ${mb(skipBytes)} (not published — by rule, see EXCLUDE)`)

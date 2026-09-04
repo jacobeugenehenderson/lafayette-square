@@ -28,7 +28,21 @@ jobs:
           # Where the BAKED SLAB is served from (R2 custom domain). Unset ⇒ falls
           # back to BASE_URL, i.e. the slab committed in this repo. See
           # src/lib/bakedUrl.js and plans/r2-asset-offload.md.
-          VITE_ASSET_BASE: ${{ vars.VITE_ASSET_BASE }}
+          #
+          # ⭐ STAGING READS THE STAGING PREFIX (2026-09-03). Until now this read the same
+          # variable as deploy.yml, so staging and production served the SAME objects and a
+          # pour went live on lafayette-square.com with no preview and no gate. The bake now
+          # uploads to `staging/baked/…` and this points at it; promotion to the production
+          # keys is a separate deliberate step (upload-baked-to-r2 --env=prod).
+          # ⛔ NO FALLBACK TO THE PRODUCTION BASE. This was briefly written as
+          # `vars.VITE_ASSET_BASE_STAGING || vars.VITE_ASSET_BASE` — which would mean an
+          # unset variable silently restores the very bug this replaces: staging serving
+          # production's objects while looking perfectly healthy. An unset variable must
+          # instead break staging's slab visibly, because a broken preview is recoverable
+          # in a minute and a preview that lies about being a preview is not.
+          # ⛔ Set repo variable VITE_ASSET_BASE_STAGING to the same host with `staging/`
+          # appended. Verify the wiring: node scratch/claims-the-slab-envs-do-not-collide.mjs
+          VITE_ASSET_BASE: ${{ vars.VITE_ASSET_BASE_STAGING }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 

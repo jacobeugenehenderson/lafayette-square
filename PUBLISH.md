@@ -45,7 +45,8 @@ The GitHub Secret must be checked manually at [Settings > Secrets > Actions](htt
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
 | New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
-| **Re-poured a town** | nothing to push — the bake uploads the slab to R2 and it is **live immediately, on staging AND prod** (§6) |
+| **Re-poured a town** | nothing to push — the bake uploads the slab to R2 **STAGING** (`staging/baked/…`) and it is live on the staging site immediately. ⛔ **It does NOT reach production.** Verify on staging, then promote: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` (§6) |
+| **Promote a slab to prod** | `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys; live on lafayette-square.com immediately, still without a push. ⛔ `--env` is required and has no default. ▶ `node scratch/claims-the-slab-envs-do-not-collide.mjs` |
 | **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
 
 ---
@@ -111,7 +112,7 @@ There is a **second** Pages target for previewing slab/look work before it reach
 
 Push a feature branch to the trunk to stage it; push the trunk to `main` to ship. **CI does not bake** — both workflows are `vite build` over an `actions/checkout`.
 
-⛔⛔ **BUT THE SLAB IS NO LONGER WHAT YOU COMMIT (2026-09-01).** This line used to read *"serve the committed slab, so the artifacts you committed are exactly what deploys (bake + commit before you push)"* — **that instruction is now wrong and following it ships nothing.** `public/baked/` is gitignored and served from R2 (§6). The pour uploads it; git carries only `design.json`, `looks/index.json`, `ribbons.json` and the OG image. ⭐ **So a slab reaches production WITHOUT a push, and code still needs one.** The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
+⛔⛔ **BUT THE SLAB IS NO LONGER WHAT YOU COMMIT (2026-09-01).** This line used to read *"serve the committed slab, so the artifacts you committed are exactly what deploys (bake + commit before you push)"* — **that instruction is now wrong and following it ships nothing.** `public/baked/` is gitignored and served from R2 (§6). The pour uploads it; git carries only `design.json`, `looks/index.json`, `ribbons.json` and the OG image. ⭐ **So a slab reaches its environment WITHOUT a push, and code still needs one.** ⚠️ **Corrected 2026-09-03:** this line, and the row above, used to say a pour was *"live immediately, on staging AND prod"* — it was, and that was the defect, not the design. One bucket, one un-prefixed key space, both workflows resolving the same `VITE_ASSET_BASE`: a pour reached lafayette-square.com with **no preview and no gate**, while code had a full staging loop. The bake now writes `staging/baked/…` only; promotion is its own deliberate gesture. The slab save→ship discipline (source-vs-derived, dirty-tree triage, the symptom→door table) lives in **`cartograph/OPERATIONS.md §Save → ship`**.
 
 ### Build-time environment (GitHub Secrets)
 

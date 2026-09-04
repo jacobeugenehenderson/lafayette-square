@@ -2347,14 +2347,20 @@ createServer(async (req, res) => {
       // public/baked/ is gitignored, so this upload is the ONLY thing that carries
       // a pour to a visitor. If it is skipped, the pour lives nowhere: the map
       // renders from the PREVIOUS slab and nothing says so.
-      // ⚠️ AND IT GOES LIVE IMMEDIATELY, EVERYWHERE. One bucket serves staging and
-      // production at the same URLs, so a re-pour reaches lafayette-square.com the
-      // moment it uploads — it no longer waits for a push to main. That is a real
-      // change to the release model; per-environment prefixes are the fix if it
-      // ever bites. Recorded here because it is invisible from the button.
+      // ⭐ IT GOES TO STAGING, NOT PRODUCTION (fixed 2026-09-03). This comment used to
+      // read "AND IT GOES LIVE IMMEDIATELY, EVERYWHERE… per-environment prefixes are the
+      // fix if it ever bites" — it bit. One bucket served staging and prod at the same
+      // keys, so a pour reached lafayette-square.com the instant it uploaded: no push, no
+      // gate, no preview, and no way back except re-baking a slab that may no longer
+      // exist. Code had a staging loop and DATA had none, which is invisible from a button
+      // labelled "Stage →". (Jacob: "the bigger issue is there's no way to preview it
+      // before it goes live.")
+      // ⛔ A BAKE MAY ONLY EVER WRITE STAGING. Promotion is a separate, deliberate gesture
+      // (`--env=prod`), because "I poured a slab" and "visitors should see it" are two
+      // different decisions and this button only ever meant the first.
       let r2 = null
       try {
-        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --look=${id}`,
+        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=staging --look=${id}`,
           { cwd: REPO_ROOT, timeout: 900000 })
         if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
         r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
