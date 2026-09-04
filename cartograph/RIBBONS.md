@@ -158,6 +158,33 @@
 > ▶ `node scratch/claims-spur-leg-offset.mjs` (leg offset, station-local, authoring-aware) ·
 > `node scratch/claims-deadend-notch-standoff.mjs` (the per-station ray-march form).
 >
+> #### ⭐⭐⭐ AND THE NODES BECOME BEZIER **INTENTIONS** — a blunt cap TURNS, a rounded cap EASES.
+> > *"The nodes become bezier 'intentions' where a blunt cap turns and a rounded cap eases."* (Jacob, the
+> > closing generalisation.)
+>
+> **A node is not a corner, a cap or a junction — it is a HANDLE CONFIGURATION.** Broken handles **turn**;
+> continuous handles **ease**. ⇒ cap style, corner radius and fillet stop being three things. **R = 0 is
+> zero-length handles**, so the operator's dial survives unchanged — NACTO-class seed × per-IX × per-corner,
+> and R=0 stays authorable (`project_corner_radius_is_design_control`).
+> ⭐ The node is then the carrier of the authoring, which is *the polygon must ask the stamp* at the one
+> place the geometry actually bends (`A15`).
+>
+> ⭐⭐ **THIS RETIRES THE SECOND ROUNDING MECHANISM — AND WITH IT THE CLAMP §1 CALLS *THE* ARTIFACT.**
+> Today the intention lives OUTSIDE the geometry, so the construction rounds once (`filletRing`) and must
+> then be told not to round again (INVARIANT 2: `jtMiter`, never `jtRound`). With the intention **in the
+> node** there is nothing to second-guess:
+> - **`filletRing` / `filletRings` retire** — the contour is already curved where the operator said so.
+> - **The `jtMiter`-vs-`jtRound` doctrine retires** — no second mechanism left to guard against.
+> - **`bandJoin` retires** — a per-TILE case decision (`tileGround.js:4549` — round if the tile has any cap,
+>   or a single run, or is thin) **frozen into `shape.json`**. A node-level intention needs no tile-level mode.
+> - **The miter-limit bevel retires** (`:67`, `miterLimit 2`). It fires because two offset lines struck from a
+>   SHARP vertex meet far away; an eased vertex has no such intersection. ⭐ **§3.3's U-seam measurement IS
+>   this clamp firing** — it substitutes a bevel and the frozen curb swings metres off a line that should be
+>   parallel. That is the worked example §1 names as *the* artifact, and it is a direct casualty.
+> ⚠️ **The one caveat, and it is the curve handoff's own top risk:** the offset of a cubic is only
+> APPROXIMATELY a cubic, and it degrades where depth approaches the fit radius — the tight turning circles.
+> **Not measured under the grout subject.**
+>
 > *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):
 > the coincident-chains open question — answered, then made moot — and Tessel's "second mouth corner is not
 > a defect", which contradicted `POLYGON-FIRST §2.1` Check 5 and the substrate ruling above it.)*
@@ -607,8 +634,9 @@
 > 2026-08-06 (`090a68cf`) and **reverted the same day on Jacob's call** — it rounded nothing anyway, because
 > its input is that empty array. Recover it from `4044bca1^` if the substrate question rules that way.
 >
-> ⛔ **INVARIANT 2 governs any move here:** `filletRing` and `applyRoundCornersToRing` round the same object
-> from opposite sides — **alternatives, never both.** Running both is the second rounding mechanism §1 forbids.
+> ⛔ **INVARIANT 2 governs any move here:** never two rounding mechanisms on the same object. Live form:
+> `filletRing` rounds once, the inward bands `jtMiter`-inherit it (§3.3). *(This clause used to name
+> `applyRoundCornersToRing` — deleted at T4; only comments in dead modules still mention it.)*
 >
 > ---
 >
@@ -802,7 +830,7 @@ Builds the planar graph from shared vertices of `streets[].points` (excludes `gr
 
 ### 3.3 The curb SHAPE — `offsetRingVariable` + `filletRing`
 
-Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per-run via `runMeasure`) → `iA`, the curb edge. `offsetRingVariable(ring, depthAt, cornerAt, capAt)` does the variable-depth parallel offset; `cornerAt` uses the run-seam test (real corner vs through-node) so a width step doesn't appear at a through-node — ⛔ **which key it reads is a live defect, see the block below.** `filletRing(ring, Rfn, sink)` rounds the curb corners **once** (radius from the authored corner-R kit: global scale × per-IX × per-corner). `strokeOpen(polyline, delta)` handles open/perimeter runs. **jtMiter throughout** (invariant 2). This is the SHAPE that freezes at the Wall. *(Line numbers deleted 2026-08-13 — all three had drifted 2–3× over; grep the function name.)*
+Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per-run via `runMeasure`) → `iA`, the curb edge. `offsetRingVariable(ring, depthAt, cornerAt, capAt)` does the variable-depth parallel offset; `cornerAt` uses the run-seam test (real corner vs through-node) so a width step doesn't appear at a through-node — ⛔ **which key it reads is a live defect, see the block below.** `filletRing(ring, Rfn, sink)` rounds the curb corners **once** (radius from the authored corner-R kit: global scale × per-IX × per-corner). `strokeOpen(polyline, delta)` handles open/perimeter runs. **jtMiter throughout** (invariant 2). This is the SHAPE that freezes at the Wall. ⛔ **All three — `filletRing`, the jtMiter doctrine and the miter limit — retire under §1's 2026-09-04 grout ruling** (the node carries the intention; nothing rounds twice). *(Line numbers deleted 2026-08-13 — all three had drifted 2–3× over; grep the function name.)*
 
 > ### ⛔⛔ THE 18th/DOLMAN TOOTH IS A **REGRESSION**. THE CURE EXISTS, EYE-APPROVED, AND IS OUTVOTED BY A LATER KEY. *(Measured 2026-08-13, agent Wend, `1cadbceb`; framing corrected by Jacob 2026-08-14.)*
 >

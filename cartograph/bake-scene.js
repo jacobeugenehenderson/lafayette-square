@@ -37,7 +37,7 @@ import {
   WARMTH_FLAT_DEFAULTS, FILL_FLAT_DEFAULTS,
   MIST_FLAT_DEFAULTS, HALO_FLAT_DEFAULTS,
   SKY_GAIN_FLAT_DEFAULTS,
-  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
+  GRADE_FLAT_DEFAULTS, GRAIN_FLAT_DEFAULTS, SHADOW_FLAT_DEFAULTS, CANOPY_FLAT_DEFAULTS, SMAA_FLAT_DEFAULTS, DOF_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FLAT_DEFAULTS, migrateArchLight, LANTERN_FLAT_DEFAULTS, HORIZON_FLAT_DEFAULTS,
   CLOUDS_FLAT_DEFAULTS,
@@ -117,6 +117,16 @@ export async function bakeScene({ look } = {}) {
     smaa:     design.smaa     || { values: { ...SMAA_FLAT_DEFAULTS } },
     dof:      design.dof      || { values: { ...DOF_FLAT_DEFAULTS } },
     shadow:   design.shadow   || { values: { ...SHADOW_FLAT_DEFAULTS } },
+    // Canopy Light (Surfaces → Trees) — how the tree impostor CARDS answer to the
+    // scene's key light. Every town carries it, and an unauthored one carries
+    // `directional: 0` = the historical flat dimmer, so emitting it unconditionally
+    // changes no existing map. ⛔ It has to be named HERE or it does not ship:
+    // this object is an explicit list, not a spread of design.json, so a channel
+    // that persists and previews perfectly in Stage still reaches no viewer until
+    // it appears on this line. That is the design.json-is-not-scene.json trap, and
+    // it fails in the worst direction — the operator authors, sees it work, and
+    // the slab quietly carries nothing.
+    canopy:   design.canopy   || { values: { ...CANOPY_FLAT_DEFAULTS } },
     // SC.5 — per-shot camera + Hero authoring + Browse heading. Runtime
     // inputs (Browse altitude, Hero target, Street position/target)
     // explicitly NOT baked: they come from computeBrowseAltitude(aspect),
