@@ -76,6 +76,33 @@ const MIN_BAND_INTERSECT = 0.15
 const io = new NodeIO().registerExtensions(ALL_EXTENSIONS)
   .registerDependencies({ 'meshopt.decoder': MeshoptDecoder })
 
+// ⭐ THE DISCRIMINATOR THIS CHECK LACKED. A stored height cannot separate "captured in the
+// pre-fix LOCAL frame" from "captured from the raw LIBRARY file", because those are the same
+// number whenever the library twin carries no node scale. The UVs CAN: bake-look packs a
+// rewritten GLB into an atlas sub-rect inside [0,1], while a raw library GLB keeps its
+// original tiling UVs, which leave the unit square. So this is the fact that decides it —
+// and it is read off the artifact, needing no pair list and no knowledge of the town.
+async function readUv(file) {
+  const doc = await io.read(file)
+  let u0 = Infinity, u1 = -Infinity, v0 = Infinity, v1 = -Infinity, n = 0
+  for (const node of doc.getRoot().listNodes()) {
+    const mesh = node.getMesh(); if (!mesh) continue
+    for (const prim of mesh.listPrimitives()) {
+      const uv = prim.getAttribute('TEXCOORD_0'); if (!uv) continue
+      const e = [0, 0]
+      for (let i = 0; i < uv.getCount(); i++) {
+        uv.getElement(i, e)
+        if (e[0] < u0) u0 = e[0]; if (e[0] > u1) u1 = e[0]
+        if (e[1] < v0) v0 = e[1]; if (e[1] > v1) v1 = e[1]
+        n++
+      }
+    }
+  }
+  if (!n) return null
+  const T = 1e-3
+  return { u0, u1, v0, v1, escapes: u0 < -T || v0 < -T || u1 > 1 + T || v1 > 1 + T }
+}
+
 // Read a GLB the way the capture sees it: every vertex pushed through its node's world matrix,
 // leaf/bark split off `extras.atlasKind` (what stampTreeVertexAttrs turns into aBark).
 async function readWorld(file) {
@@ -134,14 +161,34 @@ for (const look of looks) {
   const atlas = JSON.parse(readFileSync(atlasPath, 'utf8'))
   const treeDir = path.join(BAKED, look, 'trees')
   if (!existsSync(treeDir)) { console.log(`  ${look.padEnd(22)} — no baked tree GLBs`); continue }
+  // ⭐ What the slab actually PLACES, read from the artifact — never a roster, never a list.
+  // A manifest record for an unplaced species is an orphan, and orphans need a different
+  // sentence than stale captures do. Absent trees.json ⇒ null ⇒ the orphan test is skipped
+  // rather than guessed at.
+  let placed = null
+  try {
+    const tj = JSON.parse(readFileSync(path.join(BAKED, look, 'trees.json'), 'utf8'))
+    placed = new Set((tj.instances || []).map(i => i.species))
+  } catch { placed = null }
 
   const bad = []
   let seen = 0
   for (const sp of readdirSync(treeDir)) {
-    // The capture shoots the look's baked lod1; species outside the look shoot their runtime GLB.
-    const file = [path.join(treeDir, sp, 'skeleton-1-lod1.glb'),
-                  path.join(ROOT, 'public/trees', sp, 'skeleton-1-lod1.glb')].find(existsSync)
+    // The capture shoots the look's baked lod1. (Until 2026-09-03 species outside the Look
+    // shot the raw LIBRARY GLB instead — that was the bug behind this check's own worst
+    // misdiagnosis; see the discriminator below.)
+    const bakedFile = path.join(treeDir, sp, 'skeleton-1-lod1.glb')
+    const libFile = path.join(ROOT, 'public/trees', sp, 'skeleton-1-lod1.glb')
+    const file = [bakedFile, libFile].find(existsSync)
     if (!file) continue
+    // The other candidate cause: the raw library GLB the pool used to capture from.
+    // Measured, not assumed — it is only a candidate when the file is actually there.
+    let libH = null
+    let libUv = null
+    if (existsSync(libFile) && libFile !== file) {
+      try { const lw = await readWorld(libFile); if (lw) libH = Math.max(1, lw.maxY) } catch { libH = null }
+      try { libUv = await readUv(libFile) } catch { libUv = null }
+    }
     let w = null
     try { w = await readWorld(file) } catch (e) { bad.push([sp, `GLB unreadable — ${e.message}`]); continue }
     if (!w) { bad.push([sp, 'no vertices']); continue }
@@ -169,14 +216,44 @@ for (const look of looks) {
       if (!rec || !Number.isFinite(rec.heightM)) continue
       const expect = Math.max(1, maxY)
       if (Math.abs(rec.heightM - expect) / expect > 0.02) {
-        // ⛔ REPORT THE NUMBER, NAME THE DISCRIMINATOR — do not assert a cause.
-        // A stored height equal to the LOCAL top is the old frame, verbatim. A stored
-        // height that matches NEITHER frame was captured from a different GLB than the
-        // one on disk now; that is a stale record and this check cannot say why.
+        // ⛔ AN ORPHAN IS NOT A STALE CAPTURE. A record for a species the slab does not
+        // place reaches no pixel and NO BAKE CAN REFRESH IT — there is nothing to re-shoot.
+        // Prescribing a re-bake here sent Jacob to press a button that could never work
+        // (2026-09-03, quercus_alba: 0 placements, record frozen since 08-25).
+        if (placed && !placed.has(sp)) {
+          bad.push([sp, `${key}.heightM = ${rec.heightM.toFixed(1)} m vs GLB world ${expect.toFixed(1)} m — `
+            + `⚠️ ORPHAN RECORD: the slab places 0 of this species, so no capture can refresh it and it `
+            + `reaches no pixel. Drop the record or ignore it; ⛔ do not re-bake for this.`])
+          continue
+        }
+        // ⛔⛔ REPORT THE NUMBER, NAME EVERY CONSISTENT CAUSE — do not assert one.
+        // This check used to declare "= the LOCAL top ⇒ captured in the pre-fix frame;
+        // RE-BAKE" and it was WRONG for the case that mattered. The baked GLB's LOCAL top
+        // and the UNREWRITTEN LIBRARY GLB's world height are THE SAME NUMBER whenever the
+        // library twin carries no node scale — which is the normal case. So a height alone
+        // cannot separate "captured in the wrong frame" from "captured from the wrong
+        // FILE", and asserting the first hid the second for a week on acer_saccharum.
+        const near = (a, b) => b > 0 && Math.abs(a - b) / b <= 0.02
         const local = Math.max(1, w.localMaxY)
-        const why = Math.abs(rec.heightM - local) / local <= 0.02
-          ? `= the LOCAL top (${local.toFixed(1)}) ⇒ captured in the pre-fix frame; RE-BAKE`
-          : `matches NEITHER frame (local top ${local.toFixed(1)}) ⇒ stale record, baked from a different GLB; cause not established`
+        const causes = []
+        if (near(rec.heightM, local)) causes.push(`the baked GLB's LOCAL top (${local.toFixed(1)}) — the pre-fix capture frame`)
+        if (libH && near(rec.heightM, libH)) causes.push(`the UNREWRITTEN library GLB's world height (${libH.toFixed(1)}) — captured from the WRONG FILE`)
+        const why = causes.length === 0
+          ? `matches NEITHER the world frame, the local top (${local.toFixed(1)}), nor the library GLB`
+            + `${libH ? ` (${libH.toFixed(1)})` : ''} ⇒ cause not established`
+          : causes.length === 1
+            ? `= ${causes[0]}`
+            // Both heights agree, so the UVs decide. A library GLB whose UVs leave [0,1] was
+            // never atlas-rewritten — capturing from it samples outside the atlas entirely,
+            // which is a strictly worse defect than a mis-scaled frame and the one to name.
+            : libUv?.escapes
+              ? `= ${libH.toFixed(1)} m, which is BOTH the baked local top AND the library GLB's world height — `
+                + `⭐ RESOLVED BY UVs: the library GLB's UVs are u[${libUv.u0.toFixed(2)}, ${libUv.u1.toFixed(2)}] `
+                + `v[${libUv.v0.toFixed(2)}, ${libUv.v1.toFixed(2)}], i.e. OUTSIDE [0,1] and never atlas-rewritten. `
+                + `⇒ CAPTURED FROM THE WRONG FILE (the raw library twin), not merely the wrong frame — `
+                + `the card also sampled the wrong atlas regions.`
+              : `= ${causes.join('  AND  ')} — ⚠️ THESE ARE THE SAME NUMBER and the library GLB's UVs stay `
+                + `inside [0,1], so this check cannot separate them. Cause not established.`
         bad.push([sp, `${key}.heightM = ${rec.heightM.toFixed(1)} m, GLB world height ${expect.toFixed(1)} m — ${why}`])
       }
     }
@@ -189,7 +266,10 @@ for (const look of looks) {
   failed++
   console.error(`  ⛔ ${look.padEnd(22)} ${bad.length} finding(s) across ${seen} capturable GLBs —`)
   for (const [sp, why] of bad) console.error(`       ${sp.padEnd(24)} ${why}`)
-  console.error(`       ▶ a pre-fix height is fixed by re-running Grove "Bake → Slab" for this look.`)
+  console.error(`       ▶ a stale height (wrong frame OR wrong file) is fixed by re-running Grove "Bake → Slab":`)
+  console.error(`         the pool now sources the atlas-rewritten baked GLB, and CAPTURE_FORMAT forces the re-shoot.`)
+  console.error(`       ⛔ an ORPHAN record is NOT fixed by a re-bake — the slab places none of that species,`)
+  console.error(`         so there is nothing to capture. Drop the record; it reaches no pixel either way.`)
   console.error(`       ▶ a cut outside the geometry is an ASSET defect (a stray vertex above the crown,`)
   console.error(`         or a merged group-shot GLB) — profile it: node scratch/tree-y-profile.mjs <glb>`)
 }
