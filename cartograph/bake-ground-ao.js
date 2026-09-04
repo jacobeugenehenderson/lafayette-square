@@ -263,7 +263,14 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   const POOL_RING_SHARP  = 4.5  // ring sharpness; LOWER = blurrier ring
   const POOL_SHADOW_FRAC = 0.18 // center radius the pole blocks its own light
   const POOL_MAX         = 3.0  // R encode headroom so overlaps build un-clipped
-  const TREE_SHADOW_RADIUS_M = 4.5  // tree contact-shadow reach (m)
+  // ⚠️ REACH AND PROFILE ARE COUPLED — changing one without the other is how this
+  // got wrong twice. 4.5 m was set when the falloff was (1−rn)², which threw away
+  // everything past ~1.5 m, so the number in the constant and the disc on the
+  // ground disagreed by 3×. Giving it a readable profile made the SAME 4.5 m read
+  // at its true size for the first time, and it was far too big (operator, at the
+  // eye, 2026-09-04). The reach now means what it says, so it is set to what a
+  // tree's contact shadow should actually cover.
+  const TREE_SHADOW_RADIUS_M = 2.75 // tree contact-shadow reach (m)
   const TREE_SHADOW_STR      = 0.7  // per-tree shadow contribution (0..1, summed)
   // ⭐ THE FALLOFF SHAPE IS THE WHOLE DISC, NOT THE REACH. The reach has said 4.5 m
   // since this was written, but the profile was (1−rn)² — quadratic, which puts
@@ -276,7 +283,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
   // A contact shadow wants a FLAT CORE and a SOFT SHOULDER — full strength under the
   // crown, easing out at the rim — which is what smoothstep gives and a squared
   // falloff cannot. CORE is the fraction of the radius held at full strength.
-  const TREE_SHADOW_CORE     = 0.15 // inner fraction held at full strength
+  const TREE_SHADOW_CORE     = 0.0  // inner fraction held at full strength
   const LAMP_SHADOW_RADIUS_M = 2.5  // lamp-base contact-shadow reach (m)
   const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
   const FX_SIZE = 1024

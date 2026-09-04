@@ -185,6 +185,35 @@
 > APPROXIMATELY a cubic, and it degrades where depth approaches the fit radius — the tight turning circles.
 > **Not measured under the grout subject.**
 >
+> #### ▶ STATE OF THE BUILD — two gates run 2026-09-04, both READ-ONLY, no `src/` touched.
+> ⛔ **Re-run them; the directions below are the doctrine, the digits are a snapshot.**
+> - **GATE A — topology.** `node scratch/gate-a-grout-holes.mjs` · stroke at ε, unite, subtract from
+>   the stencil (the union of the frozen tile rings — artifact-derived, so it ports). **Result: the
+>   grout INVENTS NOTHING** — every new ring lands inside a frozen tile, three towns, block areas
+>   agreeing to ~0.1% (the grout's own footprint); where it differs it SUBDIVIDES a tile the freeze
+>   merged. **And `POLYGON-FIRST §2.1` checks 1–2 go to ZERO from ε alone**, on a gate whose own text
+>   says it "fails on ALL 50 dead-end tips" today. **ε's value carries no information — measured**:
+>   identical topology across a 45× range of ε. ⛔ LS's exact count match is a NET (one tile splits,
+>   one receives nothing), **not a bijection** — do not quote it as 1:1.
+> - **GATE B — authored widths + the fold class.** `node scratch/gate-b-grout-offset.mjs` · the grout
+>   built as the model says (per-station per-side boundaries closed into a ribbon, the ruled bulb at
+>   round tips), not as a symmetric stroke. **Result: the LEGS LAND ON THE CURB** — median deviation
+>   0.000/0.001 m over 216k vertices, LS and HPDM. ⭐⭐ **AND THE FOLD CLASS DOES NOT REPRODUCE**:
+>   `POLYGON-FIRST D6a` marks the chain-side offset NOT robust (~70% of crossings at the
+>   averaged-normal branch); offsetting a CONTOUR gives zero repeated-vertex rings across both towns.
+>   **The predicted failure appeared instead — blocks VANISH rather than fold**, which is loud and
+>   countable. That was written here as a hypothesis and is now measured.
+>
+> ⛔ **OPEN — cause NOT established on any of these:**
+> 1. **The CORNER zone misses** (~50% of corner-zone vertices beyond 0.10 m). ⭐ **EXPECTED and not a
+>    defect of the model** — Gate B applies no authored corner R at all, because R lives in the node's
+>    handles and the handles are not built. **This is the size of the prize for node-as-intention.**
+> 2. **~20% of LEG vertices beyond 0.10 m** (p90 1.3–3.6 m). ⭐ **Measure this BEFORE building Gate C**
+>    — the width step lives in this population, and a rule designed without it is a guess.
+> 3. **Swallowed blocks** — 15 across two towns, the loud failure mode, uninvestigated.
+>
+> ▶ **GATE C — the width step at a block boundary.** ⛔ Do not start it from a guess; start it from (2).
+>
 > *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):
 > the coincident-chains open question — answered, then made moot — and Tessel's "second mouth corner is not
 > a defect", which contradicted `POLYGON-FIRST §2.1` Check 5 and the substrate ruling above it.)*
@@ -300,7 +329,18 @@
 > threshold to close the gap.**
 > ⛔⛔ **AND THE OBVIOUS DISCRIMINATOR — "the two bounding sides FACE EACH OTHER" — HAS ALREADY BEEN TRIED AND
 > REVERTED** (`§3.5`): the measure `side` is point-order-relative **per chain**, so a pair's two carriageways
-> disagree about which side faces the median (Lafayette: A matches the inboard oracle, B does not). ⭐ **So it
+> disagree about which side faces the median (Lafayette: A matches the inboard oracle, B does not).
+> ⚠️⚠️ **AND THAT ORACLE MAY ITSELF BE INVERTED — OPEN, AWAITING THE EYE (2026-09-04).**
+> `innerSideSign` (writes the persisted `innerSign`) and `inboardKeyGeom`/`inboardSideOf` (byte-identical
+> duplicates, `derive.js:3799` == `tileGround.js:1246`) map the SAME perp to OPPOSITE labels. Read out of
+> the artifact — which geometric side production's own `side` label lands on — **`(-dz,dx)` is measure-RIGHT**,
+> which makes the geometric pair the inverted one. Consequence, tested label-free: **the ped is zeroed on the
+> side AWAY from the mate on 128 of 133 pairs across four towns** — the outboard side losing its treelawn and
+> sidewalk, the opposite of the documented intent (`tileGround.js:1222`). ⛔ `tileGround.js:1234` asserts the
+> opposite of this measurement, so ONE OF THE TWO IS WRONG and it is not ruled.
+> ▶ `node scratch/claims-inboard-side-convention.mjs` · **the gate is the EYE: on a divided road in the lit
+> app, is the treelawn at the CURB or in the MEDIAN?** A consistent inversion renders as a planted median,
+> which on a boulevard is plausible-looking — Layer 0 q2, which is how it could survive an eye gate. ⭐ **So it
 > is not a discriminator we lack — it is one that the `side` labels cannot currently support**, and it waits
 > on the walk's directed sides, which is the same root as the inverted `side` law on the list below.
 >
