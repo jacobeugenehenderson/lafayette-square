@@ -135,7 +135,7 @@ async function postOverhead(look, species, heightM, canopyRadiusM, bands, captur
  * @param {function} props.onProgress (done, total)
  * @param {function} props.onDone   ({ ok, fail })
  */
-export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) {
+export function OverheadBaker({ runTick, lookId, species, onProgress, onDone, onBlocked }) {
   const gl = useThree((s) => s.gl)
   const atlas = useTreeAtlas(lookId)
   const lastTick = useRef(0)
@@ -153,6 +153,12 @@ export function OverheadBaker({ runTick, lookId, species, onProgress, onDone }) 
       : !lookId ? 'no active Look'
       : null
     if (blocked) {
+      // ⛔ TELL THE UI. A blocked baker is NOT a running one, and leaving the header's
+      // progress set meant both Grove buttons stayed DISABLED forever — so the only way
+      // out was to leave for the Salon and come back. The effect still returns without
+      // consuming the tick, so it retries the moment its deps change; this only stops the
+      // UI from lying about it in the meantime. (2026-09-03)
+      onBlocked?.(blocked)
       console.warn(`[overhead-bake] tick ${runTick} did NOT start: ${blocked}. `
         + `Waiting for it to change; if this is the last line you see, the capture is stuck here.`)
       return

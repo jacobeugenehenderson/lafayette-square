@@ -245,7 +245,13 @@ export default function Grove() {
       // about anybody's roster: bake-look writes a species there exactly when it rewrote
       // that species' GLB into this atlas. So it covers a town nobody has looked at, needs
       // no list, and cannot drift from what was actually baked.
-      const rewritten = !!groveAtlas?.manifest?.barkBySpecies?.[t.species]
+      // ⛔ "THE ATLAS HAS NOT ANSWERED YET" IS NOT "THE ATLAS SAYS NO", and conflating them
+      // emptied the whole pool. `invalidateTreeAtlas` runs at the end of every bake, so there
+      // is a window where `manifest` is null — and during it this gate rejected EVERY species,
+      // which made the ⟳ button a silent no-op. Unknown ⇒ keep the species and let the baker's
+      // own `!atlas?.treeMaterial` blocker wait and retry, which is what it is for. (2026-09-03)
+      const bark = groveAtlas?.manifest?.barkBySpecies
+      const rewritten = bark ? !!bark[t.species] : true
       if (!rewritten) {
         // ⛔ LOUD, NOT SILENT, AND ⛔ NOT A FALLBACK TO THE RAW FILE. Capturing from an
         // unrewritten GLB yields a confidently wrong impostor, which is worse than none:
@@ -269,7 +275,7 @@ export default function Grove() {
   // same fact: this tree ships as mesh at every distance, and here is its name.
   const unrewrittenSpecies = useMemo(() => {
     const bark = groveAtlas?.manifest?.barkBySpecies
-    if (!bark) return []
+    if (!bark) return []   // atlas unknown — judge nothing (see the pool gate)
     const source = slabSpecies.length ? slabSpecies : activeLookTrees
     const seen = new Set(), out = []
     for (const t of source) {
@@ -434,7 +440,23 @@ export default function Grove() {
   // against an atlas the other hasn't seen is a drift waiting to happen.
   // Overhead's onDone chains hero, so kicking overhead runs both. (2026-07-22)
   const recaptureImpostors = () => {
-    if (!overheadSpecies.length) return
+    // ⛔⛔ A PRESSED BUTTON MUST NEVER DO NOTHING IN SILENCE. This was `if (!length) return`
+    // — no toast, no console line, no state change — so every failed press was
+    // indistinguishable from a dead control, and the operator's only working move was to
+    // leave for the Salon and come back, which defeats the button entirely.
+    // (Jacob, 2026-09-03: "Clicked it and nothing happened. Again." / "It hasn't worked
+    // this whole time.")
+    if (!overheadSpecies.length) {
+      const why = !activeLookId ? 'no active Look selected'
+        : !groveAtlas?.manifest ? 'the atlas is still loading — press it again in a moment'
+        : !slabSpecies.length && !activeLookTrees.length ? 'the slab has no placed species to capture'
+        : 'every candidate species was gated out (roster bars, or absent from this atlas) — see the console'
+      console.warn(`[grove-bake] ⟳ pressed but the capture pool is EMPTY: ${why}`)
+      setToast(`Nothing to re-capture — ${why}`)
+      clearTimeout(toastTimerRef.current)
+      toastTimerRef.current = setTimeout(() => setToast(null), 4000)
+      return
+    }
     forceAll.current = true          // repair gesture — ignore the fingerprints
     setOverheadResult(null); setHeroResult(null); setImpostorGapDismissed(false)
     setOverheadProg({ done: 0, total: null }); setOverheadTick((t) => t + 1)   // the baker owns the total
@@ -793,6 +815,8 @@ export default function Grove() {
             lookId={activeLookId}
             species={overheadBatch}
             onProgress={(done, total) => setOverheadProg({ done, total })}
+            onBlocked={(why) => { setOverheadProg(null); setHeroProg(null); setToast(`Capture could not start — ${why}`)
+              clearTimeout(toastTimerRef.current); toastTimerRef.current = setTimeout(() => setToast(null), 5000) }}
             onDone={({ ok, fail, failedNames, empty }) => {
               setOverheadProg('done'); setOverheadResult({ ok, fail, failedNames, empty })
               console.log(`[overhead-bake] done — ${ok} ok, ${fail} failed`)
@@ -808,6 +832,8 @@ export default function Grove() {
             lookId={activeLookId}
             species={heroBatch}
             onProgress={(done, total) => setHeroProg({ done, total })}
+            onBlocked={(why) => { setHeroProg(null); setToast(`Hero capture could not start — ${why}`)
+              clearTimeout(toastTimerRef.current); toastTimerRef.current = setTimeout(() => setToast(null), 5000) }}
             onDone={({ ok, fail, failedNames, empty }) => {
               setHeroProg('done'); setHeroResult({ ok, fail, failedNames, empty })
               console.log(`[hero-impostor-bake] done — ${ok} ok, ${fail} failed`)
