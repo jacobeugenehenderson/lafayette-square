@@ -78,6 +78,37 @@ uniform declared in the wrong half links to nothing and the canopy silently DOES
 no exception, no error, just no trees. That happened twice tonight.
 ▶ `node scratch/claims-shader-fragments-declare-what-they-use.mjs` before you ship.
 
+## AO and CAST SHADOWS are in scope too (Jacob: "there should be AO and cast shadows in addition to whatever normals")
+
+**AO already exists and is already consumed — but light-independently.** Every hero layer
+and overhead band carries an `ao` page beside its `albedo`, and both stamps apply
+`albedo x (uAmbient + uSun * ao)`. So occlusion is baked and real; what it never does is
+respond to WHERE the light is. Folding AO into a directional term (rather than replacing
+it) is the job — it is the one channel you do not have to capture.
+
+**⛔ TREES CAST AND RECEIVE NOTHING IN REAL TIME, BY EXPLICIT SETTING.** All four tree draw
+sites hard-code `castShadow={false} receiveShadow={false}`:
+`HeroImpostorTrees.jsx:246`, `OverheadTrees.jsx:288`, `InstancedTrees.jsx:423` and `:526`.
+The scene DOES have soft shadow maps (`Scene.jsx:980` `shadows='soft'`, sun `castShadow` at
+`CelestialBodies.jsx:148`) — buildings and ground use them. Trees are simply excluded.
+⚠️ Cards are `MeshBasicMaterial`, which cannot receive a shadow at all, so "receive" is
+blocked until the material question (Q1) is answered. "Cast" is not blocked the same way.
+
+**⛔⛔ AND A LIVE BUG, MEASURED 2026-09-03: 73% OF RENDERED TREES CAST NO GROUND SHADOW.**
+`cartograph/bake-ground-ao.js:335` splats the baked ground contact shadow for
+`trees.filter(t => t.heroTier !== 'cull')` — **1408 of 5146**. Its reasoning was sound when
+written ("cull placements draw nothing, so splatting their shadow leaves an orphan soft
+circle on bare grass", 2026-06-29) and is now FALSE: `heroTier` reaches no pixel on a
+foundation-on slab (it drives only the QC tint), it marks 3850 as cull, and all 5146
+placements render as impostors. The filter is the exact inverse of its own intent — it now
+REMOVES shadows from trees that are there.
+⭐ The honest predicate is "does this placement draw", which after 2026-09-03 is
+`meshTier`/`heroRole`, not `heroTier`. ⛔ Fix the predicate; do not delete the filter — the
+orphan-circle defect it prevents is real and will come straight back.
+▶ `node scratch/claims-every-shadowed-placement-renders.mjs` is the existing check for this
+class and it passes on LS today — because it asks whether shadowed placements RENDER, not
+whether rendered placements are SHADOWED. It is blind to this direction; sharpen it.
+
 ## The work
 
 **Q1 — decide the lighting path and justify it.** (a) card material → MeshStandard /
