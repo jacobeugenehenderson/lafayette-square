@@ -996,7 +996,32 @@ export async function bakeTrees({
         while (lo < hi) { const mid = (lo + hi) >> 1; if (per[mid] < dbh) lo = mid + 1; else hi = mid }
         const pct = per.length > 1 ? lo / (per.length - 1) : 1
         const h = band.lo + Math.max(0, Math.min(1, pct)) * (band.hi - band.lo)
-        instScale = +(h / band.hi).toFixed(4)
+        // ⛔⛔ DIVIDE BY THE HEIGHT THE GLB ACTUALLY STANDS AT — never by `band.hi`.
+        // This was `h / band.hi`, which is only correct if the model is normalised to the
+        // band's top. It is not: publish-glb normalises to `chassis.size.target` (or
+        // mature-heights.json, or a category default) and bake-look bakes that into the
+        // GLB bytes. Two independent derivations of "how tall is this model", and they
+        // agreed for exactly the 3 species whose dossier carries `chassis.size.band` — by
+        // coincidence. The other 6 rendered 18–34% SHORT: 3602 of 5146 placements (70%),
+        // by a DIFFERENT factor per species, so relative species heights were wrong too.
+        // (Measured 2026-09-03. The USDA 20yr–mature fallback landed 2026-08-28 to kill
+        // the flat-1:1 bug; publish-glb was never taught the same fallback, and this line
+        // assumed it had been.)
+        // ⭐ The index already publishes the answer, so derive it ONCE from the artifact
+        // rather than a second time from the dossier: approxHeightM × the scale actually
+        // applied. Reading `scaleOverride` first also makes an operator override respected
+        // — today it would silently break the band, which is the override-is-the-product
+        // rule failing in arithmetic.
+        const standsAtM = (v.approxHeightM || 0) * (v.scaleOverride ?? v.normalizeScale ?? 1)
+        if (standsAtM > 0) {
+          instScale = +(h / standsAtM).toFixed(4)
+        } else {
+          // ⛔ LOUD. No fallback to band.hi: that is the bug this replaces, and a silently
+          // mis-scaled forest is exactly the plausible-looking success Layer 0 forbids.
+          console.warn(`[bake-trees] ⛔ "${v.species}" v${v.variantId} has no usable standing height `
+            + `(approxHeightM=${v.approxHeightM}, normalizeScale=${v.normalizeScale}) — scale OMITTED, `
+            + `so it renders 1:1. Fix the variant index; do not guess a divisor here.`)
+        }
       }
     }
     instances.push({
