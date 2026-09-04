@@ -68,11 +68,42 @@ if (!/--env is REQUIRED and has no default/.test(up)) {
 } else ok('--env is required, with no default')
 
 // ④ the bake may only ever write staging
+// ⛔⛔ MATCH THE INVOCATION, NOT THE FILENAME (hardened 2026-09-04).
+// This read `carto.match(/upload-baked-to-r2\.mjs[^`]*/)` — the FIRST textual occurrence
+// anywhere in the file, comments included, stopping at a backtick. A comment added that
+// day mentioning `scripts/upload-baked-to-r2.mjs` inside backticks matched first and
+// truncated to the bare filename, so the check reported a COLLISION over a code change
+// that was correct. ⭐ A guard that a passing comment can flip is worse than a loud one:
+// the next person's fix is to reword the prose until it goes green, which disarms it.
+// Anchor on `node scripts/…` — an actual command, which prose does not contain.
+//
+// ⭐ AND THE PREMISE MOVED: THERE ARE TWO INVOCATIONS NOW. Promotion ships the slab
+// (2026-09-04), so `--env=prod` appearing in serve.js is no longer proof of a collision —
+// it is required. What must hold is that each gesture uploads to ITS OWN environment: the
+// BAKE may only ever write staging, and only the PROMOTE may write prod. Asserting "no
+// prod anywhere" would now be false, and asserting only the first call would be blind to
+// the second.
 const carto = read('cartograph/serve.js')
-const call = (carto.match(/upload-baked-to-r2\.mjs[^`]*/) || [''])[0]
-if (!call) fail('cartograph/serve.js no longer invokes the uploader — re-anchor this check')
-else if (!call.includes('--env=staging')) fail(`the bake invokes the uploader as "${call.trim()}" — it must pass --env=staging; promotion is a separate gesture`)
-else ok('the Cartograph bake uploads to staging only')
+const calls = [...carto.matchAll(/node scripts\/upload-baked-to-r2\.mjs[^`'"]*/g)]
+if (!calls.length) fail('cartograph/serve.js no longer invokes the uploader — re-anchor this check')
+else {
+  const envOf = (s) => (s.match(/--env=(\w+)/) || [])[1] || null
+  const bakeAt = carto.search(/POST \/looks\/[^\n]*\/bake\b|\/bake\$\//)
+  const promoteAt = carto.search(/\/promote\$\//)
+  const naked = calls.filter((c) => !envOf(c[0]))
+  if (naked.length) fail(`${naked.length} uploader call(s) in serve.js pass no --env — a pour can reach production without a decision`)
+  else {
+    // Attribute each call to the handler it sits in, by position: the bake handler
+    // precedes the promote handler in the file, so a call after `promoteAt` is the
+    // promotion's and anything before it belongs to the bake.
+    const bad = calls
+      .map((c) => ({ env: envOf(c[0]), gesture: promoteAt > 0 && c.index > promoteAt ? 'promote' : 'bake' }))
+      .filter((c) => (c.gesture === 'bake' ? c.env !== 'staging' : c.env !== 'prod'))
+    if (bad.length) fail(`each gesture must upload to its own environment — found ${bad.map((b) => `${b.gesture}→--env=${b.env}`).join(', ')}`)
+    else ok(`each gesture uploads to its own environment (${calls.length} call${calls.length === 1 ? '' : 's'}: bake→staging, promote→prod)`)
+  }
+  if (bakeAt < 0 || promoteAt < 0) fail('could not locate the bake/promote handlers — re-anchor this check before trusting it')
+}
 
 console.log()
 if (failed) {

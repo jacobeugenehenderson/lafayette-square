@@ -79,9 +79,14 @@ function runCapture(cmd, opts = {}) {
 const STAGING_BRANCH = 'land-use-derivation'
 const PROD_BRANCH = 'main'
 // Where the baked slab is actually served from. Must match the VITE_ASSET_BASE the
-// deployed builds use (.github/workflows/*.yml → repo variable). One bucket serves
-// every environment, per PREVIEW.md §0.2.
+// deployed builds use (.github/workflows/*.yml → repo variable).
 const ASSET_BASE_URL = process.env.ASSET_BASE || 'https://assets.theward.online/'
+// ⛔ ONE BUCKET, TWO KEY SPACES (2026-09-03). This used to read "one bucket serves every
+// environment, per PREVIEW.md §0.2" — true until the prefix split, and the reason
+// `/deployed` reported prod's slab under staging's name. ⛔ KEEP IN STEP WITH
+// `scripts/upload-baked-to-r2.mjs`'s ENV_PREFIX; the two drifting apart means the panel
+// measures a key space nothing writes. ▶ node scratch/claims-the-slab-envs-do-not-collide.mjs
+const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
 const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
 const PROD_SITE_URL = 'https://lafayette-square.com/'
 // The coherent slab set a publish commits (SLAB-CONTRACT §9): the per-look
@@ -2485,25 +2490,39 @@ createServer(async (req, res) => {
   // measure THE ARTIFACT BEING SERVED rather than the state of the repo, and the
   // artifact being served now comes from the bucket.
   //
-  // ⚠️ SO staging AND prod NOW RETURN THE SAME VALUE, and it goes green at BAKE time,
-  // before either button. That is not a bug and not a lost gate: `PREVIEW.md §0.2` has
-  // been settled doctrine since 2026-06-30 — "staging is REDUNDANT for slab-data … the
-  // publish flow pushes straight to prod; staging-first applies only to code/structural
-  // changes." PREVIEW is the gate for a slab; the buttons ship CODE. Do not "restore"
-  // a per-environment slab gate here without reopening that decision first.
+  // ⛔⛔ IT IS PER-ENVIRONMENT AGAIN (2026-09-04), AND `target` IS NOW LOAD-BEARING.
+  // This block used to accept `target` and DISCARD it, reading the un-prefixed (prod)
+  // keys for both rows. Its comment defended that — "staging AND prod NOW RETURN THE
+  // SAME VALUE … not a bug and not a lost gate" — on `PREVIEW.md §0.2`'s 2026-06-30
+  // ruling that "one bucket serves every environment" and staging is redundant for
+  // slab-data. ⭐ THAT DECISION WAS REOPENED ON 2026-09-03 by the staging/prod prefix
+  // split: the bucket now has two key spaces, a bake may only write `staging/`, and
+  // prod is a deliberate promotion. The old comment even said what to do about it —
+  // "do not restore a per-environment gate here without reopening that decision first"
+  // — and the decision had already been reopened, one day earlier, in another file.
+  // ⛔ The cost of leaving it: the STAGING row reported PRODUCTION's slab, so the two
+  // gestures the panel exists to distinguish — "put it up in a sample way" and
+  // "overwrite production" — read the same number and could not disagree.
+  // ⛔ An unknown target FAILS rather than guessing; guessing here is what shipped a
+  // year of staging rows that were quietly about prod.
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/deployed$/))) {
     const id = m[1]
     const target = (req.url.match(/[?&]target=([^&]+)/) || [])[1]
-    const base = ASSET_BASE_URL
+    if (!ASSET_ENV_PREFIX.hasOwnProperty(target)) {
+      res.writeHead(400, { 'Content-Type': 'application/json' })
+      res.end(JSON.stringify({ error: `target must be one of: ${Object.keys(ASSET_ENV_PREFIX).join(', ')} — got ${JSON.stringify(target ?? null)}` }))
+      return
+    }
+    const base = ASSET_BASE_URL + ASSET_ENV_PREFIX[target]
     try {
       const r = await fetch(`${base}baked/${id}/scene.json?t=${Date.now()}`, { cache: 'no-store' })
       let bakedAt = null
       if (r.ok) { try { bakedAt = (await r.json()).bakedAt ?? null } catch { /* HTML/404 while building */ } }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, target: target || 'staging', bakedAt }))
+      res.end(JSON.stringify({ ok: true, target, bakedAt }))
     } catch (err) {
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, target: target || 'staging', bakedAt: null, error: err.message }))
+      res.end(JSON.stringify({ ok: true, target, bakedAt: null, error: err.message }))
     }
     return
   }

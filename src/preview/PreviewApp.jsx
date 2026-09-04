@@ -768,6 +768,14 @@ function PublishPanel({ lookId }) {
   const [msg, setMsg] = useState(null)          // { kind:'ok'|'err', text }
   const [deploys, setDeploys] = useState({ staging: null, prod: null }) // {status:'building'|'ready', bakedAt, url}
   const [capturing, setCapturing] = useState(false)
+  // ⭐ THE DEV DRAWER, AND IT IS FOR THE DEVELOPER — NOT THE OPERATOR (Jacob, 2026-09-04:
+  // "a collapsible git area for you, basically, to get through developing").
+  // ⛔ This does NOT reverse "no git in this panel" (2026-08-29). That rule is about the
+  // OPERATOR'S FACE, and it stands: the two gestures are "put it up in a sample way" and
+  // "put it up, overwriting production" — neither is a git thing, even though the reality
+  // is. The drawer is a second audience behind a closed door, not a change to the first.
+  // ⛔ DEFAULT CLOSED, and in-memory by design — a refresh returns to the operator's face.
+  const [drawer, setDrawer] = useState(false)
   const [smsStage, setSmsStage] = useState('capture') // capture → push → pushing → live (in-memory; a refresh just resets to capture, by design)
   const API = `/api/cartograph/looks/${encodeURIComponent(lookId)}`
 
@@ -853,7 +861,11 @@ function PublishPanel({ lookId }) {
       const r = await fetch(`${API}/promote`, { method: 'POST' })
       const data = await r.json()
       if (!r.ok || data.error) throw new Error(data.error || 'promote failed')
-      setMsg({ kind: 'ok', text: `Promoted to prod · ${data.promoted} commit${data.promoted === 1 ? '' : 's'}` })
+      // ⚠️ Success text is SET but never rendered (the panel shows `kind === 'err'` only, by
+      // the note at the bottom of the panel). Kept accurate rather than "fixed": the slab is
+      // the half that changes what a visitor sees, and a slab-only promotion (0 commits) is a
+      // complete shipment, not a no-op. The drawer is where that detail is actually read.
+      setMsg({ kind: 'ok', text: `Promoted to prod · slab shipped${data.promoted ? ` · ${data.promoted} commit${data.promoted === 1 ? '' : 's'}` : ''}` })
       setDeploys(prev => ({ ...prev, prod: { status: 'building', bakedAt: data.bakedAt, url: data.prodUrl } }))
       await load()
     } catch (e) { setMsg({ kind: 'err', text: String(e.message || e) }) }
@@ -916,8 +928,23 @@ function PublishPanel({ lookId }) {
   // as "this failed" — and the only thing saying otherwise was a green line
   // underneath. Nothing to ship IS the past tense; there is no third state.
   const clean = !status.unbaked && !status.dirty?.length
-  const stagingDone = clean && aheadStaging === 0
-  const prodDone    = clean && aheadProd === 0
+  // ⛔⛔ A TARGET IS CURRENT ONLY IF **BOTH** SHIPMENTS LANDED — code AND slab (2026-09-04).
+  // These read `clean && ahead === 0` alone, i.e. git only, and that is now half an answer:
+  // since the slab left the repo it ships to R2, not in a commit, so "no commits ahead" says
+  // nothing about the canopy. On 2026-09-04 prod sat at ahead 0 with 830 of 915 objects
+  // stale — the button would have gone inert and past-tense over a live, wrong map, which is
+  // the Layer 0 failure (a plausible success nobody is told about) committed by the gate.
+  // ⭐ The slab half is READ, not remembered: `/deployed?target=` fetches what that key space
+  // actually serves and the derive-on-mount effect compares it to ours.
+  // ⚠️ 'building' COUNTS AS CURRENT, and that is load-bearing — it is what preserves the
+  // 2026-08-31 fix. Gating on 'ready' alone would make the button present-tense and live for
+  // the minutes Pages takes to build, which reads as "that failed" (the exact defect the
+  // one-condition rule was written to kill). We just shipped it; it is on its way.
+  // ⛔ UNKNOWN IS NOT CURRENT. A site we cannot reach leaves `deploys[key]` undefined and the
+  // button stays live — it offers to ship rather than claiming a state it could not read.
+  const slabCurrent = (key) => ['ready', 'building'].includes(deploys[key]?.status)
+  const stagingDone = clean && aheadStaging === 0 && slabCurrent('staging')
+  const prodDone    = clean && aheadProd === 0 && slabCurrent('prod')
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
   // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").
   // A branch name and a commit count answer a question the operator does not have. The
@@ -960,9 +987,18 @@ function PublishPanel({ lookId }) {
   }[smsStage]
 
   return (
-    <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 50, width: 236, background: 'rgba(16,14,12,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 12, color: '#e9e6e2', fontSize: 12 }}>
+    <div style={{ position: 'absolute', left: 12, bottom: 12, zIndex: 50, display: 'flex', alignItems: 'flex-end', gap: 8 }}>
+    <div style={{ width: 236, background: 'rgba(16,14,12,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 12, color: '#e9e6e2', fontSize: 12 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 6 }}>
         <span style={{ fontWeight: 700 }}>Publish</span>
+        {/* ⭐ The handle is a glyph, not a word: it must not read as a third gesture beside
+            the two real ones. Horizontal expansion (Jacob: "we're not hurting for horizontal
+            space") keeps the operator's column exactly the size it was — the drawer cannot
+            push the buttons around or change what the default face looks like. */}
+        <button onClick={() => setDrawer(v => !v)} title={drawer ? 'Hide dev details' : 'Show dev details (git + slab)'}
+          style={{ background: 'none', border: 'none', color: drawer ? '#bfdbfe' : 'rgba(233,230,226,0.45)', cursor: 'pointer', fontSize: 11, padding: '0 2px', lineHeight: 1 }}>
+          {drawer ? '⟨' : '⟩'}
+        </button>
       </div>
       {status.unbaked && <div style={{ color: '#fbbf24', marginBottom: 6 }}>⚠ Unbaked edits — Publish bakes first.</div>}
 
@@ -985,6 +1021,69 @@ function PublishPanel({ lookId }) {
           note on `aheadProd` above forbids in as many words. A thing that
           worked needs no receipt; a thing that failed does. */}
       {msg && msg.kind === 'err' && <div style={{ marginTop: 8, color: '#f87171', wordBreak: 'break-word' }}>{msg.text}</div>}
+    </div>
+    {/* ⛔⛔ THE DEV DRAWER — TWO SHIPMENTS PER TARGET, NEVER ONE.
+        Code ships in a commit; the SLAB ships to R2 and is in no commit at all. Reading
+        only the git column is what let 2026-09-04 promote code over an 830-object-stale
+        canopy and call it done. So every row states both, side by side, and disagreement
+        between them is the thing this drawer exists to make visible.
+        ⛔ It is a READOUT, not a control — no buttons. The two gestures stay the only way
+        to ship, so a developer cannot use the drawer to do something the operator's face
+        cannot see or undo. ⭐ Numbers are READ (`/publish/status`, `/deployed?target=`),
+        never remembered, so a refresh shows the world rather than this tab's history. */}
+    {drawer && (
+      <div style={{ width: 268, maxHeight: '60vh', overflowY: 'auto', background: 'rgba(16,14,12,0.72)', backdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 12, padding: 12, color: '#e9e6e2', fontSize: 11, fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }}>
+        <div style={{ fontWeight: 700, marginBottom: 6, fontFamily: 'inherit', color: '#bfdbfe' }}>dev · what would ship</div>
+        <Row k="branch" v={status.branch} />
+        <Row k="slab built" v={status.bakedAt ? new Date(status.bakedAt).toLocaleTimeString() : '—'} />
+        <Row k="unbaked edits" v={status.unbaked ? 'YES — bake first' : 'no'} warn={status.unbaked} />
+        <Row k="dirty slab files" v={status.dirty?.length || 0} warn={!!status.dirty?.length} />
+        {['staging', 'prod'].map((key) => {
+          const d = deploys[key]
+          const ahead = (key === 'staging' ? status.vsStaging : status.vsProd)?.ahead || 0
+          const behind = (key === 'staging' ? status.vsStaging : status.vsProd)?.behind || 0
+          // ⭐ 'behind' is the one that matters and the one git alone cannot see: the target's
+          // live slab is not the slab on this disk. ⚠️ unknown ≠ current — an unreachable
+          // site says so rather than borrowing the other row's answer, which is exactly the
+          // bug that let staging quietly report production's number.
+          // ⭐ ABSENT ≠ STALE. A look never published to this key space answers 404 → bakedAt
+          // null, which is "nothing here", not "an older slab". Both correctly leave the
+          // button live, but naming them the same would send a developer hunting a bad pour
+          // when the real answer is that this town has never been put up here at all.
+          const slab = d?.status === 'ready' ? 'current'
+            : d?.status === 'building' ? 'shipped, building'
+            : d?.status === 'behind' ? (d.bakedAt == null ? 'never published here' : 'STALE — not your slab')
+            : 'unknown (unreachable)'
+          const bad = !d || d.status === 'behind'
+          return (
+            <div key={key} style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+              <div style={{ color: '#e9e6e2', fontWeight: 700, marginBottom: 3 }}>{key}</div>
+              <Row k="code" v={ahead === 0 ? 'current' : `${ahead} commit${ahead === 1 ? '' : 's'} to ship`} warn={ahead > 0} />
+              {behind > 0 && <Row k="⚠ behind by" v={`${behind} — not a fast-forward`} warn />}
+              <Row k="slab" v={slab} warn={bad} />
+              <Row k="live built" v={d?.bakedAt ? new Date(d.bakedAt).toLocaleTimeString() : '—'} />
+            </div>
+          )
+        })}
+        {/* ⛔ The drawer reports; it never certifies. A byte-level answer needs the
+            independent verifier, which re-walks the tree rather than trusting bakedAt. */}
+        <div style={{ marginTop: 8, paddingTop: 6, borderTop: '1px solid rgba(255,255,255,0.08)', color: 'rgba(233,230,226,0.5)', lineHeight: 1.45 }}>
+          bakedAt only — for bytes:<br />
+          <span style={{ color: 'rgba(233,230,226,0.75)' }}>verify-baked-in-r2.mjs</span>
+        </div>
+      </div>
+    )}
+    </div>
+  )
+}
+
+// One label/value line in the dev drawer. Warn colours the VALUE, never the label —
+// the eye should land on the thing that is wrong, not on the row it lives in.
+function Row({ k, v, warn }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, lineHeight: 1.7 }}>
+      <span style={{ color: 'rgba(233,230,226,0.5)', flex: '0 0 auto' }}>{k}</span>
+      <span style={{ color: warn ? '#fbbf24' : '#e9e6e2', textAlign: 'right', wordBreak: 'break-word' }}>{v}</span>
     </div>
   )
 }
