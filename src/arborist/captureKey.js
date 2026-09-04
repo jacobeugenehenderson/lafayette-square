@@ -46,11 +46,14 @@
  * code shot which record — that missing information IS the defect being closed.
  *
  * Per-pool so a hero-side change does not re-shoot every overhead band for nothing.
- *   overhead 2 — 2026-08-28 capture frame (local-vs-world) + 2026-09-03 versioning
- *   hero     2 — same
- * (1 = the implicit, unversioned era: any record written before this constant existed.)
+ *   overhead 3 — 2026-09-03: the capture pool now sources the ATLAS-REWRITTEN baked GLB
+ *                (Grove.jsx) instead of the raw library file for substituted species.
+ *                Same tree, different pixels — the fingerprint cannot see it, which is
+ *                the exact reason this constant exists. First real use.
+ *   hero     3 — same
+ *   (2 — 2026-08-28 capture frame, local-vs-world; 1 — the implicit, unversioned era.)
  */
-export const CAPTURE_FORMAT = { overhead: 2, hero: 2 }
+export const CAPTURE_FORMAT = { overhead: 3, hero: 3 }
 
 // FNV-1a over the stable-stringified inputs. Short, dependency-free, and stable
 // across runs/machines (JSON.stringify with sorted keys — plain object key order

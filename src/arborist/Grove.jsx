@@ -186,6 +186,9 @@ export default function Grove() {
   // the operator is looking. (2026-07-22)
   const [overheadResult, setOverheadResult] = useState(null)  // {ok,fail} | null
   const [heroResult, setHeroResult] = useState(null)          // {ok,fail} | null
+  // ⭐ Hoisted above the capture pool (2026-09-03): the pool now asks this manifest which
+  // species were rewritten into THIS atlas. Declared after it, the memo hit the TDZ.
+  const groveAtlas = useTreeAtlas(activeLookId)
   const overheadSpecies = useMemo(() => {
     if (!activeLookId) return []
     const base = import.meta.env.BASE_URL
@@ -228,15 +231,55 @@ export default function Grove() {
       // loads for that species and therefore the only honest thing to capture.
       // ⚠️ Those lack atlas-rewritten UVs. If that shows in the capture, the fix is to
       // bake their GLBs into the Look — NOT to drop them from the pool again.
-      const inLook = lookSpeciesSet.has(t.species)
-      const glbUrl = inLook
-        ? bakedGlbUrl(activeLookId, t.species, t.variantId, 'lod1')
-        : (t.runtimeUrl ? `${base.replace(/\/$/, '')}${t.runtimeUrl}` : null)
+      // ⭐⭐ ASK THE ATLAS WHICH GLB IS REWRITTEN TO IT — never the Look roster.
+      // ⛔ THE BUG THIS CLOSES (2026-09-03, Jacob: "let's fix the sugar maple once and
+      // for all"). This branched on Look MEMBERSHIP, on the premise that "only the Look's
+      // species get a baked GLB; building a baked path for the others yields a 404." That
+      // premise was false. `acer_saccharum` — sugar maple's Latin twin, 281 LS placements,
+      // reached by substitution and absent from the Look — HAD a baked GLB the whole time
+      // and it was ignored. So its impostor was captured from the raw library file, whose
+      // UVs run u[-1.94, 3.52] v[-5.42, 1.98] (tiling, unrewritten) while the capture binds
+      // the ATLAS material: wrong atlas regions entirely. It is also unscaled, so the card
+      // was built for a 10.3 m tree the map draws at 11.9 m.
+      // ⭐ `barkBySpecies` is the honest test, and it is a fact about THIS atlas rather than
+      // about anybody's roster: bake-look writes a species there exactly when it rewrote
+      // that species' GLB into this atlas. So it covers a town nobody has looked at, needs
+      // no list, and cannot drift from what was actually baked.
+      const rewritten = !!groveAtlas?.manifest?.barkBySpecies?.[t.species]
+      if (!rewritten) {
+        // ⛔ LOUD, NOT SILENT, AND ⛔ NOT A FALLBACK TO THE RAW FILE. Capturing from an
+        // unrewritten GLB yields a confidently wrong impostor, which is worse than none:
+        // the operator sees a tree, not a gap. Correct mesh beats wrong impostor. The name
+        // is surfaced in the "no impostor" banner so it is a gap the operator can SEE.
+        console.warn(`[grove-bake] "${t.species}" is not in this atlas (barkBySpecies) — its baked GLB `
+          + `is not rewritten to it, so any capture would sample the wrong atlas regions. SKIPPED, loudly.`)
+        continue
+      }
+      const glbUrl = bakedGlbUrl(activeLookId, t.species, t.variantId, 'lod1')
       if (!glbUrl) { console.warn(`[grove-bake] "${t.species}" has no GLB url in the slab — cannot capture.`); continue }
       out.push({ species: t.species, glbUrl })
     }
     return out
-  }, [activeLookId, activeLookTrees, slabSpecies, eligibleNames, groveBoard])
+  }, [activeLookId, activeLookTrees, slabSpecies, eligibleNames, groveBoard, groveAtlas?.manifest])
+
+  // ⛔ THE SKIP MUST BE SEEN. A species the pool refuses (its GLB is not rewritten into
+  // this atlas) would otherwise just be absent — and "silently absent from the capture
+  // pool" is exactly how 2,251 placements once ended up permanently on mesh. Surfaced in
+  // the same "no impostor" banner as a capture FAILURE, because to the operator it is the
+  // same fact: this tree ships as mesh at every distance, and here is its name.
+  const unrewrittenSpecies = useMemo(() => {
+    const bark = groveAtlas?.manifest?.barkBySpecies
+    if (!bark) return []
+    const source = slabSpecies.length ? slabSpecies : activeLookTrees
+    const seen = new Set(), out = []
+    for (const t of source) {
+      if (seen.has(t.species)) continue
+      seen.add(t.species)
+      if (eligibleNames.size && !eligibleNames.has(t.species) && !eligibleByLibId(t.species, groveBoard, unownedRef)) continue
+      if (!bark[t.species]) out.push(t.species)
+    }
+    return out
+  }, [slabSpecies, activeLookTrees, eligibleNames, groveBoard, groveAtlas?.manifest])
 
   // ⭐ DRAIN-ON-BAKE (Jacob, 2026-07-22). Bake→Slab re-captures only what's DIRTY;
   // a species whose fingerprint still matches its stored capture is skipped. The
@@ -251,7 +294,6 @@ export default function Grove() {
   // The ⟳ button deliberately FORCES all — it is the repair gesture, for when you
   // don't trust the fingerprint (changed capture code, a suspect asset on disk).
   const forceAll = useRef(false)
-  const groveAtlas = useTreeAtlas(activeLookId)
   // ⭐ The four per-species slots the shared material needs, read straight off the Look's
   // manifest — the same four `InstancedTrees` reads for the map. Bound PER DRAW inside each
   // Tile, because one material serves every tile.
@@ -692,7 +734,7 @@ export default function Grove() {
         // ⭐ Name the trees. An operator needs WHICH and WHAT NEXT, never a ratio over a
         // batch they cannot see. Loud enough not to be silent, but one line, and it
         // dismisses until the next bake.
-        const names = [...new Set([...(overheadResult?.failedNames || []), ...(heroResult?.failedNames || [])])]
+        const names = [...new Set([...(overheadResult?.failedNames || []), ...(heroResult?.failedNames || []), ...unrewrittenSpecies])]
         if (!names.length || impostorGapDismissed) return null
         return (
           <div style={{
