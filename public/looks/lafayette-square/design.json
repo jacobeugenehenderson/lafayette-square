@@ -596,12 +596,12 @@
         "spread": 0.02
       },
       "noon": {
-        "intensity": 0.36,
-        "threshold": 0.04,
+        "intensity": 1.06,
+        "threshold": 0.03,
         "smoothing": 0.96,
         "warmCool": 0.5,
         "blend": 0,
-        "spread": 0
+        "spread": 0.04
       },
       "dawn": {
         "intensity": 0.7,
@@ -642,8 +642,13 @@
     }
   },
   "fill": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "value": 0.65
+      "noon": {
+        "value": 2
+      }
     }
   },
   "exposure": {
@@ -667,10 +672,15 @@
     }
   },
   "ao": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "radius": 15.5,
-      "intensity": 0,
-      "distanceFalloff": 0.3
+      "noon": {
+        "radius": 12.5,
+        "intensity": 1.9,
+        "distanceFalloff": 0.3
+      }
     }
   },
   "mist": {
@@ -690,7 +700,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "strength": 0.5,
+        "strength": 0.25,
         "color": null
       }
     }
@@ -760,31 +770,43 @@
       },
       "noon": {
         "enabled": 0,
-        "blur": 0.1,
-        "focus": 320,
-        "heroBlur": 0.02,
+        "blur": 0.2,
+        "focus": 405,
+        "heroBlur": 0.08,
         "softness": 0.16
       },
       "golden": {
         "enabled": 0.42102621787661165,
         "blur": 0.08,
-        "focus": 55,
+        "focus": 85,
         "heroBlur": 0.02,
         "softness": 0.16
       },
       "sunset": {
         "enabled": 0.46219607164489046,
-        "blur": 0,
-        "focus": 73.84370516499277,
+        "blur": 0.12,
+        "focus": 395,
         "heroBlur": 0.02,
-        "softness": 0.16
+        "softness": 0.24
       }
     }
   },
   "shadow": {
+    "animated": "tod",
+    "transitionIn": 30,
+    "transitionOut": 30,
     "values": {
-      "size": 52,
-      "samples": 16
+      "noon": {
+        "size": 23,
+        "samples": 11
+      }
+    }
+  },
+  "canopy": {
+    "values": {
+      "directional": 0,
+      "gain": 0.85,
+      "bulge": 0.9
     }
   },
   "constellations": {
@@ -834,7 +856,7 @@
     "transitionOut": 0,
     "values": {
       "noon": {
-        "value": 0
+        "value": 1
       },
       "night": {
         "value": 2
@@ -853,7 +875,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "value": 2
+        "value": 1.5
       },
       "golden": {
         "value": 1
@@ -889,27 +911,27 @@
   "heroKeyframes": [
     {
       "position": [
-        -190,
-        107,
-        370
-      ],
-      "fov": 26
-    },
-    {
-      "position": [
-        -614,
-        114,
-        183
-      ],
-      "fov": 24
-    },
-    {
-      "position": [
-        -634,
-        113,
-        -117
+        -5,
+        93,
+        456
       ],
       "fov": 22
+    },
+    {
+      "position": [
+        -624,
+        157,
+        152
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -470,
+        81,
+        -394
+      ],
+      "fov": 43
     }
   ],
   "heroMotion": {
@@ -1275,11 +1297,5 @@
       "species": "platanus_acerifolia",
       "variantId": 4
     }
-  ],
-  "groveThreshold": {
-    "topN": 95,
-    "meshTopN": 0,
-    "pinned": [],
-    "withheld": []
-  }
+  ]
 }
