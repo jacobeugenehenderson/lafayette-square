@@ -499,11 +499,6 @@ export function injectFoliageSway(material) {
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
-         uniform float uWaveScale;
-         uniform float uWaveSpeed;
-         uniform float uWaveLag;
-         uniform float uBendGain;
-         uniform float uLayerDepth;
          uniform vec3  uGustFrontVelocity;
          uniform float uGustsScale;
          uniform float uGustEnvelope;
@@ -1897,6 +1892,16 @@ const OVERHEAD_WIND_COMMON = `
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
+         // ⛔ THESE BELONG HERE, NOT IN THE MESH COMMON BLOCK. OVERHEAD_WIND_BEGIN is the
+         // only code that reads them and it composes with THIS common — declaring them
+         // beside the mesh sway instead compiled a card shader referencing undeclared
+         // uniforms, which is a silent link failure: the trees simply do not draw.
+         // (2026-09-03 — "the trees are gone".)
+         uniform float uWaveScale;
+         uniform float uWaveSpeed;
+         uniform float uWaveLag;
+         uniform float uBendGain;
+         uniform float uLayerDepth;
          uniform float uGustsScale;
          uniform float uGustEnvelope;
          uniform float uWindFloor;
