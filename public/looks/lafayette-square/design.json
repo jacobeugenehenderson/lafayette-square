@@ -1278,7 +1278,7 @@
   ],
   "groveThreshold": {
     "topN": 95,
-    "meshTopN": 5,
+    "meshTopN": 0,
     "pinned": [],
     "withheld": []
   }
