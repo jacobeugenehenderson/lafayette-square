@@ -579,7 +579,10 @@ function TierDriver() {
 
 // GeoTierDriver (the runtime camera-altitude geometry-LOD swap) RETIRED
 // 2026-06-25 — it served the cut-trunk lod2 to high telephoto / shallow-browse
-// framings. Geometry is now chosen by baked role (heroTier), not live distance
+// framings. Geometry is chosen by the operator's mesh bar (`meshTier`) and then the baked
+// pan-distance band (`heroRole`) — ⛔ NOT by `heroTier`, which this line claimed for months
+// and which sent a 2026-09-03 audit chasing the wrong field. `heroTier` drives only the
+// read-only QC tint, and on a slab whose hero foundation is on it reaches no pixel at all.
 // (role-at-bake doctrine). `computeTier` is kept below for TierDriver (bark
 // shader detail, a uniform — not geometry).
 
@@ -709,10 +712,19 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // Geometry budget = fraction of trees (tallest-first by dbh) that KEEP mesh geometry;
   // the rest drop to the impostor foundation. A pyramid bracket / the Phase-4 Stage
   // knob. Tunable live via ?heroGeom=0.15. (The "∩ foreground" axis lands with the bake.)
-  // Opt-in to the baked pan-distance band (hero-band.mjs). Off → the legacy dbh
-  // split, i.e. exactly what shipped before 2026-08-24.
+  // ⭐⭐ THE BAKED PAN-DISTANCE BAND IS NOW THE DEFAULT (2026-09-03). It was opt-in via
+  // `?heroBand=1` "until the budget has been eye-gated" — and it never was, so since
+  // 2026-08-24 the bake computed a band every pour and the runtime threw it away, falling
+  // back to the legacy dbh cut. Measured on LS: legacy draws 792 meshes / 34.1 M mesh
+  // triangles against a `triangleBudget` of 15 M the slab reports as SPENT; the band draws
+  // 335 / 15.0 M. The slab was describing a budget nobody was spending.
+  // ⛔ dbh is the wrong axis and the code said so itself — 55% of LS placements have no
+  // measured DBH at all (OSM sources get one SAMPLED from the species distribution), so for
+  // most of the map the mesh/card decision was made on a synthesised number that "predicts
+  // neither cost nor visibility". The band is measured pan distance.
+  // `?heroBand=0` restores the legacy split for comparison.
   const useBakedBand = useMemo(() => {
-    try { return new URLSearchParams(window.location.search).get('heroBand') === '1' } catch { return false }
+    try { return new URLSearchParams(window.location.search).get('heroBand') !== '0' } catch { return true }
   }, [])
   const heroGeomFraction = useMemo(() => {
     const q = new URLSearchParams(window.location.search).get('heroGeom')
@@ -915,9 +927,17 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         // ⛔ Before this the bar controlled nothing — dragging a bar labelled "mesh" left
         // the geometry count unmoved, because the cut was taken over ALL placements
         // regardless of which species the operator had selected for geometry.
-        // ⛔ Absent `meshTier` (a slab baked before this) → previous behaviour, so an old
-        // slab is not silently stripped of every anchor.
-        const meshAllowed = inst.meshTier !== false
+        // ⛔⛔ ASK THE SLAB WHETHER THE FIELD IS STAMPED — never read absence as permission.
+        // This was `inst.meshTier !== false`, and that single `!==` inverted the operator's
+        // gesture: meshTopN:0 ("no species carries geometry") produced an EMPTY eligible set,
+        // the bake then OMITTED the field, and absence read as TRUE ⇒ every species eligible.
+        // The authored zero became a silent maximum, which is Layer 0 q2 committed in a
+        // comparison operator. `meshTierStamped` is the slab-level fact the absence was
+        // standing in for: present ⇒ the boolean is real and the bar is authoritative, zero
+        // included; absent ⇒ a pre-2026-09-03 slab, keep the old behaviour. (2026-09-03)
+        const meshAllowed = bake?.meshTierStamped
+          ? inst.meshTier === true
+          : inst.meshTier !== false
         const wantsImpostor = !meshAllowed
           ? true
           : (useBakedBand && inst.heroRole)

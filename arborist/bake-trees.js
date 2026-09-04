@@ -1021,9 +1021,16 @@ export async function bakeTrees({
       // ⭐ MESH ELIGIBILITY from the mesh bar. `false` means this species may NEVER carry
       // geometry however tall the tree; the runtime's dbh cut then chooses only among
       // species the operator already put above the bar.
-      // ⛔ Absent (no selection computed) → the runtime keeps its previous behaviour
-      // rather than silently forbidding geometry everywhere.
-      ...(meshTierSpecies.size ? { meshTier: meshTierSpecies.has(v.species) } : {}),
+      // ⛔⛔ STAMPED UNCONDITIONALLY (2026-09-03). This was gated on `meshTierSpecies.size`,
+      // which INVERTED the operator's own gesture: meshTopN:0 means "no species may carry
+      // geometry", the set comes out empty, the field was therefore OMITTED — and the
+      // runtime read absence as `meshTier !== false` ⇒ TRUE, i.e. EVERY species eligible.
+      // Zero and all, wearing the same absence. The boolean is perfectly well-defined when
+      // the set is empty; only the guard was confused. (`project_a_sentinel_is_not_a_value`,
+      // and Layer 0 q2: the fallback turned an authored zero into a silent maximum.)
+      // ⭐ The old-slab case is now a SLAB-LEVEL fact (`meshTierStamped`, below) — the thing
+      // it always was. A per-instance absence cannot distinguish "old slab" from "excluded".
+      meshTier: meshTierSpecies.has(v.species),
       // ⭐ PER-INSTANCE SCALE. The GLB is normalised at publish to the band's HIGH — the
       // mature specimen — so every instance scales DOWN from it by where its own DBH sits
       // in that species' measured DBH distribution. A tree is therefore never rendered
@@ -1227,6 +1234,11 @@ export async function bakeTrees({
     scene: sceneName,
     lod: targetLod,
     activeStyles: [...activeStyles],
+    // ⭐ THE SLAB-LEVEL FACT the per-instance absence was standing in for. Present ⇒ every
+    // instance carries a real `meshTier` boolean and the operator's mesh bar is authoritative,
+    // INCLUDING a bar of zero. Absent ⇒ a slab baked before 2026-09-03, where absence meant
+    // "not computed" and the runtime must keep its old behaviour. One fact, one meaning.
+    meshTierStamped: true,
     count: instances.length,
     unmatched,
     uniqueVariants: variantUseCount.size,
