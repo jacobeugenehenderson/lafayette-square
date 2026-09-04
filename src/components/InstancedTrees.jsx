@@ -738,7 +738,13 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // Geometry budget = fraction of trees (tallest-first by dbh) that KEEP mesh geometry;
   // the rest drop to the impostor foundation. A pyramid bracket / the Phase-4 Stage
   // knob. Tunable live via ?heroGeom=0.15. (The "∩ foreground" axis lands with the bake.)
-  // ⭐⭐ THE BAKED PAN-DISTANCE BAND IS NOW THE DEFAULT (2026-09-03). It was opt-in via
+  // ⛔⛔ DEFAULT OFF, AND IT STAYS OFF UNTIL AN EYE GATES IT. I flipped this to default-on
+  // on 2026-09-03 without reading the decision three lines below: someone had already run
+  // this experiment, got a sparse thin canopy (2323 real trees -> 403 in one step, the rest
+  // canopy cards), and parked it behind the flag ON PURPOSE. The rule they wrote is the one
+  // I broke: A SHARED CHANGE SHIPS AS A KNOB DEFAULTING TO TODAY'S VALUES, so the map is
+  // unchanged until someone turns it. Reverted at Jacob's instruction the same night.
+  // Historical note on what the flip does: it was opt-in via
   // `?heroBand=1` "until the budget has been eye-gated" — and it never was, so since
   // 2026-08-24 the bake computed a band every pour and the runtime threw it away, falling
   // back to the legacy dbh cut. Measured on LS: legacy draws 792 meshes / 34.1 M mesh
@@ -750,7 +756,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // neither cost nor visibility". The band is measured pan distance.
   // `?heroBand=0` restores the legacy split for comparison.
   const useBakedBand = useMemo(() => {
-    try { return new URLSearchParams(window.location.search).get('heroBand') !== '0' } catch { return true }
+    try { return new URLSearchParams(window.location.search).get('heroBand') === '1' } catch { return false }
   }, [])
   const heroGeomFraction = useMemo(() => {
     const q = new URLSearchParams(window.location.search).get('heroGeom')

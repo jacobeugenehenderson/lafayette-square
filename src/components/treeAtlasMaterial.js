@@ -1892,16 +1892,6 @@ const OVERHEAD_WIND_COMMON = `
          uniform float uTime;
          uniform vec3  uWindForce;
          uniform float uWindIntensity;
-         // ⛔ THESE BELONG HERE, NOT IN THE MESH COMMON BLOCK. OVERHEAD_WIND_BEGIN is the
-         // only code that reads them and it composes with THIS common — declaring them
-         // beside the mesh sway instead compiled a card shader referencing undeclared
-         // uniforms, which is a silent link failure: the trees simply do not draw.
-         // (2026-09-03 — "the trees are gone".)
-         uniform float uWaveScale;
-         uniform float uWaveSpeed;
-         uniform float uWaveLag;
-         uniform float uBendGain;
-         uniform float uLayerDepth;
          uniform float uGustsScale;
          uniform float uGustEnvelope;
          uniform float uWindFloor;
@@ -1941,46 +1931,19 @@ const OVERHEAD_WIND_BEGIN = `
              vec2 ovWorldXZ = modelMatrix[3].xz;
            #endif
            vec2 wd = uWindIntensity > 1e-3 ? uWindForce.xz / uWindIntensity : vec2(0.0);
-           if (dot(wd, wd) < 1e-6) wd = vec2(1.0, 0.0);   // dead calm still needs an AXIS
            float wI    = uWindIntensity;
            float gust  = uGustsScale * uGustEnvelope * ovFbm(vec2(uTime * 0.4) + wd * uTime * 0.2);
-
-           // ⭐⭐ THE CANOPY WAVE — one continuous field stretched across the whole
-           // neighbourhood, sampled per LAYER DEPTH. (Jacob, 2026-09-03: "something like a
-           // perspective fractal noise displacement map stretched over the entire back layer
-           // and another stretched across all the front layers.")
-           // ⛔ The field is sampled in WORLD XZ at a LARGE scale, so neighbouring trees read
-           // the SAME wave and it travels downwind as one front — that is what makes it a
-           // wave and not 7,000 trees jittering independently. The previous flutter sampled
-           // (ovWorldXZ + position.xz) * 0.55, i.e. essentially per-vertex noise, which is
-           // why it read as smear rather than motion.
-           // ⭐ TWO FIELDS, ONE PER DEPTH. uLayerDepth is 0 at the front canopy and 1 at the
-           // rear/trunk (bound per layer — each hero layer owns its material). Offsetting the
-           // sample by depth makes the back of the crown lag the front, which is the parallax
-           // a flat card cannot otherwise have. This is the "successive, in 3 dimensions".
-           vec2  waveUV = ovWorldXZ * uWaveScale - wd * (uTime * uWaveSpeed)
-                          + vec2(uLayerDepth * 3.1, uLayerDepth * -1.7);
-           float wave   = ovFbm(waveUV) - 0.5;
-           float waveLag = ovFbm(waveUV - wd * uWaveLag) - 0.5;   // trailing sample → follow-through
-           float w      = mix(wave, waveLag, uLayerDepth);
-
-           // ⛔⛔ BEND, DO NOT SLIDE. This was  transformed.xz += hula + lean + flutter  — a
-           // pure horizontal TRANSLATION of every vertex. On a flat card that is a SHEAR of
-           // the photograph: the image slides sideways and warps. No amplitude makes a shear
-           // look like a bend, which is why turning the old controls up made it worse.
-           // ⛔ And the direction ROTATED: hulaDir = vec2(cos(drift), sin(drift)) orbited the
-           // tree around the compass on a 25 s cycle. Nothing in weather orbits. That was the
-           // "trippy". Direction now comes from the wind vector and only its MAGNITUDE varies.
-           // ⭐ A base-anchored rotation gives the arc for free: the crown swings along a
-           // circle, so it DROPS as it leans (the Y this never had) and foreshortens as it
-           // swings toward or away from camera. That is the third dimension, out of geometry
-           // we already have rather than a new capture.
-           float bendAmt = (0.10 * uWindFloor + 0.055 * wI + 0.09 * gust) * uBendGain;
-           float theta   = bendAmt * (0.55 + 0.9 * w) * aTreeHeightNorm;
-           float lever   = max(transformed.y, 0.0);
-           float ct = cos(theta), st = sin(theta);
-           transformed.xz += wd * (lever * st);
-           transformed.y   = lever * ct + (transformed.y - lever);
+           float drift  = uTime * 0.25;
+           vec2  hulaDir = vec2(cos(drift), sin(drift));
+           float amp    = (0.12 * uWindFloor + 0.035 * wI + 0.07 * gust) * aTreeHeightNorm;  // ambient breeze FLOOR (calm ≠ dead), scaled PER CARRIER; weather ADDS on top
+           float hulaPh = dot(ovWorldXZ, vec2(0.017, 0.011));   // per-tree phase de-sync
+           vec2  hula   = hulaDir * (amp * sin(uTime * 0.9 - aTreeHeightNorm * 2.4 + hulaPh));
+           vec2  lean   = wd * (amp * 0.7);
+           // Flutter noise sampled at WORLD coords → advects downwind across the map.
+           vec2  np      = (ovWorldXZ + position.xz) * 0.55 + wd * uTime * 1.2;
+           float flutAmp = (0.05 * uWindFloor + 0.05 * wI) * aTreeHeightNorm;  // ambient flutter floor (per carrier) + weather
+           vec2  flutter = (vec2(ovFbm(np), ovFbm(np + 41.7)) - 0.5) * (2.0 * flutAmp);
+           transformed.xz += hula + lean + flutter;
            if (aLeafBody > 0.001) {   // legacy per-leaf flutter (procedural relic)
              float ft  = uTime * 3.4 + aLeafPhase;
              float amp2 = (0.1 + wI * 0.06) * aLeafBody;
@@ -1999,29 +1962,6 @@ const OVERHEAD_WIND_BEGIN = `
 // ⭐ SUBTLE IS AN EYE CALL, NOT A CONSTANT — dial it live and keep what looks right:
 //     window.__setBrowseWindFloor(1.8)   // browse discs
 //     window.__setHeroWindFloor(1.0)     // hero cards (1.0 = today's behaviour)
-// ⭐ THE CANOPY-WAVE DIALS. Shared across every carrier, because the wave is a property
-// of the WEATHER crossing the neighbourhood, not of one tree. ⛔ The wind itself is still
-// ONE state authored in the Meteorologist — these say how the canopy ANSWERS it, which is
-// a tree fact and belongs with the trees. Live-dialable: this is an eye call and the last
-// attempt failed by being tuned blind.
-//   uWaveScale  — smaller = LONGER waves across the map (0.004 ≈ ~250 m wavelength)
-//   uWaveSpeed  — how fast the front travels downwind
-//   uWaveLag    — how far the rear canopy trails the front (the "successive")
-//   uBendGain   — master amplitude of the bend
-export const canopyWave = {
-  uWaveScale: { value: 0.004 },
-  uWaveSpeed: { value: 0.06 },
-  uWaveLag:   { value: 18.0 },
-  uBendGain:  { value: 1.0 },
-}
-if (typeof window !== 'undefined') {
-  window.__setCanopyWave = (k, v) => {
-    const u = canopyWave['u' + k[0].toUpperCase() + k.slice(1)]
-    if (!u) return Object.keys(canopyWave)
-    u.value = Number(v); return u.value
-  }
-}
-
 export const browseWindFloor = { value: 1.5 }
 export const heroWindFloor   = { value: 1.0 }
 if (typeof window !== 'undefined') {
@@ -2057,15 +1997,6 @@ function bindOverheadWindUniforms(shader, floorUniform) {
   shader.uniforms.uWindIntensity = treeSwayUniforms.uWindIntensity
   shader.uniforms.uGustsScale    = treeSwayUniforms.uGustsScale
   shader.uniforms.uGustEnvelope  = treeSwayUniforms.uGustEnvelope
-  // The canopy wave — shared dials, plus a PER-LAYER depth. `layerDepth` is 0 at the front
-  // canopy and 1 at the rear/trunk; every hero layer owns its own material, so this is a
-  // real per-draw value rather than a global. Carriers with no layering (the browse disc)
-  // pass nothing and sit at 0, which is the single-field behaviour.
-  shader.uniforms.uWaveScale     = canopyWave.uWaveScale
-  shader.uniforms.uWaveSpeed     = canopyWave.uWaveSpeed
-  shader.uniforms.uWaveLag       = canopyWave.uWaveLag
-  shader.uniforms.uBendGain      = canopyWave.uBendGain
-  shader.uniforms.uLayerDepth    = { value: 0 }
 }
 
 export function injectOverheadWiggle(material) {
@@ -2136,17 +2067,13 @@ const HERO_BILLBOARD_BEGIN = `
            transformed = heroRight * position.x + vec3(0.0, position.y, 0.0) + heroFwd * position.z;
          }`
 
-// `layerDepth`: 0 = front canopy shell, 1 = rear shell / trunk. Drives which slice of the
-// canopy wave this card samples, so the back of the crown TRAILS the front instead of the
-// three shells moving in lockstep (which is what made a hero tree read as a rigid sandwich).
-export function injectHeroImpostorStamp(material, aoTex, layerDepth = 0) {
+export function injectHeroImpostorStamp(material, aoTex) {
   // Distinct program cache key — MeshBasic+map+onBeforeCompile collides with the
   // overhead-disc material otherwise, and three can serve one's compiled program to
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
   material.customProgramCacheKey = () => 'heroImpostorStamp'
   material.onBeforeCompile = (shader) => {
     bindOverheadWindUniforms(shader, heroWindFloor)
-    shader.uniforms.uLayerDepth = { value: layerDepth }
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
