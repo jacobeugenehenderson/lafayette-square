@@ -244,27 +244,53 @@ function isComposedSpecies(species) {
 // ⭐ SUBSTITUTE, don't drop: the routed species IS the tree the operator asked for, and
 // its composed sibling is the same canonical — so `oak_white` delivers "Oak, Red"'s
 // white oak, dressed. Dropping would have silently thinned the routing instead.
-function preferComposedTwin(candidates, pool, activeStyles) {
+// ⭐⭐ AND THE SECOND RULE: AMONG COMPOSED TWINS, THE OPERATOR'S ROSTER DECIDES.
+// ⛔ THE HOLE THE FIRST RULE LEFT (2026-09-03, Jacob: "the sugar maple, once and for all").
+// "Prefer composed" stops firing the moment BOTH twins are composed — and that is exactly
+// what happened. `acer_saccharum` was composed at some point, so 281 LS placements stayed on
+// it while `maple_sugar` — the SAME TREE, in the Look, already carrying 616 placements and a
+// full set of impostor records — sat beside it. The rule went quiet and nothing noticed,
+// because composed-ness was only ever a PROXY for "this is the asset we actually curate".
+// ⭐ The roster IS that fact, authored, per town: design.json#/trees is the operator saying
+// "these are the trees I chose." So among twins resolving to one canonical, the roster member
+// wins. No pair list, no per-town table, and a town nobody has looked at gets it from its
+// own roster on the first pour.
+// ⛔ It only ever swaps WITHIN a canonical species, so it cannot restyle a town: a bur oak
+// never becomes a maple. A twin with no roster sibling is left exactly where it is, and an
+// empty roster disables the rule rather than guessing.
+function preferComposedTwin(candidates, pool, activeStyles, rosterSpecies = null) {
   if (!candidates.length) return candidates
   const canon = (sp) => { const r = resolveSpecies(sp); return r.resolved ? String(r.value) : null }
   const composedByCanon = new Map()
+  const rosterByCanon = new Map()
   for (const v of pool) {
     if (!isComposedSpecies(v.species)) continue
     if (!v.styles?.some((s) => activeStyles.has(s))) continue   // same style gate the caller applied
     const c = canon(v.species)
-    if (c && !composedByCanon.has(c)) composedByCanon.set(c, v)
+    if (!c) continue
+    if (!composedByCanon.has(c)) composedByCanon.set(c, v)
+    if (rosterSpecies?.has(v.species) && !rosterByCanon.has(c)) rosterByCanon.set(c, v)
   }
   if (!composedByCanon.size) return candidates
   const out = [], seen = new Set()
   for (const v of candidates) {
-    const c = isComposedSpecies(v.species) ? null : canon(v.species)
-    const use = (c && composedByCanon.get(c)) || v
+    const c = canon(v.species)
+    let use = v
+    if (!isComposedSpecies(v.species)) {
+      use = (c && composedByCanon.get(c)) || v          // rule 1: raw twin → composed sibling
+    } else if (rosterSpecies?.size && c && !rosterSpecies.has(v.species)) {
+      const r = rosterByCanon.get(c)                     // rule 2: off-roster twin → roster sibling
+      if (r && r.species !== v.species) { use = r; TWIN_SWAPS.set(v.species, (TWIN_SWAPS.get(v.species) || 0) + 1) }
+    }
     if (!seen.has(use.species)) { seen.add(use.species); out.push(use) }
   }
   return out.length ? out : candidates
 }
+// ⛔ A SUBSTITUTION MAY NOT BE SILENT. It changes what the town is planted with, so the pour
+// prints it. Cleared per run by the caller.
+const TWIN_SWAPS = new Map()
 
-function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed) {
+function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed, rosterSpecies = null) {
   const preferred = speciesMap.map?.[parkSpecies]
   if (preferred?.length) {
     const speciesSet = new Set(preferred)
@@ -275,7 +301,7 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
     const candidates = preferComposedTwin(pool.filter(v =>
       speciesSet.has(v.species) &&
       v.styles?.some(s => activeStyles.has(s)),
-    ), pool, activeStyles)
+    ), pool, activeStyles, rosterSpecies)
     if (candidates.length) {
       // Per ARCHITECTURE.md "Two-tier substitution": heroes win their
       // bucket's quality lottery automatically (`4 > 2`). Restrict the hash
@@ -293,7 +319,7 @@ function pickVariant(parkSpecies, category, pool, activeStyles, speciesMap, seed
     const candidates = preferComposedTwin(pool.filter(v =>
       v.category === cat &&
       v.styles?.some(s => activeStyles.has(s)),
-    ), pool, activeStyles)
+    ), pool, activeStyles, rosterSpecies)
     if (candidates.length) {
       const idx = Math.floor(hash01(seed, 1) * candidates.length)
       return candidates[idx]
@@ -824,6 +850,15 @@ export async function bakeTrees({
   // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
   // surfaces match what the operator authored (WYSIWYG with the Design view).
   const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || sceneName, 'design.json')
+  // ⭐ The operator's curated roster for this town — the tiebreak between composed twins.
+  // Read from the Look, never enumerated here. Absent/unreadable ⇒ an EMPTY set, which
+  // DISABLES the roster rule rather than guessing at one (see preferComposedTwin).
+  let rosterSpecies = new Set()
+  try {
+    const _d = JSON.parse(readFileSync(_designPath, 'utf8'))
+    rosterSpecies = new Set((_d.trees || []).map(t => t.species).filter(Boolean))
+  } catch { rosterSpecies = new Set() }
+  TWIN_SWAPS.clear()
   const isForbidden = zoneShapePath
     ? makeZoneTester({
         shapePath: path.resolve(REPO_ROOT, zoneShapePath),
@@ -891,7 +926,7 @@ export async function bakeTrees({
     const tree = park.trees[i]
     const cat = SHAPE_TO_CATEGORY[tree.shape] || 'broadleaf'
     const seed = treeSeed(tree, i)
-    const v = pickVariant(tree.species, cat, variantPool, activeStyles, speciesMap, seed)
+    const v = pickVariant(tree.species, cat, variantPool, activeStyles, speciesMap, seed, rosterSpecies)
     if (!v) { unmatched++; continue }
     const lodUrl = v.skeletons[targetLod] || v.skeletons.lod1 || v.skeletons.lod0
     if (!lodUrl) { unmatched++; continue }
@@ -1055,6 +1090,18 @@ export async function bakeTrees({
 
   // Hero-tier classification (Phase A). Assign `heroTier` per instance in
   // lock-step with `canopies`. Skipped (field omitted) when no hero pan/dims.
+  // ⛔ SAY WHAT WAS SUBSTITUTED. A silent replant is a map the operator cannot audit.
+  if (TWIN_SWAPS.size) {
+    for (const [from, n] of TWIN_SWAPS) {
+      // ⚠️ This counts CANDIDATE substitutions, not final placements — pickVariant runs per
+      // tree and the swap is applied while building each candidate list, so n exceeds the
+      // number of trees that end up moved. The real effect is the species census below.
+      console.log(`[bake-trees] twin→roster: '${from}' substituted out of ${n} candidate list(s) `
+        + `in favour of its roster sibling (same canonical species; the Look carries the sibling).`)
+      console.log(`[bake-trees]   ⚠️ removing a candidate RE-ROLLS the category-fallback lottery, so `
+        + `other species' counts move too. Compare the census before/after — it is not a 1:1 transfer.`)
+    }
+  }
   let heroTierMeta = null
   if (heroPan && canopies.length === instances.length && canopies.length) {
     // ⭐ The HERO shot culls by CAMERA — no hood exception (Jacob, 2026-07-15).
