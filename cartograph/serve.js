@@ -2565,13 +2565,45 @@ createServer(async (req, res) => {
       const [behind, ahead] = (await runCapture(`git rev-list --left-right --count origin/${PROD_BRANCH}...HEAD`, { cwd: REPO_ROOT }))
         .stdout.trim().split(/\s+/).map(Number)
       if (behind > 0) throw new Error(`prod has ${behind} commit(s) not in this branch — not a clean fast-forward; reconcile first`)
-      if (!ahead) throw new Error('nothing to promote — prod already matches this branch')
-      const push = await runCapture(`git push origin ${branch}:${PROD_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
-      if (push.code !== 0) throw new Error(`push to prod failed: ${push.stderr}`)
+      // ⛔⛔ PROMOTE SHIPS THE SLAB, NOT JUST THE COMMITS (2026-09-04).
+      // This endpoint used to `git push` and nothing else, and the only caller of the
+      // uploader anywhere in this file is the bake — hardcoded `--env=staging`. Nothing
+      // ever ran `--env=prod`. So "Promote to Prod" shipped CODE to main and left the
+      // slab it depends on at whatever pour last reached the production keys: on
+      // 2026-09-04, 830 of 915 objects differed — a complete but OLDER canopy. ⛔ That is
+      // the Layer 0 failure exactly: prod renders a plausible map and nobody is told it is
+      // the wrong one. The staging/prod split (2026-09-03) built the guard — a bake may
+      // only ever write staging — and never wired its second half to a caller.
+      // ⛔ SLAB BEFORE CODE. `plans/r2-asset-offload.md §5`: "if 5 lands before 4, the map
+      // renders and the trees do not." Assets must exist before the code referencing them
+      // deploys, so a failed upload must leave prod untouched rather than half-promoted.
+      let r2 = null
+      try {
+        const up = await runCapture(`node scripts/upload-baked-to-r2.mjs --env=prod --look=${id}`,
+          { cwd: REPO_ROOT, timeout: 900000 })
+        if (up.code !== 0) throw new Error(up.stderr || up.stdout || `exit ${up.code}`)
+        r2 = (up.stdout.match(/✅ (\d+) objects, ([\d.]+ MB)/) || [])[0] || 'uploaded'
+        console.log(`[promote] R2 prod ${r2}`)
+      } catch (e) {
+        console.error(`[promote] ⛔ R2 prod upload FAILED for "${id}" — prod NOT pushed: ${e.message}`)
+        throw new Error(`the slab did not reach production — nothing was promoted: ${e.message}`)
+      }
+      // ⭐ The no-op guard moved BELOW the upload and now asks the right question. It used
+      // to read `if (!ahead) throw 'nothing to promote — prod already matches this branch'`,
+      // which is false whenever the code is current and the SLAB is stale — precisely the
+      // state this endpoint's own omission created, and it would have refused the one
+      // gesture that fixes it. Commits and slab are two shipments; only both being current
+      // is a no-op.
+      let pushed = false
+      if (ahead) {
+        const push = await runCapture(`git push origin ${branch}:${PROD_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
+        if (push.code !== 0) throw new Error(`push to prod failed: ${push.stderr}`)
+        pushed = true
+      }
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, promoted: ahead, branch, bakedAt, prodUrl: PROD_SITE_URL }))
+      res.end(JSON.stringify({ ok: true, promoted: ahead, pushed, r2, branch, bakedAt, prodUrl: PROD_SITE_URL }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
