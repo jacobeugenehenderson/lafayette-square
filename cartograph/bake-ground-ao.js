@@ -288,9 +288,21 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
     // exception, read from the global-looking baked/default.json. A scene with
     // no census → no trees, so no tree contact shadows. Honest either way.
     const treesLookPath = join(lookDir, 'trees.json')
+    let treesDoc = null
     if (existsSync(treesLookPath)) {
-      trees = (JSON.parse(readFileSync(treesLookPath, 'utf-8')).instances) || []
+      treesDoc = JSON.parse(readFileSync(treesLookPath, 'utf-8'))
+      trees = treesDoc.instances || []
     }
+    // ⭐ The atlas says which species have a HERO IMPOSTOR, which is what decides whether
+    // the runtime consults `heroTier` at all. Read it from the artifact beside trees.json;
+    // absent → treat the foundation as off, which is the honest reading of "no records".
+    let heroSpecies = new Set()
+    try {
+      const atlasPath = join(lookDir, 'trees-atlas.json')
+      if (existsSync(atlasPath)) {
+        heroSpecies = new Set(Object.keys(JSON.parse(readFileSync(atlasPath, 'utf-8')).heroImpostorBySpecies || {}))
+      }
+    } catch { heroSpecies = new Set() }
 
     if (lamps.length || trees.length) {
       // bbox = union of lamp + tree extents + the largest reach as margin.
@@ -332,7 +344,30 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       // ONLY for trees that actually render — `heroTier:"cull"` placements draw
       // nothing (InstancedTrees drops them), so splatting their shadow leaves an
       // orphan soft circle on bare grass. (2026-06-29 — "extra soft circles".)
-      const shadowTrees = trees.filter(t => t.heroTier !== 'cull')
+      // ⛔⛔ THE PREDICATE IS "DOES THIS PLACEMENT DRAW", AND IT IS NOT `heroTier`.
+      // This read `trees.filter(t => t.heroTier !== 'cull')`. That was correct when heroTier
+      // gated rendering. It is not any more: on a foundation-on slab the runtime reads
+      // heroTier ONLY in the branch that fires when the hero foundation is OFF
+      // (InstancedTrees.jsx:942) — it otherwise drives nothing but a QC tint. Measured
+      // 2026-09-03 on LS: heroTier marks 3850 of 5146 as 'cull' while ALL 5146 render as
+      // impostors, so this filter was splatting 1408 shadows and withholding 3738 from trees
+      // that are plainly there. ⭐ The exact INVERSE of its own stated intent.
+      // ⛔ The filter itself stays: the defect it was written for is real ("extra soft
+      // circles", 2026-06-29 — an orphan shadow ring under a tree that draws nothing). Only
+      // the predicate was wrong, so only the predicate changes.
+      const heroFoundationOn = heroSpecies.size > 0
+      const drawsAt = (t) => heroFoundationOn
+        // Foundation ON: every placement of a species with hero records draws — as mesh or
+        // as a card, but it draws. A species with NO record falls through to the legacy
+        // path, where heroTier's cull verdict is still the truth.
+        ? (heroSpecies.has(t.species) ? true : t.heroTier !== 'cull')
+        // Foundation OFF: the legacy prominence path decides, exactly as before.
+        : t.heroTier !== 'cull'
+      const shadowTrees = trees.filter(drawsAt)
+      if (shadowTrees.length !== trees.length) {
+        console.log(`[bake-ao] tree contact shadows: ${shadowTrees.length}/${trees.length} `
+          + `(${trees.length - shadowTrees.length} withheld — they draw nothing)`)
+      }
       for (const t of shadowTrees) splat(t.x, t.z, TREE_SHADOW_RADIUS_M, (i, rn) => {
         accG[i] += (1 - rn) * (1 - rn) * TREE_SHADOW_STR
       })
