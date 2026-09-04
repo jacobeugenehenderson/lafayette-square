@@ -14,6 +14,16 @@ const useSkyState = create((set, get) => ({
   moonPhase: 0,
   moonIllumination: 0,
   moonAltitude: 0,
+  // ── The KEY light, published so a consumer OUTSIDE the light rig can use it ──
+  // `sunDirection` is the sun; `keyDirection` is whatever the scene's primary
+  // <directionalLight> actually is right now — the sun by day, the sun→moon blend
+  // at night. They are the same vector for most of the day and materially
+  // different after dusk. A consumer that wants "where is the light coming from"
+  // wants THIS one. Pushed from CelestialBodies' lighting useMemo, off the very
+  // `primary.lightPosition` the light is built from — never recomputed.
+  keyDirection: new THREE.Vector3(0, 1, 0),
+  keyColor: new THREE.Color('#fffefa'),
+  nightFactor: 0,
   horizonColor: new THREE.Color('#1a1525'),  // sky color at h=0, pushed from GradientSky
 
   // ── Weather (smoothly interpolated toward targets) ──
@@ -72,7 +82,10 @@ const useSkyState = create((set, get) => ({
     // Mutate existing vectors to avoid object churn
     if (data.sunDirection) state.sunDirection.copy(data.sunDirection)
     if (data.moonDirection) state.moonDirection.copy(data.moonDirection)
+    if (data.keyDirection) state.keyDirection.copy(data.keyDirection)
+    if (data.keyColor) state.keyColor.set(data.keyColor)
     set({
+      nightFactor: data.nightFactor ?? state.nightFactor,
       sunElevation: data.sunElevation ?? state.sunElevation,
       moonPhase: data.moonPhase ?? state.moonPhase,
       moonIllumination: data.moonIllumination ?? state.moonIllumination,

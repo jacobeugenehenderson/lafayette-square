@@ -30,17 +30,35 @@ const ROOT = path.join(import.meta.dirname, '..')
 const FILE = 'src/components/treeAtlasMaterial.js'
 const src = readFileSync(path.join(ROOT, FILE), 'utf8')
 
-// The GLSL string constants, by name.
+// The GLSL string constants, by name. A block may be written as a CONCATENATION of
+// an already-declared block plus its own text (`const HERO_VERT_COMMON =
+// OVERHEAD_WIND_COMMON + <backtick>…`) — that is how a material adds its own varyings to a
+// shared block without either duplicating the shared text or declaring identifiers
+// into a sibling material that cannot write them. Resolve the prefix, or the check
+// reads the additions and misses everything they were added to.
 const blocks = new Map()
-for (const m of src.matchAll(/const ([A-Z0-9_]+) = `([\s\S]*?)`/g)) blocks.set(m[1], m[2])
+for (const m of src.matchAll(/const ([A-Z0-9_]+) = ((?:[A-Z0-9_]+ \+ )*)`([\s\S]*?)`/g)) {
+  const prefix = m[2].split('+').map(t => t.trim()).filter(Boolean).map(n => blocks.get(n) ?? '').join('\n')
+  blocks.set(m[1], prefix + m[3])
+}
 
-// Injection sites pair a COMMON with a BEGIN: `'#include <common>' + X` and
-// `'#include <begin_vertex>' + Y (+ Z…)`. Read the pairing, never restate it.
+// Injection sites pair a COMMON with the code injected alongside it. BOTH shader
+// halves are covered: the vertex half (`'#include <common>' + X` / `'#include
+// <begin_vertex>' + Y`) and the FRAGMENT half (`'#include <common>' + X` /
+// `'#include <map_fragment>' + Y`).
+//
+// ⛔ THE FRAGMENT HALF WAS INVISIBLE HERE UNTIL 2026-09-03, and the omission had the
+// shape this whole check exists to catch: the instrument reported ✅ across the board
+// while covering only half of what it claimed to cover. It could not see the fragment
+// side because that side was written as INLINE template literals rather than named
+// constants, and this file reads named constants. The cards' fragment blocks were
+// promoted to named constants so they fall under the check — an instrument's silence
+// is not evidence of absence, and the fix is to make it REACH the thing.
 const pairs = []
 for (const line of src.split('\n')) {
   const c = line.match(/'#include <common>'\s*\+\s*([A-Z0-9_]+)/)
   if (c) pairs.push({ common: c[1], begins: [] })
-  const b = line.match(/'#include <begin_vertex>'\s*\+\s*(.+)$/)
+  const b = line.match(/'#include <(?:begin_vertex|map_fragment)>'\s*\+\s*(.+)$/)
   if (b && pairs.length) {
     for (const n of b[1].matchAll(/([A-Z0-9_]{4,})/g)) if (blocks.has(n[1])) pairs[pairs.length - 1].begins.push(n[1])
   }
@@ -58,7 +76,11 @@ const declaredIn = (glsl) => new Set([
 ])
 // three.js supplies these; they are never declared in our fragments.
 const BUILTIN = new Set(['uTime', 'position', 'normal', 'uv', 'modelMatrix', 'instanceMatrix',
-  'modelViewMatrix', 'projectionMatrix', 'viewMatrix', 'normalMatrix', 'cameraPosition', 'transformed'])
+  'modelViewMatrix', 'projectionMatrix', 'viewMatrix', 'normalMatrix', 'cameraPosition', 'transformed',
+  // three's own varyings, declared by the chunks it injects around ours — `vMapUv`
+  // comes from <map_pars_fragment> whenever the material carries a `map`, which every
+  // card material does. Ours never declare these and must not.
+  'vMapUv', 'vUv', 'vNormal', 'vViewPosition', 'vColor'])
 
 let failed = 0
 console.log('Every identifier a GLSL fragment uses must be declared in the block it compiles with\n')
@@ -73,7 +95,11 @@ for (const { common, begins } of pairs) {
     const code = b.replace(/\/\/[^\n]*/g, '').replace(/\/\*[\s\S]*?\*\//g, '')
     const localDecl = declaredIn(code)
     const locals = new Set([...code.matchAll(/(?:float|vec2|vec3|vec4|mat3|mat4|int|bool)\s+(\w+)\s*[=;]/g)].map(m => m[1]))
-    const used = new Set([...code.matchAll(/\b([ua][A-Z]\w+)\b/g)].map(m => m[1]))
+    // u… = uniform, a… = attribute, v… = VARYING. The varyings were not checked
+    // until 2026-09-03, and a varying is the easiest of the three to get wrong: it
+    // has to be declared in BOTH halves, and a fragment reading one the vertex half
+    // never declared is the same silent non-link as a missing uniform.
+    const used = new Set([...code.matchAll(/\b([uav][A-Z]\w+)\b/g)].map(m => m[1]))
     const missing = [...used].filter(u => !decl.has(u) && !localDecl.has(u) && !locals.has(u) && !BUILTIN.has(u)).sort()
     if (missing.length) {
       failed++

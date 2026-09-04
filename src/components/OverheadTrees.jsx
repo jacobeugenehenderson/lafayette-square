@@ -28,6 +28,7 @@ import { buildOverheadBandDisc } from './impostorGeometry.js'
 import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
+import useSkyState from '../hooks/useSkyState.js'
 import useCamera from '../hooks/useCamera'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
@@ -59,6 +60,20 @@ const NO_RAYCAST = () => null
 export function OverheadLightDriver({ enabled = true }) {
   useFrame(() => {
     if (!enabled) return
+    // ── DIRECTION — where the light actually is ────────────────────────────────
+    // Read, never derived. `useSkyState.keyDirection` is published by
+    // CelestialBodies off the very `primary.lightPosition` its <directionalLight>
+    // is built from, so the cards and the mesh trees light from ONE fact: the sun
+    // by day, the sun→moon blend after dusk. ⛔ Recomputing a sun vector here
+    // would be a second derivation of one physical quantity — the defect class
+    // that produced both the tree-height bug and the capture-frame bug.
+    // Runs unconditionally (not behind the directive check below) so the Salon,
+    // which has no weather, still gets a real light direction.
+    const sky = useSkyState.getState()
+    overheadLightUniforms.uKeyDir.value.copy(sky.keyDirection)
+    overheadLightUniforms.uKeyColor.value.copy(sky.keyColor)
+
+    // ── CONTRAST — how hard that light is ─────────────────────────────────────
     const d = useAtmosphere.getState().tweenedDirective
     const af = d?.lightDome?.ambientFloor
     if (af == null) return

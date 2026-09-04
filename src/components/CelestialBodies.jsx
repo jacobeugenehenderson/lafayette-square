@@ -67,6 +67,12 @@ const _moonP = new THREE.Vector3()
 const _secP = new THREE.Vector3()
 const _nightLP = new THREE.Vector3()
 const _sunD = new THREE.Vector3()
+// The KEY light's world direction — normalize(primary.lightPosition), i.e. the
+// very position the <directionalLight> consumes. Sun by day, moon-blended at
+// night, which is exactly why it is NOT `_sunD`: a consumer that lights off the
+// sun at midnight lights from below the horizon while every mesh lights from the
+// moon. ONE derivation of one physical fact — read it, never recompute it.
+const _keyD = new THREE.Vector3()
 const _moonD = new THREE.Vector3()
 const _camFwd = new THREE.Vector3()
 const _lc1 = new THREE.Color()
@@ -1277,9 +1283,17 @@ function CelestialBodies({
     // Transitions over sunAlt range 0.05 to -0.15 (no hard boundary)
     const nightFactor = Math.max(0, Math.min(1, (0.05 - sunAlt) / 0.20))
 
+    // The key light's direction, taken off the object the light itself is built from
+    // (every branch above sets primary.lightPosition; at night it is already the
+    // sun→moon blend). Published so a consumer that cannot join the real light rig —
+    // the tree impostor cards, which are MeshBasic by design — can still light from
+    // the scene's actual key instead of a scalar dimmer.
+    _keyD.copy(primary.lightPosition).normalize()
+
     return { primary, secondary, sky, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow,
       _celestial: { sunDirection: _sunD.clone(), sunElevation: sunAlt, moonDirection: _moonD.clone(),
-        moonPhase: moonIllum.phase, moonIllumination: moonIllum.fraction, moonAltitude: moonAlt } }
+        moonPhase: moonIllum.phase, moonIllumination: moonIllum.fraction, moonAltitude: moonAlt,
+        keyDirection: _keyD.clone(), keyColor: primary.color, nightFactor } }
   }, [currentTime])
 
   // Push celestial data to sky state store (after render, not during)

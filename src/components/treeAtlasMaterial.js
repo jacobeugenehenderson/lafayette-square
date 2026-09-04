@@ -2016,7 +2016,245 @@ export function injectOverheadWiggle(material) {
 export const overheadLightUniforms = {
   uAmbient: { value: 0.5 },
   uSun:     { value: 0.5 },
+  // ── DIRECTION (2026-09-03) — the cards' half of "participate in the lighting" ──
+  // Until now the pair above was the WHOLE light model for an impostor: two scalars,
+  // no direction. A card was DIMMED by the weather; it was never LIT by anything. The
+  // mesh trees next to it are MeshStandardMaterial and see the full rig (sun, moon,
+  // hemisphere, 3 ambients), so the two representations of the same tree disagreed
+  // about where the light was — which is the whole reported symptom.
+  //
+  // ⭐ uKeyDir is READ, never derived: `useSkyState.keyDirection`, published by
+  // CelestialBodies off the very `primary.lightPosition` the <directionalLight> is
+  // built from. Sun by day, sun→moon blend at night. ⛔ Two derivations of one
+  // physical fact is the defect class that produced both the tree-height bug and the
+  // capture-frame bug; there is exactly one publisher and this is a consumer.
+  uKeyDir:   { value: new THREE.Vector3(0, 1, 0) },
+  uKeyColor: { value: new THREE.Color(1, 1, 1) },
+  // ⛔ DEFAULT 0 = TODAY'S LOOK, BIT FOR BIT. The rule this surface runs on
+  // (InstancedTrees.jsx:938): a shared change ships as a knob defaulting to today's
+  // values, so the map is unchanged until someone turns it. Broken once on the hero
+  // band and it cost the operator two rounds of vanished trees. `?litCards=1`.
+  uLitCards: { value: 0 },
+  // The CONTRAST dial, not a brightness one — see the shader note on LIT_CARDS_FRAG.
+  // 0 reproduces the flat dimmer exactly even with uLitCards on; 1 is full swing.
+  uKeyGain:  { value: 0.85 },
+  // How far the synthetic card normal bends away from the card plane at its rim.
+  // 1.0 = a full hemisphere across the card; lower flattens toward a plate. The
+  // card is flat geometry, so this is the ONLY thing that gives it a light-facing
+  // shape at all — it is the term a baked normal page would replace.
+  uCardBulge: { value: 0.9 },
 }
+
+// ── The lit-cards knob ────────────────────────────────────────────────────────
+// Mirrors `heroImpostorStack` (HeroImpostorTrees.jsx): a URL dial + a window setter
+// so the operator can A/B it live on the pan without a rebuild. Both card stamps
+// read the SAME uniforms object, so one write moves the hero cards and the overhead
+// discs together — they are two carriers of one tree, never two light models.
+export const litCards = { on: false, gain: 0.85 }
+export function setLitCards({ on, gain } = {}) {
+  if (on !== undefined) {
+    litCards.on = !!on
+    overheadLightUniforms.uLitCards.value = litCards.on ? 1 : 0
+  }
+  if (Number.isFinite(gain)) {
+    litCards.gain = Math.max(0, Math.min(2, gain))
+    overheadLightUniforms.uKeyGain.value = litCards.gain
+  }
+  // ⭐ REPORT THE LIVE STATE, not just the knob. `window.__setLitCards()` with no
+  // argument is the read: it returns what the GPU is actually being handed this
+  // frame — including the key direction and colour the driver last copied out of
+  // useSkyState. A dial whose effect you cannot read back is not an instrument, and
+  // "is the sun vector even reaching the cards" is precisely the question that would
+  // otherwise be answered by squinting at a canopy.
+  const u = overheadLightUniforms
+  return {
+    ...litCards,
+    live: {
+      keyDir: [+u.uKeyDir.value.x.toFixed(4), +u.uKeyDir.value.y.toFixed(4), +u.uKeyDir.value.z.toFixed(4)],
+      keyColor: '#' + u.uKeyColor.value.getHexString(),
+      ambient: +u.uAmbient.value.toFixed(3),
+      sun: +u.uSun.value.toFixed(3),
+      bulge: u.uCardBulge.value,
+      litCardsUniform: u.uLitCards.value,
+    },
+  }
+}
+if (typeof window !== 'undefined') {
+  window.__setLitCards = setLitCards
+  try {
+    const q = new URLSearchParams(window.location.search)
+    if (q.get('litCards') === '1') setLitCards({ on: true })
+    const g = parseFloat(q.get('litGain'))
+    if (Number.isFinite(g)) setLitCards({ gain: g })
+  } catch { /* no URL, no dial */ }
+}
+
+// ── THE CARD LIGHT MODEL — shared by BOTH card stamps ────────────────────────
+// One function, two carriers. The hero billboard and the overhead disc are two
+// constructions of the SAME tree (ARCHITECTURE.md "TWO impostor systems, split by
+// VIEWING HEMISPHERE"), so they must never end up with two light models — that is
+// the disagreement this whole change exists to close, reintroduced one level down.
+// The only thing each carrier supplies is its own surface normal; everything after
+// that is this function.
+//
+// ⚠️ NAMED CONSTANTS, NOT INLINE TEMPLATES, ON PURPOSE. These blocks are checked by
+// `node scratch/claims-shader-fragments-declare-what-they-use.mjs`, which reads the
+// pairings out of the source — and it can only see GLSL that lives in a named
+// `const NAME = ` + backtick + ` block. The fragment halves used to be inline literals and
+// were therefore INVISIBLE to the one instrument that exists to catch a non-linking
+// tree shader. An instrument's silence is not evidence of absence.
+const LIT_CARDS_FRAG_COMMON = `
+         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
+         uniform vec3  uKeyDir;    // world direction TOWARD the scene's key light
+         uniform vec3  uKeyColor;
+         uniform float uLitCards;  // 0 = today's flat dimmer, 1 = directional
+         uniform float uKeyGain;
+         uniform float uCardBulge;
+
+         // The card's light response. N is a WORLD-space normal; ao is the baked
+         // occlusion page (light-independent, geometry).
+         vec3 litCardsRelight(vec3 N, float ao) {
+           vec3 flatC = vec3(uAmbient + uSun * ao);   // TODAY, unchanged
+           // ⛔ UNIFORM BRANCH, and it is deliberate. uLitCards is a uniform, so this
+           // is fully coherent across every fragment of every draw — there is no
+           // divergence to pay for. It buys two things a branchless mix() cannot:
+           // the flag-off path costs literally nothing extra, and it returns flatC
+           // BY CONSTRUCTION rather than by trusting mix(x, y, 0.0) to be exact.
+           if (uLitCards <= 0.0) return flatC;
+           float ndl = dot(normalize(N), uKeyDir);
+           // WRAPPED lambert. A canopy is not an opaque solid — leaves scatter, and
+           // the shaded side of a real crown is dim, never black. Half-lambert keeps
+           // the away side lit by the sky and puts the whole swing in the mid-range,
+           // which is where a billboard reads as a volume instead of a plate.
+           float wrapped = ndl * 0.5 + 0.5;
+           // ⭐ MEAN-PRESERVING BY CONSTRUCTION. At wrapped = 0.5 — normal perpendicular
+           // to the key, i.e. the hemisphere average — dir is exactly 1.0 and this
+           // returns flatC tinted by the key colour. So turning the flag on
+           // REDISTRIBUTES light across the canopy without changing how bright the
+           // canopy IS. That is the operator's acceptance test made structural:
+           // "recognisably the same trees, differing only in how light falls on them."
+           // uKeyGain is therefore a CONTRAST dial, not a brightness one; 0 reproduces
+           // the flat dimmer exactly even with uLitCards on.
+           float dir = 1.0 + (wrapped * 2.0 - 1.0) * uKeyGain;
+           // ⭐ AO GATES THE DIRECTIONAL TERM, it does not replace it (the brief's rule:
+           // "fold AO into a directional term rather than replacing it"). Occlusion is
+           // geometry — a leaf deep in the crown stays dark wherever the sun is — so it
+           // scales what the key delivers. Ambient stays un-occluded, exactly as today.
+           vec3 lit = vec3(uAmbient) + uKeyColor * (uSun * ao * dir);
+           return mix(flatC, lit, uLitCards);
+         }`
+
+// The OVERHEAD disc's fragment half. The disc lies in the world XZ plane
+// (buildOverheadBandDisc: local x → world X, local z → world Z, plane normal world
+// +Y) and its UVs run u→X, v→Z, so the dome bulge is built directly in WORLD axes.
+// ⭐ That is why this needs no capture-frame reasoning: the bulge is a statement
+// about the shape of a canopy, not about how the page was photographed.
+// Bind the shared card-light uniforms onto a compiling shader. ONE object behind
+// both stamps, so `window.__setLitCards()` moves the hero cards and the overhead
+// discs in the same frame — they are two carriers of one tree, never two light models.
+function bindCardLightUniforms(shader) {
+  shader.uniforms.uKeyDir    = overheadLightUniforms.uKeyDir
+  shader.uniforms.uKeyColor  = overheadLightUniforms.uKeyColor
+  shader.uniforms.uLitCards  = overheadLightUniforms.uLitCards
+  shader.uniforms.uKeyGain   = overheadLightUniforms.uKeyGain
+  shader.uniforms.uCardBulge = overheadLightUniforms.uCardBulge
+}
+
+const OVERHEAD_STAMP_FRAG = `
+         // RELIGHT — see litCardsRelight. Flag off → albedo × (ambient + sun·AO),
+         // byte-identical to what shipped before.
+         float ovAO = texture2D(uAO, vMapUv).r;
+         vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
+         float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
+         vec3  ovN  = vec3(ovD.x, sqrt(1.0 - ovR2), ovD.y);   // hemispherical crown, world axes
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO);`
+
+// The HERO card's fragment half. The card is a Y-axis billboard, so its own axes
+// are handed down from the vertex shader as varyings — width along vHeroRight,
+// height along world up, depth along vHeroFwd (toward the camera).
+//
+// ⭐⭐ NO AZIMUTH ROTATION IS NEEDED HERE, AND THAT IS THE POINT. A BAKED normal page
+// would be stored in the frame of the azimuth it was shot at, and the card wears a
+// different yaw at runtime — so it would have to be rotated by (card yaw −
+// azimuthDeg), and getting that wrong lights the canopy from the wrong side WHILE
+// LOOKING PLAUSIBLE, which is worse than looking broken. This normal is synthesised
+// from the card's own UV in the card's CURRENT billboarded frame, so it carries no
+// baked azimuth and there is nothing to rotate. Measure this before spending 213
+// pages and a CAPTURE_FORMAT bump on a captured normal.
+const HERO_STAMP_FRAG = `
+         float ovAO = texture2D(uAO, vMapUv).r;
+         vec2  ovD  = (vMapUv * 2.0 - 1.0) * uCardBulge;
+         float ovR2 = clamp(dot(ovD, ovD), 0.0, 1.0);
+         vec3  ovN  = vHeroRight * ovD.x + vec3(0.0, ovD.y, 0.0) + vHeroFwd * sqrt(1.0 - ovR2);
+         diffuseColor.rgb *= litCardsRelight(ovN, ovAO);
+         // ── THE TRUNK/GROUND JOINT ────────────────────────────────────────────
+         // The operator's description: "a sample of the shadowed ground multiplied
+         // onto the trunk to blend the joint/connection point." That existed on the
+         // mesh path (injectFoliageSway) and died with the meshes — every card has
+         // met the ground as a hard edge since. This is the same construction on the
+         // card: sample the baked ground colour at the tree's world XZ, darken it by
+         // the FX map's G (its own contact-shadow ring) and lift it by R (lamp pool),
+         // then fade the card's lowest metres toward that effective ground colour.
+         //
+         // ⚠️ NOT A COPY-PASTE, AND THE DIFFERENCES ARE REAL. The mesh gates per-VERTEX
+         // on vBark; the card gates per-LAYER, because the hero stack already separates
+         // the woody layer (kind:'bark') into its own material — uCardIsBark is 1 only
+         // there. And the mesh's vLocalY is a mesh-local height while the card's is
+         // metres up a canopy-framed card, so a card whose frame starts ABOVE the blend
+         // band is correctly a no-op rather than a wrong answer.
+         if (uCardIsBark > 0.5 && uHasGroundColor > 0.5) {
+           float baseF = smoothstep(uTrunkBlendTop, 0.0, vHeroLocalY) * uTrunkBlend;
+           if (baseF > 0.001) {
+             vec2 gcUV = (vHeroWorldXZ.xz - uGroundColorMin) / uGroundColorSpan;
+             if (all(greaterThanEqual(gcUV, vec2(0.0))) && all(lessThanEqual(gcUV, vec2(1.0)))) {
+               vec3 gcol = texture2D(uGroundColorMap, gcUV).rgb;
+               vec2 fxUV = (vHeroWorldXZ.xz - uGroundFxMin) / uGroundFxSpan;
+               if (all(greaterThanEqual(fxUV, vec2(0.0))) && all(lessThanEqual(fxUV, vec2(1.0)))) {
+                 vec4 gfx = texture2D(uGroundFxMap, fxUV);
+                 gcol *= (1.0 - gfx.g * uTrunkShadowStr);
+                 gcol += uTrunkPoolColor * gfx.r * uGroundFxScale * uTrunkPool;
+               }
+               diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);
+             }
+           }
+         }
+         // Hero-tier QC overlay — these cards ARE the impostor tier, so they take the
+         // same magenta the mesh material paints for tier 1. Gated → no-op when off.
+         if (uHeroTierQC > 0.5) {
+           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.20, 0.85), 0.65);
+         }`
+
+const HERO_STAMP_FRAG_COMMON = LIT_CARDS_FRAG_COMMON + `
+         uniform float uHeroTierQC;
+         varying vec3  vHeroRight;
+         varying vec3  vHeroFwd;
+         varying vec3  vHeroWorldXZ;
+         varying float vHeroLocalY;
+         // The trunk/ground joint — the SAME uniforms injectFoliageSway binds for the
+         // mesh path. One ground state, two consumers.
+         uniform float uCardIsBark;
+         uniform sampler2D uGroundColorMap;
+         uniform vec2  uGroundColorMin;
+         uniform vec2  uGroundColorSpan;
+         uniform float uHasGroundColor;
+         uniform float uTrunkBlend;
+         uniform float uTrunkBlendTop;
+         uniform sampler2D uGroundFxMap;
+         uniform vec2  uGroundFxMin;
+         uniform vec2  uGroundFxSpan;
+         uniform float uGroundFxScale;
+         uniform float uTrunkShadowStr;
+         uniform float uTrunkPool;
+         uniform vec3  uTrunkPoolColor;`
+
+// The hero VERTEX common — the shared wind block plus the two card axes the
+// fragment half needs. Declared here rather than in OVERHEAD_WIND_COMMON so the
+// overhead disc, which shares that block, never carries varyings it cannot write.
+const HERO_VERT_COMMON = OVERHEAD_WIND_COMMON + `
+         varying vec3  vHeroRight;
+         varying vec3  vHeroFwd;
+         varying vec3  vHeroWorldXZ;
+         varying float vHeroLocalY;`
 
 // injectOverheadStamp — the RUNTIME-RELIT overhead stamp material (MeshBasic +
 // map=ALBEDO). Vertex: the shared overhead wind. Fragment: albedo × (ambient +
@@ -2029,18 +2267,14 @@ export function injectOverheadStamp(material, aoTex) {
     shader.uniforms.uAO      = { value: aoTex }
     shader.uniforms.uAmbient = overheadLightUniforms.uAmbient
     shader.uniforms.uSun     = overheadLightUniforms.uSun
+    bindCardLightUniforms(shader)
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
       .replace('#include <begin_vertex>', '#include <begin_vertex>' + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
-         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;`)
-      .replace('#include <map_fragment>', `#include <map_fragment>
-         // RELIGHT — albedo × (ambient + sun·AO). Occlusion is light-independent
-         //   (baked); the atmosphere sets the contrast → parity with the weather.
-         float ovAO = texture2D(uAO, vMapUv).r;
-         diffuseColor.rgb *= (uAmbient + uSun * ovAO);`)
+      .replace('#include <common>', '#include <common>' + LIT_CARDS_FRAG_COMMON)
+      .replace('#include <map_fragment>', '#include <map_fragment>' + OVERHEAD_STAMP_FRAG)
   }
 }
 
@@ -2065,9 +2299,22 @@ const HERO_BILLBOARD_BEGIN = `
            vec3 heroRight = vec3(-heroFwd.z, 0.0, heroFwd.x);
            // Re-seat the card facing the camera: width→right, height→world-up, depth→toward-cam.
            transformed = heroRight * position.x + vec3(0.0, position.y, 0.0) + heroFwd * position.z;
+           // Hand the card's own world axes to the fragment half. The synthetic
+           // normal is built in THIS frame — the card's current billboarded yaw —
+           // which is why it needs no azimuth rotation (see HERO_STAMP_FRAG).
+           vHeroRight = heroRight;
+           vHeroFwd = heroFwd;
+           // For the trunk/ground joint on the BARK card: the instance's world XZ
+           // (constant within a draw — the same seam injectFoliageSway samples) and
+           // the card-local height in metres above the tree base. position.y is
+           // already exactly that (buildHeroImpostorCard writes metres), and it is
+           // taken BEFORE the ground lift so it stays a height-up-the-trunk, not a
+           // world elevation.
+           vHeroWorldXZ = vec3(heroPivot.x, 0.0, heroPivot.z);
+           vHeroLocalY = position.y;
          }`
 
-export function injectHeroImpostorStamp(material, aoTex) {
+export function injectHeroImpostorStamp(material, aoTex, { isBark = false } = {}) {
   // Distinct program cache key — MeshBasic+map+onBeforeCompile collides with the
   // overhead-disc material otherwise, and three can serve one's compiled program to
   // the other (the billboard/relight silently not applying). [[feedback_unique_program_cache_key_before_wrappers]]
@@ -2087,25 +2334,32 @@ export function injectHeroImpostorStamp(material, aoTex) {
     // ⭐ Measured the day it was found: 4867 of 5127 placements were drawing as hero cards
     // — visible, textured, correct — while the gate said none were.
     shader.uniforms.uHeroTierQC = treeHeroTierQC
+    bindCardLightUniforms(shader)
+    // The trunk/ground joint. Bound on EVERY hero material (one program, one uniform
+    // set) but gated to 1 only on the woody layer — a leaf shell has no joint to make.
+    shader.uniforms.uCardIsBark      = { value: isBark ? 1 : 0 }
+    shader.uniforms.uGroundColorMap  = _groundColor.mapUniform
+    shader.uniforms.uGroundColorMin  = _groundColor.minUniform
+    shader.uniforms.uGroundColorSpan = _groundColor.spanUniform
+    shader.uniforms.uHasGroundColor  = _groundColor.hasUniform
+    shader.uniforms.uTrunkBlend      = treeTrunkGround.blendUniform
+    shader.uniforms.uTrunkBlendTop   = treeTrunkGround.blendTopUniform
+    shader.uniforms.uGroundFxMap     = _groundColor.fxMapUniform
+    shader.uniforms.uGroundFxMin     = _groundColor.fxMinUniform
+    shader.uniforms.uGroundFxSpan    = _groundColor.fxSpanUniform
+    shader.uniforms.uGroundFxScale   = _groundColor.fxScaleUniform
+    shader.uniforms.uTrunkShadowStr  = treeTrunkGround.shadowStrUniform
+    shader.uniforms.uTrunkPool       = _lampGlow.poolUniform
+    shader.uniforms.uTrunkPoolColor  = _lampGlow.colorUniform
     material.userData.shader = shader
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>' + OVERHEAD_WIND_COMMON)
+      .replace('#include <common>', '#include <common>' + HERO_VERT_COMMON)
       // Billboard FIRST (re-seat transformed facing the camera), THEN the shared wind
       // leans/gusts transformed.xz base-anchored on top.
       .replace('#include <begin_vertex>', '#include <begin_vertex>' + HERO_BILLBOARD_BEGIN + OVERHEAD_WIND_BEGIN + OVERHEAD_GROUND_LIFT)
     shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', `#include <common>
-         uniform sampler2D uAO; uniform float uAmbient; uniform float uSun;
-         uniform float uHeroTierQC;`)
-      .replace('#include <map_fragment>', `#include <map_fragment>
-         // RELIGHT — albedo × (ambient + sun·AO), same as the overhead disc.
-         float ovAO = texture2D(uAO, vMapUv).r;
-         diffuseColor.rgb *= (uAmbient + uSun * ovAO);
-         // Hero-tier QC overlay — these cards ARE the impostor tier, so they take the
-         // same magenta the mesh material paints for tier 1. Gated → no-op when off.
-         if (uHeroTierQC > 0.5) {
-           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.20, 0.85), 0.65);
-         }`)
+      .replace('#include <common>', '#include <common>' + HERO_STAMP_FRAG_COMMON)
+      .replace('#include <map_fragment>', '#include <map_fragment>' + HERO_STAMP_FRAG)
   }
 }
 

@@ -66,7 +66,9 @@ backend security posture**, plus **doc↔code drift that lives at the pitch laye
   optimization stock `postprocessing` can't do), CPU/GPU terrain sampler reconciliation, and
   disciplined handling of two three.js footguns (raw-ShaderMaterial log-depth, program-cache-key
   collisions).
-- **Beyond commodity:** relightable render-to-texture tree impostors, and the frozen-topology **"slab"
+- **Beyond commodity:** render-to-texture tree impostors that light from the scene's own key light
+  (`?litCards=1`; ⛔ until 2026-09-03 "relightable" overstated a global dimmer — the cards carried no
+  light *direction* at all), and the frozen-topology **"slab"
   contract** + kit model itself (verified working across 4 scenes).
 - **The Preview publish-confidence instrument** (`cartograph/PREVIEW.md`, `src/preview/`) — a distinct,
   under-credited asset. Preview mounts the frozen slab in production's **exact** render tree (byte-for-byte
