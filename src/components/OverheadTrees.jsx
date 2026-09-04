@@ -25,10 +25,18 @@ import { useThree, useFrame } from '@react-three/fiber'
 import { loadImpostorTexture } from './impostorTexture.js'
 import * as THREE from 'three'
 import { buildOverheadBandDisc } from './impostorGeometry.js'
-import { injectOverheadStamp, overheadLightUniforms } from './treeAtlasMaterial.js'
+import { injectOverheadStamp, overheadLightUniforms, litCards } from './treeAtlasMaterial.js'
 import { treeGroundRaw } from '../utils/elevation'
 import useAtmosphere from '../hooks/useAtmosphere.js'
 import useSkyState from '../hooks/useSkyState.js'
+import useTimeOfDay from '../hooks/useTimeOfDay'
+import { resolveGroupAtMinute, getTodSlotMinutes } from '../cartograph/animatedParam.js'
+import { CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
+
+// Boot-time envelope for a look whose slab predates the channel — identical to what
+// bake-scene emits for an unauthored town, so first paint matches the bake rather
+// than flashing a different canopy for a frame.
+const CANOPY_DEFAULT_CHANNEL = { values: { ...CANOPY_FLAT_DEFAULTS } }
 import useCamera from '../hooks/useCamera'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
@@ -57,9 +65,31 @@ const NO_RAYCAST = () => null
 // system. No directive (e.g. the Salon, which has no weather) → leaves the shared
 // uniforms alone so the Salon's Light slider / the default still governs.
 // uAmbient + uSun ≈ 1 keeps brightness; the ratio is the CONTRAST. Curve tunable.
-export function OverheadLightDriver({ enabled = true }) {
+export function OverheadLightDriver({ enabled = true, canopyChannel }) {
+  // The AUTHORED canopy response, resolved per frame against the live TOD minute —
+  // the same `resolveGroupAtMinute` every other look channel uses (dirSun, ambient,
+  // bloom…). ⭐ The operator's Stage edit is what the map ships with; the URL dial
+  // is only an override on top, so a look that authors `directional: 0.8` renders
+  // that way for every viewer, with nothing to remember to append.
+  const resolved = canopyChannel ?? CANOPY_DEFAULT_CHANNEL
+
   useFrame(() => {
     if (!enabled) return
+
+    // ── The authored channel → the shared card uniforms ───────────────────────
+    // ⛔ A live override (?litCards / __setLitCards) WINS, and is deliberately
+    // sticky: the operator A/B-ing on the pan must not have their dial silently
+    // overwritten every frame by the baked value they are comparing against.
+    if (!litCards.overridden) {
+      const tod = useTimeOfDay.getState()
+      const minute = tod.getMinuteOfDay()
+      const slotMinutes = resolved.animated ? getTodSlotMinutes(tod.currentTime) : null
+      const c = resolveGroupAtMinute(resolved, minute, slotMinutes, CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS)
+      overheadLightUniforms.uLitCards.value  = c.directional ?? 0
+      overheadLightUniforms.uKeyGain.value   = c.gain ?? CANOPY_FLAT_DEFAULTS.gain
+      overheadLightUniforms.uCardBulge.value = c.bulge ?? CANOPY_FLAT_DEFAULTS.bulge
+    }
+
     // ── DIRECTION — where the light actually is ────────────────────────────────
     // Read, never derived. `useSkyState.keyDirection` is published by
     // CelestialBodies off the very `primary.lightPosition` its <directionalLight>

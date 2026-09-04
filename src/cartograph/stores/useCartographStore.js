@@ -45,6 +45,7 @@ import {
   GRADE_FIELD_KEYS, GRADE_FLAT_DEFAULTS,
   GRAIN_FIELD_KEYS, GRAIN_FLAT_DEFAULTS,
   SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS,
+  CANOPY_FIELD_KEYS, CANOPY_FLAT_DEFAULTS,
   SHOTS_FLAT_DEFAULTS,
   BROWSE_HEADING_FIELD_KEYS, BROWSE_HEADING_FLAT_DEFAULTS,
   ARCH_FIELD_KEYS, ARCH_FLAT_DEFAULTS,
@@ -104,7 +105,7 @@ export const SHOT_LOOK_CHANNELS = new Set([
   'layerColors', 'luColors', 'lampGlow', 'bloom', 'warmth', 'fill', 'exposure',
   'ao', 'mist', 'halo', 'skyGain', 'grade', 'grain', 'smaa', 'dof', 'shadow',
   'constellations', 'milkyWay', 'neon', 'sky', 'ambient', 'hemi', 'dirSun',
-  'dirMoon', 'archLight', 'lantern', 'clouds',
+  'dirMoon', 'archLight', 'lantern', 'clouds', 'canopy',
 ])
 const FORK_SHOT_KEYS = ['browse', 'street'] // hero + designer → base
 
@@ -329,6 +330,7 @@ const DESIGN_FIELDS = [
   _grp('smaa',           SMAA_FIELD_KEYS,           SMAA_FLAT_DEFAULTS),
   _grp('dof',            DOF_FIELD_KEYS,            DOF_FLAT_DEFAULTS),
   _grp('shadow',         SHADOW_FIELD_KEYS,         SHADOW_FLAT_DEFAULTS),
+  _grp('canopy',         CANOPY_FIELD_KEYS,         CANOPY_FLAT_DEFAULTS),
   _grp('constellations', CONSTELLATIONS_FIELD_KEYS, CONSTELLATIONS_FLAT_DEFAULTS),
   _grp('milkyWay',       MILKYWAY_FIELD_KEYS,       MILKYWAY_FLAT_DEFAULTS),
   _grp('neon',           NEON_FIELD_KEYS,           NEON_FLAT_DEFAULTS),
@@ -650,6 +652,7 @@ const useCartographStore = create((set, get) => ({
   grade:    { values: { ...GRADE_FLAT_DEFAULTS } },
   grain:    { values: { ...GRAIN_FLAT_DEFAULTS } },
   shadow:   { values: { ...SHADOW_FLAT_DEFAULTS } },
+  canopy:   { values: { ...CANOPY_FLAT_DEFAULTS } },
   // SC.5 — per-shot framing knobs (FOVs, Browse bounds/padding, Street
   // eye height). Single flat-value channel; hand-rolled setShots because
   // values are nested per-shot objects (not the factory's flat scalar
@@ -1369,6 +1372,11 @@ const useCartographStore = create((set, get) => ({
     name: 'shadow',
     fieldKeys: SHADOW_FIELD_KEYS,
     flatDefaults: SHADOW_FLAT_DEFAULTS,
+  }, set, get),
+  ...createGroupChannelActions({
+    name: 'canopy',
+    fieldKeys: CANOPY_FIELD_KEYS,
+    flatDefaults: CANOPY_FLAT_DEFAULTS,
   }, set, get),
   ...createGroupChannelActions({
     name: 'browseHeading',

@@ -138,6 +138,62 @@ check(
   + `makes "unchanged when off" a floating-point claim instead of a structural one.`,
 )
 
+// ── 6. THE AUTHORED CHANNEL REACHES THE SLAB ────────────────────────────────
+// ⛔⛔ THE TRAP THIS EXISTS FOR: design.json is NOT scene.json. `bake-scene.js` builds
+// its output as an EXPLICIT object literal, not a spread of design.json, so a channel
+// can persist in Stage, preview perfectly, survive a reload — and reach no viewer,
+// because nothing named it on that line. It fails in the worst possible direction:
+// the operator authors, watches it work, and the slab quietly carries nothing.
+const CHANNELS = 'src/cartograph/skyLightChannels.js'
+const STORE = 'src/cartograph/stores/useCartographStore.js'
+const BAKE = 'cartograph/bake-scene.js'
+const SURFACES = 'src/cartograph/CartographSurfaces.jsx'
+const TREES = 'src/components/InstancedTrees.jsx'
+
+const channels = read(CHANNELS)
+const store = read(STORE)
+const bake = read(BAKE)
+const surfaces = read(SURFACES)
+const trees = read(TREES)
+
+check(
+  /export const CANOPY_FLAT_DEFAULTS = \{ directional: 0,/.test(channels),
+  'the canopy channel defaults to directional: 0 — the historical look',
+  `${CHANNELS}: a shared render channel that defaults to anything else moves every `
+  + `already-poured town's map without anyone asking for it.`,
+)
+check(
+  /_grp\('canopy',/.test(store),
+  'the store hydrates + persists the canopy channel to design.json',
+  `${STORE}: no _grp('canopy', …) in DESIGN_FIELDS, so the operator's edit does not survive a reload.`,
+)
+check(
+  /canopy:\s+design\.canopy\s+\|\|/.test(bake),
+  'bake-scene names `canopy` — the channel actually reaches scene.json',
+  `${BAKE}: \`canopy\` is missing from the scene object. This is the one that does not `
+  + `announce itself: Stage will author it, persist it and preview it correctly, and the `
+  + `SLAB WILL CARRY NOTHING. If it is not baked in, the public never sees it.`,
+)
+check(
+  /canopyChannel=\{scene\?\.canopy\}/.test(trees),
+  'the runtime reads the BAKED channel off scene, not design.json',
+  `${TREES}: the driver is not fed scene?.canopy, so the slab's authored value is ignored.`,
+)
+check(
+  /kind: 'canopy_light'/.test(surfaces) && /function CanopyLightEditor/.test(surfaces),
+  'Surfaces → Trees carries the Canopy Light control',
+  `${SURFACES}: the operator has no way to author this without a URL parameter, which `
+  + `does not ship.`,
+)
+// The live dial must LATCH, or the per-frame channel resolve overwrites the operator's
+// A/B 60x a second and the dial silently appears to do nothing.
+check(
+  /if \(!litCards\.overridden\)/.test(read(DRIVER)),
+  'the live dial latches over the authored channel while A/B-ing',
+  `${DRIVER}: the frame loop writes the authored value unconditionally, so __setLitCards `
+  + `is overwritten every frame and reads as broken.`,
+)
+
 console.log()
 if (failed) {
   console.log(`⛔ ${failed} link(s) in the card-lighting chain are broken or forked.`)

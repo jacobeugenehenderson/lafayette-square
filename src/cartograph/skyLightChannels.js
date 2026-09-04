@@ -419,6 +419,30 @@ export const SHADOW_FIELDS = [
 export const SHADOW_FLAT_DEFAULTS = { size: 52, samples: 16 }
 export const SHADOW_FIELD_KEYS = SHADOW_FIELDS.map(f => f.key)
 
+// Canopy Light (Surfaces → Trees) — how the tree IMPOSTOR CARDS answer to the
+// scene's key light. A card is MeshBasicMaterial by design: it cannot join
+// three's light rig the way the mesh trees beside it do, so its light response
+// is authored here rather than falling out of the rig.
+//
+// ⛔ `directional` DEFAULTS TO 0, and that is the whole safety property. 0 is the
+// historical look — a flat weather dimmer, `ambient + sun·AO`, no direction at all
+// — so an unauthored Look and every already-poured town render exactly as they did
+// before this channel existed. It is a BLEND, not a toggle: intermediate values are
+// meaningful, which is what makes it dialable by eye rather than a cliff.
+//
+// `gain` is CONTRAST, not brightness: the shader's directional term is
+// mean-preserving, so gain redistributes light across a canopy without changing how
+// bright the canopy is. `bulge` is how far the card's synthetic normal bends from
+// the card plane — 0 is a flat plate, 1 a full hemisphere. It is the term a captured
+// normal page would replace, so it is the dial to try before spending pages on one.
+export const CANOPY_FIELDS = [
+  { key: 'directional', label: 'Directional', min: 0, max: 1,   step: 0.05 },
+  { key: 'gain',        label: 'Contrast',    min: 0, max: 2,   step: 0.05 },
+  { key: 'bulge',       label: 'Roundness',   min: 0, max: 1.5, step: 0.05 },
+]
+export const CANOPY_FLAT_DEFAULTS = { directional: 0, gain: 0.85, bulge: 0.9 }
+export const CANOPY_FIELD_KEYS = CANOPY_FIELDS.map(f => f.key)
+
 // Clouds (Sky & Light, ATMOSPHERE group — SC.6) — atmospheric state
 // channel for the future <Atmosphere /> volumetric runtime
 // (Meteorologist v3). v1 keeps the procedural CloudDome as the actual

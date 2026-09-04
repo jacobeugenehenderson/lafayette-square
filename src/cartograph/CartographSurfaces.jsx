@@ -17,7 +17,8 @@ import { useState } from 'react'
 import useCartographStore, { activeChannel } from './stores/useCartographStore.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS } from './m3Colors.js'
 import TodChannel from './TodChannel.jsx'
-import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS } from './skyLightChannels.js'
+import { LAMPGLOW_FIELDS, LAMPGLOW_FLAT_DEFAULTS, CANOPY_FIELDS, CANOPY_FLAT_DEFAULTS } from './skyLightChannels.js'
+import { StoreChannel } from './CartographSkyLight.jsx'
 
 // Default shader physics for the 3D-scene materials. roughness/metalness
 // reflect what LafayetteScene's hardcoded materials use today; textures
@@ -229,6 +230,11 @@ const TABS = [
     key: 'trees',
     label: 'Trees',
     items: [
+      // ⭐ FIRST, above the leaf tints, because it is the only control here that
+      // changes how a tree READS rather than what colour it is. The leaf swatches
+      // tint morphology classes; this decides whether the canopy answers to the
+      // scene's light at all.
+      { id: 'canopy_light',    label: 'Canopy Light', kind: 'canopy_light' },
       { id: 'leaf_palmate',    label: 'Palmate',     kind: 'material' },
       { id: 'leaf_lobed',      label: 'Lobed',       kind: 'material' },
       { id: 'leaf_compound',   label: 'Compound',    kind: 'material' },
@@ -433,7 +439,10 @@ export default function CartographSurfaces() {
       {selectedItem && selectedItem.kind === 'lamp_glow' && (
         <LampGlowEditor />
       )}
-      {selectedItem && selectedItem.kind !== 'palette' && (() => {
+      {selectedItem && selectedItem.kind === 'canopy_light' && (
+        <CanopyLightEditor />
+      )}
+      {selectedItem && selectedItem.kind !== 'palette' && selectedItem.kind !== 'canopy_light' && (() => {
         // Hide the color picker for textured materials — their color
         // comes from the building palette + per-building overrides, not
         // from this swatch. Foundation/Night Shift have no texture, so
@@ -545,6 +554,32 @@ export function LampGlowEditor() {
   )
 }
 
+
+// ── Canopy Light (Surfaces → Trees) ──────────────────────────────────────────
+// The tree IMPOSTOR CARDS' light response. Cards are MeshBasicMaterial by design —
+// they cannot join three's light rig the way the mesh trees beside them do — so
+// until this existed their whole model was a weather DIMMER with no direction, and
+// on a clear afternoon every crown in the neighborhood was the same value.
+//
+// ⛔ `Directional` defaults to 0 = the historical flat look, so an unauthored Look
+// and every already-poured town are untouched until an operator turns it up. It is
+// a blend, not a switch. `Contrast` is mean-preserving — it redistributes light
+// across a canopy without changing how bright the canopy is — and `Roundness` is
+// how far the card's synthetic normal bends from flat.
+//
+// TOD-animatable like every other look channel, so a town can carry a hard noon and
+// a flat dusk. ▶ `node scratch/claims-cards-light-from-the-scene-key.mjs` pins the
+// whole path, design.json → bake → the two card carriers.
+function CanopyLightEditor() {
+  return (
+    <StoreChannel
+      name="canopy"
+      label="Canopy Light"
+      fields={CANOPY_FIELDS}
+      flatDefaults={CANOPY_FLAT_DEFAULTS}
+    />
+  )
+}
 
 function PaletteEditor({ palette, setEntry, reset }) {
   return (

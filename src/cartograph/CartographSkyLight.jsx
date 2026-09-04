@@ -36,7 +36,9 @@ import {
 
 // Generic store-bound TodChannel mount — same shape as the one in
 // CartographPost. Reads channel + 6 actions by name.
-function StoreChannel({ name, label, fields, flatDefaults }) {
+// Exported so any panel can bind a group channel without restating the six
+// generated action names — Surfaces → Trees reuses it for Canopy Light.
+export function StoreChannel({ name, label, fields, flatDefaults }) {
   const cap = name[0].toUpperCase() + name.slice(1)
   // Resolve the active shot's channel (channel-variant cascade) — same panel,
   // binding follows the active shot (forked shot edits its own block).

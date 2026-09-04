@@ -1202,7 +1202,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     <>
       <SwayDriver />
       <TierDriver />
-      <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} />
+      <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} canopyChannel={scene?.canopy} />
       {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
           It used to be `visible={!overheadMode}`, which made the comment on the overhead
           group below ("a species with no baked asset simply stays on mesh — never blank")

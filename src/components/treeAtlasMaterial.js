@@ -2050,15 +2050,34 @@ export const overheadLightUniforms = {
 // so the operator can A/B it live on the pan without a rebuild. Both card stamps
 // read the SAME uniforms object, so one write moves the hero cards and the overhead
 // discs together — they are two carriers of one tree, never two light models.
-export const litCards = { on: false, gain: 0.85 }
-export function setLitCards({ on, gain } = {}) {
+// ⭐ `overridden` IS THE POINT OF THIS OBJECT, not `on`. The authored channel
+// (Surfaces → Trees, baked into scene.json) is what the map ships with, and the
+// driver re-resolves it every frame. Without a latch, an operator A/B-ing on the
+// pan would have their dial silently overwritten 60× a second by the very baked
+// value they are comparing against — the change would look like it did nothing.
+// So the live dial LATCHES: once touched, it owns the uniforms until released.
+// ⛔ Release with `__setLitCards({ release: true })`, which hands authority back to
+// the look — never by "setting it back", which just latches a different value.
+export const litCards = { on: false, gain: 0.85, bulge: 0.9, overridden: false }
+export function setLitCards({ on, gain, bulge, release } = {}) {
+  if (release) {
+    litCards.overridden = false
+    return { ...litCards, live: readCardLight(), authority: 'look' }
+  }
   if (on !== undefined) {
     litCards.on = !!on
+    litCards.overridden = true
     overheadLightUniforms.uLitCards.value = litCards.on ? 1 : 0
   }
   if (Number.isFinite(gain)) {
     litCards.gain = Math.max(0, Math.min(2, gain))
+    litCards.overridden = true
     overheadLightUniforms.uKeyGain.value = litCards.gain
+  }
+  if (Number.isFinite(bulge)) {
+    litCards.bulge = Math.max(0, Math.min(1.5, bulge))
+    litCards.overridden = true
+    overheadLightUniforms.uCardBulge.value = litCards.bulge
   }
   // ⭐ REPORT THE LIVE STATE, not just the knob. `window.__setLitCards()` with no
   // argument is the read: it returns what the GPU is actually being handed this
@@ -2066,17 +2085,20 @@ export function setLitCards({ on, gain } = {}) {
   // useSkyState. A dial whose effect you cannot read back is not an instrument, and
   // "is the sun vector even reaching the cards" is precisely the question that would
   // otherwise be answered by squinting at a canopy.
+  return { ...litCards, live: readCardLight(), authority: litCards.overridden ? 'dial' : 'look' }
+}
+
+// What the GPU is actually being handed this frame.
+function readCardLight() {
   const u = overheadLightUniforms
   return {
-    ...litCards,
-    live: {
-      keyDir: [+u.uKeyDir.value.x.toFixed(4), +u.uKeyDir.value.y.toFixed(4), +u.uKeyDir.value.z.toFixed(4)],
-      keyColor: '#' + u.uKeyColor.value.getHexString(),
-      ambient: +u.uAmbient.value.toFixed(3),
-      sun: +u.uSun.value.toFixed(3),
-      bulge: u.uCardBulge.value,
-      litCardsUniform: u.uLitCards.value,
-    },
+    keyDir: [+u.uKeyDir.value.x.toFixed(4), +u.uKeyDir.value.y.toFixed(4), +u.uKeyDir.value.z.toFixed(4)],
+    keyColor: '#' + u.uKeyColor.value.getHexString(),
+    ambient: +u.uAmbient.value.toFixed(3),
+    sun: +u.uSun.value.toFixed(3),
+    directional: +u.uLitCards.value.toFixed(3),
+    gain: +u.uKeyGain.value.toFixed(3),
+    bulge: +u.uCardBulge.value.toFixed(3),
   }
 }
 if (typeof window !== 'undefined') {
@@ -2086,6 +2108,8 @@ if (typeof window !== 'undefined') {
     if (q.get('litCards') === '1') setLitCards({ on: true })
     const g = parseFloat(q.get('litGain'))
     if (Number.isFinite(g)) setLitCards({ gain: g })
+    const b = parseFloat(q.get('litBulge'))
+    if (Number.isFinite(b)) setLitCards({ bulge: b })
   } catch { /* no URL, no dial */ }
 }
 
