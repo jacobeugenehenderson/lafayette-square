@@ -657,7 +657,33 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       .then(([j, anchorsDoc]) => {
         if (cancelled) return
         const anchors = anchorsDoc?.anchors
-        if (j?.instances && Array.isArray(anchors) && anchors.length === j.instances.length) {
+        // ⛔⛔ THE LENGTH GATE IS NOT EVIDENCE. `anchors.length === instances.length` cannot
+        // tell a good anchor file from a STALE one of the same length: a re-pour that keeps
+        // the count but changes the ORDER mis-seats every tree, silently, and the map looks
+        // plausible while every trunk floats or sinks. bake-tree-anchors now stamps
+        // `placementKey` — FNV-1a over the placement coordinates in order — so the file can
+        // prove it belongs to THESE placements. (2026-09-03 audit §6.)
+        // ⛔ Absent key ⇒ a v1 file baked before this; fall back to the length gate rather
+        // than discarding good anchors, but SAY SO — silence is what let this stand.
+        let keyOk = true
+        if (anchorsDoc?.placementKey && j?.instances) {
+          let h = 2166136261 >>> 0
+          for (const t of j.instances) {
+            const k = `${t.x.toFixed(3)},${t.z.toFixed(3)}`
+            for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
+          }
+          keyOk = h.toString(16).padStart(8, '0') === anchorsDoc.placementKey
+          if (!keyOk) {
+            console.error(`[InstancedTrees] ⛔ tree-anchors.json belongs to DIFFERENT placements `
+              + `(placementKey ${anchorsDoc.placementKey} ≠ ${h.toString(16).padStart(8, '0')} for this trees.json, `
+              + `both ${anchors?.length} long). Every trunk would be seated on another tree's ground. `
+              + `Anchors DISCARDED — the scene falls back to the smooth field. Re-run bake-tree-anchors.`)
+          }
+        } else if (j?.instances && Array.isArray(anchors)) {
+          console.warn('[InstancedTrees] tree-anchors.json has no placementKey (v1, baked before 2026-09-03) — '
+            + 'falling back to the length gate, which cannot detect a reordered re-pour. Re-bake to get the key.')
+        }
+        if (j?.instances && Array.isArray(anchors) && keyOk && anchors.length === j.instances.length) {
           for (let i = 0; i < j.instances.length; i++) j.instances[i].groundRaw = anchors[i]
         } else if (j?.instances && Array.isArray(anchors)) {
           // ⛔⛔ ALL-OR-NOTHING, AND IT WAS SILENT. A length mismatch discards EVERY anchor
@@ -1171,9 +1197,15 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
       <SwayDriver />
       <TierDriver />
       <OverheadLightDriver enabled={overheadEnabled || heroFoundationEnabled} />
-      {/* All-mesh (+ hero impostor) render — hidden as a GROUP when the camera pulls
-          up to plan height and the whole scene swaps to the overhead snapshot. */}
-      <group visible={!overheadMode}>
+      {/* All-mesh (+ hero impostor) render. ⛔ THIS GROUP NO LONGER HIDES AS A BLOCK.
+          It used to be `visible={!overheadMode}`, which made the comment on the overhead
+          group below ("a species with no baked asset simply stays on mesh — never blank")
+          FALSE: that species rendered null in Browse while its mesh was hidden by this
+          group, so it did not stay on mesh — it VANISHED. Reaches no pixel on LS (all 9
+          species carry an overhead asset) but on a town nobody has looked at it is a silent
+          hole in Browse, and the runtime is designed never to blank. Children now own their
+          visibility so the exception can exist. (2026-09-03 audit §5.) */}
+      <group>
       {/* HERO canopy-impostor FOUNDATION: every non-anchor tree as a billboarded
           side-on card (leaf shells + rear woody), per-instance azimuth variety. */}
       {heroAssets && !treeDbg('noTrees') && Array.from(heroImpostors.entries()).map(([species, instances]) => {
@@ -1197,6 +1229,10 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
           const leafFace = species ? (leafFaceBySpecies[species] || null) : null
           return (
             <Suspense key={`${url}#${tileId}`} fallback={null}>
+              {/* ⭐ THE "NEVER BLANK" PROMISE, KEPT. Visible in the hero shot as always —
+                  and ALSO in Browse when this species has no overhead snapshot, which is
+                  the fallback the overhead group's comment has been claiming all along. */}
+              <group visible={!overheadMode || !(overheadAssets && species && overheadAssets.has(species))}>
               <VariantInstances
                 url={url}
                 instances={instances}
@@ -1208,6 +1244,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
                 deformerRange={deformerRange}
                 leafFace={leafFace}
               />
+              </group>
             </Suspense>
           )
         }),
@@ -1222,6 +1259,9 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
         const deformerRange = deformerBySpecies[species]?.range || null
         const leafFace = leafFaceBySpecies[species] || null
         return (
+          // ⛔ ImpostorSpecies takes no `visible` prop — a prop here would be silently
+          // dropped and the cards would leak into Browse. Wrap it. (2026-09-03)
+          <group key={`impostor#${species}`} visible={!overheadMode}>
           <ImpostorSpecies
             key={`impostor#${species}`}
             species={species}
@@ -1234,6 +1274,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
             deformerRange={deformerRange}
             leafFace={leafFace}
           />
+          </group>
         )
       })}
       </group>

@@ -54,7 +54,23 @@ export async function bakeTreeAnchors({ look, scene = 'lafayette-square' } = {})
   const trees = (JSON.parse(readFileSync(treesPath, 'utf-8')).instances) || []
   const anchors = trees.map(t => sampler.groundRawAt(t.x, t.z))
 
-  const out = { version: 1, look, count: anchors.length, anchors }
+  // ⛔⛔ BIND THE ANCHORS TO THE PLACEMENTS THEY WERE SAMPLED FROM. The runtime gated
+  // only on `anchors.length === instances.length`, which cannot tell a good file from a
+  // STALE one of the same length — a re-pour that keeps the count but changes the ORDER
+  // mis-seats every tree, silently, and the map looks plausible while every trunk floats
+  // or sinks. Nothing on LS today (residual median 0.07 m, p95 0.68 m against a shuffled
+  // control of 6.45 m — measured 2026-09-03), but a length gate is not evidence, it is
+  // the absence of one, and on town #2 it passes while the whole canopy is wrong.
+  // ⭐ FNV-1a over the placement COORDINATES, in order — the exact thing that must not
+  // have moved. Cheap to compute, cheap to verify, and it fails on reorder as loudly as
+  // on a count change.
+  let h = 2166136261 >>> 0
+  for (const t of trees) {
+    const k = `${t.x.toFixed(3)},${t.z.toFixed(3)}`
+    for (let i = 0; i < k.length; i++) { h ^= k.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0 }
+  }
+  const placementKey = h.toString(16).padStart(8, '0')
+  const out = { version: 2, look, count: anchors.length, placementKey, anchors }
   const outPath = join(outDir, 'tree-anchors.json')
   const wrote = writeIfChanged(outPath, JSON.stringify(out))
   console.log(`[bake-tree-anchors] ${wrote ? 'wrote' : 'unchanged'} ${outPath} (${anchors.length} tree anchors)`)
