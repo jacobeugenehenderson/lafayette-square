@@ -626,6 +626,10 @@ export { resolveHeroSubject, FALLBACK_HERO_SUBJECT } from '../lib/heroSubject.js
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
+// Scratch for the interpolated aim — reused every frame so the hero loop stays
+// allocation-free, the same reason heroAnim.js writes into caller-owned vectors.
+const _aimScratch = [0, 0, 0]
+
 const heroScrub = { t: 0 }  // 0–1, written by preview or panel scrub
 let heroScrubListeners = new Set()
 function subscribeHeroScrub(fn) { heroScrubListeners.add(fn); return () => heroScrubListeners.delete(fn) }
