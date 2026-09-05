@@ -18,6 +18,7 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { browseAltitude } from '../lib/browseAltitude.js'
+import { heroAimTarget } from '../lib/heroSubject.js'
 
 import LafayetteScene from '../components/LafayetteScene'
 import CelestialBodies from '../components/CelestialBodies'
@@ -614,12 +615,28 @@ export function defaultKeyframes(shotKey) {
   return [{ position: [...s.position], fov: s.fov }]
 }
 
+/**
+ * Read the subject's CURRENT position in the frame, as [sx, sy] in NDC.
+ * The other half of the inverted lock: after composing freely in authoring
+ * mode, this is what the composition MEANT — feed it to `setHeroFraming` and
+ * the shot holds that framing at runtime, on any aspect, even if the subject
+ * later resolves somewhere slightly different.
+ */
+export function readHeroFraming(camera, subject) {
+  if (!camera || !subject) return [0, 0]
+  const v = new THREE.Vector3(subject[0], subject[1], subject[2]).project(camera)
+  return [
+    Math.max(-1, Math.min(1, Number.isFinite(v.x) ? v.x : 0)),
+    Math.max(-1, Math.min(1, Number.isFinite(v.y) ? v.y : 0)),
+  ]
+}
+
 // Subject centroid resolver lifted to the shared pure module `src/lib/heroSubject.js`
 // (the single resolver Stage / production / Preview all use — no camera resolves
 // differently). Re-exported here so existing `from '../stage/StageApp.jsx'`
 // imports keep resolving. Stage call sites pass the cartograph store's arch
 // values; production/Preview pass `scene.arch.values`.
-export { resolveHeroSubject, FALLBACK_HERO_SUBJECT } from '../lib/heroSubject.js'
+export { resolveHeroSubject, FALLBACK_HERO_SUBJECT, heroAimTarget } from '../lib/heroSubject.js'
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
@@ -1105,9 +1122,10 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-export function HeroPreview({ keyframes, motion, subject }) {
-  const { camera } = useThree()
+export function HeroPreview({ keyframes, motion, subject, framing }) {
+  const { camera, size } = useThree()
   const controls = useThree((s) => s.controls)
+  const authoring = useHeroAuthoring()
   const elapsed = useRef(0)
   const frameCount = useRef(0)
 
@@ -1162,9 +1180,29 @@ export function HeroPreview({ keyframes, motion, subject }) {
       }
     }
 
-    // 3) Always aim at the subject (every frame, animating or not)
-    camera.lookAt(tgt[0], tgt[1], tgt[2])
-    if (controls) controls.target.set(tgt[0], tgt[1], tgt[2])
+    // 3) Aim.
+    //
+    // ⛔⛔ AUTHORING GETS A FREE CAMERA (2026-09-05). This re-aimed at the
+    // subject EVERY FRAME, animating or not — which meant every gesture an
+    // operator made was an orbit around the subject whether they wanted one or
+    // not. Pan was undone the instant it happened, so there was no way to tilt,
+    // and no way to compose a frame the subject was not dead centre of. That is
+    // the whole reason the LS pan is level to within two degrees and shows no
+    // rooftops: with a plain lookAt the pitch is not a choice, it is
+    // atan((subjY − camY) / distance), and the subject is 2km out at camera
+    // height. See heroAimTarget in lib/heroSubject.js.
+    // ⭐ SO THE LOCK IS INVERTED (Jacob: "maybe the hero is locked to the
+    // camera... and not vice versa"). While authoring, we touch nothing — orbit,
+    // pan, dolly and tilt all work and the operator composes by eye. Otherwise
+    // the subject is held at its MARK in the frame, which is the recorded
+    // result of that composition rather than a constraint on making it.
+    // ⚠️ A [0,0] mark is the old dead-centre behaviour EXACTLY, so nothing that
+    // was authored before this existed moves.
+    if (!authoring) {
+      const aim = heroAimTarget(camera.position, tgt, camera.fov, size.width / Math.max(size.height, 1), framing)
+      camera.lookAt(aim[0], aim[1], aim[2])
+      if (controls) controls.target.set(aim[0], aim[1], aim[2])
+    }
 
     // 4) Broadcast camera state to the panel (every 10 frames)
     if (++frameCount.current % 10 !== 0) return

@@ -86,3 +86,86 @@ export function resolveHeroSubject(subject, { slabIndex, buildings, archValues }
   }
   return FALLBACK_HERO_SUBJECT
 }
+
+/**
+ * ── HERO FRAMING ────────────────────────────────────────────────────────────
+ * Where the subject sits IN THE FRAME, and therefore where the camera points.
+ *
+ * ⛔ THE PROBLEM THIS SOLVES, MEASURED. With a plain `lookAt(subject)` the
+ * camera's pitch is not a choice — it is `atan((subjectY − cameraY) / distance)`.
+ * Lafayette Square's hero subject is the Arch: 74m high and ~2km away, with the
+ * camera at 81–157m. Nearly equal heights over a huge distance means the three
+ * authored keyframes come out at −0.59°, −2.05° and −0.21° of pitch, with the
+ * horizon within 0.18 of dead frame-centre in all three. Half the picture is
+ * sky and the neighborhood is squashed edge-on into the bottom half. Jacob:
+ * "it's hard to see the rooftops in our pan because it's too flat to the ground
+ * on account of the hero-lock."
+ * ⛔ AND YOU CANNOT BUY PITCH BY CLIMBING. −10° at 2km costs ~350m of altitude —
+ * a helicopter shot, at a scale that is a different picture entirely.
+ *
+ * ⭐ SO THE LOCK IS INVERTED (Jacob, 2026-09-05: "maybe the hero is locked to
+ * the camera... and not vice versa"). Instead of the camera being pinned to put
+ * the subject dead centre, the SUBJECT is held at a mark in the frame and the
+ * camera aims wherever that requires. Pitch becomes authorable; the subject
+ * cannot drift out of shot, because its frame position is the thing being held.
+ * ⭐ AND AT THIS DISTANCE THE MARK IS A HORIZON CONTROL FOR FREE: 2km out, the
+ * Arch is essentially ON the horizon, so raising the subject in frame raises
+ * the horizon with it and the lower two-thirds fill with rooftops.
+ *
+ * `framing` is [sx, sy] in normalized device coords — 0 = frame centre, +1 = top
+ * / right edge. ⛔ [0, 0] REPRODUCES THE OLD BEHAVIOUR EXACTLY, so this is
+ * additive: every existing keyframe still plays identically and SLAB-CONTRACT
+ * §4 extends rather than breaks.
+ *
+ * Pure and shared for the same reason `resolveHeroSubject` is: Stage,
+ * production and Preview must aim identically or the shot an operator approves
+ * is not the shot that ships.
+ *
+ * @param {{x:number,y:number,z:number}|number[]} camPos
+ * @param {number[]} subject   resolved hero subject point
+ * @param {number} fov         vertical field of view, degrees
+ * @param {number} aspect      viewport width / height
+ * @param {number[]} [framing] [sx, sy]; absent or [0,0] = subject dead centre
+ * @returns {number[]} the point to aim at — feed straight to lookAt / controls.target
+ */
+export function heroAimTarget(camPos, subject, fov, aspect, framing) {
+  const sx = framing?.[0] || 0
+  const sy = framing?.[1] || 0
+  const px = camPos.x ?? camPos[0], py = camPos.y ?? camPos[1], pz = camPos.z ?? camPos[2]
+  if (!sx && !sy) return subject
+  let vx = subject[0] - px, vy = subject[1] - py, vz = subject[2] - pz
+  const r = Math.hypot(vx, vy, vz)
+  if (!(r > 1e-6)) return subject
+  vx /= r; vy /= r; vz /= r
+
+  const t = Math.tan((fov * Math.PI) / 180 / 2)
+  // The angle from frame centre at which the subject must sit. Aim BELOW the
+  // subject to push it UP the frame, hence the negation at the rotation.
+  const pitch = Math.atan(sy * t)
+  const yaw   = Math.atan(sx * t * (aspect || 1))
+
+  // Camera basis about the subject direction. worldUp is +Y everywhere in Hero
+  // (no roll is authored), so `right` is well defined unless we are looking
+  // straight down — which Hero never does.
+  // ⚠️ right = v × worldUp, which for up=(0,1,0) is (−vz, 0, vx). Writing the
+  // cross the other way round negates it and silently INVERTS the tilt — a
+  // positive sy then pushed the subject DOWN the frame. Caught by asserting the
+  // resulting pitch, not by reading the code.
+  let rx = -vz, ry = 0, rz = vx
+  const rl = Math.hypot(rx, ry, rz) || 1
+  rx /= rl; ry /= rl; rz /= rl
+
+  // Rotate the view direction down by `pitch` about `right`, then by `yaw`
+  // about world Y. Rodrigues, unrolled — no THREE import, this stays pure.
+  const rot = (ax, ay, az, kx, ky, kz, ang) => {
+    const c = Math.cos(ang), s = Math.sin(ang), d = kx * ax + ky * ay + kz * az
+    return [
+      ax * c + (ky * az - kz * ay) * s + kx * d * (1 - c),
+      ay * c + (kz * ax - kx * az) * s + ky * d * (1 - c),
+      az * c + (kx * ay - ky * ax) * s + kz * d * (1 - c),
+    ]
+  }
+  let [ax, ay, az] = rot(vx, vy, vz, rx, ry, rz, -pitch)
+  ;[ax, ay, az] = rot(ax, ay, az, 0, 1, 0, -yaw)
+  return [px + ax * r, py + ay * r, pz + az * r]
+}

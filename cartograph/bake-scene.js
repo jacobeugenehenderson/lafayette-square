@@ -137,6 +137,13 @@ export async function bakeScene({ look } = {}) {
     heroSubject:   design.heroSubject   || null,
     heroKeyframes: design.heroKeyframes || [],
     heroMotion:    stripTransientHeroMotion(design.heroMotion) || { period: 12, easing: 'easeInOut' },
+    // Where the subject sits in the frame — [sx, sy] in NDC. ⛔ [0,0] is the
+    // dead-centre lock this channel replaced, so a slab baked without it (every
+    // slab before 2026-09-05) plays exactly as it did. Additive to
+    // SLAB-CONTRACT §4, not a break.
+    heroFraming:   Array.isArray(design.heroFraming) && design.heroFraming.length === 2
+                     ? [Number(design.heroFraming[0]) || 0, Number(design.heroFraming[1]) || 0]
+                     : [0, 0],
     // SC.7 — arch + horizon authoring. The Gateway Arch landmark's
     // placement / transform / uplights and the ground disc's radius +
     // feathering. Promoted from the module-scope `archState` bridge in

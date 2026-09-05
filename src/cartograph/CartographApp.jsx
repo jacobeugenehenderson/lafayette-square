@@ -917,6 +917,8 @@ export default function CartographApp() {
   const [previewPlaying, setPreviewPlaying] = useState(false)
   const [previewSpeed, setPreviewSpeed] = useState(1)
   const heroMotion = { ...storeMotion, preview: previewPlaying, speed: previewSpeed }
+  // Hero only — where the subject sits in the frame. [0,0] = dead centre.
+  const heroFraming = useCartographStore(s => s.heroFraming)
   const setHeroMotion = (next) => {
     const f = typeof next === 'function' ? next(heroMotion) : next
     if (f.period !== heroMotion.period || f.easing !== heroMotion.easing) {
@@ -1268,7 +1270,7 @@ export default function CartographApp() {
           {!inDesigner && <NeonPump />}
           <Controls controlsRef={controlsRef} />
           {shot === 'hero' && sceneCfg.hasHero && (
-            <HeroPreview keyframes={keyframes} motion={heroMotion}
+            <HeroPreview keyframes={keyframes} motion={heroMotion} framing={heroFraming}
               subject={resolveHeroSubject(heroSubject, { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values })} />
           )}
         </Canvas>

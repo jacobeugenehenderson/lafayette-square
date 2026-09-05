@@ -39,7 +39,7 @@ import { useSceneJson } from '../lib/useSceneJson.js'
 import { heroKeyframeAnim, randomizeHeroStart } from '../preview/heroAnim.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import { SHOTS_FLAT_DEFAULTS } from '../cartograph/skyLightChannels.js'
-import { resolveHeroSubject } from '../lib/heroSubject.js'
+import { resolveHeroSubject, heroAimTarget } from '../lib/heroSubject.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 
 
@@ -409,6 +409,9 @@ function CameraRig() {
   }, [scene?.heroKeyframes, heroSubject[0], heroSubject[1], heroSubject[2],
       browseBounds?.w, browseBounds?.h, heroFov])
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
+  // ⭐ [sx, sy] — where the subject sits in the frame. Absent = [0,0] = the old
+  // dead-centre lock, so a slab baked before this existed plays identically.
+  const heroFraming = scene?.heroFraming || [0, 0]
   // ⭐ ARRIVAL VARIETY — a different part of the pan on every load (Jacob, 2026-08-28).
   // `randomizeHeroStart` already existed and is called on hero ENTRY (below), but the
   // first load is not an entry: `prevMode` initialises to 'hero', so on arrival
@@ -783,7 +786,8 @@ function CameraRig() {
       // so the transition lands on the authored path instead of a stale point.
       if (transToHero.current) {
         const { fov: kfFov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _toPos)
-        _toTarget.set(heroSubject[0], heroSubject[1], heroSubject[2])
+        const _ta = heroAimTarget(camera.position, heroSubject, camera.fov, size.width / Math.max(size.height, 1), heroFraming)
+        _toTarget.set(_ta[0], _ta[1], _ta[2])
         toFov.current = kfFov
       }
 
@@ -853,7 +857,12 @@ function CameraRig() {
         camera.fov = kfFov
         camera.updateProjectionMatrix()
       }
-      ctl.target.set(heroSubject[0], heroSubject[1], heroSubject[2])
+      // ⭐ AIM AT THE MARK, NOT AT THE SUBJECT. With a plain lookAt(subject) the
+      // pitch is not a choice — it is atan((subjY − camY) / distance), which for
+      // a subject 2km out at camera height is ~0° and puts the horizon dead
+      // centre. See heroAimTarget.
+      const _ha = heroAimTarget(camera.position, heroSubject, camera.fov, size.width / Math.max(size.height, 1), heroFraming)
+      ctl.target.set(_ha[0], _ha[1], _ha[2])
       // Bypass damping — direct position control, no interpolation fighting
       ctl.enableDamping = false
       ctl.update()

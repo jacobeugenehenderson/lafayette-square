@@ -340,6 +340,12 @@ const DESIGN_FIELDS = [
   _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
   _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
   { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
+  // Where the subject sits IN THE FRAME — see heroAimTarget in lib/heroSubject.js.
+  // Absent or [0,0] is the old dead-centre behaviour exactly, so this hydrates
+  // additively over every design.json written before it existed.
+  { key: 'heroFraming',   hydrate: (d) => Array.isArray(d.heroFraming) && d.heroFraming.length === 2
+                                            ? [Number(d.heroFraming[0]) || 0, Number(d.heroFraming[1]) || 0]
+                                            : [0, 0] },
   { key: 'heroKeyframes', hydrate: (d, get) => d.heroKeyframes || get().heroKeyframes },
   { key: 'heroMotion',    hydrate: (d, get) => {
     const m = { ...get().heroMotion, ...(d.heroMotion || {}) }
@@ -721,6 +727,10 @@ const useCartographStore = create((set, get) => ({
   ],
   // Authored motion params (preview/speed are transient runtime UI, not here)
   heroMotion: { period: 720, easing: 'sine' },
+  // [sx, sy] in NDC — 0,0 = subject dead centre (the behaviour before this
+  // existed). Positive sy lifts the subject up the frame, which pitches the
+  // camera DOWN and brings the rooftops into shot. Hero only.
+  heroFraming: [0, 0],
   openSections: {},
   bgColor: '#1a1a18',
   _designHydrated: false,
@@ -1576,6 +1586,15 @@ const useCartographStore = create((set, get) => ({
   // Patch motion partial — { period?, easing? }. preview/speed are not stored.
   setHeroMotion: (patch) => {
     set(s => ({ heroMotion: { ...s.heroMotion, ...patch } }))
+    get()._saveDesignDebounced()
+  },
+
+  // Hero framing — [sx, sy] in NDC, where the subject sits in the frame.
+  // ⛔ HERO ONLY. Browse is a plan view and Street is first-person; neither has
+  // a subject to hold a mark, and neither should grow one.
+  setHeroFraming: (framing) => {
+    const f = Array.isArray(framing) ? [Number(framing[0]) || 0, Number(framing[1]) || 0] : [0, 0]
+    set({ heroFraming: f })
     get()._saveDesignDebounced()
   },
   setLayerVis: (id, visible) => {
