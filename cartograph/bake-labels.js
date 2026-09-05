@@ -142,11 +142,41 @@ function main() {
   }
 
   const labels = computeLabels(ribbons, keepPoint)
+
+  // ⛔⛔ THE STYLE TRAVELS WITH THE ARTIFACT, AND THIS IS A BUG FIX (2026-09-05).
+  // Placement is computed at RUNTIME by labelLayout.js from two style fields —
+  // `sizeK` and `letterSpacing` — and `useLabelPlacements` was reading both out
+  // of the CARTOGRAPH STORE, which only Cartograph ever hydrates from
+  // design.json. So the Designer laid out at the authored style and the player
+  // laid out at store DEFAULTS. Measured on lafayette-square: sizeK 0.7 vs 1
+  // (43% larger type) and letterSpacing 0.04 vs 0.05 — different sizes mean
+  // different fit gating, different abbreviation and different repeat spacing,
+  // so the rendered labels were not the ones the operator had approved.
+  // ⚠️ useLabelPlacements.js asserted in its own header that the two "never
+  // drift". They did, silently, because nothing compared them.
+  // ⭐ So the two layout inputs are baked next to the geometry they lay out.
+  // Doctrine: slab-is-the-contract — the runtime reads the artifact, never an
+  // authoring store it does not fill.
+  let style = {}
+  try {
+    const designPath = join(ROOT, 'public', 'looks', look, 'design.json')
+    if (existsSync(designPath)) {
+      const d = JSON.parse(readFileSync(designPath, 'utf-8'))
+      const L = d.labels || {}
+      // Only the fields that affect LAYOUT. Colour, weight, halo and case are
+      // render-time and are read from the Look at draw; baking them here would
+      // create a second source for them.
+      if (L.sizeK != null) style.sizeK = L.sizeK
+      if (L.letterSpacing != null) style.letterSpacing = L.letterSpacing
+    }
+  } catch (e) { console.warn('[bake-labels] design.json unreadable, baking Auto style:', e.message) }
+
   const outDir = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
   const outPath = join(outDir, 'labels.json')
-  writeFileSync(outPath, JSON.stringify({ version: 2, scene, look, count: labels.length, labels }))
+  writeFileSync(outPath, JSON.stringify({ version: 3, scene, look, count: labels.length, style, labels }))
   console.log(`[bake-labels] scene=${scene} look=${look}: ${labels.length} street labels → ${outPath}`)
+  console.log(`  layout style: ${JSON.stringify(style)}${Object.keys(style).length ? '' : '  (Auto — design.json set neither sizeK nor letterSpacing)'}`)
   if (labels.length) console.log('  e.g. ' + labels.slice(0, 8).map(l => l.name).join(' · '))
 }
 main()

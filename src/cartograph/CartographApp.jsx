@@ -298,9 +298,36 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         let toPos
         let toTarget = [...s.target]
         if (shot === 'browse') {
-          const aspect = size.width / Math.max(size.height, 1)
-          const y = computeBrowseAltitude(aspect, fov)
-          toPos = [s.position[0], y, s.position[2]]
+          // ⛔⛔ THE HANDOFF WAS ONE-WAY, AND THAT IS THE BUG (2026-09-05).
+          // Browse → Designer has carried the view for a long time (see the
+          // designer branch above: copy x/z, back-compute zoom from altitude).
+          // Designer → Browse did NOT: it snapped to SHOTS.browse.position —
+          // the building centroid — at the altitude that fits EVERY building.
+          // So an operator framing a corner in the Designer and stepping into
+          // 3D lost the framing and could not get it back, because the 3D
+          // pose was derived, not authored. The persistence comment further
+          // down claimed "Browse-↔-Designer view sync is handled by the
+          // cross-camera handoff" — half true, and the missing half is the
+          // direction the work actually flows in.
+          // ⭐ THE MATH IS THE EXACT INVERSE of the Browse → Designer line, so
+          // the round trip is lossless: there, zoom = viewportH / visibleH;
+          // here, visibleH = viewportH / zoom and altitude = visibleH / 2tan(fov/2).
+          // ⚠️ TARGET MOVES WITH IT. Browse looks straight down, so the target
+          // is the point under the camera — leaving it at SHOTS.browse.target
+          // aimed the camera back at the centroid from wherever it now stood.
+          const ortho = orthoRef.current
+          if (ortho && prevShot.current === 'designer' && ortho.zoom > 0) {
+            const visibleH = size.height / ortho.zoom
+            const y = visibleH / (2 * Math.tan((fov * Math.PI / 180) / 2))
+            toPos = [ortho.position.x, y, ortho.position.z]
+            toTarget = [ortho.position.x, 0, ortho.position.z]
+          } else {
+            // No Designer pose to inherit (first entry, a reload straight into
+            // Browse, or arriving from Hero/Street): fit the whole neighborhood.
+            const aspect = size.width / Math.max(size.height, 1)
+            const y = computeBrowseAltitude(aspect, fov)
+            toPos = [s.position[0], y, s.position[2]]
+          }
         } else if (shot === 'hero') {
           // Hero framing is AUTHORED as keyframes + a designated subject, not
           // the static SHOTS.hero scaffold. Enter at the path start (first
@@ -415,9 +442,10 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     if (tweenRef.current.isActive()) tweenRef.current.tick(performance.now())
   })
 
-  // Persist designer pan/zoom (ortho only). Browse-↔-Designer view sync
-  // is handled by the cross-camera handoff in the shot-change useEffect
-  // above (read ortho/persp directly), not via localStorage.
+  // Persist designer pan/zoom (ortho only). Browse ↔ Designer view sync is
+  // handled by the cross-camera handoff in the shot-change useEffect above
+  // (read ortho/persp directly), not via localStorage — and as of 2026-09-05
+  // that handoff runs BOTH WAYS. It had only ever run Browse → Designer.
   useFrame(() => {
     if (useCartographStore.getState().shot !== 'designer') return
     if (!camera.isOrthographicCamera) return
@@ -489,68 +517,35 @@ function Controls({ controlsRef }) {
 }
 
 function BrowseControls({ controlsRef }) {
-  // LEFT=PAN by default, ⌥/Alt+LEFT=ROTATE, RIGHT=ROTATE always.
-  //
-  // Two delivery paths because each alone has been observed to fail:
-  //   (a) Declarative `mouseButtons` prop. drei renders OrbitControls as
-  //       <primitive object={controls} ...restProps>, and R3F's applyProps
-  //       *mutates* `controls.mouseButtons` keys in place. That works on
-  //       initial mount, but if THREE.OrbitControls' constructor (or the
-  //       running drag handler) ever resets the object, the React tree
-  //       won't re-push it because the prop value is referentially equal.
-  //   (b) Imperative assignment after every mouse/key event. Robust against
-  //       any internal reset, and against the underlying controls instance
-  //       being recreated by drei when the default camera swaps (entering
-  //       Browse from Designer flips makeDefault on PerspectiveCamera, which
-  //       changes drei's internal `useMemo(new OrbitControls(...), [camera])`
-  //       dependency and creates a NEW controls instance — our previous
-  //       useEffect-once imperative set was applied to the OLD instance and
-  //       silently lost). Tying the ref to a state setter forces a re-apply
-  //       on every controls-instance swap.
-  const [controls, setControls] = useState(null)
-  const [altDown, setAltDown] = useState(false)
-  const buttons = useMemo(() => ({
-    LEFT: altDown ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN,
-    MIDDLE: THREE.MOUSE.DOLLY,
-    RIGHT: THREE.MOUSE.ROTATE,
-  }), [altDown])
-  // Re-apply imperatively whenever the controls instance OR alt state
-  // changes. Belt-and-suspenders against drei recreating the underlying
-  // OrbitControls when explCamera changes.
-  useEffect(() => {
-    if (!controls) return
-    controls.mouseButtons = buttons
-  }, [controls, buttons])
-  useEffect(() => {
-    const onKeyDown = (e) => { if (e.key === 'Alt') setAltDown(true) }
-    const onKeyUp   = (e) => { if (e.key === 'Alt') setAltDown(false) }
-    const onBlur    = () => setAltDown(false)
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
-    window.addEventListener('blur', onBlur)
-    return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
-      window.removeEventListener('blur', onBlur)
-    }
-  }, [])
-  const refCb = useCallback((r) => {
-    setControls(r)
-    if (controlsRef) controlsRef.current = r
-  }, [controlsRef])
+  // ⛔⛔ BROWSE IS A PLAN VIEW. PAN AND ZOOM, NOTHING ELSE (2026-09-05).
+  // Jacob: "only hero gets true 3D controls." Browse is the same view of the
+  // same ground the Designer shows — that is the whole reason the two can hand
+  // their framing to each other — and an orbit breaks that the instant it is
+  // used: a tilted Browse camera has no ortho equivalent, so the handoff back
+  // either lies about what you were looking at or has to refuse.
+  // ⛔ WHAT WENT: an ⌥/Alt+LEFT and RIGHT-drag 360° orbit easter egg
+  // (feedback_browse_right_drag_orbit.md), and the two delivery paths it
+  // needed — a declarative `mouseButtons` prop AND an imperative re-assign on
+  // every mouse and key event, because drei rebuilds the underlying
+  // OrbitControls whenever the default camera swaps and the imperative set was
+  // being applied to the dead instance. That machinery existed entirely to
+  // keep a rotation this view should not have.
+  // ⭐ `enableRotate={false}` now does the work one prop used to need forty
+  // lines and a documented failure mode to approximate.
+  // Archived: git show HEAD:src/cartograph/CartographApp.jsx
   return (
     <OrbitControls
       key="browse"
       makeDefault
-      ref={refCb}
-      mouseButtons={buttons}
+      ref={controlsRef}
       enablePan
-      enableRotate
+      enableRotate={false}
       enableZoom
       screenSpacePanning
       minDistance={50}
       maxDistance={20000}
-      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE }}
+      mouseButtons={{ LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN }}
+      touches={{ ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN }}
     />
   )
 }

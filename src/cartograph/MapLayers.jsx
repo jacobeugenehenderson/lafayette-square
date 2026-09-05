@@ -550,8 +550,8 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // Designer / Preview / LS never drift. The Designer shows the ACTIVE look's
   // own names (Łódź shows Łódź), not a static LS import.
   const activeLookId = useCartographStore(s => s.activeLookId)
-  const labelData = useStreetLabels(activeLookId)
-  const labelPlacements = useLabelPlacements(labelData)
+  const { labels: labelData, style: labelStyle } = useStreetLabels(activeLookId)
+  const labelPlacements = useLabelPlacements(labelData, labelStyle)
 
   // ── Park water (flat plan-view; park-local, rotated below) ────
   // ShapeGeometry sits in XY → rotateX maps (x,y,0) → (x,0,-y); negate z to

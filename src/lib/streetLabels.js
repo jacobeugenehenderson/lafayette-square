@@ -28,19 +28,32 @@ function resolveLookId(propLookId) {
  * @param {string} [lookId]     — explicit Look id (cartograph passes activeLookId);
  *                                falls back to the URL `?look=` param, then INSTANCE.
  * @param {number} [cacheBust]  — bump to re-fetch after a Stage/Designer re-bake.
- * @returns {Array<{name,x,z,angle,widthM}>} — [] until loaded / if the scene has none.
+ * @returns {{labels: Array<{name,widthM,points}>, style: {sizeK?:number, letterSpacing?:number}}}
+ *   `labels` is [] until loaded / if the scene has none. `style` is the LAYOUT
+ *   style baked beside them (v3+); {} on an older artifact, which lays out Auto.
+ *
+ * ⛔⛔ THE STYLE COMES BACK WITH THE GEOMETRY, AND THAT IS A BUG FIX. Placement
+ * is computed at runtime from `sizeK` and `letterSpacing`, and both were being
+ * read out of the CARTOGRAPH STORE — which only Cartograph hydrates. The
+ * Designer laid out at the authored style and the player at store defaults, so
+ * the rendered labels were never the ones the operator approved. Measured on
+ * lafayette-square: sizeK 0.7 vs 1, letterSpacing 0.04 vs 0.05. See
+ * useLabelPlacements.js, which asserted they could not drift.
  */
 export function useStreetLabels(lookId, cacheBust) {
   const resolved = resolveLookId(lookId)
-  const [labels, setLabels] = useState([])
+  const [data, setData] = useState(EMPTY)
   useEffect(() => {
     let cancelled = false
     const bust = cacheBust != null ? `?t=${cacheBust}` : ''
     fetch(`${ASSET_BASE}baked/${resolved}/labels.json${bust}`)
       .then(r => (r.ok ? r.json() : null))
-      .then(j => { if (!cancelled) setLabels(j?.labels || []) })
-      .catch(e => { console.warn('[streetLabels] load failed:', e); if (!cancelled) setLabels([]) })
+      .then(j => { if (!cancelled) setData(j?.labels ? { labels: j.labels, style: j.style || {} } : EMPTY) })
+      .catch(e => { console.warn('[streetLabels] load failed:', e); if (!cancelled) setData(EMPTY) })
     return () => { cancelled = true }
   }, [resolved, cacheBust])
-  return labels
+  return data
 }
+
+// Stable identity so a failed/empty load does not re-render consumers forever.
+const EMPTY = { labels: [], style: {} }

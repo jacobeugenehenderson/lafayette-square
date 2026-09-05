@@ -1089,7 +1089,20 @@ function Row({ k, v, warn }) {
 }
 
 export default function PreviewApp() {
-  const [shot, setShot] = useState('hero')
+  // ⛔ NOT ALWAYS HERO (2026-09-05). Preview opened on the Hero shot every
+  // time, which dates from when arriving on the hero was the emotionally
+  // resonant thing to do. It is now just a camera you have to click out of
+  // before you can look at what you came to look at.
+  // ⭐ It lands on the last Stage shot the operator was actually in —
+  // `cartograph-last-stage-shot`, the same key Cartograph's "Stage →" button
+  // returns to, so Preview and the Designer agree about where you left off.
+  const [shot, setShot] = useState(() => {
+    try {
+      const saved = localStorage.getItem('cartograph-last-stage-shot')
+      if (saved && ['hero', 'browse', 'street'].includes(saved)) return saved
+    } catch { /* ignore */ }
+    return 'browse'
+  })
   // Per-shot look resolve (channel-variant cascade): Preview drives a LOCAL
   // `shot`, but `useSceneJson` resolves shotLooks off the camera store. Production
   // drives `useCamera.viewMode`; Preview deliberately does NOT (it owns its own

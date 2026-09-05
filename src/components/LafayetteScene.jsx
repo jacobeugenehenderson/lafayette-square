@@ -1336,8 +1336,12 @@ function LafayetteScene({ lookId, bakeLastMs, paletteOverride, materialPhysicsOv
   // getStreetLabelPlacements, its SAME_NAME_MIN_DIST / ANY_LABEL_MIN_DIST
   // collision skip, and the EAST_OF_TRUMAN_ALLOWED whitelist are retired — the
   // collision de-dup now lives in labelLayout.js, the hood gate in the bake.
-  const streetLabels = useStreetLabels()
-  const labelPlacements = useLabelPlacements(streetLabels)
+  // ⭐ THE STYLE COMES WITH THEM. The player does not hydrate the Cartograph
+  // store, so the layout style has to arrive from the slab or the labels lay
+  // out at defaults — which is exactly what they were doing. See
+  // useLabelPlacements.js.
+  const { labels: streetLabels, style: labelStyle } = useStreetLabels()
+  const labelPlacements = useLabelPlacements(streetLabels, labelStyle)
 
   return (
     <group>
