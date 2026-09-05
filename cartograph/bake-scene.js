@@ -135,15 +135,16 @@ export async function bakeScene({ look } = {}) {
     shots:         design.shots         || { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
     browseHeading: design.browseHeading || { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
     heroSubject:   design.heroSubject   || null,
+    // ⭐ KEYFRAMES CARRY THEIR OWN AIM as of 2026-09-05 — {position, target,
+    // fov}. The Hero Lock derived the aim from the subject every frame, which
+    // made the camera's pitch an OUTPUT (atan((subjY − camY) / distance)) and
+    // is why the LS pan was level to within two degrees. ⚠️ `target` is
+    // OPTIONAL: a keyframe without one falls back to the resolved subject at
+    // runtime (heroAnim.js), reproducing the old lock exactly for that
+    // keyframe. So every slab baked before today plays identically and
+    // SLAB-CONTRACT §4 extends rather than breaks.
     heroKeyframes: design.heroKeyframes || [],
     heroMotion:    stripTransientHeroMotion(design.heroMotion) || { period: 12, easing: 'easeInOut' },
-    // Where the subject sits in the frame — [sx, sy] in NDC. ⛔ [0,0] is the
-    // dead-centre lock this channel replaced, so a slab baked without it (every
-    // slab before 2026-09-05) plays exactly as it did. Additive to
-    // SLAB-CONTRACT §4, not a break.
-    heroFraming:   Array.isArray(design.heroFraming) && design.heroFraming.length === 2
-                     ? [Number(design.heroFraming[0]) || 0, Number(design.heroFraming[1]) || 0]
-                     : [0, 0],
     // SC.7 — arch + horizon authoring. The Gateway Arch landmark's
     // placement / transform / uplights and the ground disc's radius +
     // feathering. Promoted from the module-scope `archState` bridge in

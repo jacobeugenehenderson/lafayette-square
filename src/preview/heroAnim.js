@@ -93,10 +93,9 @@ export function heroAnimPose(t01, keyframes, motion, outPos, outTgt) {
 }
 
 // Authored hero animation — the one the operator actually tunes in Stage.
-// Mirrors StageApp.jsx HeroPreview exactly: position swings along the
-// keyframe positions (Catmull-Rom, wave-eased period phase), the target is
-// the SUBJECT (NOT per-keyframe targets — these keyframes carry only
-// position + fov), and fov interpolates across keyframes. Shared by Stage
+// Position swings along the keyframe positions (Catmull-Rom, wave-eased period
+// phase), the TARGET swings along the keyframe targets on the same parameter,
+// and fov interpolates across keyframes. Shared by Stage
 // (HeroPreview), Preview (ShotCamera), and production (Scene.jsx CameraRig)
 // — one authored hero animation across all three environments.
 //
@@ -212,8 +211,23 @@ function _mapKfArc(f) {
   return _kfArc.u[lo - 1] + local * (_kfArc.u[lo] - _kfArc.u[lo - 1])
 }
 
+// ⛔⛔ THE AIM IS AUTHORED NOW (2026-09-05), and this used to say the opposite:
+// "the target is the SUBJECT (NOT per-keyframe targets — these keyframes carry
+// only position + fov)". That was the Hero Lock, and it made the camera's pitch
+// an OUTPUT — `atan((subjY − camY) / distance)` — rather than something an
+// operator could choose. On LS it produced three keyframes level to within two
+// degrees with the horizon dead centre, which is why the pan showed no
+// rooftops. Jacob: "we can get rid of the lock because it's not as much to
+// manage as I feared."
+// ⭐ The target rides the SAME `u` as the position, so aim and position cannot
+// desynchronise — including through the arc-length reparam and the per-keyframe
+// dwell below, which retime WHERE along the path the camera sits.
+// ⚠️ `fallbackTarget` is the migration: a keyframe authored before targets
+// existed has none, and using the resolved subject for it reproduces the old
+// lock EXACTLY for that keyframe. A slab baked last week plays identically.
 const _kfPositions = []
-export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
+const _kfTargets = []
+export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos, outTgt, fallbackTarget) {
   const period = motion.period || 720
   const speed = motion.speed || 1
   const wave = WAVES[motion.easing] || WAVES.sine
@@ -222,6 +236,10 @@ export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
   if (keyframes.length <= 1) {
     const p = keyframes[0]?.position || [0, 0, 0]
     outPos.set(p[0], p[1], p[2])
+    if (outTgt) {
+      const q = keyframes[0]?.target || fallbackTarget || [0, 0, 0]
+      outTgt.set(q[0], q[1], q[2])
+    }
     return { fov: keyframes[0]?.fov ?? 22 }
   }
   _kfPositions.length = 0
@@ -242,5 +260,11 @@ export function heroKeyframeAnim(elapsedSec, keyframes, motion, outPos) {
   u = (seg + local) / segs
   const p = catmullRom(_kfPositions, u, tension)
   outPos.set(p[0], p[1], p[2])
+  if (outTgt) {
+    _kfTargets.length = 0
+    for (const k of keyframes) _kfTargets.push(k.target || fallbackTarget || k.position)
+    const q = catmullRom(_kfTargets, u, tension)
+    outTgt.set(q[0], q[1], q[2])
+  }
   return { fov: lerpFov(keyframes, u) }
 }

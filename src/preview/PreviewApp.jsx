@@ -26,7 +26,7 @@ import BakedLamps from '../components/BakedLamps'
 import GatewayArch from '../components/GatewayArch'
 import LafayettePark from '../components/LafayettePark'
 import { SHOTS, computeBrowseAltitude } from '../stage/StageApp.jsx'
-import { resolveHeroSubject, heroAimTarget } from '../lib/heroSubject.js'
+import { resolveHeroSubject } from '../lib/heroSubject.js'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import useCamera from '../hooks/useCamera'
@@ -111,6 +111,7 @@ function resolveShotPose(shot, aspect) {
 
 // Reused temp for the hero keyframe pose (allocation-free hot path).
 const _heroPos = new THREE.Vector3()
+const _heroTgt = new THREE.Vector3()
 
 function ShotCamera({ shot, setShot }) {
   const { camera, size, gl } = useThree()
@@ -157,9 +158,6 @@ function ShotCamera({ shot, setShot }) {
     ? scene.heroKeyframes
     : [{ position: SHOTS.hero.position, fov: SHOTS.hero.fov }]
   const heroMotion = scene?.heroMotion || { period: 720, easing: 'sine' }
-  // ⭐ [sx, sy] — where the subject sits in the frame. Absent = [0,0] = the old
-  // dead-centre lock, so a slab baked before this existed plays identically.
-  const heroFraming = scene?.heroFraming || [0, 0]
   // Hero look-at via the SHARED resolver — parity with production CameraRig.
   // Undesignated → the authored Gateway Arch (scene.arch.values); building/
   // landmark → the slab index. (project_camera_framing_slab_contract)
@@ -256,21 +254,18 @@ function ShotCamera({ shot, setShot }) {
   useFrame(({ clock }) => {
     if (tween.isActive()) { tween.tick(performance.now()); return }
     if (shot !== 'hero') return
-    const aspect = size.width / Math.max(size.height, 1)
-    const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos)
+    const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt, heroSubject)
     camera.position.copy(_heroPos)
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
     const ctl = controlsRef.current
     if (ctl) {
-      const aim = heroAimTarget(camera.position, heroSubject, camera.fov, aspect, heroFraming)
-      ctl.target.set(aim[0], aim[1], aim[2])
+      ctl.target.copy(_heroTgt)
       // Direct position control — bypass damping so it doesn't fight the anim.
       ctl.enableDamping = false
       ctl.update()
       ctl.enableDamping = true
     } else {
-      const aim = heroAimTarget(camera.position, heroSubject, camera.fov, aspect, heroFraming)
-      camera.lookAt(aim[0], aim[1], aim[2])
+      camera.lookAt(_heroTgt.x, _heroTgt.y, _heroTgt.z)
     }
   })
 

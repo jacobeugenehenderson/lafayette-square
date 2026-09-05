@@ -18,7 +18,6 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { OrbitControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { browseAltitude } from '../lib/browseAltitude.js'
-import { heroAimTarget } from '../lib/heroSubject.js'
 
 import LafayetteScene from '../components/LafayetteScene'
 import CelestialBodies from '../components/CelestialBodies'
@@ -180,9 +179,6 @@ function ArchHorizonControls() {
   const horizonChannel   = useCartographStore(s => s.horizon)
   const landscapeChannel = useCartographStore(s => s.landscape)
   const heroSubject      = useCartographStore(s => s.heroSubject)
-  // Hero framing — the mark the subject holds in the frame. Hero only.
-  const heroFraming      = useCartographStore(s => s.heroFraming)
-  const setHeroFraming   = useCartographStore(s => s.setHeroFraming)
   const setArch       = useCartographStore(s => s.setArch)
   const setHorizon    = useCartographStore(s => s.setHorizon)
   const setLandscape  = useCartographStore(s => s.setLandscape)
@@ -608,8 +604,11 @@ function pushCamera(update) {
 export function defaultKeyframes(shotKey) {
   const s = SHOTS[shotKey]
   if (shotKey === 'hero') {
-    // Hero keyframes carry only camera position + fov; target = subject centroid (runtime).
     // Two keyframes mark the swing extremes; the wave oscillates between them.
+    // ⚠️ NO `target` HERE ON PURPOSE. A keyframe without one falls back to the
+    // resolved subject (heroAnim.js), which is the old dead-centre lock — the
+    // right starting point for a shot nobody has composed yet. The operator
+    // authors the aim by moving the camera and saving.
     return [
       { position: [-540, 55, 362], fov: 22 },
       { position: [-260, 55, 98], fov: 22 },
@@ -618,36 +617,14 @@ export function defaultKeyframes(shotKey) {
   return [{ position: [...s.position], fov: s.fov }]
 }
 
-/**
- * Read the subject's CURRENT position in the frame, as [sx, sy] in NDC.
- * The other half of the inverted lock: after composing freely in authoring
- * mode, this is what the composition MEANT — feed it to `setHeroFraming` and
- * the shot holds that framing at runtime, on any aspect, even if the subject
- * later resolves somewhere slightly different.
- */
-export function readHeroFraming(camera, subject) {
-  if (!camera || !subject) return [0, 0]
-  const v = new THREE.Vector3(subject[0], subject[1], subject[2]).project(camera)
-  return [
-    Math.max(-1, Math.min(1, Number.isFinite(v.x) ? v.x : 0)),
-    Math.max(-1, Math.min(1, Number.isFinite(v.y) ? v.y : 0)),
-  ]
-}
-
 // Subject centroid resolver lifted to the shared pure module `src/lib/heroSubject.js`
 // (the single resolver Stage / production / Preview all use — no camera resolves
 // differently). Re-exported here so existing `from '../stage/StageApp.jsx'`
 // imports keep resolving. Stage call sites pass the cartograph store's arch
 // values; production/Preview pass `scene.arch.values`.
-export { resolveHeroSubject, FALLBACK_HERO_SUBJECT, heroAimTarget } from '../lib/heroSubject.js'
+export { resolveHeroSubject, FALLBACK_HERO_SUBJECT } from '../lib/heroSubject.js'
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
-
-// Where the subject is sitting in the frame RIGHT NOW, in NDC. Written by
-// HeroPreview each frame while authoring, read by the panel's "Frame from view".
-// Same R3F ⇄ DOM rail as heroScrub and cameraState — the panel is DOM and cannot
-// see the camera, and the camera is R3F and cannot see React state.
-const liveFraming = { sx: 0, sy: 0 }
 
 const heroScrub = { t: 0 }  // 0–1, written by preview or panel scrub
 let heroScrubListeners = new Set()
@@ -691,7 +668,7 @@ function kfName(i, total) {
 
 // ── Shot-specific camera controls ───────────────────────────────────────────
 
-function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, framing, setFraming }) {
+function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
   const authoring = useHeroAuthoring()
   const trackRef = useRef(null)
@@ -821,7 +798,11 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
     const snap = captureCameraSnapshot()
     if (!snap) return
     const next = [...keyframes]
-    next[selectedKf] = { position: snap.position, fov: snap.fov }
+    // ⭐ THE AIM IS PART OF THE KEYFRAME NOW. It was discarded here — the
+    // snapshot always carried `target` and we threw it away, because the Hero
+    // Lock re-derived the aim from the subject every frame. That is what made
+    // pitch an output instead of a choice.
+    next[selectedKf] = { position: snap.position, target: snap.target, fov: snap.fov }
     setKeyframes(next)
     triggerPulse(selectedKf)
   }
@@ -987,7 +968,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
         <div className="space-y-2">
           <div className="text-caption px-2 py-1.5 rounded"
             style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}>
-            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free. <b>Drag</b> orbits, <b>⌥ drag</b> pans, <b>⌃ drag</b> dollies. Compose by eye, then take the framing and save the pose.
+            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free. <b>Drag</b> orbits, <b>⌥ drag</b> pans, <b>⌃ drag</b> dollies. Compose it, then Save — the aim is part of the keyframe.
           </div>
           <div className="flex gap-1.5">
             <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
@@ -1007,40 +988,6 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
                 title="Delete this mid keyframe"
               >×</button>
             )}
-          </div>
-          {/* ── Framing ─────────────────────────────────────────────────
-              Where the subject sits IN THE FRAME, which is what makes pitch
-              authorable at all: with the old dead-centre lock the pitch was
-              atan((subjY − camY) / distance) and nothing else. This is a
-              per-LOOK mark, not per-keyframe — it holds across the whole move.
-              ⭐ Composed with the camera, not typed: ⌥ drag pans, which is what
-              moves the subject in the frame. "From view" then reads where it
-              ended up. The sliders are for a considered adjustment afterwards. */}
-          <div className="space-y-1 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
-            <div className="flex items-center justify-between">
-              <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>
-                Framing <span style={{ color: 'var(--on-surface-disabled)' }}>· where the subject sits</span>
-              </span>
-              <div className="flex gap-1">
-                <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
-                  style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
-                  onClick={() => setFraming([Math.round(liveFraming.sx * 1000) / 1000, Math.round(liveFraming.sy * 1000) / 1000])}
-                  title="Take the framing from the view you have composed"
-                >From view</button>
-                <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
-                  style={{ background: 'transparent', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
-                  onClick={() => setFraming([0, 0])}
-                  title="Put the subject back in the centre of the frame"
-                >Centre</button>
-              </div>
-            </div>
-            <SliderRow label="Up / down" value={(framing || [0, 0])[1]} min={-0.9} max={0.9} step={0.01}
-              onChange={(v) => setFraming([(framing || [0, 0])[0], v])} />
-            <SliderRow label="Left / right" value={(framing || [0, 0])[0]} min={-0.9} max={0.9} step={0.01}
-              onChange={(v) => setFraming([v, (framing || [0, 0])[1]])} />
-            <div className="text-caption" style={{ color: 'var(--on-surface-disabled)' }}>
-              Raising the subject tilts the camera down — more ground, more rooftops.
-            </div>
           </div>
           {sel != null && (
             <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
@@ -1174,8 +1121,8 @@ function StreetCamera({ cam }) {
 
 // ── Hero preview animation (runs inside R3F) ────────────────────────────────
 
-export function HeroPreview({ keyframes, motion, subject, framing }) {
-  const { camera, size } = useThree()
+export function HeroPreview({ keyframes, motion, subject }) {
+  const { camera } = useThree()
   const controls = useThree((s) => s.controls)
   const authoring = useHeroAuthoring()
   const elapsed = useRef(0)
@@ -1186,8 +1133,11 @@ export function HeroPreview({ keyframes, motion, subject, framing }) {
     liveCamera.camera = camera
     liveCamera.controls = controls
 
-    // Subject centroid = camera target. Always look at it, every frame.
+    // The subject is the FALLBACK aim for any keyframe authored before targets
+    // existed — not the aim itself. See heroAnim.js.
     const tgt = subject || FALLBACK_HERO_SUBJECT
+    const aim = _aimScratch
+    aim[0] = tgt[0]; aim[1] = tgt[1]; aim[2] = tgt[2]
 
     // 1) Drain panel pushes (position + fov from scrub, Add/Set Keyframe).
     // Target is owned by the subject; we ignore u.target if present.
@@ -1230,42 +1180,43 @@ export function HeroPreview({ keyframes, motion, subject, framing }) {
         camera.fov = fov
         camera.updateProjectionMatrix()
       }
+      // The aim rides the same parameter as the position, so they cannot
+      // desynchronise. A keyframe with no authored target falls back to the
+      // subject — the old lock, for that keyframe only.
+      const tgts = keyframes.map(k => k.target || tgt)
+      const at = keyframes.length === 1 ? tgts[0] : catmullRom(tgts, t)
+      aim[0] = at[0]; aim[1] = at[1]; aim[2] = at[2]
     }
 
-    // 3) Aim.
+    // 3) Aim — AUTHORED, not derived.
     //
-    // ⛔⛔ AUTHORING GETS A FREE CAMERA (2026-09-05). This re-aimed at the
-    // subject EVERY FRAME, animating or not — which meant every gesture an
-    // operator made was an orbit around the subject whether they wanted one or
-    // not. Pan was undone the instant it happened, so there was no way to tilt,
-    // and no way to compose a frame the subject was not dead centre of. That is
-    // the whole reason the LS pan is level to within two degrees and shows no
-    // rooftops: with a plain lookAt the pitch is not a choice, it is
+    // ⛔⛔ THIS RE-PINNED TO THE SUBJECT EVERY FRAME, animating or not, and that
+    // one line is why the LS pan is level to within two degrees and shows no
+    // rooftops. With a plain lookAt(subject) the pitch is not a choice — it is
     // atan((subjY − camY) / distance), and the subject is 2km out at camera
-    // height. See heroAimTarget in lib/heroSubject.js.
-    // ⭐ SO THE LOCK IS INVERTED (Jacob: "maybe the hero is locked to the
-    // camera... and not vice versa"). While authoring, we touch nothing — orbit,
-    // pan, dolly and tilt all work and the operator composes by eye. Otherwise
-    // the subject is held at its MARK in the frame, which is the recorded
-    // result of that composition rather than a constraint on making it.
-    // ⚠️ A [0,0] mark is the old dead-centre behaviour EXACTLY, so nothing that
-    // was authored before this existed moves.
+    // height. It also meant every authoring gesture was an orbit around the
+    // subject whether one was wanted or not: pan was undone the instant it
+    // happened, so there was no way to tilt and no way to compose a frame the
+    // subject was not centred in.
+    // ⭐ AUTHORING TOUCHES NOTHING — the camera is free, and what the operator
+    // composes IS the keyframe (Save captures position AND target).
+    // ⭐ OTHERWISE the aim is the interpolated authored target, riding the same
+    // parameter as the position so the two cannot desynchronise.
+    // ⚠️ A keyframe with no authored target falls back to the subject, which
+    // reproduces the old lock exactly for that keyframe — so a slab baked
+    // before today plays identically.
     if (!authoring) {
-      const aim = heroAimTarget(camera.position, tgt, camera.fov, size.width / Math.max(size.height, 1), framing)
       camera.lookAt(aim[0], aim[1], aim[2])
       if (controls) controls.target.set(aim[0], aim[1], aim[2])
-    } else {
-      // Free camera. Publish where the subject has ENDED UP so the panel can
-      // capture it — the mark is the result of composing, not an input to it.
-      const m = readHeroFraming(camera, tgt)
-      liveFraming.sx = m[0]; liveFraming.sy = m[1]
     }
 
     // 4) Broadcast camera state to the panel (every 10 frames)
     if (++frameCount.current % 10 !== 0) return
     const p = camera.position
     cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
-    cameraState.target = [Math.round(tgt[0]), Math.round(tgt[1]), Math.round(tgt[2])]
+    cameraState.target = controls
+      ? [Math.round(controls.target.x), Math.round(controls.target.y), Math.round(controls.target.z)]
+      : [Math.round(aim[0]), Math.round(aim[1]), Math.round(aim[2])]
     cameraState.fov = Math.round(camera.fov)
     cameraState.up = [camera.up.x, camera.up.y, camera.up.z]
     notifyCameraListeners()
@@ -1692,8 +1643,7 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         <Collapsible label="Camera">
           {shot === 'hero' && (
             <HeroCamera cam={cam} keyframes={keyframes} setKeyframes={setKeyframes}
-              heroMotion={heroMotion} setHeroMotion={setHeroMotion}
-              framing={heroFraming} setFraming={setHeroFraming} />
+              heroMotion={heroMotion} setHeroMotion={setHeroMotion} />
           )}
           {shot === 'browse' && <BrowseCamera cam={cam} />}
           {shot === 'street' && <StreetCamera cam={cam} />}
