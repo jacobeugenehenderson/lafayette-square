@@ -554,24 +554,42 @@ function BrowseControls({ controlsRef }) {
 // `enabled` locks them for the Hero runtime preview (see Controls).
 function OrbitControlsShot({ controlsRef, enabled = true }) {
   const localRef = useRef(null)
+  // ⭐ ONE BUTTON AND TWO MODIFIERS — the DCC scheme, so a pen or a trackpad can
+  // do all three moves. Alt already panned; Control now dollies, which is the
+  // one that was missing: dolly lived on the MIDDLE button and the wheel, and a
+  // stylus has neither. Jacob: "regular 3D controls with mouse/tablet +
+  // option/control keys."
+  // ⛔ THE PAN IS THE FRAMING GESTURE. In Hero authoring the camera is free, so
+  // ⌥-dragging moves the subject in the frame — that IS the tilt. The panel's
+  // "From view" then reads where it landed. There is deliberately no keyboard
+  // nudge for it: the framing is what you SEE, not a number you type at.
+  // ⚠️ Both delivery paths, for the reason BrowseControls documented before it
+  // lost its orbit: drei renders OrbitControls as a <primitive> and R3F mutates
+  // `mouseButtons` in place, so a referentially-equal prop will not re-push
+  // after the controls instance is rebuilt on a camera swap.
   useEffect(() => {
-    const setButtons = (altDown) => {
+    const setButtons = (mod) => {
       const c = localRef.current
       if (!c) return
       c.mouseButtons = {
-        LEFT: altDown ? THREE.MOUSE.PAN : THREE.MOUSE.ROTATE,
+        LEFT: mod === 'alt' ? THREE.MOUSE.PAN
+            : mod === 'ctrl' ? THREE.MOUSE.DOLLY
+            : THREE.MOUSE.ROTATE,
         MIDDLE: THREE.MOUSE.DOLLY,
         RIGHT: THREE.MOUSE.PAN,
       }
     }
-    const onKeyDown = (e) => { if (e.key === 'Alt') setButtons(true) }
-    const onKeyUp   = (e) => { if (e.key === 'Alt') setButtons(false) }
-    setButtons(false)
-    window.addEventListener('keydown', onKeyDown)
-    window.addEventListener('keyup', onKeyUp)
+    const read = (e) => (e.altKey ? 'alt' : (e.ctrlKey || e.metaKey) ? 'ctrl' : null)
+    const onKey  = (e) => setButtons(read(e))
+    const onBlur = () => setButtons(null)
+    setButtons(null)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('keyup', onKey)
+    window.addEventListener('blur', onBlur)
     return () => {
-      window.removeEventListener('keydown', onKeyDown)
-      window.removeEventListener('keyup', onKeyUp)
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keyup', onKey)
+      window.removeEventListener('blur', onBlur)
     }
   }, [])
   return (

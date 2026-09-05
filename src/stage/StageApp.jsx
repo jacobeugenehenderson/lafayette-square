@@ -863,41 +863,22 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
   }
   const cancelAuthoring = () => setHeroAuthoring(false)
 
-  // ── Authoring hotkeys ────────────────────────────────────────────────
-  // Esc leaves without saving. Arrows nudge the MARK — where the subject sits
-  // in the frame — because composing is a nudging job and reaching for a slider
-  // breaks the look. F captures the mark from the view you have just composed;
-  // 0 returns the subject to dead centre (the pre-2026-09-05 behaviour).
-  // ⚠️ Arrow keys are free here: drei's OrbitControls only binds them when
-  // `listenToKeyEvents` is passed, and nothing in this app passes it.
-  // ⛔ Never swallow a key while the operator is typing in a field.
-  const NUDGE = 0.05, NUDGE_FINE = 0.01
+  // Esc leaves authoring without saving.
+  // ⛔ NO KEYBOARD NUDGES. An arrow-key handler for the framing mark was built
+  // and cut the same day (Jacob: "hotkeys no: I meant regular 3D controls with
+  // mouse/tablet + option/control keys"). The framing is not a value you type
+  // at — it is what you SEE when you have finished moving the camera. The
+  // gesture is the camera itself; the panel's "From view" reads the result.
   useEffect(() => {
     if (!authoring) return
     const onKey = (e) => {
       const t = e.target
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
-      if (e.metaKey || e.ctrlKey) return
-      if (e.key === 'Escape') { setHeroAuthoring(false); return }
-      const step = e.shiftKey ? NUDGE_FINE : NUDGE
-      const clamp = (v) => Math.max(-1, Math.min(1, Math.round(v * 1000) / 1000))
-      const [sx, sy] = framing || [0, 0]
-      switch (e.key) {
-        case 'ArrowUp':    setFraming([sx, clamp(sy + step)]); break
-        case 'ArrowDown':  setFraming([sx, clamp(sy - step)]); break
-        case 'ArrowRight': setFraming([clamp(sx + step), sy]); break
-        case 'ArrowLeft':  setFraming([clamp(sx - step), sy]); break
-        case 'f': case 'F':
-          setFraming([Math.round(liveFraming.sx * 1000) / 1000,
-                      Math.round(liveFraming.sy * 1000) / 1000]); break
-        case '0': setFraming([0, 0]); break
-        default: return
-      }
-      e.preventDefault()
+      if (e.key === 'Escape') setHeroAuthoring(false)
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [authoring, framing, setFraming])
+  }, [authoring])
 
   return (
     <div className="space-y-3">
@@ -1006,7 +987,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
         <div className="space-y-2">
           <div className="text-caption px-2 py-1.5 rounded"
             style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}>
-            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free: orbit, pan, dolly, tilt. Compose by eye, then <b>F</b> to take the framing or <b>Save</b> for the pose.
+            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free. <b>Drag</b> orbits, <b>⌥ drag</b> pans, <b>⌃ drag</b> dollies. Compose by eye, then take the framing and save the pose.
           </div>
           <div className="flex gap-1.5">
             <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
@@ -1032,8 +1013,9 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
               authorable at all: with the old dead-centre lock the pitch was
               atan((subjY − camY) / distance) and nothing else. This is a
               per-LOOK mark, not per-keyframe — it holds across the whole move.
-              ⭐ Arrows nudge it live (Shift = fine), F takes it from the view
-              you just composed, 0 returns the subject to centre. */}
+              ⭐ Composed with the camera, not typed: ⌥ drag pans, which is what
+              moves the subject in the frame. "From view" then reads where it
+              ended up. The sliders are for a considered adjustment afterwards. */}
           <div className="space-y-1 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
             <div className="flex items-center justify-between">
               <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>
@@ -1043,18 +1025,18 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, f
                 <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
                   style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
                   onClick={() => setFraming([Math.round(liveFraming.sx * 1000) / 1000, Math.round(liveFraming.sy * 1000) / 1000])}
-                  title="Take the framing from the view you have composed (F)"
+                  title="Take the framing from the view you have composed"
                 >From view</button>
                 <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
                   style={{ background: 'transparent', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
                   onClick={() => setFraming([0, 0])}
-                  title="Put the subject back in the centre of the frame (0)"
+                  title="Put the subject back in the centre of the frame"
                 >Centre</button>
               </div>
             </div>
-            <SliderRow label="Up / down  ↑↓" value={(framing || [0, 0])[1]} min={-0.9} max={0.9} step={0.01}
+            <SliderRow label="Up / down" value={(framing || [0, 0])[1]} min={-0.9} max={0.9} step={0.01}
               onChange={(v) => setFraming([(framing || [0, 0])[0], v])} />
-            <SliderRow label="Left / right  ←→" value={(framing || [0, 0])[0]} min={-0.9} max={0.9} step={0.01}
+            <SliderRow label="Left / right" value={(framing || [0, 0])[0]} min={-0.9} max={0.9} step={0.01}
               onChange={(v) => setFraming([v, (framing || [0, 0])[1]])} />
             <div className="text-caption" style={{ color: 'var(--on-surface-disabled)' }}>
               Raising the subject tilts the camera down — more ground, more rooftops.
