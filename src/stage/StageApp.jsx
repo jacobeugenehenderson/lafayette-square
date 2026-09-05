@@ -28,6 +28,9 @@ import Terrain from '../components/Terrain'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 
 import { catmullRom, EASINGS } from '../preview/heroAnim'
+// ⚠️ The `export { resolveHeroSubject } from …` below is a RE-EXPORT and creates
+// no local binding; this file needs its own import to call it.
+import { resolveHeroSubject as _resolveHeroSubject } from '../lib/heroSubject.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -675,6 +678,15 @@ function kfName(i, total) {
 function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
   const scrubT = useHeroScrub()
   const authoring = useHeroAuthoring()
+  // The resolved subject — the FALLBACK aim for any keyframe authored before
+  // targets existed, so selecting one lands the camera pointing where the old
+  // lock would have pointed it.
+  const heroSubjectDesignation = useCartographStore(s => s.heroSubject)
+  const archValues = useCartographStore(s => s.arch?.values)
+  const subjectPoint = useMemo(
+    () => _resolveHeroSubject(heroSubjectDesignation, { archValues }),
+    [heroSubjectDesignation, archValues],
+  )
   const trackRef = useRef(null)
   const [scrubDragging, setScrubDragging] = useState(false)
 
@@ -769,7 +781,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   const selectKeyframe = useCallback((i) => {
     const kf = keyframes[i]
     if (!kf) return
-    pushCamera({ position: [...kf.position], fov: kf.fov })
+    pushCamera({ position: [...kf.position], target: [...(kf.target || subjectPoint)], fov: kf.fov })
     heroScrub.t = kfFractions[i] ?? 0
     notifyHeroScrub()
   }, [keyframes, kfFractions])
@@ -839,8 +851,13 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
     setHeroAuthoring(true)
     heroScrub.t = kfFractions[i] ?? 0
     notifyHeroScrub()
-    pushCamera({ position: [...kf.position], fov: kf.fov })
-  }, [keyframes, kfFractions, heroMotion, setHeroMotion])
+    // ⭐ THE AIM COMES WITH IT. Without the target the camera lands on the
+    // keyframe's position pointing wherever it happened to be — half a
+    // keyframe, and the operator composes from a pose that is not the one they
+    // clicked. `kf.target` is absent on anything authored before targets
+    // existed; the subject is the fallback, which is what it used to be.
+    pushCamera({ position: [...kf.position], target: [...(kf.target || subjectPoint)], fov: kf.fov })
+  }, [keyframes, kfFractions, heroMotion, setHeroMotion, subjectPoint])
 
   const saveKeyframe = () => {
     setSelectedFromView()    // capture the live (orbited) pose into the selected kf
@@ -1143,13 +1160,25 @@ export function HeroPreview({ keyframes, motion, subject }) {
     const aim = _aimScratch
     aim[0] = tgt[0]; aim[1] = tgt[1]; aim[2] = tgt[2]
 
-    // 1) Drain panel pushes (position + fov from scrub, Add/Set Keyframe).
-    // Target is owned by the subject; we ignore u.target if present.
+    // 1) Drain panel pushes (position + target + fov from scrub, keyframe select,
+    // Add/Set Keyframe).
+    // ⛔⛔ THE TARGET USED TO BE DROPPED HERE — "target is owned by the subject;
+    // we ignore u.target if present" — which was true under the Hero Lock and is
+    // a bug without it. Selecting a keyframe or entering authoring jumped the
+    // camera to the saved POSITION and left the aim wherever the last runtime
+    // frame had put it, so the operator started composing from a pose that was
+    // half the keyframe they clicked. Worse with preview paused, where nothing
+    // was updating the aim at all.
     if (cameraPush.pending) {
       const u = cameraPush.pending
       cameraPush.pending = null
       if (u.position) camera.position.set(u.position[0], u.position[1], u.position[2])
       if (u.fov != null) { camera.fov = u.fov; camera.updateProjectionMatrix() }
+      if (u.target) {
+        aim[0] = u.target[0]; aim[1] = u.target[1]; aim[2] = u.target[2]
+        camera.lookAt(aim[0], aim[1], aim[2])
+        if (controls) { controls.target.set(aim[0], aim[1], aim[2]); controls.update() }
+      }
     }
 
     // 2) Animate when playing — interpolate position + fov; target = subject.
