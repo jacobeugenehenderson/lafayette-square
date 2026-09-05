@@ -262,7 +262,12 @@ function FitRow({ signature, baseFontPx = 20, gapPx = 12, className = '', childr
   )
 }
 
-function AlmanacTab() {
+// ⭐ EXPORTED so `?embed=almanac` can mount it ALONE, the same way
+// `LafayettePagesTab` is mounted alone by `?embed=society`. It reads the clock
+// and the sky from stores and takes no props, so this is a route, not a
+// refactor — and an embedding page gets the ACTUAL Almanac rather than a
+// marketing copy of one. ⛔ Do not fork it for the embed; see AlmanacEmbed.jsx.
+export function AlmanacTab() {
   const { currentTime, isLive } = useTimeOfDay()
   const [use24Hour, setUse24Hour] = useState(false)
   const [useCelsius, setUseCelsius] = useState(false)
@@ -366,7 +371,14 @@ function AlmanacTab() {
       {almanacView === 'weather' && (
         <div ref={weatherRef}>
         {/* ── Time + Weather + Temp ── */}
-        <div className="px-4 py-3 border-b border-outline-variant">
+        {/* ⭐ `data-almanac="head"` is the same kind of seam as `data-tod` on the
+            day strip: a hook an EMBEDDING page's stylesheet can reach, because
+            it cannot reach across a frame any other way. This row is three
+            children at `justify-between` with no wrap, and framed narrow — a
+            phone, inside a figure with its own gutters — the temperature runs
+            off the right edge. `.embed-almanac [data-almanac="head"]` in
+            index.css trims the gutters there and nowhere else. */}
+        <div data-almanac="head" className="px-4 py-3 border-b border-outline-variant">
           <div className="flex items-center justify-between">
             <div
               className="flex items-center gap-1.5 cursor-pointer hover:opacity-70 transition-opacity"

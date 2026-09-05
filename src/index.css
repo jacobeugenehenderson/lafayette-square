@@ -451,3 +451,87 @@ html.ward-alpha-embed body,
 html.ward-alpha-embed #root {
   background: transparent !important;
 }
+
+/* ── The Almanac, mounted alone (`?embed=almanac`) ──────────────────────────
+   Framed on a page that is explaining the Ward to someone who has never seen
+   one, the day strip has a different job than it has inside the app. In the
+   panel it is a control among controls and a reader has already been told what
+   the Almanac is. On an embedding page it is the FIRST thing anyone is asked to
+   touch, and a 12px dot on a 4px rule reads as a progress bar — something the
+   page is telling you, not something you can pull.
+
+   ⭐ SO THE STRIP GETS LOUDER, NOT DIFFERENT. Same component, same waypoints,
+   same clock; a bigger grab target, a thicker rail and a real `grab` cursor.
+   Two structural selectors beat Tailwind's one, so this needs no !important and
+   the strip keeps ONE look everywhere it actually ships.
+   ⛔ Colour is deliberately untouched: the handle's fill and border are INLINE
+   (green at rest, blue while dragging), so changing them here would cost an
+   !important and would fork the one signal the control already gives. */
+/* ⛔ DETACHED FROM THE FRAME'S HEIGHT, and this is what makes `ward-size`
+   possible at all. In flow, `AlmanacTab`'s `h-full` resolves against whatever
+   the host has already set the frame to, its inner `overflow-y-auto` hides any
+   overflow, and the panel can only ever measure itself as tall as it already
+   is — so the first short reading (taken before the forecast adds the hi/lo
+   row) becomes permanent. Absolutely positioned with `bottom: auto`, the height
+   is the CONTENT's and the frame follows it instead of the other way round. */
+.embed-almanac {
+  position: absolute;
+  inset: 0 0 auto 0;
+}
+
+.embed-almanac [data-tod="track"] {
+  height: 40px;
+  cursor: grab;
+}
+.embed-almanac [data-tod="track"]:active {
+  cursor: grabbing;
+}
+/* The rail. It is the track's first child — the only element there with no
+   hook of its own, because inside the app nothing ever needed to reach it. */
+.embed-almanac [data-tod="track"] > div:first-child {
+  height: 8px;
+  border-radius: 999px;
+}
+.embed-almanac [data-tod="handle"] {
+  width: 26px;
+  height: 26px;
+  border-width: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ⭐ THE ONE-TIME NUDGE, and the emphasis is on ONE. The host page posts
+   `ward-cue` when the strip has actually been scrolled into view — it can see
+   that across the frame and this document cannot — and the handle breathes
+   three times. AlmanacEmbed drops the attribute on the first pointer or key
+   that touches this document, so the cue cannot outlive the moment it is for.
+   ⛔ Never `infinite`. An ambient pulse stops meaning "pull me" within seconds
+   and starts meaning "this page moves". */
+@keyframes ward-almanac-nudge {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.28); }
+}
+.embed-almanac[data-cue] [data-tod="handle"] {
+  animation: ward-almanac-nudge 1.1s ease-in-out 3;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.45), 0 0 0 8px rgba(74, 222, 128, 0.18);
+}
+@media (prefers-reduced-motion: reduce) {
+  .embed-almanac[data-cue] [data-tod="handle"] { animation: none; }
+}
+
+/* ⛔ NARROW, THE ROW OVERFLOWS — and this is the one place it can. The header
+   is three children at `justify-between` with no wrap: a clock, a condition
+   and a temperature. In the app the Almanac is the panel's width and there is
+   room. Framed on a phone, inside a figure that has gutters of its own, the
+   frame comes in around 290px and the temperature runs off the right edge.
+   ⭐ Gutters and gaps, not type size: shrinking the clock is the one thing on
+   this row that must not get smaller. */
+@media (max-width: 400px) {
+  .embed-almanac [data-almanac="head"] {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .embed-almanac [data-almanac="head"] > div {
+    gap: 4px;
+    min-width: 0;
+  }
+}

@@ -173,8 +173,16 @@ export function TodStrip({ showHiLo = false, useCelsius = false }) {
         ))}
       </div>
 
+      {/* ⭐ `data-tod` IS A SEAM, NOT DECORATION. An embedding page cannot reach
+          across a frame with CSS, so `.embed-almanac [data-tod="handle"]` in
+          index.css is how the marketing embed makes the grab target loud enough
+          for a first-time visitor — without a second slider, and without forking
+          this one. Two structural selectors beat Tailwind's one, so the strip
+          keeps ONE look everywhere it actually ships.
+          ⛔ Rename these and the embed goes quiet with no error. */}
       <div
         ref={trackRef}
+        data-tod="track"
         className="relative h-6 flex items-center cursor-pointer select-none touch-none"
         onPointerDown={(e) => {
           e.currentTarget.setPointerCapture(e.pointerId)
@@ -221,6 +229,7 @@ export function TodStrip({ showHiLo = false, useCelsius = false }) {
         )}
 
         <div
+          data-tod="handle"
           className="absolute w-[12px] h-[12px] rounded-full -translate-x-1/2 top-1/2 -translate-y-1/2 pointer-events-none border-2 shadow-sm"
           style={{
             left: `${nowFrac * 100}%`,

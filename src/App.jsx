@@ -9,6 +9,7 @@ import SidePanel, { LafayettePagesTab, SocietyMasthead } from './components/Side
 import PlaceCard from './components/PlaceCard'
 import SkyEmbed from './components/SkyEmbed'
 import TreeDiorama from './components/TreeDiorama'
+import AlmanacEmbed from './components/AlmanacEmbed'
 import { buildings as ALL_BUILDINGS } from './data/buildings'
 import BulletinModal from './components/BulletinModal'
 import ContactModal, { useContact } from './components/ContactModal'
@@ -800,6 +801,7 @@ function App() {
   // ── Chrome-only embeds ───────────────────────────────────────────────────
   // `?embed=society`  the neighborhood directory, from the search bar down
   // `?embed=masthead` the four role counts
+  // `?embed=almanac`  the Almanac — the clock, the conditions and the day strip
   //
   // ⭐ WHY THIS IS SMALL: the panel's parts are already self-contained — they
   // read the content layer from stores and take no props but layout hints — so
@@ -828,6 +830,7 @@ function App() {
         {route.embed === 'masthead' && <SocietyMasthead />}
         {route.embed === 'sky' && <SkyEmbed />}
         {route.embed === 'tree' && <TreeDiorama />}
+        {route.embed === 'almanac' && <AlmanacEmbed />}
         {route.embed === 'card' && <EmbedCard placeId={embedPlace} />}
         {route.embed === 'society' && (
           <div className="embed-society w-full h-full flex flex-col min-h-0">
@@ -929,6 +932,11 @@ function parseRoute() {
   // rather than threaded through the route, because they are viewing choices
   // about the same embed, not different embeds.
   if (embed === 'tree') return { page: 'embed', embed: 'tree' }
+  // `?embed=almanac` — the Almanac panel, DOM only. It is the other half of the
+  // tree embed: that one shows the day, this one is the control for it, and an
+  // embedding page that wants both mounts both and relays `ward-time` between
+  // them. ⛔ It is the REAL panel, not a copy — see AlmanacEmbed.jsx.
+  if (embed === 'almanac') return { page: 'embed', embed: 'almanac' }
   if (embed === 'society' || embed === 'masthead') {
     let place = null
     try { place = new URLSearchParams(window.location.search).get('place') } catch { place = null }
