@@ -180,6 +180,9 @@ function ArchHorizonControls() {
   const horizonChannel   = useCartographStore(s => s.horizon)
   const landscapeChannel = useCartographStore(s => s.landscape)
   const heroSubject      = useCartographStore(s => s.heroSubject)
+  // Hero framing — the mark the subject holds in the frame. Hero only.
+  const heroFraming      = useCartographStore(s => s.heroFraming)
+  const setHeroFraming   = useCartographStore(s => s.setHeroFraming)
   const setArch       = useCartographStore(s => s.setArch)
   const setHorizon    = useCartographStore(s => s.setHorizon)
   const setLandscape  = useCartographStore(s => s.setLandscape)
@@ -640,6 +643,12 @@ export { resolveHeroSubject, FALLBACK_HERO_SUBJECT, heroAimTarget } from '../lib
 
 // ── Shared hero scrub position (R3F ↔ DOM) ──────────────────────────────────
 
+// Where the subject is sitting in the frame RIGHT NOW, in NDC. Written by
+// HeroPreview each frame while authoring, read by the panel's "Frame from view".
+// Same R3F ⇄ DOM rail as heroScrub and cameraState — the panel is DOM and cannot
+// see the camera, and the camera is R3F and cannot see React state.
+const liveFraming = { sx: 0, sy: 0 }
+
 const heroScrub = { t: 0 }  // 0–1, written by preview or panel scrub
 let heroScrubListeners = new Set()
 function subscribeHeroScrub(fn) { heroScrubListeners.add(fn); return () => heroScrubListeners.delete(fn) }
@@ -682,7 +691,7 @@ function kfName(i, total) {
 
 // ── Shot-specific camera controls ───────────────────────────────────────────
 
-function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion }) {
+function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion, framing, setFraming }) {
   const scrubT = useHeroScrub()
   const authoring = useHeroAuthoring()
   const trackRef = useRef(null)
@@ -854,13 +863,41 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
   }
   const cancelAuthoring = () => setHeroAuthoring(false)
 
-  // Esc leaves authoring without saving.
+  // ── Authoring hotkeys ────────────────────────────────────────────────
+  // Esc leaves without saving. Arrows nudge the MARK — where the subject sits
+  // in the frame — because composing is a nudging job and reaching for a slider
+  // breaks the look. F captures the mark from the view you have just composed;
+  // 0 returns the subject to dead centre (the pre-2026-09-05 behaviour).
+  // ⚠️ Arrow keys are free here: drei's OrbitControls only binds them when
+  // `listenToKeyEvents` is passed, and nothing in this app passes it.
+  // ⛔ Never swallow a key while the operator is typing in a field.
+  const NUDGE = 0.05, NUDGE_FINE = 0.01
   useEffect(() => {
     if (!authoring) return
-    const onKey = (e) => { if (e.key === 'Escape') setHeroAuthoring(false) }
+    const onKey = (e) => {
+      const t = e.target
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return
+      if (e.metaKey || e.ctrlKey) return
+      if (e.key === 'Escape') { setHeroAuthoring(false); return }
+      const step = e.shiftKey ? NUDGE_FINE : NUDGE
+      const clamp = (v) => Math.max(-1, Math.min(1, Math.round(v * 1000) / 1000))
+      const [sx, sy] = framing || [0, 0]
+      switch (e.key) {
+        case 'ArrowUp':    setFraming([sx, clamp(sy + step)]); break
+        case 'ArrowDown':  setFraming([sx, clamp(sy - step)]); break
+        case 'ArrowRight': setFraming([clamp(sx + step), sy]); break
+        case 'ArrowLeft':  setFraming([clamp(sx - step), sy]); break
+        case 'f': case 'F':
+          setFraming([Math.round(liveFraming.sx * 1000) / 1000,
+                      Math.round(liveFraming.sy * 1000) / 1000]); break
+        case '0': setFraming([0, 0]); break
+        default: return
+      }
+      e.preventDefault()
+    }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [authoring])
+  }, [authoring, framing, setFraming])
 
   return (
     <div className="space-y-3">
@@ -969,7 +1006,7 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
         <div className="space-y-2">
           <div className="text-caption px-2 py-1.5 rounded"
             style={{ background: 'var(--surface-container-highest)', color: 'var(--on-surface-variant)' }}>
-            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — orbit to reposition; the camera stays locked on the subject.
+            ✎ Editing {selectedKf != null ? kfName(selectedKf, keyframes.length) : 'keyframe'} — the camera is free: orbit, pan, dolly, tilt. Compose by eye, then <b>F</b> to take the framing or <b>Save</b> for the pose.
           </div>
           <div className="flex gap-1.5">
             <button className="hero-btn flex-1 py-2 rounded-lg text-body-sm font-medium cursor-pointer transition-all"
@@ -989,6 +1026,39 @@ function HeroCamera({ cam, keyframes, setKeyframes, heroMotion, setHeroMotion })
                 title="Delete this mid keyframe"
               >×</button>
             )}
+          </div>
+          {/* ── Framing ─────────────────────────────────────────────────
+              Where the subject sits IN THE FRAME, which is what makes pitch
+              authorable at all: with the old dead-centre lock the pitch was
+              atan((subjY − camY) / distance) and nothing else. This is a
+              per-LOOK mark, not per-keyframe — it holds across the whole move.
+              ⭐ Arrows nudge it live (Shift = fine), F takes it from the view
+              you just composed, 0 returns the subject to centre. */}
+          <div className="space-y-1 pt-1" style={{ borderTop: '1px solid var(--outline-variant)' }}>
+            <div className="flex items-center justify-between">
+              <span className="text-caption" style={{ color: 'var(--on-surface-variant)' }}>
+                Framing <span style={{ color: 'var(--on-surface-disabled)' }}>· where the subject sits</span>
+              </span>
+              <div className="flex gap-1">
+                <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
+                  style={{ background: 'var(--surface-container-high)', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
+                  onClick={() => setFraming([Math.round(liveFraming.sx * 1000) / 1000, Math.round(liveFraming.sy * 1000) / 1000])}
+                  title="Take the framing from the view you have composed (F)"
+                >From view</button>
+                <button className="px-1.5 py-0.5 rounded text-caption cursor-pointer"
+                  style={{ background: 'transparent', color: 'var(--on-surface-variant)', border: '1px solid var(--outline-variant)' }}
+                  onClick={() => setFraming([0, 0])}
+                  title="Put the subject back in the centre of the frame (0)"
+                >Centre</button>
+              </div>
+            </div>
+            <SliderRow label="Up / down  ↑↓" value={(framing || [0, 0])[1]} min={-0.9} max={0.9} step={0.01}
+              onChange={(v) => setFraming([(framing || [0, 0])[0], v])} />
+            <SliderRow label="Left / right  ←→" value={(framing || [0, 0])[0]} min={-0.9} max={0.9} step={0.01}
+              onChange={(v) => setFraming([v, (framing || [0, 0])[1]])} />
+            <div className="text-caption" style={{ color: 'var(--on-surface-disabled)' }}>
+              Raising the subject tilts the camera down — more ground, more rooftops.
+            </div>
           </div>
           {sel != null && (
             <SliderRow label="FOV" value={sel.fov} min={5} max={120} suffix="°"
@@ -1202,6 +1272,11 @@ export function HeroPreview({ keyframes, motion, subject, framing }) {
       const aim = heroAimTarget(camera.position, tgt, camera.fov, size.width / Math.max(size.height, 1), framing)
       camera.lookAt(aim[0], aim[1], aim[2])
       if (controls) controls.target.set(aim[0], aim[1], aim[2])
+    } else {
+      // Free camera. Publish where the subject has ENDED UP so the panel can
+      // capture it — the mark is the result of composing, not an input to it.
+      const m = readHeroFraming(camera, tgt)
+      liveFraming.sx = m[0]; liveFraming.sy = m[1]
     }
 
     // 4) Broadcast camera state to the panel (every 10 frames)
@@ -1635,7 +1710,8 @@ export function StagePanel({ shot, setShot, keyframes, setKeyframes, heroMotion,
         <Collapsible label="Camera">
           {shot === 'hero' && (
             <HeroCamera cam={cam} keyframes={keyframes} setKeyframes={setKeyframes}
-              heroMotion={heroMotion} setHeroMotion={setHeroMotion} />
+              heroMotion={heroMotion} setHeroMotion={setHeroMotion}
+              framing={heroFraming} setFraming={setHeroFraming} />
           )}
           {shot === 'browse' && <BrowseCamera cam={cam} />}
           {shot === 'street' && <StreetCamera cam={cam} />}
