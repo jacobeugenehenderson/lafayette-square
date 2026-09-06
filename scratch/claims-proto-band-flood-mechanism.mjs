@@ -23,6 +23,12 @@
 // ▶ node scratch/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
+// ⛔⛔ THIS PROBE NAMES PRODUCER STAGES BY STRING and therefore rots the moment they are renamed.
+// It did: `PROTO_DUMP`'s stages moved from `hw / hw+cw / WB` (measured from ①) to
+// `curb / curb+cw / curb+WB` when ③'s subject became the eased curb, and this file threw
+// `Cannot read properties of undefined` — a break nobody sees, because nothing runs it by default.
+// ⭐ Two instruments rotted the same way in one day. A probe keyed on a producer's internal LABELS
+// is coupled to it without a compiler to say so; assert the stages exist before reading them.
 
 process.env.PROTO_DUMP = '1'
 const scenes = process.argv.slice(2)
@@ -41,9 +47,12 @@ for (const scene of scenes) {
   const st = (b, n) => b.stages.find(s => s.name === n)
   // a block "floods" when the curb band (hw − hw+cw) is far thicker than cw can explain:
   // its area exceeds what a cw-wide annulus around that perimeter could be.
-  const drops = D.filter(b => st(b, 'hw+cw').pieces < st(b, 'hw').pieces)
+  // ⛔ LOUD IF THE STAGES MOVED AGAIN — never a silent undefined
+  const missing = D.length ? ['curb', 'curb+cw', 'curb+WB'].filter(n => !st(D[0], n)) : []
+  if (missing.length) { console.log(`⛔ PROTO_DUMP no longer emits stage(s): ${missing.join(', ')} — this probe is keyed on names the producer renamed. NOT a pass.`); process.exit(1) }
+  const drops = D.filter(b => st(b, 'curb+cw').pieces < st(b, 'curb').pieces)
   const folds = D.filter(b => b.stages.some(s => s.repeated > 0))
-  const lost  = D.filter(b => st(b, 'hw').area > 0 && (st(b, 'hw').area - st(b, 'hw+cw').area) / st(b, 'hw').area > 0.5)
+  const lost  = D.filter(b => st(b, 'curb').area > 0 && (st(b, 'curb').area - st(b, 'curb+cw').area) / st(b, 'curb').area > 0.5)
   console.log(`\n${scene} — ${D.length} blocks`)
   console.log(`  piece count DROPS between hw and hw+cw ....... ${drops.length}   ← the vanishing-piece signature`)
   console.log(`  any ring carries a REPEATED vertex ........... ${folds.length}   ← the fold signature`)
@@ -52,9 +61,9 @@ for (const scene of scenes) {
   const both = drops.filter(b => lost.includes(b)).length
   console.log(`  floods explained by a piece drop ............. ${both} of ${lost.length}`)
   if (lost.length) {
-    const worst = [...lost].sort((a, b) => (st(b,'hw').area - st(b,'hw+cw').area) - (st(a,'hw').area - st(a,'hw+cw').area)).slice(0, 5)
+    const worst = [...lost].sort((a, b) => (st(b,'curb').area - st(b,'curb+cw').area) - (st(a,'curb').area - st(a,'curb+cw').area)).slice(0, 5)
     console.log('  worst five (block · ring m² · pieces hw→hw+cw→WB · area hw→hw+cw · repeated):')
-    for (const b of worst) console.log(`     #${String(b.block).padStart(3)}  ${st(b,'hw').area.toFixed(0).padStart(7)} m²  ${st(b,'hw').pieces}→${st(b,'hw+cw').pieces}→${st(b,'WB').pieces}   ${st(b,'hw').area.toFixed(0)}→${st(b,'hw+cw').area.toFixed(0)}   rep ${b.stages.map(s=>s.repeated).join('/')}`)
+    for (const b of worst) console.log(`     #${String(b.block).padStart(3)}  ${st(b,'curb').area.toFixed(0).padStart(7)} m²  ${st(b,'curb').pieces}→${st(b,'curb+cw').pieces}→${st(b,'curb+WB').pieces}   ${st(b,'curb').area.toFixed(0)}→${st(b,'curb+cw').area.toFixed(0)}   rep ${b.stages.map(s=>s.repeated).join('/')}`)
   }
   verdictAll.push({ scene, drops: drops.length, folds: folds.length, lost: lost.length, both })
 }
