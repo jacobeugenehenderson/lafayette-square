@@ -3081,6 +3081,12 @@ export function buildTileGround(ribbons, opts = {}) {
     CURB_PRODUCER_PROSE)
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
+  // ⛔ ε IS NOT A REAL WIDTH — it is not real at all (Jacob); its value carries no
+  // information, only its non-zero-ness, and the topology is byte-stable across a 250x
+  // range. Declared here because ① is both a DRAWING and, below, a TILE SOURCE. The full
+  // doctrine (and the integer-floor constraint that is its one real bound) sits with the
+  // construction at `opts.grout === 'proto'`.
+  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
   // → tiles → strips all come out smooth — loops/curves round. smoothChain is
   // INTERPOLATING (passes through every authored vertex), so intersection
@@ -3345,6 +3351,63 @@ export function buildTileGround(ribbons, opts = {}) {
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
   let tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)
+
+  // ══ [① AS THE PRODUCER] THE PROTOPOLYGON AS A TILE SOURCE ═════════════════
+  // ⭐⭐⭐ THE POINT OF THE WHOLE EXERCISE (Jacob, 2026-09-06): "with the protopolygon
+  // these shapes are impossible." A junction knot, a spur retracing into a zero-width
+  // slit, a fillet struck from a needle — every one is what you get when each chain is
+  // stroked SEPARATELY and the strokes MEET. In ONE united contour there is no meeting;
+  // the class is not fixed, it is unconstructible. So this is a change of CONSUMER, not
+  // a new construction — the comment at `opts.grout === 'proto'` has said so since
+  // 2026-09-04 ("this DRAWS, it does not produce... making it the producer is owed").
+  //
+  // ⛔ DEFAULT OFF, STRUCTURALLY — same wall as the substrate walk above: nothing passes
+  // `opts.protoTiles` and the env var is unset, so with the flag off `tiles` is the
+  // frozen artifact byte-for-byte and this block cannot touch it. ⭐ And unlike that
+  // block this is NOT a per-tile election: ① is TOTAL. The stencil closes the rim blocks
+  // against the boundary, so ① produces the whole partition — rim included — and the
+  // hybrid seam the walk needs does not exist here. It replaces the list or it throws.
+  //
+  // ⛔⛔ IT THROWS RATHER THAN FALLING BACK. An operator who asked for ① and silently got
+  // the frozen tiles would be looking at the old map while believing they were testing
+  // the new producer — the plausible-looking success Layer 0 q2 forbids, in the one place
+  // it would be hardest to notice (the two maps are SUPPOSED to look alike).
+  const protoTiles = opts.protoTiles ?? (typeof process !== 'undefined' && process.env?.PROTO_TILES === '1')
+  if (protoTiles) {
+    // ⛔ THE BOUNDARY ARRIVES AS AN ARGUMENT AND ALWAYS HAS — `opts.stencil` is the EXTENT
+    // tool's polygon (`bake-ground.js:110`, "the stencil's SSoT is neighborhood_boundary
+    // .json"), handed down by every caller. So `BRIEF-slice2 §4` ("a render artifact may
+    // not decide block topology") is satisfied by construction: nothing here reads a file.
+    if (!stencil) throw new Error('[tileGround][①] protoTiles requires opts.stencil — blocks = boundary − stroked roads (RIBBONS §1), and without the boundary every rim block is missing. Refusing to draw a map with no rim.')
+    // ⛔ `gradeSep: []` — THE BLOCK GRID'S ①, NOT THE DRAWING'S, and they are different
+    // objects. `SKELETON §2`: "Consumers exclude these from the face graph" — a motorway
+    // does not bound a city block, the block runs on underneath it. Minting them into the
+    // cut slices the partition along every off-ramp (measured on LS: SPLIT 7 vs 1).
+    // `stencilProtopolygon` refuses a ① that carries grade-separated ink, so this is not a
+    // preference expressed here; it is the only ① that function will accept.
+    const gridProto = mintProtopolygon({ streets: streetsOrig, gradeSep: [], eps: PROTO_HW })
+    const punched = stencilProtopolygon({ proto: gridProto, boundary: stencil })
+    if (!punched || punched.refused) throw new Error(`[tileGround][①] the stencil refused: ${punched?.refused || 'null'}`)
+    const built = tilesFromProto(punched, streetsOrig, { take: 'faces' })
+    if (!built?.tiles?.length) throw new Error('[tileGround][①] the stencil produced no blocks')
+    // ⛔ NEVER SILENT — every departure from the frozen list is printed, including the
+    // ones that are fine. A quiet producer swap is a fallback wearing a feature's clothes.
+    const rim = built.tiles.filter(t => t.edges.some(e => e.boundary)).length
+    console.log(`[tileGround][①] PRODUCER — ${built.tiles.length} blocks from ①'s holes (${rim} closing on the rim), replacing ${tiles?.length ?? 0} frozen tiles. ε=${PROTO_HW} m, ${gridProto.rings.length} chain rings → ${punched.rings.length} stencilled.`)
+    if (built.skipped.length) console.warn(`[tileGround][①] ${built.skipped.length} hole(s) REFUSED — unnamed, counted not dropped: ${built.skipped.slice(0, 4).map(k => `${k.area.toFixed(0)} m² (${k.why})`).join(' · ')}`)
+    if (built.voids) console.warn(`[tileGround][①] ${built.voids} void(s) — a ring of road ink enclosed inside a block; not a block.`)
+    // ⛔⛔ AND THE ONE THING ① DOES NOT CARRY, SAID OUT LOUD RATHER THAN PAPERED OVER:
+    // DEAD-END CAPS. A frozen tile carries `caps` stamped ONCE at prebake (`derive.js`,
+    // the "freeze, don't derive live" decision, 2026-07-17) and the cul-de-sac cap flip
+    // authors against them (`ROADMAP A0`/`A1`). ①'s holes carry no such stamp, so a
+    // scene drawn from ① has NO cap identity and every cul-de-sac loses its authored
+    // bulb. ⛔ NOT cured here by re-deriving them — that would re-open the very leak the
+    // freeze closed, and quietly. It is the next piece of work, and until it lands this
+    // flag is a topology experiment, not a way to draw the map.
+    const hadCaps = (tiles || []).filter(t => t.caps?.length).length
+    if (hadCaps) console.warn(`[tileGround][①] ⛔ ${hadCaps} frozen tile(s) carried dead-end CAPS and ① carries none — cul-de-sac cap authoring is ABSENT from this render. Topology experiment only.`)
+    tiles = built.tiles
+  }
 
   // ══ [SLICE 2 — TEMPORARY] THE SUBSTRATE WALK AS A THIRD TILE SOURCE ═══════
   // ⛔⛔ THIS BLOCK IS SCAFFOLDING AND MUST NOT HARDEN. It exists to get the
@@ -5190,7 +5253,9 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⚠️ The one constraint: ε must clear the integer floor of the stage that HOLDS it.
   // Clipper is integer-space and `toClipper` rounds — SCALE=1000 here (1 mm), SCALE=100
   // at prebake (1 cm). Below the floor the object silently ceases to exist.
-  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
+  // (`PROTO_HW` is hoisted to the top of this function — ① is now a TILE SOURCE as well
+  //  as a drawing, and the producer block needs ε before this point. The ε doctrine above
+  //  is its documentation and stays here, where the object it describes is built.)
   let proto = null
   if (opts.grout === 'proto') {
     // ⛔⛔ NOT `ClipperOffset` ANY MORE, and the reason is step ②, not taste. An offset MINTS
