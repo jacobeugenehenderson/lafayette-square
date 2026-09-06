@@ -803,7 +803,16 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON }) }
+    // ⭐⭐⭐ ① IS THE FROZEN SHAPE — `protoArtifact`, NOT `protoProducer`.
+  // ⛔ SECTION'S ARTIFACT IS PRODUCED HERE, NOT BY `bake-ground`: the client autosaves
+  // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`) and that lands
+  // exactly where Section fetches it. So every CLI `--proto` bake was overwritten by this
+  // build's legacy artifact seconds later, and Section could never show ①.
+  // ⛔ `protoProducer` is deliberately NOT set: it also replaces Survey's `curb`, which Survey
+  // FILLS (`ringsToFlatGeo(..., true)`), and one 1.77 km² ring — the face the grade-separated
+  // chains enclose — turns the whole authoring surface solid. Survey keeps the legacy curb
+  // WIREFRAME until that face has a rule; the frozen shape does not have to wait for it.
+  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: 'proto', protoArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))

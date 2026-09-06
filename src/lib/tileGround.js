@@ -5791,7 +5791,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // into a chain-shaped painter and re-introduce the seams that are the whole tell (`RIBBONS §1`:
       // "a seam is positive evidence of per-chain construction").
       // ⛔ OPT-IN (`opts.protoProducer`), so the shipped artifact is byte-identical unless asked.
-      if (opts.protoProducer) {
+      if (opts.protoProducer || opts.protoArtifact) {
         protoShapeTiles = []
         for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
           if (!(ring?.length >= 3)) continue
@@ -6115,7 +6115,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
   // single source Section reads, no chain. JSON-safe (roundTipKeys Set→array).
   // Built ONLY when the bake asks (emitArtifact) so the live path pays nothing.
-  const _shapeArtifact = opts.emitArtifact
+  let _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
   // ⭐⭐⭐ ① AS THE PRODUCER OF THE **LIVE** CURB — the one Survey actually draws.
@@ -6159,6 +6159,20 @@ export function buildTileGround(ribbons, opts = {}) {
       curb = protoCurb
       console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) — ⛔ NO boundary in this pour, so it is the WHOLE FRAME, un-stamped.`)
     }
+  }
+  // ⭐⭐⭐ `protoArtifact` SWAPS THE FROZEN ARTIFACT ONLY — separate from `protoProducer`, which
+  // swaps what SURVEY DRAWS. They were one flag and that conflation cost the day's last hour:
+  // enabling ① for Section also replaced Survey's `curb`, which Survey FILLS, and one 1.77 km²
+  // ring (the face the grade-separated chains enclose) turned the authoring surface solid.
+  // ⛔ AND SECTION'S ARTIFACT COMES FROM HERE, NOT FROM `bake-ground`: the client autosaves
+  // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`), which lands
+  // exactly where Section fetches it — so every CLI `--proto` bake was overwritten by the
+  // browser's own legacy artifact within seconds of Jacob leaving Survey. Section could never
+  // show ① no matter what the bake produced.
+  if (opts.protoArtifact) {
+    if (!protoShapeTiles?.length) throw new Error('[tileGround] protoArtifact asked for ①②③ as the frozen shape but it produced NO tiles. Refusing to freeze the chain artifact under a flag that says otherwise.')
+    _shapeArtifact = protoShapeTiles
+    console.log(`[tileGround][①⇢FREEZE] the artifact Section opens is now ①②③: ${protoShapeTiles.length} tile(s)`)
   }
   return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
