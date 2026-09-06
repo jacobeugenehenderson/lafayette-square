@@ -560,14 +560,15 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     //   LAST, to finished geometry, at every consumer (`[PROTO⊙]` and the live curb).
     // ⛔ The margin is a REACH, not a taste: it must exceed the deepest ③ can inset. 60 m is ~10×
     //   the widest authored curb+treelawn+sidewalk stack, so it is not a tuned number.
-    const RIM_MARGIN = 60
-    let bcx = 0, bcz = 0
-    for (const p of bRing) { bcx += p[0]; bcz += p[1] }
-    bcx /= bRing.length; bcz /= bRing.length
-    const grown = bRing.map(p => {
-      const dx = p[0] - bcx, dz = p[1] - bcz, L = Math.hypot(dx, dz) || 1
-      return [p[0] + dx / L * RIM_MARGIN, p[1] + dz / L * RIM_MARGIN]
-    })
+    // ⛔ THE CIRCLE TOUCHES NOTHING HERE. Jacob, twice: "build the whole grid flat and then stamp
+    // out the circle last", and "obviously the circle stencil is happening too early". A disc, or
+    // a disc plus a margin, is STILL the circle deciding block geometry — one step further out is
+    // the same error. The subject is a plain rectangle around everything.
+    let fx0 = Infinity, fx1 = -Infinity, fz0 = Infinity, fz1 = -Infinity
+    for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+    for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+    const M = 50
+    const grown = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
     const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], R.rings, R.labels, true)
     let blocks = null, blockLabels = null
     if (!D.refused && D.rings?.length) {
@@ -581,22 +582,27 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       // ⭐ Identified by GEOMETRY, not by size: a real block never reaches the frame, because the
       // frame was built with a 50 m margin beyond every piece of ink. A size threshold would be a
       // guess that fails on a town with one genuinely huge block.
-      // ⛔ Identified by its BOUNDING BOX, not by exact coordinates: Clipper returns rounded
-      // integers, so comparing an output vertex to the frame's own float corner misses — the first
-      // version of this test did exactly that and a 4.5M m² curb ring survived it.
+      // ⛔⛔ THE EXTERIOR IS THE COMPONENT THAT CONTAINS A FRAME CORNER. Not "the biggest", not
+      // "the one whose bbox spans 99% of the frame" — both are thresholds and both failed here:
+      // the exterior's bbox hugs the INK, not the frame (the frame carries a 50 m margin), so it
+      // measured 97.3% and slipped through. A corner of the subtraction rectangle is by
+      // construction outside every street and inside exactly one output component: the exterior.
+      // That is a containment test, so it has no tuning and no town where it degrades.
       let dropped = 0
-      let gx0 = Infinity, gx1 = -Infinity, gz0 = Infinity, gz1 = -Infinity
-      for (const p of grown) { if (p[0]<gx0)gx0=p[0]; if (p[0]>gx1)gx1=p[0]; if (p[1]<gz0)gz0=p[1]; if (p[1]>gz1)gz1=p[1] }
-      const FW = gx1 - gx0, FH = gz1 - gz0
-      const spansFrame = (rg) => {
-        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
-        for (const p of rg) { if (p[0]<x0)x0=p[0]; if (p[0]>x1)x1=p[0]; if (p[1]<z0)z0=p[1]; if (p[1]>z1)z1=p[1] }
-        return (x1 - x0) > FW * 0.99 && (z1 - z0) > FH * 0.99
+      const corner = [fx0 - M + 1e-3, fz0 - M + 1e-3]
+      const holdsCorner = (rg) => {
+        let inside = false
+        for (let a = 0, b = rg.length - 1; a < rg.length; b = a++) {
+          const p1 = rg[a], p2 = rg[b]
+          if ((p1[1] > corner[1]) !== (p2[1] > corner[1]) &&
+              corner[0] < (p2[0]-p1[0]) * (corner[1]-p1[1]) / ((p2[1]-p1[1]) || 1e-12) + p1[0]) inside = !inside
+        }
+        return inside
       }
       for (let i = 0; i < D.rings.length; i++) {
         const rg = D.rings[i], lb = D.labels?.[i]
         if (!(rg?.length >= 3) || !lb) continue
-        if (spansFrame(rg)) { dropped++; continue }
+        if (holdsCorner(rg)) { dropped++; continue }
         if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
         else { blocks.push(rg); blockLabels.push(lb) }
       }
