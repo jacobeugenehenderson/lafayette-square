@@ -4847,6 +4847,37 @@ export function buildTileGround(ribbons, opts = {}) {
       }
     }
     grout = unionRings(gAcc)
+    // ── Round the corners with the AUTHORED R — "like all the others" (Jacob).
+    // ⛔⛔ AND filletRing MUST BE HANDED THE BLOCK, NOT THE ROAD. It rounds only
+    // vertices CONVEX relative to the ring's interior (`:625`, the concave `continue`).
+    // A street corner is CONVEX on the block and CONCAVE on the grout — hand it the
+    // grout and it skips every corner you want and rounds the ones you don't. The curb
+    // is the SHARED boundary, so filleting the block rounds the grout's corners too:
+    // same curve, owned by the other polygon. (This is the whole tile path's own move —
+    // `filletRings(blockRings, cornerRfn, …)`, `:4463`.)
+    // R comes from the same authored kit as everywhere else: the per-tile `vertR` the
+    // corner-R controls already wrote (global scale × per-IX × per-corner). ⛔ No new
+    // control, no clamp, no default — a vertex with no authored corner near it gets 0
+    // and stays sharp, which is what an authored R=0 must look like.
+    const gCorners = []
+    for (const st of shapeTiles) {
+      const vr = st.vertR || []
+      for (let i = 0; i < (st.ring || []).length; i++) if (vr[i] > 0) gCorners.push([st.ring[i][0], st.ring[i][1], vr[i]])
+    }
+    const groutRfn = (V) => {
+      let bd = Infinity, bR = 0
+      for (let k = 0; k < gCorners.length; k++) {
+        const dx = V[0] - gCorners[k][0], dz = V[1] - gCorners[k][1], d = dx * dx + dz * dz
+        if (d < bd) { bd = d; bR = gCorners[k][2] }
+      }
+      return bd <= 25 ? bR : 0            // 5 m — the corner it belongs to, or none
+    }
+    // `?grout=raw` draws the road contour UNFILLETED — the control, so the fillet's
+    // contribution is separable rather than asserted.
+    if (opts.grout !== 'raw') {
+      const gStencil = stencil ? [stencil] : unionRings(tiles.map(t => t.ring))
+      grout = filletRings(differenceRings(gStencil, grout), groutRfn, [])
+    }
     // ⛔ Report the skip LOUDLY rather than drawing a grout with holes in it: a chain
     // with no resolvable width is a hole the blocks merge through, and a quietly
     // incomplete grout is the plausible-looking success Layer 0 q2 forbids.
