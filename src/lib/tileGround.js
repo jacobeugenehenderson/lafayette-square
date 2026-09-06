@@ -2879,8 +2879,17 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       const bundle = {
         key,
         W: b.sidewalk || [],
-        tlByLu: { _proto: b.treelawn || [] },
-        luByLu: { _proto: b.lu || [] },
+        // ⭐ KEYED BY THE TILE'S OWN LAND USE, not a placeholder. Jacob: "LU is a gettable/knowable
+        // datapoint… stamp the LU into the initial ground map." The tile carries `lu`, so the bands
+        // bucket by it exactly as the chain path's per-class buckets do — every colour knob and
+        // visibility toggle rides these keys, and a private key costs the operator control silently
+        // (`bake-ground.js`'s PAINT_ORDER comment: a key no entry consumes "drops silently from the
+        // slab — that is exactly how the divided median vanished").
+        // ⛔ `unknown` is a REAL CLASS here, not a fallback: `luForRing` returns it when the data
+        // cannot say, and painting that as a distinct thing is what makes an unclassified block
+        // visible rather than plausible.
+        tlByLu: { [st.lu || 'unknown']: b.treelawn || [] },
+        luByLu: { [st.lu || 'unknown']: b.lu || [] },
         A: differenceRings([st.ring], st.iA || []),   // asphalt is still tile − curb
         C: b.curb || [],
         block: st.iA || [],
@@ -5631,12 +5640,55 @@ export function buildTileGround(ribbons, opts = {}) {
             }
             return n && inB / n > 0.5
           }))
+          // ⭐⭐ `runs` — SUPPLIED, and it is IDENTITY not geometry (ruled 2026-09-06).
+          // Consecutive ① edges with the same owner ARE a run: `RIBBONS §1`'s "every ring edge is
+          // owned by one (skelId, side) BY CONSTRUCTION", now literally true instead of aspirational.
+          // ⛔ It carries the IDENTITY QUARTET only — `skelId · side · segOrd · poly`. The chain run's
+          // other fields are REFUSED with a reason, not silently dropped:
+          //   `measure` `baseMeasure` `anchor` — inputs to a WALK. ③ hands Section the STROKE, so
+          //      there is nothing left to stroke with. (`bands` is a change of MODEL, not an addition.)
+          //   `roadId` `throughId` `thruEnds` — chain-world through-road identity, which exists to
+          //      tell a per-run painter where a name change is NOT a corner. A contour has no runs to
+          //      join, so the question does not arise.
+          // ⛔ A consumer that needs one of those must say so and be answered, never find `undefined`:
+          // on a town nobody has inspected, an absent field and a refused field must not read alike.
+          const runs = []
+          for (const EC of mine) {
+            let cur = null
+            for (let i = 0; i < EC.ring.length; i++) {
+              const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
+              const key = o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
+              if (!key) { cur = null; continue }
+              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [] }; runs.push(cur) }
+              cur.poly.push(EC.ring[i])
+            }
+          }
+          for (const r of runs) delete r.key
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
             // ⭐ the FILL, already painted — not `runs` for something else to re-stroke
             bands: { curb: bandsOf(protoBands.curb), treelawn: bandsOf(protoBands.treelawn),
                      sidewalk: bandsOf(protoBands.sidewalk), lu: bandsOf(protoBands.lu) },
-            producer: 'proto', producerReason: 'offset from ①, bands struck from the curb',
+            runs,
+            // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
+            // initial ground map and later add overrides." A fact about the world, read off the block
+            // itself, not a construction parameter. Overrides are a later layer and not scoped here.
+            lu: luForRing(ring),
+            producer: 'proto',
+            producerReason: 'offset from ①; bands struck from the curb; runs = identity only',
+            // ⛔ THE REFUSALS, RECORDED. A consumer hitting a missing field can read WHY here rather
+            // than guess whether it was dropped or never applied.
+            refused: {
+              tl: 'walk input — ③ supplies the stroke, not the depth',
+              sw: 'walk input — ③ supplies the stroke, not the depth',
+              cap: 'walk input — the ribbon extent is already painted',
+              bandJoin: 'per-tile join mode; a contour has no pieces to join',
+              vertR: 'fillet machinery — R belongs in the node handles',
+              fillets: 'fillet machinery — nothing rounds twice',
+              roundTips: 'cap machinery — a contour already IS its caps',
+              bluntTips: 'cap machinery — a contour already IS its caps',
+              roundTipKeys: 'cap machinery — a contour already IS its caps',
+            },
           })
         }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
