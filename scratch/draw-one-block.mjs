@@ -9,7 +9,13 @@
 // ONE BLOCK. ⇒ If a single block is right, the map is right, because there is nothing else.
 //
 // Draws, for ONE block, at a readable zoom: ① its own hole · ② the curb offset from it · ③ the bands.
-// ▶ node scratch/draw-one-block.mjs [scene] [--block N | --at x,z] [--pad 12]
+// ▶ node scratch/draw-one-block.mjs [scene] [--street NAME | --at x,z | --block N] [--pad 12]
+//   --street russell            → the blocks bounded by a street whose id contains "russell"
+//   --street russell --nth 2    → the 2nd of them
+// ⛔ `--at x,z` was the only selector and it is USELESS TO THE OPERATOR — nothing on screen tells you
+// a coordinate. The map is addressed by STREET NAME, and `CLAUDE.md` is explicit that Jacob naming
+// streets is CORRECT because authoring is street-keyed. A harness he cannot aim is a harness he
+// cannot use, which is most of what a harness is for.
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 
@@ -17,7 +23,8 @@ const argv = process.argv.slice(2)
 const scene = argv.find(a => !a.startsWith('--')) || 'lafayette-square'
 const num = (k, d) => { const i = argv.indexOf(k); return i > 0 ? Number(argv[i + 1]) : d }
 const AT = (() => { const i = argv.indexOf('--at'); return i > 0 ? argv[i + 1].split(',').map(Number) : null })()
-const WANT = num('--block', NaN), PAD = num('--pad', 12)
+const WANT = num('--block', NaN), PAD = num('--pad', 12), NTH = num('--nth', 1)
+const STREET = (() => { const i = argv.indexOf('--street'); return i > 0 ? argv[i + 1].toLowerCase() : null })()
 
 const f = feed(scene); if (!f) process.exit(1)
 const r = buildProto(f, { quiet: false })
@@ -33,7 +40,21 @@ for (let k = 0; k < (r.proto || []).length; k++) {
   if (rg?.length >= 3 && SA(rg) < 0) holes.push({ k, ring: rg, labs: r.protoLabels?.[k], area: Math.abs(SA(rg)) })
 }
 let pick = null
-if (AT) pick = holes.find(h => inRing(h.ring, AT[0], AT[1]))
+if (STREET) {
+  const O0 = r.protoOwners || []
+  const named = holes.filter(h => (h.labs || []).some(l => (O0[l]?.skelId || '').toLowerCase().includes(STREET)))
+  if (!named.length) {
+    // ⛔ LOUD, and it prints what IS there — a silent empty result reads as "no blocks on that street"
+    const all = [...new Set((r.protoOwners || []).map(o => o?.skelId).filter(Boolean))].sort()
+    console.log(`⛔ no block is bounded by a street matching "${STREET}".`)
+    console.log(`   streets present: ${all.filter(n => n[0] === STREET[0]).join(', ') || all.slice(0, 20).join(', ') + ' …'}`)
+    process.exit(1)
+  }
+  named.sort((a, b) => b.area - a.area)
+  console.log(`  "${STREET}" bounds ${named.length} block(s); showing #${NTH} (largest first). --nth N for the others.`)
+  pick = named[Math.max(0, NTH - 1)] || named[0]
+}
+else if (AT) pick = holes.find(h => inRing(h.ring, AT[0], AT[1]))
 else if (Number.isFinite(WANT)) pick = holes[WANT]
 else pick = holes.filter(h => h.area > 3000 && h.area < 20000 && h.ring.length <= 12).sort((a,b)=>a.ring.length-b.ring.length)[0]
 if (!pick) { console.log('⛔ no block matched — NOT a pass'); process.exit(1) }

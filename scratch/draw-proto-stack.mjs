@@ -24,16 +24,24 @@ const d = (rg) => 'M' + rg.map(p => p[0].toFixed(2) + ',' + p[1].toFixed(2)).joi
 // Drawn with NO stroke on the fills, so any seam that appears is real geometry and not a
 // hairline I painted between two polygons.
 const B = r.protoBands || {}
-const layer = (rings, fill) => { for (const rg of (rings || [])) if (rg?.length >= 3) P.push(`<path d="${d(rg)}" fill="${fill}" stroke="none"/>`) }
+// ⛔⛔ ONE PATH PER BAND, `fill-rule="evenodd"` — A BAND IS A COMPOUND PATH.
+// An annulus is an outer ring PLUS a hole. Emitting each ring as its own filled <path> paints the
+// outer solid and then the HOLE solid on top, in the same colour — a 0.381 m curb strip renders as a
+// filled 19,816 m² block. That artefact was read as "band floods" and "black wedges" for hours,
+// 2026-09-06, in geometry that was fine.
+const layer = (rings, fill) => {
+  const keep = (rings || []).filter(rg => rg?.length >= 3)
+  if (keep.length) P.push(`<path d="${keep.map(d).join(' ')}" fill="${fill}" fill-rule="evenodd" stroke="none"/>`)
+}
 layer(B.lu, '#a8cf7a')          // the block interior — everything inside the sidewalk
 layer(B.sidewalk, '#efe9dc')    // sidewalk
 layer(B.treelawn, '#6aa83a')    // treelawn
-layer(B.curbBand, '#6f6f68')    // the curb itself
+layer(B.curb, '#6f6f68')        // the curb itself — ⛔ was `B.curbBand`, a key `protoBands` has never had, so this layer silently drew nothing
 for (const rg of (r.proto || [])) if (rg?.length >= 3) P.push(`<path d="${d(rg)}" fill="none" stroke="#3b6ef5" stroke-width="0.4" opacity="0.5"/>`)
 const pad = 40
 let vx = x0 - pad, vy = y0 - pad, vw = x1 - x0 + 2 * pad, vh = y1 - y0 + 2 * pad
 if (AT) { vx = AT[0] - SPAN / 2; vy = AT[1] - SPAN / 2; vw = SPAN; vh = SPAN }
-const out = `scratch/proto-stack-${scene}${AT ? '-crop' : ''}.svg`
+const out = `scratch/proto-preview-${scene}${AT ? '-crop' : ''}.svg`   // ⛔ NOT proto-stack-*: that file is modified in the operator's working tree
 fs.writeFileSync(out, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}" width="1600">
 <rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="#23241f"/>
 ${P.join('\n')}
