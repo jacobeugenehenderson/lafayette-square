@@ -5116,7 +5116,7 @@ export function buildTileGround(ribbons, opts = {}) {
       m = protoMeasureCache[label] = {
         pavementHW: Number.isFinite(hw) ? hw : null,
         curb: curbWidth,
-        treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, terminal: d?.terminal ?? null,
+        treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, hasTL: !!d?.hasTL, terminal: d?.terminal ?? null,
       }
       return m
     }
@@ -5190,51 +5190,99 @@ export function buildTileGround(ribbons, opts = {}) {
       // contour offset a little further, and each band is the difference between two of them.
       // Per-edge depths come from the labels, so a width authored per frontage still varies
       // along the ring — but the ring is never cut, so no seam is constructible.
-      protoBands = { curbBand: [], treelawn: [], sidewalk: [], lu: [] }
-      const collapse = []
-      for (let k = 0, ci2 = 0; k < R.rings.length; k++) {
-        const ring = R.rings[k], labs = R.labels[k]
-        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
-        ci2++
-        // depth to each boundary, per edge, measured from ① (which sits ε off the centreline)
-        // ⛔ EVERY VALUE COMES OFF THE STAMP. No `measures`, no `feWidthAt`, no
-        // `segOrdAtVertex` — there is nothing here that could ask a chain a question.
-        const at = (i, e) => {
-          const o = protoMeasureOf(labs[i])
-          if (!o || !(o.pavementHW > 0)) return 0
-          const add = e === 0 ? 0
-                    : e === 1 ? o.curb
-                    : e === 2 ? o.curb + o.treelawn
-                    :           o.curb + o.treelawn + o.sidewalk
-          return Math.max(0, o.pavementHW + add - PROTO_HW)
+      // ⭐⭐⭐ ③ THE PED RIBBON — SET BACK FROM THE CURB, MONO-WIDTH, MATERIALS PER EDGE.
+      // Three corrections land here together, and they were ONE term:
+      //
+      // ① THE DATUM. The ped strips are set back from THE CURB. Measurements from the
+      //    centreline are immaterial to them (Jacob, 2026-09-06). The old ladder read
+      //    `pavementHW + curb + treelawn + sidewalk` PER EDGE, i.e. it measured every rung
+      //    from ①, which sits at the centreline. `pavementHW` survives here for exactly one
+      //    job — it is WHERE THE CURB IS, the origin of the setback — and it appears nowhere
+      //    in the ped ladder itself.
+      //
+      // ② MONO-WIDTH (`RIBBONS §1` INVARIANT 4, the keystone the 13-month corner saga ended
+      //    on). ⛔ `WB = cw + max(TL) + max(SW)` over THIS BLOCK's own edges — ONE uniform
+      //    outer depth per block, which is what makes the corners concentric by construction.
+      //    Carrying tl/sw per-edge into the OUTER extent is per-leg stitching: the exact
+      //    variable-offset balloon that killed Stages 7/8/sub-B. "Ribbon monowidth, strips
+      //    variable" — what varies per edge is the DIVIDER and the MATERIALS, never the total.
+      //
+      // ③ THE BAND NAMES ARE THE SHIPPED ONES. `PAINT_ORDER` (`bake-ground.js:129`) is an
+      //    ALLOW-LIST, and its own comment records what happens otherwise: a key no entry
+      //    consumes "drops silently from the slab — that is exactly how the divided median
+      //    vanished." `curbBand` was not in it. Every colour knob (`layerColors`) and every
+      //    visibility toggle (`layerVis`) rides on these names through `BAND_TO_LAYER`, so a
+      //    private name costs the operator control over the band, silently.
+      //
+      // ⭐⭐ MATERIALS WITHOUT A SECTOR PASS. Two strips ALWAYS, EQUAL width — they SWAP, they
+      // never collapse (`SECTION §3.1`/`§3.3`): treelawn-Y reads curb→grass→walk, treelawn-N
+      // reads curb→walk→lawn. The gleaned `hasTL` drives ONLY the material ordering, never a
+      // width. ⇒ each MATERIAL's own two boundaries are per-edge functions, so the sidewalk
+      // is one variable-depth annulus and the treelawn is another — no sector slicing, no
+      // re-stroking a run's polyline into an area (the round trip `A10` closed).
+      //
+      // ⛔ THE LU REMAINDER RUNS TO CENTRE. `SECTION §3.3`: the FILL spans curb → block-centre;
+      // there is no hard property line. So "both strips LU" is an OPEN FIELD — a MATERIAL
+      // state, never an absence — and it falls out for free rather than being a case.
+      protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
+      let capped = 0
+      for (const [k, ring] of R.rings.entries()) {
+        const labs = R.labels[k]
+        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue   // outer contour; blocks are the HOLES
+        const M = (i) => protoMeasureOf(labs[i])
+        // the CURB — per-edge, because a street's width genuinely varies along it and that is
+        // the product (`SURVEY §4`, the asphalt-edge drag). ① already sits ε off the centreline.
+        const hwAt = (i) => { const m = M(i); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
+        const cw = curbWidth
+        // the MONO-WIDTH envelope — one number for the whole block
+        let WBnom = 0
+        for (const l of labs) { const m = protoMeasureOf(l); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0)) }
+        // ⭐ THE TOPOLOGICAL CAPACITY GUARD — and it is NOT the forbidden clamp. `§6.9`.5 rules
+        // "no cusp guard; self-intersection is SIGNAL, not error" for MEANINGFUL degeneracy —
+        // an authored R shrinking the pad to a point is a coherent smaller version of itself,
+        // and Clipper's output is the honest answer. This is the OTHER regime: a depth past the
+        // block's medial axis INVERTS the offset, `differenceRings` returns the COMPLEMENT, and
+        // the band floods the interior. That is not a shape, it is a sign error wearing one.
+        // ⛔ It is also why the previous cut's "drop the rung and count it" was wrong twice
+        // over: it was a cusp guard by another name, AND it modelled a narrow block as MISSING
+        // GEOMETRY when the model already has an answer for one (the ribbon simply reaches
+        // centre). The shipped path guards this exact way — `cap = 0.9 × inscribed reach`,
+        // bisected — so this is the existing licensed guard, not a new one.
+        let WB = WBnom
+        if (WBnom > 1e-6 && !offsetRingVariable(ring, (i) => hwAt(i) + WBnom / 0.9, () => true, () => null).length) {
+          let lo = 0, hi = WBnom / 0.9
+          for (let it = 0; it < 12; it++) {
+            const mid = (lo + hi) / 2
+            if (offsetRingVariable(ring, (i) => hwAt(i) + mid, () => true, () => null).length) lo = mid; else hi = mid
+          }
+          WB = lo * 0.9
+          capped++
         }
-        const bnd = [0, 1, 2, 3].map(e => offsetRingVariable(ring, (i) => at(i, e), () => true, () => null))
-        // a band is the difference between two successive boundaries — never a stroke
-        // ⛔ THE LARGER RING IS THE SUBJECT. These are HOLES eroded inward, so a bigger depth
-        // gives a SMALLER ring: bnd[0] (the curb) is the largest and bnd[3] (the LU edge) the
-        // smallest. Passing the smaller as subject asks for (inner − outer), which is the
-        // block's COMPLEMENT — the roadway — and that is exactly what it drew: cream filling
-        // the street edge to edge, every band overlapping every other.
-        //
-        // ⛔⛔ AND A COLLAPSED BOUNDARY IS A FAILURE, NOT AN EMPTY CLIP. `offsetRingVariable`
-        // drops a ring that erodes away (its area floor), so on a block narrower than the ped
-        // stack the deeper boundary comes back `[]` — and `differenceRings(subject, [])`
-        // returns the SUBJECT WHOLE (`:815`, `:822`). The band then floods the entire block and
-        // renders as a plausible fill: Layer 0 q2 inside the geometry, with no code fallback
-        // for a reader to spot. So the rung is DROPPED and COUNTED, never painted. The block
-        // comes out visibly empty and the census says why.
-        const dead = bnd.findIndex(b => !b.length)
-        if (dead >= 0) collapse.push({ at: dead, ring: ci2, area: Math.abs(signedArea(ring)) })
-        const band = (o, i) => { if (bnd[o].length && bnd[i].length) return differenceRings(bnd[o], bnd[i]); return [] }
-        protoBands.curbBand.push(...band(0, 1))
-        protoBands.treelawn.push(...band(1, 2))
-        protoBands.sidewalk.push(...band(2, 3))
-        protoBands.lu.push(...bnd[3])
+        // per-edge MATERIAL boundaries — the swap, expressed as depths rather than as a case
+        const tl = (i) => Math.min(M(i)?.treelawn || 0, Math.max(0, WB - cw))
+        const sw = (i) => Math.min(M(i)?.sidewalk || 0, Math.max(0, WB - cw))
+        const yes = (i) => !!M(i)?.hasTL
+        const walkFrom = (i) => hwAt(i) + (yes(i) ? cw + tl(i) : cw)
+        const walkTo   = (i) => hwAt(i) + (yes(i) ? WB : cw + sw(i))
+        const lawnFrom = (i) => hwAt(i) + (yes(i) ? cw : cw + sw(i))
+        const lawnTo   = (i) => hwAt(i) + (yes(i) ? cw + tl(i) : WB)
+        const inset = (fn) => offsetRingVariable(ring, fn, () => true, () => null)
+        const curbOuter = inset(hwAt), pedOuter = inset((i) => hwAt(i) + cw), luEdge = inset((i) => hwAt(i) + WB)
+        // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
+        // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
+        // block's COMPLEMENT: the roadway, flooding every band across the whole street.
+        const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
+        protoBands.curb.push(...band(curbOuter, pedOuter))
+        protoBands.sidewalk.push(...band(inset(walkFrom), inset(walkTo)))
+        protoBands.treelawn.push(...band(inset(lawnFrom), inset(lawnTo)))
+        protoBands.lu.push(...luEdge)
       }
-      // the loud half — an absent stack is reported by rung, per town, every pour
-      protoStackCollapse = { total: collapse.length, byRung: [0, 1, 2, 3].map(e => collapse.filter(c => c.at === e).length), blocks: collapse }
-      console.log(`[tileGround][PROTO③] concentric stack off ①: curb ${protoBands.curbBand.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
-      if (protoStackCollapse.total) console.log(`[tileGround][PROTO③] ⛔ ${protoStackCollapse.total} block(s) NARROWER THAN THE STACK — bands dropped, NOT painted. Collapsed at rung: curb ${protoStackCollapse.byRung[0]} · treelawn ${protoStackCollapse.byRung[1]} · sidewalk ${protoStackCollapse.byRung[2]} · LU ${protoStackCollapse.byRung[3]}`)
+      // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
+      // nominal depth is a real fact about that block, not an error — but it must be countable,
+      // because on town #2 nobody is looking.
+      protoStackCollapse = { total: capped, byRung: null, blocks: null }
+      console.log(`[tileGround][PROTO③] ped ribbon off the CURB, mono-width per block: curb ${protoBands.curb.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
+      if (capped) console.log(`[tileGround][PROTO③] ${capped} block(s) hit the capacity guard — the ribbon reaches centre rather than inverting (NOT a defect; the open-field case).`)
 
       // ⛔⛔ `sectionPass` IS REMOVED FROM THIS PATH, NOT LEFT BESIDE IT. It strokes inward
       // PER RUN, so its output is per-chain strips laid side by side — and Jacob read that

@@ -39,8 +39,8 @@ for (const scene of scenes) {
   if (!fs.existsSync(path)) { console.log(`\n${scene}: no ribbons at ${path} — SKIPPED LOUDLY, this scene was not checked`); failed = true; continue }
   const r = buildTileGround(JSON.parse(fs.readFileSync(path, 'utf8')), { grout: 'proto', smooth: 0 })
   const B = r.protoBands || {}
-  const IX = { curbBand: index(B.curbBand), treelawn: index(B.treelawn), sidewalk: index(B.sidewalk), lu: index(B.lu) }
-  const NAMES = ['curbBand', 'treelawn', 'sidewalk', 'lu']
+  const IX = { curb: index(B.curb), treelawn: index(B.treelawn), sidewalk: index(B.sidewalk), lu: index(B.lu) }
+  const NAMES = ['curb', 'treelawn', 'sidewalk', 'lu']
 
   // A — march the normal off ①'s contour into the block, every ~60 m of contour
   let stations = 0, overlaps = 0
@@ -64,7 +64,12 @@ for (const scene of scenes) {
     }
   }
 
-  // B — every collapse declared
+  // B — the capacity guard is DECLARED. ⚠️ RE-AIMED 2026-09-06: this used to assert that a
+  // per-rung COLLAPSE was counted, which was written against a construction that dropped rungs
+  // — itself a cusp guard, forbidden by `§6.9`.5. The rungs are gone; what must be declared now
+  // is the TOPOLOGICAL CAPACITY guard (a block whose ribbon reaches centre rather than
+  // inverting). ⛔ It is not a defect and must never read as one — but it must be COUNTABLE,
+  // because on town #2 nobody is looking.
   const col = r.protoStackCollapse
   const declared = col && typeof col.total === 'number'
 
@@ -73,8 +78,7 @@ for (const scene of scenes) {
   console.log(`\n${scene}`)
   console.log(`  A DISJOINT  ${okA ? 'PASS' : 'FAIL'} — ${overlaps}/${stations} stations found a point in two bands at once`)
   for (const [k, v] of [...worst].sort((a, b) => b[1] - a[1]).slice(0, 6)) console.log(`      ${String(v).padStart(5)}  ${k}`)
-  console.log(`  B DECLARED  ${okB ? 'PASS' : 'FAIL'} — ${declared ? `${col.total} collapsed block(s), by rung curb/treelawn/sidewalk/lu = ${col.byRung.join('/')}` : 'protoStackCollapse ABSENT — a collapse could not be reported'}`)
-  if (declared && col.total) console.log(`      ⭐ a collapse is NOT a defect of this check — it is the honest report that the stack does not fit. It must be COUNTED, never painted.`)
+  console.log(`  B DECLARED  ${okB ? 'PASS' : 'FAIL'} — ${declared ? `${col.total} block(s) hit the capacity guard (ribbon reaches centre — NOT a defect)` : 'protoStackCollapse ABSENT — the guard could not be reported'}`)
 }
 console.log(`\n${failed ? '⛔ FAIL' : '✅ PASS'}\n`)
 process.exit(failed ? 1 : 0)
