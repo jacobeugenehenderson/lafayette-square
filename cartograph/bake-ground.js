@@ -340,8 +340,16 @@ function ringsToHoledPolys(rings) {
 // remainder routes to byFaceUse per class (face:<lu> → per-Look colour) and the
 // treelawn routes to 'treelawn:<lu>' so it matches its block's land-use.
 // Shares src/lib/tileGround.js with the live path.
-function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null) {
+function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = null, parkClip = null, scene = null, opts = {}) {
+  // ⭐⭐⭐ `--proto` MAKES ① THE PRODUCER. The frozen artifact is then built from ②③ — the curb
+  // offset from the protopolygon and the bands struck from that curb — instead of from the chains.
+  // ⛔ It is a change of CONSUMER, not of construction (`5560cf6a`'s lesson): ②③ already offset the
+  // grout contour, so nothing new is built here; the bake simply freezes what they made.
+  // ⛔ OFF BY DEFAULT. With the flag absent this call is byte-identical, which `a03-curb-identity`
+  // proves on every commit.
+  const PROTO = !!opts.proto   // from buildTileBakeShape's own opts, not the bake's
   const pr = buildTileGround(ribbons, {
+    ...(PROTO ? { grout: 'proto', protoProducer: true } : {}),
     stencil: stencilPolygon,
     // Surface the ambiguous treelawn run-sides for the operator (bake-only).
     reportGlean: true,
@@ -430,7 +438,11 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
     const { land } = buildParkPathRings(ribbons, { polygon: parkClip.polygon, water: parkClip.water })
     pushClipperRings('park_path', mergeRings(land))
   }
-  return { byMaterial, byFaceUse, shapeArtifact: pr._shapeArtifact, highwayRings: pr.highway || [] }
+  // ⛔ LOUD IF ASKED FOR AND ABSENT — a silent fall back to the chain artifact would bake the old
+  // producer under a flag that says otherwise, which is the plausible-looking success Layer 0 forbids.
+  if (PROTO && !pr.protoShapeTiles?.length) throw new Error('[bake-ground] --proto asked for ① as the producer but ②③ produced NO tiles. Refusing to bake the chain artifact under a proto flag.')
+  if (PROTO) console.log(`  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`)
+  return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
 
 // T4 (2026-07-15): buildV2BakeShape — the figure-ground bake path — deleted.
@@ -682,7 +694,7 @@ function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}
   return { positions, indices }
 }
 
-export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {} } = {}) {
+export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {}, proto: protoFlag = false } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -742,7 +754,7 @@ export async function bakeGround({ look, scene = 'lafayette-square', refine: ref
   // commit 3).
   // ALL scenes (LS included) bake from the tile construction. The figure-ground
   // path was deleted at T4 (2026-07-15). A scene is a dataset, not a code path.
-  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene)
+  const { byMaterial, byFaceUse, shapeArtifact, highwayRings } = buildTileBakeShape(ribbons, design, stencil.clipPolygon, surveyStreets, parkClip, scene, { proto: !!protoFlag })
 
   // ── Inject map.json overlays into byMaterial ──────────────────────
   // Each Designer-toggleable id needs to come out as its own bake group
@@ -1038,19 +1050,20 @@ export async function bakeGround({ look, scene = 'lafayette-square', refine: ref
 
 // CLI
 async function main() {
-  let look = null, scene = 'lafayette-square'
+  let look = null, scene = 'lafayette-square', proto = false
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
     else if ((m = arg.match(/^--scene=(.+)$/)))   scene = m[1]
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
+    else if (arg === '--proto')                   proto = true            // ① as the producer
     else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-max-edge=(.+)$/)))refine.maxEdge = parseFloat(m[1])
   }
-  await bakeGround({ look, scene, refine })
+  await bakeGround({ look, scene, refine, proto })
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {

@@ -2910,6 +2910,29 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const tileGeo = (st, i) => {
     const key = cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
     if (cache) { const hit = cache.get(i); if (hit && hit.key === key) return hit }
+    // ⭐⭐⭐ ① AS THE PRODUCER — a tile that CARRIES ITS BANDS is consumed as-is.
+    // ⛔ It must NOT go through `sectionPassTile`: that is the per-RUN chain painter, and handing it
+    // a proto tile feeds chain-shaped runs into a chain-shaped painter, re-introducing the seams that
+    // are the whole tell (`RIBBONS §1`: "a seam is positive evidence of per-chain construction… ONE
+    // ring offset inward has no joins in it"). The bands were already struck as successive offsets of
+    // one contour upstream; there is nothing left here to construct.
+    // ⛔ Detected by the tile's own shape, not by a flag: an artifact either carries bands or it does
+    // not, so a mixed set (a re-pour part-way through the migration) cannot silently take one path
+    // for tiles that wanted the other.
+    if (st.bands) {
+      const b = st.bands
+      const bundle = {
+        key,
+        W: b.sidewalk || [],
+        tlByLu: { _proto: b.treelawn || [] },
+        luByLu: { _proto: b.lu || [] },
+        A: differenceRings([st.ring], st.iA || []),   // asphalt is still tile − curb
+        C: b.curb || [],
+        block: st.iA || [],
+      }
+      if (cache) cache.set(i, bundle)
+      return bundle
+    }
     const r = sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
     const bandJoin = st.bandJoin || 'miter'
@@ -5123,6 +5146,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
+  let protoShapeTiles = null
   let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null, protoAuthoring = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
@@ -5631,6 +5655,46 @@ export function buildTileGround(ribbons, opts = {}) {
           protoBands.lu.push(...luEdge)
         }
       }
+      // ⭐⭐⭐ ① AS THE PRODUCER — the frozen artifact, built from ②③ rather than from the chains.
+      // ⛔⛔ THIS IS A CHANGE OF CONSUMER, NOT OF CONSTRUCTION, and that distinction is the whole
+      // lesson of the revert (`5560cf6a`): "I CHANGED THE SUBSTRATE, NOT THE PRODUCER… I chopped the
+      // one compound path into 102 per-tile rings and handed them to the existing chain-based
+      // construction, which still offsets from chains, still fillets, still constructs caps."
+      // ②③ already changed the SUBJECT — they offset the grout contour. So the producer swap is only
+      // this: hand the frozen artifact what ②③ made, instead of what the chain path made.
+      // ⛔ AND THE TILE CARRIES ITS BANDS, NOT ITS `runs`. `sectionOpen` → `sectionPassTile` is the
+      // per-run chain painter ③ exists to replace; giving it proto tiles would feed chain-shaped runs
+      // into a chain-shaped painter and re-introduce the seams that are the whole tell (`RIBBONS §1`:
+      // "a seam is positive evidence of per-chain construction").
+      // ⛔ OPT-IN (`opts.protoProducer`), so the shipped artifact is byte-identical unless asked.
+      if (opts.protoProducer) {
+        protoShapeTiles = []
+        for (const [k, ring] of R.rings.entries()) {
+          if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
+          const mine = easedByBlock[k] || []
+          if (!mine.length) continue
+          const bandsOf = (rings) => (rings || []).filter(g => g?.length >= 3 && mine.some(EC => {
+            let inB = 0, n = 0
+            for (let i = 0; i < g.length; i += Math.max(1, Math.floor(g.length / 12))) {
+              n++; let c = false
+              for (let a = 0, b = EC.ring.length - 1; a < EC.ring.length; b = a++) {
+                const [px, py] = EC.ring[a], [qx, qy] = EC.ring[b]
+                if ((py > g[i][1]) !== (qy > g[i][1]) && g[i][0] < (qx - px) * (g[i][1] - py) / (qy - py) + px) c = !c
+              }
+              if (c) inB++
+            }
+            return n && inB / n > 0.5
+          }))
+          protoShapeTiles.push({
+            ring, iA: mine.map(EC => EC.ring),
+            // ⭐ the FILL, already painted — not `runs` for something else to re-stroke
+            bands: { curb: bandsOf(protoBands.curb), treelawn: bandsOf(protoBands.treelawn),
+                     sidewalk: bandsOf(protoBands.sidewalk), lu: bandsOf(protoBands.lu) },
+            producer: 'proto', producerReason: 'offset from ①, bands struck from the curb',
+          })
+        }
+        console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
+      }
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,
       // because on town #2 nobody is looking.
@@ -5859,7 +5923,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
