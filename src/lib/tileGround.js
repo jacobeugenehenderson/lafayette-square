@@ -5117,6 +5117,16 @@ export function buildTileGround(ribbons, opts = {}) {
         pavementHW: Number.isFinite(hw) ? hw : null,
         curb: curbWidth,
         treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, hasTL: !!d?.hasTL, terminal: d?.terminal ?? null,
+        // ⭐⭐ THE STRIPS ARE SWAPPABLE, AND THE SWAP IS THE OPERATOR'S (Jacob: "adjustable and
+        // swappable monowidth"). The gleaned `hasTL` supplies only the DEFAULT arrangement
+        // (`SECTION §3.1`: `{outer: Y?'LU':'SW', inner: Y?'SW':'LU'}` — treelawn-Y reads
+        // grass→walk, treelawn-N reads walk→lawn); `blockCustoms[…].materials` is the ctrl-click
+        // override on top (`§3.2`). ⛔ Reading only the glean made the swap gesture INERT here —
+        // the operator flips a strip and nothing moves, which is the authoring surface silently
+        // not working. ⭐ Both strips to 'LU' is the OPEN FIELD — a material state, never an
+        // absence, and it falls out of the arrangement rather than being a case.
+        matOuter: c?.materials?.outer ?? (d?.hasTL ? 'LU' : 'SW'),
+        matInner: c?.materials?.inner ?? (d?.hasTL ? 'SW' : 'LU'),
       }
       return m
     }
@@ -5272,11 +5282,20 @@ export function buildTileGround(ribbons, opts = {}) {
         // per-edge MATERIAL boundaries — the swap, expressed as depths rather than as a case
         const tl = (i) => Math.min(M(i)?.treelawn || 0, Math.max(0, WB - cw))
         const sw = (i) => Math.min(M(i)?.sidewalk || 0, Math.max(0, WB - cw))
-        const yes = (i) => !!M(i)?.hasTL
-        const walkFrom = (i) => hwAt(i) + (yes(i) ? cw + tl(i) : cw)
-        const walkTo   = (i) => hwAt(i) + (yes(i) ? WB : cw + sw(i))
-        const lawnFrom = (i) => hwAt(i) + (yes(i) ? cw : cw + sw(i))
-        const lawnTo   = (i) => hwAt(i) + (yes(i) ? cw + tl(i) : WB)
+        // ⭐ THE ARRANGEMENT, per edge: which MATERIAL is the outer strip, and how deep it runs.
+        // Two strips always — they SWAP, they never collapse — so the inner one simply takes
+        // the rest of the mono-width envelope. ⛔ The depth belongs to the STRIP, not to the
+        // material's name: an outer sidewalk is `sw` deep, an outer treelawn is `tl` deep.
+        const outWalk = (i) => M(i)?.matOuter === 'SW'          // is the CURB-side strip the walk?
+        const inWalk  = (i) => M(i)?.matInner === 'SW'
+        const dOut    = (i) => Math.min(outWalk(i) ? sw(i) : tl(i), Math.max(0, WB - cw))
+        // each material's own two boundaries — one variable-depth annulus per material, so the
+        // swap is a change of DEPTHS and never a change of construction (`RIBBONS §1`: if a
+        // material choice changes the geometry, the proposal is wrong).
+        const walkFrom = (i) => hwAt(i) + cw + (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0))
+        const walkTo   = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : (inWalk(i) ? Math.max(0, WB - cw) : 0))
+        const lawnFrom = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : 0)
+        const lawnTo   = (i) => hwAt(i) + cw + (outWalk(i) ? (inWalk(i) ? dOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
         const inset = (fn) => offsetRingVariable(ring, fn, () => true, () => null)
         // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, and it is
         // INERT when unset (no output changes, the shipped `CORNER_DUMP` idiom). Two diseases
