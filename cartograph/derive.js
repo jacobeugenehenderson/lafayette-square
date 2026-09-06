@@ -4871,6 +4871,14 @@ export function deriveLayers(highways) {
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
       labels: MP.labels,
       owners: MP.owners,
+      // ⛔⛔ CROSSINGS MUST BE FROZEN OR ① HAS NO CORNERS. A corner is exactly where two chains
+      // cross, and `booleanLabelled` resolves a crossing vertex by INHERITING a neighbour's label —
+      // so the label alone cannot say "this vertex is a node". The crossing record (who met here,
+      // captured by Clipper's ZFillFunction and carried THROUGH the union) is the only thing that
+      // can, and dropping it made every consumer read the whole contour as "no corners" and ease
+      // NOTHING. ⭐ Caught by the consumer's own warning rather than by inspection, which is the
+      // point of that warning existing.
+      ...(MP.crossings ? { crossings: MP.crossings } : {}),
       ...(MP.refused ? { refused: MP.refused } : {}),
     }
     // ⛔ THE SAME SHOELACE `signedArea` USES — outer contour POSITIVE, holes NEGATIVE, which
@@ -4888,7 +4896,9 @@ export function deriveLayers(highways) {
     // on the centreline. A plausible-looking wrong map is the one outcome a kit
     // may not have (`CLAUDE.md` Layer 0 q2).
     if (MP.refused) console.warn(`    ⛔ [①] identity REFUSED on the union — the protopolygon is frozen WITHOUT usable labels; downstream must not offset from it.`)
-    console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps at ε=0.005 m`)
+    const nCross = (MP.crossings || []).reduce((n, rg) => n + rg.filter(Boolean).length, 0)
+    console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps, ${nCross} crossings (= the corners) at ε=0.005 m`)
+    if (!nCross) console.warn(`    ⛔ [①] ZERO crossings frozen — every downstream consumer will read this contour as having NO CORNERS and round nothing.`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)

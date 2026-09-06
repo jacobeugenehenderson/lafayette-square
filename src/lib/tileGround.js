@@ -252,7 +252,33 @@ function easeRing(ring, rAt, report = null) {
     }
     if (report) report.eased++
   }
+  // ⛔⛔ A SELF-INTERSECTING RESULT IS NOT DRAWN. Jacob, 2026-09-06: "self intersection IRL isn't
+  // real — when something 'self intersects' it goes to 0 and disappears."
+  // ⭐ THAT SHARPENS `§6.9`.5's "self-intersection is SIGNAL, not error", and it is the half I had
+  // wrong: the signal is that the FEATURE IS GONE, not that a crossed shape is the honest output.
+  // A curb that crosses itself is not a curb the operator could build; it is a corner whose radius
+  // has driven the geometry to nothing. So the corner goes to ZERO — the sharp vertex — which is
+  // the same answer R=0 gives, and the ring is returned unchanged rather than crossed.
+  // ⛔ This is still NOT the forbidden clamp: nothing is shrunk to a plausible fit and no invented
+  // radius is drawn. The feature either exists or it does not.
+  if (out.length >= 3 && _selfIntersects(out)) { if (report) report.vanished++; return { ring, src: ring.map((_, i) => i) } }
   return out.length >= 3 ? { ring: out, src: outSrc } : { ring, src: ring.map((_, i) => i) }
+}
+// Segment-pair test, adjacent pairs excluded (they share an endpoint by construction).
+function _selfIntersects(r) {
+  const n = r.length
+  const hit = (p1, p2, p3, p4) => {
+    const d = (p2[0] - p1[0]) * (p4[1] - p3[1]) - (p2[1] - p1[1]) * (p4[0] - p3[0])
+    if (!d) return false
+    const t = ((p3[0] - p1[0]) * (p4[1] - p3[1]) - (p3[1] - p1[1]) * (p4[0] - p3[0])) / d
+    const u = ((p3[0] - p1[0]) * (p2[1] - p1[1]) - (p3[1] - p1[1]) * (p2[0] - p1[0])) / d
+    return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9
+  }
+  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) {
+    if (i === 0 && j === n - 1) continue
+    if (hit(r[i], r[(i + 1) % n], r[j], r[(j + 1) % n])) return true
+  }
+  return false
 }
 
 // Remove FOLD NEEDLES from a per-vertex offset ring. On a bend tighter than the
@@ -5455,7 +5481,7 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
       return pts[o.srcIdx]
     }
-    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, noNode: 0 }
+    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, noNode: 0, vanished: 0 }
     // ⛔⛔ NO CLASSIFICATION BY CHAIN RELATIONSHIP. THIS IS THE CORRECTION (Jacob, 2026-09-06):
     // "this is still chains talk — the protopoly has already expanded and merged these polygons
     // and the naming stamp has already happened."
@@ -5555,6 +5581,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,
       // rendering as what it is (`§6.9.5`: self-intersection is SIGNAL, not error).
       console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased at the stamped R`)
+      if (protoEaseReport.vanished) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.vanished} ring(s) whose ease SELF-INTERSECTED — the corner went to ZERO and the ring stayed sharp. A self-intersecting curb is not a curb; it does not draw.`)
       if (protoEaseReport.tooTight) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.tooTight} corner(s) TOO TIGHT for the authored R — left SHARP and counted. ⛔ Not clamped to a smaller radius: that would draw a corner nobody authored.`)
       if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) whose ease would overlap a neighbour's — left sharp.`)
       if (!R.crossings) console.warn(`[tileGround][PROTO②ease] ⛔ NO crossing identity on this ① — every vertex reads as "not a corner" and NOTHING eases. A frozen protopolygon minted before crossings were carried will do this. Re-pour.`)

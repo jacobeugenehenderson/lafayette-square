@@ -811,14 +811,35 @@ export default function BlockGeometryV2Debug({
   // returns null whenever the frozen path renders, which is exactly when the operator is looking.
   const protoGeo = useMemo(() => {
     if (!PROTO_ON) return null
-    const P = liveRibbons?.protopolygon
+    if (!liveRibbons) return null
+    const P = liveRibbons.protopolygon
     if (!P?.rings?.length) {
-      console.warn('[BlockGeometryV2Debug][①] ⛔ ?proto=1 but this scene carries NO frozen protopolygon — it has not been poured since ① landed. Showing nothing; the map you see is the ordinary chain-built one.')
+      console.warn('[BlockGeometryV2Debug][①] ⛔ ?proto=1 but this scene carries NO frozen protopolygon — it has not been poured since ① landed. The map you see is the ordinary chain-built one.')
       return null
     }
-    console.log(`[BlockGeometryV2Debug][①] drawing the frozen protopolygon — ${P.rings.length} ring(s), ε=${P.eps} m`)
-    return ringsToEdgeGeo(P.rings, 0.065)
-  }, [liveRibbons])
+    // ⭐⭐ ② IS BUILT HERE, GATED, AND IT IS A LIVE BUILD ON PURPOSE. ① freezes at prebake, but the
+    // CURB cannot: it is ① eroded to the AUTHORED half-width, and prebake is blind to
+    // `design.json`/`blockCustoms` (`POLYGON-FIRST §3`). Freezing ② there would bake the to-code
+    // default into the artifact — Layer 0 q3. So identity is frozen and the VALUE resolves here.
+    // ⛔ Behind `?proto=1` and nothing else: default-off costs one branch, and `tileGeos` is
+    // untouched, so the shipped map is byte-identical whether or not this runs.
+    let tg = null
+    try {
+      tg = buildTileGround(liveRibbons, {
+        stencil, curbWidth, smooth: streetSmooth, blockLandUse,
+        cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides,
+        blockCustoms: blockCustomsX, grout: 'proto',
+      })
+    } catch (e) { console.error('[BlockGeometryV2Debug][②] proto build failed:', e) }
+    // ⛔ LOUD ABOUT WHAT IS ON SCREEN. A curb that silently failed to build must not read as
+    // "② agrees with the shipped curb" — the whole point of the overlay is that the two differ.
+    if (!tg?.protoCurb?.length) console.warn('[BlockGeometryV2Debug][②] ⛔ ① drew but the CURB did not build — you are seeing the ε contour only, NOT the offset curb.')
+    else console.log(`[BlockGeometryV2Debug][②] curb off ①: ${tg.protoCurb.length} ring(s) — magenta is ①'s ink, CYAN is the curb offset from it at the authored width`)
+    return {
+      ink:  ringsToEdgeGeo(P.rings, 0.065),
+      curb: tg?.protoCurb?.length ? ringsToEdgeGeo(tg.protoCurb, 0.075) : null,
+    }
+  }, [liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustomsX])
 
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
@@ -1161,6 +1182,12 @@ export default function BlockGeometryV2Debug({
   const groutMat = useMemo(() => new THREE.LineBasicMaterial({
     color: 0xff3d7f, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
+  // [PROTO] ② — the curb offset from ①. ⛔ A DIFFERENT COLOUR FROM ①'s ink on purpose: the two sit
+  // ε apart everywhere except where the authored width takes the curb away from the centreline, so
+  // one colour would make "the curb is missing" and "the curb is on the centreline" look identical.
+  const protoCurbMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: 0x2fe0e0, transparent: true, opacity: 0.95, depthWrite: false,
+  }), [])
   // The curb band filled a touch darker than the block — it's the 'handle rail',
   // where the corner-rounding controls live, so it reads slightly proud of the
   // block interior.
@@ -1301,9 +1328,13 @@ export default function BlockGeometryV2Debug({
           <lineSegments geometry={tileGeos.groutOutline} renderOrder={PRI.curb + 2}
             material={groutMat} />
         )}
-        {protoGeo && (
-          <lineSegments geometry={protoGeo} renderOrder={PRI.curb + 3}
+        {protoGeo?.ink && (
+          <lineSegments geometry={protoGeo.ink} renderOrder={PRI.curb + 3}
             material={groutMat} />
+        )}
+        {protoGeo?.curb && (
+          <lineSegments geometry={protoGeo.curb} renderOrder={PRI.curb + 4}
+            material={protoCurbMat} />
         )}
         {surveyIxGeo && (
           <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
