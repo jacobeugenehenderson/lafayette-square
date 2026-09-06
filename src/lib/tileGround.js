@@ -388,7 +388,7 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 //
 // ⭐ THIS IS A PURE FUNCTION OF THE FRAME, and that is the whole point: it takes
 // chains and ε and nothing else. No `blockCustoms`, no look, no authored width —
-// so it can be minted ONCE AT PREBAKE and frozen, which is `PIPELINE §Wall`'s
+// so it can be minted ONCE AT PREBAKE and frozen, which is `PIPELINE §5 (the Wall)`'s
 // Check C for the object the curb is offset from. `POLYGON-FIRST §3`'s blocker on
 // D6b ("freezing iA at prebake would bake a bare-defaults curb") does NOT apply,
 // because ① HAS no width to bake.
@@ -5213,7 +5213,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // draws. ⭐ But it is LABELLED: `protoSource` carries a REASON STRING, never a boolean, so
     // "this scene was never poured with ①" and "the artifact is at a different ε" read
     // differently to whoever is looking. **The defect was always the silence, not the draw**
-    // (`WALL.md §2`, `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
+    // (`PIPELINE.md` §5 (the Wall), `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
     //
     // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, not a tuning knob applied after. A caller
     // that asks for a different ε than the artifact was frozen at is asking for a DIFFERENT

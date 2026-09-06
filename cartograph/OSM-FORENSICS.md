@@ -24,7 +24,7 @@
 >   committed.
 
 
-> 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `PIPELINE §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `PIPELINE.md §Wall`/`§P1` · `SKELETON.md` · `INTAKE.md`.
+> 🗄️ **CLOSED FORENSIC (the P1 fix landed) — archive PENDING (2026-06-14, doc cleanup).** Not yet moved to `_archive/`: it is still cited as the live **frame-forensics evidence base** by active doctrine (the "OSM or us = 100% us" verdict, the "79 interior Ts" rationale in `PIPELINE §P1`/`SKELETON`). **Held back per the lift-first gate** — needs Jacob's eye to confirm its evidence is fully homed before the physical move. Live conclusions: `PIPELINE.md §5 (the Wall)`/`§P1` · `SKELETON.md` · `INTAKE.md`.
 
 > **Forensic report.** Pathologist: **Vesalius** (named for the anatomist who corrected centuries of received error by *dissecting the bones* instead of trusting the textbook). Dispatched 2026-05-31, delivered 2026-06-01. **Read-only forensics — this is a report, not a fix.** Companion brief: `HANDOFF-osteopathologist.md`. Doctrine: `PIPELINE.md §P1, §Wall`; memory `project_skeleton_is_the_first_bake`.
 
@@ -257,7 +257,7 @@ Treelawn and sidewalk land in the correct real-world spots by default, derived f
 
 ### Corner-relief test: **confirmed — chains-root + corner-confusion are one disease.**
 
-`PIPELINE.md §Wall` claims a correct frame relieves the 13-month corner saga from upstream. The evidence supports it. The corner machinery (`cornersAtIx`, P7) needs three things the frame should *hand it as facts* but today *guesses*: (1) a **clean single junction node** (we delete 79); (2) a **butt-vs-cap decision** (today operator-authored or blunt-and-pray); (3) a **class-seeded `R`** (Part 4). Give the corner pass typed nodes + cap decisions + seeded `R`, and the per-leg/constructed-corner temptation — the thing the mono-width regime exists to kill — loses its last excuse, exactly as §Wall predicts. The corner saga is downstream of a thin frame.
+`PIPELINE.md §5 (the Wall)` claims a correct frame relieves the 13-month corner saga from upstream. The evidence supports it. The corner machinery (`cornersAtIx`, P7) needs three things the frame should *hand it as facts* but today *guesses*: (1) a **clean single junction node** (we delete 79); (2) a **butt-vs-cap decision** (today operator-authored or blunt-and-pray); (3) a **class-seeded `R`** (Part 4). Give the corner pass typed nodes + cap decisions + seeded `R`, and the per-leg/constructed-corner temptation — the thing the mono-width regime exists to kill — loses its last excuse, exactly as §Wall predicts. The corner saga is downstream of a thin frame.
 
 ### Wall-move read: **a richer frame makes clean-slate cheap and correct — lean clean-slate.**
 

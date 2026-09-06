@@ -36,8 +36,23 @@ for (const scene of scenes) {
     console.log('       The tool will re-derive it live and say so. Pour to freeze it.')
     continue
   }
-  const streets = rb.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-  const gradeSep = rb.streets.filter(s => s?.points?.length >= 2 && s.gradeSeparated)
+  // ⛔⛔ FIXED 2026-09-06 — THIS CHECK WAS MINTING FROM THE WRONG INPUT AND REPORTING A CORRECT
+  // ARTIFACT AS STALE. It built the live side from `rb.streets` — the DERIVED, densified chains —
+  // while `derive.js` freezes ① from `clean/skeleton.json`'s SIMPLIFIED points (ruled 2026-09-06,
+  // `SKELETON.md §0.1`). So it compared two different constructions and printed
+  // "⛔ THE ARTIFACT IS STALE — Re-pour this scene" over an artifact that was provably correct:
+  // frozen 147 rings / 2,246 owners vs a live 157 / 19,094, where 19,094 is precisely the
+  // pre-ruling densified stamp count. ⭐ A wrong INSTRUCTION is worse than a wrong number — this
+  // one sent its reader to re-pour a good scene. The instrument did not move when its input did.
+  const skPath = `cartograph/data/${scene}/clean/skeleton.json`
+  if (!fs.existsSync(skPath)) { console.log(`   ⛔ no skeleton at ${skPath} — REFUSING to check (⛔ never fall back to the dense chains: that is the bug this comment records)`); failed = true; continue }
+  const simp = new Map((JSON.parse(fs.readFileSync(skPath, 'utf8')).streets || []).map(st => [st.id,
+    (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+  const mapped = rb.streets.filter(s => s?.points?.length >= 2)
+    .map(s => { const pts = simp.get(s.skelId ?? s.name); return pts?.length >= 2 ? { ...s, points: pts } : null })
+  if (mapped.some(m => !m)) { console.log(`   ⛔ ${mapped.filter(m => !m).length} chain(s) have no simplified geometry — REFUSING, exactly as derive.js does`); failed = true; continue }
+  const streets = mapped.filter(m => !m.gradeSeparated)
+  const gradeSep = mapped.filter(m => m.gradeSeparated)
   const L = mintProtopolygon({ streets, gradeSep, eps: F.eps })
   const q = (v) => Math.round(v * 1e6) / 1e6      // the artifact's own write precision
   const ringsEq = F.rings.length === L.rings.length && F.rings.every((r, i) =>

@@ -1816,7 +1816,7 @@ const useCartographStore = create((set, get) => ({
   // Section surface re-opens the fresh freeze (cache-bust). This is the LIGHT
   // freeze (the per-tile curb/corner silhouette only) — decoupled from the
   // heavy slab bake, so leaving Survey re-freezes the eye-gated shape WITHOUT
-  // the operator ever running a bake (WALL.md §4; "autosave on exit").
+  // the operator ever running a bake (`PIPELINE.md` §5 (the Wall); "autosave on exit").
   shapeFrozenMs: null,
   // The in-flight shape-freeze promise (null when idle). runBake's settle-gate
   // awaits it so a fast "exit Survey → bake" never reads a half-written

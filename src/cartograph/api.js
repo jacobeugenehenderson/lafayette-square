@@ -343,7 +343,7 @@ export async function saveLookDesign(lookId, design) {
 }
 
 // Autosave the frozen SHAPE artifact — the Section-enabling freeze (the
-// per-tile curb/corner silhouette). Written on Survey-exit (WALL.md §4
+// per-tile curb/corner silhouette). Written on Survey-exit (`PIPELINE.md` §5 (the Wall)
 // "freeze at Survey-exit"), decoupled from the heavy slab bake. Section
 // opens it via shape.json. `artifact` = the `_shapeArtifact` from the live
 // Survey build (WYSIWYG: freeze exactly what Survey rendered).

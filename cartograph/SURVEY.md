@@ -6,16 +6,11 @@
 
 ---
 
-## 0. What Survey is
-
-Survey takes the Skeleton's lab-clean centerlines + IX nodes and turns them into the **polygon world**: it forms **Tiles**, strokes the chains **outward** into a hardscape silhouette to make **Blocks**, authors the **corner shapes**, and **freezes** all of it. Two load-bearing facts:
-
-- **SHAPE only — there is no notion of pedestrian depth in Survey.** Treelawn/sidewalk widths, ADA pads — that is **Section** (FILL). Survey authors the asphalt/curb silhouette and the corner geometry; Section strokes *inward* off the frozen curb. (`ARCHITECTURE §2.1`.)
-- **The Skeleton is a black box; Survey fortifies on top of it.** The operator does not edit the centerline graph — they author a thin overlay of widths/caps/corner-radius keyed to the Skeleton's identities. **If the Skeleton is right, Survey shrinks to thin fortification** (`SKELETON.md §0`).
-
-It is the middle of the three tools — **Survey · Section · Stage** — and it raises **wall #1** (chains die here; `[[project_two_bakes_two_walls]]`).
-
----
+> ⛔ **THE NARRATIVE LIVES IN `PIPELINE.md` — read it first.** This doc holds **detail only**:
+> the mechanism, the schema, the open defect. **What Survey is FOR** is now said once, in `PIPELINE.md` step 4 — including the rule that the override IS the product.
+> *(The "what this stage is" opening that used to sit here was excised 2026-09-06 in the narrative
+> scrub — one storyline, one home. Text preserved verbatim in
+> `_archive/stage-doc-openings-2026-09-06.md`.)*
 
 ## 1. The vocabulary — the smell-generator
 
@@ -98,15 +93,15 @@ The operator edits **whole blocks in strips**: click a **centerline** to **activ
 
 ---
 
-## 5. The Data Wall — what freezes, and where it's enforced  *(deep: `WALL.md`)*
+## 5. The Data Wall — what freezes, and where it's enforced  *(deep: `PIPELINE.md` §5 (the Wall))*
 
 By the time the operator leaves Survey we hold an extremely-simplified, polygon-ready frozen dataset, and **chains are dead.** The wall is enforced **at a function signature**, not by convention:
 
-> **`sectionPass(shapeTiles, cw, stripMat, blockCustoms = null)`** takes the frozen per-tile polygons + scalars **+ `blockCustoms`** — **zero handle on streets, chains, measures or ribbons.** Section physically cannot reach back *to chain geometry*; doing so requires changing the signature (a visible, auditable edit). ⭐ **`blockCustoms` is authoring, not a chain** — the Wall forbids geometry derived from chains, never the operator's design intent (ruled 2026-08-04, `WALL.md §Doctrine`; the wall proof's FORBIDDEN entry for it was a false positive and was removed). *(This bullet said 3 args and "no `blockCustoms`", contradicting `SECTION §3`, which was right. A reader taking this version would treat a landed feature as a wall breach.)*
+> **`sectionPass(shapeTiles, cw, stripMat, blockCustoms = null)`** takes the frozen per-tile polygons + scalars **+ `blockCustoms`** — **zero handle on streets, chains, measures or ribbons.** Section physically cannot reach back *to chain geometry*; doing so requires changing the signature (a visible, auditable edit). ⭐ **`blockCustoms` is authoring, not a chain** — the Wall forbids geometry derived from chains, never the operator's design intent (ruled 2026-08-04, `PIPELINE.md` §The three laws; the wall proof's FORBIDDEN entry for it was a false positive and was removed). *(This bullet said 3 args and "no `blockCustoms`", contradicting `SECTION §3`, which was right. A reader taking this version would treat a landed feature as a wall breach.)*
 
 **Frozen across it:** the `shapeTiles` / `_shapeArtifact` — block silhouette (`ring`), curb line (`iA`), per-vertex radius (`vertR`), the run's *frozen* measure, and the dead-end tip typology. Everything Section needs, nothing chain-shaped.
 
-*(The wall **should** sit even earlier — at the Skeleton/prebake boundary (P2). Today it sits at `sectionPass`; closing that gap is the standing architectural debt. First diagnostic on any head-scratcher: "is this chains again?" — `PIPELINE §Wall`.)*
+*(The wall **should** sit even earlier — at the Skeleton/prebake boundary (P2). Today it sits at `sectionPass`; closing that gap is the standing architectural debt. First diagnostic on any head-scratcher: "is this chains again?" — `PIPELINE §5 (the Wall)`.)*
 
 ### 5.1 ⭐ The deeper truth — Survey is **not yet polygon-first** *(but the tile freeze DID land — see the correction)*
 
@@ -123,7 +118,7 @@ By the time the operator leaves Survey we hold an extremely-simplified, polygon-
 The block **topology** is frozen at prebake (above), but the **silhouette** is still re-derived from the centerline graph on every build (the ring is stroked + filleted from chain measures and only *then* frozen at `sectionPass`). So chains remain load-bearing right up to the freeze — Survey today is **chain-derived-then-frozen, not polygon-first.** This is the substrate behind every "corner saga":
 
 - **The false corner (§6) is born here.** At a divided transition the carriageway *stub* is a vertex in the centerline graph → it becomes a tile vertex → `filletRing` corners it. In a true **polygon-first** Survey (block silhouette = the primary frozen/authored object, wall at **P2**) there is no stub and **no false corner** — nothing to detect, nothing to patch.
-- **The canon already names the cure:** *the chains-root-problem and the corner-confusion are one disease with one cure — polygon-first* (`PIPELINE §Wall` + §Tile). The corner is **a symptom of the wall sitting too late, not a unit of work.**
+- **The canon already names the cure:** *the chains-root-problem and the corner-confusion are one disease with one cure — polygon-first* (`PIPELINE §5 (the Wall)` + §Tile). The corner is **a symptom of the wall sitting too late, not a unit of work.**
 - **∴ patching the corner inside `tileGround` (reaching back to carriageway / curb-line reasoning) is "patching chains deeper downstream" — the move the doctrine forbids.** The real fix moves the wall earlier; a corner-patch is at most a *labeled stopgap*.
 - **Where the cure lives: prebake (`PREBAKE.md`).** Today prebake is a thin compile — it emits `ribbons.json`, still **chains** — and defers the chain→polygon conversion (`extractFaces` + silhouette) into Survey's per-build construction. The move is to **do that conversion once, in prebake, and freeze the polygon substrate** — the tile/block topology + the corner *identities* (resolving the divided transition as a polygon: corner the **corridor outer-edge legs, not the stubs**). Then chains die at the prebake→Survey boundary, Survey only *reshapes* the frozen rings (offset by width, round by radius), and the false corner **cannot be re-born.** Elevating prebake from compile → polygon-ization stage **is** the wall-move (wall → ~P3). The false corner becomes a **topology** decision made once upstream, not a per-build reconstruction.
 
@@ -133,7 +128,7 @@ The block **topology** is frozen at prebake (above), but the **silhouette** is s
 
 At a transition (a divided avenue meeting a cross-street — LS's four park corners: Mississippi×Lafayette, Park×S-18th), the carriageways diverge to open the median. **The rule** (`SKELETON.md §5d`, "the special sauce"): the **outer curb runs straight through**; the **median opens inward** — an outer edge must never inherit the median-opening divergence. The principle generalized: *the intersection interior is legitimately variable; the streets and corners outside it must be simple — the IP is finding and declaring that boundary.*
 
-**Current state (updated 2026-06-09): the false CORNER is cured; the residual is the unfrozen CURB.** The corner-construction defect below was fixed **live + clean on Jacob's eye** (intersection-everywhere `9c275ce` — corners from leg-adjacency at every node). What still bows at the transition is the **"d" bulge**, and it is **not** the corner: it is the **curb PRODUCED at mint time** rather than derived from the frozen frame. ⛔⛔ **ESTABLISH WHICH PRODUCER BUILT THE BULGING TILE BEFORE REASONING ABOUT THE CAUSE.** `iA = tile.ring − asphalt-union` is the **legacy carve**, and since D6a it is *not* the default: `tileGround.js` takes the per-edge parallel offset (`buildCurbRings`) whenever `iaOffset !== false && !isMedianTile && ringArea > 1500`, and the carve only where that gate fails. **So on any ordinary large non-median tile, a bulge is produced by the OFFSET, not by a swelling asphalt union** — and a fix aimed at the union is aimed at a branch that tile never enters. ✅ The tile tells you: `producer` + `producerReason` are stamped in `shape.json` (A07). ⚠️ `shape.json` on disk is pre-A07 until a re-bake, and the tool says "unstamped" rather than inventing zeros — so an unstamped artifact means *re-bake*, not *offset*. ⚠️ **Precision fix 2026-07-31:** this is a **producer** statement, not a consumer one — every non-Survey view already reads the frozen `shape.json`; only Survey live-strokes, by design (`WALL.md §31`, `PIPELINE §Wall`). The bulge is baked *into* the frozen artifact at mint time, which is why freezing harder downstream cannot cure it. A correct curb is `chain ⊕ halfWidth` (parallel offset), a pure function of the skeleton — so it belongs **frozen in prebake**, and that freeze is the unfinished half. **SSOT: `PREBAKE.md §4.1`/`§5` + `SKELETON.md §5f` + `HANDOFF-freeze-the-curb-in-the-first-bake.md`.** Same disease as §5.1 (geometry re-derived from chains downstream), one layer deeper — the curb is the **last unfrozen polygon**.
+**Current state (updated 2026-06-09): the false CORNER is cured; the residual is the unfrozen CURB.** The corner-construction defect below was fixed **live + clean on Jacob's eye** (intersection-everywhere `9c275ce` — corners from leg-adjacency at every node). What still bows at the transition is the **"d" bulge**, and it is **not** the corner: it is the **curb PRODUCED at mint time** rather than derived from the frozen frame. ⛔⛔ **ESTABLISH WHICH PRODUCER BUILT THE BULGING TILE BEFORE REASONING ABOUT THE CAUSE.** `iA = tile.ring − asphalt-union` is the **legacy carve**, and since D6a it is *not* the default: `tileGround.js` takes the per-edge parallel offset (`buildCurbRings`) whenever `iaOffset !== false && !isMedianTile && ringArea > 1500`, and the carve only where that gate fails. **So on any ordinary large non-median tile, a bulge is produced by the OFFSET, not by a swelling asphalt union** — and a fix aimed at the union is aimed at a branch that tile never enters. ✅ The tile tells you: `producer` + `producerReason` are stamped in `shape.json` (A07). ⚠️ `shape.json` on disk is pre-A07 until a re-bake, and the tool says "unstamped" rather than inventing zeros — so an unstamped artifact means *re-bake*, not *offset*. ⚠️ **Precision fix 2026-07-31:** this is a **producer** statement, not a consumer one — every non-Survey view already reads the frozen `shape.json`; only Survey live-strokes, by design (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §31` — a section that never existed)*, `PIPELINE §5 (the Wall)`). The bulge is baked *into* the frozen artifact at mint time, which is why freezing harder downstream cannot cure it. A correct curb is `chain ⊕ halfWidth` (parallel offset), a pure function of the skeleton — so it belongs **frozen in prebake**, and that freeze is the unfinished half. **SSOT: `PREBAKE.md §4.1`/`§5` + `SKELETON.md §5f` + `HANDOFF-freeze-the-curb-in-the-first-bake.md`.** Same disease as §5.1 (geometry re-derived from chains downstream), one layer deeper — the curb is the **last unfrozen polygon**.
 
 The corner story, kept for the trail:
 
@@ -142,7 +137,7 @@ The corner story, kept for the trail:
 - **The corner hardening — D3 (backlog).** Freeze the corner *identity* as a polygon at prebake (corridor outer-edge legs, divided corridor = one road) so no per-build code can re-manufacture it — the **sibling** of the curb-geometry freeze (`BACKLOG §HARDENING`).
 - **Operator ground truth:** `scratch/correct-target-mississippi-lafayette.json` (two straight curb legs meeting at the true corner) = the *polygon* outcome prebake must produce.
 
-> ⛔ **The corner-patch is KILLED (2026-06-05, Jacob's call).** The scoped Part 2 (consume `spineAt*` in `tileGround`, reconstruct the true corner from the straight curb lines, subtract a keep-out) is a **chain-patch** — it repairs a polygon by reaching back into carriageway/centerline reasoning, the forbidden *"patch chains deeper"* move (§5.1). **We are not shipping it.** The false corner dissolves when Survey becomes polygon-first (the prebake polygon-ization, §5.1). Retired: `HANDOFF-divided-false-corner.md` → `_archive/handoffs/`; `scratch/divided-false-corner-WIP.patch` abandoned.
+> ⛔ **The corner-patch is KILLED (2026-06-05, Jacob's call).** The scoped Part 2 (consume `spineAt*` in `tileGround`, reconstruct the true corner from the straight curb lines, subtract a keep-out) is a **chain-patch** — it repairs a polygon by reaching back into carriageway/centerline reasoning, the forbidden *"patch chains deeper"* move (§5.1). **We are not shipping it.** The false corner dissolves when Survey becomes polygon-first (the prebake polygon-ization, §5.1). Retired: `_archive/handoffs/HANDOFF-divided-false-corner-KILLED-2026-06-05.md` → `_archive/handoffs/`; `scratch/divided-false-corner-WIP.patch` abandoned.
 
 ---
 
@@ -161,7 +156,7 @@ The corner story, kept for the trail:
 
 ## Cross-references
 - `SKELETON.md` — the frame Survey consumes (the paired front-half rebuild spec).
-- `PIPELINE.md §survey` + `§Wall` — the execution spine (this doc is the deep chapter it points into).
+- `PIPELINE.md step 4 (Survey)` + `§Wall` — the execution spine (this doc is the deep chapter it points into).
 - `ARCHITECTURE.md §2.1` — the three tools; Survey ≠ Section (different data models).
 - `RIBBONS.md` — the ribbon/corner geometry canon (the tile construction's invariants).
 - `SECTION.md` — the FILL tool, past the wall (the downstream consumer of this doc's frozen `iA`); its open tail is `SECTION.md §7` (the pre-build census is archived: `_archive/SECTION-CENSUS-2026-06-03.md`).

@@ -85,7 +85,7 @@ LOOK is authored; the open work is the SHAPE campaign (make the skeleton produce
 One canonical reading order, every session: **`ORIENTATION.md`** (the plain-language mental model) → **`README.md §⭐ START HERE`** (the settled conclusion per topic + the cross-cutting feature index "where does X live") → **the topic canon** it names. (`BOZ.md` is the coordinator's doc, summoned only when you're Boz.)
 
 ### What it is, per stage (the authoritative homes)
-Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · `WALL` (the freeze) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
+Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · the freeze (folded into `PIPELINE.md` §5) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
 
 ### How to fix / troubleshoot
 - **First diagnostic: "is this chains again?"** A wrong silhouette is upstream (skeleton/survey); how the ribbon *bends* is Section. The fix is to move the wall earlier, never patch chains deeper. (`PIPELINE §Wall`.)

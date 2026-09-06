@@ -45,7 +45,7 @@ IMPACT: The mandatory routing gate's only concrete proof is stale — and it is 
         matters most (a fixed thing listed as open). An agent will either re-fix it, or cite it to Jacob as
         live. Note `ROADMAP.md:51` (A00) carries the same stale text — outside my cluster, flagging for merge.
 
-### cartograph/PIPELINE.md §Wall, 4th bullet — FALSE
+### cartograph/PIPELINE.md §5 (the Wall), 4th bullet — FALSE
 CLAIM:  "⛔ **NEW, live, unfixed (2026-07-31) — a FALLBACK inside the wall itself.** If the `shape.json` fetch
         fails, the consumer **silently** falls back to a live build … the operator sees a plausible map and
         **never learns the freeze did not happen**."
@@ -81,7 +81,7 @@ ACTUAL: No `SvgGround` component and no `bake-svg.js` exist anywhere in the repo
 IMPACT: The first architecture diagram a newcomer reads names a non-existent producer and a non-existent
         consumer for the kit's primary output.
 
-### cartograph/PIPELINE.md §prebake + README.md §START HERE "Prebake" row — FALSE
+### cartograph/PIPELINE.md step 3 (prebake) + README.md §START HERE "Prebake" row — FALSE
 CLAIM:  "The 2D Survey/Design view renders **LIVE from `ribbons.json`** via `buildTileGround` — **the ground
         bake is irrelevant to the 2D screen; only `ribbons.json` + `tileGround.js` matter there.**"
 ACTUAL: True for **Survey only**. Every non-Survey 2D view (Section/Measure *and* the neutral Design view)
@@ -122,7 +122,7 @@ IMPACT: Low blast radius, but it is a "where does X live" pointer to a function 
 
 ## CONTRADICTIONS ACROSS THE CLUSTER
 
-### PIPELINE.md §Wall ↔ ARCHITECTURE.md §2.1
+### PIPELINE.md §5 (the Wall) ↔ ARCHITECTURE.md §2.1
 PIPELINE's correction note credits the other docs: *"`WALL.md §31` and **`ARCHITECTURE.md §79` carried the
 accurate version the whole time**; this one was never updated."* But `ARCHITECTURE.md:79` **opens with the
 exact false sentence** — *"the **curb geometry is still re-stroked live from chains every frame**"* — and only
@@ -143,7 +143,7 @@ the file does not have.
 ## CONFIRMED (checked, true — cite these)
 
 - **`shape.json` frozen `iA` on 93 of 101 LS tiles** — measured directly on
-  `public/baked/lafayette-square/shape.json`: 101 tiles, 93 with non-empty `iA`. (README WALL row + PIPELINE §Wall.)
+  `public/baked/lafayette-square/shape.json`: 101 tiles, 93 with non-empty `iA`. (README WALL row + PIPELINE §5 (the Wall).)
 - **Producer side is genuinely open** — `shape.json` is a *snapshot*: written by `bake-ground.js:1027` from the
   live `buildTileGround` artifact, or POSTed wholesale by the client freeze (`serve.js:1011-1023`). Check C RED is real.
 - **`sectionOpen` is chain-free by signature** — `tileGround.js:1907`: `(shapeTiles, cw, stripMat, stencil,

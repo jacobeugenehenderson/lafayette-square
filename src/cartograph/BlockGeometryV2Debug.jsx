@@ -540,7 +540,7 @@ export default function BlockGeometryV2Debug({
   // re-run of the Survey build. Fetched once per scene when the tool first
   // activates; `sectionOpen` (chain-free signature — artifact + design params
   // only) composes block/curb/asphalt off the frozen iA and the ped FILL via
-  // sectionPass. Note what this is: the freeze→open MECHANISM (WALL.md §4) —
+  // sectionPass. Note what this is: the freeze→open MECHANISM (`PIPELINE.md` §5 (the Wall)) —
   // the §5(b) "correct data" half stays gated on the prebake cure; this view
   // shows the shape exactly as frozen, defects included.
   const bakeLastMs = useCartographStore(s => s.bakeLastMs)
@@ -837,7 +837,7 @@ export default function BlockGeometryV2Debug({
   // ── Autosave the SHAPE freeze on Survey-exit (the Data Wall, made invisible) ──
   // While in Survey, keep the latest live `_shapeArtifact` (exactly what the
   // operator sees). When they LEAVE Survey — the deliberate "this shape is done,
-  // now I'll do the FILL" moment, their eye just on it (WALL.md §5b) — persist it
+  // now I'll do the FILL" moment, their eye just on it (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §5b` — a section that never existed)*) — persist it
   // so Section opens the current, eye-gated curb. No manual bake, no per-edit
   // churn: a discrete freeze at the boundary keeps Section's substrate stable
   // ("autosave on exit"). Going to Stage re-freezes via the full bake instead.

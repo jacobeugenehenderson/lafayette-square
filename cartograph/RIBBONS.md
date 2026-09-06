@@ -362,7 +362,7 @@
 >   ⭐⭐ **THE DANGER IS NOT ORPHANING, IT IS SILENT RE-POINTING.** LS: **0 slots orphaned** (nothing
 >   stops resolving, which is the visible failure) but **17 of 83 RE-POINTED** — the slot still
 >   resolves and now describes **a different physical stretch of road**. The authoring keeps working
->   and means somewhere else. That is `A17`'s mechanism exactly, and `WALL.md`'s T3 gate named it in
+>   and means somewhere else. That is `A17`'s mechanism exactly, and `PIPELINE.md` §5's T3 gate named it in
 >   advance: *"if chains renumber, authored customs orphan silently."*
 >   ⛔ **So the convergence is not "safe because nothing breaks."** 20% of the operator's work would
 >   move and nothing would say so. **It needs a re-key — map old spans to new by GEOMETRY before the

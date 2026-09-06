@@ -2,7 +2,7 @@
 
 **The pipeline's first stage: external sources → a cleaned local frame.** This is the SSOT for *data provenance* — every source we pull, how we fetch it, what we transform it into, and (the load-bearing part) **which layer is authoritative vs. which is OSM-default.** Written because "how do we troubleshoot if we don't even know where the data comes from?" (Jacob, 2026-06-13) — provenance you can't see is provenance you can't debug.
 
-> **Status: v0.4 (2026-07-20) — intake is a UI, and boundary authoring is the INCLUSION POLYGON.** The **Extent tool** (`src/cartograph/ExtentApp.jsx`) is the realized front-end of this stage (§0.5) — intake is no longer "hand-edit two JSON files + CLI," and the boundary is an **inclusion polygon** — membership = `((polygon − exclusions) ∪ activate) − hide`; the disc RENDERS. *(v0.3 said the circle IS the boundary and the excluder was settled; retracted §0.5.)* Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, `serve.js`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`PIPELINE §intake`); FEATURES carries the one-line pitch.
+> **Status: v0.4 (2026-07-20) — intake is a UI, and boundary authoring is the INCLUSION POLYGON.** The **Extent tool** (`src/cartograph/ExtentApp.jsx`) is the realized front-end of this stage (§0.5) — intake is no longer "hand-edit two JSON files + CLI," and the boundary is an **inclusion polygon** — membership = `((polygon − exclusions) ∪ activate) − hide`; the disc RENDERS. *(v0.3 said the circle IS the boundary and the excluder was settled; retracted §0.5.)* Grounded in `scripts/`, `cartograph/fetch-msbf.js`, `config.py`, `serve.js`, and the `data/lafayette-square/{raw,clean}` artifacts. Some source attributions are marked **⚠️ confirm**. The developer-reference home for the **intake** pipeline stage (`PIPELINE steps 0–1 (Extent + intake)`); FEATURES carries the one-line pitch.
 
 ---
 
@@ -156,7 +156,7 @@ The two levers that shrink the *automation-debt* share (never the idiosyncratic)
 
 ## Cross-references
 - `SKELETON.md` — the frame built from this intake (`seedSection`, the RDP + corner-round, width-sourcing).
-- `PIPELINE.md §intake` — the stage in the execution spine (this is its deep doc).
+- `PIPELINE.md steps 0–1 (Extent + intake)` — the stage in the execution spine (this is its deep doc).
 - `OSM-FORENSICS.md` — "OSM or us" (the frame was strictly poorer than raw OSM until we stopped dropping tags) + "stop dropping it."
 - `OSM2STREETS-GROUNDING.md` — the reference algorithm to ground in (don't reinvent).
 - `FEATURES.md` — the user/investor pitch line (*grounded in authoritative municipal + survey data, not guessed*) — **to add.**

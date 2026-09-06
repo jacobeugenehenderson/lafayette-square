@@ -64,8 +64,8 @@ Orientation — checked against the four navigational surfaces: `README §START 
 
 ### 2.1 Settled-doctrine headlines (the "don't re-derive" set, with pointers)
 1. **Polygons Only — the TILE model.** tiles = faces of the centerline graph; strips painted inward; the corner is the inward-offset (never a constructed fillet primitive). → RIBBONS §1, POLYGON-FIRST, README §START HERE.
-2. **The Skeleton is The First Bake.** By Survey-exit, hold an extremely-simplified polygon-ready frozen frame (clean block ≈ 4 corners). → SKELETON, PIPELINE §skeleton.
-3. **Chains die at the Wall.** No geometry from chains past the freeze; first diagnostic = "is this chains again?"; fix = move the wall earlier, never patch chains deeper. → PIPELINE §Wall, WALL.
+2. **The Skeleton is The First Bake.** By Survey-exit, hold an extremely-simplified polygon-ready frozen frame (clean block ≈ 4 corners). → SKELETON, PIPELINE step 2 (Skeleton).
+3. **Chains die at the Wall.** No geometry from chains past the freeze; first diagnostic = "is this chains again?"; fix = move the wall earlier, never patch chains deeper. → PIPELINE §5 (the Wall), WALL.
 4. **The Derivation Chain: centerline → polygon → ribbon.** Centerline is the ROOT; the polygon is BOTH geometry AND identity (leg/corner/treelawn-vs-sidewalk read off it); fix at the centerline first (patching the polygon on a rough centerline edits a shadow). → RIBBONS §1, SKELETON §3.5.
 5. **The curb is a concentric/parallel offset of the centerline (D6a).** NOT an asphalt-union carve; cleanup lives on the frame, never the curb (the concentric law). → POLYGON-FIRST §1, vector-curve-construction Law 1.
 6. **SHAPE automated / LOOK authored — the KIT INVARIANT.** Hand-authored SHAPE is a defect; data-derivable → automatic; only creative LOOK is authored; the 35 curated streets are the metric → 0. → SKELETON §6, INTAKE §6.1, BACKLOG NOW.
@@ -76,7 +76,7 @@ Orientation — checked against the four navigational surfaces: `README §START 
 11. **The correctness suite — automate the operator's eye.** One RED-until-true invariant per bug-class; the detector is the deliverable; validated against the 35; the 35 lean topological. → POLYGON-FIRST §5.
 12. **Inputs are authoritative, not guessed.** City parcels/ROW + operator-measured widths + OSM geometry + ML footprints, fortified against max-res aerial; no external street source helps (County rejected). → FEATURES "inputs are authoritative", INTAKE §5.1/§6.
 13. **Compass frame only.** One frame; no rotation constants in the math/data layer (the 9.2° park rotation is real-world geometry). → FEATURES §Frame discipline.
-14. **Grade separation handled.** gradeSeparated excluded from the face graph, stroked flat on its own layer, rendered behind local. → PIPELINE §Wall, README.
+14. **Grade separation handled.** gradeSeparated excluded from the face graph, stroked flat on its own layer, rendered behind local. → PIPELINE §5 (the Wall), README.
 15. **Toy is the canonical pipeline test rig.** A new scene routes through the existing pipeline, never a toy-only branch. → FEATURES, AGENT-VALIDATION-SURFACES.
 16. **The doc architecture.** Three kinds (Reference/State/Diary, one per doc); three registers (FEATURES user / OPERATIONS operator / dev docs); additive-never-destructive; hot/cool. → BOZ §0–3.
 17. **(Mis-homed → relocate to ARCHITECTURE):** polygonOffset is inert under logarithmicDepthBuffer — resolve coplanar with renderOrder (transparent) / Y-separation (opaque). → FEATURES "Layering" (relocate).

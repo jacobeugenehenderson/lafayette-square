@@ -37,7 +37,7 @@ The docs say "`filletRing` corners the carriageway stub." The instrumented reali
 **Recommendation: the chain→polygon conversion runs once in prebake (`derive.js`, orchestrated by `pipeline.js`) and the polygon substrate freezes into the artifact (`ribbons.json` or its successor).** `extractFaces` is already a pure exported function of `streets[].points` — it *moves* upstream rather than being rewritten.
 
 Why not a `tileGround` cache:
-- **Caching ≠ freezing.** A cache re-derives on every miss; the corner decision would still live in per-build code and the false corner is re-born whenever inputs wiggle. The wall freezes *trust* (`WALL.md §1`); a cache freezes nothing.
+- **Caching ≠ freezing.** A cache re-derives on every miss; the corner decision would still live in per-build code and the false corner is re-born whenever inputs wiggle. The wall freezes *trust* (`PIPELINE.md` Law 2 (freezing wrong data)); a cache freezes nothing.
 - **The wall lands at ~P3 only if prebake owns the conversion.** Chains then die at the prebake→Survey boundary; Survey receives polygons and *reshapes* (offset by width, round by radius). A cache leaves chains load-bearing inside Survey — the wall stays late, the doctrine stays violated.
 - **C5 can only be killed at prebake** — LU classification needs raw-OSM/parcel sources that exist in `derive.js`, not in the browser (§3).
 - **Perf (the activated-block model, `SURVEY.md §4.1`)** needs a *stable substrate identity* to know what "everything else stays frozen" means. Block-independence is verified; the frozen substrate is what lets us exploit it.
@@ -93,7 +93,7 @@ Mechanics validated in the spike (`mercator-spike.mjs`):
 | **D4** | **LU at prebake + retire raw-OSM faces (C5).** §3's three steps. ⛔ **`medians[]` stays** — it is E2's constructed-median home, 52 live entries (§3). | D2 | L | LU-color A/B byte-identical; IX markers/corner handles unchanged. |
 | **D5** | **Activated-block live reshape (perf).** Recompute only activated tiles on edit; the rest render from the frozen substrate. | D2 (D3 for corners) | M | Designer feel on the high-res aerial (the sticky-tools complaint); no visual diff when idle. *(Overlaps the Wall Phase-D arc — coordinate, don't duplicate.)* |
 
-**Order:** D1 ∥ D2 (independent, both dispatchable now) → D3 (the cure; needs both) → D4 ∥ D5. The Wall milestone's "(b) correct data" gate (`WALL.md §5`) is satisfied by D1+D3 for the false-corner class; the thorns (band-fold) stay a separate prerequisite as already ledgered.
+**Order:** D1 ∥ D2 (independent, both dispatchable now) → D3 (the cure; needs both) → D4 ∥ D5. The Wall milestone's "(b) correct data" gate (`PIPELINE.md` §5 (the Wall)) is satisfied by D1+D3 for the false-corner class; the thorns (band-fold) stay a separate prerequisite as already ledgered.
 
 ---
 

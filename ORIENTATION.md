@@ -22,6 +22,13 @@ A **kit for pouring 3D neighborhoods.** You feed it real city data; it produces 
 
 ## The dependency chain — in plain words
 
+> ⛔ **THE FULL NARRATIVE IS NOW `cartograph/PIPELINE.md` (rewritten 2026-09-06).** What follows is the
+> **one-screen** version — the chain and the vocabulary pairing, enough to orient. **PIPELINE.md is the
+> ironclad one**: every stage with what it is for, what goes in and out, the rule, and — the part this
+> summary cannot carry — **how you would tell if that stage were wrong**, naming a real instrument.
+> ⚠️ **These two are now the only plain-language accounts of the chain, and that is one more than the
+> scrub wanted.** If they ever disagree, `PIPELINE.md` wins and this list is the bug.
+
 *(Confirmed with Jacob 2026-07-31, in his corrections. If you read only one thing before touching the pipeline, read this — three separate passes in one day went wrong on **step 3** alone.)*
 
 > ⭐⭐ **THE TOOLS AND THE STAGES HAVE DIFFERENT NAMES, AND BOTH ARE LIVE. Learn the pairing or every doc reads as though it is about something else.** *(Added 2026-08-09 — Jacob: "The Survey comes from the Extent; Survey feeds Measure." That sentence is the chain in the operator's words, and this doc did not contain it.)*
@@ -84,7 +91,7 @@ Read it left-to-right: **you say what the hood is**, messy inputs get traced int
 ### How the map gets built
 
 - **The skeleton is the first bake.** Before any prettifying, we trace the real streets into a clean, *simplified* frame — a city block should be ~4 corners, not 30 wiggles. Get the bones simple and everything downstream is healthy. → `SKELETON.md`
-- **Chains die at the wall.** We start from messy traced street-lines ("chains"). At one point — *the Wall* — we **freeze** them into finished shapes, and after that nobody may reach back to the messy lines. When something looks broken, the first question is always *"did we sneak back across the wall?"* — and the fix is to move the freeze *earlier*, never to patch the messy lines deeper. → `cartograph/PIPELINE.md §Wall`
+- **Chains die at the wall.** We start from messy traced street-lines ("chains"). At one point — *the Wall* — we **freeze** them into finished shapes, and after that nobody may reach back to the messy lines. When something looks broken, the first question is always *"did we sneak back across the wall?"* — and the fix is to move the freeze *earlier*, never to patch the messy lines deeper. → `cartograph/PIPELINE.md §5 (the Wall)`
 - **Polygons, not pen-strokes.** The map is made of **shapes**, not drawn lines. We paint the sidewalk and grass *inward* from each block's edge. → `cartograph/RIBBONS.md §1`
   > ### ⛔⛔ AND **"POLYGON" MEANS TWO THINGS HERE. LEARN BOTH OR YOU WILL LOSE A DAY — SEVERAL ALREADY HAVE.**
   > **To Jacob it is THE CURB** — the drawn edge of the roadway, pushed out from the centerline by the authored half-width. **To the code and most docs it is THE TILE** — the block face between streets. *(`BOZ.md §1` records 2026-08-06 running for hours on exactly this; it recurred 2026-08-21 with the coordinator writing "the polygons are the tiles" back at him.)*

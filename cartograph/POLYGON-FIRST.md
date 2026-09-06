@@ -6,20 +6,11 @@
 
 ---
 
-## 0. Why this doc exists (the reckoning, 2026-06-09)
-
-The program built walls, sequenced bakes, and a whole vocabulary around freezing chaotic OSM chains *once* into rigid polygons that every downstream consumer trusts. It mostly worked. But the **street curb** — the most visible polygon on the map — was never actually frozen from the frame. *(2026-07 status update: two of the specifics below have since moved — see the ⤷ notes — but the core defect stands: the curb is minted by the live producer, not built once from the frozen frame.)* It is still **re-stroked live by `buildTileGround`** and snapshotted, so it is a photograph of a chain-stroke, not a function of the frozen frame.
-> ⤷ **The construction changed (D6a landed):** `iA` is no longer the `tile.ring − aFill` union-carve — it is the **per-edge parallel offset** (`offsetRingVariable`, `chain ⊕ pavementHW`, `src/lib/tileGround.js:2728/2810`; the carve survives only as a degenerate fallback `legacyBlock`). So the "d"-bulge-from-the-carve framing is superseded (the divided-"d" instance was separately cured at the frame, `fd38c70`).
-> ⤷ **The consumer/idle side froze (2026-07-15):** Survey/Design no longer "re-derives every frame" — it now **consumes the frozen `shape.json` via `sectionOpen`** for idle display; only the **element under the operator's hand** re-strokes live (`BlockGeometryV2Debug.jsx`, the load-forensic work). What remains RED is the **producer** minting the freeze from chains at bake/edit — Check C below.
-
-**How it slipped through, precisely:**
-1. **The curb geometry was *deliberately excluded* from the freeze**, on a wrong premise. The polygon-ization was cut into three layers (`PREBAKE-POLYGONIZATION-PLAN.md §1`): **L1** topology (= D2, done — `derive.js:3922`), **L2** corner identity (= D3, parked), and **L3 the stroked curb line** — *"NOT L3 … asphalt offsets + fillets stay in Survey's live reshape."* The premise was that the live reshape is a benign "offset by width, round by radius." It isn't — it's the `tile.ring − asphalt-union` carve, where the junction strokes leak the chains back in. **The freeze stopped one layer short of the layer that leaks.**
-2. **The Section wall *masked* it.** A curb *was* frozen — the bake's `_shapeArtifact` carries `iA` per tile (`SURVEY.md:63`), and `sectionOpen` reads it chain-free (`WALL.md:51`). But that frozen curb is a **downstream snapshot of the live re-stroke** (same engine, baked later — bulge and all), and **Survey never consumes it.** "We have a frozen curb behind the wall" was true and false at once, and nothing made the contradiction visible.
-3. **The doctrine was *described*, not *enforced*.** The one place it's structurally guaranteed is `sectionPass`/`sectionOpen` — they have **no chain in lexical scope**, so Section physically *cannot* re-derive (`tileGround.js:581`, `:825`). Everywhere else "chains die" was a principle you had to remember. The producer never had to. **Names that don't reduce to a test are how "done" got claimed over an unfrozen curb.**
-
-We are not at zero. The gap is named, the mechanism is understood, and below it becomes a check.
-
----
+> ⛔ **THE NARRATIVE LIVES IN `PIPELINE.md` — read it first.** This doc holds **detail only**:
+> the mechanism, the schema, the open defect. **Why this doc exists** is now said once, in `PIPELINE.md` (the three laws + step 3a). This doc holds the ENFORCEABLE form: the checks.
+> *(The "what this stage is" opening that used to sit here was excised 2026-09-06 in the narrative
+> scrub — one storyline, one home. Text preserved verbatim in
+> `_archive/stage-doc-openings-2026-09-06.md`.)*
 
 ## 1. The invariant
 
@@ -81,13 +72,13 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 The existing Wall is a **handle** rule (`sectionOpen` takes no chain reference) — it stops a consumer
 *reaching back*, but not the artifact from **being** a chain. At a dead end it is one: the face freeze
 walks the spur out and back over the same vertices, so the ring is the traversal
-(`PIPELINE §Wall`). These are the **content** checks, run **at the freeze**, failing the **bake** — never
+(`PIPELINE §5 (the Wall)`). These are the **content** checks, run **at the freeze**, failing the **bake** — never
 the eye:
 
 > ## ⛔⛔ 2026-09-04 — THESE FIVE ARE A **CRYPTO POSITIVE/NEGATIVE TEST**, AND THAT IS THE DEFECT IN THEM (Jacob)
 > **Every one is stated about a TILE RING or a FRONTAGE EDGE — the NEGATIVE — and infers the street.**
 > Nothing in this document asserts anything about the road as an object. ⇒ **figure-ground in the checks,
-> polygon-first on the letterhead**, in the doc whose own `PIPELINE §144` calls figure-ground dead.
+> polygon-first on the letterhead**, in the doc whose own `PIPELINE (the retired figure-ground ladder — see `_archive/PIPELINE-v0.2-address-map-2026-09-06.md`)` calls figure-ground dead.
 >
 > **Assert the GROUT instead** (home: `RIBBONS §1`, the 2026-09-04 ruling — the grout is a positive compound
 > path, stroked at ε, and we offset from *it*, not the chains):
@@ -155,7 +146,7 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 >
 > ⛔⛔ **RE-MEASURED 2026-08-05 — THE "6 vs 9" SPLIT IS FALSE. The corner set and the run-through set are
 > SET-IDENTICAL, member for member.** This block previously said they were two different measurements
-> yielding **6** and **9**, and `README`, `ROADMAP A0` and `PIPELINE §Wall` all repeated it. They are the
+> yielding **6** and **9**, and `README`, `ROADMAP A0` and `PIPELINE §5 (the Wall)` all repeated it. They are the
 > same nine folds:
 >
 > `allen-avenue-0[start] · carroll-street-0[end] · geyer-avenue-0[end] · mackay-place-1[start] ·
@@ -361,7 +352,7 @@ registry was one answer to it, and not a shipped one. Live task:
 ### Check B — Tier-2 identity (the real gate · writable only after the freeze)
 > With no element active, **Survey's rendered curb == the prebake-frozen curb, byte-equal** — and the frozen curb is the clean offset (it passes Check A *including* the junction zone, because corners are constructed, not carved).
 
-This is the un-fakeable test. It cannot be written today because there is **no upstream-frozen clean curb to compare against** (D2 froze topology, not geometry) — and *that inability is itself the proof the curb is not **derived from the frame***. ⚠️ **Precision, 2026-07-31:** read every "the curb isn't frozen" phrase in this doc as a **PRODUCER** claim. A frozen curb artifact *does* exist and *is* consumed — every non-Survey view renders from `shape.json` (frozen `iA` on 93/101 tiles). What's missing is that it be **built from the frozen frame** rather than traced from chains and snapshotted (`WALL.md §31`). It extends the existing precedent harness `scratch/hadrian-wall-open-proof.mjs` (which machine-proved `sectionOpen` chain-free). Block-independence is already verified (`PREBAKE.md §5`, `SURVEY.md §4.1`), which is what makes "only the active element re-derives" achievable.
+This is the un-fakeable test. It cannot be written today because there is **no upstream-frozen clean curb to compare against** (D2 froze topology, not geometry) — and *that inability is itself the proof the curb is not **derived from the frame***. ⚠️ **Precision, 2026-07-31:** read every "the curb isn't frozen" phrase in this doc as a **PRODUCER** claim. A frozen curb artifact *does* exist and *is* consumed — every non-Survey view renders from `shape.json` (frozen `iA` on 93/101 tiles). What's missing is that it be **built from the frozen frame** rather than traced from chains and snapshotted (`PIPELINE.md` §5 (the Wall) ⚠️ *(was cited as `WALL.md §31` — a section that never existed)*). It extends the existing precedent harness `scratch/hadrian-wall-open-proof.mjs` (which machine-proved `sectionOpen` chain-free). Block-independence is already verified (`PREBAKE.md §5`, `SURVEY.md §4.1`), which is what makes "only the active element re-derives" achievable.
 
 ### Check C — no chain in the producer's scope (structural)
 > `buildCurb` has **no chain / street / measure-chain in its lexical scope** — the curb is built from the frozen frame only. Enforced the way `sectionPass` already is (a signature with nothing to reach back through), greppable in CI.
@@ -486,7 +477,7 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 So this can't rot the same way:
 
 1. **Every "frozen / chains-die / polygon-first" claim names the check that proves it** — or it is marked TARGET, not stated in the present tense. A claim without a check is the failure mode that hid this gap.
-2. **TARGET and CURRENT are separated, never blurred.** Tables and headings must not speak target-voice ("Freezes: wall #1, chains die") while the truth lives in a buried parenthetical. (Audit residue to clean: `ARCHITECTURE.md:73,79`, `README.md:107`, `WALL.md:11` — each now carries a pointer here.)
+2. **TARGET and CURRENT are separated, never blurred.** Tables and headings must not speak target-voice ("Freezes: wall #1, chains die") while the truth lives in a buried parenthetical. (Audit residue to clean: `ARCHITECTURE.md:73,79`, `README.md:107`, `PIPELINE.md` §5 (the Wall) — each now carries a pointer here.)
 3. **The vocabulary compiles to tests, or it's removed.** Per `OSM2STREETS-GROUNDING.md`, the field already had the *constructive* concepts (intersection polygon, trim distance, corner pair) the project kept circling under homemade outcome-nouns. Prefer the construction that reduces to a check over the noun that asserts a state.
 4. **One enforcement, both sides.** `sectionPass` closure guards the consumer; `buildCurb` closure (Check C) must guard the producer. A wall with only one side is a wall that leaks — which is exactly what happened.
 
@@ -573,7 +564,7 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 ## Cross-references
 - `PREBAKE.md §4.1`/`§5` — the curb-is-the-unfrozen-half SSOT; the L1/L2/L3 split.
 - `SKELETON.md §5f` — the skeleton-voiced statement of the same.
-- `WALL.md` — the Data Wall (consumer-side closure, the model to mirror on the producer).
+- `PIPELINE.md` §5 (the Wall) — the Data Wall (consumer-side closure, the model to mirror on the producer).
 - `SURVEY.md §5.1` — "Survey is not yet polygon-first" (the honest body the target-voice tables contradicted).
 - `BACKLOG.md` "(2b) Freeze the CURB geometry" — the parked program; D6a–d.
 - `HANDOFF-freeze-the-curb-in-the-first-bake.md` — the implementation brief.

@@ -3,7 +3,7 @@
 // WHY: the corpus quotes three similar-sized dead-end sets interchangeably —
 //   (a) "spurs missing a mouth corner"  (b) "legs running THROUGH the mouth"
 //   (c) "fold chains with no mouth disc"
-// POLYGON-FIRST §2.1 says (a) is SIX and that the widely-quoted 9 is (b); PIPELINE §Wall
+// POLYGON-FIRST §2.1 says (a) is SIX and that the widely-quoted 9 is (b); PIPELINE §5 (the Wall)
 // repeats that. The probe that produced the 6 (`stamp-mouth-audit.mjs`) was DELETED by
 // 7b5b87a3 and cannot be re-run. `coupler-slit-anatomy.mjs` — which CAN be re-run — puts
 // (a) at 9. This decomposes all three off the frozen artifact and reports the overlap, so

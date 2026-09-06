@@ -347,7 +347,7 @@ const MAX_FETCH_KM2 = 200
 // 7% of the 200 km² cap, a fifth of what Altadena already fetches.
 //
 // The real ceiling is not the cap — it's that `derive` processes the whole fetch
-// BEFORE clipping (`PIPELINE §pour`, still OPEN). Close that and this can grow.
+// BEFORE clipping (`PIPELINE steps 0–1 (Extent + intake)`, still OPEN). Close that and this can grow.
 const FETCH_MARGIN_M = 1000
 
 // Shoelace area of a closed x/z ring, in hectares — the one number that tells an

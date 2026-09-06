@@ -63,7 +63,7 @@ managed the absence rather than removed it.
   mouth-wrap snap displaces `run.poly` off the frozen ring by up to **6.24 m** (next largest 6.00,
   5.49); the remaining **13** sit exactly on the ring, slit and all. *Method: same probe;
   `distToRing(run.poly[i], tile.ring)` per fold, max per chain.* ⚠️ The **"up to 13 m"** figure still
-  quoted in `PIPELINE §Wall` is ~2× — it is used to argue the mask's size, so it matters.
+  quoted in `PIPELINE §5 (the Wall)` is ~2× — it is used to argue the mask's size, so it matters.
 - **D5 [OUR] ✅** Mouth discs cover **40 fold-chains**; **10 folds (9 distinct chains)** have none, so
   the snap cannot fire there. The 10-vs-9 is `waverly-place-1`, which caps twice in one tile. *Method:
   `scratch/claims-deadend-set-decomposition.mjs` — `_shapeArtifact[].mouths[].spurSkel` ∌ the fold's
@@ -101,7 +101,7 @@ managed the absence rather than removed it.
   park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
   waverly-place-1[start]`. *Method: `node scratch/claims-deadend-set-decomposition.mjs`, both sets
   derived from `mouthInfo()` over the same 50 folds; `A ∩ B = 9`, `A only = none`, `B only = none`.*
-  ⛔ `POLYGON-FIRST §2.1`, `PIPELINE §Wall`, `README` and `ROADMAP A0` all state these are **distinct
+  ⛔ `POLYGON-FIRST §2.1`, `PIPELINE §5 (the Wall)`, `README` and `ROADMAP A0` all state these are **distinct
   measurements yielding 6 and 9**. The **6** came from `stamp-mouth-audit.mjs`, which `7b5b87a3`
   **deleted** while its own commit message claimed the probes were kept — so 6 is unreproducible by
   the very rule that section states. **The reproducible number is 9, for both.**
@@ -276,6 +276,6 @@ Artifact key-censuses (C8, C11, S4, B4, D3) are one-liners over `src/data/ribbon
 
 *Written 2026-08-05 by Quill, fresh, from the Tier-2-corrected corpus on disk — `ORIENTATION` ·
 `README §START HERE` · `POLYGON-FIRST §2.1/§2/§5` · `SECTION §3/§4/§5/§6/§7` · `RIBBONS §1/§4/§6.4` ·
-`SURVEY §3/§4/§5/§6` · `PREBAKE §4/§4.1` · `WALL §2` · `PIPELINE §Wall` · `ROADMAP A0/A01/A03/A06/A07/A7/A8` ·
+`SURVEY §3/§4/§5/§6` · `PREBAKE §4/§4.1` · `WALL §2` · `PIPELINE §5 (the Wall)` · `ROADMAP A0/A01/A03/A06/A07/A7/A8` ·
 `scratch/doc-sweep-tier-2-report.md`. The frozen whole-pipeline baseline it replaces:
 `cartograph/_archive/PIPELINE-CLAIMS-full-manifest-2026-08-02.md` (⛔ drift-diff only, never cited as true).*

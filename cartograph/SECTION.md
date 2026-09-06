@@ -2,22 +2,15 @@
 
 **The third tool — the ped **FILL**. Section reads the **frozen Survey SHAPE** (the hardscape silhouette) and strokes the pedestrian cross-section **inward** off it: treelawn, sidewalk, the ribbon corner fills, the ADA pad, the dead-end cap wraps. It is the first **consumer** past the Data Wall.** This is its single-source-of-truth reference: what it is, the document it reads, how it builds, the authoring panel it powers, what stays live versus frozen, and where it is today.
 
-> **Status: v0.4 (2026-06-10).** Most of Section is built: the per-edge FILL (`resolvePedDepths` → `sectionPass`), the **mono-width strip swap** (two equal strips; sidewalk-only = "sidewalk then lawn", never collapse), the dead-end caps built into the curb offset (D6a, `[[project_d6a_curb_offset]]`), the live material + depth overrides, the handles riding the achieved curb, **two handles always** (`sideBoundaries`), the **freeze-on-Survey-exit** (the wall auto-saves the SHAPE; no manual sub-bake — `WALL.md §4`), and the **Revert to Default** UI (`[[project_revert_buttons]]`). ✅ **The CORNER construction LANDED** (2026-06-10) — the bent SECTOR off the frozen fillet, EXACT tangent-trimmed legs, street-edge always concrete (ADA), a **concentric arc at the shallow depth with the set-back walk sliding to the curb on its leg** (Idea A). Full construction + a **"how to change the corners" guide** in §6. Verified neighborhood-wide on the lit app. Open tail (T-junctions, SW↔SW residuals) in §7. **Grounded in code** (`src/lib/tileGround.js`; `MeasurePanel.jsx`/`MeasureOverlay.jsx`). Reference-kind. The pre-build forensic census is **archived** (`_archive/`); its open-tail is folded into §7. Today's tool is still labelled **"Measure"** (the rename rides T3).
+> **Status: v0.4 (2026-06-10).** Most of Section is built: the per-edge FILL (`resolvePedDepths` → `sectionPass`), the **mono-width strip swap** (two equal strips; sidewalk-only = "sidewalk then lawn", never collapse), the dead-end caps built into the curb offset (D6a, `[[project_d6a_curb_offset]]`), the live material + depth overrides, the handles riding the achieved curb, **two handles always** (`sideBoundaries`), the **freeze-on-Survey-exit** (the wall auto-saves the SHAPE; no manual sub-bake — `PIPELINE.md` §5 (the Wall)), and the **Revert to Default** UI (`[[project_revert_buttons]]`). ✅ **The CORNER construction LANDED** (2026-06-10) — the bent SECTOR off the frozen fillet, EXACT tangent-trimmed legs, street-edge always concrete (ADA), a **concentric arc at the shallow depth with the set-back walk sliding to the curb on its leg** (Idea A). Full construction + a **"how to change the corners" guide** in §6. Verified neighborhood-wide on the lit app. Open tail (T-junctions, SW↔SW residuals) in §7. **Grounded in code** (`src/lib/tileGround.js`; `MeasurePanel.jsx`/`MeasureOverlay.jsx`). Reference-kind. The pre-build forensic census is **archived** (`_archive/`); its open-tail is folded into §7. Today's tool is still labelled **"Measure"** (the rename rides T3).
 
 ---
 
-## 0. What Section is
-
-Section takes Survey's **frozen hardscape silhouette** — the curb edge (`iA`) and its corner shape — and authors the **pedestrian profile** on top of it: the strips between the curb and the property line, the way the ribbon bends around a corner, the ADA ramp pad, the treelawn wrap on a round dead-end. Four load-bearing facts:
-
-- **Section = FILL; Survey = SHAPE.** Survey owns the asphalt/curb silhouette + the corner *radius*; Section owns the treelawn/sidewalk depths, the corner *fills*, the ADA pads, the cap wraps, and the strip materials. (`ARCHITECTURE §2.1`, `SURVEY §0`.)
-- **It strokes INWARD off a FROZEN edge.** Survey strokes the chains *outward* into the curb line and freezes it; Section offsets *inward* from that frozen `iA`. It never touches a chain — **that is the whole point of the Wall** (`WALL.md`).
-- **⭐ Always populate best-effort, then override.** Every edge gets a sane default with *no operator action* (§3.1); authoring is purely *override* on top — toggle a treelawn, tune a depth, ctrl-click-swap a strip (§3.2). The operator never starts from blank; they correct.
-- **∴ FILL authoring is live and cheap.** Because the heavy thing (the silhouette) is frozen, an override only re-strokes the interior — it must **not** recompute the outline. *"Section strokes a frozen edge, so ped-width drags are live and cheap"* (`HANDOFF-tile-T3-authoring.md §18`). This responsiveness is the **reason** the silhouette is frozen (§4).
-
-It is the third of the three tools — **Survey · Section · Stage** — and the **first pure consumer**: past the Wall, it reads the frozen shape and never derives geometry from chains.
-
----
+> ⛔ **THE NARRATIVE LIVES IN `PIPELINE.md` — read it first.** This doc holds **detail only**:
+> the mechanism, the schema, the open defect. **What Section is FOR** is now said once, in `PIPELINE.md` step 6 — including the seam test.
+> *(The "what this stage is" opening that used to sit here was excised 2026-09-06 in the narrative
+> scrub — one storyline, one home. Text preserved verbatim in
+> `_archive/stage-doc-openings-2026-09-06.md`.)*
 
 ## 1. The vocabulary — what Section names
 
@@ -51,7 +44,7 @@ Intake → Skeleton → Prebake → Survey → ⟦DATA WALL⟧ → ⟦ SECTION �
 
 **Built by** `src/lib/tileGround.js`:
 - **`sectionPass(shapeTiles, cw, stripMat, blockCustoms)`** — the FILL construction (the chain-free wall; §3). `blockCustoms` is the **override** input — design intent keyed by the *frozen* run identity, never chain geometry (§3.2).
-- **`sectionOpen(shapeTiles, cw, stripMat, stencil, blockCustoms)`** — the open-side mate (Wall Phase-D, `ef460d1`): composes block/curb/asphalt off the frozen `iA` + the FILL via `sectionPass`, with **no chain handle** (`WALL.md §4`).
+- **`sectionOpen(shapeTiles, cw, stripMat, stencil, blockCustoms)`** — the open-side mate (Wall Phase-D, `ef460d1`): composes block/curb/asphalt off the frozen `iA` + the FILL via `sectionPass`, with **no chain handle** (`PIPELINE.md` §5 (the Wall)).
 
 The product of all assets, artifacts, and bakes — Survey's SHAPE, Section's FILL, Stage's LOOK — is the **Slab** (`[[project_two_bakes_two_walls]]`).
 
@@ -213,7 +206,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **The cap is a COUPLER, not a corner.** Its two shoulders are corners in the **lane-switch** sense, not the bending sense — *"a point on both sides of the ribbon to create the slope if necessary."*
 - **Width is germane, not just parity.** The coupler meets a sidewalk and a treelawn at each end and *"starts and ends with possibly different widths"* — so the shoulder transition tapers **depth** as well as crossing the strips. It fires **only on a real difference** (arrangement or width), so an inherited cap has none and uniform caps stay byte-identical.
 - ⚠️ **A road may be authored with different `pavementHW` per side** (Nicholson Place = left 2.50 m, right 6.70 m). Any dead-end detector keyed on "both shoulders at the same radius" is wrong by construction — grow by the radius **jump** and confirm with a **signed** ~180° sweep.
-- ⛔ **The MOUTH is a different layer — and it is a CO-CLAIM, not a gap** (classified 2026-07-22, `scratch/cap-mouth-classify.mjs`). The spur collapses to a zero-width slit in the face walk; measured, the mouth is **0 m² unclaimed** and **~15 m²/mouth claimed by TWO layers at once**. So it is an **identity** defect, not a missing-fill one — which is why the junction-band cannot gate it and why `mouths` (a FILL-layer patch over the slit) is the wrong shape of cure. ⛔ **Do not FILL-patch it** (that class was tried and reverted — `THROAT-JUNCTION-FINDINGS.md`). It belongs to the junction-construction class (61 of 152 LS junctions fragment) and its brief was ARCHIVED 2026-07-30 (`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`) — live doctrine now in `POLYGON-FIRST.md` + `PIPELINE.md §Wall` — *the polygon must ask the stamp*, i.e. carry node identity onto the emitted face so the FILL **reads** ownership instead of negotiating it. *(`BRIEF-dead-end-mouth-junction.md` §3 survives as the evidence appendix; its §4 fix direction is superseded.)* ⚠️ **Waverly is NOT this class** — loop×loop (E2/E3); the mouth fix will not touch it.
+- ⛔ **The MOUTH is a different layer — and it is a CO-CLAIM, not a gap** (classified 2026-07-22, `scratch/cap-mouth-classify.mjs`). The spur collapses to a zero-width slit in the face walk; measured, the mouth is **0 m² unclaimed** and **~15 m²/mouth claimed by TWO layers at once**. So it is an **identity** defect, not a missing-fill one — which is why the junction-band cannot gate it and why `mouths` (a FILL-layer patch over the slit) is the wrong shape of cure. ⛔ **Do not FILL-patch it** (that class was tried and reverted — `THROAT-JUNCTION-FINDINGS.md`). It belongs to the junction-construction class (61 of 152 LS junctions fragment) and its brief was ARCHIVED 2026-07-30 (`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`) — live doctrine now in `POLYGON-FIRST.md` + `PIPELINE.md §5 (the Wall)` — *the polygon must ask the stamp*, i.e. carry node identity onto the emitted face so the FILL **reads** ownership instead of negotiating it. *(`BRIEF-dead-end-mouth-junction.md` §3 survives as the evidence appendix; its §4 fix direction is superseded.)* ⚠️ **Waverly is NOT this class** — loop×loop (E2/E3); the mouth fix will not touch it.
 
 *Also fixed in that pass, upstream of the FILL: `tileGround.js:3216` wrote each ring edge's asphalt depth under BOTH directed keys, so on a zero-width slit the second leg clobbered the first and **22 of 48** dead-end chains drew at one side's width. Directed keys now keep the two legs distinct.*
 
@@ -469,9 +462,9 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
 ## Cross-references
 - `RIBBONS.md §1` — **the four invariants + "ribbon monowidth, strips variable" (the model §3.3 builds to)** · `§3.4` (the FILL pointer) · `§4` (the corner, by home). *(The V1 figure-ground corner resolution is archived: `_archive/RIBBONS-figureground-emitter-2026-06-15.md`.)*
 - `SURVEY.md` — the SHAPE tool whose frozen `iA` Section strokes off.
-- `WALL.md` — the freeze between them; `§4` the Phase-D mechanism.
+- `PIPELINE.md` §5 (the Wall) — the freeze between them; `§4` the Phase-D mechanism.
 - `_archive/SECTION-CENSUS-2026-06-03.md` — the **pre-build forensic census** (Stratum): the inventory, wall audit, and SHAPE/FILL defect frame that proved Section was a wiring job. Did its job; its enduring open-tail + diagnostic frame are folded into §7. Archived 2026-06-10.
 - `ARCHITECTURE.md §2.1` — the three tools; the two-corners distinction.
-- `PIPELINE.md §section` — the execution spine.
+- `PIPELINE.md step 6 (Section)` — the execution spine.
 - `src/lib/tileGround.js` — `sectionPass` (the wall + per-edge override), `resolvePedDepths` (the one depth truth), `sectionOpen` (open-side), `buildTileGround` (host); `MeasurePanel.jsx` / `MeasureOverlay.jsx` (the controls + revert gestures); `stores/useCartographStore.js` (`revertSectionToDefault`, `revertFeSectionToDefault`).
 - Memory: `[[project_ribbon_corner_uniform_width]]`, `[[project_two_bakes_two_walls]]`, `[[project_d6a_curb_offset]]`, `[[project_revert_buttons]]`, `[[feedback_survey_polygon_not_ribbon_concepts]]`.

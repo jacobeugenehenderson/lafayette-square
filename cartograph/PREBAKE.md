@@ -6,16 +6,11 @@
 
 ---
 
-## 0. What prebake is
-
-Prebake takes the frozen `skeleton.json` (+ raw OSM + operator overlay) and compiles it into **`ribbons.json`** — the single geometry document the Survey tool authors against and the live 2D view renders from. *"The First Bake."*
-
-Two facts, both load-bearing for the program:
-
-- **Today it is a thin, two-source compile.** It freezes street **chains** (from the skeleton) *and* parcel **faces** (polygonized from **raw OSM**, used only for land-use color) into one file. The real block-shape polygon is **not** produced here — Survey re-derives it from the chains on every build (§4).
-- **This is where the Data Wall belongs — for correctness *and* perf.** "Polygon-first" means the chain→polygon conversion happens **once, in prebake**, and the polygon substrate is **frozen** here. Correctness: Survey receives polygons, so the false corner can't be re-born (`SURVEY.md §5.1`). Perf: Survey stops re-deriving the whole map every edit, so live authoring can recompute **only the activated blocks** (`SURVEY.md §4.1`). Elevating prebake from *compile* to *polygon-ization* **is** the wall-move.
-
----
+> ⛔ **THE NARRATIVE LIVES IN `PIPELINE.md` — read it first.** This doc holds **detail only**:
+> the mechanism, the schema, the open defect. **What prebake is FOR** is now said once, in `PIPELINE.md` step 3 (and the block-substrate question in step 3a).
+> *(The "what this stage is" opening that used to sit here was excised 2026-09-06 in the narrative
+> scrub — one storyline, one home. Text preserved verbatim in
+> `_archive/stage-doc-openings-2026-09-06.md`.)*
 
 ## 1. The artifact chain — where prebake sits
 
@@ -226,7 +221,7 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 
 ### 4.1 ⭐⭐ What is frozen, and what is not — CONSUMER done, PRODUCER open
 
-**Verified in code 2026-07-31. SSOT: `WALL.md §2`.**
+**Verified in code 2026-07-31. SSOT: `PIPELINE.md` §5 (the Wall).**
 
 - ✅ **Consumer — done.** Every non-Survey view (Section/Measure **and** the neutral Design view) renders from the frozen `shape.json`: frozen `iA` on **93/101** LS tiles plus per-run curb polylines with measures. `sectionOpen` has no chain in lexical scope and cannot re-derive. Race-guarded twice (`72bbc989`, `59e5f109`).
 - ✅ **Survey strokes live — **not a WALL violation** — Survey is the tool that *edits* the SHAPE, so re-stroking the edited element is the requirement. ⚠️ **But that is not a blessing of the current implementation:** today every edit re-strokes the **WHOLE MAP**, and the standing requirement is fluid asymmetric editing of a **single polygon** — nothing that retraces the whole map at 60fps works (`ORIENTATION` §the-chain, the condensation principle). The whole-map scope is a known perf defect (D6c / the block-local loop), just not a wall one.
@@ -269,7 +264,7 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 ## Cross-references
 - `SKELETON.md` — the frame prebake consumes.
 - `SURVEY.md §5.1` (polygon-first) + `§4.1` (the activated-block editing/perf model) — this doc is where that cure is built.
-- `PIPELINE.md §prebake` + `§Wall` + `P3` — the execution spine.
+- `PIPELINE.md step 3 (prebake)` + `§Wall` + `P3` — the execution spine.
 - `OSM-FORENSICS-EVAL.md` — the two-source seam + the Layer-2 (faces-on-frame) cleanup, in detail.
 - `src/lib/tileGround.js` — the downstream consumer that today re-derives the polygon.
 - `pipeline.js` (the boundary clip, §2.5) · `bake-buildings.js` (the belt-and-suspenders building cull) · `neighborhood_boundary.json` (the gate — center/radius disc).

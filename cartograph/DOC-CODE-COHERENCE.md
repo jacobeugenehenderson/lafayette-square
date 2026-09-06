@@ -16,6 +16,316 @@
 
 **Status legend:** 🔎 identified · 📝 brief-drafted · ✅ excised+synced · ⚠️ re-verify before trusting.
 
+> ⭐ **Mapping to `CLAUDE.md`'s three causes**, because both vocabularies are live and they are the same
+> three things: **corpse-lie ≈ ROT** (evict) · **landmine ≈ REGRESSION or an undocumented truth** (fix or
+> document) · **aspiration = ASPIRATION** (⛔ neither evict nor "correct" — surface it as work).
+
+---
+
+## ⭐⭐⭐ The 2026-09-06 progression survey — nodes and chains → the drawn surface
+
+**Commissioned by Jacob:** *"We have a huge corpus of docs, and I think that's the problem. The agents
+self-confuse. The technical issues frequently expose themselves when you just drop the jargon and say
+logically what we're trying to do."* The scrub produced the rewritten `PIPELINE.md`; this is the
+divergence half — **where we are off, and on which side.**
+
+⛔ **Scope:** the eight docs that describe the progression — `SKELETON` · `PREBAKE` · `SURVEY` ·
+`SECTION` · `RIBBONS` · `POLYGON-FIRST` · `PIPELINE` · the retired `WALL`. Docs-only pass; **no code was
+changed** beyond repointing doc citations inside comments.
+
+### S0 · The finding that contains all the others — 445 KB of one storyline
+
+Measured before touching anything:
+▶ `wc -c cartograph/{SKELETON,RIBBONS,POLYGON-FIRST,SECTION,PIPELINE,PREBAKE,SURVEY}.md`
+
+**Eight docs, 445 KB, one progression.** Every one of them opened by re-explaining what its stage *is*.
+⭐ **The re-explanations are where they contradicted each other; the deep detail below them mostly did
+not.** That is the whole diagnosis, and it is why the cure was to say the narrative **once** and leave
+detail where it was, rather than to rewrite eight docs.
+
+**Done:** the six openings excised to `_archive/stage-doc-openings-2026-09-06.md`, `WALL.md` folded
+whole into `PIPELINE.md` (`_archive/WALL-2026-09-06.md`), each doc now carrying one pointer up.
+✅ Type: **rot, structural.**
+
+---
+
+### S1 · 🔎 **CORPSE-LIE, and it is a whole class: the code citations do not resolve**
+
+**51 of 99 `file.js:NNN` citations in those eight docs point at something else.** 13 verify; 35 name no
+symbol at all and cannot be checked. *(Measured before the scrub, `WALL.md` still in the set.)*
+▶ `node scratch/claims-doc-code-citations.mjs` *(new, 2026-09-06 — it READS the source, so it cannot go
+stale; `SHOW_OK=1` shows the passes, `--window=N` widens the tolerance)*
+⛔ **Re-run it; don't quote the figure.** The class is the finding, not the count.
+
+⭐ **The check can only prove staleness, never freshness.** A pass means "a symbol named on the doc line
+appears near the cited line." Its first version *passed* `BlockGeometryV2Debug.jsx:562` on the word
+"shape" when the thing it is cited for lives at `:638` — **the instrument's own false positive, found by
+inspecting its output rather than its summary.**
+
+**Why this is the corpus's most expensive defect and not a tidiness issue:** an agent routes correctly,
+follows the citation the canon gives it, lands in an unrelated comment 2,000 lines away, concludes the
+canon is stale, and **re-derives from grep** — which is precisely the failure `CLAUDE.md` step 2 exists
+to prevent. The gate holds and the pointer breaks.
+
+**Worse — 14 citations point at sections that never existed.** `WALL.md §31` is cited **13 times**,
+including by the previous `PIPELINE.md` as *"the accurate SSOT"* and by `README.md` as *"Accurate
+SSOT"*; `WALL.md §5b` once, from a code comment. **`WALL.md` had sections 0–6.** A phantom section
+cited as the authority is the purest form of this disease: **it cannot be checked, so it is believed.**
+
+**Fix, and it is a method not a sweep:** `PIPELINE.md` now cites **symbols, not line numbers** — `grep -n`
+is one keystroke and never rots. ⛔ **A line number reintroduced into a canonical doc is a regression.**
+Run the check when you touch one. *(The 51 in the other seven docs are **not** repaired — repairing them
+by hand re-creates the same rot on the next refactor. The right cure is to stop citing lines.)*
+
+---
+
+### S2 · ✅ **CORPSE-LIE, doc side, and it cost a day: the Wall's display gate**
+
+`WALL.md:30` said the frozen artifact is what Survey/Design shows *"when no element is active"* — an
+**idle-display** reading.
+
+The code gates on **which tool is selected**: `sectionFrozen = !surveyActive && !!frozenShape`, and
+`surveyActive` is `tool === 'surveyor' && inDesigner`. ⇒ **With the Survey tool selected at all — idle,
+nothing picked, hands off — the frozen artifact is bypassed.**
+
+⭐⭐ **And the correct sentence was two lines above the wrong one, in the code's own comment:** *"Frozen
+whenever NOT surveying (Measure + neutral Design)."* **This was never drift. The code said it right and
+nobody propagated it.**
+
+**Cost:** an agent, reasoning from the doc, told Jacob to reload Survey to see a producer change that
+**structurally could not appear there**. He did. Nothing changed. ✅ **Excised** — the claim is gone with
+`WALL.md`, and `PIPELINE.md §5` does not repeat it.
+
+> ⛔⛔ **AND THE FRAMING THAT GREW OUT OF IT IS THE MORE DANGEROUS HALF.** The same agent then wrote
+> *"Survey never reads the frozen artifact; it live-builds from the chains, always"* and used it to
+> explain why its work was invisible. **Jacob's correction: the axis is CHAINS vs ①, not frozen vs
+> live.** ① is frozen into `ribbons.json`, which the live build already loads — so a live build can build
+> **from ①**, and the frozen/live distinction is beside the point. ⭐ **Stating the gate as a constraint
+> turned a defect into an excuse.** Carried into `PIPELINE.md §3a` as a standing warning.
+
+---
+
+### S3 · ⛔ **ASPIRATION — and this is the one a naïve sweep would have deleted**
+
+Two answers to *"what is a block"* are alive in the corpus at once, and **both are correct sentences**:
+
+- **Shipped:** a block is a **face of the centerline graph**. Stated as load-bearing fact #1 in the
+  previous `PIPELINE.md step 3a (what a block is)`. True of the code.
+- **Ruled 2026-08-12:** the substrate is a **punch-out** — blocks are the holes in one closed compound
+  path (`RIBBONS §1`). Built, minted, frozen into `ribbons.json` as `protopolygon`, **and producing
+  nothing that ships**: an overlay behind `?grout=1` in the app, an env flag in the bake.
+
+⛔ **Neither doc was wrong. What was missing was any sentence saying these are two different answers and
+which one is on.** A conformance pass that "brought the docs into line with the code" would have deleted
+the ruling as rot — which is exactly `CLAUDE.md`'s named failure mode for this kind of work.
+
+✅ **Fixed by naming it rather than resolving it:** `PIPELINE.md` **step 3a** is a step of its own, whose
+job is to hold both and say which ships. ⛔ **Do not collapse it.**
+
+**Why the ruling exists — the evidence, not the preference:** a graph face **cannot close around a
+dead end**; the walk goes out and back over the same vertices, so **all 50 dead-end tips are zero-width
+slits**, and 40 only look right because a later cosmetic step displaces the drawn edge off the ring by
+up to 13 m. ⭐ `detectTileCaps` is **a slit detector wearing a cap detector's name** — its criterion is
+literally *"the ring doubled back here"* — and that registry was used for months as a source of
+identity.
+
+---
+
+### S4 · 🔎 **CORPSE-LIE, doc side: "the curb is a concentric offset, parallel everywhere"**
+
+Printed as load-bearing fact #2 in the previous `PIPELINE.md step 3a (what a block is)`, with no mention of the carve.
+`ORIENTATION.md` and `POLYGON-FIRST §1` have carried the corrected version since A07: **the curb has two
+producers**, and the carved share **varies by town** — 59 of 101 offset in the first town, 19 of 77 in
+another — **so no single scene reveals the split.**
+
+**Consequence:** a reader who believes the headline debugs a carved block with reasoning that cannot
+apply to it. ✅ **Fixed** — `PIPELINE.md §6` now carries the two-producer rule and the instruction to
+**read the `producer` stamp before reasoning about a curb.**
+
+---
+
+### S5 · ⚠️ **OPEN, correctly documented, and quoted anyway: Check A is blind in both Layer-0 modes**
+
+`litmus-curb-parallel.mjs` passes **`blockCustoms: null`** — it runs with **authoring switched off** — so
+it scores the operator's own authored widths as defects (one avenue's authored 8.70 m read as a "3.13 m
+bow"). And it **silently skips a block with no curb ring at all**, printing *"this block has no curb"*
+as a modest bow. **A fallback inside the detector, which is the one place it must never be.**
+
+**⚠️ Re-verified in the code 2026-09-06: both still present, at the lines `CLAUDE.md` names.** This is
+**not** a doc↔code divergence — the docs describe it accurately. It is on this ledger because **its
+aggregate is still quoted as evidence**, and a number from a blind instrument is worse than no number.
+⛔ Until it runs **with** the scene's authoring and reports an absent ring as its own loud failure class,
+**Check A's aggregate is not evidence of anything.**
+
+---
+
+### S6 · 🔎 **LANDMINE — a truth that existed only in one agent's measurement, on the day it was taken**
+
+**The centerline the operator SEES is not the line ① is built from.** `ribbons.streets[].points` versus
+the simplified skeleton: **median 1.00 m apart, p90 7.50 m, max 20.8 m — 4,781 of 9,547 points more than
+a meter off.** ⇒ **The curb is a perfect offset of a line nobody can see** (② is parallel to ① at the
+authored width on 101/101 blocks, max error 0.00 m — `scratch/claims-proto-curb-is-parallel.mjs`).
+
+Also landmined, same day: **the authored corner radius is not built** on the ① path. It belongs in the
+node's bezier handles; a rounding pass was written, grew four guards each propping up the last, and was
+excised. On that path, corners are sharp.
+
+✅ **Documented** in `PIPELINE.md §3a`. ⛔ Neither is a defect *in the docs* — they are live work, and the
+defect was that the docs did not know about them.
+
+---
+
+### S7 · ⭐⭐⭐ **THE STRUCTURAL FAULT, diagnosed from outside: the corpus is strong on RULINGS and weak on HOW TO MEASURE**
+
+An agent arrives, finds a ruling with no instrument attached, **invents an instrument, and the instrument
+is where the errors live.**
+
+**Evidence, one agent, one day, seven findings — every one a measurement error wearing a defect's
+clothes:** a copied-sign `signedArea` · gross `|area|` over an annulus · area-over-perimeter on an
+annulus outer ring · outer-minus-holes on a pooled band · a compound-path SVG renderer painting holes
+solid · centroid block-assignment (which `RIBBONS §1`'s own reconcile gate documents as misfiling
+non-convex islands) · nearest-segment instead of perpendicular-to-line. **Every one produced a plausible
+number.** ⭐ **And this scrub reproduced the failure in miniature** — S1's own instrument passed a
+citation on the word "shape."
+
+**Scale of the invention:** `ls scratch/*.mjs | wc -l` → **664**. The answer is almost never the 665th.
+
+> ### ⭐⭐⭐ AND HERE IS THE SHAPE OF IT, WHICH IS WORTH MORE THAN THE LIST
+> **The recurring failure is not *"the measurement was wrong."* It is *"the measurement answered a
+> different question than the one asked — and nothing in the number says so."*** *(The agent's own
+> formulation, offered against itself.)*
+>
+> ⛔ That is why these survive review: a wrong number looks wrong, and **a number answering the wrong
+> question looks exactly like the right answer.** Gross `|area|` over an annulus is a perfectly good
+> area — of the wrong region. `Object.keys(tiles[0])` is a perfectly good field list — of one block.
+> **The eighth instance that day was sampling one and reporting the population**, and it reached this
+> very survey (S9).
+>
+> ▶ **The move: before trusting a number, say out loud what question it answers, and check that against
+> the question you asked.** ⭐ And prefer an instrument that fails loudly on the wrong region — that is
+> the same Law-2 discipline as `--proto`'s throw-and-refuse, applied to measurement.
+
+✅ **Fixed structurally, not by exhortation:** every stage in `PIPELINE.md` now carries a **"how you would
+tell it was wrong"** line **naming an existing instrument**. ⛔ **A ruling without an instrument is half a
+ruling** — when you land one, land the check with it.
+
+⭐ **And the sharpest one is free:** *a seam between two bands is not constructible* — tree-lawn and
+sidewalk are offsets of one contour. **So a visible seam is a real defect, at a glance, with no probe at
+all.** ⭐⭐ **The unit is the BLOCK** (`scratch/draw-one-block.mjs --street NAME`). Every whole-map total
+used during this arc hid a localised defect: a mean over 101 blocks cannot tell you one of them is inside
+out.
+
+---
+
+### S8 · 🔎 **The disease under S1–S4: the same truth stated in five places, in five scopes**
+
+The wall's producer/consumer split was stated in `WALL`, `PIPELINE`, `PREBAKE`, `POLYGON-FIRST`, `BAKE`,
+`SKELETON`, `SURVEY`, `BACKLOG` and `README` — each with its own precision-fix banner stacked on top of
+its own earlier wording. **That is how the overgeneralisation *"prebake is authoring-blind"* entered
+circulation**, when the accurate statement is narrower and load-bearing: prebake **does** read the
+street-keyed overlay and **does not** read `design.json`/`blockCustoms`.
+
+⛔ **A correction banner sitting next to the sentence it corrects is the anti-pattern** — the false
+sentence outlives its correction because it is shorter and reached first. ✅ Partially cured: the wall is
+now stated **once**, in `PIPELINE.md §5`, and eight files point at it. **Still owed:** the same
+consolidation for the producer/Check-C language in `BAKE` · `BACKLOG` · `README`, which still carry their
+own paraphrases.
+
+---
+
+### S9 · ⚠️ **Two errors this survey itself introduced, caught by review within the hour**
+
+Recorded because S7's whole point is that plausible-looking statements are the failure mode, and a
+survey that hid its own would be arguing against itself.
+
+- ⛔ **"① is a drawn overlay behind `?grout=1`" — wrong object.** `?grout=1` strokes each chain at the
+  **authored half-width** and unites them: offset-then-polygonize, the old order. **It builds the curb,
+  not the protopolygon** (`RIBBONS §1` says so explicitly). Two constructions sharing a block of code and
+  a nearly-identical flag name — `grout: true` from the URL versus `grout: 'proto'` from the bake. The
+  true statement is stronger: **① has no app surface at all.**
+- ⛔ **"behind an environment flag" — it is a CLI flag**, `--proto` on `bake-ground.js`, read from argv.
+  This codebase gates on argv rather than `process.env` on purpose. **"Environment flag" sends a reader
+  hunting for something that does not exist — the same class of error as `WALL.md §31`.**
+
+✅ Both corrected in `PIPELINE.md §3a`, verified in the code before the edit.
+
+**And three more, from the other side of the same conversation — logged here at that agent's own
+request, because a survey that records its author's errors and not its sources' is only half honest:**
+
+- ⛔ **"a real frozen tile carries 17 fields" — read off `tiles[0]` and reported as the contract.** The
+  union across all 101 LS tiles is **20**, and — the fact that actually matters — **only 14 are on every
+  tile; 6 are optional** (`iaEdge`, `iaEdgeReason`, `isMedian`, `med`, `mouths`, `producerReason`).
+  ⭐ **The contract is a union with optional members, which is a materially different thing to plan
+  against than a fixed list.** Neither 17 nor 20 is the useful answer; the *shape* is.
+- ⛔ **"the proto tile carries 5 fields" — there are TWO proto-side tile objects and the sentence named
+  neither.** `tilesFromProto` returns `{ring, edges}` and is called by **nothing** in `src/`;
+  `protoShapeTiles` — what `--proto` actually freezes — carries five. Both counts were right about
+  different objects. **The defect was the ambiguity, not the arithmetic.**
+- ⭐ **Both are the eighth and ninth instances of one error in a single day: sample one, report the
+  population.** That is the evidence for S7's second sentence above, and it is why that sentence is
+  phrased as *answering a different question* rather than as *being wrong*.
+
+⭐⭐⭐ **AND THE RESOLUTION IS THE BEST ILLUSTRATION OF S7 IN THIS WHOLE SURVEY.** Four counts were
+produced across two sessions — **17, 20, 5, 2** — and **every one was a correct count of something.**
+The question none of them answered, and the only one worth asking, is: **how many REQUIRED fields does
+the proto tile fail to supply?**
+
+**Answer: it satisfies 3 of the 14 required fields** (`ring`, `iA`, `producer`); `producerReason` is
+optional and `bands` is an addition. **The eleven unsupplied are `vertR` · `tl` · `sw` · `lu` ·
+`roundTips` · `bluntTips` · `roundTipKeys` · `runs` · `bandJoin` · `cap` · `fillets`.**
+
+⛔ **And even that is not a to-do list.** `bands` ships the FILL **already painted** — a deliberate
+change of model, not an omission — so some of the eleven may want **explicit refusal** rather than
+supply. **Which must be produced and which refused is the open design question**, and it is the actual
+content of "switch ① on."
+
+⭐ **Only the required/optional split made the right question askable.** That is the whole finding: the
+counts were not wrong, the question was — and *nothing in any of the four numbers said so.*
+
+▶ Derive it, both sides, and don't sample one block — the one-liner is in `PIPELINE.md §3a`.
+
+---
+
+### S10 · ⭐⭐⭐ **THE REGIME CENSUS — 10 places where two representations of the same thing coexist**
+
+**Jacob, 2026-09-06:** *"I find it hard to believe we have so many 'regimes' layered in there (but
+'disconnected') and none of them are causing trouble."* He is right, and the mechanism of harm is now
+named: **they do not crash anything — they make measurement uninterpretable.** Nothing errors, the map
+renders, and you cannot tell whether it is correct. `SKELETON §0.1` on the two partitions: **"Both
+render. Neither can be seen to be wrong."**
+
+▶ `node scratch/claims-regime-census.mjs [scene]` — reads the artifacts and the source, so it cannot go
+stale. **Runs unchanged on a second town** (kit-level, not an LS instance patch). ⛔ **Re-run it; do not
+quote its figures here** — that is what let four "9 of 50"s circulate.
+
+**The ten, by subject:** the geometry of a street · the partition into blocks · the producer of the curb
+· the tile object · who paints the pavement · where a corner comes from · what closes a dead end · what
+bounds the map · where authoring lives · which path draws the map.
+
+⭐⭐ **The single most useful column is "which one SHIPS."** In every row but three, one representation
+is live and the other is correct-but-unwired. That is the shape of the debt: **not dead code — live
+compensations for a defect one layer upstream.** No linter finds them; they present as features.
+
+⛔ **Two rows the census itself got wrong on the first run, both fixed and both commented in the
+script** — and both are S7 again: the boundary row looked for rim edges in `shape.json`'s runs, found
+none, and printed **0** against a doc saying **31**. *Both were right:* the rim edge is in the frozen
+**topology** and **absent from the frozen shape**. ⭐ **That gap is itself a finding** — the rim is an
+edge of the drawing upstream and invisible downstream, which is the *"the rim is never an absence"*
+doctrine failing at an artifact boundary. And the tile-object row took **four attempts** (0 → 4 → 6 →
+5): a truncating window, then a missing shorthand property, then a comment read as a field. **Each was
+a good count of the wrong thing, produced by the instrument built to find exactly that.**
+
+---
+
+### What this survey did NOT do
+
+- ⛔ **No code changed.** The only edits inside `src/` and `cartograph/*.js` were **doc pointers in
+  comments** that would otherwise have become dead links to the retired `WALL.md`.
+- ⛔ **The 51 stale citations in the other seven docs are not repaired** (S1 — repairing them by hand
+  re-creates the rot; the cure is to stop citing lines).
+- ⛔ **S3 is not resolved, deliberately.** Which substrate ships is a decision about where the project is
+  going, and it is Jacob's.
+
 ---
 
 ## ⭐ Landed-claim forensic (2026-06-13) — code-landed ≠ done ≠ eye-verified
@@ -64,9 +374,9 @@ Triggered by Jacob: *"we can't take the BACKLOG's word for it; we need a forensi
 | # | Corpse-lie (doc) | Locus | Status |
 |---|---|---|---|
 | D1 | Body describes dead figure-ground as the primary construction | `RIBBONS.md` §1 / §3.1-3.8 / §6 / §7 | 🔎 |
-| D2 | prong-4 "skeleton-consolidation / `osm2streets`" red herring for the false corner | `BACKLOG.md` ✅ (reshaped 2026-06-05) · `PIPELINE.md §Wall` 🔎 | 🔎 partial |
+| D2 | prong-4 "skeleton-consolidation / `osm2streets`" red herring for the false corner | `BACKLOG.md` ✅ (reshaped 2026-06-05) · `PIPELINE.md §5 (the Wall)` 🔎 | 🔎 partial |
 | D3 | figure-ground-as-live passages (`cornersAtIx` / "V2 curb" / treelawn-LU) | `FEATURES.md` | ✅ **RESOLVED 2026-06-14** — the figure-ground passages were **removed** from FEATURES in the purification (FEATURES is now the pure pitch; the engineer/figure-ground content → `ARCHITECTURE.md §8` or git history). The treelawn-matches-abutting-LU *behaviour* survives where still true; the figure-ground *plumbing* prose is gone. (The doc-side T4 code deletion of `buildBlockGeometryV2`/`cornersAtIx` is still pending — separate from this doc cleanup.) |
-| D4 | `SURVEY.md` cross-ref still lists the killed `HANDOFF-divided-false-corner.md` as open work | `SURVEY.md` §Cross-references | ✅ fixed 2026-06-05 |
+| D4 | ✅ **FIXED 2026-09-06** — was: `SURVEY.md`/`SKELETON.md` cited the killed `HANDOFF-divided-false-corner.md`, a dead pointer since June; repointed to `_archive/handoffs/HANDOFF-divided-false-corner-KILLED-2026-06-05.md` | `SURVEY.md` §Cross-references | ✅ fixed 2026-06-05 |
 | D5 | `SKELETON.md` §2/§3 drift (junctions "degree ≥3" / divided-id "-0/-1" / `spineAt*` missing from schema / unnamed "no seed" / `continuesAs` missing / write "via writeIfChanged") | `SKELETON.md` §2, §3 | ✅ conformed 2026-06-05 (the skeleton audit) |
 | D6 | `SURVEY.md` §3 **block/asphalt INVERTED** ("Block = tile − iA" — that's asphalt; block = iA), contradicting §1; + §3 overstated the capacity guard (it's full-collapse only) + line-ref drift | `SURVEY.md` §3 | ✅ conformed 2026-06-05 (the survey audit) |
 | D7 | `SURVEY.md` §4 migration note stale — said asphalt-edge "still in Measure"; it **moved to Survey** (`SurveyorOverlay`; `MeasureOverlay:147` confirms) | `SURVEY.md` §4 | ✅ conformed 2026-06-05 |
