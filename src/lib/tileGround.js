@@ -367,9 +367,44 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   clipperLib.use_xyz = true
   let out = []
   const enc = (p, lab) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: Number.isInteger(lab) ? lab + 1 : 0 })
+  // ⭐⭐ THE CROSSING LEDGER — who MET here. Additive: `pt.Z` is still left at 0, so every
+  // existing caller's labels are byte-identical; this only records what Clipper already
+  // hands us and would otherwise throw away.
+  // ⛔ WHY IT IS NEEDED: the forward scan below resolves a minted vertex from the next
+  // LABELLED one, which works whenever a ring has at least one. A BLOCK HAS NONE — its
+  // corners are precisely where two streets' ink crosses, and a source vertex lies ALONG a
+  // chain, never at a crossing of two. Measured on LS's protopolygon: of 106 output rings,
+  // 24 are wholly minted and every one is a 4-vertex HOLE. So `all-vertices-minted` is not
+  // an anomaly, it is the normal condition of a block, and vertices are the wrong carrier.
+  // ⭐ EDGES ARE THE RIGHT ONE, and that is the substrate ruling already: "every ring edge is
+  // owned by one (skelId, side) BY CONSTRUCTION". A block corner belongs to no single street
+  // — two owners meet there — but the EDGE between two corners lies on the one they share.
+  // ⛔ And this is carried THROUGH the boolean, not recovered after it: Clipper hands
+  // ZFillFunction the four contributing vertices, so both owners are known AT the crossing.
+  // A post-hoc lookup could not do this (`§A06`: half the carve vertices sit on no input
+  // curve), which is exactly why the label has to ride the operation.
+  const met = new Map()                 // "X,Y" → Set(label) — the owners that met at a crossing
+  const mkey = (q) => q.X + ',' + q.Y
   try {
     const c = new Clipper()
-    c.ZFillFunction = () => {}          // leave pt.Z = 0 ⇒ "an intersection point"
+    // ⛔ Records only; deliberately does NOT set pt.Z. Setting it would change the label
+    // stream every current caller reads, and their byte-identity is a shipped proof.
+    // ⛔ THE LABEL SET ALONE IS NOT ENOUGH — measured. Where two chains cross at BOTH ends
+    // of an output edge the shared set is {a,b} and the edge is ambiguous. So record what
+    // Clipper also knows: the DIRECTION of each contributing edge. The output edge lies ON
+    // one of them, so its owner is the contributor running parallel to it. Still carried
+    // through the boolean — the direction comes from Clipper's own edge pair, not from a
+    // lookup against unrelated geometry afterward.
+    c.ZFillFunction = (b1, t1, b2, t2, pt) => {
+      let arr = met.get(mkey(pt)); if (!arr) met.set(mkey(pt), arr = [])
+      for (const [bo, to] of [[b1, t1], [b2, t2]]) {
+        if (!bo || !to) continue
+        const lab = bo.Z > 0 ? bo.Z - 1 : (to.Z > 0 ? to.Z - 1 : -1)
+        if (lab < 0) continue
+        const dx = to.X - bo.X, dy = to.Y - bo.Y, L = Math.hypot(dx, dy) || 1
+        arr.push({ lab, dx: dx / L, dy: dy / L })
+      }
+    }
     let s = 0
     for (let k = 0; k < subjectRings.length; k++) {
       const r = subjectRings[k]; if (!r || r.length < 3) continue
@@ -394,8 +429,38 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       if (raw[i] >= 0) { res[i] = raw[i]; continue }
       let v = -1
       for (let k = 1; k <= n; k++) { const j = raw[(i + k) % n]; if (j >= 0) { v = j; break } }
-      if (v < 0) return { rings, labels: null, refused: 'all-vertices-minted' }
+      if (v < 0) { res[i] = -1; continue }        // wholly minted → the edge resolver below
       res[i] = v
+    }
+    // ⭐ EDGE RESOLUTION, for a ring the forward scan could not touch. The convention is
+    // unchanged — "a crossing point is owned by the ARC THAT LEAVES IT" — so the label at
+    // vertex i names the edge i→i+1, and that edge's owner is the one label present at BOTH
+    // of its ends. ⛔ Ambiguity is REFUSED, never guessed: if the two ends share none, or
+    // share more than one, this ring gets no labels rather than a plausible wrong one.
+    if (res.some(v => v < 0)) {
+      const cand = p.map(q => met.get(mkey(q)) || [])
+      let ok = true
+      for (let i = 0; i < n && ok; i++) {
+        if (res[i] >= 0) continue
+        const j = (i + 1) % n
+        const a = cand[i], b = cand[j]
+        const bLabs = new Set(b.map(e => e.lab))
+        const shared = [...new Set(a.map(e => e.lab))].filter(x => bLabs.has(x))
+        if (shared.length === 1) { res[i] = shared[0]; continue }
+        if (shared.length > 1) {
+          // ⭐ Disambiguate by DIRECTION: the output edge lies on one contributor's line.
+          const ex = p[j].X - p[i].X, ey = p[j].Y - p[i].Y, eL = Math.hypot(ex, ey) || 1
+          let best = -1, bestDot = 0.999            // near-parallel only; never a loose pick
+          for (const e of a) {
+            if (!bLabs.has(e.lab)) continue
+            const d = Math.abs((e.dx * ex + e.dy * ey) / eL)
+            if (d > bestDot) { bestDot = d; best = e.lab }
+          }
+          if (best >= 0) { res[i] = best; continue }
+        }
+        ok = false
+      }
+      if (!ok) return { rings, labels: null, refused: 'all-vertices-minted' }
     }
     labs.push(res)
   }
