@@ -114,6 +114,31 @@
 > > attached to override handles, also like everything already is. **I only said the humunculus was sharp
 > > because we already do rounding and filleting at the other steps.**"*
 >
+> ### ⭐⭐⭐ RULED 2026-09-06 (Jacob) — ① IS MINTED FROM THE **SIMPLIFIED SKELETON**, NOT THE DERIVED CHAINS.
+> > *"The protopoly is a simplified shape with no rounding!!!"* · *"Blocks are, for the most part,
+> > quadrilateral and even when 'extreme' they're predictable."* · *"We're building these elaborate
+> > scaffolds around these tiny edge cases."*
+>
+> ⛔ **`mintProtopolygon` was being handed `ribbons.json`'s streets — the post-`CURVE_FIT` densified
+> trace — at BOTH call sites**, and `derive.js` said so in a comment: *"whether ① SHOULD take the
+> corrected chains is a real question and it is NOT settled here."* It is settled. Same curves,
+> **8.5× the points** (1,123 skeleton → 9,547 ribbons), and ① inherited every one.
+> | ① minted from | blocks | median verts | p90 | max | >20 |
+> |---|---|---|---|---|---|
+> | ribbons *(was)* | 155 | 10 | 286 | 705 | 65 |
+> | skeleton *(is)* | 145 | 6 | 25 | 55 | 18 |
+> ⭐⭐ **Excluding grade-separated chains it lands on 102 blocks against the map's 101 tiles — ① from
+> the skeleton REPRODUCES THE BLOCK COUNT.** The dense form invented ~54 phantom blocks; those are the
+> *"homeless holes"* `claims-proto-tiles-vs-faces` fails on, which a prior session chased as a topology
+> defect. ⛔ **Nothing about the shape is lost — only density.** Smoothness is SKELETON's and is already
+> in those points; rounding is Survey's and happens after ② is offset. ① does neither.
+> ⭐⭐⭐ **THE LESSON IS BIGGER THAN THE FIX: every guard built for corner clusters, exploding fillet
+> setbacks and self-intersections was coping with vertices that do not belong in ① at all.** Changing
+> the INPUT cut "too tight" 338→90, overlap 122→46, self-intersection 6→4. ⛔ When a construction needs
+> elaborate scaffolding on a map of quadrilateral blocks, **suspect the substrate, not the edge cases.**
+> ⛔ **NO FALLBACK:** a missing or unjoinable skeleton now REFUSES to freeze ① rather than minting the
+> dense one, which renders and cannot be seen to be wrong. ▶ `derive.js`, the `[①]` block.
+>
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
 > united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
 > two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).
@@ -238,10 +263,16 @@
 >   the chain-side offset NOT robust (~70% of crossings at the averaged-normal branch); offsetting a
 >   CONTOUR gives zero repeated-vertex rings across both towns. **The predicted failure appeared
 >   instead — blocks VANISH rather than fold**, which is loud and countable.
-> - **IT DRAWS** — `?grout=1`, LS, a flagged overlay and **not** the producer. ⛔ **And it builds the
->   CURB, not the protopolygon**: it strokes each chain at the authored half-width and unites —
->   offset-then-polygonize, the old order. ⛔ **Identity does not survive its `unionRings`**;
->   `booleanLabelled` (`tileGround.js:364`) is the N-ring labelled boolean that would carry it.
+> - ### ⛔⛔ **"IT DRAWS" WAS FALSE IN THE ONE STATE THE OPERATOR SITS IN — CORRECTED 2026-09-06.**
+>   This bullet claimed `?grout=1` draws the grout over the live curb. **`tileGeos` returns `null`
+>   whenever the frozen path renders** (`BlockGeometryV2Debug.jsx`), so `buildTileGround` **does not run
+>   at idle** — the overlay appears only while an element is active. ⛔ **No producer-side overlay is
+>   visible in Survey at rest**, and the doc said otherwise for two days.
+>   ⭐ **`?proto=1` NOW EXISTS AND IS THE EYE-GATE** — magenta = ①'s ink, read straight off the FROZEN
+>   artifact so it needs no live build and crosses no wall; cyan = ② the curb offset from it. ⚠️ The
+>   URL itself predates the code: it was asserted as a gate by the session reverted in `5560cf6a` and
+>   matched nothing, so typing it showed the ordinary chain-built map with no sign ① was absent.
+>   ⛔ The ease is OFF in that overlay by deliberate bisection — judge the CURB first.
 > - ### ⛔⛔ EVERY ②③ NUMBER TAKEN BEFORE 2026-09-06 WAS MEASURED WITH **AUTHORING OFF** — void, re-take it.
 >   Seven of the eight `scratch/claims-proto-*` probes called `buildTileGround(rb, { grout: 'proto' })`
 >   with **no `blockCustoms`**, and `claims-proto-stack-disjoint`'s own header asserted the opposite.
@@ -334,7 +365,17 @@
 > *measures* smoothness is the machine catching the bug, which is the deliverable Layer 0 asks for. What is
 > forbidden is a pass that *takes a jagged output and cleans it up*. **Detector at the end; fix at the root.**
 > ⛔ **The forbidden shape, stated so it is recognisable:** a smoother, a simplifier, a snap, a **clamp**, or
-> any guard that fires when a construction degenerates and substitutes something plausible. **A clamp is a
+> any guard that fires when a construction degenerates and substitutes something plausible.
+> ### ⭐⭐ RULED 2026-09-06 (Jacob) — **SELF-INTERSECTION MEANS THE FEATURE IS GONE, NOT THAT IT DRAWS CROSSED.**
+> > *"Self intersection IRL isn't real. When something 'self intersects' it goes to 0 and disappears."*
+>
+> This sharpens `§6.9`.5's *"self-intersection is SIGNAL, not error"*, which says what NOT to do without
+> saying what the output **is**. A curb that crosses itself is not a curb anyone could build ⇒ the
+> feature goes to **ZERO**: the corner's radius is 0, which is the sharp vertex, the same answer `R=0`
+> already gives. ⛔ Still not the forbidden clamp — nothing is shrunk to a plausible fit.
+> ⚠️ **It goes to zero WHERE it crosses.** A band pinching out mid-block vanishes *there* and continues
+> either side. ⛔ The current implementation is coarser — a self-intersection anywhere on a ring reverts
+> **the whole ring** to sharp, so one bad corner flattens every good corner on a long block. Named, open. **A clamp is a
 > cleanup patch living inside the construction** — the miter-limit bevel at §3.3's U-seam is the worked
 > example, and it is *the* artifact there.
 >
@@ -425,7 +466,21 @@
 > is not a discriminator we lack — it is one that the `side` labels cannot currently support**, and it waits
 > on the walk's directed sides, which is the same root as the inverted `side` law on the list below.
 >
-> ### ⭐⭐ AND THE PED RULE IS REPLACED BY THE LADDER THAT ALREADY EXISTS — ask the data, then guess, then override.
+> ### ⛔⛔ CONTRADICTED 2026-09-06 (Jacob) — **"A MEDIAN IS A SPECIAL CASE TYPE OF BLOCK; NO SIDEWALK."**
+> That is the operator's ruling and it is the OPPOSITE of the section below, which concludes *"the median
+> joins `gleanTreelawn`'s ladder like any other block; **there is no median rule to write**."*
+> ⭐ **The measurement below is sound; the INFERENCE from it is not.** Its evidence is that most medians
+> are crossed by an OSM `footway=crossing`, and the quote it cites from Jacob is *"many medians have
+> sidewalks that **cross** them."* **A sidewalk crossing a median is not a sidewalk running along it.**
+> ⇒ There IS a median rule: **no sidewalk.** ⛔ Which of the three causes is not yet ruled — the code has
+> not been checked against either reading, so it is not stated here. **Do not act on the section below
+> without settling it.**
+> ⭐ And the other half of the ruling: **the median is otherwise a BLOCK — curb on each side, asphalt
+> unchanged.** *"If the curbs touch, there's no median"* — where the two curbs meet the region has ended,
+> which ③ now detects by the AUTHORED inset splitting (never a `2 × curbWidth` constant: **the curb width
+> is authored**). ⛔ Making the deeper bands honour that severance is NOT built.
+
+### ⭐⭐ AND THE PED RULE IS REPLACED BY THE LADDER THAT ALREADY EXISTS — ask the data, then guess, then override.
 > **`effectiveMeasure`'s blanket `treelawn:0, sidewalk:0` is WRONG ON THE MAJORITY OF MEDIANS** — measured:
 > **68% of LS · 56% of HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
 > medians have sidewalks that cross them"*). ⇒ **the median joins `gleanTreelawn`'s ladder like any other

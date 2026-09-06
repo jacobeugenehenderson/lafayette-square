@@ -155,16 +155,19 @@ function easeRing(ring, rAt, report = null) {
     }
     return { p: ring[k], idx: k, tan: [0, 0], short: true }
   }
-  // ⭐ THE BUDGET — half the arc-length to the nearest corner on either side. Corners are the
-  // vertices that TURN meaningfully; a dense polyline's ~1° bends are not boundaries. Half, so two
-  // adjacent corners' eases can meet but never overlap.
+  // ⭐⭐ THE BUDGET — half the arc-length to the next CORNER either side. Half, so two adjacent
+  // corners' eases can meet but never overlap.
+  // ⛔⛔ AND A CORNER IS A VERTEX THAT `rAt` GIVES A RADIUS TO — nothing else. The first cut asked
+  // a GEOMETRIC question instead ("does this vertex turn more than ~7°?"), which is a threshold I
+  // invented, and it was wrong in the way invented thresholds are: ①'s contour is a dense ~1 m
+  // polyline following a SMOOTHED chain, so ordinary curvature tripped it, the budget collapsed to
+  // half a metre, and REAL corners came back "too tight". 338 of 733 corners declined on a town
+  // whose blocks are quadrilaterals — Jacob: "we're building these elaborate scaffolds around
+  // these tiny edge cases. Blocks are, for the most part, quadrilateral."
+  // ⭐ The guard was manufacturing the edge cases it then handled. The corners are already known —
+  // they are ①'s CROSSINGS, carried through the boolean — so the threshold is deleted, not tuned.
   const isCorner = new Array(n).fill(false)
-  for (let i = 0; i < n; i++) {
-    const V = ring[i], A = ring[(i - 1 + n) % n], B = ring[(i + 1) % n]
-    const aL = D(A, V), bL = D(V, B); if (aL < 1e-9 || bL < 1e-9) continue
-    const dot = ((A[0]-V[0])/aL)*((B[0]-V[0])/bL) + ((A[1]-V[1])/aL)*((B[1]-V[1])/bL)
-    if (Math.acos(Math.max(-1, Math.min(1, dot))) < Math.PI - 0.12) isCorner[i] = true   // >~7° turn
-  }
+  for (let i = 0; i < n; i++) if ((rAt(i) || 0) > 1e-6) isCorner[i] = true
   const budget = new Array(n).fill(Infinity)
   for (let i = 0; i < n; i++) {
     if (!isCorner[i]) continue
@@ -5564,7 +5567,17 @@ export function buildTileGround(ribbons, opts = {}) {
             ? easeRing(rings2[ri], (vi) => {
                 const i1 = src[vi]
                 if (i1 == null) return 0
-                return protoRAt(R.crossings?.[k]?.[i1])
+                // ⛔⛔ A BLOCK CORNER IS A CLUSTER OF CROSSINGS, NOT ONE VERTEX. Two ε-ribbons
+                // meeting produce several intersection points a few MILLIMETRES apart, and marking
+                // each as its own corner put them ε from their neighbours — so the budget between
+                // two "corners" collapsed to ε and every real corner came back TOO TIGHT.
+                // ⭐ Collapse by IDENTITY, not by distance: consecutive crossing vertices are the
+                // same junction, so only the FIRST of a run carries the radius. No merge tolerance
+                // to pick, and nothing about ε's value is relied on.
+                const X = R.crossings?.[k]
+                if (!X?.[i1]) return 0
+                if (X[(i1 - 1 + ring.length) % ring.length]) return 0   // mid-cluster — already eased
+                return protoRAt(X[i1])
               }, protoEaseReport)
             : (protoEaseReport.noNode++, { ring: rings2[ri], src: rings2[ri].map((_, i) => i) })
           protoCurb.push(E.ring); protoCurbGs.push(isGs)

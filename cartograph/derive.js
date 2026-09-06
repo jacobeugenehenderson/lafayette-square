@@ -4858,13 +4858,54 @@ export function deriveLayers(highways) {
   // with ≥2 points, plus the grade-separated ones. ⭐ Grade-separated roads belong
   // IN ① (Jacob, 2026-09-05: "the highways etc. have to be there") — the canon
   // pulls them out of the BLOCK GRID, which says nothing about the DRAWING.
-  // ⚠️ The D2 walk above deliberately uses `strokePoints` (the corrected chains,
-  // so a divided→through median face does not pinch). ① does NOT, because that is
-  // what the live mint uses and this freeze must reproduce it. Whether ① SHOULD
-  // take the corrected chains is a real question and it is NOT settled here.
+  // ⭐⭐⭐ RULED 2026-09-06 (Jacob) — ① IS MINTED FROM THE **SIMPLIFIED SKELETON**, NOT FROM THE
+  // DERIVED CHAINS. "The protopoly is a simplified shape with no rounding." "Blocks are, for the
+  // most part, quadrilateral and even when 'extreme' they're predictable."
+  // ⛔ THIS LINE USED TO READ `ribbonsLayer.streets`, and the comment here said "whether ① SHOULD
+  // take the corrected chains is a real question and it is NOT settled here." It is settled now,
+  // and the cost of it having been open is the whole of 2026-09-06:
+  //     source              blocks   median verts   p90   max   >20 verts
+  //     ribbons (was)         155         10        286   705      65
+  //     skeleton (is)         102          6         25    68      13
+  // ⭐⭐ 102 against the map's 101 tiles — the skeleton-minted ① REPRODUCES THE BLOCK COUNT, while
+  // the derived chains INVENT ~54 extra "blocks" that are artifacts of re-sampling. Those are the
+  // "homeless holes" `claims-proto-tiles-vs-faces` has been failing on, and a prior session chased
+  // them as a topology defect. ⭐ Every guard built against corner clusters, exploding fillet
+  // setbacks and self-intersections was coping with vertices that do not belong in ① at all.
+  // ⛔ The chain geometry is the SAME CURVES, merely re-sampled 8.5× finer by `CURVE_FIT`
+  // (1,123 skeleton points vs 9,547) — so this loses no shape, only density. SMOOTHNESS IS
+  // SKELETON's and it is already in these points; ROUNDING is Survey's and happens after ② is
+  // offset (`RIBBONS §1`). ① sits between the two stages and does neither.
+  // ⚠️ The D2 walk above deliberately uses `strokePoints` (the corrected chains, so a
+  // divided→through median face does not pinch). ① does NOT and now must not.
   {
-    const pStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-    const pGradeSep = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && s.gradeSeparated)
+    // ⛔ NO FALLBACK TO THE DENSE CHAINS. A silently dense ① is exactly the failure this ruling
+    // fixes and it is invisible — it renders, it just carries hundreds of phantom vertices. So a
+    // missing or unjoinable skeleton REFUSES TO FREEZE ①; the consumer already handles an absent
+    // protopolygon by live-minting with a reason string, which is loud (`CLAUDE.md` Layer 0 q2).
+    const skPath = join(CLEAN_DIR, 'skeleton.json')
+    let simplified = null
+    if (existsSync(skPath)) {
+      const sk = JSON.parse(readFileSync(skPath, 'utf-8'))
+      simplified = new Map((sk.streets || []).map(st => [st.id,
+        (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+      // ⛔ `{x,z}` OBJECTS, NOT `[x,z]` PAIRS — the skeleton and the ribbons store the same frame
+      // in different shapes, and reading one as the other yields `undefined` for every coordinate
+      // and an EMPTY protopolygon that looks like "no blocks". Same near-miss `A08` records for
+      // `nb.polygon`. Converted here, once.
+    }
+    const simplify = (s) => {
+      const pts = simplified?.get(s.skelId ?? s.name)
+      return pts?.length >= 2 ? { ...s, points: pts } : null
+    }
+    const all = ribbonsLayer.streets.filter(s => s?.points?.length >= 2)
+    const mapped = all.map(s => ({ s, sim: simplify(s) }))
+    const unjoined = mapped.filter(m => !m.sim)
+    if (!simplified || unjoined.length) {
+      console.warn(`    ⛔ [①] NOT FROZEN — ${!simplified ? `no skeleton at ${skPath}` : `${unjoined.length} of ${all.length} chain(s) have no simplified geometry (${unjoined.slice(0, 4).map(m => m.s.skelId ?? m.s.name).join(', ')})`}. ⛔ Refusing to mint ① from the DERIVED chains: that silently produces a dense contour with phantom blocks, which renders and cannot be seen to be wrong.`)
+    } else {
+    const pStreets = mapped.filter(m => !m.s.gradeSeparated).map(m => m.sim)
+    const pGradeSep = mapped.filter(m => m.s.gradeSeparated).map(m => m.sim)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep })
     ribbonsLayer.protopolygon = {
       eps: 0.005,
@@ -4899,6 +4940,7 @@ export function deriveLayers(highways) {
     const nCross = (MP.crossings || []).reduce((n, rg) => n + rg.filter(Boolean).length, 0)
     console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps, ${nCross} crossings (= the corners) at ε=0.005 m`)
     if (!nCross) console.warn(`    ⛔ [①] ZERO crossings frozen — every downstream consumer will read this contour as having NO CORNERS and round nothing.`)
+    }
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
