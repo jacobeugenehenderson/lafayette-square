@@ -5006,7 +5006,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -5046,12 +5046,45 @@ export function buildTileGround(ribbons, opts = {}) {
     // rounds into a DOTTED line). One polygon per chain has no such term.
     // ⛔ NOTHING IS ROUNDED: no join style is chosen anywhere, because the union does the
     // joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ① is neither.
-    // ⭐ ONE CONSTRUCTION, TWO CALLERS. The mint is `mintProtopolygon` — a pure function of
-    // the frame — so prebake can freeze exactly what the live path builds. ⛔ Two copies of a
-    // construction is how "live == bake" stops being true without anyone editing either one.
-    const MP = mintProtopolygon({ streets: streetsOrig, gradeSep, eps: PROTO_HW })
+    // ⭐⭐⭐ CONSUME THE FROZEN ① — this is the wall doing its positive job. `derive.js` mints
+    // the protopolygon once, at prebake, from the frozen frame, and hands down a RIGID OUTER
+    // FRAME. ⛔ Chains die not because nothing may touch them but because there is nothing
+    // left to ask: the contour and its per-edge identity are already decided.
+    //
+    // ⛔⛔ NO SILENT FALLBACK, AND NO REFUSAL TO DRAW EITHER. Both halves are ruled.
+    // A scene that has not been re-poured yet is a LEGITIMATE state — refusing to render would
+    // make onboarding town #2 impossible — so the live mint still runs and the map still
+    // draws. ⭐ But it is LABELLED: `protoSource` carries a REASON STRING, never a boolean, so
+    // "this scene was never poured with ①" and "the artifact is at a different ε" read
+    // differently to whoever is looking. **The defect was always the silence, not the draw**
+    // (`WALL.md §2`, `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
+    //
+    // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, not a tuning knob applied after. A caller
+    // that asks for a different ε than the artifact was frozen at is asking for a DIFFERENT
+    // PROTOPOLYGON, and silently handing back the frozen one would be a substitution — so that
+    // case mints live and says which two values disagree. (`RIBBONS §1`: ε's value carries no
+    // information, but its non-zero-ness is a declaration — and two declarations are two
+    // objects.)
+    const frozenProto = ribbons?.protopolygon
+    let MP
+    if (frozenProto?.rings?.length && frozenProto?.owners?.length &&
+        Math.abs((frozenProto.eps ?? -1) - PROTO_HW) < 1e-9) {
+      MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
+             refused: frozenProto.refused || false, chainRings: null }
+      protoSource = 'frozen'
+    } else {
+      const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
+        : !(frozenProto.rings?.length && frozenProto.owners?.length) ? 'the frozen protopolygon is present but EMPTY'
+        : `ε mismatch — the artifact was frozen at ${frozenProto.eps} m, this build asked for ${PROTO_HW} m (a different object, not a tolerance)`
+      // ⭐ ONE CONSTRUCTION, TWO CALLERS — the live path calls the SAME function prebake does,
+      // so a live re-derivation is the same object, not a second implementation of it.
+      MP = mintProtopolygon({ streets: streetsOrig, gradeSep, eps: PROTO_HW })
+      protoSource = `live: ${why}`
+      console.warn(`[tileGround][①] ⛔ NOT the frozen protopolygon — re-derived live. ${why}.`)
+    }
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused }
+    console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
 
     // ⭐⭐ THE AUTHORED HALF — build-time, keyed off the frozen IDENTITY. ⛔ It cannot live in
     // the mint: `resolvePedDepths` and the `pavementHW` override both read `blockCustoms`, and
@@ -5092,7 +5125,6 @@ export function buildTileGround(ribbons, opts = {}) {
         tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
       const med=(f)=>{const a=M.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
       console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
-    console.log(`[tileGround][PROTO①] ${MP.chainRings} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${gradeSep.length} gradeSeparated`)
     proto = R.rings
     protoLabels = R.labels
     protoRefused = R.refused
@@ -5423,7 +5455,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
