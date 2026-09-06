@@ -37,7 +37,8 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
-import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
+import { pickLuFromHash, hashKey, blockKeyFromRing } from './buildBlockGeometryV2.js'
+import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 // [SLICE 2 — TEMPORARY] The substrate walk, imported but NOT called unless the
 // flag is on (`electSubstrateTiles`). An import is not a call site: with the
@@ -361,20 +362,115 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⚠️ Unlabelled clip geometry is legitimate (the junction/median constructions add
 // polygons that belong to no single run): its vertices land as crossings and inherit
 // forward, which is the same ring-adjacency rule the keyhole clip seam uses.
-// ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER.
-// The edge-ledger below was added 2026-09-05 for the protopolygon (`0e879687`, "identity rides
-// the boolean") and it is a real requirement — `RIBBONS §1`: identity must be carried THROUGH
-// the boolean, never recovered from ring geometry afterward. ⛔ But it was added by changing
-// this SHARED helper for ALL SIX callers, and only ONE of them is the proto path: the other
-// five (`:495`, and three inside the tile construction, and the `iA` difference) build the
-// SHIPPED map. So a capability the experiment needed silently changed the map.
-// ⭐ MEASURED, which is why this is a fix and not a preference — `scratch/claims-band-reaches-lu.mjs`
-// on lafayette-square:
-//        with the ledger unconditional   34 tiles ·  3669.6 m² of band falling into land use
-//        with it opt-in (this)           28 tiles ·      0.2 m²  — production's number exactly
-// That 3669 m² IS the sidewalk stopping mid-block and never wrapping the corner. The probe says
-// so in its own verdict: "This is the sidewalk the operator sees stop."
-// ⇒ default OFF = the shipped behaviour, byte-for-byte. The proto caller asks for it.
+// ─────────────────────────────────────────────────────────────────────────────
+// ① THE PROTOPOLYGON — width-free, permanent, never seen, never authored.
+//
+// ⭐⭐⭐ Every chain expanded at ε and united into ONE closed compound path; the
+// blocks are its HOLES. `RIBBONS §1` (ruled 2026-09-04/05): the grout is a
+// POSITIVE object and we offset from IT, not the chains. ② the curb is a
+// SEPARATE object offset FROM ① — ⛔ not one object at two moments.
+//
+// ⭐ THIS IS A PURE FUNCTION OF THE FRAME, and that is the whole point: it takes
+// chains and ε and nothing else. No `blockCustoms`, no look, no authored width —
+// so it can be minted ONCE AT PREBAKE and frozen, which is `PIPELINE §Wall`'s
+// Check C for the object the curb is offset from. `POLYGON-FIRST §3`'s blocker on
+// D6b ("freezing iA at prebake would bake a bare-defaults curb") does NOT apply,
+// because ① HAS no width to bake.
+//
+// ⛔ ε IS A DECLARATION, NOT A TOLERANCE. Zero and ε render identically and are
+// different objects: zero is an ABSENCE, ε a PRESENCE with an interior, two sides
+// and TWO nodes at every mouth. Its VALUE carries no information; its
+// non-zero-ness is the whole of it. Its one constraint is that it must clear the
+// integer floor of the stage that freezes it (`claims-zero-separation-offset`).
+//
+// ⛔ NOTHING IS ROUNDED. No join style is chosen anywhere — the union does the
+// joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ①
+// sits between the two stages and does NEITHER.
+//
+// ⛔ NOT `ClipperOffset`: an offset MINTS every output vertex, so the only label
+// it can carry is one scalar for the whole chain — an edge would know WHICH chain
+// but not WHICH SIDE. Building each outline explicitly (right boundary forward,
+// left boundary back) makes every vertex a SOURCE vertex whose index gives both.
+// ⭐ It also removes the density trap: expanding a path SEGMENT-BY-SEGMENT makes
+// the result depend on sampling (consecutive rectangles overlap by ε·tan(θ/2),
+// which on a dense polyline falls under the 1 mm integer grid and the ink rounds
+// into a DOTTED line). One polygon per chain has no such term.
+//
+// ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
+// Authored values resolve downstream off that identity, so ① is look-agnostic:
+// one scene's ① serves every Look.
+export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
+  const owners = [], rings = [], labels = []
+  // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
+  // one — so it is computed unconditionally here. ⚠️ The live path used to gate
+  // the segmentation on `blockCustoms` being present (it only needed the map to
+  // look an override up), which made an UNAUTHORED scene stamp segOrd 0
+  // everywhere. Harmless while the value was only a lookup key into an absent
+  // table; ⛔ NOT harmless in a frozen fact, which must carry the real ordinal
+  // whether or not anyone has authored against it yet.
+  const seg = resolveChainSegmentation(streets)
+  const ixIdxs = streets.map(st => {
+    const n = st?.points?.length || 0
+    return [...(seg.get(st) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b)
+  })
+  const segOrdAt = (ci, i) => { let so = 0; for (const k of (ixIdxs[ci] || [])) if (k <= i) so++; return so }
+  // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc.
+  // are gone from the protopoly rendering; they have to be there"). Excluding
+  // them CONFLATES two rules: the canon pulls them out of the BLOCK GRID — they
+  // do not bound a city block — which says nothing about whether they are in the
+  // DRAWING. ① is the ink of the whole network; drop the highway from it and the
+  // highway does not exist. ⭐ They carry `gradeSeparated` on the stamp so
+  // downstream still tells a highway from a street — by IDENTITY, not by absence.
+  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))]
+  for (const { st, ci } of chains) {
+    if (!(st?.points?.length >= 2)) continue
+    const P = st.points, nrm = []
+    for (let i = 0; i < P.length; i++) {
+      const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
+      const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
+      nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
+    }
+    const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs }) - 1
+    const ring = [], labs = []
+    for (let i = 0; i < P.length; i++) {
+      ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
+      // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it
+      // 'left' puts every ASYMMETRIC authored width on the wrong side of its street.
+      labs.push(stamp('right', i))
+    }
+    for (let i = P.length - 1; i >= 0; i--) {
+      ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
+      labs.push(stamp('left', i))
+    }
+    if (ring.length < 3) continue
+    // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
+    // overlaps, so a mixed pile unions into confetti instead of one object.
+    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
+    rings.push(ring); labels.push(labs)
+  }
+  // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled`, N subject rings each with its
+  // own label, labels on Clipper's Z channel, crossings resolved by walking the
+  // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
+  // cannot carry identity across ~200 chain rectangles.
+  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, true)   // ① needs the edge ledger; nothing else does
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length }
+}
+
+// ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
+// The edge ledger below was added for the protopolygon (`0e879687`, "identity rides the boolean")
+// and it is a real requirement — `RIBBONS §1`: identity must be carried THROUGH the boolean, never
+// recovered from ring geometry afterward. ⛔ But it was added by changing this SHARED helper for
+// ALL SIX callers, and only ONE is the proto path; the other five build the SHIPPED map. So a
+// capability only the experiment uses silently changed what the operator sees.
+// ⭐ MEASURED, which is why this is a fix and not a preference — `claims-band-reaches-lu.mjs`, LS:
+//        ledger unconditional   34 tiles · 3669.6 m² of band falling into land use
+//        ledger opt-in (this)   28 tiles ·     0.2 m² — production's number exactly
+// That 3669 m² IS the sidewalk stopping mid-block. The probe's own verdict: "This is the sidewalk
+// the operator sees stop."
+// ⇒ default OFF = shipped behaviour byte-for-byte; the proto caller asks for it.
+// ⭐⭐ THE GENERAL RULE: a flag on a BLOCK is not a wall if the block edits something the rest of
+// the map calls. Anything an experiment needs from shared code is opt-in AT THE CALL SITE.
 function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false) {
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
@@ -445,8 +541,8 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       let v = -1
       for (let k = 1; k <= n; k++) { const j = raw[(i + k) % n]; if (j >= 0) { v = j; break } }
       // ⭐ THE REFUSAL IS THE SHIPPED CONTRACT: a wholly-minted ring has no owner this function
-      // can honestly name, so it says so and hands back `labels: null` — and `:4178` branches on
-      // exactly that. Guessing an owner instead is what mislabelled the shipped bands.
+      // can honestly name, so it says so and hands back `labels: null` — and the tile construction
+      // branches on exactly that. Guessing an owner instead is what mislabelled the shipped bands.
       if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted' }
       if (v < 0) { res[i] = -1; continue }        // wholly minted → the edge resolver below
       res[i] = v
@@ -4929,7 +5025,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -4969,101 +5065,95 @@ export function buildTileGround(ribbons, opts = {}) {
     // rounds into a DOTTED line). One polygon per chain has no such term.
     // ⛔ NOTHING IS ROUNDED: no join style is chosen anywhere, because the union does the
     // joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ① is neither.
-    const pRings = [], pLabels = []
-    protoOwners = []                     // label → { idx, side, vtx } — the edge's owner
-    // ⭐ BOTH LISTS. `streets` is filtered at :2835 to EXCLUDE gradeSeparated, which live in
-    // `gradeSep` (:2841) because they are drawn through their own accumulator and carry their
-    // own styling knobs. That separation is about STYLE and about the block grid — it is not
-    // a reason for them to be absent from ①, which is the ink of the whole network.
-    // ⛔ Their widths do NOT come from `measures` (that array is indexed in `streets` space
-    // and has no entry for them), so an owner records which resolver applies: a `streets`
-    // index, or the chain's own `measure`. ⭐ `gs` rides on the owner so downstream can still
-    // tell a highway from a street and style it accordingly — the distinction is carried by
-    // IDENTITY, not by absence.
-    const protoChains = [
-      ...streetsOrig.map((st, idx) => ({ st, idx })),
-      ...gradeSep.map(st => ({ st, idx: -1 })),
-    ]
-    // ⭐⭐⭐ THE STAMP IS THE WALL. `WALL.md` / `PIPELINE §Wall`: the wall we have is a HANDLE
-    // rule and it needs to be a CONTENT rule — "polygons only by the time we get to the
-    // Section tools". A chain-free SIGNATURE only proves no consumer can REACH a chain; it
-    // says nothing about whether the artifact IS one. A label that carries an INDEX into
-    // chain space is one: every read of it is a chain question asked late.
-    // ⇒ Resolve here, ONCE, and carry VALUES. This is the last read of a chain in the
-    // pipeline; everything after offsets a stamped contour and literally has nothing to call.
-    // ⛔ `skelId` stays on the stamp — authoring is street-keyed (`A15`) and `blockCustoms`
-    // resolves against it. The wall kills chains, not the operator's overrides.
-    // authoring resolves at the MINT, street-keyed (`A15`) — the operator's overrides cross
-    // the wall as VALUES, exactly like every other measure.
+    // ⭐⭐⭐ CONSUME THE FROZEN ① — this is the wall doing its positive job. `derive.js` mints
+    // the protopolygon once, at prebake, from the frozen frame, and hands down a RIGID OUTER
+    // FRAME. ⛔ Chains die not because nothing may touch them but because there is nothing
+    // left to ask: the contour and its per-edge identity are already decided.
+    //
+    // ⛔⛔ NO SILENT FALLBACK, AND NO REFUSAL TO DRAW EITHER. Both halves are ruled.
+    // A scene that has not been re-poured yet is a LEGITIMATE state — refusing to render would
+    // make onboarding town #2 impossible — so the live mint still runs and the map still
+    // draws. ⭐ But it is LABELLED: `protoSource` carries a REASON STRING, never a boolean, so
+    // "this scene was never poured with ①" and "the artifact is at a different ε" read
+    // differently to whoever is looking. **The defect was always the silence, not the draw**
+    // (`WALL.md §2`, `ROADMAP A02` — the same shape as `shapeFreezeMissing`, deliberately).
+    //
+    // ⚠️ ε IS PART OF THE IDENTITY OF THE OBJECT, not a tuning knob applied after. A caller
+    // that asks for a different ε than the artifact was frozen at is asking for a DIFFERENT
+    // PROTOPOLYGON, and silently handing back the frozen one would be a substitution — so that
+    // case mints live and says which two values disagree. (`RIBBONS §1`: ε's value carries no
+    // information, but its non-zero-ness is a declaration — and two declarations are two
+    // objects.)
+    const frozenProto = ribbons?.protopolygon
+    let MP
+    if (frozenProto?.rings?.length && frozenProto?.owners?.length &&
+        Math.abs((frozenProto.eps ?? -1) - PROTO_HW) < 1e-9) {
+      MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
+             refused: frozenProto.refused || false, chainRings: null }
+      protoSource = 'frozen'
+    } else {
+      const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
+        : !(frozenProto.rings?.length && frozenProto.owners?.length) ? 'the frozen protopolygon is present but EMPTY'
+        : `ε mismatch — the artifact was frozen at ${frozenProto.eps} m, this build asked for ${PROTO_HW} m (a different object, not a tolerance)`
+      // ⭐ ONE CONSTRUCTION, TWO CALLERS — the live path calls the SAME function prebake does,
+      // so a live re-derivation is the same object, not a second implementation of it.
+      MP = mintProtopolygon({ streets: streetsOrig, gradeSep, eps: PROTO_HW })
+      protoSource = `live: ${why}`
+      console.warn(`[tileGround][①] ⛔ NOT the frozen protopolygon — re-derived live. ${why}.`)
+    }
+    protoOwners = MP.owners
+    const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused }
+    console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
+
+    // ⭐⭐ THE AUTHORED HALF — build-time, keyed off the frozen IDENTITY. ⛔ It cannot live in
+    // the mint: `resolvePedDepths` and the `pavementHW` override both read `blockCustoms`, and
+    // prebake is blind to `design.json` (`POLYGON-FIRST §3`). Resolving there would freeze the
+    // to-code default into the artifact — Layer 0 q3, the exact shape that made D6b's literal
+    // wording impossible. ⭐ Splitting it here is what lets ① freeze while the operator's
+    // override still reaches the geometry: identity is permanent, the value is live.
+    const protoBase = new Map()          // skelId → the pre-authoring base measure
+    streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
+    for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
     const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
-    const mkStamp = (idx, st, side, i) => {
-      const so = idx >= 0 ? segOrdAtVertex(idx, i) : 0
-      const mz = idx >= 0 ? measures[idx] : st?.measure
-      const hw = idx >= 0 ? feWidthAt(idx, side, so) : mz?.[side]?.pavementHW
-      return protoOwners.push({
-        skelId: st?.skelId ?? st?.name ?? null, side, segOrd: so,
-        gradeSeparated: !!st?.gradeSeparated,
+    // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
+    // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
+    // ladder (`gleanTreelawn`) supplies a value where nothing is authored. Reading the raw
+    // field made a second, poorer lookup — 19,094 stamps but only 4,601 with a treelawn, both
+    // with a median of 0.00: three quarters of the map had no ped band and LU flooded to the
+    // curb. Jacob, on the drawing: "what are we even looking at here?"
+    const protoMeasureCache = []
+    const protoMeasureOf = (label) => {
+      let m = protoMeasureCache[label]
+      if (m) return m
+      const o = protoOwners[label]
+      if (!o) return null
+      const mz = protoBase.get(o.skelId)             // the frozen BASE, by skelId
+      const c = bcOf(o.skelId, o.side, o.segOrd)     // the operator's OVERRIDE, street-keyed
+      const base = mz?.[o.side]?.pavementHW
+      const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
+      const d = resolvePedDepths(mz, o.side, c)
+      m = protoMeasureCache[label] = {
         pavementHW: Number.isFinite(hw) ? hw : null,
         curb: curbWidth,
-        // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
-        // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose
-        // default ladder (`gleanTreelawn`) supplies a value where nothing is authored.
-        // Reading the raw field made a SECOND, poorer lookup — the exact thing the comment
-        // three functions up forbids — and it showed: 19,094 stamps, but only 4,601 with a
-        // treelawn and 6,301 with a sidewalk, BOTH with a median of 0.00. Three quarters of
-        // the map had no ped band at all, LU flooded to the curb, and the few that survived
-        // rendered as slivers. Jacob, on the drawing: "what are we even looking at here?"
-        ...(() => { const d = resolvePedDepths(mz, side, bcOf(st?.skelId ?? st?.name, side, so))
-                    return { treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, terminal: d?.terminal ?? null } })(),
-      }) - 1
+        treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, hasTL: !!d?.hasTL, terminal: d?.terminal ?? null,
+        // ⭐⭐ THE STRIPS ARE SWAPPABLE, AND THE SWAP IS THE OPERATOR'S (Jacob: "adjustable and
+        // swappable monowidth"). The gleaned `hasTL` supplies only the DEFAULT arrangement
+        // (`SECTION §3.1`: `{outer: Y?'LU':'SW', inner: Y?'SW':'LU'}` — treelawn-Y reads
+        // grass→walk, treelawn-N reads walk→lawn); `blockCustoms[…].materials` is the ctrl-click
+        // override on top (`§3.2`). ⛔ Reading only the glean made the swap gesture INERT here —
+        // the operator flips a strip and nothing moves, which is the authoring surface silently
+        // not working. ⭐ Both strips to 'LU' is the OPEN FIELD — a material state, never an
+        // absence, and it falls out of the arrangement rather than being a case.
+        matOuter: c?.materials?.outer ?? (d?.hasTL ? 'LU' : 'SW'),
+        matInner: c?.materials?.inner ?? (d?.hasTL ? 'SW' : 'LU'),
+      }
+      return m
     }
-    for (let ci = 0; ci < protoChains.length; ci++) {
-      const { st, idx } = protoChains[ci]
-      // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc. are gone
-      // from the protopoly rendering; they have to be there"). They were excluded here, and
-      // that was a CONFLATION of two different rules: the canon pulls them out of the BLOCK
-      // GRID — they do not bound a city block — which says nothing about whether they are in
-      // the DRAWING. ① is the ink of the whole network. Drop the highway from it and the
-      // highway does not exist: no asphalt, no curb, no ped stack, and a hole in the map
-      // where a road is. Whether the faces they bound are BLOCKS is a downstream
-      // classification question, and it is not this one.
-      if (!(st?.points?.length >= 2)) continue
-      const P = st.points
-      const nrm = []
-      for (let i = 0; i < P.length; i++) {
-        const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
-        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
-        nrm.push(L > 1e-9 ? [-dz / L * PROTO_HW, dx / L * PROTO_HW] : (nrm[nrm.length - 1] || [0, 0]))
-      }
-      const ring = [], labs = []
-      for (let i = 0; i < P.length; i++) {
-        ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
-        // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice
-        // (claims-spur-leg-offset, claims-inboard-side-convention). Naming it 'left' here
-        // puts every ASYMMETRIC authored width on the wrong side of its street.
-        labs.push(mkStamp(idx, st, 'right', i))
-      }
-      for (let i = P.length - 1; i >= 0; i--) {
-        ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
-        labs.push(mkStamp(idx, st, 'left', i))
-      }
-      if (ring.length < 3) continue
-      // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon overlaps,
-      // so a mixed pile unions into confetti instead of one object.
-      const asC = ring.map(toClipper)
-      if (clipperLib.Clipper.Orientation(asC) !== true) { ring.reverse(); labs.reverse() }
-      pRings.push(ring); pLabels.push(labs)
-    }
-    // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled` (:364), N subject rings each with its
-    // own label, labels on Clipper's Z channel, crossings resolved by walking the output
-    // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
-    // it, and cannot carry identity across ~200 chain rectangles.
-    { const n=protoOwners.length, hw=protoOwners.filter(o=>o.pavementHW>0).length,
-        tl=protoOwners.filter(o=>o.treelawn>0).length, sw=protoOwners.filter(o=>o.sidewalk>0).length
-      const med=(f)=>{const a=protoOwners.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
+    { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
+      const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
+        tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
+      const med=(f)=>{const a=M.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
       console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
-    console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
-    const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels, [], null, true)   // ① needs the edge ledger; nothing else does
     proto = R.rings
     protoLabels = R.labels
     protoRefused = R.refused
@@ -5085,9 +5175,9 @@ export function buildTileGround(ribbons, opts = {}) {
         if (!(ring?.length >= 3)) continue
         if (signedArea(ring) > 0) continue          // outer contour — the blocks are the HOLES
         const depthAt = (i) => {
-          const o = protoOwners[labs[i]]
-          if (!o) return 0
-          const hw = o.pavementHW                     // ⛔ the STAMP, not a lookup
+          const m = protoMeasureOf(labs[i])
+          if (!m) return 0
+          const hw = m.pavementHW                     // ⛔ resolved off the frozen IDENTITY
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
@@ -5129,36 +5219,140 @@ export function buildTileGround(ribbons, opts = {}) {
       // contour offset a little further, and each band is the difference between two of them.
       // Per-edge depths come from the labels, so a width authored per frontage still varies
       // along the ring — but the ring is never cut, so no seam is constructible.
-      protoBands = { curbBand: [], treelawn: [], sidewalk: [], lu: [] }
-      for (let k = 0, ci2 = 0; k < R.rings.length; k++) {
-        const ring = R.rings[k], labs = R.labels[k]
-        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
-        ci2++
-        // depth to each boundary, per edge, measured from ① (which sits ε off the centreline)
-        // ⛔ EVERY VALUE COMES OFF THE STAMP. No `measures`, no `feWidthAt`, no
-        // `segOrdAtVertex` — there is nothing here that could ask a chain a question.
-        const at = (i, e) => {
-          const o = protoOwners[labs[i]]
-          if (!o || !(o.pavementHW > 0)) return 0
-          const add = e === 0 ? 0
-                    : e === 1 ? o.curb
-                    : e === 2 ? o.curb + o.treelawn
-                    :           o.curb + o.treelawn + o.sidewalk
-          return Math.max(0, o.pavementHW + add - PROTO_HW)
+      // ⭐⭐⭐ ③ THE PED RIBBON — SET BACK FROM THE CURB, MONO-WIDTH, MATERIALS PER EDGE.
+      // Three corrections land here together, and they were ONE term:
+      //
+      // ① THE DATUM. The ped strips are set back from THE CURB. Measurements from the
+      //    centreline are immaterial to them (Jacob, 2026-09-06). The old ladder read
+      //    `pavementHW + curb + treelawn + sidewalk` PER EDGE, i.e. it measured every rung
+      //    from ①, which sits at the centreline. `pavementHW` survives here for exactly one
+      //    job — it is WHERE THE CURB IS, the origin of the setback — and it appears nowhere
+      //    in the ped ladder itself.
+      //
+      // ② MONO-WIDTH (`RIBBONS §1` INVARIANT 4, the keystone the 13-month corner saga ended
+      //    on). ⛔ `WB = cw + max(TL) + max(SW)` over THIS BLOCK's own edges — ONE uniform
+      //    outer depth per block, which is what makes the corners concentric by construction.
+      //    Carrying tl/sw per-edge into the OUTER extent is per-leg stitching: the exact
+      //    variable-offset balloon that killed Stages 7/8/sub-B. "Ribbon monowidth, strips
+      //    variable" — what varies per edge is the DIVIDER and the MATERIALS, never the total.
+      //
+      // ③ THE BAND NAMES ARE THE SHIPPED ONES. `PAINT_ORDER` (`bake-ground.js:129`) is an
+      //    ALLOW-LIST, and its own comment records what happens otherwise: a key no entry
+      //    consumes "drops silently from the slab — that is exactly how the divided median
+      //    vanished." `curbBand` was not in it. Every colour knob (`layerColors`) and every
+      //    visibility toggle (`layerVis`) rides on these names through `BAND_TO_LAYER`, so a
+      //    private name costs the operator control over the band, silently.
+      //
+      // ⭐⭐ MATERIALS WITHOUT A SECTOR PASS. Two strips ALWAYS, EQUAL width — they SWAP, they
+      // never collapse (`SECTION §3.1`/`§3.3`): treelawn-Y reads curb→grass→walk, treelawn-N
+      // reads curb→walk→lawn. The gleaned `hasTL` drives ONLY the material ordering, never a
+      // width. ⇒ each MATERIAL's own two boundaries are per-edge functions, so the sidewalk
+      // is one variable-depth annulus and the treelawn is another — no sector slicing, no
+      // re-stroking a run's polyline into an area (the round trip `A10` closed).
+      //
+      // ⛔ THE LU REMAINDER RUNS TO CENTRE. `SECTION §3.3`: the FILL spans curb → block-centre;
+      // there is no hard property line. So "both strips LU" is an OPEN FIELD — a MATERIAL
+      // state, never an absence — and it falls out for free rather than being a case.
+      protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
+      let capped = 0, tooNarrow = 0
+      for (const [k, ring] of R.rings.entries()) {
+        const labs = R.labels[k]
+        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue   // outer contour; blocks are the HOLES
+        const M = (i) => protoMeasureOf(labs[i])
+        // the CURB — per-edge, because a street's width genuinely varies along it and that is
+        // the product (`SURVEY §4`, the asphalt-edge drag). ① already sits ε off the centreline.
+        const hwAt = (i) => { const m = M(i); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
+        const cw = curbWidth
+        // the MONO-WIDTH envelope — one number for the whole block
+        let WBnom = 0
+        for (const l of labs) { const m = protoMeasureOf(l); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0)) }
+        // ⭐ THE TOPOLOGICAL CAPACITY GUARD — and it is NOT the forbidden clamp. `§6.9`.5 rules
+        // "no cusp guard; self-intersection is SIGNAL, not error" for MEANINGFUL degeneracy —
+        // an authored R shrinking the pad to a point is a coherent smaller version of itself,
+        // and Clipper's output is the honest answer. This is the OTHER regime: a depth past the
+        // block's medial axis INVERTS the offset, `differenceRings` returns the COMPLEMENT, and
+        // the band floods the interior. That is not a shape, it is a sign error wearing one.
+        // ⛔ It is also why the previous cut's "drop the rung and count it" was wrong twice
+        // over: it was a cusp guard by another name, AND it modelled a narrow block as MISSING
+        // GEOMETRY when the model already has an answer for one (the ribbon simply reaches
+        // centre). The shipped path guards this exact way — `cap = 0.9 × inscribed reach`,
+        // bisected — so this is the existing licensed guard, not a new one.
+        let WB = WBnom
+        if (WBnom > 1e-6 && !offsetRingVariable(ring, (i) => hwAt(i) + WBnom / 0.9, () => true, () => null).length) {
+          let lo = 0, hi = WBnom / 0.9
+          for (let it = 0; it < 12; it++) {
+            const mid = (lo + hi) / 2
+            if (offsetRingVariable(ring, (i) => hwAt(i) + mid, () => true, () => null).length) lo = mid; else hi = mid
+          }
+          WB = lo * 0.9
+          capped++
         }
-        const bnd = [0, 1, 2, 3].map(e => offsetRingVariable(ring, (i) => at(i, e), () => true, () => null))
-        // a band is the difference between two successive boundaries — never a stroke
-        // ⛔ THE LARGER RING IS THE SUBJECT. These are HOLES eroded inward, so a bigger depth
-        // gives a SMALLER ring: bnd[0] (the curb) is the largest and bnd[3] (the LU edge) the
-        // smallest. Passing the smaller as subject asks for (inner − outer), which is the
-        // block's COMPLEMENT — the roadway — and that is exactly what it drew: cream filling
-        // the street edge to edge, every band overlapping every other.
-        protoBands.curbBand.push(...differenceRings(bnd[0], bnd[1]))
-        protoBands.treelawn.push(...differenceRings(bnd[1], bnd[2]))
-        protoBands.sidewalk.push(...differenceRings(bnd[2], bnd[3]))
-        protoBands.lu.push(...bnd[3])
+        // ⛔⛔ A BLOCK TOO NARROW FOR THE CURB CARRIES NO STACK AT ALL — and the honest output
+        // is LU TO CENTRE, not a clamp and not an absence. When the capacity guard drives WB
+        // below `cw`, the LU edge lands OUTSIDE the curb band's inner edge and the two overlap
+        // — measured by `claims-proto-stack-disjoint` the moment its membership test was fixed:
+        // LS 5 blocks, HPDM 21, some capped to 0.0000 m. ⛔ Forcing `WB = cw` would invert the
+        // offset again (the medial-axis case), and emitting nothing would read the block as an
+        // ABSENCE, which `ARCHITECTURE §"The compound shape"` forbids: the drawing has no holes.
+        // ⭐ `SECTION §3.3` already answers it — the FILL spans curb → block-centre and the LU
+        // remainder floods, so a block with no room for a ribbon is the OPEN-FIELD limit: all
+        // LU, a MATERIAL state, never a missing one. Counted, because on town #2 nobody looks.
+        if (WB < cw) { protoBands.lu.push(...offsetRingVariable(ring, hwAt, () => true, () => null)); tooNarrow++; continue }
+        // per-edge MATERIAL boundaries — the swap, expressed as depths rather than as a case
+        const tl = (i) => Math.min(M(i)?.treelawn || 0, Math.max(0, WB - cw))
+        const sw = (i) => Math.min(M(i)?.sidewalk || 0, Math.max(0, WB - cw))
+        // ⭐ THE ARRANGEMENT, per edge: which MATERIAL is the outer strip, and how deep it runs.
+        // Two strips always — they SWAP, they never collapse — so the inner one simply takes
+        // the rest of the mono-width envelope. ⛔ The depth belongs to the STRIP, not to the
+        // material's name: an outer sidewalk is `sw` deep, an outer treelawn is `tl` deep.
+        const outWalk = (i) => M(i)?.matOuter === 'SW'          // is the CURB-side strip the walk?
+        const inWalk  = (i) => M(i)?.matInner === 'SW'
+        const dOut    = (i) => Math.min(outWalk(i) ? sw(i) : tl(i), Math.max(0, WB - cw))
+        // each material's own two boundaries — one variable-depth annulus per material, so the
+        // swap is a change of DEPTHS and never a change of construction (`RIBBONS §1`: if a
+        // material choice changes the geometry, the proposal is wrong).
+        const walkFrom = (i) => hwAt(i) + cw + (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0))
+        const walkTo   = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : (inWalk(i) ? Math.max(0, WB - cw) : 0))
+        const lawnFrom = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : 0)
+        const lawnTo   = (i) => hwAt(i) + cw + (outWalk(i) ? (inWalk(i) ? dOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
+        const inset = (fn) => offsetRingVariable(ring, fn, () => true, () => null)
+        // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, and it is
+        // INERT when unset (no output changes, the shipped `CORNER_DUMP` idiom). Two diseases
+        // look identical from a thickness histogram and have different cures:
+        //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver
+        //     falls below `offsetRingVariable`'s area floor. The deeper set then has FEWER
+        //     pieces, that lobe is never subtracted, and `differenceRings` returns it WHOLE.
+        //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`, the
+        //     averaged-normal branch, ~70% of crossings). Piece count HOLDS; the ring carries
+        //     repeated/crossing vertices and the difference mishandles the reversed winding.
+        // ⇒ record piece COUNT per depth, and repeated-vertex count per ring. If counts drop on
+        // exactly the flooded blocks it is the first; if counts hold it is the second.
+        if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
+          const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
+          const ar = (rs) => rs.reduce((t, rg) => { let a=0; for (let i=0;i<rg.length;i++){const[x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length];a+=x1*y2-x2*y1} return t + Math.abs(a/2) }, 0)
+          const stages = [['hw', inset(hwAt)], ['hw+cw', inset((i) => hwAt(i) + cw)], ['WB', inset((i) => hwAt(i) + WB)]]
+          ;(globalThis.__PROTO_DUMP ||= []).push({
+            block: k, ringArea: Math.abs(signedArea(ring)), WBnom, WB, capped: WB !== WBnom,
+            stages: stages.map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
+          })
+        }
+        const curbOuter = inset(hwAt), pedOuter = inset((i) => hwAt(i) + cw), luEdge = inset((i) => hwAt(i) + WB)
+        // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
+        // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
+        // block's COMPLEMENT: the roadway, flooding every band across the whole street.
+        const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
+        protoBands.curb.push(...band(curbOuter, pedOuter))
+        protoBands.sidewalk.push(...band(inset(walkFrom), inset(walkTo)))
+        protoBands.treelawn.push(...band(inset(lawnFrom), inset(lawnTo)))
+        protoBands.lu.push(...luEdge)
       }
-      console.log(`[tileGround][PROTO③] concentric stack off ①: curb ${protoBands.curbBand.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
+      // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
+      // nominal depth is a real fact about that block, not an error — but it must be countable,
+      // because on town #2 nobody is looking.
+      protoStackCollapse = { total: capped, tooNarrow, byRung: null, blocks: null }
+      console.log(`[tileGround][PROTO③] ped ribbon off the CURB, mono-width per block: curb ${protoBands.curb.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
+      if (capped) console.log(`[tileGround][PROTO③] ${capped} block(s) hit the capacity guard — the ribbon reaches centre rather than inverting (NOT a defect; the open-field case).`)
+      if (tooNarrow) console.log(`[tileGround][PROTO③] ${tooNarrow} block(s) too narrow for even the curb — painted ALL LU to centre (the open-field limit, a MATERIAL state, not an absence).`)
 
       // ⛔⛔ `sectionPass` IS REMOVED FROM THIS PATH, NOT LEFT BESIDE IT. It strokes inward
       // PER RUN, so its output is per-chain strips laid side by side — and Jacob read that
@@ -5379,7 +5573,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
