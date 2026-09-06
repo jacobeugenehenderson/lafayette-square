@@ -4471,8 +4471,24 @@ export function buildTileGround(ribbons, opts = {}) {
           // the chain node and hits here exactly, byte-for-byte as before. The identity lookup is
           // the fallback ONLY for a ring whose vertices are not chain nodes (①, ε off), and it is
           // a lookup by name, not a widened distance test.
-          const t = deadEndTips.get(tk) || (cid ? deadEndTipsById.get(cid.skelId + '@' + cid.capEnd) : null)
-          if (t) { seenTip.add(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
+          const tByCoord = deadEndTips.get(tk)
+          const t = tByCoord || (cid ? deadEndTipsById.get(cid.skelId + '@' + cid.capEnd) : null)
+          if (t) {
+            seenTip.add(tk)
+            // ⭐⭐ `p` IS THE CHAIN'S TIP NODE — that is the stated invariant at the record's own
+            // construction ("every key, cap-flip slot and ring-vertex match rides it"), and on a
+            // FROZEN tile it holds for free because the ring vertex IS the chain node. On a proto
+            // tile the ring sits ε off, so passing the ring vertex hands every downstream consumer
+            // a node that is ε wrong — MEASURED as exactly that by the tangency gate:
+            // `tessel-cap-bulb-verify --proto` scored 23 caps off by 5.09e-3 m at ε=5e-3.
+            // ⛔ The bulb itself was never wrong (CONTROL: ① resolves the same radius AND centre as
+            // the frozen tile, 46/46) — so this is the invariant restored, not the geometry changed.
+            // ⛔ ONLY on the identity path: when the coordinate lookup hit, `p` stays exactly the
+            // point that hit, so the frozen path is byte-identical (`tipKey` rounds to 1 mm, and
+            // substituting `px,py` there could move `p` by up to that).
+            const pNode = tByCoord ? p : [t.px, t.py]
+            ;(t.cap === 'round' ? roundTips : bluntTips).push({ p: pNode, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) })
+          }
         }
       }
     }

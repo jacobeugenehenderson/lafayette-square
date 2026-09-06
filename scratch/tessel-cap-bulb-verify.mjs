@@ -15,7 +15,17 @@
 //             the bulb centre — that IS "no shoulder step", stated as a
 //             distance (Layer 0: never an area test).
 //
-//   node scratch/tessel-cap-bulb-verify.mjs [scene]
+//   node scratch/tessel-cap-bulb-verify.mjs [scene] [--proto]
+//
+// ⭐ `--proto` RUNS THE SAME MEASUREMENT ON ①-PRODUCED TILES (`opts.protoTiles`).
+// EXACT and TANGENT are source-agnostic — they read the built `roundTips` — so ①
+// gets the identical acceptance the frozen path gets, with ONE clause swapped:
+// CONTROL cannot compare ① to the OLD `max` rule (① postdates it), so in proto mode
+// it asserts the thing that can actually go wrong instead — that every ① cap
+// resolves to the SAME bulb record (radius AND centre) the frozen tile resolves to.
+// ⛔ That is the real risk in `deadEndTipsById`: ①'s ring vertices are ε off the
+// chain, so the bulb is fetched BY IDENTITY, and an identity lookup that returned the
+// wrong chain-end would still produce a perfectly tangent — and wrong — bulb.
 //
 // ⛔ Runs with the scene's authored state: overlay.json measures over the
 // ribbons defaults, design.json blockCustoms. A run with blockCustoms:null is
@@ -24,7 +34,8 @@ import fs from 'node:fs'
 import crypto from 'node:crypto'
 import { buildTileGround, capCentre } from '../src/lib/tileGround.js'
 
-const scene = process.argv[2] || 'lafayette-square'
+const PROTO = process.argv.includes('--proto')
+const scene = process.argv.slice(2).find(a => !a.startsWith('--')) || 'lafayette-square'
 const o = console.log
 const R = (p) => JSON.parse(fs.readFileSync(p, 'utf8'))
 const ribbonsPath = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
@@ -61,7 +72,10 @@ const opts = {
   cornerCornerRadiusOverrides: design.cornerCornerRadiusOverrides || null,
   blockCustoms: design.blockCustoms || null,
   emitArtifact: true,
+  ...(PROTO ? { protoTiles: true } : {}),
 }
+if (PROTO && !(nb?.boundary?.length >= 3)) { o(`⛔ INSTRUMENT FAILURE — --proto needs a boundary and ${scene} has none. NOT MEASURED.`); process.exit(2) }
+o(PROTO ? '⭐ PROTO MODE — tiles produced by ① (stencilled), not the frozen artifact' : 'frozen-tile mode')
 const q = console.log; console.log = () => {}
 const built = buildTileGround(live, opts)
 console.log = q
@@ -84,12 +98,28 @@ if (frozen) {
     if (!f) { ctlBad.push([`${rt.skelId}|${rt.capEnd}`, 'not in the frozen artifact']); continue }
     const s = stBySkel.get(rt.skelId)
     const l = +(s?.measure?.left?.pavementHW || 0), r = +(s?.measure?.right?.pavementHW || 0)
+    if (PROTO) {
+      // ⭐ THE PROTO CONTROL: ① must resolve to the SAME bulb the frozen tile resolves to —
+      // radius AND centre, exactly. This is what gates the identity lookup: ①'s ring vertices
+      // are ε off the chain, so the record is fetched by `skelId@capEnd`, and fetching the
+      // WRONG end would still hand back a perfectly tangent bulb in the wrong place.
+      const fc = f.c || [f.px, f.py], rc = capCentre(rt)
+      const dR = Math.abs((+rt.hw) - (+f.hw)), dC = Math.hypot(rc[0] - fc[0], rc[1] - fc[1])
+      if (dR < 1e-9 && dC < 1e-9) ctlOK++
+      else ctlBad.push([`${rt.skelId}|${rt.capEnd}`, `① radius Δ${dR.toExponential(2)} m, centre Δ${dC.toExponential(2)} m vs the frozen bulb`])
+      continue
+    }
     const oldRule = Math.max(l, r)
     if (Math.abs(oldRule - f.hw) < 1e-9) ctlOK++
     else ctlBad.push([`${rt.skelId}|${rt.capEnd}`, `reconstructed max ${oldRule.toFixed(4)} ≠ frozen hw ${(+f.hw).toFixed(4)}`])
   }
-  o(`\nCONTROL — reconstructed input reproduces the frozen radii under the OLD rule (max): ${ctlOK}/${caps.length}`)
+  o(`\nCONTROL — ${PROTO ? '① resolves the SAME bulb (radius + centre) as the frozen tile' : 'reconstructed input reproduces the frozen radii under the OLD rule (max)'}: ${ctlOK}/${caps.length}`)
   for (const b of ctlBad.slice(0, 8)) o(`   ⛔ ${b[0]}: ${b[1]}`)
+  // ⚠️ IN FROZEN MODE A NON-ZERO ctlBad IS EXPECTED ONCE THE ARTIFACT HAS BEEN RE-FROZEN
+  // POST-`bbf4adf6` — this clause reproduces the artifact under the rule the fix REPLACED, so
+  // its failures on the asymmetric caps are the fix being present in the artifact, not absent.
+  // ⛔ Left failing rather than tuned green: it is still the only thing proving the reconstructed
+  // input IS the producer's on a pre-fix artifact, and rewriting it would discard that.
 } else o('\nCONTROL — skipped, no frozen artifact for this scene')
 
 // ── EXACT + TANGENT ────────────────────────────────────────────────────────

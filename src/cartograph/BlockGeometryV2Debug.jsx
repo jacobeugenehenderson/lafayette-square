@@ -194,6 +194,13 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // ⛔ Off by default and Survey-only: it costs a second union per rebuild.
 let GROUT_ON = false
 try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
+// ⭐ `?proto=1` — DRAW THE MAP FROM ① INSTEAD OF THE FROZEN TILES. The preview switch for the
+// producer swap (`ROADMAP`, ① as the producer); `PROTO_TILES=1` is the same flag for the bake.
+// ⛔ Not a render branch and not a mesh — one option passed through to `buildTileGround`, which
+// owns the decision and THROWS rather than falling back if it cannot honour it (the console
+// error below is then the disclosure, and the map going blank is the loud part).
+let PROTO_TILES_ON = false
+try { PROTO_TILES_ON = new URLSearchParams(window.location.search).get('proto') === '1' } catch { PROTO_TILES_ON = false }
 
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
@@ -804,7 +811,7 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON, protoTiles: PROTO_TILES_ON }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
