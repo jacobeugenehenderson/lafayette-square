@@ -4808,11 +4808,18 @@ export function buildTileGround(ribbons, opts = {}) {
   // through `offsetRingVariable` (which already takes a per-edge `depthAt` with a
   // `[start,end]` ramp and is winding-aware) — a change of SUBJECT, not new code.
   //
-  // ⛔ AND WHEN ① IS BUILT: **NOTHING ON IT MAY BE ROUNDED** (Jacob, 2026-09-05 — "the
-  // line segments get SMOOTHED but the downstream details don't get ROUNDED, until they
-  // naturally get rounded by the geometry"). Reason is geometric, NOT measured: an arc of
-  // radius ε offset outward by w comes out at radius ε+w ≈ w, so rounding the proto pins
-  // every corner to the road's half-width and makes an authored R=0 UNREACHABLE.
+  // ⛔ AND WHEN ① IS BUILT: **NOTHING ON IT MAY BE ROUNDED. CORNERS STAY SHARP.**
+  // RULED by Jacob 2026-09-05: "Sharp, with curvature calculated for ADA like everything
+  // already is, attached to override handles, also like everything already is."
+  // ⭐ The reason is a STAGE ASSIGNMENT, not a geometric argument — "the skeleton is
+  // SMOOTH but the corners are rounded by the SURVEY." The smoothing is already in the
+  // chain's points before ① is built; the rounding is authored after ② is offset. ① sits
+  // between the two stages and does NEITHER. Nothing about the protopolygon has to be
+  // argued from its geometry at all.
+  // ⇒ The offset does NOT round "naturally": an arc of radius = the offset distance
+  // (Illustrator behaviour) would be a THIRD, unauthored place to round — the same
+  // don't-round-twice this section already retires. R=0 stays reachable, the dial is
+  // unchanged, and NOTHING NEW IS BUILT for corners.
   // ⚠️ `scratch/gate-a-grout-holes.mjs` strokes with jtRound + etOpenRound — harmless as a
   // topology count, but it is the call anyone would copy forward to build ①, and it bakes
   // in exactly that. A warning sits at that line.
