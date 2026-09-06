@@ -506,7 +506,12 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     owners.push({ skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false, srcIdx: -1, boundary: true })
     const bRing = boundary.map(p => [p[0], p[1]])
     const bLabs = bRing.map(() => bIdx)
-    const S = booleanLabelled(clipperLib.ClipType.ctIntersection, R.rings, R.labels, [bRing], [bLabs], true)
+    // ⛔⛔ ① IS **NOT** CUT HERE. It was, briefly, and that was the same order error as cutting the
+    // blocks: it left ① stopping at the arc while the curb built from it ran on past, so Survey
+    // showed two different rules in one view (Jacob: "still happening in Survey"). Under "build
+    // the whole grid flat and stamp the circle LAST" the ONLY place the disc is applied is to the
+    // finished geometry — see `[PROTO⊙]`. ① is the ink of the WHOLE frame, always.
+    // ⭐ `boundaryRing` is carried out so the late stamp has it; it is a payload here, not a clip.
 
     // ⭐⭐⭐ BLOCKS = BOUNDARY − STROKED ROADS. The substrate ruling (`RIBBONS §1`), and it has to
     // be a SUBTRACTION rather than "the holes of the stencilled ink", because those are not the
@@ -558,10 +563,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }
 
-    // ⛔ A refused stencil is LOUD and the un-stencilled ① is returned unchanged — never a
-    // half-cut contour, which would render and could not be seen to be wrong.
-    if (S.refused) console.warn(`    ⛔ [①] STENCIL REFUSED (${S.refused}) — ① is the FULL bb, NOT cut at the perimeter. The rim is unstencilled; do not read rim geometry from this pour.`)
-    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx, blocks, blockLabels, boundaryRing: bRing }
+    return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length,
+             crossings: R.crossings, stencilled: false, boundaryOwner: bIdx, blocks, blockLabels, boundaryRing: bRing }
   }
   return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false }
 }
