@@ -4731,14 +4731,38 @@ export function deriveLayers(highways) {
       }
       return out
     }
-    let faceStreets = ribbonsLayer.streets
-      .filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
-      .map(s => {
-        if (s.strokePoints) return { ...s, points: s.strokePoints }
-        const skel = s.skelId || s.name
-        if (splitsByThru.has(skel)) return { ...s, points: spliceHits(s.points, splitsByThru.get(skel)) }
-        return s
-      })
+    // ⭐⭐⭐ RULED 2026-09-06 (Jacob) — **ALL DATA SKEWS TO THE SSoT, AND THE SKELETON IS IT.**
+    // "All data should skew to SSoT." · "The skeleton should simplify and make ironclad and
+    // foolproof." ⇒ The face walk takes the SIMPLIFIED SKELETON, the same geometry ① is minted
+    // from. Three geometries were being frozen from this one pass — `points` (densified),
+    // `strokePoints` (densified + tips straightened), and the skeleton — so the tiles and ①'s holes
+    // were two independent partitions of the map that could not agree, and every probe comparing
+    // them was measuring that rather than a defect.
+    // ⛔ MEASURED BEFORE MOVING, not after: topology UNCHANGED (102 faces either input), 94 of 102
+    // blocks move under 5%, median 0.05%. The tail is EIGHT blocks and they are the ones the canon
+    // already names — `park-place-2` and `st-vincent-court-0` (`A10`'s keyhole-splice pair),
+    // `benton-place-1` (§1's own grout eye-gate), `saint-vincent-avenue`.
+    // ⭐ And the objection to this collapsed on measurement: `strokePoints` straightens carriageway
+    // tips at divided→through nodes and I expected retiring it to cost the median faces — EXACTLY
+    // ONE CHAIN IN THE MAP CARRIES IT, and one of the eight movers touches it.
+    // ▶ `node scratch/claims-faces-on-the-ssot.mjs <scene>` — re-run it; the digits are a snapshot.
+    // ⛔ NO FALLBACK to the densified chains: a face walk that silently uses a different geometry
+    // from ① is what produced two partitions in the first place, and it is invisible — both render.
+    const faceSimplified = (() => {
+      const fp = join(CLEAN_DIR, 'skeleton.json')
+      if (!existsSync(fp)) return null
+      const j = JSON.parse(readFileSync(fp, 'utf-8'))
+      return new Map((j.streets || []).map(st => [st.id,
+        (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+    })()
+    const faceBase = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+    const faceMissing = faceSimplified
+      ? faceBase.filter(s => !(faceSimplified.get(s.skelId || s.name)?.length >= 2)).map(s => s.skelId || s.name)
+      : faceBase.map(s => s.skelId || s.name)
+    if (faceMissing.length) throw new Error(
+      `[faces] ⛔ REFUSING TO WALK FACES: ${faceMissing.length} chain(s) have no simplified skeleton geometry (${faceMissing.slice(0, 4).join(', ')}). ` +
+      `The skeleton is the SSoT and the face walk may not silently fall back to the densified chains — that produces a tile set ① cannot agree with, and both render.`)
+    let faceStreets = faceBase.map(s => ({ ...s, points: faceSimplified.get(s.skelId || s.name) }))
     // [F — EDGE OF MAP] Close the perimeter block faces. The street network
     // extends PAST the circular boundary (frame extent ≫ silhouette radius), so
     // an undecorated extractFaces walk leaves the region between the outermost

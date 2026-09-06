@@ -17,6 +17,44 @@ Jacob's words: *"Skeleton is **THE most important document** in the cartograph."
 
 ---
 
+## 0.1 ⭐⭐⭐ RULED 2026-09-06 (Jacob) — **THE SKELETON IS THE SSoT. IT SIMPLIFIES; NOTHING DOWNSTREAM COPES.**
+
+> *"All data should skew to SSoT."* · *"The skeleton should simplify and make ironclad and foolproof."*
+
+**Every consumer takes the SIMPLIFIED skeleton geometry.** ⛔ Not `points` (the densified trace),
+not `strokePoints` (the same with carriageway tips straightened) — the skeleton.
+
+**Why this is a ruling and not a preference:** prebake was freezing **three different geometries out
+of one pass** — the face walk on `strokePoints || points`, ① on something else again — so the tiles
+and ①'s holes were **two independent partitions of the same map**, and every probe comparing them
+was measuring that divergence rather than a defect in either. Both render. Neither can be seen to be
+wrong.
+
+⭐⭐ **AND THE COROLLARY IS THE ONE THAT SAVES TIME: IF A CONSTRUCTION DOWNSTREAM NEEDS ELABORATE
+SCAFFOLDING, SUSPECT THE INPUT.** 2026-09-06 was spent building guards — corner-cluster collapsing,
+fillet-setback budgets, self-intersection handling, severance detection — against a ① minted from the
+**densified** chains, which carried 8.5× the points (9,547 vs 1,123) and up to **705 vertices on a
+block that should have ~8**. Feeding it the skeleton instead moved every failure count at once, with
+no new code: corners declining as "too tight" went **338 → 39**. ⛔ Jacob said it three ways —
+*"blocks are, for the most part, quadrilateral"*, *"we're building these elaborate scaffolds around
+these tiny edge cases"*, *"the protopoly is a simplified shape with no rounding"* — before anyone
+checked the input.
+
+**Measured before moving, and the digits are a snapshot — re-run it:**
+▶ `node scratch/claims-faces-on-the-ssot.mjs <scene>` · `node scratch/claims-repour-changes-nothing.mjs <scene>`
+- topology **unchanged** — 102 faces on either input; the pour holds 101 tiles / 178 faces
+- 94 of 102 blocks move **under 5%** (median 0.05%)
+- the tail is **eight blocks, and the canon already names them**: `park-place-2` + `st-vincent-court-0`
+  (`A10`'s keyhole-splice pair), `benton-place-1` (`RIBBONS §1`'s grout eye-gate), `saint-vincent-avenue`
+- ⭐ the objection collapsed on measurement: `strokePoints` exists to stop divided→through median faces
+  pinching, and **exactly ONE chain in the map carries it**
+
+⛔ **NO FALLBACK.** A consumer with no simplified geometry for a chain **refuses** rather than quietly
+using the densified one — `derive.js` throws for the face walk and declines to freeze ① — because a
+silent divergence here is invisible: both inputs produce a map.
+
+---
+
 ## 1. The artifact chain — where the skeleton sits
 
 Every pipeline stage *freezes a real document*. The skeleton is link #2, and it is the one all downstream geometry trusts.

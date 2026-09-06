@@ -287,11 +287,18 @@
 >   whenever the frozen path renders** (`BlockGeometryV2Debug.jsx`), so `buildTileGround` **does not run
 >   at idle** — the overlay appears only while an element is active. ⛔ **No producer-side overlay is
 >   visible in Survey at rest**, and the doc said otherwise for two days.
->   ⭐ **`?proto=1` NOW EXISTS AND IS THE EYE-GATE** — magenta = ①'s ink, read straight off the FROZEN
->   artifact so it needs no live build and crosses no wall; cyan = ② the curb offset from it. ⚠️ The
->   URL itself predates the code: it was asserted as a gate by the session reverted in `5560cf6a` and
->   matched nothing, so typing it showed the ordinary chain-built map with no sign ① was absent.
->   ⛔ The ease is OFF in that overlay by deliberate bisection — judge the CURB first.
+>   ⚠️ `?proto=1` was BUILT AND THEN EXCISED, 2026-09-06, and the reason is the useful part.
+>   It drew ① (magenta, off the frozen artifact) and ② (cyan) over the live map. ⛔ **② was not fit to
+>   look at** — it threw long thin triangles spanning blocks — so the overlay put broken geometry on
+>   top of the operator's map and cost him three passes trying to read around it. Jacob: *"all these
+>   lines look awful; I don't even know what making the producer is."*
+>   ⭐⭐ **THE RULE THIS EARNS: DO NOT EYE-GATE A CONSTRUCTION THAT IS NOT READY, AND NEVER IN THE
+>   OPERATOR'S OWN VIEW.** An overlay is not free — it competes with the map for the one instrument
+>   that can judge either. ② is worked in `scratch/draw-proto-corner.mjs` (an SVG harness) until the
+>   cyan lies on the curb; only then does it earn a place on screen.
+>   ⚠️ The URL itself predates the code: it was asserted as a gate by the session reverted in
+>   `5560cf6a` and matched nothing, so typing it showed the ordinary chain-built map with no sign ①
+>   was absent. ⛔ It matches nothing again now — that is deliberate, not a regression.
 > - ### ⛔⛔ EVERY ②③ NUMBER TAKEN BEFORE 2026-09-06 WAS MEASURED WITH **AUTHORING OFF** — void, re-take it.
 >   Seven of the eight `scratch/claims-proto-*` probes called `buildTileGround(rb, { grout: 'proto' })`
 >   with **no `blockCustoms`**, and `claims-proto-stack-disjoint`'s own header asserted the opposite.

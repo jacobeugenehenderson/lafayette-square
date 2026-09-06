@@ -194,20 +194,6 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // ⛔ Off by default and Survey-only: it costs a second union per rebuild.
 let GROUT_ON = false
 try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
-// [PROTO] ① overlay — `?proto=1`. ⛔⛔ THIS URL EXISTED IN NOBODY'S CODE UNTIL NOW. It was
-// asserted as an eye-gate by the session reverted in `5560cf6a` ("I asserted a URL param as the
-// eye-gate without exercising it, then let Jacob find out"), and Jacob has since typed it and been
-// shown the ordinary chain-built map with no indication that ① was not on screen.
-// ⭐⭐ IT READS THE FROZEN ARTIFACT, NOT A LIVE BUILD, and that is what makes it work at all:
-// `tileGeos` returns null whenever the frozen path renders (`:800`), so `buildTileGround` DOES NOT
-// RUN at idle — which is why `?grout=1` shows nothing there either. ① is minted at prebake and is a
-// pure function of the frame (`derive.js`), so it can be drawn straight off `ribbons.protopolygon`
-// with no producer change and no reach back across the wall.
-// ⛔ It draws ① ITSELF — the ε contour, width-free — NOT the curb. If the scene has never been
-// poured since ① landed the artifact is absent, and this says so rather than drawing nothing.
-let PROTO_ON = false
-try { PROTO_ON = new URLSearchParams(window.location.search).get('proto') === '1' } catch { PROTO_ON = false }
-
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
   const pos = []
@@ -807,47 +793,6 @@ export default function BlockGeometryV2Debug({
     })
   }, [sectionGeos])
 
-  // [PROTO] ①, straight off the frozen artifact. ⛔ Deliberately NOT inside `tileGeos`: that memo
-  // returns null whenever the frozen path renders, which is exactly when the operator is looking.
-  const protoGeo = useMemo(() => {
-    if (!PROTO_ON) return null
-    if (!liveRibbons) return null
-    const P = liveRibbons.protopolygon
-    if (!P?.rings?.length) {
-      console.warn('[BlockGeometryV2Debug][①] ⛔ ?proto=1 but this scene carries NO frozen protopolygon — it has not been poured since ① landed. The map you see is the ordinary chain-built one.')
-      return null
-    }
-    // ⭐⭐ ② IS BUILT HERE, GATED, AND IT IS A LIVE BUILD ON PURPOSE. ① freezes at prebake, but the
-    // CURB cannot: it is ① eroded to the AUTHORED half-width, and prebake is blind to
-    // `design.json`/`blockCustoms` (`POLYGON-FIRST §3`). Freezing ② there would bake the to-code
-    // default into the artifact — Layer 0 q3. So identity is frozen and the VALUE resolves here.
-    // ⛔ Behind `?proto=1` and nothing else: default-off costs one branch, and `tileGeos` is
-    // untouched, so the shipped map is byte-identical whether or not this runs.
-    let tg = null
-    try {
-      tg = buildTileGround(liveRibbons, {
-        stencil, curbWidth, smooth: streetSmooth, blockLandUse,
-        cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides,
-        blockCustoms: blockCustomsX, grout: 'proto',
-        // ⭐ THE EASE IS ON. It was switched OFF for one bisection — with the DENSE ① it drew thin
-        // fans across blocks (a corner whose setback `R/tan(θ/2)` ran to tens of metres put its
-        // tangent points far down both legs, and the arc between them cut the block). ⛔ My
-        // long-step metric never caught that, because a bad fillet is a TESSELLATED ARC — hundreds
-        // of short steps, not one long one — so decline counts got tuned while the output was
-        // garbage. ⭐ Minting ① from the SIMPLIFIED SKELETON removed the cause rather than the
-        // symptom: too-tight 338 → 90, overlap 122 → 46. The corners curve again.
-      })
-    } catch (e) { console.error('[BlockGeometryV2Debug][②] proto build failed:', e) }
-    // ⛔ LOUD ABOUT WHAT IS ON SCREEN. A curb that silently failed to build must not read as
-    // "② agrees with the shipped curb" — the whole point of the overlay is that the two differ.
-    if (!tg?.protoCurb?.length) console.warn('[BlockGeometryV2Debug][②] ⛔ ① drew but the CURB did not build — you are seeing the ε contour only, NOT the offset curb.')
-    else console.log(`[BlockGeometryV2Debug][②] curb off ①: ${tg.protoCurb.length} ring(s), eased at the authored R — magenta is ①'s ink, CYAN is the curb offset from it at the authored width`)
-    return {
-      ink:  ringsToEdgeGeo(P.rings, 0.065),
-      curb: tg?.protoCurb?.length ? ringsToEdgeGeo(tg.protoCurb, 0.075) : null,
-    }
-  }, [liveRibbons, stencil, curbWidth, streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustomsX])
-
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
     // The frozen path is going to render this — don't duplicate its work. See
@@ -1189,12 +1134,6 @@ export default function BlockGeometryV2Debug({
   const groutMat = useMemo(() => new THREE.LineBasicMaterial({
     color: 0xff3d7f, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
-  // [PROTO] ② — the curb offset from ①. ⛔ A DIFFERENT COLOUR FROM ①'s ink on purpose: the two sit
-  // ε apart everywhere except where the authored width takes the curb away from the centreline, so
-  // one colour would make "the curb is missing" and "the curb is on the centreline" look identical.
-  const protoCurbMat = useMemo(() => new THREE.LineBasicMaterial({
-    color: 0x2fe0e0, transparent: true, opacity: 0.95, depthWrite: false,
-  }), [])
   // The curb band filled a touch darker than the block — it's the 'handle rail',
   // where the corner-rounding controls live, so it reads slightly proud of the
   // block interior.
@@ -1334,14 +1273,6 @@ export default function BlockGeometryV2Debug({
         {tileGeos?.groutOutline && (
           <lineSegments geometry={tileGeos.groutOutline} renderOrder={PRI.curb + 2}
             material={groutMat} />
-        )}
-        {protoGeo?.ink && (
-          <lineSegments geometry={protoGeo.ink} renderOrder={PRI.curb + 3}
-            material={groutMat} />
-        )}
-        {protoGeo?.curb && (
-          <lineSegments geometry={protoGeo.curb} renderOrder={PRI.curb + 4}
-            material={protoCurbMat} />
         )}
         {surveyIxGeo && (
           <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
