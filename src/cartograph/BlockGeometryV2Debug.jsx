@@ -194,6 +194,15 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // ⛔ Off by default and Survey-only: it costs a second union per rebuild.
 let GROUT_ON = false
 try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
+// [PROTO] `?proto=1` — ① AS THE PRODUCER OF THE LIVE CURB, which is the one SURVEY DRAWS.
+// ⛔⛔ Survey never reads the frozen `shape.json` (`sectionFrozen = !surveyActive`), so the bake's
+// `--proto` flag and the whole producer swap are INVISIBLE there. This is the only switch that
+// changes the curb under the operator's hand.
+// ⛔ NOT an overlay. The earlier `?proto=1` drew ①/② ON TOP of the map and was excised for exactly
+// that reason; this REPLACES the curb, so there is one thing on screen and it is either right or
+// wrong. Default off; `buildTileGround` refuses rather than falling back.
+let PROTO_ON = false
+try { PROTO_ON = new URLSearchParams(window.location.search).get('proto') === '1' } catch { PROTO_ON = false }
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
   const pos = []
@@ -803,7 +812,7 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: PROTO_ON ? 'proto' : GROUT_ON, protoProducer: PROTO_ON }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))

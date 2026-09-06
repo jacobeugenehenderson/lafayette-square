@@ -5929,7 +5929,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // it stays free on the live corner-drag rebuild path. The Survey view shades
   // these to memorialize the block boundaries; the rest of the app ignores it.
   const blockRaw = shapeTiles.flatMap(st => st.iA || [])
-  const block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
+  let block = stencil ? intersectRings(blockRaw, [stencil]) : blockRaw
 
   // ── THE WALL · Phase D · serialize the frozen artifact ─────────────
   // `_shapeArtifact` is the per-tile frozen shape sectionPass consumes — the
@@ -5938,6 +5938,22 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
+  // ⭐⭐⭐ ① AS THE PRODUCER OF THE **LIVE** CURB — the one Survey actually draws.
+  // ⛔⛔ THIS IS THE PIECE THAT WAS MISSING ALL DAY. Survey NEVER reads the frozen `shape.json`
+  // (`sectionFrozen = !surveyActive`), so it live-builds from the chains — which means ①②③, the bake
+  // flag and the whole producer swap were invisible in the one view the operator uses. Every "101/101
+  // parallel" I reported measured a curb that had never been on his screen. Jacob: "You can not look
+  // at this centerline and tell me the curbs are parallel offsets."
+  // ⇒ When ① is the producer, `curb` and `block` ARE ②. Nothing downstream changes; the outputs are
+  // the same arrays of rings, built from the contour instead of from the chains.
+  // ⛔ Gated, and it REFUSES rather than falling back: asking for ① as the producer and silently
+  // getting the chain curb is the plausible-looking success Layer 0 forbids.
+  if (opts.protoProducer) {
+    if (!protoCurb?.length) throw new Error('[tileGround] protoProducer asked for ① as the producer but ② built NO curb. Refusing to hand back the chain curb under a flag that says otherwise.')
+    curb = protoCurb
+    block = protoCurb
+    console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) offset from ①`)
+  }
   return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
