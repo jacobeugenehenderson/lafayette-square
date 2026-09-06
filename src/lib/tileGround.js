@@ -147,6 +147,24 @@ function easeRing(ring, rAt, report = null) {
     }
     return { p: ring[k], idx: k, tan: [0, 0], short: true }
   }
+  // ⭐ THE BUDGET — half the arc-length to the nearest corner on either side. Corners are the
+  // vertices that TURN meaningfully; a dense polyline's ~1° bends are not boundaries. Half, so two
+  // adjacent corners' eases can meet but never overlap.
+  const isCorner = new Array(n).fill(false)
+  for (let i = 0; i < n; i++) {
+    const V = ring[i], A = ring[(i - 1 + n) % n], B = ring[(i + 1) % n]
+    const aL = D(A, V), bL = D(V, B); if (aL < 1e-9 || bL < 1e-9) continue
+    const dot = ((A[0]-V[0])/aL)*((B[0]-V[0])/bL) + ((A[1]-V[1])/aL)*((B[1]-V[1])/bL)
+    if (Math.acos(Math.max(-1, Math.min(1, dot))) < Math.PI - 0.12) isCorner[i] = true   // >~7° turn
+  }
+  const budget = new Array(n).fill(Infinity)
+  for (let i = 0; i < n; i++) {
+    if (!isCorner[i]) continue
+    let back = 0, fwd = 0, k
+    for (k = 1; k < n; k++) { back += seglen[(i - k + n) % n]; if (isCorner[(i - k + n) % n]) break }
+    for (k = 1; k < n; k++) { fwd  += seglen[(i + k - 1) % n]; if (isCorner[(i + k) % n]) break }
+    budget[i] = Math.min(back, fwd) / 2
+  }
   // pass 1 — resolve each vertex's radius and its two tangent points
   const plan = new Array(n).fill(null)
   for (let i = 0; i < n; i++) {
@@ -161,8 +179,20 @@ function easeRing(ring, rAt, report = null) {
     const theta = Math.acos(Math.max(-1, Math.min(1, ax * bx + az * bz)))
     if (!(theta > 1e-3) || theta > Math.PI - 1e-3) continue   // collinear / doubled back
     const t = R / Math.tan(theta / 2)
+    // ⛔⛔ AN ACUTE CORNER CANNOT HOLD A FIXED RADIUS, AND THE ANSWER IS TO DECLINE, NOT TO CLAMP.
+    // `t = R/tan(θ/2)` diverges as θ→0: a 4.5 m radius in a 5° wedge genuinely needs a ~100 m
+    // setback. That is arithmetically right and visually garbage — Jacob's eye caught it as a long
+    // chord cutting straight across a block, drawn where a corner should be.
+    // ⭐ THE DISTINCTION THAT MATTERS, because `RIBBONS §1` forbids the other one: a CLAMP would
+    // shrink R to something that fits and draw a plausible corner nobody authored — "a cleanup
+    // patch living inside the construction", which is exactly what the miterLimit bevel was doing.
+    // DECLINING draws the corner the operator's geometry actually has (sharp) and SAYS SO. No
+    // invented radius, no silent substitution, and the count is the signal.
+    // ⛔ The budget is the distance to the NEAREST NEIGHBOURING CORNER, not the whole ring: an ease
+    // that reaches past the next corner would consume a leg that belongs to someone else.
+    if (!(t <= budget[i])) { if (report) report.tooTight++; continue }
     const P0 = walk(i, -1, t), P1 = walk(i, +1, t)
-    if (P0.short || P1.short) { if (report) report.overreach++; continue }
+    if (P0.short || P1.short) { if (report) report.tooTight++; continue }
     plan[i] = { P0, P1, theta, R, t }
   }
   // ⛔ OVERLAP IS REPORTED, NOT CLAMPED. Two corners whose eases would consume the same span is an
@@ -5400,7 +5430,7 @@ export function buildTileGround(ribbons, opts = {}) {
       const [a, b] = legOut <= legIn ? [legOut, legIn] : [legIn, legOut]
       return `${ixKeyOf(V)}|${a}|${b}`
     }
-    const protoEaseReport = { eased: 0, overreach: 0, corner: 0, capApex: 0, bend: 0, noNode: 0 }
+    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, capApex: 0, bend: 0, noNode: 0 }
     // ⭐ THE CLASSIFICATION FALLS OUT OF THE LABELS — no graph query, no angle test.
     // different skelId          → a CORNER (two streets meet)
     // same skelId, other side   → a CAP APEX (the contour turned around a tip; there are TWO)
@@ -5470,7 +5500,8 @@ export function buildTileGround(ribbons, opts = {}) {
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,
       // rendering as what it is (`§6.9.5`: self-intersection is SIGNAL, not error).
       console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased — ${protoEaseReport.corner} corner · ${protoEaseReport.capApex} cap-apex · ${protoEaseReport.bend} bend (skeleton's, left sharp)`)
-      if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) where the authored R exceeds its leg — they self-intersect, which is the honest output, NOT clamped.`)
+      if (protoEaseReport.tooTight) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.tooTight} corner(s) TOO TIGHT for the authored R — left SHARP and counted. ⛔ Not clamped to a smaller radius: that would draw a corner nobody authored.`)
+      if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) whose ease would overlap a neighbour's — left sharp.`)
       if (protoEaseReport.noNode) console.warn(`[tileGround][PROTO②ease] ⛔ ${protoEaseReport.noNode} vertex/vertices could not resolve a centreline node and went through SHARP — the authored corner R did not reach them.`)
       // ── ③ HAND IT TO `sectionPass` — the FILL, unchanged ────────────────────────────
       // The paint stack (treelawn · sidewalk · materials · ADA · the LU flood) strokes INWARD
