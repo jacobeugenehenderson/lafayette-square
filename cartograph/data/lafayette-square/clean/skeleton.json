@@ -91,7 +91,7 @@
       "caps": {
         "start": {
           "cap": "butt",
-          "degree": 4
+          "degree": 3
         },
         "end": {
           "cap": "butt",
@@ -7040,7 +7040,7 @@
         },
         "end": {
           "cap": "butt",
-          "degree": 4
+          "degree": 3
         }
       },
       "throughId": "Saint Ange Avenue",
@@ -7187,200 +7187,6 @@
         }
       },
       "throughId": "South 17th Street",
-      "through": {
-        "start": false,
-        "end": false
-      }
-    },
-    {
-      "id": "lasalle-lane",
-      "name": "Lasalle Lane",
-      "highway": "residential",
-      "oneway": false,
-      "lanes": 2,
-      "surface": "asphalt",
-      "points": [
-        {
-          "x": 700.28,
-          "z": -320.86
-        },
-        {
-          "x": 709.18,
-          "z": -318.55
-        },
-        {
-          "x": 716.15,
-          "z": -316.73
-        },
-        {
-          "x": 749.74,
-          "z": -307.99
-        },
-        {
-          "x": 789.51,
-          "z": -297.64
-        },
-        {
-          "x": 792.35,
-          "z": -297.52
-        },
-        {
-          "x": 795.31,
-          "z": -297.98
-        },
-        {
-          "x": 799.23,
-          "z": -299.32
-        },
-        {
-          "x": 809.83,
-          "z": -300.55
-        },
-        {
-          "x": 879.95,
-          "z": -281.19
-        },
-        {
-          "x": 888.18,
-          "z": -278.18
-        },
-        {
-          "x": 896.44,
-          "z": -273.3
-        },
-        {
-          "x": 904.7,
-          "z": -267.01
-        },
-        {
-          "x": 959.62,
-          "z": -251.89
-        },
-        {
-          "x": 964.81,
-          "z": -251.74
-        },
-        {
-          "x": 974.23,
-          "z": -251.46
-        }
-      ],
-      "sources": [
-        1421582594,
-        6416637,
-        1421582593,
-        1421582590
-      ],
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69
-      },
-      "layer": 0,
-      "bridge": false,
-      "tunnel": false,
-      "gradeSeparated": false,
-      "phase": {
-        "kind": "single",
-        "role": "spine",
-        "corridorName": "Lasalle Lane",
-        "pairKey": null,
-        "startNode": {
-          "x": 700.28,
-          "z": -320.86
-        },
-        "endNode": {
-          "x": 974.23,
-          "z": -251.46
-        }
-      },
-      "segments": [
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 790.4177980890724,
-            "z": -297.4037488000528
-          },
-          "c2": {
-            "x": 791.4135713383027,
-            "z": -297.4651059060384
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 793.3368307898206,
-            "z": -297.57784870147225
-          },
-          "c2": {
-            "x": 794.3746164415148,
-            "z": -297.66025153868117
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 802.5309128557349,
-            "z": -300.4483732721134
-          },
-          "c2": {
-            "x": 806.2959022882433,
-            "z": -301.5257577253225
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        }
-      ],
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 3
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 4
-        }
-      },
-      "throughId": "Lasalle Lane",
       "through": {
         "start": false,
         "end": false
@@ -15815,165 +15621,6 @@
       }
     },
     {
-      "id": "hickory-lane-0",
-      "name": "Hickory Lane",
-      "highway": "construction",
-      "oneway": false,
-      "points": [
-        {
-          "x": 812.71,
-          "z": -181.1
-        },
-        {
-          "x": 863.44,
-          "z": -167.37
-        },
-        {
-          "x": 905.75,
-          "z": -155.34
-        }
-      ],
-      "sources": [
-        1454227434,
-        6425837
-      ],
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 4.57,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 6.25,
-          "source": "survey-row"
-        },
-        "right": {
-          "pavementHW": 4.57,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 6.25,
-          "source": "survey-row"
-        },
-        "widthSource": "survey"
-      },
-      "layer": 0,
-      "bridge": false,
-      "tunnel": false,
-      "gradeSeparated": false,
-      "phase": {
-        "kind": "single",
-        "role": "spine",
-        "corridorName": "Hickory Lane",
-        "pairKey": null,
-        "startNode": {
-          "x": 812.71,
-          "z": -181.1
-        },
-        "endNode": {
-          "x": 905.75,
-          "z": -155.34
-        }
-      },
-      "caps": {
-        "start": {
-          "cap": "round",
-          "degree": 1
-        },
-        "end": {
-          "cap": "round",
-          "degree": 1
-        }
-      },
-      "throughId": "Hickory Lane",
-      "through": {
-        "start": false,
-        "end": false
-      }
-    },
-    {
-      "id": "hickory-lane-1",
-      "name": "Hickory Lane",
-      "highway": "residential",
-      "oneway": false,
-      "points": [
-        {
-          "x": 668.4,
-          "z": -205.39
-        },
-        {
-          "x": 766.15,
-          "z": -180.16
-        }
-      ],
-      "sources": [
-        43394252
-      ],
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69,
-        "left": {
-          "pavementHW": 4.57,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 6.25,
-          "source": "survey-row"
-        },
-        "right": {
-          "pavementHW": 4.57,
-          "treelawn": 0,
-          "sidewalk": 1.52,
-          "blockEdgeHW": 6.25,
-          "source": "survey-row"
-        },
-        "widthSource": "survey"
-      },
-      "layer": 0,
-      "bridge": false,
-      "tunnel": false,
-      "gradeSeparated": false,
-      "phase": {
-        "kind": "single",
-        "role": "spine",
-        "corridorName": "Hickory Lane",
-        "pairKey": null,
-        "startNode": {
-          "x": 668.4,
-          "z": -205.39
-        },
-        "endNode": {
-          "x": 766.15,
-          "z": -180.16
-        }
-      },
-      "caps": {
-        "start": {
-          "cap": "butt",
-          "degree": 3
-        },
-        "end": {
-          "cap": "butt",
-          "degree": 3
-        }
-      },
-      "throughId": "Hickory Lane",
-      "through": {
-        "start": false,
-        "end": false
-      }
-    },
-    {
       "id": "serbian-drive",
       "name": "Serbian Drive",
       "highway": "residential",
@@ -24118,6 +23765,160 @@
       }
     },
     {
+      "id": "hickory-lane-0",
+      "name": "Hickory Lane",
+      "highway": "residential",
+      "oneway": false,
+      "points": [
+        {
+          "x": 668.4,
+          "z": -205.39
+        },
+        {
+          "x": 766.15,
+          "z": -180.16
+        }
+      ],
+      "sources": [
+        43394252
+      ],
+      "seed": {
+        "seededClass": "residential",
+        "lanesAssumed": 2,
+        "pavementHW": 5.49,
+        "curb": 0.15,
+        "treelawn": 1.52,
+        "sidewalk": 1.52,
+        "cornerR": 4.5,
+        "rowHalf": 8.69,
+        "left": {
+          "pavementHW": 4.57,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 6.25,
+          "source": "survey-row"
+        },
+        "right": {
+          "pavementHW": 4.57,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 6.25,
+          "source": "survey-row"
+        },
+        "widthSource": "survey"
+      },
+      "layer": 0,
+      "bridge": false,
+      "tunnel": false,
+      "gradeSeparated": false,
+      "phase": {
+        "kind": "single",
+        "role": "spine",
+        "corridorName": "Hickory Lane",
+        "pairKey": null,
+        "startNode": {
+          "x": 668.4,
+          "z": -205.39
+        },
+        "endNode": {
+          "x": 766.15,
+          "z": -180.16
+        }
+      },
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 3
+        },
+        "end": {
+          "cap": "butt",
+          "degree": 3
+        }
+      },
+      "throughId": "Hickory Lane",
+      "through": {
+        "start": false,
+        "end": false
+      }
+    },
+    {
+      "id": "hickory-lane-1",
+      "name": "Hickory Lane",
+      "highway": "residential",
+      "oneway": false,
+      "points": [
+        {
+          "x": 863.44,
+          "z": -167.37
+        },
+        {
+          "x": 905.75,
+          "z": -155.34
+        }
+      ],
+      "sources": [
+        1454227434
+      ],
+      "seed": {
+        "seededClass": "residential",
+        "lanesAssumed": 2,
+        "pavementHW": 5.49,
+        "curb": 0.15,
+        "treelawn": 1.52,
+        "sidewalk": 1.52,
+        "cornerR": 4.5,
+        "rowHalf": 8.69,
+        "left": {
+          "pavementHW": 4.57,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 6.25,
+          "source": "survey-row"
+        },
+        "right": {
+          "pavementHW": 4.57,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "blockEdgeHW": 6.25,
+          "source": "survey-row"
+        },
+        "widthSource": "survey"
+      },
+      "layer": 0,
+      "bridge": false,
+      "tunnel": false,
+      "gradeSeparated": false,
+      "phase": {
+        "kind": "single",
+        "role": "spine",
+        "corridorName": "Hickory Lane",
+        "pairKey": null,
+        "startNode": {
+          "x": 863.44,
+          "z": -167.37
+        },
+        "endNode": {
+          "x": 905.75,
+          "z": -155.34
+        }
+      },
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 3
+        },
+        "end": {
+          "cap": "round",
+          "degree": 1
+        }
+      },
+      "throughId": "Hickory Lane",
+      "through": {
+        "start": false,
+        "end": false
+      }
+    },
+    {
       "id": "eads-avenue-0",
       "name": "Eads Avenue",
       "highway": "residential",
@@ -28581,729 +28382,6 @@
       }
     },
     {
-      "id": "green-line-brt",
-      "name": "Green Line BRT",
-      "highway": "proposed",
-      "oneway": false,
-      "points": [
-        {
-          "x": -4766.25,
-          "z": -7754.58
-        },
-        {
-          "x": -4548.22,
-          "z": -7569.43
-        },
-        {
-          "x": -4356.91,
-          "z": -7419.43
-        },
-        {
-          "x": -4326.97,
-          "z": -7398.59
-        },
-        {
-          "x": -4298.96,
-          "z": -7381.01
-        },
-        {
-          "x": -4215.4,
-          "z": -7332.97
-        },
-        {
-          "x": -3720.97,
-          "z": -7057.79
-        },
-        {
-          "x": -3476.09,
-          "z": -6908.71
-        },
-        {
-          "x": -3102.89,
-          "z": -6700.81
-        },
-        {
-          "x": -111.56,
-          "z": -5040.11
-        },
-        {
-          "x": 236.56,
-          "z": -4846.18
-        },
-        {
-          "x": 249.94,
-          "z": -4838.23
-        },
-        {
-          "x": 263.91,
-          "z": -4829.29
-        },
-        {
-          "x": 358.12,
-          "z": -4765.19
-        },
-        {
-          "x": 374.08,
-          "z": -4755.23
-        },
-        {
-          "x": 549.84,
-          "z": -4659.14
-        },
-        {
-          "x": 619.99,
-          "z": -4623.46
-        },
-        {
-          "x": 728.46,
-          "z": -4568.22
-        },
-        {
-          "x": 1080.41,
-          "z": -4471.97
-        },
-        {
-          "x": 1122.89,
-          "z": -4440.98
-        },
-        {
-          "x": 1147.14,
-          "z": -4397.32
-        },
-        {
-          "x": 1269.28,
-          "z": -4133.17
-        },
-        {
-          "x": 1336.33,
-          "z": -3989.99
-        },
-        {
-          "x": 1390.81,
-          "z": -3855.7
-        },
-        {
-          "x": 1544.74,
-          "z": -3463.67
-        },
-        {
-          "x": 1667.35,
-          "z": -3153.71
-        },
-        {
-          "x": 1684.34,
-          "z": -3109.83
-        },
-        {
-          "x": 1701.95,
-          "z": -3072.8
-        },
-        {
-          "x": 1728.68,
-          "z": -3039.06
-        },
-        {
-          "x": 1762.87,
-          "z": -3010.83
-        },
-        {
-          "x": 1823.83,
-          "z": -2986.87
-        },
-        {
-          "x": 1876.2,
-          "z": -2972.29
-        },
-        {
-          "x": 1897.38,
-          "z": -2957.25
-        },
-        {
-          "x": 1929.12,
-          "z": -2855.29
-        },
-        {
-          "x": 1861,
-          "z": -2612.06
-        },
-        {
-          "x": 1860.79,
-          "z": -2603.63
-        },
-        {
-          "x": 1868.59,
-          "z": -2566.75
-        },
-        {
-          "x": 1877.88,
-          "z": -2530.62
-        },
-        {
-          "x": 1895.99,
-          "z": -2508.39
-        },
-        {
-          "x": 1901.23,
-          "z": -2501.93
-        },
-        {
-          "x": 1900.35,
-          "z": -2495.7
-        },
-        {
-          "x": 1887.12,
-          "z": -2472.9
-        },
-        {
-          "x": 1874.89,
-          "z": -2441.94
-        },
-        {
-          "x": 1847.62,
-          "z": -2343.77
-        },
-        {
-          "x": 1790.32,
-          "z": -2127.46
-        },
-        {
-          "x": 1724.27,
-          "z": -1889.46
-        },
-        {
-          "x": 1676.47,
-          "z": -1746.01
-        },
-        {
-          "x": 1550.4,
-          "z": -1271.39
-        },
-        {
-          "x": 1475.88,
-          "z": -1034.92
-        },
-        {
-          "x": 1471.83,
-          "z": -1030.72
-        },
-        {
-          "x": 1466.63,
-          "z": -1030.17
-        },
-        {
-          "x": 1250.16,
-          "z": -1097.14
-        },
-        {
-          "x": 801.06,
-          "z": -1214.66
-        },
-        {
-          "x": 793.74,
-          "z": -1214.87
-        },
-        {
-          "x": 787.86,
-          "z": -1212.62
-        },
-        {
-          "x": 786.22,
-          "z": -1208.01
-        },
-        {
-          "x": 744.85,
-          "z": -1045.03
-        },
-        {
-          "x": 733.64,
-          "z": -1007.7
-        },
-        {
-          "x": 676.63,
-          "z": -795.89
-        },
-        {
-          "x": 647.07,
-          "z": -684.94
-        },
-        {
-          "x": 648.37,
-          "z": -607.44
-        },
-        {
-          "x": 662.84,
-          "z": -559.58
-        },
-        {
-          "x": 693.72,
-          "z": -464.53
-        },
-        {
-          "x": 694.31,
-          "z": -458.4
-        },
-        {
-          "x": 690.7,
-          "z": -454.07
-        },
-        {
-          "x": 684.26,
-          "z": -453.36
-        },
-        {
-          "x": -218.51,
-          "z": -691.11
-        },
-        {
-          "x": -233.66,
-          "z": -634.07
-        },
-        {
-          "x": -251.84,
-          "z": -575.28
-        },
-        {
-          "x": -365.08,
-          "z": -224.32
-        },
-        {
-          "x": -375.45,
-          "z": -176.4
-        },
-        {
-          "x": -455.32,
-          "z": 290.18
-        },
-        {
-          "x": -461.92,
-          "z": 333.07
-        },
-        {
-          "x": -465.14,
-          "z": 359.4
-        },
-        {
-          "x": -599.81,
-          "z": 1226.81
-        },
-        {
-          "x": -636.04,
-          "z": 1438.56
-        },
-        {
-          "x": -814.28,
-          "z": 2524.38
-        },
-        {
-          "x": -939.24,
-          "z": 3311.71
-        },
-        {
-          "x": -945.17,
-          "z": 3349.05
-        },
-        {
-          "x": -1032.98,
-          "z": 3865.72
-        },
-        {
-          "x": -1048.31,
-          "z": 3899.09
-        },
-        {
-          "x": -1201.72,
-          "z": 4087.2
-        }
-      ],
-      "sources": [
-        1320171601
-      ],
-      "seed": {
-        "seededClass": "residential",
-        "lanesAssumed": 2,
-        "pavementHW": 5.49,
-        "curb": 0.15,
-        "treelawn": 1.52,
-        "sidewalk": 1.52,
-        "cornerR": 4.5,
-        "rowHalf": 8.69
-      },
-      "layer": 0,
-      "bridge": false,
-      "tunnel": false,
-      "gradeSeparated": false,
-      "phase": {
-        "kind": "single",
-        "role": "spine",
-        "corridorName": "Green Line BRT",
-        "pairKey": null,
-        "startNode": {
-          "x": -4766.25,
-          "z": -7754.58
-        },
-        "endNode": {
-          "x": -1201.72,
-          "z": 4087.2
-        }
-      },
-      "segments": [
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1101.0951679950524,
-            "z": -4466.31309583883
-          },
-          "c2": {
-            "x": 1111.5761909949983,
-            "z": -4461.349521697252
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1705.4890571676344,
-            "z": -3065.35813248623
-          },
-          "c2": {
-            "x": 1725.0613589902766,
-            "z": -3042.8009052030848
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1733.4561069330791,
-            "z": -3034.122521198307
-          },
-          "c2": {
-            "x": 1752.4758004423322,
-            "z": -3014.9153842093456
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1884.4582718143479,
-            "z": -2969.990866850235
-          },
-          "c2": {
-            "x": 1890.7073965135492,
-            "z": -2962.6315824171525
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1927.4139062024792,
-            "z": -2933.027079836099
-          },
-          "c2": {
-            "x": 1939.4403101522146,
-            "z": -2892.1398097228885
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1860.2495244418724,
-            "z": -2609.3803439518
-          },
-          "c2": {
-            "x": 1860.33025755371,
-            "z": -2606.3745230884583
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1862.8451590776833,
-            "z": -2591.3613230817086
-          },
-          "c2": {
-            "x": 1865.9792007970254,
-            "z": -2578.912558928192
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1870.5574172287359,
-            "z": -2557.584673170737
-          },
-          "c2": {
-            "x": 1874.482476489926,
-            "z": -2538.861949997585
-          }
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 1885.4495072505224,
-            "z": -2512.2573602477873
-          },
-          "c2": {
-            "x": 1884.2753744043598,
-            "z": -2522.8320765930985
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": 640.2561103856699,
-            "z": -659.3648628988523
-          },
-          "c2": {
-            "x": 640.7021215809585,
-            "z": -632.8017595808792
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": -370.1225674625824,
-            "z": -208.69178137877134
-          },
-          "c2": {
-            "x": -372.68959667611813,
-            "z": -192.5255663309979
-          }
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "line"
-        },
-        {
-          "type": "bezier",
-          "c1": {
-            "x": -1035.103981069569,
-            "z": 3878.2174068923146
-          },
-          "c2": {
-            "x": -1040.3306039604224,
-            "z": 3889.3057343784308
-          }
-        },
-        {
-          "type": "line"
-        }
-      ],
-      "caps": {
-        "start": {
-          "cap": "round",
-          "degree": 1
-        },
-        "end": {
-          "cap": "round",
-          "degree": 1
-        }
-      },
-      "throughId": "Green Line BRT",
-      "through": {
-        "start": false,
-        "end": false
-      }
-    },
-    {
       "id": "west-18th-street",
       "name": "West 18th Street",
       "highway": "residential",
@@ -29398,6 +28476,225 @@
       },
       "continuesAs": "dolman-street-2",
       "throughId": "West 18th Street",
+      "through": {
+        "start": false,
+        "end": false
+      }
+    },
+    {
+      "id": "lasalle-lane-0",
+      "name": "Lasalle Lane",
+      "highway": "residential",
+      "oneway": false,
+      "lanes": 2,
+      "surface": "asphalt",
+      "points": [
+        {
+          "x": 700.28,
+          "z": -320.86
+        },
+        {
+          "x": 709.18,
+          "z": -318.55
+        },
+        {
+          "x": 716.15,
+          "z": -316.73
+        },
+        {
+          "x": 749.74,
+          "z": -307.99
+        },
+        {
+          "x": 789.51,
+          "z": -297.64
+        },
+        {
+          "x": 792.35,
+          "z": -297.52
+        },
+        {
+          "x": 795.31,
+          "z": -297.98
+        },
+        {
+          "x": 799.23,
+          "z": -299.32
+        },
+        {
+          "x": 805.38,
+          "z": -300.83
+        }
+      ],
+      "sources": [
+        1421582593,
+        1421582590
+      ],
+      "seed": {
+        "seededClass": "residential",
+        "lanesAssumed": 2,
+        "pavementHW": 5.49,
+        "curb": 0.15,
+        "treelawn": 1.52,
+        "sidewalk": 1.52,
+        "cornerR": 4.5,
+        "rowHalf": 8.69
+      },
+      "layer": 0,
+      "bridge": false,
+      "tunnel": false,
+      "gradeSeparated": false,
+      "phase": {
+        "kind": "single",
+        "role": "spine",
+        "corridorName": "Lasalle Lane",
+        "pairKey": null,
+        "startNode": {
+          "x": 700.28,
+          "z": -320.86
+        },
+        "endNode": {
+          "x": 805.38,
+          "z": -300.83
+        }
+      },
+      "segments": [
+        {
+          "type": "line"
+        },
+        {
+          "type": "line"
+        },
+        {
+          "type": "line"
+        },
+        {
+          "type": "line"
+        },
+        {
+          "type": "bezier",
+          "c1": {
+            "x": 790.4177980890724,
+            "z": -297.4037488000528
+          },
+          "c2": {
+            "x": 791.4135713383027,
+            "z": -297.4651059060384
+          }
+        },
+        {
+          "type": "bezier",
+          "c1": {
+            "x": 793.3368307898206,
+            "z": -297.57784870147225
+          },
+          "c2": {
+            "x": 794.3746164415148,
+            "z": -297.66025153868117
+          }
+        },
+        {
+          "type": "line"
+        },
+        {
+          "type": "bezier",
+          "c1": {
+            "x": 803.4929868117547,
+            "z": -300.7772454917732
+          },
+          "c2": {
+            "x": 801.0623499689416,
+            "z": -300.2354383563789
+          }
+        }
+      ],
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 3
+        },
+        "end": {
+          "cap": "round",
+          "degree": 1
+        }
+      },
+      "throughId": "Lasalle Lane",
+      "through": {
+        "start": false,
+        "end": false
+      }
+    },
+    {
+      "id": "lasalle-lane-1",
+      "name": "Lasalle Lane",
+      "highway": "residential",
+      "oneway": false,
+      "lanes": 2,
+      "surface": "asphalt",
+      "points": [
+        {
+          "x": 896.44,
+          "z": -273.3
+        },
+        {
+          "x": 904.7,
+          "z": -267.01
+        },
+        {
+          "x": 959.62,
+          "z": -251.89
+        },
+        {
+          "x": 964.81,
+          "z": -251.74
+        },
+        {
+          "x": 974.23,
+          "z": -251.46
+        }
+      ],
+      "sources": [
+        1421582594
+      ],
+      "seed": {
+        "seededClass": "residential",
+        "lanesAssumed": 2,
+        "pavementHW": 5.49,
+        "curb": 0.15,
+        "treelawn": 1.52,
+        "sidewalk": 1.52,
+        "cornerR": 4.5,
+        "rowHalf": 8.69
+      },
+      "layer": 0,
+      "bridge": false,
+      "tunnel": false,
+      "gradeSeparated": false,
+      "phase": {
+        "kind": "single",
+        "role": "spine",
+        "corridorName": "Lasalle Lane",
+        "pairKey": null,
+        "startNode": {
+          "x": 896.44,
+          "z": -273.3
+        },
+        "endNode": {
+          "x": 974.23,
+          "z": -251.46
+        }
+      },
+      "caps": {
+        "start": {
+          "cap": "butt",
+          "degree": 3
+        },
+        "end": {
+          "cap": "butt",
+          "degree": 4
+        }
+      },
+      "throughId": "Lasalle Lane",
       "through": {
         "start": false,
         "end": false
@@ -138500,14 +137797,14 @@
     {
       "x": 896.44,
       "z": -273.3,
-      "degree": 4,
-      "kind": "cross"
+      "degree": 3,
+      "kind": "T"
     },
     {
       "x": 863.44,
       "z": -167.37,
-      "degree": 4,
-      "kind": "cross"
+      "degree": 3,
+      "kind": "T"
     },
     {
       "x": 851.28,
@@ -139680,30 +138977,6 @@
       "kind": "deadend"
     },
     {
-      "x": 700.28,
-      "z": -320.86,
-      "degree": 3,
-      "kind": "T"
-    },
-    {
-      "x": 799.23,
-      "z": -299.32,
-      "degree": 4,
-      "kind": "cross"
-    },
-    {
-      "x": 964.81,
-      "z": -251.74,
-      "degree": 4,
-      "kind": "cross"
-    },
-    {
-      "x": 974.23,
-      "z": -251.46,
-      "degree": 4,
-      "kind": "cross"
-    },
-    {
       "x": 767.21,
       "z": 323.35,
       "degree": 3,
@@ -139944,6 +139217,12 @@
       "kind": "T"
     },
     {
+      "x": 700.28,
+      "z": -320.86,
+      "degree": 3,
+      "kind": "T"
+    },
+    {
       "x": 724.35,
       "z": -417.79,
       "degree": 3,
@@ -140152,6 +139431,12 @@
       "z": -414.16,
       "degree": 3,
       "kind": "T"
+    },
+    {
+      "x": 799.23,
+      "z": -299.32,
+      "degree": 4,
+      "kind": "cross"
     },
     {
       "x": 766.15,
@@ -140520,6 +139805,12 @@
       "kind": "cross"
     },
     {
+      "x": 974.23,
+      "z": -251.46,
+      "degree": 4,
+      "kind": "cross"
+    },
+    {
       "x": -1686.42,
       "z": -989.02,
       "degree": 1,
@@ -140828,18 +140119,6 @@
     {
       "x": -612.16,
       "z": 822.62,
-      "degree": 1,
-      "kind": "deadend"
-    },
-    {
-      "x": 812.71,
-      "z": -181.1,
-      "degree": 1,
-      "kind": "deadend"
-    },
-    {
-      "x": 905.75,
-      "z": -155.34,
       "degree": 1,
       "kind": "deadend"
     },
@@ -141360,6 +140639,12 @@
       "kind": "deadend"
     },
     {
+      "x": 964.81,
+      "z": -251.74,
+      "degree": 4,
+      "kind": "cross"
+    },
+    {
       "x": 878.2,
       "z": 69.08,
       "degree": 1,
@@ -141482,6 +140767,12 @@
     {
       "x": -1004.69,
       "z": 257.44,
+      "degree": 1,
+      "kind": "deadend"
+    },
+    {
+      "x": 905.75,
+      "z": -155.34,
       "degree": 1,
       "kind": "deadend"
     },
@@ -141816,14 +141107,8 @@
       "kind": "deadend"
     },
     {
-      "x": -4766.25,
-      "z": -7754.58,
-      "degree": 1,
-      "kind": "deadend"
-    },
-    {
-      "x": -1201.72,
-      "z": 4087.2,
+      "x": 805.38,
+      "z": -300.83,
       "degree": 1,
       "kind": "deadend"
     },

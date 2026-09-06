@@ -1569,8 +1569,44 @@ function buildNodeGraph(streets) {
 
 function main() {
   const osm = JSON.parse(readFileSync(join(RAW_DIR, 'osm.json'), 'utf8'))
-  const highways = osm.ground?.highway || []
+  const highwaysRaw = osm.ground?.highway || []
+
+  // ⛔⛔ A ROAD THAT DOES NOT EXIST IS NOT A STREET. OSM tags a planned or
+  // under-construction alignment with `highway=proposed` / `construction` /
+  // `planned` / `abandoned` / `razed` and puts it on the REAL road it will one
+  // day replace. Nothing filtered these, and `seedSection` below maps any
+  // unknown class to 'residential' (`STD_SECTION[base] ? base : 'residential'`),
+  // so such a way was poured as a residential street lying exactly on top of a
+  // real one — a doubled centerline the operator sees as a duplicate chain.
+  // ⭐ MEASURED, LS 2026-09-06: `Green Line BRT` (`highway=proposed`,
+  // `start_date=2031`, a studied busway) shadowed South Jefferson Avenue over
+  // 852 m at 100%, plus South 18th and Chouteau — 10 of the 18 chains that any
+  // other chain shadows. Jacob's eye found it as two navy lines with a sliver
+  // between them (`node scratch/claims-no-shadowed-chains.mjs`).
+  // ⛔ This is a CLASS rule, never a name: it is keyed on the OSM tag that says
+  // "not built", so it holds in a town nobody has looked at. And it is LOUD —
+  // what it drops is printed, because a silent drop is the same defect as a
+  // silent admit.
+  //
+  // ⭐⭐ THIS DROPS IT FROM THE *ROAD NETWORK*, NOT FROM THE PRODUCT. Jacob,
+  // 2026-09-06: "the transit train line would be a good thing to keep
+  // eventually." A rail/BRT alignment is a REAL feature of a neighborhood — it
+  // is simply not a street, and pouring it as one is what put a phantom
+  // residential road on top of South Jefferson. When transit becomes its own
+  // layer it reads these same ways from `osm.json`, which still holds them;
+  // nothing here deletes data. ⛔ FILED AS OWED WORK, not as a settled
+  // exclusion — do not let a later pass read this filter as "we don't want
+  // transit" (`CLAUDE.md`: an ASPIRATION must be surfaced, never erased).
+  const NOT_BUILT = new Set(['proposed', 'construction', 'planned', 'abandoned', 'razed', 'demolished', 'dismantled'])
+  const notBuilt = highwaysRaw.filter(f => NOT_BUILT.has(f.tags?.highway))
+  const highways = highwaysRaw.filter(f => !NOT_BUILT.has(f.tags?.highway))
   console.log(`Input: ${highways.length} highway features`)
+  if (notBuilt.length) {
+    console.log(`  ⛔ dropped ${notBuilt.length} way(s) that DO NOT EXIST (highway=${[...new Set(notBuilt.map(f => f.tags.highway))].join('/')}):`)
+    for (const f of notBuilt.slice(0, 12))
+      console.log(`       ${(f.tags.name || '(unnamed)')} — highway=${f.tags.highway}${f.tags.start_date ? `, start_date=${f.tags.start_date}` : ''}`)
+    if (notBuilt.length > 12) console.log(`       …and ${notBuilt.length - 12} more`)
+  }
 
   // osmId → tags, so a welded chain can be graded from ALL its source ways
   // (Part 2 grade separation — see gradeFields/gradeFacts above).
