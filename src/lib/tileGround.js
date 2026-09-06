@@ -4910,7 +4910,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null
+  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoSection = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -5019,6 +5019,77 @@ export function buildTileGround(ribbons, opts = {}) {
       // leave the curb sitting on the centreline — a plausible-looking wrong map.
       if (noWidth) console.warn(`[tileGround][PROTO②] ${noWidth} edge(s) had NO resolvable authored width and were offset by 0 — the curb sits on the centreline there.`)
       console.log(`[tileGround][PROTO②] curb from the proto: ${protoCurb.length} ring(s) offset per-edge at the authored pavementHW`)
+      // ── ③ HAND IT TO `sectionPass` — the FILL, unchanged ────────────────────────────
+      // The paint stack (treelawn · sidewalk · materials · ADA · the LU flood) strokes INWARD
+      // off a curb and does not care where the curb came from. So the honest test of ① and ②
+      // is to build a shape-tile whose `iA` is the PROTO curb and run the shipped painter on
+      // it. ⛔ Nothing in `sectionPassTile` is modified; if the stack cannot paint this, the
+      // fault is in ①/② and must not be papered over downstream.
+      // `runs` is the one field that has to be synthesised, and the labels already carry it:
+      // consecutive proto edges with the same owner ARE a run — which is the substrate
+      // ruling's "every ring edge is owned by one (skelId, side) by construction", now
+      // literally true rather than aspirational.
+      protoSection = []
+      let shortRuns = 0
+      for (let k = 0, ci = 0; k < R.rings.length; k++) {
+        const ring = R.rings[k], labs = R.labels[k]
+        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
+        const iAk = protoCurb[ci++]; if (!iAk) continue
+        // ⛔ A LABEL NAMES THE EDGE STARTING AT ITS VERTEX, so a run over edges a..b spans
+        // ring[a..b+1] — the closing vertex is part of the run, and forgetting it leaves a
+        // one-point "run" that `legDirAt` reads off the end (it wants poly[1] and poly[n-2]).
+        // ⚠️ Runs are NOT merged across index 0: a seam there is acceptable for a debug pass
+        // and wrapping would silently join two arcs that the walk sees as distinct.
+        const nR = ring.length
+        const keyAt = (i) => { const o = protoOwners[labs[i]]; return o ? `${o.idx}|${o.side}` : 'none' }
+        const runs = []
+        for (let a = 0; a < nR;) {
+          const key = keyAt(a); let b = a
+          while (b + 1 < nR && keyAt(b + 1) === key) b++
+          const o = protoOwners[labs[a]]
+          const st2 = o ? streetsOrig[o.idx] : null
+          const poly = []
+          for (let i = a; i <= b + 1 && i < nR + 1; i++) poly.push(ring[i % nR])
+          // ⛔ Two points minimum, or the leg has no direction. A one-edge run is real
+          // geometry (a block corner clipped short); it is COUNTED, not silently dropped.
+          // ⛔ `measure` / `baseMeasure` ARE NOT OPTIONAL. `resolvePedDepths` reads the run's
+          // own measure for the treelawn + sidewalk depths; a run without them resolves to
+          // ZERO and the painter returns a land-use flood and no ped bands at all — which is
+          // exactly what it did before these two lines. Same arrays the shipped runs use;
+          // ⛔ never a second width lookup.
+          if (poly.length >= 2) runs.push({ key, skelId: st2?.skelId ?? st2?.name ?? null,
+            side: o?.side ?? 'left', segOrd: o ? segOrdAtVertex(o.idx, o.vtx) : 0,
+            streetIdx: o?.idx ?? -1, poly,
+            measure: o ? measures[o.idx] : null, baseMeasure: o ? measures[o.idx] : null,
+            anchor: st2?.anchor || null, roadId: st2?.roadId ?? null, throughId: st2?.throughId ?? null })
+          else shortRuns++
+          a = b + 1
+        }
+        // ⛔ Depths from the SAME resolver the shipped painter uses — never a second lookup.
+        const st0 = runs[0] && runs[0].streetIdx >= 0 ? streetsOrig[runs[0].streetIdx] : null
+        protoSection.push({
+          ring, iA: [iAk], vertR: ring.map(() => 0), runs,
+          tl: measures[runs[0]?.streetIdx]?.left?.treelawn ?? st0?.seed?.treelawn ?? 1.52,
+          sw: measures[runs[0]?.streetIdx]?.left?.sidewalk ?? st0?.seed?.sidewalk ?? 1.52,
+          lu: 'residential', roundTips: [], bluntTips: [], roundTipKeys: new Set(),
+          fillets: [], bandJoin: 'miter', cap: null,
+        })
+      }
+      let painted = 0, empty = 0, threw = 0, firstErr = null, shape = null, sw = 0, tlN = 0, luN = 0
+      for (const st2 of protoSection) {
+        try {
+          const out = sectionPassTile(st2, curbWidth, stripMat, blockCustoms)
+          if (!shape) shape = Object.keys(out || {}).join(',')
+          // ⛔ The painter returns { Wacc, tlByLu, luByLu } — Wacc is the SIDEWALK.
+          const cnt = (o) => o ? Object.values(o).reduce((a, b) => a + (b?.length || 0), 0) : 0
+          const w = out?.Wacc?.length || 0, tl = cnt(out?.tlByLu), lu = cnt(out?.luByLu)
+          sw += w; tlN += tl; luN += lu
+          if (w + tl + lu) painted++; else empty++
+        } catch (e) { threw++; if (!firstErr) firstErr = e.stack.split('\n').slice(0, 2).join(' | ') }
+      }
+      if (globalThis.__PROTO_DEBUG) console.warn(`  [PROTO③] returns {${shape}} | threw ${threw}: ${firstErr || '-'}`)
+      console.log(`[tileGround][PROTO③] sectionPass on the proto curb: ${painted} block(s) painted, ${empty} produced nothing${shortRuns ? `, ${shortRuns} sub-2-point run(s) dropped` : ''}`)
+      console.log(`[tileGround][PROTO③]   sidewalk ${sw} ring(s) · treelawn ${tlN} · land-use ${luN}`)
     }
   }
 
@@ -5230,7 +5301,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoSection, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
