@@ -194,6 +194,19 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // ⛔ Off by default and Survey-only: it costs a second union per rebuild.
 let GROUT_ON = false
 try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
+// [PROTO] ① overlay — `?proto=1`. ⛔⛔ THIS URL EXISTED IN NOBODY'S CODE UNTIL NOW. It was
+// asserted as an eye-gate by the session reverted in `5560cf6a` ("I asserted a URL param as the
+// eye-gate without exercising it, then let Jacob find out"), and Jacob has since typed it and been
+// shown the ordinary chain-built map with no indication that ① was not on screen.
+// ⭐⭐ IT READS THE FROZEN ARTIFACT, NOT A LIVE BUILD, and that is what makes it work at all:
+// `tileGeos` returns null whenever the frozen path renders (`:800`), so `buildTileGround` DOES NOT
+// RUN at idle — which is why `?grout=1` shows nothing there either. ① is minted at prebake and is a
+// pure function of the frame (`derive.js`), so it can be drawn straight off `ribbons.protopolygon`
+// with no producer change and no reach back across the wall.
+// ⛔ It draws ① ITSELF — the ε contour, width-free — NOT the curb. If the scene has never been
+// poured since ① landed the artifact is absent, and this says so rather than drawing nothing.
+let PROTO_ON = false
+try { PROTO_ON = new URLSearchParams(window.location.search).get('proto') === '1' } catch { PROTO_ON = false }
 
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
@@ -794,6 +807,19 @@ export default function BlockGeometryV2Debug({
     })
   }, [sectionGeos])
 
+  // [PROTO] ①, straight off the frozen artifact. ⛔ Deliberately NOT inside `tileGeos`: that memo
+  // returns null whenever the frozen path renders, which is exactly when the operator is looking.
+  const protoGeo = useMemo(() => {
+    if (!PROTO_ON) return null
+    const P = liveRibbons?.protopolygon
+    if (!P?.rings?.length) {
+      console.warn('[BlockGeometryV2Debug][①] ⛔ ?proto=1 but this scene carries NO frozen protopolygon — it has not been poured since ① landed. Showing nothing; the map you see is the ordinary chain-built one.')
+      return null
+    }
+    console.log(`[BlockGeometryV2Debug][①] drawing the frozen protopolygon — ${P.rings.length} ring(s), ε=${P.eps} m`)
+    return ringsToEdgeGeo(P.rings, 0.065)
+  }, [liveRibbons])
+
   const tileGeos = useMemo(() => {
     if (!liveRibbons) return null
     // The frozen path is going to render this — don't duplicate its work. See
@@ -1273,6 +1299,10 @@ export default function BlockGeometryV2Debug({
         )}
         {tileGeos?.groutOutline && (
           <lineSegments geometry={tileGeos.groutOutline} renderOrder={PRI.curb + 2}
+            material={groutMat} />
+        )}
+        {protoGeo && (
+          <lineSegments geometry={protoGeo} renderOrder={PRI.curb + 3}
             material={groutMat} />
         )}
         {surveyIxGeo && (
