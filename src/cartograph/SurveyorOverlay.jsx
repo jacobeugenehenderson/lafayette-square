@@ -155,6 +155,7 @@ export default function SurveyorOverlay() {
   const selectedStreet = useCartographStore(s => s.selectedStreet)
   const selectedNode = useCartographStore(s => s.selectedNode)
   const centerlineData = useCartographStore(s => s.centerlineData)
+  const protopolygon = useCartographStore(s => s.protopolygon)
   const corridorByIdx = useCartographStore(s => s.corridorByIdx)
   const selectStreet = useCartographStore(s => s.selectStreet)
   const selectNode = useCartographStore(s => s.selectNode)
@@ -479,6 +480,52 @@ export default function SurveyorOverlay() {
     }
   }, [active, gl, onPointerDown, onPointerMove, onPointerUp])
 
+  // ⭐⭐⭐ THE SURVEY NAVY IS ①, NOT THE CHAINS (Jacob, 2026-09-06:
+  // "the navy blue should exist in Survey but it should be the protopoly!!
+  // Not the chains!!"). `RIBBONS §1`: "the requirement is that the SHAPE comes
+  // from ① everywhere — frozen or live, Survey or Section." ① is already frozen
+  // into `ribbons.json`, which this view's fixture loads, so nothing is rebuilt
+  // here — this reads the artifact.
+  //
+  // ⭐ WHY THIS CHANGES WHAT THE OPERATOR SEES, and it is the point: ① is ONE
+  // closed compound path, every chain stroked at ε and UNITED. Two chains lying
+  // on top of each other are one line in ①; a junction is one outline through
+  // the crossing, not N chains overlapping. The doubled navy line and the
+  // Y-fork the chains drew are artifacts of drawing chains individually.
+  //
+  // ⛔ AUTHORING IS UNTOUCHED. Selection, node drag and the asphalt handles all
+  // hit-test MATHEMATICALLY against `centerlineData.streets`
+  // (`distToPolyline`, Priority 3 in onPointerDown) — never against these
+  // meshes. This is a change of what is DRAWN only.
+  const protoNavy = useMemo(() => {
+    const rings = protopolygon?.rings
+    if (!Array.isArray(rings) || !rings.length) return null
+    const geos = []
+    for (const ring of rings) {
+      if (!Array.isArray(ring) || ring.length < 2) continue
+      // ① rings are CLOSED — repeat the first point so the outline closes.
+      const closed = ring[0][0] === ring[ring.length-1][0] && ring[0][1] === ring[ring.length-1][1]
+        ? ring : [...ring, ring[0]]
+      const g = polylineRibbon(closed, 0.4, 0.1)
+      if (g) geos.push(g)
+    }
+    return geos.length ? geos : null
+  }, [protopolygon])
+
+  // ⛔ NOT A SILENT FALLBACK. A scene poured before ① started freezing carries no
+  // protopolygon (measured 2026-09-06: only lafayette-square has one). Drawing the
+  // chains in that state and saying nothing is exactly the substitution Layer 0 q2
+  // forbids — a plausible-looking success. So it is announced, by name, with the
+  // command that fixes it, every time the artifact is missing.
+  useEffect(() => {
+    if (!active) return
+    if (!protopolygon?.rings?.length) {
+      console.error('[Survey] ⛔ this scene carries NO protopolygon — the navy below is the CHAINS, not ①. '
+        + 'Re-pour the scene (node cartograph/skeleton.js --scene=<id> && node cartograph/pipeline.js --scene=<id> '
+        + '&& node cartograph/promote-ribbons.js --scene=<id> --yes) to see ①.')
+    }
+  }, [active, protopolygon])
+
   // Materials (hooks must run unconditionally).
   const centerlineMat = useMemo(() => new THREE.MeshBasicMaterial({
     color: '#0a1a4a', depthTest: false, transparent: true, opacity: 1,
@@ -493,9 +540,20 @@ export default function SurveyorOverlay() {
   const { LONG, SHORT, BORDER } = { LONG: HANDLE_LONG, SHORT: HANDLE_SHORT, BORDER: HANDLE_BORDER }
   return (
     <group position={[0, 0.2, 0]}>
+      {/* ① — the navy. One closed compound path, drawn as the artifact carries it. */}
+      {protoNavy?.map((geo, i) => (
+        <mesh key={`proto-${i}`} geometry={geo} material={centerlineMat}
+          renderOrder={OVERLAY_Z + 1} />
+      ))}
+
+      {/* The chains are drawn ONLY where the operator has selected one — the yellow
+          is selection feedback and has no ① equivalent, since ① unites across
+          streets and carries no per-street ring. When ① is absent the loud error
+          above has already fired and this draws every chain so the view is not blank. */}
       {centerlineData.streets?.map((st, i) => {
         if (st.points.length < 2) return null
         const isSel = selectedCorridor?.has(i) || false
+        if (protoNavy && !isSel) return null
         const hw = isSel ? 0.55 : 0.4
         // [curve-primitive] A bezier'd chain's `points` are already the dense curve
         // tessellation — render them directly; smoothChain (Catmull-Rom) only applies to

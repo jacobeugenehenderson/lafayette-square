@@ -2091,6 +2091,7 @@ const useCartographStore = create((set, get) => ({
 
   // ── Surveyor ──────────────────────────────────────────────
   centerlineData: { streets: [] },
+  protopolygon: null,
   corridorByIdx: new Map(),
   selectedStreet: null,
   selectedNode: null,
@@ -2351,6 +2352,13 @@ const useCartographStore = create((set, get) => ({
       if (stale()) return
       set({
         centerlineData: { streets },
+        // ⭐ ① travels with the scene's fixture. `SKELETON §0.1` — the skeleton is
+        // the SSoT and ① is minted from it; Survey's navy renders ①, not the
+        // chains (Jacob, 2026-09-06: "the navy blue should exist in Survey but it
+        // should be the protopoly! Not the chains!"). Null when the scene has not
+        // been poured since ① started freezing — SurveyorOverlay says so LOUDLY
+        // rather than pretending the chains are ①.
+        protopolygon: ribbonsFixture.protopolygon || null,
         svOriginals: originals,
         corridorByIdx,
       })
