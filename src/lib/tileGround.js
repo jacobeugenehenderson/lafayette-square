@@ -1296,6 +1296,22 @@ export function stencilProtopolygon({ proto, boundary }) {
   // ⭐ ONE owner for the whole rim. `side: 'right'` matches what the frozen artifact already
   // stores on all 290 of LS's `__boundary__` edges — the sentinel path keys off `skelId`, not
   // side, but agreeing with the shipped artifact costs nothing and a disagreement would.
+  // ⛔⛔ A GRADE-SEPARATED ROAD MAY NOT CUT A BLOCK, AND THIS REFUSES RATHER THAN LET IT.
+  // `SKELETON §2` on `gradeSeparated`: "Consumers EXCLUDE THESE FROM THE FACE GRAPH." A motorway
+  // flying over a neighborhood does not bound a city block — the block runs on underneath it, which
+  // is exactly what the frozen tiles do (LS tile #12 spans a whole interchange at 291,298 m²).
+  // ⭐ MEASURED, which is why this is a wall and not a preference — the injection test, LS:
+  //        ① minted WITH the highways in the cut    147 tiles, SPLIT 7
+  //        ① minted WITHOUT them                    102 tiles, SPLIT 1   (frozen: 101)
+  // ⛔ AND THE MINT IS RIGHT TO CARRY THEM — Jacob, 2026-09-05: "the highways etc. are gone from
+  // the protopoly rendering; they have to be there." ① is the ink of the whole network. The two
+  // facts are not in tension: a highway belongs in THE DRAWING and not in THE BLOCK GRID, and the
+  // stamp already distinguishes them BY IDENTITY. So the ① you hand a renderer and the ① you hand
+  // this function are different objects, and mixing them up silently would hand back a partition
+  // sliced along every off-ramp — a plausible-looking wrong map, which is the one thing a kit may
+  // never produce (Layer 0 q2). ⇒ mint the grid's ① with `gradeSep: []`.
+  const gsOwners = proto.owners.filter(o => o?.gradeSeparated).length
+  if (gsOwners) return { rings: [], labels: [], owners: proto.owners, refused: `grade-separated-ink-in-the-cut (${gsOwners} stamps) — mint the block grid's ① with gradeSep: []; a highway belongs in the DRAWING, not the BLOCK GRID (SKELETON §2)` }
   const owners = [...proto.owners, { skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false }]
   const bIdx = owners.length - 1
   const R = booleanLabelled(clipperLib.ClipType.ctDifference,

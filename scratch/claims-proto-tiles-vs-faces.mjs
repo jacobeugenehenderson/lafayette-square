@@ -39,7 +39,12 @@ for (const scene of scenes) {
   const rb = JSON.parse(fs.readFileSync(path, 'utf8'))
   const streets  = rb.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
   const gradeSep = rb.streets.filter(s => s?.points?.length >= 2 && s.gradeSeparated)
-  const proto = rb.protopolygon?.rings?.length ? rb.protopolygon : mintProtopolygon({ streets, gradeSep })
+  // ⛔ `gradeSep: []` — THE BLOCK GRID'S ①, NOT THE DRAWING'S. A grade-separated road does not
+  // bound a city block (`SKELETON §2`: "Consumers exclude these from the face graph"); the block
+  // runs on underneath it. Minting them into the cut slices the partition along every off-ramp —
+  // measured on LS, SPLIT 7 with them vs 1 without. `stencilProtopolygon` refuses the drawing's ①
+  // outright, so this is not a preference the probe is expressing; it is the only ① it will take.
+  const proto = rb.protopolygon?.rings?.length ? rb.protopolygon : mintProtopolygon({ streets, gradeSep: [] })
   const src = rb.protopolygon?.rings?.length ? 'frozen' : 'live'
   // ⭐ THE PRODUCER CANDIDATE IS THE STENCILLED ①, not the raw mint — `blocks = boundary −
   // stroked roads` (`RIBBONS §1`). The raw mint cannot pass this test even in principle: it
