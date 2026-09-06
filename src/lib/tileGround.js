@@ -4783,6 +4783,76 @@ export function buildTileGround(ribbons, opts = {}) {
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
   }
+  // ── [GROUT] The grout as a POSITIVE OBJECT — RIBBONS §1, ruled 2026-09-04 ─────
+  // Jacob: "The grout is a mathematical invention. It's not real. But it's a closed
+  // polygon, and everything offsets from it… we were offsetting chains and THEN
+  // polygonizing; I am saying we should polygonize the chain itself so the corners and
+  // end caps (flat or rounded) are there in the ur-primitive way."
+  // ⇒ polygonize ONCE, offset ONCE. A corner is a join in one contour, a cap is where
+  // the contour turns around, a mouth is two vertices because the object has width.
+  // None of the three is constructed.
+  //
+  // Per chain, walk its OWN vertices — no resampling — and read the per-fe authored
+  // half-width per side through `feWidthAt`/`segOrdAtVertex`, the SAME resolvers the
+  // curb reads. ⛔ NEVER a second width lookup here: two hydration paths drift, and the
+  // whole point of this construction is that it removes machinery rather than adding a
+  // parallel copy of it. A width STEP therefore falls out as extra vertices where
+  // `segOrd` changes — it is not a construction (measured at Benton's loop joint:
+  // eight vertices, `node scratch/benton-grout-joint.mjs`).
+  // The ruled bulb (bbf4adf6 — radius (hwL+hwR)/2, centre displaced (hwR−hwL)/2,
+  // because the chain is NOT the road's centreline) closes a round-capped degree-1 tip.
+  //
+  // ⛔ OVERLAY ONLY today (`opts.grout`): this DRAWS, it does not produce. Making it the
+  // producer is a change of CONSUMER, not of this construction — and it is owed, along
+  // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
+  // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
+  // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
+  let grout = null
+  if (opts.grout) {
+    const gAcc = []
+    let gSkipped = 0
+    for (let idx = 0; idx < streetsOrig.length; idx++) {
+      const s = streetsOrig[idx]
+      const pts = s?.points
+      if (!(pts?.length >= 2) || s.gradeSeparated) continue
+      const Lb = [], Rb = []
+      for (let i = 0; i < pts.length - 1; i++) {
+        const a = pts[i], b = pts[i + 1]
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
+        if (L < 1e-9) continue
+        const so = segOrdAtVertex(idx, i)
+        const hwL = feWidthAt(idx, 'left', so), hwR = feWidthAt(idx, 'right', so)
+        if (!(hwL > 0) && !(hwR > 0)) continue
+        const R = [-dz / L, dx / L]                       // measure-RIGHT perp, (-dz,dx)
+        Lb.push([a[0] - R[0] * hwL, a[1] - R[1] * hwL], [b[0] - R[0] * hwL, b[1] - R[1] * hwL])
+        Rb.push([a[0] + R[0] * hwR, a[1] + R[1] * hwR], [b[0] + R[0] * hwR, b[1] + R[1] * hwR])
+      }
+      if (Lb.length < 2) { gSkipped++; continue }
+      gAcc.push([...Lb, ...Rb.reverse()])
+      for (const [k, vi] of [['start', 0], ['end', pts.length - 1]]) {
+        if (nodeDeg.get(tipKey(pts[vi])) !== 1) continue
+        const authored = s.capEnds?.[k] || (k === 'start' ? s.capStart : s.capEnd)
+        const style = (authored && authored !== 'none') ? authored : (s.caps?.[k]?.cap || 'round')
+        if (style !== 'round') continue                   // a blunt cap has no bulb — it is the node's handle state
+        const so = segOrdAtVertex(idx, vi === 0 ? 0 : pts.length - 2)
+        const hwL = feWidthAt(idx, 'left', so), hwR = feWidthAt(idx, 'right', so)
+        const rr = (hwL + hwR) / 2
+        if (!(rr > 0)) continue
+        const nb = pts[vi === 0 ? 1 : pts.length - 2]
+        const dx = vi === 0 ? nb[0] - pts[vi][0] : pts[vi][0] - nb[0]
+        const dz = vi === 0 ? nb[1] - pts[vi][1] : pts[vi][1] - nb[1]
+        const L = Math.hypot(dx, dz) || 1, R = [-dz / L, dx / L]
+        const disp = (hwR - hwL) / 2
+        gAcc.push(circlePoly(pts[vi][0] + R[0] * disp, pts[vi][1] + R[1] * disp, rr))
+      }
+    }
+    grout = unionRings(gAcc)
+    // ⛔ Report the skip LOUDLY rather than drawing a grout with holes in it: a chain
+    // with no resolvable width is a hole the blocks merge through, and a quietly
+    // incomplete grout is the plausible-looking success Layer 0 q2 forbids.
+    if (gSkipped) console.warn(`[tileGround][GROUT] ${gSkipped} chain(s) had no resolvable per-side width and are ABSENT from the grout — the contour is incomplete where they run.`)
+  }
+
   let asphalt = unionRings(Aacc)
   let highway = unionRings(Hacc)
   let curb    = unionRings(Cacc)
@@ -4914,7 +4984,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

@@ -188,6 +188,13 @@ function ringsToFlatGeo(rings, yLift = 0, asPolygonWithHoles = false) {
 // The Survey view shows the curb as an OUTLINE rather than a filled band, so
 // it strokes the same `tg.curb` rings the tile fill uses — one geometry source,
 // no separate Survey curb construction. Each ring edge becomes a segment pair.
+// [GROUT] Overlay toggle — `?grout=1`. RIBBONS §1 (ruled 2026-09-04): the grout is a
+// positive object and everything offsets from IT, not from the chains. This DRAWS it over
+// the live curb so the two can be judged in one view; it is not the producer yet.
+// ⛔ Off by default and Survey-only: it costs a second union per rebuild.
+let GROUT_ON = false
+try { GROUT_ON = new URLSearchParams(window.location.search).get('grout') === '1' } catch { GROUT_ON = false }
+
 function ringsToEdgeGeo(rings, yLift = 0) {
   if (!rings || !rings.length) return null
   const pos = []
@@ -797,7 +804,7 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true }) }
+    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
@@ -808,6 +815,7 @@ export default function BlockGeometryV2Debug({
       sidewalk: ringsToFlatGeo(tg.sidewalk, 0.030, true),
       curb:     ringsToFlatGeo(tg.curb,     0.035, true),
       curbOutline: ringsToEdgeGeo(tg.curb,  0.050),   // Survey wireframe stroke
+      groutOutline: GROUT_ON ? ringsToEdgeGeo(tg.grout, 0.060) : null,   // [GROUT] over the curb, so both read at once
       asphalt:  ringsToFlatGeo(tg.asphalt,  0.040, true),
       highway:  ringsToFlatGeo(tg.highway,  0.015, true),   // above LU faces, below the ribbon network — grade-sep shows in its corridor, occluded by local roads
       highwayRings: tg.highway || [],   // G1 — raw grade-sep rings, frozen alongside the tiles so non-Survey views + slab restore highways
@@ -1122,6 +1130,11 @@ export default function BlockGeometryV2Debug({
   const surveyCurbMat = useMemo(() => new THREE.LineBasicMaterial({
     color: SURVEY_BLUE.curb, transparent: true, opacity: 0.95, depthWrite: false,
   }), [])
+  // [GROUT] Deliberately NOT a Survey blue — the point of the overlay is to read the
+  // grout AGAINST today's curb in one view, so it must not camouflage as the curb.
+  const groutMat = useMemo(() => new THREE.LineBasicMaterial({
+    color: 0xff3d7f, transparent: true, opacity: 0.95, depthWrite: false,
+  }), [])
   // The curb band filled a touch darker than the block — it's the 'handle rail',
   // where the corner-rounding controls live, so it reads slightly proud of the
   // block interior.
@@ -1257,6 +1270,10 @@ export default function BlockGeometryV2Debug({
         {curbVisible && tileGeos?.curbOutline && (
           <lineSegments geometry={tileGeos.curbOutline} renderOrder={PRI.curb}
             material={surveyCurbMat} />
+        )}
+        {tileGeos?.groutOutline && (
+          <lineSegments geometry={tileGeos.groutOutline} renderOrder={PRI.curb + 2}
+            material={groutMat} />
         )}
         {surveyIxGeo && (
           <mesh geometry={surveyIxGeo} renderOrder={PRI.curb + 1} material={surveyIxMat} />
