@@ -4579,6 +4579,17 @@ export function deriveLayers(highways) {
   })()
 
   // Serialize (remove circular refs)
+  // ⭐ ONE read of the skeleton, shared by the emit below — the same file ① and the face walk take.
+  // ⛔ Loaded here rather than passed in, so there is exactly one place that answers
+  // "what is the simplified geometry of this chain" for the whole pour.
+  const simplifiedPoints = (() => {
+    const fp = join(CLEAN_DIR, 'skeleton.json')
+    if (!existsSync(fp)) return null
+    const j = JSON.parse(readFileSync(fp, 'utf-8'))
+    return new Map((j.streets || []).map(st => [st.id,
+      (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+  })()
+
   const ribbonsLayer = {
     streets: ribbonStreets.map(st => ({
       skelId: st.skelId,
@@ -4592,11 +4603,31 @@ export function deriveLayers(highways) {
       ...(st.throughId != null ? { throughId: st.throughId } : {}),
       ...(st.through ? { through: st.through } : {}),
       name: st.name,
-      points: st.points,
-      // [through-edge overlay] the prevailing-direction CORRECTED chain for the
-      // construction (asphalt/curb/faces read this); absent on all but the
-      // divided→through-road carriageway tips. `points` above stays the survey.
-      ...(st.strokePoints ? { strokePoints: st.strokePoints } : {}),
+      // ⭐⭐⭐ THE DRAWN CENTRELINE IS THE SIMPLIFIED SKELETON — ruled 2026-09-06 (Jacob):
+      // "all data should skew to SSoT" · "the skeleton should simplify and make ironclad and
+      // foolproof." ⛔ THIS EMIT WAS THE LAST DIVERGENCE. ① is minted from the skeleton and the face
+      // walk was moved onto it, but `points` still carried the post-`CURVE_FIT` DENSIFIED trace — so
+      // the curb was a perfect parallel offset of a line the operator could not see, beside the line
+      // he could. Measured: median 1.00 m apart, p90 7.50 m, max 20.8 m, 4,781 of 9,547 points more
+      // than a metre off. Jacob, on the render: "these centerlines aren't related to the curbs."
+      // ⛔ NO FALLBACK: a chain with no simplified geometry makes the pour REFUSE. Emitting the
+      // densified points for some chains and the skeleton for others is the half-migrated state that
+      // caused this, and it is invisible — both render.
+      // ⚠️ IT RE-POINTS AUTHORING AND THAT IS A DECISION, NOT AN ACCIDENT: `segOrd` is an ordinal
+      // over the IX partition, and 35 of 217 chains change their count (mississippi-avenue 15→10),
+      // silently moving 17 of LS's 83 authored slots to different spans. ⭐ Ruled acceptable by Jacob
+      // ("I don't care about losing authoring") — LS's hand-authoring is a fixture on the mould town,
+      // not the product. ⛔ Nothing is destroyed on disk: `design.json` is untouched, so reverting
+      // this emit restores the old meaning. ▶ `node scratch/claims-simplify-preserves-authoring.mjs`
+      points: (() => {
+        const p = simplifiedPoints?.get(st.skelId ?? st.name)
+        if (!(p?.length >= 2)) throw new Error(`[derive] ⛔ no simplified skeleton geometry for chain "${st.skelId ?? st.name}" — refusing to emit the densified trace for it. The drawn centreline and the protopolygon must be ONE line; a per-chain mix is invisible because both render.`)
+        return p
+      })(),
+      // ⛔ `strokePoints` IS NO LONGER EMITTED. It is the densified chain with carriageway tips
+      // straightened — a SECOND geometry in the artifact, which is the thing this ruling removes.
+      // Measured before removing: written on ONE chain, read once inside `derive.js` itself, and
+      // read by NOTHING in `src/`. It stays internal to the pour; it does not cross the wall.
       // [curve-primitive] sparse, self-contained curve segments (HANDOFF-curve-primitive-
       // skeleton.md) — the editor's "few nodes" + the concentric curb read these; `points`
       // above is their dense tessellation (so ix/legacy consumers stay byte-identical).
