@@ -647,7 +647,7 @@ function unionRingLabelled(ring, labels) {
 // `stamp` (optional) collects the per-output-ring source labels described above:
 // on return it carries either `{ labels: number[][] }` parallel to the returned
 // rings, or `{ refused: '<reason>' }`. Passing it changes no geometry.
-function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null) {
+function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false) {
   const n = ring.length
   if (n < 3) return []
   const ccw = signedArea(ring) > 0
@@ -706,7 +706,16 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     }
     const t = ((B.P[0] - A.P[0]) * A.dir[1] - (B.P[1] - A.P[1]) * A.dir[0]) / det
     const X = [B.P[0] + B.dir[0] * t, B.P[1] + B.dir[1] * t]
-    const lim = 2.5 * Math.max(A.dE, B.dS, 0.5) + 1         // miter clamp (acute-corner spike → bevel)
+    // ⛔ THE MITER CLAMP. `RIBBONS §1` retires it under the grout ruling and measures it doing real
+    // damage at West-18th↔Dolman (a 1.4369 m width step across a 3.24° turn puts the intersection
+    // 26.15 m out, past the limit, so a bevel is substituted). `noMiterClamp` exists to switch it off
+    // for the proto path.
+    // ⚠️ IT IS NOT ESTABLISHED AS THE CAUSE OF THE ①-PRODUCED MAP'S BAD POLYGONS, and it is NOT
+    // switched off there. Tried 2026-09-06 against Jacob's "the polygons suck, these should be clean
+    // shapes": disabling it moved the parallelism gate 101/101 → 97/101, i.e. slightly WORSE. ⛔ I
+    // wrote it up as the fix before measuring; the measurement did not support it. Cause of the bad
+    // shapes: NOT ESTABLISHED.
+    const lim = noMiterClamp ? Infinity : 2.5 * Math.max(A.dE, B.dS, 0.5) + 1
     if (Math.hypot(X[0] - ring[i][0], X[1] - ring[i][1]) > lim) {
       const pA = (ring[i][0] - A.P[0]) * A.dir[0] + (ring[i][1] - A.P[1]) * A.dir[1]
       const pB = (ring[i][0] - B.P[0]) * B.dir[0] + (ring[i][1] - B.P[1]) * B.dir[1]
