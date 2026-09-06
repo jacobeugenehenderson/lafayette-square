@@ -4910,7 +4910,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null
+  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -4938,16 +4938,48 @@ export function buildTileGround(ribbons, opts = {}) {
   const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
   let proto = null
   if (opts.grout === 'proto') {
-    const { ClipperOffset, JoinType, EndType } = clipperLib
+    // ⛔⛔ NOT `ClipperOffset` ANY MORE, and the reason is step ②, not taste. An offset MINTS
+    // every output vertex, so the only label it can carry is one scalar for the whole chain —
+    // an edge then knows WHICH chain but not WHICH SIDE of it, and `feWidthAt(idx, side,
+    // segOrd)` needs all three. Building each chain's outline explicitly — left boundary
+    // forward, right boundary back — makes every vertex a SOURCE vertex whose index says
+    // both the side and the station along the chain.
+    // ⭐ It also removes the density trap: expanding a path SEGMENT-BY-SEGMENT makes the
+    // result depend on how finely the path is sampled (two consecutive rectangles overlap by
+    // ε·tan(θ/2), which on a dense polyline falls under the 1 mm integer grid and the ink
+    // rounds into a DOTTED line). One polygon per chain has no such term.
+    // ⛔ NOTHING IS ROUNDED: no join style is chosen anywhere, because the union does the
+    // joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ① is neither.
     const pRings = [], pLabels = []
+    protoOwners = []                     // label → { idx, side, vtx } — the edge's owner
     for (let idx = 0; idx < streetsOrig.length; idx++) {
       const st = streetsOrig[idx]
       if (!(st?.points?.length >= 2) || st.gradeSeparated) continue
-      const co = new ClipperOffset(100, 0.001 * SCALE)   // high miter limit ⇒ corners stay POINTS
-      co.AddPath(st.points.map(toClipper), JoinType.jtMiter, EndType.etOpenButt)
-      const out = []
-      co.Execute(out, PROTO_HW * SCALE)
-      for (const r of out) { pRings.push(r.map(fromClipper)); pLabels.push(idx) }   // scalar label = this chain
+      const P = st.points
+      const nrm = []
+      for (let i = 0; i < P.length; i++) {
+        const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
+        nrm.push(L > 1e-9 ? [-dz / L * PROTO_HW, dx / L * PROTO_HW] : (nrm[nrm.length - 1] || [0, 0]))
+      }
+      const ring = [], labs = []
+      for (let i = 0; i < P.length; i++) {
+        ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
+        // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice
+        // (claims-spur-leg-offset, claims-inboard-side-convention). Naming it 'left' here
+        // puts every ASYMMETRIC authored width on the wrong side of its street.
+        labs.push(protoOwners.push({ idx, side: 'right', vtx: i }) - 1)
+      }
+      for (let i = P.length - 1; i >= 0; i--) {
+        ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
+        labs.push(protoOwners.push({ idx, side: 'left', vtx: i }) - 1)
+      }
+      if (ring.length < 3) continue
+      // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon overlaps,
+      // so a mixed pile unions into confetti instead of one object.
+      const asC = ring.map(toClipper)
+      if (clipperLib.Clipper.Orientation(asC) !== true) { ring.reverse(); labs.reverse() }
+      pRings.push(ring); pLabels.push(labs)
     }
     // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled` (:364), N subject rings each with its
     // own label, labels on Clipper's Z channel, crossings resolved by walking the output
@@ -4958,6 +4990,36 @@ export function buildTileGround(ribbons, opts = {}) {
     protoLabels = R.labels
     protoRefused = R.refused
     if (R.refused) console.warn(`[tileGround][PROTO] identity REFUSED: ${R.refused} — the proto exists but carries no chain identity. Do not build on it.`)
+    // ── ② OFFSET ① ONCE, PER EDGE, AT THE AUTHORED WIDTH ────────────────────────────
+    // The blocks are ①'s HOLES; a hole's boundary at ε becomes the CURB by eroding it to the
+    // authored `pavementHW`. ⭐ A CHANGE OF SUBJECT, NOT A NEW CONSTRUCTION:
+    // `offsetRingVariable` already takes per-edge depth (and a [start,end] ramp), is
+    // winding-aware, and takes a stamp — today it is simply called on the tile ring instead.
+    // ⛔ `cornerAt` is forced TRUE and `capAt` NULL: on a contour there is nothing to decide.
+    // A corner is a join in the contour and a cap is where it turns around — neither is
+    // constructed, which is the whole point of ①. The authored corner R is NOT applied here;
+    // it belongs to the node's handles and those are not built (`RIBBONS §1`).
+    if (!R.refused) {
+      protoCurb = []
+      let noWidth = 0
+      for (let k = 0; k < R.rings.length; k++) {
+        const ring = R.rings[k], labs = R.labels[k]
+        if (!(ring?.length >= 3)) continue
+        if (signedArea(ring) > 0) continue          // outer contour — the blocks are the HOLES
+        const depthAt = (i) => {
+          const o = protoOwners[labs[i]]
+          if (!o) return 0
+          const hw = feWidthAt(o.idx, o.side, segOrdAtVertex(o.idx, o.vtx))
+          if (!(hw > 0)) { noWidth++; return 0 }
+          return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
+        }
+        for (const r of offsetRingVariable(ring, depthAt, () => true, () => null)) protoCurb.push(r)
+      }
+      // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
+      // leave the curb sitting on the centreline — a plausible-looking wrong map.
+      if (noWidth) console.warn(`[tileGround][PROTO②] ${noWidth} edge(s) had NO resolvable authored width and were offset by 0 — the curb sits on the centreline there.`)
+      console.log(`[tileGround][PROTO②] curb from the proto: ${protoCurb.length} ring(s) offset per-edge at the authored pavementHW`)
+    }
   }
 
   let grout = null
@@ -5168,7 +5230,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
