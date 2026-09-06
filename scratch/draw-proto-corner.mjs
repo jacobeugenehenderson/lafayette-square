@@ -28,8 +28,17 @@ const near = (rg) => { const [x0,y0,x1,y1] = V0()
   let a=Infinity,b=Infinity,c=-Infinity,e=-Infinity
   for (const q of rg) { if(q[0]<a)a=q[0]; if(q[0]>c)c=q[0]; if(q[1]<b)b=q[1]; if(q[1]>e)e=q[1] }
   return !(c < x0 || a > x1 || e < y0 || b > y1) }
-const layer = (rings, fill, stroke, w) => { for (const rg of (rings || [])) if (rg?.length >= 3 && near(rg))
-  P.push(`<path d="${d(rg)}" fill="${fill}" stroke="${stroke}" stroke-width="${w}"/>`) }
+// ⛔⛔ ONE PATH PER BAND, `fill-rule="evenodd"` — A BAND IS A COMPOUND PATH.
+// An annulus is an outer ring PLUS a hole ring. Emitting each ring as its own filled <path> paints
+// the outer solid and then paints the HOLE solid on top of it, in the same colour — so a 0.381 m
+// curb strip renders as a filled 19,816 m² block. ⭐ THE DEFECT WAS IN THIS RENDERER, and it sent me
+// hunting "band floods" and "black wedges" in geometry that was fine. Same class as every other
+// error of 2026-09-06: a compound path handled as loose rings.
+const layer = (rings, fill, stroke, w) => {
+  const keep = (rings || []).filter(rg => rg?.length >= 3 && near(rg))
+  if (!keep.length) return
+  P.push(`<path d="${keep.map(d).join(' ')}" fill="${fill}" fill-rule="evenodd" stroke="${stroke}" stroke-width="${w}"/>`)
+}
 layer(r.protoBands?.lu, '#3f4a33', 'none', 0)
 layer(r.protoBands?.sidewalk, '#efe9dc', 'none', 0)
 layer(r.protoBands?.treelawn, '#5d8f35', 'none', 0)

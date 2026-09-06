@@ -202,6 +202,29 @@
 > - ⭐⭐ **THIS IS WHAT UNBLOCKS THE HANDLES**, and it is §1's own prediction arriving: *"cap style, corner
 >   radius and fillet stop being three things."* Caps needed no separate mechanism; the caveat above was
 >   the last reason to think they did.
+> ### ⛔⛔ AND A CORNER PASS WAS THEN BUILT ANYWAY, AND EXCISED THE SAME DAY. READ THIS BEFORE BUILDING ONE.
+> `easeRing` rounded ②'s corners after the offset — arc-length walk, setback `R/tan(θ/2)`, a budget
+> against neighbouring corners, a decline when it did not fit, a revert when the result self-intersected.
+> ⭐⭐ **IT WAS A CORNER CONSTRUCTOR, WHICH IS THE ONE THING THIS SECTION SAYS A CORNER IS NOT** — Jacob:
+> *"the chains should be smooth, the corners should be native."* §1 had already retired
+> `cornerAt`/`capAt`/`filletRing` for exactly this reason (*"a contour already IS its corners and caps"*),
+> and this was those three under a new name. ⛔ Retiring machinery in a doc does not stop it being
+> rebuilt; only naming the SHAPE of it does, which is what this block is for.
+> **Its history is the whole argument, and every step is a guard propping up the last one:**
+> 100 m chords across blocks (the setback diverges at shallow angles) → a budget to stop that, keyed on
+> an invented ~7° turn threshold that ordinary curvature tripped, so REAL corners came back "too tight"
+> → a cluster-collapse to fix that, which **silently zeroed every corner on every clean quadrilateral
+> block**, because all four of a block's vertices are crossings → removing the collapse broke the rings
+> outright. ⭐ **Each fix was aimed at the previous fix.** That pattern is the signal to stop.
+> ⇒ ② is the PLAIN OFFSET of ①, and it renders correctly on a block. **The authored radius is still
+> owed and still belongs in the node's bezier handles** — a property the contour CARRIES, not a shape
+> built onto it afterwards. ⛔ What survives and is frozen: the crossing identity, so a corner is still
+> known by construction as the place two chains crossed.
+> ⚠️ **AND THE HARNESS WAS LYING WHILE ALL THIS WAS JUDGED.** `draw-*.mjs` emitted each ring as its own
+> filled `<path>`, so an annulus painted its outer ring solid and then its HOLE solid on top — a 0.381 m
+> curb strip rendering as a filled 19,816 m² block. Hours went into "band floods" and "black wedges" in
+> geometry that was fine. ⭐ A band is a COMPOUND PATH: one `<path>` per band, `fill-rule="evenodd"`.
+> The same class as four other errors that day, all of them a compound path handled as loose rings.
 > ⭐ And it explains the collapse we already measure: ε is *"a PRESENCE with TWO nodes at every mouth"*
 > while `coupler-slit-universal.mjs` prints `FACE=SLIT gap=0.000m` on every LS tip. **The two apexes are
 > real in ① and collapsed in the freeze** — ⛔ cause of the collapse not established here.
@@ -322,8 +345,10 @@
 >
 > ⛔ **OPEN — cause NOT established:**
 > 1. **The CORNER zone misses.** ⭐ **EXPECTED, not a defect of the model** — Gate B applies no authored
->    R, because R lives in the node's handles and the handles are not built. **The size of the prize for
->    node-as-intention**, and what the eye sees at Benton: one unrounded corner, 53° between the legs.
+>    R, because R lives in the node's handles and **the handles are still not built** (a corner PASS was
+>    built and excised 2026-09-06 — see the block above; it is not the same thing and must not be
+>    mistaken for progress toward it). **The size of the prize for node-as-intention**, and what the eye
+>    sees at Benton: one unrounded corner, 53° between the legs.
 > 2. **Some LEG vertices miss.** Gate C was scoped from this population believing the width step needs a
 >    RULE. ⛔ **Measured at Benton 2026-09-05 and it does NOT** — an authored 2.71 m stem meeting 3.96 m
 >    legs gives **eight transition vertices and nothing beyond 3.96 m**, against a frozen curb that loses

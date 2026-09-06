@@ -100,190 +100,22 @@ function capArc(PL, PR, bx, bz, N = 16) {
   for (let k = 0; k <= N; k++) { const a = aL + (ccw ? 1 : -1) * Math.PI * (k / N); out.push([Cx + r * Math.cos(a), Cy + r * Math.sin(a)]) }
   return out
 }
-// ⭐⭐⭐ THE NODE AS A BEZIER INTENTION — `RIBBONS §1`, ruled 2026-09-04/05, built 2026-09-06.
-//   "The nodes become bezier 'intentions' where a blunt cap turns and a rounded cap eases."
-//
-// A node is not a corner, a cap or a junction — it is a HANDLE CONFIGURATION. Broken handles
-// TURN; continuous handles EASE. ⇒ cap style, corner radius and fillet stop being three things.
-//
-// ⭐ AND A CAP NEEDS NO SPECIAL CASE, because there are TWO APEXES (Jacob, 2026-09-06). Measured
-// on ①'s contour: the median turn at a tip vertex is ~90° and the pair sits 2ε apart, so nothing
-// is ever asked to hold a half-turn. A blunt cap is both apexes at R=0; a round cap is both eased.
-// ▶ `node scratch/claims-proto-tip-has-two-apexes.mjs`
-//
-// ⛔ R = 0 IS ZERO-LENGTH HANDLES, so it falls out as the sharp vertex unchanged — the operator's
-// dial keeps R=0 reachable by construction, not by a branch (`project_corner_radius_is_design_control`).
-// ⛔ NO CLAMP. `§6.9.5` rules that self-intersection is SIGNAL, not error: an authored R too large
-// for its leg is a coherent statement the operator made, and Clipper's output is the honest answer.
-// `RIBBONS §1` names a clamp as *the* forbidden shape — "a cleanup patch living inside the
-// construction" — and the miter-limit bevel is the worked example this replaces. So an over-reaching
-// R is COUNTED and REPORTED, never trimmed to fit.
-// ⛔ THIS REPLACES `filletRing`, it does not join it. Nothing rounds twice.
-function easeRing(ring, rAt, report = null) {
-  const n = ring.length
-  if (n < 3) return ring
-  const D = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1])
-  const seglen = []; for (let i = 0; i < n; i++) seglen.push(D(ring[i], ring[(i + 1) % n]))
-  // ⛔⛔ THE EASE WALKS ARC-LENGTH, NOT THE ADJACENT VERTEX — and that is not a refinement, it is
-  // the difference between working and not. MEASURED on LS: 93% of ② edges are shorter than the
-  // default 4.5 m radius (median edge 0.958 m), because ①'s contour is a dense ~1 m polyline. A
-  // tangent point placed "distance t toward the next vertex" therefore lands inside a bend, and
-  // the first cut of this function reported 178 spurious "overreaches" that were its OWN symptom.
-  // ⭐ This is also why `filletRing` exists at all; this replaces it, so it has to do the same job.
-  // ⛔⛔ THE WALK MAY NOT WRAP, AND THIS IS THE BUG THAT DREW CHORDS ACROSS BLOCKS.
-  // It previously reported `short` only after exhausting the whole ring, so a large setback walked
-  // PAST the starting vertex; `span` then took the long way round, `skip` blanked almost every
-  // vertex, and the ring collapsed to a few points — which renders as a straight line across a
-  // block. The eye caught it twice before the arithmetic did.
-  // ⭐ The guard is TOPOLOGICAL, not an invented threshold: an ease may not consume its own ring.
-  const perim = seglen.reduce((a, b) => a + b, 0)
-  const walk = (i, dir, t) => {                 // → { p, idx, tan } at arc-length t from vertex i
-    if (!(t < perim / 4)) return { p: ring[i], idx: i, tan: [0, 0], short: true }
-    let rem = t, k = i
-    for (let guard = 0; guard < n; guard++) {
-      const e = dir > 0 ? k : (k - 1 + n) % n
-      const L = seglen[e]
-      const A = ring[dir > 0 ? k : (k - 1 + n) % n], B = ring[dir > 0 ? (k + 1) % n : k]
-      if (L >= rem) {
-        const u = L > 1e-12 ? rem / L : 0, f = dir > 0 ? u : 1 - u
-        const p = [A[0] + (B[0] - A[0]) * f, A[1] + (B[1] - A[1]) * f]
-        let tx = (B[0] - A[0]) / (L || 1), tz = (B[1] - A[1]) / (L || 1)
-        if (dir < 0) { tx = -tx; tz = -tz }      // tangent pointing AWAY from the corner
-        return { p, idx: dir > 0 ? (k + 1) % n : (k - 1 + n) % n, tan: [tx, tz], short: false }
-      }
-      rem -= L; k = (k + dir + n) % n
-    }
-    return { p: ring[k], idx: k, tan: [0, 0], short: true }
-  }
-  // ⭐⭐ THE BUDGET — half the arc-length to the next CORNER either side. Half, so two adjacent
-  // corners' eases can meet but never overlap.
-  // ⛔⛔ AND A CORNER IS A VERTEX THAT `rAt` GIVES A RADIUS TO — nothing else. The first cut asked
-  // a GEOMETRIC question instead ("does this vertex turn more than ~7°?"), which is a threshold I
-  // invented, and it was wrong in the way invented thresholds are: ①'s contour is a dense ~1 m
-  // polyline following a SMOOTHED chain, so ordinary curvature tripped it, the budget collapsed to
-  // half a metre, and REAL corners came back "too tight". 338 of 733 corners declined on a town
-  // whose blocks are quadrilaterals — Jacob: "we're building these elaborate scaffolds around
-  // these tiny edge cases. Blocks are, for the most part, quadrilateral."
-  // ⭐ The guard was manufacturing the edge cases it then handled. The corners are already known —
-  // they are ①'s CROSSINGS, carried through the boolean — so the threshold is deleted, not tuned.
-  const isCorner = new Array(n).fill(false)
-  for (let i = 0; i < n; i++) if ((rAt(i) || 0) > 1e-6) isCorner[i] = true
-  const budget = new Array(n).fill(Infinity)
-  for (let i = 0; i < n; i++) {
-    if (!isCorner[i]) continue
-    let back = 0, fwd = 0, k
-    for (k = 1; k < n; k++) { back += seglen[(i - k + n) % n]; if (isCorner[(i - k + n) % n]) break }
-    for (k = 1; k < n; k++) { fwd  += seglen[(i + k - 1) % n]; if (isCorner[(i + k) % n]) break }
-    budget[i] = Math.min(back, fwd) / 2
-  }
-  // pass 1 — resolve each vertex's radius and its two tangent points
-  const plan = new Array(n).fill(null)
-  for (let i = 0; i < n; i++) {
-    const V = ring[i], A = ring[(i - 1 + n) % n], B = ring[(i + 1) % n]
-    const R = Math.max(0, rAt(i) || 0)
-    if (!(R > 1e-6)) continue                   // R=0 ⇒ zero-length handles ⇒ the sharp vertex
-    // ⛔⛔ ONLY WHERE THE CONTOUR ACTUALLY TURNS. This is a geometric test on the polygon, NOT the
-    // chain-identity classifier that was correctly struck ("the protopoly has already expanded and
-    // merged and the naming stamp has already happened") — it asks the contour, which is the only
-    // thing left to ask. Easing every vertex instead cost 16% of total ring perimeter on LS: a
-    // near-straight vertex gets a huge setback and the arc short-cuts real geometry.
-    if (!isCorner[i]) continue
-    const aL = D(A, V), bL = D(V, B)
-    if (aL < 1e-9 || bL < 1e-9) continue
-    // the corner's own turn, from the segments that actually meet at it
-    const ax = (A[0] - V[0]) / aL, az = (A[1] - V[1]) / aL
-    const bx = (B[0] - V[0]) / bL, bz = (B[1] - V[1]) / bL
-    const theta = Math.acos(Math.max(-1, Math.min(1, ax * bx + az * bz)))
-    if (!(theta > 1e-3) || theta > Math.PI - 1e-3) continue   // collinear / doubled back
-    const t = R / Math.tan(theta / 2)
-    // ⛔⛔ AN ACUTE CORNER CANNOT HOLD A FIXED RADIUS, AND THE ANSWER IS TO DECLINE, NOT TO CLAMP.
-    // `t = R/tan(θ/2)` diverges as θ→0: a 4.5 m radius in a 5° wedge genuinely needs a ~100 m
-    // setback. That is arithmetically right and visually garbage — Jacob's eye caught it as a long
-    // chord cutting straight across a block, drawn where a corner should be.
-    // ⭐ THE DISTINCTION THAT MATTERS, because `RIBBONS §1` forbids the other one: a CLAMP would
-    // shrink R to something that fits and draw a plausible corner nobody authored — "a cleanup
-    // patch living inside the construction", which is exactly what the miterLimit bevel was doing.
-    // DECLINING draws the corner the operator's geometry actually has (sharp) and SAYS SO. No
-    // invented radius, no silent substitution, and the count is the signal.
-    // ⛔ The budget is the distance to the NEAREST NEIGHBOURING CORNER, not the whole ring: an ease
-    // that reaches past the next corner would consume a leg that belongs to someone else.
-    if (!(t <= budget[i])) { if (report) report.tooTight++; continue }
-    const P0 = walk(i, -1, t), P1 = walk(i, +1, t)
-    if (P0.short || P1.short) { if (report) report.tooTight++; continue }
-    plan[i] = { P0, P1, theta, R, t }
-
-  }
-  // ⛔ OVERLAP IS REPORTED, NOT CLAMPED. Two corners whose eases would consume the same span is an
-  // authored R too large for the block — `§6.9.5`: self-intersection is SIGNAL, not error, and
-  // `RIBBONS §1` names a clamp as the forbidden shape. The LATER corner yields so the ring stays a
-  // ring; both are counted so the operator can see it happened.
-  const consumed = new Array(n).fill(false)
-  const span = (i, pl) => { const out = []; let k = pl.P0.idx; for (let g = 0; g < n; g++) { out.push(k); if (k === pl.P1.idx) break; k = (k + 1) % n } return out }
-  for (let i = 0; i < n; i++) {
-    if (!plan[i]) continue
-    const sp = span(i, plan[i]).filter(k => k !== i)
-    if (sp.some(k => consumed[k] || (plan[k] && k !== i))) {
-      if (sp.some(k => consumed[k])) { if (report) report.overreach++; plan[i] = null; continue }
-    }
-    for (const k of sp) consumed[k] = true
-  }
-  // pass 2 — emit. ⭐ `src` rides alongside: for every emitted point, the index of the INPUT ring
-  // vertex it derives from. Without it the bands cannot read a per-edge depth off the eased curb,
-  // and ③ is stuck insetting from ① — which is what made the bands non-concentric with the curb.
-  // ⛔ An arc's points are split at its midpoint between the INCOMING and OUTGOING leg rather than
-  // all attributed to the corner: a corner joins two edges that may carry different authored
-  // widths, and collapsing both onto one of them would step the ribbon at every corner.
-  const out = [], outSrc = []
-  const skip = new Array(n).fill(false)
-  for (let i = 0; i < n; i++) if (plan[i]) for (const k of span(i, plan[i])) if (k !== i) skip[k] = true
-  for (let i = 0; i < n; i++) {
-    const pl = plan[i]
-    if (!pl) { if (!skip[i]) { out.push(ring[i]); outSrc.push(i) } continue }
-    const { P0, P1, theta, R } = pl
-    const phi = Math.PI - theta                      // the turn
-    const h = (4 / 3) * Math.tan(phi / 4) * R        // the cubic that best fits a circular arc
-    // ⭐ HANDLES RUN ALONG THE LEG'S OWN TANGENT AT THE TANGENT POINT — "continuous handles EASE"
-    // (`RIBBONS §1`). Taking them at the corner instead would break tangency with a curved leg.
-    const c1 = [P0.p[0] - P0.tan[0] * h, P0.p[1] - P0.tan[1] * h]
-    const c2 = [P1.p[0] - P1.tan[0] * h, P1.p[1] - P1.tan[1] * h]
-    const N = Math.max(4, Math.min(64, Math.ceil(phi * Math.max(R, 0.1) / 0.05)))   // ~5 cm chords
-    for (let k = 0; k <= N; k++) {
-      const u = k / N, w = 1 - u
-      out.push([w*w*w*P0.p[0] + 3*w*w*u*c1[0] + 3*w*u*u*c2[0] + u*u*u*P1.p[0],
-                w*w*w*P0.p[1] + 3*w*w*u*c1[1] + 3*w*u*u*c2[1] + u*u*u*P1.p[1]])
-      outSrc.push(u < 0.5 ? P0.idx : P1.idx)
-    }
-    if (report) report.eased++
-  }
-  // ⛔⛔ A SELF-INTERSECTING RESULT IS NOT DRAWN. Jacob, 2026-09-06: "self intersection IRL isn't
-  // real — when something 'self intersects' it goes to 0 and disappears."
-  // ⭐ THAT SHARPENS `§6.9`.5's "self-intersection is SIGNAL, not error", and it is the half I had
-  // wrong: the signal is that the FEATURE IS GONE, not that a crossed shape is the honest output.
-  // A curb that crosses itself is not a curb the operator could build; it is a corner whose radius
-  // has driven the geometry to nothing. So the corner goes to ZERO — the sharp vertex — which is
-  // the same answer R=0 gives, and the ring is returned unchanged rather than crossed.
-  // ⛔ This is still NOT the forbidden clamp: nothing is shrunk to a plausible fit and no invented
-  // radius is drawn. The feature either exists or it does not.
-  if (out.length >= 3 && _selfIntersects(out)) { if (report) report.vanished++; return { ring, src: ring.map((_, i) => i) } }
-  return out.length >= 3 ? { ring: out, src: outSrc } : { ring, src: ring.map((_, i) => i) }
-}
-// Segment-pair test, adjacent pairs excluded (they share an endpoint by construction).
-function _selfIntersects(r) {
-  const n = r.length
-  const hit = (p1, p2, p3, p4) => {
-    const d = (p2[0] - p1[0]) * (p4[1] - p3[1]) - (p2[1] - p1[1]) * (p4[0] - p3[0])
-    if (!d) return false
-    const t = ((p3[0] - p1[0]) * (p4[1] - p3[1]) - (p3[1] - p1[1]) * (p4[0] - p3[0])) / d
-    const u = ((p3[0] - p1[0]) * (p2[1] - p1[1]) - (p3[1] - p1[1]) * (p2[0] - p1[0])) / d
-    return t > 1e-9 && t < 1 - 1e-9 && u > 1e-9 && u < 1 - 1e-9
-  }
-  for (let i = 0; i < n; i++) for (let j = i + 2; j < n; j++) {
-    if (i === 0 && j === n - 1) continue
-    if (hit(r[i], r[(i + 1) % n], r[j], r[(j + 1) % n])) return true
-  }
-  return false
-}
-
+// ⛔⛔ `easeRing` WAS HERE AND IS EXCISED (2026-09-06). It rounded ②'s corners by walking
+// arc-length, computing a setback `R/tan(θ/2)`, budgeting against neighbouring corners, declining
+// when it did not fit, and reverting a ring whose result self-intersected.
+// ⭐⭐ IT WAS A CORNER CONSTRUCTOR, AND THAT IS THE ONE THING THE MODEL SAYS A CORNER IS NOT.
+// Jacob: "the chains should be smooth, the corners should be native." `RIBBONS §1` had already
+// retired `cornerAt`/`capAt`/`filletRing` for the same reason — "a contour already IS its corners
+// and caps" — and this was those three rebuilt under a new name.
+// ⛔ ITS HISTORY IS THE ARGUMENT AGAINST IT: every guard it grew existed to prop up the previous
+// guard. It drew 100 m chords across blocks (setback diverging at shallow angles); the budget added
+// to stop that used an invented 7° threshold that ordinary curvature tripped, so real corners came
+// back "too tight"; the cluster-collapse added to fix THAT silently zeroed every corner on every
+// clean quadrilateral block, because all four of a block's vertices are crossings; removing the
+// collapse then broke the rings outright.
+// ⇒ ② is now the plain offset of ①, which renders correctly on a block. The authored corner radius
+// is owed and belongs in the NODE's bezier handles — where `RIBBONS §1` puts it, and where it is a
+// property the contour carries rather than a shape something builds onto it afterwards.
 // Remove FOLD NEEDLES from a per-vertex offset ring. On a bend tighter than the
 // offset depth (exposed by the curve-fit knob's smooth dense curves) the inward
 // offset overshoots and the ring doubles back on itself, leaving a thin spike —
@@ -5484,54 +5316,10 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
       return pts[o.srcIdx]
     }
-    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, noNode: 0, vanished: 0 }
-    // ⛔⛔ NO CLASSIFICATION BY CHAIN RELATIONSHIP. THIS IS THE CORRECTION (Jacob, 2026-09-06):
-    // "this is still chains talk — the protopoly has already expanded and merged these polygons
-    // and the naming stamp has already happened."
-    // The first cut asked, at each vertex, whether the two adjacent edges' owners had the same
-    // `skelId` and the same `side`, and branched: different street → CORNER, same street other
-    // side → CAP APEX, same both → a bend to leave alone. ⛔ THAT IS `cornerAt`/`capAt` REBUILT
-    // UNDER A NEW NAME — the exact pair `RIBBONS §1` retires, because "a grout contour already IS
-    // its corners and caps". By the time ① exists the expansion, the merge and the stamp have all
-    // happened; there is nothing left to ask the graph.
-    // ⭐ It is also `CLAUDE.md`'s named failure: resolve a vertex to chain identity, get a
-    // chain-world answer back, and never notice you changed layers because it feels like LOCATING
-    // the defect. It produced a whole divided-carriageway investigation for a vertex where the
-    // contour simply turns.
-    // ⇒ WHAT SURVIVES IS READING THE STAMP — a name applied THROUGH the merge, not recovered after
-    // it. A vertex takes its authored R and eases. Whether it is a corner, a cap apex or a bend is
-    // not asked, because the answer changes nothing.
-    // ⭐⭐ AND THE BEND FALLS OUT FOR FREE, WITH NO THRESHOLD: a 1° smoothing bend needs a setback
-    // of R/tan(0.5°) ≈ 515 m, which cannot fit on its legs, so it declines itself. Smoothing stays
-    // SKELETON's without a rule saying so.
-    // ⭐⭐⭐ A CROSSING IS A CORNER. That is the whole rule, and it is polygon-world: two inked chains
-    // crossing IS the corner of a block, so the question "is this vertex a corner" is answered by
-    // the boolean that made it, not by asking a graph afterwards.
-    // ⛔ The identity is CARRIED THROUGH the union (`booleanLabelled`'s ZFillFunction records both
-    // contributors at every crossing) — `RIBBONS §1`: "identity must be carried THROUGH the boolean,
-    // never recovered from ring geometry afterward." Every previous attempt here recovered it
-    // afterwards and died of it: nearest-fe match, the walk-ordinal coupler, and this session's own
-    // snap-to-nearest-node, which handed a corner radius to every mid-chain vertex.
-    // ⭐ The authored per-IX override still wants a NODE COORDINATE to key on, and a crossing
-    // resolves one only when a contributor's stamped `srcIdx` IS a node index. When it does not, the
-    // corner still eases at the seed radius and the shortfall is COUNTED — it is a limit on where
-    // authoring reaches, not a geometry failure, and the two must not be reported as one thing.
-    // ⚠️ Untested in anger: corner R is unauthored project-wide, so the override branch is exercised
-    // by nothing today.
-    const protoRAt = (crossLabels) => {
-      if (!crossLabels) return 0                    // not a crossing ⇒ not a corner ⇒ sharp
-      protoEaseReport.corner++
-      for (const l of crossLabels) {
-        const V = protoNodeOf(protoOwners[l])
-        if (!V) continue
-        const ixv = ixOverrides?.[ixKeyOf(V)]
-        if (Number.isFinite(+ixv)) return Math.max(0, +ixv) * scale
-        return baseR * scale
-      }
-      protoEaseReport.noNode++
-      return baseR * scale                          // ⛔ still a corner; only the OVERRIDE is out of reach
-    }
-    const easedByBlock = {}          // ① hole ring index → its eased curb ring(s) + per-vertex ① labels
+    const easedByBlock = {}          // ① hole ring index → its curb ring(s) + per-vertex ① labels
+    // ⛔ The ease's report and its `protoRAt` resolver are EXCISED with it. `protoNodeOf` and the
+    // crossing identity SURVIVE and are still frozen — a corner is still known, by construction, as
+    // a place two chains crossed. What is gone is the pass that tried to ROUND it afterwards.
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
       let noWidth = 0, gsSkipped = 0
@@ -5577,26 +5365,18 @@ export function buildTileGround(ribbons, opts = {}) {
           // ⛔ NO SILENT DEGRADE. Without the correspondence the authored R cannot be placed, and
           // easing at a guessed node would be a plausible-looking wrong curb — Layer 0 q2 inside
           // the geometry. So the ring goes through SHARP and the shortfall is counted, loudly.
-          const E = src
-            ? easeRing(rings2[ri], (vi) => {
-                const i1 = src[vi]
-                if (i1 == null) return 0
-                // ⛔⛔ A BLOCK CORNER IS A CLUSTER OF CROSSINGS, NOT ONE VERTEX. Two ε-ribbons
-                // meeting produce several intersection points a few MILLIMETRES apart, and marking
-                // each as its own corner put them ε from their neighbours — so the budget between
-                // two "corners" collapsed to ε and every real corner came back TOO TIGHT.
-                // ⭐ Collapse by IDENTITY, not by distance: consecutive crossing vertices are the
-                // same junction, so only the FIRST of a run carries the radius. No merge tolerance
-                // to pick, and nothing about ε's value is relied on.
-                const X = R.crossings?.[k]
-                if (!X?.[i1]) return 0
-                if (X[(i1 - 1 + ring.length) % ring.length]) return 0   // mid-cluster — already eased
-                return protoRAt(X[i1])
-              }, protoEaseReport)
-            : (protoEaseReport.noNode++, { ring: rings2[ri], src: rings2[ri].map((_, i) => i) })
-          protoCurb.push(E.ring); protoCurbGs.push(isGs)
-          // ⭐ the eased curb, with each vertex's ① label — this is what ③ insets FROM
-          ;(easedByBlock[k] ||= []).push({ ring: E.ring, labs: E.src.map(j => (src ? labs[src[j]] : null)) })
+          // ⛔ NO EASE. ② is the plain offset of ①; the corner radius is owed and belongs in the
+          // node's handles, not in a pass that rounds the offset afterwards (`RIBBONS §1`).
+          // ⛔ `src` maps a ②-ring POSITION to the ① ring vertex it was struck from, so the label
+          // lookup is one hop, not two. (The ease used to sit between them and hold its own position
+          // array; excising it left a double-index here — `labs[src[src[i]]]` — which resolved to
+          // undefined for every vertex and threw. A shape difference, not a logic one.)
+          protoCurb.push(rings2[ri]); protoCurbGs.push(isGs)
+          // ⭐ the curb, with each vertex's ① label — this is what ③ insets FROM
+          ;(easedByBlock[k] ||= []).push({
+            ring: rings2[ri],
+            labs: rings2[ri].map((_, i) => (src && src[i] != null ? labs[src[i]] : null)),
+          })
         }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
@@ -5608,12 +5388,6 @@ export function buildTileGround(ribbons, opts = {}) {
       // through SHARP; that is a real shortfall and must be countable, because on town #2 nobody
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,
       // rendering as what it is (`§6.9.5`: self-intersection is SIGNAL, not error).
-      console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased at the stamped R`)
-      if (protoEaseReport.vanished) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.vanished} ring(s) whose ease SELF-INTERSECTED — the corner went to ZERO and the ring stayed sharp. A self-intersecting curb is not a curb; it does not draw.`)
-      if (protoEaseReport.tooTight) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.tooTight} corner(s) TOO TIGHT for the authored R — left SHARP and counted. ⛔ Not clamped to a smaller radius: that would draw a corner nobody authored.`)
-      if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) whose ease would overlap a neighbour's — left sharp.`)
-      if (!R.crossings) console.warn(`[tileGround][PROTO②ease] ⛔ NO crossing identity on this ① — every vertex reads as "not a corner" and NOTHING eases. A frozen protopolygon minted before crossings were carried will do this. Re-pour.`)
-      if (protoEaseReport.noNode) console.warn(`[tileGround][PROTO②ease] ⚠️ ${protoEaseReport.noNode} of ${protoEaseReport.corner} corner(s) could not resolve a node COORDINATE — they still ease at the seed radius; only the authored per-IX override cannot reach them.`)
       // ── ③ HAND IT TO `sectionPass` — the FILL, unchanged ────────────────────────────
       // The paint stack (treelawn · sidewalk · materials · ADA · the LU flood) strokes INWARD
       // off a curb and does not care where the curb came from. So the honest test of ① and ②
