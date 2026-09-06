@@ -108,22 +108,22 @@
 > asserted is silently rounded back into an absence **in the artifact**.
 > ▶ `node scratch/claims-zero-separation-offset.mjs` — floors read live from source, so they cannot go stale.
 >
-> #### ⭐⭐⭐ RULED 2026-09-05 (Jacob) — **NOTHING IS ROUNDED ON THE PROTOPOLYGON.** Two objects, not one.
-> > *"A protopolygon. The humunculus… it's .00001 symmetrical between nodes… That is **separate** from
-> > the polygons of the curbs."* · *"The line segments get SMOOTHED but the downstream details don't get
-> > ROUNDED — until they naturally get rounded by the geometry."*
+> #### ⭐⭐⭐ RULED 2026-09-05 (Jacob) — **SHARP. ROUNDING HAPPENS ONCE, DOWNSTREAM, WHERE IT ALREADY DOES.**
+> > *"A protopolygon. The humunculus… it's .00001 symmetrical between nodes… That is **separate** from the
+> > polygons of the curbs."* · *"Sharp, with curvature calculated for ADA like everything already is,
+> > attached to override handles, also like everything already is. **I only said the humunculus was sharp
+> > because we already do rounding and filleting at the other steps.**"*
 >
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
 > united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
 > two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).
-> ⛔ **SHARP EVERYWHERE ON ①** (smoothing the PATH is the line; rounding the JOINS is a construction).
-> **Geometric, NOT measured:** a corner rounded at ε then offset by `w` lands at `ε+w ≈ w` — so a rounded
-> proto pins every corner to the half-width, makes authored **R=0 unreachable**, leaves no vertex for the
-> node's handle, and turns every blunt cap into a bulb. ⭐ **Expand each segment to its own rectangle and
-> unite**: no join style to choose, no miter limit to clamp — that clamp is a second mechanism by another
-> name. ⛔ **OPEN, Jacob's: what "naturally rounded by the geometry" means at the OFFSET** — an arc of
-> radius = the offset distance (Illustrator; nothing authored), or SHARP with every curve from the node's
-> handles (R dial survives, R=0 reachable). ▶ Eye-gate: Benton's loop joint, one corner, 53°.
+> ⛔ **SHARP ON ①, AND SHARP THROUGH THE OFFSET.** ⭐ **The reason is NOT a principle about protopolygons
+> — it is that rounding ALREADY HAPPENS DOWNSTREAM**, so rounding here is the second mechanism this §
+> already retires. ⇒ **the offset does NOT round "naturally"**: an arc of radius = the offset distance
+> (Illustrator's behaviour) is precisely that unauthored second mechanism. Curvature stays where it is
+> computed today — **for ADA, off the override handles** — so nothing new is built, the operator's dial is
+> unchanged, and **R=0 stays reachable**. ⭐ **Expand each segment to its own rectangle and unite**: no
+> join style to choose, no miter limit to clamp. ▶ Eye-gate: Benton's loop joint, one corner at 53°.
 >
 > #### ⭐⭐⭐ WE OFFSET FROM THE GROUT. The corners, the caps and the mouths FALL OUT.
 > ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
