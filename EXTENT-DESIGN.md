@@ -178,6 +178,17 @@ independent centers**, and the two fetches doing **different jobs**:
    the zone. The ~20–25% is sized to contain *every future edit* — that is *why* it is frozen and
    chosen deliberately, not casually.
 
+> ### ⛔⛔ THE ZONE IS RULED HERE AND IS NOT BOUGHT ON DISK — measured 2026-09-06, and it is the CLASS
+> ▶ **`node scratch/claims-fetch-contains-the-forever-zone.mjs`** — per side, per scene, input stamped.
+> Three of five scenes fail; on two the fetch does not reach **the disc rim itself**, so the map is
+> simply missing town on one side. ⭐ **It is SILENT** — nothing errors, nothing looks broken, the
+> streets just stop, and you only find it by looking at that one compass direction (Jacob's eye,
+> 2026-09-06: *"the rest of the streets show around the disc, just these on the N side"*). ⛔ It is
+> **upstream of the clip, of ①, and of the caps** — a chopped-looking rim is not evidence about any
+> of them until this check is green. ⛔ **Cause not established** — `geography.json`'s declared bbox
+> is *smaller than the data it contains*, so it is not the fetch bound and the bound cannot be read
+> off it. ⛔ The remedy is a **re-fetch, which is the irreversible step** — the operator's call.
+
 **⭐ The bb centroid must never MOVE.** Once laid down at the hard fetch, the frame origin is frozen
 forever. The extent *may* grow (append) and *may* shrink (**destructively** — you lose the trimmed
 data, and that is allowed); the one operation it may **never** do is **move**. The reason is precise:
@@ -207,8 +218,7 @@ The server already accepts `center:[x,z]`; un-gating the handle is the work.
 > fallback — *the file exists; the polygon inside it does not.* ⚠️ The recurring
 trap: resizing the **bb** when the **disc** is the problem (an un-authored scene auto-fits the disc to
 *all* fetched buildings → huge radius, off-center), and conflating the big-generous SOFT with the
-deliberate HARD. Author the disc; keep the bb's forever-zone. (Home:
-`[[project_extent_disc_centroid_radius_bb_model]]`.)
+deliberate HARD. Author the disc; keep the bb's forever-zone.
 
 ---
 
