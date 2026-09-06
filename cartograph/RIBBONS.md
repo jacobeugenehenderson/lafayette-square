@@ -357,6 +357,12 @@
 > side AWAY from the mate on 128 of 133 pairs across four towns** — the outboard side losing its treelawn and
 > sidewalk, the opposite of the documented intent (`tileGround.js:1222`). ⛔ `tileGround.js:1234` asserts the
 > opposite of this measurement, so ONE OF THE TWO IS WRONG and it is not ruled.
+> ⭐ **AND E3.4's PRESCRIPTION IS THE CANDIDATE CURE — rehomed here 2026-09-05 when the E3 campaign closed.**
+> It is a **DATUM** fix, not a construction, so the grout does **not** subsume it and it did not die with E3:
+> **port `innerSign` from the perpendicular foot-vote (`derive.js:3450–3464`) to FACE-ADJACENCY** — which
+> half-edge bounds the median face — because the foot-vote cannot be authoritative. `OSM2STREETS-GROUNDING`
+> notes the standard has no `innerSign` at all: "which side faces the median" **falls out of the block walk.**
+> ⛔ Still gated on the eye below; a cure for an inversion nobody has confirmed is a guess.
 > ▶ `node scratch/claims-inboard-side-convention.mjs` · **the gate is the EYE: on a divided road in the lit
 > app, is the treelawn at the CURB or in the MEDIAN?** A consistent inversion renders as a planted median,
 > which on a boulevard is plausible-looking — Layer 0 q2, which is how it could survive an eye gate. ⭐ **So it
@@ -717,11 +723,18 @@
 
 > The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
 
-> ## ⭐⭐ DOCTRINE (2026-06-15, Jacob — the construction campaign): CONSTRUCT the hard polygons; DERIVE only the simple block faces.
+> ## ⛔⛔ RETRACTED IN FULL, 2026-09-05 — "CONSTRUCT the hard polygons" is dead. **BOTH** hard polygons derive.
+> ⭐ The median half was retracted 2026-06-15 (the update below). **The junction half is retracted now**, by
+> Jacob's *"E3 is superseded; fold it in and close the campaign"* — the grout polygonizes the network and the
+> junction falls out, so there is nothing left to construct positively. ▶ **LIVE: `§1`'s grout ruling.**
+> ⭐⭐ **AND THE DOCTRINE PREDICTED ITS OWN DEATH** — its "deeper pattern (bank it)" below says every hard case
+> so far dissolved by fixing the DERIVATION. It was three for three; this was the third.
+> *(2026-06-15 text kept below for the record — ⛔ nothing in it is live.)*
+> ### ~~DOCTRINE (2026-06-15, Jacob — the construction campaign): CONSTRUCT the hard polygons; DERIVE only the simple block faces.~~
 > The derivation chain below holds for a **simple block face** — a tile bounded by ordinary street legs derives correctly (centerline → offset → ribbon). It **fails at the two HARD polygons**, and that failure is one root, not many: **the junction and the divided median must be CONSTRUCTED positively, not left to emerge from the face-walk.** ⛔ **A purely emergent junction IS the bug family** — that is the posture this doctrine replaced, and `tileGround.js`'s header now says so.
 > - **Why (canon × the median deep-research × osm2streets):** the standard (`OSM2STREETS-GROUNDING §2`, "the defining divergence") **constructs the intersection polygon positively at every node** — roads trimmed back, the node neighborhood *replaced* by construction; *"every E3 artifact lives in this gap."* And the median research (2026-06-15) found **no production system *derives* a median** — A/B Street calls a centerline-derived median a **known limitation that "doesn't fit"** — the right move is to **construct a generic median positively**. Both findings are the same principle from two sides.
 > - **The unification:** junction-curb bumps + 4-way sliver corners (emergent junction tile) · median needles + the "d" bulge (emergent median face) · divided-transition scallops/width-steps (tiles inheriting messy node geometry) are **ONE root** — *we build ribbons against tiles that are emergent at the hard cases, not constructed.* The concentric-ribbon FILL is sound; it just needs **correct polygons to build against.**
-> - **The campaign (now ONE move):** **intersection-everywhere** — construct the intersection polygon at EVERY node (trim-back + corners-by-clockwise-adjacency). The junction MAP already spans every node + the corner-adjacency pairs are frozen; only the GEOMETRY (apron + edge-collision trim) is still divided-only (forensic 2026-06-16). The `OSM2STREETS-GROUNDING §4` recommendation #2. **Brief: `HANDOFF-junction-construction.md`.** *(The second half — ~~constructed generic median~~ — is RETRACTED; the median is DERIVED, see the update below.)*
+> - ~~**The campaign (E3, intersection-everywhere):** construct the intersection polygon at EVERY node.~~ ⛔ **CLOSED 2026-09-05.** Its method — thicken, collide, trim back, assemble the corner — **is polygonize-then-offset under construction vocabulary**, i.e. the grout ruling three months early. ▶ `_handoffs/HANDOFF-junction-construction.md` carries the closure banner and says what survived: **`innerSign`→face-adjacency (E3.4, a DATUM fix the grout does not subsume) → `§3.5`**; the `junction-band` + `curb-bump` detectors, which outlive it and are the grout's acceptance too.
 > - **LOCKED (do not reopen):** the two-carriageway model (no merge-to-spine); the concentric-ribbon FILL (`sectionPass`); custom > OSM > AASHTO widths. **Separate layers, NOT tile/median geometry:** pedestrian refuge islands (a footway layer, `footway=traffic_island`/`crossing:island=yes`) and signal hardware (instanced assets from `highway=traffic_signals`).
 >
 > ### ⭐⭐ UPDATE (2026-06-15, Jacob — *"why aren't we using the same make-polygon / walk-polygon process as everywhere else?"*): the MEDIAN is DERIVED, not constructed.
