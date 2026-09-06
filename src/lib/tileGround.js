@@ -4845,8 +4845,58 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
+  let protoLabels = null, protoRefused = null
+  // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
+  //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
+  //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
+  //    are also drawn at that proto scale. That is SEPARATE from the polygons of the
+  //    curbs. This is equivalent to … 'Expand appearance' and then 'Pathfinder > JOIN'."
+  //
+  // ONE closed compound path, width-free, permanent. It carries the TOPOLOGY — which
+  // corners exist, which caps close, which faces are holes — and nothing else. The curb
+  // (② below) is a SEPARATE polygon offset from it.
+  //
+  // ⛔ CORNERS STAY SHARP: `jtMiter`, and `etOpenButt` at the ends. No rounding anywhere.
+  // The reason is a STAGE ASSIGNMENT, not geometry — "the skeleton is SMOOTH but the
+  // corners are rounded by the SURVEY": the smoothing is already in the chain's points
+  // before ① is built, the rounding is authored after ② is offset, and ① sits between
+  // the two stages doing NEITHER. ⇒ R=0 stays reachable and nothing new is built for
+  // corners.
+  //
+  // ⛔ ε IS NOT A REAL WIDTH — it is not real at all (Jacob). Its value carries no
+  // information, only its non-zero-ness. MEASURED, not asserted: the topology is
+  // byte-stable across ε = 0.002 … 0.5 m, a 250x range — 87 rings, 85 holes, every time.
+  // `opts.protoHW` exists so that stays demonstrable.
+  // ⚠️ The one constraint: ε must clear the integer floor of the stage that HOLDS it.
+  // Clipper is integer-space and `toClipper` rounds — SCALE=1000 here (1 mm), SCALE=100
+  // at prebake (1 cm). Below the floor the object silently ceases to exist.
+  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
+  let proto = null
+  if (opts.grout === 'proto') {
+    const { ClipperOffset, JoinType, EndType } = clipperLib
+    const pRings = [], pLabels = []
+    for (let idx = 0; idx < streetsOrig.length; idx++) {
+      const st = streetsOrig[idx]
+      if (!(st?.points?.length >= 2) || st.gradeSeparated) continue
+      const co = new ClipperOffset(100, 0.001 * SCALE)   // high miter limit ⇒ corners stay POINTS
+      co.AddPath(st.points.map(toClipper), JoinType.jtMiter, EndType.etOpenButt)
+      const out = []
+      co.Execute(out, PROTO_HW * SCALE)
+      for (const r of out) { pRings.push(r.map(fromClipper)); pLabels.push(idx) }   // scalar label = this chain
+    }
+    // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled` (:364), N subject rings each with its
+    // own label, labels on Clipper's Z channel, crossings resolved by walking the output
+    // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
+    // it, and cannot carry identity across ~200 chain rectangles.
+    const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
+    proto = R.rings
+    protoLabels = R.labels
+    protoRefused = R.refused
+    if (R.refused) console.warn(`[tileGround][PROTO] identity REFUSED: ${R.refused} — the proto exists but carries no chain identity. Do not build on it.`)
+  }
+
   let grout = null
-  if (opts.grout) {
+  if (opts.grout && opts.grout !== 'proto') {
     const gAcc = []
     let gSkipped = 0
     for (let idx = 0; idx < streetsOrig.length; idx++) {
@@ -5053,7 +5103,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
