@@ -7,7 +7,7 @@ import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterl
 import { chainMeasure, findFeForSide, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom } from '../lib/feCustomKey.js'
 import { resolvePedDepths } from '../lib/tileGround.js'
-import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
+import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 
 const raycaster = new THREE.Raycaster()
 const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0)

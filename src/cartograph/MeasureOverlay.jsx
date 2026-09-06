@@ -6,7 +6,7 @@ import { CURB_WIDTH, segmentRangesForCouplers, measureForSegment, innerEdgeOffse
 import { resolvePedDepths } from '../lib/tileGround.js'
 import { polylineRibbon } from './overlayGeom.js'
 import { smoothChain, STREET_SMOOTH, junctionKeysOf } from '../lib/smoothCenterline.js'  // the ONE smoothing knob — shared with the curb (SSoT; SKELETON.md §3.5)
-import { resolveChainSegmentation } from '../lib/chainSegmentation.js'
+import { resolveChainSegmentation } from '../lib/buildBlockGeometryV2.js'
 import { chainMeasure, findFeForSide as findFeForSidePure, applyKindToMeasure } from './measureModel.js'
 import { readFeCustom, makeCapFe, feCustomKey } from '../lib/feCustomKey.js'
 
