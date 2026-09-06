@@ -530,7 +530,21 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // reversed here, once, at the source. ⭐ This repo carries both shoelace conventions and
     // mis-reading them has cost a full day; converting at the boundary beats every consumer
     // guessing.
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [bRing], [bLabs], R.rings, R.labels, true)
+    // ⛔⛔ THE SUBTRACTION SUBJECT IS THE FRAME, NOT THE DISC — "build the whole grid flat and then
+    // stamp out the circle LAST" (Jacob, 2026-09-06). Subtracting from the DISC cuts each rim block
+    // BEFORE ②③ run, so the circle arrives at the offset stage looking like an ordinary block edge
+    // and the curb + ped ribbon wrap around it and turn corners at the rim — visible immediately,
+    // and wrong: nothing is built at the map edge, it is simply where the drawing stops.
+    // ⇒ Subtract the ink from a RECTANGLE that contains everything. Every block comes out WHOLE,
+    // ②③ offset a whole block, and the disc is applied to the RESULT (see the artifact clip).
+    // ⭐ This also deletes machinery rather than adding it: no `__boundary__` depth-0 special case,
+    // no rim corner rule, no "is this the rim?" question inside the offset at all.
+    let fx0 = Infinity, fx1 = -Infinity, fz0 = Infinity, fz1 = -Infinity
+    for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+    for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+    const M = 50
+    const frame = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [frame], [frame.map(() => bIdx)], R.rings, R.labels, true)
     let blocks = null, blockLabels = null
     if (!D.refused && D.rings?.length) {
       blocks = []; blockLabels = []
@@ -547,7 +561,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // ⛔ A refused stencil is LOUD and the un-stencilled ① is returned unchanged — never a
     // half-cut contour, which would render and could not be seen to be wrong.
     if (S.refused) console.warn(`    ⛔ [①] STENCIL REFUSED (${S.refused}) — ① is the FULL bb, NOT cut at the perimeter. The rim is unstencilled; do not read rim geometry from this pour.`)
-    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx, blocks, blockLabels }
+    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx, blocks, blockLabels, boundaryRing: bRing }
   }
   return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false }
 }
@@ -5241,7 +5255,8 @@ export function buildTileGround(ribbons, opts = {}) {
       MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
              refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null,
              // ⭐ `blocks` = boundary − stroked roads, frozen alongside ①. See the block loop below.
-             blocks: frozenProto.blocks || null, blockLabels: frozenProto.blockLabels || null }
+             blocks: frozenProto.blocks || null, blockLabels: frozenProto.blockLabels || null,
+             boundaryRing: frozenProto.boundaryRing || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -5792,6 +5807,33 @@ export function buildTileGround(ribbons, opts = {}) {
               roundTipKeys: 'cap machinery — a contour already IS its caps',
             },
           })
+        }
+        // ⭐⭐⭐ AND NOW THE CIRCLE IS STAMPED — LAST, ON THE RESULT. Jacob, 2026-09-06: "I thought
+        // the decision was to build the whole grid flat and then stamp out the circle last."
+        // Everything above ran on WHOLE blocks: ② offset a full block, ③ struck full bands. Only
+        // here is the disc applied, and it applies to the OUTPUT — so a rim block's ribbon is a
+        // clean CUT through a finished band, never a band that turned a corner to follow the rim.
+        // ⛔ Cutting earlier is what produced the wrapped corners at the stencil edge: the circle
+        // reached the offset stage disguised as an ordinary block edge, and ③ has no way to tell
+        // "edge of a block" from "edge of the drawing".
+        // ⛔ NO FALLBACK: no frozen boundary ⇒ NOTHING is stamped and it says so. A silently
+        // un-stamped pour draws the whole bb and looks deliberate.
+        const stamp = MP.boundaryRing
+        if (stamp?.length > 2) {
+          const before = protoShapeTiles.length
+          const cut = (rings) => { const o = intersectRings(rings || [], [stamp]); return o?.length ? o : [] }
+          const kept = []
+          for (const t of protoShapeTiles) {
+            const ring = cut([t.ring])
+            if (!ring.length) continue                     // wholly outside the disc — correctly gone
+            for (const r of ring) kept.push({ ...t, ring: r, iA: cut(t.iA),
+              bands: { curb: cut(t.bands.curb), treelawn: cut(t.bands.treelawn),
+                       sidewalk: cut(t.bands.sidewalk), lu: cut(t.bands.lu) } })
+          }
+          protoShapeTiles = kept
+          console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)
+        } else {
+          console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
         }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
       }

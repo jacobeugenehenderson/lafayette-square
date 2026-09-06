@@ -4980,6 +4980,8 @@ export function deriveLayers(highways) {
         blocks: MP.blocks.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
         blockLabels: MP.blockLabels,
       } : {}),
+      // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.
+      ...(MP.boundaryRing ? { boundaryRing: MP.boundaryRing.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]) } : {}),
       // ⛔⛔ CROSSINGS MUST BE FROZEN OR ① HAS NO CORNERS. A corner is exactly where two chains
       // cross, and `booleanLabelled` resolves a crossing vertex by INHERITING a neighbour's label —
       // so the label alone cannot say "this vertex is a node". The crossing record (who met here,
