@@ -224,13 +224,18 @@ function easeRing(ring, rAt, report = null) {
     }
     for (const k of sp) consumed[k] = true
   }
-  // pass 2 — emit
-  const out = []
+  // pass 2 — emit. ⭐ `src` rides alongside: for every emitted point, the index of the INPUT ring
+  // vertex it derives from. Without it the bands cannot read a per-edge depth off the eased curb,
+  // and ③ is stuck insetting from ① — which is what made the bands non-concentric with the curb.
+  // ⛔ An arc's points are split at its midpoint between the INCOMING and OUTGOING leg rather than
+  // all attributed to the corner: a corner joins two edges that may carry different authored
+  // widths, and collapsing both onto one of them would step the ribbon at every corner.
+  const out = [], outSrc = []
   const skip = new Array(n).fill(false)
   for (let i = 0; i < n; i++) if (plan[i]) for (const k of span(i, plan[i])) if (k !== i) skip[k] = true
   for (let i = 0; i < n; i++) {
     const pl = plan[i]
-    if (!pl) { if (!skip[i]) out.push(ring[i]); continue }
+    if (!pl) { if (!skip[i]) { out.push(ring[i]); outSrc.push(i) } continue }
     const { P0, P1, theta, R } = pl
     const phi = Math.PI - theta                      // the turn
     const h = (4 / 3) * Math.tan(phi / 4) * R        // the cubic that best fits a circular arc
@@ -243,10 +248,11 @@ function easeRing(ring, rAt, report = null) {
       const u = k / N, w = 1 - u
       out.push([w*w*w*P0.p[0] + 3*w*w*u*c1[0] + 3*w*u*u*c2[0] + u*u*u*P1.p[0],
                 w*w*w*P0.p[1] + 3*w*w*u*c1[1] + 3*w*u*u*c2[1] + u*u*u*P1.p[1]])
+      outSrc.push(u < 0.5 ? P0.idx : P1.idx)
     }
     if (report) report.eased++
   }
-  return out.length >= 3 ? out : ring
+  return out.length >= 3 ? { ring: out, src: outSrc } : { ring, src: ring.map((_, i) => i) }
 }
 
 // Remove FOLD NEEDLES from a per-vertex offset ring. On a bend tighter than the
@@ -5496,6 +5502,7 @@ export function buildTileGround(ribbons, opts = {}) {
       protoEaseReport.noNode++
       return baseR * scale                          // ⛔ still a corner; only the OVERRIDE is out of reach
     }
+    const easedByBlock = {}          // ① hole ring index → its eased curb ring(s) + per-vertex ① labels
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
       let noWidth = 0
@@ -5527,14 +5534,16 @@ export function buildTileGround(ribbons, opts = {}) {
           // ⛔ NO SILENT DEGRADE. Without the correspondence the authored R cannot be placed, and
           // easing at a guessed node would be a plausible-looking wrong curb — Layer 0 q2 inside
           // the geometry. So the ring goes through SHARP and the shortfall is counted, loudly.
-          const eased = src
+          const E = src
             ? easeRing(rings2[ri], (vi) => {
                 const i1 = src[vi]
                 if (i1 == null) return 0
                 return protoRAt(R.crossings?.[k]?.[i1])
               }, protoEaseReport)
-            : (protoEaseReport.noNode++, rings2[ri])
-          protoCurb.push(eased); protoCurbGs.push(isGs)
+            : (protoEaseReport.noNode++, { ring: rings2[ri], src: rings2[ri].map((_, i) => i) })
+          protoCurb.push(E.ring); protoCurbGs.push(isGs)
+          // ⭐ the eased curb, with each vertex's ① label — this is what ③ insets FROM
+          ;(easedByBlock[k] ||= []).push({ ring: E.ring, labs: E.src.map(j => (src ? labs[src[j]] : null)) })
         }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
@@ -5667,11 +5676,22 @@ export function buildTileGround(ribbons, opts = {}) {
         // each material's own two boundaries — one variable-depth annulus per material, so the
         // swap is a change of DEPTHS and never a change of construction (`RIBBONS §1`: if a
         // material choice changes the geometry, the proposal is wrong).
-        const walkFrom = (i) => hwAt(i) + cw + (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0))
-        const walkTo   = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : (inWalk(i) ? Math.max(0, WB - cw) : 0))
-        const lawnFrom = (i) => hwAt(i) + cw + (outWalk(i) ? dOut(i) : 0)
-        const lawnTo   = (i) => hwAt(i) + cw + (outWalk(i) ? (inWalk(i) ? dOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
-        const inset = (fn) => offsetRingVariable(ring, fn, () => true, () => null)
+        const walkFrom = (i) => (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0))
+        const walkTo   = (i) => (outWalk(i) ? dOut(i) : (inWalk(i) ? Math.max(0, WB - cw) : 0))
+        const lawnFrom = (i) => (outWalk(i) ? dOut(i) : 0)
+        const lawnTo   = (i) => (outWalk(i) ? (inWalk(i) ? dOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
+        // ⭐⭐⭐ THE BANDS INSET FROM THE EASED CURB, NOT FROM ①. `RIBBONS §1`: "each boundary is the
+        // same contour offset a little further", and ③'s own datum note — "the ped strips are set
+        // back from THE CURB; measurements from the centreline are immaterial to them."
+        // ⛔ WHY IT HAD TO CHANGE: insetting ① by `hwAt + cw + …` is only equivalent to insetting the
+        // curb while the curb is a plain parallel offset of ①. Once the corner EASES, it is not —
+        // so bands struck from ① kept ①'s square corners while the curb rounded, and the ribbon
+        // stopped being concentric with the curb it is supposed to wrap. That breaks INVARIANT 1
+        // (the corner is the band BENT around the arc) at every intersection in the map.
+        // ⇒ the depth ladder loses its `hwAt` term entirely: the subject already IS the curb.
+        // ⛔ `pavementHW` keeps exactly one job — putting the curb where it is — and appears
+        // nowhere in the ped ladder, which is what ③'s datum correction asked for and could not
+        // have while ① was the subject.
         // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, and it is
         // INERT when unset (no output changes, the shipped `CORNER_DUMP` idiom). Two diseases
         // look identical from a thickness histogram and have different cures:
@@ -5692,15 +5712,34 @@ export function buildTileGround(ribbons, opts = {}) {
             stages: stages.map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
           })
         }
-        const curbOuter = inset(hwAt), pedOuter = inset((i) => hwAt(i) + cw), luEdge = inset((i) => hwAt(i) + WB)
         // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
         // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
         // block's COMPLEMENT: the roadway, flooding every band across the whole street.
         const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
-        protoBands.curb.push(...band(curbOuter, pedOuter))
-        protoBands.sidewalk.push(...band(inset(walkFrom), inset(walkTo)))
-        protoBands.treelawn.push(...band(inset(lawnFrom), inset(lawnTo)))
-        protoBands.lu.push(...luEdge)
+        // ⭐ ONE BLOCK MAY YIELD SEVERAL CURB RINGS (the offset can split a pinched block), so the
+        // mono-width envelope `WB` is computed once for the BLOCK and applied to each of its rings.
+        // ⛔ Re-deriving WB per ring would let a split block carry two different ribbon depths,
+        // which is INVARIANT 1's "one outer depth per block" broken by an implementation detail.
+        for (const EC of (easedByBlock[k] || [])) {
+          if (!(EC.ring?.length >= 3)) continue
+          // ⭐ per-edge depths ride the EASED ring's own carried ① labels
+          const EM = (i) => (EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i]))
+          const swap = (fn) => (i) => { const m = EM(i); return m ? fn(m) : 0 }
+          const eOutWalk = swap(m => m.matOuter === 'SW'), eInWalk = swap(m => m.matInner === 'SW')
+          const eTl = swap(m => Math.min(m.treelawn || 0, Math.max(0, WB - cw)))
+          const eSw = swap(m => Math.min(m.sidewalk || 0, Math.max(0, WB - cw)))
+          const eDOut = (i) => Math.min(eOutWalk(i) ? eSw(i) : eTl(i), Math.max(0, WB - cw))
+          const eWalkFrom = (i) => cw + (eOutWalk(i) ? 0 : (eInWalk(i) ? eDOut(i) : 0))
+          const eWalkTo   = (i) => cw + (eOutWalk(i) ? eDOut(i) : (eInWalk(i) ? Math.max(0, WB - cw) : 0))
+          const eLawnFrom = (i) => cw + (eOutWalk(i) ? eDOut(i) : 0)
+          const eLawnTo   = (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
+          const ins = (fn) => offsetRingVariable(EC.ring, fn, () => true, () => null)
+          const curbOuter = [EC.ring], pedOuter = ins(() => cw), luEdge = ins(() => WB)
+          protoBands.curb.push(...band(curbOuter, pedOuter))
+          protoBands.sidewalk.push(...band(ins(eWalkFrom), ins(eWalkTo)))
+          protoBands.treelawn.push(...band(ins(eLawnFrom), ins(eLawnTo)))
+          protoBands.lu.push(...luEdge)
+        }
       }
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,
