@@ -117,13 +117,15 @@
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
 > united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
 > two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).
-> ⛔ **SHARP ON ①, AND SHARP THROUGH THE OFFSET.** ⭐ **The reason is NOT a principle about protopolygons
-> — it is that rounding ALREADY HAPPENS DOWNSTREAM**, so rounding here is the second mechanism this §
-> already retires. ⇒ **the offset does NOT round "naturally"**: an arc of radius = the offset distance
-> (Illustrator's behaviour) is precisely that unauthored second mechanism. Curvature stays where it is
-> computed today — **for ADA, off the override handles** — so nothing new is built, the operator's dial is
-> unchanged, and **R=0 stays reachable**. ⭐ **Expand each segment to its own rectangle and unite**: no
-> join style to choose, no miter limit to clamp. ▶ Eye-gate: Benton's loop joint, one corner at 53°.
+> ⛔ **SHARP ON ①, AND SHARP THROUGH THE OFFSET** — ⭐⭐ **because SMOOTHING IS SKELETON AND ROUNDING IS
+> SURVEY** (*"the skeleton is smooth but the corners are rounded by the survey"*). The smooth is already
+> in the chain's points before ① exists; the rounding is authored after ② is offset. **① sits between the
+> two stages and does NEITHER** — a STAGE FACT, not a principle about protopolygons.
+> ⇒ **the offset does NOT round "naturally"**: an arc of radius = the offset distance (Illustrator's
+> behaviour) is a third, unauthored place to round — the second mechanism this § already retires.
+> Curvature stays where it is computed today, **for ADA, off the override handles**: nothing new is built,
+> the dial is unchanged, **R=0 stays reachable**. ⭐ **Expand each segment to its own rectangle and
+> unite** — no join style to choose, no miter limit to clamp. ▶ Eye-gate: Benton's joint, one 53° corner.
 >
 > #### ⭐⭐⭐ WE OFFSET FROM THE GROUT. The corners, the caps and the mouths FALL OUT.
 > ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
