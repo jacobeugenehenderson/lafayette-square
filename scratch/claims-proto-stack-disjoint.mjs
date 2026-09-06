@@ -31,7 +31,19 @@ const index = (rings) => (rings || []).filter(r => r?.length >= 3).map(r => {
   for (const p of r) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1] }
   return { r, x0, y0, x1, y1 }
 })
-const hit = (ix, x, y) => { for (const e of ix) if (x >= e.x0 && x <= e.x1 && y >= e.y0 && y <= e.y1 && inRing(e.r, x, y)) return true; return false }
+// ⛔⛔ A BAND IS A COMPOUND PATH — AN ANNULUS IS AN OUTER CONTOUR *PLUS AN INNER HOLE*, and
+// membership is the EVEN-ODD count across the whole set, never "is it inside any ring".
+// ⭐ THIS WAS THE DEFECT, AND IT WAS IN THIS FILE, NOT IN THE GEOMETRY. The first version asked
+// `some(ring contains p)`, so EVERY point inside a block tested TRUE against that block's band
+// outer contour — the hole was never subtracted. It reported ~1000 "overlaps" on LS across
+// several sessions and did NOT move when the construction was corrected, because it was never
+// measuring the construction. Measured: the curb band is 299 positive rings and 62 NEGATIVE
+// (holes); its gross |area| is 145.6 ha and its NET signed area is 1.15 ha — a 127× difference,
+// which is the size of the lie.
+// ⭐ `POLYGON-FIRST §5` RULE 1b, exactly: measure the DEFINITION, not a proxy that correlates
+// with it — and a wrong detector is worse than none, because it is the one artifact nobody
+// thinks to doubt.
+const hit = (ix, x, y) => { let c = 0; for (const e of ix) if (x >= e.x0 && x <= e.x1 && y >= e.y0 && y <= e.y1 && inRing(e.r, x, y)) c++; return (c & 1) === 1 }
 
 let failed = false
 for (const scene of scenes) {

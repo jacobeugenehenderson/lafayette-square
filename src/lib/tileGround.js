@@ -5225,7 +5225,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // there is no hard property line. So "both strips LU" is an OPEN FIELD — a MATERIAL
       // state, never an absence — and it falls out for free rather than being a case.
       protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
-      let capped = 0
+      let capped = 0, tooNarrow = 0
       for (const [k, ring] of R.rings.entries()) {
         const labs = R.labels[k]
         if (!(ring?.length >= 3) || signedArea(ring) > 0) continue   // outer contour; blocks are the HOLES
@@ -5258,6 +5258,17 @@ export function buildTileGround(ribbons, opts = {}) {
           WB = lo * 0.9
           capped++
         }
+        // ⛔⛔ A BLOCK TOO NARROW FOR THE CURB CARRIES NO STACK AT ALL — and the honest output
+        // is LU TO CENTRE, not a clamp and not an absence. When the capacity guard drives WB
+        // below `cw`, the LU edge lands OUTSIDE the curb band's inner edge and the two overlap
+        // — measured by `claims-proto-stack-disjoint` the moment its membership test was fixed:
+        // LS 5 blocks, HPDM 21, some capped to 0.0000 m. ⛔ Forcing `WB = cw` would invert the
+        // offset again (the medial-axis case), and emitting nothing would read the block as an
+        // ABSENCE, which `ARCHITECTURE §"The compound shape"` forbids: the drawing has no holes.
+        // ⭐ `SECTION §3.3` already answers it — the FILL spans curb → block-centre and the LU
+        // remainder floods, so a block with no room for a ribbon is the OPEN-FIELD limit: all
+        // LU, a MATERIAL state, never a missing one. Counted, because on town #2 nobody looks.
+        if (WB < cw) { protoBands.lu.push(...offsetRingVariable(ring, hwAt, () => true, () => null)); tooNarrow++; continue }
         // per-edge MATERIAL boundaries — the swap, expressed as depths rather than as a case
         const tl = (i) => Math.min(M(i)?.treelawn || 0, Math.max(0, WB - cw))
         const sw = (i) => Math.min(M(i)?.sidewalk || 0, Math.max(0, WB - cw))
@@ -5267,6 +5278,26 @@ export function buildTileGround(ribbons, opts = {}) {
         const lawnFrom = (i) => hwAt(i) + (yes(i) ? cw : cw + sw(i))
         const lawnTo   = (i) => hwAt(i) + (yes(i) ? cw + tl(i) : WB)
         const inset = (fn) => offsetRingVariable(ring, fn, () => true, () => null)
+        // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, and it is
+        // INERT when unset (no output changes, the shipped `CORNER_DUMP` idiom). Two diseases
+        // look identical from a thickness histogram and have different cures:
+        //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver
+        //     falls below `offsetRingVariable`'s area floor. The deeper set then has FEWER
+        //     pieces, that lobe is never subtracted, and `differenceRings` returns it WHOLE.
+        //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`, the
+        //     averaged-normal branch, ~70% of crossings). Piece count HOLDS; the ring carries
+        //     repeated/crossing vertices and the difference mishandles the reversed winding.
+        // ⇒ record piece COUNT per depth, and repeated-vertex count per ring. If counts drop on
+        // exactly the flooded blocks it is the first; if counts hold it is the second.
+        if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
+          const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
+          const ar = (rs) => rs.reduce((t, rg) => { let a=0; for (let i=0;i<rg.length;i++){const[x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length];a+=x1*y2-x2*y1} return t + Math.abs(a/2) }, 0)
+          const stages = [['hw', inset(hwAt)], ['hw+cw', inset((i) => hwAt(i) + cw)], ['WB', inset((i) => hwAt(i) + WB)]]
+          ;(globalThis.__PROTO_DUMP ||= []).push({
+            block: k, ringArea: Math.abs(signedArea(ring)), WBnom, WB, capped: WB !== WBnom,
+            stages: stages.map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
+          })
+        }
         const curbOuter = inset(hwAt), pedOuter = inset((i) => hwAt(i) + cw), luEdge = inset((i) => hwAt(i) + WB)
         // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
         // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
@@ -5280,9 +5311,10 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,
       // because on town #2 nobody is looking.
-      protoStackCollapse = { total: capped, byRung: null, blocks: null }
+      protoStackCollapse = { total: capped, tooNarrow, byRung: null, blocks: null }
       console.log(`[tileGround][PROTO③] ped ribbon off the CURB, mono-width per block: curb ${protoBands.curb.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
       if (capped) console.log(`[tileGround][PROTO③] ${capped} block(s) hit the capacity guard — the ribbon reaches centre rather than inverting (NOT a defect; the open-field case).`)
+      if (tooNarrow) console.log(`[tileGround][PROTO③] ${tooNarrow} block(s) too narrow for even the curb — painted ALL LU to centre (the open-field limit, a MATERIAL state, not an absence).`)
 
       // ⛔⛔ `sectionPass` IS REMOVED FROM THIS PATH, NOT LEFT BESIDE IT. It strokes inward
       // PER RUN, so its output is per-chain strips laid side by side — and Jacob read that
