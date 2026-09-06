@@ -37,7 +37,8 @@
 import clipperLib from 'clipper-lib'
 import { CURB_WIDTH } from '../cartograph/streetProfiles.js'
 import { smoothChain, jKey, junctionKeysOf } from './smoothCenterline.js'
-import { pickLuFromHash, hashKey, blockKeyFromRing, resolveChainSegmentation } from './buildBlockGeometryV2.js'
+import { pickLuFromHash, hashKey, blockKeyFromRing } from './buildBlockGeometryV2.js'
+import { resolveChainSegmentation } from './chainSegmentation.js'
 import { readCapCustom } from './feCustomKey.js'
 // [SLICE 2 — TEMPORARY] The substrate walk, imported but NOT called unless the
 // flag is on (`electSubstrateTiles`). An import is not a call site: with the
@@ -361,6 +362,101 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⚠️ Unlabelled clip geometry is legitimate (the junction/median constructions add
 // polygons that belong to no single run): its vertices land as crossings and inherit
 // forward, which is the same ring-adjacency rule the keyhole clip seam uses.
+// ─────────────────────────────────────────────────────────────────────────────
+// ① THE PROTOPOLYGON — width-free, permanent, never seen, never authored.
+//
+// ⭐⭐⭐ Every chain expanded at ε and united into ONE closed compound path; the
+// blocks are its HOLES. `RIBBONS §1` (ruled 2026-09-04/05): the grout is a
+// POSITIVE object and we offset from IT, not the chains. ② the curb is a
+// SEPARATE object offset FROM ① — ⛔ not one object at two moments.
+//
+// ⭐ THIS IS A PURE FUNCTION OF THE FRAME, and that is the whole point: it takes
+// chains and ε and nothing else. No `blockCustoms`, no look, no authored width —
+// so it can be minted ONCE AT PREBAKE and frozen, which is `PIPELINE §Wall`'s
+// Check C for the object the curb is offset from. `POLYGON-FIRST §3`'s blocker on
+// D6b ("freezing iA at prebake would bake a bare-defaults curb") does NOT apply,
+// because ① HAS no width to bake.
+//
+// ⛔ ε IS A DECLARATION, NOT A TOLERANCE. Zero and ε render identically and are
+// different objects: zero is an ABSENCE, ε a PRESENCE with an interior, two sides
+// and TWO nodes at every mouth. Its VALUE carries no information; its
+// non-zero-ness is the whole of it. Its one constraint is that it must clear the
+// integer floor of the stage that freezes it (`claims-zero-separation-offset`).
+//
+// ⛔ NOTHING IS ROUNDED. No join style is chosen anywhere — the union does the
+// joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ①
+// sits between the two stages and does NEITHER.
+//
+// ⛔ NOT `ClipperOffset`: an offset MINTS every output vertex, so the only label
+// it can carry is one scalar for the whole chain — an edge would know WHICH chain
+// but not WHICH SIDE. Building each outline explicitly (right boundary forward,
+// left boundary back) makes every vertex a SOURCE vertex whose index gives both.
+// ⭐ It also removes the density trap: expanding a path SEGMENT-BY-SEGMENT makes
+// the result depend on sampling (consecutive rectangles overlap by ε·tan(θ/2),
+// which on a dense polyline falls under the 1 mm integer grid and the ink rounds
+// into a DOTTED line). One polygon per chain has no such term.
+//
+// ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
+// Authored values resolve downstream off that identity, so ① is look-agnostic:
+// one scene's ① serves every Look.
+export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
+  const owners = [], rings = [], labels = []
+  // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
+  // one — so it is computed unconditionally here. ⚠️ The live path used to gate
+  // the segmentation on `blockCustoms` being present (it only needed the map to
+  // look an override up), which made an UNAUTHORED scene stamp segOrd 0
+  // everywhere. Harmless while the value was only a lookup key into an absent
+  // table; ⛔ NOT harmless in a frozen fact, which must carry the real ordinal
+  // whether or not anyone has authored against it yet.
+  const seg = resolveChainSegmentation(streets)
+  const ixIdxs = streets.map(st => {
+    const n = st?.points?.length || 0
+    return [...(seg.get(st) || [])].filter(i => i > 0 && i < n - 1).sort((a, b) => a - b)
+  })
+  const segOrdAt = (ci, i) => { let so = 0; for (const k of (ixIdxs[ci] || [])) if (k <= i) so++; return so }
+  // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc.
+  // are gone from the protopoly rendering; they have to be there"). Excluding
+  // them CONFLATES two rules: the canon pulls them out of the BLOCK GRID — they
+  // do not bound a city block — which says nothing about whether they are in the
+  // DRAWING. ① is the ink of the whole network; drop the highway from it and the
+  // highway does not exist. ⭐ They carry `gradeSeparated` on the stamp so
+  // downstream still tells a highway from a street — by IDENTITY, not by absence.
+  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))]
+  for (const { st, ci } of chains) {
+    if (!(st?.points?.length >= 2)) continue
+    const P = st.points, nrm = []
+    for (let i = 0; i < P.length; i++) {
+      const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
+      const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
+      nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
+    }
+    const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs }) - 1
+    const ring = [], labs = []
+    for (let i = 0; i < P.length; i++) {
+      ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
+      // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it
+      // 'left' puts every ASYMMETRIC authored width on the wrong side of its street.
+      labs.push(stamp('right', i))
+    }
+    for (let i = P.length - 1; i >= 0; i--) {
+      ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
+      labs.push(stamp('left', i))
+    }
+    if (ring.length < 3) continue
+    // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
+    // overlaps, so a mixed pile unions into confetti instead of one object.
+    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
+    rings.push(ring); labels.push(labs)
+  }
+  // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled`, N subject rings each with its
+  // own label, labels on Clipper's Z channel, crossings resolved by walking the
+  // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
+  // cannot carry identity across ~200 chain rectangles.
+  const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels)
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length }
+}
+
 function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null) {
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
@@ -4950,69 +5046,29 @@ export function buildTileGround(ribbons, opts = {}) {
     // rounds into a DOTTED line). One polygon per chain has no such term.
     // ⛔ NOTHING IS ROUNDED: no join style is chosen anywhere, because the union does the
     // joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ① is neither.
-    const pRings = [], pLabels = []
-    protoOwners = []                     // label → { idx, side, vtx } — the edge's owner
-    // ⭐ BOTH LISTS. `streets` is filtered at :2835 to EXCLUDE gradeSeparated, which live in
-    // `gradeSep` (:2841) because they are drawn through their own accumulator and carry their
-    // own styling knobs. That separation is about STYLE and about the block grid — it is not
-    // a reason for them to be absent from ①, which is the ink of the whole network.
-    // ⛔ Their widths do NOT come from `measures` (that array is indexed in `streets` space
-    // and has no entry for them), so an owner records which resolver applies: a `streets`
-    // index, or the chain's own `measure`. ⭐ `gs` rides on the owner so downstream can still
-    // tell a highway from a street and style it accordingly — the distinction is carried by
-    // IDENTITY, not by absence.
-    const protoChains = [
-      ...streetsOrig.map((st, idx) => ({ st, idx })),
-      ...gradeSep.map(st => ({ st, idx: -1 })),
-    ]
-    // ⭐⭐⭐ THE STAMP IS THE WALL. `WALL.md` / `PIPELINE §Wall`: the wall we have is a HANDLE
-    // rule and it needs to be a CONTENT rule — "polygons only by the time we get to the
-    // Section tools". A chain-free SIGNATURE only proves no consumer can REACH a chain; it
-    // says nothing about whether the artifact IS one. A label that carries an INDEX into
-    // chain space is one: every read of it is a chain question asked late.
-    // ⇒ Resolve here, ONCE, and carry VALUES. This is the last read of a chain in the
-    // pipeline; everything after offsets a stamped contour and literally has nothing to call.
-    // ⛔ `skelId` stays on the stamp — authoring is street-keyed (`A15`) and `blockCustoms`
-    // resolves against it. The wall kills chains, not the operator's overrides.
-    // authoring resolves at the MINT, street-keyed (`A15`) — the operator's overrides cross
-    // the wall as VALUES, exactly like every other measure.
-    // ⭐⭐ THE BASE MEASURE, KEYED BY skelId — the pre-authoring half, and the ONLY thing ①
-    // needs from chain space. Built here, once, BEFORE the mint. ⛔ An ARRAY INDEX must not
-    // ride on an owner: it is `A15`'s disguised chain ("a skelId string does not look like a
-    // centerline, so it passes every 'is this chains again?' reading" — an index does not even
-    // have that excuse), and it would not survive a re-pour, which is precisely what a frozen
-    // fact has to do. ⭐ `skelId` is the legitimate carrier: authoring IS street-keyed by
-    // design (`A15`: "that is the product, and it stays"), and `blockCustoms` is keyed on it.
-    const protoBase = new Map()
+    // ⭐ ONE CONSTRUCTION, TWO CALLERS. The mint is `mintProtopolygon` — a pure function of
+    // the frame — so prebake can freeze exactly what the live path builds. ⛔ Two copies of a
+    // construction is how "live == bake" stops being true without anyone editing either one.
+    const MP = mintProtopolygon({ streets: streetsOrig, gradeSep, eps: PROTO_HW })
+    protoOwners = MP.owners
+    const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused }
+
+    // ⭐⭐ THE AUTHORED HALF — build-time, keyed off the frozen IDENTITY. ⛔ It cannot live in
+    // the mint: `resolvePedDepths` and the `pavementHW` override both read `blockCustoms`, and
+    // prebake is blind to `design.json` (`POLYGON-FIRST §3`). Resolving there would freeze the
+    // to-code default into the artifact — Layer 0 q3, the exact shape that made D6b's literal
+    // wording impossible. ⭐ Splitting it here is what lets ① freeze while the operator's
+    // override still reaches the geometry: identity is permanent, the value is live.
+    const protoBase = new Map()          // skelId → the pre-authoring base measure
     streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
     for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
     const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
-    // ⭐⭐⭐ THE STAMP SPLITS IN TWO, AND THE SPLIT IS WHAT LETS ① FREEZE AT PREBAKE.
-    // ⛔ The authored half CANNOT go upstream: `feWidthAt` and `resolvePedDepths` both read
-    // `blockCustoms`, and prebake is blind to `design.json` (`POLYGON-FIRST §3`). Freezing a
-    // resolved width there would bake the to-code default into the artifact — Layer 0 q3, in
-    // exactly the shape that made D6b's literal wording impossible.
-    // ⇒ the OWNER carries IDENTITY ONLY — `{skelId, side, segOrd, gradeSeparated}` — every
-    // term of which is pure chain TOPOLOGY (`segOrdAtVertex` counts IX vertices; it never
-    // asks a width). That is width-free, look-agnostic and permanent: ONE scene's ① serves
-    // every Look, which is the same property `baseHW` gives A03's curb facts.
-    // ⭐ The authored values resolve at BUILD time, keyed off the frozen identity — so the
-    // operator's override still reaches the geometry and the freeze does not pin it.
-    const mkStamp = (idx, st, side, i) => {
-      const so = idx >= 0 ? segOrdAtVertex(idx, i) : 0
-      return protoOwners.push({
-        skelId: st?.skelId ?? st?.name ?? null, side, segOrd: so,
-        gradeSeparated: !!st?.gradeSeparated,
-      }) - 1
-    }
-    // ⭐ THE AUTHORED RESOLVER — build-time, keyed off the frozen identity. Memoised per
-    // owner because ② and ③ both ask, per vertex, on every pass.
     // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
-    // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose
-    // default ladder (`gleanTreelawn`) supplies a value where nothing is authored.
-    // Reading the raw field made a SECOND, poorer lookup — 19,094 stamps but only 4,601 with
-    // a treelawn, BOTH with a median of 0.00: three quarters of the map had no ped band and
-    // LU flooded to the curb. Jacob, on the drawing: "what are we even looking at here?"
+    // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
+    // ladder (`gleanTreelawn`) supplies a value where nothing is authored. Reading the raw
+    // field made a second, poorer lookup — 19,094 stamps but only 4,601 with a treelawn, both
+    // with a median of 0.00: three quarters of the map had no ped band and LU flooded to the
+    // curb. Jacob, on the drawing: "what are we even looking at here?"
     const protoMeasureCache = []
     const protoMeasureOf = (label) => {
       let m = protoMeasureCache[label]
@@ -5031,54 +5087,12 @@ export function buildTileGround(ribbons, opts = {}) {
       }
       return m
     }
-    for (let ci = 0; ci < protoChains.length; ci++) {
-      const { st, idx } = protoChains[ci]
-      // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc. are gone
-      // from the protopoly rendering; they have to be there"). They were excluded here, and
-      // that was a CONFLATION of two different rules: the canon pulls them out of the BLOCK
-      // GRID — they do not bound a city block — which says nothing about whether they are in
-      // the DRAWING. ① is the ink of the whole network. Drop the highway from it and the
-      // highway does not exist: no asphalt, no curb, no ped stack, and a hole in the map
-      // where a road is. Whether the faces they bound are BLOCKS is a downstream
-      // classification question, and it is not this one.
-      if (!(st?.points?.length >= 2)) continue
-      const P = st.points
-      const nrm = []
-      for (let i = 0; i < P.length; i++) {
-        const a = P[Math.max(0, i - 1)], b = P[Math.min(P.length - 1, i + 1)]
-        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz)
-        nrm.push(L > 1e-9 ? [-dz / L * PROTO_HW, dx / L * PROTO_HW] : (nrm[nrm.length - 1] || [0, 0]))
-      }
-      const ring = [], labs = []
-      for (let i = 0; i < P.length; i++) {
-        ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
-        // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice
-        // (claims-spur-leg-offset, claims-inboard-side-convention). Naming it 'left' here
-        // puts every ASYMMETRIC authored width on the wrong side of its street.
-        labs.push(mkStamp(idx, st, 'right', i))
-      }
-      for (let i = P.length - 1; i >= 0; i--) {
-        ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
-        labs.push(mkStamp(idx, st, 'left', i))
-      }
-      if (ring.length < 3) continue
-      // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon overlaps,
-      // so a mixed pile unions into confetti instead of one object.
-      const asC = ring.map(toClipper)
-      if (clipperLib.Clipper.Orientation(asC) !== true) { ring.reverse(); labs.reverse() }
-      pRings.push(ring); pLabels.push(labs)
-    }
-    // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled` (:364), N subject rings each with its
-    // own label, labels on Clipper's Z channel, crossings resolved by walking the output
-    // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
-    // it, and cannot carry identity across ~200 chain rectangles.
     { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
       const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
         tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
       const med=(f)=>{const a=M.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
       console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
-    console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
-    const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
+    console.log(`[tileGround][PROTO①] ${MP.chainRings} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${gradeSep.length} gradeSeparated`)
     proto = R.rings
     protoLabels = R.labels
     protoRefused = R.refused
