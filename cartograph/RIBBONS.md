@@ -344,10 +344,25 @@
 >   exactly parallel and still be an ugly shape: every vertex at the right distance says nothing about
 >   stepped notches, slivers, or a lopsided cul-de-sac. ⚠️ The number invites the wrong conclusion,
 >   which is why the distinction is written here.
->   ⚠️ **CANDIDATE TRIED AND UNSUPPORTED:** the miter clamp (`offsetRingVariable`, "acute-corner spike
->   → bevel"; measured doing real damage at West-18th↔Dolman, `§3.3`). Switching it off for the proto
->   path moved the gate **101/101 → 97/101** — worse — so it is backed out. ⛔ It was written up as the
->   cause BEFORE it was measured; `noMiterClamp` exists but is not used.
+>   ### ⭐⭐⭐ RULED 2026-09-06 (Jacob) — **THERE IS NO CONDITIONAL AT A CORNER.**
+>   > *"I am highly suspicious of 'if' or 'when' statements; there is no 'when the corner' is anywhere
+>   > — the corner is what it is, where it is, there's no conditional."*
+>
+>   `offsetRingVariable`'s vertex loop carried **FOUR conditionals deciding what a vertex IS**: is it a
+>   cap · which kind of cap · is it a real corner or a through-node · **is the miter too long**. Each is
+>   a case boundary, and a case boundary is a place a discontinuity can appear. §1 already retires the
+>   first three (`cornerAt`/`capAt`), and the proto path neutralises them. **The clamp was the last
+>   one, and it is now off for that path** (`noMiterClamp`). A corner is where the two offset lines
+>   meet — full stop; where that self-intersects, the boolean cancels it to nothing, which is the
+>   operator's own "goes to 0 and disappears" applied by the union rather than by a guard.
+>   ⭐ **THE EYE: the shapes came out CLEAN** — sharp miters, no bevels, no stepped notches, blocks
+>   reading as quadrilaterals. ⭐ And a SHAPE gate now exists alongside the distance one:
+>   **median 7 vertices per curb ring** (a quadrilateral block's curb should be 4–8).
+>   ⛔⛔ **AND THE PROCESS ERROR IS THE PART TO KEEP.** This change was made, then BACKED OUT on a weak
+>   number — the parallelism gate moved 101/101 → 97/101 — and then re-made when the number was
+>   interrogated: **a miter apex lies ON BOTH OFFSET LINES**, so it satisfies that test by
+>   construction; the dip is the gate's block assignment shifting as rings change shape.
+>   ⭐ A principled change dismissed on an uninterrogated number is the same error as adopting one.
 >   ⚠️ `?proto=1` was built and EXCISED the same day: it drew ①/② over the live Survey view and ② was
 >   not fit to look at. ⭐⭐ **THE RULE IT EARNED — do not eye-gate a construction that is not ready,
 >   and never in the operator's own view.** Iterate in `scratch/draw-one-block.mjs` (`--street NAME`).

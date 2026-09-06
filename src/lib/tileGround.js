@@ -710,11 +710,17 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
     // damage at West-18th↔Dolman (a 1.4369 m width step across a 3.24° turn puts the intersection
     // 26.15 m out, past the limit, so a bevel is substituted). `noMiterClamp` exists to switch it off
     // for the proto path.
-    // ⚠️ IT IS NOT ESTABLISHED AS THE CAUSE OF THE ①-PRODUCED MAP'S BAD POLYGONS, and it is NOT
-    // switched off there. Tried 2026-09-06 against Jacob's "the polygons suck, these should be clean
-    // shapes": disabling it moved the parallelism gate 101/101 → 97/101, i.e. slightly WORSE. ⛔ I
-    // wrote it up as the fix before measuring; the measurement did not support it. Cause of the bad
-    // shapes: NOT ESTABLISHED.
+    // ⛔⛔ IT IS OFF FOR THE PROTO PATH, AND THE REASON IS A PRINCIPLE, NOT A MEASUREMENT.
+    // Jacob, 2026-09-06: "I am highly suspicious of 'if' or 'when' statements; there is no 'when the
+    // corner' is anywhere — the corner is what it is, where it is, there's no conditional."
+    // ⭐ This vertex loop carried FOUR conditionals deciding what a vertex IS: is it a cap · which
+    // kind of cap · is it a real corner or a through-node · is the miter too long. The proto path
+    // already neutralises the first three (`cornerAt` true, `capAt` null, per §1's retirement of
+    // both). THIS WAS THE LAST ONE, and a corner is where the two offset lines meet — full stop.
+    // ⚠️ I backed this out once on a weak number: the parallelism gate moved 101/101 → 97/101. But a
+    // MITER APEX LIES ON BOTH OFFSET LINES, so it satisfies that test by construction — the dip was
+    // the gate's block assignment shifting as rings changed shape, not the geometry degrading. ⛔ A
+    // principled change dismissed on an uninterrogated number is the same error as adopting one.
     const lim = noMiterClamp ? Infinity : 2.5 * Math.max(A.dE, B.dS, 0.5) + 1
     if (Math.hypot(X[0] - ring[i][0], X[1] - ring[i][1]) > lim) {
       const pA = (ring[i][0] - A.P[0]) * A.dir[0] + (ring[i][1] - A.P[1]) * A.dir[1]
@@ -5392,7 +5398,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
         const st = {}
-        const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, false, st)
+        const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, false, st, true)
         for (let ri = 0; ri < rings2.length; ri++) {
           const src = st.labels?.[ri]
           // ⛔ NO SILENT DEGRADE. Without the correspondence the authored R cannot be placed, and
