@@ -312,11 +312,27 @@
 >   the chain-side offset NOT robust (~70% of crossings at the averaged-normal branch); offsetting a
 >   CONTOUR gives zero repeated-vertex rings across both towns. **The predicted failure appeared
 >   instead — blocks VANISH rather than fold**, which is loud and countable.
-> - ### ⛔⛔ **"IT DRAWS" WAS FALSE IN THE ONE STATE THE OPERATOR SITS IN — CORRECTED 2026-09-06.**
->   This bullet claimed `?grout=1` draws the grout over the live curb. **`tileGeos` returns `null`
->   whenever the frozen path renders** (`BlockGeometryV2Debug.jsx`), so `buildTileGround` **does not run
->   at idle** — the overlay appears only while an element is active. ⛔ **No producer-side overlay is
->   visible in Survey at rest**, and the doc said otherwise for two days.
+> - ### ⛔⛔⛔ HOW ① IS LOOKED AT — **THE EXPANDED PATH IS THE WHOLE POINT** (Jacob, 2026-09-06)
+>   ① is defined as *"**Expand appearance**, then **Pathfinder > JOIN**"*. **The EXPANSION is the
+>   mechanism**; ε only makes the width nominal. So the readable object is the **expanded** ① —
+>   the joins, the corners and the holes are the entire content, and any view that hides them is
+>   not showing ①. ▶ `node scratch/draw-protopolygon.mjs [scene] [--at x,z] [--span m] --expand <m>`
+>   - ⛔⛔ **A STROKE IS NOT AN EXPANSION, AND SUBSTITUTING ONE IS A NEW DEFECT CLASS WE INVENTED
+>     TODAY.** Stroking the ring paints a band centred ON the outline and leaves every hole **the
+>     same size**; expanding offsets the compound path so the ink grows and **every hole shrinks by
+>     the same amount**. Only the second has trustworthy topology. Use `ClipperOffset` +
+>     `jtMiter`/`etClosedPolygon` — ⛔ never `jtRound`; ① has sharp corners **by ruling**, and an
+>     expansion may not invent round ones (the same trap `GATE A` above already warns about).
+>   - ⛔ **AND A STROKE WIDTH IS NOT A WIDTH.** The first harness drew ① with a 1.5 px stroke
+>     converted to WORLD units — **1.74 m at scene scale, 350× wider than ① itself** — so every
+>     visible band was the stroke and ① was the hairline inside it. Jacob: *"This is a FAILED
+>     protopolygon. I am looking at FUCKING paths with thicknesses."* ⭐ **The instrument was the
+>     liar, not the geometry** — the same shape of error as the SVG that emitted each ring as its
+>     own filled path and turned a 0.381 m curb into a filled block.
+>   - ⛔ **An expanded ① is a DIFFERENT OBJECT from ①** and must say so — the harness stamps
+>     `EXPANDED <m> m — NOT the ink width` into the SVG itself, not just the console. **Never
+>     expand silently**; a legible picture that does not name its own distortion is how the
+>     distortion gets quoted as a measurement.
 >   ### ⭐⭐⭐ ① IS THE PRODUCER — LANDED 2026-09-06, behind `bake-ground --proto`.
 >   `shape.json` is built from ②③: 104 tiles, every one `producer:'proto'`, each carrying its BANDS.
 >   ⛔ **A change of CONSUMER, not of construction** — the distinction `5560cf6a` turns on. ②③ already

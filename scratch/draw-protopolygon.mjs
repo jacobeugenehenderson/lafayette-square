@@ -11,6 +11,7 @@
 //
 // ▶ node scratch/draw-protopolygon.mjs [scene] [--at x,z] [--span m]
 import fs from 'fs'
+import clipperLib from 'clipper-lib'
 
 const scene = process.argv.find((a, i) => i >= 2 && !a.startsWith('--')) || 'lafayette-square'
 const ai = process.argv.indexOf('--at'), si = process.argv.indexOf('--span')
@@ -39,16 +40,48 @@ const PX = 1600, sc = PX / W
 const sa = (r) => { let a = 0; for (let i=0,j=r.length-1;i<r.length;j=i++) a += (r[j][0]+r[i][0])*(r[j][1]-r[i][1]); return a/2 }
 const posN = rings.filter(r => sa(r) > 0).length
 
-const d = rings.map(r => 'M' + r.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join('L') + 'Z').join(' ')
-// stroke-width in WORLD units so it stays 1.5 px on screen at any crop
-const sw = 1.5 / sc
+// ⛔⛔ THE STROKE IS NOT THE SHAPE, AND THIS HARNESS PRETENDED IT WAS — TWICE.
+// v1 drew ① with a stroke 1.5px converted to WORLD units — 1.74 m at scene scale, 350× wider
+// than ① itself (ε = 0.005 m) — so every visible band was the stroke and ① was the hairline
+// buried in it. Jacob: "This is a FAILED protopolygon. I am looking at FUCKING paths with
+// thicknesses."
+// v2 over-corrected to a hairline, which threw away the point. Jacob: "The expanded path IS THE
+// WHOLE POINT." ① is defined as "Expand appearance, then Pathfinder > JOIN" — the EXPANSION is
+// the mechanism and ε only makes the width nominal. A hairline hides the joins, the corners and
+// the holes, which is everything ① carries.
+//
+// ⭐ SO `--expand <m>` IS A TRUE POLYGON OFFSET, NOT A STROKE. Stroking the ring paints a band
+// centred ON the outline and leaves holes UNCHANGED; expanding offsets the compound path, so the
+// ink grows and every hole SHRINKS by the same amount — which is what "expand appearance" does
+// and the only version whose topology you can trust. jtMiter/etClosedPolygon: ① has sharp
+// corners by ruling and an expansion must not invent round ones.
+// ⛔ It is stamped in the SVG and the console: an expanded ① is a DIFFERENT OBJECT from ①, and
+// conflating the two is exactly the mistake above. Never expand silently.
+const ei = process.argv.findIndex(a => a === '--expand' || a === '--dilate')
+const EXPAND = ei > 0 ? Number(process.argv[ei + 1]) : 0
+let drawRings = rings
+if (EXPAND > 0) {
+  const SC = 1e6
+  const co = new clipperLib.ClipperOffset(2, 0.25)
+  co.AddPaths(rings.map(r => r.map(p => ({ X: Math.round(p[0]*SC), Y: Math.round(p[1]*SC) }))),
+    clipperLib.JoinType.jtMiter, clipperLib.EndType.etClosedPolygon)
+  const out = []
+  co.Execute(out, EXPAND * SC)
+  if (!out.length) { console.error(`⛔ expansion by ${EXPAND} m produced NOTHING — not falling back to the un-expanded contour.`); process.exit(2) }
+  drawRings = out.map(pth => pth.map(q => [q.X/SC, q.Y/SC]))
+}
+const d = drawRings.map(r => 'M' + r.map(p => p[0].toFixed(2)+','+p[1].toFixed(2)).join('L') + 'Z').join(' ')
+const body = `<path d="${d}" fill="#0a1a4a" fill-rule="evenodd" stroke="#ff2d95" stroke-width="1" vector-effect="non-scaling-stroke"/>`
+  + (EXPAND > 0 ? `\n<text x="${x0 + W*0.02}" y="${y0 + H*0.05}" font-family="monospace" font-size="${W*0.02}" fill="#ff2d95">EXPANDED ${EXPAND} m — NOT the ink width (e=${P.eps} m). Topology true, thickness not.</text>` : '')
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${PX}" height="${Math.round(PX*H/W)}" viewBox="${x0} ${y0} ${W} ${H}">
 <rect x="${x0}" y="${y0}" width="${W}" height="${H}" fill="#ffffff"/>
-<path d="${d}" fill="#0a1a4a" fill-rule="evenodd" stroke="#ff2d95" stroke-width="${sw}" stroke-linejoin="round"/>
+${body}
 </svg>`
-const out = `scratch/protopolygon-${scene}${AT&&SPAN?`-${AT[0]}_${AT[1]}`:''}.svg`
+const out = `scratch/protopolygon-${scene}${AT&&SPAN?`-${AT[0]}_${AT[1]}`:''}${EXPAND>0?`-expand${EXPAND}`:''}.svg`
 fs.writeFileSync(out, svg)
 console.log(`① ${scene}: ${rings.length} ring(s) — ${posN} of one orientation, ${rings.length-posN} of the other, ε=${P.eps} m`)
 console.log(`   ⛔ which class is "hole" is NOT asserted (both sign conventions live in this repo); evenodd needs no orientation.`)
 console.log(`   extent ${W.toFixed(0)} × ${H.toFixed(0)} m${AT&&SPAN?`  (cropped at ${AT} span ${SPAN} m)`:''}`)
+if (EXPAND > 0) console.log(`   ⭐ EXPANDED ${EXPAND} m — a true polygon offset (holes shrink with it), jtMiter so corners stay sharp. ⛔ NOT ①'s ink width (ε=${P.eps} m).`)
+else console.log(`   un-expanded: ① is ${P.eps} m of ink, invisible at this scale. Use --expand <m> — the expanded path is the readable object.`)
 console.log(`   → ${out}`)
