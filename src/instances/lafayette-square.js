@@ -23,8 +23,16 @@ export default {
     // projection (frontend AerialTiles + cartograph backend config.js).
     lonToMeters: 86774,
     latToMeters: 111000,
-    // Neighborhood bbox: S above I-44, N past Chouteau, W past Jefferson.
-    bbox: { minLat: 38.6100, maxLat: 38.6230, minLon: -90.2290, maxLon: -90.2070 },
+    // ⛔ THE BBOX IS THE FOREVER SAFETY ZONE, NOT A LANDMARK LIST. `EXTENT-DESIGN §3.3`:
+    // bb = disc radius + ~20–25%, a PERCENTAGE, sized so the operator may grow the radius
+    // and move the centroid forever with no re-pour. It was previously justified by St.
+    // Louis landmarks ("S above I-44, N past Chouteau") — a rule only someone who already
+    // knows this town can apply, and it left the box 777 m north against an 892 m disc, so
+    // the disc rim itself was unfetched and the north streets simply stopped (Jacob's eye,
+    // 2026-09-06). Grown to 1115 m = 1.25 × 892 on every side; `lat`/`lon` UNTOUCHED, which
+    // is the one operation the extent may never do (`§3.3`: grow yes, shrink yes, MOVE never).
+    // ▶ `node scratch/claims-fetch-contains-the-forever-zone.mjs` — re-run, don't quote.
+    bbox: { minLat: 38.605955, maxLat: 38.626045, minLon: -90.2290, maxLon: -90.203251 },
     // City/state the installation sits in (legal + display copy).
     cityState: 'St. Louis, MO',
     stateCode: 'MO',

@@ -6,9 +6,9 @@
   "lonToMeters": 86774,
   "latToMeters": 111000,
   "bbox": {
-    "minLat": 38.61,
-    "maxLat": 38.623,
+    "minLat": 38.605955,
+    "maxLat": 38.626045,
     "minLon": -90.229,
-    "maxLon": -90.207
+    "maxLon": -90.203251
   }
 }
