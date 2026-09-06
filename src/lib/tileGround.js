@@ -1261,28 +1261,89 @@ export function capCentre(t) {
 //     (`RIBBONS §1` gate 1 case C measured the punch-out as clean: 93 islands ↔ 101 tiles,
 //     0 merges / 0 splits / 0 straddlers — ⛔ re-run, never quote).
 //   · caps are not carried; `detectTileCaps` reads the ring and would have to run here.
-export function tilesFromProto(proto, streets) {
+// ⭐⭐⭐ THE STENCIL — `blocks = boundary − stroked roads`, which is `RIBBONS §1` verbatim.
+//
+// ⛔ THIS IS NOT A CROP BOLTED ONTO THE MINT. Both of the injection test's failures are ONE
+// missing piece, and the measurement says so on BOTH towns (`claims-proto-homeless-census`):
+//   · HOMELESS  every hole ① mints outside the rim — LS 34/34, HPDM 1110/1110, none inside
+//     the disc. ① builds the FULL network ("build full, crop last"); the tiles are cropped.
+//   · UNRECEIVED the rim blocks — LS 22/22 and HPDM 34/35 carry a `__boundary__` edge. ①
+//     alone cannot mint them: a rim block does not close against a street, it closes against
+//     the EDGE OF THE DRAWING.
+// One difference against the boundary closes both — the outside falls away because it is not
+// in the subject, and the rim blocks appear because the subject's own edge closes them.
+//
+// ⛔⛔ THE BOUNDARY ARRIVES AS AN ARGUMENT (`BRIEF-slice2 §4`, Jacob's ruling): a render
+// artifact may not decide block topology, so this function reads no file. ⭐ And the boundary
+// is the PUNCH'S STENCIL — it BOUNDS and carries `__boundary__` identity, but it is NOT a
+// chain: it gets exactly one owner, it is never segmented, and nothing downstream may resolve
+// an authored width against it (`tilesFromFrozen` already gives it `streetIdx: -1`, depth 0).
+//
+// ⭐ Identity rides THIS boolean too — the same `carryEdges` ledger the mint uses, and for the
+// same reason: a block's corners are all crossings, so vertices cannot carry the owner and
+// edges must (`booleanLabelled`, the edge-resolution note).
+export function stencilProtopolygon({ proto, boundary }) {
+  if (!proto?.rings?.length || !proto?.owners?.length) return null
+  let ring = Array.isArray(boundary) ? boundary.filter(p => Array.isArray(p) && p.length >= 2).map(p => [p[0], p[1]]) : []
+  // A closed ring may or may not repeat its first point; Clipper wants it once.
+  if (ring.length > 1) { const a = ring[0], b = ring[ring.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-9) ring.pop() }
+  // ⛔ NO FALLBACK. Without a stencil the honest answer is "I cannot punch", not "here are the
+  // holes" — the caller asked for blocks and would get a map missing every rim block.
+  if (ring.length < 3) return { rings: [], labels: [], owners: proto.owners, refused: 'no-boundary' }
+  // ⛔ UNIFORM WINDING, same convention as the mint: non-zero fill cancels an opposite-wound
+  // subject against the clip and the difference would come back inside-out.
+  if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) ring.reverse()
+  // ⭐ ONE owner for the whole rim. `side: 'right'` matches what the frozen artifact already
+  // stores on all 290 of LS's `__boundary__` edges — the sentinel path keys off `skelId`, not
+  // side, but agreeing with the shipped artifact costs nothing and a disagreement would.
+  const owners = [...proto.owners, { skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false }]
+  const bIdx = owners.length - 1
+  const R = booleanLabelled(clipperLib.ClipType.ctDifference,
+    [ring], [ring.map(() => bIdx)], proto.rings, proto.labels, true)
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, stencilVerts: ring.length }
+}
+
+// ⭐ `take` — WHICH RINGS ARE THE BLOCKS, and it differs by what produced them:
+//   'holes' (default, unchanged) — a raw mint. ① is road INK, so the blocks are its HOLES.
+//   'faces'                      — a stencilled ①. The difference already subtracted the ink,
+//                                  so the blocks are the FACES and must NOT be reversed.
+// ⛔ Default is the shipped call, byte-for-byte (`ROADMAP A18`: opt-in at the call site).
+export function tilesFromProto(proto, streets, { take = 'holes' } = {}) {
   if (!proto?.rings?.length || !proto?.owners?.length) return null
   const { rings, labels, owners } = proto
   const idxBySkelId = new Map()
   streets.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i) })
   const tiles = [], skipped = []
+  let voids = 0
   for (let k = 0; k < rings.length; k++) {
     const ring0 = rings[k], labs0 = labels?.[k]
     if (!(ring0?.length >= 3) || !labs0) continue
-    // ⛔ THE BLOCKS ARE THE HOLES. The outer contour is the network's own outline and is not a
-    // block; `signedArea > 0` is the shipped convention for it (② reads it the same way).
-    if (signedArea(ring0) > 0) continue
-    // ⛔ AND THE WINDING MUST BE FLIPPED TO MATCH A FACE. Downstream `offsetRingVariable` is
-    // winding-aware, so handing it a negative-area ring where the face walk hands a positive
-    // one inverts every depth — the band would grow outward into the road. Reverse the ring AND
-    // its labels together, or every edge takes its neighbour's owner.
-    const ring = ring0.slice().reverse(), labs = labs0.slice().reverse()
+    // ⛔ THE BLOCKS ARE THE HOLES of a raw mint. The outer contour is the network's own outline
+    // and is not a block; `signedArea > 0` is the shipped convention for it (② reads it the same
+    // way). ⭐ After the STENCIL the sense inverts: the difference already removed the ink, so
+    // the blocks are the positive faces and a negative ring is a void in one (an isolated loop
+    // of road inside a block) — not a block, and counted rather than silently dropped.
+    const A0 = signedArea(ring0)
+    if (take === 'faces' ? A0 <= 0 : A0 > 0) { if (take === 'faces' && A0 < 0) voids++; continue }
+    // ⛔ AND THE WINDING MUST MATCH A FACE. Downstream `offsetRingVariable` is winding-aware, so
+    // handing it a negative-area ring where the face walk hands a positive one inverts every
+    // depth — the band would grow outward into the road. A hole must be reversed, ring AND
+    // labels together (or every edge takes its neighbour's owner); a face is already correct.
+    const ring = take === 'faces' ? ring0.slice() : ring0.slice().reverse()
+    const labs = take === 'faces' ? labs0.slice() : labs0.slice().reverse()
     const edges = []
     let bad = null
     for (let i = 0; i < ring.length; i++) {
       const o = owners[labs[i]]
       if (!o) { bad = 'unlabelled edge'; break }
+      // ⭐ THE RIM IS AN EDGE OF THE DRAWING, NEVER AN ABSENCE (`ARCHITECTURE`, the compound
+      // shape). Same sentinel `tilesFromFrozen` already uses: no street, zero depth, LU floods
+      // to the boundary. ⛔ Not a refusal — a rim block is correct, it just has no street here.
+      if (o.skelId === BOUNDARY_EDGE_SKEL) {
+        const fwd = o.side === 'right'
+        edges.push({ streetIdx: -1, forward: fwd, side: fwd ? 'right' : 'left', boundary: true })
+        continue
+      }
       const si = idxBySkelId.get(o.skelId)
       if (si === undefined) { bad = `no street for ${o.skelId}`; break }
       const forward = o.side === 'right'
@@ -1294,7 +1355,7 @@ export function tilesFromProto(proto, streets) {
     if (bad) { skipped.push({ k, why: bad, area: Math.abs(signedArea(ring0)) }); continue }
     tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
   }
-  return { tiles, skipped }
+  return { tiles, skipped, voids }
 }
 
 export function tilesFromFrozen(frozen, streets) {
