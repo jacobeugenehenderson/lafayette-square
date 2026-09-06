@@ -208,7 +208,7 @@ function easeRing(ring, rAt, report = null) {
     const P0 = walk(i, -1, t), P1 = walk(i, +1, t)
     if (P0.short || P1.short) { if (report) report.tooTight++; continue }
     plan[i] = { P0, P1, theta, R, t }
-    if (report && t > (report.maxT || 0)) { report.maxT = t; report.maxAt = ring[i] }
+
   }
   // ⛔ OVERLAP IS REPORTED, NOT CLAMPED. Two corners whose eases would consume the same span is an
   // authored R too large for the block — `§6.9.5`: self-intersection is SIGNAL, not error, and
@@ -609,7 +609,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
   // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
   // cannot carry identity across ~200 chain rectangles.
   const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, true)   // ① needs the edge ledger; nothing else does
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -687,6 +687,19 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
   } finally { clipperLib.use_xyz = prev }
   const rings = out.map(p => p.map(fromClipper))
   const labs = []
+  // ⭐⭐ PER-VERTEX CROSSING IDENTITY — carried THROUGH the boolean, never recovered after it
+  // (`RIBBONS §1`). `met` already records every contributor Clipper hands ZFillFunction; until now
+  // it was consumed only to resolve EDGE owners and thrown away for vertices.
+  // ⛔ WHY IT IS NEEDED: a CORNER IS EXACTLY WHERE TWO CHAINS CROSS, so a corner vertex is always a
+  // minted crossing. The forward scan below gives it an INHERITED label from a neighbouring edge —
+  // correct for "who owns this arc", useless for "is this vertex a node", because the inherited
+  // owner's source index points mid-chain. Consumers that needed the second question had no way to
+  // ask it and were reduced to snapping to the nearest node, which hands a corner radius to every
+  // mid-chain vertex.
+  // ⛔ Computed only under `carryEdges` (which is `met`'s own gate), so the five shipped callers see
+  // an unchanged object plus one additive key nothing reads. `ROADMAP A18`: anything an experiment
+  // needs from shared code is opt-in at the call site.
+  const crossings = carryEdges ? out.map(p => p.map(q => (q.Z ? null : (met.get(mkey(q)) || []).map(e => e.lab)))) : null
   for (const p of out) {
     const raw = p.map(q => (q.Z ? q.Z - 1 : -1))          // -1 = a crossing
     const n = raw.length
@@ -734,7 +747,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     }
     labs.push(res)
   }
-  return { rings, labels: labs, refused: null }
+  return { rings, labels: labs, refused: null, crossings }
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
@@ -5307,7 +5320,7 @@ export function buildTileGround(ribbons, opts = {}) {
     if (frozenProto?.rings?.length && frozenProto?.owners?.length &&
         Math.abs((frozenProto.eps ?? -1) - PROTO_HW) < 1e-9) {
       MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
-             refused: frozenProto.refused || false, chainRings: null }
+             refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -5320,7 +5333,7 @@ export function buildTileGround(ribbons, opts = {}) {
       console.warn(`[tileGround][①] ⛔ NOT the frozen protopolygon — re-derived live. ${why}.`)
     }
     protoOwners = MP.owners
-    const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused }
+    const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused, crossings: MP.crossings }
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
     // ②③ below read `blockCustoms` twice (the `pavementHW` override at `bcOf`, and the ped
@@ -5436,7 +5449,7 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
       return pts[o.srcIdx]
     }
-    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, noNode: 0 }
+    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, noNode: 0 }
     // ⛔⛔ NO CLASSIFICATION BY CHAIN RELATIONSHIP. THIS IS THE CORRECTION (Jacob, 2026-09-06):
     // "this is still chains talk — the protopoly has already expanded and merged these polygons
     // and the naming stamp has already happened."
@@ -5456,13 +5469,32 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⭐⭐ AND THE BEND FALLS OUT FOR FREE, WITH NO THRESHOLD: a 1° smoothing bend needs a setback
     // of R/tan(0.5°) ≈ 515 m, which cannot fit on its legs, so it declines itself. Smoothing stays
     // SKELETON's without a rule saying so.
-    const protoRAt = (o) => {
-      if (!o) { protoEaseReport.noNode++; return 0 }
-      const V = protoNodeOf(o)
-      if (!V) { protoEaseReport.noNode++; return 0 }
-      const ixv = ixOverrides?.[ixKeyOf(V)]
-      if (Number.isFinite(+ixv)) return Math.max(0, +ixv) * scale
-      return baseR * scale
+    // ⭐⭐⭐ A CROSSING IS A CORNER. That is the whole rule, and it is polygon-world: two inked chains
+    // crossing IS the corner of a block, so the question "is this vertex a corner" is answered by
+    // the boolean that made it, not by asking a graph afterwards.
+    // ⛔ The identity is CARRIED THROUGH the union (`booleanLabelled`'s ZFillFunction records both
+    // contributors at every crossing) — `RIBBONS §1`: "identity must be carried THROUGH the boolean,
+    // never recovered from ring geometry afterward." Every previous attempt here recovered it
+    // afterwards and died of it: nearest-fe match, the walk-ordinal coupler, and this session's own
+    // snap-to-nearest-node, which handed a corner radius to every mid-chain vertex.
+    // ⭐ The authored per-IX override still wants a NODE COORDINATE to key on, and a crossing
+    // resolves one only when a contributor's stamped `srcIdx` IS a node index. When it does not, the
+    // corner still eases at the seed radius and the shortfall is COUNTED — it is a limit on where
+    // authoring reaches, not a geometry failure, and the two must not be reported as one thing.
+    // ⚠️ Untested in anger: corner R is unauthored project-wide, so the override branch is exercised
+    // by nothing today.
+    const protoRAt = (crossLabels) => {
+      if (!crossLabels) return 0                    // not a crossing ⇒ not a corner ⇒ sharp
+      protoEaseReport.corner++
+      for (const l of crossLabels) {
+        const V = protoNodeOf(protoOwners[l])
+        if (!V) continue
+        const ixv = ixOverrides?.[ixKeyOf(V)]
+        if (Number.isFinite(+ixv)) return Math.max(0, +ixv) * scale
+        return baseR * scale
+      }
+      protoEaseReport.noNode++
+      return baseR * scale                          // ⛔ still a corner; only the OVERRIDE is out of reach
     }
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
@@ -5499,7 +5531,7 @@ export function buildTileGround(ribbons, opts = {}) {
             ? easeRing(rings2[ri], (vi) => {
                 const i1 = src[vi]
                 if (i1 == null) return 0
-                return protoRAt(protoOwners[labs[i1]])
+                return protoRAt(R.crossings?.[k]?.[i1])
               }, protoEaseReport)
             : (protoEaseReport.noNode++, rings2[ri])
           protoCurb.push(eased); protoCurbGs.push(isGs)
@@ -5516,7 +5548,8 @@ export function buildTileGround(ribbons, opts = {}) {
       console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased at the stamped R`)
       if (protoEaseReport.tooTight) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.tooTight} corner(s) TOO TIGHT for the authored R — left SHARP and counted. ⛔ Not clamped to a smaller radius: that would draw a corner nobody authored.`)
       if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) whose ease would overlap a neighbour's — left sharp.`)
-      if (protoEaseReport.noNode) console.warn(`[tileGround][PROTO②ease] ⛔ ${protoEaseReport.noNode} vertex/vertices could not resolve a centreline node and went through SHARP — the authored corner R did not reach them.`)
+      if (!R.crossings) console.warn(`[tileGround][PROTO②ease] ⛔ NO crossing identity on this ① — every vertex reads as "not a corner" and NOTHING eases. A frozen protopolygon minted before crossings were carried will do this. Re-pour.`)
+      if (protoEaseReport.noNode) console.warn(`[tileGround][PROTO②ease] ⚠️ ${protoEaseReport.noNode} of ${protoEaseReport.corner} corner(s) could not resolve a node COORDINATE — they still ease at the seed radius; only the authored per-IX override cannot reach them.`)
       // ── ③ HAND IT TO `sectionPass` — the FILL, unchanged ────────────────────────────
       // The paint stack (treelawn · sidewalk · materials · ADA · the LU flood) strokes INWARD
       // off a curb and does not care where the curb came from. So the honest test of ① and ②
