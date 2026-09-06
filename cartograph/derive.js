@@ -27,7 +27,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // [D2] The block-face DCEL walk — runs HERE at prebake now (the face freeze);
 // tileGround consumes the frozen result and keeps this same function only as
 // its fallback for pre-D2 artifacts.
-import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys } from '../src/lib/tileGround.js'
+import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
@@ -4828,6 +4828,67 @@ export function deriveLayers(highways) {
       return caps.length ? { ring, edges, caps } : { ring, edges }
     })
     console.log(`    [D2] froze ${ribbonsLayer.tiles.length} block-face tiles (skeleton-derived topology; ${nPerim} boundary edges; ${nCaps} dead-end caps)`)
+  }
+
+  // [① — THE PROTOPOLYGON FREEZE] The width-free ink of the whole network, minted
+  // ONCE here and frozen into the artifact. `RIBBONS §1` (ruled 2026-09-04/05):
+  // the grout is a POSITIVE compound path — every chain expanded at ε and united,
+  // the blocks its HOLES — and we offset from IT, not from the chains. ② the curb
+  // is a SEPARATE object offset FROM ①; ⛔ not one object at two moments.
+  //
+  // ⭐⭐⭐ WHY THIS ONE CAN LIVE HERE WHEN THE CURB CANNOT. `POLYGON-FIRST §3`
+  // rules D6b's literal wording impossible: prebake is blind to `design.json` /
+  // `blockCustoms`, so freezing `iA` here would freeze a bare-defaults curb —
+  // `CLAUDE.md` Layer 0 q3, baked into an artifact. ⛔ That objection cannot reach
+  // ①, because ① HAS NO WIDTH. It is chains and ε and nothing else, so there is
+  // no authored value for the freeze to pin. Enforced, not asserted:
+  // `node scratch/claims-proto-wall.mjs` claim A fails if any authored read
+  // appears inside the mint.
+  //
+  // ⭐ The per-edge stamp carries IDENTITY ONLY — {skelId, side, segOrd,
+  // gradeSeparated}. Authored widths and ped depths resolve DOWNSTREAM off that
+  // identity, at build time, so the artifact is look-agnostic: one scene's ①
+  // serves every Look, exactly as A03's `baseHW` does for the curb facts.
+  //
+  // ⛔ ONE CONSTRUCTION, TWO CALLERS — `buildTileGround` calls this same function.
+  // Two copies is how "live == bake" stops being true with nobody editing either.
+  //
+  // ⛔ THE INPUT MATCHES THE CONSUMER'S EXACTLY — `points` (not `strokePoints`),
+  // and the same two lists `buildTileGround` splits: non-grade-separated chains
+  // with ≥2 points, plus the grade-separated ones. ⭐ Grade-separated roads belong
+  // IN ① (Jacob, 2026-09-05: "the highways etc. have to be there") — the canon
+  // pulls them out of the BLOCK GRID, which says nothing about the DRAWING.
+  // ⚠️ The D2 walk above deliberately uses `strokePoints` (the corrected chains,
+  // so a divided→through median face does not pinch). ① does NOT, because that is
+  // what the live mint uses and this freeze must reproduce it. Whether ① SHOULD
+  // take the corrected chains is a real question and it is NOT settled here.
+  {
+    const pStreets = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
+    const pGradeSep = ribbonsLayer.streets.filter(s => s?.points?.length >= 2 && s.gradeSeparated)
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep })
+    ribbonsLayer.protopolygon = {
+      eps: 0.005,
+      rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
+      labels: MP.labels,
+      owners: MP.owners,
+      ...(MP.refused ? { refused: MP.refused } : {}),
+    }
+    // ⛔ THE SAME SHOELACE `signedArea` USES — outer contour POSITIVE, holes NEGATIVE, which
+    // is the convention ② reads (`if (signedArea(ring) > 0) continue — the blocks are the
+    // HOLES`). The first cut here used the trapezoid form, whose sign is the NEGATIVE of it,
+    // and printed 2 holes where there are 156. The geometry was never wrong; the disclosure
+    // was — the same class as the "0 gradeSeparated" line this pass corrected.
+    const holes = MP.rings.filter(r => {
+      let a = 0; for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
+      return a / 2 < 0
+    }).length
+    // ⛔ LOUD IF IT REFUSED. `booleanLabelled` refuses rather than hand back a
+    // ring whose identity it could not carry — an unlabelled ① is worse than none,
+    // because every downstream offset would silently take depth 0 and lay the curb
+    // on the centreline. A plausible-looking wrong map is the one outcome a kit
+    // may not have (`CLAUDE.md` Layer 0 q2).
+    if (MP.refused) console.warn(`    ⛔ [①] identity REFUSED on the union — the protopolygon is frozen WITHOUT usable labels; downstream must not offset from it.`)
+    console.log(`    [①] froze the protopolygon: ${MP.chainRings} chain outline(s) → ${MP.rings.length} ring(s), ${holes} holes (= blocks), ${MP.owners.length} identity stamps at ε=0.005 m`)
   }
 
   console.log(`    ${ribbonStreets.length} streets, ${intersections.length} intersections`)
