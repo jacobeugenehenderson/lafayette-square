@@ -333,7 +333,24 @@
 >   ⇒ **The requirement is that the SHAPE comes from ① everywhere** — frozen or live, Survey or
 >   Section. Where the code happens to touch a chain to get there is secondary; what may not happen is
 >   a curb whose shape is a traced chain.
->   ⚠️ **STILL OPEN:** ① as the live producer is behind `?proto=1`, not the default.
+>   ### ⛔⛔ AND MOVING ① TO THE SKELETON WAS ONLY HALF A CHANGE — MEASURED 2026-09-06
+>   > *"These centerlines aren't related to the curbs."* (Jacob, on the render.)
+>
+>   ① is minted from the SIMPLIFIED SKELETON. **The centreline the Designer DRAWS is
+>   `ribbons.streets[].points` — the densified trace.** They are two different lines:
+>   **median 1.00 m apart · p90 7.50 m · max 20.8 m · 4,781 of 9,547 points more than a metre off.**
+>   ⇒ The curb is a perfect parallel offset of a line the operator cannot see, beside a line he can.
+>   Every "101/101 parallel" is true and irrelevant to what is on screen.
+>   ⭐⭐ **THE FIX HIS RULING ALREADY IMPLIES:** *"all data should skew to SSoT."* If the skeleton is
+>   the SSoT then `ribbons.streets[].points` must BE the simplified geometry — one line everywhere,
+>   drawn and offset from the same source. ⛔ Not a flag, not a second path: the divergence has to stop
+>   existing, not be selectable.
+>   ⚠️ **CONSEQUENCE TO ACCEPT DELIBERATELY:** that changes what EVERY consumer sees, not just the
+>   curb — it is the substrate re-founding, and it wants the operator's eye rather than a gate.
+>   ⛔ **AND IT IS THE SECOND TIME IN ONE DAY THE SAME HALF-CHANGE WAS MADE:** the face walk was moved
+>   to the skeleton only after ① had been, and only because the divergence was noticed. The centreline
+>   was missed the same way. **When a source moves, move every consumer of it in the same window** —
+>   a half-migrated SSoT is worse than none, because both halves render.
 >
 >   ### ⭐⭐⭐ ②'s ACCEPTANCE, IN THE OPERATOR'S WORDS — *"if the centerline is smooth, their offsets should match."*
 >   ▶ `node scratch/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**

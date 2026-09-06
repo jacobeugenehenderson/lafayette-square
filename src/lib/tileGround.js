@@ -5950,8 +5950,12 @@ export function buildTileGround(ribbons, opts = {}) {
   // getting the chain curb is the plausible-looking success Layer 0 forbids.
   if (opts.protoProducer) {
     if (!protoCurb?.length) throw new Error('[tileGround] protoProducer asked for ① as the producer but ② built NO curb. Refusing to hand back the chain curb under a flag that says otherwise.')
+    // ⛔⛔ ONLY `curb`. `block` IS NOT MINE TO TOUCH — it is the block FILL, and it is produced by
+    // `intersectRings(blockRaw, [stencil])`, i.e. it is what the neighbourhood's bounding circle
+    // CLIPS. Overwriting it after that intersect handed back an UNCLIPPED fill and the circle stamp
+    // stopped working — Jacob, on the render: "the bounding circle stamp isn't working". A one-word
+    // overreach, and it broke a thing nobody asked me to change.
     curb = protoCurb
-    block = protoCurb
     console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) offset from ①`)
   }
   return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
