@@ -4910,7 +4910,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoSection = null
+  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoSection = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -4952,9 +4952,30 @@ export function buildTileGround(ribbons, opts = {}) {
     // joining and the ends are flat. Smoothing is SKELETON, rounding is SURVEY; ① is neither.
     const pRings = [], pLabels = []
     protoOwners = []                     // label → { idx, side, vtx } — the edge's owner
-    for (let idx = 0; idx < streetsOrig.length; idx++) {
-      const st = streetsOrig[idx]
-      if (!(st?.points?.length >= 2) || st.gradeSeparated) continue
+    // ⭐ BOTH LISTS. `streets` is filtered at :2835 to EXCLUDE gradeSeparated, which live in
+    // `gradeSep` (:2841) because they are drawn through their own accumulator and carry their
+    // own styling knobs. That separation is about STYLE and about the block grid — it is not
+    // a reason for them to be absent from ①, which is the ink of the whole network.
+    // ⛔ Their widths do NOT come from `measures` (that array is indexed in `streets` space
+    // and has no entry for them), so an owner records which resolver applies: a `streets`
+    // index, or the chain's own `measure`. ⭐ `gs` rides on the owner so downstream can still
+    // tell a highway from a street and style it accordingly — the distinction is carried by
+    // IDENTITY, not by absence.
+    const protoChains = [
+      ...streetsOrig.map((st, idx) => ({ st, idx })),
+      ...gradeSep.map(st => ({ st, idx: -1 })),
+    ]
+    for (let ci = 0; ci < protoChains.length; ci++) {
+      const { st, idx } = protoChains[ci]
+      // ⛔⛔ GRADE-SEPARATED ROADS BELONG IN ① (Jacob, 2026-09-05: "the highways etc. are gone
+      // from the protopoly rendering; they have to be there"). They were excluded here, and
+      // that was a CONFLATION of two different rules: the canon pulls them out of the BLOCK
+      // GRID — they do not bound a city block — which says nothing about whether they are in
+      // the DRAWING. ① is the ink of the whole network. Drop the highway from it and the
+      // highway does not exist: no asphalt, no curb, no ped stack, and a hole in the map
+      // where a road is. Whether the faces they bound are BLOCKS is a downstream
+      // classification question, and it is not this one.
+      if (!(st?.points?.length >= 2)) continue
       const P = st.points
       const nrm = []
       for (let i = 0; i < P.length; i++) {
@@ -4968,11 +4989,11 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice
         // (claims-spur-leg-offset, claims-inboard-side-convention). Naming it 'left' here
         // puts every ASYMMETRIC authored width on the wrong side of its street.
-        labs.push(protoOwners.push({ idx, side: 'right', vtx: i }) - 1)
+        labs.push(protoOwners.push({ idx, st, gs: !!st.gradeSeparated, side: 'right', vtx: i }) - 1)
       }
       for (let i = P.length - 1; i >= 0; i--) {
         ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
-        labs.push(protoOwners.push({ idx, side: 'left', vtx: i }) - 1)
+        labs.push(protoOwners.push({ idx, st, gs: !!st.gradeSeparated, side: 'left', vtx: i }) - 1)
       }
       if (ring.length < 3) continue
       // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon overlaps,
@@ -4985,6 +5006,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // own label, labels on Clipper's Z channel, crossings resolved by walking the output
     // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
     // it, and cannot carry identity across ~200 chain rectangles.
+    console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
     const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
     proto = R.rings
     protoLabels = R.labels
@@ -5000,7 +5022,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // constructed, which is the whole point of ①. The authored corner R is NOT applied here;
     // it belongs to the node's handles and those are not built (`RIBBONS §1`).
     if (!R.refused) {
-      protoCurb = []
+      protoCurb = []; protoCurbGs = []
       let noWidth = 0
       for (let k = 0; k < R.rings.length; k++) {
         const ring = R.rings[k], labs = R.labels[k]
@@ -5009,11 +5031,19 @@ export function buildTileGround(ribbons, opts = {}) {
         const depthAt = (i) => {
           const o = protoOwners[labs[i]]
           if (!o) return 0
-          const hw = feWidthAt(o.idx, o.side, segOrdAtVertex(o.idx, o.vtx))
+          const hw = o.idx >= 0 ? feWidthAt(o.idx, o.side, segOrdAtVertex(o.idx, o.vtx))
+                                : o.st?.measure?.[o.side]?.pavementHW
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
-        for (const r of offsetRingVariable(ring, depthAt, () => true, () => null)) protoCurb.push(r)
+        // ⛔ Tag each curb ring by whether a GRADE-SEPARATED chain owns most of it. The
+        // shipped curb path builds NO highway curb at all (they are drawn as flat strokes
+        // through their own accumulator), so a highway-owned ring has no baseline to be
+        // compared against and averaging the two populations makes the number meaningless.
+        let gsN = 0, allN = 0
+        for (const l of labs) { allN++; if (protoOwners[l]?.gs) gsN++ }
+        const isGs = gsN > allN / 2
+        for (const r of offsetRingVariable(ring, depthAt, () => true, () => null)) { protoCurb.push(r); protoCurbGs.push(isGs) }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
       // leave the curb sitting on the centreline — a plausible-looking wrong map.
@@ -5047,7 +5077,7 @@ export function buildTileGround(ribbons, opts = {}) {
           const key = keyAt(a); let b = a
           while (b + 1 < nR && keyAt(b + 1) === key) b++
           const o = protoOwners[labs[a]]
-          const st2 = o ? streetsOrig[o.idx] : null
+          const st2 = o?.st || null
           const poly = []
           for (let i = a; i <= b + 1 && i < nR + 1; i++) poly.push(ring[i % nR])
           // ⛔ Two points minimum, or the leg has no direction. A one-edge run is real
@@ -5060,17 +5090,19 @@ export function buildTileGround(ribbons, opts = {}) {
           if (poly.length >= 2) runs.push({ key, skelId: st2?.skelId ?? st2?.name ?? null,
             side: o?.side ?? 'left', segOrd: o ? segOrdAtVertex(o.idx, o.vtx) : 0,
             streetIdx: o?.idx ?? -1, poly,
-            measure: o ? measures[o.idx] : null, baseMeasure: o ? measures[o.idx] : null,
+            measure: o ? (o.idx >= 0 ? measures[o.idx] : o.st?.measure) : null,
+            baseMeasure: o ? (o.idx >= 0 ? measures[o.idx] : o.st?.measure) : null,
+            gradeSeparated: !!o?.gs,
             anchor: st2?.anchor || null, roadId: st2?.roadId ?? null, throughId: st2?.throughId ?? null })
           else shortRuns++
           a = b + 1
         }
         // ⛔ Depths from the SAME resolver the shipped painter uses — never a second lookup.
-        const st0 = runs[0] && runs[0].streetIdx >= 0 ? streetsOrig[runs[0].streetIdx] : null
+        const st0 = runs[0]?.streetIdx >= 0 ? streetsOrig[runs[0].streetIdx] : null
         protoSection.push({
           ring, iA: [iAk], vertR: ring.map(() => 0), runs,
-          tl: measures[runs[0]?.streetIdx]?.left?.treelawn ?? st0?.seed?.treelawn ?? 1.52,
-          sw: measures[runs[0]?.streetIdx]?.left?.sidewalk ?? st0?.seed?.sidewalk ?? 1.52,
+          tl: runs[0]?.measure?.left?.treelawn ?? st0?.seed?.treelawn ?? 1.52,
+          sw: runs[0]?.measure?.left?.sidewalk ?? st0?.seed?.sidewalk ?? 1.52,
           lu: 'residential', roundTips: [], bluntTips: [], roundTipKeys: new Set(),
           fillets: [], bandJoin: 'miter', cap: null,
         })
@@ -5301,7 +5333,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoSection, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoSection, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
