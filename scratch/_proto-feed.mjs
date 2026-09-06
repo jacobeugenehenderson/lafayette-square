@@ -39,7 +39,13 @@ export function feed(scene) {
     scene, look,
     ribbons: JSON.parse(fs.readFileSync(rp, 'utf8')),
     blockCustoms: design.blockCustoms || null,
-    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth : 0.381,
+    // ⛔ NO DEFAULT. The curb width is AUTHORED (Jacob, 2026-09-06) — it is a per-Look value in
+    // `design.json`, and every downstream distance depends on it: the ped setback, and whether two
+    // curbs TOUCH, which is what severs a block. Substituting 0.381 for a scene that authored
+    // something else would measure a different map and say nothing — Layer 0 q2. A scene with no
+    // authored curb width is a real state; it must be reported, not filled in.
+    curbWidth: Number.isFinite(design.curbWidth) ? design.curbWidth
+      : (console.log(`⛔ ${scene}: design.json carries NO curbWidth — NOT substituting one; this scene cannot be measured for anything curb-relative`), null),
     slots: Object.values(design.blockCustoms || {}).reduce((n, sides) =>
       n + Object.values(sides || {}).reduce((m, ords) => m + Object.keys(ords || {}).length, 0), 0),
   }

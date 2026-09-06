@@ -32,16 +32,28 @@ const map = JSON.parse(readFileSync(MAP_PATH, 'utf-8'))
 const ribbons = map.layers?.ribbons
 if (!ribbons) throw new Error('map.json has no layers.ribbons')
 
-// ⛔⛔ REFUSE A SILENT MATERIAL CLOBBER (2026-07-31).
-// This step overwrites the artifact the operator's map is actually made of. On
-// 2026-07-31 a fresh `pipeline.js` run on unchanged inputs produced a MATERIALLY
-// DIFFERENT LS map than the committed one (101 tiles either way, but 233 vs 228
-// junction nodes and a different FILL: 75 vs 71 asphalt rings), and the fresh
-// derivation was WORSE on the operator's eye. Promoting it silently destroyed his
-// map — three times in one day, twice while merely "verifying" an unrelated change.
-// Until `ROADMAP A01` (the pipeline does not reproduce its own committed output) is
-// understood, a promote that changes the shape of the artifact must be a decision,
-// not a side effect. Counts equal ⇒ proceed silently, as before.
+// ⛔ REFUSE A SILENT MATERIAL CLOBBER. This step overwrites the artifact the operator's
+// map is actually made of, so a promote that CHANGES its shape must be a decision, not a
+// side effect. Counts equal ⇒ proceed silently.
+//
+// ⭐⭐ WHAT THIS GUARD IS *NOT*: a reason to hesitate over an ordinary re-pour.
+// This comment used to say a fresh run "produced a MATERIALLY DIFFERENT LS map" and that
+// promoting it "destroyed his map — three times in one day". ⛔ THAT DOES NOT REPRODUCE and
+// the retraction is older than this text: `ROADMAP A01` established the pipeline is
+// DETERMINISTIC (two runs byte-identical; byte-identical across six days) and that the
+// COMMITTED artifact is the stale one. The "worse on the eye" verdict came from a session
+// that was measuring the wrong scene with a flag-off bake and a stale cache.
+// ⭐ MEASURED AGAIN 2026-09-06 on LS: skeleton `[unchanged]`, and every layer the map is
+// made of — streets, tiles, faces, junctionMap, medians, corridors, paths, alleys,
+// intersections, junctions, nameTransitions — byte-identical to the committed artifact. The
+// only delta was one ADDED key (`protopolygon`), which is additive and cannot move the map.
+// ⛔ RE-RUN IT, DO NOT QUOTE IT: `node scratch/claims-repour-changes-nothing.mjs <scene>`.
+// The stale alarm cost a session: it was raised as a blocker against a re-pour that had
+// already been settled, because the doc still read as live.
+//
+// ⚠️ THE REAL LIMIT OF THIS GUARD IS STILL TRUE AND IS THE ONLY THING TO CARRY FORWARD:
+// it compares COUNTS, so a same-count different-GEOMETRY pour passes silently. That is what
+// the check above exists to catch — diff the layers, never the counts.
 if (existsSync(BUNDLED_PATH) && !process.argv.includes('--yes')) {
   try {
     const prev = JSON.parse(readFileSync(BUNDLED_PATH, 'utf-8'))

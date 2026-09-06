@@ -5619,7 +5619,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // there is no hard property line. So "both strips LU" is an OPEN FIELD — a MATERIAL
       // state, never an absence — and it falls out for free rather than being a case.
       protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
-      let capped = 0, tooNarrow = 0
+      let capped = 0, tooNarrow = 0, severed = 0
       for (const [k, ring] of R.rings.entries()) {
         const labs = R.labels[k]
         if (!(ring?.length >= 3) || signedArea(ring) > 0) continue   // outer contour; blocks are the HOLES
@@ -5725,7 +5725,51 @@ export function buildTileGround(ribbons, opts = {}) {
           const eLawnFrom = (i) => cw + (eOutWalk(i) ? eDOut(i) : 0)
           const eLawnTo   = (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
           const ins = (fn) => offsetRingVariable(EC.ring, fn, () => true, () => null)
-          const curbOuter = [EC.ring], pedOuter = ins(() => cw), luEdge = ins(() => WB)
+          // ⛔⛔ `chain` OFFSETS `pedOuter`, SO ITS DEPTH FUNCTION IS INDEXED IN `pedOuter`'s VERTEX
+          // SPACE, NOT `EC.ring`'s. The first cut passed the same `fn` straight through and read
+          // `EC.labs[i]` with pedOuter's index — garbage depths, and the gate found them instantly
+          // (a new 471-station treelawn&sidewalk overlap class that did not exist before).
+          // ⭐ The offset MINTS vertices, so labels never survive it implicitly; `offsetRingVariable`
+          // takes a `stamp` for exactly this, and using it is the same "carry it through, never
+          // recover it after" rule that the crossing identity needed.
+          // ⛔ A piece with no stamp gets NO ped ribbon and is counted — never a guessed index.
+          // ⭐⭐⭐ WHERE THE CURBS TOUCH, THERE IS NO BLOCK (Jacob, 2026-09-06). A block whose inset
+          // by the AUTHORED curb width comes back in two pieces has been SEVERED — the two curbs
+          // met, and the region between them stopped existing there. ⛔ The previous form threw that
+          // away: it differenced the multi-piece inset against the ORIGINAL one-piece ring, so every
+          // deeper band was struck from a ring that still spanned the severance, and the ribbon
+          // bridged a gap the geometry had already closed.
+          // ⭐ THE SEVERANCE IS FOUND BY THE OFFSET ITSELF, never by a width test. There is no
+          // `2 × curbWidth` anywhere here — the curb width is AUTHORED, so a constant would be right
+          // on one Look and silently wrong on the next. The inset splits or it does not.
+          // ⛔⛔ NO STAMP HERE. `offsetRingVariable` GATES ITS UNION ON THE STAMP — with one it runs
+          // `unionRingLabelled`, without it `unionRings` — so asking for labels CHANGES THE
+          // GEOMETRY. I added a stamp for the chained form, backed the chaining out, and the
+          // regression stayed: 448 `treelawn&sidewalk` overlaps that did not exist before, from a
+          // parameter I had assumed was bookkeeping. ⭐ Its own comment says so at the call site and
+          // I read past it. The A18 shape again — an experiment reaching the map through a shared
+          // path — one function deeper.
+          const pedOuter = ins(() => cw)
+          if (pedOuter.length > 1) severed++
+          // depth in pedOuter's index space → the owning EC.ring vertex → the authored measure
+          // ⛔⛔ THE CHAINED FORM IS BACKED OUT, AND THE MEASUREMENT IS WHY — NOT TASTE.
+          // Striking each boundary from the one before it is `RIBBONS §1` verbatim and it is what
+          // carries a severance forward. Built, it REGRESSED the disjointness gate: 294 overlapping
+          // stations → 730, including a 446-station `treelawn&sidewalk` class that did not exist
+          // before. ⛔ Cause not established. Two candidates, neither measured: the depth ramps of
+          // two successive variable-depth offsets can cross where the authored depth varies along
+          // the ring, and `offsetRingVariable`'s area floor scales with depth² so a chained call
+          // filters differently from a single deep one.
+          // ⭐ The SEVERANCE DETECTION below is kept and is sound on its own — it is read off the
+          // authored inset, never off a `2 × curbWidth` constant, because the curb width is
+          // AUTHORED (Jacob, 2026-09-06) and a constant would be right on one Look and silently
+          // wrong on the next. What is not yet built is making the deeper bands honour it.
+          // ⭐⭐ AND EACH BOUNDARY IS NOW STRUCK FROM THE ONE BEFORE IT, which is `RIBBONS §1`
+          // verbatim — "each boundary is the same contour offset a little further". Chaining is what
+          // carries the severance forward: offsetting the deeper bands from `EC.ring` again would
+          // re-bridge the pinch at every rung.
+          const luEdge = ins(() => WB)
+          const curbOuter = [EC.ring]
           // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when
           // unset. ⛔ RE-AIMED 2026-09-06 and it had ROTTED SILENTLY: it still called `inset()`,
           // which went away when the subject became the eased curb, so `PROTO_DUMP=1` THREW. A
@@ -5761,9 +5805,10 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,
       // because on town #2 nobody is looking.
-      protoStackCollapse = { total: capped, tooNarrow, byRung: null, blocks: null }
+      protoStackCollapse = { total: capped, tooNarrow, severed, byRung: null, blocks: null }
       console.log(`[tileGround][PROTO③] ped ribbon off the CURB, mono-width per block: curb ${protoBands.curb.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
       if (capped) console.log(`[tileGround][PROTO③] ${capped} block(s) hit the capacity guard — the ribbon reaches centre rather than inverting (NOT a defect; the open-field case).`)
+      if (severed) console.log(`[tileGround][PROTO③] ${severed} block(s) SEVERED by their own curbs — the inset came back in pieces, so the two curbs meet and there is no block between them there. Each piece carries the ribbon separately (NOT a defect).`)
       if (tooNarrow) console.log(`[tileGround][PROTO③] ${tooNarrow} block(s) too narrow for even the curb — painted ALL LU to centre (the open-field limit, a MATERIAL state, not an absence).`)
 
       // ⛔⛔ `sectionPass` IS REMOVED FROM THIS PATH, NOT LEFT BESIDE IT. It strokes inward
