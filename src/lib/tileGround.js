@@ -4910,7 +4910,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null
+  let protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -4976,27 +4976,60 @@ export function buildTileGround(ribbons, opts = {}) {
     // resolves against it. The wall kills chains, not the operator's overrides.
     // authoring resolves at the MINT, street-keyed (`A15`) — the operator's overrides cross
     // the wall as VALUES, exactly like every other measure.
+    // ⭐⭐ THE BASE MEASURE, KEYED BY skelId — the pre-authoring half, and the ONLY thing ①
+    // needs from chain space. Built here, once, BEFORE the mint. ⛔ An ARRAY INDEX must not
+    // ride on an owner: it is `A15`'s disguised chain ("a skelId string does not look like a
+    // centerline, so it passes every 'is this chains again?' reading" — an index does not even
+    // have that excuse), and it would not survive a re-pour, which is precisely what a frozen
+    // fact has to do. ⭐ `skelId` is the legitimate carrier: authoring IS street-keyed by
+    // design (`A15`: "that is the product, and it stays"), and `blockCustoms` is keyed on it.
+    const protoBase = new Map()
+    streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
+    for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
     const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
+    // ⭐⭐⭐ THE STAMP SPLITS IN TWO, AND THE SPLIT IS WHAT LETS ① FREEZE AT PREBAKE.
+    // ⛔ The authored half CANNOT go upstream: `feWidthAt` and `resolvePedDepths` both read
+    // `blockCustoms`, and prebake is blind to `design.json` (`POLYGON-FIRST §3`). Freezing a
+    // resolved width there would bake the to-code default into the artifact — Layer 0 q3, in
+    // exactly the shape that made D6b's literal wording impossible.
+    // ⇒ the OWNER carries IDENTITY ONLY — `{skelId, side, segOrd, gradeSeparated}` — every
+    // term of which is pure chain TOPOLOGY (`segOrdAtVertex` counts IX vertices; it never
+    // asks a width). That is width-free, look-agnostic and permanent: ONE scene's ① serves
+    // every Look, which is the same property `baseHW` gives A03's curb facts.
+    // ⭐ The authored values resolve at BUILD time, keyed off the frozen identity — so the
+    // operator's override still reaches the geometry and the freeze does not pin it.
     const mkStamp = (idx, st, side, i) => {
       const so = idx >= 0 ? segOrdAtVertex(idx, i) : 0
-      const mz = idx >= 0 ? measures[idx] : st?.measure
-      const hw = idx >= 0 ? feWidthAt(idx, side, so) : mz?.[side]?.pavementHW
       return protoOwners.push({
         skelId: st?.skelId ?? st?.name ?? null, side, segOrd: so,
         gradeSeparated: !!st?.gradeSeparated,
+      }) - 1
+    }
+    // ⭐ THE AUTHORED RESOLVER — build-time, keyed off the frozen identity. Memoised per
+    // owner because ② and ③ both ask, per vertex, on every pass.
+    // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
+    // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose
+    // default ladder (`gleanTreelawn`) supplies a value where nothing is authored.
+    // Reading the raw field made a SECOND, poorer lookup — 19,094 stamps but only 4,601 with
+    // a treelawn, BOTH with a median of 0.00: three quarters of the map had no ped band and
+    // LU flooded to the curb. Jacob, on the drawing: "what are we even looking at here?"
+    const protoMeasureCache = []
+    const protoMeasureOf = (label) => {
+      let m = protoMeasureCache[label]
+      if (m) return m
+      const o = protoOwners[label]
+      if (!o) return null
+      const mz = protoBase.get(o.skelId)             // the frozen BASE, by skelId
+      const c = bcOf(o.skelId, o.side, o.segOrd)     // the operator's OVERRIDE, street-keyed
+      const base = mz?.[o.side]?.pavementHW
+      const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
+      const d = resolvePedDepths(mz, o.side, c)
+      m = protoMeasureCache[label] = {
         pavementHW: Number.isFinite(hw) ? hw : null,
         curb: curbWidth,
-        // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
-        // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose
-        // default ladder (`gleanTreelawn`) supplies a value where nothing is authored.
-        // Reading the raw field made a SECOND, poorer lookup — the exact thing the comment
-        // three functions up forbids — and it showed: 19,094 stamps, but only 4,601 with a
-        // treelawn and 6,301 with a sidewalk, BOTH with a median of 0.00. Three quarters of
-        // the map had no ped band at all, LU flooded to the curb, and the few that survived
-        // rendered as slivers. Jacob, on the drawing: "what are we even looking at here?"
-        ...(() => { const d = resolvePedDepths(mz, side, bcOf(st?.skelId ?? st?.name, side, so))
-                    return { treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, terminal: d?.terminal ?? null } })(),
-      }) - 1
+        treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, terminal: d?.terminal ?? null,
+      }
+      return m
     }
     for (let ci = 0; ci < protoChains.length; ci++) {
       const { st, idx } = protoChains[ci]
@@ -5039,9 +5072,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // own label, labels on Clipper's Z channel, crossings resolved by walking the output
     // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
     // it, and cannot carry identity across ~200 chain rectangles.
-    { const n=protoOwners.length, hw=protoOwners.filter(o=>o.pavementHW>0).length,
-        tl=protoOwners.filter(o=>o.treelawn>0).length, sw=protoOwners.filter(o=>o.sidewalk>0).length
-      const med=(f)=>{const a=protoOwners.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
+    { const M = protoOwners.map((_, l) => protoMeasureOf(l) || {})
+      const n=protoOwners.length, hw=M.filter(o=>o.pavementHW>0).length,
+        tl=M.filter(o=>o.treelawn>0).length, sw=M.filter(o=>o.sidewalk>0).length
+      const med=(f)=>{const a=M.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
       console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
     console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
     const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
@@ -5066,9 +5100,9 @@ export function buildTileGround(ribbons, opts = {}) {
         if (!(ring?.length >= 3)) continue
         if (signedArea(ring) > 0) continue          // outer contour — the blocks are the HOLES
         const depthAt = (i) => {
-          const o = protoOwners[labs[i]]
-          if (!o) return 0
-          const hw = o.pavementHW                     // ⛔ the STAMP, not a lookup
+          const m = protoMeasureOf(labs[i])
+          if (!m) return 0
+          const hw = m.pavementHW                     // ⛔ resolved off the frozen IDENTITY
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
@@ -5111,6 +5145,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // Per-edge depths come from the labels, so a width authored per frontage still varies
       // along the ring — but the ring is never cut, so no seam is constructible.
       protoBands = { curbBand: [], treelawn: [], sidewalk: [], lu: [] }
+      const collapse = []
       for (let k = 0, ci2 = 0; k < R.rings.length; k++) {
         const ring = R.rings[k], labs = R.labels[k]
         if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
@@ -5119,7 +5154,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⛔ EVERY VALUE COMES OFF THE STAMP. No `measures`, no `feWidthAt`, no
         // `segOrdAtVertex` — there is nothing here that could ask a chain a question.
         const at = (i, e) => {
-          const o = protoOwners[labs[i]]
+          const o = protoMeasureOf(labs[i])
           if (!o || !(o.pavementHW > 0)) return 0
           const add = e === 0 ? 0
                     : e === 1 ? o.curb
@@ -5134,12 +5169,26 @@ export function buildTileGround(ribbons, opts = {}) {
         // smallest. Passing the smaller as subject asks for (inner − outer), which is the
         // block's COMPLEMENT — the roadway — and that is exactly what it drew: cream filling
         // the street edge to edge, every band overlapping every other.
-        protoBands.curbBand.push(...differenceRings(bnd[0], bnd[1]))
-        protoBands.treelawn.push(...differenceRings(bnd[1], bnd[2]))
-        protoBands.sidewalk.push(...differenceRings(bnd[2], bnd[3]))
+        //
+        // ⛔⛔ AND A COLLAPSED BOUNDARY IS A FAILURE, NOT AN EMPTY CLIP. `offsetRingVariable`
+        // drops a ring that erodes away (its area floor), so on a block narrower than the ped
+        // stack the deeper boundary comes back `[]` — and `differenceRings(subject, [])`
+        // returns the SUBJECT WHOLE (`:815`, `:822`). The band then floods the entire block and
+        // renders as a plausible fill: Layer 0 q2 inside the geometry, with no code fallback
+        // for a reader to spot. So the rung is DROPPED and COUNTED, never painted. The block
+        // comes out visibly empty and the census says why.
+        const dead = bnd.findIndex(b => !b.length)
+        if (dead >= 0) collapse.push({ at: dead, ring: ci2, area: Math.abs(signedArea(ring)) })
+        const band = (o, i) => { if (bnd[o].length && bnd[i].length) return differenceRings(bnd[o], bnd[i]); return [] }
+        protoBands.curbBand.push(...band(0, 1))
+        protoBands.treelawn.push(...band(1, 2))
+        protoBands.sidewalk.push(...band(2, 3))
         protoBands.lu.push(...bnd[3])
       }
+      // the loud half — an absent stack is reported by rung, per town, every pour
+      protoStackCollapse = { total: collapse.length, byRung: [0, 1, 2, 3].map(e => collapse.filter(c => c.at === e).length), blocks: collapse }
       console.log(`[tileGround][PROTO③] concentric stack off ①: curb ${protoBands.curbBand.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)
+      if (protoStackCollapse.total) console.log(`[tileGround][PROTO③] ⛔ ${protoStackCollapse.total} block(s) NARROWER THAN THE STACK — bands dropped, NOT painted. Collapsed at rung: curb ${protoStackCollapse.byRung[0]} · treelawn ${protoStackCollapse.byRung[1]} · sidewalk ${protoStackCollapse.byRung[2]} · LU ${protoStackCollapse.byRung[3]}`)
 
       // ⛔⛔ `sectionPass` IS REMOVED FROM THIS PATH, NOT LEFT BESIDE IT. It strokes inward
       // PER RUN, so its output is per-chain strips laid side by side — and Jacob read that
@@ -5360,7 +5409,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

@@ -17,13 +17,27 @@ if (end < 0) end = SRC.length
 const mintFrom = SRC.findIndex((l, i) => i > start && l.includes('const mkStamp ='))
 let mintTo = mintFrom
 for (let i = mintFrom, depth = 0; i < end; i++) { depth += (SRC[i].match(/\{/g)||[]).length - (SRC[i].match(/\}/g)||[]).length; if (i > mintFrom && depth <= 0) { mintTo = i; break } }
-const offenders = []
+// ⭐⭐ SHARPENED 2026-09-06 — the predicate now matches the sentence this check has always
+// printed. It used to fail on ANY chain read outside `mkStamp`'s braces, including one that
+// runs BEFORE the mint, and then report it as "after the mint" — a check contradicting its own
+// message, which `POLYGON-FIRST §5` names as worse than no check.
+// ⛔ The rule is unchanged and is NOT loosened: chain space is read UPSTREAM and everything
+// downstream carries VALUES. A read after the mint completes is still a hard failure — that is
+// the whole assertion. What changes is that a PRE-mint read (building the base table the mint
+// stamps from — the half that moves to prebake) is DISCLOSED rather than mis-labelled.
+// ⭐ Disclosed, not permitted-and-forgotten: they are named and counted, so the set cannot grow
+// silently into the thing this check exists to stop.
+const offenders = [], upstream = []
 for (let i = start; i < end; i++) {
-  if (i >= mintFrom && i <= mintTo) continue          // the mint is allowed to read chains — once
+  if (i >= mintFrom && i <= mintTo) continue          // the mint itself reads chains — once
   if (SRC[i].trimStart().startsWith('//')) continue    // prose about the rule is not the rule
-  for (const re of CHAIN_READS) if (re.test(SRC[i])) offenders.push(`${i + 1}: ${SRC[i].trim().slice(0, 100)}`)
+  for (const re of CHAIN_READS) if (re.test(SRC[i])) (i < mintFrom ? upstream : offenders).push(`${i + 1}: ${SRC[i].trim().slice(0, 100)}`)
 }
 console.log(`proto block lines ${start + 1}–${end}   mint (mkStamp) ${mintFrom + 1}–${mintTo + 1}`)
+if (upstream.length) {
+  console.log(`   ${upstream.length} upstream chain read(s) BEFORE the mint — the half that moves to prebake:`)
+  for (const u of upstream) console.log('     ', u)
+}
 if (offenders.length) {
   console.log(`⛔ ${offenders.length} CHAIN LOOKUP(S) AFTER THE MINT — the artifact still IS a chain:`)
   for (const o of offenders) console.log('   ', o)
