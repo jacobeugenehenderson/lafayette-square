@@ -33,9 +33,9 @@ const layer = (rings, fill, stroke, w) => { for (const rg of (rings || [])) if (
 layer(r.protoBands?.lu, '#3f4a33', 'none', 0)
 layer(r.protoBands?.sidewalk, '#efe9dc', 'none', 0)
 layer(r.protoBands?.treelawn, '#5d8f35', 'none', 0)
-layer(sharp.protoCurb, 'none', '#e2504a', 0.22)     // ② with R=0 — the sharp control
-layer(r.protoCurb,     'none', '#3b6ef5', 0.30)     // ② eased at the authored R
-layer(r.proto,         'none', '#f0b429', 0.10)     // ① the protopolygon ink
+layer(sharp.protoCurb, 'none', '#e2504a', SPAN/300)     // ② with R=0 — the sharp control
+layer(r.protoCurb,     'none', '#3b6ef5', SPAN/500)     // ② eased at the authored R
+layer(r.proto,         'none', '#f0b429', SPAN/1400)     // ① the protopolygon ink
 const [cx, cz] = AT || [0, 0]
 const vx = cx - SPAN / 2, vy = cz - SPAN / 2
 const out = `scratch/proto-corner-${scene}${AT ? `-${cx}_${cz}` : ''}.svg`

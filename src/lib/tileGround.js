@@ -130,7 +130,15 @@ function easeRing(ring, rAt, report = null) {
   // tangent point placed "distance t toward the next vertex" therefore lands inside a bend, and
   // the first cut of this function reported 178 spurious "overreaches" that were its OWN symptom.
   // ⭐ This is also why `filletRing` exists at all; this replaces it, so it has to do the same job.
+  // ⛔⛔ THE WALK MAY NOT WRAP, AND THIS IS THE BUG THAT DREW CHORDS ACROSS BLOCKS.
+  // It previously reported `short` only after exhausting the whole ring, so a large setback walked
+  // PAST the starting vertex; `span` then took the long way round, `skip` blanked almost every
+  // vertex, and the ring collapsed to a few points — which renders as a straight line across a
+  // block. The eye caught it twice before the arithmetic did.
+  // ⭐ The guard is TOPOLOGICAL, not an invented threshold: an ease may not consume its own ring.
+  const perim = seglen.reduce((a, b) => a + b, 0)
   const walk = (i, dir, t) => {                 // → { p, idx, tan } at arc-length t from vertex i
+    if (!(t < perim / 4)) return { p: ring[i], idx: i, tan: [0, 0], short: true }
     let rem = t, k = i
     for (let guard = 0; guard < n; guard++) {
       const e = dir > 0 ? k : (k - 1 + n) % n
@@ -171,6 +179,12 @@ function easeRing(ring, rAt, report = null) {
     const V = ring[i], A = ring[(i - 1 + n) % n], B = ring[(i + 1) % n]
     const R = Math.max(0, rAt(i) || 0)
     if (!(R > 1e-6)) continue                   // R=0 ⇒ zero-length handles ⇒ the sharp vertex
+    // ⛔⛔ ONLY WHERE THE CONTOUR ACTUALLY TURNS. This is a geometric test on the polygon, NOT the
+    // chain-identity classifier that was correctly struck ("the protopoly has already expanded and
+    // merged and the naming stamp has already happened") — it asks the contour, which is the only
+    // thing left to ask. Easing every vertex instead cost 16% of total ring perimeter on LS: a
+    // near-straight vertex gets a huge setback and the arc short-cuts real geometry.
+    if (!isCorner[i]) continue
     const aL = D(A, V), bL = D(V, B)
     if (aL < 1e-9 || bL < 1e-9) continue
     // the corner's own turn, from the segments that actually meet at it
@@ -194,6 +208,7 @@ function easeRing(ring, rAt, report = null) {
     const P0 = walk(i, -1, t), P1 = walk(i, +1, t)
     if (P0.short || P1.short) { if (report) report.tooTight++; continue }
     plan[i] = { P0, P1, theta, R, t }
+    if (report && t > (report.maxT || 0)) { report.maxT = t; report.maxAt = ring[i] }
   }
   // ⛔ OVERLAP IS REPORTED, NOT CLAMPED. Two corners whose eases would consume the same span is an
   // authored R too large for the block — `§6.9.5`: self-intersection is SIGNAL, not error, and
@@ -5406,46 +5421,45 @@ export function buildTileGround(ribbons, opts = {}) {
       return [0, ...ix, Math.max(0, n - 1)].sort((a, b) => a - b)   // IX vertices AND both ends
     })
     // owner → the centreline node it belongs to, by index-space proximity along its OWN chain
+    // ⛔⛔ A VERTEX IS AT A NODE OR IT IS NOT — no snapping to the nearest one.
+    // The first cut walked to the CLOSEST node index unconditionally, so every mid-chain vertex was
+    // handed a node and therefore the corner radius. `resolveVertR` is applied to TILE RING
+    // vertices in the shipped path — those ARE intersections — and giving `baseR` to all ~18k
+    // contour vertices instead cost 14% of total ring perimeter to over-wide fillets.
+    // ⭐ The test is EXACT and needs no tolerance: the stamp records which chain point this
+    // boundary vertex was struck from, so it is a node iff that index IS an IX or a chain end.
+    const protoNodeSet = protoNodeIdxs.map(a => new Set(a))
     const protoNodeOf = (o) => {
       if (!o) return null
       const si = protoStreetOf.get(o.skelId); if (si == null) return null
-      const pts = streetsOrig[si]?.points; const cand = protoNodeIdxs[si]
-      if (!pts?.length || !cand?.length) return null
-      let best = cand[0]
-      for (const c of cand) if (Math.abs(c - o.srcIdx) < Math.abs(best - o.srcIdx)) best = c
-      return pts[best]
+      const pts = streetsOrig[si]?.points
+      if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
+      return pts[o.srcIdx]
     }
-    // ⛔ THE f/b CONVENTION IS ASSERTED HERE, NOT MEASURED. Corner R is effectively UNAUTHORED
-    // across the project — every Look carries scale 1 and an empty per-IX map; only HPDM has any
-    // per-corner entries at all (5). Jacob, 2026-09-06: "there is nothing authored worth disrupting
-    // things over." ⇒ in practice every corner resolves to `baseR`, and this key matters the day
-    // someone authors one, not today. ⚠️ Do NOT read that as "authoring is negligible" generally —
-    // the WIDTH channel is load-bearing and measured: dropping `blockCustoms` moves ②'s curb by
-    // 21,142 m² on LS (`claims-proto-stack-reads-authoring.mjs`). Two different channels.
-    // On ①, the 'right' boundary runs +index and 'left' runs −index, which is what `forward` means
-    // to `cornerKeyAt`; the leg-in inversion mirrors it.
-    const protoCornerKey = (V, oIn, oOut) => {
-      const legOut = `${oOut.skelId}:${oOut.side === 'right' ? 'f' : 'b'}`
-      const legIn  = `${oIn.skelId}:${oIn.side === 'right' ? 'b' : 'f'}`
-      const [a, b] = legOut <= legIn ? [legOut, legIn] : [legIn, legOut]
-      return `${ixKeyOf(V)}|${a}|${b}`
-    }
-    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, corner: 0, capApex: 0, bend: 0, noNode: 0 }
-    // ⭐ THE CLASSIFICATION FALLS OUT OF THE LABELS — no graph query, no angle test.
-    // different skelId          → a CORNER (two streets meet)
-    // same skelId, other side   → a CAP APEX (the contour turned around a tip; there are TWO)
-    // same skelId, same side    → a BEND already in the chain's points — SKELETON's smoothing,
-    //                             not ours to round (`RIBBONS §1`: smoothing is skeleton).
-    // This is §1's "a corner is a join in one contour, a cap is where the contour turns around —
-    // none of the three is constructed", literally true rather than aspirational.
-    const protoRAt = (oIn, oOut) => {
-      if (!oIn || !oOut) { protoEaseReport.noNode++; return 0 }
-      if (oIn.skelId === oOut.skelId && oIn.side === oOut.side) { protoEaseReport.bend++; return 0 }
-      if (oIn.skelId === oOut.skelId) protoEaseReport.capApex++; else protoEaseReport.corner++
-      const V = protoNodeOf(oIn) || protoNodeOf(oOut)
+    const protoEaseReport = { eased: 0, overreach: 0, tooTight: 0, noNode: 0 }
+    // ⛔⛔ NO CLASSIFICATION BY CHAIN RELATIONSHIP. THIS IS THE CORRECTION (Jacob, 2026-09-06):
+    // "this is still chains talk — the protopoly has already expanded and merged these polygons
+    // and the naming stamp has already happened."
+    // The first cut asked, at each vertex, whether the two adjacent edges' owners had the same
+    // `skelId` and the same `side`, and branched: different street → CORNER, same street other
+    // side → CAP APEX, same both → a bend to leave alone. ⛔ THAT IS `cornerAt`/`capAt` REBUILT
+    // UNDER A NEW NAME — the exact pair `RIBBONS §1` retires, because "a grout contour already IS
+    // its corners and caps". By the time ① exists the expansion, the merge and the stamp have all
+    // happened; there is nothing left to ask the graph.
+    // ⭐ It is also `CLAUDE.md`'s named failure: resolve a vertex to chain identity, get a
+    // chain-world answer back, and never notice you changed layers because it feels like LOCATING
+    // the defect. It produced a whole divided-carriageway investigation for a vertex where the
+    // contour simply turns.
+    // ⇒ WHAT SURVIVES IS READING THE STAMP — a name applied THROUGH the merge, not recovered after
+    // it. A vertex takes its authored R and eases. Whether it is a corner, a cap apex or a bend is
+    // not asked, because the answer changes nothing.
+    // ⭐⭐ AND THE BEND FALLS OUT FOR FREE, WITH NO THRESHOLD: a 1° smoothing bend needs a setback
+    // of R/tan(0.5°) ≈ 515 m, which cannot fit on its legs, so it declines itself. Smoothing stays
+    // SKELETON's without a rule saying so.
+    const protoRAt = (o) => {
+      if (!o) { protoEaseReport.noNode++; return 0 }
+      const V = protoNodeOf(o)
       if (!V) { protoEaseReport.noNode++; return 0 }
-      const k = protoCornerKey(V, oIn, oOut)
-      if (cornerOverrides && Number.isFinite(+cornerOverrides[k])) return Math.max(0, +cornerOverrides[k]) * scale
       const ixv = ixOverrides?.[ixKeyOf(V)]
       if (Number.isFinite(+ixv)) return Math.max(0, +ixv) * scale
       return baseR * scale
@@ -5485,7 +5499,7 @@ export function buildTileGround(ribbons, opts = {}) {
             ? easeRing(rings2[ri], (vi) => {
                 const i1 = src[vi]
                 if (i1 == null) return 0
-                return protoRAt(protoOwners[labs[(i1 - 1 + ring.length) % ring.length]], protoOwners[labs[i1]])
+                return protoRAt(protoOwners[labs[i1]])
               }, protoEaseReport)
             : (protoEaseReport.noNode++, rings2[ri])
           protoCurb.push(eased); protoCurbGs.push(isGs)
@@ -5499,7 +5513,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // through SHARP; that is a real shortfall and must be countable, because on town #2 nobody
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,
       // rendering as what it is (`§6.9.5`: self-intersection is SIGNAL, not error).
-      console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased — ${protoEaseReport.corner} corner · ${protoEaseReport.capApex} cap-apex · ${protoEaseReport.bend} bend (skeleton's, left sharp)`)
+      console.log(`[tileGround][PROTO②ease] ${protoEaseReport.eased} vertex/vertices eased at the stamped R`)
       if (protoEaseReport.tooTight) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.tooTight} corner(s) TOO TIGHT for the authored R — left SHARP and counted. ⛔ Not clamped to a smaller radius: that would draw a corner nobody authored.`)
       if (protoEaseReport.overreach) console.log(`[tileGround][PROTO②ease] ${protoEaseReport.overreach} corner(s) whose ease would overlap a neighbour's — left sharp.`)
       if (protoEaseReport.noNode) console.warn(`[tileGround][PROTO②ease] ⛔ ${protoEaseReport.noNode} vertex/vertices could not resolve a centreline node and went through SHARP — the authored corner R did not reach them.`)
