@@ -5703,15 +5703,6 @@ export function buildTileGround(ribbons, opts = {}) {
         //     repeated/crossing vertices and the difference mishandles the reversed winding.
         // ⇒ record piece COUNT per depth, and repeated-vertex count per ring. If counts drop on
         // exactly the flooded blocks it is the first; if counts hold it is the second.
-        if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
-          const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
-          const ar = (rs) => rs.reduce((t, rg) => { let a=0; for (let i=0;i<rg.length;i++){const[x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length];a+=x1*y2-x2*y1} return t + Math.abs(a/2) }, 0)
-          const stages = [['hw', inset(hwAt)], ['hw+cw', inset((i) => hwAt(i) + cw)], ['WB', inset((i) => hwAt(i) + WB)]]
-          ;(globalThis.__PROTO_DUMP ||= []).push({
-            block: k, ringArea: Math.abs(signedArea(ring)), WBnom, WB, capped: WB !== WBnom,
-            stages: stages.map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
-          })
-        }
         // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
         // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
         // block's COMPLEMENT: the roadway, flooding every band across the whole street.
@@ -5735,6 +5726,32 @@ export function buildTileGround(ribbons, opts = {}) {
           const eLawnTo   = (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
           const ins = (fn) => offsetRingVariable(EC.ring, fn, () => true, () => null)
           const curbOuter = [EC.ring], pedOuter = ins(() => cw), luEdge = ins(() => WB)
+          // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when
+          // unset. ⛔ RE-AIMED 2026-09-06 and it had ROTTED SILENTLY: it still called `inset()`,
+          // which went away when the subject became the eased curb, so `PROTO_DUMP=1` THREW. A
+          // debug path nothing runs is a debug path nothing protects — and this is the one
+          // instrument built for exactly the failure now open.
+          // Two diseases look identical from a thickness histogram and have different cures:
+          //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver
+          //     falls below `offsetRingVariable`'s area floor. The deeper set then has FEWER
+          //     pieces, that lobe is never subtracted, and `differenceRings` returns it WHOLE.
+          //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`).
+          //     Piece count HOLDS; the ring carries repeated vertices.
+          if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
+            const _bandDbg = band(curbOuter, pedOuter)
+            const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
+            const ar = (rs) => rs.reduce((t, rg) => { let a=0; for (let i=0;i<rg.length;i++){const[x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length];a+=x1*y2-x2*y1} return t + Math.abs(a/2) }, 0)
+            ;(globalThis.__PROTO_DUMP ||= []).push({
+              block: k, curbArea: Math.abs(signedArea(EC.ring)), WBnom, WB, capped: WB !== WBnom,
+              // ⛔ the band's SHAPE, not just its size: an annulus is `+-`, but a strip that pinches
+              // comes back as several all-positive pieces, and a pooled outer-vs-hole count cannot
+              // tell those apart. Reading one as the other manufactured a false root cause.
+              bandOut: _bandDbg.length,
+              bandSigns: _bandDbg.map(rg => (signedArea(rg) > 0 ? '+' : '-')).join(''),
+              stages: [['curb', curbOuter], ['curb+cw', pedOuter], ['curb+WB', luEdge]]
+                .map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
+            })
+          }
           protoBands.curb.push(...band(curbOuter, pedOuter))
           protoBands.sidewalk.push(...band(ins(eWalkFrom), ins(eWalkTo)))
           protoBands.treelawn.push(...band(ins(eLawnFrom), ins(eLawnTo)))
