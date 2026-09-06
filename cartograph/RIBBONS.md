@@ -108,6 +108,23 @@
 > asserted is silently rounded back into an absence **in the artifact**.
 > ▶ `node scratch/claims-zero-separation-offset.mjs` — floors read live from source, so they cannot go stale.
 >
+> #### ⭐⭐⭐ RULED 2026-09-05 (Jacob) — **NOTHING IS ROUNDED ON THE PROTOPOLYGON.** Two objects, not one.
+> > *"A protopolygon. The humunculus… it's .00001 symmetrical between nodes… That is **separate** from
+> > the polygons of the curbs."* · *"The line segments get SMOOTHED but the downstream details don't get
+> > ROUNDED — until they naturally get rounded by the geometry."*
+>
+> ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
+> united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
+> two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).
+> ⛔ **SHARP EVERYWHERE ON ①** (smoothing the PATH is the line; rounding the JOINS is a construction).
+> **Geometric, NOT measured:** a corner rounded at ε then offset by `w` lands at `ε+w ≈ w` — so a rounded
+> proto pins every corner to the half-width, makes authored **R=0 unreachable**, leaves no vertex for the
+> node's handle, and turns every blunt cap into a bulb. ⭐ **Expand each segment to its own rectangle and
+> unite**: no join style to choose, no miter limit to clamp — that clamp is a second mechanism by another
+> name. ⛔ **OPEN, Jacob's: what "naturally rounded by the geometry" means at the OFFSET** — an arc of
+> radius = the offset distance (Illustrator; nothing authored), or SHARP with every curve from the node's
+> handles (R dial survives, R=0 reachable). ▶ Eye-gate: Benton's loop joint, one corner, 53°.
+>
 > #### ⭐⭐⭐ WE OFFSET FROM THE GROUT. The corners, the caps and the mouths FALL OUT.
 > ⛔ **`iA = chain ⊕ pavementHW` offsets from the CHAINS, and that is what this replaces.** Offset the
 > grout's contour instead: a **corner** is a join in one contour, a **cap** is where the contour turns
@@ -185,34 +202,36 @@
 > APPROXIMATELY a cubic, and it degrades where depth approaches the fit radius — the tight turning circles.
 > **Not measured under the grout subject.**
 >
-> #### ▶ STATE OF THE BUILD — two gates run 2026-09-04, both READ-ONLY, no `src/` touched.
-> ⛔ **Re-run them; the directions below are the doctrine, the digits are a snapshot.**
-> - **GATE A — topology.** `node scratch/gate-a-grout-holes.mjs` · stroke at ε, unite, subtract from
->   the stencil (the union of the frozen tile rings — artifact-derived, so it ports). **Result: the
->   grout INVENTS NOTHING** — every new ring lands inside a frozen tile, three towns, block areas
->   agreeing to ~0.1% (the grout's own footprint); where it differs it SUBDIVIDES a tile the freeze
->   merged. **And `POLYGON-FIRST §2.1` checks 1–2 go to ZERO from ε alone**, on a gate whose own text
->   says it "fails on ALL 50 dead-end tips" today. **ε's value carries no information — measured**:
->   identical topology across a 45× range of ε. ⛔ LS's exact count match is a NET (one tile splits,
->   one receives nothing), **not a bijection** — do not quote it as 1:1.
-> - **GATE B — authored widths + the fold class.** `node scratch/gate-b-grout-offset.mjs` · the grout
->   built as the model says (per-station per-side boundaries closed into a ribbon, the ruled bulb at
->   round tips), not as a symmetric stroke. **Result: the LEGS LAND ON THE CURB** — median deviation
->   0.000/0.001 m over 216k vertices, LS and HPDM. ⭐⭐ **AND THE FOLD CLASS DOES NOT REPRODUCE**:
->   `POLYGON-FIRST D6a` marks the chain-side offset NOT robust (~70% of crossings at the
->   averaged-normal branch); offsetting a CONTOUR gives zero repeated-vertex rings across both towns.
->   **The predicted failure appeared instead — blocks VANISH rather than fold**, which is loud and
->   countable. That was written here as a hypothesis and is now measured.
+> #### ▶ STATE OF THE BUILD — gates A+B measured 2026-09-04; **the grout DRAWS** since `a82a6d8d`.
+> ⛔ **Re-run; the directions are the doctrine, the digits are a snapshot — which is why the digits are
+> NOT repeated here.** ▶ `scratch/gate-a-grout-holes.mjs` · `gate-b-grout-offset.mjs` · `?grout=1`
+> - **GATE A — topology.** Stroke at ε, unite, subtract from the stencil (artifact-derived, so it
+>   ports). **The grout INVENTS NOTHING** — every ring lands inside a frozen tile, three towns; where
+>   it differs it SUBDIVIDES a tile the freeze merged. **`POLYGON-FIRST §2.1` checks 1–2 go to ZERO
+>   from ε alone**, on a gate whose own text says it "fails on ALL 50 dead-end tips". **ε's value
+>   carries no information — measured** across a wide sweep. ⛔ LS's count match is a NET (one tile
+>   splits, one receives nothing), **not a bijection**. ⛔ **This gate strokes `jtRound`+`etOpenRound`
+>   — it ROUNDS. Fine for a topology count; NEVER copy that call into the protopolygon.**
+> - **GATE B — authored widths + the fold class.** **The LEGS LAND ON THE CURB** — deviation at the
+>   millimetre, LS and HPDM. ⭐⭐ **AND THE FOLD CLASS DOES NOT REPRODUCE**: `POLYGON-FIRST D6a` marks
+>   the chain-side offset NOT robust (~70% of crossings at the averaged-normal branch); offsetting a
+>   CONTOUR gives zero repeated-vertex rings across both towns. **The predicted failure appeared
+>   instead — blocks VANISH rather than fold**, which is loud and countable.
+> - **IT DRAWS** — `?grout=1`, LS, a flagged overlay and **not** the producer. ⛔ **And it builds the
+>   CURB, not the protopolygon**: it strokes each chain at the authored half-width and unites —
+>   offset-then-polygonize, the old order. ⛔ **Identity does not survive its `unionRings`**;
+>   `booleanLabelled` (`tileGround.js:364`) is the N-ring labelled boolean that would carry it.
 >
-> ⛔ **OPEN — cause NOT established on any of these:**
-> 1. **The CORNER zone misses** (~50% of corner-zone vertices beyond 0.10 m). ⭐ **EXPECTED and not a
->    defect of the model** — Gate B applies no authored corner R at all, because R lives in the node's
->    handles and the handles are not built. **This is the size of the prize for node-as-intention.**
-> 2. **~20% of LEG vertices beyond 0.10 m** (p90 1.3–3.6 m). ⭐ **Measure this BEFORE building Gate C**
->    — the width step lives in this population, and a rule designed without it is a guess.
-> 3. **Swallowed blocks** — 15 across two towns, the loud failure mode, uninvestigated.
->
-> ▶ **GATE C — the width step at a block boundary.** ⛔ Do not start it from a guess; start it from (2).
+> ⛔ **OPEN — cause NOT established:**
+> 1. **The CORNER zone misses.** ⭐ **EXPECTED, not a defect of the model** — Gate B applies no authored
+>    R, because R lives in the node's handles and the handles are not built. **The size of the prize for
+>    node-as-intention**, and what the eye sees at Benton: one unrounded corner, 53° between the legs.
+> 2. **Some LEG vertices miss.** Gate C was scoped from this population believing the width step needs a
+>    RULE. ⛔ **Measured at Benton 2026-09-05 and it does NOT** — an authored 2.71 m stem meeting 3.96 m
+>    legs gives **eight transition vertices and nothing beyond 3.96 m**, against a frozen curb that loses
+>    the 2.71 entirely and strays to 10.71 m. ▶ `scratch/benton-grout-joint.mjs` ⛔ **ONE NODE, ONE READ
+>    — this does not close Gate C; it forbids STARTING it from "a construction is owed".**
+> 3. **Swallowed blocks** — the loud failure mode, uninvestigated.
 >
 > *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):
 > the coincident-chains open question — answered, then made moot — and Tessel's "second mouth corner is not
@@ -234,12 +253,10 @@
 > ### ✅ Slice 1 — the degree-1 coupler — LANDED `a2e0f6c4` (2026-08-12)
 > The cap **is** a coupler: the CCW sweep's same-arm guard was dropping the one-arm case, so `via:'cap'`
 > now wraps a tip's two side-chains around the spike. ⛔ **It reaches NO artifact until a pipeline
-> re-pour** — `derive.js` is prebake. ⛔⛔ **CORRECTED 2026-08-14: this said "`via:'cap'` greps 0 in all six
-> committed `ribbons.json`." ROT — true when written, falsified the NEXT DAY by the `918f5ff6` promote.**
-> `src/data/ribbons.json` carries cap couplers; the five per-scene bundles carry none. ⭐⭐ **AND THE
-> METHOD IS THE LESSON: `grep '"via":"cap"'` returns 0 on a PRETTY-PRINTED file** (`"via": "cap"`) — the
-> claim and its independent re-check were both made with the same brittle string match, so they agreed and
-> were both wrong. ⛔ **Count structurally, never by string:**
+> re-pour** — `derive.js` is prebake. `src/data/ribbons.json` carries cap couplers; the five per-scene
+> bundles carry none. ⭐⭐ **COUNT STRUCTURALLY, NEVER BY STRING: `grep '"via":"cap"'` returns 0 on a
+> PRETTY-PRINTED file** (`"via": "cap"`) — a claim and its independent re-check were both made with that
+> same brittle match, so they agreed and were both wrong.
 > `node -e "const r=require('./src/data/ribbons.json');let n=0;for(const d of r.junctionMap.nodes)for(const c of (d.cornersAdjacent||[]))if(c.via==='cap')n++;console.log(n)"`
 > ⛔ **Re-run the line above; never quote it.** Harmless today (`PREBAKE §2.5`), but **slice 2's walk
 > consumes it ⇒ the re-pour is on the critical path.**
