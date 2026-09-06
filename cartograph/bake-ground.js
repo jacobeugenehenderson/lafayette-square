@@ -348,6 +348,26 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   // ⛔ OFF BY DEFAULT. With the flag absent this call is byte-identical, which `a03-curb-identity`
   // proves on every commit.
   const PROTO = !!opts.proto   // from buildTileBakeShape's own opts, not the bake's
+  // ⛔⛔ ① AS THE DEFAULT PRODUCER REQUIRES A SCENE THAT CAN ACTUALLY PRODUCE IT. Measured
+  // 2026-09-06 the moment the default flipped: hipointe-demun has no frozen protopolygon and no
+  // boundary, so it LIVE-MINTED ①, skipped the circle stamp, and baked 1103 tiles of the WHOLE
+  // FRAME where it had 196 — a plausible-looking wrong map, which is the one outcome Layer 0 q2
+  // names as worse than a failure. ⛔ And it destroyed the old artifact doing it: baked output is
+  // not in git, so there was nothing to restore.
+  // ⇒ REFUSE, LOUDLY, NAMING THE FIX. ⛔ Never fall back to the chain curb here: a silent legacy
+  // bake under the current default is the same substitution in the other direction, and it is
+  // exactly how `serve.js`'s flagless bake hid a day of ① work from the operator.
+  if (PROTO) {
+    const fp = ribbons?.protopolygon
+    const why = !fp?.rings?.length ? 'it carries NO frozen protopolygon — it has not been poured since ① landed'
+      : !fp.blocks?.length ? 'its frozen ① carries no `blocks` (boundary − stroked roads) — it was poured before the rim fix'
+      : !fp.boundaryRing?.length ? 'its frozen ① carries no `boundaryRing`, so the circle could not be stamped and the bake would be the WHOLE FRAME'
+      : null
+    if (why) throw new Error(
+      `[bake-ground] ⛔ scene '${scene}' cannot bake ① as the producer: ${why}.\n` +
+      `   FIX: re-pour it —  node cartograph/skeleton.js --scene=${scene} && node cartograph/pipeline.js --scene=${scene} && node cartograph/promote-ribbons.js --scene=${scene} --yes\n` +
+      `   Or bake the chain curb DELIBERATELY with --legacy. ⛔ Refusing to substitute either one silently.`)
+  }
   const pr = buildTileGround(ribbons, {
     ...(PROTO ? { grout: 'proto', protoProducer: true } : {}),
     stencil: stencilPolygon,
@@ -440,8 +460,10 @@ function buildTileBakeShape(ribbons, design, stencilPolygon, surveyStreets = nul
   }
   // ⛔ LOUD IF ASKED FOR AND ABSENT — a silent fall back to the chain artifact would bake the old
   // producer under a flag that says otherwise, which is the plausible-looking success Layer 0 forbids.
-  if (PROTO && !pr.protoShapeTiles?.length) throw new Error('[bake-ground] --proto asked for ① as the producer but ②③ produced NO tiles. Refusing to bake the chain artifact under a proto flag.')
-  if (PROTO) console.log(`  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`)
+  if (PROTO && !pr.protoShapeTiles?.length) throw new Error('[bake-ground] ① is the producer but ②③ produced NO tiles. Refusing to silently bake the chain artifact instead — pass --legacy if the chain curb is what you want.')
+  console.log(PROTO
+    ? `  [①⇢producer] freezing ${pr.protoShapeTiles.length} tile(s) built from ①②③ — NOT the chain curb`
+    : `  [①⇢producer] ⛔ --legacy: freezing the CHAIN curb, not ①. This artifact is NOT the current producer.`)
   return { byMaterial, byFaceUse, shapeArtifact: PROTO ? pr.protoShapeTiles : pr._shapeArtifact, highwayRings: pr.highway || [] }
 }
 
@@ -694,7 +716,7 @@ function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}
   return { positions, indices }
 }
 
-export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {}, proto: protoFlag = false } = {}) {
+export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {}, proto: protoFlag = true } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1050,14 +1072,21 @@ export async function bakeGround({ look, scene = 'lafayette-square', refine: ref
 
 // CLI
 async function main() {
-  let look = null, scene = 'lafayette-square', proto = false
+  let look = null, scene = 'lafayette-square', proto = true   // ⭐ ① is the producer by default; --legacy opts out
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
     else if ((m = arg.match(/^--scene=(.+)$/)))   scene = m[1]
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
-    else if (arg === '--proto')                   proto = true            // ① as the producer
+    // ⭐⭐⭐ ① IS THE PRODUCER BY DEFAULT (Jacob, 2026-09-06: "make --proto the default and
+    // rebake"). `--proto` is kept as an accepted no-op so existing invocations and docs still
+    // work; `--legacy` is the ONLY way back to the chain curb, and it is explicit because a bake
+    // that silently produced the other producer is what hid a full day of ① work from the
+    // operator — `serve.js`'s bake button omitted `--proto` and clobbered every proto artifact
+    // with a legacy one, so Section could never show ① no matter what was fixed.
+    else if (arg === '--proto')                   proto = true            // accepted; now the default
+    else if (arg === '--legacy' || arg === '--no-proto') proto = false    // the chain curb, explicitly
     else if ((m = arg.match(/^--refine=(.+)$/)))  refine.mode    = m[1]            // adaptive | uniform
     else if ((m = arg.match(/^--refine-tol=(.+)$/)))     refine.tol     = parseFloat(m[1])
     else if ((m = arg.match(/^--refine-min-edge=(.+)$/)))refine.minEdge = parseFloat(m[1])

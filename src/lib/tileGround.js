@@ -544,21 +544,63 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // ②③ offset a whole block, and the disc is applied to the RESULT (see the artifact clip).
     // ⭐ This also deletes machinery rather than adding it: no `__boundary__` depth-0 special case,
     // no rim corner rule, no "is this the rim?" question inside the offset at all.
-    let fx0 = Infinity, fx1 = -Infinity, fz0 = Infinity, fz1 = -Infinity
-    for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
-    for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
-    const M = 50
-    const frame = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [frame], [frame.map(() => bIdx)], R.rings, R.labels, true)
+    // ⛔⛔ THE SUBTRACTION SUBJECT IS THE DISC PLUS A MARGIN — not the disc, and not the frame.
+    // Both extremes were built and both are wrong, which is why the rule is spelled out here:
+    //  · SUBTRACT FROM THE DISC → every rim block is cut BEFORE ②③ run, so the circle reaches the
+    //    offset stage disguised as an ordinary block edge and the ped ribbon wraps it and turns
+    //    corners at the rim. Jacob: "why are the sidewalks trying to bend and create corners at
+    //    the edge of the stencil?"
+    //  · SUBTRACT FROM THE FRAME → the sparse outer chains (motorways running kilometres past
+    //    town) enclose enormous faces. They are real faces of the graph and NOT city blocks; ②
+    //    offsets inside them and hands back a 4.5M m² curb ring. Survey FILLS `tg.curb`, so the
+    //    authoring surface went solid: "basically just wrecked survey interface".
+    // ⇒ A disc of R + MARGIN. The margin is larger than anything ③ can reach inward, so a rim
+    //   block is WHOLE where it matters and nothing bends at the VISIBLE rim; and the cut is well
+    //   outside the disc, so the giant exterior faces never exist. The true circle is applied
+    //   LAST, to finished geometry, at every consumer (`[PROTO⊙]` and the live curb).
+    // ⛔ The margin is a REACH, not a taste: it must exceed the deepest ③ can inset. 60 m is ~10×
+    //   the widest authored curb+treelawn+sidewalk stack, so it is not a tuned number.
+    const RIM_MARGIN = 60
+    let bcx = 0, bcz = 0
+    for (const p of bRing) { bcx += p[0]; bcz += p[1] }
+    bcx /= bRing.length; bcz /= bRing.length
+    const grown = bRing.map(p => {
+      const dx = p[0] - bcx, dz = p[1] - bcz, L = Math.hypot(dx, dz) || 1
+      return [p[0] + dx / L * RIM_MARGIN, p[1] + dz / L * RIM_MARGIN]
+    })
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], R.rings, R.labels, true)
     let blocks = null, blockLabels = null
     if (!D.refused && D.rings?.length) {
       blocks = []; blockLabels = []
+      // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
+      // necessarily yields the whole region beyond the outermost streets as one huge component.
+      // It is not a city block — the frame is an artificial bound, not a street — and treating it
+      // as one made ② offset INSIDE it and hand back a frame-sized curb ring. Survey fills
+      // `tg.curb` (`ringsToFlatGeo(..., true)`), so the whole view went solid blue: Jacob,
+      // "basically just wrecked survey interface".
+      // ⭐ Identified by GEOMETRY, not by size: a real block never reaches the frame, because the
+      // frame was built with a 50 m margin beyond every piece of ink. A size threshold would be a
+      // guess that fails on a town with one genuinely huge block.
+      // ⛔ Identified by its BOUNDING BOX, not by exact coordinates: Clipper returns rounded
+      // integers, so comparing an output vertex to the frame's own float corner misses — the first
+      // version of this test did exactly that and a 4.5M m² curb ring survived it.
+      let dropped = 0
+      let gx0 = Infinity, gx1 = -Infinity, gz0 = Infinity, gz1 = -Infinity
+      for (const p of grown) { if (p[0]<gx0)gx0=p[0]; if (p[0]>gx1)gx1=p[0]; if (p[1]<gz0)gz0=p[1]; if (p[1]>gz1)gz1=p[1] }
+      const FW = gx1 - gx0, FH = gz1 - gz0
+      const spansFrame = (rg) => {
+        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+        for (const p of rg) { if (p[0]<x0)x0=p[0]; if (p[0]>x1)x1=p[0]; if (p[1]<z0)z0=p[1]; if (p[1]>z1)z1=p[1] }
+        return (x1 - x0) > FW * 0.99 && (z1 - z0) > FH * 0.99
+      }
       for (let i = 0; i < D.rings.length; i++) {
         const rg = D.rings[i], lb = D.labels?.[i]
         if (!(rg?.length >= 3) || !lb) continue
+        if (spansFrame(rg)) { dropped++; continue }
         if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
         else { blocks.push(rg); blockLabels.push(lb) }
       }
+      if (dropped) console.log(`    [①] dropped ${dropped} component(s) spanning the whole clip — the EXTERIOR, not a block.`)
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }
@@ -5192,6 +5234,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
+  let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
   let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null, protoAuthoring = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
@@ -5273,6 +5316,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused, crossings: MP.crossings }
+    protoBoundaryRing = MP.boundaryRing || null
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
     // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
     // ②③ below read `blockCustoms` twice (the `pavementHW` override at `bcOf`, and the ped
@@ -6085,8 +6129,23 @@ export function buildTileGround(ribbons, opts = {}) {
     // CLIPS. Overwriting it after that intersect handed back an UNCLIPPED fill and the circle stamp
     // stopped working — Jacob, on the render: "the bounding circle stamp isn't working". A one-word
     // overreach, and it broke a thing nobody asked me to change.
-    curb = protoCurb
-    console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) offset from ①`)
+    // ⛔⛔ THE LIVE CURB IS STAMPED TOO. "Build the whole grid flat and stamp the circle LAST"
+    // applies at EVERY consumer, not only at the bake. Un-stamped, ② includes the enormous faces
+    // the far-flung motorway chains enclose out at the frame edge — real faces of the graph, not
+    // city blocks — and Survey FILLS `tg.curb` (`ringsToFlatGeo(..., true)`), so a 4.5M m² ring
+    // turns the whole authoring surface solid: Jacob, "basically just wrecked survey interface".
+    // ⛔ Not solved by dropping big rings: size is a guess that fails on a town with one genuinely
+    // huge block. The disc is the actual answer — it is what "the drawing" means.
+    const liveStamp = protoBoundaryRing
+    if (liveStamp?.length > 2) {
+      const cut = intersectRings(protoCurb, [liveStamp])
+      if (!cut?.length) throw new Error('[tileGround] the circle stamp removed the ENTIRE live curb. Refusing to hand back nothing.')
+      curb = cut
+      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②, STAMPED: ${protoCurb.length} ring(s) → ${cut.length} inside the circle`)
+    } else {
+      curb = protoCurb
+      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) — ⛔ NO boundary in this pour, so it is the WHOLE FRAME, un-stamped.`)
+    }
   }
   return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
