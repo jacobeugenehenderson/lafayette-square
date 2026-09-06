@@ -1,7 +1,9 @@
 import fs from 'fs'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { feed, buildProto } from './_proto-feed.mjs'
 const rb = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
-const r = buildTileGround(rb, { grout: 'proto', smooth: 0 })
+const f = feed('lafayette-square')
+if (!f) process.exit(1)
+const r = buildProto(f, { quiet: false })
 console.log('proto rings:', r.proto?.length)
 console.log('refused    :', r.protoRefused === null ? '✅ none — identity carried' : '⛔ ' + r.protoRefused)
 if (r.protoLabels) {

@@ -5,7 +5,7 @@
 // applied and ② does not (R lives in the node's handles, unbuilt), so a corner miss is
 // EXPECTED and must be reported apart from a leg miss, which would be a real defect.
 import fs from 'fs'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
 const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))
@@ -13,7 +13,9 @@ const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))
 // before today's frame change (the curve fit now reads the raw trace, so every curved chain's
 // vertices moved). Measuring ② against it scores the FRAME change as ②'s error — the exact
 // shape of "verify the baseline before comparing to it".
-const r = buildTileGround(rb, { grout: 'proto', smooth: 0, emitArtifact: true })
+const f = feed(scene)
+if (!f) process.exit(1)
+const r = buildProto(f, { quiet: false, emitArtifact: true })
 console.log(`\n${scene}: proto rings ${r.proto?.length}  identity ${r.protoRefused || 'carried'}  ② curb rings ${r.protoCurb?.length}`)
 if (!r.protoCurb?.length) process.exit(0)
 const iA = []

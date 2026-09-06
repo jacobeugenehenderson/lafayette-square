@@ -5088,7 +5088,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // with the retirement it licenses (`filletRing`, `bandJoin`, the miterLimit-2 clamp,
   // `roundTips`/`bluntTips`, `offsetRingVariable`'s `cornerAt`/`capAt`). Jacob,
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
-  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null, protoAuthoring = null
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -5167,6 +5167,24 @@ export function buildTileGround(ribbons, opts = {}) {
     protoOwners = MP.owners
     const R = { rings: MP.rings, labels: MP.labels, refused: MP.refused }
     console.log(`[tileGround][①] source: ${protoSource} — ${MP.rings.length} ring(s), ${MP.owners.length} identity stamps, ε=${PROTO_HW} m (network: ${streetsOrig.length} streets + ${gradeSep.length} gradeSeparated)`)
+    // ⛔⛔ DISCLOSE THE AUTHORING STATE — the SILENCE is the defect, never the draw.
+    // ②③ below read `blockCustoms` twice (the `pavementHW` override at `bcOf`, and the ped
+    // depths + strip materials through `resolvePedDepths(mz, side, c)`). A caller that passes
+    // none gets the to-code default and NO indication of it — `ROADMAP A05`'s exact shape
+    // (`litmus-curb-parallel.mjs:77` runs `blockCustoms: null` and scores the operator's own
+    // authored widths as a bow). ⭐ It fails WORST on the most heavily authored town and looks
+    // CLEANEST on a fresh pour, which is why it survived: measured on ①②③, dropping LS's 22
+    // authored streets moves the treelawn 3.3% and the curb 21,142 m², while HPDM's 6 streets
+    // move 0.002% — blind exactly where the map is most worked-on.
+    // ⛔ NOT a refusal: an unauthored scene is a LEGITIMATE state (a fresh pour of town #2 has
+    // no `blockCustoms` at all) and refusing to build would make onboarding impossible — the
+    // same call `A02`/`shapeFreezeMissing` makes at the wall. So it DRAWS, and it is LABELLED.
+    // ▶ node scratch/claims-proto-stack-reads-authoring.mjs
+    protoAuthoring = blockCustoms
+      ? `${Object.keys(blockCustoms).length} authored street(s)`
+      : 'ABSENT — no blockCustoms passed; ②③ are the to-code default, not this town'
+    if (!blockCustoms) console.warn(`[tileGround][①] ⛔ AUTHORING ABSENT — ②③ below are built at the to-code default width and depth. If this is a measurement, it is measuring the wrong map (Layer 0 q3).`)
+    else console.log(`[tileGround][①] authoring: ${protoAuthoring}`)
 
     // ⭐⭐ THE AUTHORED HALF — build-time, keyed off the frozen IDENTITY. ⛔ It cannot live in
     // the mint: `resolvePedDepths` and the `pavementHW` override both read `blockCustoms`, and
@@ -5636,7 +5654,7 @@ export function buildTileGround(ribbons, opts = {}) {
   const _shapeArtifact = opts.emitArtifact
     ? shapeTiles.map(st => ({ ...st, roundTipKeys: [...st.roundTipKeys] }))
     : undefined
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),

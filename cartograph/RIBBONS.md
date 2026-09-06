@@ -223,6 +223,26 @@
 >   CURB, not the protopolygon**: it strokes each chain at the authored half-width and unites —
 >   offset-then-polygonize, the old order. ⛔ **Identity does not survive its `unionRings`**;
 >   `booleanLabelled` (`tileGround.js:364`) is the N-ring labelled boolean that would carry it.
+> - ### ⛔⛔ EVERY ②③ NUMBER TAKEN BEFORE 2026-09-06 WAS MEASURED WITH **AUTHORING OFF** — void, re-take it.
+>   Seven of the eight `scratch/claims-proto-*` probes called `buildTileGround(rb, { grout: 'proto' })`
+>   with **no `blockCustoms`**, and `claims-proto-stack-disjoint`'s own header asserted the opposite.
+>   ⭐ **This is `ROADMAP A05` reproduced in the new stack** — Layer 0 q3 committed by an instrument — and
+>   it wore A05's signature: it moves LS (22 authored streets) hard and barely touches HPDM (6), i.e.
+>   **blind exactly where the map is most worked-on.** ▶ `node scratch/claims-proto-stack-reads-authoring.mjs`
+>   (the dual-state gate; both outcomes are findings, and it reports which state produced each row).
+>   - **Fixed at BOTH levels, because one of them alone drifts back.** ① The construction now **discloses**:
+>     ② and ③ warn when no `blockCustoms` is passed and stamp `protoAuthoring` on the result — ⛔ it still
+>     DRAWS, because an unauthored scene is legitimate and refusing would make town #2 impossible; **the
+>     defect was the silence, not the draw** (`A02`/`shapeFreezeMissing`, deliberately the same shape).
+>     ② Every proto probe now builds through **one shared feed**, `scratch/_proto-feed.mjs` — seven copies
+>     of a call is why the correction could not hold, and reaching the bare state now has to be **asked for
+>     by name** (`{ bare: true }`), which is `A03`'s dual-state pattern rather than an accident.
+>   - ⭐ **① ITSELF IS EXEMPT AND MUST STAY SO** — it is **width-free by ruling**, so `mintProtopolygon` and
+>     the two probes that call it directly are *correct* to ignore authoring. ⛔ Do not "fix" them.
+>   - ⭐ **A finding fell out that inverts the obvious reading:** ①'s identity stamps address a **strict
+>     superset** of the authored slots the shipped producer can address — every slot the shipped `shape.json`
+>     runs can name, ① can name, plus more; **zero the other way.** ⛔ Cause not established, and ⛔ this is
+>     **not** a claim that ① fixes `A17`. ▶ the command in `claims-proto-stack-reads-authoring.mjs`.
 >
 > ⛔ **OPEN — cause NOT established:**
 > 1. **The CORNER zone misses.** ⭐ **EXPECTED, not a defect of the model** — Gate B applies no authored
@@ -233,6 +253,23 @@
 >    legs gives **eight transition vertices and nothing beyond 3.96 m**, against a frozen curb that loses
 >    the 2.71 entirely and strays to 10.71 m. ▶ `scratch/benton-grout-joint.mjs` ⛔ **ONE NODE, ONE READ
 >    — this does not close Gate C; it forbids STARTING it from "a construction is owed".**
+>    ### ⛔⛔ MEASURED WHOLE-TOWN 2026-09-06 — **GATE C IS REAL. THE HANDLES ARE NECESSARY AND NOT SUFFICIENT.**
+>    ▶ `node scratch/claims-proto-leg-tail-is-corner-reach.mjs` — bins every non-highway ② vertex by
+>    distance to the nearest node, because **12 m was an arbitrary cut and "leg" vs "corner" was one
+>    population split at a guess.** The question it settles: does the miss DECAY away from nodes (⇒ it is
+>    corner reach, and building the handles closes it) or PLATEAU (⇒ a mid-leg error handles cannot touch)?
+>    **On LS it PLATEAUS in the far field (≥20 m from any node).** ⇒ ⛔ **Do not scope the handles as the
+>    close of ②.** They remain owed — the corner zone's miss is still expected and still theirs.
+>    - ⭐ **AND IT IS NOT A BASELINE ARTIFACT — checked before the claim shipped.** The baseline is this
+>      run's own `iA`, and `A06` says 42 of LS's 101 tiles still build `iA` by the legacy carve, so the
+>      obvious reading was *"② only disagrees with the half we know is chain-built."* **It does not** —
+>      split by A07's producer stamp, ② misses `offset` and `carve` about equally, and carve is if anything
+>      the closer of the two. ▶ `node scratch/claims-proto-legmiss-by-producer.mjs`
+>      *(`feedback_verify_the_baseline_before_comparing_to_it`, applied before the conclusion, not after.)*
+>    - ⛔ **CAUSE NOT ESTABLISHED.** Nothing here says what the mid-leg error IS.
+>    - ⛔ **HPDM CANNOT ANSWER THIS QUESTION TODAY** — a majority of its ② vertices find no baseline edge
+>      at all and are reported `UNMEASURABLE` as their own class, so the scene gets **no verdict** rather
+>      than a number. **That is its own open item, and a green LS is not evidence about it.**
 > 3. **Swallowed blocks** — the loud failure mode, uninvestigated.
 >
 > *(Superseded here, moved to [`_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md`](_archive/RIBBONS-mouth-corner-and-coincident-chains-2026-09-04.md):

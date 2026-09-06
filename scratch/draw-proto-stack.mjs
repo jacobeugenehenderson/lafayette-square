@@ -3,7 +3,7 @@
 // READ-ONLY, writes one SVG. The eye is the gate; every number so far is a distance against
 // a curb the same run built, which can be uniformly wrong and still score well.
 import fs from 'fs'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 // --at x,z --span m : crop to a window so a band 1.5 m wide is actually visible
 const ai = process.argv.indexOf('--at'), si = process.argv.indexOf('--span')
@@ -11,7 +11,9 @@ const AT = ai > 0 ? process.argv[ai + 1].split(',').map(Number) : null
 const SPAN = si > 0 ? Number(process.argv[si + 1]) : 300
 const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
 const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))
-const r = buildTileGround(rb, { grout: 'proto', smooth: 0 })
+const f = feed(scene)
+if (!f) process.exit(1)
+const r = buildProto(f, { quiet: false })
 const P = []
 let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity
 const bb = (rg) => { for (const p of rg) { if (p[0] < x0) x0 = p[0]; if (p[0] > x1) x1 = p[0]; if (p[1] < y0) y0 = p[1]; if (p[1] > y1) y1 = p[1] } }

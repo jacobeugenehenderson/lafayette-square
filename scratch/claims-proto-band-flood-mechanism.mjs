@@ -22,7 +22,7 @@
 //
 // ▶ node scratch/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { feed, buildProto } from './_proto-feed.mjs'
 
 process.env.PROTO_DUMP = '1'
 const scenes = process.argv.slice(2)
@@ -34,7 +34,9 @@ for (const scene of scenes) {
   const path = RIB(scene)
   if (!fs.existsSync(path)) { console.log(`\n${scene}: no ribbons at ${path} — SKIPPED LOUDLY`); continue }
   globalThis.__PROTO_DUMP = []
-  buildTileGround(JSON.parse(fs.readFileSync(path, 'utf8')), { grout: 'proto', smooth: 0 })
+  const f = feed(scene)
+  if (!f) continue
+  buildProto(f, { quiet: false })
   const D = globalThis.__PROTO_DUMP
   const st = (b, n) => b.stages.find(s => s.name === n)
   // a block "floods" when the curb band (hw − hw+cw) is far thicker than cw can explain:

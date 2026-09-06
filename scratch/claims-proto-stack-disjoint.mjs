@@ -17,7 +17,7 @@
 // ⛔ Runs on every scene given, WITH the scene's authored state loaded (Layer 0 q3).
 // ▶ node scratch/claims-proto-stack-disjoint.mjs [scene ...]
 import fs from 'fs'
-import { buildTileGround } from '../src/lib/tileGround.js'
+import { feed, buildProto } from './_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)
 if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
@@ -49,7 +49,9 @@ let failed = false
 for (const scene of scenes) {
   const path = RIB(scene)
   if (!fs.existsSync(path)) { console.log(`\n${scene}: no ribbons at ${path} — SKIPPED LOUDLY, this scene was not checked`); failed = true; continue }
-  const r = buildTileGround(JSON.parse(fs.readFileSync(path, 'utf8')), { grout: 'proto', smooth: 0 })
+  const f = feed(scene)
+  if (!f) { failed = true; continue }
+  const r = buildProto(f)
   const B = r.protoBands || {}
   const IX = { curb: index(B.curb), treelawn: index(B.treelawn), sidewalk: index(B.sidewalk), lu: index(B.lu) }
   const NAMES = ['curb', 'treelawn', 'sidewalk', 'lu']
