@@ -4974,6 +4974,9 @@ export function buildTileGround(ribbons, opts = {}) {
     // pipeline; everything after offsets a stamped contour and literally has nothing to call.
     // ⛔ `skelId` stays on the stamp — authoring is street-keyed (`A15`) and `blockCustoms`
     // resolves against it. The wall kills chains, not the operator's overrides.
+    // authoring resolves at the MINT, street-keyed (`A15`) — the operator's overrides cross
+    // the wall as VALUES, exactly like every other measure.
+    const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
     const mkStamp = (idx, st, side, i) => {
       const so = idx >= 0 ? segOrdAtVertex(idx, i) : 0
       const mz = idx >= 0 ? measures[idx] : st?.measure
@@ -4983,9 +4986,16 @@ export function buildTileGround(ribbons, opts = {}) {
         gradeSeparated: !!st?.gradeSeparated,
         pavementHW: Number.isFinite(hw) ? hw : null,
         curb: curbWidth,
-        treelawn: mz?.[side]?.treelawn ?? 0,
-        sidewalk: mz?.[side]?.sidewalk ?? 0,
-        terminal: mz?.[side]?.terminal ?? null,
+        // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
+        // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose
+        // default ladder (`gleanTreelawn`) supplies a value where nothing is authored.
+        // Reading the raw field made a SECOND, poorer lookup — the exact thing the comment
+        // three functions up forbids — and it showed: 19,094 stamps, but only 4,601 with a
+        // treelawn and 6,301 with a sidewalk, BOTH with a median of 0.00. Three quarters of
+        // the map had no ped band at all, LU flooded to the curb, and the few that survived
+        // rendered as slivers. Jacob, on the drawing: "what are we even looking at here?"
+        ...(() => { const d = resolvePedDepths(mz, side, bcOf(st?.skelId ?? st?.name, side, so))
+                    return { treelawn: d?.tl ?? 0, sidewalk: d?.sw ?? 0, terminal: d?.terminal ?? null } })(),
       }) - 1
     }
     for (let ci = 0; ci < protoChains.length; ci++) {
@@ -5029,6 +5039,10 @@ export function buildTileGround(ribbons, opts = {}) {
     // own label, labels on Clipper's Z channel, crossings resolved by walking the output
     // ring forward. ⛔ NOT `unionRingLabelled` (:429): that takes ONE ring and self-unions
     // it, and cannot carry identity across ~200 chain rectangles.
+    { const n=protoOwners.length, hw=protoOwners.filter(o=>o.pavementHW>0).length,
+        tl=protoOwners.filter(o=>o.treelawn>0).length, sw=protoOwners.filter(o=>o.sidewalk>0).length
+      const med=(f)=>{const a=protoOwners.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
+      console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
     console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
     const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
     proto = R.rings
@@ -5115,9 +5129,14 @@ export function buildTileGround(ribbons, opts = {}) {
         }
         const bnd = [0, 1, 2, 3].map(e => offsetRingVariable(ring, (i) => at(i, e), () => true, () => null))
         // a band is the difference between two successive boundaries — never a stroke
-        protoBands.curbBand.push(...differenceRings(bnd[1], bnd[0]))
-        protoBands.treelawn.push(...differenceRings(bnd[2], bnd[1]))
-        protoBands.sidewalk.push(...differenceRings(bnd[3], bnd[2]))
+        // ⛔ THE LARGER RING IS THE SUBJECT. These are HOLES eroded inward, so a bigger depth
+        // gives a SMALLER ring: bnd[0] (the curb) is the largest and bnd[3] (the LU edge) the
+        // smallest. Passing the smaller as subject asks for (inner − outer), which is the
+        // block's COMPLEMENT — the roadway — and that is exactly what it drew: cream filling
+        // the street edge to edge, every band overlapping every other.
+        protoBands.curbBand.push(...differenceRings(bnd[0], bnd[1]))
+        protoBands.treelawn.push(...differenceRings(bnd[1], bnd[2]))
+        protoBands.sidewalk.push(...differenceRings(bnd[2], bnd[3]))
         protoBands.lu.push(...bnd[3])
       }
       console.log(`[tileGround][PROTO③] concentric stack off ①: curb ${protoBands.curbBand.length} · treelawn ${protoBands.treelawn.length} · sidewalk ${protoBands.sidewalk.length} · LU ${protoBands.lu.length} ring(s)`)

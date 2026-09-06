@@ -5,6 +5,10 @@
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 const scene = process.argv[2] || 'lafayette-square'
+// --at x,z --span m : crop to a window so a band 1.5 m wide is actually visible
+const ai = process.argv.indexOf('--at'), si = process.argv.indexOf('--span')
+const AT = ai > 0 ? process.argv[ai + 1].split(',').map(Number) : null
+const SPAN = si > 0 ? Number(process.argv[si + 1]) : 300
 const RIB = scene === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${scene}/clean/ribbons.json`
 const rb = JSON.parse(fs.readFileSync(RIB, 'utf8'))
 const r = buildTileGround(rb, { grout: 'proto', smooth: 0 })
@@ -25,9 +29,11 @@ layer(B.treelawn, '#6aa83a')    // treelawn
 layer(B.curbBand, '#6f6f68')    // the curb itself
 for (const rg of (r.proto || [])) if (rg?.length >= 3) P.push(`<path d="${d(rg)}" fill="none" stroke="#3b6ef5" stroke-width="0.4" opacity="0.5"/>`)
 const pad = 40
-const out = `scratch/proto-stack-${scene}.svg`
-fs.writeFileSync(out, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${x0-pad} ${y0-pad} ${x1-x0+2*pad} ${y1-y0+2*pad}" width="1800">
-<rect x="${x0-pad}" y="${y0-pad}" width="${x1-x0+2*pad}" height="${y1-y0+2*pad}" fill="#23241f"/>
+let vx = x0 - pad, vy = y0 - pad, vw = x1 - x0 + 2 * pad, vh = y1 - y0 + 2 * pad
+if (AT) { vx = AT[0] - SPAN / 2; vy = AT[1] - SPAN / 2; vw = SPAN; vh = SPAN }
+const out = `scratch/proto-stack-${scene}${AT ? '-crop' : ''}.svg`
+fs.writeFileSync(out, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}" width="1600">
+<rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="#23241f"/>
 ${P.join('\n')}
 </svg>\n`)
 console.log(`\n▶ ${out}`)
