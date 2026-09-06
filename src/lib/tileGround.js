@@ -505,11 +505,49 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     const bIdx = owners.length
     owners.push({ skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false, srcIdx: -1, boundary: true })
     const bRing = boundary.map(p => [p[0], p[1]])
-    const S = booleanLabelled(clipperLib.ClipType.ctIntersection, R.rings, R.labels, [bRing], [bRing.map(() => bIdx)], true)
+    const bLabs = bRing.map(() => bIdx)
+    const S = booleanLabelled(clipperLib.ClipType.ctIntersection, R.rings, R.labels, [bRing], [bLabs], true)
+
+    // ⭐⭐⭐ BLOCKS = BOUNDARY − STROKED ROADS. The substrate ruling (`RIBBONS §1`), and it has to
+    // be a SUBTRACTION rather than "the holes of the stencilled ink", because those are not the
+    // same set at the rim.
+    // ⛔ WHY, measured on LS 2026-09-06 the moment the stencil landed: a block the circle CUTS is
+    // bounded partly by street ink and partly by the circle — and the circle is a CLIP, not ink —
+    // so it is no longer enclosed by ink at all. It stops being a hole and becomes exterior.
+    // 36 blocks vanished, 30 of them in the outer 20% of the radius (90–100% of R: 21 missing
+    // against 6 kept). Jacob's eye found it as Park Avenue having chains on both sides of the
+    // circle and NO drawing between them. Interior blocks were untouched, which is why every
+    // aggregate gate stayed green.
+    // ⇒ Subtract the ink FROM the disc: a rim block comes out whole, bounded by ink on some edges
+    // and by the circle on the rest. Its circle-side edges carry `__boundary__` and resolve to NO
+    // measure, so `depthAt` returns 0 there — which is already the ruled behaviour at the map edge
+    // ("edgeDepth → 0, land-use floods to the boundary, no curb/sidewalk on the map edge").
+    //
+    // ⛔⛔ ORIENTATION IS CONVERTED DELIBERATELY, NOT ASSUMED. The consumer walks blocks wound as
+    // HOLES of ① (it skips `signedArea(ring) > 0`) and insets by a POSITIVE depth. `disc − ink`
+    // hands back the same regions wound the OTHER way, and offsetting those inward by the same
+    // sign would push the curb OUTWARD. So each block ring — and its label array with it — is
+    // reversed here, once, at the source. ⭐ This repo carries both shoelace conventions and
+    // mis-reading them has cost a full day; converting at the boundary beats every consumer
+    // guessing.
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [bRing], [bLabs], R.rings, R.labels, true)
+    let blocks = null, blockLabels = null
+    if (!D.refused && D.rings?.length) {
+      blocks = []; blockLabels = []
+      for (let i = 0; i < D.rings.length; i++) {
+        const rg = D.rings[i], lb = D.labels?.[i]
+        if (!(rg?.length >= 3) || !lb) continue
+        if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
+        else { blocks.push(rg); blockLabels.push(lb) }
+      }
+    } else if (D.refused) {
+      console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
+    }
+
     // ⛔ A refused stencil is LOUD and the un-stencilled ① is returned unchanged — never a
     // half-cut contour, which would render and could not be seen to be wrong.
     if (S.refused) console.warn(`    ⛔ [①] STENCIL REFUSED (${S.refused}) — ① is the FULL bb, NOT cut at the perimeter. The rim is unstencilled; do not read rim geometry from this pour.`)
-    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx }
+    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx, blocks, blockLabels }
   }
   return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false }
 }
@@ -5201,7 +5239,9 @@ export function buildTileGround(ribbons, opts = {}) {
     if (frozenProto?.rings?.length && frozenProto?.owners?.length &&
         Math.abs((frozenProto.eps ?? -1) - PROTO_HW) < 1e-9) {
       MP = { rings: frozenProto.rings, labels: frozenProto.labels, owners: frozenProto.owners,
-             refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null }
+             refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null,
+             // ⭐ `blocks` = boundary − stroked roads, frozen alongside ①. See the block loop below.
+             blocks: frozenProto.blocks || null, blockLabels: frozenProto.blockLabels || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
@@ -5330,17 +5370,42 @@ export function buildTileGround(ribbons, opts = {}) {
       if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
       return pts[o.srcIdx]
     }
-    const easedByBlock = {}          // ① hole ring index → its curb ring(s) + per-vertex ① labels
+    const easedByBlock = {}          // BLOCK index → its curb ring(s) + per-vertex ① labels
+    // ⛔⛔ ONE INDEX SPACE FOR EVERY CONSUMER. `easedByBlock` is keyed by position in the block
+    // list, so every loop that reads it MUST enumerate the same list. When the curb loop was
+    // switched to `blocks` and the two downstream loops were left on `R.rings`, the keys silently
+    // referred to different objects and 61 blocks lost their tiles — a mismatch that throws no
+    // error and only shows up as absent geometry. Hoisted here so the three cannot drift again.
+    let protoUseBlocks = false, protoBlockRings = null, protoBlockLabels = null
     // ⛔ The ease's report and its `protoRAt` resolver are EXCISED with it. `protoNodeOf` and the
     // crossing identity SURVIVE and are still frozen — a corner is still known, by construction, as
     // a place two chains crossed. What is gone is the pass that tried to ROUND it afterwards.
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
       let noWidth = 0, gsSkipped = 0
-      for (let k = 0; k < R.rings.length; k++) {
-        const ring = R.rings[k], labs = R.labels[k]
+      // ⭐⭐⭐ THE BLOCKS COME FROM `boundary − stroked roads`, NOT FROM ①'s HOLES.
+      // ⛔ WHY THE HOLES ARE WRONG, measured on LS the day the stencil landed (2026-09-06): once
+      // ① is cut by the circle, a block the circle CUTS is bounded partly by ink and partly by
+      // the circle — and the circle is a CLIP, not ink — so it is no longer enclosed by ink. It
+      // stops being a hole and becomes exterior. 36 blocks vanished, 30 of them in the outer 20%
+      // of the radius (90–100% of R: 21 gone against 6 kept). Interior blocks were untouched,
+      // which is exactly why every aggregate gate stayed green and only the eye caught it —
+      // Jacob, on Park Avenue: chains on both sides of the circle and NO drawing between them.
+      // ⭐ A rim block's circle-side edges are owned by `__boundary__`, which resolves to NO
+      // measure, so `depthAt` returns 0 there — already the ruled behaviour at the map edge
+      // ("edgeDepth → 0, land use floods to the boundary, no curb/sidewalk on the map edge").
+      // ⛔ NO FALLBACK: an unbounded pour (no boundary ⇒ no `blocks`) legitimately has no rim, so
+      // it walks ①'s holes and SAYS SO. It is never silently substituted.
+      protoUseBlocks = !!(MP.blocks?.length && MP.blockLabels?.length)
+      protoBlockRings = protoUseBlocks ? MP.blocks : R.rings
+      protoBlockLabels = protoUseBlocks ? MP.blockLabels : R.labels
+      console.log(`[tileGround][①] blocks from ${protoUseBlocks ? `boundary − roads: ${protoBlockRings.length} block(s), rim blocks INCLUDED` : `①'s HOLES (no boundary in this pour) — ⛔ any block the boundary would cut is ABSENT`}`)
+      for (let k = 0; k < protoBlockRings.length; k++) {
+        const ring = protoBlockRings[k], labs = protoBlockLabels[k]
         if (!(ring?.length >= 3)) continue
-        if (signedArea(ring) > 0) continue          // outer contour — the blocks are the HOLES
+        // ⛔ The sign test applies ONLY to the holes path. `blocks` are already exactly the
+        // blocks, wound as holes by the mint — filtering them by orientation would drop them all.
+        if (!protoUseBlocks && signedArea(ring) > 0) continue   // outer contour — holes are the blocks
         const depthAt = (i) => {
           const m = protoMeasureOf(labs[i])
           if (!m) return 0
@@ -5463,9 +5528,10 @@ export function buildTileGround(ribbons, opts = {}) {
       // state, never an absence — and it falls out for free rather than being a case.
       protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
       let capped = 0, tooNarrow = 0, severed = 0
-      for (const [k, ring] of R.rings.entries()) {
-        const labs = R.labels[k]
-        if (!(ring?.length >= 3) || signedArea(ring) > 0) continue   // outer contour; blocks are the HOLES
+      for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
+        const labs = (protoBlockLabels || R.labels)[k]
+        if (!(ring?.length >= 3)) continue
+        if (!protoUseBlocks && signedArea(ring) > 0) continue        // holes-path only; blocks are the HOLES there
         const M = (i) => protoMeasureOf(labs[i])
         // the CURB — per-edge, because a street's width genuinely varies along it and that is
         // the product (`SURVEY §4`, the asphalt-edge drag). ① already sits ε off the centreline.
@@ -5659,8 +5725,9 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⛔ OPT-IN (`opts.protoProducer`), so the shipped artifact is byte-identical unless asked.
       if (opts.protoProducer) {
         protoShapeTiles = []
-        for (const [k, ring] of R.rings.entries()) {
-          if (!(ring?.length >= 3) || signedArea(ring) > 0) continue
+        for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
+          if (!(ring?.length >= 3)) continue
+          if (!protoUseBlocks && signedArea(ring) > 0) continue
           const mine = easedByBlock[k] || []
           if (!mine.length) continue
           const bandsOf = (rings) => (rings || []).filter(g => g?.length >= 3 && mine.some(EC => {

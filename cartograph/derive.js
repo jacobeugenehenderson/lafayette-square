@@ -4970,6 +4970,16 @@ export function deriveLayers(highways) {
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
       labels: MP.labels,
       owners: MP.owners,
+      // ⭐⭐ `blocks` = boundary − stroked roads (the substrate ruling), frozen WITH ① because the
+      // bake reads ① from this artifact and never re-mints. Without it the consumer falls back to
+      // ①'s holes, which LOSE every block the circle cuts — 36 on LS, 30 of them at the rim.
+      // ⛔ Rounded to the same 1e-6 as `rings`: a block edge and the ① edge it lies on must not
+      // disagree in the 7th decimal, or a downstream containment test can put a point on the
+      // wrong side of a shared edge.
+      ...(MP.blocks ? {
+        blocks: MP.blocks.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
+        blockLabels: MP.blockLabels,
+      } : {}),
       // ⛔⛔ CROSSINGS MUST BE FROZEN OR ① HAS NO CORNERS. A corner is exactly where two chains
       // cross, and `booleanLabelled` resolves a crossing vertex by INHERITING a neighbour's label —
       // so the label alone cannot say "this vertex is a node". The crossing record (who met here,
