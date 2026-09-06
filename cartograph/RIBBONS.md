@@ -310,18 +310,47 @@
 >   whenever the frozen path renders** (`BlockGeometryV2Debug.jsx`), so `buildTileGround` **does not run
 >   at idle** — the overlay appears only while an element is active. ⛔ **No producer-side overlay is
 >   visible in Survey at rest**, and the doc said otherwise for two days.
->   ⚠️ `?proto=1` was BUILT AND THEN EXCISED, 2026-09-06, and the reason is the useful part.
->   It drew ① (magenta, off the frozen artifact) and ② (cyan) over the live map. ⛔ **② was not fit to
->   look at** — it threw long thin triangles spanning blocks — so the overlay put broken geometry on
->   top of the operator's map and cost him three passes trying to read around it. Jacob: *"all these
->   lines look awful; I don't even know what making the producer is."*
->   ⭐⭐ **THE RULE THIS EARNS: DO NOT EYE-GATE A CONSTRUCTION THAT IS NOT READY, AND NEVER IN THE
->   OPERATOR'S OWN VIEW.** An overlay is not free — it competes with the map for the one instrument
->   that can judge either. ② is worked in `scratch/draw-proto-corner.mjs` (an SVG harness) until the
->   cyan lies on the curb; only then does it earn a place on screen.
->   ⚠️ The URL itself predates the code: it was asserted as a gate by the session reverted in
->   `5560cf6a` and matched nothing, so typing it showed the ordinary chain-built map with no sign ①
->   was absent. ⛔ It matches nothing again now — that is deliberate, not a regression.
+>   ### ⭐⭐⭐ ① IS THE PRODUCER — LANDED 2026-09-06, behind `bake-ground --proto`.
+>   `shape.json` is built from ②③: 104 tiles, every one `producer:'proto'`, each carrying its BANDS.
+>   ⛔ **A change of CONSUMER, not of construction** — the distinction `5560cf6a` turns on. ②③ already
+>   offset the grout contour; the bake now freezes what they made. No geometry was written to land it.
+>   ⛔ **The tile carries BANDS, not `runs`.** `sectionOpen` → `sectionPassTile` is the per-RUN chain
+>   painter ③ replaces; feeding it proto tiles re-introduces the seams that are the whole tell.
+>   `sectionOpen` short-circuits on a tile carrying `bands`, detected by the tile's own shape so a
+>   half-migrated artifact cannot silently take the wrong path.
+>   ⛔ **OFF BY DEFAULT, proven twice:** `a03-curb-identity --against` byte-identical, and a normal bake
+>   reproduces the prior `shape.json` byte for byte. `--proto` REFUSES rather than falling back.
+>   ### ⛔⛔ AND IT IS INVISIBLE IN SURVEY — `sectionFrozen = !surveyActive && !!frozenShape`
+>   **While the Survey tool is selected the Designer ignores `shape.json` and live-builds from the
+>   chains**, by design (Survey strokes the element under the operator's hand). ⇒ A producer change
+>   shows in **MEASURE, never in Survey.** ⭐ This cost a round trip — the operator hard-refreshed
+>   Survey and correctly reported "no visible change".
+>   ⚠️ **CONSEQUENCE OPEN:** the authoring surface and the shipped shape now disagree — Survey draws
+>   the chain curb while everything frozen is ①-produced.
+>
+>   ### ⭐⭐⭐ ②'s ACCEPTANCE, IN THE OPERATOR'S WORDS — *"if the centerline is smooth, their offsets should match."*
+>   ▶ `node scratch/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**
+>   ⛔ **The "50 blocks are not parallel" finding was FIVE successive errors in that one probe** — bbox
+>   assignment → centroid assignment → nearest-edge scoring → segment clamping → candidate selection.
+>   The "~2.4 m constant" was `hw/sin(θ/2)`: a MITER APEX measured to a CLAMPED SEGMENT instead of the
+>   edge's LINE. ⭐ Measure to the LINE; pick candidate edges by SEGMENT proximity (picking them by
+>   line-distance lets a distant parallel edge match by coincidence — permissive, and it also reports
+>   100%). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
+>   this section's reconcile gate says "misfiles" a non-convex island. Reading it was not enough.
+>
+>   ### ⛔⛔ AND THE EYE SAYS THE SHAPES ARE STILL WRONG (Jacob, 2026-09-06, on the ①-produced map)
+>   > *"FIX THE CURBS. The polygons suck, these should be clean shapes."*
+>   ⛔ **CAUSE NOT ESTABLISHED — and 101/101 parallelism does NOT contradict it.** A polygon can be
+>   exactly parallel and still be an ugly shape: every vertex at the right distance says nothing about
+>   stepped notches, slivers, or a lopsided cul-de-sac. ⚠️ The number invites the wrong conclusion,
+>   which is why the distinction is written here.
+>   ⚠️ **CANDIDATE TRIED AND UNSUPPORTED:** the miter clamp (`offsetRingVariable`, "acute-corner spike
+>   → bevel"; measured doing real damage at West-18th↔Dolman, `§3.3`). Switching it off for the proto
+>   path moved the gate **101/101 → 97/101** — worse — so it is backed out. ⛔ It was written up as the
+>   cause BEFORE it was measured; `noMiterClamp` exists but is not used.
+>   ⚠️ `?proto=1` was built and EXCISED the same day: it drew ①/② over the live Survey view and ② was
+>   not fit to look at. ⭐⭐ **THE RULE IT EARNED — do not eye-gate a construction that is not ready,
+>   and never in the operator's own view.** Iterate in `scratch/draw-one-block.mjs` (`--street NAME`).
 > - ### ⛔⛔ EVERY ②③ NUMBER TAKEN BEFORE 2026-09-06 WAS MEASURED WITH **AUTHORING OFF** — void, re-take it.
 >   Seven of the eight `scratch/claims-proto-*` probes called `buildTileGround(rb, { grout: 'proto' })`
 >   with **no `blockCustoms`**, and `claims-proto-stack-disjoint`'s own header asserted the opposite.
