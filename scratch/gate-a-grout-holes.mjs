@@ -50,6 +50,12 @@ for (const scene of SCENES) {
   // ── the GROUT: every chain stroked at ε, united.
   const streets = rb.streets.filter(s => s.points?.length >= 2 && (KEEPGS || !s.gradeSeparated))
   const co = new ClipperOffset(2.0, ARC)
+  // ⛔⛔ jtRound + etOpenRound ROUNDS every join and every cap at ε. Harmless HERE — this
+  // counts topology and a rounded ε-corner encloses the same holes — but ⛔ DO NOT COPY
+  // THIS CALL FORWARD TO BUILD THE PROTOPOLYGON. Jacob ruled 2026-09-05: nothing on the
+  // proto may be rounded. An arc of radius ε offset outward by w comes out at radius
+  // ε+w ≈ w, so a rounded proto pins every corner to the road's half-width and makes an
+  // authored R=0 unreachable. (Geometric argument, NOT measured — say so if you cite it.)
   for (const s of streets) co.AddPath(s.points.map(toC), JoinType.jtRound, EndType.etOpenRound)
   const grout = []
   co.Execute(grout, EPS * SCALE)

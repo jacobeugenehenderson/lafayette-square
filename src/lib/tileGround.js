@@ -4783,14 +4783,45 @@ export function buildTileGround(ribbons, opts = {}) {
     if (hw <= 1e-6) continue
     ;(HIGHWAY_CLASSES.has(s.highway) ? Hacc : Aacc).push(...strokeOpen(sm, hw))
   }
-  // ── [GROUT] The grout as a POSITIVE OBJECT — RIBBONS §1, ruled 2026-09-04 ─────
-  // Jacob: "The grout is a mathematical invention. It's not real. But it's a closed
-  // polygon, and everything offsets from it… we were offsetting chains and THEN
-  // polygonizing; I am saying we should polygonize the chain itself so the corners and
-  // end caps (flat or rounded) are there in the ur-primitive way."
-  // ⇒ polygonize ONCE, offset ONCE. A corner is a join in one contour, a cap is where
-  // the contour turns around, a mouth is two vertices because the object has width.
-  // None of the three is constructed.
+  // ── [GROUT] ⛔⛔ READ THIS FIRST: WHAT THIS BUILDS IS THE **CURB**, NOT THE PROTOPOLYGON.
+  // Corrected 2026-09-05 after Jacob caught the conflation ("so the chains offset
+  // polygonization *was* the solution?" — yes, and that was the drift).
+  //
+  // HIS MODEL IS **TWO OBJECTS**, not one object at two moments:
+  //   "I am talking about a new polygon: a protopolygon. The humunculus. It is not a real
+  //    width; let's say it's .00001 symmetrical between nodes, and the corners join and
+  //    round at that scale, and the end caps are also drawn at that proto scale. That is
+  //    SEPARATE from the polygons of the curbs. This is equivalent to … 'Expand
+  //    appearance' and then 'Pathfinder > JOIN' … but the stroke on the line segments is
+  //    .00001, just for geometry purposes."
+  //   ① the PROTOPOLYGON — width-free, permanent, one closed compound path. Where the
+  //      topology lives: corners join and caps close AT PROTO SCALE.
+  //   ② the CURB polygons — SEPARATE, offset FROM ①.
+  //
+  // ⛔ THIS CODE HAS NO ①. It strokes each chain directly at `feWidthAt`'s AUTHORED
+  // half-width and unions the result — offset-then-polygonize, the old order, with better
+  // bookkeeping. It is a correct curb and it measures well on the legs (Gate B: median
+  // 0.000 m over 216k vertices, and the D6a fold class does not reproduce). It is NOT the
+  // ruling, and the corners prove it: they come out sharp and want a fillet pass, which
+  // under the real model does not exist, because ① already holds the corner.
+  // ⇒ THE BUILD THAT IS OWED: construct ①, then offset it ONCE with per-edge deltas
+  // through `offsetRingVariable` (which already takes a per-edge `depthAt` with a
+  // `[start,end]` ramp and is winding-aware) — a change of SUBJECT, not new code.
+  //
+  // ⛔ AND WHEN ① IS BUILT: **NOTHING ON IT MAY BE ROUNDED** (Jacob, 2026-09-05 — "the
+  // line segments get SMOOTHED but the downstream details don't get ROUNDED, until they
+  // naturally get rounded by the geometry"). Reason is geometric, NOT measured: an arc of
+  // radius ε offset outward by w comes out at radius ε+w ≈ w, so rounding the proto pins
+  // every corner to the road's half-width and makes an authored R=0 UNREACHABLE.
+  // ⚠️ `scratch/gate-a-grout-holes.mjs` strokes with jtRound + etOpenRound — harmless as a
+  // topology count, but it is the call anyone would copy forward to build ①, and it bakes
+  // in exactly that. A warning sits at that line.
+  //
+  // ⛔ IDENTITY DOES NOT SURVIVE THE UNION BELOW. `unionRings` returns anonymous rings.
+  // ⚠️ `unionRingLabelled` is NOT the fix — it takes ONE ring (`:429`) and self-unions it.
+  // The usable primitive is `booleanLabelled` (`:364`), which takes N subject rings EACH
+  // with its own label array, so labels can ride Clipper's Z channel across every chain
+  // rectangle here. Unbuilt. This is the blocker on polygonize-and-name BEFORE Survey.
   //
   // Per chain, walk its OWN vertices — no resampling — and read the per-fe authored
   // half-width per side through `feWidthAt`/`segOrdAtVertex`, the SAME resolvers the
