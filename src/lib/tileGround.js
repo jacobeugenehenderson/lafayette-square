@@ -431,19 +431,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
       nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
     }
     const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
-    // ⭐⭐ THE TIP RIDES AS IDENTITY, STAMPED WHERE IT IS KNOWN EXACTLY. A dead-end cap is a
-    // ring vertex whose two edges carry the same chain on OPPOSITE sides *at that chain's own
-    // endpoint* (the one cap criterion, `RIBBONS §1` tile model). The first half of that test
-    // is already in the stamp; this is the second half.
-    // ⛔⛔ AND IT MAY NOT BE RECOVERED GEOMETRICALLY. `detectTileCaps` matches a ring vertex to
-    // a chain endpoint through `tipKey`, which rounds to 1 mm — but ①'s vertices sit ε off the
-    // chain (5 mm at the default), so that match can NEVER fire on a proto tile and a distance
-    // test is the only thing that would make it. ⛔ That test is proximity recovery of a chain
-    // label — `ROADMAP A15`'s explicitly forbidden third recovery, which already killed the
-    // nearest-fe match and the walk-ordinal coupler. Here `i` IS the station, exactly, at zero
-    // cost. ⭐ ε is a DECLARATION, not a tolerance, and nothing downstream may treat it as one.
-    const tipAtI = (i) => i === 0 ? 'start' : (i === P.length - 1 ? 'end' : null)
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, tip: tipAtI(i) }) - 1
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -1273,139 +1261,40 @@ export function capCentre(t) {
 //     (`RIBBONS §1` gate 1 case C measured the punch-out as clean: 93 islands ↔ 101 tiles,
 //     0 merges / 0 splits / 0 straddlers — ⛔ re-run, never quote).
 //   · caps are not carried; `detectTileCaps` reads the ring and would have to run here.
-// ⭐⭐⭐ THE STENCIL — `blocks = boundary − stroked roads`, which is `RIBBONS §1` verbatim.
-//
-// ⛔ THIS IS NOT A CROP BOLTED ONTO THE MINT. Both of the injection test's failures are ONE
-// missing piece, and the measurement says so on BOTH towns (`claims-proto-homeless-census`):
-//   · HOMELESS  every hole ① mints outside the rim — LS 34/34, HPDM 1110/1110, none inside
-//     the disc. ① builds the FULL network ("build full, crop last"); the tiles are cropped.
-//   · UNRECEIVED the rim blocks — LS 22/22 and HPDM 34/35 carry a `__boundary__` edge. ①
-//     alone cannot mint them: a rim block does not close against a street, it closes against
-//     the EDGE OF THE DRAWING.
-// One difference against the boundary closes both — the outside falls away because it is not
-// in the subject, and the rim blocks appear because the subject's own edge closes them.
-//
-// ⛔⛔ THE BOUNDARY ARRIVES AS AN ARGUMENT (`BRIEF-slice2 §4`, Jacob's ruling): a render
-// artifact may not decide block topology, so this function reads no file. ⭐ And the boundary
-// is the PUNCH'S STENCIL — it BOUNDS and carries `__boundary__` identity, but it is NOT a
-// chain: it gets exactly one owner, it is never segmented, and nothing downstream may resolve
-// an authored width against it (`tilesFromFrozen` already gives it `streetIdx: -1`, depth 0).
-//
-// ⭐ Identity rides THIS boolean too — the same `carryEdges` ledger the mint uses, and for the
-// same reason: a block's corners are all crossings, so vertices cannot carry the owner and
-// edges must (`booleanLabelled`, the edge-resolution note).
-export function stencilProtopolygon({ proto, boundary }) {
-  if (!proto?.rings?.length || !proto?.owners?.length) return null
-  let ring = Array.isArray(boundary) ? boundary.filter(p => Array.isArray(p) && p.length >= 2).map(p => [p[0], p[1]]) : []
-  // A closed ring may or may not repeat its first point; Clipper wants it once.
-  if (ring.length > 1) { const a = ring[0], b = ring[ring.length - 1]; if (Math.hypot(a[0] - b[0], a[1] - b[1]) < 1e-9) ring.pop() }
-  // ⛔ NO FALLBACK. Without a stencil the honest answer is "I cannot punch", not "here are the
-  // holes" — the caller asked for blocks and would get a map missing every rim block.
-  if (ring.length < 3) return { rings: [], labels: [], owners: proto.owners, refused: 'no-boundary' }
-  // ⛔ UNIFORM WINDING, same convention as the mint: non-zero fill cancels an opposite-wound
-  // subject against the clip and the difference would come back inside-out.
-  if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) ring.reverse()
-  // ⭐ ONE owner for the whole rim. `side: 'right'` matches what the frozen artifact already
-  // stores on all 290 of LS's `__boundary__` edges — the sentinel path keys off `skelId`, not
-  // side, but agreeing with the shipped artifact costs nothing and a disagreement would.
-  // ⛔⛔ A GRADE-SEPARATED ROAD MAY NOT CUT A BLOCK, AND THIS REFUSES RATHER THAN LET IT.
-  // `SKELETON §2` on `gradeSeparated`: "Consumers EXCLUDE THESE FROM THE FACE GRAPH." A motorway
-  // flying over a neighborhood does not bound a city block — the block runs on underneath it, which
-  // is exactly what the frozen tiles do (LS tile #12 spans a whole interchange at 291,298 m²).
-  // ⭐ MEASURED, which is why this is a wall and not a preference — the injection test, LS:
-  //        ① minted WITH the highways in the cut    147 tiles, SPLIT 7
-  //        ① minted WITHOUT them                    102 tiles, SPLIT 1   (frozen: 101)
-  // ⛔ AND THE MINT IS RIGHT TO CARRY THEM — Jacob, 2026-09-05: "the highways etc. are gone from
-  // the protopoly rendering; they have to be there." ① is the ink of the whole network. The two
-  // facts are not in tension: a highway belongs in THE DRAWING and not in THE BLOCK GRID, and the
-  // stamp already distinguishes them BY IDENTITY. So the ① you hand a renderer and the ① you hand
-  // this function are different objects, and mixing them up silently would hand back a partition
-  // sliced along every off-ramp — a plausible-looking wrong map, which is the one thing a kit may
-  // never produce (Layer 0 q2). ⇒ mint the grid's ① with `gradeSep: []`.
-  const gsOwners = proto.owners.filter(o => o?.gradeSeparated).length
-  if (gsOwners) return { rings: [], labels: [], owners: proto.owners, refused: `grade-separated-ink-in-the-cut (${gsOwners} stamps) — mint the block grid's ① with gradeSep: []; a highway belongs in the DRAWING, not the BLOCK GRID (SKELETON §2)` }
-  const owners = [...proto.owners, { skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false }]
-  const bIdx = owners.length - 1
-  const R = booleanLabelled(clipperLib.ClipType.ctDifference,
-    [ring], [ring.map(() => bIdx)], proto.rings, proto.labels, true)
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, stencilVerts: ring.length }
-}
-
-// ⭐ `take` — WHICH RINGS ARE THE BLOCKS, and it differs by what produced them:
-//   'holes' (default, unchanged) — a raw mint. ① is road INK, so the blocks are its HOLES.
-//   'faces'                      — a stencilled ①. The difference already subtracted the ink,
-//                                  so the blocks are the FACES and must NOT be reversed.
-// ⛔ Default is the shipped call, byte-for-byte (`ROADMAP A18`: opt-in at the call site).
-export function tilesFromProto(proto, streets, { take = 'holes' } = {}) {
+export function tilesFromProto(proto, streets) {
   if (!proto?.rings?.length || !proto?.owners?.length) return null
   const { rings, labels, owners } = proto
   const idxBySkelId = new Map()
   streets.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i) })
   const tiles = [], skipped = []
-  let voids = 0
   for (let k = 0; k < rings.length; k++) {
     const ring0 = rings[k], labs0 = labels?.[k]
     if (!(ring0?.length >= 3) || !labs0) continue
-    // ⛔ THE BLOCKS ARE THE HOLES of a raw mint. The outer contour is the network's own outline
-    // and is not a block; `signedArea > 0` is the shipped convention for it (② reads it the same
-    // way). ⭐ After the STENCIL the sense inverts: the difference already removed the ink, so
-    // the blocks are the positive faces and a negative ring is a void in one (an isolated loop
-    // of road inside a block) — not a block, and counted rather than silently dropped.
-    const A0 = signedArea(ring0)
-    if (take === 'faces' ? A0 <= 0 : A0 > 0) { if (take === 'faces' && A0 < 0) voids++; continue }
-    // ⛔ AND THE WINDING MUST MATCH A FACE. Downstream `offsetRingVariable` is winding-aware, so
-    // handing it a negative-area ring where the face walk hands a positive one inverts every
-    // depth — the band would grow outward into the road. A hole must be reversed, ring AND
-    // labels together (or every edge takes its neighbour's owner); a face is already correct.
-    const ring = take === 'faces' ? ring0.slice() : ring0.slice().reverse()
-    const labs = take === 'faces' ? labs0.slice() : labs0.slice().reverse()
-    const edges = [], tipAt = []
+    // ⛔ THE BLOCKS ARE THE HOLES. The outer contour is the network's own outline and is not a
+    // block; `signedArea > 0` is the shipped convention for it (② reads it the same way).
+    if (signedArea(ring0) > 0) continue
+    // ⛔ AND THE WINDING MUST BE FLIPPED TO MATCH A FACE. Downstream `offsetRingVariable` is
+    // winding-aware, so handing it a negative-area ring where the face walk hands a positive
+    // one inverts every depth — the band would grow outward into the road. Reverse the ring AND
+    // its labels together, or every edge takes its neighbour's owner.
+    const ring = ring0.slice().reverse(), labs = labs0.slice().reverse()
+    const edges = []
     let bad = null
     for (let i = 0; i < ring.length; i++) {
       const o = owners[labs[i]]
       if (!o) { bad = 'unlabelled edge'; break }
-      // ⭐ THE RIM IS AN EDGE OF THE DRAWING, NEVER AN ABSENCE (`ARCHITECTURE`, the compound
-      // shape). Same sentinel `tilesFromFrozen` already uses: no street, zero depth, LU floods
-      // to the boundary. ⛔ Not a refusal — a rim block is correct, it just has no street here.
-      if (o.skelId === BOUNDARY_EDGE_SKEL) {
-        const fwd = o.side === 'right'
-        edges.push({ streetIdx: -1, forward: fwd, side: fwd ? 'right' : 'left', boundary: true })
-        tipAt.push(null)   // ⛔ KEEP `tipAt` IN LOCKSTEP WITH `edges` — a rim edge has no tip, but
-        // skipping the push here shifts every later index and silently drops the caps on exactly
-        // the tiles that touch the boundary (measured: 10 of LS's 50, all at d 788–891 of r=892).
-        continue
-      }
       const si = idxBySkelId.get(o.skelId)
       if (si === undefined) { bad = `no street for ${o.skelId}`; break }
       const forward = o.side === 'right'
       edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
-      tipAt.push(o.tip || null)
     }
     // ⛔ A TILE WE CANNOT NAME IS REFUSED AND COUNTED, NEVER SILENTLY DROPPED. An unnamed ring
     // downstream takes depth 0 and lays its curb on the centreline — a plausible-looking wrong
     // map, which is the one outcome a kit may not have (`CLAUDE.md` Layer 0 q2).
     if (bad) { skipped.push({ k, why: bad, area: Math.abs(signedArea(ring0)) }); continue }
-    // ⭐⭐ DEAD-END CAPS — the SAME criterion `detectTileCaps` applies to a frozen tile, with
-    // its one un-runnable clause supplied from identity instead of geometry: same chain on the
-    // two adjacent edges, OPPOSITE sides, at that chain's own endpoint. ⛔ Caps carry IDENTITY
-    // ONLY — `{vertexIdx, skelId, capEnd}`, no width and no radius. The asymmetric bulb is
-    // already ruled and lives downstream (`bbf4adf6`): radius `(hwL+hwR)/2`, centre the tip
-    // displaced `(hwR−hwL)/2`, because THE CHAIN IS NOT THE ROAD'S CENTRELINE and an asymmetric
-    // authored `pavementHW` is what "the traced line is off-centre" looks like. ⭐ So a cap
-    // needs no per-side reasoning here, and if this had a left branch and a right branch it
-    // would be the wrong fix — Jacob's ruling, 2026-08-12. Stamping identity is the whole job.
-    const caps = []
-    for (let i = 0; i < edges.length; i++) {
-      const inc = edges[(i - 1 + edges.length) % edges.length], out = edges[i]
-      if (inc.streetIdx < 0 || inc.streetIdx !== out.streetIdx || inc.side === out.side) continue
-      const capEnd = tipAt[(i - 1 + edges.length) % edges.length] || tipAt[i]
-      if (!capEnd) continue
-      const st = streets[inc.streetIdx]
-      caps.push({ vertexIdx: i, skelId: st?.skelId || st?.name, capEnd })
-    }
-    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(caps.length ? { caps } : {}) })
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
   }
-  return { tiles, skipped, voids }
+  return { tiles, skipped }
 }
 
 export function tilesFromFrozen(frozen, streets) {
@@ -3115,12 +3004,6 @@ export function buildTileGround(ribbons, opts = {}) {
     CURB_PRODUCER_PROSE)
   const curbWidth = Number.isFinite(opts.curbWidth) ? opts.curbWidth : CURB_WIDTH
   const stencil = opts.stencil && opts.stencil.length >= 3 ? opts.stencil : null
-  // ⛔ ε IS NOT A REAL WIDTH — it is not real at all (Jacob); its value carries no
-  // information, only its non-zero-ness, and the topology is byte-stable across a 250x
-  // range. Declared here because ① is both a DRAWING and, below, a TILE SOURCE. The full
-  // doctrine (and the integer-floor constraint that is its one real bound) sits with the
-  // construction at `opts.grout === 'proto'`.
-  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
   // Smooth centerlines BEFORE face extraction so the grout (shared tile edges)
   // → tiles → strips all come out smooth — loops/curves round. smoothChain is
   // INTERPOLATING (passes through every authored vertex), so intersection
@@ -3307,7 +3190,6 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
   const deadEndTips = new Map()
-  const deadEndTipsById = new Map()   // skelId@capEnd → the same record, for rings that are not chain nodes (①)
   // [DEAD-END MOUTH WRAP] skelIds that own a genuine deg-1 dead-end tip. A loop
   // street (Benton / Waverly / Saint Vincent — closed bodies, "don't kill Benton")
   // has NO deg-1 endpoint (both ends are junctions), so it is EXCLUDED here — the
@@ -3370,18 +3252,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // `px,py` and the KEY stay the chain's tip NODE — every lookup, cap-flip
       // slot and ring-vertex match is keyed off it. `c` is the bulb's CENTRE and
       // is the only thing the circle primitives may use.
-      const _tipRec = { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1], c: [capCx, capCy] }
-      deadEndTips.set(tipKey(pts[idx]), _tipRec)
-      // ⭐⭐ THE SAME RECORD, ALSO KEYED BY IDENTITY — for a tile whose ring vertices are NOT
-      // chain nodes. ①'s ring sits ε off the centreline, and `tipKey` rounds to 1 mm while ε is
-      // 5 mm, so the coordinate lookup below can never hit on a proto tile. ⛔ THE CURE IS NOT
-      // TO WIDEN THE MATCH BY ε: "ε is a DECLARATION, not a tolerance", and a distance-matched
-      // chain label is `ROADMAP A15`'s forbidden recovery — the one that killed the nearest-fe
-      // match and the walk-ordinal coupler. The cap already KNOWS its chain and its end, so ask
-      // by identity. ⭐ Nothing about the bulb changes: `hw` is still `(hwL+hwR)/2` and `c` is
-      // still the tip displaced `(hwR−hwL)/2` (`bbf4adf6`) — both computed from the CHAIN and
-      // the authored widths, neither reading ①. ε never enters the fan, only the join.
-      deadEndTipsById.set((s.skelId || s.name) + '@' + (idx === 0 ? 'start' : 'end'), _tipRec)
+      deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1], c: [capCx, capCy] })
     }
   }
 
@@ -3397,69 +3268,6 @@ export function buildTileGround(ribbons, opts = {}) {
   // semantics stay bit-for-bit what they were (rings AND strokes smoothed
   // together, never mixed).
   let tiles = smooth > 0 ? null : tilesFromFrozen(ribbons?.tiles, streets)
-
-  // ══ [① AS THE PRODUCER] THE PROTOPOLYGON AS A TILE SOURCE ═════════════════
-  // ⭐⭐⭐ THE POINT OF THE WHOLE EXERCISE (Jacob, 2026-09-06): "with the protopolygon
-  // these shapes are impossible." A junction knot, a spur retracing into a zero-width
-  // slit, a fillet struck from a needle — every one is what you get when each chain is
-  // stroked SEPARATELY and the strokes MEET. In ONE united contour there is no meeting;
-  // the class is not fixed, it is unconstructible. So this is a change of CONSUMER, not
-  // a new construction — the comment at `opts.grout === 'proto'` has said so since
-  // 2026-09-04 ("this DRAWS, it does not produce... making it the producer is owed").
-  //
-  // ⛔ DEFAULT OFF, STRUCTURALLY — same wall as the substrate walk above: nothing passes
-  // `opts.protoTiles` and the env var is unset, so with the flag off `tiles` is the
-  // frozen artifact byte-for-byte and this block cannot touch it. ⭐ And unlike that
-  // block this is NOT a per-tile election: ① is TOTAL. The stencil closes the rim blocks
-  // against the boundary, so ① produces the whole partition — rim included — and the
-  // hybrid seam the walk needs does not exist here. It replaces the list or it throws.
-  //
-  // ⛔⛔ IT THROWS RATHER THAN FALLING BACK. An operator who asked for ① and silently got
-  // the frozen tiles would be looking at the old map while believing they were testing
-  // the new producer — the plausible-looking success Layer 0 q2 forbids, in the one place
-  // it would be hardest to notice (the two maps are SUPPOSED to look alike).
-  const protoTiles = opts.protoTiles ?? (typeof process !== 'undefined' && process.env?.PROTO_TILES === '1')
-  if (protoTiles) {
-    // ⛔ THE BOUNDARY ARRIVES AS AN ARGUMENT AND ALWAYS HAS — `opts.stencil` is the EXTENT
-    // tool's polygon (`bake-ground.js:110`, "the stencil's SSoT is neighborhood_boundary
-    // .json"), handed down by every caller. So `BRIEF-slice2 §4` ("a render artifact may
-    // not decide block topology") is satisfied by construction: nothing here reads a file.
-    if (!stencil) throw new Error('[tileGround][①] protoTiles requires opts.stencil — blocks = boundary − stroked roads (RIBBONS §1), and without the boundary every rim block is missing. Refusing to draw a map with no rim.')
-    // ⛔ `gradeSep: []` — THE BLOCK GRID'S ①, NOT THE DRAWING'S, and they are different
-    // objects. `SKELETON §2`: "Consumers exclude these from the face graph" — a motorway
-    // does not bound a city block, the block runs on underneath it. Minting them into the
-    // cut slices the partition along every off-ramp (measured on LS: SPLIT 7 vs 1).
-    // `stencilProtopolygon` refuses a ① that carries grade-separated ink, so this is not a
-    // preference expressed here; it is the only ① that function will accept.
-    const gridProto = mintProtopolygon({ streets: streetsOrig, gradeSep: [], eps: PROTO_HW })
-    const punched = stencilProtopolygon({ proto: gridProto, boundary: stencil })
-    if (!punched || punched.refused) throw new Error(`[tileGround][①] the stencil refused: ${punched?.refused || 'null'}`)
-    const built = tilesFromProto(punched, streetsOrig, { take: 'faces' })
-    if (!built?.tiles?.length) throw new Error('[tileGround][①] the stencil produced no blocks')
-    // ⛔ NEVER SILENT — every departure from the frozen list is printed, including the
-    // ones that are fine. A quiet producer swap is a fallback wearing a feature's clothes.
-    const rim = built.tiles.filter(t => t.edges.some(e => e.boundary)).length
-    console.log(`[tileGround][①] PRODUCER — ${built.tiles.length} blocks from ①'s holes (${rim} closing on the rim), replacing ${tiles?.length ?? 0} frozen tiles. ε=${PROTO_HW} m, ${gridProto.rings.length} chain rings → ${punched.rings.length} stencilled.`)
-    if (built.skipped.length) console.warn(`[tileGround][①] ${built.skipped.length} hole(s) REFUSED — unnamed, counted not dropped: ${built.skipped.slice(0, 4).map(k => `${k.area.toFixed(0)} m² (${k.why})`).join(' · ')}`)
-    if (built.voids) console.warn(`[tileGround][①] ${built.voids} void(s) — a ring of road ink enclosed inside a block; not a block.`)
-    // ⛔⛔ AND THE ONE THING ① DOES NOT CARRY, SAID OUT LOUD RATHER THAN PAPERED OVER:
-    // DEAD-END CAPS. A frozen tile carries `caps` stamped ONCE at prebake (`derive.js`,
-    // the "freeze, don't derive live" decision, 2026-07-17) and the cul-de-sac cap flip
-    // authors against them (`ROADMAP A0`/`A1`). ①'s holes carry no such stamp, so a
-    // scene drawn from ① has NO cap identity and every cul-de-sac loses its authored
-    // bulb. ⛔ NOT cured here by re-deriving them — that would re-open the very leak the
-    // freeze closed, and quietly. It is the next piece of work, and until it lands this
-    // flag is a topology experiment, not a way to draw the map.
-    // ⭐ CAPS ARE CARRIED NOW — ①'s stamps stamp the tip (`tip: 'start'|'end'`) where `i` IS the
-    // station, exactly, so `tilesFromProto` applies the same cap criterion a frozen tile gets.
-    // ⛔ STILL COMPARED OUT LOUD RATHER THAN ASSUMED: a shortfall against the frozen artifact is
-    // the cul-de-sac authoring going missing, and it must never be discovered by eye.
-    const capsFrozen = (tiles || []).reduce((a, t) => a + (t.caps?.length || 0), 0)
-    const capsProto = built.tiles.reduce((a, t) => a + (t.caps?.length || 0), 0)
-    console.log(`[tileGround][①] dead-end caps: ${capsProto} from ① vs ${capsFrozen} frozen${capsProto === capsFrozen ? ' ✅' : ''}`)
-    if (capsProto < capsFrozen) console.warn(`[tileGround][①] ⛔ ${capsFrozen - capsProto} cap(s) FEWER than the frozen artifact — cul-de-sac bulbs are missing from this render.`)
-    tiles = built.tiles
-  }
 
   // ══ [SLICE 2 — TEMPORARY] THE SUBSTRATE WALK AS A THIRD TILE SOURCE ═══════
   // ⛔⛔ THIS BLOCK IS SCAFFOLDING AND MUST NOT HARDEN. It exists to get the
@@ -4466,29 +4274,8 @@ export function buildTileGround(ribbons, opts = {}) {
         for (const p of [run.poly[0], run.poly[run.poly.length - 1]]) {   // tip may sit at EITHER run end
           const tk = tipKey(p)
           if (seenTip.has(tk)) continue
-          const cid = capIdByTip.get(tk)
-          // ⛔ COORDINATE FIRST, SO THE FROZEN PATH IS UNTOUCHED — a frozen tile's ring vertex IS
-          // the chain node and hits here exactly, byte-for-byte as before. The identity lookup is
-          // the fallback ONLY for a ring whose vertices are not chain nodes (①, ε off), and it is
-          // a lookup by name, not a widened distance test.
-          const tByCoord = deadEndTips.get(tk)
-          const t = tByCoord || (cid ? deadEndTipsById.get(cid.skelId + '@' + cid.capEnd) : null)
-          if (t) {
-            seenTip.add(tk)
-            // ⭐⭐ `p` IS THE CHAIN'S TIP NODE — that is the stated invariant at the record's own
-            // construction ("every key, cap-flip slot and ring-vertex match rides it"), and on a
-            // FROZEN tile it holds for free because the ring vertex IS the chain node. On a proto
-            // tile the ring sits ε off, so passing the ring vertex hands every downstream consumer
-            // a node that is ε wrong — MEASURED as exactly that by the tangency gate:
-            // `tessel-cap-bulb-verify --proto` scored 23 caps off by 5.09e-3 m at ε=5e-3.
-            // ⛔ The bulb itself was never wrong (CONTROL: ① resolves the same radius AND centre as
-            // the frozen tile, 46/46) — so this is the invariant restored, not the geometry changed.
-            // ⛔ ONLY on the identity path: when the coordinate lookup hit, `p` stays exactly the
-            // point that hit, so the frozen path is byte-identical (`tipKey` rounds to 1 mm, and
-            // substituting `px,py` there could move `p` by up to that).
-            const pNode = tByCoord ? p : [t.px, t.py]
-            ;(t.cap === 'round' ? roundTips : bluntTips).push({ p: pNode, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) })
-          }
+          const t = deadEndTips.get(tk)
+          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
         }
       }
     }
@@ -5326,9 +5113,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⚠️ The one constraint: ε must clear the integer floor of the stage that HOLDS it.
   // Clipper is integer-space and `toClipper` rounds — SCALE=1000 here (1 mm), SCALE=100
   // at prebake (1 cm). Below the floor the object silently ceases to exist.
-  // (`PROTO_HW` is hoisted to the top of this function — ① is now a TILE SOURCE as well
-  //  as a drawing, and the producer block needs ε before this point. The ε doctrine above
-  //  is its documentation and stays here, where the object it describes is built.)
+  const PROTO_HW = Number.isFinite(opts.protoHW) ? opts.protoHW : 0.005
   let proto = null
   if (opts.grout === 'proto') {
     // ⛔⛔ NOT `ClipperOffset` ANY MORE, and the reason is step ②, not taste. An offset MINTS

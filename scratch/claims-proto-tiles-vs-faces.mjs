@@ -16,12 +16,11 @@
 //
 // ▶ node scratch/claims-proto-tiles-vs-faces.mjs [scene ...]
 import fs from 'fs'
-import { mintProtopolygon, stencilProtopolygon, tilesFromProto } from '../src/lib/tileGround.js'
+import { mintProtopolygon, tilesFromProto } from '../src/lib/tileGround.js'
 
 const scenes = process.argv.slice(2)
 if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
 const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
-const BND = (s) => `cartograph/data/${s}/neighborhood_boundary.json`
 const A = (r) => { let a = 0; for (let i = 0; i < r.length; i++) { const [x1,y1]=r[i],[x2,y2]=r[(i+1)%r.length]; a += x1*y2 - x2*y1 } return a/2 }
 const inRing = (rg,x,y) => { let c=false; for(let i=0,j=rg.length-1;i<rg.length;j=i++){const[a,b]=rg[i],[e,f]=rg[j]; if((b>y)!==(f>y)&&x<(e-a)*(y-b)/(f-b)+a)c=!c} return c }
 const interior = (r) => { // a robust interior point: centroid, else an edge midpoint nudged inward
@@ -39,28 +38,12 @@ for (const scene of scenes) {
   const rb = JSON.parse(fs.readFileSync(path, 'utf8'))
   const streets  = rb.streets.filter(s => s?.points?.length >= 2 && !s.gradeSeparated)
   const gradeSep = rb.streets.filter(s => s?.points?.length >= 2 && s.gradeSeparated)
-  // ⛔ `gradeSep: []` — THE BLOCK GRID'S ①, NOT THE DRAWING'S. A grade-separated road does not
-  // bound a city block (`SKELETON §2`: "Consumers exclude these from the face graph"); the block
-  // runs on underneath it. Minting them into the cut slices the partition along every off-ramp —
-  // measured on LS, SPLIT 7 with them vs 1 without. `stencilProtopolygon` refuses the drawing's ①
-  // outright, so this is not a preference the probe is expressing; it is the only ① it will take.
-  const proto = rb.protopolygon?.rings?.length ? rb.protopolygon : mintProtopolygon({ streets, gradeSep: [] })
+  const proto = rb.protopolygon?.rings?.length ? rb.protopolygon : mintProtopolygon({ streets, gradeSep })
   const src = rb.protopolygon?.rings?.length ? 'frozen' : 'live'
-  // ⭐ THE PRODUCER CANDIDATE IS THE STENCILLED ①, not the raw mint — `blocks = boundary −
-  // stroked roads` (`RIBBONS §1`). The raw mint cannot pass this test even in principle: it
-  // mints the FULL network (every hole beyond the rim is homeless) and it cannot mint a rim
-  // block at all (a rim block closes against the edge of the drawing, not against a street).
-  // ⛔ The boundary is read HERE and passed IN — the construction may not read it (BRIEF-slice2 §4).
-  if (!fs.existsSync(BND(scene))) { console.log(`\n${scene}: no boundary at ${BND(scene)} — SKIPPED LOUDLY`); failed = true; continue }
-  const boundary = JSON.parse(fs.readFileSync(BND(scene), 'utf8')).boundary
-  const stencilled = stencilProtopolygon({ proto, boundary })
-  if (!stencilled || stencilled.refused) { console.log(`\n${scene}: stencil REFUSED — ${stencilled?.refused || 'null'}`); failed = true; continue }
-  const out = tilesFromProto(stencilled, rb.streets, { take: 'faces' })
+  const out = tilesFromProto(proto, rb.streets)
   const frozen = rb.tiles || []
-  const rim = out.tiles.filter(t => t.edges.some(e => e.boundary)).length
-  console.log(`\n${scene}  (① ${src}, stencilled)`)
-  console.log(`   ① blocks → tiles: ${out.tiles.length}   (${rim} closing on the rim)      frozen face tiles: ${frozen.length}`)
-  if (out.voids) console.log(`   ⚠️  ${out.voids} void(s) — a ring of road ink enclosed inside a block; not a block, counted not dropped`)
+  console.log(`\n${scene}  (① ${src})`)
+  console.log(`   ① holes → tiles: ${out.tiles.length}      frozen face tiles: ${frozen.length}`)
   if (out.skipped.length) {
     console.log(`   ⛔ ${out.skipped.length} hole(s) REFUSED — unnamed, never silently dropped:`)
     for (const s of out.skipped.slice(0,5)) console.log(`        ring ${s.k}  ${s.area.toFixed(0)} m²  — ${s.why}`)
