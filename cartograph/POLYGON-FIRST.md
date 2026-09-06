@@ -232,18 +232,17 @@ it could not fix *where that leg starts and stops*, because there was no second 
 corner registry"`). `cornersAdjacent` was therefore **never retired**, and `corners.{outer,apex,stub}`
 remain the only registry `tileGround.js` sees.
 
-> ### ⭐⭐⭐ AND `cornersAdjacent` IS THE COUPLER RELATION — FROZEN, COMPLETE AT EVERY ORDINARY INTERSECTION, AND READ BY NOTHING (2026-08-12)
+> ### ⭐⭐⭐ AND `cornersAdjacent` IS THE COUPLER RELATION — FROZEN, COMPLETE AT EVERY ORDINARY INTERSECTION, AND ITS ONE CONSUMER IS GATED OFF (2026-08-12; consumer claim corrected 2026-09-05)
 > *(Found while sizing Jacob's directed-side-chain proposal. This is not "another orphaned field" — it
 > is the one this doc has been circling, and it moves the substrate question.)*
 >
 > Each record pairs **`(chain, end, side)` → `(chain, end, side)`** at a node — *which incoming side
 > hands off to which outgoing side.* That is a **permutation on directed half-chains**, which is
 > exactly what determines the face structure of an embedded graph. ⭐ **The identity a face walk would
-> need is already stamped; what is missing is a consumer.**
+> need is already stamped; what is missing is for its consumer to be SWITCHED ON** (`PREBAKE §2.5`).
 > - **Produced** at prebake — `derive.js:4353` / `:4358`, serialized `:4410`.
-> - ⛔ **Consumed by NOTHING.** Zero reads in `src/`:
->   `grep -rn "cornersAdjacent" --include="*.js" --include="*.jsx" src cartograph` → **three lines, all
->   in `derive.js`** (produce · push · serialize). ⛔ **The `--include` is load-bearing** — a bare grep
+> - ⛔ **Consumer status: `PREBAKE §2.5`, and nowhere else. Do not restate it here.**
+>   ⛔ **When you do grep it, `--include` is load-bearing** — a bare grep
 >   over `src` also walks `src/data/ribbons.json`, where the field appears in the artifact thousands of
 >   times, and the noise reads as "plenty of consumers." ⭐ **`project_polygon_must_ask_the_stamp` in
 >   its purest form: the stamp exists, is correct in shape, and the polygon never asks.**

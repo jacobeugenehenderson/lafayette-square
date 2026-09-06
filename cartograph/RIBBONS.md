@@ -224,7 +224,7 @@
 > topology there would freeze **bare-default widths** — Layer 0 q3, baked into an artifact. **Therefore:**
 > - **The COUPLER RELATION is width-INDEPENDENT** — which side hands off to which is a graph property.
 >   Prebake, frozen once. ⭐ **It already exists: `junctionMap.nodes[].cornersAdjacent`** — complete at
->   every T and cross, **read by nothing** (`POLYGON-FIRST §2.1`).
+>   every T and cross. ⛔ **Consumer status: `PREBAKE §2.5`, and nowhere else. Do not restate it here.**
 > - **The GEOMETRY is width-DEPENDENT** — where the side-chain lands. Resolves AFTER width authoring.
 >
 > ⭐ This is `PREBAKE §5`'s own unexecuted sentence: *"corner identity (topology) = prebake, frozen once;
@@ -236,13 +236,13 @@
 > now wraps a tip's two side-chains around the spike. ⛔ **It reaches NO artifact until a pipeline
 > re-pour** — `derive.js` is prebake. ⛔⛔ **CORRECTED 2026-08-14: this said "`via:'cap'` greps 0 in all six
 > committed `ribbons.json`." ROT — true when written, falsified the NEXT DAY by the `918f5ff6` promote.**
-> `src/data/ribbons.json` carries **30** cap couplers; the five per-scene bundles carry 0. ⭐⭐ **AND THE
+> `src/data/ribbons.json` carries cap couplers; the five per-scene bundles carry none. ⭐⭐ **AND THE
 > METHOD IS THE LESSON: `grep '"via":"cap"'` returns 0 on a PRETTY-PRINTED file** (`"via": "cap"`) — the
 > claim and its independent re-check were both made with the same brittle string match, so they agreed and
 > were both wrong. ⛔ **Count structurally, never by string:**
 > `node -e "const r=require('./src/data/ribbons.json');let n=0;for(const d of r.junctionMap.nodes)for(const c of (d.cornersAdjacent||[]))if(c.via==='cap')n++;console.log(n)"`
-> Harmless today (`cornersAdjacent` has **zero consumers**), but **slice 2's walk consumes it ⇒ the
-> re-pour is on the critical path.**
+> ⛔ **Re-run the line above; never quote it.** Harmless today (`PREBAKE §2.5`), but **slice 2's walk
+> consumes it ⇒ the re-pour is on the critical path.**
 > ⛔ **AND THE RELATION IS NOT TOTAL, despite `derive.js:4373` claiming it is** — `dirs.length < 3`
 > silently drops **degree-2** (continuation · same-corridor-join · divided-transition). LS 4 nodes /
 > HPDM 18. No new coupler *kind* is needed: 100% of the hole is an end-to-end weld of two distinct
