@@ -1,3 +1,27 @@
+# ⛔ RETIRED 2026-09-06 — ARCHIVED. Its census is DONE and one of its premises was ROT.
+
+**Why it is here.** The clip this brief existed to size is GONE (`cartograph/pipeline.js:150` carries
+the excision and what died with it). The census questions are answered; nothing here is live work.
+
+## ⛔⛔ AND ITS "RULED DESIGN" BULLET 1 WAS WRONG — do not carry it forward
+> *"The circle is a line segment like the streets. It joins the **same** expand-and-unite."*
+
+**That contradicted a ruling Jacob had already made THREE WEEKS EARLIER**, and made in the opposite
+direction, in `RIBBONS.md §1` — *"THE RIM BOUNDS, IT DOES NOT OWN":* **"I was wrong; the radius is not
+an ordinary chain. That was when we were trying to close the circle."** The rim ✅ BOUNDS (the stencil
+of the punch) and ⛔ is **NOT a side-chain**.
+
+**Re-ruled aloud 2026-09-06, in the same words:** *"EITHER we build the entire grid of streets and the
+circle stencils out the circle OR the circle adds the geometry such that the whole perimeter is made of
+weird odd shapes."* ⇒ **STENCIL.** Live home: `RIBBONS.md §1`.
+
+⭐ **The cost of leaving this contradiction standing, recorded because it is the point:** an agent read
+this brief, did not read `RIBBONS §1`, and began building the boundary INTO ①'s union — the "weird odd
+shapes" outcome — before Jacob stopped it. A newer doc that contradicts an older ruling is read as the
+newer truth. **That is why a superseded premise is EXCISED, not annotated.**
+
+---
+
 # BRIEF — the rim census: the chain population, before anything is turned on
 
 **READ-ONLY. Measure only. ⛔ Turn nothing on, fix nothing, edit no `src/`. ⛔ Do not propose the fix —

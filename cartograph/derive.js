@@ -4961,7 +4961,10 @@ export function deriveLayers(highways) {
     } else {
     const pStreets = mapped.filter(m => !m.s.gradeSeparated).map(m => m.sim)
     const pGradeSep = mapped.filter(m => m.s.gradeSeparated).map(m => m.sim)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep })
+    // ⭐ THE CIRCLE STENCILS ① (Jacob, 2026-09-06). The whole grid is built, then cut square
+    // at the perimeter — "there should be no tips; the streets clip at the perimeter edge."
+    // ⛔ The boundary is NOT passed as a chain; it is the CLIP. See mintProtopolygon's header.
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ })
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),

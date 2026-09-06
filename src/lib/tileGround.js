@@ -415,7 +415,7 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
 // Authored values resolve downstream off that identity, so ① is look-agnostic:
 // one scene's ① serves every Look.
-export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
+export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -476,7 +476,42 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
   // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
   // cannot carry identity across ~200 chain rectangles.
   const R = booleanLabelled(clipperLib.ClipType.ctUnion, rings, labels, [], null, true)   // ① needs the edge ledger; nothing else does
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings }
+
+  // ⭐⭐⭐ THE CIRCLE IS THE STENCIL, NOT A CHAIN. Home: `RIBBONS §1`, "THE RIM BOUNDS, IT DOES
+  // NOT OWN" — ruled 2026-08-12 and re-ruled aloud 2026-09-06: "EITHER we build the entire grid
+  // of streets and the circle stencils out the circle OR the circle adds the geometry such that
+  // the whole perimeter is made of weird odd shapes", and "there should be no tips; the streets
+  // clip at the perimeter edge."
+  // ⇒ Build the WHOLE grid, then INTERSECT. The boundary is the CLIP, never a subject.
+  //
+  // ⛔ WHY THE OTHER READING IS WORSE, AND IT IS NOT A STYLE CHOICE. Uniting a boundary line
+  // into ① leaves every street's ink running THROUGH and PAST the perimeter, so the rim becomes
+  // a chain of slivers between the circle and each crossing street — Jacob's "weird odd shapes".
+  // Intersecting cuts every street SQUARE at the edge: "there should be no tips; the streets clip
+  // at the perimeter edge." A square cut has no endpoint, so there is nothing for a cap, a bulb
+  // or a fillet to be built on. That is the point — the defect class is removed rather than
+  // guarded against downstream.
+  //
+  // ⭐ IDENTITY SURVIVES THE CUT, which is the only reason this can be done here. The clip ring
+  // is labelled like any subject, so `booleanLabelled` carries `__boundary__` THROUGH the boolean
+  // (`RIBBONS §1`: never recovered from ring geometry afterward) and a perimeter edge comes out
+  // owned, not anonymous. ⛔ A vertex where a street meets the circle is a genuine crossing and
+  // is minted — it appears in `crossings`, exactly like a street-street corner, because that is
+  // what it is.
+  //
+  // ⛔ NO FALLBACK: a scene with no boundary keeps the full-bb ①, and says so. It is not
+  // silently stencilled with a guess, and it is not refused — an unbounded pour is a real state.
+  if (boundary && boundary.length > 2 && R.rings?.length) {
+    const bIdx = owners.length
+    owners.push({ skelId: BOUNDARY_EDGE_SKEL, side: 'right', segOrd: 0, gradeSeparated: false, srcIdx: -1, boundary: true })
+    const bRing = boundary.map(p => [p[0], p[1]])
+    const S = booleanLabelled(clipperLib.ClipType.ctIntersection, R.rings, R.labels, [bRing], [bRing.map(() => bIdx)], true)
+    // ⛔ A refused stencil is LOUD and the un-stencilled ① is returned unchanged — never a
+    // half-cut contour, which would render and could not be seen to be wrong.
+    if (S.refused) console.warn(`    ⛔ [①] STENCIL REFUSED (${S.refused}) — ① is the FULL bb, NOT cut at the perimeter. The rim is unstencilled; do not read rim geometry from this pour.`)
+    else return { rings: S.rings, labels: S.labels, owners, refused: null, chainRings: rings.length, crossings: S.crossings, stencilled: true, boundaryOwner: bIdx }
+  }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).

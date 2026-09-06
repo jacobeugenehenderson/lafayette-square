@@ -810,6 +810,25 @@
 > ⭐ A construction asking *"is this the rim?"* to decide **painting** has diverged; asking to decide
 > **bounding** is the stencil doing its job.
 >
+> #### ⭐⭐⭐ ① IS STENCILLED BY THE CIRCLE — LANDED 2026-09-06, and it is THIS ruling applied to ①
+> Jacob, re-ruling aloud: *"EITHER we build the entire grid of streets and the circle stencils out the
+> circle OR the circle adds the geometry such that the whole perimeter is made of weird odd shapes."*
+> and *"there should be no tips; the streets clip at the perimeter edge."*
+> `mintProtopolygon({..., boundary})` unites the whole grid and then **INTERSECTS** — the boundary is
+> the CLIP, never a subject. ⭐ Identity survives the cut: the clip ring is labelled, so
+> `booleanLabelled` carries `__boundary__` **through** the boolean and a rim edge comes out owned; a
+> street meeting the circle is a genuine minted **crossing**, like any corner.
+> ⭐⭐ **WHY IT REMOVES A CLASS rather than guarding one:** a square cut has NO ENDPOINT, so there is
+> nothing for a cap, bulb or fillet to be built on. Contrast `derive.js`'s `[F]` `clipStreet`, which
+> chops CENTRELINES and mints a fresh endpoint per crossing — a manufactured tip, downstream of which
+> every tip-shaped defect becomes possible. ⛔ `[F]` still runs for the FACE walk and is NOT yet on the
+> stencil; that is the remaining half.
+> ⛔ NO FALLBACK: a scene with no boundary keeps the full-bb ① and says so; a refused stencil is LOUD
+> and returns the contour UNCUT, never half-cut.
+> ⛔ **The superseded reading — "the circle joins the same expand-and-unite" — is EXCISED**, not
+> annotated; it lived in `BRIEF-rim-chain-census.md`, now
+> `cartograph/_archive/BRIEF-rim-chain-census-2026-09-06.md`, whose header records what it cost.
+>
 > ### ⛔⛔ AND THE RIM CANNOT BE DROPPED FOR A WALK — MEASURED, 2026-08-12 (Tessel)
 > *"Build full, crop last"* is `derive.js:4632`'s own stated doctrine and it is available to the
 > **punch-out**, which has a stencil. It is **NOT** available to a bare face-walk: **a walk over the

@@ -1,4 +1,15 @@
 #!/usr/bin/env node
+// ⛔⛔⛔ VOID — DO NOT RUN, DO NOT QUOTE. RETRACTED 2026-09-06 by Jacob's eye.
+// It reported "Benton Place 17%"; Benton's median CORRECTLY carries no sidewalk. Jacob: "No."
+// THE BUG, and it is this week's recurring one — the measurement answered a different question
+// and nothing in the number said so: `inAny` runs EVEN-ODD PARITY OVER EVERY SIDEWALK RING ON
+// THE MAP POOLED TOGETHER. A band is a compound path (outer + hole) and parity is meaningful
+// only WITHIN one band; pooling them lets unrelated overlapping bands cancel, so a point's
+// "inside" is noise. Every figure and every name it printed is void.
+// ⛔ The underlying question — does ③ zero the inner band on a median-facing edge? — is still
+// OPEN and still worth asking. Ask it PER BAND, and confirm against the eye before reporting.
+// Kept, not deleted, so the retraction outlives the claim (`feedback_a_retraction_must_fix_the_steps`).
+process.exit((console.error('⛔ VOID probe — see the header. Refusing to produce numbers.'), 3))
 // ⛔⛔ DOES ③ PAINT A SIDEWALK INSIDE A MEDIAN / LOOP INTERIOR? — the band ①②③ cannot zero.
 //
 // WHY. Jacob's eye, 2026-09-06, on Benton Place and the split carriageways. `LOOP-STREETS.md §2`
