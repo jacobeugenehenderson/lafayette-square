@@ -382,6 +382,34 @@
 >   100%). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
 >   this section's reconcile gate says "misfiles" a non-convex island. Reading it was not enough.
 >
+>   ### ⭐⭐⭐ RULED 2026-09-06 (Jacob) — THE PRODUCE/REFUSE SPLIT FOR ①'s TILE. **2 SUPPLIED, 9 REFUSED.**
+>   A frozen tile carries **14 required + 6 optional** fields (derive both: `node -e` over
+>   `shape.json`'s tiles, union AND the every-tile intersection — sampling `tiles[0]` gives 17 and is
+>   wrong). ①'s tile supplies **3 of the 14**. The other eleven are not a to-do list.
+>   ⭐⭐ **THE RULE THAT DECIDES THEM: does this field tell someone HOW TO BUILD, or WHAT A THING IS?**
+>   `bands` is a **change of model**, not an addition — Section is handed the STROKE, not parameters to
+>   stroke with. **A walk needs boundaries; an offset needs only a value per point.** `runs` exist so
+>   each frontage can be stroked separately and the pieces joined; ③ never cuts the ring, so there is
+>   no "where does this stop" question, only "what depth *here*" — answered per edge by the stamp ①
+>   already carries (`protoMeasureOf(labs[i])`).
+>   ⭐ **And that is why a seam is UNCONSTRUCTIBLE rather than merely unlikely:** a walk makes pieces
+>   that must meet, and every join can seam; one ring offset inward has no joins. The seam test is not
+>   a quality check — it tells you WHICH MODEL made the geometry.
+>
+>   | | field | why |
+>   |---|---|---|
+>   | **SUPPLY** | `runs` | **identity, not geometry** — which block was clicked, which authored slot a frontage owns, and (2026-09-06) **who owns a RIM edge**. The map must stay addressable. |
+>   | **SUPPLY** | `lu` | *(Jacob)* **"LU is a gettable/knowable datapoint… stamp the LU into the initial ground map and later add overrides."** A fact about the world, stamped once — not a construction parameter. Styling/overrides are a later layer and are NOT scoped here. |
+>   | **REFUSE** | `tl` `sw` `cap` `bandJoin` | inputs to a walk: how deep to stroke, how to join the pieces. No walk, no need. |
+>   | **REFUSE** | `vertR` `fillets` | the fillet machinery §1 retires; R belongs in the node's handles. |
+>   | **REFUSE** | `roundTips` `bluntTips` `roundTipKeys` | cap machinery — a contour already IS its caps. |
+>
+>   ⛔ **REFUSE MEANS THE CONSUMER STOPS READING IT, WHICH IS THE REAL WORK.** Nine refusals means
+>   splitting `sectionPassTile` (~924 lines) into the part that is legitimate FILL and the part that is
+>   compensation for a walk. That split IS the design question, and it is bigger than the excision list.
+>   ⛔ Every refusal is RECORDED WITH A REASON, never a silent absence — an absent field and a refused
+>   field must not read the same to a consumer on a town nobody has inspected.
+>
 >   ### ⛔⛔ AND THE EYE SAYS THE SHAPES ARE STILL WRONG (Jacob, 2026-09-06, on the ①-produced map)
 >   > *"FIX THE CURBS. The polygons suck, these should be clean shapes."*
 >   ⛔ **CAUSE NOT ESTABLISHED — and 101/101 parallelism does NOT contradict it.** A polygon can be
