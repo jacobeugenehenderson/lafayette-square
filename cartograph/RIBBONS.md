@@ -139,6 +139,25 @@
 > ⛔ **NO FALLBACK:** a missing or unjoinable skeleton now REFUSES to freeze ① rather than minting the
 > dense one, which renders and cannot be seen to be wrong. ▶ `derive.js`, the `[①]` block.
 >
+> #### ⛔⛔ AND THE OTHER HALF OF THE COUNT: **A HOLE IN ① IS NOT NECESSARILY A BLOCK.**
+> ① carries the **HIGHWAYS as ink** — ruled 2026-09-05 and right, *"the canon pulls them out of the
+> BLOCK GRID, which says nothing about the DRAWING"* — so the union also encloses regions bounded by
+> motorways and ramps, and **those are not city blocks.** LS: **145 holes; excluding grade-separated
+> chains, 102 — against the map's 101 tiles.** That ~44 is the entire *"① has more blocks than the
+> map"* discrepancy, and it is not a topology defect.
+> ⭐⭐ **IT IS ALSO WHY ② DREW LONG THIN RUNS.** A highway carries an 8.53 m default half-width, so
+> striking a curb on both sides of a 0.6–9 m gap between two ramps collapses it. 48 blocks had their
+> curbs meet — and **47 of the 48 carry NO authoring anywhere**, so Layer 0 q3 was asked first and the
+> answer was no: this is not the operator's widths showing through.
+> ⭐ **The shipped curb path builds NO highway curb at all** (they are flat strokes through their own
+> accumulator), so emitting one invented a curb production never had and then scored it against a
+> baseline that does not exist. `protoCurbGs` already computed the tag and used it only to LABEL the
+> ring; it now excludes it. ⇒ **107 curb rings against 101 tiles**, and "too tight" 90 → 39.
+> ⛔ **STILL OPEN:** 28 holes bounded by ORDINARY streets also have their curbs meet. Unexplained —
+> they may be alleys or medians closing legitimately (*"if the curbs touch, there's no block"*) or
+> they may not. ⛔ Cause not established. ▶ `node scratch/claims-proto-thin-curb-runs.mjs <scene>`,
+> which reports every thin run with its authored-vs-base width so the two can never be merged.
+>
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
 > united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
 > two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).

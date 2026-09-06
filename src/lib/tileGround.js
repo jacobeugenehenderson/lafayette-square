@@ -5534,7 +5534,7 @@ export function buildTileGround(ribbons, opts = {}) {
     const easedByBlock = {}          // ① hole ring index → its eased curb ring(s) + per-vertex ① labels
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
-      let noWidth = 0
+      let noWidth = 0, gsSkipped = 0
       for (let k = 0; k < R.rings.length; k++) {
         const ring = R.rings[k], labs = R.labels[k]
         if (!(ring?.length >= 3)) continue
@@ -5553,6 +5553,20 @@ export function buildTileGround(ribbons, opts = {}) {
         let gsN = 0, allN = 0
         for (const l of labs) { allN++; if (protoOwners[l]?.gradeSeparated) gsN++ }
         const isGs = gsN > allN / 2
+        // ⛔⛔ A HOLE IN ① IS NOT NECESSARILY A BLOCK. ① carries the HIGHWAYS as ink — ruled, and
+        // right: "the canon pulls them out of the BLOCK GRID, which says nothing about the DRAWING"
+        // — so the union also encloses regions bounded by motorways and ramps, and those are not
+        // city blocks. LS: 145 holes; excluding grade-separated chains gives 102, against the map's
+        // 101 tiles. ⭐ That ~44 is the whole of the "① has more blocks than the map" discrepancy.
+        // ⛔ AND IT IS WHY ② DREW LONG THIN RUNS: a highway carries an 8.53 m default half-width, so
+        // striking a curb both sides of a 0.6-9 m gap between two ramps collapses it. 48 blocks had
+        // their curbs meet; 47 of the 48 carry NO authoring anywhere — this is not the operator's
+        // widths showing through (Layer 0 q3 asked first, and answered no).
+        // ⭐ The shipped curb path builds NO highway curb at all — they are flat strokes through
+        // their own accumulator — so emitting one here invented a curb production never had, and
+        // then measured against a baseline that does not exist. This tag already existed and was
+        // used only to LABEL the ring; now it excludes it, which is what the tag was for.
+        if (isGs) { gsSkipped++; continue }
         // ⭐ THE STAMP IS THE CORRESPONDENCE, AND IT ALREADY EXISTS (`A10-③`, `WL`): each ②
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
@@ -5589,6 +5603,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // leave the curb sitting on the centreline — a plausible-looking wrong map.
       if (noWidth) console.warn(`[tileGround][PROTO②] ${noWidth} edge(s) had NO resolvable authored width and were offset by 0 — the curb sits on the centreline there.`)
       console.log(`[tileGround][PROTO②] curb from the proto: ${protoCurb.length} ring(s) offset per-edge at the authored pavementHW`)
+      if (gsSkipped) console.log(`[tileGround][PROTO②] ${gsSkipped} grade-separated region(s) skipped — a hole bounded by motorways is not a city block, and the shipped path builds no highway curb either.`)
       // ⭐ THE EASE IS DISCLOSED PER POUR. A node that could not resolve its centreline node went
       // through SHARP; that is a real shortfall and must be countable, because on town #2 nobody
       // is looking. ⚠️ `overreach` is NOT an error — it is an authored R too big for its leg,

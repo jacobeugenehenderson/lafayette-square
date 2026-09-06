@@ -829,22 +829,19 @@ export default function BlockGeometryV2Debug({
         stencil, curbWidth, smooth: streetSmooth, blockLandUse,
         cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides,
         blockCustoms: blockCustomsX, grout: 'proto',
-        // ⛔⛔ THE EASE IS OFF IN THIS OVERLAY, and that is a bisection, not a preference.
-        // `cornerR: 0` is zero-length handles, so ② comes through SHARP — the curb offset from ①
-        // and nothing else. With the ease on, the overlay drew thin fans across blocks: a corner
-        // whose setback `R/tan(θ/2)` runs to tens of metres puts its tangent points far down both
-        // legs and the arc between them cuts the block. ⛔ My long-step metric never caught it
-        // because a bad fillet is a TESSELLATED ARC — hundreds of short steps, not one long one —
-        // so I tuned decline counts while the output was garbage.
-        // ⇒ Judge the CURB first. If the sharp ② is right, the ease is a separate problem and does
-        // not get to make the curb unjudgeable while it is worked out.
-        cornerR: 0,
+        // ⭐ THE EASE IS ON. It was switched OFF for one bisection — with the DENSE ① it drew thin
+        // fans across blocks (a corner whose setback `R/tan(θ/2)` ran to tens of metres put its
+        // tangent points far down both legs, and the arc between them cut the block). ⛔ My
+        // long-step metric never caught that, because a bad fillet is a TESSELLATED ARC — hundreds
+        // of short steps, not one long one — so decline counts got tuned while the output was
+        // garbage. ⭐ Minting ① from the SIMPLIFIED SKELETON removed the cause rather than the
+        // symptom: too-tight 338 → 90, overlap 122 → 46. The corners curve again.
       })
     } catch (e) { console.error('[BlockGeometryV2Debug][②] proto build failed:', e) }
     // ⛔ LOUD ABOUT WHAT IS ON SCREEN. A curb that silently failed to build must not read as
     // "② agrees with the shipped curb" — the whole point of the overlay is that the two differ.
     if (!tg?.protoCurb?.length) console.warn('[BlockGeometryV2Debug][②] ⛔ ① drew but the CURB did not build — you are seeing the ε contour only, NOT the offset curb.')
-    else console.log(`[BlockGeometryV2Debug][②] curb off ①: ${tg.protoCurb.length} ring(s), SHARP (ease off) — magenta is ①'s ink, CYAN is the curb offset from it at the authored width`)
+    else console.log(`[BlockGeometryV2Debug][②] curb off ①: ${tg.protoCurb.length} ring(s), eased at the authored R — magenta is ①'s ink, CYAN is the curb offset from it at the authored width`)
     return {
       ink:  ringsToEdgeGeo(P.rings, 0.065),
       curb: tg?.protoCurb?.length ? ringsToEdgeGeo(tg.protoCurb, 0.075) : null,
