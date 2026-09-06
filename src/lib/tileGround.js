@@ -6144,10 +6144,17 @@ export function buildTileGround(ribbons, opts = {}) {
     // huge block. The disc is the actual answer — it is what "the drawing" means.
     const liveStamp = protoBoundaryRing
     if (liveStamp?.length > 2) {
-      const cut = intersectRings(protoCurb, [liveStamp])
-      if (!cut?.length) throw new Error('[tileGround] the circle stamp removed the ENTIRE live curb. Refusing to hand back nothing.')
+      // ⛔⛔ PER RING, NEVER ALL AT ONCE. One boolean over all 255 curb rings UNIONS them: the
+      // enormous face the outer motorway chains enclose absorbs its neighbours and 255 rings come
+      // back as 14, one of them disc-sized. Survey FILLS `tg.curb`, so that single ring turns the
+      // authoring surface solid — "basically just wrecked survey interface".
+      // ⭐ The artifact never had this bug because `[PROTO⊙]` stamps each TILE separately. Same
+      // rule here: a stamp is a per-object cut, not a set operation over the whole map.
+      const cut = []
+      for (const rg of protoCurb) { const c = intersectRings([rg], [liveStamp]); if (c?.length) cut.push(...c) }
+      if (!cut.length) throw new Error('[tileGround] the circle stamp removed the ENTIRE live curb. Refusing to hand back nothing.')
       curb = cut
-      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②, STAMPED: ${protoCurb.length} ring(s) → ${cut.length} inside the circle`)
+      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②, STAMPED per ring: ${protoCurb.length} → ${cut.length} inside the circle`)
     } else {
       curb = protoCurb
       console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) — ⛔ NO boundary in this pour, so it is the WHOLE FRAME, un-stamped.`)
