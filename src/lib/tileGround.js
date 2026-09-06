@@ -431,7 +431,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
       nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
     }
     const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs }) - 1
+    // ⭐ `srcIdx` is the chain POINT INDEX this boundary vertex was struck from — carried, never
+    // recovered. The corner-R key space is `ixKeyOf(node)|legA|legB` (`resolveVertR`), i.e. it is
+    // keyed on the CENTRELINE node, and ①'s contour sits ε off it. Without the index there is no
+    // way back to that node except by proximity, which is `A15`'s explicitly forbidden third
+    // recovery. ⛔ A MINTED crossing vertex has no source and carries no label — that is not a gap
+    // to paper over, it is where two chains actually cross.
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])

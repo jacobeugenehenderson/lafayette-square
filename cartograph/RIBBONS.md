@@ -143,8 +143,27 @@
 > round = handles continuing unbroken along the chain, symmetrically, bent back to the pair node. That is
 > the existing curve primitive (`{type:'bezier',c1,c2}`, `derive.js:40`) used at the tip, and it dissolves
 > the `roundTips`/`bluntTips` case split — 19 sites in `tileGround.js`, frozen into `shape.json` (`:4738`).
-> ⚠️ A single cubic cannot hold a half-turn; the coupler is **two** segments split at the apex, or the
-> bezier is ruled canonical and `bbf4adf6`'s circle becomes its approximation. **Jacob's call, not made.**
+> ### ⭐⭐⭐ RULED BY MEASUREMENT 2026-09-06 — **THERE ARE 2 APEXES. THE HALF-TURN QUESTION NEVER AROSE.**
+> > *"There are 2 apexes."* (Jacob, correcting the framing below.)
+>
+> This block used to read: *"A single cubic cannot hold a half-turn; the coupler is **two** segments split
+> at the apex, or the bezier is ruled canonical and `bbf4adf6`'s circle becomes its approximation. Jacob's
+> call, not made."* ⛔ **That question only exists if the tip is ONE node turning 180°. It is not.**
+> **MEASURED on ①'s own contour: the median turn at a tip vertex is ~90°, and the two vertices sit 2ε
+> apart** — the ribbon's full width, because ① butt-ends and the left and right boundaries each stand ε
+> off the centreline. ▶ `node scratch/claims-proto-tip-has-two-apexes.mjs`
+> ⇒ **A cap is two ORDINARY corner nodes.** Nothing turns a half-turn, so no cubic is asked to.
+> - **blunt = both apexes at R=0** (zero-length handles) · **round = both eased.** One dial, no case split.
+> - ⭐ **`bbf4adf6`'s bulb is not an APPROXIMATION of anything** — it is what two full 90° eases produce.
+> - ⭐⭐ **THIS IS WHAT UNBLOCKS THE HANDLES**, and it is §1's own prediction arriving: *"cap style, corner
+>   radius and fillet stop being three things."* Caps needed no separate mechanism; the caveat above was
+>   the last reason to think they did.
+> ⭐ And it explains the collapse we already measure: ε is *"a PRESENCE with TWO nodes at every mouth"*
+> while `coupler-slit-universal.mjs` prints `FACE=SLIT gap=0.000m` on every LS tip. **The two apexes are
+> real in ① and collapsed in the freeze** — ⛔ cause of the collapse not established here.
+> ⚠️ ⛔ **Denominator warning:** that probe counts every unshared chain endpoint (211 on LS), **not** the
+> canonical 50 dead ends. Do not merge the two counts. 97 tips carry 3 contour vertices and 2 carry 4;
+> cause not established.
 > ▶ `_handoffs/HANDOFF-curve-primitive-skeleton.md` — its §72 (*"tangent directions = the bounding
 > straight-leg directions"*) is the same law, written for mid-chain.
 >
