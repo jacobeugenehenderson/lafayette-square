@@ -194,6 +194,44 @@
     CURB, which never moved; the defect was in the FILL. **A gate that watches the wrong artifact is
     a gate that is not watching.**
 
+- **⛔⛔ A19 · A NAMED FOOTPATH BECOMES A STREET AND BOUNDS CITY BLOCKS — the canon says it is pavement *inside* one.** *(NEW 2026-09-06, surfaced from the ① injection test; Jacob on the instance: "I have no idea what that is.")*
+  **THE CANON IS NOT AMBIGUOUS.** `SKELETON §2` (`paths[]`): *"Non-vehicular **unnamed** ways
+  (footway/cycleway/steps/service) — Render pavement-only, **no measure authoring**."* `§3 step 7`:
+  *"Unnamed vehicular → streets with synthetic names. **Everything else → `paths[]`**."* And a path is
+  stroked by `buildPathRibbons` **clipped to the parcel interior** (`ARCHITECTURE:142`, `BAKE §3`) —
+  block − curb − treelawn − sidewalk. A footway is ink **inside** a block. It is not a block boundary
+  and it takes no authoring.
+  - **THE MECHANISM — the rule is keyed on the word "UNNAMED", and nothing downstream re-checks the
+    CLASS.** `skeleton.js §3` step 1 buckets by **name**; every named group goes through `makeStreet`
+    (step 6) whatever its `highway` tag says. Only the *unnamed* bucket ever reaches `paths[]`. ⇒ a
+    **named** footway becomes a street chain, bounds blocks, and is **also** stroked as a path inside
+    them. ⭐ The double carry is the tell, and it is measured, not inferred.
+  - ▶ **`node scratch/claims-named-way-becomes-street.mjs`** — reads the classes off the artifacts and
+    derives the double carry by joining `streets[]` to `paths[]`. ⛔ Re-run it; do not quote it here.
+    Today it reports **LS 0 · HPDM 51 · altadena 135**, every one of them NAMED and ~all double-carried.
+  - ### ⭐⭐ THIS IS LAYER 0'S SIGNATURE SHAPE, ARRIVING UNPROMPTED — **LS IS STRUCTURALLY BLIND TO IT.**
+    LS has **hundreds of footways and not one named**, so **zero** reach `streets[]`: the class cannot
+    appear on the town the whole project is built against. It is not small elsewhere — HPDM's are Forest
+    Park's trail network (`Heels Path` 2475 pts, `Wheels Path`, `Centennial Greenway`, `St. Louis Walk of
+    Fame`) cutting the park into "blocks"; **altadena's are mountain hiking trails** (`Altadena Crest
+    Trail`, `Lower Sam Merrill Trail`), and there they are **~15% of the whole chain set**. ⛔ So a
+    green LS is not evidence, and never could have been.
+  - **WHICH OF THE THREE CAUSES: ⭐⭐ ASPIRATION** (`CLAUDE.md`, the smell-detector) — **not ROT, not
+    REGRESSION.** The doc describes `paths[]` correctly and nothing drifted; the intent *"non-vehicular
+    ways are pavement-only with no measure authoring"* was **built for the unnamed case and never
+    qualified by class for the named one.** An unbuilt decision filed as done. ⛔ Do not evict the doc
+    and do not "correct" it — the doc is right and the code is short.
+  - ⛔ **THE FIX IS NOT MINE TO PICK, AND IT IS NOT A SKIP LIST.** The shape is presumably *class, not
+    name, decides whether a way is a street* — but that moves 51 chains out of HPDM's `streets[]` and
+    135 out of altadena's, i.e. **it changes the block grid of every town at once**, so it wants Jacob's
+    ruling before a line is written. ⚠️ Also unruled: a way that is genuinely both (a pedestrian **mall**
+    that really does bound blocks), and whether the double carry is double *paint* on the slab today.
+  - **SIDE-TRACKS SPOTTED, NEITHER CHASED:** HPDM carries 2 chains tagged `highway=proposed` — roads that
+    do not exist yet, stroked as ink. · `SKELETON §2` documents `paths[]` as `{id, highway, tags, coords,
+    osmId}`; the clean artifact carries `{name, kind, points, pavedWidth}`. Different shape, unverified.
+  - **Blocks nothing currently in flight** — ① and the stencil are upstream-clean of it. **M** ·
+    `SKELETON §2/§3`, `INTAKE`, `skeleton.js` step 1/6/7.
+
 - **A06 · 🟡 CHECK C's REMAINDER — the last 42 tiles · ✅ UNBLOCKED 2026-08-08 — THE STAMP IS IN THE ARTIFACT.** A07 **closed 2026-08-04** and is this ticket's TEST INSTRUMENT — its DoD *"these tiles now take the offset path"* is a per-tile producer statement, unmeasurable without the stamp. ⭐ **The stamp has since been baked in: `shape.json` is 101/101 producer-stamped — carve 42 · offset 59**, exactly A07's documented LS split (verify: `node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles; console.log(t.length, t.filter(x=>x.producer).length)"`). *(This line read "101 tiles, 0 producer-stamped ⇒ blocked on the re-bake decision" until 2026-08-08; the re-bake happened and the claim went stale.)* ⭐ **Its other stated blocker also dissolved the same day** — the *"don't re-bake LS"* fear was **A14**, now **withdrawn** (those were the operator's layer toggles; the poured overlays are disposable until the real republish). ⇒ **A06 is ready to scope; it is waiting on nothing.** **✅ Scope re-checked against the corrected prebake fact and unchanged — see A07.** *(NEW 2026-07-31, split out of A03; **scope CORRECTED the same evening after a trace — read the scope note before estimating**)* — 30 divided-median + 3 loop-body-median + 9 small tiles still build their curb as `tile.ring − aFill`. Closing this is what turns **Check C** green outright.
   - ⛔ **PARK PLACE RATIONALE EXCISED 2026-08-13 (Wren, `52b5df18`) — the producer does NOT decide the partition; tile 99 is stamped and resolves 30 spans.** *"The carve path emits no labels"* was TRUE at `7299bbeb` (16:49) and FALSE at `4b573fb0` (20:54) — the same day. ▶ `node scratch/claims-producer-does-not-decide-partition.mjs --all --tiles`. ⭐ A06 is Check-C hygiene again — the "NOTHING IS BROKEN FOR LS" line below is no longer contradicted. ⚠️ Jacob's Park Place eye report (2026-08-11) **STANDS**; cause not established, and it is **not A06's**.
   - ### ⛔⛔ RETRACTED 2026-09-06 — **"A06 IS CHECK-C HYGIENE, NOT A MAP DEFECT" IS FALSE, AND JACOB'S EYE IS WHAT FALSIFIED IT.**
