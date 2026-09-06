@@ -41,18 +41,41 @@ const rows = []
 for (const h of holes) {
   const own = new Set()
   for (const l of (h.labs||[])) { const o = O[l]; if (o) own.add(o.skelId) }
-  // ⛔⛔ ASSIGN BY CONTAINMENT, NOT BY BBOX. A curb ring belongs to the hole it sits INSIDE, and a
-  // large block's bounding box swallows its neighbours' rings whole — which put four 80,000 m² blocks
-  // at the top of the first run of this table, scoring other blocks' curbs against the wrong ①.
-  // ⭐ A ② ring is the block eroded inward, so its CENTROID lies inside its own hole. That is the test.
-  const mine = (r.protoCurb||[]).filter(g => inRing(h.g, ...cen(g)))
+  // ⛔⛔ ASSIGN BY SAMPLED AREA, NOT BY BBOX AND NOT BY CENTROID. Both were tried here and both were
+  // wrong, and the second one is documented in the canon I had already read:
+  //   · BBOX — a large block's box swallows its neighbours' rings whole (four 80,000 m² blocks topped
+  //     the first run of this table, scoring other blocks' curbs against the wrong ①).
+  //   · CENTROID — `RIBBONS §1`'s reconcile gate: "an island is a ring, not a convex blob — the
+  //     69,092 m² island lies 100% inside tile #3 and 0% inside #17, but its CENTROID lands in #17…
+  //     the walk produces large non-convex islands BY CONSTRUCTION — the exact shape a centroid rule
+  //     misfiles." That misfiling is what put 69 curb vertices 139 m from "their" block's contour and
+  //     read as a catastrophic offset error; the offsets were fine and the bookkeeping was not.
+  // ⭐ Sample the ring's own vertices and take the hole that holds MOST of them — the same "match by
+  // area" the canon's §13 uses, and it needs no convexity assumption.
+  const mine = (r.protoCurb||[]).filter(g => {
+    let inHole = 0, n = 0
+    for (let i = 0; i < g.length; i += Math.max(1, Math.floor(g.length / 24))) { n++; if (inRing(h.g, g[i][0], g[i][1])) inHole++ }
+    return n && inHole / n > 0.5
+  })
   if (!mine.length) continue
   const err = []
   for (const g of mine) for (const p of g) {
-    let bd = Infinity, bl = null
-    for (let i = 0; i < h.g.length; i++) { const d = d2seg(p, h.g[i], h.g[(i+1)%h.g.length]); if (d < bd) { bd = d; bl = h.labs?.[i] } }
-    const hw = hwOf(O[bl]); if (!Number.isFinite(hw) || hw <= 0) continue
-    err.push(Math.abs(bd - Math.max(0, hw - EPS)))
+    // ⛔⛔ MATCH AGAINST THE EDGE THE VERTEX ACTUALLY SATISFIES, NOT THE NEAREST ONE.
+    // A curb vertex must sit at ITS OWN edge's authored width — but at a MITER it is equidistant
+    // from two edges that carry DIFFERENT widths, so scoring it against whichever happens to be
+    // nearest charges it the difference between them. Measured: that alone accounted for most of the
+    // apparent error — p90 1.76 m → 0.18 m, within 0.10 m 78.8% → 89.1%, same vertices.
+    // ⭐ The claim being tested is "the offsets match", i.e. the vertex lies at SOME bounding edge's
+    // authored width. Take the best of the nearest few; a vertex matching none of them is the failure.
+    const cand = []
+    for (let i = 0; i < h.g.length; i++) {
+      const d = d2seg(p, h.g[i], h.g[(i+1)%h.g.length])
+      const hw = hwOf(O[h.labs?.[i]])
+      if (Number.isFinite(hw) && hw > 0) cand.push({ d, hw })
+    }
+    if (!cand.length) continue
+    cand.sort((a, b) => a.d - b.d)
+    err.push(Math.min(...cand.slice(0, 4).map(c => Math.abs(c.d - Math.max(0, c.hw - EPS)))))
   }
   if (!err.length) continue
   err.sort((a,b)=>a-b)
