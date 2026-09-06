@@ -168,9 +168,62 @@
 - **A03 · 🟡 PARTIALLY LANDED 2026-07-31 (`4dd05303`+`aa40a7d5`) — the producer is split at the chain boundary; Check C is green for 58% of tiles and still RED overall.** The curb producer now divides into **`freezeCurbEdgeFacts()`** (chain-derived — reduces runs/streets/measures to one fact per ring edge) → **`buildCurbRings()`** (**chain-free**: ring + facts + authored widths, with no streets/runs/measures/ribbons in lexical scope, the `sectionPass` pattern). ⭐ **Verified BYTE-IDENTICAL on BOTH the authored state and bare defaults** — harness `scratch/a03-curb-identity.mjs --against baseline`, re-run independently at merge. ⭐ **The reframe that made it buildable: the goal is CHAIN-FREEDOM, not prebake-location** — prebake is authoring-blind, so freezing `iA` there would have frozen bare defaults (Layer 0 q3); see `POLYGON-FIRST §3`.
   - ⚠️ **What is NOT done, stated honestly: 42 of 101 tiles still route through the legacy carve** (`tile.ring − aFill`, and `aFill` is a chain-derived asphalt stroke) — **30 divided median · 3 loop-body median · 9 small · 0 degenerate**. **Check C is green for the offset path only.** ⭐ Zero degenerate fallbacks: every tile that *qualifies* for the chain-free path succeeds on it, so the 42 are structural, not failures. ⛔ The chain was deliberately **not** passed into `buildCurbRings` to cover them — that would have looked like 100% and quietly re-opened Check C. **The gap is bounded and named rather than hidden**, which is the whole difference from the six prior attempts.
   - **→ the remainder is `A06`.** `WALL.md §2` · `POLYGON-FIRST §3` (as-built) · `HANDOFF-freeze-the-curb-in-the-first-bake.md`.
+- **⛔⛔ A18 · A GATED EXPERIMENT REACHED THE SHIPPED MAP THROUGH A SHARED HELPER — CLOSED 2026-09-06 (`cd873545`), and the LESSON is the ticket.**
+  `0e879687` ("identity rides the boolean") changed **`booleanLabelled`** so the protopolygon could
+  carry identity through the union — a real requirement (`RIBBONS §1`: identity must be carried
+  THROUGH the boolean, never recovered from ring geometry afterward). ⛔ But that helper has **SIX
+  callers and only ONE is the proto path**; the other five build the shipped map. So a capability
+  only the experiment uses silently changed what the operator sees, for a day.
+  - **MEASURED, bisected to the function — `node scratch/claims-band-reaches-lu.mjs` on LS:**
+    ledger unconditional **34 tiles / 3669.6 m²** of band falling into land use · ledger opt-in
+    **28 tiles / 0.2 m²**, which is production's number exactly. Splicing `origin/main`'s
+    `booleanLabelled` into HEAD and changing nothing else reproduced the 0.2. ⭐ The probe names the
+    symptom in its own verdict: *"This is the sidewalk the operator sees stop."*
+  - **The mechanism:** the removed line was the shipped CONTRACT —
+    `if (v < 0) return { rings, labels: null, refused: 'all-vertices-minted' }`. A wholly-minted ring
+    has no owner the function can honestly name, so it refused, and `tileGround.js:4178` branches on
+    exactly that. The new path GUESSES an owner from an edge ledger. Those labels are `iaEdge`,
+    `iaEdge` is the ring partition, and the partition tells the FILL which arc belongs to which run.
+  - **Fix: `carryEdges` is opt-in** — default false (shipped behaviour, byte-for-byte), the proto
+    caller passes true. ⭐ Not reverted: the capability is kept, the blast radius is not.
+  - ### ⭐⭐⭐ THE LESSON, AND IT GENERALISES PAST THIS FUNCTION
+    **A FLAG ON A BLOCK IS NOT A WALL IF THE BLOCK EDITS SOMETHING THE REST OF THE MAP CALLS.**
+    `grout === 'proto'` gates the protopolygon block correctly; this edit was **outside** it, in a
+    shared helper. ⛔ Anything an experiment needs from shared code is **opt-in at the call site**,
+    or it is not gated at all. ⚠️ Nothing in the suite caught it — `a03-curb-identity` compares the
+    CURB, which never moved; the defect was in the FILL. **A gate that watches the wrong artifact is
+    a gate that is not watching.**
+
 - **A06 · 🟡 CHECK C's REMAINDER — the last 42 tiles · ✅ UNBLOCKED 2026-08-08 — THE STAMP IS IN THE ARTIFACT.** A07 **closed 2026-08-04** and is this ticket's TEST INSTRUMENT — its DoD *"these tiles now take the offset path"* is a per-tile producer statement, unmeasurable without the stamp. ⭐ **The stamp has since been baked in: `shape.json` is 101/101 producer-stamped — carve 42 · offset 59**, exactly A07's documented LS split (verify: `node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles; console.log(t.length, t.filter(x=>x.producer).length)"`). *(This line read "101 tiles, 0 producer-stamped ⇒ blocked on the re-bake decision" until 2026-08-08; the re-bake happened and the claim went stale.)* ⭐ **Its other stated blocker also dissolved the same day** — the *"don't re-bake LS"* fear was **A14**, now **withdrawn** (those were the operator's layer toggles; the poured overlays are disposable until the real republish). ⇒ **A06 is ready to scope; it is waiting on nothing.** **✅ Scope re-checked against the corrected prebake fact and unchanged — see A07.** *(NEW 2026-07-31, split out of A03; **scope CORRECTED the same evening after a trace — read the scope note before estimating**)* — 30 divided-median + 3 loop-body-median + 9 small tiles still build their curb as `tile.ring − aFill`. Closing this is what turns **Check C** green outright.
   - ⛔ **PARK PLACE RATIONALE EXCISED 2026-08-13 (Wren, `52b5df18`) — the producer does NOT decide the partition; tile 99 is stamped and resolves 30 spans.** *"The carve path emits no labels"* was TRUE at `7299bbeb` (16:49) and FALSE at `4b573fb0` (20:54) — the same day. ▶ `node scratch/claims-producer-does-not-decide-partition.mjs --all --tiles`. ⭐ A06 is Check-C hygiene again — the "NOTHING IS BROKEN FOR LS" line below is no longer contradicted. ⚠️ Jacob's Park Place eye report (2026-08-11) **STANDS**; cause not established, and it is **not A06's**.
-  - ✅ **NOTHING IS BROKEN FOR LS BY THIS.** The 42 tiles are **correct today and byte-identical**; A03 changed where the curb is computed, not how it is drawn. **A06 is Check-C hygiene, not a map defect** — which is precisely what lets it be *sequenced* rather than rushed. ⛔ Do not let the red dot read as a broken map.
+  - ### ⛔⛔ RETRACTED 2026-09-06 — **"A06 IS CHECK-C HYGIENE, NOT A MAP DEFECT" IS FALSE, AND JACOB'S EYE IS WHAT FALSIFIED IT.**
+    *(The struck line read: "NOTHING IS BROKEN FOR LS BY THIS… the 42 tiles are correct today and byte-identical; A06 is Check-C hygiene, not a map defect. Do not let the red dot read as a broken map." It is kept here only as the claim being corrected.)*
+    ⭐ **Jacob, on the render, 2026-09-06: *"this is chains."*** He was pointing at the ped ribbon
+    stopping mid-block and never wrapping the corner, against bare asphalt.
+    ⭐⭐ **THE MECHANISM, AND IT IS A10'S OWN SENTENCE READ THE OTHER WAY ROUND.** `RIBBONS §1`'s
+    slice-2 acceptance says that on a **partitioned** tile *"a gap is not constructible"* — the arcs
+    close on the same inward bisector, step-over and step-back are one cut. ⇒ **On an UNSTAMPED tile
+    none of that runs.** It keeps the pre-A10 construction, which re-strokes an AREA from the run's
+    polyline — chain-world — and there a gap is not merely possible, it is the expected failure.
+    **That is the visible defect, and it is A06's population.** Check-C hygiene and the map defect
+    are the same tiles.
+    ⛔⛔ **TWO PROBES, TWO NUMBERS — DO NOT MERGE THEM. Say which you ran.**
+    | probe | LS result |
+    |---|---|
+    | `node scratch/claims-unpainted-arcs.mjs` | **89 stamped · 12 unstamped** ("no partition to drop from") |
+    | `node scratch/claims-ia-source-stamp.mjs` | **91 stamped · 10 refused** — 7 `carve:median-divided` · 2 `carve:noncontiguous-arcs` · 1 `carve:small` |
+    ⛔ **Re-run both; neither number is quotable.** They disagree by two and nobody has reconciled the
+    denominators — `POLYGON-FIRST §5` RULE 3 (one invariant, one defect) applies before anyone sizes
+    work off either.
+    ⚠️⚠️ **AND THE REFUSAL REASONS CONTRADICT THIS TICKET'S OWN 2026-08-13 CORRECTION.** The line
+    above says *"the producer does NOT decide the partition; tile 99 is stamped and resolves 30
+    spans"* — yet **all ten refusals name a `carve:` reason.** Both cannot be the whole story. ⛔ Do
+    not resolve it by picking; that cross-doc seam is the richest one we have
+    (`project_find_the_code_error_by_finding_the_thinking_error`). **Measure which tiles refuse and
+    why, before scoping.**
+    ⭐ **What this does NOT change:** the 42 tiles' CURB is still correct and byte-identical, and A03
+    still changed only where the curb is computed. What was wrong was inferring from that that
+    nothing the operator sees is affected. **The curb is fine and the RIBBON on it is not.**
   - ⛔ **"FREEZE `aFill`" IS THE WRONG TARGET — do not re-derive this dead end.** It was A06's original framing and it is wrong twice over. (1) `aFill` **moves with authoring** (the stroke differs on 8 of 101 tiles between the authored and bare-defaults state, −2114 m² net, up to −769 m² on one tile), so freezing the polygon would bake the operator's widths into geometry and a width drag could no longer move the curb — `CLAUDE.md` Layer 0 q3, in artifact form. (2) It is also unnecessary: see the polyline row below.
   - ⭐⭐ **THE STROKE'S POLYLINE IS ALREADY CHAIN-FREE (Jacob, verified in code).** `groupRuns(tile)` takes only `{ring, edges}` and builds `run.poly` **purely from ring vertices** (`tileGround.js:1074-1076`) — and the ring is already frozen. ⛔ An earlier objection that "freezing the run polylines = freezing the chain" was **provenance-by-name and is retracted**; the test is **lexical scope**, which is the standard `buildCurbRings` was held to.
   - **What `aFill` still needs, per term — the trace that defines the work:**
