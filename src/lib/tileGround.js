@@ -1283,69 +1283,9 @@ export function capCentre(t) {
   }
   return t.p
 }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ⭐⭐⭐ TILES FROM ① — the substrate ruling, made the producer.
-//
-// `RIBBONS §1` (ruled 2026-08-12): **blocks = boundary − stroked roads**, walked with
-// IDENTITY CARRIED. ① already is that object: every chain expanded at ε and united into ONE
-// closed compound path, so **the blocks are its HOLES** and every hole edge carries the
-// `(skelId, side, segOrd)` stamp of the chain that made it.
-//
-// ⭐⭐ WHY THIS IS THE PRODUCER CHANGE AND NOT A REFINEMENT (Jacob, 2026-09-06: *"with the
-// protopolygon these shapes are impossible"*). Today a tile is a face of the centreline graph
-// and its curb is built by stroking each chain and letting the strokes meet — so a junction
-// can knot, a spur can retrace itself into a zero-width slit, and a fillet can be struck from a
-// needle. **In a single united contour there is no meeting**: the union resolved it. The
-// degenerate class is not fixed here, it is UNCONSTRUCTIBLE. That is the whole return on ①.
-//
-// ⛔ OFF BY DEFAULT, OPT-IN AT THE CALL SITE (`opts.protoTiles`). Tonight's `A18` lesson, paid
-// for once already: a flag on a block is not a wall if the block edits shared code. This
-// function is additive and nothing calls it unless asked.
-//
-// ⚠️ KNOWN GAPS, STATED NOT HIDDEN — this is a first cut and it is NOT ready to be the producer:
-//   · ① as minted carries NO boundary circle, so rim blocks cannot close against the edge of
-//     the drawing (`ARCHITECTURE §"The compound shape"`: the rim is an edge of the drawing,
-//     never an absence). `derive.js` injects the boundary into the FACE walk; ① needs the same.
-//   · hole count and tile count are not 1:1 — measure the injection before trusting it
-//     (`RIBBONS §1` gate 1 case C measured the punch-out as clean: 93 islands ↔ 101 tiles,
-//     0 merges / 0 splits / 0 straddlers — ⛔ re-run, never quote).
-//   · caps are not carried; `detectTileCaps` reads the ring and would have to run here.
-export function tilesFromProto(proto, streets) {
-  if (!proto?.rings?.length || !proto?.owners?.length) return null
-  const { rings, labels, owners } = proto
-  const idxBySkelId = new Map()
-  streets.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i) })
-  const tiles = [], skipped = []
-  for (let k = 0; k < rings.length; k++) {
-    const ring0 = rings[k], labs0 = labels?.[k]
-    if (!(ring0?.length >= 3) || !labs0) continue
-    // ⛔ THE BLOCKS ARE THE HOLES. The outer contour is the network's own outline and is not a
-    // block; `signedArea > 0` is the shipped convention for it (② reads it the same way).
-    if (signedArea(ring0) > 0) continue
-    // ⛔ AND THE WINDING MUST BE FLIPPED TO MATCH A FACE. Downstream `offsetRingVariable` is
-    // winding-aware, so handing it a negative-area ring where the face walk hands a positive
-    // one inverts every depth — the band would grow outward into the road. Reverse the ring AND
-    // its labels together, or every edge takes its neighbour's owner.
-    const ring = ring0.slice().reverse(), labs = labs0.slice().reverse()
-    const edges = []
-    let bad = null
-    for (let i = 0; i < ring.length; i++) {
-      const o = owners[labs[i]]
-      if (!o) { bad = 'unlabelled edge'; break }
-      const si = idxBySkelId.get(o.skelId)
-      if (si === undefined) { bad = `no street for ${o.skelId}`; break }
-      const forward = o.side === 'right'
-      edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
-    }
-    // ⛔ A TILE WE CANNOT NAME IS REFUSED AND COUNTED, NEVER SILENTLY DROPPED. An unnamed ring
-    // downstream takes depth 0 and lays its curb on the centreline — a plausible-looking wrong
-    // map, which is the one outcome a kit may not have (`CLAUDE.md` Layer 0 q2).
-    if (bad) { skipped.push({ k, why: bad, area: Math.abs(signedArea(ring0)) }); continue }
-    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
-  }
-  return { tiles, skipped }
-}
+// ⛔ `tilesFromProto` EXCISED 2026-09-06 — it had ZERO callers in `src/`, and its one scratch
+// caller tested '① as the TILE SOURCE', which is the premise `5560cf6a` ruled wrong: "I CHANGED THE
+// SUBSTRATE, NOT THE PRODUCER." Dead code is excised here, not archived; git holds it.
 
 export function tilesFromFrozen(frozen, streets) {
   if (!Array.isArray(frozen) || !frozen.length) return null
@@ -4290,7 +4230,9 @@ export function buildTileGround(ribbons, opts = {}) {
     if (f && f.res < 0.3 && f.R >= 3 && f.R <= 12) culDeSacLoops.set(si, { C: [f.cx, f.cy], R: f.R })
   }
   const shapeTiles = []
-  const _mouthProbe = []   // TEMP probe (opts.deadEndMouthProbe): every candidate mouth + its nearby fillets
+  // ⛔ `_mouthProbe` EXCISED 2026-09-06 — labelled "TEMP probe" by its own author, gated on
+  // `opts.deadEndMouthProbe`, which nothing passes. A temporary thing that outlives its occasion is
+  // the debt pattern; git holds it if the investigation reopens.
   for (const tile of tiles) {
     // [THRU] runs split at through-construction stations → per-fe spans
     const runs = thruSplits.size ? groupRuns(tile).flatMap(splitRunAtStations) : groupRuns(tile)
@@ -4927,21 +4869,10 @@ export function buildTileGround(ribbons, opts = {}) {
         // the two mouth fillet apexes nearest the mouth node (the two corners)
         const near = fSink.map(f => ({ f, d: Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]) }))
           .filter(o => o.d < 30).sort((a, b) => a.d - b.d).slice(0, 2)
-        if (opts.deadEndMouthProbe) {
-          const allNear = fSink.map(f => ({ d: +Math.hypot(f.apex[0] - M[0], f.apex[1] - M[1]).toFixed(2), r: +(f.r || 0).toFixed(2), apex: f.apex.map(v => +v.toFixed(1)) }))
-            .filter(o => o.d < 60).sort((a, b) => a.d - b.d).slice(0, 5)
-          // count spur run-ends at this mouth + their sides
-          const spurEnds = []
-          for (const rm of runMeta) {
-            if (rm.skelId !== spurSkel) continue
-            for (const ix of [0, rm.poly.length - 1]) {
-              if (Math.hypot(rm.poly[ix][0] - M[0], rm.poly[ix][1] - M[1]) < 1) spurEnds.push({ side: rm.side })
-            }
-          }
-          _mouthProbe.push({ ti: tiles.indexOf(tile), spurSkel, M: M.map(v => +v.toFixed(1)), nearCount: near.length, spurSides: spurEnds.map(e => e.side), fillets: allNear })
-        }
-        // FALLBACK — a SINGLE-FILLET mouth (Piece 1). The probe (deadEndMouthProbe)
-        // confirmed the only genuinely-skipped mouths are south-13th (tile 12) and
+        // FALLBACK — a SINGLE-FILLET mouth (Piece 1). ⛔ The probe that established this
+        // (`deadEndMouthProbe`) was EXCISED 2026-09-06; the FINDING it produced is kept here
+        // because it is the reason this branch exists, and a dead pointer is worse than a
+        // finding without its instrument. It confirmed the only genuinely-skipped mouths are south-13th (tile 12) and
         // henrietta (tile 25): at each, the through/cross road extends to just ONE
         // side of the node, so the curb forms exactly ONE real corner (one fillet) —
         // the other side is collinear (no corner to round). We wrap the ONE corner
@@ -5958,7 +5889,7 @@ export function buildTileGround(ribbons, opts = {}) {
     curb = protoCurb
     console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) offset from ①`)
   }
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _mouthProbe, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
