@@ -1234,6 +1234,69 @@ export function capCentre(t) {
   return t.p
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ⭐⭐⭐ TILES FROM ① — the substrate ruling, made the producer.
+//
+// `RIBBONS §1` (ruled 2026-08-12): **blocks = boundary − stroked roads**, walked with
+// IDENTITY CARRIED. ① already is that object: every chain expanded at ε and united into ONE
+// closed compound path, so **the blocks are its HOLES** and every hole edge carries the
+// `(skelId, side, segOrd)` stamp of the chain that made it.
+//
+// ⭐⭐ WHY THIS IS THE PRODUCER CHANGE AND NOT A REFINEMENT (Jacob, 2026-09-06: *"with the
+// protopolygon these shapes are impossible"*). Today a tile is a face of the centreline graph
+// and its curb is built by stroking each chain and letting the strokes meet — so a junction
+// can knot, a spur can retrace itself into a zero-width slit, and a fillet can be struck from a
+// needle. **In a single united contour there is no meeting**: the union resolved it. The
+// degenerate class is not fixed here, it is UNCONSTRUCTIBLE. That is the whole return on ①.
+//
+// ⛔ OFF BY DEFAULT, OPT-IN AT THE CALL SITE (`opts.protoTiles`). Tonight's `A18` lesson, paid
+// for once already: a flag on a block is not a wall if the block edits shared code. This
+// function is additive and nothing calls it unless asked.
+//
+// ⚠️ KNOWN GAPS, STATED NOT HIDDEN — this is a first cut and it is NOT ready to be the producer:
+//   · ① as minted carries NO boundary circle, so rim blocks cannot close against the edge of
+//     the drawing (`ARCHITECTURE §"The compound shape"`: the rim is an edge of the drawing,
+//     never an absence). `derive.js` injects the boundary into the FACE walk; ① needs the same.
+//   · hole count and tile count are not 1:1 — measure the injection before trusting it
+//     (`RIBBONS §1` gate 1 case C measured the punch-out as clean: 93 islands ↔ 101 tiles,
+//     0 merges / 0 splits / 0 straddlers — ⛔ re-run, never quote).
+//   · caps are not carried; `detectTileCaps` reads the ring and would have to run here.
+export function tilesFromProto(proto, streets) {
+  if (!proto?.rings?.length || !proto?.owners?.length) return null
+  const { rings, labels, owners } = proto
+  const idxBySkelId = new Map()
+  streets.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !idxBySkelId.has(k)) idxBySkelId.set(k, i) })
+  const tiles = [], skipped = []
+  for (let k = 0; k < rings.length; k++) {
+    const ring0 = rings[k], labs0 = labels?.[k]
+    if (!(ring0?.length >= 3) || !labs0) continue
+    // ⛔ THE BLOCKS ARE THE HOLES. The outer contour is the network's own outline and is not a
+    // block; `signedArea > 0` is the shipped convention for it (② reads it the same way).
+    if (signedArea(ring0) > 0) continue
+    // ⛔ AND THE WINDING MUST BE FLIPPED TO MATCH A FACE. Downstream `offsetRingVariable` is
+    // winding-aware, so handing it a negative-area ring where the face walk hands a positive
+    // one inverts every depth — the band would grow outward into the road. Reverse the ring AND
+    // its labels together, or every edge takes its neighbour's owner.
+    const ring = ring0.slice().reverse(), labs = labs0.slice().reverse()
+    const edges = []
+    let bad = null
+    for (let i = 0; i < ring.length; i++) {
+      const o = owners[labs[i]]
+      if (!o) { bad = 'unlabelled edge'; break }
+      const si = idxBySkelId.get(o.skelId)
+      if (si === undefined) { bad = `no street for ${o.skelId}`; break }
+      const forward = o.side === 'right'
+      edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
+    }
+    // ⛔ A TILE WE CANNOT NAME IS REFUSED AND COUNTED, NEVER SILENTLY DROPPED. An unnamed ring
+    // downstream takes depth 0 and lays its curb on the centreline — a plausible-looking wrong
+    // map, which is the one outcome a kit may not have (`CLAUDE.md` Layer 0 q2).
+    if (bad) { skipped.push({ k, why: bad, area: Math.abs(signedArea(ring0)) }); continue }
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
+  }
+  return { tiles, skipped }
+}
+
 export function tilesFromFrozen(frozen, streets) {
   if (!Array.isArray(frozen) || !frozen.length) return null
   const idxBySkelId = new Map()
