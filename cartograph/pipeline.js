@@ -136,149 +136,53 @@ async function main() {
     }
   }
 
-  // ── Clip to the neighborhood boundary (KIT) ─────────────────────────
-  // If the scene has a committed neighborhood_boundary.json, drop every feature
-  // OUTSIDE the circle (+ the street-fade margin) so map.json/ribbons carry only
-  // the neighborhood, not the whole fetched square (a wide fetch otherwise pours
-  // 100s of MB). INCLUSIVE — keep anything TOUCHING the margin — so tile→street
-  // edge refs and crossing arterials survive. No boundary (uncommitted) = no clip.
+  // ── Building membership (KIT) ───────────────────────────────────────
+  // ⛔⛔ THE GEOMETRIC CLIP WAS EXCISED HERE — 2026-09-05, ruled by Jacob: "let's
+  // remove the clip and recover the full bb chains." What stood here trimmed every
+  // street/alley/path polyline to a circle and dropped features outside it.
+  //
+  // WHY, and it is a CONTRACT breach rather than a perf question (`EXTENT-DESIGN
+  // §3.3`): the bb is a SQUARE holding the disc, frozen at hard fetch at roughly
+  // radius + 20–25% — the "forever safety zone" — sized so the data reaches the first
+  // junction PAST the boundary streets so corners still close, and so R15's live edits
+  // (change the radius, move the disc centroid, hide/reveal) need NO re-pour "because
+  // the frozen square holds every point in the zone". The clip cut at
+  // `max(streetFade.outer, radius) + 30`, INSIDE that zone on every kit-built scene
+  // (Altadena by 642–850 m) — so growing the radius revealed nothing, the data having
+  // already been destroyed. The forever zone was not forever.
+  // ⭐ And the VERB was wrong: EXTENT says the disc HIDES what is outside it. This was
+  // the one step in the chain that DELETED instead. The disc hides; the bb holds.
+  //
+  // ⭐ ROOT of why it had to invent an extent: the boundary record carries NO bb field
+  // (`radius`, `fade`, `streetFade`, `boundary`, `polygon`, `exclusions` — no forever
+  // zone). With nothing principled to clip to it reached for `streetFade` — A RENDER
+  // KNOB deciding what exists. Jacob: "the edge gets faded but AFTER it's drawn."
+  // Measured live on all three kit scenes, `fadeOuter` dominating `radius`: it alone
+  // decided the fate of 43 / 80 / 28 chains. ▶ `node scratch/claims-rim-census.mjs`
+  //
+  // ⛔ WHAT THIS DOES NOT DO: it does not bound the DRAWING — nothing here ever did.
+  // The disc still hides and `streetFade` still fades. Per Jacob the whole bb is built
+  // and only the stamped circle is shown. A bake-time crop is a SEPARATE, still-unbuilt
+  // concern: chop at the BAKE, never at the chain. This block fused "what is the
+  // neighborhood" with "what do we ship"; they are two questions and it owned neither.
+  //
+  // ⛔ EXPECT map.json / ribbons.json TO GROW on the next pour, most on a scene whose
+  // bb is large relative to its hood (HPDM was keeping 16.9% of chain length). That is
+  // recovered data, not bloat.
+  //
+  // ⭐ WHAT DIES WITH IT — measured, not hoped: the manufactured rim tips at exactly
+  // keepR (31/77/44, of which 22/12/26 got ROUND CAPS, so a chopped street rendered as
+  // a cul-de-sac — Jacob: "artificially cut off streets in this whole area"); the
+  // nodeless-endpoint class this block used to print, a blocker on substrateWalk
+  // becoming the producer (`PREBAKE §2.5a`); and the stranded frozen nodes.
+  // ⛔ NOT the 51 INTERIOR dead-end tips — 51 pre-clip and 51 post, so they are real
+  // and this changes nothing about them. Do not expect A0 to close.
+  //
+  // Membership SURVIVES, unchanged: the polygon decides which BUILDINGS are in the
+  // hood. That is a different question from where the GEOMETRY stops.
   const nbPath = join(RAW_DIR, '..', 'neighborhood_boundary.json')
   if (existsSync(nbPath)) {
     const nb = JSON.parse(readFileSync(nbPath, 'utf-8'))
-    const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
-    // keepR is a CONTENT extent, and it may never reach INSIDE the hood. Floor it
-    // at the authored disc radius: `streetFade` is a look band, and nothing stops a
-    // scene authoring one NARROWER than its own disc — on which the bare
-    // `streetFade.outer` would clip the neighborhood's own streets. LS is the only
-    // scene whose band isn't radius+160 (1000 vs 892, authored), so no scene reveals
-    // this on its own — a kit defect by construction (`EXTENT-DESIGN §3.3` D4).
-    const fadeOuter = Number.isFinite(nb.streetFade?.outer) ? nb.streetFade.outer : null
-    const discR = Number.isFinite(nb.radius) ? nb.radius : null
-    // ⛔ NO FALLBACK. This used to read `?? Infinity`: a boundary carrying neither
-    // field clipped NOTHING, then printed its kept/dropped line like a clean run —
-    // a silent success inside a KIT step, on the town where nobody has looked
-    // (CLAUDE.md Layer 0, q2). The absent extent is the failure; say so and stop.
-    if (fadeOuter === null && discR === null) {
-      console.error(`
-⛔ ${nbPath}
-   carries neither streetFade.outer nor radius, so the boundary clip has no extent.
-
-   It cannot proceed: clipping to Infinity keeps the entire fetched square and
-   reports success. Author a radius on the scene's boundary, or delete the file
-   to opt this scene out of the clip deliberately.
-`)
-      process.exit(1)
-    }
-    const keepR = Math.max(fadeOuter ?? 0, discR ?? 0) + 30
-    const R2 = keepR * keepR
-    const touches = (pts) => {
-      if (!Array.isArray(pts)) return false
-      for (const p of pts) {
-        const x = Array.isArray(p) ? p[0] : p.x, z = Array.isArray(p) ? p[1] : p.z
-        if ((x - cx) ** 2 + (z - cz) ** 2 <= R2) return true
-      }
-      return false
-    }
-    const keep = (item) => {
-      if (typeof item.x === 'number' && typeof item.z === 'number') return (item.x - cx) ** 2 + (item.z - cz) ** 2 <= R2
-      return touches(item.ring || item.points || item.coords)
-    }
-    let dropped = 0, kept = 0
-    for (const cat of Object.keys(layers || {})) {
-      const arr = layers[cat]
-      if (Array.isArray(arr)) { const before = arr.length; layers[cat] = arr.filter(keep); dropped += before - layers[cat].length; kept += layers[cat].length }
-    }
-    // ⭐ Polyline CLIP (the Data-Wall neuter): trim a street/path polyline to the
-    // circle, keeping the longest inside run — so a named BOUNDARY ARTERIAL isn't
-    // carried through at full city length (South Big Bend ran 3882 m across a
-    // 2502 m hood, sticking out and skewing the 3D framing). Whole-street keep/drop
-    // is not enough; the geometry itself must stop at the boundary. [x,z] arrays.
-    const clipRun = (pts) => {
-      if (!Array.isArray(pts) || pts.length < 2) return pts
-      const inC = (x, z) => (x - cx) ** 2 + (z - cz) ** 2 <= R2
-      const pieces = []; let cur = null
-      const close = () => { if (cur && cur.length >= 2) pieces.push(cur); cur = null }
-      const push = (p) => { if (!cur) { cur = [p]; return } const l = cur[cur.length - 1]; if (l[0] !== p[0] || l[1] !== p[1]) cur.push(p) }
-      for (let i = 0; i < pts.length - 1; i++) {
-        const a = pts[i], b = pts[i + 1], dx = b[0] - a[0], dz = b[1] - a[1], A = dx * dx + dz * dz
-        const ts = []
-        if (A > 1e-12) {
-          const fx = a[0] - cx, fz = a[1] - cz, B = 2 * (fx * dx + fz * dz), C = fx * fx + fz * fz - R2, disc = B * B - 4 * A * C
-          if (disc > 0) { const sq = Math.sqrt(disc); for (const t of [(-B - sq) / (2 * A), (-B + sq) / (2 * A)]) if (t > 1e-9 && t < 1 - 1e-9) ts.push(t) }
-        }
-        ts.sort((x, y) => x - y)
-        const stops = [0, ...ts, 1]
-        for (let s = 0; s < stops.length - 1; s++) {
-          const t0 = stops[s], t1 = stops[s + 1]; if (t1 - t0 < 1e-9) continue
-          const mt = (t0 + t1) / 2
-          if (inC(a[0] + dx * mt, a[1] + dz * mt)) { push([a[0] + dx * t0, a[1] + dz * t0]); push([a[0] + dx * t1, a[1] + dz * t1]) } else close()
-        }
-      }
-      close()
-      if (!pieces.length) return null
-      return pieces.reduce((p, q) => (q.length > p.length ? q : p))
-    }
-    const POLYLINE = new Set(['streets', 'alleys', 'paths'])
-    const rb = layers.ribbons
-    if (rb && typeof rb === 'object' && !Array.isArray(rb)) {
-      // ⛔ THE FROZEN-INDEX FLOOR — snapshot the chain ENDPOINTS the junction map
-      // was stamped against, before clipRun mints new ones. `deriveLayers` above
-      // built `ribbons.junctionMap` over FULL-LENGTH chains; the census below says
-      // out loud what the clip then does to it. Same vKey rounding as derive.js:3444.
-      const jvKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
-      const preClipEnds = new Map()
-      for (const it of (Array.isArray(rb.streets) ? rb.streets : [])) {
-        const p = it?.points
-        if (!p || p.length < 2) continue
-        preClipEnds.set(it.skelId ?? it.name, { start: jvKey(p[0]), end: jvKey(p[p.length - 1]), curbed: !it.gradeSeparated && !it.disabled })
-      }
-      for (const key of ['streets', 'faces', 'tiles', 'medians', 'corridors', 'alleys', 'paths', 'intersections', 'junctions', 'nameTransitions']) {
-        if (!Array.isArray(rb[key])) continue
-        const before = rb[key].length
-        if (POLYLINE.has(key)) {
-          rb[key] = rb[key].map(it => { const run = clipRun(it.points); return run ? { ...it, points: run } : null }).filter(Boolean)
-        } else {
-          rb[key] = rb[key].filter(keep)
-        }
-        dropped += before - rb[key].length; kept += rb[key].length
-      }
-      // ⛔⛔ [clip/frozen-index] A LOUD, NAMED, COUNTED CLASS — never a silent line.
-      // The key list above is the whole of what the clip touches, and `junctionMap`
-      // is NOT in it: the loop's own `Array.isArray(arr)` guard skips it, because it
-      // is an object. So every chain clipRun severs gains an endpoint no node source
-      // ever saw, and the node stamped at the real end is stranded outside `keepR`.
-      // Downstream: no node ⇒ no `cornersAdjacent` ⇒ substrateWalk cannot close the
-      // run ⇒ a hole in the pedestrian band. Root + measurement: PREBAKE §2.5a.
-      //   ▶ node scratch/claims-nodeless-tip-classifier.mjs --source=pour
-      // ⚠️⚠️ DELIBERATELY NOT FATAL. The condition is LIVE on every scene that clips
-      // (LS 25, HPDM 67 as of 2026-08-21), so `exit(1)` here bricks the pipeline for
-      // everyone before the cure exists. It earns its refusal the day the count is 0
-      // — and THAT IS A ONE-LINE CHANGE, made deliberately, right here.
-      const jnodes = rb.junctionMap?.nodes
-      if (Array.isArray(jnodes) && preClipEnds.size) {
-        const jmSet = new Set(jnodes.map(n => jvKey(n.at)))
-        const severed = [], manufactured = []
-        for (const it of rb.streets || []) {
-          const was = preClipEnds.get(it.skelId ?? it.name)
-          const p = it?.points
-          if (!was || !p || p.length < 2) continue
-          for (const [end, now] of [['start', jvKey(p[0])], ['end', jvKey(p[p.length - 1])]]) {
-            if (now === was[end]) continue
-            const who = `${it.skelId ?? it.name}/${end}`
-            if (jmSet.has(was[end])) severed.push(`${who}@${was[end]}`)
-            if (was.curbed && !jmSet.has(now)) manufactured.push(`${who}→${now}`)
-          }
-        }
-        const stranded = jnodes.filter(n => !keep({ points: [n.at] })).length
-        console.log(`  ⛔ [clip/frozen-index] junctionMap is NOT in the clipped key list — it is stamped pre-clip and never re-derived.`)
-        console.log(`     ${severed.length} chain-end(s) SEVERED whose frozen node the clip strands · ${manufactured.length} NEW endpoint(s) MANUFACTURED with no junction node · ${stranded} of ${jnodes.length} node(s) now beyond keepR ${keepR} m`)
-        if (manufactured.length) console.log(`     manufactured (no node ⇒ no coupler ⇒ the walk cannot close here): ${manufactured.join(' · ')}`)
-        if (severed.length) console.log(`     severed (their frozen node is now unreachable): ${severed.join(' · ')}`)
-        if (!severed.length && !manufactured.length) console.log(`     ✅ 0 and 0 — the frozen index and the clipped geometry agree. This is the state that makes the refusal above safe to arm.`)
-      } else if (preClipEnds.size) {
-        console.log(`  ⛔ [clip/frozen-index] NOT MEASURED — ribbons.junctionMap has no nodes[]. The census cannot run, so absence of a warning here means nothing.`)
-      }
-    }
     // Building MEMBERSHIP (KIT): the neighborhood is the area inside the
     // boundary-street POLYGON; the roster editor's overrides layer on top
     // (activate = force-in an outside building, hide = force-out an inside one).
@@ -291,10 +195,8 @@ async function main() {
       catch (e) { console.warn(`  building-overrides unreadable: ${e.message}`) }
     }
     const membership = createMembershipFilter({ nb, activate, hide, label: 'pipeline/map.json' })
-    const bBefore = buildings.length
     buildings = buildings.filter((b) => membership.decide(buildingIdOf(b), b.ring || null))
     membership.report()
-    dropped += bBefore - buildings.length
   }
 
   // ── World-coord bbox (derived from projected layers + buildings) ────

@@ -1902,6 +1902,25 @@ function main() {
     if (seq.length >= 2) roads.push(seq)
   }
 
+  // ⭐⭐ FIT THE CURVE ON THE RAW TRACE, THEN SIMPLIFY (Jacob, 2026-09-05).
+  // Step 4b's fit runs on RDP's OUTPUT, and the two steps disagree about what a corner is.
+  // RDP has no notion of corners; the fit calls any vertex turning ≥ CURVE_HARD_TURN (35°)
+  // "a real corner, kept SHARP, never inside a cluster". So a TIGHT arc is simplified into
+  // chords that turn 42–48°, the fit reads each chord as a corner, no cluster forms, and the
+  // chain is faceted forever. ⛔ THE SIMPLIFICATION MANUFACTURES THE CORNERS THAT DISQUALIFY
+  // ITS OWN RESULT FROM BEING RE-CURVED. Same for CURVE_SEG_MAX (40 m): RDP emits 90 m chords
+  // and a 90 m chord is by definition "a straight leg".
+  // Measured on LS before this change: 12 chains curve (>30° turn) and carry no `segments` —
+  // allen-avenue-0 98°/124 m, geyer-avenue-4 82°, south-tucker-boulevard 79°,
+  // saint-vincent-avenue-0 63°, waverly-place-0 48°. Every one trips 35° or 40 m or both.
+  // The step-4b comment states the assumption it rests on — "normal streets never do this,
+  // their gentle curves stay <12° at eps=1.0" — which holds for 107 of 119 chains and not
+  // for these.
+  // ⇒ Keep the RAW trace so the fit sees the samples RDP is about to throw away. The fit is
+  // grid-safe by construction (a straight run and a sharp corner come back byte-identical),
+  // so a chain it declines to fit still gets exactly the simplified points it gets today.
+  for (const s of streets) s._rawPts = s.points.slice()
+
   // (c) Simplify each through-road ONCE across the joins, then split back by name.
   const protRoad = new Set([...junctionKeys].filter(k => !transitionKeys.has(k)))
   const orientedPts = (e) => e.flip ? reverse(sById.get(e.id).points) : sById.get(e.id).points.slice()
@@ -1984,7 +2003,7 @@ function main() {
     //     loops (Benton teardrop — v2 step (b)) now fit as general beziers via
     //     fitClosedLoopBezier (the fitClosedLoopCircle fall-through). Waverly couplet is
     //     multi-chain, not a single closed loop — unaffected here.
-    let loopFits = 0
+    let loopFits = 0, rawFits = 0
     for (const s of streets) {
       if (roadHandled.has(s.id)) continue
       if (s.phase && s.phase.kind === 'divided') continue
@@ -1993,10 +2012,13 @@ function main() {
         if (loopFit) { s.points = loopFit.points; s.segments = loopFit.segments; fitChains++; loopFits++ }
         continue                                            // closed loops never go through the open-chain cluster fit
       }
-      const fit = curveFitSegments(s.points, junctionKeys)
-      if (fit.segments) { s.points = fit.points; s.segments = fit.segments; fitChains++ }
+      // ⭐ fit from the RAW trace, not from RDP's output (see the note at step 4c).
+      const fit = curveFitSegments(s._rawPts || s.points, junctionKeys)
+      if (fit.segments) { s.points = fit.points; s.segments = fit.segments; fitChains++; rawFits++ }
     }
     console.log(`  curve-fit: bezier-fit ${fitChains} curving chain(s) (${loopFits} closed loop(s) incl. non-circular teardrops; divided excluded)`)
+    console.log(`  curve-fit: ${rawFits} standalone chain(s) fitted FROM THE RAW TRACE (pre-RDP)`)
+    for (const s of streets) delete s._rawPts
   }
 
   // Canonical direction pass. Non-oneway chains are oriented so the
