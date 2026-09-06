@@ -361,7 +361,21 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⚠️ Unlabelled clip geometry is legitimate (the junction/median constructions add
 // polygons that belong to no single run): its vertices land as crossings and inherit
 // forward, which is the same ring-adjacency rule the keyhole clip seam uses.
-function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null) {
+// ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER.
+// The edge-ledger below was added 2026-09-05 for the protopolygon (`0e879687`, "identity rides
+// the boolean") and it is a real requirement — `RIBBONS §1`: identity must be carried THROUGH
+// the boolean, never recovered from ring geometry afterward. ⛔ But it was added by changing
+// this SHARED helper for ALL SIX callers, and only ONE of them is the proto path: the other
+// five (`:495`, and three inside the tile construction, and the `iA` difference) build the
+// SHIPPED map. So a capability the experiment needed silently changed the map.
+// ⭐ MEASURED, which is why this is a fix and not a preference — `scratch/claims-band-reaches-lu.mjs`
+// on lafayette-square:
+//        with the ledger unconditional   34 tiles ·  3669.6 m² of band falling into land use
+//        with it opt-in (this)           28 tiles ·      0.2 m²  — production's number exactly
+// That 3669 m² IS the sidewalk stopping mid-block and never wrapping the corner. The probe says
+// so in its own verdict: "This is the sidewalk the operator sees stop."
+// ⇒ default OFF = the shipped behaviour, byte-for-byte. The proto caller asks for it.
+function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false) {
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
@@ -395,7 +409,8 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     // one of them, so its owner is the contributor running parallel to it. Still carried
     // through the boolean — the direction comes from Clipper's own edge pair, not from a
     // lookup against unrelated geometry afterward.
-    c.ZFillFunction = (b1, t1, b2, t2, pt) => {
+    if (!carryEdges) c.ZFillFunction = () => {}          // leave pt.Z = 0 ⇒ "an intersection point"
+    else c.ZFillFunction = (b1, t1, b2, t2, pt) => {
       let arr = met.get(mkey(pt)); if (!arr) met.set(mkey(pt), arr = [])
       for (const [bo, to] of [[b1, t1], [b2, t2]]) {
         if (!bo || !to) continue
@@ -429,6 +444,10 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       if (raw[i] >= 0) { res[i] = raw[i]; continue }
       let v = -1
       for (let k = 1; k <= n; k++) { const j = raw[(i + k) % n]; if (j >= 0) { v = j; break } }
+      // ⭐ THE REFUSAL IS THE SHIPPED CONTRACT: a wholly-minted ring has no owner this function
+      // can honestly name, so it says so and hands back `labels: null` — and `:4178` branches on
+      // exactly that. Guessing an owner instead is what mislabelled the shipped bands.
+      if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted' }
       if (v < 0) { res[i] = -1; continue }        // wholly minted → the edge resolver below
       res[i] = v
     }
@@ -5044,7 +5063,7 @@ export function buildTileGround(ribbons, opts = {}) {
       const med=(f)=>{const a=protoOwners.map(f).filter(v=>Number.isFinite(v)).sort((x,y)=>x-y);return a.length?a[a.length>>1]:NaN}
       console.log(`[tileGround][STAMP] ${n} stamps — pavementHW>0 ${hw} (med ${med(o=>o.pavementHW)?.toFixed(2)}) · treelawn>0 ${tl} (med ${med(o=>o.treelawn)?.toFixed(2)}) · sidewalk>0 ${sw} (med ${med(o=>o.sidewalk)?.toFixed(2)})`) }
     console.log(`[tileGround][PROTO①] ${pRings.length} chain outline(s) into the unite — of ${streetsOrig.length} streets, ${streetsOrig.filter(x => x.gradeSeparated).length} gradeSeparated`)
-    const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels)
+    const R = booleanLabelled(clipperLib.ClipType.ctUnion, pRings, pLabels, [], null, true)   // ① needs the edge ledger; nothing else does
     proto = R.rings
     protoLabels = R.labels
     protoRefused = R.refused
