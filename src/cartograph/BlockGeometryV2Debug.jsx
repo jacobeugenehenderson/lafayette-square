@@ -803,7 +803,17 @@ export default function BlockGeometryV2Debug({
     // null with frozenNotReady false, and the live build is the visible fallback.)
     if (sectionGeos) return null
     let tg
-    try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: GROUT_ON }) }
+    // ⭐⭐⭐ ① IS THE PRODUCER HERE TOO — LIVE, NOT ONLY IN THE BAKE (2026-09-06).
+  // `RIBBONS §1`: "the requirement is that the SHAPE comes from ① everywhere — frozen or live,
+  // Survey or Section."
+  // ⛔ THIS LINE IS WHY A WHOLE DAY OF ① WORK WAS INVISIBLE TO THE OPERATOR. It passed
+  // `grout: GROUT_ON`, and `GROUT_ON` is FALSE unless the URL carries `?grout=1` — so ① was never
+  // built in the app at all, `opts.protoProducer` was never set, and `curb = protoCurb` never
+  // fired. Survey drew the LEGACY CHAIN CURB through every fix, and each "still happening" was
+  // the operator correctly reporting geometry none of the changes could reach.
+  // ⭐ The tell was in the screenshot and I missed it: the curb corners were ROUND. ② is jtMiter
+  // and is sharp by ruling — a rounded corner was proof the proto path was not running.
+  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: 'proto', protoProducer: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))
