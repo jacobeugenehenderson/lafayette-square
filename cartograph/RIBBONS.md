@@ -320,13 +320,20 @@
 >   half-migrated artifact cannot silently take the wrong path.
 >   ⛔ **OFF BY DEFAULT, proven twice:** `a03-curb-identity --against` byte-identical, and a normal bake
 >   reproduces the prior `shape.json` byte for byte. `--proto` REFUSES rather than falling back.
->   ### ⛔⛔ AND IT IS INVISIBLE IN SURVEY — `sectionFrozen = !surveyActive && !!frozenShape`
->   **While the Survey tool is selected the Designer ignores `shape.json` and live-builds from the
->   chains**, by design (Survey strokes the element under the operator's hand). ⇒ A producer change
->   shows in **MEASURE, never in Survey.** ⭐ This cost a round trip — the operator hard-refreshed
->   Survey and correctly reported "no visible change".
->   ⚠️ **CONSEQUENCE OPEN:** the authoring surface and the shipped shape now disagree — Survey draws
->   the chain curb while everything frozen is ①-produced.
+>   ### ⭐⭐⭐ AND THE AXIS IS **CHAINS vs ①**, NOT "FROZEN vs LIVE" — corrected 2026-09-06 (Jacob)
+>   > *"It may be mechanically impossible to not use the chains, but the EFFECT needs to be we work
+>   > from the simplified protopolygon."*
+>
+>   `sectionFrozen = !surveyActive`, so with the Survey tool selected the Designer does not read
+>   `shape.json` — it live-builds. ⛔ **That is NOT a reason Survey must draw the chain curb, and
+>   stating it as one is a defect dressed as a constraint.** ① is frozen into `ribbons.json`, which the
+>   live build ALREADY LOADS, so **the live build can build from ①** without touching the frozen-shape
+>   boundary at all. `opts.protoProducer` does exactly that, and the console proves the source:
+>   `[tileGround][①] source: frozen`.
+>   ⇒ **The requirement is that the SHAPE comes from ① everywhere** — frozen or live, Survey or
+>   Section. Where the code happens to touch a chain to get there is secondary; what may not happen is
+>   a curb whose shape is a traced chain.
+>   ⚠️ **STILL OPEN:** ① as the live producer is behind `?proto=1`, not the default.
 >
 >   ### ⭐⭐⭐ ②'s ACCEPTANCE, IN THE OPERATOR'S WORDS — *"if the centerline is smooth, their offsets should match."*
 >   ▶ `node scratch/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**
