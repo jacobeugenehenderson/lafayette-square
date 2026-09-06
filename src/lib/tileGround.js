@@ -431,7 +431,19 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005 }) {
       nrm.push(L > 1e-9 ? [-dz / L * eps, dx / L * eps] : (nrm[nrm.length - 1] || [0, 0]))
     }
     const skelId = st?.skelId ?? st?.name ?? null, gs = !!st?.gradeSeparated
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs }) - 1
+    // ⭐⭐ THE TIP RIDES AS IDENTITY, STAMPED WHERE IT IS KNOWN EXACTLY. A dead-end cap is a
+    // ring vertex whose two edges carry the same chain on OPPOSITE sides *at that chain's own
+    // endpoint* (the one cap criterion, `RIBBONS §1` tile model). The first half of that test
+    // is already in the stamp; this is the second half.
+    // ⛔⛔ AND IT MAY NOT BE RECOVERED GEOMETRICALLY. `detectTileCaps` matches a ring vertex to
+    // a chain endpoint through `tipKey`, which rounds to 1 mm — but ①'s vertices sit ε off the
+    // chain (5 mm at the default), so that match can NEVER fire on a proto tile and a distance
+    // test is the only thing that would make it. ⛔ That test is proximity recovery of a chain
+    // label — `ROADMAP A15`'s explicitly forbidden third recovery, which already killed the
+    // nearest-fe match and the walk-ordinal coupler. Here `i` IS the station, exactly, at zero
+    // cost. ⭐ ε is a DECLARATION, not a tolerance, and nothing downstream may treat it as one.
+    const tipAtI = (i) => i === 0 ? 'start' : (i === P.length - 1 ? 'end' : null)
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, tip: tipAtI(i) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -1347,7 +1359,7 @@ export function tilesFromProto(proto, streets, { take = 'holes' } = {}) {
     // labels together (or every edge takes its neighbour's owner); a face is already correct.
     const ring = take === 'faces' ? ring0.slice() : ring0.slice().reverse()
     const labs = take === 'faces' ? labs0.slice() : labs0.slice().reverse()
-    const edges = []
+    const edges = [], tipAt = []
     let bad = null
     for (let i = 0; i < ring.length; i++) {
       const o = owners[labs[i]]
@@ -1358,18 +1370,40 @@ export function tilesFromProto(proto, streets, { take = 'holes' } = {}) {
       if (o.skelId === BOUNDARY_EDGE_SKEL) {
         const fwd = o.side === 'right'
         edges.push({ streetIdx: -1, forward: fwd, side: fwd ? 'right' : 'left', boundary: true })
+        tipAt.push(null)   // ⛔ KEEP `tipAt` IN LOCKSTEP WITH `edges` — a rim edge has no tip, but
+        // skipping the push here shifts every later index and silently drops the caps on exactly
+        // the tiles that touch the boundary (measured: 10 of LS's 50, all at d 788–891 of r=892).
         continue
       }
       const si = idxBySkelId.get(o.skelId)
       if (si === undefined) { bad = `no street for ${o.skelId}`; break }
       const forward = o.side === 'right'
       edges.push({ streetIdx: si, forward, side: forward ? 'right' : 'left' })
+      tipAt.push(o.tip || null)
     }
     // ⛔ A TILE WE CANNOT NAME IS REFUSED AND COUNTED, NEVER SILENTLY DROPPED. An unnamed ring
     // downstream takes depth 0 and lays its curb on the centreline — a plausible-looking wrong
     // map, which is the one outcome a kit may not have (`CLAUDE.md` Layer 0 q2).
     if (bad) { skipped.push({ k, why: bad, area: Math.abs(signedArea(ring0)) }); continue }
-    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges })
+    // ⭐⭐ DEAD-END CAPS — the SAME criterion `detectTileCaps` applies to a frozen tile, with
+    // its one un-runnable clause supplied from identity instead of geometry: same chain on the
+    // two adjacent edges, OPPOSITE sides, at that chain's own endpoint. ⛔ Caps carry IDENTITY
+    // ONLY — `{vertexIdx, skelId, capEnd}`, no width and no radius. The asymmetric bulb is
+    // already ruled and lives downstream (`bbf4adf6`): radius `(hwL+hwR)/2`, centre the tip
+    // displaced `(hwR−hwL)/2`, because THE CHAIN IS NOT THE ROAD'S CENTRELINE and an asymmetric
+    // authored `pavementHW` is what "the traced line is off-centre" looks like. ⭐ So a cap
+    // needs no per-side reasoning here, and if this had a left branch and a right branch it
+    // would be the wrong fix — Jacob's ruling, 2026-08-12. Stamping identity is the whole job.
+    const caps = []
+    for (let i = 0; i < edges.length; i++) {
+      const inc = edges[(i - 1 + edges.length) % edges.length], out = edges[i]
+      if (inc.streetIdx < 0 || inc.streetIdx !== out.streetIdx || inc.side === out.side) continue
+      const capEnd = tipAt[(i - 1 + edges.length) % edges.length] || tipAt[i]
+      if (!capEnd) continue
+      const st = streets[inc.streetIdx]
+      caps.push({ vertexIdx: i, skelId: st?.skelId || st?.name, capEnd })
+    }
+    tiles.push({ ring: ring.map(p => [p[0], p[1]]), edges, ...(caps.length ? { caps } : {}) })
   }
   return { tiles, skipped, voids }
 }
@@ -3273,6 +3307,7 @@ export function buildTileGround(ribbons, opts = {}) {
     }
   }
   const deadEndTips = new Map()
+  const deadEndTipsById = new Map()   // skelId@capEnd → the same record, for rings that are not chain nodes (①)
   // [DEAD-END MOUTH WRAP] skelIds that own a genuine deg-1 dead-end tip. A loop
   // street (Benton / Waverly / Saint Vincent — closed bodies, "don't kill Benton")
   // has NO deg-1 endpoint (both ends are junctions), so it is EXCLUDED here — the
@@ -3335,7 +3370,18 @@ export function buildTileGround(ribbons, opts = {}) {
       // `px,py` and the KEY stay the chain's tip NODE — every lookup, cap-flip
       // slot and ring-vertex match is keyed off it. `c` is the bulb's CENTRE and
       // is the only thing the circle primitives may use.
-      deadEndTips.set(tipKey(pts[idx]), { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1], c: [capCx, capCy] })
+      const _tipRec = { cap, hw, tl: tlw, sw: sww, px: pts[idx][0], py: pts[idx][1], c: [capCx, capCy] }
+      deadEndTips.set(tipKey(pts[idx]), _tipRec)
+      // ⭐⭐ THE SAME RECORD, ALSO KEYED BY IDENTITY — for a tile whose ring vertices are NOT
+      // chain nodes. ①'s ring sits ε off the centreline, and `tipKey` rounds to 1 mm while ε is
+      // 5 mm, so the coordinate lookup below can never hit on a proto tile. ⛔ THE CURE IS NOT
+      // TO WIDEN THE MATCH BY ε: "ε is a DECLARATION, not a tolerance", and a distance-matched
+      // chain label is `ROADMAP A15`'s forbidden recovery — the one that killed the nearest-fe
+      // match and the walk-ordinal coupler. The cap already KNOWS its chain and its end, so ask
+      // by identity. ⭐ Nothing about the bulb changes: `hw` is still `(hwL+hwR)/2` and `c` is
+      // still the tip displaced `(hwR−hwL)/2` (`bbf4adf6`) — both computed from the CHAIN and
+      // the authored widths, neither reading ①. ε never enters the fan, only the join.
+      deadEndTipsById.set((s.skelId || s.name) + '@' + (idx === 0 ? 'start' : 'end'), _tipRec)
     }
   }
 
@@ -3404,8 +3450,14 @@ export function buildTileGround(ribbons, opts = {}) {
     // bulb. ⛔ NOT cured here by re-deriving them — that would re-open the very leak the
     // freeze closed, and quietly. It is the next piece of work, and until it lands this
     // flag is a topology experiment, not a way to draw the map.
-    const hadCaps = (tiles || []).filter(t => t.caps?.length).length
-    if (hadCaps) console.warn(`[tileGround][①] ⛔ ${hadCaps} frozen tile(s) carried dead-end CAPS and ① carries none — cul-de-sac cap authoring is ABSENT from this render. Topology experiment only.`)
+    // ⭐ CAPS ARE CARRIED NOW — ①'s stamps stamp the tip (`tip: 'start'|'end'`) where `i` IS the
+    // station, exactly, so `tilesFromProto` applies the same cap criterion a frozen tile gets.
+    // ⛔ STILL COMPARED OUT LOUD RATHER THAN ASSUMED: a shortfall against the frozen artifact is
+    // the cul-de-sac authoring going missing, and it must never be discovered by eye.
+    const capsFrozen = (tiles || []).reduce((a, t) => a + (t.caps?.length || 0), 0)
+    const capsProto = built.tiles.reduce((a, t) => a + (t.caps?.length || 0), 0)
+    console.log(`[tileGround][①] dead-end caps: ${capsProto} from ① vs ${capsFrozen} frozen${capsProto === capsFrozen ? ' ✅' : ''}`)
+    if (capsProto < capsFrozen) console.warn(`[tileGround][①] ⛔ ${capsFrozen - capsProto} cap(s) FEWER than the frozen artifact — cul-de-sac bulbs are missing from this render.`)
     tiles = built.tiles
   }
 
@@ -4414,8 +4466,13 @@ export function buildTileGround(ribbons, opts = {}) {
         for (const p of [run.poly[0], run.poly[run.poly.length - 1]]) {   // tip may sit at EITHER run end
           const tk = tipKey(p)
           if (seenTip.has(tk)) continue
-          const t = deadEndTips.get(tk)
-          if (t) { seenTip.add(tk); const cid = capIdByTip.get(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
+          const cid = capIdByTip.get(tk)
+          // ⛔ COORDINATE FIRST, SO THE FROZEN PATH IS UNTOUCHED — a frozen tile's ring vertex IS
+          // the chain node and hits here exactly, byte-for-byte as before. The identity lookup is
+          // the fallback ONLY for a ring whose vertices are not chain nodes (①, ε off), and it is
+          // a lookup by name, not a widened distance test.
+          const t = deadEndTips.get(tk) || (cid ? deadEndTipsById.get(cid.skelId + '@' + cid.capEnd) : null)
+          if (t) { seenTip.add(tk); (t.cap === 'round' ? roundTips : bluntTips).push({ p, c: t.c, hw: t.hw, tl: t.tl, sw: t.sw, ...(cid || {}) }) }
         }
       }
     }
