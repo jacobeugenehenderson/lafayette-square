@@ -3560,6 +3560,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     const resKey = feKey
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
+      const corner = st.iaCorner?.[p.si] || null
       // ⛔⛔ A FRONTAGE IS ONE ARC OF THE BLOCK POLYGON. ENFORCED, NOT ASSUMED.
       // ⭐ Think in ①: a block IS a closed polygon, each edge carries one owner, and a corner is a
       // vertex where the owner CHANGES. ⇒ a block with N frontages has exactly N corners. If an
@@ -3607,9 +3608,13 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         const a = ownFix.get(`${ri}|${(q - 1 + n) % n}`) ?? resKey(stp[(q - 1 + n) % n])
         const b = ownFix.get(`${ri}|${q}`) ?? resKey(stp[q])
         if (a !== b) cuts.push(q)                                    // resolve per SPAN (rule 4)
-        const ra = ownFix.get(`${ri}|${(q - 1 + n) % n}`) ?? feKey(stp[(q - 1 + n) % n])
-        const rb = ownFix.get(`${ri}|${q}`) ?? feKey(stp[q])
-        if (ra !== rb && ra != null && rb != null) seamAt.add(`${ri}|${q}`)   // CORNER: road or side
+        // ⭐⭐⭐ THE CORNER IS READ, NOT DERIVED. `st.iaCorner` is stamped at the MINT, PRE-EASING,
+        // from ①'s own vertices: an owner change on the sharp polygon, with contiguity enforced
+        // there. ⛔ Deriving it here would be asking ②'s eased contour a question about ①'s shape —
+        // ② rounds a 90° corner into ~12 vertices of 7.5°, so the answer is always "no corner".
+        // ▶ the field now reads 5.7% of LS contour points, median 4 corners per ring; it read 81%
+        //   and was true on EVERY point of 43 rings when it was built from owner LABELS.
+        if (corner?.[q]) seamAt.add(`${ri}|${q}`)
       }
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
       for (const [s0, len] of spans) {
@@ -7136,22 +7141,62 @@ export function buildTileGround(ribbons, opts = {}) {
           // ⭐ So the corner is stamped from ①'s ring and CARRIED onto ②'s contour by the label
           // every ② vertex already holds — identity carried through the offset, never recovered
           // from the eased geometry afterward.
-          const cornerLabels = new Set()
+          // ⭐⭐⭐ THE CORNER IS AN OWNER CHANGE AT AN ① VERTEX — COMPUTED PRE-EASING, THEN CARRIED.
+          // *(Jacob, 2026-09-07: "Fix the corner stamp pre-easing, off ①'s vertices.")*
+          // ⛔ WHAT THIS REPLACES, AND IT WAS WRONG TWICE OVER:
+          //  · it tested the TURN at an ① vertex. A street BENDS mid-block; a bend is not a corner.
+          //    `RIBBONS §1319`: a corner is where the OWNER changes, full stop.
+          //  · it collected owner LABELS into a set and then marked every ② point holding one of
+          //    them — so a frontage with a corner anywhere marked its whole length. Measured: true
+          //    on 81% of LS contour points and true EVERYWHERE on 43 of 162 rings. A field that is
+          //    true on four fifths of a contour is not marking corners.
+          // ⭐ AND CONTIGUITY IS ENFORCED HERE, ON ①, NOT PATCHED ONTO ② LATER. A block is a CLOSED
+          // POLYGON: each owner occupies exactly ONE arc of it, so a second appearance is a
+          // mis-attribution and every extra arc mints a corner the block does not have. Measured on
+          // ① before easing: LS 62 of 276 rings fragmented (157 extra corners), HPDM 297 of 1282
+          // (588). ⛔ No threshold — keep each owner's longest arc, absorb the rest into the longer
+          // neighbour. A frontage cannot appear twice on one ring; the polygon would self-cross.
+          const ownAt = new Map()                 // ① edge index → the owner that edge really has
           {
             const PR = (protoBlockRings || R.rings)[k], L = (protoBlockLabels || R.labels)?.[k]
             if (PR?.length >= 3 && L) {
               const m2 = PR.length
-              for (let q = 0; q < m2; q++) {
-                const P = PR[(q - 1 + m2) % m2], V = PR[q], N = PR[(q + 1) % m2]
-                const a = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
-                if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) >= FILLET_TURN_TOL && L[q] != null) cornerLabels.add(L[q])
+              const key = (q) => { const o = protoOwners[L[q]]; return o ? `${String(o.skelId ?? '').replace(/-\d+$/, '')}|${o.side}` : null }
+              const own = new Array(m2); for (let q = 0; q < m2; q++) own[q] = key(q)
+              const eLen = (q) => { const a = PR[q], b = PR[(q + 1) % m2]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
+              let start = 0; while (start < m2 && own[start] === own[(start - 1 + m2) % m2]) start++
+              if (start < m2) {
+                const arcs = []
+                for (let t = 0, q = start; t < m2; t++, q = (q + 1) % m2) {
+                  if (!arcs.length || own[q] !== arcs[arcs.length - 1].o) arcs.push({ o: own[q], qs: [], len: 0 })
+                  const a = arcs[arcs.length - 1]; a.qs.push(q); a.len += eLen(q)
+                }
+                const best = new Map()
+                for (const a of arcs) if (a.o != null && (!best.has(a.o) || a.len > best.get(a.o).len)) best.set(a.o, a)
+                for (let i2 = 0; i2 < arcs.length; i2++) {
+                  const a = arcs[i2]; if (a.o == null || best.get(a.o) === a) continue
+                  const pv = arcs[(i2 - 1 + arcs.length) % arcs.length], nx = arcs[(i2 + 1) % arcs.length]
+                  const take = (pv.len >= nx.len ? pv : nx).o; if (take == null) continue
+                  for (const q of a.qs) own[q] = take
+                  a.o = take
+                }
               }
+              for (let q = 0; q < m2; q++) if (own[q] != null) ownAt.set(L[q], own[q])
             }
           }
           const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
+          // ⭐ CARRIED, NOT RE-DERIVED. Every ② vertex already holds the ① EDGE it was struck from,
+          // so "is this a corner?" is "did the OWNER change between this vertex and the last?" — a
+          // question about ①'s identity, asked on ②'s contour without ever measuring ②'s geometry.
+          // ⛔ Reading it off ②'s shape is reading the ROUNDING: ② eases a 90° corner into ~12
+          // vertices of 7.5°, so a turn test finds ZERO corners on a rectangle.
+          const iaCorner = mine.map(EC => {
+            const n2 = EC.ring.length
+            const o = (i) => (EC.labs?.[i] != null ? (ownAt.get(EC.labs[i]) ?? null) : null)
+            return EC.ring.map((_, i) => { const a = o((i - 1 + n2) % n2), b = o(i); return a != null && b != null && a !== b })
+          })
           // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
           // consumer never has to ask the eased geometry a question it cannot answer.
-          const iaCorner = mine.map(EC => EC.ring.map((_, i) => EC.labs[i] != null && cornerLabels.has(EC.labs[i])))
           for (let ri = 0; ri < mine.length; ri++) {
             const EC = mine[ri]
             const first = runs.length          // where this ring's runs begin, for the wrap merge
