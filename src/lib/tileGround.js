@@ -3465,7 +3465,49 @@ function stampMeasure(run, blockCustoms, curbWidth) {
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
   && st.iaStamp.length === st.iaFull.length && !!st.runs
 
-const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
+// ⛔⛔ A FILLET TANGENT IS MATCHED TO A RING VERTEX ACROSS A BOOLEAN, SO IT MAY NOT BE THE SAME
+// FLOAT. The key here used to be `KP`, an exact 6-decimal STRING. Clipper is an INTEGER grid
+// (`SCALE = 1000`, i.e. 1 mm — `RIBBONS §1` names that floor as ε's one real constraint), so a
+// point that survives a union comes back moved by up to half a grid step. The string then differs,
+// the lookup misses, and the call site throws the corner's EXTENT away in silence: `if (a == null
+// || b == null) continue`. Layer 0 q2 inside the corner constructor.
+// ⭐ THE JOIN IS THE BUG, NOT THE TOLERANCE. Two points closer than the grid quantum ARE the same
+// point to the library that produced them, so this resolves at the grid's own resolution: hash the
+// ring into 1 mm buckets, then take the NEAREST vertex within one quantum, checking the 3×3
+// neighbourhood because a point can round across a bucket edge. Ties resolve to the lower index so
+// the result is identical run to run (the exact-string map it replaces kept the first occurrence).
+// ⛔ There is no knob here — `GRID_M` is Clipper's `SCALE`, not a threshold, and widening it would
+// be the tolerance this deliberately is not (Jacob, 2026-09-07: "no sizes or distances can be
+// hardwired" — this is the resolution of the arithmetic underneath the map, not a size in it).
+// ⛔ AND IT DOES NOT ADDRESS THE FAR CLASS. A tangent 10 cm off the contour is NOT on it, and that
+// is a different defect with its own cause, unestablished. Those still miss, and they must —
+// ▶ node scratch/claims-every-corner-is-configured.mjs splits the two populations by name.
+// *(Recovered from `787bcbde` on `corner-r0-and-slide`, which fixed this at the two call sites the
+// painter had then; the leg cut has since become identity-based and only the extent lookup is
+// left. ⛔ Not re-derived — the construction and the reasoning are that commit's.)*
+const GRID_M = 0.001
+const QK = (x, y) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`
+function ringVertexIndex(ring) {
+  const m = new Map()
+  for (let q = 0; q < ring.length; q++) {
+    const k = QK(ring[q][0], ring[q][1])
+    const a = m.get(k); if (a) a.push(q); else m.set(k, [q])
+  }
+  return m
+}
+// The ring vertex within ONE grid quantum of P, or null.
+function findRingVertex(ix, ring, P) {
+  const cx = Math.round(P[0] * 1000), cy = Math.round(P[1] * 1000)
+  let best = null, bd = Infinity
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
+    const a = ix.get(`${cx + dx},${cy + dy}`); if (!a) continue
+    for (const q of a) {
+      const d = Math.hypot(ring[q][0] - P[0], ring[q][1] - P[1])
+      if (d < bd - 1e-12 || (Math.abs(d - bd) <= 1e-12 && best != null && q < best)) { bd = d; best = q }
+    }
+  }
+  return bd <= GRID_M ? best : null
+}
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
   // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
@@ -3515,6 +3557,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // produced the retracted "89 owners per block".
   const legArr = new Map()      // `${ri}|${edge}` → the FRONTAGE's ONE resolved measure
   const seamAt = new Set()      // `${ri}|${q}` → a FRONTAGE change, i.e. a corner
+  // ⛔ THE RESIDUE THE LONGEST-ARC ABSORPTION USED TO HIDE, COUNTED INSTEAD OF ABSORBED. `feArcs`
+  // = contiguous `(road, side)` stretches on this tile; `feRepeat` = stretches belonging to an
+  // owner that already had one. Under rule B a repeat is LEGITIMATE (a loop or a dogleg touches
+  // one block twice) — so this is a population to read, never a failure to assert. A check tells
+  // the two apart by geometry; the painter's job is only to stop pretending they are impossible.
+  let feArcs = 0, feRepeat = 0
   {
     // ⛔⛔ THE UNIT IS THE FRONTAGE — one address, one side — NOT THE RUN. A run is cut wherever
     // `segOrd` changes, and `segOrd` subdivides a single frontage: ONE stretch of this block's edge
@@ -3541,7 +3589,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // boundary between them is not a corner, so it gets the ANGLED SLOPE JOINER (§6.1 step 5 with
     // no arc), not a pad.
     const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
-    const ownFix = new Map()      // `${ri}|${q}` → the owner this edge belongs to once contiguity holds
     const feKey = (r) => r == null ? null : `${roadOf(runs[r].skelId)}|${runs[r].side}`
     // ⛔⛔ AND RESOLUTION IS THE BLOCK FACE TOO — THE SAME UNIT. *(Jacob, 2026-09-07, flipping a
     // strip on a straight face: "I flipped the inner sidewalk and you see it stopped at the seam
@@ -3561,52 +3608,33 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
       const corner = st.iaCorner?.[p.si] || null
-      // ⛔⛔ A FRONTAGE IS ONE ARC OF THE BLOCK POLYGON. ENFORCED, NOT ASSUMED.
-      // ⭐ Think in ①: a block IS a closed polygon, each edge carries one owner, and a corner is a
-      // vertex where the owner CHANGES. ⇒ a block with N frontages has exactly N corners. If an
-      // owner appears in TWO arcs, one of them is a mis-attribution — and every extra arc mints a
-      // corner where the block has none, which is "the intersections are wrecked all over the map".
-      // ▶ MEASURED before this: LS 73 of 165 rings fragmented, 238 extra corners · HPDM 416 of
-      //   1251, 1002 extra. Median arc 90 m (a real face) but 7–8% under 2 m — the owner FLICKERS
-      //   for a metre or two mid-frontage and each flicker mints two corners.
-      // ⛔ NO THRESHOLD, NO SKIP LIST. The rule is the polygon's own property: keep each owner's
-      // LONGEST arc and absorb its others into whichever neighbour is longer. A frontage that
-      // genuinely appears twice on one ring cannot exist — the polygon would have to cross itself.
-      // ⚠️ This is a FILL-side enforcement of an identity the carry should already give us, and it
-      // is disclosed as such: the residue belongs to `carryEdgeLabels` (`fca8e492` took the same
-      // class 30.5% → 2.2%). ⛔ It absorbs the symptom so the corner count is right; it does not
-      // make the attribution right, and it says so here rather than looking like a cure.
-      {
-        const own = new Array(n).fill(null)
-        for (let q = 0; q < n; q++) own[q] = feKey(stp[q])
-        const eLen = (q) => { const a = ring[q], b = ring[(q + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
-        // arcs around the closed ring
-        let start = 0
-        while (start < n && own[start] === own[(start - 1 + n) % n]) start++
-        if (start < n) {
-          const arcs = []
-          for (let k = 0, q = start; k < n; k++, q = (q + 1) % n) {
-            if (!arcs.length || own[q] !== arcs[arcs.length - 1].o) arcs.push({ o: own[q], qs: [], len: 0 })
-            const a = arcs[arcs.length - 1]; a.qs.push(q); a.len += eLen(q)
-          }
-          const best = new Map()
-          for (const a of arcs) if (a.o != null && (!best.has(a.o) || a.len > best.get(a.o).len)) best.set(a.o, a)
-          for (let i = 0; i < arcs.length; i++) {
-            const a = arcs[i]
-            if (a.o == null || best.get(a.o) === a) continue          // its one true arc
-            const prev = arcs[(i - 1 + arcs.length) % arcs.length], next = arcs[(i + 1) % arcs.length]
-            const take = (prev.len >= next.len ? prev : next).o
-            if (take == null) continue
-            for (const q of a.qs) own[q] = take
-            a.o = take
-          }
-          for (let q = 0; q < n; q++) if (own[q] !== feKey(stp[q])) ownFix.set(`${ri}|${q}`, own[q])
-        }
-      }
+      // ⛔⛔ THE UNIT IS A MAXIMAL CONTIGUOUS STRETCH OF ONE `(road, side)` — RULED B, 2026-09-07.
+      // *(Jacob, asked which counts as one piece when a road's chunks sit end-to-end along one
+      // block face: "B, obviously" — one UNBROKEN stretch, so a street touching the same block
+      // TWICE (a loop, a dogleg) stays two frontages, correctly resolved apart.)*
+      // ⭐ IT IS THE INTERSECTION OF TWO THINGS ALREADY RULED, not a third rule. The IDENTITY is
+      // `(road, side)` — a far-kerb T cuts the line, so one face carries two `skelId`s and keying
+      // on the chain mints a seam mid-face ("ABSOLUTELY DO NOT APPLY IT HERE because it's not a
+      // corner!"). The UNIT is CONTIGUITY — `eb0611cc`'s rule, which keyed on `skelId`. Take the
+      // road-level key and the contiguous unit and both of his rulings hold at once.
+      // ⛔⛔ AND THIS RETIRES THE LONGEST-ARC ABSORPTION THAT STOOD HERE (`ecec7e11`). Its stated
+      // reason was *"a frontage that genuinely appears twice on one ring cannot exist — the polygon
+      // would have to cross itself."* ⭐ THAT IS FALSE AND IT IS THE CLAIM B OVERTURNS: a loop or a
+      // dogleg touches one block twice without the polygon crossing itself, and absorbing the
+      // second arc into a neighbour paints the operator's OTHER frontage with a stranger's
+      // arrangement. Its second reason — *"every extra arc mints a corner where the block has
+      // none"* — was already answered by `271b6d98`: corners come from `st.iaCorner`, stamped
+      // PRE-EASING off ①'s own vertices, and no longer from these owner-change cuts at all.
+      // ⚠️ WHAT THE ABSORPTION WAS REALLY COVERING IS STILL THERE AND IS NOT MINE TO HIDE: the
+      // owner FLICKERS for a metre or two mid-frontage (`ecec7e11` measured 7–8% of arcs under
+      // 2 m), and each flicker is now its own short stretch with its own resolution. That residue
+      // belongs to `carryEdgeLabels` — an ATTRIBUTION defect, disclosed as one rather than absorbed
+      // where it cannot be seen. ⛔ It is COUNTED on the return value (`feArcs`/`feRepeat`) so a
+      // check reads it off the painter instead of restating the rule.
       const cuts = []
       for (let q = 0; q < n; q++) {
-        const a = ownFix.get(`${ri}|${(q - 1 + n) % n}`) ?? resKey(stp[(q - 1 + n) % n])
-        const b = ownFix.get(`${ri}|${q}`) ?? resKey(stp[q])
+        const a = resKey(stp[(q - 1 + n) % n])
+        const b = resKey(stp[q])
         if (a !== b) cuts.push(q)                                    // resolve per SPAN (rule 4)
         // ⭐⭐⭐ THE CORNER IS READ, NOT DERIVED. `st.iaCorner` is stamped at the MINT, PRE-EASING,
         // from ①'s own vertices: an owner change on the sharp polygon, with contiguity enforced
@@ -3617,6 +3645,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         if (corner?.[q]) seamAt.add(`${ri}|${q}`)
       }
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
+      const seenOwner = new Set()
       for (const [s0, len] of spans) {
         // ⛔ ONE resolution for the frontage. A frontage may own SEVERAL `segOrd`s — `assignSegOrdsToFes`
         // gives 136 of LS's 1022 fes more than one — so the slots can disagree inside one stretch.
@@ -3633,6 +3662,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
           if ((au && !winAuth) || (au === winAuth && L > best)) { best = L; win = r; winAuth = au } }
         const mm = stampMeasure(runs[win], blockCustoms, cw)
         for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, mm)
+        const ok = resKey(stp[s0]); feArcs++
+        if (ok != null) { if (seenOwner.has(ok)) feRepeat++; else seenOwner.add(ok) }
       }
     }
   }
@@ -3681,7 +3712,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⛔⛔ A BLOCK TOO NARROW FOR EVEN THE CURB IS THE OPEN-FIELD LIMIT — all LU to centre. Not a
   // clamp (forcing WB = cw re-inverts the offset) and not an absence (`ARCHITECTURE §"The compound
   // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
-  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: { [key]: inBlock(insAt(0)) }, curb: [], capped, openField: true }
+  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: { [key]: inBlock(insAt(0)) }, curb: [], capped, openField: true, feArcs, feRepeat }
 
   // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
@@ -3757,12 +3788,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const cornerAt = new Map()             // `${ri}|${edge}` → cMin
   for (const p of parts) {
     const ring = p.ring, n = ring.length
-    const ix = new Map()
-    for (let q = 0; q < n; q++) { const kk = KP(ring[q]); if (!ix.has(kk)) ix.set(kk, q) }
+    const ix = ringVertexIndex(ring)
     // where a fillet eased a corner, its two tangents are that corner's EXTENT
     const arcAt = new Map()
     for (const fl of st.fillets || []) {
-      const a = ix.get(KP(fl.tA)), b = ix.get(KP(fl.tB))
+      const a = findRingVertex(ix, ring, fl.tA), b = findRingVertex(ix, ring, fl.tB)
       if (a == null || b == null) continue
       const fwd = (b - a + n) % n, bwd = (a - b + n) % n
       const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
@@ -3907,6 +3937,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
+    feArcs, feRepeat,
   }
 }
 
@@ -7000,7 +7031,15 @@ export function buildTileGround(ribbons, opts = {}) {
             // called from both sites; when that lands, this correction should arrive as a deletion.
             walkTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? Math.max(0, WB - cw) : eDOut(i)) : (eInWalk(i) ? Math.max(0, WB - cw) : 0)),
             lawnFrom: (i) => cw + (eOutWalk(i) ? eDOut(i) : 0),
-            lawnTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw)),
+            // ⛔⛔ AND THE LAWN HALF, WHICH I LEFT BEHIND IN `17ebb477` — found by the session that
+            // took over the ribbon work, not by me. That commit fixed `walkTo` here and stopped,
+            // in a message whose own text quoted "you fixed it once but you need to fix it twice."
+            // Fourth instance of that failure today and the first one that is mine twice over.
+            // WHAT WAS WRONG: on a treelawn-Y edge (`eOutWalk` false) the lawn ran to the whole
+            // envelope — `WB - cw` — instead of stopping at the divider, so it spanned OVER the
+            // walk. Mirrors `sectionPassProtoTile`'s symmetric form: the lawn ends at `eDOut`
+            // whenever the OTHER strip is the walk, whichever strip that is.
+            lawnTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw))),
           }
         })
         if (!parts.length) continue
