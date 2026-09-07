@@ -140,6 +140,13 @@ the **same painter**, which is what "the same thing" was always supposed to mean
 ### ⛔ OPEN
 - **Cap folds** — one chain's two sides meeting at a tip. `§6.3` rules it (the bulb has NO halves,
   one cross-section, whole to the cap owner). **Not built.**
+- ⭐ **The ANGLED SLOPE JOINER at a same-road chain change — ASPIRATION, filed, not built.** *(Jacob,
+  2026-09-07: "even if we think something changes mid-leg, that's what the angled slope corner joiner
+  is for.")* The kit cuts one road into many chains and rule 4 says their cross-sections genuinely
+  differ, so the ped band steps mid-street with no corner to carry it. ⛔ **The cure is NOT to merge
+  the chains** — that averages away the survey and was built and excised the same day. The joiner is
+  the cap coupler's shoulder taper (`§6.3`, "width is germane") applied at an ordinary chain change.
+  ▶ `node scratch/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run; it names the instances.
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
   **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all

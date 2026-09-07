@@ -3413,10 +3413,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
       // ⛔⛔ A PER-VERTEX TURN TEST CANNOT SEE AN EASED CORNER, and that was the defect.
       // ① IS SHARP; ② EASES IT. So on the drawn contour a corner is an ARC of many vertices each
-      // turning a few degrees — measured on tile 107, a 62-vertex rectangular block: ZERO vertices
-      // turn ≥ 18°, so the whole 579 m perimeter came back as ONE leg. Everything followed from
-      // that: authoring any run swapped the WHOLE block ("when I swap one leg, all 4 swap"), no leg
-      // boundary existed for a pad to sit at, and one leg's arrangement painted all four sides.
+      // turning a few degrees, and on a plain rectangular block NO vertex clears 18° — the whole
+      // perimeter came back as ONE leg, with no boundary for a pad to sit at.
+      // ⛔ THIS COMMENT USED TO ALSO BLAME THE OPERATOR'S "when I swap one leg, all 4 swap" ON IT.
+      // That was wrong and it sent a session after a leg cut that is correct: the cause was the ②
+      // LABEL CARRY — an EDGE label read off a VERTEX stamp on a ring the union had reversed
+      // (`RIBBONS §1`, 2026-09-07). The stale sentence is excised rather than corrected in place.
       // ⭐ THE CORNERS ARE ALREADY STAMPED: ② records each achieved arc in `fillets` with its two
       // TANGENT points. That IS the corner — not a proxy for it — so the leg cut reads them
       // directly. ⛔ This is not invariant 3 returning: the PAD is still a band slice, not
