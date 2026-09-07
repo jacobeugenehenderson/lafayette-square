@@ -59,8 +59,45 @@ on the Desktop, never a sibling folder (`CLAUDE.md`, "stay inside the project"):
 git worktree add .claude/worktrees/legs    -b legs-frontage-ownership screenshot-framing
 git worktree add .claude/worktrees/corners -b corner-r0-and-slide     screenshot-framing
 ```
+
+### ⛔⛔ AND THEN YOU MUST DO THIS, OR YOUR WORKTREE CAN ONLY MEASURE LAFAYETTE SQUARE
+*Found by CORNERS thirty seconds after moving in, because its check **skipped loudly** instead of
+quietly reporting one town. This instruction was wrong when first written — my error, and it is the
+kit's signature failure committed by the coordination doc itself.*
+
+**Only LS's ribbons are tracked.** `scratch/_proto-feed.mjs:19` reads `src/data/ribbons.json` for
+lafayette-square and `cartograph/data/<scene>/clean/ribbons.json` for every other town — and **every one
+of those is gitignored** (`.gitignore:123` and the per-scene blocks; `git check-ignore -v <path>` says
+so). They exist only in the **main checkout's working tree**. ⇒ In a fresh worktree every cross-town
+check silently becomes a **single-town check**, and single-town is the one thing Layer 0 forbids.
+**And the authoring is stale on the one town you do get:** `public/looks/lafayette-square/design.json`
+is TRACKED, so you get the committed slot count, not Jacob's live one — measuring a corner without the
+operator's current authored state is **Layer 0 q3 committed by the instrument** (`§4` note, and it is
+the same error `litmus-curb-parallel` has been making since 2026-07-31).
+
+```sh
+MAIN=/Users/jacobhenderson/Desktop/lafayette-square.nosync
+for s in hipointe-demun altadena centrum ksi-y-m-yn lafayette-square-staging; do
+  [ -f "$MAIN/cartograph/data/$s/clean/ribbons.json" ] &&     ln -sfn "$MAIN/cartograph/data/$s/clean/ribbons.json" "cartograph/data/$s/clean/ribbons.json"
+done                                    # gitignored, so git sees nothing. ⚠️ READ-ONLY — a script that
+                                        #    WRITES ribbons would write into the main tree.
+cp "$MAIN/public/looks/lafayette-square/design.json" public/looks/lafayette-square/design.json
+cp "$MAIN/public/looks/index.json"                   public/looks/index.json
+git update-index --skip-worktree public/looks/lafayette-square/design.json public/looks/index.json
+```
+⭐ The `--skip-worktree` is the part to keep regardless: it makes Jacob's live authoring **physically
+unstageable**, so "do not commit `design.json`" stops depending on anyone remembering. Undo with
+`--no-skip-worktree`; it is per-worktree, so main is untouched. **Then re-run your gate and confirm it
+names BOTH towns.** A check that reports one town has not run.
+
 ⛔ **Do not spawn a dev server.** Reuse the running one (`feedback_do_not_spawn_new_dev_servers`).
-⛔ Do not commit `public/looks/*/design.json` — that is Jacob's live authoring, not your change.
+
+### ⚠️ ANYTHING MEASURED IN THE MAIN CHECKOUT TONIGHT MAY CARRY LEGS' IN-FLIGHT CODE
+LEGS has been editing `src/lib/tileGround.js` in the **shared** checkout, uncommitted. Every probe run
+there since — **mine included** — built against those lines. CORNERS caught one: HPDM "two different
+roads meet" reads **334** in a clean tree against **352** measured in main. ⇒ **Re-run anything you
+intend to rely on inside your own worktree**, and treat a figure from the main tree as provisional.
+⭐ The tangent split in `§9`.3 is the exception — CORNERS reproduced it exactly in a clean tree.
 
 ## 3. Both of you must keep these green — they are not yours to move
 
