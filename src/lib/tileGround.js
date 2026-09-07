@@ -3465,7 +3465,6 @@ function stampMeasure(run, blockCustoms, curbWidth) {
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
   && st.iaStamp.length === st.iaFull.length && !!st.runs
 
-let _midFrontageSeams = 0, _midFrontageWarned = false
 const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
@@ -3514,33 +3513,44 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // `south-18th-street-6|right|0` holds ① labels 246 · 245 · 244. Different array, different
   // granularity: ① labels are per-EDGE, ② runs are per-FRONTAGE. Reading one as the other is what
   // produced the retracted "89 owners per block".
-  const legArr = new Map()      // `${ri}|${edge}` → the leg's ONE resolved measure
-  const seamAt = new Set()      // `${ri}|${q}` → a RUN SEAM, i.e. a corner. The corner's own set.
+  const legArr = new Map()      // `${ri}|${edge}` → the FRONTAGE's ONE resolved measure
+  const seamAt = new Set()      // `${ri}|${q}` → a FRONTAGE change, i.e. a corner
   {
+    // ⛔⛔ THE UNIT IS THE FRONTAGE — `(skelId, side)` — NOT THE RUN. A run is cut wherever `segOrd`
+    // changes, and `segOrd` changes at a T-JUNCTION ON THE FAR KERB: the far street chops this
+    // road's chain, so this block's own frontage is split in two where NOTHING on this side
+    // changes. Reading that as a corner draws a corner treatment in the middle of a straight
+    // block — the exact artifact Jacob spent the day trying to eliminate, and I put it back.
+    // ▶ MEASURED: of the run seams, LS 94 of 1195 (7.9%) and HPDM 644 of 7016 (9.2%) are
+    //   `segOrd`-only — same street, same side, no corner. Every one drew a pad.
+    // ⭐ Same conclusion the CORNERS session reached independently in `eb0611cc`, from the other
+    // end: it moved RESOLUTION to the frontage after seeing one block side disagree with itself.
+    // ⇒ The frontage owns the resolution AND the corner. One unit, not two.
+    const feKey = (r) => r == null ? null : `${runs[r].skelId}|${runs[r].side}`
     for (const p of parts) {
-      const ri = p.ri, stp = stamps[p.si] || [], n = p.ring.length
-      for (let q = 0; q < n; q++) {
-        const r = stp[q]
-        // ⛔ NO STAMP IS AN HONEST ABSENCE, NOT A NEIGHBOUR'S MEASURE. `iaStamp` writes null where a
-        // run was dropped; inheriting across it would re-attribute ground to a frontage that does
-        // not front it, which is the whole defect class this file spent the day on.
-        legArr.set(`${ri}|${q}`, r == null ? null : stampMeasure(runs[r], blockCustoms, cw))
-        const prev = stp[(q - 1 + n) % n]
-        if (prev != null && r != null && prev !== r) {
-          seamAt.add(`${ri}|${q}`)
-          const a = runs[prev], b = runs[r]
-          if (a && b && a.skelId === b.skelId && a.side === b.side && a.segOrd === b.segOrd) _midFrontageSeams++
-        }
+      const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
+      const cuts = []
+      for (let q = 0; q < n; q++) { const a = feKey(stp[(q - 1 + n) % n]), b = feKey(stp[q])
+        if (a !== b) { cuts.push(q); if (a != null && b != null) seamAt.add(`${ri}|${q}`) } }
+      const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
+      for (const [s0, len] of spans) {
+        // ⛔ ONE resolution for the frontage. A frontage may own SEVERAL `segOrd`s — `assignSegOrdsToFes`
+        // gives 136 of LS's 1022 fes more than one — so the slots can disagree inside one stretch.
+        // AUTHORING WINS; among un-authored slots the LONGEST contributor wins. ⛔ An override that
+        // lost a length vote would be the operator's gesture silently doing nothing (Layer 0 q3).
+        const byRun = new Map()
+        for (let k = 0; k < len; k++) { const q = (s0 + k) % n, r = stp[q]; if (r == null) continue
+          const a = ring[q], b = ring[(q + 1) % n]
+          byRun.set(r, (byRun.get(r) || 0) + Math.hypot(b[0] - a[0], b[1] - a[1])) }
+        if (!byRun.size) { for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, null); continue }
+        const authored = (r) => !!blockCustoms?.[runs[r].skelId]?.[runs[r].side]?.[runs[r].segOrd]
+        let win = null, best = -1, winAuth = false
+        for (const [r, L] of byRun) { const au = authored(r)
+          if ((au && !winAuth) || (au === winAuth && L > best)) { best = L; win = r; winAuth = au } }
+        const mm = stampMeasure(runs[win], blockCustoms, cw)
+        for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, mm)
       }
     }
-  }
-  if (_midFrontageSeams && !_midFrontageWarned) {
-    _midFrontageWarned = true
-    console.warn(`[tileGround][SECTION] ⛔ ${_midFrontageSeams} run seam(s) fall INSIDE one frontage — `
-      + `a corner has been minted mid-frontage, which is the seam this construction exists to abolish. `
-      + `\`RIBBONS §1319\`: a run IS a leg. Two adjacent runs sharing one skelId|side|segOrd means `
-      + `\`groupRuns\` stopped merging same-frontage edges. Measured 0 on LS and 0 on HPDM when this `
-      + `gate was written; it is counted rather than assumed.`)
   }
   // ⭐ EVERY per-point read goes through the LEG's single resolution (`SECTION §3.3` step 1).
   const M = (ri, i) => legArr.get(`${ri}|${i}`) ?? null
@@ -3695,7 +3705,18 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         // the operator's seam. ⭐ There is no R=0 CLASS and never was: `T` is the fillet's tangent
         // where one exists and the seam VERTEX where none does, and the same slice is drawn either
         // way. Invariant 1 holds too — the band bent, never a separately-constructed primitive.
-        for (const [L, back] of (same ? [] : [[A, true], [B, false]])) {
+        // ⛔⛔ THERE ARE EXACTLY THREE CONFIGURATIONS AND THE SLIDE BELONGS TO ONE OF THEM.
+        // `SECTION §6.1`, verbatim: TL↔TL → all concrete to `c.T`, no carve and NO SLIDE ·
+        // SW↔SW → concrete one width then parcel, carve and NO SLIDE · SW↔TL (MIXED) → a concentric
+        // arc at the SW depth AND the deep leg's walk slides in ON ITS OWN LEG. ⇒ Step 5 fires in
+        // the mixed case only, and on the DEEPER leg only.
+        // ⛔ I fired it on BOTH legs at every corner whose legs differed at all. That is a FOURTH
+        // treatment — a slope where the config calls for a clean concentric arc — and it drew a tab
+        // into the block at corners that needed nothing. Jacob: "there are exactly and only 3 corner
+        // configurations, and they only apply AT CORNERS."
+        const deepIsA = A.conD >= B.conD
+        const slide = same ? [] : (deepIsA ? [[A, true]] : [[B, false]])
+        for (const [L, back] of slide) {
           // where the leg leaves the corner, and which way it runs
           const T = arc ? (back ? ring[arc.dstep === 1 ? arc.a : arc.b] : ring[arc.dstep === 1 ? arc.b : arc.a]) : ring[q]
           const tIdx = arc ? ix.get(KP(T)) : q
