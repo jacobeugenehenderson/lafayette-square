@@ -3972,19 +3972,38 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     return {
       walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
       walkTo:   (i) => cw + L(i).walkTo,
+      // ⚠️ THE LAWN'S SPAN IS INVERTED HERE ON PURPOSE — `lawnFrom` is pushed to `lim`, past its own
+      // `lawnTo`, to mean "the grass stops at the corner". ⛔ I CHANGED THIS TO A ZERO-WIDTH SPAN ON
+      // 2026-09-07, ARGUING AN INVERTED SPAN IS A SIGN ERROR, AND THE A/B REFUTED IT: LS 190 → 186
+      // corners correct, HPDM 2301 → 2269 — no effect, marginally negative. Reverted rather than kept
+      // on the strength of the argument, because the argument's prediction failed.
+      // ⭐ WHY IT IS HARMLESS: `band` is `differenceRings(ringAt(from), ringAt(to))` and a deeper
+      // depth is a SMALLER ring, so `from > to` differences a smaller ring from a larger one and
+      // yields nothing — the inversion already collapses to empty. ⛔ Do not "fix" it again.
       lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
       lawnTo:   (i) => cw + L(i).lawnTo,
     }
   }
-  if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
-    const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
-    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
-      owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
-      resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
-      hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
-      walk: [l.walkFrom, l.walkTo], lawn: [l.lawnFrom, l.lawnTo] })
-  }
   const F = new Map(parts.map(p => [p, mk(p)]))
+  // ⛔⛔ THE DUMP RECORDS WHAT IS PAINTED, NOT WHAT THE LADDER WOULD HAVE SAID. It used to report
+  // `stripLadder`'s raw spans, which do NOT carry the corner override — so a probe asking "does the
+  // corner change the lawn here" was reading the LEG's answer and could never see the corner at all.
+  // It reported 0 inverted spans where there are 301 on LS and 3316 on HPDM.
+  // ⭐ It is `F`'s four functions, evaluated: the exact numbers `ins()` is handed. An instrument that
+  // reads an earlier stage than the one it is judging is the same defect as one reading the
+  // INTENTION instead of the ACHIEVEMENT — this file's recurring failure, and it caught me here.
+  if (sectionDump.on) for (const p of parts) {
+    const g = F.get(p)
+    for (let i = 0; i < p.ring.length; i++) {
+      const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
+      sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
+        owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
+        resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
+        hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
+        legWalk: [l.walkFrom, l.walkTo], legLawn: [l.lawnFrom, l.lawnTo],
+        walk: [g.walkFrom(i) - cw, g.walkTo(i) - cw], lawn: [g.lawnFrom(i) - cw, g.lawnTo(i) - cw] })
+    }
+  }
   const pedOuter = insAt(cw)
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
