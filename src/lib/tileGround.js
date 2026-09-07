@@ -2462,6 +2462,12 @@ export function spanClaimPoly(A, i0, len, m, D, sgn) {
 // Drain `cornerDump.rows` after each sectionPassTile call; the caller owns the
 // tile identity (sectionPassTile has none).
 export const cornerDump = { on: (typeof process !== 'undefined' && process.env?.CORNER_DUMP === '1'), rows: [] }
+// ── SECTION_DUMP=1 · ③'s per-edge resolution, for a check that READS the source ──────────────
+// ⛔ INERT: nothing in the paint reads it and the geometry is byte-identical armed or disarmed.
+// It exists because every probe that wanted to know "what cross-section did this edge resolve
+// to" had to RESTATE the resolution, and two instruments with one blind spot are one instrument
+// (`c9a0d783`). Same pattern and same discipline as `cornerDump` above.
+export const sectionDump = { on: (typeof process !== 'undefined' && process.env?.SECTION_DUMP === '1'), rows: [] }
 
 export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
@@ -3460,6 +3466,42 @@ function stampMeasure(run, blockCustoms, curbWidth) {
   }
 }
 
+// ⭐⭐⭐ THE STRIP LADDER — ONE FUNCTION, BOTH PAINTERS. Depths are measured PAST THE CURB; each
+// caller adds `cw` itself, and `lim = WB − cw` is the mono-width envelope past the curb.
+// ⛔⛔ IT EXISTS BECAUSE THERE WERE TWO COPIES AND THEY DISAGREED. `sectionPassProtoTile` (what
+// Section renders) carried `298e9a60`'s symmetric form; `buildTileGround`'s ③ emit still read
+// `lawnTo = outWalk ? … : lim`, so on a treelawn-Y edge the lawn ran the WHOLE envelope while the
+// walk ran `dOut → lim` — the lawn CONTAINED the walk, and draw order hid it. That is `cfef5216`'s
+// defect, fixed at one site and not the other, twice: `67e8b944` corrected `walkTo` in one copy,
+// `17ebb477` the other, and `lawnTo` was corrected in neither.
+// ⭐ `SECTION §3.1`: "every edge has TWO strips, outer and inner, plus the LU remainder." The walk
+// is one of them; the lawn is the OTHER one. Never both, never overlapping. Written as spans that
+// is not four conditionals that have to agree — it is one sentence each:
+//     the lawn STARTS where an outer walk ENDS      ·  `lawnFrom = outWalk ? dOut : 0`
+//     the lawn ENDS where an inner walk BEGINS      ·  `lawnTo   = inWalk  ? dOut : lim`
+// ⇒ the two strips PARTITION the band, so a seam between them is not constructible — `RIBBONS`
+// Slice 2 invariant 1 applied to the divider rather than to the envelope. Both strips SW is the
+// walk taking the whole envelope; both LU is the OPEN FIELD. Neither is a case, and neither
+// collapses: two strips ALWAYS, they SWAP (`SECTION §3.1`/`§3.3`).
+// ⛔ NO CONSTANTS. Every distance here is `cw`, the envelope, or the authored divider.
+// *(The extraction is `ribbon-monowidth-overlap`'s, stranded at `984b932c`; the correction it
+// carries is `cfef5216`/`502037ca`'s. Not re-derived.)*
+export function stripLadder(m, lim) {
+  const outWalk = m.matOuter === 'SW', inWalk = m.matInner === 'SW'
+  const tl = Math.min(m.treelawn || 0, lim), sw = Math.min(m.sidewalk || 0, lim)
+  const dOut = Math.min(outWalk ? sw : tl, lim)
+  return {
+    outWalk, inWalk, dOut,
+    // ⭐ `conD` — HOW DEEP CONCRETE RUNS ON THIS LEG (`SECTION §6.1` step 4). A set-back walk
+    // (inner SW) is concrete to the FULL total; a curb-side walk is concrete for its one strip.
+    conD: inWalk ? lim : dOut,
+    walkFrom: outWalk ? 0 : (inWalk ? dOut : 0),
+    walkTo:   outWalk ? (inWalk ? lim : dOut) : (inWalk ? lim : 0),
+    lawnFrom: outWalk ? dOut : 0,
+    lawnTo:   inWalk ? dOut : lim,
+  }
+}
+
 // Does this tile carry the per-point stamp? ⛔ Detected from the tile's own shape, never a flag,
 // so a mixed artifact cannot silently take one path for tiles that wanted the other.
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
@@ -3718,14 +3760,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
   // material's name. Identical ladder to the producer's, so the two can be gated against each other.
   const lim = Math.max(0, WB - cw)
-  const arrOf = (m) => {
-    const outWalk = m.matOuter === 'SW', inWalk = m.matInner === 'SW'
-    const tl = Math.min(m.treelawn || 0, lim), sw = Math.min(m.sidewalk || 0, lim)
-    const dOut = Math.min(outWalk ? sw : tl, lim)
-    // ⭐ `conD` — HOW DEEP CONCRETE RUNS ON THIS LEG (`SECTION §6.1` step 4). A set-back walk
-    // (inner SW) is concrete to the FULL total; a curb-side walk is concrete for its one strip.
-    return { outWalk, inWalk, dOut, conD: inWalk ? lim : dOut }
-  }
+  const arrOf = (m) => stripLadder(m, lim)
 
   // ══ THE CORNER — `SECTION §6.1`'s FIVE STEPS, drawn by this painter's own ladder ══════════════
   // ⛔⛔ NOT A SECOND CONSTRUCTION. The rule and every constant are §6.1's, the ones that landed
@@ -3874,10 +3909,16 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
-  const swap = (p, fn) => (i) => { const m = M(p.ri, i); return m ? fn(m) : 0 }
   const mk = (p) => {
-    const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
-    const dOutF = swap(p, m => arrOf(m).dOut)
+    // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`, the same call `buildTileGround`'s ③ emit
+    // makes. ⛔ The arrangement is NOT re-expressed here; what is local to this painter is only
+    // the datum (`cw`) and the CORNER override below. Two hand-written copies of these four spans
+    // produced three half-fixes in one day (`67e8b944`/`45b7aa60`, `17ebb477`, `f7a38ba0`), each
+    // landing in whichever copy the author was reading. They cannot drift again.
+    // ⛔ AN EDGE WITH NO RESOLVED MEASURE IS THE OPEN FIELD — `stripLadder({})` reads neither
+    // strip as SW, i.e. all-LU curb→centre. Byte-identical to what the hand-written copy gave a
+    // null, and the ruled answer (`ARCHITECTURE §"The compound shape"`: the drawing has no holes).
+    const L = (i) => stripLadder(M(p.ri, i) || {}, lim)
     const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
     // ⛔⛔ THE PAD MOVES ONE DEPTH, NOT FOUR — AND THAT IS THE WHOLE OF IT.
     // *(Jacob's three configs, in his words, 2026-09-07:)*
@@ -3891,35 +3932,30 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // ⇒ ONE RULE, NO CASE SPLIT: at a corner the walk REACHES THE STREET and the grass stops.
     // ⛔ `walkTo` and the leg's whole arrangement are UNTOUCHED, and that is load-bearing.
     //
-    // ⛔ WHY THE PREVIOUS VERSION WAS A REGRESSION, AND IT IS MINE FROM TODAY: overriding all four
-    // depths let the corner's cross-section REPLACE the leg's, so wherever a pad landed the
-    // frontage stopped responding to authoring. 58.8% of LS contour edges sit inside a corner
-    // extent and 33.7% of frontage stretches are ENTIRELY inside one ⇒ a third of the map could no
-    // longer be swapped. Jacob: "The swap regime doesn't work on adjacent blocks anymore."
-    // ▶ MEASURED, bisected: swaps that move nothing — 65.1% at `162b8645`, 72.0% at `17ebb477`,
-    //   75.9% at `4ea814dd` (my pad), 78.3% at `296ea8d3`. ⛔ The 65% floor is OLDER and is the
-    //   authoring-key mismatch (`§7` T3), not this.
+    // ⛔ WHY THE PREVIOUS VERSION WAS A REGRESSION: overriding all four depths let the corner's
+    // cross-section REPLACE the leg's, so wherever a pad landed the frontage stopped responding to
+    // authoring — 58.8% of LS contour edges sit inside a corner extent and 33.7% of frontage
+    // stretches are ENTIRELY inside one. Jacob: "The swap regime doesn't work on adjacent blocks
+    // anymore." ▶ measure it with the BOTH-ARRANGEMENTS method, never by writing a literal:
+    //   `node scratch/claims-swap-reaches-the-paint.mjs` writes `{outer:'SW', inner:'LU'}`, which
+    //   IS the default on a treelawn-N edge, so it scores a no-op as a dead gesture and overstates
+    //   the class ~3× (1088 slots/75.6% against 1195 slots/27.5% painted both ways).
+    // ⭐ AND THE GRASS STOPPING IS THE LAWN'S OUTER EDGE, NOT A FOURTH DEPTH: where the lawn is
+    // the OUTER strip its start is pushed to the envelope, which inverts its span to nothing.
     return {
-      walkFrom: (i) => cAt(i) != null ? cw : cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
-      walkTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
-      lawnFrom: (i) => cAt(i) != null ? cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)) : cw + (outWalk(i) ? dOutF(i) : 0),
-      // ⛔⛔ THE LAWN IS THE STRIP THE WALK IS NOT — SYMMETRICALLY, IN BOTH ARRANGEMENTS.
-      // *(Jacob, 2026-09-07: "when I swap the inner band it still has a seam… maybe this is related
-      // to the same issue as the TL <> LU matcher. The inner band needs another fix pass.")* He is
-      // right about the CLASS: this is one resolver giving two different answers for one thing.
-      // ⛔ A treelawn-N span read the lawn as the inner strip `[cw+dOut, cw+lim]` — correct — while
-      // a treelawn-Y span read it as the WHOLE band `[cw, cw+lim]`, painted under the walk and left
-      // to draw order to hide. So at every boundary between the two arrangements the LAWN's outer
-      // edge STEPS, and swapping a strip moves the step instead of removing it.
-      // ⭐ `SECTION §3.1`: "every edge has TWO strips, outer and inner, plus the LU remainder." The
-      // walk is one of them; the lawn is the OTHER one. Never both, never overlapping.
-      //   walk outer → lawn is the inner strip   [cw+dOut, cw+lim]
-      //   walk inner → lawn is the outer strip   [cw,      cw+dOut]
-      //   both SW    → no lawn (empty)      ·  both LU → open field, the whole band
-      // ⇒ The two strips PARTITION the band, so a seam between them is not constructible — which is
-      // `RIBBONS` Slice 2's invariant 1 applied to the divider rather than to the envelope.
-      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : (inWalk(i) ? dOutF(i) : lim)),
+      walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
+      walkTo:   (i) => cw + L(i).walkTo,
+      lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
+      lawnTo:   (i) => cw + L(i).lawnTo,
     }
+  }
+  if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
+    const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
+    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
+      owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
+      resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
+      hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
+      walk: [l.walkFrom, l.walkTo], lawn: [l.lawnFrom, l.lawnTo] })
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
   const pedOuter = insAt(cw)
@@ -7002,44 +7038,29 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ The per-edge depth functions are unchanged and still ride each ring's own carried ①
         // labels (`EC.labs`) — what changed is the SUBJECT, not the ladder.
         const parts = (easedByBlock[k] || []).filter(EC => EC.ring?.length >= 3).map(EC => {
-          const EM = (i) => (EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i]))
-          const swap = (fn) => (i) => { const m = EM(i); return m ? fn(m) : 0 }
-          const eOutWalk = swap(m => m.matOuter === 'SW'), eInWalk = swap(m => m.matInner === 'SW')
-          const eTl = swap(m => Math.min(m.treelawn || 0, Math.max(0, WB - cw)))
-          const eSw = swap(m => Math.min(m.sidewalk || 0, Math.max(0, WB - cw)))
-          // ⭐ THE ARRANGEMENT, per edge: which MATERIAL is the outer strip, and how deep it runs.
-          // Two strips always — they SWAP, they never collapse — so the inner one takes the rest of
-          // the mono-width envelope. ⛔ The depth belongs to the STRIP, not to the material's name.
-          const eDOut = (i) => Math.min(eOutWalk(i) ? eSw(i) : eTl(i), Math.max(0, WB - cw))
+          // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`. This site and `sectionPassProtoTile`
+          // held two hand-written copies of the same four span expressions, and every fix today
+          // landed in one of them: `67e8b944`/`45b7aa60` corrected `walkTo` at the other site,
+          // `17ebb477` corrected it here, `f7a38ba0` corrected `lawnTo` here — three half-fixes,
+          // because correctness had to be reproduced by hand in two places instead of stated once.
+          // ⛔ THE ARRANGEMENT IS NOT RE-EXPRESSED HERE. What is local to this site is only the
+          // datum (`cw`) and the envelope (`WB`); everything about WHICH strip is where comes from
+          // the one function, so the two painters cannot drift again by construction.
+          const lim = Math.max(0, WB - cw)
+          // ⛔ AN EDGE WITH NO OWNER IS THE OPEN FIELD, NOT AN ABSENCE. `stripLadder({})` reads
+          // neither strip as SW, which is all-LU curb→centre — byte-identical to what the two
+          // hand-written copies produced for a null measure, and it is the ruled answer
+          // (`ARCHITECTURE §"The compound shape"`: the drawing has no holes). It is not a
+          // fallback: no material is invented, the absent one simply is not concrete.
+          const L = (i) => stripLadder((EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i])) || {}, lim)
+          const at = (f) => (i) => cw + L(i)[f]
           return {
             ring: EC.ring,
             // ⛔ A HOLE OF THE CURB REGION, read off its winding — the one thing winding is a
             // reliable record of here, because these rings came straight out of one boolean.
             hole: signedArea(EC.ring) < 0,
-            walkFrom: (i) => cw + (eOutWalk(i) ? 0 : (eInWalk(i) ? eDOut(i) : 0)),
-            // ⛔ THE SECOND COPY OF `sectionPassProtoTile`'s LADDER, and it carried the same hole:
-            // `outWalk && inWalk` — BOTH strips authored SW, a real state — stopped the walk at
-            // `dOut` while the lawn resolved to zero width, so the rest of the envelope was painted
-            // by nobody. `§3.1`: "two strips always, they SWAP, they never collapse — the inner one
-            // takes the rest of the envelope." Fixed at the other site by the CORNERS session
-            // (`67e8b944`, cherry-picked as `45b7aa60`); this is the same one-term correction here.
-            // ⚠️ NOTHING IN `src/` READS `protoBands` TODAY, so this reaches no screen and moved no
-            // gate — it is live code that was wrong, fixed because it was wrong, and that is the
-            // whole of the justification. ⛔ Do not read "no number moved" as "no defect".
-            // ⭐⭐ AND THE REAL CURE IS NOT THIS EDIT: two copies of one ladder is why the first fix
-            // was half a fix. A third session is extracting these four lines into ONE function
-            // called from both sites; when that lands, this correction should arrive as a deletion.
-            walkTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? Math.max(0, WB - cw) : eDOut(i)) : (eInWalk(i) ? Math.max(0, WB - cw) : 0)),
-            lawnFrom: (i) => cw + (eOutWalk(i) ? eDOut(i) : 0),
-            // ⛔⛔ AND THE LAWN HALF, WHICH I LEFT BEHIND IN `17ebb477` — found by the session that
-            // took over the ribbon work, not by me. That commit fixed `walkTo` here and stopped,
-            // in a message whose own text quoted "you fixed it once but you need to fix it twice."
-            // Fourth instance of that failure today and the first one that is mine twice over.
-            // WHAT WAS WRONG: on a treelawn-Y edge (`eOutWalk` false) the lawn ran to the whole
-            // envelope — `WB - cw` — instead of stopping at the divider, so it spanned OVER the
-            // walk. Mirrors `sectionPassProtoTile`'s symmetric form: the lawn ends at `eDOut`
-            // whenever the OTHER strip is the walk, whichever strip that is.
-            lawnTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw))),
+            walkFrom: at('walkFrom'), walkTo: at('walkTo'),
+            lawnFrom: at('lawnFrom'), lawnTo: at('lawnTo'),
           }
         })
         if (!parts.length) continue
