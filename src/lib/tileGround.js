@@ -815,8 +815,46 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
     const raw = p.map(q => (q.Z ? q.Z - 1 : -1))          // -1 = a crossing
     const n = raw.length
     const res = new Array(n)
+    // ⭐⭐⭐ ASK THE CROSSING LEDGER BEFORE THE FORWARD SCAN. The scan below inherits a minted
+    // vertex's label from the next surviving one, which is right only when nothing else ran out in
+    // between. ⛔ AT A BLOCK'S CORNER IT IS ROUTINELY WRONG: a straight cross-street with no interior
+    // vertex contributes NO surviving vertex to that side of the hole — both its ends are crossings —
+    // so the whole side inherited the owner of whatever came next around the ring. Measured on LS:
+    // the 102 m south side of the Dolman/South-18th block IS Hickory Street (0.3 m from its
+    // centreline) and ① stamped it `south-18th-street-4|left|1`, which is why swapping one leg
+    // swapped two sides. *(Jacob, 2026-09-07: "I believe we need to fix the skeleton > proto
+    // polygon." He was right and I had cleared the mint by checking for MISSING labels rather than
+    // WRONG ones — absence is not correctness.)*
+    // ⭐ The ledger already knows: Clipper hands `ZFillFunction` both contributing edges AT the
+    // crossing, so the owner of the edge leaving vertex i is the label present at BOTH of its ends,
+    // disambiguated by DIRECTION when two are shared. That is the existing edge resolver below,
+    // which until now ran ONLY on a wholly-minted ring. ⛔ Identity carried through the boolean,
+    // never recovered from ring geometry afterward (`RIBBONS §1`) — the direction comes from
+    // Clipper's own edge pair, not from a lookup against unrelated geometry.
+    // ⛔ Scoped to `carryEdges` callers, which is ① and the two differences that opt in; every other
+    // caller's `met` is empty and its labels are byte-identical.
+    const cand0 = carryEdges ? p.map(q => met.get(mkey(q)) || []) : null
+    const ownerLeaving = (i) => {
+      if (!cand0) return -1
+      const j = (i + 1) % n
+      const a = raw[i] >= 0 ? [{ lab: raw[i], dx: 0, dy: 0 }] : cand0[i]
+      const bLabs = new Set(raw[j] >= 0 ? [raw[j]] : cand0[j].map(e => e.lab))
+      const shared = [...new Set(a.map(e => e.lab))].filter(x => bLabs.has(x))
+      if (shared.length === 1) return shared[0]
+      if (shared.length > 1) {
+        const ex = p[j].X - p[i].X, ey = p[j].Y - p[i].Y, eL = Math.hypot(ex, ey) || 1
+        let best = -1, bestDot = 0.999
+        for (const e of a) { if (!bLabs.has(e.lab)) continue
+          const d = Math.abs((e.dx * ex + e.dy * ey) / eL)
+          if (d > bestDot) { bestDot = d; best = e.lab } }
+        return best
+      }
+      return -1
+    }
     for (let i = 0; i < n; i++) {
       if (raw[i] >= 0) { res[i] = raw[i]; continue }
+      const led = ownerLeaving(i)
+      if (led >= 0) { res[i] = led; continue }
       let v = -1
       for (let k = 1; k <= n; k++) { const j = raw[(i + k) % n]; if (j >= 0) { v = j; break } }
       // ⭐ THE REFUSAL IS THE SHIPPED CONTRACT: a wholly-minted ring has no owner this function
