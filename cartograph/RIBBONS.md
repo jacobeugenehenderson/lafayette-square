@@ -201,12 +201,13 @@
 > ### ⭐⭐⭐ AND THE CORNERS WERE NOT SKIPPED — THEY WERE DRAWN AT A QUARTER OF THEIR RADIUS (2026-09-06)
 > *Jacob, marking a fresh set: "sharp corners which look to be skipped altogether."* ⛔ **They were
 > being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
-> **19 of his 27 marks were achieving under 60% of their stamped radius.**
+> **A majority of his marked corners were achieving well under their stamped radius** —
+> ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs` measures the achieved-vs-authored split.
 > ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`.** It planned a corner
-> at **every** vertex wanting a radius — **42% of them turning under 18°, i.e. curve samples, not
-> corners** — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a metre
-> from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
-> `Reff = s/tan(θ/2)` collapsed with it. **426 of 2,089 planned corners (20%) had `s` cut below 60% of
+> at **every** vertex wanting a radius — a large share of them turning under a shallow angle, i.e. curve
+> samples, not corners — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a
+> metre from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
+> `Reff = s/tan(θ/2)` collapsed with it. **A large share of planned corners had `s` cut well below their
 > `want`.** ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled.
 > ⚠️⚠️ **AND THIS IS WHY THE RADIUS GATE STAYED GREEN THROUGH ALL OF IT.**
 > `claims-proto-corner-is-authored-radius` read the **stamped** `r`, which said 4.50 m the whole time.
@@ -396,8 +397,8 @@
 >
 >   ### ⭐⭐⭐ AND THIS IS WHAT REMOVES THE RIM ARTIFACT — MEASURED, not argued
 >   The bending at the map edge was never ①'s. Vertices within 5 cm of the boundary arc:
->   **① block faces 0 of 2999** — they run PAST the rim, as ruled — while **the legacy D2 walk closes
->   its faces AGAINST the disc, 352 of 1538 on the arc**, and `filletRing` then ROUNDS the corner the
+>   **① block faces have none** — they run PAST the rim, as ruled — while **the legacy D2 walk closes
+>   its faces AGAINST the disc, a substantial share on the arc**, and `filletRing` then ROUNDS the corner the
 >   circle made. ⇒ *"why are the sidewalks trying to bend and create corners at the edge of the
 >   stencil?"* is the TILE WORLD, and the cure is to stop consuming it — not a rim patch.
 >   ▶ `node scratch/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
@@ -423,9 +424,8 @@
 >
 >   ⛔⛔ **A SKELETON STREET'S `points` IS THE CONTROL POLYGON.** The curves are in `segments`
 >   (`{type:'bezier',c1,c2}`), and both ① and the drawn centreline were reading the ANCHORS ALONE.
->   LS: **225 bezier segments over 9,948 m on 124 of 343 chains**, against just **1,978 anchors
->   (5.8 per chain)** — so every curve was minted as a straight chord, throwing away a sagitta of
->   **median 1.34 m · p90 5.43 m · max 20.80 m.**
+>   ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const w=s.filter(x=>x.segments&&x.segments.length);console.log(w.reduce((a,c)=>a+c.segments.filter(g=>g.type==='bezier').length,0),'bezier segments on',w.length,'of',s.length,'chains')"`
+>   — so every curve was minted as a straight chord, throwing away a real sagitta on every one of them.
 >   ⭐⭐ **THAT 20.80 m IS THE FIGURE THIS SECTION USED TO RECORD AS "the drawn centreline vs ①".**
 >   It was never two lines diverging — it is **the discarded curve**, and converging them to 0.00 m
 >   did not fix the divergence: **it deleted the curve from both sides.** *(The old block, with its
@@ -437,8 +437,8 @@
 >   ⛔ **THIS DOES NOT REOPEN THE DENSITY RULING.** `CURVE_FIT` densified *everything*, straight runs
 >   included — that is what put 705 vertices on an 8-vertex block. An arc tolerance spends points
 >   only where there is curvature: a straight street keeps its two anchors.
->   ⭐ **NOTHING IS SMOOTHED AND THE CHAIN DOES NOT MOVE** — measured: **0 of 1,978 anchors absent**,
->   1,108 points added between them, and every emitted point lies on the chain's own primitive at
+>   ⭐ **NOTHING IS SMOOTHED AND THE CHAIN DOES NOT MOVE** — measured: **no anchors absent**,
+>   only points added between them, and every emitted point lies on the chain's own primitive at
 >   **max 0.000737 m**. A change of SAMPLING, not of shape.
 >   ⭐ **AND IT COSTS NO AUTHORING** — `segOrd` is an ordinal over the IX partition, the IX vertices
 >   ARE anchors, and anchors all survive: **0 orphaned, 0 re-pointed of 88 slots.**
