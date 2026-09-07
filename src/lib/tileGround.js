@@ -5911,6 +5911,65 @@ export function buildTileGround(ribbons, opts = {}) {
     const protoBase = new Map()          // skelId → the pre-authoring base measure
     streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
     for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
+    // ⛔⛔ AND THE PED CROSS-SECTION IS RESOLVED PER **ROAD**, NOT PER CHAIN. THIS IS THE JOIN LINE.
+    // `gleanTreelawn` reads `measure[side].treelawn` to decide whether the walk sits AT the curb or
+    // SET BACK. Keyed by `skelId` that is a step function of CHAIN IDENTITY — so where a road is
+    // cut into chains (LS cuts South 18th Street into ELEVEN; 58 of 174 roads are multi-chain) the
+    // lookup changes and the walk jumps a full treelawn's depth. ⭐ THE OPERATOR SEES A JOIN LINE
+    // ACROSS THE RIBBON, and he is right that it is impossible: these are concentric offsets of one
+    // contour, so there is no join — the discontinuity is in the DEPTH FUNCTION, not the geometry.
+    // ⛔ A chain boundary IS NOT A FEATURE OF THE DRAWING. The continuous side of a T, and a
+    // cul-de-sac where one chain folds onto itself, are exactly where the kit cuts chains and
+    // exactly where the operator marked. Letting the ped depth step there is CHAINS REACHING PAST
+    // THE WALL — forbidden in Section, not a matter of taste.
+    // ⚠️ THE WALL'S EXEMPTION DOES NOT COVER THIS, and that was my error: `blockCustoms` may be
+    // looked up by street id because it is DESIGN INTENT — a dictionary of numbers. This is not.
+    // Its DISCONTINUITIES are chain artifacts, and a value whose steps come from chain segmentation
+    // is chain geometry wearing a lookup's clothes.
+    // ⭐ `pavementHW` STAYS PER CHAIN — a street genuinely changes width block to block and that is
+    // the product (`SURVEY §4`, Layer 0 q3). Only the ped ARRANGEMENT is made road-continuous.
+    const protoRoadKey = new Map()       // skelId → the ROAD it belongs to
+    for (const st of [...streetsOrig, ...gradeSep]) {
+      const k = st?.skelId ?? st?.name; if (k == null) continue
+      protoRoadKey.set(k, st?.throughId ?? st?.roadId ?? k)
+    }
+    // Road+side → one merged cross-section. ⛔ Merged on the MEASURE, not by voting on the gleaned
+    // boolean: one threshold, applied once, to a road-level number — rather than a second rule
+    // invented here to arbitrate between chains. Length-weighted, because a road's character is
+    // what most of its frontage is, and length is the measure already in the data.
+    const protoRoadPed = new Map()       // `${roadKey}|${side}` → { treelawn, sidewalk }
+    {
+      const acc = new Map()
+      streetsOrig.forEach((st, i) => {
+        const k = st?.skelId ?? st?.name; if (k == null) return
+        const rk = protoRoadKey.get(k); const m = measures[i]; if (!m) return
+        let len = 0; const P = st?.points || []
+        for (let q = 1; q < P.length; q++) len += Math.hypot(P[q][0] - P[q-1][0], P[q][1] - P[q-1][1])
+        if (!(len > 0)) len = 1
+        for (const side of ['left', 'right']) {
+          const sm = m[side]; if (!sm) continue
+          const key = `${rk}|${side}`
+          let a = acc.get(key); if (!a) { a = { tl: 0, sw: 0, w: 0 }; acc.set(key, a) }
+          a.tl += (Number.isFinite(sm.treelawn) ? sm.treelawn : 0) * len
+          a.sw += (Number.isFinite(sm.sidewalk) ? sm.sidewalk : 0) * len
+          a.w += len
+        }
+      })
+      for (const [k, a] of acc) protoRoadPed.set(k, { treelawn: a.tl / a.w, sidewalk: a.sw / a.w })
+    }
+    // The measure a FRONTAGE resolves its ped cross-section from: this chain's measure for
+    // everything width-shaped, the ROAD's for the ped strips. ⛔ Both sides always present, so a
+    // missing side reads as absent rather than inheriting the other one.
+    const protoPedMeasure = (skelId) => {
+      const base = protoBase.get(skelId) || null
+      const rk = protoRoadKey.get(skelId) ?? skelId
+      const out = { ...(base || {}) }
+      for (const side of ['left', 'right']) {
+        const rp = protoRoadPed.get(`${rk}|${side}`)
+        if (rp) out[side] = { ...(base?.[side] || {}), treelawn: rp.treelawn, sidewalk: rp.sidewalk }
+      }
+      return out
+    }
     const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
     // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
     // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
@@ -6640,6 +6699,7 @@ export function buildTileGround(ribbons, opts = {}) {
           const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
           for (let ri = 0; ri < mine.length; ri++) {
             const EC = mine[ri]
+            const first = runs.length          // where this ring's runs begin, for the wrap merge
             let cur = null
             for (let i = 0; i < EC.ring.length; i++) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
@@ -6649,9 +6709,38 @@ export function buildTileGround(ribbons, opts = {}) {
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
               // frozen identity, not chain geometry — it crosses the wall by the ruled rule.
-              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [], baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
+              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [],
+                // ⭐ ROAD-continuous ped, per-chain everything else. `roadKey` is SUPPLIED (it was
+                // refused, and that refusal was the bug): a consumer must be able to ask "is this
+                // the same road" without asking the chain graph.
+                roadKey: protoRoadKey.get(o.skelId) ?? o.skelId,
+                baseMeasure: protoPedMeasure(o.skelId) }; runs.push(cur) }
               iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
+            }
+            // ⛔⛔ THE RING IS CLOSED, SO THE ARRAY'S SEAM IS NOT A FEATURE OF IT.
+            // The loop above starts at index 0 and does not wrap, so a frontage that spans the
+            // start of the array comes out as TWO runs — one at the head, one at the tail. The
+            // consumer then reads an owner change there and treats it as a CORNER.
+            // ⭐ THE OPERATOR NAMED THIS EXACTLY: "every street which encircles a ring has a break
+            // in it where the join starts/ends, so every single block is wrong." ONE fabricated
+            // join per ring, on EVERY block — and it is a WALK artifact, in a construction whose
+            // whole point is that it does not walk.
+            // ⭐ `groupRuns` — the legacy walker this replaced — has always handled it ("find a
+            // seam: an edge whose predecessor differs… whole ring is one street-side → one closed
+            // run"). I did not carry that across, and index 0 is not a place on the map.
+            if (runs.length - first >= 2) {
+              const a = runs[first], b = runs[runs.length - 1]
+              if (a.key === b.key) {
+                b.poly.push(...a.poly)                       // the tail run continues into the head
+                const bi = runs.length - 1
+                for (let i = 0; i < iaStamp[ri].length; i++) if (iaStamp[ri][i] === first) iaStamp[ri][i] = bi
+                runs.splice(first, 1)
+                for (let i = 0; i < iaStamp[ri].length; i++) if (iaStamp[ri][i] > first) iaStamp[ri][i]--
+                for (const r2 of runs) { /* earlier rings' stamps are already fixed */ }
+                for (let rj = 0; rj < ri; rj++) for (let i = 0; i < iaStamp[rj].length; i++)
+                  if (iaStamp[rj][i] != null && iaStamp[rj][i] > first) iaStamp[rj][i]--
+              }
             }
           }
           // ⛔ A RUN OF ONE VERTEX IS NOT A LEG. `sectionPassTile`'s `legDirAt` reads `poly[1]` and
