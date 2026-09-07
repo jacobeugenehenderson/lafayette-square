@@ -9,9 +9,18 @@
 // ends and not off to one side. A point attributed to an edge it does not front is an ownership
 // error, and ownership decides the cross-section, so it draws as a seam.
 //
-// ⛔ MEASURED AT JACOB'S 18TH STREET SEAM and this is why the check exists: the contour point sat
-// 102.5% along a 5.5 m ① edge — PAST ITS END — and 3.25 m off it, while ①'s three consecutive edges
-// there carried three different labels.
+// ⛔⛔ RETRACTED, 2026-09-07, BY THE `ee` SESSION AND VERIFIED HERE. This check was written on the
+// reading that ① carries ~15 owners per block on LS and ~89 on HPDM, so "ownership can change where
+// ① has no corner and a seam is constructible everywhere". THAT IS FALSE. `protoLabels[k][i]`
+// indexes `protoOwners`, which holds ONE RECORD PER ① EDGE — so counting distinct labels counts
+// EDGES. Counting distinct `skelId|side|segOrd` instead:
+//     distinct FRONTAGES per block   LS 5.4 · HPDM 5.2      (a block is ~4-5. Correct, both towns.)
+//     distinct LABELS per block      LS 14.9 · HPDM 88.9    (edges. Meaningless as ownership.)
+// And at Jacob's own 18th Street vertex the three "different owners" — labels 246 · 245 · 244 —
+// are all `south-18th-street-6|right|0`. ONE frontage, three edges. There was no ownership change
+// there at all.
+// ⇒ ① IS NOT OVER-SEGMENTED IN OWNERSHIP AND THERE IS NO SEAM POPULATION TO SUPPRESS. I re-routed
+// two sessions and told Jacob this was the root. It was not.
 //
 // ⛔⛔ AND THE SECOND ROW IS THE PORTABILITY ONE. A block is a face with a handful of frontages. If
 // ① carries far more LABEL RUNS than a block has frontages, ownership can change where ① has no
