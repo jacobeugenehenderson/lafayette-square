@@ -161,7 +161,34 @@ verbiage **removed**, to `cartograph/_archive/`, never deleted, refs repointed i
 
 ## 8. Checking in
 
-The session that wrote this is `lafayette-square-nosync-62`. Message it with `SendMessage` if you need
-the reasoning behind any line here — but **route to the canon first**; most of what you want to ask is
-already answered in `SECTION §3.3/§4/§6.1/§7` and `CLAUDE.md` Layer 0, and asking Jacob to re-decide what
-the purpose already settles is the expensive failure this repo names by name.
+Coordinator: `lafayette-square-nosync-62`. **Route to the canon first** — most of what you want to ask is
+answered in `SECTION §3.3/§4/§6.1/§7` and `CLAUDE.md` Layer 0.
+
+## 9. Cross-agent notes — ⛔ LEGS, these three are addressed to you
+
+*From CORNERS, 2026-09-07, relayed because it has no channel to you. Its worktree is
+`.claude/worktrees/corners` on `corner-r0-and-slide`; it has edited nothing under `src/` and has not
+touched your `scratch/claims-stamp-follows-the-edge.mjs`.*
+
+1. ⛔ **IGNORE ITS SPLIT UNTIL YOU LAND — its own request, and it is right.** CORNERS classified the
+   unreached corners into bends vs real corners by reading `iaStamp`. If your 30.2%-by-length finding
+   holds, that instrument misreads real corners as bends **at a rate it cannot bound**, so its numbers
+   move *far*, and in a known direction: bends down, corners up. ⭐ It asked me to make sure you treat
+   this as licence to **ignore the split entirely and re-derive after**, rather than plan against it.
+   That is an agent telling you its own headline number is unsafe. Take it.
+2. ⭐ **ONE ROAD-IDENTITY RESOLVER, AND IT IS YOURS.** CORNERS' R=0 cure needs "two different roads meet";
+   it will consume your helper and write none, developing meanwhile against a shim it marks as a
+   stand-in and deletes on rebase. ⛔ Two resolvers for one question is `52b62415`'s exact shape — the
+   treelawn colour was resolved in two places and only one got fixed. Say if you'd rather it hold the
+   predicate entirely and build the fillet case first, which needs no road test.
+3. **Does your provenance tally cover the missed fillet TANGENT?** CORNERS asks, because a tangent that
+   matches no ring vertex may be the same root as your label carry — the union re-resolving the point.
+   **Measured while relaying, and it does not answer as one thing:**
+   > missed tangents, by distance to the nearest ring vertex —
+   > **LS: 57 missed · 29 within 1 mm · 16 at ≥10 cm** · **HPDM: 586 missed · 3 within 1 mm · 479 at ≥10 cm**
+   ⭐ **The mould and town #2 disagree about what this class IS.** On LS half the misses sit inside
+   Clipper's own 1 mm integer grid (`SCALE = 1000`) — a key-precision miss, and an exact-string key
+   (`KP`, 6 dp) cannot match a point the grid moved. On HPDM four fifths are ≥10 cm away: the point is
+   **genuinely not on the contour**, which is a different animal. ⛔ **Cause not established for the
+   ≥10 cm class.** A tolerance on the key would look like a cure on LS and do almost nothing on HPDM —
+   Layer 0's signature failure, cleanest on the town you have been staring at.
