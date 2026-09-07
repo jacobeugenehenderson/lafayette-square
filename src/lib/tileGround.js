@@ -3372,10 +3372,35 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) }
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
-      // ⭐ THE SAME TEST ②'s CORNER USES — the contour turns. ⛔ Not an owner change: ① has no
-      // nodes, so a change of label is not a change of place.
-      const isCorner = (q) => turnAt(ring, q) >= FILLET_TURN_TOL
-      const cuts = []; for (let q = 0; q < n; q++) if (isCorner(q)) cuts.push(q)
+      // ⛔⛔ A PER-VERTEX TURN TEST CANNOT SEE AN EASED CORNER, and that was the defect.
+      // ① IS SHARP; ② EASES IT. So on the drawn contour a corner is an ARC of many vertices each
+      // turning a few degrees — measured on tile 107, a 62-vertex rectangular block: ZERO vertices
+      // turn ≥ 18°, so the whole 579 m perimeter came back as ONE leg. Everything followed from
+      // that: authoring any run swapped the WHOLE block ("when I swap one leg, all 4 swap"), no leg
+      // boundary existed for a pad to sit at, and one leg's arrangement painted all four sides.
+      // ⭐ THE CORNERS ARE ALREADY STAMPED: ② records each achieved arc in `fillets` with its two
+      // TANGENT points. That IS the corner — not a proxy for it — so the leg cut reads them
+      // directly. ⛔ This is not invariant 3 returning: the PAD is still a band slice, not
+      // predicated on an arc; it is the LEG BOUNDARY that a corner defines, which is what a corner
+      // is for ("that's what the corners are for, they are designed to accommodate shifts/swaps").
+      // ⭐ And an R = 0 corner has no arc to stamp — there the contour turns sharply at ONE vertex
+      // and the per-vertex test catches it. Eased or square, both are found.
+      const cutSet = new Set()
+      for (let q = 0; q < n; q++) if (turnAt(ring, q) >= FILLET_TURN_TOL) cutSet.add(q)
+      {
+        const ix = new Map()
+        for (let q = 0; q < n; q++) { const kk = KP(ring[q]); if (!ix.has(kk)) ix.set(kk, q) }
+        for (const fl of st.fillets || []) {
+          const a = ix.get(KP(fl.tA)), b = ix.get(KP(fl.tB))
+          if (a != null) cutSet.add(a)
+          if (b != null) cutSet.add(b)
+        }
+      }
+      const isCorner = (q) => cutSet.has(q)
+      // ⛔ A CORNER ARC IS **ONE** BOUNDARY, NOT TWELVE. Cut where corner-ness CHANGES, so an eased
+      // arc of a dozen vertices contributes a single leg break instead of a dozen empty legs.
+      const cuts = []
+      for (let q = 0; q < n; q++) if (isCorner(q) !== isCorner((q - 1 + n) % n)) cuts.push(q)
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n])
                                 : [[0, n]]
       for (const [s0, len] of spans) {
@@ -6754,7 +6779,34 @@ export function buildTileGround(ribbons, opts = {}) {
           // ⛔ A `null` entry is an HONEST absence — a vertex ① never labelled, or (after the
           // disc cut below) a vertex on the RIM. The rim is an edge of the DRAWING, not a street
           // frontage; it owes no sidewalk, and `EM(i)` returning null is how that reads.
+          // ⭐⭐⭐ THE CORNERS COME FROM ①, NOT FROM ②. *(Jacob, 2026-09-07: "back to the
+          // protopolygon and not chains.")* `RIBBONS §1`: "① IS SHARP — smoothing is SKELETON and
+          // rounding is SURVEY; ① sits between the two stages and does NEITHER."
+          // ⛔ READING THE CORNER OFF ②'s CONTOUR IS READING THE ROUNDING, NOT THE SHAPE, and it
+          // silently finds nothing: ② eases a 90° corner into ~12 vertices of 0.57 m turning 7.5°
+          // each, so NO vertex clears a corner threshold. Measured on the block the operator
+          // circled — a plain rectangle — ②'s contour has max turn 7.5° and ZERO corners, while ①'s
+          // own hole has 10 vertices turning 1 0 0 92 7 102 4 3 88 93. Map-wide ① gives a median of
+          // 4 corners per block; ② gives none.
+          // ⭐ So the corner is stamped from ①'s ring and CARRIED onto ②'s contour by the label
+          // every ② vertex already holds — identity carried through the offset, never recovered
+          // from the eased geometry afterward.
+          const cornerLabels = new Set()
+          {
+            const PR = (protoBlockRings || R.rings)[k], L = (protoBlockLabels || R.labels)?.[k]
+            if (PR?.length >= 3 && L) {
+              const m2 = PR.length
+              for (let q = 0; q < m2; q++) {
+                const P = PR[(q - 1 + m2) % m2], V = PR[q], N = PR[(q + 1) % m2]
+                const a = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
+                if (Math.abs(Math.atan2(Math.sin(a), Math.cos(a))) >= FILLET_TURN_TOL && L[q] != null) cornerLabels.add(L[q])
+              }
+            }
+          }
           const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
+          // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
+          // consumer never has to ask the eased geometry a question it cannot answer.
+          const iaCorner = mine.map(EC => EC.ring.map((_, i) => EC.labs[i] != null && cornerLabels.has(EC.labs[i])))
           for (let ri = 0; ri < mine.length; ri++) {
             const EC = mine[ri]
             const first = runs.length          // where this ring's runs begin, for the wrap merge
@@ -6843,7 +6895,7 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐ `iaFull` — the UNCUT curb contour the stamp indexes. The disc cut simplifies the
             // ring, so `iA` and `iaStamp` stop corresponding after it; the FILL is struck off this
             // one and CUT with `iA`. See the cut block below.
-            runs: runs2, iaStamp, iaFull: mine.map(EC => EC.ring),
+            runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
             // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
             // initial ground map and later add overrides." A fact about the world, read off the block
             // itself, not a construction parameter. Overrides are a later layer and not scoped here.
