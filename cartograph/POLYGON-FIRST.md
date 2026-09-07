@@ -103,8 +103,9 @@ the eye:
 
 > ⭐ **The checkable form of this whole class — `/PIPELINE-CLAIMS.md` (root).** The dead-end → corner →
 > sidewalk chain as `[REQ]`/`[OUR]` claims, each with the method that produced its number and a re-run
-> command. ⛔ **Read its `C4` before quoting the "6 of 50" vs "9 of 50" split below** — re-measured
-> 2026-08-05, the two sets are **identical, 9 and 9**; the 6 came from a probe `7b5b87a3` deleted.
+> command. ⛔ **Read its `C4` before quoting an older split against the mouth-corner numbers below** —
+> ▶ `node scratch/claims-deadend-set-decomposition.mjs` shows the two sets are the SAME set; an earlier,
+> smaller count came from a probe that has since been deleted.
 
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
 on ALL 50 dead-end tips.** And it is not free — it forces the punch-out construction (boundary − roads) or
@@ -122,11 +123,12 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > replaced them; don't re-copy from the branch.
 
 > ⭐⭐ **THE MEASUREMENT — two different vertices, two different numbers. Never conflate them.**
+> ▶ `node scratch/coupler-slit-universal.mjs` (TIP, Checks 1–2) · `node scratch/coupler-slit-anatomy.mjs` (MOUTH, Check 5)
 >
 > | | measured | what it means |
 > |---|---|---|
-> | **TIP** — Checks 1–2 | **50 of 50** tips are zero-width slits | the freeze closes NO dead-end polygon, anywhere |
-> | **MOUTH** — Check 5 | **9 of 50** spurs miss a mouth corner | the leg that runs through unbounded |
+> | **TIP** — Checks 1–2 | every dead-end tip is a zero-width slit | the freeze closes NO dead-end polygon, anywhere |
+> | **MOUTH** — Check 5 | a minority of spurs miss a mouth corner | the leg that runs through unbounded |
 >
 > ⛔ **READ THE TIP OFF THE FROZEN `cap.vertexIdx` — never off a FILL run's span end.** They are not the
 > same vertex and on a long block they are hundreds of metres apart, so a span-end probe measures the gap at
@@ -149,11 +151,13 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
 > waverly-place-1[start]`
 >
+> ▶ `node scratch/claims-deadend-set-decomposition.mjs` — the three sets, dual-state.
+>
 > | measurement | count | what it is |
 > |---|---|---|
-> | mouths where the ring cannot see a corner | **9 of 50** | the second pass reads same-chain — Check 5's failure |
-> | folds with a leg **running through** the mouth | **9 of 50** | ⭐ **the SAME 9.** `A ∩ B = 9`; neither set has a member the other lacks |
-> | fold chains with **no mouth disc** | **9 chains / 10 folds** | ⭐ genuinely a **third, different** set — 3 members belong to no other set |
+> | mouths where the ring cannot see a corner | *(see command)* | the second pass reads same-chain — Check 5's failure |
+> | folds with a leg **running through** the mouth | *(see command)* | ⭐ **the SAME set as above.** `A ∩ B = A = B`; neither set has a member the other lacks |
+> | fold chains with **no mouth disc** | *(see command)* | ⭐ genuinely a **third, different** set — some members belong to no other set |
 >
 > ⭐ **The two predicates are INDEPENDENT, which is what makes this evidence rather than a tautology.**
 > `isCorner` is an **edge-identity** test at the mouth vertex (`inc.skelId !== out.skelId`); `runThrough` is
@@ -242,8 +246,8 @@ remain the only registry `tileGround.js` sees.
 >   does not store it. **A census keyed on `legs.length` reports the opposite of the truth, and did**
 >   (2026-08-12, Boz — it made the ordinary intersections look constructed when they are not).
 >
-> ⭐⭐ **WHY IT MATTERS FOR §2.1's ONE-LINE TEST.** The relation is present at 100% of ordinary
-> intersections and **absent at every dead end** — and the dead end is the only place the ring
+> ⭐⭐ **WHY IT MATTERS FOR §2.1's ONE-LINE TEST.** The relation is present at every ordinary
+> intersection and **absent at every dead end** — and the dead end is the only place the ring
 > retraces. So *"does it create the second mouth corner?"* has a structural answer for the first time:
 > **at a T or a cross the pairing already exists and could bound the legs; at a spur there is nothing
 > to couple to, which is precisely the missing corner this section diagnoses.** ⛔ This does **not**
@@ -328,14 +332,12 @@ registry was one answer to it, and not a shipped one. Live task:
 >
 > **(2) It DRESSES A FAILURE AS A MODEST DEFECT.** `:86` — `if (!tile?.iA?.length) continue` — a tile with **no curb ring at all is skipped**, and samples that find no curb nearby are dropped. So *"this block has no curb"* prints as *"bows 3.9 m."* ⛔ **A silent substitution inside the detector**, which is the one place it must never happen (`CLAUDE.md` Layer 0).
 >
-> **What the numbers actually are** (2026-07-31; the canon's "38 … up to 5.8 m" was stale):
+> **What the numbers actually are — re-derive, do not quote:** ▶ `node cartograph/litmus-curb-parallel.mjs`
+> (authoring OFF, the check's current — broken — default). Running it with authoring loaded moves which
+> runs fail, not how many: ⭐ **the count barely moves; the COMPOSITION does.** Honoring authored widths
+> does not rescue the number, it changes which runs fail.
 >
-> | | |
-> |---|---|
-> | runs failing, authoring OFF | **78 of 151**, worst **4.45 m** |
-> | runs failing, authoring ON | **79** — ⭐ **the count barely moves; the COMPOSITION does.** Honoring authored widths does not rescue the number, it changes which runs fail. |
->
-> ⛔ **A follow-on "collapsed curb rings — 28 of 92 tiles" census was filed the same day and WITHDRAWN hours later. Do not resurrect it.** It measured **`iA` AREA** — but **`Block = iA = tile − the authored roadway`** (`SURVEY §3` step 5), and the asphalt-edge handle *"strokes the pavement half-width outward; **the block follows**"* (`SURVEY §4`). **It was measuring the operator's width edits.** Area cannot separate an authored wide street from a genuinely narrow historical block from a graph face that is legitimately all roadway — and not with a better threshold either: median ring-share climbs **1% → 34% → 45% → 86%** with block size alone, so the metric mostly encodes size. **The only honest test is DISTANCE — is the curb at the *authored* half-width from its centerline — run with authoring loaded** (`ROADMAP A05`).
+> ⛔ **A follow-on "collapsed curb rings" census keyed on `iA` area was filed the same day and WITHDRAWN hours later. Do not resurrect it.** It measured **`iA` AREA** — but **`Block = iA = tile − the authored roadway`** (`SURVEY §3` step 5), and the asphalt-edge handle *"strokes the pavement half-width outward; **the block follows**"* (`SURVEY §4`). **It was measuring the operator's width edits.** Area cannot separate an authored wide street from a genuinely narrow historical block from a graph face that is legitimately all roadway — and not with a better threshold either: median ring-share climbs steeply with block size alone, so the metric mostly encodes size. **The only honest test is DISTANCE — is the curb at the *authored* half-width from its centerline — run with authoring loaded** (`ROADMAP A05`).
 >
 > ⭐ **"Bow" is still MORE THAN ONE THING — never quote the aggregate:** **(a) shifted** — perfectly parallel at the wrong datum, which is largely the authoring artifact above and *not a defect*; **(b) wander** — the distance genuinely varies along the run. *Same street is a perfect offset on six tiles and wild on two, so where real wander exists it is **specific tiles**, not the offset math.*
 >
@@ -410,33 +412,32 @@ The curb-geometry freeze was nobody's deliverable (§0.1). These are the named, 
 >
 > ### ⚠️ CHECK C IS STILL RED — and this is the honest scope of what landed
 >
-> The chain-free producer owns **59 of 101 tiles (58%)**. The rest still route through the legacy carve
-> (`tile.ring − aFill`), **and `aFill` is chain-derived**:
+> The chain-free producer owns a majority of tiles, not all of them. The rest still route through the
+> legacy carve (`tile.ring − aFill`), **and `aFill` is chain-derived**:
+> ▶ `node scratch/a07-producer-disclosure.mjs` — reproduces the current offset/carve split, broken
+> out by legacy-carve reason (divided median, loop-body median, small tile), and the degeneracy count.
 >
-> | path | tiles | |
-> |---|---|---|
-> | chain-FREE offset producer | **59** | Check C holds here |
-> | legacy carve — **divided median** | 30 | structural (offsetting both inner edges collapses the thin gap) |
-> | legacy carve — **loop-body median** | 3 | structural (`medArea > 0.5` on a single-run tile) |
-> | legacy carve — **small** tile | 9 | structural (`ringArea ≤ 1500` **and not already median**) |
-> | legacy carve — degenerate | **0** | every tile that qualifies for the offset path succeeds on it |
+> | path | reason |
+> |---|---|
+> | chain-FREE offset producer | Check C holds here |
+> | legacy carve — **divided median** | structural (offsetting both inner edges collapses the thin gap) |
+> | legacy carve — **loop-body median** | structural (`medArea > 0.5` on a single-run tile) |
+> | legacy carve — **small** tile | structural (`ringArea ≤ 1500` **and not already median**) |
+> | legacy carve — degenerate | every tile that qualifies for the offset path succeeds on it |
 >
-> ⚠️ **Corrected 2026-07-31:** this table first read *"32 median · 10 small"*, which conflated the two
-> median classes and mis-split the total. `isMedianTile` is `isDividedMedian || (isLoopInterior &&
-> medArea > 0.5)` — two different tile kinds behind one flag. Total is unchanged at 42.
-> ✅ **Independently reproduced 2026-08-04** off `public/baked/lafayette-square/shape.json`: **30 tiles
-> `ringArea ≤ 1500` · 30 carrying `isMedian` · 19 both ⇒ 41 ineligible / 60 eligible.** That is the same
-> split — the `9` row is *small AND not already median*, which is 30 − 19 − (the loop-body 3, whose flag
-> the artifact does not carry). ⚠️ **The `9` is NOT the count of small tiles** (that is 30), and reading
-> it as such is what produced a "the table is wrong" report. And the artifact's `isMedian` is written
-> from `isDividedMedian` **alone** (`tileGround.js:3627`), so any count taken off it is a **floor**.
+> ⚠️ **Corrected 2026-07-31:** this table first conflated the two median classes and mis-split the
+> total. `isMedianTile` is `isDividedMedian || (isLoopInterior && medArea > 0.5)` — two different tile
+> kinds behind one flag. ⚠️ **The "small" row is NOT the count of `ringArea ≤ 1500` tiles alone** — it
+> is *small AND not already median* — and reading it as the raw small-tile count is what produced a
+> "the table is wrong" report. And the artifact's `isMedian` is written from `isDividedMedian` **alone**
+> (`tileGround.js:3627`), so any count taken off it is a **floor**.
 > ⛔ **`D6a`'s comment above this gate also lists DEAD-END tiles as a legacy-carve class. It is stale** —
 > the gate is `!isMedianTile && ringArea > 1500`, with **no dead-end condition**; dead-end tiles take the
-> OFFSET path and their caps are built in via `capArc` twelve lines below (21 tiles carry tips).
+> OFFSET path and their caps are built in via `capArc` twelve lines below.
 >
-> ⛔ **The chain was NOT passed into `buildCurbRings` to cover those 42.** That is the quiet
-> re-opening the signature exists to prevent, and declining it is why the gap is countable instead of
-> hidden. **Do not claim Check C green at 58%.**
+> ⛔ **The chain was NOT passed into `buildCurbRings` to cover the legacy-carve tiles.** That is the
+> quiet re-opening the signature exists to prevent, and declining it is why the gap is countable
+> instead of hidden. **Do not claim Check C green — re-run the command above before quoting a share.**
 >
 > ⭐ **What this bought, stated plainly:** the producer defect went from *"the curb is traced from
 > chains"* — unbounded and unmeasured — to **42 named tiles in two structural classes**. Bounded and
@@ -511,7 +512,7 @@ The 35 `source:'curated'` hand-fixes (`INTAKE §6.1`) are the kit's **central pr
 > **RULE 1b — MEASURE THE DEFINITION, NOT A PROXY THAT CORRELATES WITH IT.** A correct curb is a
 > **distance** (`chain ⊕ authored halfWidth`). The withdrawn "collapsed rings" census measured an
 > **area ratio** instead — and area is blind to the definition: a curb could be metres off on every
-> edge and barely move it, while block *size* alone swings it 1% → 86%. ⭐ **The proxy is always the
+> edge and barely move it, while block *size* alone swings it across a wide range on its own. ⭐ **The proxy is always the
 > cheap thing to compute; that is exactly why it gets reached for.** Three times in one day the
 > wrong quantity was measured (probes that didn't predict the eye · parallelism against un-authored
 > widths · area standing in for distance). **If you cannot state the invariant as the definition of
