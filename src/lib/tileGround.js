@@ -1090,6 +1090,11 @@ function openRound(rings, R) {
 //     → passed through (keeps the rounding off the gentle smoothed runs).
 //   • inset is clamped to 45% of the arc-length to each NEIGHBOUR corner so
 //     adjacent fillets never overlap on a short leg.
+// ⭐ DERIVED, not tuned: `tessellateAdaptive` subdivides to a 0.10 m arc tolerance, and a step of
+// angle θ on radius R satisfies θ = 2·acos(1 − t/R). At 60° that is R = 0.10/(1 − cos30°) = 0.75 m,
+// so a vertex turning this much cannot be a curve sample of any street — it is a broken handle
+// whatever the skeleton's flag says. Move the tolerance and this moves with it.
+const PROTO_HARD_TURN = 60
 const FILLET_TURN_TOL = 18 * Math.PI / 180
 // A corner exists only where two REAL legs meet (the osm2streets doctrine:
 // corners come from leg adjacency, never from whatever stroke geometry falls
@@ -5770,7 +5775,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⇒ Any next attempt must BOUND the apex, or rejoin the legs some way that is not an unbounded
     // line intersection. ⛔ Do not rebuild either of the two above.
     // the authored R at ② ring vertex `i`. 0 ⇒ BROKEN HANDLES ⇒ the contour turns (`RIBBONS §1`).
-    const protoRAt = (labs, i, n, hwHere = 0) => {
+    const protoRAt = (labs, i, n, hwHere = 0, turnHere = null) => {
       const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
       if (!a || !b || a.skelId == null || b.skelId == null) return 0
       // ⭐⭐⭐ A DEAD-END CAP IS TWO ORDINARY CORNER NODES — `RIBBONS §1`, ruled by measurement:
@@ -5807,9 +5812,31 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ The second half is `RIBBONS §1` verbatim — "broken handles TURN, continuous handles EASE".
       // A node between two straight segments is a corner; a node a bezier runs through is already
       // eased by the skeleton and must NOT be filleted (INVARIANT 2 — nothing rounds twice).
-      // ⛔ NO ANGLE ANYWHERE. Both halves are carried identity; a threshold here is what `easeRing`
-      // was built on and excised for.
-      if (a.skelId === b.skelId && !(a.hard && b.hard)) return 0
+      // ⛔ NO TUNED ANGLE ANYWHERE. Both halves are carried identity; a threshold here is what
+      // `easeRing` was built on and excised for. The one geometric test below is NOT a tuning
+      // parameter — read its derivation before treating it as one.
+      //
+      // ⭐⭐ `a.hard || b.hard`, NOT `&&`. `hard` is stamped PER CHAIN VERTEX, and `a` is the owner
+      // of the PREVIOUS ring vertex while `b` is this one's — so `&&` demanded that the previous
+      // node be broken too, and a node flagged on one side only was never a corner. Measured on LS
+      // in-disc: 11 non-highway vertices turning >= 60° were refused for exactly that reason.
+      //
+      // ⭐⭐⭐ AND A TURN THE TESSELLATION CANNOT PRODUCE IS A BROKEN HANDLE, whatever the flag says.
+      // ⛔ THIS AMENDS THE "no angle anywhere" RULE ABOVE, deliberately, and here is why it is not
+      // the excised threshold: `tessellateAdaptive` subdivides every curve to a 0.10 m ARC
+      // TOLERANCE, and a tessellation step of angle θ on radius R satisfies θ = 2·acos(1 − t/R).
+      // At θ = 60° that is R = 0.10 / (1 − cos 30°) = 0.75 m. ⇒ **a vertex turning 60° or more
+      // cannot be a curve sample of any street** — it would need a sub-metre turning radius. So a
+      // 95° turn carrying `hard: false` is not a smooth bezier node; it is the input CONTRADICTING
+      // ITSELF, and the geometry is the half that cannot be wrong.
+      // ⭐ The number is DERIVED from a tolerance we own, not chosen to make a picture look right —
+      // change the tolerance and it moves with it. It decides nothing about how round a corner is;
+      // it only refuses to believe `hard: false` where that is geometrically impossible.
+      // ⭐ MEASURED on LS in-disc: 27 non-highway vertices turn >= 60° with no corner planned at
+      // all — `allen-avenue-0` at 95° (marked), `park-place-2`, `benton-place-1`, `south-21st-street`,
+      // `lasalle-lane-0` ×6. Of those, 16 carry `hard: false` on BOTH sides.
+      const hardHere = a.hard || b.hard || (turnHere != null && turnHere >= PROTO_HARD_TURN)
+      if (a.skelId === b.skelId && !hardHere) return 0
       protoCornerN++
       const key = a.skelId < b.skelId ? `${a.skelId}|${b.skelId}` : `${b.skelId}|${a.skelId}`
       // ⛔ A BEND HAS NO PAIR, AND THAT IS NOT A FAILURE. Where one street turns, both sides of the
@@ -5954,7 +5981,12 @@ export function buildTileGround(ribbons, opts = {}) {
         // Jacob, on the render: "whatever you just did messed up a bunch of corners" — crossed
         // spikes at the intersections. ⛔ Do not re-derive it; the setback, not the concept, is what
         // fails, and it fails on exactly the blocks a city has most of.
-        const rSrc = ring.map((_, i) => protoRAt(labs, i, ring.length, depthAt(i)))
+        // ⭐ the turn at each ① vertex, handed to the corner test so it can catch a `hard: false`
+        // that the geometry contradicts (see `protoRAt`). Cheap, and computed on the ring we hold.
+        const turnOf = (g, i) => { const m = g.length, P = g[(i - 1 + m) % m], V = g[i], N = g[(i + 1) % m]
+          const t = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
+          return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) * 180 / Math.PI }
+        const rSrc = ring.map((_, i) => protoRAt(labs, i, ring.length, depthAt(i), turnOf(ring, i)))
         // ⭐⭐⭐ THE EASE IS ASKED FOR HERE AND HAPPENS INSIDE THE OFFSET, before its self-union —
         // that is where the corner correspondence is still exact. `rSrc` is indexed by ① block-ring
         // vertex, and `easeAt` receives exactly that index off the offset's own stamp.
