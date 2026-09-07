@@ -3708,11 +3708,31 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
     const dOutF = swap(p, m => arrOf(m).dOut)
     const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
+    // ⛔⛔ THE PAD MOVES ONE DEPTH, NOT FOUR — AND THAT IS THE WHOLE OF IT.
+    // *(Jacob's three configs, in his words, 2026-09-07:)*
+    //   SW↔SW → "the corner is just a continuous stripe around the outer band"  ⇒ NOTHING to do:
+    //           the walk is already the outer strip and already reaches the curb.
+    //   TL↔TL → "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to
+    //           the street"                                                     ⇒ the walk WRAPS at
+    //           its own depth and additionally REACHES the curb: `walkFrom → cw`.
+    //   SW↔TL → "there is a slope joiner"                                       ⇒ the set-back side
+    //           reaches the curb at the corner so the two walks meet. The same one depth.
+    // ⇒ ONE RULE, NO CASE SPLIT: at a corner the walk REACHES THE STREET and the grass stops.
+    // ⛔ `walkTo` and the leg's whole arrangement are UNTOUCHED, and that is load-bearing.
+    //
+    // ⛔ WHY THE PREVIOUS VERSION WAS A REGRESSION, AND IT IS MINE FROM TODAY: overriding all four
+    // depths let the corner's cross-section REPLACE the leg's, so wherever a pad landed the
+    // frontage stopped responding to authoring. 58.8% of LS contour edges sit inside a corner
+    // extent and 33.7% of frontage stretches are ENTIRELY inside one ⇒ a third of the map could no
+    // longer be swapped. Jacob: "The swap regime doesn't work on adjacent blocks anymore."
+    // ▶ MEASURED, bisected: swaps that move nothing — 65.1% at `162b8645`, 72.0% at `17ebb477`,
+    //   75.9% at `4ea814dd` (my pad), 78.3% at `296ea8d3`. ⛔ The 65% floor is OLDER and is the
+    //   authoring-key mismatch (`§7` T3), not this.
     return {
       walkFrom: (i) => cAt(i) != null ? cw : cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
-      walkTo:   (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
-      lawnFrom: (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? dOutF(i) : 0),
-      lawnTo:   (i) => cAt(i) != null ? cw + lim : cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
+      walkTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
+      lawnFrom: (i) => cAt(i) != null ? cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)) : cw + (outWalk(i) ? dOutF(i) : 0),
+      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
     }
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
