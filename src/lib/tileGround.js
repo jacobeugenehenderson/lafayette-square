@@ -3541,6 +3541,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // boundary between them is not a corner, so it gets the ANGLED SLOPE JOINER (§6.1 step 5 with
     // no arc), not a pad.
     const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
+    const ownFix = new Map()      // `${ri}|${q}` → the owner this edge belongs to once contiguity holds
     const feKey = (r) => r == null ? null : `${roadOf(runs[r].skelId)}|${runs[r].side}`
     // ⛔⛔ AND RESOLUTION IS THE BLOCK FACE TOO — THE SAME UNIT. *(Jacob, 2026-09-07, flipping a
     // strip on a straight face: "I flipped the inner sidewalk and you see it stopped at the seam
@@ -3559,11 +3560,55 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     const resKey = feKey
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
+      // ⛔⛔ A FRONTAGE IS ONE ARC OF THE BLOCK POLYGON. ENFORCED, NOT ASSUMED.
+      // ⭐ Think in ①: a block IS a closed polygon, each edge carries one owner, and a corner is a
+      // vertex where the owner CHANGES. ⇒ a block with N frontages has exactly N corners. If an
+      // owner appears in TWO arcs, one of them is a mis-attribution — and every extra arc mints a
+      // corner where the block has none, which is "the intersections are wrecked all over the map".
+      // ▶ MEASURED before this: LS 73 of 165 rings fragmented, 238 extra corners · HPDM 416 of
+      //   1251, 1002 extra. Median arc 90 m (a real face) but 7–8% under 2 m — the owner FLICKERS
+      //   for a metre or two mid-frontage and each flicker mints two corners.
+      // ⛔ NO THRESHOLD, NO SKIP LIST. The rule is the polygon's own property: keep each owner's
+      // LONGEST arc and absorb its others into whichever neighbour is longer. A frontage that
+      // genuinely appears twice on one ring cannot exist — the polygon would have to cross itself.
+      // ⚠️ This is a FILL-side enforcement of an identity the carry should already give us, and it
+      // is disclosed as such: the residue belongs to `carryEdgeLabels` (`fca8e492` took the same
+      // class 30.5% → 2.2%). ⛔ It absorbs the symptom so the corner count is right; it does not
+      // make the attribution right, and it says so here rather than looking like a cure.
+      {
+        const own = new Array(n).fill(null)
+        for (let q = 0; q < n; q++) own[q] = feKey(stp[q])
+        const eLen = (q) => { const a = ring[q], b = ring[(q + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
+        // arcs around the closed ring
+        let start = 0
+        while (start < n && own[start] === own[(start - 1 + n) % n]) start++
+        if (start < n) {
+          const arcs = []
+          for (let k = 0, q = start; k < n; k++, q = (q + 1) % n) {
+            if (!arcs.length || own[q] !== arcs[arcs.length - 1].o) arcs.push({ o: own[q], qs: [], len: 0 })
+            const a = arcs[arcs.length - 1]; a.qs.push(q); a.len += eLen(q)
+          }
+          const best = new Map()
+          for (const a of arcs) if (a.o != null && (!best.has(a.o) || a.len > best.get(a.o).len)) best.set(a.o, a)
+          for (let i = 0; i < arcs.length; i++) {
+            const a = arcs[i]
+            if (a.o == null || best.get(a.o) === a) continue          // its one true arc
+            const prev = arcs[(i - 1 + arcs.length) % arcs.length], next = arcs[(i + 1) % arcs.length]
+            const take = (prev.len >= next.len ? prev : next).o
+            if (take == null) continue
+            for (const q of a.qs) own[q] = take
+            a.o = take
+          }
+          for (let q = 0; q < n; q++) if (own[q] !== feKey(stp[q])) ownFix.set(`${ri}|${q}`, own[q])
+        }
+      }
       const cuts = []
       for (let q = 0; q < n; q++) {
-        const a = resKey(stp[(q - 1 + n) % n]), b = resKey(stp[q])
+        const a = ownFix.get(`${ri}|${(q - 1 + n) % n}`) ?? resKey(stp[(q - 1 + n) % n])
+        const b = ownFix.get(`${ri}|${q}`) ?? resKey(stp[q])
         if (a !== b) cuts.push(q)                                    // resolve per SPAN (rule 4)
-        const ra = feKey(stp[(q - 1 + n) % n]), rb = feKey(stp[q])
+        const ra = ownFix.get(`${ri}|${(q - 1 + n) % n}`) ?? feKey(stp[(q - 1 + n) % n])
+        const rb = ownFix.get(`${ri}|${q}`) ?? feKey(stp[q])
         if (ra !== rb && ra != null && rb != null) seamAt.add(`${ri}|${q}`)   // CORNER: road or side
       }
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
