@@ -168,10 +168,14 @@
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
 > united into ONE closed path. ② the **curb polygons** — separate, offset FROM ①. ⛔ **Not one object at
 > two moments** — that conflation put the wrong construction in `src/` (`4be5e5c1`).
-> ⛔ **SHARP ON ①, AND SHARP THROUGH THE OFFSET** — ⭐⭐ **because SMOOTHING IS SKELETON AND ROUNDING IS
-> SURVEY** (*"the skeleton is smooth but the corners are rounded by the survey"*). The smooth is already
-> in the chain's points before ① exists; the rounding is authored after ② is offset. **① sits between the
-> two stages and does NEITHER** — a STAGE FACT, not a principle about protopolygons.
+> ⛔ **① IS SHARP** — ⭐⭐ **because SMOOTHING IS SKELETON AND ROUNDING IS SURVEY** (*"the skeleton is
+> smooth but the corners are rounded by the survey"*). The smooth is already in the chain's points
+> before ① exists; the rounding is Survey's. **① sits between the two stages and does NEITHER** — a
+> STAGE FACT, not a principle about protopolygons.
+> ⚠️ **"AND SHARP THROUGH THE OFFSET" IS STRUCK (2026-09-06).** The ease runs INSIDE
+> `offsetRingVariable`, on the raw offset polyline **before its self-union** — that is the only place
+> the corner correspondence is still exact, and easing the returned ring instead lost 687 of 893
+> corners. ⭐ Still ONE rounding, still Survey's; what moved is where in the call it happens.
 > ⇒ **the offset does NOT round "naturally"**: an arc of radius = the offset distance (Illustrator's
 > behaviour) is a third, unauthored place to round — the second mechanism this § already retires.
 > Curvature stays where it is computed today, **for ADA, off the override handles**: nothing new is built,
@@ -209,38 +213,12 @@
 > - ⭐⭐ **THIS IS WHAT UNBLOCKS THE HANDLES**, and it is §1's own prediction arriving: *"cap style, corner
 >   radius and fillet stop being three things."* Caps needed no separate mechanism; the caveat above was
 >   the last reason to think they did.
-> ### ⛔⛔ AND A CORNER PASS WAS THEN BUILT ANYWAY, AND EXCISED THE SAME DAY. READ THIS BEFORE BUILDING ONE.
-> `easeRing` rounded ②'s corners after the offset — arc-length walk, setback `R/tan(θ/2)`, a budget
-> against neighbouring corners, a decline when it did not fit, a revert when the result self-intersected.
-> ⭐⭐ **IT WAS A CORNER CONSTRUCTOR, WHICH IS THE ONE THING THIS SECTION SAYS A CORNER IS NOT** — Jacob:
-> *"the chains should be smooth, the corners should be native."* §1 had already retired
-> `cornerAt`/`capAt`/`filletRing` for exactly this reason (*"a contour already IS its corners and caps"*),
-> and this was those three under a new name. ⛔ Retiring machinery in a doc does not stop it being
-> rebuilt; only naming the SHAPE of it does, which is what this block is for.
-> **Its history is the whole argument, and every step is a guard propping up the last one:**
-> 100 m chords across blocks (the setback diverges at shallow angles) → a budget to stop that, keyed on
-> an invented ~7° turn threshold that ordinary curvature tripped, so REAL corners came back "too tight"
-> → a cluster-collapse to fix that, which **silently zeroed every corner on every clean quadrilateral
-> block**, because all four of a block's vertices are crossings → removing the collapse broke the rings
-> outright. ⭐ **Each fix was aimed at the previous fix.** That pattern is the signal to stop.
-> ⇒ ② is the PLAIN OFFSET of ①, and it renders correctly on a block. **The authored radius is still
-> owed and still belongs in the node's bezier handles** — a property the contour CARRIES, not a shape
-> built onto it afterwards. ⛔ What survives and is frozen: the crossing identity, so a corner is still
-> known by construction as the place two chains crossed.
-> ⚠️ **AND THE HARNESS WAS LYING WHILE ALL THIS WAS JUDGED.** `draw-*.mjs` emitted each ring as its own
-> filled `<path>`, so an annulus painted its outer ring solid and then its HOLE solid on top — a 0.381 m
-> curb strip rendering as a filled 19,816 m² block. Hours went into "band floods" and "black wedges" in
-> geometry that was fine. ⭐ A band is a COMPOUND PATH: one `<path>` per band, `fill-rule="evenodd"`.
-> The same class as four other errors that day, all of them a compound path handled as loose rings.
-> ⭐ And it explains the collapse we already measure: ε is *"a PRESENCE with TWO nodes at every mouth"*
-> while `coupler-slit-universal.mjs` prints `FACE=SLIT gap=0.000m` on every LS tip. **The two apexes are
-> real in ① and collapsed in the freeze** — ⛔ cause of the collapse not established here.
-> ⚠️ ⛔ **Denominator warning:** that probe counts every unshared chain endpoint (211 on LS), **not** the
-> canonical 50 dead ends. Do not merge the two counts. 97 tips carry 3 contour vertices and 2 carry 4;
-> cause not established.
-> ▶ `_handoffs/HANDOFF-curve-primitive-skeleton.md` — its §72 (*"tangent directions = the bounding
-> straight-leg directions"*) is the same law, written for mid-chain.
->
+> ### ⛔⛔ A CORNER PASS (`easeRing`) WAS BUILT AND EXCISED, 2026-09-05 — and the corner is now built
+> the OTHER way, at the node. ⭐ The one live sentence: **a corner constructor grows guards — a
+> setback that diverges, a budget to stop it, a threshold the budget needs, a cluster-collapse to fix
+> the threshold — and each fix aims at the previous fix. That pattern is the signal to stop.** The
+> cure is the node's own handle configuration (below): no threshold, no budget, no decline, no revert.
+> Full history: `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §A`.
 > ⛔ **THE ONE CONSTRUCTION STILL OWED: the width STEP at a block boundary** — two adjacent grout edges
 > carrying different `pavementHW`. On the chains that is a datum defect at a through-node (`:178`); on the
 > grout it is an ordinary vertex where `depthAt` jumps, and the `[start,end]` ramp is either the answer or
@@ -285,10 +263,12 @@
 > Today the intention lives OUTSIDE the geometry, so the construction rounds once (`filletRing`) and must
 > then be told not to round again (INVARIANT 2: `jtMiter`, never `jtRound`). With the intention **in the
 > node** there is nothing to second-guess:
-> - **`filletRing` / `filletRings` retire** — the contour is already curved where the operator said so.
+> - **`filletRing` / `filletRings` retire** — ✅ on the ① path: ② rounds at the node and the artifact
+>   carries the achieved arcs as `fillets`, so nothing rounds twice. Still live on the legacy path.
 > - **The `jtMiter`-vs-`jtRound` doctrine retires** — no second mechanism left to guard against.
-> - **`bandJoin` retires** — a per-TILE case decision (`tileGround.js:4549` — round if the tile has any cap,
->   or a single run, or is thin) **frozen into `shape.json`**. A node-level intention needs no tile-level mode.
+> - **`bandJoin` retires** — ⚠️ NOT retired in fact: the ① tile carries `bandJoin:'miter'`, because the
+>   consumer reads it. It is now a CONSTANT, not a per-tile case decision, which is the substance of
+>   the retirement; the field survives as plumbing.
 > - **The miter-limit bevel retires** (`:67`, `miterLimit 2`). It fires because two offset lines struck from a
 >   SHARP vertex meet far away; an eased vertex has no such intersection. ⭐ **§3.3's U-seam measurement IS
 >   this clamp firing** — it substitutes a bevel and the frozen curb swings metres off a line that should be
@@ -297,21 +277,12 @@
 > APPROXIMATELY a cubic, and it degrades where depth approaches the fit radius — the tight turning circles.
 > **Not measured under the grout subject.**
 >
-> #### ▶ STATE OF THE BUILD — gates A+B measured 2026-09-04; **the grout DRAWS** since `a82a6d8d`.
-> ⛔ **Re-run; the directions are the doctrine, the digits are a snapshot — which is why the digits are
-> NOT repeated here.** ▶ `scratch/gate-a-grout-holes.mjs` · `gate-b-grout-offset.mjs` · `?grout=1`
-> - **GATE A — topology.** Stroke at ε, unite, subtract from the stencil (artifact-derived, so it
->   ports). **The grout INVENTS NOTHING** — every ring lands inside a frozen tile, three towns; where
->   it differs it SUBDIVIDES a tile the freeze merged. **`POLYGON-FIRST §2.1` checks 1–2 go to ZERO
->   from ε alone**, on a gate whose own text says it "fails on ALL 50 dead-end tips". **ε's value
->   carries no information — measured** across a wide sweep. ⛔ LS's count match is a NET (one tile
->   splits, one receives nothing), **not a bijection**. ⛔ **This gate strokes `jtRound`+`etOpenRound`
->   — it ROUNDS. Fine for a topology count; NEVER copy that call into the protopolygon.**
-> - **GATE B — authored widths + the fold class.** **The LEGS LAND ON THE CURB** — deviation at the
->   millimetre, LS and HPDM. ⭐⭐ **AND THE FOLD CLASS DOES NOT REPRODUCE**: `POLYGON-FIRST D6a` marks
->   the chain-side offset NOT robust (~70% of crossings at the averaged-normal branch); offsetting a
->   CONTOUR gives zero repeated-vertex rings across both towns. **The predicted failure appeared
->   instead — blocks VANISH rather than fold**, which is loud and countable.
+> #### ▶ STATE OF THE BUILD — ①②③ is the PRODUCER for Survey and Section (`protoProducer` +
+> `protoArtifact`). The 2026-09-04 grout gates that asked whether it could be built at all are
+> retired to `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §B`; two rules from them stay live:
+> ⛔ never copy GATE A's `jtRound`+`etOpenRound` stroke into ① (it ROUNDS; ① is sharp by ruling), and
+> ⭐ offsetting a CONTOUR does not reproduce the fold class — a narrow block VANISHES instead, which
+> is loud and countable.
 > - ### ⛔⛔⛔ HOW ① IS LOOKED AT — **THE EXPANDED PATH IS THE WHOLE POINT** (Jacob, 2026-09-06)
 >   ① is defined as *"**Expand appearance**, then **Pathfinder > JOIN**"*. **The EXPANSION is the
 >   mechanism**; ε only makes the width nominal. So the readable object is the **expanded** ① —
@@ -333,16 +304,17 @@
 >     `EXPANDED <m> m — NOT the ink width` into the SVG itself, not just the console. **Never
 >     expand silently**; a legible picture that does not name its own distortion is how the
 >     distortion gets quoted as a measurement.
->   ### ⭐⭐⭐ ① IS THE PRODUCER — LANDED 2026-09-06, behind `bake-ground --proto`.
->   `shape.json` is built from ②③: 104 tiles, every one `producer:'proto'`, each carrying its BANDS.
+>   ### ⭐⭐⭐ ① IS THE PRODUCER, AND IT IS ON — 2026-09-06. `protoProducer` + `protoArtifact`.
 >   ⛔ **A change of CONSUMER, not of construction** — the distinction `5560cf6a` turns on. ②③ already
->   offset the grout contour; the bake now freezes what they made. No geometry was written to land it.
->   ⛔ **The tile carries BANDS, not `runs`.** `sectionOpen` → `sectionPassTile` is the per-RUN chain
->   painter ③ replaces; feeding it proto tiles re-introduces the seams that are the whole tell.
->   `sectionOpen` short-circuits on a tile carrying `bands`, detected by the tile's own shape so a
->   half-migrated artifact cannot silently take the wrong path.
->   ⛔ **OFF BY DEFAULT, proven twice:** `a03-curb-identity --against` byte-identical, and a normal bake
->   reproduces the prior `shape.json` byte for byte. `--proto` REFUSES rather than falling back.
+>   offset the grout contour; the artifact freezes what they made. No geometry was written to land it.
+>   **The tile carries `bands` AND `runs` AND `SECTION §4`'s freeze list** (`ring · iA · vertR ·
+>   fillets · runs`, each run with its `baseMeasure`). ⚠️ Two earlier claims here are STRUCK:
+>   *"the tile carries BANDS, not `runs`"* — `§4` freezes run identity by ruling, and `§3.2` calls it
+>   design intent, not chain geometry; and *"OFF BY DEFAULT, proven twice"* — both flags are ON in the
+>   Designer, so **`a03-curb-identity` no longer guards this path** and the byte-identity proof covers
+>   only the legacy build.
+>   ⛔ Shipping `bands` freezes the FILL, which `SECTION §4` names as the Phase-D over-reach. Open
+>   there, with the measurement and the one-line flip.
 >   ### ⭐⭐⭐ AND THE AXIS IS **CHAINS vs ①**, NOT "FROZEN vs LIVE" — corrected 2026-09-06 (Jacob)
 >   > *"It may be mechanically impossible to not use the chains, but the EFFECT needs to be we work
 >   > from the simplified protopolygon."*
@@ -1094,56 +1066,11 @@
 >
 > ---
 >
-> ## ⭐⭐ 2026-08-06 — the evidence and cautions that survive the ruling. Read before building.
->
-> ⛔ **The "tried and reverted" note below is about `SPUR_OUTLINE`, which `ROADMAP A0` describes as asserting
-> the spur *"rather than punching the whole map."* It was the ALTERNATIVE to `blocks = boundary − stroked
-> roads`, not that construction.** That construction has never been the render path and the eye has never
-> seen it.
->
-> **What is measured, with the commands (⛔ do not quote these numbers without re-running):**
-> `node scratch/punchout-spike.mjs` — the punch-out already computes: `blockSharp = differenceRings([stencil],
-> asphaltSharp)` (`buildBlockGeometryV2.js`), gated behind `__debugRings`, and **`frontageEdges` is already
-> sliced from it.** ⛔ **Read its output as a COMPOUND PATH** — boundary contour + holes + islands, winding-
-> encoded — never as a flat block list; that misread is recorded in the spike's own header.
->
-> **What broke it, two commits a week apart, neither saying so:** `4044bca1` (7/15, *"perf(designer)!: T4"*)
-> deleted the rounded primitive `applyRoundCornersToRing`/`blockRounded`; `cd062388` (7/22) emptied
-> `ribbons.intersections` **258 → 0**, which is what `cornersAtIx` walks. ⚠️ The primitive was restored
-> 2026-08-06 (`090a68cf`) and **reverted the same day on Jacob's call** — it rounded nothing anyway, because
-> its input is that empty array. Recover it from `4044bca1^` if the substrate question rules that way.
->
-> ⛔ **INVARIANT 2 governs any move here:** never two rounding mechanisms on the same object. Live form:
-> `filletRing` rounds once, the inward bands `jtMiter`-inherit it (§3.3). *(This clause used to name
-> `applyRoundCornersToRing` — deleted at T4; only comments in dead modules still mention it.)*
->
-> ---
->
-> ⛔⛔ **TRIED AND REVERTED, 2026-07-31 — but the verdict is UNRELIABLE, not reversed.** Asserting the spur as
-> a closed two-sided outline before the walk (`spurOutline.js`, `SPUR_OUTLINE`) was built and then
-> **reverted out of trunk** (`152e7734` built it, `7b5b87a3` reverted it, taking the corner registry and
-> the probes with it). There is **no `spurOutline.js` in the tree and no `SPUR_OUTLINE` in any source
-> file** — verified 2026-08-04. ⛔ **Do not go looking for the flag; there is nothing behind it.**
-> ⭐⭐ **THE LESSON IS THE LOAD-BEARING PART, AND IT IS NOT "the probes don't predict the eye" — that
-> over-read it.** Named 2026-08-06: **Jacob was looking at `lafayette-square` while the work was on
-> `lafayette-square-staging`, and neither party knew all day.** Different maps (overlay-authored
-> **52 vs 177**), so the verdict was taken on the scene the change was *not* on. ⛔ **Do not cite the
-> revert as proof the construction fails, and do not read this as licence to re-land it** — the probes
-> are neither vindicated nor discredited. ⭐ **An eye verdict must record the SCENE it was taken on**,
-> as strictly as a measurement records its authoring state (`PREBAKE §4.0a`, `ROADMAP A0`).
-> The dead-end substrate question was therefore **OPEN** on that evidence — ✅ **and is now RULED
-> (2026-08-12, the block at the top of this section).** ⭐ **The revert still must not be cited as proof
-> the construction fails**; the ruling does not rest on it either way.
-
-> The tile model replaced the **figure-ground** regime (blocks-as-positive, streets-as-subtracted-void) in the ~2026-06-01 re-pour, and **T4 (2026-07-15) deleted figure-ground's geometry outright** — the tile construction is now the only one. The emitter reference is archived at [`_archive/RIBBONS-figureground-emitter-2026-06-15.md`](_archive/RIBBONS-figureground-emitter-2026-06-15.md); `silhouetteStraightEmitter` and the band emitters no longer exist in the tree. `buildBlockGeometryV2` survives as a **frontage-edge identity builder only** (§1's T3 note below).
-
-> ## ⛔⛔ RETRACTED IN FULL, 2026-09-05 — "CONSTRUCT the hard polygons" is dead. **BOTH** hard polygons derive.
-> ⭐ The median half was retracted 2026-06-15 (the update below). **The junction half is retracted now**, by
-> Jacob's *"E3 is superseded; fold it in and close the campaign"* — the grout polygonizes the network and the
-> junction falls out, so there is nothing left to construct positively. ▶ **LIVE: `§1`'s grout ruling.**
-> ⭐⭐ **AND THE DOCTRINE PREDICTED ITS OWN DEATH** — its "deeper pattern (bank it)" below says every hard case
-> so far dissolved by fixing the DERIVATION. It was three for three; this was the third.
-> *(2026-06-15 text kept below for the record — ⛔ nothing in it is live.)*
+> ## ⭐⭐ The 2026-08-06 punch-out evidence is retired to
+> `_archive/RIBBONS-s1-retired-detail-2026-09-06.md §C` — it recorded what was known before the
+> substrate became the render path. ⛔ **One rule from it is LIVE and cost a day when ignored: read
+> the punch-out's output as a COMPOUND PATH — outer contour + holes + islands — never as a flat
+> block list.**
 > ### ~~DOCTRINE (2026-06-15, Jacob — the construction campaign): CONSTRUCT the hard polygons; DERIVE only the simple block faces.~~
 > The derivation chain below holds for a **simple block face** — a tile bounded by ordinary street legs derives correctly (centerline → offset → ribbon). It **fails at the two HARD polygons**, and that failure is one root, not many: **the junction and the divided median must be CONSTRUCTED positively, not left to emerge from the face-walk.** ⛔ **A purely emergent junction IS the bug family** — that is the posture this doctrine replaced, and `tileGround.js`'s header now says so.
 > - **Why (canon × the median deep-research × osm2streets):** the standard (`OSM2STREETS-GROUNDING §2`, "the defining divergence") **constructs the intersection polygon positively at every node** — roads trimmed back, the node neighborhood *replaced* by construction; *"every E3 artifact lives in this gap."* And the median research (2026-06-15) found **no production system *derives* a median** — A/B Street calls a centerline-derived median a **known limitation that "doesn't fit"** — the right move is to **construct a generic median positively**. Both findings are the same principle from two sides.
