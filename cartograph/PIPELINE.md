@@ -362,18 +362,19 @@ success is the worst outcome a kit can have:
 
 **What is open, disclosed per pour — and ⛔ this list is DISCLOSED BY THE CONSTRUCTION, not maintained
 here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
-- ✅ **CLOSED 2026-09-06 — ③ NO LONGER SHIPS THE FILL FROZEN.**
-  ⭐⭐ **RULED (Jacob): "because we don't do a WALK anymore, we might need a STAMP INQUIRY step" ·
-  "there should be no MID-LEG anything — there are no nodes there now, because we are fully
-  polygonized."** ⛔ "Delete `bands`" used to hand a contour to `sectionPassTile`, the per-RUN painter,
-  which asks where a frontage starts and stops — questions a contour cannot answer. The tile now
-  freezes the **STAMP** (`iaStamp`, per contour point → its run; `iaFull`, the uncut contour it
-  indexes) and `sectionPassProtoTile` re-strikes ③'s own ladder live. **Band within 0.1% of ③ on two
-  towns · asphalt 0.00% · authoring +35,819 m² where it was Δ 0 · 99.5% of points stamped.**
-  ⚠️ **A `shape.json` poured before the flip still carries `bands`; that path is kept and made LOUD**
-  (it draws, and warns that authoring cannot move the fill — the cure is a re-pour).
-  ⛔ Open, cause not established: the two strips swap ~3% while their total holds — only the divider.
-  → `SECTION §4` · ▶ `node scratch/claims-proto-fill-is-live.mjs`.
+- ✅ **CLOSED — ③ NO LONGER SHIPS THE FILL FROZEN.** The tile freezes the SILHOUETTE and the
+  **STAMP** (`iaStamp` per contour point, `iaFull` the uncut contour it indexes) and Section strikes
+  ③'s own ladder live off them — ⭐ Survey and Section now agree to 0 m² because they run the **same
+  painter**, not because both read one frozen strike. Band within 0.7% of ③, asphalt 0.00%,
+  authoring **+35,549 m²** where it was Δ 0.
+  ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
+  resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
+  corner · and ② **minting a corner at every chain cut** — *"① has no nodes"*. → `SECTION §4` and
+  `RIBBONS §1`'s 2026-09-07 amendment.
+  ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a ~3% divider residual,
+  cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
+  draws and **warns**, and the cure is a re-pour.
+  ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-proto-has-no-nodes.mjs`
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.

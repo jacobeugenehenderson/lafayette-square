@@ -128,63 +128,61 @@ The architecture that makes Section responsive, and the thing the freeze is **fo
 > `ring · iA` (②'s eased curb) `· vertR · fillets` (②'s achieved arcs) `· runs` (with `baseMeasure`,
 > the surveyed cross-section `resolvePedDepths` glean off). Delete `bands` from the tile and
 > `sectionPassTile` strokes the FILL live off it.
-> ### ⭐⭐⭐ THE CURE IS BUILT — **A STAMP INQUIRY, NOT A WALK** *(Jacob, 2026-09-06)*
+> ### ✅✅ THE FILL IS NO LONGER FROZEN — **A STAMP INQUIRY, NOT A WALK** *(landed 2026-09-06/07)*
 > > *"Because we don't do a **walk** anymore, we might need to do a **stamp inquiry** step."*
-> > *"There should be no **mid-leg** anything. There are no nodes there now, because we are fully polygonized."*
+> > *"There should be no **mid-leg** anything. There are no nodes there now, because we are fully
+> > polygonized."* (Jacob)
 >
-> ⛔⛔ **"THE FIX IS ONE DELETION" WAS STRUCK, AND THAT SECOND SENTENCE IS WHY.** Deleting `bands`
-> handed the tile to `sectionPassTile` — the per-**RUN** painter. It groups runs, strokes each
-> polyline into an area, trims it back from a corner, and offers the leftover wedge to a corner pad
-> that may **decline**. ⭐ **Every one of those is a question about a LEG, and a contour has none** —
-> no ends, no nodes, no corner as a separate object. There is a closed curve and, at each point, a
-> stamp. ⇒ **the only question ③ can ask is "what depth HERE".**
-> ### The two defects that produced the "~90% gone", both now closed
-> **① A REFUSED FIELD READ THROUGH `>`.** The mono-width seed was `TLmax = tl, SWmax = sw`; ①'s tile
-> **refuses** that pair by ruling, and **`undefined` never loses a `>` comparison**, so no per-edge
-> depth could lift the seed and `iW = ringAt(NaN)` collapsed the ribbon. ⛔ Not a crash — a *silent*
-> substitution inside the painter, Layer 0 q2 where it must never happen. Closing it alone: **7% →
-> 66.7%**, and the authored treelawn from **Δ 0 → +802 m²**.
-> **② THE WALK ITSELF.** ①'s `runs` are grouped off `iA`, so they neither partition `st.ring` (A10
-> established on **0 of 151** tiles, vs 107 of 118 legacy) nor cover the curb (**88.5% LS · 71.1%
-> HPDM**, with **29 tiles OVER-covering — a cover cannot be both**). Curb with no run got no band.
-> ⛔ **The cure was NOT to make the runs cover the ring** — that is the walk, rebuilt.
-> ### What was built — ⭐ **a change of CONSUMER, not of construction**
-> ③'s own strike is *already* a stamp inquiry: `EM(i) = protoMeasureOf(labs[i])` per contour vertex,
-> four whole-contour offsets, `band(a,b)` between them. **No runs, no sectors, no trims, no corner
-> takeover.** `sectionPassProtoTile` is that same ladder moved past the wall and re-resolved against
-> live `blockCustoms`. The producer freezes the **stamp** instead of the **bands**:
-> - **`iaStamp`** — per contour point, the index of the `run` that owns it. ⭐ `runs` stays
->   **IDENTITY**, exactly as `RIBBONS §1` ruled; this is the per-**POINT** index into it, which is
->   the form an offset can consume. A `null` is an honest absence (rim, or unlabelled ①).
-> - **`iaFull`** — the **UNCUT** contour the stamp indexes. ⛔⛔ **The stamp cannot survive the disc
->   cut and must not be made to:** `intersectRings` **simplifies** (a ring came back with 40 points
->   where it had 67), so re-attaching by exact key recovered **2 of 40**. A tolerance would "fix"
->   that and is the forbidden shape; matching by distance is `A15`'s proximity recovery. ⭐ ③ never
->   needed it to survive — it strikes off the uncut contour and cuts the **bands**. So each geometry
->   answers one question: **`iaFull`+`iaStamp` say WHAT DEPTH, the cut `iA` says WHERE THE BLOCK IS.**
-> - ⭐ **A seam is unconstructible here rather than merely unlikely** — every boundary is a
->   whole-contour offset of the *same* curve, so there are no pieces to join.
-> ### Measured — ⛔ re-run, never quote: `node scratch/claims-proto-fill-is-live.mjs`
-> | | LS | HPDM |
-> |---|---|---|
-> | contour points stamped | 15,102 · **99.5%** | 169,733 · **99.8%** |
-> | ped band (tl+sw) vs ③ | **Δ 0.1%** | **Δ 0.0%** |
-> | LU · curb · asphalt | 0.4% · 0.8% · **0.00%** | 0.4% · 1.1% · **0.00%** |
-> | **authoring reaches** | **+35,819 m²** (frozen: 0) | town authors none |
-> | treelawn∩sidewalk | 34,707 vs ③'s 35,614 — **no worse** | 820,693 vs 841,500 |
+> `bands` is gone from the tile. ③ freezes the **SILHOUETTE** and the **STAMP**; Section strokes the
+> ribbon live off them, and **§4's keystone is kept for the first time since it was written.**
+> ⭐ Survey and Section now agree to **0 m² because they run the SAME live painter**, not because
+> both read one frozen strike — which is what *"the same thing"* was always supposed to mean.
 >
-> ⛔ **STILL OPEN, CAUSE NOT ESTABLISHED:** the two strips swap **~3%** between each other while
-> their **total holds to 0.1%** — so only the **divider** moved. It is **not** the capacity guard
-> (the residual sits on the 144 tiles whose envelope is identical to ③'s) and **not** the rim cut.
-> ### ✅ FLIPPED 2026-09-06, on Jacob's call — `bands` IS GONE FROM THE TILE
-> The FILL is no longer frozen anywhere: the tile freezes the SILHOUETTE and the STAMP, and Section
-> strokes the ribbon live off them. **`SECTION §4`'s keystone is kept for the first time.**
-> ⭐ Survey and Section still agree to **0 m² on all four layers** — both now run the same live
-> painter, which is what "the same thing" was always supposed to mean. Legacy FILL byte-identical.
-> ⚠️ **A `shape.json` poured BEFORE the flip still carries `bands`, and that path is kept and made
-> LOUD.** It draws — refusing would make a re-pour a prerequisite for opening the tool — but it
-> `console.warn`s that the ped FILL cannot respond to authoring. ⛔ Silence there would present as
-> *"my treelawn edit isn't working"*, never as an error. **The cure is a re-pour.**
+> **What the tile freezes:** `iaStamp` — per contour POINT, the index of the `run` that owns it
+> (`runs` stays **identity**, exactly as `RIBBONS §1` ruled) — and `iaFull`, the **UNCUT** contour it
+> indexes. ⛔ **The stamp cannot survive the disc cut and must not be made to:** `intersectRings`
+> SIMPLIFIES (a ring came back with 40 points where it had 67), so re-attaching by exact key
+> recovered **2 of 40**. A tolerance would "fix" that and is the forbidden shape; matching by
+> distance is `A15`'s proximity recovery. ⭐ ③ never needed it to survive — it strikes off the uncut
+> contour and cuts the **bands**. So each geometry answers ONE question: **`iaFull`+`iaStamp` say
+> WHAT DEPTH, the cut `iA` says WHERE THE BLOCK IS.**
+> ⭐ **A seam is unconstructible rather than merely unlikely:** every boundary is a whole-contour
+> offset of the SAME curve, so there are no pieces to join.
+>
+> ### ⛔⛔ THE JOIN LINE — TWO FABRICATED JOINS, BOTH FOUND BY THE OPERATOR'S EYE
+> *"The fact of a join line is the smoking gun… **there is no join**."* Right, and it is the sharpest
+> test there is: a visible join in a construction that has none proves the geometry was made in
+> **pieces**. Two causes, both real, both closed:
+> - **THE PED WAS RESOLVED PER CHAIN.** `baseMeasure = protoBase.get(skelId)`, and `gleanTreelawn`
+>   reads it to decide whether the walk sits AT the curb or SET BACK — so the arrangement was a step
+>   function of **chain identity**, and the walk jumped a full treelawn's depth wherever the kit cut
+>   a chain. ⛔ Justifying that as *"surveyed data keyed by frozen identity, so the wall permits it"*
+>   is **WRONG**: the exemption covers **design intent**, a dictionary of numbers. It does not cover
+>   a value whose **DISCONTINUITIES are chain artifacts**. Now resolved per **ROAD**,
+>   length-weighted on the measure. `pavementHW` stays per chain — a street genuinely changes width
+>   block to block and that is the product (Layer 0 q3). ▶ flips at a chain boundary **26 → 0**.
+> - **THE RING'S OWN ARRAY SEAM WAS READ AS A CORNER.** *"Every street which encircles a ring has a
+>   break in it where the join starts/ends, so every single block is wrong."* The stamp walk started
+>   at index 0 and never wrapped, so a frontage spanning the array's start came out as TWO runs and
+>   the consumer read an owner change between them — **one fabricated join per ring, on every
+>   block.** `groupRuns` has always handled it; it was not carried across. ⛔ **Index 0 is not a
+>   place on the map**, and this is a WALK artifact in a construction that does not walk.
+>   ▶ runs **877 → 807**; rings split at index 0: **0**.
+>
+> ⭐⭐ **AND THE THIRD WAS UPSTREAM, IN ②** — the corner minted at every chain cut. One predicate,
+> both tools. **Full ruling: `RIBBONS §1`, the 2026-09-07 amendment.**
+>
+> ### ⛔ OPEN
+> - **Cap folds — "legs meeting end caps."** 22 of 87 (LS) flip the arrangement where one chain's
+>   two sides meet at a tip. `§6.3` rules it — **the bulb has NO halves**, it carries ONE
+>   cross-section and goes whole to the cap owner. **Not built.**
+> - **The two strips swap ~3%** between each other while their total holds to 0.1% — only the
+>   **divider** moved. ⛔ **CAUSE NOT ESTABLISHED**; it is not the capacity guard and not the rim cut.
+> - ⚠️ **A `shape.json` poured before the flip still carries `bands`.** That path is kept and made
+>   LOUD — it draws, and warns that the ped FILL cannot respond to authoring. ⛔ Silence there
+>   presents as *"my treelawn edit isn't working"*, never as an error. **The cure is a re-pour.**
+> ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-proto-has-no-nodes.mjs`
+> — ⛔ re-run them, never quote; the second is **FAILING on HPDM** and passing on LS.
 
 **State (2026-06-07):** the live wiring is **landed** — `sectionGeos`/`sectionOpen`/`sectionPass` take `blockCustoms`, so the FILL re-strokes off the frozen `iA` when an override changes (material-swap proves it live). The remaining gap is §3.3: the **depth** override + the per-edge divider. (Phase-D's earlier "freeze the FILL too" over-reach is the thing §3.2/§3.3 unwinds — freeze the silhouette, stroke the FILL live.)
 

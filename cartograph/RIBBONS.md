@@ -457,8 +457,38 @@
 >   because past that the leg belongs to the next corner.
 >   ⭐⭐ **THE CORNER IS FOUND BY CARRIED IDENTITY: the OWNER CHANGING along the ring.** `§1`'s own
 >   law — every ring edge is owned by one `(skelId, side)` by construction — so no angle test and no
->   proximity match. LS in-disc: **445 corners, median turn 90.1°**, and the blocks reading ZERO are
->   exactly the medians and loop interiors (one street, so the owner never changes).
+>   proximity match. The blocks reading ZERO are exactly the medians and loop interiors (one street,
+>   so the owner never changes).
+>   ### ⛔⛔⛔ AMENDED 2026-09-07 (Jacob) — **THE OWNER IS THE *ROAD*, NOT THE CHAIN. ① HAS NO NODES.**
+>   > *"The ribbon is disrupted where nodes are, which means it's got nodes in there. Get Rid Of
+>   > Them."* · *"Do you understand that the protopolygon doesn't have nodes?"* · *"We made the
+>   > protopolygon from the chains, and then completely walled off the chains."*
+>
+>   **`skelId` IS CHAIN IDENTITY, and the kit cuts one road into many chains** — LS cuts South 18th
+>   Street into **eleven**; **58 of 174 roads are multi-chain.** A chain cut and a `segOrd` boundary
+>   are bookkeeping in the chain world; **①'s contour runs straight through them and the only thing
+>   that changes there is the LABEL.** ⇒ Read as written, this law puts the chain graph's nodes back
+>   into the one construction built to have none, and the operator sees **the ribbon disrupted at
+>   every junction.** ⭐ It presents as *"the continuous side of a T"* because a T is exactly where
+>   the kit cuts a chain. ▶ measured on LS: **131 nodes in the stamp**, 39 of them rounded by ②.
+>   ⛔⛔ **AND WIDENING THE IDENTITY TEST ALONE FIXES NOTHING — measured, 36 spurious arcs before and
+>   36 after.** `hard` is a chain artifact at a cut: a cut leaves a chain **endpoint**, whose handles
+>   are broken by default, so the flag says *corner* while the road runs straight through.
+>   ⭐ **WHERE THE ROAD CONTINUES, ONLY THE GEOMETRY MAY MINT A CORNER** — and that is not a new
+>   threshold: `PROTO_HARD_TURN` is derived from the tessellation tolerance (*a vertex turning ≥ 60°
+>   cannot be a curve sample of any street*). **A road that BENDS still corners; a road merely CUT
+>   does not.** ▶ arcs minted at a chain cut **36 → 0**.
+>   ⭐⭐ **ONE PREDICATE, BOTH TOOLS** *(Jacob: "the curbs and block shapes we establish there are
+>   EXACTLY THE SAME in section and made from the same math")* — Survey draws ② and Section reads the
+>   same ②, so there was never a second place to fix.
+>   ⚠️ **OWED, AND IT IS THE ARCHITECTURAL HALF:** the road is resolved by a live lookup because ①'s
+>   frozen owners carry only `skelId`. **The mint is the one place a chain may be read**, so the
+>   ROAD and a road-aware `hard` belong stamped INTO ① — then the predicate reads the stamp and no
+>   downstream road reasoning exists at all. `mintProtopolygon` stamps `roadKey` now; it reaches
+>   nothing until a re-pour.
+>   ▶ `node scratch/claims-proto-has-no-nodes.mjs` — ⛔ **FAILING ON HPDM** (8 arcs minted + 8 ped
+>   flips at chain cuts) while LS is clean: Layer 0's signature, caught by the check rather than by
+>   an operator.
 >   ⭐ **ROUNDING HAPPENS ONCE, AT THE NODE** — INVARIANT 2 — so ③ insets an already-curved contour
 >   and its bands are concentric with the arc BY CONSTRUCTION: *"the corner is the band bent around
 >   the curb arc, never a constructed primitive."*
