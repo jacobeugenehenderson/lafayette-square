@@ -469,22 +469,37 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // `skelId` changes has put the chain graph's nodes back into a construction built to have none
     // — and the operator sees the ribbon disrupted at every junction.
     // ⭐ LS cuts South 18th Street into ELEVEN chains; 58 of 174 roads are multi-chain.
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
+    // ⭐⭐⭐ `segOrd` NAMES THE SPAN THE EDGE LEAVING THIS VERTEX LIES ON, not the vertex.
+    // `segOrdAt(ci, i)` counts IX vertices at-or-before i, so it names the span STARTING at i —
+    // right for the forward (right-hand) pass and off by one for the backward (left-hand) one,
+    // where the edge leaving vertex i is the offset of span i−1. ⛔ Unfixed, the two frontages on
+    // either side of an intersection can land on ONE authoring slot: measured, 165 of LS's 795
+    // slots painted ≥2 m in more than one block, which is *(Jacob)* "the dead end strip in the
+    // adjacent dead end" changing when he swaps a leg two blocks away.
+    // ⛔ `srcIdx` STAYS THE VERTEX — the corner ease resolves its radius through it, and that is a
+    // per-VERTEX question. Only the span ordinal takes the edge's answer.
+    const stamp = (side, i, segI) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
       // ⛔ (-dz, dx) IS MEASURE-RIGHT — derived from the artifact twice. Naming it
       // 'left' puts every ASYMMETRIC authored width on the wrong side of its street.
-      labs.push(stamp('right', i))
+      labs.push(stamp('right', i, i))
     }
     for (let i = P.length - 1; i >= 0; i--) {
       ring.push([P[i][0] - nrm[i][0], P[i][1] - nrm[i][1]])
-      labs.push(stamp('left', i))
+      labs.push(stamp('left', i, Math.max(0, i - 1)))
     }
     if (ring.length < 3) continue
     // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
     // overlaps, so a mixed pile unions into confetti instead of one object.
-    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
+    // ⛔⛔ AND A REVERSAL SHIFTS A PER-EDGE ARRAY BY ONE. `labs[i]` owns the edge i → i+1; after
+    // reversing, that edge sits between reversed positions i and i+1 only if the labels are
+    // rotated with it. `reverse()` alone hands every edge its NEIGHBOUR'S owner — the same
+    // edge-vs-vertex slip this file now carries three separate corrections for, here at the source.
+    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) {
+      ring.reverse(); labs.reverse(); labs.push(labs.shift())
+    }
     rings.push(ring); labels.push(labs)
   }
   // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
