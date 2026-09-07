@@ -363,15 +363,16 @@ success is the worst outcome a kit can have:
 **What is open, disclosed per pour — and ⛔ this list is DISCLOSED BY THE CONSTRUCTION, not maintained
 here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
 - ⛔ **③ ships the FILL frozen** — the tile carries `bands`, which is `SECTION §4`'s Phase-D over-reach
-  arriving again under a new name. **The flip is one deletion and it is not flipped**, because it costs
-  ~91% of the ped fill. ⭐ **Two leads are EXCLUDED by measurement, not by argument** — `fillets` (the
-  corner work took stamped arcs up by an order of magnitude, and proto now carries them on **more**
-  tiles than legacy; ⛔ the standing lead *"54 of 119 proto tiles carry no fillets"* is stale **and
-  inverted**, do not chase it) and `runs` (proto resolves more authored slots, with zero missing
-  `baseMeasure`). ⛔ **Both must be re-measured against the LIVE BUILD, never the artifact on disk** —
-  see §5, "who writes the frozen file." ⚠️ **And the flip
-  does not buy what `SECTION §4` wants anyway:** on the live path, doubling every authored treelawn
-  moves the fill **Δ 0 m²**. **Cause not established.** → `SECTION §4`.
+  arriving again under a new name. ⛔⛔ **"THE FLIP IS ONE DELETION" IS STRUCK — measured false.**
+  `sectionPassTile` reads four fields ①'s tile does not supply, two REFUSED by ruling; §4's freeze list
+  is not the painter's read set. ✅ **Half is closed:** the mono-width seed was `TLmax = tl`, and
+  `undefined` never loses a `>` comparison, so `ringAt(NaN)` collapsed the ribbon — ped band **7% →
+  66.7%**, authored treelawn **Δ 0 → +802 m²**, legacy byte-identical. ⛔ **Half is open and it is a
+  MODEL mismatch:** ①'s `runs` are grouped off `iA`, so they neither partition `st.ring` (A10: 0 of 151)
+  nor cover the curb (88.5% LS · 71.1% HPDM, with 29 tiles OVER-covering — a cover cannot be both), and
+  **95% of the miss is far field, mid-leg**, so the corner is not it. ⭐⭐ **RULED (Jacob): "we don't do a
+  WALK any more — we might need a STAMP INQUIRY step."** ⛔ Not "make the runs cover the ring"; that is
+  the walk rebuilt. → `SECTION §4` · ▶ `node scratch/claims-proto-fill-is-live.mjs`.
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.

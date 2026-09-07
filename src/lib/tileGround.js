@@ -2425,10 +2425,20 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // interior, narrow median, sliver) can't drive the inward offsets past the
     // medial axis into thorns — it degrades to a clean truncated ribbon. On the
     // offset W, never the fillet radius.
-    const cap = Number.isFinite(st.cap) ? st.cap : (cw + tl + sw)
+    const cap = Number.isFinite(st.cap) ? st.cap : (cw + (tl || 0) + (sw || 0))
     // Median tile: the shape pass froze ped at zero (tl = sw = 0) — no per-edge
     // resolution can re-grow strips into the median.
-    const pedOff = (tl + sw) <= 1e-6
+    // ⛔⛔ `tl`/`sw` ARE A REFUSABLE PAIR — read the tile's own `refused` block, never the raw
+    // field. ①'s tile refuses them with a reason ("a DEFAULT depth, not a frozen one —
+    // `resolvePedDepths` gleans it live off `runs[].baseMeasure`"), and an absent field must not
+    // read the same as a present one. Untested, `undefined + undefined` is NaN and `NaN <= 1e-6`
+    // is FALSE, so a refusing tile silently read as "not a median" — right answer, wrong reason,
+    // and the same NaN then poisoned the mono-width seed below. ⭐ ZERO is a VALUE here and it is
+    // the median signal (`a sentinel is not a value`), so it may only be read where it was
+    // actually frozen. A tile that refuses the pair carries NO median signal — that is ③'s
+    // already-disclosed gap ("there is no `median` land-use class"), not something to invent one for.
+    const pedFrozen = Number.isFinite(tl) && Number.isFinite(sw)
+    const pedOff = pedFrozen && (tl + sw) <= 1e-6
     // ── §3.3 step 1 · per-edge resolution ──
     // One resolved depth pair per qualifying run (the one-depth-truth wire —
     // resolvePedDepths, shared with the handle placement), plus the §3.1 strip
@@ -2515,7 +2525,15 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
     // tile's edges, floored at the frozen tile depths so an unauthored tile
     // reproduces the frozen geometry exactly. All per-edge variation below is
     // SLICING inside this band — the uniform offsets are never re-architected.
-    let TLmax = tl, SWmax = sw
+    // ⛔⛔ THE SEED IS A FLOOR, AND A REFUSED FIELD IS NOT A FLOOR OF NaN. Seeding from `tl`/`sw`
+    // keeps an unauthored frozen tile byte-identical (that is what the floor is FOR), but on a
+    // tile that REFUSES the pair the seed was `undefined` — and `e.tlD > undefined` is false for
+    // every run, so the per-edge depths could never lift it. `iW = ringAt(NaN)` then offset the
+    // band by NaN and the whole ribbon collapsed. ⭐ MEASURED on ①'s artifact: sidewalk
+    // 7,731 → 68,505 m² and treelawn 7,620 → 60,774 m² from this line alone, and an authored
+    // treelawn doubling went from Δ 0 m² to Δ +850 m² — i.e. THIS is what made the FILL look
+    // unauthorable. No floor is invented where none was frozen: the runs supply every depth.
+    let TLmax = pedFrozen ? tl : 0, SWmax = pedFrozen ? sw : 0
     for (const e of rr) { if (e.tlD > TLmax) TLmax = e.tlD; if (e.swD > SWmax) SWmax = e.swD }
     // Concentric ring at ped depth d off the frozen iA (cap-clamped, shared
     // join) — cached per distinct depth, so the default tile costs the same
@@ -6411,21 +6429,30 @@ export function buildTileGround(ribbons, opts = {}) {
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
             // ⭐ the FILL, already painted — not `runs` for something else to re-stroke
-            // ⛔⛔ THE FILL IS STILL FROZEN HERE, AND THAT IS A KNOWN NON-CONFORMANCE — not a choice.
-            // `SECTION §4` rules the FILL live off the frozen shape, and I built that: the tile below
-            // carries `§4`'s whole freeze list and `sectionPassTile` runs on it. MEASURED, it yields
-            // **8,198 m² of sidewalk against ③'s 85,939** — ~90% of the ped fill gone. Handing that to
-            // the operator would be worse than the over-reach it fixes, so the bands ship until the
-            // loss is explained. ⛔ CAUSE NOT ESTABLISHED. Runs are NOT it (proto 5.5 runs/tile,
-            // median poly 5 · legacy 5.4, median 2 — proto is the healthier of the two).
-            // ⛔ NOR IS IT FILLETS, AND THE STANDING LEAD THAT SAID SO IS STALE **AND INVERTED**:
-            // "54 of 119 proto tiles carry NO fillets against 9 of 118 legacy" predates the corner
-            // work (stamped arcs 238 → 2089). Re-measured against the live build, proto carries
-            // fillets on MORE tiles than legacy. ⛔ Do not chase it. Both remaining leads are now
-            // excluded by measurement, so the suspect is `sectionPassTile`'s leg-zone / sector
-            // construction on a contour-derived ring — hypothesis, UNMEASURED.
-            // ▶ Flip to the ruled behaviour by deleting `bands` from this object — everything else
-            // is already in place.
+            // ⛔⛔ THE FILL IS STILL FROZEN HERE — `SECTION §4`'s over-reach, and a known
+            // non-conformance. ⛔⛔ AND "THE FLIP IS ONE DELETION" IS STRUCK: MEASURED FALSE.
+            // Deleting `bands` hands the tile to `sectionPassTile`, which reads FOUR fields this
+            // tile does not supply — `tl` `sw` `iaEdge` (per tile) and `runs[].measure` — two of
+            // them REFUSED here on purpose. ⭐ THE HALF THAT IS NOW CLOSED (`e14f17f9`+): the
+            // mono-width seed was `TLmax = tl`, and `undefined` never loses a `>` comparison, so
+            // the per-edge depths could not lift it and `ringAt(NaN)` collapsed the whole ribbon.
+            // That alone was the "~90% gone": ped band 7% → 66.7% of ③'s, and the authored
+            // treelawn went from Δ 0 m² to Δ +802 m². ⭐ The old figure also compared ③'s SUMMED
+            // layers (they overlap 46,072 m²) against the painter's — two different questions.
+            // ⛔ THE HALF STILL OPEN, AND IT IS A MODEL MISMATCH, NOT A BUG TO PATCH: this tile's
+            // `runs` are grouped off `iA`, so they are neither a partition of `st.ring` (A10:
+            // 0/151 tiles establish it) nor a cover of the curb (88.5% on LS, 71.1% on HPDM; 108
+            // tiles under-cover and 29 OVER-cover — a cover cannot be both). A leg sector is
+            // stroked FROM a run's polyline, so curb with no run gets no sector and its band falls
+            // to `luRemainder`. ⭐ MEASURED: 95% of the miss is FAR FIELD, >12 m from any fillet
+            // apex — mid-leg, so the corner takeover is NOT the dominant cause.
+            // ⭐⭐ RULED (Jacob, 2026-09-06): "because we don't do a WALK any more, we might need a
+            // STAMP INQUIRY step." That is `RIBBONS §1`'s produce/refuse ruling arriving as the
+            // cure — "③ never cuts the ring, so there is no 'where does this stop' question, only
+            // 'what depth HERE', answered per edge by the stamp ① already carries". ⛔ So the fix
+            // is NOT to make the runs cover the ring — that is the walk, rebuilt. It is to ask the
+            // stamp per point. `runs` stays as IDENTITY, which is all it was ever supplied for.
+            // ▶ node scratch/claims-proto-fill-is-live.mjs — every number above, re-derived.
             bands: { curb: (protoBandsByBlock[k] || {}).curb || [], treelawn: (protoBandsByBlock[k] || {}).treelawn || [],
                      sidewalk: (protoBandsByBlock[k] || {}).sidewalk || [], lu: (protoBandsByBlock[k] || {}).lu || [] },
             // ⭐ the SHAPE the wall freezes (`SECTION §4`'s own list) — carried NOW, so the flip is

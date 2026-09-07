@@ -128,13 +128,38 @@ The architecture that makes Section responsive, and the thing the freeze is **fo
 > `ring · iA` (②'s eased curb) `· vertR · fillets` (②'s achieved arcs) `· runs` (with `baseMeasure`,
 > the surveyed cross-section `resolvePedDepths` glean off). Delete `bands` from the tile and
 > `sectionPassTile` strokes the FILL live off it.
-> ⛔ **IT IS NOT FLIPPED, AND HERE IS THE HONEST REASON:** built and run, it yields **8,198 m² of
-> sidewalk against ③'s 85,939** — ~90% of the ped fill gone. Shipping that is worse than the
-> over-reach it fixes, so the bands stay until the loss is explained.
-> ⛔ **CAUSE NOT ESTABLISHED.** Run fragmentation is EXCLUDED by measurement — proto 5.5 runs/tile,
-> median poly length 5; legacy 5.4 and 2, so proto is the healthier of the two. **The open lead: 54
-> of 119 proto tiles carry NO fillets, against 9 of 118 legacy** — and both the leg trim (§6.1 step
-> 2) and the bent corner (step 1) key off `fillets`. Not yet chased.
+> ⛔⛔ **"THE FIX IS ONE DELETION" IS STRUCK — MEASURED FALSE 2026-09-06.** `sectionPassTile` reads
+> **four fields ①'s tile does not supply** — `tl` `sw` `iaEdge` per tile and `runs[].measure` — and
+> **two of them are REFUSED here by ruling** (`RIBBONS §1`'s produce/refuse table). §4's freeze list
+> is not the painter's read set, and the gap between the two is the whole story.
+> ### ⭐ HALF OF IT IS NOW CLOSED, AND IT WAS ONE LINE
+> The mono-width seed was `TLmax = tl, SWmax = sw`. **`undefined` never loses a `>` comparison**, so
+> `e.tlD > TLmax` was false for every run, the seed never lifted, and `iW = ringAt(NaN)` collapsed
+> the ribbon. ⛔ Not a crash — a *silent* substitution inside the painter, which is Layer 0 q2 in the
+> one place it must never happen. ▶ ped band **7% → 66.7%** of ③'s, and **the authored treelawn went
+> from Δ 0 m² to Δ +802 m²** — i.e. this is what made the FILL look unauthorable. A refusable field
+> is now read through `Number.isFinite`, and the legacy path is **byte-identical on two towns**.
+> ⭐ **The old "~90%" also compared ③'s SUMMED layers against the painter's** — ③'s four layers
+> overlap **46,072 m²**, so the two numbers answered different questions. Every figure here is a union.
+> ### ⛔ THE HALF STILL OPEN — A MODEL MISMATCH, NOT A BUG TO PATCH
+> ①'s `runs` are grouped off **`iA`**, so they are neither a partition of `st.ring` (**A10 establishes
+> on 0 of 151 tiles**, against 107 of 118 legacy) nor a cover of the curb (**88.5% LS · 71.1% HPDM**;
+> 108 tiles under-cover and **29 OVER-cover — a cover cannot be both**). A leg sector is stroked FROM
+> a run's polyline, so curb with no run gets no sector and its band falls to `luRemainder`.
+> ⭐ **MEASURED: 95% of the miss is FAR FIELD (>12 m from any fillet apex)** — mid-leg. ⛔ So the
+> corner takeover is **not** the dominant cause, and neither is `fillets`: the standing lead *"54 of
+> 119 proto tiles carry NO fillets"* is **stale AND inverted** (proto now carries them on more tiles
+> than legacy). ⛔ Do not chase either.
+> ### ⭐⭐⭐ THE CURE, RULED (Jacob, 2026-09-06) — **A STAMP INQUIRY, NOT A WALK**
+> > *"Because we don't do a 'walk' anymore, we might need to do a stamp inquiry step."*
+>
+> This is `RIBBONS §1`'s produce/refuse ruling arriving as the fix: *"③ never cuts the ring, so there
+> is no 'where does this stop' question, only 'what depth **here**' — answered per edge by the stamp ①
+> already carries."* ⛔ **So the fix is NOT to make the runs cover the ring — that is the walk,
+> rebuilt.** It is to ask the stamp per point; `runs` stays **identity**, which is all it was supplied
+> for. That is the `sectionPassTile` split `RIBBONS §1` names as *"the real work"*, and it is a design
+> step, not an excision.
+> ▶ `node scratch/claims-proto-fill-is-live.mjs` — every number above, re-derived from the live build.
 
 **State (2026-06-07):** the live wiring is **landed** — `sectionGeos`/`sectionOpen`/`sectionPass` take `blockCustoms`, so the FILL re-strokes off the frozen `iA` when an override changes (material-swap proves it live). The remaining gap is §3.3: the **depth** override + the per-edge divider. (Phase-D's earlier "freeze the FILL too" over-reach is the thing §3.2/§3.3 unwinds — freeze the silhouette, stroke the FILL live.)
 
