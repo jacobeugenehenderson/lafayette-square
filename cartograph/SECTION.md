@@ -116,7 +116,9 @@ the 2026-09-07 flip — the **STAMP**: `iaStamp` (per contour point, the run tha
 gone from the tile; the FILL is frozen nowhere.** Survey and Section agree to 0 m² because they run
 the **same painter**, which is what "the same thing" was always supposed to mean.
 
-▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-ped-resolves-per-leg.mjs`
+▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-a-swap-never-happens-mid-street.mjs`
+*(`claims-ped-resolves-per-leg.mjs` was cited here and in `RIBBONS §1` and has never existed. ⛔ A
+pointer that does not resolve reads as evidence already gathered.)*
 ⛔ Re-run them; do not quote numbers from here.
 
 ### ⛔⛔ THE FIVE RULES THIS SECTION IS BUILT ON — every one was already written, and every one was broken on 2026-09-07
@@ -136,6 +138,14 @@ the **same painter**, which is what "the same thing" was always supposed to mean
 5. **A chain cut is not a corner** — ① has no nodes. `RIBBONS §3.3`: a through-node if **EITHER**
    `roadId` or `throughId` agrees; ⛔ `throughId` is a NAME, so `throughId ?? roadId` makes `roadId`
    unreachable — a **recorded regression**, re-committed here on 2026-09-07 for want of reading it.
+6. ### ⛔⛔ **AND THE POSITIVE FORM RULE 5 NEVER STATED — WHICH IS WHY RULE 5 DID NOT SAVE US.**
+   *(Jacob, 2026-09-07: "The protopolygon doesn't have a node/corner there in the first place.")*
+   **A corner is a vertex where ① TURNS *and* the owner changes.** Rule 5 says what a corner is NOT;
+   with no rule saying what it IS, the corner test fell back to the only thing to hand — the owner
+   label — and that is a chain identity wearing a shape's job. ⛔ **A prohibition without its
+   positive is half a rule, and the half that is missing is the half the code will invent.**
+   ⭐ It cost a whole block face painted as ADA ramp, on the map the operator was looking at.
+   Full law, both halves and why not the turn alone: `RIBBONS §1`.
 
 ### ⛔ OPEN
 - **Cap folds** — one chain's two sides meeting at a tip. `§6.3` rules it (the bulb has NO halves,
@@ -208,8 +218,22 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
 5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
 
-> ### ⭐⭐⭐ WHERE THE PAD IS LOCATED — LANDED 2026-09-07. ⛔ **NOT THE ARC.**
-> **The pad is located by the OWNER CHANGING; the arc supplies only its EXTENT where one exists.**
+> ### ⭐⭐⭐ WHERE THE PAD IS LOCATED — AMENDED 2026-09-07 (Jacob). ⛔ **NOT THE ARC, AND NOT THE OWNER EITHER.**
+> **The pad is located where ① TURNS *and* the owner changes; the arc supplies only its EXTENT.**
+> > *(Jacob, on the canary: "Are you **positive** you are working from and only from the protopolygon?
+> > **The protopolygon doesn't have a node/corner there in the first place.**")*
+> ⛔ **This line read "located by the OWNER CHANGING" and that alone was wrong** — an owner is a chain
+> identity (`protoOwners[].skelId`, ordinal stripped), so it cannot answer a question about ①'s shape.
+> **The shape answers WHETHER, the label answers WHOSE.** Full law + why not the turn alone:
+> `RIBBONS §1`, "the corner test, in its corrected form".
+> ⛔ **AND THE EXTENT IS `len` EDGES, NOT `len + 1`.** An arc from vertex `a` to vertex `b` spans the
+> edges *between* them; the inclusive bound also claimed the first edge of the next leg, and on ①'s
+> sparse contour a straight frontage is ONE EDGE — one quadrilateral block painted **458 m of 458 m**
+> as curb ramp, its treelawn erased. ▶ the gate, by LENGTH and reading the painter rather than
+> restating it: `SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs`
+> ⭐ **The two towns agreeing is the evidence, not either number** — the pad's share of kerb was 32%
+> against 39% before and 3.4% against 3.6% after; the divergence WAS the defect's signature, because it
+> scaled with how sparse the contour is and so read worst on the town nobody has stared at.
 > *(Written as the cure in `8753ea91`'s own commit message on 2026-09-06 and not built for a day, while
 > three sessions re-derived it. `CLAUDE.md`: reuse forensics, never re-derive.)*
 > - ⛔ **Predicating the pad on the fillet is `RIBBONS §1` invariant 3 broken** — *"a band-slice, NOT
@@ -362,42 +386,24 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > runs group by exactly that 4-tuple (`gkOf`, `:1341`). ⛔ So *"give the FILL a continuous ring"* is not the
 > cure: it has one.
 >
-> ### ✅✅ CURED 2026-08-11 (`07e65753`) — READ THIS BEFORE THE DIAGNOSIS BELOW, WHICH IS NOW THE *ACCOUNT OF A FIXED BUG*.
+> ### ✅✅ THE BAND IS PAINTED FROM THE PARTITION (`07e65753`, 2026-08-11) — and the diagnosis it cured is EVICTED, not bannered.
 >
-> **The band is painted FROM THE PARTITION.** On a tile carrying the `iaEdge` stamp, `iA` is cut at every
-> fillet's two tangent points and at every ownership change outside a fillet; **each owner sweeps its own
-> arc inward**, and adjacent arcs close on the **same inward bisector** — so **step over and step back are
-> ONE cut, and a gap is not constructible.** ⇒ the four decline modes below **no longer gate the takeover
-> on a partitioned tile**; the corner owns its arc rather than bidding for it. **An unstamped tile keeps the
-> construction described below, byte-identical** — so the diagnosis stays live for that population.
-> ▶ **State, scope and what remains: `ROADMAP` A10.** The full journey: `_archive/A10-cure-journey-2026-08-11.md`.
+> On a tile carrying the `iaEdge` stamp, `iA` is cut at every fillet's two tangent points and at every
+> ownership change outside a fillet; **each owner sweeps its own arc inward**, and adjacent arcs close on
+> the **same inward bisector** — so **step over and step back are ONE cut, and a gap is not
+> constructible.** The corner owns its arc rather than bidding for it.
 >
-> ### The deviation *(the bug, as diagnosed — still live on UNSTAMPED tiles)*
->
-> Doctrine `§6.9`.4: *"**Both legs stop at tA/tB; the corner ribbon takes over; legs resume.**"* The
-> pull-back (`legTrim` `:1416`, exact via `tangentTrim` `:1409`) is therefore **intended**.
->
-> ⭐⭐ **The doctrine does not say "if a fillet can be found."** The takeover is gated on
-> `bandRem.length && cornerT.size && fillets.length` (`:1566`), per corner on locating a fillet within
-> `best.r + c.trim + 1` (`:1575`), and again on the intersection coming back non-empty (`:1583`).
-> **Step over is unconditional; step back is not.**
->
-> ▶ **The population is measured, not estimated — `node scratch/claims-corner-takeover.mjs`** (all 7 scenes,
-> both states, runs the real `sectionPassTile` under `CORNER_DUMP=1`; the dump is inert — output is
-> byte-identical armed and disarmed). What it establishes:
-> - **Four decline modes exist, and LS fires all four** — `bandRem-empty` · `bandRem-empty + no-fillets` ·
->   `no-fillet-in-range` · **`empty-pad` (`:1583`)**. ⛔ **No town carries a mode LS lacks**, so the cure
->   does not need a town nobody has looked at in order to be designed.
-> - ⚠️ **But the MIX is not portable, and that is the trap.** `bandRem-empty` as a share of a town's bids
->   swings widely by town (▶ `node scratch/claims-corner-takeover.mjs` prints the per-town split and the
->   overall decline-rate range), LS mid-range. **A cure tuned to LS's dominant gate is tuned wrong for both extremes** — handle all four
->   structurally, never optimise for the common one.
-> - **Two gates are dead:** `zero-depth` (`:1569`) and the pure no-fillets tile gate fired **0 times in
->   7,632 bids**. ⛔ Do not treat either as load-bearing.
->
-> ⭐⭐ **An unhonoured takeover is a MISLABEL, not a hole.** Band the legs released and no corner claimed
-> falls to `luRemainder` (`:1642`) and **renders as land use** — the gap is **ribbon painted green**, not
-> absent geometry. That is why it is intermittent while the curb is uniformly correct.
+> ⛔ **THE ~40 LINES OF DIAGNOSIS THAT STOOD HERE ARE RETIRED** to
+> `_archive/SECTION-corner-takeover-decline-2026-09-07.md` — the walk painter's four decline modes, the
+> per-town mix, the two dead gates. They described `sectionPassTile`'s conditional takeover, which was
+> scoped in this doc as *"still live on UNSTAMPED tiles."*
+> ⭐ **THAT POPULATION IS EMPTY.** ▶ re-derive, never quote:
+> `node -e "import('./scratch/_proto-feed.mjs').then(async({feed,buildProto})=>{const M=await import('./src/lib/tileGround.js');for(const s of ['lafayette-square','hipointe-demun']){const f=feed(s);if(!f)continue;const T=buildProto(f,{protoArtifact:true}).protoShapeTiles;console.log(s,T.length,'tiles ·',T.filter(t=>M.hasStampInquiry(t)).length,'stamped')}})"`
+> ⛔ **A correction banner sitting next to the false sentence it corrects is the anti-pattern**
+> (`CLAUDE.md`): the false sentence is shorter and gets read first. The banner's job is done when its
+> subject is gone, so the subject is gone. ⚠️ If the legacy walk painter is ever reachable again, the
+> account is in the Diary — and the honest next step is that **dead code gets EXCISED, not archived**
+> (`[[feedback_dead_code_gets_excised_not_archived]]`), which `sectionPassTile` is now a candidate for.
 >
 > Five predicates decide whether a corner exists and whether the pull-back is exempted. **None reads the
 > curb:** `cornerAt` (⛔ **not `skelId` — it keys on `streetKey = throughId || roadId || skelId || name`,

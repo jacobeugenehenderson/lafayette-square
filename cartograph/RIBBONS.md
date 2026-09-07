@@ -203,22 +203,21 @@
 > being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
 > **A majority of his marked corners were achieving well under their stamped radius** —
 > ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs` measures the achieved-vs-authored split.
-> ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`.** It planned a corner
-> at **every** vertex wanting a radius — a large share of them turning under a shallow angle, i.e. curve
-> samples, not corners — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a
-> metre from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
-> `Reff = s/tan(θ/2)` collapsed with it. **A large share of planned corners had `s` cut well below their
-> `want`.** ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled.
-> ⚠️⚠️ **AND THIS IS WHY THE RADIUS GATE STAYED GREEN THROUGH ALL OF IT.**
-> `claims-proto-corner-is-authored-radius` read the **stamped** `r`, which said 4.50 m the whole time.
-> ⛔ **An instrument that reads the INTENTION cannot see the ACHIEVEMENT** — check an authored feature
-> by DIMENSION on the drawn geometry (fit a circle to the arc), never by the value it was asked for.
-> ▶ marks achieving <60% of stamped radius **19 → 0** · planned corners 2,089 → 1,208 · collapsed
-> setbacks 426 → 230 · achieved-radius **p10 1.45 → 2.71 m**, within 25% of authored **66% → 79%**.
-> ⭐ Also closed the same day: **a cap apex is where ONE chain's two sides meet.** The cap branch keyed
-> on `a.tipEnd || b.tipEnd` — "either edge belongs to a tip" — so **64 in-disc street corners next to a
-> dead end took the cap rule** and a blunt default returned R = 0. Same law as everywhere else: the
-> owner changing is a corner; same `skelId` both sides is the apex. 145 genuine apexes, 64 false.
+> ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`** — it planned a corner
+> at every vertex wanting a radius, including curve samples, and those truncated the real corners' legs.
+> ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled. **`FILLET_TURN_TOL`
+> now has three readers and is still one rule** (`filletRing` · `easeContour` · the corner test below).
+> ⚠️⚠️ **AND THIS IS WHY THE RADIUS GATE STAYED GREEN THROUGH ALL OF IT — the live lesson, and the
+> reason the narrative above is retired rather than kept:** the gate read the **stamped** `r`, which said
+> 4.50 m the whole time. ⛔ **An instrument that reads the INTENTION cannot see the ACHIEVEMENT** — check
+> an authored feature by DIMENSION on the drawn geometry (fit a circle to the arc), never by the value it
+> was asked for. ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs`
+> ⭐ Also closed the same day: **a cap apex is where ONE chain's two sides meet** — the cap branch fired
+> on "either edge belongs to a tip", so in-disc street corners next to a dead end took the cap rule and a
+> blunt default returned R = 0. Same `skelId` both sides is the apex.
+> *(Mechanism, figures and the false "the owner changing is a corner" restatement: retired to
+> `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`. ⛔ That phrase is superseded — see the
+> corrected corner test in this §.)*
 >
 > ### ⛔⛔ AND IT SURFACED A SILENT ABSENCE THAT PREDATES IT: **66 blocks were already being dropped.**
 > `if (!mine.length) continue` — a block whose curb came back empty was skipped **with no count**,
@@ -251,14 +250,15 @@
 > the existing curve primitive (`{type:'bezier',c1,c2}`, `derive.js:40`) used at the tip, and it dissolves
 > the `roundTips`/`bluntTips` case split — 19 sites in `tileGround.js`, frozen into `shape.json` (`:4738`).
 > ### ⭐⭐⭐ RULED BY MEASUREMENT 2026-09-06 — **THERE ARE 2 APEXES. THE HALF-TURN QUESTION NEVER AROSE.**
-> > *"There are 2 apexes."* (Jacob, correcting the framing below.)
+> > *"There are 2 apexes."* (Jacob.)
 >
-> This block used to read: *"A single cubic cannot hold a half-turn; the coupler is **two** segments split
-> at the apex, or the bezier is ruled canonical and `bbf4adf6`'s circle becomes its approximation. Jacob's
-> call, not made."* ⛔ **That question only exists if the tip is ONE node turning 180°. It is not.**
-> **MEASURED on ①'s own contour: the median turn at a tip vertex is ~90°, and the two vertices sit 2ε
-> apart** — the ribbon's full width, because ① butt-ends and the left and right boundaries each stand ε
-> off the centreline. ▶ `node scratch/claims-proto-tip-has-two-apexes.mjs`
+> **A tip is TWO ordinary corner vertices, not one node turning 180°** — ① butt-ends, so its left and
+> right boundaries each stand ε off the centreline and the two vertices sit 2ε apart, each turning about
+> a right angle. ▶ `node scratch/claims-proto-tip-has-two-apexes.mjs`
+> *(The half-turn framing this replaced — "a single cubic cannot hold a half-turn, so the coupler is two
+> segments" — is retired to `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`. ⛔ Quoting a retired
+> framing beside its correction is the anti-pattern `CLAUDE.md` names: the false sentence is shorter and
+> gets read first.)*
 > ⇒ **A cap is two ORDINARY corner nodes.** Nothing turns a half-turn, so no cubic is asked to.
 > - **blunt = both apexes at R=0** (zero-length handles) · **round = both eased.** One dial, no case split.
 > - ⭐ **`bbf4adf6`'s bulb is not an APPROXIMATION of anything** — it is what two full 90° eases produce.
@@ -455,10 +455,28 @@
 >   **no threshold, no budget, no decline, no revert**; an R too big for its leg renders as what it
 >   is (`§6.9.5`). The one bound is TOPOLOGICAL — a tangent point may not pass its leg's midpoint,
 >   because past that the leg belongs to the next corner.
->   ⭐⭐ **THE CORNER IS FOUND BY CARRIED IDENTITY: the OWNER CHANGING along the ring.** `§1`'s own
->   law — every ring edge is owned by one `(skelId, side)` by construction — so no angle test and no
->   proximity match. The blocks reading ZERO are exactly the medians and loop interiors (one street,
->   so the owner never changes).
+>   ### ⭐⭐⭐ THE CORNER TEST, IN ITS CORRECTED FORM — **THE SHAPE ANSWERS *WHETHER*, THE LABEL ANSWERS *WHOSE*.**
+>   > *(Jacob, 2026-09-07, on the ADA pad eating a whole block: "Are you **positive** you are working
+>   > from and only from the protopolygon? **The protopolygon doesn't have a node/corner there in the
+>   > first place.**")*
+>   **A corner is a vertex where ① TURNS *and* the owner changes. Both, and for different reasons.**
+>   ⛔ This section used to read *"the corner is found by carried identity: the OWNER CHANGING along
+>   the ring… so no angle test"* — and that sentence, taken at its word, put a chain label in charge
+>   of a question about a shape. It is **excised**, not bannered: an owner is `protoOwners[].skelId`
+>   with the chain ordinal stripped, so *"the owner changed"* is chain world (the amendment below
+>   already says so; what was missing was the positive rule to put in its place).
+>   ⭐ **Where ① does not turn there is NO CORNER, whatever the labels say** — the contour runs
+>   straight through, exactly as `① HAS NO NODES` states. ▶ measure it on ①'s own sharp ring, never
+>   on ②: `node scratch/claims-a-corner-is-where-one-turns.mjs <scene>`.
+>   ⛔ **AND NOT THE TURN ALONE** — a street that BENDS mid-block turns with no intersection there,
+>   and a pad there is an ADA ramp in the middle of a frontage. The conjunction is a strict
+>   NARROWING of the identity test: it can only remove a corner, never invent one, which is what
+>   makes it safe on a town nobody has inspected.
+>   ⛔ **The turn tolerance is `FILLET_TURN_TOL`, and it is not new** — `filletRing`'s ruled constant,
+>   which `easeContour` already carries for the same reason (*"a near-straight vertex is a CURVE
+>   SAMPLE, not a corner"*). A third READER of one rule, never a third rule.
+>   ⭐ The blocks reading ZERO corners are still exactly the medians and loop interiors — one street,
+>   so the owner never changes — and now also any face ① runs straight along.
 >   ### ⛔⛔⛔ AMENDED 2026-09-07 (Jacob) — **THE CORNER IS ①'s, AND ① HAS NO NODES.**
 >   > *"The ribbon is disrupted where nodes are, which means it's got nodes in there. Get Rid Of
 >   > Them."* · *"Do you understand that the protopolygon doesn't have nodes?"* · *"That is a
@@ -498,12 +516,33 @@
 >   boolean must be carried as the thing it IS.** Vertex-valued (the ease radius `outR`) survives a
 >   reversal untouched; edge-valued does not. This is `§1`'s own *identity carried, never recovered*
 >   law with the arity made explicit — and it is the half that was missing.
+>   ### ⛔⛔ AND IT HAS A SECOND INSTANCE, WHICH COST A WHOLE BLOCK — **AN ARC'S EXTENT IS EDGES, NOT VERTICES** (2026-09-07)
+>   **An arc running from vertex `a` to vertex `b` covers the EDGES between them — `len` of them,
+>   not `len + 1`.** The corner's extent was stamped `k <= len`, so every corner also claimed **the
+>   first edge of the next leg** — and on ①-derived geometry a straight frontage is **ONE EDGE**.
+>   ⭐ The canary Jacob marked: a quadrilateral block, 4 fillets, `iaCorner` true at exactly 4
+>   vertices, 54 contour vertices of which 50 are the four eased arcs and **four are the block's
+>   sides**. Each arc took its 12 short edges *and* the long one after it ⇒ **458 m of 458 m painted
+>   as ADA pad**, the treelawn erased off the whole block.
+>   ⛔ **WHY IT SURVIVED, AND THIS IS THE PART TO CARRY:** on a DENSE contour the extra edge is a
+>   millimetre and invisible. **① is SPARSE by ruling**, so the same off-by-one is a city block.
+>   ⇒ **An arity error is not proportional to its unit; it is proportional to the SPACING of what it
+>   indexes** — and every simplification we do makes the spacing coarser. ⚠️ Re-audit `<=` against
+>   `<` on anything spanning ① by index whenever a construction moves onto sparser geometry.
+>   ▶ `node scratch/claims-the-pad-is-the-size-of-the-corner.mjs <scene>` — reports the pad's extent
+>   BY LENGTH, reading the painter through `SECTION_DUMP=1` rather than restating its rule.
+>   ⛔ **BY LENGTH, NEVER BY VERTEX COUNT.** ② eases one corner into ~12 vertices while a straight
+>   leg needs 2, so counting contour EDGES inside a corner over-weights the arc several-fold — that
+>   is how *"58.8% of contour edges sit inside a corner extent"* was read as *"a third of the map is
+>   pad"*. The two are not the same claim and the second one is not measurable in that unit.
 >   ▶ `node scratch/claims-stamp-follows-the-edge.mjs <scene>` — the ORACLE is geometric (the inward
 >   offset of ① edge E is parallel to E), so it can only be run where ① is **frozen**. ⛔ Re-run it.
 >   ⚠️ **OWED:** the road/`hard` reasoning still resolves live because ①'s frozen owners carry only
 >   `skelId`. **The mint is the one place a chain may be read**, so it belongs stamped INTO ①;
 >   `mintProtopolygon` stamps it now but it reaches nothing until a re-pour.
->   ▶ `node scratch/claims-ped-resolves-per-leg.mjs` — ⛔ re-run, never quote.
+>   ▶ `node scratch/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run, never quote.
+>   *(This cited `claims-ped-resolves-per-leg.mjs`, which has never existed in the tree. A pointer that
+>   does not resolve is worse than no pointer: it reads as evidence already gathered.)*
 >   ⭐ **ROUNDING HAPPENS ONCE, AT THE NODE** — INVARIANT 2 — so ③ insets an already-curved contour
 >   and its bands are concentric with the arc BY CONSTRUCTION: *"the corner is the band bent around
 >   the curb arc, never a constructed primitive."*
