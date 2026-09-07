@@ -3542,7 +3542,21 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // no arc), not a pad.
     const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
     const feKey = (r) => r == null ? null : `${roadOf(runs[r].skelId)}|${runs[r].side}`
-    const resKey = (r) => r == null ? null : `${runs[r].skelId}|${runs[r].side}`
+    // ⛔⛔ AND RESOLUTION IS THE BLOCK FACE TOO — THE SAME UNIT. *(Jacob, 2026-09-07, flipping a
+    // strip on a straight face: "I flipped the inner sidewalk and you see it stopped at the seam
+    // again, which isn't even supposed to be possible.")*
+    // A far-kerb T cuts the line, so ONE block face carries two spans under two `skelId`s. The
+    // authoring write fans across a chain's `segOrd`s (`feSegOrds`) and CANNOT cross into the other
+    // chain — so the operator's flip reached half the face and stopped dead at the cut. Resolving
+    // per span made that state paintable; it must not be.
+    // ⭐ `SECTION §4` rule 4 IS PRESERVED, and this is the distinction that matters: a road's
+    // cross-section genuinely varies ALONG THE STREET — South 18th carries twelve treelawn values
+    // on one side — but it varies BETWEEN BLOCKS, and a block boundary is a corner. WITHIN one
+    // block face there is exactly one arrangement. This painter is per-tile, so `road|side` here
+    // means "this face", and the street's variation across other tiles is untouched.
+    // ⇒ "There should be no seams in runs, ever, period" — a run IS a block face, and a face now
+    // cannot hold two arrangements, so the seam is unconstructible rather than merely absent.
+    const resKey = feKey
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
       const cuts = []
