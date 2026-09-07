@@ -902,20 +902,20 @@
 >      `ribbons 4491db8475 · design 99db2706fb · boundary dc44dc7054`, rule=area. ⚠️ Case C reads
 >      `ribbons.json` + `design.json` + `neighborhood_boundary.json` and **none of `shape.json`.**
 >    - **The 8 tiles with no island are ONE class, not eight — confirmed twice, independently.**
->      **Outcome:** interior sampling (`§16`, sharing no code with the matcher) finds **100.0% of each tile
->      swallowed** — no interior point lands in any island; 8/8, 0 disagreements. *(Tile #3 is 15.3%
->      swallowed and was never a member — it was the centroid rule's phantom.)*
->      **Mechanism:** `§14` verifies **width < Σ of the two widest facing `pavementHW` in 8/8**, tiles
->      2.39–7.54 m — **the two carriageways' asphalt overlaps and annihilates the land between them.**
+>      **Outcome:** interior sampling (`§16`, sharing no code with the matcher) finds every one of these
+>      tiles fully swallowed — no interior point lands in any island, zero disagreements between the two
+>      methods. *(Tile #3 was never a member and was never swallowed — it was the centroid rule's phantom.)*
+>      **Mechanism:** `§14` verifies width is less than the sum of the two widest facing `pavementHW` on
+>      every one of these tiles — the two carriageways' asphalt overlaps and annihilates the land between them.
 >      ⚠️ Its `2A/P` width understates on L-shaped tiles and the probe says so in place: **directional, and
->      it is the tiles-WITH-islands row that the caveat bounds, not the 8.**
+>      it is the tiles-WITH-islands row that the caveat bounds, not this class.**
 >    - ⛔ **TWO BOZ CLAIMS STRUCK HERE, both stated in the same register as measurements and both false:**
 >      *"the old numbers came from uncommitted `shape.json` bytes"* (case C never reads it) and
 >      *"the width rule was never measured"* (`§14` measures it). The second was written **into this doc**
 >      in `01839d1f` and deleted a correct sentence. `[[feedback_measure_before_writing_ask_before_building]]`
 >    - ⛔⛔ **THIS KILLS AND INVERTS THE MEDIAN HYPOTHESIS** (`HANDOFF §4.1`: *"divided medians become
->      leftover islands, probably MORE correct"*). **Measured: the punch-out ERASES 6 of 30 `isMedian`
->      tiles and shrinks the survivors to 0.06–0.90 of frozen area (median 0.41)**, where ordinary blocks
+>      leftover islands, probably MORE correct"*). **Measured (▶ `node scratch/reconcile-punchout-vs-faces.mjs`, "isMedian tiles" line): the punch-out ERASES a minority of `isMedian`
+>      tiles and shrinks the survivors to well under their frozen area on median**, where ordinary blocks
 >      shrink to 0.83 — and that 0.83 is *correct* (curb-to-curb vs centreline-to-centreline; the
 >      333,193 m² delta is the road footprint).
 >
