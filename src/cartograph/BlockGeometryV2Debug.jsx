@@ -19,7 +19,7 @@
  * Name is historical — this was a debug probe during the V2 prototype;
  * promote to its proper name when convenient.
  */
-import { useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useState, useRef } from 'react'
 import * as THREE from 'three'
 import { buildBlockGeometryV2, differenceRings } from '../lib/buildBlockGeometryV2.js'
 import { buildTileGround, sectionOpen } from '../lib/tileGround.js'  // T1 — toy tiles (transitional; shared with the bake for WYSIWYG); sectionOpen = the Wall's Phase-D open (Section ← frozen shape.json)
@@ -32,6 +32,7 @@ import parkWaterData from '../data/lafayette-square/park_water.json'
 import { mergeLiveRibbons } from '../lib/mergeLiveRibbons.js'
 import { BAND_COLORS } from './streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from './m3Colors.js'
+import { LAND_USE_COLORS } from '../lib/ribbonsGeometry.js'
 import useSurfaceMaterial from '../lib/useSurfaceMaterial.js'
 import useCartographStore from './stores/useCartographStore.js'
 import {
@@ -989,13 +990,9 @@ export default function BlockGeometryV2Debug({
     // during Measure drag) regardless of LU.
     treelawnByLu: new Map((function buildLuMats() {
       const out = []
-      const luSet = new Set([
-        ...Object.keys(luColors || {}),
-        ...Object.keys(DEFAULT_LU_COLORS),
-      ])
-      for (const lu of luSet) {
-        const color = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || treelawnCol
-        out.push([lu, makeMaterial(color, PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing })])
+      // ⭐ SAME resolver, SAME key set as the face above — so the strip is the centre's colour.
+      for (const lu of luClasses) {
+        out.push([lu, makeMaterial(luColorOf(lu), PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing })])
       }
       return out
     })()),
@@ -1108,17 +1105,31 @@ export default function BlockGeometryV2Debug({
   // parcel translucency matches the chain's band translucency (0.55 in
   // Measure). Same N→1 caching win as before; ~10 LU × 2 selected-states.
 
+  // ⭐⭐⭐ ONE RESOLVER, ONE KEY SET — THE TREELAWN IS THE SAME COLOUR AS THE BLOCK'S CENTRE.
+  // *(Jacob, 2026-09-07: "The TL takes on the LU of the block, it isn't complicated." · "all the TL
+  // needs to know is that it's the same color as the center.")* `SECTION §1` says the same.
+  // ⛔ THE FACE AND THE TREELAWN HAD SEPARATE LOOKUPS WITH DIFFERENT FALLBACKS — the face fell back
+  // to a parcel colour, the treelawn to `bandMats.treelawn`, which is GRASS GREEN. So a class in
+  // neither colour table drew a green strip against its own parcel, and looked deliberate.
+  // ⛔ Layer 0 both ways: the key set was an instance table (town #2's classes are not in it) and
+  // the fallback substituted something PLAUSIBLE instead of failing loudly.
+  // ⭐ THE BAKE ALREADY RESOLVED IT THIS WAY and this path never carried it (`bake-ground.js:943`:
+  // `designLuColors → DEFAULT_LU_COLORS → LAND_USE_COLORS → unknown`), so live ≠ bake — itself the
+  // defect, since `SURVEY §2` claims WYSIWYG by construction.
+  // ⇒ Same chain, same key set, for both. They cannot disagree.
+  const luColorOf = useCallback((lu) => (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu]
+    || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown, [luColors])
+  const luClasses = useMemo(() => [...new Set([
+    ...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS), ...Object.keys(LAND_USE_COLORS),
+  ])], [luColors])
+
   // Per-LU face materials for the tile land-use regions (M1) — one cached
   // material per class, painted in its per-Look colour.
   const tileLuMats = useMemo(() => {
     const out = new Map()
-    const luSet = new Set([...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS)])
-    for (const lu of luSet) {
-      const col = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
-      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }))
-    }
+    for (const lu of luClasses) out.set(lu, makeMaterial(luColorOf(lu), PRI.residential, faceFade, { measureActive, surveyActive, editing: surveyEditing }))
     return out
-  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive, surveyEditing])
+  }, [makeMaterial, luClasses, luColorOf, faceFade, measureActive, surveyActive, surveyEditing])
   const tileLuFallback = tileLuMats.get('residential')
   // Translucent per-LU variants for the SELECTED corridor in Section (opacity
   // 0.55 → the hi-res aerial reads through while authoring against it). Mirrors
@@ -1126,18 +1137,18 @@ export default function BlockGeometryV2Debug({
   // asphalt) reuse the existing bandMats.*Selected; curb stays solid.
   const tileLuMatsSelected = useMemo(() => {
     const out = new Map()
-    const luSet = new Set([...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS)])
-    for (const lu of luSet) {
-      const col = (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu] || DEFAULT_LU_COLORS.residential
-      out.set(lu, makeMaterial(col, PRI.residential, faceFade, { measureActive, surveyActive, selectedCorridor: true }))
-    }
+    for (const lu of luClasses) out.set(lu, makeMaterial(luColorOf(lu), PRI.residential, faceFade, { measureActive, surveyActive, selectedCorridor: true }))
     return out
-  }, [makeMaterial, luColors, faceFade, measureActive, surveyActive])
+  }, [makeMaterial, luClasses, luColorOf, faceFade, measureActive, surveyActive])
   const tileLuFallbackSelected = tileLuMatsSelected.get('residential')
   const medianSelected = useMemo(
     () => makeMaterial(medianCol, PRI.residential, faceFade, { measureActive, surveyActive, selectedCorridor: true }),
     [makeMaterial, medianCol, faceFade, measureActive, surveyActive])
-  const tlLuFallback = bandMats.treelawn
+  // ⛔ NOT `bandMats.treelawn` — that is grass green, and a class that fell through to it drew a
+  // deliberate-looking lawn against its own parcel. The bare treelawn material stays for what the
+  // bake reserves it for: "chain dead-end caps + corner pads where there's no single adjacent block
+  // to attribute" (`bake-ground.js:122`).
+  const tlLuFallback = bandMats.treelawnByLu.get('unknown') || bandMats.treelawn
 
   // ── Survey wireframe (tool === 'surveyor') ──────────────────────────────
   // Survey shows the skeleton + hardscape boundary only — no ped/LU fill (that
