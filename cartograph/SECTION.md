@@ -68,7 +68,7 @@ The model is **`RIBBONS §1` — "ribbon monowidth, strips variable."** One unif
 
 Before the operator authors anything, Section draws a **best-effort default** off the frozen silhouette. The model (Jacob): the system needs only **two things per edge** — **treelawn Y/N** + **strip depths (ADA).** This replaced the old per-tile *averaged* measures (a noisy continuum that drew sub-meter treelawn slivers).
 
-- **Treelawn Y/N is *gleaned from data*, not guessed.** `survey.json` measured `pavementHalfWidth` (centerline→sidewalk); *"tree lawn is the natural gap"* — already in the frame as the `treelawn` field. The LS distribution is cleanly **bimodal**, and the *shape* is what this doctrine rests on: threshold the gap (~0.6 m) and Y/N decides itself for **~95 % of edges**, leaving a small valley for the operator's call. ⚠️ **The old `n=951 / 391 / 508 / ~50` breakdown is struck** — it was measured against a `survey.json` denominator that cannot be reconstructed, and three sources disagreed on the ambiguous count (doc "~50" · a `tileGround.js` comment "~92" · 22 measured). Over the shipped `ribbons.json` (418 street-sides) it reads **269 N · 127 Y · 22 valley** — so the ~95 % automatic figure survives, but **treelawn-Y is a minority (30 %), not the stated majority (53 %)**. ⛔ **Do not size the DEFAULT-FILL front off the old numbers.**
+- **Treelawn Y/N is *gleaned from data*, not guessed.** `survey.json` measured `pavementHalfWidth` (centerline→sidewalk); *"tree lawn is the natural gap"* — already in the frame as the `treelawn` field. The LS distribution is cleanly **bimodal**, and the *shape* is what this doctrine rests on: threshold the gap (`TREELAWN_YN_THRESHOLD`, §3.2 below) and Y/N decides itself for the large majority of edges, leaving a small valley for the operator's call. ⚠️ **The old breakdown quoted in earlier drafts of this doc is struck** — it was measured against a `survey.json` denominator that cannot be reconstructed, and multiple sources disagreed on the ambiguous count. Over the shipped `ribbons.json` it reads out that **treelawn-Y is a minority, not the majority the old breakdown claimed.** ⛔ **Do not size the DEFAULT-FILL front off the old numbers.**
 - **Strip depths default to ADA-standard — also the Revert state** (Jacob). Treelawn-Y → standard treelawn + ADA sidewalk; treelawn-N → ADA sidewalk abuts the curb. Reset/revert returns here.
 - **∴ default fill = (gleaned treelawn Y/N) × (ADA depths).**
 
@@ -213,14 +213,14 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 > *(Written as the cure in `8753ea91`'s own commit message on 2026-09-06 and not built for a day, while
 > three sessions re-derived it. `CLAUDE.md`: reuse forensics, never re-derive.)*
 > - ⛔ **Predicating the pad on the fillet is `RIBBONS §1` invariant 3 broken** — *"a band-slice, NOT
->   predicated on the arc, so it works square OR round."* Measured when it was: of 231 arrangement steps
->   only 60 sat inside a fillet arc, so **171 corners were bare**, and every square corner declined.
+>   predicated on the arc, so it works square OR round."* Measured when it was: most arrangement steps
+>   did not sit inside a fillet arc, so **most corners were bare**, and every square corner declined.
 > - ⭐ **The owner is the FRONTAGE, not the run.** A run is cut wherever `segOrd` changes, and one
 >   frontage can carry several — so a `segOrd` change draws a corner treatment in the middle of a
 >   straight block edge where nothing turns and nothing changes. ▶ `node scratch/claims-frontage-covers-the-block.mjs`
 > - ⭐ **A stamp cannot decline.** At contour points inside the corner the stamp says concrete and the
 >   same four offsets draw it — no sector, no intersection, no bid. The walk painter's four decline
->   gates dropped 60% of its bids; this has none.
+>   gates decline a majority of its bids; this has none.
 > ⛔ **The SLIDE is not the pad.** It carries a *change*, so it belongs to the mixed config alone
 > (`§6.1` step 5). The pad is unconditional — `§6.1` step 3, the curb side of a corner is concrete
 > ALWAYS. Conflating them removes the pads at every corner whose two sides agree.
@@ -293,8 +293,8 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > `coupler-slit-anatomy.mjs` Check 5, map-wide: **41/50 spurs have a corner at EVERY mouth pass; 9/50 miss at
 > least one; 9/50 have a leg running THROUGH the mouth.** The class is real and this is its mechanism, but
 > **sizing a prebake re-founding off "all 50 are unbounded" overstates the prize by ~5×.** *(Corrected
-> 2026-08-04; the adjacent "98 of 107 leg slots ARE clickable — the defect is BOUNDING, not EXISTENCE"
-> correction also over-swung: bounding holds on 41 of 50 too.)* Where it does fire: a leg is normally
+> 2026-08-04; the adjacent "most leg slots ARE clickable — the defect is BOUNDING, not EXISTENCE"
+> correction below also over-swung: bounding holds on the majority too.)* Where it does fire: a leg is normally
 > bounded **corner-to-corner** — that boundary is what makes "select this leg" a region, what stops an edit
 > at the leg's end, and what tells the cap/mouth machinery where they sit. One leg is therefore bounded and
 > the other is an unbounded run-through, which is exactly this class's triad: **the edit lands on a SEGMENT
@@ -326,7 +326,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > Live task: **`_handoffs/HANDOFF-deadend-face-resolution.md`** (prebake) · rule: `POLYGON-FIRST §2.1` ·
 > `cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md §10/§11` is **retracted at the layer**.
 
-> **Scoreboard after the pass (2026-07-22), so nobody re-measures it:** three defects fixed **at source** — cap slope · leg flip · width collapse. Legs responding **56 → 93 of 100**. ✅ **10 asymmetric caps ACCEPTED** on Jacob's eye (they are correct, not a defect — see the per-side `pavementHW` warning above). **Open tail:** 7 legs still unresponsive; 7 caps flip with no visible change (pre-existing). ⚠️ **A SHAPE-pass fix is invisible until `shape.json` is re-baked** — re-bake before judging on the eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`).
+> **Scoreboard after the pass (2026-07-22):** three defects fixed **at source** — cap slope · leg flip · width collapse. Most legs now respond. ✅ **Some asymmetric caps ACCEPTED** on Jacob's eye (they are correct, not a defect — see the per-side `pavementHW` warning above). **Open tail:** a handful of legs still unresponsive; some caps flip with no visible change (pre-existing). ⚠️ **A SHAPE-pass fix is invisible until `shape.json` is re-baked** — re-bake before judging on the eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`).
 
 ---
 
@@ -388,9 +388,9 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > - **Four decline modes exist, and LS fires all four** — `bandRem-empty` · `bandRem-empty + no-fillets` ·
 >   `no-fillet-in-range` · **`empty-pad` (`:1583`)**. ⛔ **No town carries a mode LS lacks**, so the cure
 >   does not need a town nobody has looked at in order to be designed.
-> - ⚠️ **But the MIX is not portable, and that is the trap.** `bandRem-empty` as a share of a town's bids:
->   **altadena 6.6% · LS 20.2% · Księży Młyn 53.6%.** Decline rate overall spans **11% → 63%**, LS
->   mid-range. **A cure tuned to LS's dominant gate is tuned wrong for both extremes** — handle all four
+> - ⚠️ **But the MIX is not portable, and that is the trap.** `bandRem-empty` as a share of a town's bids
+>   swings widely by town (▶ `node scratch/claims-corner-takeover.mjs` prints the per-town split and the
+>   overall decline-rate range), LS mid-range. **A cure tuned to LS's dominant gate is tuned wrong for both extremes** — handle all four
 >   structurally, never optimise for the common one.
 > - **Two gates are dead:** `zero-depth` (`:1569`) and the pure no-fillets tile gate fired **0 times in
 >   7,632 bids**. ⛔ Do not treat either as load-bearing.
