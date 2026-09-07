@@ -989,14 +989,38 @@ function unionRingLabelled(ring, labels) {
 // and it is a choice among KNOWN contributors, never a proximity lookup against unrelated geometry.
 // ⛔ Still counted: a plural edge is a real fact about the union and the count must not go quiet.
 // ▶ node scratch/claims-stamp-follows-the-edge.mjs
+// ⭐⭐⭐ AND THE RING HAS ONE DIRECTION, SO A VERTEX THAT CANNOT SAY WHICH WAY ASKS THE RING.
+// Where two consecutive ② points share a source (a corner's ease arc, a bevel's two points) the
+// pair carries no direction of its own, and taking "the edge leaving a" is right only if ② runs
+// WITH ①. ⛔ It usually does not, and this is not a rare case: it is every corner arc, which is
+// where a block's sides MEET — so the arc, and the long straight edge leaving it, took the
+// previous side's owner. Measured: on the Dolman/South-18th block ①'s south edge reads Hickory
+// and ② carried South 18th across it anyway, which is the operator's "I swapped the left side leg
+// and both the left side and the top swapped" surviving the mint fix.
+// ⭐ The direction is READ OFF THE PAIRS THAT DO SAY — a majority over unambiguous evidence, not
+// a threshold and not a winding heuristic. A ring with no such pair is a ring with no information
+// and keeps ① order, which is what it did before.
+const ringRunsWithProto = (src, L, n) => {
+  let fwd = 0, rev = 0
+  for (let i = 0; i < L; i++) {
+    const a = src?.[i], b = src?.[(i + 1) % L]
+    if (a == null || b == null || a === b) continue
+    if ((b - a + n) % n === 1) fwd++
+    else if ((a - b + n) % n === 1) rev++
+  }
+  return rev > fwd ? -1 : 1
+}
 function carryEdgeLabels(rg, src, labs, n, tally = null, ring = null) {
   const L = rg.length
+  const dir = ringRunsWithProto(src, L, n)
   const eLen = (q) => { if (!ring) return 1
     const a = ring[q], b = ring[(q + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
   return rg.map((_, i) => {
     const a = src?.[i]; if (a == null) return null
     const b = src?.[(i + 1) % L]
-    if (b == null || b === a) return labs[a]
+    // ⛔ NO DIRECTION OF ITS OWN — take the ring's. Under ② running against ①, the edge LEAVING
+    // this point in ② is the ① edge ENTERING the vertex it was struck from.
+    if (b == null || b === a) return labs[dir > 0 ? a : (a - 1 + n) % n]
     if ((b - a + n) % n === 1) return labs[a]        // ② runs WITH ①: the edge leaving a
     if ((a - b + n) % n === 1) return labs[b]        // ② runs AGAINST ①: the edge leaving b
     if (tally) tally.lost++
