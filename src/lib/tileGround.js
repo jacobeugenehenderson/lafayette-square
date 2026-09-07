@@ -3832,7 +3832,21 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const fwd = (b - a + n) % n, bwd = (a - b + n) % n
       const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
       if (len === 0 || len * 2 > n) continue                 // a fillet is the MINOR arc
-      for (let k = 0; k <= len; k++) arcAt.set((s0 + k) % n, [s0, len])
+      // ⛔⛔ `k < len`, NOT `k <= len` — AN ARC FROM VERTEX a TO VERTEX b COVERS THE EDGES BETWEEN
+      // THEM, AND THERE ARE `len` OF THOSE, NOT `len + 1`. The extra one is the FIRST EDGE OF THE
+      // NEXT LEG, and on ①-derived geometry a straight frontage is ONE EDGE — so the inclusive
+      // bound handed each corner an entire block side.
+      // ⭐ THE CANARY, measured: tile 110 is a quadrilateral — 4 fillets, `iaCorner` true at exactly
+      // 4 vertices, 54 contour vertices of which 50 are the four eased arcs and FOUR are the block's
+      // four sides (30.8 · 184.1 · 30.7 · 184.3 m). Each arc stamped its 12 short edges AND the long
+      // one after it ⇒ 458 m of 458 m painted as ADA pad, and the treelawn erased off the whole
+      // block. That is the "all concrete, no grass" cross-section Jacob circled with the Marker.
+      // ⛔ THE CLASS IS THIS FILE'S OWN, FOR THE THIRD TIME: an EDGE quantity indexed as if it were
+      // a VERTEX quantity (`592043fe` "an EDGE label read off a VERTEX stamp"; `RIBBONS §1`'s "a
+      // quantity carried through a boolean must be carried as the thing it IS"). It is not a
+      // threshold, a tolerance or a special case — it is an arity error, and the reason it survived
+      // is that on a DENSE contour the extra edge is 1 mm and invisible.
+      for (let k = 0; k < len; k++) arcAt.set((s0 + k) % n, [s0, len])
     }
     for (let q = 0; q < n; q++) {
       if (!seamAt.has(`${p.ri}|${q}`)) continue              // ⭐ LOCATED BY THE OWNER CHANGING
@@ -3842,8 +3856,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const arc = arcAt.get(q)
       // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
       // extent is the one edge the owners meet across, and the pad is drawn there just the same.
+      // ⛔ Same arity: `len` EDGES from `s0`. A square corner (no arc) is `len = 0` — and it must
+      // then stamp the ONE edge the owners meet across, which is `k <= 0`, i.e. exactly one pass.
       const [s0, len] = arc || [q, 0]
-      for (let k = 0; k <= len; k++) {
+      for (let k = 0; k < Math.max(1, len); k++) {
         const e = (s0 + k) % n
         const prev = cornerAt.get(`${p.ri}|${e}`)
         if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
@@ -7217,6 +7233,8 @@ export function buildTileGround(ribbons, opts = {}) {
           // (588). ⛔ No threshold — keep each owner's longest arc, absorb the rest into the longer
           // neighbour. A frontage cannot appear twice on one ring; the polygon would self-cross.
           const ownAt = new Map()                 // ① edge index → the owner that edge really has
+          // ① edge index q → ① TURNS at the vertex where edge q begins. A fact about ①'s SHAPE.
+          const protoTurns = new Set()
           {
             const PR = (protoBlockRings || R.rings)[k], L = (protoBlockLabels || R.labels)?.[k]
             if (PR?.length >= 3 && L) {
@@ -7224,6 +7242,40 @@ export function buildTileGround(ribbons, opts = {}) {
               const key = (q) => { const o = protoOwners[L[q]]; return o ? `${String(o.skelId ?? '').replace(/-\d+$/, '')}|${o.side}` : null }
               const own = new Array(m2); for (let q = 0; q < m2; q++) own[q] = key(q)
               const eLen = (q) => { const a = PR[q], b = PR[(q + 1) % m2]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
+              // ⛔⛔⛔ AND THE OTHER HALF, WHICH ① OWNS: DOES THE CONTOUR TURN HERE?
+              // *(Jacob, 2026-09-07: "Are you POSITIVE you are working from and only from the
+              // protopolygon? The protopolygon doesn't have a node/corner there in the first
+              // place.")* He is right, and it was measurable on ①'s own sharp ring.
+              // `RIBBONS §1`, 2026-09-07: "① HAS NO NODES… a chain cut and a `segOrd` boundary are
+              // chain-world bookkeeping — ①'s contour runs straight through them and the only thing
+              // that changes is the LABEL." An OWNER is `protoOwners[].skelId` with the ordinal
+              // stripped: a CHAIN identity. So "the owner changed" cannot be the corner test — it
+              // is the test for WHOSE, not for WHETHER.
+              // ⭐ THE SHAPE ANSWERS WHETHER, THE LABEL ANSWERS WHOSE. Both were already computed
+              // here; only the label was being read. This is not a new rule, it is `RIBBONS §1`'s
+              // two halves used for the two questions they each answer.
+              // ⛔ `FILLET_TURN_TOL` is not a new threshold — it is `filletRing`'s existing ruled
+              // constant, the same one `easeContour` carries for the same reason ("a near-straight
+              // vertex is a CURVE SAMPLE, not a corner"). A third reader, not a third rule.
+              // ⭐⭐ WHY BOTH AND NOT TURN ALONE: a street that BENDS mid-block turns without any
+              // intersection, and a pad there would be an ADA ramp in the middle of a frontage.
+              // The conjunction is a strict NARROWING of what shipped — it can only remove a pad,
+              // never invent one, which is what makes it safe to land on a town nobody has seen.
+              // ▶ MEASURED on ①'s own ring, both towns: LS 39 of 1283 owner changes (3.0%) and
+              //   HPDM 269 of 5527 (4.9%) sit where ① DOES NOT TURN. They are exactly the ones no
+              //   fillet rounds — nothing turns, so nothing was rounded — so downstream they fell
+              //   to "the extent is the one edge the owners meet across", and on ① a straight
+              //   frontage is ONE EDGE: median 32.8 m and up to 223 m on LS, 494 m on HPDM, painted
+              //   as a curb ramp. ⭐ Town #2 carries it ~6× harder, the kit's signature.
+              const turnsAt = new Array(m2)
+              for (let q = 0; q < m2; q++) {
+                const P = PR[(q - 1 + m2) % m2], V = PR[q], N = PR[(q + 1) % m2]
+                const d1 = [V[0] - P[0], V[1] - P[1]], d2 = [N[0] - V[0], N[1] - V[1]]
+                const L1 = Math.hypot(d1[0], d1[1]) || 1, L2 = Math.hypot(d2[0], d2[1]) || 1
+                const cr = (d1[0] * d2[1] - d1[1] * d2[0]) / (L1 * L2), dt = (d1[0] * d2[0] + d1[1] * d2[1]) / (L1 * L2)
+                turnsAt[q] = Math.atan2(Math.abs(cr), dt) >= FILLET_TURN_TOL
+              }
+              for (let q = 0; q < m2; q++) if (turnsAt[q]) protoTurns.add(L[q])
               let start = 0; while (start < m2 && own[start] === own[(start - 1 + m2) % m2]) start++
               if (start < m2) {
                 const arcs = []
@@ -7253,7 +7305,13 @@ export function buildTileGround(ribbons, opts = {}) {
           const iaCorner = mine.map(EC => {
             const n2 = EC.ring.length
             const o = (i) => (EC.labs?.[i] != null ? (ownAt.get(EC.labs[i]) ?? null) : null)
-            return EC.ring.map((_, i) => { const a = o((i - 1 + n2) % n2), b = o(i); return a != null && b != null && a !== b })
+            // ⛔ TWO QUESTIONS, TWO SOURCES, AND ONLY ONE OF THEM IS THE CHAIN'S. ① must TURN here
+            // (its own shape) AND the owner must change (whose cross-sections meet). See the
+            // `protoTurns` block above for why the first half was missing and what it cost.
+            return EC.ring.map((_, i) => {
+              const a = o((i - 1 + n2) % n2), b = o(i)
+              return a != null && b != null && a !== b && protoTurns.has(EC.labs[i])
+            })
           })
           // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
           // consumer never has to ask the eased geometry a question it cannot answer.
