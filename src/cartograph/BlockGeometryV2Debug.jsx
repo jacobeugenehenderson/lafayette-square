@@ -978,6 +978,24 @@ export default function BlockGeometryV2Debug({
   // across all chains. Two materials per band — one normal, one
   // selectedCorridor (opacity 0.55 in Measure) — lets us do an O(1) ref
   // lookup per chain instead of O(N) allocations per render.
+  // ⭐⭐⭐ ONE RESOLVER, ONE KEY SET — THE TREELAWN IS THE SAME COLOUR AS THE BLOCK'S CENTRE.
+  // *(Jacob, 2026-09-07: "The TL takes on the LU of the block, it isn't complicated." · "all the TL
+  // needs to know is that it's the same color as the center.")* `SECTION §1` says the same.
+  // ⛔ THE FACE AND THE TREELAWN HAD SEPARATE LOOKUPS WITH DIFFERENT FALLBACKS — the face fell back
+  // to a parcel colour, the treelawn to `bandMats.treelawn`, which is GRASS GREEN. So a class in
+  // neither colour table drew a green strip against its own parcel, and looked deliberate.
+  // ⛔ Layer 0 both ways: the key set was an instance table (town #2's classes are not in it) and
+  // the fallback substituted something PLAUSIBLE instead of failing loudly.
+  // ⭐ THE BAKE ALREADY RESOLVED IT THIS WAY and this path never carried it (`bake-ground.js:943`:
+  // `designLuColors → DEFAULT_LU_COLORS → LAND_USE_COLORS → unknown`), so live ≠ bake — itself the
+  // defect, since `SURVEY §2` claims WYSIWYG by construction.
+  // ⇒ Same chain, same key set, for both. They cannot disagree.
+  const luColorOf = useCallback((lu) => (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu]
+    || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown, [luColors])
+  const luClasses = useMemo(() => [...new Set([
+    ...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS), ...Object.keys(LAND_USE_COLORS),
+  ])], [luColors])
+
   const bandMats = useMemo(() => ({
     asphalt:           makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
@@ -1104,24 +1122,6 @@ export default function BlockGeometryV2Debug({
   // adjacent blocks route through the `selectedCorridor` variant so the
   // parcel translucency matches the chain's band translucency (0.55 in
   // Measure). Same N→1 caching win as before; ~10 LU × 2 selected-states.
-
-  // ⭐⭐⭐ ONE RESOLVER, ONE KEY SET — THE TREELAWN IS THE SAME COLOUR AS THE BLOCK'S CENTRE.
-  // *(Jacob, 2026-09-07: "The TL takes on the LU of the block, it isn't complicated." · "all the TL
-  // needs to know is that it's the same color as the center.")* `SECTION §1` says the same.
-  // ⛔ THE FACE AND THE TREELAWN HAD SEPARATE LOOKUPS WITH DIFFERENT FALLBACKS — the face fell back
-  // to a parcel colour, the treelawn to `bandMats.treelawn`, which is GRASS GREEN. So a class in
-  // neither colour table drew a green strip against its own parcel, and looked deliberate.
-  // ⛔ Layer 0 both ways: the key set was an instance table (town #2's classes are not in it) and
-  // the fallback substituted something PLAUSIBLE instead of failing loudly.
-  // ⭐ THE BAKE ALREADY RESOLVED IT THIS WAY and this path never carried it (`bake-ground.js:943`:
-  // `designLuColors → DEFAULT_LU_COLORS → LAND_USE_COLORS → unknown`), so live ≠ bake — itself the
-  // defect, since `SURVEY §2` claims WYSIWYG by construction.
-  // ⇒ Same chain, same key set, for both. They cannot disagree.
-  const luColorOf = useCallback((lu) => (luColors && luColors[lu]) || DEFAULT_LU_COLORS[lu]
-    || LAND_USE_COLORS[lu] || LAND_USE_COLORS.unknown, [luColors])
-  const luClasses = useMemo(() => [...new Set([
-    ...Object.keys(luColors || {}), ...Object.keys(DEFAULT_LU_COLORS), ...Object.keys(LAND_USE_COLORS),
-  ])], [luColors])
 
   // Per-LU face materials for the tile land-use regions (M1) — one cached
   // material per class, painted in its per-Look colour.
