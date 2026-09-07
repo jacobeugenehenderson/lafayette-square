@@ -701,6 +701,27 @@ export default function BlockGeometryV2Debug({
     if (!stencil) return null
     if (!designHydrated) return null
     if (sectionCacheRef.current.shape !== frozenShape) sectionCacheRef.current = { shape: frozenShape, map: new Map() }
+    // ⭐⭐⭐ PUBLISH THE FRONTAGES THE PAINT USES — `SECTION §7` T3, and it is the last half of
+    // "the swap only works on some blocks". The Measure tool resolved a click against
+    // `_v2FrontageEdges`, whose `segOrd` comes from `resolveChainSegmentation` → `naturalSegments`;
+    // the band is painted from ①'s stamp. Measured on LS: the two partitions disagree on **441 of
+    // 450** (skelId, side) pairs, so a click wrote a slot the paint reads somewhere else.
+    // *(Jacob, 2026-09-07)* "when I click the top, the customs in the adjacent block to the left
+    // change instead." ⛔ Two answers to one question — `52b62415`'s shape, third instance today.
+    // ⭐ A run already IS a frontage edge: `skelId · side · segOrd` plus the arc it owns. Shaped to
+    // the same contract `feCustomKey` reads, so nothing downstream learns a new type.
+    // ⛔ NOT A FALLBACK PAIR: this publishes only what the frozen shape actually carries. A scene
+    // whose artifact predates the stamp publishes NOTHING here and Measure keeps today's path,
+    // which the store already reports as a degraded freeze rather than silently substituting.
+    { const feList = []
+      for (const t of (frozenShape.tiles || [])) for (const r of (t.runs || [])) {
+        if (!(r?.poly?.length >= 2) || r.skelId == null || r.side == null || r.segOrd == null) continue
+        feList.push({ chainSkelId: r.skelId, chainName: null, side: r.side, segOrds: [r.segOrd], points: r.poly })
+      }
+      const store = useCartographStore.getState()
+      if (feList.length) store._setProtoFrontageEdges(feList)
+      else if ((store._protoFrontageEdges || []).length) store._setProtoFrontageEdges([])
+    }
     // [Section translucency] Selected-corridor tiles = those whose runs front the
     // selected street (its skelId) → the selected block + the across-street
     // neighbour. Rendered translucent below so the hi-res aerial reads through.

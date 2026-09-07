@@ -556,6 +556,13 @@ const useCartographStore = create((set, get) => ({
   editSidesSeparately: false,
   setEditSidesSeparately: (v) => set({ editSidesSeparately: !!v }),
   _v2FrontageEdges: [],
+  // ⭐⭐⭐ THE FRONTAGES THE PAINT ACTUALLY USES — ①'s runs off the frozen shape. `SECTION §7` T3.
+  // ⛔ `_v2FrontageEdges` is the CHAIN partition (`resolveChainSegmentation` → `naturalSegments`)
+  // and the band is painted from ①'s stamp; measured, the two disagree on 441 of LS's 450
+  // (skelId, side) pairs. So a click resolved against v2 writes a slot the paint reads somewhere
+  // else — *(Jacob, 2026-09-07)* "when I click the top, the customs in the adjacent block to the
+  // left change instead." One question, two answers.
+  _protoFrontageEdges: [],
   // Dead-end CAP handles, surfaced from the frozen tile topology (ribbons
   // .tiles[].caps) so the Measure tool can flip a cul-de-sac cap like a leg.
   // Each: { skelId, chainName, capEnd, tip:[x,z] } — the flip resolves the cap
@@ -765,6 +772,7 @@ const useCartographStore = create((set, get) => ({
   // Measure UI can resolve a clicked chain point → (blockKey, edgeOrd)
   // for per-block-edge customs authoring.
   _setV2FrontageEdges: (fes) => set({ _v2FrontageEdges: Array.isArray(fes) ? fes : [] }),
+  _setProtoFrontageEdges: (fes) => set({ _protoFrontageEdges: Array.isArray(fes) ? fes : [] }),
   _setV2Caps: (caps) => set({ _v2Caps: Array.isArray(caps) ? caps : [] }),
   // Measure-mode setter. 'block' is the default; 'global' is the
   // whole-chain authoring mode (= edit chain.measure).

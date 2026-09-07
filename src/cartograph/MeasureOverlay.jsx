@@ -255,7 +255,15 @@ export default function MeasureOverlay() {
   // D.5/D.6: frontageEdges from the V2 build — used to resolve a
   // (chainIdx, segOrd, sideKey) tuple to its containing block-edge
   // (blockKey + edgeOrd) for per-block-edge customs authoring.
-  const v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
+  const _v2FrontageEdges = useCartographStore(s => s._v2FrontageEdges)
+  const _protoFrontageEdges = useCartographStore(s => s._protoFrontageEdges)
+  // ⭐⭐⭐ THE TOOL RESOLVES AGAINST THE FRONTAGES THE PAINT USES. `SECTION §7` T3: ①'s runs carry
+  // `skelId · side · segOrd` and the arc each one owns, so a click lands on the slot that actually
+  // paints there. ⛔ The chain partition is not a second opinion, it is a DIFFERENT PARTITION —
+  // 441 of LS's 450 street-sides disagree — and resolving against it wrote the neighbouring block.
+  // ⭐ It also takes `resolveChainSegmentation` off the path a click travels, which is `RIBBONS §2`'s
+  // ruled deliverable: *"The Measure Tool should NEVER encounter nodes or chains."*
+  const v2FrontageEdges = (_protoFrontageEdges?.length ? _protoFrontageEdges : _v2FrontageEdges)
   // Coord-match IX identity per chain — single source of truth shared
   // with buildBlockGeometryV2's buildFrontageEdges. naturalSegmentOrdinal
   // below uses this so the operator's drag resolves segOrds against the
