@@ -465,7 +465,7 @@
 >   > rectangle."* · *"Back to the protopolygon and not chains."*
 >
 >   Read as written, "the owner changing" is a **CHAIN** law, and the kit cuts one road into many
->   chains (LS: South 18th Street into **eleven**; 58 of 174 roads multi-chain). A chain cut and a
+>   chains (LS: South 18th Street into **eleven**; a third of roads are multi-chain — ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const b={};for(const c of s)(b[c.name]=b[c.name]||[]).push(c);const n=Object.keys(b);console.log(n.filter(k=>b[k].length>1).length,'of',n.length)"`). A chain cut and a
 >   `segOrd` boundary are chain-world bookkeeping — **①'s contour runs straight through them and the
 >   only thing that changes is the LABEL.** ⇒ Taken literally it puts the chain graph's nodes back
 >   into the one construction built to have none, and the ribbon is disrupted at every junction.
@@ -485,8 +485,9 @@
 >   **①'s `labels[q]` owns the edge `q → q+1`. `offsetRingVariable` emits one point per ① VERTEX
 >   (`push(p, i)`), so its stamp names a vertex.** Reading `labs[src[j]]` therefore means *"the ①
 >   edge LEAVING that vertex"* — which is the ② edge leaving `j` **only while the two rings run the
->   same way.** ⛔ **Clipper's union normalises winding and they mostly do not: measured, 133 of 138
->   ② rings run AGAINST their ① block ring.** The result is an off-by-one that displaces every
+>   same way.** ⛔ **Clipper's union normalises winding and they mostly do not** —
+>   ▶ `node scratch/claims-offset-reversal.mjs` measures the share of ② rings running AGAINST their
+>   ① block ring. The result is an off-by-one that displaces every
 >   frontage's ownership onto its neighbour's ground, and it is the operator's *"when I swap one
 >   treelawn/sidewalk pair, it swaps all 4 sides of the block."*
 >   ⛔ **NOT AN ORIENTATION FLAG AND NOT A THRESHOLD** — the adjacency of the two endpoints' source
@@ -531,7 +532,7 @@
 >   The "~2.4 m constant" was `hw/sin(θ/2)`: a MITER APEX measured to a CLAMPED SEGMENT instead of the
 >   edge's LINE. ⭐ Measure to the LINE; pick candidate edges by SEGMENT proximity (picking them by
 >   line-distance lets a distant parallel edge match by coincidence — permissive, and it also reports
->   100%). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
+>   a clean pass regardless). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
 >   this section's reconcile gate says "misfiles" a non-convex island. Reading it was not enough.
 >
 >   ### ⭐⭐⭐ RULED 2026-09-06 (Jacob) — THE PRODUCE/REFUSE SPLIT FOR ①'s TILE. **2 SUPPLIED, 9 REFUSED.**
