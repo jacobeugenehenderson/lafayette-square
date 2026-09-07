@@ -9,6 +9,14 @@
 // here reads a chain, and nothing here recovers a label by proximity in production — the proximity
 // match is the ORACLE, which is the one place it is legitimate (`claims-proto-curb-is-parallel`).
 //
+// ⛔⛔ THIS CHECK CANNOT SPEAK ABOUT ①. It compares ② against ①, so an error at the SOURCE moves
+// them TOGETHER and the number does not budge. Measured: a mint-side `side` swap took runs whose
+// label disagrees with their geometry from 2 to 47 and this gate stayed FLAT at 92.1% through all
+// three states. ⇒ cite it as evidence about the CARRY and never about the mint, the labels, or the
+// substrate. To see a source error, pin ① (`git show <sha>:src/data/ribbons.json`) and bisect the
+// CODE against it. ⭐ Same class as `litmus-curb-parallel` in `CLAUDE.md`'s standing receipt: an
+// instrument that cannot fail in the direction the defect lies.
+//
 // ⭐ WHY BY LENGTH AND NEVER BY POINTS (`2ddb526c`): corner arcs are ~5% of a town's contour by
 // LENGTH and ~50% by POINTS, so a per-point score reports the corners and ignores the block.
 //

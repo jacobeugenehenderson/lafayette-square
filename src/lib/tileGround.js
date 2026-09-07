@@ -6857,7 +6857,19 @@ export function buildTileGround(ribbons, opts = {}) {
             // reliable record of here, because these rings came straight out of one boolean.
             hole: signedArea(EC.ring) < 0,
             walkFrom: (i) => cw + (eOutWalk(i) ? 0 : (eInWalk(i) ? eDOut(i) : 0)),
-            walkTo:   (i) => cw + (eOutWalk(i) ? eDOut(i) : (eInWalk(i) ? Math.max(0, WB - cw) : 0)),
+            // ⛔ THE SECOND COPY OF `sectionPassProtoTile`'s LADDER, and it carried the same hole:
+            // `outWalk && inWalk` — BOTH strips authored SW, a real state — stopped the walk at
+            // `dOut` while the lawn resolved to zero width, so the rest of the envelope was painted
+            // by nobody. `§3.1`: "two strips always, they SWAP, they never collapse — the inner one
+            // takes the rest of the envelope." Fixed at the other site by the CORNERS session
+            // (`67e8b944`, cherry-picked as `45b7aa60`); this is the same one-term correction here.
+            // ⚠️ NOTHING IN `src/` READS `protoBands` TODAY, so this reaches no screen and moved no
+            // gate — it is live code that was wrong, fixed because it was wrong, and that is the
+            // whole of the justification. ⛔ Do not read "no number moved" as "no defect".
+            // ⭐⭐ AND THE REAL CURE IS NOT THIS EDIT: two copies of one ladder is why the first fix
+            // was half a fix. A third session is extracting these four lines into ONE function
+            // called from both sites; when that lands, this correction should arrive as a deletion.
+            walkTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? Math.max(0, WB - cw) : eDOut(i)) : (eInWalk(i) ? Math.max(0, WB - cw) : 0)),
             lawnFrom: (i) => cw + (eOutWalk(i) ? eDOut(i) : 0),
             lawnTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw)),
           }
