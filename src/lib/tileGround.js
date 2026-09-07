@@ -453,7 +453,17 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // way back to that node except by proximity, which is `A15`'s explicitly forbidden third
     // recovery. ⛔ A MINTED crossing vertex has no source and carries no label — that is not a gap
     // to paper over, it is where two chains actually cross.
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i }) - 1
+    // ⭐ `hard` — this node has BROKEN handles, i.e. it is a CORNER (`RIBBONS §1`). Stamped here so
+    // ② can ask the question off carried identity instead of reaching back to the chain.
+    const hardAt = st?.hard || null
+    // ⭐ `tipEnd` — the STRUCTURAL fact that this vertex is a chain end of DEGREE 1, i.e. a dead end.
+    // ⛔ The structural fact only: which END it is, never whether it is round or blunt. That is
+    // authoring (`capEnds`) plus a gleaned default, and ① is look-agnostic — one scene's ① serves
+    // every Look, so a cap STYLE baked in here would freeze one Look's decision into the substrate.
+    const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
+    const lastI = P.length - 1
+    const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -471,6 +481,35 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
     rings.push(ring); labels.push(labs)
   }
+  // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
+  // ② needs one thing from the centreline: where two chains meet, because the authored corner
+  // radius is keyed on that point (`ixKeyOf(node)`). Reading it from `streetsOrig` at build time
+  // is a reach back across the wall — "the centreline must be completely inert and unreachable by
+  // the protopolygon" (Jacob, 2026-09-06). ⭐ The MINT is the one place reading a chain is
+  // legitimate — ① *is* the expanded chain — so the node is resolved here and frozen.
+  // ⛔ EXACT SHARED VERTEX, never the nearest point: the skeleton graph is shared-vertex, so the
+  // node of a corner between chains A and B is the vertex they both carry, keyed at 0.1 mm.
+  // ⛔ AMBIGUITY IS REFUSED, NOT GUESSED: two chains can share more than one vertex (a loop), and
+  // such a pair freezes as `null` so the consumer takes the class seed and COUNTS it. A wrong node
+  // hands a corner someone else's authored radius.
+  const nodes = (() => {
+    const at = new Map(), pair = {}
+    const qk = (p) => `${Math.round(p[0] * 1e4)},${Math.round(p[1] * 1e4)}`
+    for (const { st } of chains) {
+      const id = st?.skelId ?? st?.name; if (id == null) continue
+      for (const p of st.points || []) { const k = qk(p); let m = at.get(k); if (!m) at.set(k, m = new Map()); if (!m.has(id)) m.set(id, [p[0], p[1]]) }
+    }
+    for (const [, m] of at) {
+      if (m.size < 2) continue
+      const ids = [...m.keys()]
+      for (let i = 0; i < ids.length; i++) for (let j = i + 1; j < ids.length; j++) {
+        const k = ids[i] < ids[j] ? `${ids[i]}|${ids[j]}` : `${ids[j]}|${ids[i]}`
+        pair[k] = Object.prototype.hasOwnProperty.call(pair, k) ? null : m.get(ids[i])
+      }
+    }
+    return pair
+  })()
+
   // ⭐ IDENTITY RIDES THE UNION — `booleanLabelled`, N subject rings each with its
   // own label, labels on Clipper's Z channel, crossings resolved by walking the
   // output ring forward. ⛔ NOT `unionRingLabelled`: that self-unions ONE ring and
@@ -540,26 +579,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // BEFORE ②③ run, so the circle arrives at the offset stage looking like an ordinary block edge
     // and the curb + ped ribbon wrap around it and turn corners at the rim — visible immediately,
     // and wrong: nothing is built at the map edge, it is simply where the drawing stops.
+    // ⭐ The "subtract from the frame and the outer motorways enclose enormous faces" objection —
+    // which briefly made the subject a disc-plus-margin — was the FLAT RING LIST, not the frame.
+    // The enormous ring was the exterior's own ink contour; read as a compound face it leaves with
+    // the exterior. The frame is the subject, the margin is only a clearance.
     // ⇒ Subtract the ink from a RECTANGLE that contains everything. Every block comes out WHOLE,
     // ②③ offset a whole block, and the disc is applied to the RESULT (see the artifact clip).
     // ⭐ This also deletes machinery rather than adding it: no `__boundary__` depth-0 special case,
     // no rim corner rule, no "is this the rim?" question inside the offset at all.
-    // ⛔⛔ THE SUBTRACTION SUBJECT IS THE DISC PLUS A MARGIN — not the disc, and not the frame.
-    // Both extremes were built and both are wrong, which is why the rule is spelled out here:
-    //  · SUBTRACT FROM THE DISC → every rim block is cut BEFORE ②③ run, so the circle reaches the
-    //    offset stage disguised as an ordinary block edge and the ped ribbon wraps it and turns
-    //    corners at the rim. Jacob: "why are the sidewalks trying to bend and create corners at
-    //    the edge of the stencil?"
-    //  · SUBTRACT FROM THE FRAME → the sparse outer chains (motorways running kilometres past
-    //    town) enclose enormous faces. They are real faces of the graph and NOT city blocks; ②
-    //    offsets inside them and hands back a 4.5M m² curb ring. Survey FILLS `tg.curb`, so the
-    //    authoring surface went solid: "basically just wrecked survey interface".
-    // ⇒ A disc of R + MARGIN. The margin is larger than anything ③ can reach inward, so a rim
-    //   block is WHOLE where it matters and nothing bends at the VISIBLE rim; and the cut is well
-    //   outside the disc, so the giant exterior faces never exist. The true circle is applied
-    //   LAST, to finished geometry, at every consumer (`[PROTO⊙]` and the live curb).
-    // ⛔ The margin is a REACH, not a taste: it must exceed the deepest ③ can inset. 60 m is ~10×
-    //   the widest authored curb+treelawn+sidewalk stack, so it is not a tuned number.
     // ⛔ THE CIRCLE TOUCHES NOTHING HERE. Jacob, twice: "build the whole grid flat and then stamp
     // out the circle last", and "obviously the circle stencil is happening too early". A disc, or
     // a disc plus a margin, is STILL the circle deciding block geometry — one step further out is
@@ -569,10 +596,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
     const M = 50
     const grown = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], R.rings, R.labels, true)
-    let blocks = null, blockLabels = null
-    if (!D.refused && D.rings?.length) {
-      blocks = []; blockLabels = []
+    // ⭐⭐⭐ `asTree` — A BLOCK IS A COMPOUND FACE, and the boolean already knows which ring
+    // is a hole of which. Read as a flat list, `frame − ink` hands back the exterior as the
+    // frame ring PLUS one hole per connected ink component, and every one of those holes was
+    // being carried out as a block. See `booleanLabelled`'s header for the measurement.
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], R.rings, R.labels, true, true)
+    let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
+    if (!D.refused && D.faces?.length) {
+      blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
       // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
       // necessarily yields the whole region beyond the outermost streets as one huge component.
       // It is not a city block — the frame is an artificial bound, not a street — and treating it
@@ -588,8 +619,11 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       // measured 97.3% and slipped through. A corner of the subtraction rectangle is by
       // construction outside every street and inside exactly one output component: the exterior.
       // That is a containment test, so it has no tuning and no town where it degrades.
-      let dropped = 0
+      let dropped = 0, unlabelledHoles = 0
       const corner = [fx0 - M + 1e-3, fz0 - M + 1e-3]
+      const FT = 1e-3
+      const touchesFrame = (p) => Math.abs(p[0] - (fx0 - M)) < FT || Math.abs(p[0] - (fx1 + M)) < FT
+                                || Math.abs(p[1] - (fz0 - M)) < FT || Math.abs(p[1] - (fz1 + M)) < FT
       const holdsCorner = (rg) => {
         let inside = false
         for (let a = 0, b = rg.length - 1; a < rg.length; b = a++) {
@@ -599,22 +633,54 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         }
         return inside
       }
-      for (let i = 0; i < D.rings.length; i++) {
-        const rg = D.rings[i], lb = D.labels?.[i]
-        if (!(rg?.length >= 3) || !lb) continue
-        if (holdsCorner(rg)) { dropped++; continue }
+      let degenerate = 0
+      for (const f of D.faces) {
+        const rg = D.rings[f.outer], lb = D.labels?.[f.outer]
+        // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
+        // identity is a real state and must be countable — on town #2 nobody is looking.
+        if (!(rg?.length >= 3) || !lb) { degenerate++; continue }
+        // ⛔⛔ EVERY COMPONENT THAT TOUCHES THE FRAME IS ARTIFICIAL, not just the one holding the
+        // corner. The frame is a construction convenience, so any face resting against it exists
+        // only because we drew a rectangle — it is not a face of the street graph.
+        // ⭐ Coincidence with the frame, at 1e-3 m — the frame is an EXACT input we chose, so this
+        // is an identity test against a known line, not a tuned tolerance. Both tests are kept:
+        // the corner test is the containment one, the frame test catches a component resting on
+        // an edge without enclosing a corner. Under `asTree` the exterior is ONE face and its
+        // holes leave with it, which is what removed the ghost block.
+        if (holdsCorner(rg) || rg.some(touchesFrame)) { dropped++; continue }
+        // ⛔⛔ A HOLE IS WOUND OPPOSITE ITS OUTER AND MUST STAY THAT WAY. The outer is converted
+        // below to the winding the consumer expects (blocks wound as ①'s holes, offset inward by
+        // a POSITIVE depth); a hole of that face has to carry the opposite sign or the compound
+        // path's fill is inverted. Converted HERE, once, at the source — this repo carries both
+        // shoelace conventions and letting each consumer guess has already cost a day.
+        const hs = [], hls = []
+        for (const hi of f.holes) {
+          const hr = D.rings[hi], hl = D.labels?.[hi]
+          // ⛔ NO SILENT DROP. A hole with no identity cannot be offset at its authored width,
+          // and dropping it would offset the face AS IF SOLID — a plausible-looking wrong curb,
+          // which is the one outcome a kit may not have. Counted and reported by name.
+          if (!(hr?.length >= 3) || !hl) { unlabelledHoles++; continue }
+          if (signedArea(hr) < 0) { hs.push([...hr].reverse()); hls.push([...hl].reverse()) }
+          else { hs.push(hr); hls.push(hl) }
+        }
         if (signedArea(rg) > 0) { blocks.push([...rg].reverse()); blockLabels.push([...lb].reverse()) }
         else { blocks.push(rg); blockLabels.push(lb) }
+        blockHoles.push(hs); blockHoleLabels.push(hls)
       }
-      if (dropped) console.log(`    [①] dropped ${dropped} component(s) spanning the whole clip — the EXTERIOR, not a block.`)
+      const withHoles = blockHoles.filter(h => h.length).length
+      if (dropped) console.log(`    [①] dropped ${dropped} face(s) resting on the clip frame — the EXTERIOR, not a block.`)
+      if (degenerate) console.warn(`    ⛔ [①] ${degenerate} face(s) came back degenerate (<3 vertices or no identity) and are NOT blocks — reported, not hidden.`)
+      console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
+      if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
     } else if (D.refused) {
       console.warn(`    ⛔ [①] BLOCK SUBTRACTION REFUSED (${D.refused}) — falling back to ①'s HOLES, which LOSE every block the circle cuts. Rim geometry from this pour is NOT trustworthy.`)
     }
 
     return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length,
-             crossings: R.crossings, stencilled: false, boundaryOwner: bIdx, blocks, blockLabels, boundaryRing: bRing }
+             crossings: R.crossings, stencilled: false, boundaryOwner: bIdx, blocks, blockLabels,
+             blockHoles, blockHoleLabels, boundaryRing: bRing, nodes }
   }
-  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false }
+  return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes }
 }
 
 // ⛔⛔ `carryEdges` IS OPT-IN, AND THAT IS THE WHOLE POINT OF THIS PARAMETER (`ROADMAP A18`).
@@ -631,11 +697,23 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
 // ⇒ default OFF = shipped behaviour byte-for-byte; the proto caller asks for it.
 // ⭐⭐ THE GENERAL RULE: a flag on a BLOCK is not a wall if the block edits something the rest of
 // the map calls. Anything an experiment needs from shared code is opt-in AT THE CALL SITE.
-function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false) {
+// ⭐⭐⭐ `asTree` — THE NESTING COMES OUT OF THE BOOLEAN, NOT OUT OF THE RINGS AFTERWARDS.
+// Clipper knows which output ring is a HOLE OF WHICH OTHER RING; executing into a flat
+// `Paths` list throws that away and leaves winding as the only record, which is what
+// `RIBBONS §1` forbids ("identity must be carried THROUGH the boolean, never recovered
+// from ring geometry afterward"). ⛔ MEASURED, and it is not theoretical: `frame − ink`
+// hands back the exterior region as an outer ring (the frame) PLUS one hole per connected
+// ink component — and those holes were being read as blocks. LS: a 4.49 km² "block"
+// containing 276 of the other 281; HPDM: 29.79 km² containing 1,272 of 1,290. Neither
+// touches the frame and neither holds a frame corner, so no drop test can see them.
+// ⭐ Returns `faces: [{ outer, holes: [] }]` — INDICES into `rings`/`labels`, so nothing
+// about the existing return shape moves and a caller that does not ask sees no change.
+function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], clipLabels = null, carryEdges = false, asTree = false) {
   const { Clipper, PolyType, PolyFillType } = clipperLib
   const prev = clipperLib.use_xyz
   clipperLib.use_xyz = true
   let out = []
+  let faces = null
   const enc = (p, lab) => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE), Z: Number.isInteger(lab) ? lab + 1 : 0 })
   // ⭐⭐ THE CROSSING LEDGER — who MET here. Additive: `pt.Z` is still left at 0, so every
   // existing caller's labels are byte-identical; this only records what Clipper already
@@ -688,7 +766,29 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       const L = clipLabels?.[k]
       c.AddPath(r.map((p, i) => enc(p, Array.isArray(L) ? L[i] : L)), PolyType.ptClip, true)
     }
-    c.Execute(clipType, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    if (!asTree) c.Execute(clipType, out, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+    else {
+      // ⭐ A FACE IS AN OUTER NODE PLUS ITS IMMEDIATE HOLE CHILDREN. A hole's own children
+      // are outer nodes again — faces nested inside a hole — so the walk recurses and they
+      // are emitted as faces in their own right. ⛔ The Z channel survives the PolyTree
+      // build (Clipper carries the same IntPoints into the contours), so the label
+      // resolution below is byte-for-byte the same work on the same points.
+      const tree = new clipperLib.PolyTree()
+      c.Execute(clipType, tree, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
+      faces = []
+      const walk = (node) => {
+        for (const ch of node.Childs()) {
+          if (!ch.IsHole()) {
+            const f = { outer: out.length, holes: [] }
+            out.push(ch.Contour())
+            for (const h of ch.Childs()) { if (h.IsHole()) { f.holes.push(out.length); out.push(h.Contour()) } }
+            faces.push(f)
+          }
+          walk(ch)
+        }
+      }
+      walk(tree)
+    }
   } finally { clipperLib.use_xyz = prev }
   const rings = out.map(p => p.map(fromClipper))
   const labs = []
@@ -716,7 +816,7 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       // ⭐ THE REFUSAL IS THE SHIPPED CONTRACT: a wholly-minted ring has no owner this function
       // can honestly name, so it says so and hands back `labels: null` — and the tile construction
       // branches on exactly that. Guessing an owner instead is what mislabelled the shipped bands.
-      if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted' }
+      if (v < 0 && !carryEdges) return { rings, labels: null, refused: 'all-vertices-minted', faces }
       if (v < 0) { res[i] = -1; continue }        // wholly minted → the edge resolver below
       res[i] = v
     }
@@ -748,11 +848,11 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
         }
         ok = false
       }
-      if (!ok) return { rings, labels: null, refused: 'all-vertices-minted' }
+      if (!ok) return { rings, labels: null, refused: 'all-vertices-minted', faces }
     }
     labs.push(res)
   }
-  return { rings, labels: labs, refused: null, crossings }
+  return { rings, labels: labs, refused: null, crossings, faces }
 }
 // The original single-ring union, preserved EXACTLY as a wrapper — the offset path's
 // byte-identity proof (`a03-curb-identity`) covers it and must keep covering it.
@@ -785,10 +885,26 @@ function unionRingLabelled(ring, labels) {
 // `stamp` (optional) collects the per-output-ring source labels described above:
 // on return it carries either `{ labels: number[][] }` parallel to the returned
 // rings, or `{ refused: '<reason>' }`. Passing it changes no geometry.
-function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false) {
+// ⭐ `outward` — OFFSET AWAY FROM THE RING'S OWN INTERIOR, for a COMPOUND FACE's HOLES.
+// The normal here is winding-aware, so it points into the ring's enclosed area whichever
+// way the ring is traversed — reversing a hole ring does NOT flip it. A face's curb is the
+// outer eroded inward AND every hole DILATED into the face, so the second one needs the
+// direction stated, not inferred. ⛔ One flag on the one expression the whole construction
+// derives from; every existing caller passes nothing and is byte-identical.
+// `easeAt` (optional, opt-in at the call site per `ROADMAP A18`) — realize each node's handle
+// configuration BEFORE the self-union. ⛔⛔ THIS PLACEMENT IS THE WHOLE POINT AND IT IS MEASURED:
+// easing the RETURNED ring instead loses the corner, because the union below re-resolves labels —
+// a minted vertex inherits a neighbour's source index — so by the time the caller looks, the stamp
+// no longer points at the corner it came from. 687 of 893 corners died there, and the ones that
+// survived came back at 3.15 m instead of the authored 4.50 m.
+// ⭐ `WL` here is EXACT: every emitted point still carries the ring vertex it was struck from,
+// including the miter apex. `easeAt(srcIdx)` is therefore an identity lookup, not a recovery.
+// ⭐ Easing before the union also lets the union CLEAN UP an overrun instead of the caller seeing a
+// fold — the failure mode that made ease-before-offset produce spikes.
+function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false, outward = false, easeAt = null) {
   const n = ring.length
   if (n < 3) return []
-  const ccw = signedArea(ring) > 0
+  const ccw = (signedArea(ring) > 0) !== outward
   const seg = []
   for (let i = 0; i < n; i++) {
     const a = ring[i], b = ring[(i + 1) % n]
@@ -889,16 +1005,25 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // [A10-③] The labelled union is gated on `stamp` so the live Survey path keeps
   // today's exact call. a03's byte-identity across both states is what proves the
   // two are the same boolean — the Z channel writes only .Z, never .X/.Y.
+  // ⭐ THE EASE — here, on the raw offset polyline, while the correspondence is still exact.
+  let W_ = W, WL_ = WL
+  if (easeAt) {
+    const arcs = []
+    const e = easeContour(W_, (j) => easeAt(WL_[j]) || 0, WL_, arcs)
+    const preWL = WL_
+    W_ = e.ring; WL_ = e.labs || preWL
+    if (stamp) stamp.easeArcs = arcs.map(a => ({ ...a, src: preWL[a.i] }))
+  }
   if (!clean) {
     let uni, uniL = null
-    if (stamp) { const r = unionRingLabelled(W, WL); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
-    else uni = unionRings([W])
+    if (stamp) { const r = unionRingLabelled(W_, WL_); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
+    else uni = unionRings([W_])
     const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
     if (stamp && uniL) stamp.labels = keep.map(k => uniL[k])
     return keep.map(k => uni[k])
   }
-  const t0 = dropFoldSpursTracked(W)
-  const W0 = t0.ring, L0 = t0.src.map(k => WL[k])
+  const t0 = dropFoldSpursTracked(W_)
+  const W0 = t0.ring, L0 = t0.src.map(k => WL_[k])
   let uni, uniL = null
   if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
   else uni = unionRings([W0])
@@ -1166,6 +1291,131 @@ function oneSideClaim(poly, W, leftInside) {
   return out.length >= 3 ? [out] : []
 }
 
+// ⭐⭐⭐ THE NODE IS A HANDLE CONFIGURATION — the ruled cure (`RIBBONS §1`, 2026-09-05/06).
+// > "The nodes become bezier INTENTIONS where a blunt cap TURNS and a rounded cap EASES."
+// > "A node is not a corner, a cap or a junction — it is a HANDLE CONFIGURATION. Broken handles
+// >  turn; continuous handles ease. ⇒ cap style, corner radius and fillet stop being three things.
+// >  R = 0 is zero-length handles, so the operator's dial survives unchanged."
+//
+// ⛔⛔ THIS IS NOT `easeRing`, AND THE DIFFERENCE IS THE WHOLE POINT. That pass was a CORNER
+// CONSTRUCTOR: an invented ~7° turn threshold, a budget against neighbouring corners, a DECLINE
+// when it did not fit, a REVERT when the result self-intersected, and a cluster-collapse to fix
+// the budget — "each fix was aimed at the previous fix", which is why it was excised. Here there
+// is no threshold, no budget, no decline and no revert. A node either carries handles or it does
+// not; if the authored R does not fit its leg, the result renders as what it is (`§6.9.5`:
+// self-intersection is SIGNAL, not error).
+//
+// ⭐ THE ONE BOUND IS TOPOLOGICAL, NOT A BUDGET: a corner's tangent point may not pass the
+// midpoint of its own leg, because past that the leg belongs to the NEXT corner. That is the leg's
+// own extent — the same class as the existing licensed capacity guard, not a tuned number.
+//
+// ⭐ R = 0 IS EXACT, BY CONSTRUCTION, NOT BY A BRANCH: zero setback and zero-length handles leave
+// the vertex and its two edges untouched, so an un-eased contour is byte-identical to the sharp one.
+//
+// `rAt(i)` → the authored radius at vertex i (0 ⇒ broken handles ⇒ the contour turns).
+// `labs` (optional) rides along: every emitted point inherits the label of the edge it lies on, so
+// ①'s per-edge identity survives the ease instead of being recovered from the rounded geometry.
+const easeSkips = { noR: 0, straight: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0 }
+const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may miss by (= `derive.js`'s ARC_TOL)
+// `out` (optional) collects the ACHIEVED arc per eased corner — {i, V, R, C, r, tA, tB}. This is
+// the corner TRUTH the authoring handle rides: `SURVEY §4` — "the ONE corner truth the magenta
+// handle reads (no re-derivation)". ⛔ Without it the handle sits on the LEGACY fillet while the
+// drawn curb is ②'s eased arc, and the operator's dial moves a corner that is not on screen.
+function easeContour(ring, rAt, labs = null, arcsOut = null) {
+  const n = ring.length
+  if (n < 3) return { ring, labs }
+  const seg = (a, b) => { const dx = b[0]-a[0], dz = b[1]-a[1]; const L = Math.hypot(dx, dz); return { L, d: L > 1e-12 ? [dx/L, dz/L] : [0, 0] } }
+  const R_ = new Array(n); for (let i = 0; i < n; i++) R_[i] = Math.max(0, rAt(i) || 0)
+  const eLen = new Array(n)
+  for (let i = 0; i < n; i++) { const a = ring[i], b = ring[(i + 1) % n]; eLen[i] = Math.hypot(b[0]-a[0], b[1]-a[1]) }
+
+  // ⭐⭐⭐ A LEG RUNS CORNER TO CORNER — it is NOT the adjacent edge. Jacob, 2026-09-06: "a square
+  // offset into itself is a smaller square; 4 corners to 4 smaller corners." The sides of that
+  // square are the legs; on a curved street one side is a whole run of tessellation samples.
+  // ⛔⛔ BOUNDING THE SETBACK BY THE ADJACENT EDGE WAS THE DEFECT: on a tessellated contour that
+  // edge is a 1–2 m curve sample, so `min(R·tan(θ/2), edge/2)` collapsed the ease and only 32% of
+  // eligible corners rounded — the achieved radius reading 3.15 m against an authored 4.50 m was
+  // that clamp biting, never a different radius being asked for.
+  // ⭐ The bound stays TOPOLOGICAL — a corner may not eat past the midpoint of its own leg, because
+  // past that the leg belongs to the next corner. Only the definition of "leg" is corrected.
+  const legBack = new Array(n).fill(0), legFwd = new Array(n).fill(0)
+  for (let i = 0; i < n; i++) {
+    let L = 0
+    for (let k = 1; k <= n; k++) { const j = (i - k + n) % n; L += eLen[j]; if (R_[j] > 1e-9) break }
+    legBack[i] = L
+    L = 0
+    for (let k = 0; k < n; k++) { const j = (i + k) % n; L += eLen[j]; if (R_[(j + 1) % n] > 1e-9) break }
+    legFwd[i] = L
+  }
+  // walk `dist` along the ring from vertex `from` (dir −1 back, +1 forward) → the point there
+  const walk = (from, dir, dist) => {
+    let left = dist, j = from
+    for (let k = 0; k < n; k++) {
+      const eIdx = dir < 0 ? (j - 1 + n) % n : j
+      const L = eLen[eIdx]
+      const a = ring[j], b = ring[dir < 0 ? eIdx : (j + 1) % n]
+      if (L >= left) { const t = L > 1e-12 ? left / L : 0; return [a[0] + (b[0]-a[0])*t, a[1] + (b[1]-a[1])*t] }
+      left -= L; j = dir < 0 ? (j - 1 + n) % n : (j + 1) % n
+    }
+    return ring[j]
+  }
+
+  // ── PASS 1 — plan every corner, and which samples its arc swallows ──────────────────────────
+  // ⛔ TWO PASSES, DELIBERATELY. A corner's arc reaches BACKWARD as well as forward, so the samples
+  // it replaces include ones already emitted if this is done in a single walk. Planning first is
+  // what makes the span honest instead of one-sided.
+  const plan = new Map()          // corner index → { arc points, labels }
+  const covered = new Set()
+  for (let i = 0; i < n; i++) {
+    const R = R_[i]; if (!(R > 1e-9)) continue
+    const P = ring[(i - 1 + n) % n], V = ring[i], N = ring[(i + 1) % n]
+    const A = seg(P, V), B = seg(V, N)
+    if (!(A.L > 1e-9) || !(B.L > 1e-9)) continue
+    const cross = A.d[0]*B.d[1] - A.d[1]*B.d[0], dot = A.d[0]*B.d[0] + A.d[1]*B.d[1]
+    const theta = Math.atan2(Math.abs(cross), dot)
+    if (!(theta > 1e-6)) continue
+    if (theta > Math.PI - 1e-6) continue
+    const want = R * Math.tan(theta / 2)
+    const s = Math.min(want, legBack[i] / 2, legFwd[i] / 2)
+    if (!(s > 1e-9)) continue
+    const Reff = s / Math.tan(theta / 2)
+    // ⭐ The tangent points are placed ALONG THE RING, not along the adjacent edge's infinite line —
+    // on a curved leg those diverge and the arc would lift off the curb.
+    const T1 = walk(i, -1, s), T2 = walk(i, +1, s)
+    const dIn = seg(T1, V).d, dOut = seg(V, T2).d
+    const h = (4 / 3) * Math.tan(theta / 4) * Reff
+    const c1 = [T1[0] + dIn[0]*h, T1[1] + dIn[1]*h]
+    const c2 = [T2[0] - dOut[0]*h, T2[1] - dOut[1]*h]
+    const steps = Math.max(2, Math.ceil(theta / (2 * Math.acos(Math.max(-1, Math.min(1, 1 - EASE_ARC_TOL / Math.max(Reff, EASE_ARC_TOL)))))))
+    const pts = []
+    for (let k = 0; k <= steps; k++) {
+      const t = k / steps, u = 1 - t
+      const a3 = u*u*u, b3 = 3*u*u*t, c3 = 3*u*t*t, d3 = t*t*t
+      pts.push([a3*T1[0] + b3*c1[0] + c3*c2[0] + d3*T2[0], a3*T1[1] + b3*c1[1] + c3*c2[1] + d3*T2[1]])
+    }
+    plan.set(i, { pts, lIn: labs ? labs[(i - 1 + n) % n] : null, lOut: labs ? labs[i] : null })
+    // the samples strictly inside the arc's span are behind the curve now — keeping them folds it
+    let back = 0
+    for (let k = 1; k < n; k++) { const j = (i - k + n) % n; back += eLen[j]; if (back < s) covered.add(j); else break }
+    let fwd = 0
+    for (let k = 0; k < n; k++) { const j = (i + k) % n; fwd += eLen[j]; if (fwd < s) covered.add((j + 1) % n); else break }
+    if (arcsOut) {
+      const sgn = cross >= 0 ? 1 : -1
+      const nA = [-dIn[1] * sgn, dIn[0] * sgn]
+      arcsOut.push({ i, V, R: Reff, C: [T1[0] + nA[0]*Reff, T1[1] + nA[1]*Reff], r: Reff, tA: T1, tB: T2 })
+    }
+  }
+
+  // ── PASS 2 — emit ──────────────────────────────────────────────────────────────────────────
+  const out = [], outL = []
+  for (let i = 0; i < n; i++) {
+    const pl = plan.get(i)
+    if (pl) { for (let k = 0; k < pl.pts.length; k++) { out.push(pl.pts[k]); outL.push(k < pl.pts.length / 2 ? pl.lIn : pl.lOut) } ; continue }
+    if (covered.has(i)) continue
+    out.push(ring[i]); outL.push(labs ? labs[i] : null)
+  }
+  return { ring: out.length >= 3 ? out : ring, labs: labs ? (out.length >= 3 ? outL : labs) : null }
+}
 function signedArea(r) {
   let a = 0
   for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 }
@@ -5242,6 +5492,11 @@ export function buildTileGround(ribbons, opts = {}) {
   let protoShapeTiles = null
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
   let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null, protoAuthoring = null
+  // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
+  // because the producer swap at the end of the build reads it (`SURVEY §4`: one corner truth).
+  const protoCornerSet = []
+  const protoArcsByBlock = {}        // BLOCK index → its achieved arcs, in the frozen `fillets` shape
+  const protoCapByBlock = {}         // BLOCK index → the mono-width envelope the guard allowed
   // ── [PROTO] ① THE PROTOPOLYGON — the homunculus. RIBBONS §1, Jacob 2026-09-05 ──────
   //   "I am talking about a new polygon: a protopolygon… It is not a real width; let's
   //    say it's .00001 symmetrical between nodes, and the corners join and the end caps
@@ -5308,6 +5563,10 @@ export function buildTileGround(ribbons, opts = {}) {
              refused: frozenProto.refused || false, chainRings: null, crossings: frozenProto.crossings || null,
              // ⭐ `blocks` = boundary − stroked roads, frozen alongside ①. See the block loop below.
              blocks: frozenProto.blocks || null, blockLabels: frozenProto.blockLabels || null,
+             // ⭐ the COMPOUND face — a block's holes travel with it, or it is offset as if solid
+             blockHoles: frozenProto.blockHoles || null, blockHoleLabels: frozenProto.blockHoleLabels || null,
+             // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
+             nodes: frozenProto.nodes || null,
              boundaryRing: frozenProto.boundaryRing || null }
       protoSource = 'frozen'
     } else {
@@ -5414,29 +5673,104 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⛔ NOT reusing `ixIdxsByStreet` (`:3120`): it is gated on `blockCustoms`, so it is null on an
     // unauthored scene — the exact gating `mintProtopolygon`'s header records as a defect. Making
     // it unconditional would edit the shipped path from inside a gated experiment, which is `A18`.
-    const protoSegs = resolveChainSegmentation(streetsOrig)
-    const protoStreetOf = new Map()
-    streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoStreetOf.has(k)) protoStreetOf.set(k, i) })
-    const protoNodeIdxs = streetsOrig.map(st => {
-      const n = st?.points?.length || 0
-      const ix = [...(protoSegs.get(st) || [])].filter(i => i > 0 && i < n - 1)
-      return [0, ...ix, Math.max(0, n - 1)].sort((a, b) => a - b)   // IX vertices AND both ends
-    })
-    // owner → the centreline node it belongs to, by index-space proximity along its OWN chain
-    // ⛔⛔ A VERTEX IS AT A NODE OR IT IS NOT — no snapping to the nearest one.
-    // The first cut walked to the CLOSEST node index unconditionally, so every mid-chain vertex was
-    // handed a node and therefore the corner radius. `resolveVertR` is applied to TILE RING
-    // vertices in the shipped path — those ARE intersections — and giving `baseR` to all ~18k
-    // contour vertices instead cost 14% of total ring perimeter to over-wide fillets.
-    // ⭐ The test is EXACT and needs no tolerance: the stamp records which chain point this
-    // boundary vertex was struck from, so it is a node iff that index IS an IX or a chain end.
-    const protoNodeSet = protoNodeIdxs.map(a => new Set(a))
-    const protoNodeOf = (o) => {
-      if (!o) return null
-      const si = protoStreetOf.get(o.skelId); if (si == null) return null
-      const pts = streetsOrig[si]?.points
-      if (!pts?.length || !protoNodeSet[si]?.has(o.srcIdx)) return null
-      return pts[o.srcIdx]
+    // ⛔ `protoNodeOf` AND ITS FOUR SUPPORTING MAPS ARE EXCISED, NOT ARCHIVED. They were the
+    // node resolver for the ease that was removed on 2026-09-06 and were left behind unused —
+    // and they were 2 of the 3 chain reads keeping ②③ from being chain-free. Dead code gets
+    // excised. The live resolver is `protoRAt` below, off ①'s FROZEN `nodes`.
+    // ⭐⭐⭐ THE CORNER, BY CARRIED IDENTITY. `RIBBONS §1`: "every ring edge is owned by one
+    // (skelId, side) BY CONSTRUCTION" ⇒ a corner is exactly where the OWNER CHANGES along the ring.
+    // ⛔ Not an angle threshold and not a proximity match — both are `A15`'s forbidden recoveries,
+    // and the angle one is what `easeRing` was built on. MEASURED on LS's in-disc blocks: 445
+    // corners, median turn 90.1°, and the blocks with ZERO are exactly the medians and loop
+    // interiors (bounded by one street, so the owner never changes).
+    // ⭐ THE NODE ITSELF IS AN EXACT SHARED VERTEX, not the nearest point: the skeleton graph is
+    // shared-vertex, so the centreline node of a corner between chains A and B is the vertex they
+    // both carry. Keyed at 0.1 mm, the same grid `extractFaces` nodes on.
+    // ⭐ FROZEN, not read from a chain: `mintProtopolygon` resolved every corner's centreline node
+    // and froze it into ①. The centreline is inert here by construction — there is nothing to reach.
+    const protoPairNode = MP.nodes || {}
+    // ⭐⭐ THE CAP LADDER — override, then the gleaned fact. `SURVEY §4`: Survey owns cap Start/End
+    // (None / Round / Blunt) and writes `overlay.capStart|capEnd`, which `derive` lands as
+    // `capEnds`; `caps[end].cap` is what the data itself says. Keyed by frozen identity, so this is
+    // design intent crossing the wall, exactly like `blockCustoms` (`SECTION §8`).
+    const protoCapTable = new Map()
+    for (const st of streetsOrig) {
+      const k = st?.skelId ?? st?.name; if (k == null || protoCapTable.has(k)) continue
+      protoCapTable.set(k, {
+        start: st?.capEnds?.start || (st?.caps?.start?.cap === 'round' ? 'round' : 'blunt'),
+        end:   st?.capEnds?.end   || (st?.caps?.end?.cap   === 'round' ? 'round' : 'blunt'),
+      })
+    }
+    let protoCornerN = 0, protoCornerNoNode = 0, protoCornerAuthored = 0, protoCornerBend = 0
+    let protoTipRound = 0, protoTipBlunt = 0
+    // ⛔⛔ "THE LEGS RUN STRAIGHT THROUGH THE INTERSECTION" — BUILT TWICE, REVERTED TWICE, 2026-09-06.
+    // The instruction is right (`SURVEY §6`: the intersection interior is variable, the streets
+    // outside it must be simple) and BOTH constructions of it were wrong, in the same way:
+    //   · IX = a disc at the node, radius `hypot(hwA,hwB)` (~12 m) → swallowed real curb: block
+    //     area +8%, sidewalk +21%. Any radius is a guess, and the guess eats the parallel run.
+    //   · IX = "inside another street's roadway" (exact, no radius) → asphalt +24% and curb lines
+    //     flying across the map. Jacob: "totally crazy".
+    // ⭐⭐ THE SHARED DEFECT IS NOT THE IX TEST, IT IS THE REJOIN: extending the two surviving legs
+    // to their LINE INTERSECTION puts the apex arbitrarily far away when the legs are near-parallel
+    // — `hw/sin(θ/2)` diverges — which is the identical failure the miter clamp exists to catch
+    // (`§3.3`: a 1.4369 m width step across a 3.24° turn puts the intersection 26.15 m out).
+    // ⇒ Any next attempt must BOUND the apex, or rejoin the legs some way that is not an unbounded
+    // line intersection. ⛔ Do not rebuild either of the two above.
+    // the authored R at ② ring vertex `i`. 0 ⇒ BROKEN HANDLES ⇒ the contour turns (`RIBBONS §1`).
+    const protoRAt = (labs, i, n, hwHere = 0) => {
+      const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
+      if (!a || !b || a.skelId == null || b.skelId == null) return 0
+      // ⭐⭐⭐ A DEAD-END CAP IS TWO ORDINARY CORNER NODES — `RIBBONS §1`, ruled by measurement:
+      // "there are 2 apexes… blunt = both apexes at R=0 (zero-length handles) · round = both eased.
+      // One dial, no case split." So the cap needs NO cap machinery: it is this same knob, asked at
+      // the two tip vertices. ⛔ That is why `roundTips`/`bluntTips` stay empty — not a gap papered
+      // over, a mechanism the ruling deletes.
+      // ⭐ A cap has NO AUTHORED RADIUS ("an offset is measured from a leg, never from a cap; a cap
+      // is what falls out"), so a round tip eases at the HALF-WIDTH — two 90° eases of radius hw
+      // meeting in the middle IS the bulb, which is what `bbf4adf6` produces.
+      const tip = a.tipEnd || b.tipEnd
+      if (tip) {
+        const style = protoCapTable.get(a.tipEnd ? a.skelId : b.skelId)?.[tip]
+        if (style === 'round') { protoTipRound++; return Math.max(0, hwHere) }
+        protoTipBlunt++; return 0
+      }
+      // ⭐⭐⭐ A CORNER IS "THE OWNER CHANGED **OR** THE NODE HAS BROKEN HANDLES".
+      // ⛔ Owner-change alone missed every street that TURNS: a single street bending 90° keeps its
+      // owner, so the block outside it turns with no change and the ease never saw it — MEASURED at
+      // 558 of 1,196 sharp block-ring vertices, the whole remaining square-corner class.
+      // ⭐ The second half is `RIBBONS §1` verbatim — "broken handles TURN, continuous handles EASE".
+      // A node between two straight segments is a corner; a node a bezier runs through is already
+      // eased by the skeleton and must NOT be filleted (INVARIANT 2 — nothing rounds twice).
+      // ⛔ NO ANGLE ANYWHERE. Both halves are carried identity; a threshold here is what `easeRing`
+      // was built on and excised for.
+      if (a.skelId === b.skelId && !(a.hard && b.hard)) return 0
+      protoCornerN++
+      const key = a.skelId < b.skelId ? `${a.skelId}|${b.skelId}` : `${b.skelId}|${a.skelId}`
+      // ⛔ A BEND HAS NO PAIR, AND THAT IS NOT A FAILURE. Where one street turns, both sides of the
+      // corner are the SAME chain, so there is no chain-pair node to look up — the corner is real
+      // and takes the class seed. Counted separately from a genuinely AMBIGUOUS pair (two chains
+      // sharing more than one vertex), which is a failure and must not hide inside the same number.
+      const node = a.skelId === b.skelId ? null : protoPairNode[key]
+      if (!node) { if (a.skelId === b.skelId) protoCornerBend++; else protoCornerNoNode++; return baseR * scale }
+      // ⭐ THE 3-TIER DIAL, IN ②'s OWN KEY SPACE: per-corner → per-IX → the class seed × the
+      // operator's scale. The key is `ixKey|skelA|skelB` — the two CHAINS that meet, sorted — and
+      // it is the same key `protoCornerSet` stamps, so what the handle writes is what ② reads.
+      // ⛔ The legacy key flavours each leg with a tile-edge `f|b` flag a contour vertex cannot
+      // carry, so a Look authored against THAT key space does not resolve here. Counted and warned,
+      // never silently ignored.
+      const ck = a.skelId <= b.skelId ? `${ixKeyOf(node)}|${a.skelId}|${b.skelId}` : `${ixKeyOf(node)}|${b.skelId}|${a.skelId}`
+      const co = cornerOverrides ? cornerOverrides[ck] : undefined
+      if (co != null && Number.isFinite(+co)) return Math.max(0, +co) * scale
+      if (cornerOverrides && Object.keys(cornerOverrides).length) protoCornerAuthored++
+      // ⛔⛔ `+null === 0` AND `Number.isFinite(0)` IS TRUE. Written as `ixOverrides && …`, an ABSENT
+      // override coerced to a real authored ZERO and every corner that resolved a node came back
+      // R = 0 — square. It cost 457 of 685 corners, and it hid behind the 228 that FAILED the node
+      // lookup and took the early class-seed return, so the feature looked partly wired rather than
+      // broken. ⭐ An ABSENCE and an authored ZERO are different states and R = 0 is authorable
+      // (`project_corner_radius_is_design_control`), so they must never coerce into each other.
+      const ix = ixOverrides ? ixOverrides[ixKeyOf(node)] : undefined
+      if (ix != null && Number.isFinite(+ix)) return Math.max(0, +ix) * scale
+      return Math.max(0, baseR) * scale
     }
     const easedByBlock = {}          // BLOCK index → its curb ring(s) + per-vertex ① labels
     // ⛔⛔ ONE INDEX SPACE FOR EVERY CONSUMER. `easedByBlock` is keyed by position in the block
@@ -5445,12 +5779,14 @@ export function buildTileGround(ribbons, opts = {}) {
     // referred to different objects and 61 blocks lost their tiles — a mismatch that throws no
     // error and only shows up as absent geometry. Hoisted here so the three cannot drift again.
     let protoUseBlocks = false, protoBlockRings = null, protoBlockLabels = null
+    let protoBlockHoles = null, protoBlockHoleLabels = null
     // ⛔ The ease's report and its `protoRAt` resolver are EXCISED with it. `protoNodeOf` and the
     // crossing identity SURVIVE and are still frozen — a corner is still known, by construction, as
     // a place two chains crossed. What is gone is the pass that tried to ROUND it afterwards.
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
-      let noWidth = 0, gsSkipped = 0
+      let noWidth = 0, gsSkipped = 0, compoundFaces = 0, compoundUnlabelled = 0
+      let protoShortRuns = 0, compoundNoEase = 0
       // ⭐⭐⭐ THE BLOCKS COME FROM `boundary − stroked roads`, NOT FROM ①'s HOLES.
       // ⛔ WHY THE HOLES ARE WRONG, measured on LS the day the stencil landed (2026-09-06): once
       // ① is cut by the circle, a block the circle CUTS is bounded partly by ink and partly by
@@ -5467,6 +5803,13 @@ export function buildTileGround(ribbons, opts = {}) {
       protoUseBlocks = !!(MP.blocks?.length && MP.blockLabels?.length)
       protoBlockRings = protoUseBlocks ? MP.blocks : R.rings
       protoBlockLabels = protoUseBlocks ? MP.blockLabels : R.labels
+      // ⛔ ①'s HOLES path has no compound faces to carry — a hole of ① IS the block, and it has
+      // no holes of its own. Null there, and the loop below reads it as "no holes", not as "none
+      // were frozen": an artifact frozen before compound faces landed would otherwise be offset
+      // as if every face were solid, silently.
+      protoBlockHoles = protoUseBlocks ? (MP.blockHoles || null) : null
+      protoBlockHoleLabels = protoUseBlocks ? (MP.blockHoleLabels || null) : null
+      if (protoUseBlocks && !protoBlockHoles) console.warn(`[tileGround][①] ⛔ this ① carries BLOCKS but NO blockHoles — it was frozen before compound faces landed. Any face with a hole is offset AS IF SOLID. Re-pour before trusting ②.`)
       console.log(`[tileGround][①] blocks from ${protoUseBlocks ? `boundary − roads: ${protoBlockRings.length} block(s), rim blocks INCLUDED` : `①'s HOLES (no boundary in this pour) — ⛔ any block the boundary would cut is ABSENT`}`)
       for (let k = 0; k < protoBlockRings.length; k++) {
         const ring = protoBlockRings[k], labs = protoBlockLabels[k]
@@ -5474,19 +5817,27 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⛔ The sign test applies ONLY to the holes path. `blocks` are already exactly the
         // blocks, wound as holes by the mint — filtering them by orientation would drop them all.
         if (!protoUseBlocks && signedArea(ring) > 0) continue   // outer contour — holes are the blocks
-        const depthAt = (i) => {
-          const m = protoMeasureOf(labs[i])
+        // ⭐ ONE DEPTH RULE, READ OFF WHICHEVER RING'S LABELS ARE IN HAND. A face's holes are
+        // bounded by the same ink at the same authored widths as its outer, so the rule cannot
+        // differ between them — it is the label array that differs, not the law.
+        const mkDepth = (L) => (i) => {
+          const m = protoMeasureOf(L[i])
           if (!m) return 0
           const hw = m.pavementHW                     // ⛔ resolved off the frozen IDENTITY
           if (!(hw > 0)) { noWidth++; return 0 }
           return Math.max(0, hw - PROTO_HW)         // ① already sits ε off the centreline
         }
+        const depthAt = mkDepth(labs)
+        // ⭐⭐ THE COMPOUND FACE — outer + its holes, offset as ONE object.
+        const holes = protoBlockHoles?.[k] || [], holeLabs = protoBlockHoleLabels?.[k] || []
         // ⛔ Tag each curb ring by whether a GRADE-SEPARATED chain owns most of it. The
         // shipped curb path builds NO highway curb at all (they are drawn as flat strokes
         // through their own accumulator), so a highway-owned ring has no baseline to be
         // compared against and averaging the two populations makes the number meaningless.
         let gsN = 0, allN = 0
-        for (const l of labs) { allN++; if (protoOwners[l]?.gradeSeparated) gsN++ }
+        // ⛔ THE WHOLE FACE VOTES, holes included — a face bounded mostly by motorway is not a
+        // city block whichever of its rings the motorway happens to bound.
+        for (const L of [labs, ...holeLabs]) for (const l of L) { allN++; if (protoOwners[l]?.gradeSeparated) gsN++ }
         const isGs = gsN > allN / 2
         // ⛔⛔ A HOLE IN ① IS NOT NECESSARILY A BLOCK. ① carries the HIGHWAYS as ink — ruled, and
         // right: "the canon pulls them out of the BLOCK GRID, which says nothing about the DRAWING"
@@ -5506,30 +5857,141 @@ export function buildTileGround(ribbons, opts = {}) {
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
         const st = {}
-        const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, false, st, true)
-        for (let ri = 0; ri < rings2.length; ri++) {
-          const src = st.labels?.[ri]
+        // ⭐⭐⭐ THE CORNER IS KNOWN ON ①, NOT ON ②. MEASURED, and this WAS the defect: reading the
+        // owner change off the OFFSET ring missed 789 of 1,033 right-angle corners, because
+        // `offsetRingVariable` mints the miter apex from ONE contributing vertex — so both edges
+        // either side of a ② corner usually carry the SAME owner and the corner is invisible there.
+        // ⭐ On ①'s block ring the owner change IS the corner and it reads true: 445 corners at a
+        // median turn of 90.1°. So resolve R per ① VERTEX, and carry it across the offset on the
+        // stamp (`src`) — the correspondence `offsetRingVariable` already keeps.
+        // ⛔ CARRIED, NOT RECOVERED: a ② vertex is a corner iff the ① vertex it was struck FROM is.
+        // ⛔⛔ EASE-BEFORE-OFFSET WAS TRIED AND REVERTED, 2026-09-06 — READ THIS BEFORE REBUILDING IT.
+        // Easing ① at R + the pavement half-width and then offsetting looks right on paper (the
+        // offset of a rounded contour is concentric, INVARIANT 1) and it is WRONG in practice: the
+        // ease radius becomes ~12.5 m, its setback ~12.5 m, and on any leg shorter than that the
+        // arcs of two neighbouring corners overrun each other and the following offset FOLDS.
+        // Jacob, on the render: "whatever you just did messed up a bunch of corners" — crossed
+        // spikes at the intersections. ⛔ Do not re-derive it; the setback, not the concept, is what
+        // fails, and it fails on exactly the blocks a city has most of.
+        const rSrc = ring.map((_, i) => protoRAt(labs, i, ring.length, depthAt(i)))
+        // ⭐⭐⭐ THE EASE IS ASKED FOR HERE AND HAPPENS INSIDE THE OFFSET, before its self-union —
+        // that is where the corner correspondence is still exact. `rSrc` is indexed by ① block-ring
+        // vertex, and `easeAt` receives exactly that index off the offset's own stamp.
+        // ⭐⭐⭐ `clean = true` — RUN THE FOLD-SPUR PASS. ⛔ ② was passing `false`, so
+        // `dropFoldSpursTracked` never ran and every place the inward offset overran itself came
+        // back as a NEEDLE: the curb doubling back on itself in a hairline spike. That is what the
+        // operator's marker circles were actually pointing at, not the corner radius — the same
+        // regions read 173°–177° turns, which is a reversal, not a corner.
+        // ⭐ MEASURED on LS: needle vertices in ② 40 → 4, in the drawn curb 64 → 12, and ~90° turns
+        // 141 → 81 — for a 0.15% change in curb area (24,593 → 24,556 m²). It removes artifacts, not
+        // geometry.
+        // ⛔ NOT a cleanup fudge of the forbidden kind: the pass drops vertices where the contour
+        // REVERSES, which is a self-intersection the offset created, never a shape the operator
+        // authored. The legacy path has always had it (`buildCurbRings` passes `curved`).
+        const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, true, st, true, false,
+                                          (srcIdx) => (srcIdx != null ? (rSrc[srcIdx] || 0) : 0))
+        // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
+        // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
+        let outRings = rings2
+        let outLabs = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? labs[src[i]] : null)) })
+        let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
+        if (holes.length) {
+          // ⭐⭐⭐ A FACE'S CURB IS ITS OUTER ERODED INWARD **MINUS** EVERY HOLE DILATED INTO IT.
+          // ⛔ Offsetting a hole ring with the ordinary call would SHRINK the hole — the normal is
+          // winding-aware and points into the ring's own area whichever way it is traversed — so
+          // the direction is stated (`outward`), never inferred from the winding.
+          // ⛔ The subtraction goes through `booleanLabelled`, not `differenceRings`, because the
+          // ① owner has to survive it: `RIBBONS §1`, identity is carried THROUGH the boolean and
+          // never recovered from ring geometry afterward.
+          const hRings = [], hLabs = []
+          for (let hi = 0; hi < holes.length; hi++) {
+            const hSt = {}
+            const hOff = offsetRingVariable(holes[hi], mkDepth(holeLabs[hi]), () => true, () => null, false, hSt, true, true)
+            for (let ri = 0; ri < hOff.length; ri++) {
+              const src = hSt.labels?.[ri]
+              hRings.push(hOff[ri])
+              hLabs.push(hOff[ri].map((_, i) => (src && src[i] != null ? holeLabs[hi][src[i]] : null)))
+            }
+          }
+          if (hRings.length) {
+            const B = booleanLabelled(clipperLib.ClipType.ctDifference, outRings, outLabs, hRings, hLabs, true)
+            // ⛔ THE STAMP DOES NOT SURVIVE THE HOLE SUBTRACTION, so the per-vertex correspondence is
+            // lost on a compound face and its corners go through SHARP. Counted, never guessed:
+            // easing at a vertex whose provenance we no longer hold would round what is not a corner.
+            compoundNoEase++
+            // ⛔ NO SILENT DEGRADE. Losing the identity means ③ cannot resolve a per-edge depth on
+            // this face; the geometry is still the honest curb, so it is kept and the shortfall is
+            // named. Guessing an owner is what mislabelled the shipped bands.
+            if (B.refused) compoundUnlabelled++
+            outRings = B.rings
+            outLabs = B.labels || B.rings.map(rg => rg.map(() => null))
+            outR = B.rings.map(rg => rg.map(() => 0))
+          }
+          compoundFaces++
+        }
+        for (let ri = 0; ri < outRings.length; ri++) {
           // ⛔ NO SILENT DEGRADE. Without the correspondence the authored R cannot be placed, and
           // easing at a guessed node would be a plausible-looking wrong curb — Layer 0 q2 inside
           // the geometry. So the ring goes through SHARP and the shortfall is counted, loudly.
-          // ⛔ NO EASE. ② is the plain offset of ①; the corner radius is owed and belongs in the
-          // node's handles, not in a pass that rounds the offset afterwards (`RIBBONS §1`).
-          // ⛔ `src` maps a ②-ring POSITION to the ① ring vertex it was struck from, so the label
-          // lookup is one hop, not two. (The ease used to sit between them and hold its own position
-          // array; excising it left a double-index here — `labs[src[src[i]]]` — which resolved to
-          // undefined for every vertex and threw. A shape difference, not a logic one.)
-          protoCurb.push(rings2[ri]); protoCurbGs.push(isGs)
+          // ⭐⭐⭐ THE EASE — the node's handle configuration, realized. `RIBBONS §1`: the authored
+          // radius "belongs in the node's bezier handles — a property the contour CARRIES, not a
+          // shape built onto it afterwards". Rounding happens ONCE, here, which is INVARIANT 2:
+          // ③ then insets this contour, so its bands are concentric with the arc BY CONSTRUCTION —
+          // "the corner is the band BENT around the curb arc, never a constructed primitive".
+          // ⛔ ① stays sharp and the OFFSET stays sharp; smoothing is Skeleton, rounding is Survey,
+          // and this is Survey. R = 0 leaves the contour byte-identical (see `easeContour`).
+          // ⭐⭐⭐ THE DETECTOR IS ①'s BLOCK RING, CARRIED ACROSS THE OFFSET ON THE STAMP — and the
+          // OPERATOR'S EYE picked it, against my metrics. Reading the owner change off ②'s own ring
+          // stamps MORE corners at a better median radius (238 @ 4.50 m vs 206 @ 3.15 m), and I
+          // ranked the two that way and chose it. Wrong proxy: on screen the ① detector is the one
+          // that rounds the corners a person sees. ⛔ Corner COUNT and MEDIAN RADIUS are not a proxy
+          // for "the corners look right" — a corner stamped in the wrong place counts the same as one
+          // in the right place. `feedback_proxy_render_is_not_the_operator_eye`.
+          // ⚠️ Still short of the ~445 real corners in the disc — about 40% of them read correctly
+          // (Jacob's eye). CAUSE NOT ESTABLISHED for the rest; the known lossy step is that
+          // `offsetRingVariable` unions its emitted points and the union re-resolves labels, so the
+          // miter apex's `src` need not point at the corner it came from.
+          // ⛔ EASING ① FIRST (at R + the half-width, then offsetting) folds the offset on any leg
+          // shorter than the setback — the crossed spikes at intersections. Built and reverted.
+          // ⭐ The ring is ALREADY EASED — `offsetRingVariable` did it before its union. Nothing
+          // rounds twice (INVARIANT 2); what is left here is recording the achieved arcs.
+          const eL = outLabs[ri], eN = outRings[ri].length
+          const arcs = (ri === 0 ? (st.easeArcs || []) : [])
+          const eased = { ring: outRings[ri], labs: eL }
+          // ⭐⭐ THE CORNER TRUTH, FROM ②. `SURVEY §4`: one corner truth, read by the handle, never
+          // re-derived. ⛔ Under ① the legacy `cornerFillets`/`cornerSet` describe arcs that are NOT
+          // on screen — they come from the chain shape pass — so the handle would drag a corner the
+          // operator cannot see. These replace them (below) when ① is the producer.
+          for (const a of arcs) {
+            const si = a.src, nB = ring.length
+            const o1 = protoOwners[labs[(si - 1 + nB) % nB]], o2 = protoOwners[labs[si]]
+            if (!o1 || !o2) continue
+            const [la, lb] = o1.skelId <= o2.skelId ? [o1.skelId, o2.skelId] : [o2.skelId, o1.skelId]
+            const nodeKey = protoPairNode[`${la}|${lb}`]
+            const key = `${ixKeyOf(nodeKey || a.V)}|${la}|${lb}`
+            const fil = { apex: a.V, C: a.C, r: a.r, tA: a.tA, tB: a.tB }
+            protoCornerSet.push({ key, V: nodeKey || a.V, legA: la, legB: lb, vertR: a.R, fillet: fil })
+            // ⭐ FROZEN PER BLOCK — `SECTION §6.1`: the bent corner is `arcSectorPoly` off the frozen
+            // `fillets`. Without these Section has no arc to bend the band around.
+            ;(protoArcsByBlock[k] ||= []).push(fil)
+          }
+          protoCurb.push(eased.ring); protoCurbGs.push(isGs)
           // ⭐ the curb, with each vertex's ① label — this is what ③ insets FROM
-          ;(easedByBlock[k] ||= []).push({
-            ring: rings2[ri],
-            labs: rings2[ri].map((_, i) => (src && src[i] != null ? labs[src[i]] : null)),
-          })
+          ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri] })
         }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
       // leave the curb sitting on the centreline — a plausible-looking wrong map.
       if (noWidth) console.warn(`[tileGround][PROTO②] ${noWidth} edge(s) had NO resolvable authored width and were offset by 0 — the curb sits on the centreline there.`)
       console.log(`[tileGround][PROTO②] curb from the proto: ${protoCurb.length} ring(s) offset per-edge at the authored pavementHW`)
+      console.log(`[tileGround][PROTO②] corner ease: ${protoCornerN} corner(s) found by OWNER CHANGE (carried identity, never an angle), R=${baseR}×${scale} m` +
+        (protoTipRound || protoTipBlunt ? ` · dead-end tips: ${protoTipRound} ROUND (eased at the half-width) · ${protoTipBlunt} BLUNT (R=0)` : '') +
+        (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
+        (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
+      if (protoCornerAuthored) console.warn(`[tileGround][PROTO②] ⛔ this Look carries PER-CORNER radius overrides and ② cannot key them yet (the leg f/b flag is a tile-edge fact) — ${protoCornerAuthored} corner(s) took per-IX or the class seed instead. NOT silently applied.`)
+      if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
+      if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
+      if (compoundUnlabelled) console.warn(`[tileGround][PROTO②] ⛔ ${compoundUnlabelled} compound face(s) lost their ① identity across the hole subtraction — ③ cannot resolve a per-edge depth on them.`)
       if (gsSkipped) console.log(`[tileGround][PROTO②] ${gsSkipped} grade-separated region(s) skipped — a hole bounded by motorways is not a city block, and the shipped path builds no highway curb either.`)
       // ⭐ THE EASE IS DISCLOSED PER POUR. A node that could not resolve its centreline node went
       // through SHARP; that is a real shortfall and must be countable, because on town #2 nobody
@@ -5595,6 +6057,9 @@ export function buildTileGround(ribbons, opts = {}) {
       // there is no hard property line. So "both strips LU" is an OPEN FIELD — a MATERIAL
       // state, never an absence — and it falls out for free rather than being a case.
       protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
+      // ⭐ BLOCK INDEX → its own bands. The tile artifact needs to know which band belongs to which
+      // block; that is known at emit time and must be CARRIED, not recovered by containment later.
+      const protoBandsByBlock = {}
       let capped = 0, tooNarrow = 0, severed = 0
       for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
         const labs = (protoBlockLabels || R.labels)[k]
@@ -5605,9 +6070,25 @@ export function buildTileGround(ribbons, opts = {}) {
         // the product (`SURVEY §4`, the asphalt-edge drag). ① already sits ε off the centreline.
         const hwAt = (i) => { const m = M(i); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
         const cw = curbWidth
-        // the MONO-WIDTH envelope — one number for the whole block
+        // ⭐⭐ THE COMPOUND FACE REACHES ③ TOO. A block's holes are part of the same object, so the
+        // capacity guard and the open-field LU flood are struck from outer-minus-holes. ⛔ Offsetting
+        // the outer alone would let the guard call a ring-shaped block roomy and then flood its hole.
+        const bHoles = protoBlockHoles?.[k] || [], bHoleLabs = protoBlockHoleLabels?.[k] || []
+        const hwOfLabs = (L) => (i) => { const m = protoMeasureOf(L[i]); return m?.pavementHW > 0 ? Math.max(0, m.pavementHW - PROTO_HW) : 0 }
+        // the block region at an extra inward depth `d` past the authored pavement half-width
+        const blockAt = (d) => {
+          const outs = offsetRingVariable(ring, (i) => hwAt(i) + d, () => true, () => null)
+          if (!bHoles.length || !outs.length) return outs
+          const hls = []
+          for (let hi = 0; hi < bHoles.length; hi++) {
+            const hw = hwOfLabs(bHoleLabs[hi])
+            hls.push(...offsetRingVariable(bHoles[hi], (i) => hw(i) + d, () => true, () => null, false, null, false, true))
+          }
+          return hls.length ? differenceRings(outs, hls) : outs
+        }
+        // the MONO-WIDTH envelope — one number for the whole block, over EVERY edge it has
         let WBnom = 0
-        for (const l of labs) { const m = protoMeasureOf(l); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0)) }
+        for (const L of [labs, ...bHoleLabs]) for (const l of L) { const m = protoMeasureOf(l); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0)) }
         // ⭐ THE TOPOLOGICAL CAPACITY GUARD — and it is NOT the forbidden clamp. `§6.9`.5 rules
         // "no cusp guard; self-intersection is SIGNAL, not error" for MEANINGFUL degeneracy —
         // an authored R shrinking the pad to a point is a coherent smaller version of itself,
@@ -5620,11 +6101,11 @@ export function buildTileGround(ribbons, opts = {}) {
         // centre). The shipped path guards this exact way — `cap = 0.9 × inscribed reach`,
         // bisected — so this is the existing licensed guard, not a new one.
         let WB = WBnom
-        if (WBnom > 1e-6 && !offsetRingVariable(ring, (i) => hwAt(i) + WBnom / 0.9, () => true, () => null).length) {
+        if (WBnom > 1e-6 && !blockAt(WBnom / 0.9).length) {
           let lo = 0, hi = WBnom / 0.9
           for (let it = 0; it < 12; it++) {
             const mid = (lo + hi) / 2
-            if (offsetRingVariable(ring, (i) => hwAt(i) + mid, () => true, () => null).length) lo = mid; else hi = mid
+            if (blockAt(mid).length) lo = mid; else hi = mid
           }
           WB = lo * 0.9
           capped++
@@ -5639,145 +6120,106 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ `SECTION §3.3` already answers it — the FILL spans curb → block-centre and the LU
         // remainder floods, so a block with no room for a ribbon is the OPEN-FIELD limit: all
         // LU, a MATERIAL state, never a missing one. Counted, because on town #2 nobody looks.
-        if (WB < cw) { protoBands.lu.push(...offsetRingVariable(ring, hwAt, () => true, () => null)); tooNarrow++; continue }
-        // per-edge MATERIAL boundaries — the swap, expressed as depths rather than as a case
-        const tl = (i) => Math.min(M(i)?.treelawn || 0, Math.max(0, WB - cw))
-        const sw = (i) => Math.min(M(i)?.sidewalk || 0, Math.max(0, WB - cw))
-        // ⭐ THE ARRANGEMENT, per edge: which MATERIAL is the outer strip, and how deep it runs.
-        // Two strips always — they SWAP, they never collapse — so the inner one simply takes
-        // the rest of the mono-width envelope. ⛔ The depth belongs to the STRIP, not to the
-        // material's name: an outer sidewalk is `sw` deep, an outer treelawn is `tl` deep.
-        const outWalk = (i) => M(i)?.matOuter === 'SW'          // is the CURB-side strip the walk?
-        const inWalk  = (i) => M(i)?.matInner === 'SW'
-        const dOut    = (i) => Math.min(outWalk(i) ? sw(i) : tl(i), Math.max(0, WB - cw))
-        // each material's own two boundaries — one variable-depth annulus per material, so the
-        // swap is a change of DEPTHS and never a change of construction (`RIBBONS §1`: if a
-        // material choice changes the geometry, the proposal is wrong).
-        const walkFrom = (i) => (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0))
-        const walkTo   = (i) => (outWalk(i) ? dOut(i) : (inWalk(i) ? Math.max(0, WB - cw) : 0))
-        const lawnFrom = (i) => (outWalk(i) ? dOut(i) : 0)
-        const lawnTo   = (i) => (outWalk(i) ? (inWalk(i) ? dOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
-        // ⭐⭐⭐ THE BANDS INSET FROM THE EASED CURB, NOT FROM ①. `RIBBONS §1`: "each boundary is the
-        // same contour offset a little further", and ③'s own datum note — "the ped strips are set
-        // back from THE CURB; measurements from the centreline are immaterial to them."
-        // ⛔ WHY IT HAD TO CHANGE: insetting ① by `hwAt + cw + …` is only equivalent to insetting the
-        // curb while the curb is a plain parallel offset of ①. Once the corner EASES, it is not —
-        // so bands struck from ① kept ①'s square corners while the curb rounded, and the ribbon
-        // stopped being concentric with the curb it is supposed to wrap. That breaks INVARIANT 1
-        // (the corner is the band BENT around the arc) at every intersection in the map.
-        // ⇒ the depth ladder loses its `hwAt` term entirely: the subject already IS the curb.
-        // ⛔ `pavementHW` keeps exactly one job — putting the curb where it is — and appears
-        // nowhere in the ped ladder, which is what ③'s datum correction asked for and could not
-        // have while ① was the subject.
-        // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, and it is
-        // INERT when unset (no output changes, the shipped `CORNER_DUMP` idiom). Two diseases
-        // look identical from a thickness histogram and have different cures:
-        //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver
-        //     falls below `offsetRingVariable`'s area floor. The deeper set then has FEWER
-        //     pieces, that lobe is never subtracted, and `differenceRings` returns it WHOLE.
-        //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`, the
-        //     averaged-normal branch, ~70% of crossings). Piece count HOLDS; the ring carries
-        //     repeated/crossing vertices and the difference mishandles the reversed winding.
-        // ⇒ record piece COUNT per depth, and repeated-vertex count per ring. If counts drop on
-        // exactly the flooded blocks it is the first; if counts hold it is the second.
-        // ⛔ THE LARGER RING IS THE SUBJECT — these are HOLES eroded inward, so a deeper offset
-        // gives a SMALLER ring. Passing the smaller first asks for (inner − outer), which is the
-        // block's COMPLEMENT: the roadway, flooding every band across the whole street.
-        const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
-        // ⭐ ONE BLOCK MAY YIELD SEVERAL CURB RINGS (the offset can split a pinched block), so the
-        // mono-width envelope `WB` is computed once for the BLOCK and applied to each of its rings.
-        // ⛔ Re-deriving WB per ring would let a split block carry two different ribbon depths,
-        // which is INVARIANT 1's "one outer depth per block" broken by an implementation detail.
-        for (const EC of (easedByBlock[k] || [])) {
-          if (!(EC.ring?.length >= 3)) continue
-          // ⭐ per-edge depths ride the EASED ring's own carried ① labels
+        if (WB < cw) {
+          const flood = blockAt(0)
+          ;(protoBandsByBlock[k] ||= { curb: [], treelawn: [], sidewalk: [], lu: [] }).lu.push(...flood)
+          protoBands.lu.push(...flood); tooNarrow++; continue
+        }
+        // ⭐⭐⭐ THE SUBJECT IS THE BLOCK'S COMPOUND CURB REGION, NOT ONE RING AT A TIME.
+        // ②'s output for a block is a compound path: an outer, plus hole rings wherever the face
+        // has holes or the block pinched into an annulus. ⛔ Insetting each ring on its own paints
+        // the ribbon INTO the hole — the ring is offset toward its own interior whichever way it
+        // is wound, so a hole's "inset" grows a band across a region that is not part of the block
+        // at all. The region has to be offset as ONE object: outers eroded, holes DILATED
+        // (`outward`), then differenced. Every band boundary below goes through `ins`, so there is
+        // one place where that is true.
+        // ⭐ The per-edge depth functions are unchanged and still ride each ring's own carried ①
+        // labels (`EC.labs`) — what changed is the SUBJECT, not the ladder.
+        const parts = (easedByBlock[k] || []).filter(EC => EC.ring?.length >= 3).map(EC => {
           const EM = (i) => (EC.labs[i] == null ? null : protoMeasureOf(EC.labs[i]))
           const swap = (fn) => (i) => { const m = EM(i); return m ? fn(m) : 0 }
           const eOutWalk = swap(m => m.matOuter === 'SW'), eInWalk = swap(m => m.matInner === 'SW')
           const eTl = swap(m => Math.min(m.treelawn || 0, Math.max(0, WB - cw)))
           const eSw = swap(m => Math.min(m.sidewalk || 0, Math.max(0, WB - cw)))
+          // ⭐ THE ARRANGEMENT, per edge: which MATERIAL is the outer strip, and how deep it runs.
+          // Two strips always — they SWAP, they never collapse — so the inner one takes the rest of
+          // the mono-width envelope. ⛔ The depth belongs to the STRIP, not to the material's name.
           const eDOut = (i) => Math.min(eOutWalk(i) ? eSw(i) : eTl(i), Math.max(0, WB - cw))
-          const eWalkFrom = (i) => cw + (eOutWalk(i) ? 0 : (eInWalk(i) ? eDOut(i) : 0))
-          const eWalkTo   = (i) => cw + (eOutWalk(i) ? eDOut(i) : (eInWalk(i) ? Math.max(0, WB - cw) : 0))
-          const eLawnFrom = (i) => cw + (eOutWalk(i) ? eDOut(i) : 0)
-          const eLawnTo   = (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw))
-          const ins = (fn) => offsetRingVariable(EC.ring, fn, () => true, () => null)
-          // ⛔⛔ `chain` OFFSETS `pedOuter`, SO ITS DEPTH FUNCTION IS INDEXED IN `pedOuter`'s VERTEX
-          // SPACE, NOT `EC.ring`'s. The first cut passed the same `fn` straight through and read
-          // `EC.labs[i]` with pedOuter's index — garbage depths, and the gate found them instantly
-          // (a new 471-station treelawn&sidewalk overlap class that did not exist before).
-          // ⭐ The offset MINTS vertices, so labels never survive it implicitly; `offsetRingVariable`
-          // takes a `stamp` for exactly this, and using it is the same "carry it through, never
-          // recover it after" rule that the crossing identity needed.
-          // ⛔ A piece with no stamp gets NO ped ribbon and is counted — never a guessed index.
-          // ⭐⭐⭐ WHERE THE CURBS TOUCH, THERE IS NO BLOCK (Jacob, 2026-09-06). A block whose inset
-          // by the AUTHORED curb width comes back in two pieces has been SEVERED — the two curbs
-          // met, and the region between them stopped existing there. ⛔ The previous form threw that
-          // away: it differenced the multi-piece inset against the ORIGINAL one-piece ring, so every
-          // deeper band was struck from a ring that still spanned the severance, and the ribbon
-          // bridged a gap the geometry had already closed.
-          // ⭐ THE SEVERANCE IS FOUND BY THE OFFSET ITSELF, never by a width test. There is no
-          // `2 × curbWidth` anywhere here — the curb width is AUTHORED, so a constant would be right
-          // on one Look and silently wrong on the next. The inset splits or it does not.
-          // ⛔⛔ NO STAMP HERE. `offsetRingVariable` GATES ITS UNION ON THE STAMP — with one it runs
-          // `unionRingLabelled`, without it `unionRings` — so asking for labels CHANGES THE
-          // GEOMETRY. I added a stamp for the chained form, backed the chaining out, and the
-          // regression stayed: 448 `treelawn&sidewalk` overlaps that did not exist before, from a
-          // parameter I had assumed was bookkeeping. ⭐ Its own comment says so at the call site and
-          // I read past it. The A18 shape again — an experiment reaching the map through a shared
-          // path — one function deeper.
-          const pedOuter = ins(() => cw)
-          if (pedOuter.length > 1) severed++
-          // depth in pedOuter's index space → the owning EC.ring vertex → the authored measure
-          // ⛔⛔ THE CHAINED FORM IS BACKED OUT, AND THE MEASUREMENT IS WHY — NOT TASTE.
-          // Striking each boundary from the one before it is `RIBBONS §1` verbatim and it is what
-          // carries a severance forward. Built, it REGRESSED the disjointness gate: 294 overlapping
-          // stations → 730, including a 446-station `treelawn&sidewalk` class that did not exist
-          // before. ⛔ Cause not established. Two candidates, neither measured: the depth ramps of
-          // two successive variable-depth offsets can cross where the authored depth varies along
-          // the ring, and `offsetRingVariable`'s area floor scales with depth² so a chained call
-          // filters differently from a single deep one.
-          // ⭐ The SEVERANCE DETECTION below is kept and is sound on its own — it is read off the
-          // authored inset, never off a `2 × curbWidth` constant, because the curb width is
-          // AUTHORED (Jacob, 2026-09-06) and a constant would be right on one Look and silently
-          // wrong on the next. What is not yet built is making the deeper bands honour it.
-          // ⭐⭐ AND EACH BOUNDARY IS NOW STRUCK FROM THE ONE BEFORE IT, which is `RIBBONS §1`
-          // verbatim — "each boundary is the same contour offset a little further". Chaining is what
-          // carries the severance forward: offsetting the deeper bands from `EC.ring` again would
-          // re-bridge the pinch at every rung.
-          const luEdge = ins(() => WB)
-          const curbOuter = [EC.ring]
-          // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when
-          // unset. ⛔ RE-AIMED 2026-09-06 and it had ROTTED SILENTLY: it still called `inset()`,
-          // which went away when the subject became the eased curb, so `PROTO_DUMP=1` THREW. A
-          // debug path nothing runs is a debug path nothing protects — and this is the one
-          // instrument built for exactly the failure now open.
-          // Two diseases look identical from a thickness histogram and have different cures:
-          //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver
-          //     falls below `offsetRingVariable`'s area floor. The deeper set then has FEWER
-          //     pieces, that lobe is never subtracted, and `differenceRings` returns it WHOLE.
-          //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`).
-          //     Piece count HOLDS; the ring carries repeated vertices.
-          if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
-            const _bandDbg = band(curbOuter, pedOuter)
-            const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
-            const ar = (rs) => rs.reduce((t, rg) => { let a=0; for (let i=0;i<rg.length;i++){const[x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length];a+=x1*y2-x2*y1} return t + Math.abs(a/2) }, 0)
-            ;(globalThis.__PROTO_DUMP ||= []).push({
-              block: k, curbArea: Math.abs(signedArea(EC.ring)), WBnom, WB, capped: WB !== WBnom,
-              // ⛔ the band's SHAPE, not just its size: an annulus is `+-`, but a strip that pinches
-              // comes back as several all-positive pieces, and a pooled outer-vs-hole count cannot
-              // tell those apart. Reading one as the other manufactured a false root cause.
-              bandOut: _bandDbg.length,
-              bandSigns: _bandDbg.map(rg => (signedArea(rg) > 0 ? '+' : '-')).join(''),
-              stages: [['curb', curbOuter], ['curb+cw', pedOuter], ['curb+WB', luEdge]]
-                .map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
-            })
+          return {
+            ring: EC.ring,
+            // ⛔ A HOLE OF THE CURB REGION, read off its winding — the one thing winding is a
+            // reliable record of here, because these rings came straight out of one boolean.
+            hole: signedArea(EC.ring) < 0,
+            walkFrom: (i) => cw + (eOutWalk(i) ? 0 : (eInWalk(i) ? eDOut(i) : 0)),
+            walkTo:   (i) => cw + (eOutWalk(i) ? eDOut(i) : (eInWalk(i) ? Math.max(0, WB - cw) : 0)),
+            lawnFrom: (i) => cw + (eOutWalk(i) ? eDOut(i) : 0),
+            lawnTo:   (i) => cw + (eOutWalk(i) ? (eInWalk(i) ? eDOut(i) : Math.max(0, WB - cw)) : Math.max(0, WB - cw)),
           }
-          protoBands.curb.push(...band(curbOuter, pedOuter))
-          protoBands.sidewalk.push(...band(ins(eWalkFrom), ins(eWalkTo)))
-          protoBands.treelawn.push(...band(ins(eLawnFrom), ins(eLawnTo)))
-          protoBands.lu.push(...luEdge)
+        })
+        if (!parts.length) continue
+        const outerParts = parts.filter(p => !p.hole), holeParts = parts.filter(p => p.hole)
+        // ⛔⛔ NO STAMP IN THESE CALLS. `offsetRingVariable` GATES ITS UNION ON THE STAMP — with one
+        // it runs `unionRingLabelled`, without it `unionRings` — so asking for labels CHANGES THE
+        // GEOMETRY. That cost 448 phantom `treelawn&sidewalk` overlaps once, from a parameter
+        // assumed to be bookkeeping.
+        const ins = (pick) => {
+          const o = [], h = []
+          for (const p of parts) {
+            const rs = offsetRingVariable(p.ring, pick(p), () => true, () => null, false, null, false, p.hole)
+            ;(p.hole ? h : o).push(...rs)
+          }
+          return (o.length && h.length) ? differenceRings(o, h) : o
         }
+        // ⛔ THE LARGER REGION IS THE SUBJECT — these are eroded inward, so a deeper offset gives a
+        // SMALLER region. Passing the smaller first asks for (inner − outer), which is the block's
+        // COMPLEMENT: the roadway, flooding every band across the whole street.
+        const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
+        const curbOuter = holeParts.length
+          ? differenceRings(outerParts.map(p => p.ring), holeParts.map(p => p.ring))
+          : outerParts.map(p => p.ring)
+        // ⭐⭐⭐ WHERE THE CURBS TOUCH, THERE IS NO BLOCK (Jacob, 2026-09-06). A region whose inset by
+        // the AUTHORED curb width comes back in more pieces than it started with has been SEVERED —
+        // the two curbs met and the block stopped existing there. ⛔ Found by the offset itself,
+        // never by a `2 × curbWidth` test: the curb width is AUTHORED, so a constant would be right
+        // on one Look and silently wrong on the next.
+        const pedOuter = ins(() => () => cw)
+        if (pedOuter.length > outerParts.length) severed++
+        const luEdge = ins(() => () => WB)
+        // ⭐ PROTO_DUMP=1 — the discriminating measurement for the fat-band class, INERT when unset.
+        // Two diseases look identical from a thickness histogram and have different cures:
+        //   VANISHING PIECE — a block that PINCHES splits under a deeper inset and the sliver falls
+        //     below `offsetRingVariable`'s area floor; the deeper set has FEWER pieces, that lobe is
+        //     never subtracted, and `differenceRings` returns it WHOLE.
+        //   FOLD — the offset crosses itself instead of splitting (`POLYGON-FIRST D6a`). Piece count
+        //     HOLDS; the ring carries repeated vertices.
+        if (typeof process !== 'undefined' && process.env?.PROTO_DUMP === '1') {
+          const _bandDbg = band(curbOuter, pedOuter)
+          const rep = (rs) => rs.reduce((n, rg) => { let c = 0; for (let i = 0; i < rg.length; i++) { const [x1,y1]=rg[i],[x2,y2]=rg[(i+1)%rg.length]; if (Math.hypot(x2-x1,y2-y1) < 1e-9) c++ } return n + c }, 0)
+          const ar = (rs) => rs.reduce((t, rg) => t + Math.abs(signedArea(rg)), 0)
+          ;(globalThis.__PROTO_DUMP ||= []).push({
+            block: k, curbArea: ar(curbOuter), WBnom, WB, capped: WB !== WBnom,
+            rings: parts.length, holes: holeParts.length,
+            // ⛔ the band's SHAPE, not just its size: an annulus is `+-`, but a strip that pinches
+            // comes back as several all-positive pieces, and a pooled outer-vs-hole count cannot
+            // tell those apart. Reading one as the other manufactured a false root cause.
+            bandOut: _bandDbg.length,
+            bandSigns: _bandDbg.map(rg => (signedArea(rg) > 0 ? '+' : '-')).join(''),
+            stages: [['curb', curbOuter], ['curb+cw', pedOuter], ['curb+WB', luEdge]]
+              .map(([name, rs]) => ({ name, pieces: rs.length, area: ar(rs), repeated: rep(rs) })),
+          })
+        }
+        // ⭐⭐ THE BANDS ARE BUCKETED BY BLOCK AT THE SOURCE. The artifact used to recover which
+        // band belonged to which tile with a point-in-polygon sample of the global band list —
+        // identity recovered from ring geometry afterward, which `RIBBONS §1` forbids, and which a
+        // compound face breaks outright (a hole ring "contains" the bands of the faces nested
+        // inside it). The block index is known HERE; carry it.
+        protoCapByBlock[k] = WB
+        const bb = (protoBandsByBlock[k] ||= { curb: [], treelawn: [], sidewalk: [], lu: [] })
+        const emit = (key, rings) => { bb[key].push(...rings); protoBands[key].push(...rings) }
+        emit('curb', band(curbOuter, pedOuter))
+        emit('sidewalk', band(ins(p => p.walkFrom), ins(p => p.walkTo)))
+        emit('treelawn', band(ins(p => p.lawnFrom), ins(p => p.lawnTo)))
+        emit('lu', luEdge)
       }
       // ⭐⭐⭐ ① AS THE PRODUCER — the frozen artifact, built from ②③ rather than from the chains.
       // ⛔⛔ THIS IS A CHANGE OF CONSUMER, NOT OF CONSTRUCTION, and that distinction is the whole
@@ -5798,18 +6240,19 @@ export function buildTileGround(ribbons, opts = {}) {
           if (!protoUseBlocks && signedArea(ring) > 0) continue
           const mine = easedByBlock[k] || []
           if (!mine.length) continue
-          const bandsOf = (rings) => (rings || []).filter(g => g?.length >= 3 && mine.some(EC => {
-            let inB = 0, n = 0
-            for (let i = 0; i < g.length; i += Math.max(1, Math.floor(g.length / 12))) {
-              n++; let c = false
-              for (let a = 0, b = EC.ring.length - 1; a < EC.ring.length; b = a++) {
-                const [px, py] = EC.ring[a], [qx, qy] = EC.ring[b]
-                if ((py > g[i][1]) !== (qy > g[i][1]) && g[i][0] < (qx - px) * (g[i][1] - py) / (qy - py) + px) c = !c
-              }
-              if (c) inB++
-            }
-            return n && inB / n > 0.5
-          }))
+          // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
+          // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
+          // consumer-side stroke off it", and "Phase-D's earlier 'freeze the FILL too' over-reach is
+          // the thing §3.2/§3.3 unwinds". Shipping ③'s bands in the artifact re-committed exactly
+          // that over-reach: MEASURED, editing all 88 authored fe slots moved the legacy artifact
+          // 960 m² of treelawn and the banded ① artifact 0 m².
+          // ⇒ The tile freezes the SHAPE — `ring · iA · vertR · fillets · runs` (`§4`'s own list) —
+          // and `sectionPassTile` strokes the ribbon, the divider, the materials and the bent corner
+          // live off it, keyed by frozen identity + `blockCustoms`.
+          // ⭐ THE SEAM OBJECTION DOES NOT SURVIVE ②. It applied to a CHAIN-derived `iA`: the band is
+          // `differenceRings(iC, iW)` — successive offsets of ONE contour (`SECTION §7`'s design→code
+          // table) — so with ②'s eased ring there is no seam constructible. The per-run sectors only
+          // TAG that continuous band with materials; they do not build it.
           // ⭐⭐ `runs` — SUPPLIED, and it is IDENTITY not geometry (ruled 2026-09-06).
           // Consecutive ① edges with the same owner ARE a run: `RIBBONS §1`'s "every ring edge is
           // owned by one (skelId, side) BY CONSTRUCTION", now literally true instead of aspirational.
@@ -5829,17 +6272,51 @@ export function buildTileGround(ribbons, opts = {}) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
               const key = o ? `${o.skelId}|${o.side}|${o.segOrd}` : null
               if (!key) { cur = null; continue }
-              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [] }; runs.push(cur) }
+              // ⭐ `baseMeasure` — the MEASURED cross-section for this street side. `SECTION §3.1`:
+              // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
+              // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
+              // frozen identity, not chain geometry — it crosses the wall by the ruled rule.
+              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [], baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
               cur.poly.push(EC.ring[i])
             }
           }
-          for (const r of runs) delete r.key
+          // ⛔ A RUN OF ONE VERTEX IS NOT A LEG. `sectionPassTile`'s `legDirAt` reads `poly[1]` and
+          // `poly[n-2]` to get each end's direction, so a single-vertex run has no direction and
+          // throws. Dropped and COUNTED — never padded with a fabricated second point.
+          const shortRuns = runs.filter(r => r.poly.length < 2).length
+          if (shortRuns) protoShortRuns += shortRuns
+          const runs2 = runs.filter(r => r.poly.length >= 2)
+          for (const r of runs2) delete r.key
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
             // ⭐ the FILL, already painted — not `runs` for something else to re-stroke
-            bands: { curb: bandsOf(protoBands.curb), treelawn: bandsOf(protoBands.treelawn),
-                     sidewalk: bandsOf(protoBands.sidewalk), lu: bandsOf(protoBands.lu) },
-            runs,
+            // ⛔⛔ THE FILL IS STILL FROZEN HERE, AND THAT IS A KNOWN NON-CONFORMANCE — not a choice.
+            // `SECTION §4` rules the FILL live off the frozen shape, and I built that: the tile below
+            // carries `§4`'s whole freeze list and `sectionPassTile` runs on it. MEASURED, it yields
+            // **8,198 m² of sidewalk against ③'s 85,939** — ~90% of the ped fill gone. Handing that to
+            // the operator would be worse than the over-reach it fixes, so the bands ship until the
+            // loss is explained. ⛔ CAUSE NOT ESTABLISHED. Runs are NOT it (proto 5.5 runs/tile,
+            // median poly 5 · legacy 5.4, median 2 — proto is the healthier of the two). The open
+            // lead: **54 of 119 proto tiles carry NO fillets** against 9 of 118 legacy, and the leg
+            // trim + bent corner both key off them.
+            // ▶ Flip to the ruled behaviour by deleting `bands` from this object — everything else
+            // is already in place.
+            bands: { curb: (protoBandsByBlock[k] || {}).curb || [], treelawn: (protoBandsByBlock[k] || {}).treelawn || [],
+                     sidewalk: (protoBandsByBlock[k] || {}).sidewalk || [], lu: (protoBandsByBlock[k] || {}).lu || [] },
+            // ⭐ the SHAPE the wall freezes (`SECTION §4`'s own list) — carried NOW, so the flip is
+            // one deletion rather than a rebuild.
+            fillets: protoArcsByBlock[k] || [],
+            vertR: (protoArcsByBlock[k] || []).map(a => a.r),
+            cap: protoCapByBlock[k],
+            bandJoin: 'miter',      // INVARIANT 2 — jtMiter, never jtRound; nothing rounds twice
+            // ⛔⛔ EMPTY, NOT ABSENT, AND IT IS A DISCLOSED GAP — NOT A DEFAULT. ① carries no cap
+            // typology yet: `RIBBONS §1` rules a cap is TWO ordinary corner nodes ("blunt = both
+            // apexes at R=0, round = both eased"), and that is not built. So a cul-de-sac gets no
+            // cap WRAP from Section on this path. Empty arrays are what "this tile has no round
+            // tip" honestly looks like; absent fields would crash the painter, and a fabricated
+            // tip would be a plausible-looking wrong bulb. Counted per pour below.
+            roundTips: [], bluntTips: [], roundTipKeys: [], mouths: [], thruNodeEnds: [],
+            runs: runs2,
             // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
             // initial ground map and later add overrides." A fact about the world, read off the block
             // itself, not a construction parameter. Overrides are a later layer and not scoped here.
@@ -5848,13 +6325,14 @@ export function buildTileGround(ribbons, opts = {}) {
             producerReason: 'offset from ①; bands struck from the curb; runs = identity only',
             // ⛔ THE REFUSALS, RECORDED. A consumer hitting a missing field can read WHY here rather
             // than guess whether it was dropped or never applied.
+            // ⛔ WHAT IS STILL REFUSED, AND WHY — a consumer hitting a missing field reads the
+            // reason here rather than guessing whether it was dropped or never applied.
+            // ⭐ `tl`/`sw`/`cap`/`bandJoin`/`vertR`/`fillets` are NO LONGER REFUSED: `SECTION §4`
+            // freezes exactly `ring · iA · vertR · fillets · runs` and strokes the FILL live off
+            // them. Refusing them was this build freezing the FILL — the named over-reach.
             refused: {
-              tl: 'walk input — ③ supplies the stroke, not the depth',
-              sw: 'walk input — ③ supplies the stroke, not the depth',
-              cap: 'walk input — the ribbon extent is already painted',
-              bandJoin: 'per-tile join mode; a contour has no pieces to join',
-              vertR: 'fillet machinery — R belongs in the node handles',
-              fillets: 'fillet machinery — nothing rounds twice',
+              tl: 'a DEFAULT depth, not a frozen one — `resolvePedDepths` glean it live off `runs[].baseMeasure` (`SECTION §3.1`)',
+              sw: 'a DEFAULT depth, not a frozen one — same resolution as `tl`',
               roundTips: 'cap machinery — a contour already IS its caps',
               bluntTips: 'cap machinery — a contour already IS its caps',
               roundTipKeys: 'cap machinery — a contour already IS its caps',
@@ -5879,7 +6357,13 @@ export function buildTileGround(ribbons, opts = {}) {
           for (const t of protoShapeTiles) {
             const ring = cut([t.ring])
             if (!ring.length) continue                     // wholly outside the disc — correctly gone
+            // ⛔ The SHAPE is what is cut — the ring and the curb. The FILL is stroked live off
+            // them past the wall, so there is nothing else here to clip.
+            // ⭐ A fillet whose arc falls entirely outside the disc goes with it: the corner it
+            // describes is not in the drawing, and a fillet with no curb is an arc nobody paints.
+            const inDisc = (p) => intersectRings([[[p[0]-0.05,p[1]-0.05],[p[0]+0.05,p[1]-0.05],[p[0]+0.05,p[1]+0.05],[p[0]-0.05,p[1]+0.05]]], [stamp]).length > 0
             for (const r of ring) kept.push({ ...t, ring: r, iA: cut(t.iA),
+              fillets: (t.fillets || []).filter(f => inDisc(f.apex)),
               bands: { curb: cut(t.bands.curb), treelawn: cut(t.bands.treelawn),
                        sidewalk: cut(t.bands.sidewalk), lu: cut(t.bands.lu) } })
           }
@@ -6129,36 +6613,49 @@ export function buildTileGround(ribbons, opts = {}) {
   // ⛔ Gated, and it REFUSES rather than falling back: asking for ① as the producer and silently
   // getting the chain curb is the plausible-looking success Layer 0 forbids.
   if (opts.protoProducer) {
-    if (!protoCurb?.length) throw new Error('[tileGround] protoProducer asked for ① as the producer but ② built NO curb. Refusing to hand back the chain curb under a flag that says otherwise.')
-    // ⛔⛔ ONLY `curb`. `block` IS NOT MINE TO TOUCH — it is the block FILL, and it is produced by
-    // `intersectRings(blockRaw, [stencil])`, i.e. it is what the neighbourhood's bounding circle
-    // CLIPS. Overwriting it after that intersect handed back an UNCLIPPED fill and the circle stamp
-    // stopped working — Jacob, on the render: "the bounding circle stamp isn't working". A one-word
-    // overreach, and it broke a thing nobody asked me to change.
-    // ⛔⛔ THE LIVE CURB IS STAMPED TOO. "Build the whole grid flat and stamp the circle LAST"
-    // applies at EVERY consumer, not only at the bake. Un-stamped, ② includes the enormous faces
-    // the far-flung motorway chains enclose out at the frame edge — real faces of the graph, not
-    // city blocks — and Survey FILLS `tg.curb` (`ringsToFlatGeo(..., true)`), so a 4.5M m² ring
-    // turns the whole authoring surface solid: Jacob, "basically just wrecked survey interface".
-    // ⛔ Not solved by dropping big rings: size is a guess that fails on a town with one genuinely
-    // huge block. The disc is the actual answer — it is what "the drawing" means.
-    const liveStamp = protoBoundaryRing
-    if (liveStamp?.length > 2) {
-      // ⛔⛔ PER RING, NEVER ALL AT ONCE. One boolean over all 255 curb rings UNIONS them: the
-      // enormous face the outer motorway chains enclose absorbs its neighbours and 255 rings come
-      // back as 14, one of them disc-sized. Survey FILLS `tg.curb`, so that single ring turns the
-      // authoring surface solid — "basically just wrecked survey interface".
-      // ⭐ The artifact never had this bug because `[PROTO⊙]` stamps each TILE separately. Same
-      // rule here: a stamp is a per-object cut, not a set operation over the whole map.
-      const cut = []
-      for (const rg of protoCurb) { const c = intersectRings([rg], [liveStamp]); if (c?.length) cut.push(...c) }
-      if (!cut.length) throw new Error('[tileGround] the circle stamp removed the ENTIRE live curb. Refusing to hand back nothing.')
-      curb = cut
-      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②, STAMPED per ring: ${protoCurb.length} → ${cut.length} inside the circle`)
-    } else {
-      curb = protoCurb
-      console.log(`[tileGround][①⇢LIVE] the curb Survey draws is now ②: ${protoCurb.length} ring(s) — ⛔ NO boundary in this pour, so it is the WHOLE FRAME, un-stamped.`)
-    }
+    // ⭐⭐⭐ ① IS THE PRODUCER OF **EVERY LAYER SURVEY DRAWS**, not just the curb.
+    // ⛔⛔ Swapping `curb` alone painted one ①-built line on top of a chain-built map, and the two
+    // did not agree. MEASURED, vertices within 5 cm of the boundary arc: ① block faces 0 of 2999
+    // — they run PAST the rim, as ruled — while the legacy D2 walk CLOSES ITS FACES AGAINST THE
+    // DISC (352 of 1538 on the arc) and `filletRing` then ROUNDS the corner the circle made.
+    // ⭐ That is the rim artifact the operator keeps pointing at — "why are the sidewalks trying to
+    // bend and create corners at the edge of the stencil?" It is not built by ① and cannot be
+    // patched out of ①: it comes from the tile world, so the cure is to stop consuming the tile
+    // world. Nothing is built at the map edge; it is simply where the drawing stops.
+    // ⭐⭐ THE CONSUMER ALREADY EXISTS AND IS ALREADY SHIPPED. `sectionOpen` consumes a tile that
+    // CARRIES ITS BANDS as-is (`if (st.bands)`) and unions them into exactly these layers; ③
+    // produces exactly that tile. ⇒ a change of CONSUMER, not of construction — no new producer,
+    // no second painter, no per-layer reimplementation here.
+    // ⛔ `highway` is deliberately NOT swapped. Grade-separated roads are flat strokes through
+    // their own accumulator and were never blocks; ① carries them as INK, not as a curb, and ②
+    // builds no highway curb at all. Swapping it would invent a production that never existed.
+    // ⛔ REFUSES rather than falling back: asking for ① and silently getting the chain map is the
+    // plausible-looking success Layer 0 forbids.
+    if (!protoShapeTiles?.length) throw new Error('[tileGround] protoProducer asked for ① as the producer but ①②③ produced NO tiles. Refusing to hand back the chain map under a flag that says otherwise.')
+    // ⭐⭐⭐ THE CORNER RADIUS IS FROZEN BY THE DATAWALL (Jacob, 2026-09-06) — and the truth the
+    // handle rides has to be the arc that is DRAWN. The legacy `cornerFillets`/`cornerSet` are
+    // built by the chain shape pass; under ① they describe corners that are not on screen.
+    if (protoCornerSet.length) {
+      for (const k of Object.keys(cornerFillets)) delete cornerFillets[k]
+      cornerSet.length = 0
+      for (const c of protoCornerSet) { cornerFillets[c.key] = c.fillet; cornerSet.push(c) }
+      console.log(`[tileGround][①⇢LIVE] corner truth swapped to ②'s achieved arcs: ${protoCornerSet.length} corner(s); the handle rides the curb that is drawn.`)
+    } else console.warn(`[tileGround][①⇢LIVE] ⛔ ② produced NO corner arcs — the corner handles would ride the LEGACY fillets, which are not on screen. Not swapping; the dial is untrustworthy in this pour.`)
+    const S = sectionOpen(protoShapeTiles, curbWidth, stripMat, stencil, blockCustoms)
+    asphalt = S.asphalt; curb = S.curb; sidewalk = S.sidewalk; block = S.block
+    // the LU buckets are objects the caller reads by key — replace the CONTENTS, not the binding
+    for (const kk of Object.keys(treelawnByLu)) delete treelawnByLu[kk]
+    for (const kk of Object.keys(luByClass)) delete luByClass[kk]
+    Object.assign(treelawnByLu, S.treelawnByLu)
+    Object.assign(luByClass, S.luByClass)
+    console.log(`[tileGround][①⇢LIVE] every layer Survey draws is now ①②③ through sectionOpen: ${protoShapeTiles.length} tile(s) — asphalt ${asphalt.length} · curb ${curb.length} · sidewalk ${sidewalk.length} · block ${block.length} ring(s) · LU classes ${Object.keys(luByClass).join(', ') || 'none'}. Highway stays a flat stroke.`)
+    // ⛔⛔ THE MEDIAN CLASS CANNOT APPEAR, AND THAT MUST BE SAID OUT LOUD. ③ carries no median or
+    // loop concept (`LOOP-STREETS §2/§4`); the legacy carve exists largely FOR those. So a town
+    // whose chain path produced a `median` land use produces none here — LS: 20,362 m² → 0.
+    // ⭐ A land-use key no entry consumes "drops silently from the slab — that is exactly how the
+    // divided median vanished" (`bake-ground.js` PAINT_ORDER). It is not going to vanish silently
+    // twice: this is a KNOWN GAP in ③, disclosed per pour, not a fallback and not a fix.
+    if (!luByClass.median) console.warn(`[tileGround][①⇢LIVE] ⛔ NO 'median' land use in this pour — ③ carries no median or loop concept. If this town has divided roads, their medians are classed as something else. KNOWN GAP, not a silent success.`)
   }
   // ⭐⭐⭐ `protoArtifact` SWAPS THE FROZEN ARTIFACT ONLY — separate from `protoProducer`, which
   // swaps what SURVEY DRAWS. They were one flag and that conflation cost the day's last hour:

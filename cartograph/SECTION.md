@@ -119,6 +119,23 @@ The architecture that makes Section responsive, and the thing the freeze is **fo
 
 > **The per-edge FILL does NOT abrogate Survey or the Wall** (the question, answered, 2026-06-07). Survey still owns + freezes the silhouette; the FILL strokes inward off the frozen `iA` using **frozen run identity** + **`blockCustoms` design intent** — no chain handle, no shape re-derivation, nothing new across the wall (`runs[]` was already frozen). The FILL was *never* meant to be frozen; the DataWall freezes the *silhouette* and the FILL is the live consumer-side stroke off it. Going per-edge live is the **correct** realization of this keystone, not a departure.
 
+> ### ⛔⛔ OPEN, 2026-09-06 — ① SHIPS THE FILL FROZEN, AND THAT IS THIS OVER-REACH RE-COMMITTED
+> ③ (the ①②③ stack) strikes the ped bands BEFORE the freeze and puts them on the tile, and
+> `sectionOpen` short-circuits on a tile carrying `bands`. **MEASURED: editing all 88 authored fe
+> slots moves the legacy artifact 960 m² of treelawn and the banded ① artifact 0 m².** That is
+> exactly the Phase-D freeze §3.2/§3.3 unwound, arriving again under a new name.
+> ⭐ **THE FIX IS BUILT AND IS ONE DELETION.** The ① tile now carries this §'s whole freeze list —
+> `ring · iA` (②'s eased curb) `· vertR · fillets` (②'s achieved arcs) `· runs` (with `baseMeasure`,
+> the surveyed cross-section `resolvePedDepths` glean off). Delete `bands` from the tile and
+> `sectionPassTile` strokes the FILL live off it.
+> ⛔ **IT IS NOT FLIPPED, AND HERE IS THE HONEST REASON:** built and run, it yields **8,198 m² of
+> sidewalk against ③'s 85,939** — ~90% of the ped fill gone. Shipping that is worse than the
+> over-reach it fixes, so the bands stay until the loss is explained.
+> ⛔ **CAUSE NOT ESTABLISHED.** Run fragmentation is EXCLUDED by measurement — proto 5.5 runs/tile,
+> median poly length 5; legacy 5.4 and 2, so proto is the healthier of the two. **The open lead: 54
+> of 119 proto tiles carry NO fillets, against 9 of 118 legacy** — and both the leg trim (§6.1 step
+> 2) and the bent corner (step 1) key off `fillets`. Not yet chased.
+
 **State (2026-06-07):** the live wiring is **landed** — `sectionGeos`/`sectionOpen`/`sectionPass` take `blockCustoms`, so the FILL re-strokes off the frozen `iA` when an override changes (material-swap proves it live). The remaining gap is §3.3: the **depth** override + the per-edge divider. (Phase-D's earlier "freeze the FILL too" over-reach is the thing §3.2/§3.3 unwinds — freeze the silhouette, stroke the FILL live.)
 
 ---

@@ -356,37 +356,106 @@
 >   ⇒ **The requirement is that the SHAPE comes from ① everywhere** — frozen or live, Survey or
 >   Section. Where the code happens to touch a chain to get there is secondary; what may not happen is
 >   a curb whose shape is a traced chain.
->   ### ⛔⛔ AND MOVING ① TO THE SKELETON WAS ONLY HALF A CHANGE — MEASURED 2026-09-06
->   > *"These centerlines aren't related to the curbs."* (Jacob, on the render.)
+>   ### ⭐⭐⭐ SURVEY **AND** SECTION ARE ON ① — LANDED 2026-09-06. `protoProducer` + `protoArtifact`.
+>   ⛔⛔ **SWAPPING THE `curb` SLOT ALONE WAS NOT A HALF-STEP, IT WAS A WRONG STEP.** It painted one
+>   ①-built line on top of a chain-built map and the two did not agree — and the slot holds a **BAND**,
+>   not a ring, so handing it ② (the block's inner polygon) filled every block solid: **2,125,205 m²
+>   against the legacy curb's 25,202 m².**
+>   ⭐⭐ **THE CONSUMER ALREADY EXISTED.** `sectionOpen` consumes a tile that CARRIES ITS BANDS as-is
+>   (`if (st.bands)`) and unions them into asphalt / curb / sidewalk / treelawn / LU / block; ③ produces
+>   exactly that tile. ⇒ **`protoProducer` now runs `sectionOpen(protoShapeTiles, …)` and takes every
+>   layer from it** — a change of CONSUMER, not of construction, with no per-layer reimplementation.
+>   ⛔ `highway` is deliberately NOT swapped: grade-separated roads are flat strokes through their own
+>   accumulator and ② builds no highway curb, so swapping it would invent a production never had.
+>   ▶ `node scratch/claims-survey-and-section-agree.mjs` — LS: 118 tiles, all `producer:'proto'`,
+>   all carrying bands; **asphalt, curb, sidewalk and block agree to 0 m²** and the LU class sets are
+>   identical. That gate is the definition of "the same thing".
 >
->   ① is minted from the SIMPLIFIED SKELETON. **The centreline the Designer DRAWS is
->   `ribbons.streets[].points` — the densified trace.** They are two different lines:
->   **median 1.00 m apart · p90 7.50 m · max 20.8 m · 4,781 of 9,547 points more than a metre off.**
->   ⇒ The curb is a perfect parallel offset of a line the operator cannot see, beside a line he can.
->   Every "101/101 parallel" is true and irrelevant to what is on screen.
->   ⭐⭐ **THE FIX HIS RULING ALREADY IMPLIES:** *"all data should skew to SSoT."* If the skeleton is
->   the SSoT then `ribbons.streets[].points` must BE the simplified geometry — one line everywhere,
->   drawn and offset from the same source. ⛔ Not a flag, not a second path: the divergence has to stop
->   existing, not be selectable.
->   ⚠️ **CONSEQUENCE TO ACCEPT DELIBERATELY:** that changes what EVERY consumer sees, not just the
->   curb — it is the substrate re-founding, and it wants the operator's eye rather than a gate.
->   ### ⛔⛔ AND IT IS GATED ON A RE-KEY — MEASURED 2026-09-06, BEFORE ANY ATTEMPT
->   `blockCustoms` is keyed `skelId | side | segOrd`, and **`segOrd` is an ordinal over the IX
->   partition of the POINT ARRAY.** Simplify the points and the partition can move: **35 of 217 chains
->   change their ordinal count**, `mississippi-avenue` **15 → 10** — and Mississippi is authored.
+>   ### ⭐⭐⭐ AND THIS IS WHAT REMOVES THE RIM ARTIFACT — MEASURED, not argued
+>   The bending at the map edge was never ①'s. Vertices within 5 cm of the boundary arc:
+>   **① block faces 0 of 2999** — they run PAST the rim, as ruled — while **the legacy D2 walk closes
+>   its faces AGAINST the disc, 352 of 1538 on the arc**, and `filletRing` then ROUNDS the corner the
+>   circle made. ⇒ *"why are the sidewalks trying to bend and create corners at the edge of the
+>   stencil?"* is the TILE WORLD, and the cure is to stop consuming it — not a rim patch.
+>   ▶ `node scratch/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
+>   **legacy 0 m** (its ribbon wraps the rounded corner and never reaches the edge) · **① 190 m of
+>   sidewalk, longest unbroken run 6.6 m** — chords no longer than the band is wide, i.e. a CUT.
+>
+>   ### ⛔⛔ THE ONE THING ① LOSES, AND IT IS DISCLOSED PER POUR: **THERE IS NO `median` CLASS.**
+>   ③ carries no median or loop concept (`LOOP-STREETS §2/§4`); the legacy carve exists largely FOR
+>   those. LS: **20,362 m² of `median` land use → 0.** ⭐ A land-use key nothing consumes *"drops
+>   silently from the slab — that is exactly how the divided median vanished"*; it is not vanishing
+>   silently twice, so the producer swap WARNS by name when no `median` class comes out. **KNOWN GAP
+>   in ③ — not a fallback, not a fix.**
+>   ⚠️ **AND ONE NUMBER GOT WORSE.** `claims-proto-stack-disjoint`: overlapping stations **3341 → 1900**
+>   (`curb&lu` **3006 → 285**, the ghost block going away) but **`treelawn&sidewalk` 92 → 1548**, now the
+>   dominant class. ⛔ **Cause not established.** Isolated to the SUBSTRATE, not to ③: the committed ③
+>   run against the new ① reproduces 1900/1548 exactly, and emitting bands per-part instead of pooled
+>   changes nothing.
+>   ⚠️ **COST, measured, not a guess:** the live full-map rebuild goes ~0.85 s → ~1.39 s, because ③ runs
+>   under `grout:'proto'` whether or not anything consumes it. `SURVEY §4.1` already names the full-map
+>   redraw as why the tools feel sticky; this adds to it.
+>   ### ⭐⭐⭐ THE SMOOTHNESS LIVES IN THE **CURVE PRIMITIVE**, NOT IN THE POINTS — 2026-09-06
+>   > *"The protopoly isn't smooth at all, anywhere."* (Jacob, on the render.)
+>
+>   ⛔⛔ **A SKELETON STREET'S `points` IS THE CONTROL POLYGON.** The curves are in `segments`
+>   (`{type:'bezier',c1,c2}`), and both ① and the drawn centreline were reading the ANCHORS ALONE.
+>   LS: **225 bezier segments over 9,948 m on 124 of 343 chains**, against just **1,978 anchors
+>   (5.8 per chain)** — so every curve was minted as a straight chord, throwing away a sagitta of
+>   **median 1.34 m · p90 5.43 m · max 20.80 m.**
+>   ⭐⭐ **THAT 20.80 m IS THE FIGURE THIS SECTION USED TO RECORD AS "the drawn centreline vs ①".**
+>   It was never two lines diverging — it is **the discarded curve**, and converging them to 0.00 m
+>   did not fix the divergence: **it deleted the curve from both sides.** *(The old block, with its
+>   median 1.00 m / p90 7.50 m / 4,781-of-9,547 figures and its re-key warning, is excised — the
+>   re-key it warned about is measured below and is nil.)*
+>   ▶ `derive.js` `tessellateAdaptive` — de Casteljau subdivision to an ARC TOLERANCE (0.10 m), one
+>   map feeding BOTH consumers (① and the emitted centreline), because a half-migrated source is
+>   worse than none. **1,978 anchors → 3,086 points**; the old densified `CURVE_FIT` trace was 9,547.
+>   ⛔ **THIS DOES NOT REOPEN THE DENSITY RULING.** `CURVE_FIT` densified *everything*, straight runs
+>   included — that is what put 705 vertices on an 8-vertex block. An arc tolerance spends points
+>   only where there is curvature: a straight street keeps its two anchors.
+>   ⭐ **NOTHING IS SMOOTHED AND THE CHAIN DOES NOT MOVE** — measured: **0 of 1,978 anchors absent**,
+>   1,108 points added between them, and every emitted point lies on the chain's own primitive at
+>   **max 0.000737 m**. A change of SAMPLING, not of shape.
+>   ⭐ **AND IT COSTS NO AUTHORING** — `segOrd` is an ordinal over the IX partition, the IX vertices
+>   ARE anchors, and anchors all survive: **0 orphaned, 0 re-pointed of 88 slots.**
 >   ▶ `node scratch/claims-simplify-preserves-authoring.mjs <scene>`
->   ⭐⭐ **THE DANGER IS NOT ORPHANING, IT IS SILENT RE-POINTING.** LS: **0 slots orphaned** (nothing
->   stops resolving, which is the visible failure) but **17 of 83 RE-POINTED** — the slot still
->   resolves and now describes **a different physical stretch of road**. The authoring keeps working
->   and means somewhere else. That is `A17`'s mechanism exactly, and `PIPELINE.md` §5's T3 gate named it in
->   advance: *"if chains renumber, authored customs orphan silently."*
->   ⛔ **So the convergence is not "safe because nothing breaks."** 20% of the operator's work would
->   move and nothing would say so. **It needs a re-key — map old spans to new by GEOMETRY before the
->   switch — or it is a Layer 0 q2 event in the authored artifact.**
->   ⛔ **AND IT IS THE SECOND TIME IN ONE DAY THE SAME HALF-CHANGE WAS MADE:** the face walk was moved
->   to the skeleton only after ① had been, and only because the divergence was noticed. The centreline
->   was missed the same way. **When a source moves, move every consumer of it in the same window** —
->   a half-migrated SSoT is worse than none, because both halves render.
+>   ⭐ **The editor is untouched:** `SurveyorOverlay.controlVertices()` draws nodes off `segments`,
+>   never off `points` — the architecture already separated the chain's NODES from its SAMPLING.
+>
+>   ### ⭐⭐⭐ THE CORNER: THE NODE IS A HANDLE CONFIGURATION — the ruled cure, BUILT 2026-09-06
+>   `easeContour` (`tileGround.js`). Broken handles **turn**, continuous handles **ease**, and
+>   **R = 0 leaves the contour byte-identical** — by construction, not by a branch.
+>   ⛔⛔ **IT IS NOT `easeRing`, AND THE DIFFERENCE IS THE WHOLE POINT.** That pass was a corner
+>   CONSTRUCTOR: an invented ~7° threshold, a budget against neighbouring corners, a decline when it
+>   did not fit, a revert on self-intersection, a cluster-collapse to fix the budget. Here there is
+>   **no threshold, no budget, no decline, no revert**; an R too big for its leg renders as what it
+>   is (`§6.9.5`). The one bound is TOPOLOGICAL — a tangent point may not pass its leg's midpoint,
+>   because past that the leg belongs to the next corner.
+>   ⭐⭐ **THE CORNER IS FOUND BY CARRIED IDENTITY: the OWNER CHANGING along the ring.** `§1`'s own
+>   law — every ring edge is owned by one `(skelId, side)` by construction — so no angle test and no
+>   proximity match. LS in-disc: **445 corners, median turn 90.1°**, and the blocks reading ZERO are
+>   exactly the medians and loop interiors (one street, so the owner never changes).
+>   ⭐ **ROUNDING HAPPENS ONCE, AT THE NODE** — INVARIANT 2 — so ③ insets an already-curved contour
+>   and its bands are concentric with the arc BY CONSTRUCTION: *"the corner is the band bent around
+>   the curb arc, never a constructed primitive."*
+>   ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs <scene>` — an AUTHORED feature is
+>   checked by DIMENSION: achieved radius off the curb, **median 4.50 m = the class seed exactly.**
+>   ⚠️ **OPEN:** the per-corner tier (`ixKey|legA|legB`) is not reachable from a contour vertex —
+>   the leg `f/b` flag is a tile-edge fact — so a Look carrying per-corner overrides is **warned
+>   about, never silently ignored**. LS carries none.
+>
+>   ### ⭐⭐⭐ AND THE CENTRELINE IS NOW INERT — `claims-proto-wall` B PASSES, 2026-09-06
+>   > *"As long as the centerline is rendered completely inert and unreachable by the protopolygon."*
+>
+>   ② needs one thing from the centreline — where two chains meet, to key the authored radius — and
+>   **the MINT freezes it**: `protopolygon.nodes`, an exact shared-vertex lookup per chain pair
+>   (LS **682 nodes, 17 refused as ambiguous**). The mint is the one place reading a chain is
+>   legitimate, because ① *is* the expanded chain.
+>   ⭐ **`protoNodeOf` and its four maps were EXCISED** — dead since the ease was removed, and 2 of
+>   the 3 reads keeping ②③ from being chain-free. **Dead code is excised, not archived.**
+>   ▶ `node scratch/claims-proto-wall.mjs <scene>` — **"no chain lookup outside the base table;
+>   every downstream value comes off the stamp."** It was failing this before.
 >
 >   ### ⭐⭐⭐ ②'s ACCEPTANCE, IN THE OPERATOR'S WORDS — *"if the centerline is smooth, their offsets should match."*
 >   ▶ `node scratch/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**
@@ -826,24 +895,56 @@
 > ⭐ A construction asking *"is this the rim?"* to decide **painting** has diverged; asking to decide
 > **bounding** is the stencil doing its job.
 >
-> #### ⭐⭐⭐ ① IS STENCILLED BY THE CIRCLE — LANDED 2026-09-06, and it is THIS ruling applied to ①
+> #### ⭐⭐⭐ THE CIRCLE IS STAMPED **LAST**, ON FINISHED GEOMETRY — corrected 2026-09-06
 > Jacob, re-ruling aloud: *"EITHER we build the entire grid of streets and the circle stencils out the
-> circle OR the circle adds the geometry such that the whole perimeter is made of weird odd shapes."*
-> and *"there should be no tips; the streets clip at the perimeter edge."*
-> `mintProtopolygon({..., boundary})` unites the whole grid and then **INTERSECTS** — the boundary is
-> the CLIP, never a subject. ⭐ Identity survives the cut: the clip ring is labelled, so
-> `booleanLabelled` carries `__boundary__` **through** the boolean and a rim edge comes out owned; a
-> street meeting the circle is a genuine minted **crossing**, like any corner.
-> ⭐⭐ **WHY IT REMOVES A CLASS rather than guarding one:** a square cut has NO ENDPOINT, so there is
-> nothing for a cap, bulb or fillet to be built on. Contrast `derive.js`'s `[F]` `clipStreet`, which
+> circle OR the circle adds the geometry such that the whole perimeter is made of weird odd shapes"* ·
+> *"build the whole grid flat and then stamp out the circle last"* · *"obviously the circle stencil is
+> happening too early."*
+> **① is the ink of the WHOLE frame and is never cut.** The boundary is carried out of the mint as
+> `boundaryRing` — **a payload, not a clip** — and applied per object at every consumer (`[PROTO⊙]`
+> and the live curb). ⛔ **A disc, or a disc plus a margin, is STILL the circle deciding block
+> geometry**; the subtraction subject is a plain rectangle around all the ink.
+> ⚠️ **THIS SECTION USED TO SAY the mint "unites the whole grid and then INTERSECTS" and that a rim
+> edge "comes out owned" by `__boundary__`. Both are ROT** — the code carries the explicit counter-note
+> (*"① is NOT cut here"*), and **0 of LS's 275 block faces carry a single `__boundary__` label**: the
+> only rings that touch the frame are the exterior's, which is dropped. Under stamp-last a block runs
+> PAST the rim and is cut afterwards, so there is no rim edge to own.
+> ⭐⭐ **WHY IT STILL REMOVES A CLASS rather than guarding one:** a square cut has NO ENDPOINT, so there
+> is nothing for a cap, bulb or fillet to be built on. Contrast `derive.js`'s `[F]` `clipStreet`, which
 > chops CENTRELINES and mints a fresh endpoint per crossing — a manufactured tip, downstream of which
-> every tip-shaped defect becomes possible. ⛔ `[F]` still runs for the FACE walk and is NOT yet on the
-> stencil; that is the remaining half.
-> ⛔ NO FALLBACK: a scene with no boundary keeps the full-bb ① and says so; a refused stencil is LOUD
-> and returns the contour UNCUT, never half-cut.
-> ⛔ **The superseded reading — "the circle joins the same expand-and-unite" — is EXCISED**, not
-> annotated; it lived in `BRIEF-rim-chain-census.md`, now
-> `cartograph/_archive/BRIEF-rim-chain-census-2026-09-06.md`, whose header records what it cost.
+> every tip-shaped defect becomes possible. ⛔ `[F]` still runs for the FACE walk; that is the remaining
+> half.
+> ⛔ NO FALLBACK: a scene with no boundary keeps the full-bb ① and says so.
+>
+> #### ⭐⭐⭐ A BLOCK IS A **COMPOUND FACE** — the nesting comes out of the BOOLEAN, 2026-09-06
+> `blocks = frame − ink`, and the result was being read as a **flat list of rings**, so winding was the
+> only record of outer-vs-hole. ⛔ **The exterior region is an outer ring (the frame) PLUS ONE HOLE PER
+> CONNECTED INK COMPONENT — and every one of those holes was carried out as a block.**
+> **Measured:** LS a **4.49 km²** "block" containing **276 of the other 281**; HPDM **29.79 km²**
+> containing **1,272 of 1,290**. Neither touches the frame and neither holds a frame corner, so no drop
+> test can see them — this is why *"drop the component holding a frame corner"* and *"drop anything
+> resting on the frame"* both left it standing. ⭐ **That ring is what flooded Survey**: Survey FILLS
+> `tg.curb`, and ②'s largest ring was 1.77 km², ~70% of the disc.
+> ⇒ `booleanLabelled(..., asTree)` executes into a Clipper **PolyTree**: a face is an outer node plus
+> its immediate hole children, and the exterior leaves with its holes attached. ⭐ **This is `§1`'s own
+> identity law applied to TOPOLOGY** — carried THROUGH the boolean, never recovered from ring geometry
+> afterward. ⛔ The Z channel survives the PolyTree build, so the labels are unchanged.
+> **② offsets the face as ONE object:** the outer eroded inward, every hole **dilated** into the face
+> (`offsetRingVariable(..., outward)` — the normal is winding-aware and points into the ring's own area
+> whichever way it is traversed, so the direction is **stated**, never inferred), subtracted through
+> `booleanLabelled` so the ① owner survives. LS **1** compound face, HPDM **6**.
+> ✅ **③ IS COMPOUND-AWARE TOO** — every band boundary goes through one `ins()` that offsets the
+> block's whole curb region (outers eroded, holes dilated, then differenced), so no band is ever
+> struck into a hole. ⭐ The bands are also **bucketed by block index at emit time**; the artifact used
+> to recover which band belonged to which tile by sampling 12 points of every band in the map against
+> that tile's rings — identity recovered from ring geometry, which this § forbids, and which a compound
+> face breaks outright (a hole ring "contains" every band of the faces nested inside it).
+> ▶ `node scratch/claims-proto-blocks-are-faces.mjs <scene>` (no block contains another face's interior
+> point) · `node scratch/claims-proto-curb-is-block-sized.mjs <scene>` (the largest ② ring reads as a
+> block, not as the town; in-disc coverage).
+> ⚠️ **AND THE COVERAGE FIGURE THAT WAS QUOTED FOR IT WAS THE GHOST.** *"117/118 tiles covered"* counted
+> the 4.49 km² ring covering 10 of them. Excluding it, coverage was **107/118 before and 107/118 after** —
+> unchanged. ⛔ The 11 uncovered are a standing open item; **cause not established.**
 >
 > ### ⛔⛔ AND THE RIM CANNOT BE DROPPED FOR A WALK — MEASURED, 2026-08-12 (Tessel)
 > *"Build full, crop last"* is `derive.js:4632`'s own stated doctrine and it is available to the

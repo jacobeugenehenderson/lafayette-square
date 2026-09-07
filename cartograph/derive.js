@@ -40,6 +40,85 @@ const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 // Tessellate a ribbon street's SELF-CONTAINED segments ({type, a,b[,c1,c2]}, all [x,z]) to a
 // dense polyline: line segments pass through their endpoints EXACTLY (grid-safe); bezier
 // segments subdivide at ~`spacing` m. A street without segments returns its points verbatim.
+// ⭐⭐⭐ THE CURVE PRIMITIVE IS WHERE THE SMOOTHNESS LIVES — tessellate it, ADAPTIVELY.
+// ⛔⛔ MEASURED 2026-09-06, and it is why "the protopoly isn't smooth at all, anywhere": the
+// skeleton stores its curves in `segments`, not in `points`. LS carries **225 bezier segments over
+// 9,948 m of street on 124 of 343 chains**, and `points` is only 1,978 anchors (5.8 per chain) —
+// the CONTROL POLYGON. Minting ① from those anchors draws every curve as a straight chord and
+// throws away a sagitta of **median 1.34 m · p90 5.43 m · max 20.80 m**.
+// ⭐ That 20.80 m is the same figure the canon recorded as "the drawn centreline vs ①". It was
+// never two lines diverging — it is the DISCARDED CURVE. Converging them to 0.00 m did not fix the
+// divergence; it deleted the curve from both sides.
+//
+// ⛔ THIS DOES NOT REOPEN THE DENSITY RULING. `CURVE_FIT` densified EVERYTHING, straight runs
+// included — 8.5× the points, 705 vertices on a block that should have ~8. Subdividing to an ARC
+// TOLERANCE spends points only where there is real curvature: a straight street keeps its two
+// anchors and a quadrilateral block keeps ~8 vertices. Measured on LS: 1,978 anchors → **3,086
+// points at 0.10 m**, against the old densified trace's 9,547.
+// ⛔ AND EVERY ANCHOR SURVIVES, which is what makes it safe for authoring: `segOrd` is an ordinal
+// over the IX partition of the point array, and the IX vertices ARE anchors. Adding points BETWEEN
+// them shifts indices but changes no ordinal.
+// ▶ node scratch/claims-simplify-preserves-authoring.mjs <scene>
+const CURVE_TOL = 0.10   // m — the sagitta a tessellated chord may miss the true curve by
+
+function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
+  if (!segments || !segments.length || !(points?.length >= 2)) return points
+  const cub = (a, c1, c2, b, t) => {
+    const u = 1 - t, A = u*u*u, B = 3*u*u*t, C = 3*u*t*t, D = t*t*t
+    return [A*a[0] + B*c1[0] + C*c2[0] + D*b[0], A*a[1] + B*c1[1] + C*c2[1] + D*b[1]]
+  }
+  const dev = (p, a, b) => {
+    const dx = b[0]-a[0], dz = b[1]-a[1], L2 = dx*dx + dz*dz
+    let t = L2 ? ((p[0]-a[0])*dx + (p[1]-a[1])*dz) / L2 : 0
+    t = Math.max(0, Math.min(1, t))
+    return Math.hypot(p[0]-(a[0]+t*dx), p[1]-(a[1]+t*dz))
+  }
+  const flat = (a, c1, c2, b) => { for (let k = 1; k < 12; k++) if (dev(cub(a,c1,c2,b,k/12), a, b) > tol) return false; return true }
+  // de Casteljau subdivision — no step count to pick, so no tuned number
+  const emit = (a, c1, c2, b, out, d = 0) => {
+    if (d > 14 || flat(a, c1, c2, b)) { out.push(b); return }
+    const mid = (u, v) => [(u[0]+v[0])/2, (u[1]+v[1])/2]
+    const p01 = mid(a,c1), p12 = mid(c1,c2), p23 = mid(c2,b)
+    const p012 = mid(p01,p12), p123 = mid(p12,p23), M = mid(p012,p123)
+    emit(a, p01, p012, M, out, d+1); emit(M, p123, p23, b, out, d+1)
+  }
+  // ⭐⭐ `hard` RIDES ALONG: which emitted points are ORIGINAL ANCHORS whose incident segments are
+  // both straight — i.e. nodes with BROKEN handles, which `RIBBONS §1` rules are CORNERS ("broken
+  // handles turn, continuous handles ease"). A point interpolated inside a bezier is never hard.
+  // ⛔ This has to be computed HERE, before the anchors are diluted: afterwards the only way back to
+  // it is an angle threshold, which is exactly what `easeRing` was built on and excised for.
+  const hard = [true]                       // a chain END is always a broken handle
+  const out = [[points[0][0], points[0][1]]]
+  for (let i = 0; i < segments.length && i < points.length - 1; i++) {
+    const g = segments[i]
+    const a = [points[i][0], points[i][1]], b = [points[i+1][0], points[i+1][1]]
+    // ⛔ Both schemas: the SKELETON's segments are index-referenced with {x,z} handles and implicit
+    // anchors; a RIBBON street's are self-contained with [x,z]. One tessellator, or the two drift.
+    if (g?.type === 'bezier') {
+      const c1 = Array.isArray(g.c1) ? [g.c1[0], g.c1[1]] : [g.c1.x, g.c1.z]
+      const c2 = Array.isArray(g.c2) ? [g.c2[0], g.c2[1]] : [g.c2.x, g.c2.z]
+      const before = out.length
+      emit(a, c1, c2, b, out)
+      for (let q = before; q < out.length; q++) hard.push(false)      // inside a curve — never hard
+    } else { out.push(b); hard.push(true) }
+  }
+  // a chain with fewer segments than gaps: the tail is straight, keep its anchors
+  for (let i = segments.length + 1; i < points.length; i++) { out.push([points[i][0], points[i][1]]); hard.push(true) }
+  // ⛔ An anchor that ENDS a bezier is still an anchor: the curve stops there, so the handle is
+  // broken unless the NEXT segment is also a bezier. Fix those up in one pass rather than
+  // special-casing inside the emit.
+  let oi = 0
+  for (let i = 0; i < segments.length && i < points.length - 1; i++) {
+    const g = segments[i]
+    if (g?.type === 'bezier') { let k = oi + 1; while (k < out.length && !hard[k]) k++; oi = Math.min(k, out.length - 1) }
+    else oi++
+    const nxt = segments[i + 1]
+    if (oi < hard.length) hard[oi] = !(g?.type === 'bezier' && nxt?.type === 'bezier')
+  }
+  out.hard = hard
+  return out
+}
+
 function tessellateStreet(street, spacing = 1) {
   const segs = street.segments
   if (!segs || !segs.length) return street.points.map(p => [p[0], p[1]])
@@ -4582,12 +4661,27 @@ export function deriveLayers(highways) {
   // ⭐ ONE read of the skeleton, shared by the emit below — the same file ① and the face walk take.
   // ⛔ Loaded here rather than passed in, so there is exactly one place that answers
   // "what is the simplified geometry of this chain" for the whole pour.
+  // ⭐⭐⭐ THE SIMPLIFIED SKELETON, WITH ITS CURVES TESSELLATED. `points` on a skeleton street is
+  // the CONTROL POLYGON; the smoothness lives in `segments`. Reading the anchors alone is what made
+  // ① faceted everywhere — see `tessellateAdaptive`'s header for the measurement.
+  // ⛔ ONE MAP, BOTH CONSUMERS — the drawn centreline (the emit below) and ① (the `[①]` block).
+  // When a source moves, every consumer of it moves in the same window; a half-migrated SSoT is
+  // worse than none, because both halves render.
   const simplifiedPoints = (() => {
     const fp = join(CLEAN_DIR, 'skeleton.json')
     if (!existsSync(fp)) return null
     const j = JSON.parse(readFileSync(fp, 'utf-8'))
-    return new Map((j.streets || []).map(st => [st.id,
-      (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+    let curved = 0, anchors = 0, out = 0
+    const m = new Map((j.streets || []).map(st => {
+      const pts = (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))
+      anchors += pts.length
+      const t = tessellateAdaptive(pts, st.segments)
+      if (t.length > pts.length) curved++
+      out += t.length
+      return [st.id, t]
+    }))
+    console.log(`    [curve-primitive] simplified skeleton tessellated to ${CURVE_TOL} m: ${anchors} anchor(s) → ${out} point(s) across ${m.size} chain(s); ${curved} carried a curve`)
+    return m
   })()
 
   const ribbonsLayer = {
@@ -4942,8 +5036,15 @@ export function deriveLayers(highways) {
     let simplified = null
     if (existsSync(skPath)) {
       const sk = JSON.parse(readFileSync(skPath, 'utf-8'))
+      // ⭐⭐⭐ TESSELLATE THE CURVE PRIMITIVE. `st.points` is the CONTROL POLYGON — the smoothness
+      // lives in `st.segments`, and reading the anchors alone minted every curve into ① as a
+      // straight chord (LS: 225 beziers over 9,948 m, sagitta median 1.34 m / max 20.80 m).
+      // Jacob, on the render: "the protopoly isn't smooth at all, anywhere."
+      // ⛔ The SAME `tessellateAdaptive` the drawn centreline uses — one line everywhere, or the
+      // curb is a parallel offset of a line the operator cannot see. That half-migration has now
+      // happened twice on this one source; it does not happen a third time.
       simplified = new Map((sk.streets || []).map(st => [st.id,
-        (st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z]))]))
+        tessellateAdaptive((st.points || []).map(q => (Array.isArray(q) ? [q[0], q[1]] : [q.x, q.z])), st.segments)]))
       // ⛔ `{x,z}` OBJECTS, NOT `[x,z]` PAIRS — the skeleton and the ribbons store the same frame
       // in different shapes, and reading one as the other yields `undefined` for every coordinate
       // and an EMPTY protopolygon that looks like "no blocks". Same near-miss `A08` records for
@@ -4951,7 +5052,9 @@ export function deriveLayers(highways) {
     }
     const simplify = (s) => {
       const pts = simplified?.get(s.skelId ?? s.name)
-      return pts?.length >= 2 ? { ...s, points: pts } : null
+      // ⭐ `hard` travels with the points: the mint stamps it onto every owner, so ② can ask
+      // "is this node a corner?" without ever reaching for a chain.
+      return pts?.length >= 2 ? { ...s, points: pts, hard: pts.hard || null } : null
     }
     const all = ribbonsLayer.streets.filter(s => s?.points?.length >= 2)
     const mapped = all.map(s => ({ s, sim: simplify(s) }))
@@ -4976,9 +5079,27 @@ export function deriveLayers(highways) {
       // ⛔ Rounded to the same 1e-6 as `rings`: a block edge and the ① edge it lies on must not
       // disagree in the 7th decimal, or a downstream containment test can put a point on the
       // wrong side of a shared edge.
+      // ⭐⭐⭐ A BLOCK IS A COMPOUND FACE — outer ring + its holes, carried together. `blockHoles[k]`
+      // and `blockHoleLabels[k]` are PARALLEL to `blocks[k]`, deliberately: `easedByBlock` keys
+      // every ②/③ consumer by position in the block list, and splitting that index space cost 61
+      // tiles once. ⛔ Frozen, because the bake reads ① from this artifact and never re-mints — a
+      // face whose holes were not frozen is offset AS IF SOLID downstream.
       ...(MP.blocks ? {
         blocks: MP.blocks.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
         blockLabels: MP.blockLabels,
+        ...(MP.blockHoles ? {
+          blockHoles: MP.blockHoles.map(hs => hs.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6]))),
+          blockHoleLabels: MP.blockHoleLabels,
+        } : {}),
+      } : {}),
+      // ⭐⭐⭐ THE CORNER NODES, FROZEN — the centreline is INERT past this point (Jacob, 2026-09-06:
+      // "as long as the centerline is rendered completely inert and unreachable by the
+      // protopolygon"). ② needs the centreline node only to key the authored corner radius; frozen
+      // here, it never has to reach for a chain. A pair that shares more than one vertex freezes as
+      // `null` — refused, not guessed.
+      ...(MP.nodes && Object.keys(MP.nodes).length ? {
+        nodes: Object.fromEntries(Object.entries(MP.nodes).map(([k, v]) =>
+          [k, v ? [Math.round(v[0] * 1e6) / 1e6, Math.round(v[1] * 1e6) / 1e6] : null])),
       } : {}),
       // ⭐ the STAMP, frozen with ①: the disc is applied to the RESULT of ②③, never to their input.
       ...(MP.boundaryRing ? { boundaryRing: MP.boundaryRing.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]) } : {}),

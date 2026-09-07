@@ -67,6 +67,51 @@
       "capStart": null,
       "capEnd": "round"
     },
+    "south-18th-street-8": {
+      "name": "South 18th Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-9": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "south-18th-street-10": {
+      "name": "South 18th Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2,
+          "treelawn": 1.2456,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2,
+          "treelawn": 4.3856,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
+      "capStart": null,
+      "capEnd": "round"
+    },
     "waverly-place-0": {
       "name": "Waverly Place",
       "capStart": "blunt",
@@ -86,6 +131,24 @@
       "name": "Preston Place",
       "capStart": "blunt",
       "capEnd": "round"
+    },
+    "hickory-street-3": {
+      "name": "Hickory Street",
+      "measure": {
+        "left": {
+          "pavementHW": 4.93,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.705775552899246,
+          "treelawn": 0,
+          "sidewalk": 1.52,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
     },
     "missouri-avenue-0": {
       "name": "Missouri Avenue",
@@ -109,6 +172,26 @@
     },
     "missouri-avenue-4": {
       "name": "Missouri Avenue",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "missouri-avenue-5": {
+      "name": "Missouri Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 8.385853030132012,
+          "treelawn": 3.020838982094821,
+          "sidewalk": 2.263884048165316,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 8.73105352144237,
+          "treelawn": 3.1519828488643356,
+          "sidewalk": 2.345906370814321,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      },
       "capStart": null,
       "capEnd": "round"
     },
@@ -171,6 +254,16 @@
       "capEnd": "round"
     },
     "lasalle-street-4": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-5": {
+      "name": "Lasalle Street",
+      "capStart": null,
+      "capEnd": "round"
+    },
+    "lasalle-street-6": {
       "name": "Lasalle Street",
       "capStart": null,
       "capEnd": "round"
@@ -259,6 +352,42 @@
         "symmetric": true
       }
     },
+    "rutger-street-5": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
+    "rutger-street-6": {
+      "name": "Rutger Street",
+      "measure": {
+        "left": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 2.1901709234175555,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": true
+      }
+    },
     "albion-place": {
       "name": "Albion Place",
       "capStart": "round",
@@ -286,6 +415,24 @@
       "name": "Dolman Street",
       "capStart": null,
       "capEnd": "round"
+    },
+    "dolman-street-2": {
+      "name": "Dolman Street",
+      "measure": {
+        "left": {
+          "pavementHW": 5,
+          "treelawn": 1.3756000000000004,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 5.997331895265273,
+          "treelawn": 0,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
     },
     "lafayette-avenue-0": {
       "name": "Lafayette Avenue",
@@ -323,7 +470,43 @@
         "symmetric": false
       }
     },
+    "lafayette-avenue-2": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
     "lafayette-avenue-3": {
+      "name": "Lafayette Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 10.555325676754327,
+          "treelawn": 3.5560120021971127,
+          "sidewalk": 4.213893953647322,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 7.899666800734073,
+          "treelawn": 3.756012002197112,
+          "sidewalk": 1.524,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "lafayette-avenue-4": {
       "name": "Lafayette Avenue",
       "measure": {
         "left": {
@@ -395,7 +578,43 @@
         "symmetric": false
       }
     },
+    "park-avenue-4": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
     "park-avenue-5": {
+      "name": "Park Avenue",
+      "measure": {
+        "left": {
+          "pavementHW": 5.645715395972545,
+          "treelawn": 1,
+          "sidewalk": 1,
+          "terminal": "sidewalk"
+        },
+        "right": {
+          "pavementHW": 6.06749156059035,
+          "treelawn": 1,
+          "sidewalk": 3.693069658822573,
+          "terminal": "sidewalk"
+        },
+        "symmetric": false
+      }
+    },
+    "park-avenue-8": {
       "name": "Park Avenue",
       "measure": {
         "left": {
@@ -466,11 +685,6 @@
         },
         "symmetric": false
       }
-    },
-    "lasalle-lane": {
-      "name": "Lasalle Lane",
-      "capStart": null,
-      "capEnd": "round"
     }
   }
 }

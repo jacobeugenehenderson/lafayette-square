@@ -808,11 +808,23 @@ export default function BlockGeometryV2Debug({
   // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`) and that lands
   // exactly where Section fetches it. So every CLI `--proto` bake was overwritten by this
   // build's legacy artifact seconds later, and Section could never show ①.
-  // ⛔ `protoProducer` is deliberately NOT set: it also replaces Survey's `curb`, which Survey
-  // FILLS (`ringsToFlatGeo(..., true)`), and one 1.77 km² ring — the face the grade-separated
-  // chains enclose — turns the whole authoring surface solid. Survey keeps the legacy curb
-  // WIREFRAME until that face has a rule; the frozen shape does not have to wait for it.
-  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: 'proto', protoArtifact: true }) }
+  // ⭐⭐⭐ `protoProducer` IS ON — Survey draws ②, the offset of the protopolygon.
+  // ⛔ It was off because one 1.77 km² ring — ~70% of the disc — turned the authoring surface
+  // solid (Survey FILLS `tg.curb`, `ringsToFlatGeo(..., true)`). That ring was never a block: it
+  // was the OUTER CONTOUR OF THE INK, handed back as a hole of the exterior when `frame − ink`
+  // was read as a flat ring list. Carrying the faces as COMPOUND PATHS out of the boolean
+  // (`booleanLabelled`'s `asTree`) removes it at the source.
+  // ▶ measured, LS, with authoring loaded: 120 curb rings, largest 0.1397 km² = 5.6% of the disc
+  //   — `node scratch/claims-proto-curb-is-block-sized.mjs lafayette-square`
+  // ⭐⭐⭐ AND `protoArtifact` IS ON TOO — SURVEY AND SECTION MUST BE THE SAME THING.
+  // `protoProducer` swaps what SURVEY DRAWS; `protoArtifact` swaps what SECTION OPENS. With only
+  // the first, Survey showed ①②③ and Section showed the chain artifact — two constructions of the
+  // same street, side by side, and the operator is right to call that wrong.
+  // ⛔ SECTION'S ARTIFACT IS WRITTEN BY THIS BUILD, NOT BY `bake-ground`: the client autosaves
+  // `_shapeArtifact` to `POST /<scene>/shape` on Survey-exit (`serve.js:1113`), which lands exactly
+  // where Section fetches it. So the CLI `--proto` bake could never reach Section — the browser
+  // overwrote it seconds later. This is the only place the swap can be made.
+  try { tg = buildTileGround(liveRibbons, { stencil, curbWidth, smooth: streetSmooth, blockLandUse, cornerRadiusScale, cornerRadiusOverrides, cornerCornerRadiusOverrides, blockCustoms: blockCustomsX, emitArtifact: true, grout: 'proto', protoProducer: true, protoArtifact: true }) }
     catch (e) { console.error('[BlockGeometryV2Debug] tile build failed:', e); return null }
     const perLu = (byLu, yLift) => Object.entries(byLu)
       .map(([lu, rings]) => ({ lu, geo: ringsToFlatGeo(rings, yLift, true) }))

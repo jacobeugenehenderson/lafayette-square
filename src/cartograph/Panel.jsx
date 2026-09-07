@@ -22,6 +22,9 @@ const STREETS_DEFS = [
   { id: 'stripe',   label: 'Center Stripes' },
   { id: 'edgeline', label: 'Edge Lines' },
   { id: 'bikelane', label: 'Bike Lanes' },
+  // Designer overlay (OneWayArrows), not a bake layer — same shape as the
+  // Labels rows: it reads layerVis.oneway and nothing in the bake does.
+  { id: 'oneway',   label: 'One-Way Arrows' },
 ]
 const BLOCKS_DEFS = [
   { id: 'lot',           label: 'Parcel' },

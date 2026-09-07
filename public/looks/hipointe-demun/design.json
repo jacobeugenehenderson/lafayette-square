@@ -32,8 +32,10 @@
     "wall": true,
     "retaining_wall": false,
     "hedge": false,
-    "labels": true,
-    "centerline": false
+    "labels": false,
+    "centerline": false,
+    "parkTitle": false,
+    "oneway": false
   },
   "layerColors": {
     "street": "#4A4A48",
@@ -91,9 +93,9 @@
     "-397.000,915.300|highland-terrace-0:f|primary-link-192:b": 25.658483029955605
   },
   "curbWidth": 0.381,
+  "parkTitlePos": null,
   "alleyCap": "round",
   "labels": {
-    "size": 4,
     "weight": 600,
     "fill": "#e8e8f0",
     "halo": "#14141c",
@@ -102,6 +104,7 @@
     "opacity": 1,
     "case": "mixed",
     "fontFamily": "",
+    "size": 4,
     "tierScale": {
       "street": 1,
       "park": 2.8
@@ -469,6 +472,13 @@
       "samples": 16
     }
   },
+  "canopy": {
+    "values": {
+      "directional": 0,
+      "gain": 0.85,
+      "bulge": 0.9
+    }
+  },
   "constellations": {
     "values": {
       "value": 0
@@ -568,6 +578,24 @@
     }
   },
   "heroSubject": null,
+  "heroKeyframes": [
+    {
+      "position": [
+        -540,
+        55,
+        362
+      ],
+      "fov": 22
+    },
+    {
+      "position": [
+        -260,
+        55,
+        98
+      ],
+      "fov": 22
+    }
+  ],
   "heroMotion": {
     "period": 1360,
     "easing": "sine"
