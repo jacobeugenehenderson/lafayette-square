@@ -66,6 +66,43 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ---
 
+## 🕳 UNCLOSED BLOCKS AT THE RIM — a street that stops SHORT of its junction (2026-09-06)
+
+**Symptom, operator-marked:** a chunk of the map inside the disc paints **nothing** — no block, no
+curb, no sidewalk, no land use — while its neighbours draw normally. LS: the SW rim, mark at
+`(-267,-793)`, **61% of a 144 m circle blank**.
+
+⭐ **CAUSE ESTABLISHED, and it is the FRAME, not the producer.** ① makes a block from a HOLE in the
+ink, so the ink has to close a loop. Papin Street **shares no vertex with South Jefferson** — it
+stops short of it:
+
+| chain | ends | short of | gap |
+|---|---|---|---|
+| `papin-street-0` | start | `south-jefferson-avenue-0` | **11.63 m** |
+| `papin-street-5` | end | `south-jefferson-avenue-8` | **15.87 m** |
+
+The aerial shows the road running through to the junction, so the road is real and the frame is
+wrong. `ENDPOINT_SNAP` welds near-coincident endpoints at a few **centimetres**; 12–16 m is three
+orders of magnitude past it, so nothing welds and the loop never closes.
+
+⛔ **DO NOT CHASE THIS IN THE PRODUCER.** Everything downstream is behaving correctly — there is no
+hole, so there is no block, so there is nothing to stroke. Ruled out by measurement on the way:
+the fetch bbox (2236 × 2240 m against an 1784 m disc — it covers), prebake loss (skeleton and
+ribbons agree exactly there), and the `touchesFrame` exterior drop (removing it changes nothing).
+
+▶ **Home for the fix: `cartograph/extend-centerlines.js`** — the class is "a chain that stops short
+of the junction it visibly reaches." Skeleton-layer, so it **needs a re-pour**, which is why it is
+here and not in the corner arc.
+⭐ **The kit form, and it is the deliverable:** a check that flags *any* chain endpoint sitting a
+few metres from a chain it does not share a vertex with. That is town-#2 portable and needs no
+operator who has already seen this street. ⛔ A per-street extension list is not a fix.
+⚠️ **And it must not weld a GENUINE severance** — `OSM-FORENSICS §1.3` names Carroll Street as a
+real one, and `ROADMAP A09`'s `highway=turning_circle` tag is the only arbiter we have for
+severed-vs-fragmented. Distance alone yields a shortlist, never a verdict.
+
+▶ Reproduce: `node scratch/claims-marked-corners.mjs` is the WRONG lens (a corner classifier); use a
+region count — ① blocks inside the mark vs drawn — and the endpoint-gap scan above.
+
 ## 📐 the kit-correctness track — shrink automation-debt (automate the eye)
 
 > The SHAPE campaign: make the skeleton produce correct street geometry **automatically** so LS's *automation-debt* curated hand-fixes can be deleted and the auto-pipeline still holds. This is **kit-forward correctness** (town #2…N), distinct from the v1-render frontier above. **The law** (`NEIGHBORHOOD-INPUTS §0.0/§1.1`): every output is a best guess and overridable — automation should keep improving, but override is first-class, and *idiosyncratic* curated chains (features no source holds) are **kept**, not defects. The data question is CLOSED (no external street source helps — `INTAKE §5.1`); the lever is the skeleton's *interpretation*. North star: *Survey shows the perfected map straight from the skeleton.*
