@@ -66,6 +66,49 @@ Active trunk `curb-offset-draw` (→ staging via `staging.yml`; the old `cartogr
 
 ---
 
+## ⌒ WE HAVE NEVER TREATED A CONVEX CORNER — and ② is rounding 27 of them (2026-09-06)
+
+**Jacob, on the ①-produced map:** *"a convex corner, which is something we've never done"* ·
+*"we've never treated a convex corner."*
+
+**Measured, LS in-disc: 27 corners are eased in the OPPOSITE sense to their ring** — they round
+**outward**, wrapping an INSIDE corner. Attribution, so the history is honest: **6** were admitted
+by rules that predate 2026-09-06 (1 owner-change, 5 `hard` on both sides) and **4** by that day's
+`a.hard || b.hard` correction; the rest did not resolve to a rule under the probe used.
+
+⭐ **THE DOCTRINE POINT, WHICH IS BIGGER THAN THE COUNT.** The authored radius is a **CURB RETURN** —
+an *outside*-corner specification (the NACTO/AASHTO 4.50 m class seed, the dial the operator turns at
+an intersection). An inside corner **has no authored value**, so applying the dial there invents a
+specification. That is `RIBBONS §1`'s cap rule one level up: *"an offset is measured from a LEG,
+never from a CAP; a cap has no authored value — it is what falls out."*
+⇒ **What an inside corner should do is UNRULED.** Candidates: stay sharp · take its own (larger)
+radius · take the band's inner offset for free. ⛔ Do not pick one by eye on LS.
+
+### ⛔ ATTEMPTED AND REVERTED THE SAME DAY — read before rebuilding it
+A guard was written to leave reflex vertices sharp and disclose the count. **It fired on almost
+nothing** (ordinary corners 47 → 45, reflex 27 → 25) because **the ① block ring and the artifact
+tile ring do not share a winding convention**, so the guard's convexity test and the probe's
+measured the opposite thing. ⛔ **Get the winding convention pinned FIRST** — this repo carries both
+shoelace conventions and `booleanLabelled` converts the outer "to the winding the consumer expects"
+— then the guard is a few lines. Reverted rather than shipped, because a branch that changes nothing
+is worse than no branch.
+▶ Reproduce: count fillets whose signed turn opposes their ring's signed area, on the ARTIFACT tiles.
+
+## 🎗 SKINNY MEDIANS ON PARK (2026-09-06, operator-marked)
+
+Park Avenue's median blocks measure **6.0–8.7 m mean width** in ① (5 of them: `park-avenue-0+1`,
+`-2`, `-5+7`, `-6+2`, `-7+5`), and ② then erodes each side by the authored half-width, so what
+survives reads as a sliver.
+
+⚠️ **Suspect the DATUM before the construction.** ①'s ink is struck at ε about the **CENTRELINE**
+(`SKELETON §61`, corrected 2026-08-14: the chain points are at carriageway centrelines, *not* inner
+edges), so a median block's boundary sits on the two centrelines and eroding it by a full
+`pavementHW` per side double-counts the inboard lane. `derive.js` `innerEdgeAssign` exists to set a
+carriageway's sides to `surveyHW/2` — ⛔ **whether ②'s `protoMeasureOf` honours that halving is NOT
+measured.** That is the first question, and it is a datum question, not a corner one.
+⛔ Do not "fix" this by widening the median — `RIBBONS §1`: a median is a block, and if the curbs
+touch there is no block.
+
 ## 🕳 UNCLOSED BLOCKS AT THE RIM — a street that stops SHORT of its junction (2026-09-06)
 
 **Symptom, operator-marked:** a chunk of the map inside the disc paints **nothing** — no block, no
