@@ -198,6 +198,27 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
 5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
 
+> ### ⭐⭐ AND ③'s PAINTER RUNS THE SAME FIVE STEPS — as a STAMP (landed 2026-09-07)
+> `sectionPassProtoTile` had **no corner at all**; it now runs THIS construction, not a copy. The rule
+> and every constant are the ones above — `conD`, `cMin`, `conMax`, `rampLen`. What differs is how the
+> band is drawn: the walk painter strokes per RUN and slices the pad out of `fullBand` with
+> `arcSectorPoly`; ③ offsets per contour EDGE, so **steps 3 + 4 are a stamp** — at the arc's edges the
+> cross-section says concrete-to-`cMin`, and the same four offsets draw it. ⛔ No sector, no bid, no
+> decline; **a stamp cannot decline, so the pad cannot be missing.** Step 5's slide stays what §6.1
+> built (two polygons in the local along-leg frame) because a straight leg is often ONE ring edge tens
+> of metres long — a per-vertex ramp there would slide over the whole block.
+> - ⛔ **EDGES, NOT VERTICES.** The ladder asks with an EDGE index, so stamping the arc's END vertex
+>   hands the corner's cross-section to the whole straight leg leaving it. That one off-by-one painted
+>   ~30% of LS's treelawn as ADA concrete and it **passed the band acceptance better than the correct
+>   version** — the closure count rewards a leg painted all-concrete. ⭐ Corner arcs are ~5% of a
+>   town's contour LENGTH and ~50% of its contour POINTS; measure length.
+> - ⛔ **OPEN — step 5's `luWedge` carve is not built in ③.** It is a CUT, and a cut through a band
+>   re-joined along the same edge leaves Clipper two touching polygon records: the band reads BROKEN at
+>   unchanged area. (The same effect cost the acceptance 79 → 54 when the whole pad was cut and painted
+>   back.) Re-run the acceptance before re-landing it.
+> ▶ `node scratch/claims-sidewalk-is-one-band.mjs` · `node scratch/claims-survey-and-section-agree.mjs`
+> ⛔ Re-run them; the counts move.
+
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
@@ -440,7 +461,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
 - **§3.3 per-edge depth + divider** — the mono-width slice (`RIBBONS §1`): the depth override renders, the corner takes `cw + max-adjacent` (`cornerT`).
-- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). The **corner** construction (§0/§6.1) — `arcSectorPoly`, called in the FILL off the frozen `fillets` (present on 93 of 101 tiles).
+- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). The **corner** construction (§6.1) runs in BOTH painters — `arcSectorPoly` in the walk painter, the same five steps as a stamp in ③'s.
 - **Dead-end caps built into the curb offset** — the cap (round semicircle / blunt segment) is part of `offsetRingVariable`, so it's tangent to the achieved per-fe width by construction (D6a, `[[project_d6a_curb_offset]]`). NB: the *ped* wrap at the cap is still open (below).
 - **One depth truth** — handle placement and FILL stroke both read `resolvePedDepths`; the handle rides the achieved curb (`sectionCurbRings`).
 - **Revert UI** — whole-scene + per-edge (§5.1).
