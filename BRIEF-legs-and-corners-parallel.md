@@ -36,7 +36,7 @@ collision. The boundary is not a suggestion.
 |---|---|---|
 | owns | the run construction + `iaStamp` (~`:6860–6975`) · the `// ══ THE LEG ══` block in `sectionPassProtoTile` | the `// ══ THE CORNER ══` block (`cornerAt`, `slidWalk`) · `mk`'s four depth functions |
 | its gate | `scratch/claims-frontage-covers-the-block.mjs` · `scratch/claims-ring-partition.mjs` | `scratch/claims-sidewalk-is-one-band.mjs` |
-| its open class | frontage runs that do not cover their own block | the **unfilleted (R=0) corner** |
+| its open class | **two:** frontage runs that do not cover their own block · **the turn test minting rule-2 seams** (§5) | the **unfilleted (R=0) corner** |
 
 **⛔ NEITHER of you edits `const M = (ri, i) => legArr.get(...)`. That line is the interface.**
 
@@ -86,9 +86,7 @@ inside `claims-survey-and-section-agree.mjs`; if that script runs, you have not 
   stale sentence when you touch that block** (`CLAUDE.md`: a false claim outlives its correction).
 - **The turn test is not the road test.** The same comment says a leg breaks where the drawing TURNS
   **"or two different ROADS meet"** — only the turn test and the fillets are built. The road test does
-  not exist. That is **ASPIRATION, not rot** (`CLAUDE.md`): it is an unbuilt decision, so surface it as
-  work — do not delete the sentence. ⚠️ And note a ≥18° turn fires on a street that merely **bends**
-  mid-block, which is rule 2's forbidden seam.
+  not exist: **ASPIRATION, not rot** — surface it, do not delete the sentence. **Sized in §5.**
 
 ## 5. LEGS — the job
 
@@ -108,6 +106,29 @@ cure is upstream, where the runs are built and ①'s labels are carried (~`:6890
 the stamp* (`POLYGON-FIRST.md`).
 ⚠️ `biggest owner > 50%` in that check is **context, not a failure** — a block really can front one
 street for most of its ring. Only the **coverage** line is evidence.
+
+### ⛔⛔ AND A SECOND ITEM, MEASURED BY THE CORNERS AGENT 2026-09-07 — read it before you plan
+
+The turn test is **minting the seam Jacob's rule 2 forbids.** Corners the leg cut sees but the corner
+construction cannot reach, classified by carried identity across the vertex (`stp[q-1]` vs `stp[q]`):
+**the largest class by far is "same run both sides" — a mid-block BEND.**
+▶ `node scratch/claims-every-corner-is-configured.mjs lafayette-square hipointe-demun` — **run it.**
+
+A bend is not a corner. Each one cuts a leg in two so the halves resolve independently — *"the leg is
+either *or* and never both; a seam or joint should be disqualified from possibility."* So the road test
+(`§4`) is not merely unbuilt: **the turn test standing in for it is actively constructing what the rule
+forbids.** This is LEGS' work, and it is the same defect as the coverage one seen from the other end.
+
+⚠️ **THE TWO HALVES OF YOUR JOB PULL AGAINST EACH OTHER — DO THEM TOGETHER, NOT IN SEQUENCE.** The turn
+test is also the only thing finding corners on rings that carry no fillet. Deleting it closes the seam
+and **opens** the one-leg ring — which is Jacob's original symptom, a swap taking the whole block. I saw
+a roads-only cut leave noticeably more rings uncut than the turn+fillet cut does, but I measured it with
+a probe I have since **deleted**: treat that as a **lead, not evidence**, and re-derive it.
+
+⚠️ **AND THE CORNERS AGENT'S CLASSIFICATION READS `iaStamp`, so it inherits YOUR defect.** Where one run
+is stamped across three sides, a genuine two-roads corner reads as "same run both sides" and is counted
+a bend. Their bend figure is an **upper** bound and their real-corner figure a **lower** bound. Neither
+tightens until you land. ⛔ Do not quote either as settled.
 
 ## 6. CORNERS — the job
 
