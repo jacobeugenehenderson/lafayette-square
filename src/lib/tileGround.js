@@ -5760,7 +5760,20 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ A cap has NO AUTHORED RADIUS ("an offset is measured from a leg, never from a cap; a cap
       // is what falls out"), so a round tip eases at the HALF-WIDTH — two 90° eases of radius hw
       // meeting in the middle IS the bulb, which is what `bbf4adf6` produces.
-      const tip = a.tipEnd || b.tipEnd
+      // ⛔⛔ A CAP APEX IS WHERE ONE CHAIN'S TWO SIDES MEET — **SAME `skelId` BOTH SIDES.** The test
+      // was `a.tipEnd || b.tipEnd`, i.e. "either edge belongs to a tip", and that is a different
+      // claim: where a spur's tip INK meets a DIFFERENT street's ink, the vertex is an ordinary
+      // street corner that happens to sit next to a tip. It was taking the cap rule, so a blunt
+      // default returned R = 0 and the corner came out SHARP — the operator's "sharp corners which
+      // look to be skipped altogether" (marked 2026-09-06: Mississippi × mississippi-alley,
+      // Mississippi × Rutger, both mouths, 87°–93° surviving with no arc stamped).
+      // ⭐ MEASURED on LS in-disc: 209 vertices took this branch — 145 genuine apexes (same street)
+      // and **64 real corners** given the cap rule. The owner test separates them exactly, with no
+      // threshold: at a true apex the contour wraps one chain, so one edge is its side and the
+      // other is its butt end, and both carry the same `skelId` by construction.
+      // ⭐ `RIBBONS §1`: "a dead-end cap is TWO ORDINARY CORNER NODES" — this is that ruling being
+      // asked at the right vertices instead of at every vertex adjacent to one.
+      const tip = (a.skelId === b.skelId) ? (a.tipEnd || b.tipEnd) : null
       if (tip) {
         const style = protoCapTable.get(a.tipEnd ? a.skelId : b.skelId)?.[tip]
         if (style === 'round') { protoTipRound++; return Math.max(0, hwHere) }
