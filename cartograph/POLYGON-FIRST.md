@@ -35,18 +35,14 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 >   below 5% of the tile · overflowed past it). **THAT is a failure**, it is now counted and LOUD, and
 >   it is reported **separately** so it can never be buried among the routine structural carves.
 >
-> **Measured live, all scenes, 2026-08-04** (`scratch/a07-producer-disclosure.mjs`):
+> **Measured live, per scene, by the offset/carve split it reports per tile:**
+> ▶ `node scratch/a07-producer-disclosure.mjs`
 >
-> | scene | offset | carve | carved |
-> |---|---|---|---|
-> | lafayette-square | 59 / 101 | 42 | 42% |
-> | lafayette-square-staging | 69 / 116 | 47 | 41% |
-> | altadena | 643 / 694 | 51 | **7%** |
-> | hipointe-demun | 106 / 196 | 90 | 46% |
-> | centrum | 251 / 571 | 320 | 56% |
-> | **ksi-y-m-yn** | **19 / 77** | **58** | **⛔ 75%** |
+> The carved share ranges from a small minority of tiles (altadena) to a strong majority (ksi-y-m-yn),
+> with lafayette-square, lafayette-square-staging, hipointe-demun and centrum spread across that range —
+> **LS sits mid-range, not at either extreme.**
 >
-> ⛔⛔ **THAT SPREAD IS THE POINT — 7% to 75%, and LS is mid-range.** The invariant's truth is a
+> ⛔⛔ **THAT SPREAD IS THE POINT.** The invariant's truth is a
 > property of *the town's block geometry*, not of the kit, so no single scene can tell you whether it
 > holds. On the first non-US pour, **three quarters of the map is built by the producer the docs do
 > not mention.** An operator there reads "concentric offset," sees a plausible curb, and has no way to
