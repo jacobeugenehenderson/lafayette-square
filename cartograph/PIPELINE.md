@@ -263,38 +263,56 @@ name*: its criterion — same street, both adjacent edges, opposite sides, at a 
 precisely *"the ring doubled back here."* That list is **a registry of the places the freeze failed to
 close a shape**, and it was used for months as a source of identity.
 
-**What was ruled instead (2026-08-12), and it is built but not switched on.** The substrate is a
+**What was ruled instead (2026-08-12), built, and now switched ON.** The substrate is a
 **punch-out**: take every street centerline, stroke each to a hairline width, unite them all into one
 closed compound path — **the holes in that shape are the blocks.**
 
-> ⚠️ **The ruling says `blocks = boundary − stroked roads`. The code unions the ROADS ONLY —
-> `mintProtopolygon({ streets, gradeSep })` takes no boundary.** ⇒ ① closes the interior blocks and
-> **does not close the perimeter ones**, which is the same hole the face walk patches by injecting the
-> boundary ring as filler edges (`__boundary__`, on 31 of 101 LS blocks). **This is an aspiration, not
-> rot — do not "correct" the ruling to match the code.** It is the first thing that has to land if ①
-> is to become the substrate. *(Found 2026-09-06; this doc asserted the boundary was in the union until
-> it was checked.)* The compound
-shape is `①`, the *protopolygon*. It is never seen, never authored, never rounded. Every one of its
+> ✅ **`blocks = boundary − stroked roads` IS BUILT** — `mintProtopolygon` takes a `boundary`, and the
+> subtraction subject is **a plain rectangle around all the ink**, never the disc. ⭐⭐ **The circle is
+> stamped LAST, on finished geometry, per object.** ⛔ **A disc — or a disc plus a margin — is still the
+> circle deciding block geometry;** that was tried at both radii and is the same order error one step
+> out. ⭐ **Why it removes a class rather than guarding one: a square cut has no endpoint**, so there is
+> nothing for a cap, bulb or fillet to be built on.
+> *(Filed here 2026-09-06 as an **aspiration** — "the code unions the roads only, takes no boundary" —
+> and it landed the same day. ⭐ Note which way it resolved: the aspiration was right and the code moved
+> to it. That is the case for not "correcting" a ruling to match the code.)*
+> ⚠️ **Two superseded comments still sit above the corrected ones in `mintProtopolygon`** — *"the
+> boundary is the CLIP, never a subject"* directly above *"① is NOT cut here… it was, briefly, and that
+> was the same order error."* **A correction next to the sentence it corrects is the anti-pattern**;
+> the false half is reached first because it is higher up. Not yet excised.
+
+The compound shape is `①`, the *protopolygon*. It is never seen, never authored, never rounded. Every one of its
 edges carries which street and which side made it, and every crossing carries which two streets met
 there — so **a corner is a crossing you read, not an angle you compute.** A dead end closes into a real
 notch instead of a slit. **A median is a block** (a block with no sidewalk).
 
-**Where it actually stands, said plainly:** ① **is minted, is correct, and is frozen** — it is in
-`ribbons.json` as `protopolygon`, carrying `rings`, `labels`, `owners`, `crossings`.
+**Where it stands:** ① is minted and frozen into `ribbons.json` as `protopolygon` — `rings`, `labels`,
+`owners`, `crossings` — and ⭐⭐ **it is a PURE FUNCTION OF THE SKELETON, measured, not assumed.**
+`mintProtopolygon` reads **no authored value, no width, no measure, and nothing prebake produces**;
+`derive.js` opens `clean/skeleton.json` directly for the simplified points and **refuses to freeze ① at
+all** if the skeleton is absent or any chain is unjoinable, rather than falling back to the dense
+chains. ⇒ **① depends on nothing that prebake adds.**
 
-⭐⭐ **AND IT IS A PURE FUNCTION OF THE SKELETON — measured, not assumed.** `mintProtopolygon` reads
-**no authored value, no width, no measure, and nothing prebake produces**; `derive.js` opens
-`clean/skeleton.json` directly for the simplified points and **refuses to freeze ① at all** if the
-skeleton is absent or any chain is unjoinable, rather than falling back to the dense chains. ⇒ **①
-depends on nothing that prebake adds. It is computed one stage downstream of everything it needs.** The curb offset
-from it is exactly parallel at the authored width on **101 of 101** blocks, maximum error 0.00 m.
-⛔ **And it produces nothing that ships, and it reaches nothing on screen.** **In the app: nothing —
-① has no surface there at all.** Two overlays for it were built on 2026-09-06 and both were excised —
-the first because putting an unready construction on the operator's map cost him three passes reading
-around it, the second because it changed the interface unasked and broke the boundary clip doing it. In
-the bake it is behind a **CLI flag**: `node cartograph/bake-ground.js --scene=<s> --look=<l> --proto`
-(argv, deliberately — this codebase gates on argv, not `process.env`). The shipped map is still built
-from graph faces.
+### ⭐⭐⭐ AND IT IS THE PRODUCER, FOR SURVEY *AND* SECTION — LANDED 2026-09-06
+**Every layer either tool draws comes from ①②③.** Two flags, and the split between them is the whole
+point: **`protoProducer` swaps what SURVEY DRAWS · `protoArtifact` swaps what SECTION OPENS.** Both are
+ON in the Designer (`BlockGeometryV2Debug.jsx`, grep `protoProducer`), and the bake takes `--proto`
+(argv, deliberately — this codebase gates on argv, not `process.env`).
+
+⭐ **It is a change of CONSUMER, not of construction.** ②③ already offset the grout contour; the
+artifact freezes what they made, and `sectionOpen` already consumed a tile carrying its own bands. **No
+geometry was written to land it.**
+▶ `node scratch/claims-survey-and-section-agree.mjs` — asphalt, curb, sidewalk and block agree to
+**0 m²** between the two tools, LU class sets identical. **That gate is the definition of "the same
+thing," and it is what "Survey and Section are one construction" means operationally.**
+
+⛔ **Both flags REFUSE rather than fall back** — asking for ① and silently getting the chain artifact is
+the plausible-looking success Law 2 forbids.
+
+> ⚠️ **The `--proto` CLI bake is NOT how Section gets its artifact** — §5, *"who writes the frozen file."*
+
+*(Excised 2026-09-06: this paragraph and the artifact-contract block said ① reached nothing on screen,
+written hours before the swap landed the same day →* `_archive/PIPELINE-3a-artifact-contract-2026-09-06.md`*.)*
 
 > ⛔⛔ **`?grout=1` IS NOT ①, AND CONFUSING THE TWO WILL COST YOU A DAY.** The grout overlay strokes each
 > chain at the **authored half-width** and unites them — offset-then-polygonize, the old order. It builds
@@ -305,49 +323,28 @@ from graph faces.
 > while the frozen path renders. **An overlay gated on a live build is invisible in the state the
 > operator actually sits in.**
 
-> ### ⭐⭐ AND THE BLOCKER IS THE **ARTIFACT CONTRACT**, NOT THE GEOMETRY — read this before you plan the switch
-> ② and ③ are correct. What stops ① becoming the producer is that **a frozen block and a proto block are
-> not the same object.** The frozen artifact carries a rich per-block record — the ring, the curb, the
-> per-vertex radius, the band depths, the tip typology, the run identity, the edge provenance, the
-> producer stamp — and the proto path emits a ring and its owning edges. **It was baked anyway, and
-> Section came out disconnected; the bake is back on the chain artifact.**
+> ### ⭐⭐ THE TILE CONTRACT — a UNION WITH OPTIONAL MEMBERS, and the produce/refuse split is RULED
+> **A frozen block and a proto block are not the same object**, and the difference is a decision, not a
+> shortfall. On LS the artifact carries **20 keys, but only 14 on every block; 6 are optional.** ⇒ **A
+> consumer may not assume a field is there, and a producer emitting all of them would be
+> over-promising.** Planning against *"the tile has N fields"* is planning against something that does
+> not exist.
 >
-> ⛔⛔ **AND THE CONTRACT IS A UNION WITH OPTIONAL MEMBERS, NOT A FIXED FIELD LIST — that is the shape of
-> the answer, and it matters more than its size.** On LS: **20 keys across the artifact, but only 14 on
-> every block; 6 are optional.** ⇒ **A consumer may not assume a field is there, and a producer emitting
-> all of them would be over-promising.** Planning against "the tile has N fields" is planning against
-> something that does not exist.
+> ⭐⭐ **RULED 2026-09-06 — ①'s tile SUPPLIES 2 and REFUSES 9, and the rule that decides them is: does
+> this field tell someone HOW TO BUILD, or WHAT A THING IS?** `runs` and `lu` are **identity and fact** —
+> which block was clicked, which authored slot a frontage owns, what the land use is — and they are
+> supplied. `tl` `sw` `cap` `bandJoin` are **inputs to a walk**; `vertR` `fillets` are the fillet
+> machinery the node's handles replace; `roundTips` `bluntTips` `roundTipKeys` are cap machinery a
+> contour already IS. **A walk needs boundaries; an offset needs only a value per point.**
+> ⛔ **REFUSE MEANS THE CONSUMER STOPS READING IT, WHICH IS THE REAL WORK** — and every refusal is
+> recorded **with a reason**, never left as a silent absence. Full ruling + the table: `RIBBONS §1`.
 >
-> ### ⭐⭐⭐ THE FIGURE A PLANNER ACTS ON: **the proto tile satisfies 3 of the 14 required fields.**
-> Not "5 of 17", not "5 of 20". `protoShapeTiles` carries `ring · iA · bands · producer ·
-> producerReason` — of which **`ring`, `iA` and `producer` are required, `producerReason` is optional,
-> and `bands` is an addition rather than a substitution.**
-> **The 11 required fields it does not supply:** `vertR` · `tl` · `sw` · `lu` · `roundTips` ·
-> `bluntTips` · `roundTipKeys` · `runs` · `bandJoin` · `cap` · `fillets`.
->
-> ⛔ **But do not read that as "produce eleven more fields."** `bands` ships **the FILL already
-> painted** — the code says so at the push site: *"not `runs` for something else to re-stroke."* That is
-> a deliberate change of model, not an omission, and it means some of the eleven (`tl`, `sw`, `runs`)
-> may want **explicit refusal** rather than supply. ⭐ **Which of the eleven must be produced and which
-> must be refused is the open design question** — and it is the real content of "switch ① on."
->
-> ⭐ **And note how this figure was reached, because it is this document's own lesson:** *"how many
-> fields does a tile have"* was never the question. *"How many REQUIRED fields does my tile fail to
-> supply"* is, and only the required/optional split makes it askable. **Three counts were produced
-> before anyone asked the right question, and each was a perfectly good count of the wrong thing.**
->
-> ⛔ **Derive it — both sides, and don't sample one block:**
+> ⛔ **Derive the contract, don't quote it — both sides, and don't sample one block:**
 > ▶ `node -e "const f=require('./public/baked/<scene>/shape.json'); const t=f.tiles||f; const u=new Set(); for(const x of t) Object.keys(x).forEach(n=>u.add(n)); const opt=[...u].filter(k=>!t.every(x=>k in x)); console.log('union',u.size,'| optional',opt.length,'->',opt.sort().join(', '))"`
 > ▶ and ⛔ **name which proto object you mean** — there are two, with different shapes.
 > `tilesFromProto` returns `{ring, edges}` and is called by **nothing** in `src/`; what `--proto`
 > actually freezes is `protoShapeTiles`. Saying "the proto tile" without saying which is how a real
 > gap gets stated as an unreproducible number.
->
-> *(Three counts were in circulation on the day this was written — 17, 20 and 5 — and none survived the
-> command. The 17 came from reading `tiles[0]` and reporting it as the population.)*
->
-> ⇒ **The sentence that eventually replaces "produces nothing that ships" will be about the contract,
-> not about the shape.**
 
 ⭐ **Two things this path already gets exactly right, and they are the model — copy them, don't soften
 them.** Both are Law 2 enforced at a boundary, and both exist because Layer 0 says a plausible-looking
@@ -363,13 +360,33 @@ success is the worst outcome a kit can have:
 > requirement is **"the shape comes from ① everywhere"** — not "the frozen artifact wins." Stating it as
 > the latter lets a real gap be reported as a constraint.
 
-**Two things are known to be still untrue, and they are the live work:**
-- ⛔ **The centerline the operator SEES is not the line ① is built from.** `ribbons.streets[].points`
-  versus the skeleton: **median 1.00 m apart, p90 7.50 m, max 20.8 m — 4,781 of 9,547 points more than
-  a meter off.** The curb is a perfect offset of a line nobody can see.
-- ⛔ **The authored corner radius is not built** on the ① path. It belongs in the node's bezier handles.
-  A corner-rounding pass was written, grew four guards each propping up the last, and was excised
-  (Law 3). On that path, corners are sharp.
+**What is open, disclosed per pour — and ⛔ this list is DISCLOSED BY THE CONSTRUCTION, not maintained
+here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
+- ⛔ **③ ships the FILL frozen** — the tile carries `bands`, which is `SECTION §4`'s Phase-D over-reach
+  arriving again under a new name. **The flip is one deletion and it is not flipped**, because it costs
+  ~91% of the ped fill. ⭐ **Two leads are EXCLUDED by measurement, not by argument** — `fillets` (the
+  corner work took stamped arcs up by an order of magnitude, and proto now carries them on **more**
+  tiles than legacy; ⛔ the standing lead *"54 of 119 proto tiles carry no fillets"* is stale **and
+  inverted**, do not chase it) and `runs` (proto resolves more authored slots, with zero missing
+  `baseMeasure`). ⛔ **Both must be re-measured against the LIVE BUILD, never the artifact on disk** —
+  see §5, "who writes the frozen file." ⚠️ **And the flip
+  does not buy what `SECTION §4` wants anyway:** on the live path, doubling every authored treelawn
+  moves the fill **Δ 0 m²**. **Cause not established.** → `SECTION §4`.
+- ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
+  name rather than letting the class vanish silently. **A known gap, not a fallback.**
+- ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment; **37 grade-separated
+  regions inside the disc draw no panel.**
+- ⛔ **The legs do not run straight through an intersection** — the operator's standing SHAPE ask. Built
+  twice and reverted twice; **the defect is the REJOIN, not the intersection test** (an unbounded line
+  intersection puts the apex arbitrarily far away on near-parallel legs — the same degeneracy the miter
+  clamp catches). A correct attempt must **bound the apex**. → `RIBBONS §1`.
+
+*(This paragraph listed two other things as "still untrue" — the drawn centreline diverging from ①, and
+the authored corner radius being unbuilt. **Both were closed the same evening**, and the first by being
+reinterpreted rather than fixed: the 20.80 m was never two lines diverging, it was **the discarded
+curve** — a skeleton street's `points` is the control polygon and the curves live in `segments`.
+Converging them without finding that would have **deleted the curve from both sides**. Retired to
+`_archive/PIPELINE-3a-artifact-contract-2026-09-06.md`.)*
 
 **How you would tell it was wrong:**
 ▶ `node scratch/claims-proto-curb-is-parallel.mjs` — is the curb the authored width from ① everywhere?
@@ -467,6 +484,16 @@ a failure of the same architecture.
   default** — the wall erasing the product. ⚠️ The real hazard the structural check cannot see: that
   lookup table is **keyed by street id**, so **if street ids renumber, authored overrides orphan
   silently.** Prove key parity before renumbering.
+
+> ### ⛔⛔ WHO WRITES THE FROZEN FILE: **THE BROWSER DOES.** Not the bake.
+> `serve.js`'s `POST /<scene>/shape` — **the client autosaves `shape.json` on Survey-exit** with the
+> live `_shapeArtifact` it just rendered, into the path Section fetches. ⇒ **the file on disk is a
+> photograph of the last Survey exit**, and a CLI bake writing it is overwritten by the next one.
+> ⛔ **It has cost twice, both times from reading the file instead of the clock:** an afternoon believing
+> `--proto` bakes had landed (`dfd95f3b`), and a fillet count taken off an artifact timestamped two
+> hours before the producer being measured — which reported the opposite of the live build.
+> ⭐ **`shape.json` answers "what did Survey last draw," never "what does the construction do now."**
+> For the second question, run the construction; check the mtime before trusting the file.
 
 **How you would tell it was wrong.** The freeze degrades **loudly, by design**: if the frozen shape is
 absent or fails to load, the view still draws — refusing to render would make onboarding a new town

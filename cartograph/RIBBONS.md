@@ -173,9 +173,39 @@
 > before ① exists; the rounding is Survey's. **① sits between the two stages and does NEITHER** — a
 > STAGE FACT, not a principle about protopolygons.
 > ⚠️ **"AND SHARP THROUGH THE OFFSET" IS STRUCK (2026-09-06).** The ease runs INSIDE
-> `offsetRingVariable`, on the raw offset polyline **before its self-union** — that is the only place
-> the corner correspondence is still exact, and easing the returned ring instead lost 687 of 893
-> corners. ⭐ Still ONE rounding, still Survey's; what moved is where in the call it happens.
+> `offsetRingVariable`. ⭐ Still ONE rounding, still Survey's; what moved is where in the call it happens.
+> ### ⭐⭐⭐ AND THE ORDER IS **OFFSET → UNION → EASE** — ruled and built 2026-09-06 (Jacob)
+> It was offset → ease → union, on the reasoning that only the raw polyline keeps the corner
+> correspondence exact. ⛔ **That order was producing the operator's "protrusions", and the mechanism
+> is `§1`'s own divergent function at a second site:** the raw offset carries near-REVERSAL vertices —
+> self-intersections the offset just made, not corners — and `easeContour` plans `R·tan(θ/2)` at each,
+> which **diverges as θ→180° (11× R at 170°, 57× R at 178°)**. `s = min(want, legBack/2, legFwd/2)`
+> bounds it only by HALF THE LEG, so on a long straight run the bound never bites. The oversized arc
+> overlaps the contour, the union cuts it, and the residue is a sub-half-metre stub turning 146°–161° —
+> **under `SPUR_COS`'s 165°, so nothing catches it.** ⭐⭐ **Same divergence as the miter apex
+> (`hw/sin(θ/2)`); one mechanism, two sites.**
+> ⭐⭐⭐ **THE CURE IS NOT A BOUND ON THE SETBACK** — that is the clamp shape this § retires, and it is
+> how `easeRing` died. **Union FIRST and there is no reversal vertex left to ease**: *self-intersection
+> means the feature goes to ZERO, there*, and the union is what performs it. **No threshold anywhere.**
+> ⛔ **The one condition: the middle union must be `unionRingLabelled`.** The ease resolves R through
+> the ① vertex index carried on the stamp, and the labelled union carries it THROUGH the boolean —
+> identity carried, never recovered. With plain `unionRings` every corner resolves to 0, which is most
+> of what the old *"687 of 893 corners died, survivors at 3.15 m against an authored 4.50 m"* was.
+> ▶ **Measured, LS in-disc:** curb spikes >140° **33 → 10** · arcs planned at a near-reversal **77 → 12**
+> · the operator's marked circles carrying a surviving sharp turn **14 → 3** · achieved corner radius
+> median **4.50 m, unchanged** (the tripwire) · Survey↔Section still agree to **0 m²** · parallelism
+> gate **unchanged both sides**. ⛔ Re-run them, don't quote: `claims-marked-corners` ·
+> `claims-survey-and-section-agree` · `claims-proto-corner-is-authored-radius`.
+> ⚠️ **COST, disclosed: 2 blocks moved into the no-curb class (119 → 117 tiles).** Their curbs meet, so
+> the drop is ruled correct — but see the absence disclosure below, which is the bigger half.
+> ### ⛔⛔ AND IT SURFACED A SILENT ABSENCE THAT PREDATES IT: **66 blocks were already being dropped.**
+> `if (!mine.length) continue` — a block whose curb came back empty was skipped **with no count**,
+> the same shape as `litmus-curb-parallel`'s `if (!tile?.iA?.length) continue` that `POLYGON-FIRST §5`
+> RULE 2 names as a fallback inside an instrument. **66 before this change, 67 after, ~348,000 m² of ①
+> block area** — now `console.warn`ed per pour. ⛔ **The drop is correct; the silence was the defect.**
+> ⚠️ **And the harness was hiding it: `scratch/_proto-feed.mjs` MUZZLES `console.log` during the build**,
+> so every `console.log` disclosure is invisible to every probe that uses the feed. **Disclosures must be
+> `console.warn`.**
 > ⇒ **the offset does NOT round "naturally"**: an arc of radius = the offset distance (Illustrator's
 > behaviour) is a third, unauthored place to round — the second mechanism this § already retires.
 > Curvature stays where it is computed today, **for ADA, off the override handles**: nothing new is built,

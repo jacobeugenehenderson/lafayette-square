@@ -892,15 +892,39 @@ function unionRingLabelled(ring, labels) {
 // direction stated, not inferred. ⛔ One flag on the one expression the whole construction
 // derives from; every existing caller passes nothing and is byte-identical.
 // `easeAt` (optional, opt-in at the call site per `ROADMAP A18`) — realize each node's handle
-// configuration BEFORE the self-union. ⛔⛔ THIS PLACEMENT IS THE WHOLE POINT AND IT IS MEASURED:
-// easing the RETURNED ring instead loses the corner, because the union below re-resolves labels —
-// a minted vertex inherits a neighbour's source index — so by the time the caller looks, the stamp
-// no longer points at the corner it came from. 687 of 893 corners died there, and the ones that
-// survived came back at 3.15 m instead of the authored 4.50 m.
-// ⭐ `WL` here is EXACT: every emitted point still carries the ring vertex it was struck from,
-// including the miter apex. `easeAt(srcIdx)` is therefore an identity lookup, not a recovery.
-// ⭐ Easing before the union also lets the union CLEAN UP an overrun instead of the caller seeing a
-// fold — the failure mode that made ease-before-offset produce spikes.
+// configuration. ⭐⭐⭐ THE ORDER IS **OFFSET → UNION → EASE** (Jacob, 2026-09-06), and the union
+// must be the LABELLED one. It was offset → ease → union until then; the swap removes a defect
+// class instead of guarding it.
+//
+// ⛔⛔ WHY THE OLD ORDER PRODUCED THE OPERATOR'S "PROTRUSIONS", measured end to end:
+// the raw offset polyline contains near-REVERSAL vertices — self-intersections the offset just
+// made, not corners. `easeContour` planned a setback of `R·tan(θ/2)` at each, and that DIVERGES as
+// θ→180° (11× R at 170°, 57× R at 178°). On LS: 77 of 1,192 in-disc arcs were planned at θ ≥ 140°,
+// with setbacks reaching 41.7 m and 101.4 m against ~3.8 m for a real corner. `s = min(want,
+// legBack/2, legFwd/2)` bounds it only by HALF THE LEG, so on a long straight run the bound never
+// bites. The oversized arc overlapped the contour, the union cut it, and the residue was a
+// sub-half-metre stub turning 146°–161° — under `SPUR_COS`'s 165°, so nothing caught it, and it is
+// exactly what the marker circles were pointing at.
+// ⭐⭐ THIS IS THE SAME DIVERGENCE AS THE MITER APEX (`hw/sin(θ/2)`, the clamp below), at a second
+// site. One mechanism, two places; the comment at the IX-straighten block names it as the rejoin.
+//
+// ⭐⭐⭐ AND THE CURE IS NOT A BOUND ON THE SETBACK — that is the clamp shape `RIBBONS §1` retires,
+// and it is how `easeRing` died (a threshold, then a budget, then a cluster-collapse, each aiming
+// at the previous one). Union FIRST and there is no reversal vertex left to ease: the ruling is
+// "self-intersection means the feature GOES TO ZERO, there", and the union is what performs it.
+// ⇒ `R·tan(θ/2)` is never asked about a 178° "corner", because after the union there isn't one.
+// **No threshold is introduced anywhere.**
+//
+// ⛔ THE ONE CONDITION, AND IT IS WHAT MAKES THIS SAFE NOW: the middle union must be
+// `unionRingLabelled`. The ease resolves each vertex's authored R through `easeAt(srcIdx)`, where
+// `srcIdx` is the ① block-ring vertex the point was struck from; the labelled union carries that
+// index THROUGH the boolean on the Z channel (`RIBBONS §1`: identity is carried, never recovered).
+// With plain `unionRings` the labels are gone and every corner resolves to 0 — which is most of
+// what the earlier "687 of 893 corners died, survivors at 3.15 m instead of 4.50 m" was.
+// ⚠️ A union-MINTED vertex inherits a neighbour's source index. That is correct for owner identity
+// (it lies on one of the two edges that made it) but it means the correspondence is exact only
+// where the union did not cut — i.e. everywhere except the rings this change exists to fix.
+// ⇒ Tripwire, not a hope: `claims-proto-corner-is-authored-radius` must still read the class seed.
 function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false, outward = false, easeAt = null) {
   const n = ring.length
   if (n < 3) return []
@@ -1005,28 +1029,36 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // [A10-③] The labelled union is gated on `stamp` so the live Survey path keeps
   // today's exact call. a03's byte-identity across both states is what proves the
   // two are the same boolean — the Z channel writes only .Z, never .X/.Y.
-  // ⭐ THE EASE — here, on the raw offset polyline, while the correspondence is still exact.
-  let W_ = W, WL_ = WL
+  // ⭐⭐⭐ STEP 1 — RESOLVE SELF-INTERSECTION, so the ease only ever sees a SIMPLE contour.
+  // ⛔ With `easeAt` null this is byte-identical to the previous order by construction: the ease
+  // was the only thing that used to sit ahead of here, and it did nothing when unasked.
+  const t0 = clean ? dropFoldSpursTracked(W) : null
+  const W0 = clean ? t0.ring : W
+  const L0 = clean ? t0.src.map(k => WL[k]) : WL
+  let uni, uniL = null
+  if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
+  else uni = unionRings([W0])
+
+  // ⭐⭐⭐ STEP 2 — THE EASE, per simple ring. A reversal vertex cannot reach here, so the
+  // divergent `R·tan(θ/2)` setback has nothing to diverge on.
   if (easeAt) {
-    const arcs = []
-    const e = easeContour(W_, (j) => easeAt(WL_[j]) || 0, WL_, arcs)
-    const preWL = WL_
-    W_ = e.ring; WL_ = e.labs || preWL
-    if (stamp) stamp.easeArcs = arcs.map(a => ({ ...a, src: preWL[a.i] }))
+    const easeArcs = []
+    for (let k = 0; k < uni.length; k++) {
+      const preLab = uniL ? uniL[k] : null
+      const arcs = []
+      const e = easeContour(uni[k], (j) => easeAt(preLab ? preLab[j] : null) || 0, preLab, arcs)
+      uni[k] = e.ring
+      if (uniL) uniL[k] = e.labs || preLab
+      for (const a of arcs) easeArcs.push({ ...a, src: preLab ? preLab[a.i] : null })
+    }
+    if (stamp) stamp.easeArcs = easeArcs
   }
+
   if (!clean) {
-    let uni, uniL = null
-    if (stamp) { const r = unionRingLabelled(W_, WL_); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
-    else uni = unionRings([W_])
     const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
     if (stamp && uniL) stamp.labels = keep.map(k => uniL[k])
     return keep.map(k => uni[k])
   }
-  const t0 = dropFoldSpursTracked(W_)
-  const W0 = t0.ring, L0 = t0.src.map(k => WL_[k])
-  let uni, uniL = null
-  if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
-  else uni = unionRings([W0])
   const out = [], outL = []
   for (let k = 0; k < uni.length; k++) {
     const t = dropFoldSpursTracked(uni[k])
@@ -5786,7 +5818,7 @@ export function buildTileGround(ribbons, opts = {}) {
     if (!R.refused) {
       protoCurb = []; protoCurbGs = []
       let noWidth = 0, gsSkipped = 0, compoundFaces = 0, compoundUnlabelled = 0
-      let protoShortRuns = 0, compoundNoEase = 0
+      let protoShortRuns = 0, compoundNoEase = 0, protoNoCurb = 0, protoNoCurbArea = 0
       // ⭐⭐⭐ THE BLOCKS COME FROM `boundary − stroked roads`, NOT FROM ①'s HOLES.
       // ⛔ WHY THE HOLES ARE WRONG, measured on LS the day the stencil landed (2026-09-06): once
       // ① is cut by the circle, a block the circle CUTS is bounded partly by ink and partly by
@@ -6239,7 +6271,15 @@ export function buildTileGround(ribbons, opts = {}) {
           if (!(ring?.length >= 3)) continue
           if (!protoUseBlocks && signedArea(ring) > 0) continue
           const mine = easedByBlock[k] || []
-          if (!mine.length) continue
+          // ⛔⛔ A BLOCK WHOSE CURB CAME BACK EMPTY IS COUNTED, NEVER SILENTLY SKIPPED.
+          // The drop itself is RULED CORRECT — `RIBBONS §1`, "if the curbs touch, there's no
+          // block", and self-intersection means the feature goes to ZERO rather than drawing
+          // crossed. ⭐ THE SILENCE WAS THE DEFECT, not the drop: this was a bare `continue`,
+          // the same shape as `litmus-curb-parallel`'s `if (!tile?.iA?.length) continue` that
+          // `POLYGON-FIRST §5` RULE 2 names as a fallback INSIDE an instrument — "a block has no
+          // curb" reported as nothing at all. On a town nobody has inspected, a block quietly
+          // absent from the artifact is exactly the plausible-looking wrong map Layer 0 forbids.
+          if (!mine.length) { protoNoCurb++; protoNoCurbArea += Math.abs(signedArea(ring)); continue }
           // ⛔⛔ THE FILL IS NOT FROZEN — `SECTION §4`, the keystone, verbatim: "the FILL was NEVER
           // meant to be frozen; the DataWall freezes the SILHOUETTE and the FILL is the live
           // consumer-side stroke off it", and "Phase-D's earlier 'freeze the FILL too' over-reach is
@@ -6296,9 +6336,13 @@ export function buildTileGround(ribbons, opts = {}) {
             // **8,198 m² of sidewalk against ③'s 85,939** — ~90% of the ped fill gone. Handing that to
             // the operator would be worse than the over-reach it fixes, so the bands ship until the
             // loss is explained. ⛔ CAUSE NOT ESTABLISHED. Runs are NOT it (proto 5.5 runs/tile,
-            // median poly 5 · legacy 5.4, median 2 — proto is the healthier of the two). The open
-            // lead: **54 of 119 proto tiles carry NO fillets** against 9 of 118 legacy, and the leg
-            // trim + bent corner both key off them.
+            // median poly 5 · legacy 5.4, median 2 — proto is the healthier of the two).
+            // ⛔ NOR IS IT FILLETS, AND THE STANDING LEAD THAT SAID SO IS STALE **AND INVERTED**:
+            // "54 of 119 proto tiles carry NO fillets against 9 of 118 legacy" predates the corner
+            // work (stamped arcs 238 → 2089). Re-measured against the live build, proto carries
+            // fillets on MORE tiles than legacy. ⛔ Do not chase it. Both remaining leads are now
+            // excluded by measurement, so the suspect is `sectionPassTile`'s leg-zone / sector
+            // construction on a contour-derived ring — hypothesis, UNMEASURED.
             // ▶ Flip to the ruled behaviour by deleting `bands` from this object — everything else
             // is already in place.
             bands: { curb: (protoBandsByBlock[k] || {}).curb || [], treelawn: (protoBandsByBlock[k] || {}).treelawn || [],
@@ -6373,6 +6417,7 @@ export function buildTileGround(ribbons, opts = {}) {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
         }
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
+        if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and are ABSENT from the artifact (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`), but it is a REAL ABSENCE and it is counted here rather than left to be discovered on a map.`)
       }
       // ⭐ The capacity guard is DISCLOSED, per pour. A block whose ribbon could not reach its
       // nominal depth is a real fact about that block, not an error — but it must be countable,

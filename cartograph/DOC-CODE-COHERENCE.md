@@ -107,20 +107,22 @@ nobody propagated it.**
 
 ### S3 · ⛔ **ASPIRATION — and this is the one a naïve sweep would have deleted**
 
-Two answers to *"what is a block"* are alive in the corpus at once, and **both are correct sentences**:
-
-- **Shipped:** a block is a **face of the centerline graph**. Stated as load-bearing fact #1 in the
-  previous `PIPELINE.md step 3a (what a block is)`. True of the code.
-- **Ruled 2026-08-12:** the substrate is a **punch-out** — blocks are the holes in one closed compound
-  path (`RIBBONS §1`). Built, minted, frozen into `ribbons.json` as `protopolygon`, **and producing
-  nothing that ships**: an overlay behind `?grout=1` in the app, an env flag in the bake.
+When this survey was written, two answers to *"what is a block"* were alive at once and **both were
+correct sentences** — the **face of the centerline graph** (shipped) and the **punch-out**, blocks as
+the holes in one closed compound path (ruled 2026-08-12, minted and frozen, producing nothing).
 
 ⛔ **Neither doc was wrong. What was missing was any sentence saying these are two different answers and
 which one is on.** A conformance pass that "brought the docs into line with the code" would have deleted
-the ruling as rot — which is exactly `CLAUDE.md`'s named failure mode for this kind of work.
+the ruling as rot — which is exactly `CLAUDE.md`'s named failure mode for this kind of work, and it is
+why the survey named the tension instead of resolving it.
 
-✅ **Fixed by naming it rather than resolving it:** `PIPELINE.md` **step 3a** is a step of its own, whose
-job is to hold both and say which ships. ⛔ **Do not collapse it.**
+### ✅ RESOLVED THE SAME EVENING — and the resolution is the lesson's proof, not its expiry
+**① became the producer for Survey and Section hours after this was filed** (`84cb6a5b` · `dfd95f3b` ·
+`e14f17f9`). **The punch-out is the one that ships.** ⭐⭐ **Had the sweep "corrected" the ruling to
+match the code that morning, it would have deleted the thing that shipped that night** — an aspiration
+is not a slower kind of rot, and the only reliable tell is that **which side is wrong is a judgment
+about where the project is going**, which is why this class goes to Jacob rather than to an edit.
+⛔ **`PIPELINE §3a` is no longer holding two answers; do not read it as though it were.**
 
 **Why the ruling exists — the evidence, not the preference:** a graph face **cannot close around a
 dead end**; the walk goes out and back over the same vertices, so **all 50 dead-end tips are zero-width
@@ -275,9 +277,10 @@ optional and `bands` is an addition. **The eleven unsupplied are `vertR` · `tl`
 `roundTips` · `bluntTips` · `roundTipKeys` · `runs` · `bandJoin` · `cap` · `fillets`.**
 
 ⛔ **And even that is not a to-do list.** `bands` ships the FILL **already painted** — a deliberate
-change of model, not an omission — so some of the eleven may want **explicit refusal** rather than
-supply. **Which must be produced and which refused is the open design question**, and it is the actual
-content of "switch ① on."
+change of model, not an omission — so some of the eleven want **explicit refusal** rather than supply.
+✅ **RULED the same evening: 2 supplied (`runs`, `lu`), 9 refused with reasons** — the deciding rule is
+*does this field tell someone HOW TO BUILD, or WHAT A THING IS?* Live home: `RIBBONS §1`. *(This line
+called it "the open design question"; it was open for about four hours.)*
 
 ⭐ **Only the required/optional split made the right question askable.** That is the whole finding: the
 counts were not wrong, the question was — and *nothing in any of the four numbers said so.*
