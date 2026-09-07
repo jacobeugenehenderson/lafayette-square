@@ -3686,6 +3686,26 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         // treelawn −47.8% — the pad eating the strip it is supposed to end at.
         // ⭐ The corner still exists when the legs agree; it is the ARC STAMP that draws it (step 3,
         // the street edge is always concrete). The ramp is step 5, and step 5 is a TRANSITION.
+        // ⛔⛔ NO CHANGE ⇒ NO TREATMENT. THE WHOLE CONSTRUCTION, NOT JUST THE RAMP.
+        // *(Jacob, 2026-09-07: "THERE IS ONLY ONE LEG, NO RAMP BECAUSE NO CHANGE.")*
+        // `RIBBONS §1` invariant 1: the corner IS the band bent — "a slice of the same continuous
+        // concentric offsets, NEVER a separately-constructed primitive". Where the two frontages
+        // resolve to the same arrangement there is nothing for a corner to carry, so the offsets
+        // already draw it and anything added here is a primitive by definition.
+        // ⭐ AND `SECTION §3.1` IS WHY THIS IS SO OFTEN THE CASE: "two strips ALWAYS, EQUAL width —
+        // `hasTL` drives only the MATERIAL swap, never a width." The mono-width is uniform, so most
+        // corners are a material question and not a depth one.
+        // ⛔ I applied the cross-section at EVERY frontage seam, agreeing or not, and that — not the
+        // ramp — is the 12,708 m² of treelawn this painter was eating around the map.
+        // ⛔⛔ TWO THINGS LIVE HERE AND THEY HAVE DIFFERENT CONDITIONS. I conflated them and broke
+        // the pads. *(Jacob: "THERE IS ONLY ONE LEG, NO RAMP BECAUSE NO CHANGE" — true of the RAMP.
+        // Then: "The ADA pads are fucked now" — because I applied it to the whole corner.)*
+        //  · THE ADA PAD IS UNCONDITIONAL. `SECTION §6.1` step 3 is absolute: "the curb side of the
+        //    corner is the ADA ramp — CONCRETE — ALWAYS. Treelawn never wraps the curb." It does not
+        //    ask whether the two legs agree; grass stops at the tangents at every corner there is.
+        //  · THE SLIDE IS CONDITIONAL. It exists to carry a CHANGE across the corner — the mixed
+        //    config only, on the deeper leg. Where the two legs agree there is nothing to carry and
+        //    the band simply bends (`RIBBONS §1` invariant 1).
         const same = A.outWalk === B.outWalk && A.inWalk === B.inWalk && Math.abs(A.dOut - B.dOut) < 1e-6
         const arc = arcAt.get(q)
         // Steps 3 + 4 — where an arc exists, the whole arc carries the corner's cross-section.
