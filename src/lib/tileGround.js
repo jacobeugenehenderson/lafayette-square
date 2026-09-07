@@ -3272,6 +3272,146 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
 // order (so the unions downstream are bit-identical to the old single loop). The
 // block-local Section path (sectionOpen, below, with a per-tile cache) bypasses
 // this; it stays for the full-pass callers (a cold bake / the :2713 path).
+// ══ THE STAMP INQUIRY · ③'s FILL, struck LIVE past the wall ══════════════════
+// ⭐⭐⭐ RULED (Jacob, 2026-09-06): "Because we don't do a WALK anymore, we might need to do a
+// STAMP INQUIRY step." · "There should be no MID-LEG anything. There are no nodes there now,
+// because we are fully polygonized."
+//
+// ⛔ THAT SECOND SENTENCE IS THE WHOLE DESIGN. `sectionPassTile` asks "where does this frontage
+// START and STOP" — it groups runs, strokes each polyline into an area, trims it back from a
+// corner, and hands the leftover wedge to a corner pad that may DECLINE. Every one of those is a
+// question about a LEG, and on a contour there are no legs: no ends, no nodes, no corners as
+// separate objects, nothing between two of anything. There is a closed curve and, at each point
+// of it, a stamp. ⇒ The only question ③ can ask is "WHAT DEPTH HERE", per point.
+//
+// ⭐ SO THIS IS NOT A NEW CONSTRUCTION. It is ③'s own band strike (the `parts` / `ins` / `band`
+// ladder in `buildTileGround`), moved to the consumer side and re-resolved against live
+// `blockCustoms` — which is the entire content of `SECTION §4`'s keystone: freeze the SILHOUETTE,
+// author the FILL live. The producer keeps striking nothing; it now freezes the STAMP instead of
+// the BANDS. `RIBBONS §1`: "a walk needs boundaries; an offset needs only a value per point."
+//
+// ⭐ AND IT IS WHY A SEAM IS UNCONSTRUCTIBLE HERE rather than merely unlikely: every boundary
+// below is a whole-contour offset of the SAME curve. There are no pieces, so there is nothing to
+// join, so there is no join to open.
+//
+// THE WALL HOLDS, and by the same signature rule as `sectionPass`: the parameters are the frozen
+// tile + design scalars + `blockCustoms` (design intent keyed by frozen identity). No streets, no
+// chains, no measures, no centerlines. `run.baseMeasure` is surveyed DATA frozen across the wall,
+// not chain geometry — the ruled distinction (`SURVEY §5`).
+
+// One stamp's resolved cross-section: the frozen base measure + the operator's override.
+// ⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD — `measure.treelawn` is the authored override ONLY
+// (median 0 across the map); the depth actually painted comes from `resolvePedDepths`. Reading
+// the raw field is a real, repeated error here: it once left three quarters of the map with no
+// ped band, and it manufactured a phantom 3.00 m envelope gap during this ticket.
+function stampMeasure(run, blockCustoms, curbWidth) {
+  if (!run) return null
+  const c = blockCustoms?.[run.skelId]?.[run.side]?.[run.segOrd] || null
+  const mz = run.baseMeasure
+  const base = mz?.[run.side]?.pavementHW
+  const hw = (c && Number.isFinite(c.pavementHW)) ? Math.max(0, c.pavementHW) : base
+  const d = resolvePedDepths(mz, run.side, c)
+  return {
+    pavementHW: Number.isFinite(hw) ? hw : null,
+    curb: curbWidth,
+    treelawn: d.tl, sidewalk: d.sw, hasTL: !!d.hasTL,
+    // The §3.1 default ARRANGEMENT (treelawn-Y reads grass→walk, N reads walk→lawn), then the
+    // per-edge `.materials` override. Both strips to 'LU' is the OPEN FIELD — a material state.
+    matOuter: c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW'),
+    matInner: c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU'),
+  }
+}
+
+// Does this tile carry the per-point stamp? ⛔ Detected from the tile's own shape, never a flag,
+// so a mixed artifact cannot silently take one path for tiles that wanted the other.
+export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
+  && st.iaStamp.length === st.iaFull.length && !!st.runs
+
+export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
+  // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
+  // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
+  // was stamped. Strike off the first, CUT with the second: a rim band is a clean cut through a
+  // finished band, never a band that turned a corner to follow the rim.
+  const iA = st.iaFull || [], stamps = st.iaStamp || [], runs = st.runs || []
+  const empty = { Wacc: [], tlByLu: {}, luByLu: {}, curb: [] }
+  if (!iA.length) return empty
+  const inBlock = (rings) => (st.iA?.length && rings.length) ? intersectRings(rings, st.iA) : rings
+  const key = st.lu || 'unknown'
+  const M = (ri, i) => { const s = stamps[ri]?.[i]; return s == null ? null : stampMeasure(runs[s], blockCustoms, cw) }
+
+  // ── THE MONO-WIDTH ENVELOPE — one number for the whole block, over every point it has.
+  // `RIBBONS §1` invariant 4, and it is SACROSANCT: the outer depth is uniform per block (that is
+  // what gives the clean concentric corner); only the DIVIDER and the MATERIALS vary per point.
+  // ⭐ Resolved LIVE, so authoring an edge deeper grows the whole block's band — the behaviour
+  // `SECTION §7` lists under "preserve, all already working".
+  let WBnom = 0
+  for (let ri = 0; ri < iA.length; ri++) for (let i = 0; i < iA[ri].length; i++) {
+    const m = M(ri, i); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0))
+  }
+
+  const parts = iA.filter(r => r?.length >= 3).map((ring, n) => ({ ring, ri: n, hole: signedArea(ring) < 0 }))
+  if (!parts.length) return empty
+  // ⛔ NO STAMP IN THESE CALLS. `offsetRingVariable` GATES ITS UNION ON THE STAMP — with one it
+  // runs `unionRingLabelled`, without it `unionRings` — so asking for labels CHANGES THE
+  // GEOMETRY. Same call shape as the producer's `ins`, deliberately, so the two agree.
+  const ins = (pick) => {
+    const o = [], h = []
+    for (const p of parts) {
+      const rs = offsetRingVariable(p.ring, pick(p), () => true, () => null, false, null, false, p.hole)
+      ;(p.hole ? h : o).push(...rs)
+    }
+    return (o.length && h.length) ? differenceRings(o, h) : o
+  }
+  const insAt = (d) => ins(() => () => d)
+
+  // ── THE TOPOLOGICAL CAPACITY GUARD — not the forbidden clamp (`§6.9`.5). A depth past the
+  // block's medial axis INVERTS the offset and `differenceRings` returns the COMPLEMENT, flooding
+  // the interior: a sign error wearing the shape of a band. Bisect to the reach that still exists.
+  // ⭐ Recomputed live because WBnom is authorable — freezing it would clamp the operator's own
+  // deeper treelawn to the capacity of the UN-authored envelope, silently.
+  let WB = WBnom, capped = false
+  if (WBnom > 1e-6 && !insAt(WBnom / 0.9).length) {
+    let lo = 0, hi = WBnom / 0.9
+    for (let it = 0; it < 12; it++) { const mid = (lo + hi) / 2; if (insAt(mid).length) lo = mid; else hi = mid }
+    WB = lo * 0.9; capped = true
+  }
+  const curbOuter = parts.some(p => p.hole)
+    ? differenceRings(parts.filter(p => !p.hole).map(p => p.ring), parts.filter(p => p.hole).map(p => p.ring))
+    : parts.filter(p => !p.hole).map(p => p.ring)
+  const band = (a, b) => (a.length && b.length) ? differenceRings(a, b) : []
+
+  // ⛔⛔ A BLOCK TOO NARROW FOR EVEN THE CURB IS THE OPEN-FIELD LIMIT — all LU to centre. Not a
+  // clamp (forcing WB = cw re-inverts the offset) and not an absence (`ARCHITECTURE §"The compound
+  // shape"`: the drawing has no holes). A MATERIAL state, never a missing one.
+  if (WB < cw) return { Wacc: [], tlByLu: {}, luByLu: { [key]: inBlock(insAt(0)) }, curb: [], capped, openField: true }
+
+  // ── THE ARRANGEMENT, PER POINT. Two strips always — they SWAP, they never collapse (`§3.1`) —
+  // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
+  // material's name. Identical ladder to the producer's, so the two can be gated against each other.
+  const lim = Math.max(0, WB - cw)
+  const swap = (p, fn) => (i) => { const m = M(p.ri, i); return m ? fn(m) : 0 }
+  const mk = (p) => {
+    const outWalk = swap(p, m => m.matOuter === 'SW'), inWalk = swap(p, m => m.matInner === 'SW')
+    const tl = swap(p, m => Math.min(m.treelawn || 0, lim)), sw = swap(p, m => Math.min(m.sidewalk || 0, lim))
+    const dOut = (i) => Math.min(outWalk(i) ? sw(i) : tl(i), lim)
+    return {
+      walkFrom: (i) => cw + (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0)),
+      walkTo:   (i) => cw + (outWalk(i) ? dOut(i) : (inWalk(i) ? lim : 0)),
+      lawnFrom: (i) => cw + (outWalk(i) ? dOut(i) : 0),
+      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOut(i) : lim) : lim),
+    }
+  }
+  const F = new Map(parts.map(p => [p, mk(p)]))
+  const pedOuter = insAt(cw)
+  return {
+    Wacc:   inBlock(band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))),
+    tlByLu: { [key]: inBlock(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
+    luByLu: { [key]: inBlock(insAt(WB)) },
+    curb:   inBlock(band(curbOuter, pedOuter)),
+    capped,
+  }
+}
+
 export function sectionPass(shapeTiles, cw, stripMat, blockCustoms = null) {
   const Wacc = [], tlByLu = {}, luByLu = {}
   for (const st of shapeTiles) {
@@ -3361,7 +3501,17 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       if (cache) cache.set(i, bundle)
       return bundle
     }
-    const r = sectionPassTile(st, cw, stripMat, blockCustoms)
+    // ⭐⭐⭐ THE STAMP INQUIRY — a tile carrying a per-POINT stamp is offset, not walked.
+    // ⛔ `sectionPassTile` is the per-RUN painter: it asks where a frontage starts and stops,
+    // trims legs back from corners and lets a corner pad DECLINE. On a fully polygonized contour
+    // none of those questions exists — there are no legs and no nodes, only "what depth HERE".
+    // Handing a contour tile to the walk painter is what cost ~a third of the ped fill even after
+    // the NaN was closed: its `runs` are grouped off `iA`, so they neither partition the ring nor
+    // cover it (88.5% on LS, and 29 tiles OVER-cover), and curb with no run got no band at all.
+    // ⛔ Chosen by the tile's own shape, never a flag — a mixed artifact cannot silently take the
+    // wrong path for half its tiles.
+    const r = hasStampInquiry(st) ? sectionPassProtoTile(st, cw, stripMat, blockCustoms)
+                                  : sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
     const bandJoin = st.bandJoin || 'miter'
     const cap = Number.isFinite(st.cap) ? st.cap : (cw + (st.tl || 0) + (st.sw || 0))
@@ -3369,7 +3519,10 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
       key,
       W: r.Wacc, tlByLu: r.tlByLu, luByLu: r.luByLu,
       A: differenceRings([st.ring], iA),                                       // asphalt = tile − rounded inner
-      C: differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),    // curb = iA − iC (frozen join + cap)
+      // ⭐ THE CURB IS PART OF THE SAME LADDER when the stamp inquiry built it: `iA − ins(cw)`,
+      // a per-point VARIABLE offset. The concentric fallback below is the walk painter's, and it
+      // is not the same shape — using it on a stamped tile put 1,820 m² of curb where ③ had none.
+      C: r.curb || differenceRings(iA, offsetRings(iA, -Math.min(cw, cap), bandJoin)),
       block: iA,                                                               // block silhouette = the frozen curb ring
     }
     if (cache) cache.set(i, bundle)
@@ -6404,8 +6557,18 @@ export function buildTileGround(ribbons, opts = {}) {
           //      join, so the question does not arise.
           // ⛔ A consumer that needs one of those must say so and be answered, never find `undefined`:
           // on a town nobody has inspected, an absent field and a refused field must not read alike.
-          const runs = []
-          for (const EC of mine) {
+          // ⭐⭐⭐ AND THE SAME WALK STAMPS EVERY VERTEX — `iaStamp[r][k] = the run index`.
+          // ⛔ THIS IS WHAT REPLACES THE WALK (Jacob, 2026-09-06: "because we don't do a walk
+          // anymore, we might need to do a stamp inquiry step"). ③ never cuts the ring, so a
+          // consumer never asks "where does this frontage stop" — only "what depth HERE", which
+          // is a lookup per contour point. `runs` stays IDENTITY exactly as `RIBBONS §1` ruled;
+          // this is the per-POINT index into it, which is the form an offset can consume.
+          // ⛔ A `null` entry is an HONEST absence — a vertex ① never labelled, or (after the
+          // disc cut below) a vertex on the RIM. The rim is an edge of the DRAWING, not a street
+          // frontage; it owes no sidewalk, and `EM(i)` returning null is how that reads.
+          const runs = [], iaStamp = mine.map(EC => new Array(EC.ring.length).fill(null))
+          for (let ri = 0; ri < mine.length; ri++) {
+            const EC = mine[ri]
             let cur = null
             for (let i = 0; i < EC.ring.length; i++) {
               const o = EC.labs[i] == null ? null : protoOwners[EC.labs[i]]
@@ -6416,6 +6579,7 @@ export function buildTileGround(ribbons, opts = {}) {
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
               // frozen identity, not chain geometry — it crosses the wall by the ruled rule.
               if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [], baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
+              iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
             }
           }
@@ -6425,34 +6589,29 @@ export function buildTileGround(ribbons, opts = {}) {
           const shortRuns = runs.filter(r => r.poly.length < 2).length
           if (shortRuns) protoShortRuns += shortRuns
           const runs2 = runs.filter(r => r.poly.length >= 2)
+          // ⛔ THE FILTER RENUMBERS, SO THE STAMP IS REMAPPED — a dropped run must not leave the
+          // stamp pointing at its neighbour. A vertex whose run went away stamps `null`: an
+          // honest absence, never a silent re-attribution to whoever slid into the index.
+          const reIx = new Map(); runs.forEach((r, i) => { const j = runs2.indexOf(r); if (j >= 0) reIx.set(i, j) })
+          for (const a of iaStamp) for (let i = 0; i < a.length; i++) a[i] = a[i] == null ? null : (reIx.has(a[i]) ? reIx.get(a[i]) : null)
           for (const r of runs2) delete r.key
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
-            // ⭐ the FILL, already painted — not `runs` for something else to re-stroke
-            // ⛔⛔ THE FILL IS STILL FROZEN HERE — `SECTION §4`'s over-reach, and a known
-            // non-conformance. ⛔⛔ AND "THE FLIP IS ONE DELETION" IS STRUCK: MEASURED FALSE.
-            // Deleting `bands` hands the tile to `sectionPassTile`, which reads FOUR fields this
-            // tile does not supply — `tl` `sw` `iaEdge` (per tile) and `runs[].measure` — two of
-            // them REFUSED here on purpose. ⭐ THE HALF THAT IS NOW CLOSED (`e14f17f9`+): the
-            // mono-width seed was `TLmax = tl`, and `undefined` never loses a `>` comparison, so
-            // the per-edge depths could not lift it and `ringAt(NaN)` collapsed the whole ribbon.
-            // That alone was the "~90% gone": ped band 7% → 66.7% of ③'s, and the authored
-            // treelawn went from Δ 0 m² to Δ +802 m². ⭐ The old figure also compared ③'s SUMMED
-            // layers (they overlap 46,072 m²) against the painter's — two different questions.
-            // ⛔ THE HALF STILL OPEN, AND IT IS A MODEL MISMATCH, NOT A BUG TO PATCH: this tile's
-            // `runs` are grouped off `iA`, so they are neither a partition of `st.ring` (A10:
-            // 0/151 tiles establish it) nor a cover of the curb (88.5% on LS, 71.1% on HPDM; 108
-            // tiles under-cover and 29 OVER-cover — a cover cannot be both). A leg sector is
-            // stroked FROM a run's polyline, so curb with no run gets no sector and its band falls
-            // to `luRemainder`. ⭐ MEASURED: 95% of the miss is FAR FIELD, >12 m from any fillet
-            // apex — mid-leg, so the corner takeover is NOT the dominant cause.
-            // ⭐⭐ RULED (Jacob, 2026-09-06): "because we don't do a WALK any more, we might need a
-            // STAMP INQUIRY step." That is `RIBBONS §1`'s produce/refuse ruling arriving as the
-            // cure — "③ never cuts the ring, so there is no 'where does this stop' question, only
-            // 'what depth HERE', answered per edge by the stamp ① already carries". ⛔ So the fix
-            // is NOT to make the runs cover the ring — that is the walk, rebuilt. It is to ask the
-            // stamp per point. `runs` stays as IDENTITY, which is all it was ever supplied for.
-            // ▶ node scratch/claims-proto-fill-is-live.mjs — every number above, re-derived.
+            // ⭐ the FILL, already painted — and it is the LAST thing here that still is.
+            // ⛔ THE FILL IS STILL FROZEN, `SECTION §4`'s over-reach, and the flip is now ONE
+            // DELETION FOR REAL: remove `bands` and `sectionOpen` dispatches to the STAMP INQUIRY
+            // (`sectionPassProtoTile`), which reproduces this strike live off `iaFull`+`iaStamp`.
+            // ⛔ NOT DELETED HERE, and the reason is the eye, not the numbers: `protoProducer` is
+            // on in the Designer, so flipping puts a new FILL on the operator's own map, and
+            // `RIBBONS §1` earned that rule the hard way — "do not eye-gate a construction that is
+            // not ready, and never in the operator's own view." Jacob's call, on a render.
+            // ⭐⭐ WHAT WAS WRONG BEFORE, so it is not re-derived: "delete `bands`" used to hand the
+            // tile to `sectionPassTile`, the per-RUN WALK painter. It reads four fields this tile
+            // does not supply, and two of them are REFUSED by ruling — the mono-width seed
+            // `TLmax = tl` went `undefined`, `x > undefined` is false for every run, and
+            // `ringAt(NaN)` collapsed the ribbon. That was the "~90% gone". Closing it reached
+            // 66.7%; the rest was the walk itself, asking a contour where its legs start and stop.
+            // ▶ node scratch/claims-proto-fill-is-live.mjs — LS band within 0.1%, authoring +35,819 m².
             bands: { curb: (protoBandsByBlock[k] || {}).curb || [], treelawn: (protoBandsByBlock[k] || {}).treelawn || [],
                      sidewalk: (protoBandsByBlock[k] || {}).sidewalk || [], lu: (protoBandsByBlock[k] || {}).lu || [] },
             // ⭐ the SHAPE the wall freezes (`SECTION §4`'s own list) — carried NOW, so the flip is
@@ -6468,7 +6627,10 @@ export function buildTileGround(ribbons, opts = {}) {
             // tip" honestly looks like; absent fields would crash the painter, and a fabricated
             // tip would be a plausible-looking wrong bulb. Counted per pour below.
             roundTips: [], bluntTips: [], roundTipKeys: [], mouths: [], thruNodeEnds: [],
-            runs: runs2,
+            // ⭐ `iaFull` — the UNCUT curb contour the stamp indexes. The disc cut simplifies the
+            // ring, so `iA` and `iaStamp` stop corresponding after it; the FILL is struck off this
+            // one and CUT with `iA`. See the cut block below.
+            runs: runs2, iaStamp, iaFull: mine.map(EC => EC.ring),
             // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
             // initial ground map and later add overrides." A fact about the world, read off the block
             // itself, not a construction parameter. Overrides are a later layer and not scoped here.
@@ -6514,6 +6676,20 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐ A fillet whose arc falls entirely outside the disc goes with it: the corner it
             // describes is not in the drawing, and a fillet with no curb is an arc nobody paints.
             const inDisc = (p) => intersectRings([[[p[0]-0.05,p[1]-0.05],[p[0]+0.05,p[1]-0.05],[p[0]+0.05,p[1]+0.05],[p[0]-0.05,p[1]+0.05]]], [stamp]).length > 0
+            // ⛔⛔ THE STAMP CANNOT SURVIVE THIS CUT, AND THE ANSWER IS NOT TO MAKE IT.
+            // `intersectRings` SIMPLIFIES: Clipper drops collinear vertices, so an interior ring
+            // comes back with 40 points where it had 67 — measured, and it is why re-attaching
+            // the stamp by exact key after the cut recovered 2 of 40. ⭐ A tolerance would "fix"
+            // that and it is the forbidden shape (`RIBBONS §1`: smoothness by construction, never
+            // cleanup) — and matching a stamp by distance is `A15`'s proximity recovery, which
+            // killed the walk-ordinal coupler.
+            // ⭐⭐ ③ NEVER NEEDED IT TO SURVIVE: it strikes the bands off the UNCUT contour and cuts
+            // the BANDS. So the tile carries both, and each is the authority for one question —
+            // `iaFull` + `iaStamp` say WHAT DEPTH (per point, uncut, correspondence intact), the
+            // cut `iA` says WHERE THE BLOCK IS. The painter strikes off the first and cuts with
+            // the second, which is this block's own stated intent: "a rim block's ribbon is a
+            // clean CUT through a finished band, never a band that turned a corner to follow the
+            // rim." ⇒ `iaFull`/`iaStamp` pass through the cut untouched, by design.
             for (const r of ring) kept.push({ ...t, ring: r, iA: cut(t.iA),
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)),
               bands: { curb: cut(t.bands.curb), treelawn: cut(t.bands.treelawn),

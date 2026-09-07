@@ -362,17 +362,17 @@ success is the worst outcome a kit can have:
 
 **What is open, disclosed per pour — and ⛔ this list is DISCLOSED BY THE CONSTRUCTION, not maintained
 here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
-- ⛔ **③ ships the FILL frozen** — the tile carries `bands`, which is `SECTION §4`'s Phase-D over-reach
-  arriving again under a new name. ⛔⛔ **"THE FLIP IS ONE DELETION" IS STRUCK — measured false.**
-  `sectionPassTile` reads four fields ①'s tile does not supply, two REFUSED by ruling; §4's freeze list
-  is not the painter's read set. ✅ **Half is closed:** the mono-width seed was `TLmax = tl`, and
-  `undefined` never loses a `>` comparison, so `ringAt(NaN)` collapsed the ribbon — ped band **7% →
-  66.7%**, authored treelawn **Δ 0 → +802 m²**, legacy byte-identical. ⛔ **Half is open and it is a
-  MODEL mismatch:** ①'s `runs` are grouped off `iA`, so they neither partition `st.ring` (A10: 0 of 151)
-  nor cover the curb (88.5% LS · 71.1% HPDM, with 29 tiles OVER-covering — a cover cannot be both), and
-  **95% of the miss is far field, mid-leg**, so the corner is not it. ⭐⭐ **RULED (Jacob): "we don't do a
-  WALK any more — we might need a STAMP INQUIRY step."** ⛔ Not "make the runs cover the ring"; that is
-  the walk rebuilt. → `SECTION §4` · ▶ `node scratch/claims-proto-fill-is-live.mjs`.
+- ⚠️ **③ still ships the FILL frozen — but the cure is BUILT and it is now one deletion for real.**
+  ⭐⭐ **RULED (Jacob): "because we don't do a WALK anymore, we might need a STAMP INQUIRY step" ·
+  "there should be no MID-LEG anything — there are no nodes there now, because we are fully
+  polygonized."** ⛔ "Delete `bands`" used to hand a contour to `sectionPassTile`, the per-RUN painter,
+  which asks where a frontage starts and stops — questions a contour cannot answer. The tile now
+  freezes the **STAMP** (`iaStamp`, per contour point → its run; `iaFull`, the uncut contour it
+  indexes) and `sectionPassProtoTile` re-strikes ③'s own ladder live. **Band within 0.1% of ③ on two
+  towns · asphalt 0.00% · authoring +35,819 m² where it was Δ 0 · 99.5% of points stamped.**
+  ⛔ **Not flipped: `protoProducer` is on in the Designer, so it is the operator's eye, not a number.**
+  ⛔ Open, cause not established: the two strips swap ~3% while their total holds — only the divider.
+  → `SECTION §4` · ▶ `node scratch/claims-proto-fill-is-live.mjs`.
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.

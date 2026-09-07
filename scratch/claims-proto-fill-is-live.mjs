@@ -1,87 +1,98 @@
 #!/usr/bin/env node
-// ⛔⛔ THE ③ FLIP — "delete `bands` and the FILL strokes live" — MEASURED, not argued.
+// ⭐⭐⭐ ③'s FILL, STRUCK LIVE PAST THE WALL — the STAMP INQUIRY, measured.
 // ▶ node scratch/claims-proto-fill-is-live.mjs [scene]
 //
-// `SECTION §4` rules the keystone: freeze the SILHOUETTE, author the FILL live. ③ ships the
-// FILL frozen (`bands` on the tile), which is the Phase-D over-reach re-committed. The flip was
-// held back because it yielded ~a tenth of the ped fill and the cause was not established.
+// `SECTION §4`'s keystone: freeze the SILHOUETTE, author the FILL live. ③ shipped the FILL frozen
+// (`bands` on the tile), so authoring could not reach it. The flip is not "delete `bands`" — that
+// hands a fully-polygonized contour to `sectionPassTile`, the per-RUN WALK painter, which asks
+// where a frontage starts and stops. ⛔ On a contour there are no legs and no nodes; the only
+// question is "WHAT DEPTH HERE". This gate measures the answer.
 //
-// ⭐ THIS CHECK READS THE SOURCE, IT DOES NOT RESTATE IT — every number below is re-derived from
-// the live build, so it cannot go stale the way a figure written into a doc does.
+// WHAT IT ASSERTS
+//   1. the live FILL reproduces ③'s own frozen bands (same construction, both sides of the wall)
+//   2. authoring REACHES it (the whole point of the keystone)
+//   3. a SEAM is not constructible — every boundary is a whole-contour offset of one curve
 //
-// ⛔ THE TWO INSTRUMENT ERRORS IT EXISTS TO PREVENT, both of which cost measurements on 2026-09-06:
-//  1. ③'s four frozen layers OVERLAP (LS: 46,072 m² pairwise). SUMMING their areas answers a
-//     different question from "how much ground is painted". Every band figure here is a UNION.
-//  2. `run.baseMeasure.treelawn` is the AUTHORED OVERRIDE ONLY — median 0. The depth the map
-//     paints comes from `resolvePedDepths`. Comparing envelopes off the raw field reports a
-//     3.00 m gap that does not exist. (`tileGround.js`, the `protoMeasureOf` comment says so.)
+// ⛔ TWO INSTRUMENT ERRORS THIS ENCODES SO THEY CANNOT RECUR (both cost measurements on 2026-09-06):
+//   · ③'s four frozen layers OVERLAP (LS 46,072 m²). SUMMING their areas answers a different
+//     question from "how much ground is painted". Every figure here is a UNION.
+//   · `run.baseMeasure.treelawn` is the AUTHORED OVERRIDE ONLY — median 0. The painted depth comes
+//     from `resolvePedDepths`. Off the raw field you get a 3.00 m envelope gap that does not exist.
 import { feed, buildProto } from './_proto-feed.mjs'
-import { sectionPassTile, ringRunOwners } from '../src/lib/tileGround.js'
+import { sectionOpen, hasStampInquiry } from '../src/lib/tileGround.js'
 import { differenceRings, intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 
 const sA = r => Math.abs((r||[]).reduce((s,g)=>{let a=0;for(let i=0,n=g.length;i<n;i++){const p=g[i],q=g[(i+1)%n];a+=p[0]*q[1]-q[0]*p[1]}return s+a/2},0))
-const U  = r => sA(differenceRings(r, []))                       // area of the UNION, never the sum
-const plen = p => { let s=0; for(let i=1;i<p.length;i++) s+=Math.hypot(p[i][0]-p[i-1][0],p[i][1]-p[i-1][1]); return s }
+const U  = r => sA(differenceRings(r, []))
+const luA = o => Object.values(o||{}).reduce((s,v)=>s+U(v),0)
+const pct = (a,b) => b > 0 ? `${(100*a/b).toFixed(1)}%` : 'n/a'
 
+let bad = 0
 for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','hipointe-demun'])) {
-  const f = feed(scene); if (!f) continue
+  const f = feed(scene); if (!f) { bad++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   const cw = f.curbWidth
+  const strip = t => { const { bands, ...r } = t; return r }
+  const open = (tiles, cust) => sectionOpen(tiles, cw, { outer:'LU', inner:'SW' }, null, cust)
   console.log(`\n══ ${scene} · ${T.length} proto tiles · ${f.slots} authored slots · cw ${cw} ══`)
 
-  // ── ① THE REFUSED-FIELD READS. `sectionPassTile` reads fields ①'s tile records as REFUSED.
-  // `undefined` never loses a `>` comparison, so a refused depth propagates as NaN rather than
-  // failing — the silent-substitution shape Layer 0 q2 forbids, inside the painter.
-  const refused = ['tl','sw','iaEdge','measure']
-  const miss = {}
-  for (const t of T) { for (const k of ['tl','sw','iaEdge']) if (t[k] === undefined) miss[k]=(miss[k]||0)+1
-                       for (const r of t.runs||[]) if (r.measure === undefined) miss.measure=(miss.measure||0)+1 }
-  console.log(`  fields sectionPassTile reads that ①'s tile does not supply: ${refused.map(k=>`${k}×${miss[k]||0}`).join(' · ')}`)
+  // ── 0 · the tile carries the per-POINT stamp, and it is TOTAL where ① labelled the contour.
+  const st = T.filter(hasStampInquiry).length
+  let pts = 0, nul = 0
+  for (const t of T) for (const a of t.iaStamp || []) for (const v of a) { pts++; if (v == null) nul++ }
+  console.log(`  stamp inquiry available on ${st}/${T.length} tiles · ${pts} contour points, ${nul} unstamped (${pct(nul,pts)} — rim + unlabelled ①)`)
+  if (st !== T.length) { console.log('  ⛔ FAIL — a tile without the stamp falls to the WALK painter'); bad++ }
 
-  // ── ② THE PARTITION (A10). It is what makes a gap unconstructible. It needs the `iaEdge`
-  // stamp AND runs that consume `st.ring`; ①'s runs are grouped off `iA` instead, so neither holds.
-  const stamped = T.filter(t=>Array.isArray(t.iaEdge)).length
-  const consume = T.filter(t=>(t.runs||[]).reduce((s,r)=>s+r.poly.length-1,0)===t.ring.length).length
-  const established = T.filter(t=>Array.isArray(t.iaEdge) && ringRunOwners(t)).length
-  console.log(`  A10 partition: iaEdge stamp ${stamped}/${T.length} · runs consume st.ring ${consume}/${T.length} · ESTABLISHED ${established}/${T.length}`)
-
-  // ── ③ THE RUNS ARE NEITHER A PARTITION NOR A COVER OF THE CURB RING.
-  // ⭐ This is the finding Jacob named: "because we don't do a walk any more, we might need a
-  // stamp inquiry step". A leg sector is stroked from a run's polyline, so curb with no run gets
-  // no sector and its band falls to `luRemainder` — mid-leg, nowhere near a corner.
-  let per=0, cov=0, over=0, under=0
-  for (const t of T) {
-    let L=0; for(const r of t.iA) for(let i=0;i<r.length;i++){const j=(i+1)%r.length; L+=Math.hypot(r[j][0]-r[i][0],r[j][1]-r[i][1])}
-    const R=(t.runs||[]).reduce((s,r)=>s+plen(r.poly),0); per+=L; cov+=R
-    if (L>0 && R>L*1.02) over++; else if (L>0 && R<L*0.98) under++
+  // ── 1 · the live FILL vs ③'s frozen bands. Same ladder, both sides of the wall ⇒ they must agree.
+  const F = open(T, f.blockCustoms), L = open(T.map(strip), f.blockCustoms)
+  // ⛔ THE TOLERANCE IS PER-LAYER AND IT IS NOT A FUDGE. `asphalt`/`curb`/`LU` and the TOTAL band
+  // must reproduce ③ tightly — same ladder, both sides of the wall. The two STRIPS carry a known
+  // open residual: they swap ~3% between each other while their total holds to 0.23%, so only the
+  // DIVIDER moved. ⛔ CAUSE NOT ESTABLISHED — it is not the capacity guard (the residual sits on
+  // the 144 tiles whose envelope is identical to ③'s) and not the rim cut. Tolerance 5% so the
+  // gate still catches a real regression; ⛔ do not widen it to make a change pass.
+  const row = (n, a, b, tol=0.01) => {
+    const d = Math.abs(a-b), ok = d <= Math.max(1, b*tol)
+    if (!ok) bad++
+    console.log(`  ${n.padEnd(9)} frozen ${b.toFixed(0).padStart(8)} · live ${a.toFixed(0).padStart(8)} · Δ ${(a-b>=0?'+':'')}${(a-b).toFixed(0).padStart(7)} m² (${pct(d,b)} / ${(tol*100).toFixed(0)}%)  ${ok?'✅':'⛔'}`)
   }
-  console.log(`  curb ring covered by runs: ${(100*cov/per).toFixed(1)}% · tiles UNDER-covered ${under} · OVER-covered ${over} (a cover cannot be both)`)
+  row('sidewalk', U(L.sidewalk), U(F.sidewalk), 0.05)
+  row('treelawn', luA(L.treelawnByLu), luA(F.treelawnByLu), 0.05)
+  row('BAND tl+sw', U(L.sidewalk)+luA(L.treelawnByLu), U(F.sidewalk)+luA(F.treelawnByLu))
+  row('LU',       luA(L.luByClass),   luA(F.luByClass))
+  // ⛔ 2%, AND THE REASON IS NAMED, NOT THE NUMBER TUNED. The live curb runs slightly LARGE on
+  // both towns (+0.8% LS, +1.1% HPDM) and it is the same open residual as the strip split: ③ cuts
+  // its bands with the DISC, the live path cuts with the tile's `iA` — which is that same region
+  // after Clipper simplified it. ⛔ CAUSE NOT ESTABLISHED. 2% still catches a real regression:
+  // the walk painter's curb was +6% here and fails this bar.
+  row('curb',     U(L.curb),          U(F.curb), 0.02)
+  row('asphalt',  U(L.asphalt),       U(F.asphalt))
 
-  // ── ④ THE FILL, frozen vs live, as a union — the acceptance number.
-  let F=0,L=0,corner=0,far=0
-  for (const t of T) {
-    const fb=[...t.bands.treelawn,...t.bands.sidewalk]
-    const {bands,...st}=t
-    const r=sectionPassTile(st,cw,{outer:'LU',inner:'SW'},f.blockCustoms)
-    const lb=[...Object.values(r.tlByLu).flat(),...r.Wacc]
-    F+=U(fb); L+=U(lb)
-    // where the miss lives: at a corner (the takeover declining) or mid-leg?
-    const ap=(t.fillets||[]).map(x=>x.apex)
-    for (const gp of differenceRings(fb,lb)) { const a=sA([gp]); if(a<0.01) continue
-      let cx=0,cy=0; for(const p of gp){cx+=p[0];cy+=p[1]}; cx/=gp.length; cy/=gp.length
-      let d=Infinity; for(const p of ap){const e=Math.hypot(p[0]-cx,p[1]-cy); if(e<d)d=e}
-      if (d<=12) corner+=a; else far+=a }
+  // ── 2 · AUTHORING REACHES THE FILL. `SECTION §4`'s whole point; it was Δ 0 m² on both paths.
+  const bc = JSON.parse(JSON.stringify(f.blockCustoms || {}))
+  let n = 0
+  for (const s of Object.values(bc)) for (const sd of Object.values(s||{})) for (const o of Object.values(sd||{}))
+    if (Number.isFinite(o?.treelawn)) { o.treelawn *= 2; n++ }
+  const base = luA(L.treelawnByLu), moved = luA(open(T.map(strip), bc).treelawnByLu)
+  const frz  = luA(open(T, bc).treelawnByLu) - luA(F.treelawnByLu)
+  if (!n) console.log(`  authoring: this town authors NO treelawn depth — the gate cannot speak here (not a pass)`)
+  else {
+    const ok = Math.abs(moved-base) > 1
+    if (!ok) bad++
+    console.log(`  authoring: doubling ${n} treelawn slots moves the LIVE fill ${(moved-base>=0?'+':'')}${(moved-base).toFixed(0)} m² ${ok?'✅':'⛔ INERT'} · the FROZEN bands ${frz.toFixed(0)} m² (frozen is inert BY CONSTRUCTION — that is the over-reach)`)
   }
-  console.log(`  ped band — FROZEN ${F.toFixed(0)} m² · LIVE ${L.toFixed(0)} m² = ${(100*L/F).toFixed(1)}%`)
-  console.log(`  the miss lives: within 12 m of a fillet apex ${corner.toFixed(0)} m² (${(100*corner/(corner+far)).toFixed(1)}%) · FAR FIELD ${far.toFixed(0)} m² (${(100*far/(corner+far)).toFixed(1)}%)`)
-  console.log(`  ⇒ ${far>corner*3 ? 'MID-LEG, not corner reach — the corner takeover is NOT the dominant cause.' : 'corner-weighted.'}`)
 
-  // ── ⑤ DOES AUTHORING REACH THE FILL? `SECTION §4`'s whole point.
-  const bc=JSON.parse(JSON.stringify(f.blockCustoms||{})); let n=0
-  for(const s of Object.values(bc)) for(const sd of Object.values(s||{})) for(const o of Object.values(sd||{}))
-    if(Number.isFinite(o?.treelawn)){o.treelawn*=2;n++}
-  const tlOf=(cust)=>T.reduce((s,t)=>{const{bands,...st}=t
-    return s+U(Object.values(sectionPassTile(st,cw,{outer:'LU',inner:'SW'},cust).tlByLu).flat())},0)
-  const a=tlOf(f.blockCustoms), b=tlOf(bc)
-  console.log(`  authoring reach: doubling ${n} authored treelawn slots moves the LIVE treelawn ${(b-a>=0?'+':'')}${(b-a).toFixed(0)} m²  ${Math.abs(b-a)<1?'⛔ INERT':'✅ reaches'}`)
+  // ── 3 · NO SEAM. Every boundary is a whole-contour offset of ONE curve, so treelawn and sidewalk
+  // meet exactly. ⭐ `RIBBONS §1`: a visible seam is positive evidence of per-chain construction —
+  // it tells you WHICH MODEL made the geometry, so this is not a quality check.
+  // ⛔ MEASURED ON BOTH SIDES. `feedback_verify_the_baseline_before_comparing_to_it`: ③'s own
+  // frozen layers overlap by 46,072 m² on LS, so a bare "the live band overlaps" is not a finding
+  // — the question is whether the LIVE path overlaps MORE than the construction it reproduces.
+  const ovOf = (o) => U(intersectRings(o.sidewalk, Object.values(o.treelawnByLu).flat()))
+  const oL = ovOf(L), oF = ovOf(F)
+  const ok = oL <= Math.max(1, oF * 1.05)
+  console.log(`  treelawn∩sidewalk: frozen ${oF.toFixed(0)} m² · live ${oL.toFixed(0)} m² ${ok?'✅ no worse':'⛔ WORSE than ③'}`)
+  if (!ok) bad++
 }
+console.log(bad ? `\n⛔ ${bad} FAILURE(S)` : `\n✅ PASS — the FILL is struck live off the frozen stamp, and authoring reaches it.`)
+process.exit(bad ? 1 : 0)
