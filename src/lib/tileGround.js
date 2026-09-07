@@ -3856,10 +3856,17 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const arc = arcAt.get(q)
       // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
       // extent is the one edge the owners meet across, and the pad is drawn there just the same.
-      // ⛔ Same arity: `len` EDGES from `s0`. A square corner (no arc) is `len = 0` — and it must
-      // then stamp the ONE edge the owners meet across, which is `k <= 0`, i.e. exactly one pass.
-      const [s0, len] = arc || [q, 0]
-      for (let k = 0; k < Math.max(1, len); k++) {
+      // ⛔ Same arity: `len` EDGES from `s0`.
+      // ⭐⭐ A SQUARE CORNER IS SYMMETRIC ABOUT ITS VERTEX, AND AN ARC ALREADY IS. A fillet's span
+      // runs tangent-to-tangent, so it covers the contour on BOTH sides of the corner by
+      // construction. With no arc the corner is the VERTEX, and the two edges meeting at it are
+      // both its — stamping only the outgoing one gave the pad to one leg and not the other, so
+      // the incoming leg's walk never reached the kerb and `§6.1` step 3 ("the street edge of a
+      // corner is concrete ALWAYS") failed on one side of a corner that is correct on the other.
+      // ⛔ Not a widening and not a tolerance: it is the same span the arc case already has, stated
+      // for the degenerate case instead of falling out of it wrongly.
+      const [s0, len] = arc || [(q - 1 + n) % n, 2]
+      for (let k = 0; k < len; k++) {
         const e = (s0 + k) % n
         const prev = cornerAt.get(`${p.ri}|${e}`)
         if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
