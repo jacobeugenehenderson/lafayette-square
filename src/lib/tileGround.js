@@ -3809,7 +3809,22 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       walkFrom: (i) => cAt(i) != null ? cw : cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
       walkTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
       lawnFrom: (i) => cAt(i) != null ? cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)) : cw + (outWalk(i) ? dOutF(i) : 0),
-      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
+      // ⛔⛔ THE LAWN IS THE STRIP THE WALK IS NOT — SYMMETRICALLY, IN BOTH ARRANGEMENTS.
+      // *(Jacob, 2026-09-07: "when I swap the inner band it still has a seam… maybe this is related
+      // to the same issue as the TL <> LU matcher. The inner band needs another fix pass.")* He is
+      // right about the CLASS: this is one resolver giving two different answers for one thing.
+      // ⛔ A treelawn-N span read the lawn as the inner strip `[cw+dOut, cw+lim]` — correct — while
+      // a treelawn-Y span read it as the WHOLE band `[cw, cw+lim]`, painted under the walk and left
+      // to draw order to hide. So at every boundary between the two arrangements the LAWN's outer
+      // edge STEPS, and swapping a strip moves the step instead of removing it.
+      // ⭐ `SECTION §3.1`: "every edge has TWO strips, outer and inner, plus the LU remainder." The
+      // walk is one of them; the lawn is the OTHER one. Never both, never overlapping.
+      //   walk outer → lawn is the inner strip   [cw+dOut, cw+lim]
+      //   walk inner → lawn is the outer strip   [cw,      cw+dOut]
+      //   both SW    → no lawn (empty)      ·  both LU → open field, the whole band
+      // ⇒ The two strips PARTITION the band, so a seam between them is not constructible — which is
+      // `RIBBONS` Slice 2's invariant 1 applied to the divider rather than to the envelope.
+      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : (inWalk(i) ? dOutF(i) : lim)),
     }
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
