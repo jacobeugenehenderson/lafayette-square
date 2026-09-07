@@ -140,10 +140,13 @@ the **same painter**, which is what "the same thing" was always supposed to mean
 ### ⛔ OPEN
 - **Cap folds** — one chain's two sides meeting at a tip. `§6.3` rules it (the bulb has NO halves,
   one cross-section, whole to the cap owner). **Not built.**
-- **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`, ①'s runs carry a
-  DIFFERENT segOrd partition, and **52 of 93 LS slots resolve to no run**. This is `§7`'s **T3**, and
-  its gate `scratch/t4-fe-parity.mjs` is stale and unrun. It is what "the swap only works on some
-  blocks" is.
+- **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
+  DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
+  **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all
+  four swap" symptom** — that was the ② label carry (an EDGE label read off a VERTEX stamp on a
+  reversed ring, `RIBBONS §1`, 2026-09-07) and it is fixed. Two defects shared one sentence.
+  ▶ the slot count is a check, not a number to quote: `node scratch/claims-stamp-follows-the-edge.mjs`
+  for the carry, `t4-fe-parity.mjs` for the key.
 - **~3% divider residual** vs ③, cause not established.
 - ⚠️ A `shape.json` poured before the flip still carries `bands`; that path draws and **warns**. The
   cure is a re-pour.

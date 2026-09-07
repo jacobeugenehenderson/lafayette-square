@@ -474,13 +474,31 @@
 >   after.**
 >   ### ⭐⭐⭐ AND THE CORNER MUST BE READ OFF ①, NOT OFF ②
 >   **① IS SHARP** (this §, above: smoothing is SKELETON, rounding is SURVEY, ① does neither). ②
->   eases a 90° corner into ~12 vertices of 0.57 m turning **7.5°** each — so a turn test on ②'s
->   contour finds **ZERO corners on a plain rectangle**, while ①'s own hole for that block turns
->   `1 0 0 92 7 102 4 3 88 93`. Map-wide: ① gives a **median of 4 corners per block**; ② gives none.
+>   eases a 90° corner into a dozen vertices each turning a few degrees, so **a turn test on ②'s
+>   contour finds no corners at all on a plain rectangle** while ①'s own hole for it turns four
+>   right angles. ▶ `node scratch/claims-marked-corners.mjs` — ⛔ re-run, never quote.
 >   ⇒ **Reading the corner off ② is reading the ROUNDING, not the shape.** The producer stamps ①'s
 >   corners onto ②'s contour by the label each vertex already carries (`iaCorner`) — identity carried
 >   through the offset, never recovered from the eased geometry afterward. A corner ARC is **one**
 >   boundary, not twelve.
+>   ### ⭐⭐⭐ AND THE THING BEING CARRIED IS AN **EDGE** LABEL ON A **VERTEX** STAMP — 2026-09-07
+>   **①'s `labels[q]` owns the edge `q → q+1`. `offsetRingVariable` emits one point per ① VERTEX
+>   (`push(p, i)`), so its stamp names a vertex.** Reading `labs[src[j]]` therefore means *"the ①
+>   edge LEAVING that vertex"* — which is the ② edge leaving `j` **only while the two rings run the
+>   same way.** ⛔ **Clipper's union normalises winding and they mostly do not: measured, 133 of 138
+>   ② rings run AGAINST their ① block ring.** The result is an off-by-one that displaces every
+>   frontage's ownership onto its neighbour's ground, and it is the operator's *"when I swap one
+>   treelawn/sidewalk pair, it swaps all 4 sides of the block."*
+>   ⛔ **NOT AN ORIENTATION FLAG AND NOT A THRESHOLD** — the adjacency of the two endpoints' source
+>   indices *says* which ① edge a ② edge lies along, so there is no case to detect and nothing to
+>   tune (`carryEdgeLabels`). Where the union re-resolved a point the provenance is genuinely gone;
+>   that is **counted**, never trusted silently.
+>   ⭐ **The general form, and it is the one to carry to town #2: a quantity carried through a
+>   boolean must be carried as the thing it IS.** Vertex-valued (the ease radius `outR`) survives a
+>   reversal untouched; edge-valued does not. This is `§1`'s own *identity carried, never recovered*
+>   law with the arity made explicit — and it is the half that was missing.
+>   ▶ `node scratch/claims-stamp-follows-the-edge.mjs <scene>` — the ORACLE is geometric (the inward
+>   offset of ① edge E is parallel to E), so it can only be run where ① is **frozen**. ⛔ Re-run it.
 >   ⚠️ **OWED:** the road/`hard` reasoning still resolves live because ①'s frozen owners carry only
 >   `skelId`. **The mint is the one place a chain may be read**, so it belongs stamped INTO ①;
 >   `mintProtopolygon` stamps it now but it reaches nothing until a re-pour.

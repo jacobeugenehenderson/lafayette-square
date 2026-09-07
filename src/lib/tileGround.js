@@ -931,6 +931,34 @@ function unionRingLabelled(ring, labels) {
 // (it lies on one of the two edges that made it) but it means the correspondence is exact only
 // where the union did not cut — i.e. everywhere except the rings this change exists to fix.
 // ⇒ Tripwire, not a hope: `claims-proto-corner-is-authored-radius` must still read the class seed.
+// ⭐⭐⭐ A LABEL IS A PROPERTY OF AN EDGE; A STAMP IS A PROPERTY OF A VERTEX. Conflating them is
+// an off-by-one that only appears when the ring is TRAVERSED BACKWARDS — and it is, almost always.
+// `offsetRingVariable` emits one point per ① VERTEX (`push(p, i)`), so `stamp.labels[j]` names the
+// ① vertex a ② point was struck from. ①'s `labels` array is per-EDGE: `labs[q]` owns the edge
+// q → q+1. Reading `labs[src[j]]` therefore means "the edge LEAVING ① vertex src[j]" — which is the
+// ② edge leaving j only while the two rings run the same way. Clipper's union normalises winding,
+// so they mostly do not: measured on LS, 133 of 138 ② rings run AGAINST their ① block ring, and
+// a quarter of the town's contour BY LENGTH carried the neighbouring frontage's owner. That is the
+// operator's "when I swap one treelawn/sidewalk pair, it swaps all 4 sides of the block" — the
+// slot he authored owned a side it does not front.
+// ⛔ NOT AN ORIENTATION FLAG AND NOT A THRESHOLD. The adjacency of the two endpoints' source
+// indices SAYS which ① edge this ② edge lies along; there is no case to detect and nothing to tune.
+// ⚠️ Where the union re-resolved a point so the two sources are not adjacent, the provenance is
+// genuinely gone — it takes the leaving edge as before and is COUNTED, never silently trusted.
+// ▶ node scratch/claims-stamp-follows-the-edge.mjs
+function carryEdgeLabels(rg, src, labs, n, tally = null) {
+  const L = rg.length
+  return rg.map((_, i) => {
+    const a = src?.[i]; if (a == null) return null
+    const b = src?.[(i + 1) % L]
+    if (b == null || b === a) return labs[a]
+    if ((b - a + n) % n === 1) return labs[a]        // ② runs WITH ①: the edge leaving a
+    if ((a - b + n) % n === 1) return labs[b]        // ② runs AGAINST ①: the edge leaving b
+    if (tally) tally.lost++
+    return labs[a]
+  })
+}
+
 function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => null, clean = false, stamp = null, noMiterClamp = false, outward = false, easeAt = null) {
   const n = ring.length
   if (n < 3) return []
@@ -6329,6 +6357,7 @@ export function buildTileGround(ribbons, opts = {}) {
       protoCurb = []; protoCurbGs = []
       let noWidth = 0, gsSkipped = 0, compoundFaces = 0, compoundUnlabelled = 0
       let protoShortRuns = 0, compoundNoEase = 0, protoNoCurb = 0, protoNoCurbArea = 0
+      const labelCarryLost = { lost: 0 }    // ② points whose ① provenance the union re-resolved
       // ⭐⭐⭐ THE BLOCKS COME FROM `boundary − stroked roads`, NOT FROM ①'s HOLES.
       // ⛔ WHY THE HOLES ARE WRONG, measured on LS the day the stencil landed (2026-09-06): once
       // ① is cut by the circle, a block the circle CUTS is bounded partly by ink and partly by
@@ -6455,7 +6484,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         let outRings = rings2
-        let outLabs = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? labs[src[i]] : null)) })
+        let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost))
         let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
         if (holes.length) {
           // ⭐⭐⭐ A FACE'S CURB IS ITS OUTER ERODED INWARD **MINUS** EVERY HOLE DILATED INTO IT.
@@ -6472,7 +6501,7 @@ export function buildTileGround(ribbons, opts = {}) {
             for (let ri = 0; ri < hOff.length; ri++) {
               const src = hSt.labels?.[ri]
               hRings.push(hOff[ri])
-              hLabs.push(hOff[ri].map((_, i) => (src && src[i] != null ? holeLabs[hi][src[i]] : null)))
+              hLabs.push(carryEdgeLabels(hOff[ri], src, holeLabs[hi], holes[hi].length, labelCarryLost))
             }
           }
           if (hRings.length) {
@@ -6551,6 +6580,7 @@ export function buildTileGround(ribbons, opts = {}) {
         (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
         (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
       if (protoCornerAuthored) console.warn(`[tileGround][PROTO②] ⛔ this Look carries PER-CORNER radius overrides and ② cannot key them yet (the leg f/b flag is a tile-edge fact) — ${protoCornerAuthored} corner(s) took per-IX or the class seed instead. NOT silently applied.`)
+      if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) had NO ADJACENT ① source — the union re-resolved them, so which ① edge they lie along is not recoverable. They took the leaving edge's owner.`)
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
       if (compoundUnlabelled) console.warn(`[tileGround][PROTO②] ⛔ ${compoundUnlabelled} compound face(s) lost their ① identity across the hole subtraction — ③ cannot resolve a per-edge depth on them.`)
