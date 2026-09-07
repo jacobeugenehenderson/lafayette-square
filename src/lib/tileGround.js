@@ -463,14 +463,13 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
     const lastI = P.length - 1
     const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
-    // ⭐⭐⭐ `roadKey` — THE ROAD, NOT THE CHAIN. ⛔⛔ ① HAS NO NODES. A chain cut and a segOrd
+    // ⛔⛔ ① HAS NO NODES, AND NOTHING DOWNSTREAM ASKS WHICH ROAD THIS IS. A chain cut and a segOrd
     // boundary are bookkeeping in the CHAIN world; ①'s contour runs straight through them, and the
     // only thing that changes there is the label. So a consumer that mints a CORNER wherever
     // `skelId` changes has put the chain graph's nodes back into a construction built to have none
     // — and the operator sees the ribbon disrupted at every junction.
     // ⭐ LS cuts South 18th Street into ELEVEN chains; 58 of 174 roads are multi-chain.
-    const roadKey = st?.throughId ?? st?.roadId ?? skelId
-    const stamp = (side, i) => owners.push({ skelId, roadKey, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
+    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -3345,7 +3344,74 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   if (!iA.length) return empty
   const inBlock = (rings) => (st.iA?.length && rings.length) ? intersectRings(rings, st.iA) : rings
   const key = st.lu || 'unknown'
-  const M = (ri, i) => { const s = stamps[ri]?.[i]; return s == null ? null : stampMeasure(runs[s], blockCustoms, cw) }
+  let legSplit = 0, legMulti = 0
+  // ⛔ `si` — THE INDEX INTO `iA`/`iaStamp`, kept separately from `ri`, the index into `parts`.
+  // Filtering short rings re-indexes, so using one for the other silently reads another ring's
+  // stamps the moment any ring is dropped. It cost the leg map exactly that, caught by two of this
+  // file's own counters disagreeing (0 legs spanning >1 frontage, 95 legs with >1 arrangement).
+  const parts = iA.map((ring, si) => ({ ring, si })).filter(o => o.ring?.length >= 3)
+    .map((o, n) => ({ ring: o.ring, si: o.si, ri: n, hole: signedArea(o.ring) < 0 }))
+  if (!parts.length) return empty
+  // ══ THE LEG — `SECTION §3.3` step 1, and the unit everything below resolves on ═══════════════
+  // ⭐⭐⭐ *(Jacob, 2026-09-07)* **"A treelawn swap NEVER happens mid-leg, period. It's illogical.
+  // That's what the corners are for — they are designed to accommodate shifts/swaps."**
+  // §3.3 step 1 says it as a rule: "resolve a SINGLE per-edge depth… use this ONE resolution
+  // everywhere", and §5: "Section edits are ALWAYS per-fe". ⛔ Resolving per contour POINT is FINER
+  // than the ruled unit, and that is exactly what let the arrangement change inside a leg — the
+  // operator's join line. ▶ measured before this: 27 of 816 legs carried more than one arrangement,
+  // 20 of them because the leg spanned more than one chain.
+  // ⭐ A LEG IS THE CONTOUR BETWEEN TWO CORNERS. Both tests are things we already hold: the drawing
+  // TURNS (≥ `FILLET_TURN_TOL`, the ruled curve-sample-vs-corner constant — not a new threshold), or
+  // two different ROADS meet. ⛔ NOT a chain change: ① has no nodes, and a chain cut is not a corner.
+  // ⇒ A mid-leg swap is now UNCONSTRUCTIBLE rather than merely absent, which is the property the
+  // whole regime is after.
+  const legArr = new Map()      // `${ri}|${edge}` → the leg's ONE resolved measure
+  {
+    const turnAt = (g, q) => { const n = g.length, P = g[(q - 1 + n) % n], V = g[q], N = g[(q + 1) % n]
+      const t = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
+      return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) }
+    for (const p of parts) {
+      const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
+      // ⭐ THE SAME TEST ②'s CORNER USES — the contour turns. ⛔ Not an owner change: ① has no
+      // nodes, so a change of label is not a change of place.
+      const isCorner = (q) => turnAt(ring, q) >= FILLET_TURN_TOL
+      const cuts = []; for (let q = 0; q < n; q++) if (isCorner(q)) cuts.push(q)
+      const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n])
+                                : [[0, n]]
+      for (const [s0, len] of spans) {
+        // ⛔ ONE resolution for the leg. Where a leg spans more than one frontage the LONGEST
+        // contributor wins — length is the measure already in the data, and the ambiguity is
+        // COUNTED, never silently resolved: a leg needing a tie-break is a real fact about the
+        // authoring key (`blockCustoms[skelId][side][segOrd]` cannot name two frontages at once).
+        const byRun = new Map()
+        for (let k = 0; k < len; k++) {
+          const q = (s0 + k) % n, r = stp[q]; if (r == null) continue
+          const a = ring[q], b = ring[(q + 1) % n]
+          byRun.set(r, (byRun.get(r) || 0) + Math.hypot(b[0] - a[0], b[1] - a[1]))
+        }
+        if (!byRun.size) continue
+        // ⭐⭐⭐ AUTHORING WINS THE LEG, ALWAYS. *(Jacob, 2026-09-07: "when I swap a leg, it needs to
+        // only swap THAT leg and the corners adjust to accommodate.")*
+        // ⛔ Length is the tie-break ONLY among un-authored frontages. An override that lost a vote
+        // to a longer neighbour would be the operator's gesture silently doing nothing — Layer 0
+        // q3, the override IS the product. Where two authored frontages share one leg the longer
+        // still wins, and that ambiguity is COUNTED: the leg is the unit, so `blockCustoms`
+        // cannot name two arrangements for it.
+        const authored = (r) => !!blockCustoms?.[runs[r].skelId]?.[runs[r].side]?.[runs[r].segOrd]
+        let win = null, best = -1, winAuth = false, nAuth = 0
+        for (const [r, L] of byRun) {
+          const au = authored(r); if (au) nAuth++
+          if ((au && !winAuth) || (au === winAuth && L > best)) { best = L; win = r; winAuth = au }
+        }
+        if (byRun.size > 1) legSplit++
+        if (nAuth > 1) legMulti++
+        const mm = stampMeasure(runs[win], blockCustoms, cw)
+        for (let k = 0; k < len; k++) legArr.set(`${ri}|${(s0 + k) % n}`, mm)
+      }
+    }
+  }
+  // ⭐ EVERY per-point read goes through the LEG's single resolution (`SECTION §3.3` step 1).
+  const M = (ri, i) => legArr.get(`${ri}|${i}`) ?? null
 
   // ── THE MONO-WIDTH ENVELOPE — one number for the whole block, over every point it has.
   // `RIBBONS §1` invariant 4, and it is SACROSANCT: the outer depth is uniform per block (that is
@@ -3353,12 +3419,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ Resolved LIVE, so authoring an edge deeper grows the whole block's band — the behaviour
   // `SECTION §7` lists under "preserve, all already working".
   let WBnom = 0
-  for (let ri = 0; ri < iA.length; ri++) for (let i = 0; i < iA[ri].length; i++) {
-    const m = M(ri, i); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0))
+  for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
+    const m = M(p.ri, i); if (m) WBnom = Math.max(WBnom, cw + (m.treelawn || 0) + (m.sidewalk || 0))
   }
 
-  const parts = iA.filter(r => r?.length >= 3).map((ring, n) => ({ ring, ri: n, hole: signedArea(ring) < 0 }))
-  if (!parts.length) return empty
   // ⛔ NO STAMP IN THESE CALLS. `offsetRingVariable` GATES ITS UNION ON THE STAMP — with one it
   // runs `unionRingLabelled`, without it `unionRings` — so asking for labels CHANGES THE
   // GEOMETRY. Same call shape as the producer's `ins`, deliberately, so the two agree.
@@ -5918,65 +5982,18 @@ export function buildTileGround(ribbons, opts = {}) {
     const protoBase = new Map()          // skelId → the pre-authoring base measure
     streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
     for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
-    // ⛔⛔ AND THE PED CROSS-SECTION IS RESOLVED PER **ROAD**, NOT PER CHAIN. THIS IS THE JOIN LINE.
-    // `gleanTreelawn` reads `measure[side].treelawn` to decide whether the walk sits AT the curb or
-    // SET BACK. Keyed by `skelId` that is a step function of CHAIN IDENTITY — so where a road is
-    // cut into chains (LS cuts South 18th Street into ELEVEN; 58 of 174 roads are multi-chain) the
-    // lookup changes and the walk jumps a full treelawn's depth. ⭐ THE OPERATOR SEES A JOIN LINE
-    // ACROSS THE RIBBON, and he is right that it is impossible: these are concentric offsets of one
-    // contour, so there is no join — the discontinuity is in the DEPTH FUNCTION, not the geometry.
-    // ⛔ A chain boundary IS NOT A FEATURE OF THE DRAWING. The continuous side of a T, and a
-    // cul-de-sac where one chain folds onto itself, are exactly where the kit cuts chains and
-    // exactly where the operator marked. Letting the ped depth step there is CHAINS REACHING PAST
-    // THE WALL — forbidden in Section, not a matter of taste.
-    // ⚠️ THE WALL'S EXEMPTION DOES NOT COVER THIS, and that was my error: `blockCustoms` may be
-    // looked up by street id because it is DESIGN INTENT — a dictionary of numbers. This is not.
-    // Its DISCONTINUITIES are chain artifacts, and a value whose steps come from chain segmentation
-    // is chain geometry wearing a lookup's clothes.
-    // ⭐ `pavementHW` STAYS PER CHAIN — a street genuinely changes width block to block and that is
-    // the product (`SURVEY §4`, Layer 0 q3). Only the ped ARRANGEMENT is made road-continuous.
-    const protoRoadKey = new Map()       // skelId → the ROAD it belongs to
-    for (const st of [...streetsOrig, ...gradeSep]) {
-      const k = st?.skelId ?? st?.name; if (k == null) continue
-      protoRoadKey.set(k, st?.throughId ?? st?.roadId ?? k)
-    }
-    // Road+side → one merged cross-section. ⛔ Merged on the MEASURE, not by voting on the gleaned
-    // boolean: one threshold, applied once, to a road-level number — rather than a second rule
-    // invented here to arbitrate between chains. Length-weighted, because a road's character is
-    // what most of its frontage is, and length is the measure already in the data.
-    const protoRoadPed = new Map()       // `${roadKey}|${side}` → { treelawn, sidewalk }
-    {
-      const acc = new Map()
-      streetsOrig.forEach((st, i) => {
-        const k = st?.skelId ?? st?.name; if (k == null) return
-        const rk = protoRoadKey.get(k); const m = measures[i]; if (!m) return
-        let len = 0; const P = st?.points || []
-        for (let q = 1; q < P.length; q++) len += Math.hypot(P[q][0] - P[q-1][0], P[q][1] - P[q-1][1])
-        if (!(len > 0)) len = 1
-        for (const side of ['left', 'right']) {
-          const sm = m[side]; if (!sm) continue
-          const key = `${rk}|${side}`
-          let a = acc.get(key); if (!a) { a = { tl: 0, sw: 0, w: 0 }; acc.set(key, a) }
-          a.tl += (Number.isFinite(sm.treelawn) ? sm.treelawn : 0) * len
-          a.sw += (Number.isFinite(sm.sidewalk) ? sm.sidewalk : 0) * len
-          a.w += len
-        }
-      })
-      for (const [k, a] of acc) protoRoadPed.set(k, { treelawn: a.tl / a.w, sidewalk: a.sw / a.w })
-    }
-    // The measure a FRONTAGE resolves its ped cross-section from: this chain's measure for
-    // everything width-shaped, the ROAD's for the ped strips. ⛔ Both sides always present, so a
-    // missing side reads as absent rather than inheriting the other one.
-    const protoPedMeasure = (skelId) => {
-      const base = protoBase.get(skelId) || null
-      const rk = protoRoadKey.get(skelId) ?? skelId
-      const out = { ...(base || {}) }
-      for (const side of ['left', 'right']) {
-        const rp = protoRoadPed.get(`${rk}|${side}`)
-        if (rp) out[side] = { ...(base?.[side] || {}), treelawn: rp.treelawn, sidewalk: rp.sidewalk }
-      }
-      return out
-    }
+    // ⭐⭐⭐ THE UNIT IS THE LEG — `SECTION §3.3` step 1, "resolve a SINGLE per-edge depth… use
+    // this ONE resolution everywhere", and §5, "Section edits are ALWAYS per-fe".
+    // ⛔ A ROAD-LEVEL MERGE LIVED HERE ON 2026-09-07 AND IT WAS WRONG TWICE OVER. It averaged the
+    // ped cross-section across a road's chains, which (a) is not the ruled unit and (b) AVERAGES
+    // AWAY THE SURVEY — measured, 26 of 67 multi-chain roads carry genuinely different treelawn per
+    // chain, South 18th Street twelve distinct values on one side. That variation is the product
+    // (`SURVEY §4`, Layer 0 q3: "a single block may change width several times across its span —
+    // this is what the authoring tools are FOR"), and flattening it is the signature error the gate
+    // names. ⛔ It was built to stop the ribbon swapping mid-leg, which is the right symptom and
+    // the wrong cure: *(Jacob)* "a treelawn swap NEVER happens mid-leg, period. That's what the
+    // corners are for — they are designed to accommodate shifts/swaps."
+    // ⇒ The chain keeps its own measure; the CONSUMER resolves once per leg (`sectionPassProtoTile`).
     const bcOf = (skelId, side, segOrd) => blockCustoms?.[skelId]?.[side]?.[segOrd] || null
     // ⛔⛔ THE SHIPPED RESOLVER, NOT THE RAW FIELD. `measure.treelawn` is only the AUTHORED
     // OVERRIDE; the depth the map actually paints comes from `resolvePedDepths`, whose default
@@ -6160,21 +6177,25 @@ export function buildTileGround(ribbons, opts = {}) {
       // nothing until prebake runs again. ⛔ This is a LOOKUP BY STREET ID returning an identity —
       // the wall permits exactly that (`SURVEY §5`); no geometry crosses. `roadKey` on the owner
       // is preferred when a re-poured ① carries it.
-      const roadOf = (o) => o.roadKey ?? protoRoadKey.get(o.skelId) ?? o.skelId
-      const sameRoad = roadOf(a) === roadOf(b)
-      // ⛔⛔ AND `hard` IS A CHAIN ARTIFACT AT A CHAIN CUT. A cut leaves a chain ENDPOINT, and an
-      // endpoint's handles are broken by default (`hard: hardAt ? !!hardAt[i] : true`) — so on the
-      // continuous side of a T the flag says "corner" while the ROAD runs straight through. Widening
-      // the identity test alone changed nothing, measured: the 36 spurious arcs survived on `hard`.
-      // ⭐ WHERE THE ROAD CONTINUES, ONLY THE GEOMETRY MAY MINT A CORNER. That is not a new
-      // threshold — `PROTO_HARD_TURN` is DERIVED from the tessellation tolerance three paragraphs
-      // up ("a vertex turning 60° or more cannot be a curve sample of any street"), and it is the
-      // half of the test that cannot be wrong when the flag and the shape disagree.
-      // ⇒ a road that genuinely BENDS still corners; a road merely CUT does not.
-      const hardHere = sameRoad
-        ? (turnHere != null && turnHere >= PROTO_HARD_TURN)
-        : (a.hard || b.hard || (turnHere != null && turnHere >= PROTO_HARD_TURN))
-      if (sameRoad && !hardHere) return 0
+      // ⭐⭐⭐ A CORNER IS WHERE THE CONTOUR TURNS. NO IDENTITY AT ALL.
+      // *(Jacob, 2026-09-07: "why do you need that if you are working from the protopolygon?")* —
+      // and the answer is that I did not. This test read `a.skelId === b.skelId`, i.e. it asked a
+      // CHAIN question of a contour that has no chains in it, and then needed road unions, a
+      // union-find and a `hard` special case to repair the answer. ⛔ ALL OF THAT IS DELETED.
+      // ① is a closed path and knows its own shape; a corner is a place it BENDS.
+      // ⭐ Two ruled constants, neither invented here:
+      //   · `FILLET_TURN_TOL` (18°) — below it a vertex is a CURVE SAMPLE, not a corner. The same
+      //     constant `filletRing` has always used; `easeContour` not carrying it is the recorded
+      //     defect that drew corners at a quarter of their radius (`RIBBONS §1`).
+      //   · `PROTO_HARD_TURN` (60°) — derived from the tessellation's own 0.10 m arc tolerance: a
+      //     vertex turning ≥ 60° cannot be a curve sample of any street, so it is a corner whatever
+      //     the flag says.
+      // ⭐ `hard` survives ONLY in its legitimate role — a node a bezier runs THROUGH is already
+      // eased by the skeleton and must not be rounded twice (INVARIANT 2). It can no longer MINT a
+      // corner on its own, which is what made a chain endpoint read as one.
+      const turnDeg = turnHere == null ? 0 : turnHere
+      if (turnDeg < FILLET_TURN_TOL * 180 / Math.PI) return 0
+      if (!(a.hard || b.hard) && turnDeg < PROTO_HARD_TURN) return 0
       protoCornerN++
       const key = a.skelId < b.skelId ? `${a.skelId}|${b.skelId}` : `${b.skelId}|${a.skelId}`
       // ⛔ A BEND HAS NO PAIR, AND THAT IS NOT A FAILURE. Where one street turns, both sides of the
@@ -6750,8 +6771,12 @@ export function buildTileGround(ribbons, opts = {}) {
                 // ⭐ ROAD-continuous ped, per-chain everything else. `roadKey` is SUPPLIED (it was
                 // refused, and that refusal was the bug): a consumer must be able to ask "is this
                 // the same road" without asking the chain graph.
-                roadKey: protoRoadKey.get(o.skelId) ?? o.skelId,
-                baseMeasure: protoPedMeasure(o.skelId) }; runs.push(cur) }
+                // ⛔ BOTH UNIONS, as VALUES. `protoRoadKey` holds `{roadId, throughId}`; storing the
+                // object here made every comparison a reference compare, so every owner change
+                // classed as "different roads" and the node census silently read clean. Caught by
+                // the count MOVING THE WRONG WAY (511 → 593 corners) — an invariant that improves
+                // when you did not touch it is the tell.
+                baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
               iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
             }
