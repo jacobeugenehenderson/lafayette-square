@@ -1001,16 +1001,31 @@ export default function BlockGeometryV2Debug({
     asphaltSelected:   makeMaterial(asphaltCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, selectedCorridor: true }),
     highway:           makeMaterial(highwayCol,  PRI.asphalt,  bandFade, { measureActive, surveyActive, editing: surveyEditing }),
     treelawn:          makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing }),
+    // ⛔ Only the LAST-RESORT fallback now (an LU outside `luClasses`) — it is grass green, and a
+    // strip that reaches it is drawing a deliberate-looking lawn against its own parcel.
     treelawnSelected:  makeMaterial(treelawnCol, PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true }),
-    // Per-LU treelawn materials — opaque variants keyed by LU so each
-    // non-selected treelawn mesh paints in its adjacent parcel's color.
-    // Selected-chain treelawn still uses `treelawnSelected` (translucent
-    // during Measure drag) regardless of LU.
+    // Per-LU treelawn materials — keyed by LU so every treelawn mesh paints in its adjacent
+    // parcel's color. TWO maps, because there are two meshes: resting and selected-corridor.
     treelawnByLu: new Map((function buildLuMats() {
       const out = []
       // ⭐ SAME resolver, SAME key set as the face above — so the strip is the centre's colour.
       for (const lu of luClasses) {
         out.push([lu, makeMaterial(luColorOf(lu), PRI.treelawn, bandFade, { measureActive, surveyActive, editing: surveyEditing })])
+      }
+      return out
+    })()),
+    // ⛔⛔ AND THE SELECTED ONE TOO — THE FIX WAS LANDED ONCE AND THERE ARE TWO MESHES.
+    // The strip's colour rule is `SECTION §4` rule 3: the treelawn is the block's OWN colour, "the
+    // same color as the center". The per-LU map above satisfies it for the resting mesh; the
+    // SELECTED-corridor mesh went on drawing with bare `treelawnSelected`, which is grass green.
+    // ⇒ The operator SELECTS a block edge in order to swap it, so the strip turned green at exactly
+    // the moment he authored it — "in one config it's correct, when swapped, it's not."
+    // ⭐ One resolver, two meshes. `tileLuMatsSelected` already does this for the LU faces; this is
+    // the same construction at `PRI.treelawn`.
+    treelawnByLuSelected: new Map((function buildLuMatsSelected() {
+      const out = []
+      for (const lu of luClasses) {
+        out.push([lu, makeMaterial(luColorOf(lu), PRI.treelawn, bandFade, { measureActive, surveyActive, selectedCorridor: true })])
       }
       return out
     })()),
@@ -1149,6 +1164,7 @@ export default function BlockGeometryV2Debug({
   // bake reserves it for: "chain dead-end caps + corner pads where there's no single adjacent block
   // to attribute" (`bake-ground.js:122`).
   const tlLuFallback = bandMats.treelawnByLu.get('unknown') || bandMats.treelawn
+  const tlLuFallbackSelected = bandMats.treelawnByLuSelected.get('unknown') || bandMats.treelawnSelected
 
   // ── Survey wireframe (tool === 'surveyor') ──────────────────────────────
   // Survey shows the skeleton + hardscape boundary only — no ped/LU fill (that
@@ -1267,7 +1283,7 @@ export default function BlockGeometryV2Debug({
             <mesh key={`fsel-med:${i}`} geometry={geo} renderOrder={PRI.residential} receiveShadow material={medianSelected} />
           ))}
           {treelawnVisible && sectionGeos.selected.treelawn?.map(({ lu, geo }) => (
-            <mesh key={`fsel-tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawnSelected} />
+            <mesh key={`fsel-tl:${lu}`} geometry={geo} renderOrder={PRI.treelawn} receiveShadow material={bandMats.treelawnByLuSelected.get(lu) || tlLuFallbackSelected} />
           ))}
           {sidewalkVisible && sectionGeos.selected.sidewalk && (
             <mesh geometry={sectionGeos.selected.sidewalk} renderOrder={PRI.sidewalk} receiveShadow material={bandMats.sidewalkSelected} />
