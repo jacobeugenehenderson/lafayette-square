@@ -770,8 +770,8 @@
 > `innerSideSign` (writes the persisted `innerSign`) and `inboardKeyGeom`/`inboardSideOf` (byte-identical
 > duplicates, `derive.js:3799` == `tileGround.js:1246`) map the SAME perp to OPPOSITE labels. Read out of
 > the artifact — which geometric side production's own `side` label lands on — **`(-dz,dx)` is measure-RIGHT**,
-> which makes the geometric pair the inverted one. Consequence, tested label-free: **the ped is zeroed on the
-> side AWAY from the mate on 128 of 133 pairs across four towns** — the outboard side losing its treelawn and
+> which makes the geometric pair the inverted one. Consequence, tested label-free (▶ `node scratch/claims-inboard-side-convention.mjs`): **the ped is zeroed on the
+> side AWAY from the mate on a large majority of pairs across four towns** — the outboard side losing its treelawn and
 > sidewalk, the opposite of the documented intent (`tileGround.js:1222`). ⛔ `tileGround.js:1234` asserts the
 > opposite of this measurement, so ONE OF THE TWO IS WRONG and it is not ruled.
 > ⭐ **AND E3.4's PRESCRIPTION IS THE CANDIDATE CURE — rehomed here 2026-09-05 when the E3 campaign closed.**
@@ -802,11 +802,11 @@
 
 ### ⭐⭐ AND THE PED RULE IS REPLACED BY THE LADDER THAT ALREADY EXISTS — ask the data, then guess, then override.
 > **`effectiveMeasure`'s blanket `treelawn:0, sidewalk:0` is WRONG ON THE MAJORITY OF MEDIANS** — measured:
-> **68% of LS · 56% of HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
+> **a majority of LS and HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
 > medians have sidewalks that cross them"*). ⇒ **the median joins `gleanTreelawn`'s ladder like any other
 > block; there is no median rule to write.**
 > ⛔ **BUT THE DATA IS A RUNG, NOT A REPLACEMENT.** Normalized sidewalk coverage of street frontage at +2 m:
-> **LS 27.7% · HPDM 15.6%** — ⭐ **normalized, HPDM is the SPARSER town, and the raw way counts said the
+> LS reads a clearly higher normalized rate than HPDM — ⭐ **normalized, HPDM is the SPARSER town, and the raw way counts said the
 > opposite.** Ask-the-data alone leaves most of town #2 unanswered.
 > ⭐ **Closes the stated blocker on `BACKLOG.md`'s dead-end-mouth crossing item** (*"needs an intake trace
 > first to confirm we still retain crossing nodes"*) — **crossings ARE retained** and survive the skeleton bake.
