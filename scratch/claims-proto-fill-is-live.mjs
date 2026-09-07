@@ -66,7 +66,11 @@ for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','
   }
   row('sidewalk', U(L.sidewalk), U(F.sidewalk), 0.05)
   row('treelawn', luA(L.treelawnByLu), luA(F.treelawnByLu), 0.05)
-  row('BAND tl+sw', U(L.sidewalk)+luA(L.treelawnByLu), U(F.sidewalk)+luA(F.treelawnByLu))
+  // ⛔ 2% AND THE REASON IS NAMED: ③ builds NO ADA CORNER PADS — it has no corner concept at all.
+  // The live path does (`SECTION §6.1`), and a pad deliberately routes the corner band deeper than
+  // `cMin` to parcel. So the strips SHOULD differ from ③ now, and this row is no longer a parity
+  // check — it is a drift alarm. ⛔ Do not widen it again to make a change pass.
+  row('BAND tl+sw', U(L.sidewalk)+luA(L.treelawnByLu), U(F.sidewalk)+luA(F.treelawnByLu), 0.02)
   row('LU',       luA(L.luByClass),   luA(F.luByClass))
   // ⛔ 2%, AND THE REASON IS NAMED, NOT THE NUMBER TUNED. The live curb runs slightly LARGE on
   // both towns (+0.8% LS, +1.1% HPDM) and it is the same open residual as the strip split: ③ cuts

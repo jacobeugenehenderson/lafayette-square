@@ -3327,6 +3327,7 @@ function stampMeasure(run, blockCustoms, curbWidth) {
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
   && st.iaStamp.length === st.iaFull.length && !!st.runs
 
+const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
   // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
@@ -3389,16 +3390,81 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // so the inner one takes the rest of the envelope. ⛔ The depth belongs to the STRIP, not to the
   // material's name. Identical ladder to the producer's, so the two can be gated against each other.
   const lim = Math.max(0, WB - cw)
+  const arrOf = (m) => {
+    const outWalk = m.matOuter === 'SW', inWalk = m.matInner === 'SW'
+    const tl = Math.min(m.treelawn || 0, lim), sw = Math.min(m.sidewalk || 0, lim)
+    const dOut = Math.min(outWalk ? sw : tl, lim)
+    // ⭐ `conD` — HOW DEEP CONCRETE RUNS ON THIS LEG (`SECTION §6.1` step 4). A set-back walk
+    // (inner SW) is concrete to the FULL total; a curb-side walk is concrete for its one strip.
+    return { outWalk, inWalk, dOut, conD: inWalk ? lim : dOut }
+  }
+
+  // ══ THE CORNER — `SECTION §6.1`, as a STAMP, not a construction ═══════════════════════════════
+  // ⭐⭐⭐ THE ADA PAD IS THE BAND BENT, AND HERE THAT IS LITERAL: at contour points inside a
+  // corner arc the STAMP says concrete, and the same four offsets draw it. ⛔ No sector, no
+  // `arcSectorPoly`, no intersection, no bid, no decline — `RIBBONS §1` invariant 1 ("never a
+  // separately-constructed primitive") and invariant 3 ("a band-slice, works square OR round").
+  // The walk painter had FOUR decline gates here and dropped 60% of its bids; a stamp cannot
+  // decline, so the pad cannot be missing.
+  //
+  // ⛔ WHY THIS IS NOT COSMETIC. Without it the two legs of a corner keep their own arrangements,
+  // so a set-back walk `[cw+tl, cw+WB]` meets a curb-side walk `[cw, cw+sw]` — two depth ranges
+  // that DO NOT OVERLAP, and the sidewalk simply stops. ▶ MEASURED on LS: 231 of 681 corners
+  // (33.9%) have disagreeing arrangements. That is the operator's "the sidewalk breaks", and it is
+  // the same defect as "the ADA pads are missing" — one cure, not two.
+  //
+  // ⭐ THE THREE CONFIGURATIONS FALL OUT OF ONE RULE — `SECTION §6.1` says so, and this is why
+  // there is no case split here: concrete runs to `cMin = min(both legs' conD)`, deeper is parcel.
+  //   TL↔TL     both set back  → conD = lim both      ⇒ all concrete to the full depth
+  //   SW↔SW     both at curb   → conD = the SW width  ⇒ concrete one width, then LU
+  //   SW↔(TL)   mixed          → cMin = the SW depth  ⇒ a concentric arc at the shallower one
+  // ⛔ Step 3 is absolute and is what makes it a RAMP: THE STREET EDGE IS ALWAYS CONCRETE.
+  // Treelawn never wraps the curb — that experiment was built and reverted (`§6.2`).
+  const cornerDepth = new Map()          // `${ri}|${edgeIx}` → cMin
+  let padsBuilt = 0, padsNoTangent = 0
+  for (const p of parts) {
+    const A = iA[p.ri], m = A.length
+    const ix = new Map()
+    for (let k = 0; k < m; k++) { const kk = KP(A[k]); if (!ix.has(kk)) ix.set(kk, k) }
+    for (const fl of st.fillets || []) {
+      const a = ix.get(KP(fl.tA)), b = ix.get(KP(fl.tB))
+      if (a == null || b == null) continue                 // not this ring's corner
+      const fwd = (b - a + m) % m, bwd = (a - b + m) % m
+      const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
+      if (len === 0 || len * 2 > m) continue               // a fillet is the MINOR arc
+      // the two legs this arc joins — the stamp immediately before it and immediately after
+      const mA = M(p.ri, (s0 - 1 + m) % m), mB = M(p.ri, (s0 + len) % m)
+      if (!mA || !mB) continue
+      const cMin = Math.min(arrOf(mA).conD, arrOf(mB).conD)
+      for (let k = 0; k < len; k++) cornerDepth.set(`${p.ri}|${(s0 + k) % m}`, cMin)
+      padsBuilt++
+    }
+  }
+  // ⛔ A corner whose frozen tangents are not vertices of this contour gets NO pad, and it is
+  // COUNTED — never a silent absence. On a town nobody has inspected, an unbuilt ramp must not
+  // read the same as a corner that had none to build.
+  for (const fl of st.fillets || []) {
+    let found = false
+    for (const p of parts) { const A = iA[p.ri]
+      if (A.some(q => KP(q) === KP(fl.tA)) && A.some(q => KP(q) === KP(fl.tB))) { found = true; break } }
+    if (!found) padsNoTangent++
+  }
+
   const swap = (p, fn) => (i) => { const m = M(p.ri, i); return m ? fn(m) : 0 }
   const mk = (p) => {
-    const outWalk = swap(p, m => m.matOuter === 'SW'), inWalk = swap(p, m => m.matInner === 'SW')
-    const tl = swap(p, m => Math.min(m.treelawn || 0, lim)), sw = swap(p, m => Math.min(m.sidewalk || 0, lim))
-    const dOut = (i) => Math.min(outWalk(i) ? sw(i) : tl(i), lim)
+    const cAt = (i) => cornerDepth.get(`${p.ri}|${i}`)
+    const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
+    const dOutF = swap(p, m => arrOf(m).dOut)
+    // Inside a corner arc the arrangement IS the pad: outer strip concrete (step 3), to `cMin`.
     return {
-      walkFrom: (i) => cw + (outWalk(i) ? 0 : (inWalk(i) ? dOut(i) : 0)),
-      walkTo:   (i) => cw + (outWalk(i) ? dOut(i) : (inWalk(i) ? lim : 0)),
-      lawnFrom: (i) => cw + (outWalk(i) ? dOut(i) : 0),
-      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOut(i) : lim) : lim),
+      walkFrom: (i) => { const c = cAt(i); if (c !== undefined) return cw
+                         return cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)) },
+      walkTo:   (i) => { const c = cAt(i); if (c !== undefined) return cw + c
+                         return cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)) },
+      lawnFrom: (i) => { const c = cAt(i); if (c !== undefined) return cw + c
+                         return cw + (outWalk(i) ? dOutF(i) : 0) },
+      lawnTo:   (i) => { const c = cAt(i); if (c !== undefined) return cw + lim
+                         return cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim) },
     }
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
@@ -3408,7 +3474,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     tlByLu: { [key]: inBlock(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
-    capped,
+    capped, padsBuilt, padsNoTangent,
   }
 }
 
