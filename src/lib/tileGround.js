@@ -493,13 +493,20 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     if (ring.length < 3) continue
     // ⛔ UNIFORM WINDING. Non-zero fill CANCELS where an opposite-wound polygon
     // overlaps, so a mixed pile unions into confetti instead of one object.
-    // ⛔⛔ AND A REVERSAL SHIFTS A PER-EDGE ARRAY BY ONE. `labs[i]` owns the edge i → i+1; after
-    // reversing, that edge sits between reversed positions i and i+1 only if the labels are
-    // rotated with it. `reverse()` alone hands every edge its NEIGHBOUR'S owner — the same
-    // edge-vs-vertex slip this file now carries three separate corrections for, here at the source.
-    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) {
-      ring.reverse(); labs.reverse(); labs.push(labs.shift())
-    }
+    // ⛔⛔ AND THE LABELS REVERSE WITH IT AND ARE **NOT** ROTATED. I rotated them here for an hour
+    // on the reasoning that `labs` is per-EDGE, so a reversal must shift it by one — the same
+    // correction that is right at `carryEdgeLabels`. IT IS WRONG HERE, and bisected: this ring is
+    // [right pass forward, left pass BACKWARD], and each vertex is already paired with the span it
+    // bounds by the `segI` argument above. Rotating on top of that shifts the pairing a second
+    // time — and it does it ACROSS THE SEAM between the two passes, so a `right` label lands on a
+    // `left` vertex and both blocks flanking the street write to one slot.
+    // ▶ measured, ① re-poured both ways, same oracle: runs whose `side` disagrees with their
+    // geometry **47 with the rotation, 2 without**; slots painting in two blocks **54 → 41**; and
+    // the stamp gate did not move either way, so nothing recommended it.
+    // ⭐ THE LESSON, and it is the one to keep: the SAME correction was right three times today and
+    // wrong the fourth. "Per-edge arrays shift on reversal" is a property of a construction, not a
+    // law of the file — check the construction each time.
+    if (clipperLib.Clipper.Orientation(ring.map(toClipper)) !== true) { ring.reverse(); labs.reverse() }
     rings.push(ring); labels.push(labs)
   }
   // ⭐⭐⭐ THE CORNER NODE, FROZEN — so ② NEVER TOUCHES A CHAIN.
@@ -855,16 +862,25 @@ function booleanLabelled(clipType, subjectRings, subjectLabels, clipRings = [], 
       const a = raw[i] >= 0 ? [{ lab: raw[i], dx: 0, dy: 0 }] : cand0[i]
       const bLabs = new Set(raw[j] >= 0 ? [raw[j]] : cand0[j].map(e => e.lab))
       const shared = [...new Set(a.map(e => e.lab))].filter(x => bLabs.has(x))
-      if (shared.length === 1) return shared[0]
-      if (shared.length > 1) {
-        const ex = p[j].X - p[i].X, ey = p[j].Y - p[i].Y, eL = Math.hypot(ex, ey) || 1
-        let best = -1, bestDot = 0.999
-        for (const e of a) { if (!bLabs.has(e.lab)) continue
-          const d = Math.abs((e.dx * ex + e.dy * ey) / eL)
-          if (d > bestDot) { bestDot = d; best = e.lab } }
-        return best
+      if (!shared.length) return -1
+      // ⛔⛔ DIRECTION IS REQUIRED, NOT A TIE-BREAK — and taking it as a tie-break was a REGRESSION
+      // I shipped this afternoon. `shared.length === 1` returned that label unchecked, and at a
+      // chain's BUTT END its left and right ε-boundaries meet, so the one shared label can be the
+      // SAME CHAIN'S OTHER SIDE. Measured against a pinned pre-change ①: runs whose `side` label
+      // disagrees with their geometry went 2 → 47. Two blocks flanking one street then write to
+      // the same slot, which is the very defect the ledger was added to remove.
+      // ⭐ The output edge LIES ON one contributor, so its owner's contributing edge must be
+      // PARALLEL to it. A candidate that is not is not a candidate — including the one that would
+      // have won by being alone. Where none is parallel the ledger has no answer and says so; the
+      // forward scan takes it, exactly as before this block existed.
+      const ex = p[j].X - p[i].X, ey = p[j].Y - p[i].Y, eL = Math.hypot(ex, ey) || 1
+      let best = -1, bestDot = 0.9
+      for (const e of a) {
+        if (!bLabs.has(e.lab)) continue
+        const d = Math.abs((e.dx * ex + e.dy * ey) / eL)
+        if (d > bestDot) { bestDot = d; best = e.lab }
       }
-      return -1
+      return best
     }
     for (let i = 0; i < n; i++) {
       if (raw[i] >= 0) { res[i] = raw[i]; continue }
@@ -7160,7 +7176,21 @@ export function buildTileGround(ribbons, opts = {}) {
             // the second, which is this block's own stated intent: "a rim block's ribbon is a
             // clean CUT through a finished band, never a band that turned a corner to follow the
             // rim." ⇒ `iaFull`/`iaStamp` pass through the cut untouched, by design.
-            for (const r of ring) kept.push({ ...t, ring: r, iA: cut(t.iA),
+            // ⛔⛔ A BLOCK THE DISC CUTS INTO PIECES BECOMES SEVERAL TILES, AND EACH USED TO
+            // INHERIT THE WHOLE BLOCK'S CURB. `cut(t.iA)` clips to the DISC, not to the piece, so
+            // every piece carried every other piece's `iA` — and `sectionPassProtoTile` confines
+            // its bands with exactly that ring (`inBlock`). ⇒ one block painted its full band set
+            // once PER PIECE, on top of itself.
+            // ⭐ Measured on LS: 7 of 149 tiles were another tile's twin (#77≈#78≈#79,
+            // #92≈#93≈#94≈#95, #136≈#137), and 54 authoring slots appeared to "paint ≥2 m in two
+            // distinct blocks" — including `jules-street|right|0`, 207 m in one and 204 m in
+            // another on a 218 m two-point chain crossed by nothing. ⛔ I reported that to two
+            // other agents as "two ① faces claim the same side of the same street." IT IS NOT:
+            // it is ONE face emitted N times, and the 411 m is 218 m counted twice.
+            // ⭐ The piece's own curb is `iA ∩ piece` — the piece is already disc-cut, so one
+            // intersection does both jobs. ⛔ `iaFull`/`iaStamp` still pass through UNCUT, by the
+            // design stated above: they answer "what depth HERE", which the cut must not disturb.
+            for (const r of ring) kept.push({ ...t, ring: r, iA: intersectRings(t.iA || [], [r]),
               fillets: (t.fillets || []).filter(f => inDisc(f.apex)) })
           }
           protoShapeTiles = kept
