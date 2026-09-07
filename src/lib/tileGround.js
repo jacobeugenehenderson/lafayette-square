@@ -3749,7 +3749,15 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // construction above is what moves it; here the leg just paints its one arrangement.
     return {
       walkFrom: (i) => cAt(i) != null ? cw : cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
-      walkTo:   (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)),
+      // ⛔ BOTH STRIPS SW IS A REAL AUTHORED STATE AND IT LEFT A HOLE. `§3.1`: "Two strips always —
+      // they SWAP, they never collapse — so THE INNER ONE TAKES THE REST OF THE ENVELOPE." Every
+      // other arrangement honoured that; `outWalk && inWalk` stopped the walk at `dOut` and gave the
+      // lawn zero width, so `dOut → lim` was painted by nobody. What shows through is the block
+      // silhouette, which `BlockGeometryV2Debug` paints with a HARDCODED `residential` material —
+      // invisible on a residential block, a green stripe on a commercial one (Jacob, 2026-09-07:
+      // "it is fixed for one color/LU but not the other"). Measured on LS tile 106, commercial:
+      // 206 m² of 250 m² town-wide, one 1.5 m strip down a 135 m frontage.
+      walkTo:   (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
       lawnFrom: (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? dOutF(i) : 0),
       lawnTo:   (i) => cAt(i) != null ? cw + lim : cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
     }
