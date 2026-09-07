@@ -3516,63 +3516,24 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   //   SW↔(TL)   mixed          → cMin = the SW depth  ⇒ a concentric arc at the shallower one
   // ⛔ Step 3 is absolute and is what makes it a RAMP: THE STREET EDGE IS ALWAYS CONCRETE.
   // Treelawn never wraps the curb — that experiment was built and reverted (`§6.2`).
-  // ══ THE ADA PAD — ON ①'s CORNERS, NOT ON ②'s ARCS ═══════════════════════════════════════════
-  // ⭐⭐⭐ THE ACCEPTANCE IS CONTINUITY AT THE CORNER *(Jacob: "the sidewalk creates one continuous
-  // band around the block; it has 3 different corner configs to do it" · "the thing that matters is
-  // whether the band closes — AT A CORNER")*, and `SECTION §7` has it in his words already: "the
-  // sidewalk should be one continuous smooth line all around the entire polygon."
-  // ⛔ THE PAD WAS KEYED ON `fillets` TANGENT POINTS MATCHING EXACT CONTOUR VERTICES — so a corner
-  // whose arc did not match got no pad and the band simply stopped. MEASURED: 106 of 360 corners
-  // broke the band, and in ALL THREE configs — SW↔SW 21%, mixed 40%, TL↔TL 38%. A TL↔TL corner is
-  // ALL CONCRETE by §6.1, so a break there is the pad being absent, not mis-shaped.
-  // ⛔ `RIBBONS §1` INVARIANT 3 says why the keying was wrong: "the ADA corner pad is a band-slice,
-  // NOT predicated on the arc — so it works square OR round."
-  // ⇒ Keyed on `iaCorner`: ①'s own corners, carried onto the contour. Every corner gets a pad,
-  // square or round, and the three configurations fall out of ONE rule (§6.1 step 4):
-  //   concrete to `cMin = min(both legs' conD)`, parcel beyond.
-  //     TL↔TL   conD = lim both      ⇒ all concrete to the full depth
-  //     SW↔SW   conD = the SW width  ⇒ concrete one width, then parcel
-  //     SW↔TL   cMin = the shallower ⇒ a concentric arc at the SW depth
-  // ⛔ Step 3 is absolute and is what makes it a RAMP: the street edge is ALWAYS concrete.
-  const cornerDepth = new Map()          // `${ri}|${edgeIx}` → cMin
-  let padsBuilt = 0, padsNoTangent = 0
-  for (const p of parts) {
-    const cn = st.iaCorner?.[p.si]; if (!cn) continue
-    const m = p.ring.length
-    let q = 0
-    while (q < m) {
-      if (!cn[q]) { q++; continue }
-      let len = 0; while (len < m && cn[(q + len) % m]) len++
-      const mA = M(p.ri, (q - 1 + m) % m), mB = M(p.ri, (q + len) % m)
-      if (mA && mB) {
-        // ⛔⛔ `min` IS CORRECT — AND INCOMPLETE WITHOUT THE SLIDE, WHICH IS ALREADY BUILT.
-        // `SECTION §6.1` is Idea A in five steps, and step 5 is the half this painter lacks: "the
-        // DEEPER leg SLIDES to the curb over a short ramp ON ITS OWN LEG", so by the tangent both
-        // walks are at curb depth and `min` connects them. Without it `min` leaves the band in two
-        // pieces at a mixed corner, and `max` (§6.2's Idea C) only papers over that.
-        // ⭐⭐ THE WHOLE CONSTRUCTION EXISTS — `sectionPassTile`, the "Idea A" block: the concentric
-        // arc at `cMin`, `conMax`, `rampLen = max(2, (conMax-cMin)*2)`, the `slidQuad`, the
-        // `luWedge` carved to `swCarve`. Landed 2026-06-10. *(Jacob: "read the corner
-        // descriptions/layouts again. They're done, the work is done, just find it.")*
-        // ⛔ THIS PAINTER RE-IMPLEMENTS THE CORNER AND GETS IT WRONG. The fix is to USE that
-        // construction, not to keep tuning a fourth-rate copy of it. Not done — it needs the leg
-        // tangent frames and `conD` per leg, which is a real integration and not a 3am change.
-        const cMin = Math.min(arrOf(mA).conD, arrOf(mB).conD)
-        for (let k = 0; k < len; k++) cornerDepth.set(`${p.ri}|${(q + k) % m}`, cMin)
-        padsBuilt++
-      } else padsNoTangent++
-      q += len
-    }
-  }
+  // ⛔⛔ NO CORNER CONSTRUCTION LIVES HERE, AND THAT IS DELIBERATE.
+  // `SECTION §6.1`'s corner is BUILT — the "Idea A" block in `sectionPassTile`: the concentric arc
+  // at `cMin`, `conMax`, `rampLen`, the `slidQuad` that slides the deep leg's walk to the curb, and
+  // the `luWedge` carved to `swCarve`. Landed 2026-06-10, all five steps.
+  // ⛔ A re-implementation of it stood here and was WRONG — it had `cMin` and no slide, so the band
+  // came apart at every mixed corner, and it emitted TREELAWN beyond `cMin`, which is a fourth
+  // configuration and there are only three. It is EXCISED, not flagged: a wrong construction left
+  // in place with a comment saying so is worse than its absence, because the next reader finds the
+  // construction first and the comment second.
+  // ⇒ The corner is MISSING here until this painter USES the built one. That is visible and honest.
 
   const swap = (p, fn) => (i) => { const m = M(p.ri, i); return m ? fn(m) : 0 }
   const mk = (p) => {
-    const cAt = (i) => cornerDepth.get(`${p.ri}|${i}`)
     const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
     const dOutF = swap(p, m => arrOf(m).dOut)
     // Inside a corner arc the arrangement IS the pad: outer strip concrete (step 3), to `cMin`.
     return {
-      // ⛔⛔ THERE ARE THREE CORNER CONFIGS. IF YOU ARE DRAWING A FOURTH, IT IS WRONG. *(Jacob.)*
+      // ⛔ THREE CORNER CONFIGS EXIST (`SECTION §6.1`) AND NONE OF THEM IS BUILT HERE — see above.
       // ⭐ A sidewalk does not stop mid-street and become a tree lawn — that transition happens AT
       // THE CORNER, with ADA hardware. The walk is the INNER strip on a treelawn-Y leg and the
       // OUTER strip on a treelawn-N leg, so it sits at a DIFFERENT DEPTH on the two and the corner
@@ -3583,15 +3544,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // and ends at the tangents". This emitted the deep part of the corner into the TREELAWN
       // bucket — a grass strip bent around the arc, which is not a configuration that exists.
       // ⇒ At a corner: concrete curb→`cMin`, PARCEL beyond. Nothing else.
-      walkFrom: (i) => { const c = cAt(i); if (c !== undefined) return cw
-                         return cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)) },
-      walkTo:   (i) => { const c = cAt(i); if (c !== undefined) return cw + c
-                         return cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)) },
-      // ⭐ zero-width lawn at a corner: the treelawn ENDS at the tangents, by construction.
-      lawnFrom: (i) => { const c = cAt(i); if (c !== undefined) return cw + lim
-                         return cw + (outWalk(i) ? dOutF(i) : 0) },
-      lawnTo:   (i) => { const c = cAt(i); if (c !== undefined) return cw + lim
-                         return cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim) },
+      walkFrom: (i) => cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
+      walkTo:   (i) => cw + (outWalk(i) ? dOutF(i) : (inWalk(i) ? lim : 0)),
+      lawnFrom: (i) => cw + (outWalk(i) ? dOutF(i) : 0),
+      lawnTo:   (i) => cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
     }
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
@@ -3601,7 +3557,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     tlByLu: { [key]: inBlock(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
-    capped, padsBuilt, padsNoTangent,
+    capped,
   }
 }
 
