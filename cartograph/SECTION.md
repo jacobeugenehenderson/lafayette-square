@@ -208,26 +208,25 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
 5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
 
-> ### ⭐⭐ AND ③'s PAINTER RUNS THE SAME FIVE STEPS — as a STAMP (landed 2026-09-07)
-> `sectionPassProtoTile` had **no corner at all**; it now runs THIS construction, not a copy. The rule
-> and every constant are the ones above — `conD`, `cMin`, `conMax`, `rampLen`. What differs is how the
-> band is drawn: the walk painter strokes per RUN and slices the pad out of `fullBand` with
-> `arcSectorPoly`; ③ offsets per contour EDGE, so **steps 3 + 4 are a stamp** — at the arc's edges the
-> cross-section says concrete-to-`cMin`, and the same four offsets draw it. ⛔ No sector, no bid, no
-> decline; **a stamp cannot decline, so the pad cannot be missing.** Step 5's slide stays what §6.1
-> built (two polygons in the local along-leg frame) because a straight leg is often ONE ring edge tens
-> of metres long — a per-vertex ramp there would slide over the whole block.
-> - ⛔ **EDGES, NOT VERTICES.** The ladder asks with an EDGE index, so stamping the arc's END vertex
->   hands the corner's cross-section to the whole straight leg leaving it. That one off-by-one painted
->   ~30% of LS's treelawn as ADA concrete and it **passed the band acceptance better than the correct
->   version** — the closure count rewards a leg painted all-concrete. ⭐ Corner arcs are ~5% of a
->   town's contour LENGTH and ~50% of its contour POINTS; measure length.
-> - ⛔ **OPEN — step 5's `luWedge` carve is not built in ③.** It is a CUT, and a cut through a band
->   re-joined along the same edge leaves Clipper two touching polygon records: the band reads BROKEN at
->   unchanged area. (The same effect cost the acceptance 79 → 54 when the whole pad was cut and painted
->   back.) Re-run the acceptance before re-landing it.
+> ### ⭐⭐⭐ WHERE THE PAD IS LOCATED — LANDED 2026-09-07. ⛔ **NOT THE ARC.**
+> **The pad is located by the OWNER CHANGING; the arc supplies only its EXTENT where one exists.**
+> *(Written as the cure in `8753ea91`'s own commit message on 2026-09-06 and not built for a day, while
+> three sessions re-derived it. `CLAUDE.md`: reuse forensics, never re-derive.)*
+> - ⛔ **Predicating the pad on the fillet is `RIBBONS §1` invariant 3 broken** — *"a band-slice, NOT
+>   predicated on the arc, so it works square OR round."* Measured when it was: of 231 arrangement steps
+>   only 60 sat inside a fillet arc, so **171 corners were bare**, and every square corner declined.
+> - ⭐ **The owner is the FRONTAGE, not the run.** A run is cut wherever `segOrd` changes, and one
+>   frontage can carry several — so a `segOrd` change draws a corner treatment in the middle of a
+>   straight block edge where nothing turns and nothing changes. ▶ `node scratch/claims-frontage-covers-the-block.mjs`
+> - ⭐ **A stamp cannot decline.** At contour points inside the corner the stamp says concrete and the
+>   same four offsets draw it — no sector, no intersection, no bid. The walk painter's four decline
+>   gates dropped 60% of its bids; this has none.
+> ⛔ **The SLIDE is not the pad.** It carries a *change*, so it belongs to the mixed config alone
+> (`§6.1` step 5). The pad is unconditional — `§6.1` step 3, the curb side of a corner is concrete
+> ALWAYS. Conflating them removes the pads at every corner whose two sides agree.
 > ▶ `node scratch/claims-sidewalk-is-one-band.mjs` · `node scratch/claims-survey-and-section-agree.mjs`
-> ⛔ Re-run them; the counts move.
+> ⛔ Re-run them; the counts move, and the closure count REWARDS over-painting — a leg painted
+> all-concrete trivially closes. Do not tune against it alone.
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).

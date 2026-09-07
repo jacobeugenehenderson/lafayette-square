@@ -3483,7 +3483,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const parts = iA.map((ring, si) => ({ ring, si })).filter(o => o.ring?.length >= 3)
     .map((o, n) => ({ ring: o.ring, si: o.si, ri: n, hole: signedArea(o.ring) < 0 }))
   if (!parts.length) return empty
-  // ══ THE LEG IS THE RUN. `RIBBONS §1319`, verbatim ════════════════════════════════════════════
+  // ══ THE LEG IS THE FRONTAGE, AND THE CORNER IS WHERE IT CHANGES ══════════════════════════════
   // ⭐⭐⭐ *"A run is a LEG; a run seam (street changes) is a CORNER. `cornerAt(a,b)` = real corner
   // iff `a !== b`."*  ⇒ The leg boundary is not DETECTED, it is READ. `iaStamp` already names the
   // run that owns every contour edge, so a leg is a maximal span of one run and a corner is where
@@ -3493,7 +3493,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // TEST (≥ `FILLET_TURN_TOL`) plus frozen fillet TANGENTS matched by an exact string key. Three
   // separate defects in one construction:
   //   · it asks GEOMETRY what the polygon already carries as IDENTITY — `RIBBONS §1`'s Derivation
-  //     Chain: "the polygon is BOTH the geometry source AND the identity source";
+  //     doctrine: "the polygon is BOTH the geometry source AND the identity source";
   //   · a ≥18° turn fires on a street that merely BENDS mid-block, minting the seam Jacob's rule
   //     disqualifies outright — *"the leg is either or and never both"*;
   //   · the tangent key could not match ~24% of fillets across Clipper's 1 mm grid, so a quarter of
@@ -3516,11 +3516,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const legArr = new Map()      // `${ri}|${edge}` → the FRONTAGE's ONE resolved measure
   const seamAt = new Set()      // `${ri}|${q}` → a FRONTAGE change, i.e. a corner
   {
-    // ⛔⛔ THE UNIT IS THE FRONTAGE — `(skelId, side)` — NOT THE RUN. A run is cut wherever `segOrd`
-    // changes, and `segOrd` changes at a T-JUNCTION ON THE FAR KERB: the far street chops this
-    // road's chain, so this block's own frontage is split in two where NOTHING on this side
-    // changes. Reading that as a corner draws a corner treatment in the middle of a straight
-    // block — the exact artifact Jacob spent the day trying to eliminate, and I put it back.
+    // ⛔⛔ THE UNIT IS THE FRONTAGE — one address, one side — NOT THE RUN. A run is cut wherever
+    // `segOrd` changes, and `segOrd` subdivides a single frontage: ONE stretch of this block's edge
+    // can carry several of them (`assignSegOrdsToFes` gives 136 of LS's 1022 frontages more than
+    // one). Reading a `segOrd` change as a corner draws a corner treatment in the MIDDLE OF A
+    // STRAIGHT BLOCK EDGE, where the polygon does not turn and the arrangement does not change —
+    // the exact artifact Jacob spent the day trying to eliminate, and I put it back.
     // ▶ MEASURED: of the run seams, LS 94 of 1195 (7.9%) and HPDM 644 of 7016 (9.2%) are
     //   `segOrd`-only — same street, same side, no corner. Every one drew a pad.
     // ⭐ Same conclusion the CORNERS session reached independently in `eb0611cc`, from the other
@@ -3648,123 +3649,56 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // on LS and 6 on HPDM, and the honest home for it is a per-vertex ramp, which needs vertices
   // inserted along the leg that the frozen contour does not have.
   const fullBand = band(insAt(cw), insAt(WB))
-  const cornerAt = new Map()   // `${ri}|${edge}` → the corner's `cMin` on an arc's edges
-  const slidWalk = []          // the ramp on each abutting leg — §6.1 step 5, applied at BOTH
-  {
-    const nrm = (v) => { const L = Math.hypot(v[0], v[1]) || 1; return [v[0] / L, v[1] / L] }
-    for (const p of parts) {
-      const ring = p.ring, n = ring.length
-      if (!fullBand.length) break
-      // ⭐ THE ARC, WHERE THERE IS ONE. A fillet's two tangents bound the vertices it eased; the
-      // band bends around it. ⛔ Its ABSENCE is not a reason to decline — see invariant 3 below.
-      const ix = new Map()
-      for (let q = 0; q < n; q++) { const kk = KP(ring[q]); if (!ix.has(kk)) ix.set(kk, q) }
-      const arcAt = new Map()          // vertex → { fl, a, b, dstep }
-      for (const fl of st.fillets || []) {
-        const a = ix.get(KP(fl.tA)), b = ix.get(KP(fl.tB))
-        if (a == null || b == null) continue
-        const fwd = (b - a + n) % n, bwd = (a - b + n) % n, dstep = fwd <= bwd ? 1 : -1
-        for (let k = 0, q = a; ; k++, q = (q + dstep + n) % n) { arcAt.set(q, { fl, a, b, dstep }); if (q === b || k > n) break }
-      }
-      // winding-aware inward normal, the SAME convention `offsetRingVariable` uses (`:937`), so the
-      // ramp and the offsets agree about which way is in.
-      const ccw = (signedArea(ring) > 0) !== p.hole
-      const inward = (dx, dy) => ccw ? [-dy, dx] : [dy, -dx]
-      for (let q = 0; q < n; q++) {
-        if (!seamAt.has(`${p.ri}|${q}`)) continue
-        const mA = M(p.ri, (q - 1 + n) % n), mB = M(p.ri, q)
-        if (!mA || !mB) continue
-        const A = arrOf(mA), B = arrOf(mB)
-        // Step 4 — `cMin`. A leg carrying no concrete does not VOTE (Jacob, 2026-08-11: "all LU only
-        // happens if there are no sidewalks from either side"); only when neither carries any is the
-        // corner all parcel. ⛔ A material state, never an absence.
-        const conc = [A.conD, B.conD].filter(d => d > 1e-6)
-        const cMin = conc.length ? Math.min(...conc) : 0
-        // ⛔ A RAMP CARRIES A DIFFERENCE. Where the two legs agree there is nothing to carry, and
-        // building one anyway converts the leg's own treelawn to concrete for `rampLen` on both
-        // sides of every seam in the town. Measured before this guard: HPDM sidewalk +44.4%,
-        // treelawn −47.8% — the pad eating the strip it is supposed to end at.
-        // ⭐ The corner still exists when the legs agree; it is the ARC STAMP that draws it (step 3,
-        // the street edge is always concrete). The ramp is step 5, and step 5 is a TRANSITION.
-        // ⛔⛔ NO CHANGE ⇒ NO TREATMENT. THE WHOLE CONSTRUCTION, NOT JUST THE RAMP.
-        // *(Jacob, 2026-09-07: "THERE IS ONLY ONE LEG, NO RAMP BECAUSE NO CHANGE.")*
-        // `RIBBONS §1` invariant 1: the corner IS the band bent — "a slice of the same continuous
-        // concentric offsets, NEVER a separately-constructed primitive". Where the two frontages
-        // resolve to the same arrangement there is nothing for a corner to carry, so the offsets
-        // already draw it and anything added here is a primitive by definition.
-        // ⭐ AND `SECTION §3.1` IS WHY THIS IS SO OFTEN THE CASE: "two strips ALWAYS, EQUAL width —
-        // `hasTL` drives only the MATERIAL swap, never a width." The mono-width is uniform, so most
-        // corners are a material question and not a depth one.
-        // ⛔ I applied the cross-section at EVERY frontage seam, agreeing or not, and that — not the
-        // ramp — is the 12,708 m² of treelawn this painter was eating around the map.
-        // ⛔⛔ TWO THINGS LIVE HERE AND THEY HAVE DIFFERENT CONDITIONS. I conflated them and broke
-        // the pads. *(Jacob: "THERE IS ONLY ONE LEG, NO RAMP BECAUSE NO CHANGE" — true of the RAMP.
-        // Then: "The ADA pads are fucked now" — because I applied it to the whole corner.)*
-        //  · THE ADA PAD IS UNCONDITIONAL. `SECTION §6.1` step 3 is absolute: "the curb side of the
-        //    corner is the ADA ramp — CONCRETE — ALWAYS. Treelawn never wraps the curb." It does not
-        //    ask whether the two legs agree; grass stops at the tangents at every corner there is.
-        //  · THE SLIDE IS CONDITIONAL. It exists to carry a CHANGE across the corner — the mixed
-        //    config only, on the deeper leg. Where the two legs agree there is nothing to carry and
-        //    the band simply bends (`RIBBONS §1` invariant 1).
-        const same = A.outWalk === B.outWalk && A.inWalk === B.inWalk && Math.abs(A.dOut - B.dOut) < 1e-6
-        const arc = arcAt.get(q)
-        // Steps 3 + 4 — where an arc exists, the whole arc carries the corner's cross-section.
-        if (arc) for (let k = 0, v = arc.a; ; k++, v = (v + arc.dstep + n) % n) {
-          const e = arc.dstep === 1 ? v : (v + arc.dstep + n) % n
-          const prev = cornerAt.get(`${p.ri}|${e}`)
-          if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
-          if (v === arc.b || k > n) break
-        }
-        // ── Step 5, ON BOTH LEGS. The ramp carries each leg's own cross-section back to the
-        // corner's over `rampLen`, so the walk arrives at the corner at `[0, cMin]` from either
-        // side and the band is continuous through it.
-        // ⛔⛔ AND IT IS NOT PREDICATED ON THE ARC. `RIBBONS §1` invariant 3: "the ADA corner pad is
-        // a band-slice, NOT PREDICATED ON THE ARC — so it works square OR round." The construction
-        // that stood here opened `if (a == null || b == null) continue` over `st.fillets` and so
-        // declined at every square corner — 18 of the 65 run seams on South 18th alone, which is
-        // the operator's seam. ⭐ There is no R=0 CLASS and never was: `T` is the fillet's tangent
-        // where one exists and the seam VERTEX where none does, and the same slice is drawn either
-        // way. Invariant 1 holds too — the band bent, never a separately-constructed primitive.
-        // ⛔⛔ THERE ARE EXACTLY THREE CONFIGURATIONS AND THE SLIDE BELONGS TO ONE OF THEM.
-        // `SECTION §6.1`, verbatim: TL↔TL → all concrete to `c.T`, no carve and NO SLIDE ·
-        // SW↔SW → concrete one width then parcel, carve and NO SLIDE · SW↔TL (MIXED) → a concentric
-        // arc at the SW depth AND the deep leg's walk slides in ON ITS OWN LEG. ⇒ Step 5 fires in
-        // the mixed case only, and on the DEEPER leg only.
-        // ⛔ I fired it on BOTH legs at every corner whose legs differed at all. That is a FOURTH
-        // treatment — a slope where the config calls for a clean concentric arc — and it drew a tab
-        // into the block at corners that needed nothing. Jacob: "there are exactly and only 3 corner
-        // configurations, and they only apply AT CORNERS."
-        const deepIsA = A.conD >= B.conD
-        const slide = same ? [] : (deepIsA ? [[A, true]] : [[B, false]])
-        for (const [L, back] of slide) {
-          // where the leg leaves the corner, and which way it runs
-          const T = arc ? (back ? ring[arc.dstep === 1 ? arc.a : arc.b] : ring[arc.dstep === 1 ? arc.b : arc.a]) : ring[q]
-          const tIdx = arc ? ix.get(KP(T)) : q
-          if (tIdx == null) continue
-          const step = back ? -1 : 1
-          // march out until clear of the arc — at the tangent the single edge is short and its
-          // direction is the ARC's, not the leg's
-          let dir = null
-          for (let k = 1; k <= 24; k++) {
-            const v = (tIdx + step * k + n * 24) % n
-            dir = [ring[v][0] - T[0], ring[v][1] - T[1]]
-            if (Math.hypot(dir[0], dir[1]) >= Math.max(1, arc ? arc.fl.r : 1)) break
-          }
-          if (!dir || (!dir[0] && !dir[1])) continue
-          dir = nrm(dir)
-          // ⛔ THE NORMAL IS DEFINED ON THE RING'S FORWARD DIRECTION. `dir` runs OUT of the corner,
-          // which is BACKWARD along the contour on the arriving leg — so `inward()` hands back the
-          // OUTWARD normal there and the ramp is built outside the band. Measured before the fix:
-          // 446 of 842 ramps clipped to zero area, one of every seam's two legs.
-          const perp = nrm(inward(dir[0], dir[1])).map(v => back ? -v : v)
-          // the leg's OWN walk band, in depth from the curb
-          const legFrom = L.outWalk ? 0 : (L.inWalk ? L.dOut : 0)
-          const legTo   = L.outWalk ? L.dOut : (L.inWalk ? lim : 0)
-          if (Math.abs(legFrom) < 1e-6 && Math.abs(legTo - cMin) < 1e-6) continue   // nothing to carry
-          const rampLen = Math.max(2, Math.abs(L.conD - cMin) * 2)
-          const pt = (s2, d) => [T[0] + dir[0] * s2 + perp[0] * (cw + d), T[1] + dir[1] * s2 + perp[1] * (cw + d)]
-          slidWalk.push(...intersectRings(fullBand, [[pt(0, 0), pt(rampLen, legFrom), pt(rampLen, legTo), pt(0, cMin)]]))
-        }
+
+  // ══ THE ADA PAD — LOCATED BY THE OWNER CHANGING, ARC ONLY FOR ITS EXTENT ═════════════════════
+  // ⭐⭐⭐ THIS CURE WAS WRITTEN DOWN IN `8753ea91` (2026-09-06 23:36) AND NEVER BUILT. Verbatim:
+  //   "I predicated the pad on the FILLET ARC, and `RIBBONS §1` invariant 3 forbids exactly that —
+  //    'the ADA corner pad is a band-slice, NOT predicated on the arc, so it works square OR round.'
+  //    Of 231 arrangement steps only 60 sit inside a fillet arc, so 171 remain bare. ⇒ THE CURE IS
+  //    TO LOCATE THE PAD BY THE OWNER CHANGING — §1's own law — WITH THE ARC SUPPLYING ONLY ITS
+  //    EXTENT WHERE ONE EXISTS."
+  // ⛔ I re-derived that sentence across four commits today. It was in the commit message the whole
+  // time. `CLAUDE.md`: reuse forensics, never re-derive.
+  //
+  // ⭐ THE PAD IS A STAMP, NOT A CONSTRUCTION — `RIBBONS §1` invariants 1 and 3. At contour points
+  // inside the corner the stamp says concrete and the SAME FOUR OFFSETS draw it: no sector, no
+  // intersection, no bid, no decline. ⛔ Nothing is glued onto the ends of two legs, which is what
+  // `RIBBONS` Slice 2 invariant 2 forbids in those words.
+  //
+  // ⭐ THE THREE CONFIGS FALL OUT OF ONE RULE — concrete to `cMin = min(both owners' conD)`:
+  //   SW↔SW  both at curb   → cMin = the walk width ⇒ the outer band's stripe continues round
+  //   TL↔TL  both set back  → cMin = the full depth ⇒ the walk wraps, and the band outboard of it
+  //                                                   is the ADA pad reaching the street
+  //   SW↔TL  mixed          → cMin = the shallower  ⇒ the walk crosses inside the band
+  // ⛔ Step 3 is absolute: the curb side of a corner is concrete ALWAYS. Grass stops at the extent.
+  const cornerAt = new Map()             // `${ri}|${edge}` → cMin
+  for (const p of parts) {
+    const ring = p.ring, n = ring.length
+    const ix = new Map()
+    for (let q = 0; q < n; q++) { const kk = KP(ring[q]); if (!ix.has(kk)) ix.set(kk, q) }
+    // where a fillet eased a corner, its two tangents are that corner's EXTENT
+    const arcAt = new Map()
+    for (const fl of st.fillets || []) {
+      const a = ix.get(KP(fl.tA)), b = ix.get(KP(fl.tB))
+      if (a == null || b == null) continue
+      const fwd = (b - a + n) % n, bwd = (a - b + n) % n
+      const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
+      if (len === 0 || len * 2 > n) continue                 // a fillet is the MINOR arc
+      for (let k = 0; k <= len; k++) arcAt.set((s0 + k) % n, [s0, len])
+    }
+    for (let q = 0; q < n; q++) {
+      if (!seamAt.has(`${p.ri}|${q}`)) continue              // ⭐ LOCATED BY THE OWNER CHANGING
+      const mA = M(p.ri, (q - 1 + n) % n), mB = M(p.ri, q)
+      if (!mA || !mB) continue
+      const cMin = Math.min(arrOf(mA).conD, arrOf(mB).conD)
+      const arc = arcAt.get(q)
+      // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
+      // extent is the one edge the owners meet across, and the pad is drawn there just the same.
+      const [s0, len] = arc || [q, 0]
+      for (let k = 0; k <= len; k++) {
+        const e = (s0 + k) % n
+        const prev = cornerAt.get(`${p.ri}|${e}`)
+        if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
       }
     }
   }
@@ -3773,22 +3707,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   const mk = (p) => {
     const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
     const dOutF = swap(p, m => arrOf(m).dOut)
-    // ⭐ THE CORNER'S OWN CROSS-SECTION, at every contour point between the two tangents.
     const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
-    // ⭐ THE STRAIGHT LEG, and only it. A sidewalk does not stop mid-street and become a treelawn:
-    // the walk is the INNER strip on a treelawn-Y leg and the OUTER strip on a treelawn-N leg, so
-    // it sits at a DIFFERENT DEPTH on the two, and the CORNER is the only place it may move. The
-    // construction above is what moves it; here the leg just paints its one arrangement.
     return {
       walkFrom: (i) => cAt(i) != null ? cw : cw + (outWalk(i) ? 0 : (inWalk(i) ? dOutF(i) : 0)),
-      // ⛔ BOTH STRIPS SW IS A REAL AUTHORED STATE AND IT LEFT A HOLE. `§3.1`: "Two strips always —
-      // they SWAP, they never collapse — so THE INNER ONE TAKES THE REST OF THE ENVELOPE." Every
-      // other arrangement honoured that; `outWalk && inWalk` stopped the walk at `dOut` and gave the
-      // lawn zero width, so `dOut → lim` was painted by nobody. What shows through is the block
-      // silhouette, which `BlockGeometryV2Debug` paints with a HARDCODED `residential` material —
-      // invisible on a residential block, a green stripe on a commercial one (Jacob, 2026-09-07:
-      // "it is fixed for one color/LU but not the other"). Measured on LS tile 106, commercial:
-      // 206 m² of 250 m² town-wide, one 1.5 m strip down a 135 m frontage.
       walkTo:   (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? (inWalk(i) ? lim : dOutF(i)) : (inWalk(i) ? lim : 0)),
       lawnFrom: (i) => cAt(i) != null ? cw + cAt(i) : cw + (outWalk(i) ? dOutF(i) : 0),
       lawnTo:   (i) => cAt(i) != null ? cw + lim : cw + (outWalk(i) ? (inWalk(i) ? dOutF(i) : lim) : lim),
@@ -3805,8 +3726,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // that is genuinely additional.
   const W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
   return {
-    Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
-    tlByLu: { [key]: inBlock(differenceRings(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo)), slidWalk)) },
+    Wacc:   inBlock(W),
+    tlByLu: { [key]: inBlock(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
