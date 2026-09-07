@@ -3527,12 +3527,31 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // ⭐ Same conclusion the CORNERS session reached independently in `eb0611cc`, from the other
     // end: it moved RESOLUTION to the frontage after seeing one block side disagree with itself.
     // ⇒ The frontage owns the resolution AND the corner. One unit, not two.
-    const feKey = (r) => r == null ? null : `${runs[r].skelId}|${runs[r].side}`
+    // ⛔⛔ THE ADDRESS IS (ROAD, SIDE). THE ORDINAL IS NOT PART OF AN ADDRESS.
+    // A `skelId` carries a trailing ordinal from where the line was cut, and a T-JUNCTION ON THE
+    // FAR KERB cuts it — so `south-18th-street-6` meets `south-18th-street-10` on a STRAIGHT,
+    // UNINTERRUPTED block face where nothing turns and no street meets this side. Keying the
+    // frontage on `skelId` mints a CORNER there and draws a corner treatment mid-block.
+    // *(Jacob, 2026-09-07, on the render: "there should not be a seam in the sidewalk, period…
+    // ABSOLUTELY DO NOT APPLY IT HERE because it's not a corner!")*
+    // ⭐ A CORNER IS WHERE THE ROAD OR THE SIDE CHANGES. Nothing else is a corner.
+    // ⛔ AND THE TWO SPANS STILL RESOLVE SEPARATELY — `SECTION §4` rule 4: a road's spans genuinely
+    // carry different authored cross-sections and THAT VARIATION IS THE SURVEY. Merging them was
+    // built and excised the same day. They keep their own arrangements; what changes is that the
+    // boundary between them is not a corner, so it gets the ANGLED SLOPE JOINER (§6.1 step 5 with
+    // no arc), not a pad.
+    const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
+    const feKey = (r) => r == null ? null : `${roadOf(runs[r].skelId)}|${runs[r].side}`
+    const resKey = (r) => r == null ? null : `${runs[r].skelId}|${runs[r].side}`
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
       const cuts = []
-      for (let q = 0; q < n; q++) { const a = feKey(stp[(q - 1 + n) % n]), b = feKey(stp[q])
-        if (a !== b) { cuts.push(q); if (a != null && b != null) seamAt.add(`${ri}|${q}`) } }
+      for (let q = 0; q < n; q++) {
+        const a = resKey(stp[(q - 1 + n) % n]), b = resKey(stp[q])
+        if (a !== b) cuts.push(q)                                    // resolve per SPAN (rule 4)
+        const ra = feKey(stp[(q - 1 + n) % n]), rb = feKey(stp[q])
+        if (ra !== rb && ra != null && rb != null) seamAt.add(`${ri}|${q}`)   // CORNER: road or side
+      }
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
       for (const [s0, len] of spans) {
         // ⛔ ONE resolution for the frontage. A frontage may own SEVERAL `segOrd`s — `assignSegOrdsToFes`
@@ -3703,6 +3722,64 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
+  // ══ THE ANGLED SLOPE JOINER — a road's two spans meeting where NO CORNER IS ═══════════════════
+  // ⭐ RECOVERED from `92c4d824` + `e7c5198c` (2026-09-07), built and then stranded on a branch.
+  // ⛔ NOT re-derived: the constants, the guards and the two-sided probe are that build's.
+  // *(Jacob: "even if we think something changes mid-leg, that's what the angled slope corner
+  // joiner is for." And, on the far-kerb T: "ABSOLUTELY DO NOT APPLY IT HERE because it's not a
+  // corner!" — so it fires HERE and the corner construction does not.)*
+  //
+  // ⛔⛔ THE CURE IS NOT TO MERGE THE SPANS. `SECTION §4` rule 4 — a road's spans genuinely carry
+  // different authored cross-sections and THAT VARIATION IS THE SURVEY. A road-level merge was
+  // built for this exact symptom on 2026-09-07 and excised the same day. The joiner makes the
+  // difference SURVIVABLE: both keep their arrangement along their span, and only a short
+  // transition at the joint slopes.
+  // ⭐⭐ IT IS `§6.1` STEP 5 WITH NO ARC — `conD`, `cMin`, `conMax`, the slid quad, all step 5's,
+  // applied at a joint instead of a tangent. ⛔ ADDITIVE, UNIONED IN, NEVER CUT: cutting a band and
+  // re-joining it on the same edge leaves Clipper two touching records — the band reads BROKEN at
+  // unchanged area, and that cost the acceptance 79 → 54 once already.
+  // ⛔ NO SIZE IS HARDWIRED (Jacob: "no sizes or distances can be hardwired"). `rampLen` is 2× the
+  // depth the walk must travel — a SLOPE RATIO, a shape, not a length, and deliberately no floor.
+  const slidWalk = []
+  if (fullBand.length) {
+    const nrm2 = (v) => { const L = Math.hypot(v[0], v[1]) || 1; return [v[0] / L, v[1] / L] }
+    for (const p of parts) {
+      const ring = p.ring, n = ring.length, stp = stamps[p.si] || []
+      for (let q = 0; q < n; q++) {
+        // ⛔ A CORNER OWNS ITS OWN JOINT — the pad is already carrying the change there, and a
+        // second construction at the same place is the fourth configuration.
+        if (seamAt.has(`${p.ri}|${q}`)) continue
+        const eA = (q - 1 + n) % n, eB = q
+        const mA = M(p.ri, eA), mB = M(p.ri, eB)
+        if (!mA || !mB || mA === mB) continue
+        const A = arrOf(mA), B = arrOf(mB)
+        const conc = [A.conD, B.conD].filter(d => d > 1e-6)
+        if (!conc.length) continue                       // neither side carries concrete
+        const cMin = Math.min(...conc)
+        const deepA = A.conD >= B.conD
+        const deep = deepA ? A : B
+        if (deep.conD <= cMin + 1e-6) continue           // the same cross-section — invisible
+        // the ramp runs up the DEEPER span, away from the joint
+        const J = ring[q], away = deepA ? (q - 1 + n) % n : (q + 1) % n
+        const dir = nrm2([ring[away][0] - J[0], ring[away][1] - J[1]])
+        const conMax = deep.conD, rampLen = (conMax - cMin) * 2
+        const tloD = deep.outWalk ? 0 : deep.dOut        // the treelawn tapering out
+        const at = (pv, s2, d) => [J[0] + dir[0] * s2 + pv[0] * (cw + d), J[1] + dir[1] * s2 + pv[1] * (cw + d)]
+        const quadFor = (pv) => [at(pv, 0, 0), at(pv, rampLen, tloD), at(pv, rampLen, conMax), at(pv, 0, cMin)]
+        // ⭐ THE INWARD NORMAL IS DECIDED BY ASKING THE BAND, not by winding: a hole ring and an
+        // outer ring wind opposite ways and `p.hole` is itself read off winding, so a probe is the
+        // one answer that cannot be inverted by the thing it is describing.
+        let best = null
+        for (const pv of [[-dir[1], dir[0]], [dir[1], -dir[0]]]) {
+          const got = intersectRings(fullBand, [quadFor(pv)])
+          const a = got.reduce((tot, g) => { let x = 0; for (let i = 0; i < g.length; i++) { const j = (i + 1) % g.length; x += g[i][0] * g[j][1] - g[j][0] * g[i][1] } return tot + Math.abs(x / 2) }, 0)
+          if (!best || a > best.a) best = { got, a }
+        }
+        if (best && best.got.length) slidWalk.push(...best.got)
+      }
+    }
+  }
+
   const swap = (p, fn) => (i) => { const m = M(p.ri, i); return m ? fn(m) : 0 }
   const mk = (p) => {
     const outWalk = swap(p, m => arrOf(m).outWalk), inWalk = swap(p, m => arrOf(m).inWalk)
@@ -3746,8 +3823,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // that is genuinely additional.
   const W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
   return {
-    Wacc:   inBlock(W),
-    tlByLu: { [key]: inBlock(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
+    Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
+    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo)), slidWalk) : band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
