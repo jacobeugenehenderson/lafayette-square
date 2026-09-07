@@ -463,7 +463,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     const dg0 = st?.caps?.start?.degree, dg1 = st?.caps?.end?.degree
     const lastI = P.length - 1
     const tipOf = (i) => (i === 0 && dg0 === 1) ? 'start' : (i === lastI && dg1 === 1) ? 'end' : null
-    const stamp = (side, i) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
+    // ⭐⭐⭐ `roadKey` — THE ROAD, NOT THE CHAIN. ⛔⛔ ① HAS NO NODES. A chain cut and a segOrd
+    // boundary are bookkeeping in the CHAIN world; ①'s contour runs straight through them, and the
+    // only thing that changes there is the label. So a consumer that mints a CORNER wherever
+    // `skelId` changes has put the chain graph's nodes back into a construction built to have none
+    // — and the operator sees the ribbon disrupted at every junction.
+    // ⭐ LS cuts South 18th Street into ELEVEN chains; 58 of 174 roads are multi-chain.
+    const roadKey = st?.throughId ?? st?.roadId ?? skelId
+    const stamp = (side, i) => owners.push({ skelId, roadKey, side, segOrd: ci >= 0 ? segOrdAt(ci, i) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -6136,8 +6143,38 @@ export function buildTileGround(ribbons, opts = {}) {
       // ⭐ MEASURED on LS in-disc: 27 non-highway vertices turn >= 60° with no corner planned at
       // all — `allen-avenue-0` at 95° (marked), `park-place-2`, `benton-place-1`, `south-21st-street`,
       // `lasalle-lane-0` ×6. Of those, 16 carry `hard: false` on BOTH sides.
-      const hardHere = a.hard || b.hard || (turnHere != null && turnHere >= PROTO_HARD_TURN)
-      if (a.skelId === b.skelId && !hardHere) return 0
+      // ⭐⭐⭐ THE SAME ROAD IS THE SAME ROAD, however many chains the kit cut it into.
+      // ⛔ This read `a.skelId === b.skelId`, so a CHAIN CUT — same street, continuing straight —
+      // fell through to `protoCornerN++` and took the full class-seed radius. That is a rounded
+      // corner minted in the middle of a straight street, at a node ① does not have. It is the
+      // "continuous side of a T" defect: a T splits the through-street's chain, and ② rounded the
+      // curb at the split. ▶ MEASURED on LS: 84 owner changes are same-road-different-chain and 47
+      // are same-chain-different-segOrd — 131 nodes in the stamp, 39 of which ② had rounded.
+      // ⭐ SEGORD NEVER MATTERED HERE (it is an authoring ordinal, and this predicate reads
+      // skelId), but it reaches the FILL through the same owner change, so both now key on the road.
+      // ⭐⭐ A GENUINE BEND STILL TURNS: `hardHere` is unchanged, so a street that actually bends
+      // 90° is still a corner whether or not the chain was cut there — the two halves of
+      // `RIBBONS §1`'s rule, with only the identity half widened from chain to road.
+      // ⭐ THE ROAD IS RESOLVED LIVE, so this needs no re-pour: ①'s owners are frozen in
+      // `ribbons.json` and carry only `skelId`, and a stamp added to `mintProtopolygon` reaches
+      // nothing until prebake runs again. ⛔ This is a LOOKUP BY STREET ID returning an identity —
+      // the wall permits exactly that (`SURVEY §5`); no geometry crosses. `roadKey` on the owner
+      // is preferred when a re-poured ① carries it.
+      const roadOf = (o) => o.roadKey ?? protoRoadKey.get(o.skelId) ?? o.skelId
+      const sameRoad = roadOf(a) === roadOf(b)
+      // ⛔⛔ AND `hard` IS A CHAIN ARTIFACT AT A CHAIN CUT. A cut leaves a chain ENDPOINT, and an
+      // endpoint's handles are broken by default (`hard: hardAt ? !!hardAt[i] : true`) — so on the
+      // continuous side of a T the flag says "corner" while the ROAD runs straight through. Widening
+      // the identity test alone changed nothing, measured: the 36 spurious arcs survived on `hard`.
+      // ⭐ WHERE THE ROAD CONTINUES, ONLY THE GEOMETRY MAY MINT A CORNER. That is not a new
+      // threshold — `PROTO_HARD_TURN` is DERIVED from the tessellation tolerance three paragraphs
+      // up ("a vertex turning 60° or more cannot be a curve sample of any street"), and it is the
+      // half of the test that cannot be wrong when the flag and the shape disagree.
+      // ⇒ a road that genuinely BENDS still corners; a road merely CUT does not.
+      const hardHere = sameRoad
+        ? (turnHere != null && turnHere >= PROTO_HARD_TURN)
+        : (a.hard || b.hard || (turnHere != null && turnHere >= PROTO_HARD_TURN))
+      if (sameRoad && !hardHere) return 0
       protoCornerN++
       const key = a.skelId < b.skelId ? `${a.skelId}|${b.skelId}` : `${b.skelId}|${a.skelId}`
       // ⛔ A BEND HAS NO PAIR, AND THAT IS NOT A FAILURE. Where one street turns, both sides of the
