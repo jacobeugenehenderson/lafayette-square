@@ -5918,7 +5918,22 @@ export function buildTileGround(ribbons, opts = {}) {
         // their own accumulator — so emitting one here invented a curb production never had, and
         // then measured against a baseline that does not exist. This tag already existed and was
         // used only to LABEL the ring; now it excludes it, which is what the tag was for.
-        if (isGs) { gsSkipped++; continue }
+        // ⭐⭐⭐ RULED 2026-09-06 (Jacob), and the skip is GONE: "we need to build these blocks the
+        // same way we make the others." A region bounded by motorways and ramps IS A BLOCK — real
+        // land, with a curb, a sidewalk and a land use — and it was being dropped whole, so ③ had
+        // nothing to stroke inward from and the operator saw a HOLE. Measured on LS: 43 in-disc
+        // regions, 0.293 km², drawing nothing at all — the marked "no LU surrounding the highways".
+        // ⛔ THE DISTINCTION THIS TAG WAS CONFLATING, and it is the whole of the fix: the HIGHWAY'S
+        // OWN ROADWAY gets no city curb — it is a flat stroke through its own accumulator, and that
+        // stays true. But the BLOCK BETWEEN highways is not the highway's curb; it is a block's
+        // curb, struck inward from the block's own boundary like every other block on the map.
+        // ⭐ `isGs` survives as what it always was — a LABEL on the ring (`protoCurbGs`), so a
+        // consumer can still tell a highway-bounded block from a street one BY IDENTITY.
+        // ⚠️ EXPECT the thin-run class here: a highway carries an 8.53 m default half-width, so
+        // between two ramps 0.6–9 m apart the two curbs meet and the block goes to ZERO. That is
+        // the ruled outcome ("if the curbs touch, there's no block"), it is NOT silent — the
+        // no-curb disclosure counts it per pour — and it is not a reason to drop the class whole.
+        if (isGs) gsSkipped++
         // ⭐ THE STAMP IS THE CORRESPONDENCE, AND IT ALREADY EXISTS (`A10-③`, `WL`): each ②
         // vertex records which ① ring vertex it was struck from, so the node identity survives
         // the offset without being re-derived from ②'s geometry.
