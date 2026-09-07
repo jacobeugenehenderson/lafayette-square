@@ -6593,11 +6593,6 @@ export function buildTileGround(ribbons, opts = {}) {
         (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
         (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
       if (protoCornerAuthored) console.warn(`[tileGround][PROTO②] ⛔ this Look carries PER-CORNER radius overrides and ② cannot key them yet (the leg f/b flag is a tile-edge fact) — ${protoCornerAuthored} corner(s) took per-IX or the class seed instead. NOT silently applied.`)
-      // ⛔ COUNTED SINCE IT WAS WRITTEN, REPORTED BY NOBODY. A one-vertex run is dropped (it has no
-      // direction, so `legDirAt` cannot read it) and its contour points stamp `null` — an honest
-      // absence, but a SILENT one, which is the defect `A02` names. It moves with the label carry,
-      // so it has to be visible when the carry changes.
-      if (protoShortRuns) console.warn(`[tileGround][PROTO②] ⛔ ${protoShortRuns} run(s) of a single vertex were DROPPED — no direction to stroke. Their contour points carry no stamp; the leg resolves from its other points.`)
       if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) lie over MORE THAN ONE ① edge — the union minted or collapsed them. Attributed to the LONGEST ① edge they span, which is the FILL's own tie-break, not a guess at a single owner.`)
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
@@ -6944,6 +6939,20 @@ export function buildTileGround(ribbons, opts = {}) {
                 baseMeasure: protoBase.get(o.skelId) || null }; runs.push(cur) }
               iaStamp[ri][i] = runs.length - 1
               cur.poly.push(EC.ring[i])
+              cur.iEnd = i                                   // the last EDGE this run owns
+            }
+            // ⭐⭐⭐ A RUN OWNS EDGES, SO ITS POLYLINE ENDS AT ITS LAST EDGE'S FAR VERTEX.
+            // The loop above pushes the vertex each owned edge LEAVES, so a run's polyline stopped
+            // one vertex short of its own arc — and a run owning exactly ONE edge came out as a
+            // single point, which the filter below then DROPPED. On a contour whose straight sides
+            // are one long edge apiece, that is a whole block face going unpainted: LS 92 such runs.
+            // ⭐ Jacob, on the map: "there is no map" under handles that will not respond — the
+            // handle is placed off the centreline, the band off the stamp, so where the run was
+            // dropped the handle sits over ground nothing owns.
+            for (let ru = first; ru < runs.length; ru++) {
+              const r2 = runs[ru]
+              if (r2.iEnd == null) continue
+              r2.poly.push(EC.ring[(r2.iEnd + 1) % EC.ring.length])
             }
             // ⛔⛔ THE RING IS CLOSED, SO THE ARRAY'S SEAM IS NOT A FEATURE OF IT.
             // The loop above starts at index 0 and does not wrap, so a frontage that spans the
@@ -6959,6 +6968,9 @@ export function buildTileGround(ribbons, opts = {}) {
             if (runs.length - first >= 2) {
               const a = runs[first], b = runs[runs.length - 1]
               if (a.key === b.key) {
+                // ⛔ the tail run already closed on the head run's first vertex, so drop that
+                // duplicate rather than emitting a zero-length segment into the joined polyline.
+                b.poly.pop()
                 b.poly.push(...a.poly)                       // the tail run continues into the head
                 const bi = runs.length - 1
                 for (let i = 0; i < iaStamp[ri].length; i++) if (iaStamp[ri][i] === first) iaStamp[ri][i] = bi
@@ -6970,9 +6982,11 @@ export function buildTileGround(ribbons, opts = {}) {
               }
             }
           }
-          // ⛔ A RUN OF ONE VERTEX IS NOT A LEG. `sectionPassTile`'s `legDirAt` reads `poly[1]` and
-          // `poly[n-2]` to get each end's direction, so a single-vertex run has no direction and
-          // throws. Dropped and COUNTED — never padded with a fabricated second point.
+          // ⛔ A RUN OF ONE VERTEX IS NOT A LEG — `legDirAt` reads `poly[1]`/`poly[n-2]` and a single
+          // point has no direction. ⭐ But that is now a REAL degeneracy rather than an accounting
+          // one: since a run closes on its last edge's far vertex, a run that owns any edge at all
+          // has two points. What can still reach here is a run owning ZERO edges, which is nothing.
+          // ⛔ Still dropped and COUNTED — never padded with a fabricated second point.
           const shortRuns = runs.filter(r => r.poly.length < 2).length
           if (shortRuns) protoShortRuns += shortRuns
           const runs2 = runs.filter(r => r.poly.length >= 2)
@@ -6981,7 +6995,7 @@ export function buildTileGround(ribbons, opts = {}) {
           // honest absence, never a silent re-attribution to whoever slid into the index.
           const reIx = new Map(); runs.forEach((r, i) => { const j = runs2.indexOf(r); if (j >= 0) reIx.set(i, j) })
           for (const a of iaStamp) for (let i = 0; i < a.length; i++) a[i] = a[i] == null ? null : (reIx.has(a[i]) ? reIx.get(a[i]) : null)
-          for (const r of runs2) delete r.key
+          for (const r of runs2) { delete r.key; delete r.iEnd }
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
             // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
@@ -7077,6 +7091,11 @@ export function buildTileGround(ribbons, opts = {}) {
         } else {
           console.log(`[tileGround][PROTO⊙] ⛔ NO boundary in this pour — the circle was NOT stamped. The artifact is the WHOLE frame; do not read a rim from it.`)
         }
+        // ⛔⛔ COUNTED SINCE IT WAS WRITTEN, REPORTED BY NOBODY — and when I first wired this warn I
+        // put it in the ② epilogue, which runs BEFORE the runs are built. It printed 0 and I believed
+        // it. An instrument that reports a count taken before the count exists is the same defect as
+        // no instrument at all, and worse, because it reads as evidence.
+        if (protoShortRuns) console.warn(`[tileGround][PROTO②] ⛔ ${protoShortRuns} run(s) of a single vertex were DROPPED — their contour carries NO stamp, so nothing paints there and a handle over it has nothing to drag.`)
         console.log(`[tileGround][PROTO⇢artifact] ${protoShapeTiles.length} tile(s) produced from ①②③ — this is the SHAPE the consumer will freeze`)
         if (protoNoCurb) console.warn(`[tileGround][PROTO②] ⛔ ${protoNoCurb} block(s) yielded NO curb ring and are ABSENT from the artifact (${protoNoCurbArea.toFixed(0)} m² of ① block area). Their curbs meet, so there is no block between them — RULED CORRECT (\`RIBBONS §1\`), but it is a REAL ABSENCE and it is counted here rather than left to be discovered on a map.`)
       }
