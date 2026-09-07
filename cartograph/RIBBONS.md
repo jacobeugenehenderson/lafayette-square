@@ -198,6 +198,27 @@
 > `claims-survey-and-section-agree` · `claims-proto-corner-is-authored-radius`.
 > ⚠️ **COST, disclosed: 2 blocks moved into the no-curb class (119 → 117 tiles).** Their curbs meet, so
 > the drop is ruled correct — but see the absence disclosure below, which is the bigger half.
+> ### ⭐⭐⭐ AND THE CORNERS WERE NOT SKIPPED — THEY WERE DRAWN AT A QUARTER OF THEIR RADIUS (2026-09-06)
+> *Jacob, marking a fresh set: "sharp corners which look to be skipped altogether."* ⛔ **They were
+> being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
+> **19 of his 27 marks were achieving under 60% of their stamped radius.**
+> ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`.** It planned a corner
+> at **every** vertex wanting a radius — **42% of them turning under 18°, i.e. curve samples, not
+> corners** — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a metre
+> from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
+> `Reff = s/tan(θ/2)` collapsed with it. **426 of 2,089 planned corners (20%) had `s` cut below 60% of
+> `want`.** ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled.
+> ⚠️⚠️ **AND THIS IS WHY THE RADIUS GATE STAYED GREEN THROUGH ALL OF IT.**
+> `claims-proto-corner-is-authored-radius` read the **stamped** `r`, which said 4.50 m the whole time.
+> ⛔ **An instrument that reads the INTENTION cannot see the ACHIEVEMENT** — check an authored feature
+> by DIMENSION on the drawn geometry (fit a circle to the arc), never by the value it was asked for.
+> ▶ marks achieving <60% of stamped radius **19 → 0** · planned corners 2,089 → 1,208 · collapsed
+> setbacks 426 → 230 · achieved-radius **p10 1.45 → 2.71 m**, within 25% of authored **66% → 79%**.
+> ⭐ Also closed the same day: **a cap apex is where ONE chain's two sides meet.** The cap branch keyed
+> on `a.tipEnd || b.tipEnd` — "either edge belongs to a tip" — so **64 in-disc street corners next to a
+> dead end took the cap rule** and a blunt default returned R = 0. Same law as everywhere else: the
+> owner changing is a corner; same `skelId` both sides is the apex. 145 genuine apexes, 64 false.
+>
 > ### ⛔⛔ AND IT SURFACED A SILENT ABSENCE THAT PREDATES IT: **66 blocks were already being dropped.**
 > `if (!mine.length) continue` — a block whose curb came back empty was skipped **with no count**,
 > the same shape as `litmus-curb-parallel`'s `if (!tile?.iA?.length) continue` that `POLYGON-FIRST §5`

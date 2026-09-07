@@ -1370,13 +1370,31 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
   // that clamp biting, never a different radius being asked for.
   // ⭐ The bound stays TOPOLOGICAL — a corner may not eat past the midpoint of its own leg, because
   // past that the leg belongs to the next corner. Only the definition of "leg" is corrected.
+  // ⭐⭐⭐ A NEAR-STRAIGHT VERTEX IS A CURVE SAMPLE, NOT A CORNER — `filletRing`'s ruled rule
+  // (`FILLET_TURN_TOL`), which this constructor did not carry. ⛔ IT WAS THE DEFECT THE OPERATOR
+  // MARKED as "sharp corners which look to be skipped altogether": 42% of the vertices this pass
+  // planned a corner at turn under 18°, and because `legBack`/`legFwd` terminate on ANY vertex
+  // wanting a radius, one of those curve samples sitting a metre from a real 90° corner TRUNCATED
+  // ITS LEG. `s = min(want, legBack/2, legFwd/2)` then collapsed and `Reff = s/tan(θ/2)` with it —
+  // so the corner was DRAWN at ~1 m while the stamp still read the authored 4.50 m.
+  // ⭐ MEASURED on LS: 426 of 2,089 planned corners (20%) had `s` cut below 60% of `want`; of the
+  // operator's 27 marked corners, 19 were achieving under 60% of their stamped radius.
+  // ⛔ NOT a new threshold — `FILLET_TURN_TOL` is the existing constant, and this is the same
+  // ruling applied at the second corner constructor. A leg must run to the next REAL corner.
+  const turnAt_ = new Array(n)
+  for (let i = 0; i < n; i++) {
+    const A = seg(ring[(i - 1 + n) % n], ring[i]), B = seg(ring[i], ring[(i + 1) % n])
+    turnAt_[i] = Math.atan2(Math.abs(A.d[0] * B.d[1] - A.d[1] * B.d[0]), A.d[0] * B.d[0] + A.d[1] * B.d[1])
+  }
+  const isCorner_ = new Array(n)
+  for (let i = 0; i < n; i++) isCorner_[i] = R_[i] > 1e-9 && turnAt_[i] >= FILLET_TURN_TOL
   const legBack = new Array(n).fill(0), legFwd = new Array(n).fill(0)
   for (let i = 0; i < n; i++) {
     let L = 0
-    for (let k = 1; k <= n; k++) { const j = (i - k + n) % n; L += eLen[j]; if (R_[j] > 1e-9) break }
+    for (let k = 1; k <= n; k++) { const j = (i - k + n) % n; L += eLen[j]; if (isCorner_[j]) break }
     legBack[i] = L
     L = 0
-    for (let k = 0; k < n; k++) { const j = (i + k) % n; L += eLen[j]; if (R_[(j + 1) % n] > 1e-9) break }
+    for (let k = 0; k < n; k++) { const j = (i + k) % n; L += eLen[j]; if (isCorner_[(j + 1) % n]) break }
     legFwd[i] = L
   }
   // walk `dist` along the ring from vertex `from` (dir −1 back, +1 forward) → the point there
@@ -1399,7 +1417,10 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
   const plan = new Map()          // corner index → { arc points, labels }
   const covered = new Set()
   for (let i = 0; i < n; i++) {
-    const R = R_[i]; if (!(R > 1e-9)) continue
+    // ⛔ Plan a corner only where there IS one — a curve sample is passed through, exactly as
+    // `filletRing` passes it through. Rounding an 18° vertex is invisible and it costs its
+    // neighbours their legs.
+    const R = R_[i]; if (!isCorner_[i]) continue
     const P = ring[(i - 1 + n) % n], V = ring[i], N = ring[(i + 1) % n]
     const A = seg(P, V), B = seg(V, N)
     if (!(A.L > 1e-9) || !(B.L > 1e-9)) continue
