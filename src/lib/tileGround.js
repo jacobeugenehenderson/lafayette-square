@@ -3457,6 +3457,7 @@ function tileSliceKey(st, blockCustoms) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
+let _staleBandsWarned = false
 export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
   // own frozen fields, cw, stripMat, and its own blockCustoms slice — so a
@@ -3469,16 +3470,20 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   const tileGeo = (st, i) => {
     const key = cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
     if (cache) { const hit = cache.get(i); if (hit && hit.key === key) return hit }
-    // ⭐⭐⭐ ① AS THE PRODUCER — a tile that CARRIES ITS BANDS is consumed as-is.
-    // ⛔ It must NOT go through `sectionPassTile`: that is the per-RUN chain painter, and handing it
-    // a proto tile feeds chain-shaped runs into a chain-shaped painter, re-introducing the seams that
-    // are the whole tell (`RIBBONS §1`: "a seam is positive evidence of per-chain construction… ONE
-    // ring offset inward has no joins in it"). The bands were already struck as successive offsets of
-    // one contour upstream; there is nothing left here to construct.
-    // ⛔ Detected by the tile's own shape, not by a flag: an artifact either carries bands or it does
-    // not, so a mixed set (a re-pour part-way through the migration) cannot silently take one path
-    // for tiles that wanted the other.
+    // ⚠️⚠️ A STALE ARTIFACT PATH — AND IT IS LOUD, BECAUSE A QUIET ONE IS THE WORST CASE HERE.
+    // ⛔ The producer no longer emits `bands`; ③'s FILL is struck LIVE off the stamp. So a tile
+    // arriving with bands is a `shape.json` frozen BEFORE that flip, and consuming it means the
+    // operator is looking at a FILL THAT AUTHORING CANNOT MOVE — a plausible-looking map whose
+    // handles do nothing. That is exactly Layer 0 q2, and it would present as "my treelawn edit
+    // isn't working" rather than as an error. ⭐ The branch stays because a stale artifact is a
+    // REAL state and refusing to draw it would make a re-pour a prerequisite for opening the tool;
+    // the DEFECT WAS NEVER THE DRAW, it is the silence — so it says so, once per pass.
+    // ▶ The cure is a re-pour. `PIPELINE §5`: the browser writes `shape.json` on Survey-exit.
     if (st.bands) {
+      if (!_staleBandsWarned) {
+        _staleBandsWarned = true
+        console.warn('[tileGround][SECTION] ⛔ this artifact carries FROZEN `bands` — it was poured before ③\'s FILL went live. It will DRAW, but the ped FILL cannot respond to authoring: a treelawn or material edit will move 0 m². RE-POUR to author the fill.')
+      }
       const b = st.bands
       const bundle = {
         key,
@@ -6597,23 +6602,14 @@ export function buildTileGround(ribbons, opts = {}) {
           for (const r of runs2) delete r.key
           protoShapeTiles.push({
             ring, iA: mine.map(EC => EC.ring),
-            // ⭐ the FILL, already painted — and it is the LAST thing here that still is.
-            // ⛔ THE FILL IS STILL FROZEN, `SECTION §4`'s over-reach, and the flip is now ONE
-            // DELETION FOR REAL: remove `bands` and `sectionOpen` dispatches to the STAMP INQUIRY
-            // (`sectionPassProtoTile`), which reproduces this strike live off `iaFull`+`iaStamp`.
-            // ⛔ NOT DELETED HERE, and the reason is the eye, not the numbers: `protoProducer` is
-            // on in the Designer, so flipping puts a new FILL on the operator's own map, and
-            // `RIBBONS §1` earned that rule the hard way — "do not eye-gate a construction that is
-            // not ready, and never in the operator's own view." Jacob's call, on a render.
-            // ⭐⭐ WHAT WAS WRONG BEFORE, so it is not re-derived: "delete `bands`" used to hand the
-            // tile to `sectionPassTile`, the per-RUN WALK painter. It reads four fields this tile
-            // does not supply, and two of them are REFUSED by ruling — the mono-width seed
-            // `TLmax = tl` went `undefined`, `x > undefined` is false for every run, and
-            // `ringAt(NaN)` collapsed the ribbon. That was the "~90% gone". Closing it reached
-            // 66.7%; the rest was the walk itself, asking a contour where its legs start and stop.
-            // ▶ node scratch/claims-proto-fill-is-live.mjs — LS band within 0.1%, authoring +35,819 m².
-            bands: { curb: (protoBandsByBlock[k] || {}).curb || [], treelawn: (protoBandsByBlock[k] || {}).treelawn || [],
-                     sidewalk: (protoBandsByBlock[k] || {}).sidewalk || [], lu: (protoBandsByBlock[k] || {}).lu || [] },
+            // ⭐⭐⭐ THE FILL IS NO LONGER FROZEN — `SECTION §4`'s keystone, finally kept: freeze the
+            // SILHOUETTE, author the FILL live. `bands` used to sit here and `sectionOpen`
+            // short-circuited on it, so an authored treelawn moved this artifact 0 m². The tile now
+            // freezes the STAMP (`iaStamp` + `iaFull`) and `sectionPassProtoTile` re-strikes ③'s own
+            // ladder past the wall, per contour POINT — no walk, no runs to stroke, no corner to
+            // decline. ⭐ Jacob: "we don't do a WALK anymore… there are no nodes there now."
+            // ▶ node scratch/claims-proto-fill-is-live.mjs — band within 0.1% of what the frozen
+            //   bands drew, on two towns; authoring now moves it +35,819 m² where it moved 0.
             // ⭐ the SHAPE the wall freezes (`SECTION §4`'s own list) — carried NOW, so the flip is
             // one deletion rather than a rebuild.
             fillets: protoArcsByBlock[k] || [],
@@ -6672,7 +6668,8 @@ export function buildTileGround(ribbons, opts = {}) {
             const ring = cut([t.ring])
             if (!ring.length) continue                     // wholly outside the disc — correctly gone
             // ⛔ The SHAPE is what is cut — the ring and the curb. The FILL is stroked live off
-            // them past the wall, so there is nothing else here to clip.
+            // them past the wall, so there is nothing else here to clip. ⭐ That sentence was
+            // aspirational when it was written and is now true: the bands are gone from the tile.
             // ⭐ A fillet whose arc falls entirely outside the disc goes with it: the corner it
             // describes is not in the drawing, and a fillet with no curb is an arc nobody paints.
             const inDisc = (p) => intersectRings([[[p[0]-0.05,p[1]-0.05],[p[0]+0.05,p[1]-0.05],[p[0]+0.05,p[1]+0.05],[p[0]-0.05,p[1]+0.05]]], [stamp]).length > 0
@@ -6691,9 +6688,7 @@ export function buildTileGround(ribbons, opts = {}) {
             // clean CUT through a finished band, never a band that turned a corner to follow the
             // rim." ⇒ `iaFull`/`iaStamp` pass through the cut untouched, by design.
             for (const r of ring) kept.push({ ...t, ring: r, iA: cut(t.iA),
-              fillets: (t.fillets || []).filter(f => inDisc(f.apex)),
-              bands: { curb: cut(t.bands.curb), treelawn: cut(t.bands.treelawn),
-                       sidewalk: cut(t.bands.sidewalk), lu: cut(t.bands.lu) } })
+              fillets: (t.fillets || []).filter(f => inDisc(f.apex)) })
           }
           protoShapeTiles = kept
           console.log(`[tileGround][PROTO⊙] stamped the circle LAST, on the finished geometry: ${before} tile(s) → ${kept.length}. Bands are CUT at the rim, never bent to follow it.`)

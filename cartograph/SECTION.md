@@ -176,9 +176,15 @@ The architecture that makes Section responsive, and the thing the freeze is **fo
 > ⛔ **STILL OPEN, CAUSE NOT ESTABLISHED:** the two strips swap **~3%** between each other while
 > their **total holds to 0.1%** — so only the **divider** moved. It is **not** the capacity guard
 > (the residual sits on the 144 tiles whose envelope is identical to ③'s) and **not** the rim cut.
-> ⚠️ **NOT FLIPPED, and the reason is the eye, not the numbers.** `protoProducer` is on in the
-> Designer, so deleting `bands` puts a new FILL on the operator's own map — `RIBBONS §1`'s own rule.
-> **Jacob's call, on a render.** Everything else is in place; it is one deletion.
+> ### ✅ FLIPPED 2026-09-06, on Jacob's call — `bands` IS GONE FROM THE TILE
+> The FILL is no longer frozen anywhere: the tile freezes the SILHOUETTE and the STAMP, and Section
+> strokes the ribbon live off them. **`SECTION §4`'s keystone is kept for the first time.**
+> ⭐ Survey and Section still agree to **0 m² on all four layers** — both now run the same live
+> painter, which is what "the same thing" was always supposed to mean. Legacy FILL byte-identical.
+> ⚠️ **A `shape.json` poured BEFORE the flip still carries `bands`, and that path is kept and made
+> LOUD.** It draws — refusing would make a re-pour a prerequisite for opening the tool — but it
+> `console.warn`s that the ped FILL cannot respond to authoring. ⛔ Silence there would present as
+> *"my treelawn edit isn't working"*, never as an error. **The cure is a re-pour.**
 
 **State (2026-06-07):** the live wiring is **landed** — `sectionGeos`/`sectionOpen`/`sectionPass` take `blockCustoms`, so the FILL re-strokes off the frozen `iA` when an override changes (material-swap proves it live). The remaining gap is §3.3: the **depth** override + the per-edge divider. (Phase-D's earlier "freeze the FILL too" over-reach is the thing §3.2/§3.3 unwinds — freeze the silhouette, stroke the FILL live.)
 

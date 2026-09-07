@@ -30,9 +30,13 @@ const pct = (a,b) => b > 0 ? `${(100*a/b).toFixed(1)}%` : 'n/a'
 let bad = 0
 for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','hipointe-demun'])) {
   const f = feed(scene); if (!f) { bad++; continue }
-  const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
-  const cw = f.curbWidth
-  const strip = t => { const { bands, ...r } = t; return r }
+  const g = buildProto(f, { protoArtifact: true })
+  const T = g.protoShapeTiles, cw = f.curbWidth
+  // ⭐ ③'s strike is the REFERENCE, not the product: the tile no longer carries `bands` (the FILL
+  // is live now), so the reference comes off the build's measurement channel and is cut by each
+  // tile's own `iA` — the same cut the live painter applies, so the two are comparable.
+  const region = differenceRings(T.flatMap(t => t.iA || []), [])   // the blocks, as the disc left them
+  const clip = (rs) => intersectRings(rs || [], region)
   const open = (tiles, cust) => sectionOpen(tiles, cw, { outer:'LU', inner:'SW' }, null, cust)
   console.log(`\n══ ${scene} · ${T.length} proto tiles · ${f.slots} authored slots · cw ${cw} ══`)
 
@@ -44,7 +48,11 @@ for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','
   if (st !== T.length) { console.log('  ⛔ FAIL — a tile without the stamp falls to the WALK painter'); bad++ }
 
   // ── 1 · the live FILL vs ③'s frozen bands. Same ladder, both sides of the wall ⇒ they must agree.
-  const F = open(T, f.blockCustoms), L = open(T.map(strip), f.blockCustoms)
+  const L = open(T, f.blockCustoms)
+  // ③'s strike, clipped to the same region the live bands are cut to. ⛔ `protoBands` is struck
+  // BEFORE the disc is stamped, so comparing it raw answers a different question.
+  const F = { sidewalk: clip(g.protoBands.sidewalk), treelawnByLu: { all: clip(g.protoBands.treelawn) },
+              luByClass: { all: clip(g.protoBands.lu) }, curb: clip(g.protoBands.curb), asphalt: L.asphalt }
   // ⛔ THE TOLERANCE IS PER-LAYER AND IT IS NOT A FUDGE. `asphalt`/`curb`/`LU` and the TOTAL band
   // must reproduce ③ tightly — same ladder, both sides of the wall. The two STRIPS carry a known
   // open residual: they swap ~3% between each other while their total holds to 0.23%, so only the
@@ -73,8 +81,8 @@ for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','
   let n = 0
   for (const s of Object.values(bc)) for (const sd of Object.values(s||{})) for (const o of Object.values(sd||{}))
     if (Number.isFinite(o?.treelawn)) { o.treelawn *= 2; n++ }
-  const base = luA(L.treelawnByLu), moved = luA(open(T.map(strip), bc).treelawnByLu)
-  const frz  = luA(open(T, bc).treelawnByLu) - luA(F.treelawnByLu)
+  const base = luA(L.treelawnByLu), moved = luA(open(T, bc).treelawnByLu)
+  const frz  = 0   // the frozen bands were inert BY CONSTRUCTION — that is the over-reach now removed
   if (!n) console.log(`  authoring: this town authors NO treelawn depth — the gate cannot speak here (not a pass)`)
   else {
     const ok = Math.abs(moved-base) > 1

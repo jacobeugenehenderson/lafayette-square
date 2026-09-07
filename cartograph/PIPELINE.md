@@ -362,7 +362,7 @@ success is the worst outcome a kit can have:
 
 **What is open, disclosed per pour — and ⛔ this list is DISCLOSED BY THE CONSTRUCTION, not maintained
 here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
-- ⚠️ **③ still ships the FILL frozen — but the cure is BUILT and it is now one deletion for real.**
+- ✅ **CLOSED 2026-09-06 — ③ NO LONGER SHIPS THE FILL FROZEN.**
   ⭐⭐ **RULED (Jacob): "because we don't do a WALK anymore, we might need a STAMP INQUIRY step" ·
   "there should be no MID-LEG anything — there are no nodes there now, because we are fully
   polygonized."** ⛔ "Delete `bands`" used to hand a contour to `sectionPassTile`, the per-RUN painter,
@@ -370,7 +370,8 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
   freezes the **STAMP** (`iaStamp`, per contour point → its run; `iaFull`, the uncut contour it
   indexes) and `sectionPassProtoTile` re-strikes ③'s own ladder live. **Band within 0.1% of ③ on two
   towns · asphalt 0.00% · authoring +35,819 m² where it was Δ 0 · 99.5% of points stamped.**
-  ⛔ **Not flipped: `protoProducer` is on in the Designer, so it is the operator's eye, not a number.**
+  ⚠️ **A `shape.json` poured before the flip still carries `bands`; that path is kept and made LOUD**
+  (it draws, and warns that authoring cannot move the fill — the cure is a re-pour).
   ⛔ Open, cause not established: the two strips swap ~3% while their total holds — only the divider.
   → `SECTION §4` · ▶ `node scratch/claims-proto-fill-is-live.mjs`.
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
