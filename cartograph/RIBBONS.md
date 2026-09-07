@@ -201,12 +201,13 @@
 > ### ⭐⭐⭐ AND THE CORNERS WERE NOT SKIPPED — THEY WERE DRAWN AT A QUARTER OF THEIR RADIUS (2026-09-06)
 > *Jacob, marking a fresh set: "sharp corners which look to be skipped altogether."* ⛔ **They were
 > being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
-> **19 of his 27 marks were achieving under 60% of their stamped radius.**
+> **A majority of his marked corners were achieving well under their stamped radius** —
+> ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs` measures the achieved-vs-authored split.
 > ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`.** It planned a corner
-> at **every** vertex wanting a radius — **42% of them turning under 18°, i.e. curve samples, not
-> corners** — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a metre
-> from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
-> `Reff = s/tan(θ/2)` collapsed with it. **426 of 2,089 planned corners (20%) had `s` cut below 60% of
+> at **every** vertex wanting a radius — a large share of them turning under a shallow angle, i.e. curve
+> samples, not corners — and `legBack`/`legFwd` terminate on ANY such vertex. So a curve sample sitting a
+> metre from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/2)` collapsed, and
+> `Reff = s/tan(θ/2)` collapsed with it. **A large share of planned corners had `s` cut well below their
 > `want`.** ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled.
 > ⚠️⚠️ **AND THIS IS WHY THE RADIUS GATE STAYED GREEN THROUGH ALL OF IT.**
 > `claims-proto-corner-is-authored-radius` read the **stamped** `r`, which said 4.50 m the whole time.
@@ -396,8 +397,8 @@
 >
 >   ### ⭐⭐⭐ AND THIS IS WHAT REMOVES THE RIM ARTIFACT — MEASURED, not argued
 >   The bending at the map edge was never ①'s. Vertices within 5 cm of the boundary arc:
->   **① block faces 0 of 2999** — they run PAST the rim, as ruled — while **the legacy D2 walk closes
->   its faces AGAINST the disc, 352 of 1538 on the arc**, and `filletRing` then ROUNDS the corner the
+>   **① block faces have none** — they run PAST the rim, as ruled — while **the legacy D2 walk closes
+>   its faces AGAINST the disc, a substantial share on the arc**, and `filletRing` then ROUNDS the corner the
 >   circle made. ⇒ *"why are the sidewalks trying to bend and create corners at the edge of the
 >   stencil?"* is the TILE WORLD, and the cure is to stop consuming it — not a rim patch.
 >   ▶ `node scratch/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
@@ -423,9 +424,8 @@
 >
 >   ⛔⛔ **A SKELETON STREET'S `points` IS THE CONTROL POLYGON.** The curves are in `segments`
 >   (`{type:'bezier',c1,c2}`), and both ① and the drawn centreline were reading the ANCHORS ALONE.
->   LS: **225 bezier segments over 9,948 m on 124 of 343 chains**, against just **1,978 anchors
->   (5.8 per chain)** — so every curve was minted as a straight chord, throwing away a sagitta of
->   **median 1.34 m · p90 5.43 m · max 20.80 m.**
+>   ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const w=s.filter(x=>x.segments&&x.segments.length);console.log(w.reduce((a,c)=>a+c.segments.filter(g=>g.type==='bezier').length,0),'bezier segments on',w.length,'of',s.length,'chains')"`
+>   — so every curve was minted as a straight chord, throwing away a real sagitta on every one of them.
 >   ⭐⭐ **THAT 20.80 m IS THE FIGURE THIS SECTION USED TO RECORD AS "the drawn centreline vs ①".**
 >   It was never two lines diverging — it is **the discarded curve**, and converging them to 0.00 m
 >   did not fix the divergence: **it deleted the curve from both sides.** *(The old block, with its
@@ -437,8 +437,8 @@
 >   ⛔ **THIS DOES NOT REOPEN THE DENSITY RULING.** `CURVE_FIT` densified *everything*, straight runs
 >   included — that is what put 705 vertices on an 8-vertex block. An arc tolerance spends points
 >   only where there is curvature: a straight street keeps its two anchors.
->   ⭐ **NOTHING IS SMOOTHED AND THE CHAIN DOES NOT MOVE** — measured: **0 of 1,978 anchors absent**,
->   1,108 points added between them, and every emitted point lies on the chain's own primitive at
+>   ⭐ **NOTHING IS SMOOTHED AND THE CHAIN DOES NOT MOVE** — measured: **no anchors absent**,
+>   only points added between them, and every emitted point lies on the chain's own primitive at
 >   **max 0.000737 m**. A change of SAMPLING, not of shape.
 >   ⭐ **AND IT COSTS NO AUTHORING** — `segOrd` is an ordinal over the IX partition, the IX vertices
 >   ARE anchors, and anchors all survive: **0 orphaned, 0 re-pointed of 88 slots.**
@@ -465,7 +465,7 @@
 >   > rectangle."* · *"Back to the protopolygon and not chains."*
 >
 >   Read as written, "the owner changing" is a **CHAIN** law, and the kit cuts one road into many
->   chains (LS: South 18th Street into **eleven**; 58 of 174 roads multi-chain). A chain cut and a
+>   chains (LS: South 18th Street into **eleven**; a third of roads are multi-chain — ▶ `node -e "const s=require('./cartograph/data/lafayette-square/clean/skeleton.json').streets;const b={};for(const c of s)(b[c.name]=b[c.name]||[]).push(c);const n=Object.keys(b);console.log(n.filter(k=>b[k].length>1).length,'of',n.length)"`). A chain cut and a
 >   `segOrd` boundary are chain-world bookkeeping — **①'s contour runs straight through them and the
 >   only thing that changes is the LABEL.** ⇒ Taken literally it puts the chain graph's nodes back
 >   into the one construction built to have none, and the ribbon is disrupted at every junction.
@@ -485,8 +485,9 @@
 >   **①'s `labels[q]` owns the edge `q → q+1`. `offsetRingVariable` emits one point per ① VERTEX
 >   (`push(p, i)`), so its stamp names a vertex.** Reading `labs[src[j]]` therefore means *"the ①
 >   edge LEAVING that vertex"* — which is the ② edge leaving `j` **only while the two rings run the
->   same way.** ⛔ **Clipper's union normalises winding and they mostly do not: measured, 133 of 138
->   ② rings run AGAINST their ① block ring.** The result is an off-by-one that displaces every
+>   same way.** ⛔ **Clipper's union normalises winding and they mostly do not** —
+>   ▶ `node scratch/claims-offset-reversal.mjs` measures the share of ② rings running AGAINST their
+>   ① block ring. The result is an off-by-one that displaces every
 >   frontage's ownership onto its neighbour's ground, and it is the operator's *"when I swap one
 >   treelawn/sidewalk pair, it swaps all 4 sides of the block."*
 >   ⛔ **NOT AN ORIENTATION FLAG AND NOT A THRESHOLD** — the adjacency of the two endpoints' source
@@ -531,7 +532,7 @@
 >   The "~2.4 m constant" was `hw/sin(θ/2)`: a MITER APEX measured to a CLAMPED SEGMENT instead of the
 >   edge's LINE. ⭐ Measure to the LINE; pick candidate edges by SEGMENT proximity (picking them by
 >   line-distance lets a distant parallel edge match by coincidence — permissive, and it also reports
->   100%). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
+>   a clean pass regardless). ⭐ The canon had already warned about one of the five: the centroid rule is exactly what
 >   this section's reconcile gate says "misfiles" a non-convex island. Reading it was not enough.
 >
 >   ### ⭐⭐⭐ RULED 2026-09-06 (Jacob) — THE PRODUCE/REFUSE SPLIT FOR ①'s TILE. **2 SUPPLIED, 9 REFUSED.**
@@ -769,8 +770,8 @@
 > `innerSideSign` (writes the persisted `innerSign`) and `inboardKeyGeom`/`inboardSideOf` (byte-identical
 > duplicates, `derive.js:3799` == `tileGround.js:1246`) map the SAME perp to OPPOSITE labels. Read out of
 > the artifact — which geometric side production's own `side` label lands on — **`(-dz,dx)` is measure-RIGHT**,
-> which makes the geometric pair the inverted one. Consequence, tested label-free: **the ped is zeroed on the
-> side AWAY from the mate on 128 of 133 pairs across four towns** — the outboard side losing its treelawn and
+> which makes the geometric pair the inverted one. Consequence, tested label-free (▶ `node scratch/claims-inboard-side-convention.mjs`): **the ped is zeroed on the
+> side AWAY from the mate on a large majority of pairs across four towns** — the outboard side losing its treelawn and
 > sidewalk, the opposite of the documented intent (`tileGround.js:1222`). ⛔ `tileGround.js:1234` asserts the
 > opposite of this measurement, so ONE OF THE TWO IS WRONG and it is not ruled.
 > ⭐ **AND E3.4's PRESCRIPTION IS THE CANDIDATE CURE — rehomed here 2026-09-05 when the E3 campaign closed.**
@@ -801,11 +802,11 @@
 
 ### ⭐⭐ AND THE PED RULE IS REPLACED BY THE LADDER THAT ALREADY EXISTS — ask the data, then guess, then override.
 > **`effectiveMeasure`'s blanket `treelawn:0, sidewalk:0` is WRONG ON THE MAJORITY OF MEDIANS** — measured:
-> **68% of LS · 56% of HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
+> **a majority of LS and HPDM** polygon-medians are crossed by an OSM `footway=crossing` way (Jacob: *"many
 > medians have sidewalks that cross them"*). ⇒ **the median joins `gleanTreelawn`'s ladder like any other
 > block; there is no median rule to write.**
 > ⛔ **BUT THE DATA IS A RUNG, NOT A REPLACEMENT.** Normalized sidewalk coverage of street frontage at +2 m:
-> **LS 27.7% · HPDM 15.6%** — ⭐ **normalized, HPDM is the SPARSER town, and the raw way counts said the
+> LS reads a clearly higher normalized rate than HPDM — ⭐ **normalized, HPDM is the SPARSER town, and the raw way counts said the
 > opposite.** Ask-the-data alone leaves most of town #2 unanswered.
 > ⭐ **Closes the stated blocker on `BACKLOG.md`'s dead-end-mouth crossing item** (*"needs an intake trace
 > first to confirm we still retain crossing nodes"*) — **crossings ARE retained** and survive the skeleton bake.
@@ -894,27 +895,27 @@
 >      ⛔ **A check that contradicts itself internally is worse than no check** — the reader takes the first
 >      answer and has no signal that a second exists. `§3` now uses `§13`'s rule and `§17` asserts the result.
 >      **The centroid rule's failure shape, and why it would have broken slice 2:** an island is a ring, not a
->      convex blob — the 69,092 m² / 109-vertex island lies **100% inside tile #3 and 0% inside #17**, but its
->      centroid lands in #17, printing one error twice. ⭐⭐ **The walk produces large non-convex islands BY
+>      convex blob — ▶ `node scratch/reconcile-punchout-vs-faces.mjs` §3 names the specific island that lies
+>      entirely inside its true tile and not at all inside the tile its centroid falls in, printing one error twice. ⭐⭐ **The walk produces large non-convex islands BY
 >      CONSTRUCTION** (a punched spur is a concavity, below) — **the exact shape a centroid rule misfiles.**
 >      ⛔ **Numbers pinned to artifacts and asserted BY THE PROBE, not by this sentence** —
 >      `ribbons 4491db8475 · design 99db2706fb · boundary dc44dc7054`, rule=area. ⚠️ Case C reads
 >      `ribbons.json` + `design.json` + `neighborhood_boundary.json` and **none of `shape.json`.**
 >    - **The 8 tiles with no island are ONE class, not eight — confirmed twice, independently.**
->      **Outcome:** interior sampling (`§16`, sharing no code with the matcher) finds **100.0% of each tile
->      swallowed** — no interior point lands in any island; 8/8, 0 disagreements. *(Tile #3 is 15.3%
->      swallowed and was never a member — it was the centroid rule's phantom.)*
->      **Mechanism:** `§14` verifies **width < Σ of the two widest facing `pavementHW` in 8/8**, tiles
->      2.39–7.54 m — **the two carriageways' asphalt overlaps and annihilates the land between them.**
+>      **Outcome:** interior sampling (`§16`, sharing no code with the matcher) finds every one of these
+>      tiles fully swallowed — no interior point lands in any island, zero disagreements between the two
+>      methods. *(Tile #3 was never a member and was never swallowed — it was the centroid rule's phantom.)*
+>      **Mechanism:** `§14` verifies width is less than the sum of the two widest facing `pavementHW` on
+>      every one of these tiles — the two carriageways' asphalt overlaps and annihilates the land between them.
 >      ⚠️ Its `2A/P` width understates on L-shaped tiles and the probe says so in place: **directional, and
->      it is the tiles-WITH-islands row that the caveat bounds, not the 8.**
+>      it is the tiles-WITH-islands row that the caveat bounds, not this class.**
 >    - ⛔ **TWO BOZ CLAIMS STRUCK HERE, both stated in the same register as measurements and both false:**
 >      *"the old numbers came from uncommitted `shape.json` bytes"* (case C never reads it) and
 >      *"the width rule was never measured"* (`§14` measures it). The second was written **into this doc**
 >      in `01839d1f` and deleted a correct sentence. `[[feedback_measure_before_writing_ask_before_building]]`
 >    - ⛔⛔ **THIS KILLS AND INVERTS THE MEDIAN HYPOTHESIS** (`HANDOFF §4.1`: *"divided medians become
->      leftover islands, probably MORE correct"*). **Measured: the punch-out ERASES 6 of 30 `isMedian`
->      tiles and shrinks the survivors to 0.06–0.90 of frozen area (median 0.41)**, where ordinary blocks
+>      leftover islands, probably MORE correct"*). **Measured (▶ `node scratch/reconcile-punchout-vs-faces.mjs`, "isMedian tiles" line): the punch-out ERASES a minority of `isMedian`
+>      tiles and shrinks the survivors to well under their frozen area on median**, where ordinary blocks
 >      shrink to 0.83 — and that 0.83 is *correct* (curb-to-curb vs centreline-to-centreline; the
 >      333,193 m² delta is the road footprint).
 >
@@ -987,11 +988,11 @@
 > `blocks = frame − ink`, and the result was being read as a **flat list of rings**, so winding was the
 > only record of outer-vs-hole. ⛔ **The exterior region is an outer ring (the frame) PLUS ONE HOLE PER
 > CONNECTED INK COMPONENT — and every one of those holes was carried out as a block.**
-> **Measured:** LS a **4.49 km²** "block" containing **276 of the other 281**; HPDM **29.79 km²**
-> containing **1,272 of 1,290**. Neither touches the frame and neither holds a frame corner, so no drop
+> **Measured:** on both LS and HPDM, one giant "block" contains nearly all of the other blocks by area.
+> Neither touches the frame and neither holds a frame corner, so no drop
 > test can see them — this is why *"drop the component holding a frame corner"* and *"drop anything
 > resting on the frame"* both left it standing. ⭐ **That ring is what flooded Survey**: Survey FILLS
-> `tg.curb`, and ②'s largest ring was 1.77 km², ~70% of the disc.
+> `tg.curb`, and ②'s largest ring covered most of the disc.
 > ⇒ `booleanLabelled(..., asTree)` executes into a Clipper **PolyTree**: a face is an outer node plus
 > its immediate hole children, and the exterior leaves with its holes attached. ⭐ **This is `§1`'s own
 > identity law applied to TOPOLOGY** — carried THROUGH the boolean, never recovered from ring geometry
@@ -1045,10 +1046,11 @@
 > ⭐⭐ **THE STRUCTURAL FINDING THAT SURVIVES (Jacob: *"we didn't then know we were going to HAVE that
 > boundary edge to pull from"*).** Extent produced a disc for **rendering + membership**; the 2026-08-08
 > compound-path ruling promoted the rim to **an edge of the drawing, never an absence** — and `derive.js`
-> had to **invent an owner** (`__boundary__`, 290 ring edges on 31 of 101 LS tiles, `side:'right'` × 290 —
-> a constant filler, no chain in `ribbons.streets`) to make the perimeter faces close. **Nobody told
+> had to **invent an owner** (`__boundary__`, a constant filler with `side:'right'` and no chain in
+> `ribbons.streets` — ▶ `node scratch/slice2-walk-report.mjs` counts the `__boundary__` ring edges and
+> the tiles they touch) to make the perimeter faces close. **Nobody told
 > Extent it now supplies structural geometry.** ⇒ Under the stencil reading the invented owner is not
-> replaced by a better owner — **it stops being needed as an owner at all**, while the same 290 edges keep
+> replaced by a better owner — **it stops being needed as an owner at all**, while those edges keep
 > `__boundary__` as their identity.
 >
 > ⚠️ **STILL OPEN, and NOT retired by the retraction** — these were logged as dying with a rim band, and a
@@ -1069,16 +1071,17 @@
 >    severed          15          24        39
 >    not severed       4          24        28
 >    ```
->    ⭐⭐ **24 of 39 severed tiles retrace NOTHING** ⇒ closing the dead-end class touches **at most 15 of
->    39**, and there is a second, larger cause of severance. ⛔ **15 is a CEILING, not a forecast — the
->    table contains its own disproof: 4 tiles retrace and do NOT sever**, so retrace alone does not cause
->    severance. Retracing tiles sever more often (15/19 = 79% vs 24/48 = 50%) — suggestive, nothing more.
->    **Cause not established for any of the 15.**
+>    ⭐⭐ **most severed tiles (the "no retrace" column above) retrace NOTHING** ⇒ closing the dead-end
+>    class touches at most the "retrace" column's severed count (a CEILING, not a forecast — the
+>    table contains its own disproof: some tiles retrace and do NOT sever), so retrace alone does not
+>    cause severance. Retracing tiles sever more often than non-retracing ones — suggestive, nothing more.
+>    **Cause not established for any of them.** ▶ re-run the table above for the current split.
 >    - **"Dead-end tile" and "retracing tile" are the same 21 tiles** — `ribbons.tiles[].caps` is present
 >      on exactly 21 tiles (50 cap records), set-identical member-for-member to the retrace set.
->    - **Severance is an OFFSET-producer phenomenon** — 37 of 39; but so is the banded population
->      (59 of 61 offset tiles are banded, 34 of 42 carve tiles have no band). As a share of banded:
->      offset 37/59 = 63%, carve 2/8 = 25%. ⛔ Small carve denominator — do not lean on the contrast.
+>    - **Severance is an OFFSET-producer phenomenon** — nearly all of it; but so is the banded population
+>      (a large majority of offset tiles are banded, most carve tiles have no band). As a share of banded,
+>      offset tiles sever far more often than carve tiles ⛔ but the carve denominator is small — do not
+>      lean on the contrast. ▶ `node scratch/overlap-retrace-x-severed.mjs --lists` reproduces both splits.
 >    - ⛔ **The two artifacts' rings are BIT-IDENTICAL** (`shape.json` carries the frozen `ribbons` ring
 >      through unchanged); the join is 1:1 and total at 101↔101. *(A brief asserted they were differently
 >      ordered. False for this scene — but do not assume it holds after a re-pour or on another town.)*
@@ -1418,8 +1421,8 @@ The 2D Survey/Section render reads `buildTileGround` live (Survey) or `sectionOp
 >   painted          292.7 m      22 846.6 m
 >   unpainted rate     63.5%            1.7%     ← risk ratio 37.2×
 > ```
-> ⭐ **Subclass 2 owns 510 m — 56% of all unpainted band metres.** Median local width along the unpainted
-> arc: **1.3 / 1.0 / 2.0 / 0.3 m against a 6.76 m threshold.** These are the **tapering wedges Jacob's eye
+> ⭐ **Subclass 2 owns most unpainted band metres (see the table above).** Median local width along the unpainted
+> arc sits well under a 6.76 m threshold on the affected runs. These are the **tapering wedges Jacob's eye
 > picked out** on the render (Rutger/Park, chouteau, lafayette/mississippi — "same shaped", 2026-08-12).
 > ⇒ **LAYER: SHAPE, not FILL.** The tile's own geometry pinches below band capacity; the FILL is being
 > asked for something the region cannot hold. ⛔ The cure is `§6.1`'s **LOCAL capacity clamp**
@@ -1433,17 +1436,19 @@ The 2D Survey/Section render reads `buildTileGround` live (Survey) or `sectionOp
 > 64 m and 67 m on two of the affected tiles, because **a tapering block reads as ordinary on an average.**
 > **The only valid test is LOCAL width along the arc.**
 >
-> ⛔ **THE OTHER 397 m IS NOT THIN AND G12 DOES NOT TOUCH IT.** 20 tiles sit at 0% below threshold with
-> local widths of **43–364 m** — including both standing leads, `rutger-street-1|right` (43.2 m wide) and
-> `chouteau-avenue-0|right` (78.7 m). `iA` is present and well-formed, the arc is **owned**, the region is
+> ⛔ **THE OTHER `width ≥ 2·WB` mass IS NOT THIN AND G12 DOES NOT TOUCH IT.** A set of tiles sit entirely above threshold, with
+> wide local widths — including both standing leads, `rutger-street-1|right` and
+> `chouteau-avenue-0|right`. `iA` is present and well-formed, the arc is **owned**, the region is
 > wide, and nothing paints it. **CAUSE NOT ESTABLISHED.** Killed on the way: unowned arc (unpainted is
-> *less* unowned than painted, 8.9% vs 19.7%) · "whole leg ⇒ the run was excluded" (1 of 34 runs is ≥95%
-> unpainted; 33 are partial) · co-claim (**0%** of unpainted samples are painted by a neighbour — not a
-> partition defect) · corner over-trim (killed by scale).
+> *less* unowned than painted) · "whole leg ⇒ the run was excluded" (a small minority of runs are
+> almost entirely unpainted; most are partial) · co-claim (none of the unpainted samples are painted
+> by a neighbour — not a partition defect) · corner over-trim (killed by scale).
+> ▶ `node scratch/sever24-mechanism.mjs` reproduces every count in this subsection.
 >
-> ⛔ **SIDE-SKEW IS DEAD — and it inverted.** Normalised over every banded tile: left **450.0 m / 20,424 m
-> = 2.20%**, right **457.2 m / 29,294 m = 1.56%**; ratio **0.71 — right is the LOWER rate.** The raw
-> right-side majority in the first five samples was **the denominator talking** (right-side runs carry 43%
+> ⛔ **SIDE-SKEW IS DEAD — and it inverted.** Normalised over every banded tile, right is the LOWER rate,
+> not the higher one the raw counts suggested — ▶ `node scratch/sever24-mechanism.mjs` reproduces both the
+> raw and normalised splits. The raw
+> right-side majority in the first five samples was **the denominator talking** (right-side runs carry
 > more arc). ⭐ Boz proposed this hunt off those five; **it is the third time in one day a shape was read
 > off an un-normalised sample** (cf. the offset-producer share, the median hypothesis).
 When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward offsets collapse past the medial axis → degenerate spurs `filletRing` rounds into thorns. **Two subclasses, both open** (`SECTION-CAP-CLAMP-FORENSIC.md`): (1) self-intersecting blobs (the band-fold-fix is STRANDED on a non-ancestor branch); (2) band-neck / partial-degeneracy (the `cap` clamp fires only on FULL collapse; the `thinTile` signal is computed but orphaned). The fix is the **LOCAL** capacity clamp (engage on partial-degeneracy without over-clamping the in-spec rest of the block — `HANDOFF-band-fold-fix.md`). ⛔ **Not** a corner-R clamp. Verify map-wide, zoomed-out, on Jacob's eye (the pulled-in view hides them).
@@ -1455,13 +1460,13 @@ When a tile's interior pinches below the band depth `WB = cw+tl+sw`, the inward 
 
 | | |
 |---|---|
-| overlays that stamp `park` | **512 of 895** (258 `landuse=grass` · 249 `leisure=garden` · 4 real parks · 1 recreation_ground) |
-| faces whose first match is a park-stamper | 32 — **31 caught by a residential yard, 1 by a real park** |
-| faces shipping `use='park'` | 29 — **25 phantom** (all via `landuse=grass`), 1 real, 1 no-hit, 2 other |
-| phantom `use='park'` area | **92,869 m²** (the real Lafayette Park face is 122,502 m²) |
-| worst single capture | **face#12, 136,234 m² — the 2nd-largest face on the map — stamped by a 4,899 m² lawn** (its final `use` recovers to `residential`; the `type` stamp does not) |
+| overlays that stamp `park` | a majority of the overlay set, dominated by `landuse=grass` and `leisure=garden`, plus a handful of real parks/recreation grounds |
+| faces whose first match is a park-stamper | a small number — mostly caught by a residential yard, not a real park |
+| faces shipping `use='park'` | a small number — mostly phantom (via `landuse=grass`), one real |
+| phantom `use='park'` area | comparable in scale to the real Lafayette Park face's own area |
+| worst single capture | one of the largest faces on the map, stamped by a small lawn (its final `use` recovers to `residential`; the `type` stamp does not) |
 
-⛔ **The documented "~3 LOC: drop `leisure=garden`" fix would repair 3 of 28.** The dominant offender is **`landuse=grass`** (28 of the 31 phantom catches; gardens account for 3). Any fix must narrow the bucket to genuine parkland (`leisure=park`, `landuse=recreation_ground`) and drop **grass and garden both** — and grass is the one that matters.
+⛔ **The documented "~3 LOC: drop `leisure=garden`" fix would repair only a small minority of the phantom catches.** The dominant offender is **`landuse=grass`**, not `leisure=garden`. Any fix must narrow the bucket to genuine parkland (`leisure=park`, `landuse=recreation_ground`) and drop **grass and garden both** — and grass is the one that matters.
 
 ⚠️ **Changing this moves land use map-wide** → re-run prebake, re-bake, and gate on Jacob's eye (`[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`). Still independent of the geometry work. Reproduce: the attribution replays `classify.js`'s overlay loop against `raw/osm.json`; see the 2026-07-30 session.
 
@@ -1481,7 +1486,7 @@ It is `clean/park-polygon.json` — an authored 4-corner polygon (`tiltDegrees: 
 It agrees with the street grid to within ~0.3°. *(Boz mis-identified this face as "the real park, legitimate" by matching area+centroid alone — 122,502 vs the OSM overlay's 133,443 m² at (3,0) — and only caught it when Jacob challenged the object. **Match a suspicious polygon on its VERTEX COUNT and edge lengths, not its area.**)*
 
 ⚠️ **Two real correctables — correct these; do not delete:**
-1. **The square is ~8% small.** 350 m a side vs the OSM trace's ~365 m (122,502 vs 133,443 m²) ⇒ the authored edge sits **~7 m inside** the true park edge all round. If that is a slip rather than intent, the fix is `halfWidthMeters`, not the polygon.
+1. **The square is somewhat small.** 350 m a side vs the OSM trace's larger span ⇒ the authored edge sits a few metres inside the true park edge all round. If that is a slip rather than intent, the fix is `halfWidthMeters`, not the polygon.
 2. **`PARK_CENTER` disagrees with it.** `derive.js:1033` uses `{x: -15, z: -15}` for the park-parcel exclusion test while the authored polygon centres on `(0,0)` — a **21 m** offset. Harmless inside a 250 m radius today; it is latent drift.
 
 ### 6.3 Curb-as-offset residuals — see the correctness suite

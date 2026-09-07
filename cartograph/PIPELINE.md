@@ -364,14 +364,14 @@ success is the worst outcome a kit can have:
 here.** The pour warns by name for each; re-read it from a run, never from this paragraph:
 - ✅ **CLOSED — ③ NO LONGER SHIPS THE FILL FROZEN.** The tile freezes the SILHOUETTE and the
   **STAMP** (`iaStamp` per contour point, `iaFull` the uncut contour it indexes) and Section strikes
-  ③'s own ladder live off them — ⭐ Survey and Section now agree to 0 m² because they run the **same
-  painter**, not because both read one frozen strike. Band within 0.7% of ③, asphalt 0.00%,
-  authoring **+35,549 m²** where it was Δ 0.
+  ③'s own ladder live off them — ⭐ Survey and Section now agree because they run the **same
+  painter**, not because both read one frozen strike. ▶ `node scratch/claims-proto-fill-is-live.mjs`
+  reports the frozen-vs-live band/asphalt delta and the authoring-reaches-the-fill check per scene.
   ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
   resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
   corner · and ② **minting a corner at every chain cut** — *"① has no nodes"*. → `SECTION §4` and
   `RIBBONS §1`'s 2026-09-07 amendment.
-  ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a ~3% divider residual,
+  ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a small divider residual,
   cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
   draws and **warns**, and the cure is a re-pour.
   ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-proto-has-no-nodes.mjs`
@@ -548,7 +548,7 @@ project's corner defects has been a construction reaching for a special case.
 > median, a sliver or a dead-end disc is not an edge-offset**, so it is built by a **boolean carve**
 > instead — and that is the *right* answer for it, not a degradation. ⛔ *"The curb is a concentric
 > offset"* therefore describes **most blocks, not the map**, and the carved share **varies by town** —
-> 59 of 101 offset in the first town, 19 of 77 in another — so **no single scene reveals the split.**
+> ▶ `node scratch/a07-producer-disclosure.mjs` — so **no single scene reveals the split.**
 > ⭐ Which producer built each block is **stamped into the frozen shape** (`producer` +
 > `producerReason`), precisely because a reader who believes the headline will debug a carved block with
 > reasoning that cannot apply to it. **Read the stamp before reasoning about a curb.**
