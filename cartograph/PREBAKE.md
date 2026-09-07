@@ -72,10 +72,10 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > street renders as a cul-de-sac.
 > - ⛔ **`streetFade` IS A RENDER PARAMETER** (a shader fade — `boundary.js:10`, `BakedGround.jsx:117`)
 >   deciding **content extent**. Same defect shape as the outer-polygon finding (`RIBBONS §1`).
-> - ✅ **THE FROZEN TILE/CAP SYSTEM IS CLEAN** — 0 of 50 caps at the clip radius, because the tile and cap
+> - ✅ **THE FROZEN TILE/CAP SYSTEM IS CLEAN** — no caps sit at the clip radius, because the tile and cap
 >   freeze run **before the clip exists** (`pipeline.js:111` `deriveLayers` vs `:139`; `derive.js:4707`
 >   resolves caps against the original chain endpoints). ⇒ `RIBBONS §1`'s ruled dead-end class is **not**
->   contaminated.
+>   contaminated. ▶ `node scratch/claims-deadend-populations.mjs`
 > ### ⛔⛔ THE RECIPROCAL HALF — **THE CLIP MANUFACTURES VERTICES THAT HAVE NO NODE** *(2026-08-21, agent Gimbal, `6d2fcb4d`)*
 > This section knew the clip **strands** nodes outside the rim. It did not record the other direction, and
 > **that direction is what breaks the sidewalk band.**
@@ -99,8 +99,9 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 >   becoming the producer — real, and scoped to that. *(Corrected 2026-08-21: this line said "⇒ a hole in
 >   the ped band" flatly, and that framing sent two sessions into the chain graph after production
 >   symptoms.)*
-> - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — **LS 48/305
->   (16%) · HPDM 2006/2457 (82%)**. HPDM's index mostly describes streets that are not in the map.
+> - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — a small share
+>   on LS, a large majority on HPDM. HPDM's index mostly describes streets that are not in the map.
+>   ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour` ("THE RECIPROCAL HALF")
 > - ⛔ **THE NAIVE CURE IS A PLAUSIBLE-LOOKING WRONG MAP:** minting a node at the cut promises a **cap
 >   coupler** there, i.e. the kit would render a guillotined arterial as a **cul-de-sac by design**.
 > - ⚠️ **Bears on the ruling below but does not overturn it** — that ruling rests on there being no
@@ -109,11 +110,14 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > - ⛔ **Populations here are POST-MINT (95 pendant-tip nodes, 25 rim tips); the figures above are
 >   PRE-MINT (29 deg-1 nodes, 31 rim tips). Different populations — never merge them.**
 >
-> - ⚠️ **`junctionMap` is stamped pre-clip and never re-filtered** — 0 of its 29 degree-1 nodes sit at the
->   clip radius, but **19 of 31 unlocatable stamps name a chain the whole-feature drop removed**
+> - ⚠️ **`junctionMap` is stamped pre-clip and never re-filtered** — none of its degree-1 nodes sit at the
+>   clip radius, but a minority of unlocatable stamps name a chain the whole-feature drop removed
 >   (agent A, `a2e0f6c4`). ⛔ **Do not read this as "Slice 1 is mostly artifact."** That reading came from
->   quoting the `<0.8R` column — 10 of 29 — as though it were the real-tip count. **By hood radius it is
->   17 of 29**, and the interior population the tip couplers sit on is untouched by the clip.
+>   quoting the `<0.8R` column as though it were the real-tip count — by hood radius it is a larger
+>   share, and the interior population the tip couplers sit on is untouched by the clip.
+>   ▶ `node scratch/claims-deadend-populations.mjs` — re-derive both columns; ⚠️ this whole §2.5a
+>   census has drifted further since 2026-08-21 (the grade-separated holdout count alone has moved),
+>   so treat every number in this subsection as unverified until re-measured.
 >
 > ### ✅ RULED 2026-08-12 — THE RIM IS THE SUBSTRATE'S JOB; ② CLOSED WITHOUT REMOVING THE CLIP
 > `__boundary__` is a **synthetic id with no chain behind it in `ribbons.streets`** (`RIBBONS §1`), so
@@ -226,7 +230,7 @@ Top level: `{ streets[], alleys[], paths[], intersections[], faces[], medians[],
 - ✅ **Consumer — done.** Every non-Survey view (Section/Measure **and** the neutral Design view) renders from the frozen `shape.json`: frozen `iA` on **93/101** LS tiles plus per-run curb polylines with measures. `sectionOpen` has no chain in lexical scope and cannot re-derive. Race-guarded twice (`72bbc989`, `59e5f109`).
 - ✅ **Survey strokes live — **not a WALL violation** — Survey is the tool that *edits* the SHAPE, so re-stroking the edited element is the requirement. ⚠️ **But that is not a blessing of the current implementation:** today every edit re-strokes the **WHOLE MAP**, and the standing requirement is fluid asymmetric editing of a **single polygon** — nothing that retraces the whole map at 60fps works (`ORIENTATION` §the-chain, the condensation principle). The whole-map scope is a known perf defect (D6c / the block-local loop), just not a wall one.
 - 🔴 **Producer — open (`ROADMAP A03`, Check C RED).** `shape.json` is **minted** by `buildTileGround(liveRibbons,…)` and snapshotted, so the artifact is a **photograph of a chain-stroke, not a function of the frozen frame**. The tracing errors are frozen in at mint time, which is why a defect in the artifact cannot be cured downstream. Brief: `_handoffs/HANDOFF-freeze-the-curb-in-the-first-bake.md`.
-- ⛔ **Do NOT cite "the ~4 m bow" as the symptom — measured 2026-07-31, it is not one defect and mostly not a bow.** Largely a **shifted datum**: the curb is parallel at the *authored* width, and the check was comparing it to the un-authored one — **not a defect**. Some genuine **wander** remains, on specific tiles rather than in the offset math. ⛔ A same-day *"collapsed curb rings, 28 of 92"* census was **WITHDRAWN**: it measured `iA` **area**, and `Block = iA = tile − the authored roadway` (`SURVEY §3`/`§4`), so it was measuring the width edits themselves. **Nothing here is a defect until re-measured as a DISTANCE against authored widths** (`ROADMAP A05`).
+- ⛔ **Do NOT cite "the bow" in metres as the symptom — measured 2026-07-31, it is not one defect and mostly not a bow.** Largely a **shifted datum**: the curb is parallel at the *authored* width, and the check was comparing it to the un-authored one — **not a defect**. Some genuine **wander** remains, on specific tiles rather than in the offset math. ⛔ A same-day *"collapsed curb rings"* census was **WITHDRAWN**: it measured `iA` **area**, and `Block = iA = tile − the authored roadway` (`SURVEY §3`/`§4`), so it was measuring the width edits themselves. **Nothing here is a defect until re-measured as a DISTANCE against authored widths** (`ROADMAP A05`).
 - ⛔ **`POLYGON-FIRST` Check A is RED *and mis-specified*** — it runs with `blockCustoms: null` (authoring OFF, so it scores the operator's decisions as defects) and skips tiles with no curb ring (so a total failure prints as a modest bow). **Its aggregate is not evidence.** The parallelism *idea* is still right; the instrument is not. Full account + the three detector rules it forced: **`POLYGON-FIRST.md §2` Check A** and **`§5`**.
 
 *Prior text (2026-06-09), incl. the ruled-out approaches → `_archive/PREBAKE-4.1-frozen-vs-unfrozen-2026-06-09.md`.*
