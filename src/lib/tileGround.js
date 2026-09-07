@@ -3857,14 +3857,18 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
       // extent is the one edge the owners meet across, and the pad is drawn there just the same.
       // ⛔ Same arity: `len` EDGES from `s0`.
-      // ⭐⭐ A SQUARE CORNER IS SYMMETRIC ABOUT ITS VERTEX, AND AN ARC ALREADY IS. A fillet's span
-      // runs tangent-to-tangent, so it covers the contour on BOTH sides of the corner by
-      // construction. With no arc the corner is the VERTEX, and the two edges meeting at it are
-      // both its — stamping only the outgoing one gave the pad to one leg and not the other, so
-      // the incoming leg's walk never reached the kerb and `§6.1` step 3 ("the street edge of a
-      // corner is concrete ALWAYS") failed on one side of a corner that is correct on the other.
-      // ⛔ Not a widening and not a tolerance: it is the same span the arc case already has, stated
-      // for the degenerate case instead of falling out of it wrongly.
+      // ⭐⭐ THE BLOCK IS ONE POLYGON AND A CORNER IS ONE OF ITS VERTICES. Both edges meeting there
+      // are this block's own contour, so the band runs through both — a fillet's span already does,
+      // tangent to tangent, and the arc-less case must say the same thing rather than stop at the
+      // outgoing edge. Stamping only that one gave the pad to one leg and not the other, so the
+      // incoming leg's walk never reached the kerb: `§6.1` step 3 ("the street edge of a corner is
+      // concrete ALWAYS") failing on one side of a corner that is correct on the other.
+      // ⛔ NOT "symmetric about the vertex" — that framing was mine and Jacob struck it (2026-09-07:
+      // "irrelevant, because we treat each block individually as a polygon"). Symmetry is a claim
+      // about two things meeting at a boundary, which is the chain-world picture; there is one
+      // polygon here and the contour simply passes through the vertex.
+      // ⛔ Not a widening and not a tolerance: it is the span the arc case already has, stated for
+      // the degenerate case instead of falling out of it wrongly.
       const [s0, len] = arc || [(q - 1 + n) % n, 2]
       for (let k = 0; k < len; k++) {
         const e = (s0 + k) % n
