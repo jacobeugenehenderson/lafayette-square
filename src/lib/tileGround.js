@@ -943,11 +943,18 @@ function unionRingLabelled(ring, labels) {
 // slot he authored owned a side it does not front.
 // ⛔ NOT AN ORIENTATION FLAG AND NOT A THRESHOLD. The adjacency of the two endpoints' source
 // indices SAYS which ① edge this ② edge lies along; there is no case to detect and nothing to tune.
-// ⚠️ Where the union re-resolved a point so the two sources are not adjacent, the provenance is
-// genuinely gone — it takes the leaving edge as before and is COUNTED, never silently trusted.
+// ⭐⭐ AND WHERE THE TWO SOURCES ARE NOT ADJACENT, THE ② EDGE SPANS SEVERAL ① EDGES — the union
+// minted a point and its forward scan gave it an inherited source, or it collapsed a run. The
+// provenance is not GONE, it is PLURAL: we hold both endpoints' indices, so we hold exactly which
+// ① edges the ② edge lies over. ⭐ The LONGEST of them wins — the same tie-break the FILL already
+// applies when one leg spans more than one frontage (`sectionPassProtoTile`, `SECTION §3.3` step 1),
+// and it is a choice among KNOWN contributors, never a proximity lookup against unrelated geometry.
+// ⛔ Still counted: a plural edge is a real fact about the union and the count must not go quiet.
 // ▶ node scratch/claims-stamp-follows-the-edge.mjs
-function carryEdgeLabels(rg, src, labs, n, tally = null) {
+function carryEdgeLabels(rg, src, labs, n, tally = null, ring = null) {
   const L = rg.length
+  const eLen = (q) => { if (!ring) return 1
+    const a = ring[q], b = ring[(q + 1) % n]; return Math.hypot(b[0] - a[0], b[1] - a[1]) }
   return rg.map((_, i) => {
     const a = src?.[i]; if (a == null) return null
     const b = src?.[(i + 1) % L]
@@ -955,7 +962,11 @@ function carryEdgeLabels(rg, src, labs, n, tally = null) {
     if ((b - a + n) % n === 1) return labs[a]        // ② runs WITH ①: the edge leaving a
     if ((a - b + n) % n === 1) return labs[b]        // ② runs AGAINST ①: the edge leaving b
     if (tally) tally.lost++
-    return labs[a]
+    const fwd = (b - a + n) % n, rev = (a - b + n) % n
+    const start = fwd <= rev ? a : b, span = Math.min(fwd, rev)
+    let win = start, best = -1
+    for (let k = 0; k < span; k++) { const q = (start + k) % n, w = eLen(q); if (w > best) { best = w; win = q } }
+    return labs[win]
   })
 }
 
@@ -6484,7 +6495,7 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         let outRings = rings2
-        let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost))
+        let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost, ring))
         let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
         if (holes.length) {
           // ⭐⭐⭐ A FACE'S CURB IS ITS OUTER ERODED INWARD **MINUS** EVERY HOLE DILATED INTO IT.
@@ -6501,7 +6512,7 @@ export function buildTileGround(ribbons, opts = {}) {
             for (let ri = 0; ri < hOff.length; ri++) {
               const src = hSt.labels?.[ri]
               hRings.push(hOff[ri])
-              hLabs.push(carryEdgeLabels(hOff[ri], src, holeLabs[hi], holes[hi].length, labelCarryLost))
+              hLabs.push(carryEdgeLabels(hOff[ri], src, holeLabs[hi], holes[hi].length, labelCarryLost, holes[hi]))
             }
           }
           if (hRings.length) {
@@ -6580,7 +6591,12 @@ export function buildTileGround(ribbons, opts = {}) {
         (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
         (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
       if (protoCornerAuthored) console.warn(`[tileGround][PROTO②] ⛔ this Look carries PER-CORNER radius overrides and ② cannot key them yet (the leg f/b flag is a tile-edge fact) — ${protoCornerAuthored} corner(s) took per-IX or the class seed instead. NOT silently applied.`)
-      if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) had NO ADJACENT ① source — the union re-resolved them, so which ① edge they lie along is not recoverable. They took the leaving edge's owner.`)
+      // ⛔ COUNTED SINCE IT WAS WRITTEN, REPORTED BY NOBODY. A one-vertex run is dropped (it has no
+      // direction, so `legDirAt` cannot read it) and its contour points stamp `null` — an honest
+      // absence, but a SILENT one, which is the defect `A02` names. It moves with the label carry,
+      // so it has to be visible when the carry changes.
+      if (protoShortRuns) console.warn(`[tileGround][PROTO②] ⛔ ${protoShortRuns} run(s) of a single vertex were DROPPED — no direction to stroke. Their contour points carry no stamp; the leg resolves from its other points.`)
+      if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) lie over MORE THAN ONE ① edge — the union minted or collapsed them. Attributed to the LONGEST ① edge they span, which is the FILL's own tie-break, not a guess at a single owner.`)
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
       if (compoundUnlabelled) console.warn(`[tileGround][PROTO②] ⛔ ${compoundUnlabelled} compound face(s) lost their ① identity across the hole subtraction — ③ cannot resolve a per-edge depth on them.`)

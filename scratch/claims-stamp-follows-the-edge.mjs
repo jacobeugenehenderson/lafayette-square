@@ -52,6 +52,7 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
 
   let ok = 0, wrong = 0, spill = 0, none = 0, unattr = 0, noBlock = 0, revRings = 0, fwdRings = 0
+  const offs = [], okOffs = []
   const byPair = new Map()
   for (const t of T) {
     const rings = t.iaFull || [], stamps = t.iaStamp || [], runs = t.runs || []
@@ -98,12 +99,19 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
         const M = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2], dir = sub(B, A)
         // the ① edge this ② edge LIES ALONG: parallel, and nearest by perpendicular distance to
         // its LINE among those whose SEGMENT is within reach of the midpoint.
+        // ⛔ AND THE FOOT MUST LAND ON THE SEGMENT. A true offset runs ALONGSIDE its source, never
+        // past its ends — without this a comb block (a face wrapping several dead-end spurs) offers
+        // half a dozen long parallel walls within reach and the nearest LINE can be one the ② edge
+        // is nowhere near. That is the permissive failure `RIBBONS §1` records in
+        // `claims-proto-curb-is-parallel`: candidates by SEGMENT, distance to the LINE.
         let src = -1, bd = Infinity
         for (let e = 0; e < m; e++) {
           const EA = BR[e], EB = BR[(e + 1) % m], de = sub(EB, EA), Le = len(de)
           if (Le < 1e-9) continue
           const c = Math.abs((de[0] * dir[0] + de[1] * dir[1]) / (Le * (len(dir) || 1)))
           if (c < PARALLEL) continue
+          const tf = ((M[0] - EA[0]) * de[0] + (M[1] - EA[1]) * de[1]) / (Le * Le)
+          if (tf < -0.02 || tf > 1.02) continue
           if (distSeg(M, EA, EB) > REACH) continue
           const d = distLine(M, EA, EB)
           if (d < bd) { bd = d; src = e }
@@ -113,7 +121,7 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
         const r = stp[q]
         const got = r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`
         if (got == null) { none += L; continue }
-        if (got === want) { ok += L; continue }
+        if (got === want) { okOffs.push(bd); ok += L; continue }
         // ⭐⭐ RULE 3, ONE INVARIANT ONE DEFECT (`POLYGON-FIRST §5`). Two failures were sharing this
         // counter and they are not the same thing:
         //   · SAME LEG — the ① edge that IS stamped is reachable from the true one without turning
@@ -144,7 +152,7 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
           if (sameLeg) break
         }
         if (sameLeg) { spill += L; continue }
-        wrong += L; const kk = `${want} ← stamped ${got}`; byPair.set(kk, (byPair.get(kk) || 0) + L)
+        wrong += L; offs.push(bd); const kk = `${want} ← stamped ${got}`; byPair.set(kk, (byPair.get(kk) || 0) + L)
       }
     }
   }
@@ -158,6 +166,8 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
   console.log(`   ·  no parallel ① edge in reach (corner arc) ${unattr.toFixed(0)} m  ${pc(unattr)}   (context)`)
   console.log(`   ·  ② rings traversed WITH ① ${fwdRings} · AGAINST ① ${revRings}` +
               (noBlock ? ` · ⛔ ${noBlock} tile(s) matched no single ① block and were NOT checked` : ''))
+  const med = (a) => { if (!a.length) return NaN; const b = [...a].sort((x, y) => x - y); return b[b.length >> 1] }
+  console.log(`   ·  offset distance to the matched ① edge — median: OK ${med(okOffs).toFixed(2)} m · MISMATCHED ${med(offs).toFixed(2)} m   (a far one is the ORACLE reaching, not the map)`)
   for (const [k, v] of [...byPair].sort((a, b) => b[1] - a[1]).slice(0, 5)) console.log(`        ${v.toFixed(0)} m  ${k}`)
   if (wrong > 0.5 || none > 0.5) bad++
 }
