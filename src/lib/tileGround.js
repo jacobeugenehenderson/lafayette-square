@@ -3982,18 +3982,23 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   for (const p of parts) {
     const ring = p.ring, n = ring.length
     const cA = (i) => cornerAt.get(`${p.ri}|${i}`)
-    const out = [], src = [], kS = [], kE = []
+    const out = [], src = [], kS = [], kE = [], cm = []
+    // ⛔ THE PAD'S `cMin` MUST TRAVEL WITH THE RAMP. A ramp edge lies OUTSIDE the corner, so it has
+    // no `cornerAt` entry of its own — reading one there returns null and the interpolation silently
+    // collapses to "the leg at both ends", i.e. no ramp at all. Captured here from the corner the
+    // ramp runs away from, which is the only place that knows it.
     for (let i = 0; i < n; i++) {
       const a = ring[i], b = ring[(i + 1) % n]
       const inC = cA(i) != null
-      const push = (pt, s0, k0, k1) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1) }
-      if (inC) { push(a, i, 0, 0); continue }                       // inside the corner: depth is flat
-      const backC = cA((i - 1 + n) % n) != null, fwdC = cA((i + 1) % n) != null
+      const push = (pt, s0, k0, k1, c) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1); cm.push(c ?? null) }
+      if (inC) { push(a, i, 0, 0, cA(i)); continue }                       // inside the corner: depth is flat
+      const cBack = cA((i - 1 + n) % n), cFwd = cA((i + 1) % n)
+      const backC = cBack != null, fwdC = cFwd != null
       const m = M(p.ri, i), l = m ? arrOf(m) : null
       const travel = l ? l.dOut : 0                                  // what the divider must cross
       const rampLen = travel * 2
       const L = Math.hypot(b[0] - a[0], b[1] - a[1])
-      if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1); continue }
+      if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1, null); continue }
       const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
       // ⛔⛔ A LEG SHORTER THAN ITS RAMP TAKES THE LEG IT HAS. This used to REFUSE the split, and
       // the refusal was the residue: **317 of the 380 remaining steps sat on an edge under 3 m** —
@@ -4007,16 +4012,16 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // its leg's midpoint, because past that the leg belongs to the next corner").
       const room = (backC && fwdC) ? L / 2 : L
       const r2 = Math.min(rampLen, room)
-      if (!(r2 > 1e-6)) { rampShort++; push(a, i, 0, 0); continue }
+      if (!(r2 > 1e-6)) { rampShort++; push(a, i, 0, 0, cBack ?? cFwd); continue }
       if (backC && fwdC) {
-        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
+        push(a, i, 0, 1, cBack); push(at(r2 / L), i, 1, 1, null); push(at(1 - r2 / L), i, 1, 0, cFwd)
       } else if (backC) {
-        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1)
+        push(a, i, 0, 1, cBack); push(at(r2 / L), i, 1, 1, null)
       } else {
-        push(a, i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
+        push(a, i, 1, 1, null); push(at(1 - r2 / L), i, 1, 0, cFwd)
       }
     }
-    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE
+    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcm = cm
   }
   // ⛔ The VARIABLE-depth offsets run on the densified ring; the CONSTANT-depth ones (`insAt`) do
   // not need it and are left alone — a constant depth over collinear extra vertices is the same
@@ -4069,18 +4074,41 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // returned only where the two ends differ, so every unchanged edge stays a scalar and the
     // common path is byte-identical.
     const kS = p.dkS, kE = p.dkE, src = p.dsrc
+    // ⭐⭐⭐ INSIDE THE PAD THERE IS ONE CROSS-SECTION, NOT TWO LEGS' HALVES MEETING.
+    // *(Jacob, on a 4-way at zoom: "looks like the slope is happening inside the ramp area.")*
+    // ⛔ THAT WAS EXACTLY IT. Each half of the arc was still resolving its OWN LEG's arrangement, so
+    // at a corner whose two legs differ the two spans MET MID-ARC and jumped — a step INSIDE the pad,
+    // which is the notch. The ramp outside was correct and irrelevant: the seam was never on the leg.
+    // ⭐ `§6.1` step 4 rules it and `cornerAt` already stores the number: "a clean constant-offset
+    // ring at `cMin = min(both legs' concrete depth)`. The band shallower than `cMin` → concrete;
+    // deeper → LU (parcel-matched)." One ring, one depth, across the whole arc — which is also
+    // `RIBBONS §1` invariant 1, the band BENT rather than two things meeting.
+    // ⇒ `k` now interpolates between two whole CROSS-SECTIONS: the CORNER's at k=0 and the LEG's at
+    // k=1. Inside the pad every edge takes the corner's, so a seam there is not constructible; on
+    // the ramp edges the whole cross-section slides from one to the other; on the open leg it is the
+    // leg's, untouched. ⛔ No fourth configuration and no branch — one interpolation.
+    const dcm = p.dcm
+    const at = (j, k, f) => {
+      const l = L(src[j]), c = dcm[j]
+      if (k >= 1 || c == null) return f(l, false, 0)     // the LEG's own arrangement
+      const legV = f(l, false, 0), padV = f(l, true, c)  // the PAD's: concrete to cMin, no lawn
+      return k <= 0 ? padV : padV + (legV - padV) * k
+    }
     const span = (j, f) => {
-      const l = L(src[j]), a = f(l, kS[j]), b = f(l, kE[j])
+      const a = at(j, kS[j], f), b = at(j, kE[j], f)
       return a === b ? cw + a : [cw + a, cw + b]
     }
     return {
       // ⛔ THE TAPER SCALES THE OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK.
       // A kerb-side walk is already at the street and the corner changes nothing about it — which
       // is why SW↔SW is "subsumed" and why it must stay untouched here.
-      walkFromD: (j) => span(j, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
-      walkToD:   (j) => span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
-      lawnFromD: (j) => span(j, (l) => l.outWalk ? l.dOut : 0),
-      lawnToD:   (j) => span(j, (l, k) => l.inWalk ? l.dOut * k : lim),
+      // ⭐ `pad` = "use the corner's cross-section here"; `c` = its `cMin`. `§6.1` step 4: concrete
+      // from the kerb to `cMin`, parcel beyond, and NO treelawn — the street edge of a corner is
+      // concrete ALWAYS (step 3), so the grass has already stopped by the time the pad begins.
+      walkFromD: (j) => span(j, (l, pad) => pad ? 0 : (l.outWalk ? 0 : (l.inWalk ? l.dOut : 0))),
+      walkToD:   (j) => span(j, (l, pad, c) => pad ? c : (l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0))),
+      lawnFromD: (j) => span(j, (l, pad) => pad ? 0 : (l.outWalk ? l.dOut : 0)),
+      lawnToD:   (j) => span(j, (l, pad) => pad ? 0 : (l.inWalk ? l.dOut : lim)),
       walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
       walkTo:   (i) => cw + L(i).walkTo,
       lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
