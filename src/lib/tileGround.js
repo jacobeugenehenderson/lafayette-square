@@ -4200,6 +4200,9 @@ function tileSliceKey(st, blockCustoms) {
 // buildTileGround) but read ONLY frozen fields — buildTileGround never runs.
 // Accepts shapeTiles built in-memory OR loaded from shape.json (sectionPass
 // already tolerates the serialized roundTipKeys array).
+// ⭐ One value per module instantiation. A reload re-evaluates this file, so a new nonce falls out
+// — no version to bump, nothing to remember, and it cannot drift from the code it identifies.
+const BUILD_NONCE = Math.random().toString(36).slice(2)
 let _staleBandsWarned = false
 export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW' }, stencil = null, blockCustoms = null, cache = null, selectedTileSet = null) {
   // Block-local memo. Each tile's FILL + asphalt/curb/block depends ONLY on its
@@ -4211,7 +4214,19 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
   // still runs every call — cheap (one union per layer vs the per-run offset
   // storm) — and it keeps the output bit-identical to the un-cached pass.
   const tileGeo = (st, i) => {
-    const key = cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
+    // ⛔⛔ THE BUILD NONCE IS PART OF THE KEY, AND IT HAS TO BE. This key held the curb width, the
+    // materials and the tile's own overrides — everything the FILL depends on EXCEPT THE CODE THAT
+    // DRAWS IT. A hot module reload swaps the painter while this cache, held across the reload,
+    // hands back rings computed by the previous one. ⇒ The operator edits nothing, the map is
+    // rebuilt, and he is shown the OLD geometry with no indication that is what he is looking at.
+    // ⭐ MEASURED COST, and it is why this is not a nicety: four separate corner constructions were
+    // put in front of Jacob tonight and reported as "no visible change", one of which moved 744 m²
+    // of sidewalk and 3,391 m² of treelawn. Neither of us could tell whether the code had reached
+    // the screen, so every one of those verdicts was taken on unknown geometry.
+    // ⛔ THIS IS LAYER 0 q2 INSIDE THE AUTHORING SURFACE — a stale artifact that still renders is
+    // the canonical silent substitution, and `ORIENTATION` names exactly that shape. The tool must
+    // not be able to show a map the current code did not draw.
+    const key = BUILD_NONCE + '|' + cw + '|' + stripMat.outer + stripMat.inner + '|' + tileSliceKey(st, blockCustoms)
     if (cache) { const hit = cache.get(i); if (hit && hit.key === key) return hit }
     // ⚠️⚠️ A STALE ARTIFACT PATH — AND IT IS LOUD, BECAUSE A QUIET ONE IS THE WORST CASE HERE.
     // ⛔ The producer no longer emits `bands`; ③'s FILL is struck LIVE off the stamp. So a tile
