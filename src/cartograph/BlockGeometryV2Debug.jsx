@@ -1071,7 +1071,8 @@ export default function BlockGeometryV2Debug({
   // interiors — stop at the sidewalk's inner edge, no trespass on the
   // ped zone OR curb. block.ring extends all the way to the asphalt
   // edge (curb stroke + ped-zone bands paint on top), so
-  //   parcelInteriors = block.ring − curbBands − (treelawn ∪ sidewalk).
+  //   parcelInteriors = block.ring − curbBands.  ⭐ The ped rings are NOT subtracted since
+  //   2026-09-08 — a path is cut at the ASPHALT, not at the back of the sidewalk.
   // Y-lift 0.05 sits paths above asphalt (0.04) — Designer stacks
   // ground layers by tiny Y increments.
   const parcelInteriors = useMemo(() => {
@@ -1084,9 +1085,12 @@ export default function BlockGeometryV2Debug({
     if (!tg?.blockRings?.length) return []
     const blockRings = tg.blockRings.filter(r => r?.length >= 3)
     const subtract = []
+    // ⭐⭐⭐ CUT AT THE ASPHALT, NOT AT THE SIDEWALK (Jacob, 2026-09-08). The treelawn and sidewalk
+    // rings are NO LONGER subtracted, so a path may run through the ped zone out to the curb —
+    // matching `derive.js`'s alley ROW trim, which moved the same way in the same commit. ⛔ These
+    // two must move together or the live map and the bake disagree about where an alley ends.
+    // ⛔ `curbRings` STAYS subtracted: the curb stroke IS the asphalt edge, and that is the line.
     for (const r of (tg.curbRings || [])) if (r?.length >= 3) subtract.push(r)
-    for (const r of (tg.treelawnRings || [])) if (r?.length >= 3) subtract.push(r)
-    for (const r of (tg.sidewalkRings || [])) if (r?.length >= 3) subtract.push(r)
     for (const r of (tg.parkRings || [])) if (r?.length >= 3) subtract.push(r)
     if (!blockRings.length) return []
     if (!subtract.length) return blockRings
