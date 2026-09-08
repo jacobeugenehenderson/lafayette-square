@@ -218,39 +218,32 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 4. **CONCENTRIC arc at the shallow depth** (Idea A). The arc is a clean constant-offset ring at `cMin = min(both legs' concrete depth conD)`, where `conD = mat.inner==='SW' ? total : outerWidth` (a set-back-sidewalk leg → full `total`; a curb-side SW leg → its one strip width). The band shallower than `cMin` → concrete; deeper → **LU (parcel-matched, via `tlByLu[lu]`)**.
 5. **The deep leg SLIDES to the curb** (Idea A). The deeper (set-back) leg's sidewalk slides to the curb over a short **ramp on its own straight leg** — the treelawn taper out, the walk's deep tail becomes parcel — so by the tangent it's a curb-side walk matching the concentric ring. Built as two polygons in a local `(along-leg, depth)` frame at the tangent (`pt(s,d) = T + dir·s + perp·(cw+d)`, `perp = C→T`): a **slid-walk quad** (`[0,cMin]` at the tangent → `[tloD, conMax]` up the leg) added as concrete, and an **LU wedge** (`[cMin,conMax]` at the tangent, tapering to zero up the leg) carved from the SW strip (`swCarve`) and routed to LU. `rampLen = max(2, 2·(conMax−cMin))`.
 
-> ### ⭐⭐⭐ WHERE THE PAD IS LOCATED — AMENDED 2026-09-07 (Jacob). ⛔ **NOT THE ARC, AND NOT THE OWNER EITHER.**
-> **The pad is located where ① TURNS *and* the owner changes; the arc supplies only its EXTENT.**
-> > *(Jacob, on the canary: "Are you **positive** you are working from and only from the protopolygon?
-> > **The protopolygon doesn't have a node/corner there in the first place.**")*
-> ⛔ **This line read "located by the OWNER CHANGING" and that alone was wrong** — an owner is a chain
-> identity (`protoOwners[].skelId`, ordinal stripped), so it cannot answer a question about ①'s shape.
-> **The shape answers WHETHER, the label answers WHOSE.** Full law + why not the turn alone:
-> `RIBBONS §1`, "the corner test, in its corrected form".
-> ⛔ **AND THE EXTENT IS `len` EDGES, NOT `len + 1`.** An arc from vertex `a` to vertex `b` spans the
-> edges *between* them; the inclusive bound also claimed the first edge of the next leg, and on ①'s
-> sparse contour a straight frontage is ONE EDGE — one quadrilateral block painted **458 m of 458 m**
-> as curb ramp, its treelawn erased. ▶ the gate, by LENGTH and reading the painter rather than
-> restating it: `SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs`
-> ⭐ **The two towns agreeing is the evidence, not either number** — the pad's share of kerb was 32%
-> against 39% before and 3.4% against 3.6% after; the divergence WAS the defect's signature, because it
-> scaled with how sparse the contour is and so read worst on the town nobody has stared at.
-> *(Written as the cure in `8753ea91`'s own commit message on 2026-09-06 and not built for a day, while
-> three sessions re-derived it. `CLAUDE.md`: reuse forensics, never re-derive.)*
-> - ⛔ **Predicating the pad on the fillet is `RIBBONS §1` invariant 3 broken** — *"a band-slice, NOT
->   predicated on the arc, so it works square OR round."* Measured when it was: most arrangement steps
->   did not sit inside a fillet arc, so **most corners were bare**, and every square corner declined.
-> - ⭐ **The owner is the FRONTAGE, not the run.** A run is cut wherever `segOrd` changes, and one
->   frontage can carry several — so a `segOrd` change draws a corner treatment in the middle of a
->   straight block edge where nothing turns and nothing changes. ▶ `node scratch/claims-frontage-covers-the-block.mjs`
-> - ⭐ **A stamp cannot decline.** At contour points inside the corner the stamp says concrete and the
->   same four offsets draw it — no sector, no intersection, no bid. The walk painter's four decline
->   gates decline a majority of its bids; this has none.
-> ⛔ **The SLIDE is not the pad.** It carries a *change*, so it belongs to the mixed config alone
-> (`§6.1` step 5). The pad is unconditional — `§6.1` step 3, the curb side of a corner is concrete
-> ALWAYS. Conflating them removes the pads at every corner whose two sides agree.
-> ▶ `node scratch/claims-sidewalk-is-one-band.mjs` · `node scratch/claims-survey-and-section-agree.mjs`
-> ⛔ Re-run them; the counts move, and the closure count REWARDS over-painting — a leg painted
-> all-concrete trivially closes. Do not tune against it alone.
+> ### ⭐⭐⭐ WHERE THE PAD IS — AND THE ANSWER IS THAT IT IS NOT *LOCATED* AT ALL
+> **`RIBBONS §1` INVARIANT 1 IS THE WHOLE OF IT, AND IT OUTRANKS EVERY REFINEMENT BELOW:**
+> > *"The corner is the band BENT around the arc — a slice of the same continuous concentric offsets
+> > — **never a separately-constructed primitive** (no per-corner pad)."* · *"The same cross-section
+> > persists from straight-spans into the corner… **same materials, same depths**, bent around an
+> > arc… it is what naturally happens when the band follows the rounded curb silhouette."*
+> ⛔ **So "where is the pad located" is the wrong question, and asking it is what produced four
+> constructions in thirty hours.** The band is already continuous through the corner; nothing is
+> placed there. ⭐ **`§6.1` step 5 is how that coexists with step 3** (*"the street edge of a corner
+> is ALWAYS concrete; treelawn never wraps the kerb"*): **the treelawn tapers out ALONG THE LEG**, so
+> the cross-section arriving at the corner is already all concrete and the corner carries it through
+> unchanged. **The transition is on the leg, not at the corner** — and what moves is the DIVIDER,
+> which is the one thing invariant 4 licenses to vary.
+> ⛔ **THE PALIMPSEST IS RETIRED** — three stacked answers ("the arc" → "the owner changing" → "① turns
+> AND the owner changes"), each correcting its predecessor without deleting it, none ever reconciled
+> against invariant 1. → `_archive/SECTION-pad-location-palimpsest-2026-09-07.md`. Two facts from it
+> stay live because they are properties of the code, not of the doctrine:
+> - **The corner MARK is `iaCorner`: ① turns AND the owner changes.** The shape answers *whether*, the
+>   label answers *whose*; an owner is a chain identity and cannot answer a question about ①'s shape.
+>   `RIBBONS §1`, "the corner test, in its corrected form".
+> - **An arc's extent is `len` EDGES, not `len + 1`.** The inclusive bound also claimed the first edge
+>   of the next leg, and on ①'s sparse contour a straight frontage is ONE EDGE — a quadrilateral block
+>   painted 458 m of 458 m as curb ramp. ▶ `SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs`
+> ⚠️ **AND ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE:** step 5 above writes
+> `perp = C→T`; `sectionPassTile` computes `C − T`, i.e. **T→C**, and it must, because `d` increases
+> INWARD from the kerb toward the arc centre. **The arrow in step 5 is backwards.**
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).

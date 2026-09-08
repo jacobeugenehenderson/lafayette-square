@@ -3896,9 +3896,64 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // unchanged area, and that cost the acceptance 79 → 54 once already.
   // ⛔ NO SIZE IS HARDWIRED (Jacob: "no sizes or distances can be hardwired"). `rampLen` is 2× the
   // depth the walk must travel — a SLOPE RATIO, a shape, not a length, and deliberately no floor.
+  // ══ §6.1 STEP 5 — THE DEEP LEG SLIDES TO THE KERB, PORTED VERBATIM ═══════════════════════════
+  // ⛔⛔ PORTED, NOT RE-DERIVED. Jacob, 2026-09-07: "Do what the docs tell you" · "it's all there."
+  // Both are true and I had been re-deriving: `SECTION §6.1` step 5 specifies the frame, both
+  // polygons and the ramp length, and `sectionPassTile:3143` implements them. Two earlier attempts
+  // of mine invented a triangle and probed for the normal; the eye rejected both.
+  //   pt(s,d) = T + dir·s + perp·(cw + d)          local (along-leg, depth) frame AT THE TANGENT
+  //   slid-walk quad  [0,cMin] at the tangent → [tloD,conMax] up the leg      → concrete
+  //   LU wedge        [cMin,conMax] at the tangent, tapering to zero up the leg → parcel, and
+  //                   CARVED from the SW strip (`swCarve`)
+  //   rampLen = max(2, 2·(conMax − cMin))
+  // ⚠️ ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE AND FLAGGED: `§6.1` writes
+  // `perp = C→T`, but `sectionPassTile` computes `C − T`, i.e. T→C — and it must, because `d`
+  // increases INWARD from the kerb toward the arc centre. The doc's arrow is backwards; the
+  // construction is right. Recorded here rather than silently followed either way.
+  const nrm2 = (v) => { const L2 = Math.hypot(v[0], v[1]) || 1; return [v[0] / L2, v[1] / L2] }
   const slidWalk = []
+  const swCarve = []                          // the deep walk's tail, slid to parcel (§6.1 step 5)
+  const cornerLu = []                         // the LU wedge, routed to tlByLu — parcel-matched
+  for (const p of parts) {
+    const ring = p.ring, n = ring.length
+    const ix = ringVertexIndex(ring)
+    for (const fl of st.fillets || []) {
+      const a = findRingVertex(ix, ring, fl.tA), b = findRingVertex(ix, ring, fl.tB)
+      if (a == null || b == null || !fl.C) continue
+      const fwd = (b - a + n) % n, bwd = (a - b + n) % n
+      const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
+      if (len === 0 || len * 2 > n) continue
+      const e1 = (s0 + len) % n
+      // the two LEGS are the edges immediately OUTSIDE the arc, one at each tangent
+      const legs = [
+        { tv: s0, eLeg: (s0 - 1 + n) % n, away: (s0 - 1 + n) % n, back: true },
+        { tv: e1, eLeg: e1, away: (e1 + 1) % n, back: false },
+      ].map(L2 => { const m = M(p.ri, L2.eLeg); return m ? { ...L2, a: arrOf(m) } : null }).filter(Boolean)
+      if (legs.length !== 2) continue
+      // ⭐ `§6.1` step 4 + `[A7 · JACOB'S RULE]` from the shipped painter: the depth vote is taken
+      // over the legs that actually CARRY concrete — a leg with no sidewalk does not drag `cMin`
+      // to 0 and paint the whole pad LU, it simply does not vote.
+      const conc = legs.map(l => l.a.conD).filter(d => d > 1e-6)
+      if (!conc.length) continue
+      const cMin = Math.min(...conc)
+      const deep = legs[0].a.conD >= legs[1].a.conD ? legs[0] : legs[1]
+      const conMax = deep.a.conD
+      if (!(conMax > cMin + 1e-6)) continue          // same cross-section — nothing to slide
+      const T = ring[deep.tv]
+      const perp = (() => { const dx = fl.C[0] - T[0], dy = fl.C[1] - T[1]; const L2 = Math.hypot(dx, dy) || 1; return [dx / L2, dy / L2] })()
+      const A2 = ring[deep.back ? deep.away : (deep.away + 1) % n]
+      const dir = nrm2([A2[0] - T[0], A2[1] - T[1]])
+      const tloD = deep.a.outWalk ? 0 : deep.a.dOut  // the treelawn tapering out
+      const rampLen = Math.max(2, (conMax - cMin) * 2)
+      const pt = (s2, d) => [T[0] + dir[0] * s2 + perp[0] * (cw + d), T[1] + dir[1] * s2 + perp[1] * (cw + d)]
+      const slidQuad = [pt(0, 0), pt(rampLen, tloD), pt(rampLen, conMax), pt(0, cMin)]
+      slidWalk.push(...intersectRings(fullBand, [slidQuad]))
+      const luWedge = [pt(0, cMin), pt(0, conMax), pt(rampLen, conMax)]
+      const w = intersectRings(fullBand, [luWedge])
+      if (w.length) { cornerLu.push(...w); swCarve.push(...w) }
+    }
+  }
   if (fullBand.length) {
-    const nrm2 = (v) => { const L = Math.hypot(v[0], v[1]) || 1; return [v[0] / L, v[1] / L] }
     for (const p of parts) {
       const ring = p.ring, n = ring.length, stp = stamps[p.si] || []
       for (let q = 0; q < n; q++) {
@@ -4012,10 +4067,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // 79 → 54 on geometry that was a strict SUPERSET of the original. The stamp above needs no cut
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
-  const W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
+  let W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
+  // ⭐ `§6.1` step 5's own routing, in its own order: the slid walk is UNIONED in as concrete, and
+  // the LU wedge is CARVED from the SW strip (`swCarve`) and routed to the parcel accumulator.
+  // ⛔ The carve is the half that was never built here, and it is what makes the deep walk's tail
+  // become parcel instead of running to the kerb as concrete.
+  if (slidWalk.length) W = unionRings([...W, ...slidWalk])
+  if (swCarve.length) W = differenceRings(W, swCarve)
+  let LW = band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))
+  if (slidWalk.length) LW = differenceRings(LW, slidWalk)
+  if (cornerLu.length) LW = unionRings([...LW, ...cornerLu])
   return {
-    Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
-    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo)), slidWalk) : band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
+    Wacc:   inBlock(W),
+    tlByLu: { [key]: inBlock(LW) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
