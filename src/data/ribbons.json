@@ -1261,13 +1261,15 @@
           "pavementHW": 3.33,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.74,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -1311,14 +1313,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.74,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.41,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -1799,7 +1803,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.96,
@@ -1851,13 +1856,15 @@
           "pavementHW": 3.25,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 6.39,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -1892,14 +1899,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 6.39,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 8.06,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -2018,7 +2027,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.35,
@@ -2239,7 +2249,8 @@
           "pavementHW": 5.997331895265273,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -2280,7 +2291,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -2376,7 +2388,8 @@
           "pavementHW": 2.865967831554248,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -2423,7 +2436,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -2588,7 +2602,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -2659,7 +2674,8 @@
           "pavementHW": 2.865967831554248,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -2706,7 +2722,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -2803,7 +2820,8 @@
           "pavementHW": 2.865967831554248,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.865967831554248,
@@ -2849,7 +2867,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.35,
@@ -2960,14 +2979,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.49,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.82,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.49,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -3065,14 +3086,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.49,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.82,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.49,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -5028,7 +5051,8 @@
           "pavementHW": 2.5,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -5068,7 +5092,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.17,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -5131,7 +5156,8 @@
           "pavementHW": 4.77,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -5173,7 +5199,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.44,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -5347,7 +5374,8 @@
           "pavementHW": 4.77,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 7.01,
@@ -5389,7 +5417,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.44,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 7.01,
@@ -7218,13 +7247,15 @@
           "pavementHW": 4.93,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.83,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -7261,14 +7292,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.6,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.83,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.5,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -7338,13 +7371,15 @@
           "pavementHW": 4.83,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.93,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -7381,14 +7416,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.5,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.93,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.6,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -7452,13 +7489,15 @@
           "pavementHW": 4.88,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.88,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -7495,14 +7534,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.55,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.88,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.55,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -7598,14 +7639,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.6,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.83,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.5,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -7675,13 +7718,15 @@
           "pavementHW": 4.83,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.93,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -7718,14 +7763,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.5,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.93,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.6,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -8201,13 +8248,15 @@
           "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -8241,14 +8290,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.78,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -8321,13 +8372,15 @@
           "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -8361,14 +8414,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.78,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -8422,13 +8477,15 @@
           "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -8463,14 +8520,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.78,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -8526,13 +8585,15 @@
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -8567,14 +8628,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.11,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.78,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -8726,7 +8789,8 @@
           "pavementHW": 8.73105352144237,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 8.385853030132012,
@@ -8767,7 +8831,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.96,
@@ -8878,14 +8943,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.78,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.28,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.95,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -13097,13 +13164,15 @@
           "pavementHW": 5.25,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.29,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -13140,14 +13209,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.29,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.96,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -13231,13 +13302,15 @@
           "pavementHW": 5.25,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.29,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -13274,14 +13347,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.92,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.29,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.96,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -14198,7 +14273,8 @@
           "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -14239,7 +14315,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.12,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -14708,7 +14785,8 @@
           "pavementHW": 5.45,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -14749,7 +14827,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.12,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -14947,7 +15026,8 @@
           "pavementHW": 5.45,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -14989,7 +15069,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.12,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -17198,7 +17279,8 @@
           "pavementHW": 3.3,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17241,7 +17323,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.97,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17326,7 +17409,8 @@
           "pavementHW": 3.3,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17369,7 +17453,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.97,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17448,7 +17533,8 @@
           "pavementHW": 3.3,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17491,7 +17577,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.97,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17587,7 +17674,8 @@
           "pavementHW": 3.3,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17630,7 +17718,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.97,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -17839,7 +17928,8 @@
           "pavementHW": 5.02,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -17880,7 +17970,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.69,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -17934,13 +18025,15 @@
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -17977,14 +18070,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.22,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.65,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -18074,13 +18169,15 @@
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18117,14 +18214,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.65,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.22,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -18226,13 +18325,15 @@
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18269,14 +18370,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.22,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.65,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -18356,13 +18459,15 @@
           "pavementHW": 4.98,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -18399,14 +18504,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.65,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.55,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.22,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -18495,13 +18602,15 @@
           "pavementHW": 4.76,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.76,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -18538,14 +18647,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.44,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.76,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.44,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -19879,7 +19990,8 @@
           "pavementHW": 4.15,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -19922,7 +20034,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.82,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -20084,7 +20197,8 @@
           "pavementHW": 4.15,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20128,7 +20242,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.82,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -20431,13 +20546,15 @@
           "pavementHW": 5.43,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20473,14 +20590,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.1,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -20534,13 +20653,15 @@
           "pavementHW": 5.43,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20576,14 +20697,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.1,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -20639,13 +20762,15 @@
           "pavementHW": 5.43,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20681,14 +20806,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.1,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -20817,13 +20944,15 @@
           "pavementHW": 5.41,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.41,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -20859,14 +20988,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.09,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.41,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.09,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -20921,13 +21052,15 @@
           "pavementHW": 5.43,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -20963,14 +21096,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.1,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -21114,13 +21249,15 @@
           "pavementHW": 5.43,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -21156,14 +21293,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.1,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -21310,13 +21449,15 @@
           "pavementHW": 2.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.04,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -21352,14 +21493,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.04,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -21419,13 +21562,15 @@
           "pavementHW": 2.4,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.04,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -21461,14 +21606,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.04,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -21571,14 +21718,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.4,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.07,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -21625,7 +21774,8 @@
           "pavementHW": 4.69,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -21667,7 +21817,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.36,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -22810,14 +22961,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 4.94,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.61,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -22869,13 +23022,15 @@
           "pavementHW": 4.94,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -22912,14 +23067,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.61,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -23146,13 +23303,15 @@
           "pavementHW": 4.94,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -23189,14 +23348,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.61,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -23296,14 +23457,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.68,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.68,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -23468,14 +23631,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.68,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.68,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -23570,14 +23735,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.61,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -23679,14 +23846,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.61,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -24667,13 +24836,15 @@
           "pavementHW": 4.79,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.47,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -24708,14 +24879,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.46,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.47,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.14,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -25096,7 +25269,8 @@
           "pavementHW": 5.48,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -25136,7 +25310,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.15,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -26285,14 +26460,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -26352,13 +26529,15 @@
           "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -26394,14 +26573,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -26622,7 +26803,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.43,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -26910,7 +27092,8 @@
           "pavementHW": 3.04,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -26952,7 +27135,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -27218,7 +27402,8 @@
           "pavementHW": 3.04,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -27261,7 +27446,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -28184,7 +28370,8 @@
           "pavementHW": 5.49,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -28226,7 +28413,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.71,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -29836,14 +30024,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 10.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 8.54,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 10.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -30409,7 +30599,8 @@
           "pavementHW": 4.673822891386253,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -30459,7 +30650,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 10.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -35327,7 +35519,8 @@
           "pavementHW": 5.07,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -35370,7 +35563,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -35454,7 +35648,8 @@
           "pavementHW": 3.6756399166390326,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -35498,7 +35693,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.74,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -36358,7 +36554,8 @@
           "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -36402,7 +36599,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -36478,7 +36676,8 @@
           "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -36521,7 +36720,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -36790,7 +36990,8 @@
           "pavementHW": 5.48,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -36833,7 +37034,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -36928,7 +37130,8 @@
           "pavementHW": 3.198785587857312,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -36977,7 +37180,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -37064,7 +37268,8 @@
           "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -37108,7 +37313,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -37269,7 +37475,8 @@
           "pavementHW": 3.198785587857312,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -37318,7 +37525,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -37456,7 +37664,8 @@
           "pavementHW": 4.92,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -37500,7 +37709,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -37928,7 +38138,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.59,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -38188,7 +38399,8 @@
           "pavementHW": 2.32,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.96,
@@ -38230,7 +38442,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 3.99,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 3.96,
@@ -38350,7 +38563,8 @@
           "pavementHW": 2.32,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -38392,7 +38606,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 3.99,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -39406,7 +39621,8 @@
           "pavementHW": 5.184423225942332,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.184423225942332,
@@ -39450,7 +39666,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.8,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 6.71,
@@ -40702,14 +40919,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -40965,7 +41184,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -41465,7 +41685,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -41750,7 +41971,8 @@
           "pavementHW": 2.225007261376535,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -41797,7 +42019,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -42083,7 +42306,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.67,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 7.01,
@@ -42485,14 +42709,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 11.17,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 12.84,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -42781,14 +43007,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 12.84,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.34,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -42912,7 +43140,8 @@
           "pavementHW": 4.581522730981818,
           "treelawn": 0,
           "sidewalk": 0,
-          "terminal": "none"
+          "terminal": "none",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -42963,7 +43192,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -43097,14 +43327,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 12.84,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.34,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 7.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -43789,7 +44021,8 @@
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -43831,7 +44064,8 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.49,
@@ -43889,13 +44123,15 @@
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -43931,14 +44167,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -44219,13 +44457,15 @@
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": true,
         "source": "seed-survey"
@@ -44261,14 +44501,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 2.54,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 4.21,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
@@ -44707,13 +44949,15 @@
           "pavementHW": 3.34,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.05,
           "treelawn": 0,
           "sidewalk": 1.52,
-          "terminal": "sidewalk"
+          "terminal": "sidewalk",
+          "tlClamped": true
         },
         "symmetric": false,
         "source": "seed-survey"
@@ -44747,14 +44991,16 @@
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 5.01,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "right": {
           "pavementHW": 5.05,
           "treelawn": 0,
           "sidewalk": 1.52,
           "blockEdgeHW": 6.72,
-          "source": "survey"
+          "source": "survey",
+          "tlClamped": true
         },
         "widthSource": "survey"
       },
