@@ -2204,6 +2204,26 @@ export function deriveLayers(highways) {
   // ⚠️ The 8 that slip through are real and survive here: they sit inside the LIVE alley ribbon
   // but not the BAKED `layers.alley` — the render and the bake disagree slightly about where an
   // alley is. That discrepancy is its own open item.
+  //
+  // ⛔⛔⛔ THIRD OPEN ITEM, AND THIS ONE IS MEASURED TO A CAUSE — PARKED 2026-09-08, NOT FIXED.
+  // **EVERY ALLEY IS CUT BACK ~2.85 m BEYOND THE ROAD IT SHOULD MEET, AND IT PREDATES THIS BLOCK.**
+  // The trim below prefers `raw/centerlines.json` for `pavementHW`; the ASPHALT is drawn from the
+  // POURED measure in `ribbons.json`. They are two sources for one quantity and they disagree:
+  //     40 comparable streets · 27 disagree by >0.25 m · mean (drawn − trim) = −2.85 m
+  // so the ROW buffer is wider than the road actually drawn and the alley stops short of it.
+  // ▶ MEASURED against the drawn asphalt edge: 157 alley ends, median 2.40 m short; only 20 sit
+  //   on the edge; 64 are 0.5-3 m short.
+  // ⭐⭐ AND IT WAS INVISIBLE BECAUSE A CAP WAS COMPENSATING FOR IT. `etOpenRound` bulges half a
+  // width (2.29 m) past the endpoint — almost exactly the 2.40 m shortfall — so with the Look's
+  // `alleyCap: 'round'` the alleys LOOKED right. Switching the dial to `square` (`etOpenButt`,
+  // flush at the endpoint) removed the camouflage and the operator saw "not long enough".
+  // ⛔ THE TWO REPORTS — "rounded caps where it should butt" and "now they're not long enough" —
+  // ARE ONE DEFECT, and neither is the cap or the asphalt-edge trim above. A cosmetic default was
+  // load-bearing, which is why removing it looked like a regression it did not cause.
+  // ▶ THE FIX, when it is taken up: trim from the SAME measure the render draws from, not a second
+  //   source that disagrees on two thirds of streets. It is the `_centerlineForAlleys` preference
+  //   immediately below. ⛔ Do not "fix" it by restoring the round cap — the operator's verdict is
+  //   that rounded is WORSE; the short alley is the honest symptom and it should stay visible.
   // Preference order: centerlines.json measure (per-side, surveyor-authored)
   // → standards.crossSection fallback.
   let _centerlineForAlleys = new Map()
