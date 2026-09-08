@@ -4096,8 +4096,22 @@ export function sectionOpen(shapeTiles, cw, stripMat = { outer: 'LU', inner: 'SW
     // cover it (88.5% on LS, and 29 tiles OVER-cover), and curb with no run got no band at all.
     // ⛔ Chosen by the tile's own shape, never a flag — a mixed artifact cannot silently take the
     // wrong path for half its tiles.
-    const r = hasStampInquiry(st) ? sectionPassProtoTile(st, cw, stripMat, blockCustoms)
-                                  : sectionPassTile(st, cw, stripMat, blockCustoms)
+    // ⛔⛔ THE CORNER WAS SOLVED AND THIS LINE STOPPED CALLING IT. `95a39ce3` (2026-09-06, "the
+    // stamp inquiry: a contour has no legs to ask about") introduced `sectionPassProtoTile` and
+    // made it win wherever a tile carries the stamp — which, since the pour, is every tile. From
+    // that commit the corner has been drawn by a construction written in a day, in place of the one
+    // `SECTION §6.1` records as landing 2026-06-10 and being "verified neighborhood-wide on the lit
+    // app" after a 13-month saga (`_archive/RIBBONS-history-2026-06-12.md §7`).
+    // *(Jacob, 2026-09-07: "Look at the corners from a month ago. YESTERDAY even. This is SOLVED and
+    // we spent literally weeks doing it.")*
+    // ⭐ MEASURED, not assumed: `sectionPassTile` runs on today's ①-produced tiles unchanged —
+    // 149 of 149, ZERO throws. It was never incompatible with the new substrate; it simply stopped
+    // being reached. The frozen artifact carries what it needs (`runs`, `fillets`, `iA`).
+    // ⛔ The comment that justified the swap — "giving it proto tiles would feed chain-shaped runs
+    // into a chain-shaped painter and re-introduce the seams" — is a PREDICTION, and it is now
+    // gated rather than believed: `claims-sidewalk-is-one-band` and `claims-survey-and-section-agree`
+    // run on both painters, and the seam test is the one that would catch it.
+    const r = sectionPassTile(st, cw, stripMat, blockCustoms)
     const iA = st.iA || []
     const bandJoin = st.bandJoin || 'miter'
     const cap = Number.isFinite(st.cap) ? st.cap : (cw + (st.tl || 0) + (st.sw || 0))
