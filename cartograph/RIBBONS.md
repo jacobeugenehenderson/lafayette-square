@@ -596,11 +596,25 @@
 >   | **REFUSE** | `vertR` `fillets` | the fillet machinery §1 retires; R belongs in the node's handles. |
 >   | **REFUSE** | `roundTips` `bluntTips` `roundTipKeys` | cap machinery — a contour already IS its caps. |
 >
->   ⛔ **REFUSE MEANS THE CONSUMER STOPS READING IT, WHICH IS THE REAL WORK.** Nine refusals means
->   splitting `sectionPassTile` (~924 lines) into the part that is legitimate FILL and the part that is
->   compensation for a walk. That split IS the design question, and it is bigger than the excision list.
+>   ⛔ **REFUSE MEANS THE CONSUMER STOPS READING IT, WHICH IS THE REAL WORK.** ⭐⭐⭐ **DONE FOR THE
+>   CORNER, 2026-09-07.** It was never an excision list: the split is a SECOND painter,
+>   `sectionPassProtoTile`, whose corner reads two carried facts (`iaCorner` — where · `iaArc` — how
+>   far) and constructs NOTHING there. What went with it: the sector, the tangent trim, the bid, the
+>   decline, the corner's own cross-section, and the additive quad that stitched two legs together.
+>   ⛔ The FILL now reads **no** `fillets` and **no** `vertR`; they stay FROZEN because SURVEY's corner
+>   handle rides them, which is the live half of the disagreement below.
+>   ⚠️ **THE TABLE AND `SECTION §4`'s FREEZE LIST DISAGREE ON `vertR`/`fillets`, AND THE CODE SUPPLIES
+>   BOTH.** ⛔ NOT settled here — a doc/code mismatch names a QUESTION (`CLAUDE.md`), and this one is
+>   Jacob's: the FILL's refusal is now real, Survey's read is not the FILL's. **Open.**
 >   ⛔ Every refusal is RECORDED WITH A REASON, never a silent absence — an absent field and a refused
 >   field must not read the same to a consumer on a town nobody has inspected.
+>   ⭐ **SUPPLY, added 2026-09-07: `iaArc`** — per contour vertex, which corner's eased arc it lies in.
+>   **WHAT A THING IS, not how to build it**: the extent is a fact the ease produced and nothing
+>   downstream can recover, because ② turns 90° into ~12 vertices of 7.5° and every one reads as a
+>   curve sample. ⛔ It replaced matching the frozen fillets' TANGENT COORDINATES back onto the contour
+>   through a 1 mm grid hash — `A15`'s forbidden proximity recovery, done across a boolean that is
+>   allowed to move a point — and that failed **worst on the most authored town**, the kit's signature
+>   blindness. ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` scores both.
 >
 >   ### ⛔⛔ AND THE EYE SAYS THE SHAPES ARE STILL WRONG (Jacob, 2026-09-06, on the ①-produced map)
 >   > *"FIX THE CURBS. The polygons suck, these should be clean shapes."*

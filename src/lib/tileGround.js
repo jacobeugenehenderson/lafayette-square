@@ -1173,7 +1173,7 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   const t0 = clean ? dropFoldSpursTracked(W) : null
   const W0 = clean ? t0.ring : W
   const L0 = clean ? t0.src.map(k => WL[k]) : WL
-  let uni, uniL = null
+  let uni, uniL = null, uniA = null
   if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
   else uni = unionRings([W0])
 
@@ -1181,12 +1181,16 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   // divergent `R·tan(θ/2)` setback has nothing to diverge on.
   if (easeAt) {
     const easeArcs = []
+    uniA = []
     for (let k = 0; k < uni.length; k++) {
       const preLab = uniL ? uniL[k] : null
       const arcs = []
       const e = easeContour(uni[k], (j) => easeAt(preLab ? preLab[j] : null) || 0, preLab, arcs)
       uni[k] = e.ring
       if (uniL) uniL[k] = e.labs || preLab
+      // ⭐ the corner EXTENT rides the identical channel as the label — same array shape, same
+      // remaps below — so it cannot come apart from the vertices it describes.
+      uniA[k] = e.arc
       for (const a of arcs) easeArcs.push({ ...a, src: preLab ? preLab[a.i] : null })
     }
     if (stamp) stamp.easeArcs = easeArcs
@@ -1195,16 +1199,19 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   if (!clean) {
     const keep = uni.map((r, k) => k).filter(k => Math.abs(signedArea(uni[k])) > AREA_MIN)
     if (stamp && uniL) stamp.labels = keep.map(k => uniL[k])
+    if (stamp && uniA) stamp.arcMask = keep.map(k => uniA[k])
     return keep.map(k => uni[k])
   }
-  const out = [], outL = []
+  const out = [], outL = [], outA = []
   for (let k = 0; k < uni.length; k++) {
     const t = dropFoldSpursTracked(uni[k])
     if (!(t.ring.length >= 3 && Math.abs(signedArea(t.ring)) > AREA_MIN)) continue
     out.push(t.ring)
     if (uniL) outL.push(t.src.map(j => uniL[k][j]))
+    if (uniA) outA.push(t.src.map(j => uniA[k][j]))
   }
   if (stamp && uniL) stamp.labels = outL
+  if (stamp && uniA) stamp.arcMask = outA
   return out
 }
 // Morphological opening (erode R then dilate R, round join): rounds CONVEX
@@ -1496,9 +1503,15 @@ const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may 
 // the corner TRUTH the authoring handle rides: `SURVEY §4` — "the ONE corner truth the magenta
 // handle reads (no re-derivation)". ⛔ Without it the handle sits on the LEGACY fillet while the
 // drawn curb is ②'s eased arc, and the operator's dial moves a corner that is not on screen.
+// ⭐⭐⭐ AND IT RETURNS `arc` — WHICH OUTPUT VERTEX BELONGS TO WHICH CORNER'S ARC.
+// ⛔ THIS IS THE CORNER'S EXTENT, AND IT IS THE ONE PLACE THAT KNOWS IT. The consumer used to
+// recover it by matching the frozen fillet's TANGENT COORDINATES back onto the contour across a
+// boolean — `A15`'s forbidden proximity recovery, wearing a 1 mm grid hash — and it reached only
+// part of the corners (▶ `node scratch/claims-the-corner-extent-is-carried.mjs`, which reports the
+// share on any town). ⭐ Identity CARRIED through, never recovered afterward (`RIBBONS §1`).
 function easeContour(ring, rAt, labs = null, arcsOut = null) {
   const n = ring.length
-  if (n < 3) return { ring, labs }
+  if (n < 3) return { ring, labs, arc: ring.map(() => null) }
   const seg = (a, b) => { const dx = b[0]-a[0], dz = b[1]-a[1]; const L = Math.hypot(dx, dz); return { L, d: L > 1e-12 ? [dx/L, dz/L] : [0, 0] } }
   const R_ = new Array(n); for (let i = 0; i < n; i++) R_[i] = Math.max(0, rAt(i) || 0)
   const eLen = new Array(n)
@@ -1603,14 +1616,17 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
   }
 
   // ── PASS 2 — emit ──────────────────────────────────────────────────────────────────────────
-  const out = [], outL = []
+  const out = [], outL = [], outA = []
   for (let i = 0; i < n; i++) {
     const pl = plan.get(i)
-    if (pl) { for (let k = 0; k < pl.pts.length; k++) { out.push(pl.pts[k]); outL.push(k < pl.pts.length / 2 ? pl.lIn : pl.lOut) } ; continue }
+    // ⭐ every point of this corner's arc is stamped with the corner's own index, so a consumer
+    // reads "these edges are one corner" instead of measuring for it.
+    if (pl) { for (let k = 0; k < pl.pts.length; k++) { out.push(pl.pts[k]); outL.push(k < pl.pts.length / 2 ? pl.lIn : pl.lOut); outA.push(i) } ; continue }
     if (covered.has(i)) continue
-    out.push(ring[i]); outL.push(labs ? labs[i] : null)
+    out.push(ring[i]); outL.push(labs ? labs[i] : null); outA.push(null)
   }
-  return { ring: out.length >= 3 ? out : ring, labs: labs ? (out.length >= 3 ? outL : labs) : null }
+  const ok = out.length >= 3
+  return { ring: ok ? out : ring, labs: labs ? (ok ? outL : labs) : null, arc: ok ? outA : ring.map(() => null) }
 }
 function signedArea(r) {
   let a = 0
@@ -3517,49 +3533,6 @@ export function stripLadder(m, lim) {
 export const hasStampInquiry = (st) => Array.isArray(st?.iaStamp) && Array.isArray(st?.iaFull)
   && st.iaStamp.length === st.iaFull.length && !!st.runs
 
-// ⛔⛔ A FILLET TANGENT IS MATCHED TO A RING VERTEX ACROSS A BOOLEAN, SO IT MAY NOT BE THE SAME
-// FLOAT. The key here used to be `KP`, an exact 6-decimal STRING. Clipper is an INTEGER grid
-// (`SCALE = 1000`, i.e. 1 mm — `RIBBONS §1` names that floor as ε's one real constraint), so a
-// point that survives a union comes back moved by up to half a grid step. The string then differs,
-// the lookup misses, and the call site throws the corner's EXTENT away in silence: `if (a == null
-// || b == null) continue`. Layer 0 q2 inside the corner constructor.
-// ⭐ THE JOIN IS THE BUG, NOT THE TOLERANCE. Two points closer than the grid quantum ARE the same
-// point to the library that produced them, so this resolves at the grid's own resolution: hash the
-// ring into 1 mm buckets, then take the NEAREST vertex within one quantum, checking the 3×3
-// neighbourhood because a point can round across a bucket edge. Ties resolve to the lower index so
-// the result is identical run to run (the exact-string map it replaces kept the first occurrence).
-// ⛔ There is no knob here — `GRID_M` is Clipper's `SCALE`, not a threshold, and widening it would
-// be the tolerance this deliberately is not (Jacob, 2026-09-07: "no sizes or distances can be
-// hardwired" — this is the resolution of the arithmetic underneath the map, not a size in it).
-// ⛔ AND IT DOES NOT ADDRESS THE FAR CLASS. A tangent 10 cm off the contour is NOT on it, and that
-// is a different defect with its own cause, unestablished. Those still miss, and they must —
-// ▶ node scratch/claims-every-corner-is-configured.mjs splits the two populations by name.
-// *(Recovered from `787bcbde` on `corner-r0-and-slide`, which fixed this at the two call sites the
-// painter had then; the leg cut has since become identity-based and only the extent lookup is
-// left. ⛔ Not re-derived — the construction and the reasoning are that commit's.)*
-const GRID_M = 0.001
-const QK = (x, y) => `${Math.round(x * 1000)},${Math.round(y * 1000)}`
-function ringVertexIndex(ring) {
-  const m = new Map()
-  for (let q = 0; q < ring.length; q++) {
-    const k = QK(ring[q][0], ring[q][1])
-    const a = m.get(k); if (a) a.push(q); else m.set(k, [q])
-  }
-  return m
-}
-// The ring vertex within ONE grid quantum of P, or null.
-function findRingVertex(ix, ring, P) {
-  const cx = Math.round(P[0] * 1000), cy = Math.round(P[1] * 1000)
-  let best = null, bd = Infinity
-  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) {
-    const a = ix.get(`${cx + dx},${cy + dy}`); if (!a) continue
-    for (const q of a) {
-      const d = Math.hypot(ring[q][0] - P[0], ring[q][1] - P[1])
-      if (d < bd - 1e-12 || (Math.abs(d - bd) <= 1e-12 && best != null && q < best)) { bd = d; best = q }
-    }
-  }
-  return bd <= GRID_M ? best : null
-}
 export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⭐ TWO CONTOURS, TWO QUESTIONS. `iaFull` + `iaStamp` answer "what depth HERE" — uncut, so the
   // per-point correspondence is intact. The cut `iA` answers "where is the block" after the disc
@@ -3608,7 +3581,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // granularity: ① labels are per-EDGE, ② runs are per-FRONTAGE. Reading one as the other is what
   // produced the retracted "89 owners per block".
   const legArr = new Map()      // `${ri}|${edge}` → the FRONTAGE's ONE resolved measure
-  const seamAt = new Set()      // `${ri}|${q}` → a FRONTAGE change, i.e. a corner
   // ⛔ THE RESIDUE THE LONGEST-ARC ABSORPTION USED TO HIDE, COUNTED INSTEAD OF ABSORBED. `feArcs`
   // = contiguous `(road, side)` stretches on this tile; `feRepeat` = stretches belonging to an
   // owner that already had one. Under rule B a repeat is LEGITIMATE (a loop or a dogleg touches
@@ -3659,7 +3631,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     const resKey = feKey
     for (const p of parts) {
       const ri = p.ri, ring = p.ring, stp = stamps[p.si] || [], n = ring.length
-      const corner = st.iaCorner?.[p.si] || null
       // ⛔⛔ THE UNIT IS A MAXIMAL CONTIGUOUS STRETCH OF ONE `(road, side)` — RULED B, 2026-09-07.
       // *(Jacob, asked which counts as one piece when a road's chunks sit end-to-end along one
       // block face: "B, obviously" — one UNBROKEN stretch, so a street touching the same block
@@ -3688,13 +3659,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         const a = resKey(stp[(q - 1 + n) % n])
         const b = resKey(stp[q])
         if (a !== b) cuts.push(q)                                    // resolve per SPAN (rule 4)
-        // ⭐⭐⭐ THE CORNER IS READ, NOT DERIVED. `st.iaCorner` is stamped at the MINT, PRE-EASING,
-        // from ①'s own vertices: an owner change on the sharp polygon, with contiguity enforced
-        // there. ⛔ Deriving it here would be asking ②'s eased contour a question about ①'s shape —
-        // ② rounds a 90° corner into ~12 vertices of 7.5°, so the answer is always "no corner".
-        // ▶ the field now reads 5.7% of LS contour points, median 4 corners per ring; it read 81%
-        //   and was true on EVERY point of 43 rings when it was built from owner LABELS.
-        if (corner?.[q]) seamAt.add(`${ri}|${q}`)
       }
       const spans = cuts.length ? cuts.map((c, x) => [c, ((cuts[(x + 1) % cuts.length] - c + n) % n) || n]) : [[0, n]]
       const seenOwner = new Set()
@@ -3797,159 +3761,43 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // OVERLAP, and the sidewalk simply stops. ▶ MEASURED on LS: 231 of 681 corners (33.9%) have
   // disagreeing arrangements. That is the operator's "the sidewalk breaks" and "the ADA pads are
   // missing" — one defect, one cure. ▶ `node scratch/claims-sidewalk-is-one-band.mjs`
-  // ⭐ THE CORNER IS ①'s AND IT IS READ OFF THE FROZEN FILLET, never off the drawn contour: ②
-  // eases 90° into ~12 vertices of 7.5°, so a turn test finds ZERO corners on a rectangle.
-  // `st.fillets[] = {apex, C, r, tA, tB}` is the arc the curb actually rounded, with its two
-  // TANGENT points — the same arc the leg cut above already reads.
-  // ⛔ OPEN, and it is §6.1 step 5's other half: the `luWedge` that carves the deep tail out of the
-  // slid walk is NOT built here. It is a CUT, and a cut through a band that is then re-joined along
-  // the same edge leaves Clipper with two touching polygon records — the band reads broken at
-  // unchanged area. Re-run the acceptance before re-landing it; when it was tried it cost 3 blocks
-  // on LS and 6 on HPDM, and the honest home for it is a per-vertex ramp, which needs vertices
-  // inserted along the leg that the frozen contour does not have.
-  const fullBand = band(insAt(cw), insAt(WB))
-
-  // ══ THE ADA PAD — LOCATED BY THE OWNER CHANGING, ARC ONLY FOR ITS EXTENT ═════════════════════
-  // ⭐⭐⭐ THIS CURE WAS WRITTEN DOWN IN `8753ea91` (2026-09-06 23:36) AND NEVER BUILT. Verbatim:
-  //   "I predicated the pad on the FILLET ARC, and `RIBBONS §1` invariant 3 forbids exactly that —
-  //    'the ADA corner pad is a band-slice, NOT predicated on the arc, so it works square OR round.'
-  //    Of 231 arrangement steps only 60 sit inside a fillet arc, so 171 remain bare. ⇒ THE CURE IS
-  //    TO LOCATE THE PAD BY THE OWNER CHANGING — §1's own law — WITH THE ARC SUPPLYING ONLY ITS
-  //    EXTENT WHERE ONE EXISTS."
-  // ⛔ I re-derived that sentence across four commits today. It was in the commit message the whole
-  // time. `CLAUDE.md`: reuse forensics, never re-derive.
+  // ══ THE CORNER — READ, NOT MEASURED. `iaCorner` LOCATES IT; `iaArc` IS ITS EXTENT ═══════════
+  // ⭐⭐⭐ TWO FACTS, TWO SOURCES, BOTH CARRIED ONTO THE CONTOUR. Nothing here derives, matches,
+  // thresholds or declines:
+  //   `iaCorner[q]` — ① TURNS at this vertex AND the owner changes (`SECTION §4` rule 6's positive
+  //                   form), stamped PRE-EASING off ①'s own vertices.
+  //   `iaArc[q]`    — which corner's eased arc this vertex lies in, stamped BY the ease that made
+  //                   it (`easeContour`). The one place that knows, asked instead of guessed.
+  // ⇒ an arc is a maximal run of one `iaArc` value, and it is a CORNER's arc iff a vertex in it
+  // carries the mark. ⛔ An ease at a mid-block BEND is NOT a corner and takes no treatment —
+  // `SECTION §4` rule 5, and the licence is what keeps it out.
   //
-  // ⭐ THE PAD IS A STAMP, NOT A CONSTRUCTION — `RIBBONS §1` invariants 1 and 3. At contour points
-  // inside the corner the stamp says concrete and the SAME FOUR OFFSETS draw it: no sector, no
-  // intersection, no bid, no decline. ⛔ Nothing is glued onto the ends of two legs, which is what
-  // `RIBBONS` Slice 2 invariant 2 forbids in those words.
+  // ⛔⛔ WHAT THIS REPLACES, AND IT WAS THE LAST RECOVERY IN THE PAINTER. The extent came from
+  // `st.fillets`' tangent COORDINATES matched back onto the contour through a 1 mm grid hash —
+  // `A15`'s proximity recovery, the same shape that killed the nearest-fe match and the
+  // walk-ordinal coupler, done across a boolean that is allowed to move a point. Its own comment
+  // conceded the far class: "a tangent 10 cm off the contour is NOT on it, and those still miss."
+  // ⭐ MEASURED, and the miss is not a tail: it reached under two thirds of LS's corners, so a
+  // third of them had NO extent — one edge to change depth over, i.e. the chevron.
+  // ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` — re-run it, never quote it.
+  // ⇒ `fillets` and `vertR` are now read by NO consumer on this path. They stay FROZEN because
+  // Survey's corner handle rides them (`SECTION §4`'s freeze list); the FILL does not.
   //
-  // ⭐ THE THREE CONFIGS FALL OUT OF ONE RULE — concrete to `cMin = min(both owners' conD)`:
-  //   SW↔SW  both at curb   → cMin = the walk width ⇒ the outer band's stripe continues round
-  //   TL↔TL  both set back  → cMin = the full depth ⇒ the walk wraps, and the band outboard of it
-  //                                                   is the ADA pad reaching the street
-  //   SW↔TL  mixed          → cMin = the shallower  ⇒ the walk crosses inside the band
-  // ⛔ Step 3 is absolute: the curb side of a corner is concrete ALWAYS. Grass stops at the extent.
-  const cornerAt = new Map()             // `${ri}|${edge}` → cMin
+  // ⛔⛔ AND THE CORNER HAS NO CROSS-SECTION OF ITS OWN. `cMin`, `conMax` and the pad depths that
+  // stood here are GONE, not moved: the corner gets NOTHING (`RIBBONS §1` invariant 1 — "never a
+  // separately-constructed primitive… same materials, SAME DEPTHS, bent around an arc"). All this
+  // map carries is WHERE the corner is. It comes out flush concrete because the leg's grass has
+  // already gone to zero by the time it arrives — an OUTCOME, not a rule about the corner.
+  const inC = new Map()                  // `${ri}|${edge}` → this edge lies inside a licensed arc
   for (const p of parts) {
-    const ring = p.ring, n = ring.length
-    const ix = ringVertexIndex(ring)
-    // where a fillet eased a corner, its two tangents are that corner's EXTENT
-    const arcAt = new Map()
-    for (const fl of st.fillets || []) {
-      const a = findRingVertex(ix, ring, fl.tA), b = findRingVertex(ix, ring, fl.tB)
-      if (a == null || b == null) continue
-      const fwd = (b - a + n) % n, bwd = (a - b + n) % n
-      const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
-      if (len === 0 || len * 2 > n) continue                 // a fillet is the MINOR arc
-      // ⛔⛔ `k < len`, NOT `k <= len` — AN ARC FROM VERTEX a TO VERTEX b COVERS THE EDGES BETWEEN
-      // THEM, AND THERE ARE `len` OF THOSE, NOT `len + 1`. The extra one is the FIRST EDGE OF THE
-      // NEXT LEG, and on ①-derived geometry a straight frontage is ONE EDGE — so the inclusive
-      // bound handed each corner an entire block side.
-      // ⭐ THE CANARY, measured: tile 110 is a quadrilateral — 4 fillets, `iaCorner` true at exactly
-      // 4 vertices, 54 contour vertices of which 50 are the four eased arcs and FOUR are the block's
-      // four sides (30.8 · 184.1 · 30.7 · 184.3 m). Each arc stamped its 12 short edges AND the long
-      // one after it ⇒ 458 m of 458 m painted as ADA pad, and the treelawn erased off the whole
-      // block. That is the "all concrete, no grass" cross-section Jacob circled with the Marker.
-      // ⛔ THE CLASS IS THIS FILE'S OWN, FOR THE THIRD TIME: an EDGE quantity indexed as if it were
-      // a VERTEX quantity (`592043fe` "an EDGE label read off a VERTEX stamp"; `RIBBONS §1`'s "a
-      // quantity carried through a boolean must be carried as the thing it IS"). It is not a
-      // threshold, a tolerance or a special case — it is an arity error, and the reason it survived
-      // is that on a DENSE contour the extra edge is 1 mm and invisible.
-      for (let k = 0; k < len; k++) arcAt.set((s0 + k) % n, [s0, len])
-    }
+    const n = p.ring.length
+    const arc = st.iaArc?.[p.si], mark = st.iaCorner?.[p.si]
+    if (!arc) continue                   // no ease on this ring (a square corner, or a lost stamp)
+    const licensed = new Set()
+    for (let q = 0; q < n; q++) if (arc[q] != null && mark?.[q]) licensed.add(arc[q])
     for (let q = 0; q < n; q++) {
-      if (!seamAt.has(`${p.ri}|${q}`)) continue              // ⭐ LOCATED BY THE OWNER CHANGING
-      const mA = M(p.ri, (q - 1 + n) % n), mB = M(p.ri, q)
-      if (!mA || !mB) continue
-      const cMin = Math.min(arrOf(mA).conD, arrOf(mB).conD)
-      const arc = arcAt.get(q)
-      // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
-      // extent is the one edge the owners meet across, and the pad is drawn there just the same.
-      // ⛔ Same arity: `len` EDGES from `s0`. A square corner (no arc) is `len = 0` — and it must
-      // then stamp the ONE edge the owners meet across, which is `k <= 0`, i.e. exactly one pass.
-      const [s0, len] = arc || [q, 0]
-      for (let k = 0; k < Math.max(1, len); k++) {
-        const e = (s0 + k) % n
-        const prev = cornerAt.get(`${p.ri}|${e}`)
-        if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
-      }
-    }
-  }
-
-  // ══ THE RAMP — a road's two spans meeting where NO CORNER IS ════════════════════════════════
-  // ⭐ RECOVERED from `92c4d824` + `e7c5198c` (2026-09-07), built and then stranded on a branch.
-  // ⛔ NOT re-derived: the constants, the guards and the two-sided probe are that build's.
-  // *(Jacob: "even if we think something changes mid-leg, that's what the angled slope corner
-  // joiner is for" — his word that morning, RETIRED the same night: "'joiner' sounds like chains."
-  // ⛔ A JOINER JOINS TWO THINGS AND THERE IS ONLY ONE SHAPE. The word would cause the bug: anyone
-  // building to it builds something that stitches two pieces together, which is the walk model
-  // returning through the vocabulary. It is THE RAMP — the curb ramp, a thing that exists on the
-  // ground. And, on the far-kerb T: "ABSOLUTELY DO NOT APPLY IT HERE because it's not a
-  // corner!" — so it fires HERE and the corner construction does not.)*
-  //
-  // ⛔⛔ THE CURE IS NOT TO MERGE THE SPANS. `SECTION §4` rule 4 — a road's spans genuinely carry
-  // different authored cross-sections and THAT VARIATION IS THE SURVEY. A road-level merge was
-  // built for this exact symptom on 2026-09-07 and excised the same day. The RAMP makes the
-  // difference SURVIVABLE: both keep their arrangement along their span, and only a short
-  // transition at the joint slopes.
-  // ⭐⭐ IT IS `§6.1` STEP 5 WITH NO ARC — `conD`, `cMin`, `conMax`, the slid quad, all step 5's,
-  // applied at a joint instead of a tangent. ⛔ ADDITIVE, UNIONED IN, NEVER CUT: cutting a band and
-  // re-joining it on the same edge leaves Clipper two touching records — the band reads BROKEN at
-  // unchanged area, and that cost the acceptance 79 → 54 once already.
-  // ⛔ NO SIZE IS HARDWIRED (Jacob: "no sizes or distances can be hardwired"). `rampLen` is 2× the
-  // depth the walk must travel — a SLOPE RATIO, a shape, not a length, and deliberately no floor.
-  const slidWalk = []
-  if (fullBand.length) {
-    const nrm2 = (v) => { const L = Math.hypot(v[0], v[1]) || 1; return [v[0] / L, v[1] / L] }
-    for (const p of parts) {
-      const ring = p.ring, n = ring.length, stp = stamps[p.si] || []
-      for (let q = 0; q < n; q++) {
-        // ⛔⛔ NO GATE HERE. **EVERY CORNER GETS A RAMP** — Jacob, 2026-09-07:
-        // > "every corner gets a joiner/ramp. Sometimes, that means it's subsumed by the SW <> SW.
-        // >  but if it's TL <> SW, a slope appears to connect the different depths. TL <> TL the
-        // >  ADA ramp appears below, no ramp."
-        // ⭐ THE TWO DEPTHS DECIDE THE FORM, NEVER WHETHER. The three configs are three OUTCOMES of
-        // one unconditional construction, and each falls out of `conMax − cMin` with no branch:
-        //   SW↔SW  both at the kerb, equal    → `rampLen` 0 ⇒ SUBSUMED, nothing drawn
-        //   TL↔SW  different                  → a SLOPE connecting the two depths
-        //   TL↔TL  both set back, equal       → `rampLen` 0 here; the ADA pad BELOW the walk is the
-        //                                       corner stamp's own job (`walkFrom → cw`), not a slope
-        // ⛔ WHAT STOOD HERE — `if (seamAt.has(...)) continue`, "a corner owns its own joint" — made
-        // the construction fire ONLY where there is no corner, i.e. everywhere except the place the
-        // operator was looking at. That is the transition being CONDITIONAL on the thing it exists
-        // for. It is also why TL↔SW showed a step: the slope was gated off at every corner on the map.
-        const eA = (q - 1 + n) % n, eB = q
-        const mA = M(p.ri, eA), mB = M(p.ri, eB)
-        if (!mA || !mB || mA === mB) continue
-        const A = arrOf(mA), B = arrOf(mB)
-        const conc = [A.conD, B.conD].filter(d => d > 1e-6)
-        if (!conc.length) continue                       // neither side carries concrete
-        const cMin = Math.min(...conc)
-        const deepA = A.conD >= B.conD
-        const deep = deepA ? A : B
-        // ⭐ EQUAL DEPTHS ⇒ `rampLen` 0 ⇒ a degenerate quad ⇒ nothing drawn. That is "subsumed",
-        // and it falls out rather than being branched on. ⛔ Kept only as a cheap skip, NOT as a
-        // decision: the construction still ran and still produced the right answer without it.
-        if (deep.conD <= cMin + 1e-6) continue           // subsumed — zero-length by construction
-        // the ramp runs up the DEEPER span, away from the joint
-        const J = ring[q], away = deepA ? (q - 1 + n) % n : (q + 1) % n
-        const dir = nrm2([ring[away][0] - J[0], ring[away][1] - J[1]])
-        const conMax = deep.conD, rampLen = (conMax - cMin) * 2
-        const tloD = deep.outWalk ? 0 : deep.dOut        // the treelawn tapering out
-        const at = (pv, s2, d) => [J[0] + dir[0] * s2 + pv[0] * (cw + d), J[1] + dir[1] * s2 + pv[1] * (cw + d)]
-        const quadFor = (pv) => [at(pv, 0, 0), at(pv, rampLen, tloD), at(pv, rampLen, conMax), at(pv, 0, cMin)]
-        // ⭐ THE INWARD NORMAL IS DECIDED BY ASKING THE BAND, not by winding: a hole ring and an
-        // outer ring wind opposite ways and `p.hole` is itself read off winding, so a probe is the
-        // one answer that cannot be inverted by the thing it is describing.
-        let best = null
-        for (const pv of [[-dir[1], dir[0]], [dir[1], -dir[0]]]) {
-          const got = intersectRings(fullBand, [quadFor(pv)])
-          const a = got.reduce((tot, g) => { let x = 0; for (let i = 0; i < g.length; i++) { const j = (i + 1) % g.length; x += g[i][0] * g[j][1] - g[j][0] * g[i][1] } return tot + Math.abs(x / 2) }, 0)
-          if (!best || a > best.a) best = { got, a }
-        }
-        if (best && best.got.length) slidWalk.push(...best.got)
-      }
+      const u = arc[q], v = arc[(q + 1) % n]
+      if (u != null && u === v && licensed.has(u)) inC.set(`${p.ri}|${q}`, true)
     }
   }
 
@@ -3981,47 +3829,56 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   let rampShort = 0
   for (const p of parts) {
     const ring = p.ring, n = ring.length
-    const cA = (i) => cornerAt.get(`${p.ri}|${i}`)
-    const out = [], src = [], kS = [], kE = [], cm = []
-    // ⛔ THE PAD'S `cMin` MUST TRAVEL WITH THE RAMP. A ramp edge lies OUTSIDE the corner, so it has
-    // no `cornerAt` entry of its own — reading one there returns null and the interpolation silently
-    // collapses to "the leg at both ends", i.e. no ramp at all. Captured here from the corner the
-    // ramp runs away from, which is the only place that knows it.
+    const isC = (i) => inC.has(`${p.ri}|${i}`)
+    // ⭐⭐⭐ A LEG ENDS IN EXACTLY THREE PLACES AND THEY ARE ONE TEST — an eased corner's TANGENT,
+    // ①'s SQUARE corner (R = 0, so the ease made no arc to be a tangent of), and a change of
+    // FRONTAGE. ⛔ NO GATE ON THE TWO DEPTHS: "the two depths decide the FORM, never WHETHER"
+    // (`SECTION §4`, THE RAMP). Where nothing travels the ramp is zero-length and draws nothing —
+    // subsumed, as an outcome.
+    // ⛔⛔ THIS IS WHAT RETIRES THE ADDITIVE QUAD. A separately-constructed polygon used to be
+    // struck at a frontage change, probed against both normals for the one with more area, and
+    // unioned into the walk — a primitive glued at a joint, which `RIBBONS §1` invariant 1 forbids
+    // in those words, and a guess (the area probe) standing where a fact belongs. It existed only
+    // because the taper fired at corners and nowhere else. It fires everywhere a leg ends now, so
+    // the quad has no job: ONE construction, three outcomes, no case split.
+    const end = (v) => {
+      const back = (v - 1 + n) % n
+      if (isC(back) !== isC(v)) return true                          // the arc's tangent
+      if (isC(v)) return false                                       // inside it, nothing ends
+      return !!(st.iaCorner?.[p.si]?.[v]) || M(p.ri, back) !== M(p.ri, v)
+    }
+    const out = [], src = [], kS = [], kE = []
     for (let i = 0; i < n; i++) {
       const a = ring[i], b = ring[(i + 1) % n]
-      const inC = cA(i) != null
-      const push = (pt, s0, k0, k1, c) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1); cm.push(c ?? null) }
-      if (inC) { push(a, i, 0, 0, cA(i)); continue }                       // inside the corner: depth is flat
-      const cBack = cA((i - 1 + n) % n), cFwd = cA((i + 1) % n)
-      const backC = cBack != null, fwdC = cFwd != null
+      const push = (pt, s0, k0, k1) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1) }
+      if (isC(i)) { push(a, i, 0, 0); continue }     // inside the corner: flush to the kerb, flat
+      const backC = end(i), fwdC = end((i + 1) % n)
       const m = M(p.ri, i), l = m ? arrOf(m) : null
-      const travel = l ? l.dOut : 0                                  // what the divider must cross
+      const travel = l ? l.dOut : 0                  // what the divider must cross
       const rampLen = travel * 2
       const L = Math.hypot(b[0] - a[0], b[1] - a[1])
-      if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1, null); continue }
+      if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1); continue }
       const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
-      // ⛔⛔ A LEG SHORTER THAN ITS RAMP TAKES THE LEG IT HAS. This used to REFUSE the split, and
-      // the refusal was the residue: **317 of the 380 remaining steps sat on an edge under 3 m** —
-      // short block faces, where the ramp did not fit and the depth went back to jumping.
-      // ⭐ Shrinking to the leg's own extent hardwires NOTHING — it is the leg's length, not a
-      // chosen number — and it is the ruled behaviour, not a clamp on the design: `§6.9.5`, a
-      // feature that cannot fit "goes to ZERO there". A shorter leg gets a steeper ramp, which is
-      // what a short block face looks like on the ground.
-      // ⛔ Two corners on one edge each get at most HALF of it, so the two ramps cannot overrun
-      // each other — the same topological bound `easeContour` uses ("a tangent point may not pass
-      // its leg's midpoint, because past that the leg belongs to the next corner").
+      // ⛔⛔ A LEG SHORTER THAN ITS RAMP TAKES THE LEG IT HAS. Refusing the split was the residue:
+      // the remaining steps sat overwhelmingly on short block faces, where the ramp did not fit and
+      // the depth went back to jumping. ⭐ Shrinking to the leg's own extent hardwires NOTHING — it
+      // is the leg's length — and it is the ruled behaviour, not a clamp: a feature that cannot fit
+      // "goes to ZERO there". A shorter leg gets a steeper ramp, which is what a short block face
+      // looks like on the ground.
+      // ⛔ Two ends on one edge each get at most HALF of it, so two ramps cannot overrun each other
+      // — the same topological bound `easeContour` uses for a corner's own legs.
       const room = (backC && fwdC) ? L / 2 : L
       const r2 = Math.min(rampLen, room)
-      if (!(r2 > 1e-6)) { rampShort++; push(a, i, 0, 0, cBack ?? cFwd); continue }
+      if (!(r2 > 1e-6)) { rampShort++; push(a, i, 0, 0); continue }
       if (backC && fwdC) {
-        push(a, i, 0, 1, cBack); push(at(r2 / L), i, 1, 1, null); push(at(1 - r2 / L), i, 1, 0, cFwd)
+        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       } else if (backC) {
-        push(a, i, 0, 1, cBack); push(at(r2 / L), i, 1, 1, null)
+        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1)
       } else {
-        push(a, i, 1, 1, null); push(at(1 - r2 / L), i, 1, 0, cFwd)
+        push(a, i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       }
     }
-    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcm = cm
+    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE
   }
   // ⛔ The VARIABLE-depth offsets run on the densified ring; the CONSTANT-depth ones (`insAt`) do
   // not need it and are left alone — a constant depth over collinear extra vertices is the same
@@ -4045,7 +3902,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // strip as SW, i.e. all-LU curb→centre. Byte-identical to what the hand-written copy gave a
     // null, and the ruled answer (`ARCHITECTURE §"The compound shape"`: the drawing has no holes).
     const L = (i) => stripLadder(M(p.ri, i) || {}, lim)
-    const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
     // ⛔⛔ THE PAD MOVES ONE DEPTH, NOT FOUR — AND THAT IS THE WHOLE OF IT.
     // *(Jacob's three configs, in his words, 2026-09-07:)*
     //   SW↔SW → "the corner is just a continuous stripe around the outer band"  ⇒ NOTHING to do:
@@ -4110,15 +3966,11 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       walkToD:   (j) => span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
       lawnFromD: (j) => span(j, (l) => l.outWalk ? l.dOut : 0),
       lawnToD:   (j) => span(j, (l, k) => l.inWalk ? l.dOut * k : lim),
-      walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
-      walkTo:   (i) => cw + L(i).walkTo,
-      lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
-      lawnTo:   (i) => cw + L(i).lawnTo,
     }
   }
   if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
     const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
-    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
+    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: inC.has(`${p.ri}|${i}`) || null,
       owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
       resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
       hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
@@ -4146,9 +3998,14 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
   const W = band(insD(p => F.get(p).walkFromD), insD(p => F.get(p).walkToD))
+  // ⛔⛔ NOTHING IS UNIONED IN AND NOTHING IS CUT OUT. Every boundary below is a whole-contour
+  // offset of the SAME curve, so there are no pieces, nothing to join, and no join to open — which
+  // is `RIBBONS §1`'s "a seam is UNCONSTRUCTIBLE rather than merely unlikely", now true of the
+  // corner as well as the leg. The additive slide that stood here was the last piece that was not
+  // an offset of the contour.
   return {
-    Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
-    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD)), slidWalk) : band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD))) },
+    Wacc:   inBlock(W),
+    tlByLu: { [key]: inBlock(band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
@@ -7012,6 +6869,11 @@ export function buildTileGround(ribbons, opts = {}) {
         let outRings = rings2
         let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost, ring))
         let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
+        // ⭐⭐⭐ THE CORNER'S EXTENT, CARRIED OFF THE EASE ITSELF. `st.arcMask[ri][i]` names the
+        // corner each contour vertex belongs to — the one thing ②'s eased geometry cannot be asked
+        // for afterwards, because it eases a 90° turn into ~12 vertices of 7.5° and every one of
+        // them looks like a curve sample.
+        let outArc = rings2.map((rg, ri) => st.arcMask?.[ri] || rg.map(() => null))
         if (holes.length) {
           // ⭐⭐⭐ A FACE'S CURB IS ITS OUTER ERODED INWARD **MINUS** EVERY HOLE DILATED INTO IT.
           // ⛔ Offsetting a hole ring with the ordinary call would SHRINK the hole — the normal is
@@ -7043,6 +6905,10 @@ export function buildTileGround(ribbons, opts = {}) {
             outRings = B.rings
             outLabs = B.labels || B.rings.map(rg => rg.map(() => null))
             outR = B.rings.map(rg => rg.map(() => 0))
+            // ⛔ THE EXTENT GOES WITH THE STAMP — a compound face's vertex correspondence does not
+            // survive the hole subtraction, so its corners have no extent either. Null, never a
+            // guess; the shortfall is already counted as `compoundNoEase`.
+            outArc = B.rings.map(rg => rg.map(() => null))
           }
           compoundFaces++
         }
@@ -7094,7 +6960,7 @@ export function buildTileGround(ribbons, opts = {}) {
           }
           protoCurb.push(eased.ring); protoCurbGs.push(isGs)
           // ⭐ the curb, with each vertex's ① label — this is what ③ insets FROM
-          ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri] })
+          ;(easedByBlock[k] ||= []).push({ ring: eased.ring, labs: eased.labs || outLabs[ri], arc: outArc[ri] })
         }
       }
       // ⛔ LOUD, not silent: an edge with no resolvable authored width would erode by ZERO and
@@ -7626,7 +7492,11 @@ export function buildTileGround(ribbons, opts = {}) {
             // ⭐ `iaFull` — the UNCUT curb contour the stamp indexes. The disc cut simplifies the
             // ring, so `iA` and `iaStamp` stop corresponding after it; the FILL is struck off this
             // one and CUT with `iA`. See the cut block below.
+            // ⭐ `iaArc` — per contour vertex, WHICH CORNER'S ARC it lies in (null on a leg). ①'s
+            // corner LOCATES the treatment (`iaCorner`); this is only its EXTENT, and it is read
+            // off the ease that made it rather than matched back onto the contour afterwards.
             runs: runs2, iaStamp, iaCorner, iaFull: mine.map(EC => EC.ring),
+            iaArc: mine.map(EC => EC.arc || EC.ring.map(() => null)),
             // ⭐ `lu` — SUPPLIED. Jacob: "LU is a gettable/knowable datapoint… stamp the LU into the
             // initial ground map and later add overrides." A fact about the world, read off the block
             // itself, not a construction parameter. Overrides are a later layer and not scoped here.

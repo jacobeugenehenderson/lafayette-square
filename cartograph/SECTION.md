@@ -150,21 +150,17 @@ pointer that does not resolve reads as evidence already gathered.)*
 ### ⛔ OPEN
 - **Cap folds** — one chain's two sides meeting at a tip. `§6.3` rules it (the bulb has NO halves,
   one cross-section, whole to the cap owner). **Not built.**
-- ⭐⭐ **THE RAMP — the curb ramp, and it is UNBUILT.** *(Named 2026-09-07. Jacob coined "the angled
-  slope corner joiner" that morning and RETIRED the word the same night: "'joiner' sounds like
-  chains." He is right, and the name would have caused the bug — **a joiner joins two things, and
-  there is only ONE shape**; anyone building to that word builds something that stitches two pieces
-  together, which is the walk model climbing back in through the vocabulary.)* *(Jacob,
-  2026-09-07: "even if we think something changes mid-leg, that's what the angled slope corner joiner
-  is for.")* The kit cuts one road into many chains and rule 4 says their cross-sections genuinely
-  differ, so the ped band steps mid-street with no corner to carry it. ⛔ **The cure is NOT to merge
-  the chains** — that averages away the survey and was built and excised the same day. The RAMP is
-  the cap coupler's shoulder taper (`§6.3`, "width is germane") applied at an ordinary chain change.
-  ▶ `node scratch/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run; it names the instances.
+- ⭐⭐⭐ **THE RAMP — the curb ramp. ✅ BUILT, and it is the WHOLE corner construction.**
+  *(Named 2026-09-07. Jacob coined "the angled slope corner joiner" that morning and RETIRED the
+  word the same night: "'joiner' sounds like chains." He is right, and the name would have caused
+  the bug — **a joiner joins two things, and there is only ONE shape**; anyone building to that word
+  builds something that stitches two pieces together, which is the walk model climbing back in
+  through the vocabulary.)*
   ### ⭐⭐⭐ THE RULE, IN JACOB'S WORDS — **EVERY CORNER GETS A RAMP** (2026-09-07)
   > *"every corner gets a joiner/ramp. Sometimes, that means it's subsumed by the SW <> SW. but if
   > it's TL <> SW, a slope appears to connect the different depths. TL <> TL the ADA ramp appears
-  > below, no ramp."*
+  > below, no ramp."* · *"The ADA Ramp should be flush to the curb through the whole ramp. The slope
+  > is applied to the LEG, not the corner."* · *"AND IT DOESN'T TAPER, IT SLOPES."*
   ⛔⛔ **IT IS UNCONDITIONAL, AND THE TWO DEPTHS DECIDE ONLY WHAT IT LOOKS LIKE.** The three configs
   are three OUTCOMES of one construction, not three cases to branch on:
   | config | the two walk depths | what appears |
@@ -172,34 +168,36 @@ pointer that does not resolve reads as evidence already gathered.)*
   | **SW↔SW** | both at the kerb, equal | **nothing — the ramp is SUBSUMED.** Zero length by construction |
   | **TL↔SW** | different | **a SLOPE**, connecting the two depths |
   | **TL↔TL** | both set back, equal | **the ADA pad BELOW** (outboard of the walk, reaching the street) — **no slope** |
-  ⭐ **THAT IS WHY SW↔SW WAS THE ONLY CONFIG THE EYE CALLED CORRECT** — it is the one where the
-  missing construction is *supposed* to be invisible, so its absence cannot be seen.
-  ⛔ **AND IT CONDEMNS THE CURRENT GUARD.** The code fires its transition only where the two legs
-  DIFFER (`conMax > cMin`), so TL↔TL — the config that needs the pad below — gets nothing at all.
-  A difference decides the FORM; it must not decide WHETHER.
-  ### ⛔⛔ THE COST OF THE ABSENCE, AND IT IS EVERY CORNER ON THE MAP
-  The band steps sideways by a full treelawn width across ONE vertex, at essentially every corner↔leg
-  boundary on both towns — the chevron the operator photographed all evening ("all the corners are
-  the same, all the corners are shite"). ⭐ The doctrine being applied is CORRECT (`§6.1` step 3, the
-  street edge is concrete and the grass stops); what is missing is the ramp that carries it.
-  ▶ `SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs` — ⛔ re-run, never quote.
-  ### ⭐⭐⭐ WHY IT WAS NEVER BUILT, AND IT IS A PROPERTY OF ①, NOT A BUG IN EITHER PAINTER
-  **①'s contour has nowhere to put it.** Its vertices are spent inside the eased corner arcs, where
-  the depth must be CONSTANT; the straight leg, where the depth must CHANGE, gets a **median of ONE
-  long edge per frontage** (▶ the check above). A per-edge depth ladder therefore has exactly one
-  place to put a value along a frontage, so the corner's depth change *must* be a step. ⛔ Not a join
-  error, not a walk error — a RESOLUTION property of the frozen contour, and the code says so at the
-  site: *"the honest home for it is a per-vertex ramp, which needs vertices inserted along the leg
-  that the frozen contour does not have."*
-  ⇒ **The Ramp is therefore two things: points on the leg, and a depth that varies across them.**
-  `offsetRingVariable` has accepted a `[start,end]` per-edge ramp since it was written and nothing
-  uses it — the missing half is the POINTS.
-  ⚠️ **⛔ COUNT LONG EDGES, NEVER RAW EDGES.** At the span level ①'s contour looks rich, and that
-  reading REFUTES the sparsity finding. The real number appears only when arc edges are separated
-  from straight ones — nearly four fifths of ①'s vertices sit inside the eased arcs, where the depth
-  must be constant. The forensic that found this nearly reported it the other way.
-  ⛔ Attempts that failed because they had no room: a taper multiplier on the divider, and a slide
-  quad struck first at the apex and then at the tangent. All three reverted the same evening.
+  ### ⭐⭐⭐ AND THE WHOLE CONSTRUCTION IS **ONE MULTIPLIER ON THE LEG.**
+  The corner gets **nothing** — no cross-section, no pad depth, no override (`RIBBONS §1`
+  invariant 1). What exists is a scalar on the **outer strip's width**: **1** along the open leg,
+  **0** where the leg ends, ramping across vertices the painter inserts on the leg itself. A
+  kerb-side walk is untouched by it (SW↔SW subsumed); a set-back walk has its grass slope out and
+  arrives at the kerb (TL↔TL's pad below, TL↔SW's slope). ⇒ the ADA ramp is **flush to the kerb
+  through the whole corner because the leg already brought it there** — an outcome, not a rule.
+  - **A leg ends in exactly three places and they are ONE test**: an eased corner's **tangent** ·
+    ①'s **square** corner (R = 0, so the ease made no arc) · a change of **frontage**. ⛔ No gate on
+    the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
+    no-corner case is gone.
+  - **The corner's EXTENT is CARRIED, not recovered** — `iaArc`, stamped by the ease that made the
+    arc, beside `iaCorner`, which says only *where*. It replaced matching the frozen `fillets`'
+    tangent coordinates back onto the contour, which is `A15`'s forbidden proximity recovery and
+    failed **worst on the most authored town**.
+  - ⛔ **The cure is NOT to merge the chains** — that averages away the survey (rule 4) and was
+    built and excised the same day.
+  ▶ `node scratch/claims-the-slope-is-on-the-leg.mjs <scene>` — the acceptance: a DERIVED feature is
+  checked by CONTINUITY, so it counts discontinuities in the walk's outer depth across one vertex,
+  on the **densified** ring. ⛔ Reading ①'s own edges cannot see the ramp and reports the step it
+  removed.
+  ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` — scores the carry against the
+  tangent match it replaced, both columns from one run.
+  ⛔ Re-run them; never quote a figure from here.
+  ### ⛔ STILL OPEN, MEASURED, CAUSE NOT ESTABLISHED
+  **treelawn∩sidewalk overlap.** The two strips are written as spans that partition the band, so
+  they cannot overlap by construction — and they do, in pieces 1–2 m wide, on both towns and before
+  this work. Removing the additive quad and ramping every leg end made it larger while making the
+  piece COUNT smaller, i.e. the same pieces grew. It is the `~3% divider residual` below, seen from
+  the other end. ▶ `node scratch/claims-proto-fill-is-live.mjs`
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
   **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all
@@ -253,7 +251,16 @@ So "author the corners in Section" means the **fill**, not the radius. The fill 
 
 ### 6.1 ✅ The corner construction — LANDED (2026-06-10)
 
-The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **frozen fillet** the curb actually rounded there (`shapeTiles[].fillets[] = {apex, C, r, tA, tB}`, frozen by `filletRing` in the shape pass). The pipeline, in order:
+> ### ⛔⛔ TWO PAINTERS, AND THE FIVE STEPS BELOW ARE THE OTHER ONE'S.
+> **`sectionPassTile` — the WALK painter — is what this section describes**, and it still runs on a
+> tile with no per-point stamp. ⛔ **It is not what draws the map.** A tile carrying `iaStamp` takes
+> `sectionPassProtoTile` — the STAMP painter — dispatched by `hasStampInquiry`, and its corner is
+> `§4`'s RAMP: no sector, no tangent trim, no bid, no decline, nothing constructed at the corner at
+> all. ⭐ **Read the five steps as the walk painter's construction and the vocabulary it fixed**
+> (`conD`, `cMin`, the ADA street edge); read `§4` for what the map does. ⛔ Which painter ran is a
+> question about the TILE, never a flag: `hasStampInquiry` reads it off the tile's own shape.
+
+The walk painter's corner is built entirely off the **frozen fillet** the curb actually rounded there (`shapeTiles[].fillets[] = {apex, C, r, tA, tB}`, frozen by `filletRing` in the shape pass). The pipeline, in order:
 
 1. **The bent SECTOR** (`arcSectorPoly`). The corner region is the mono-width band bent around the arc — a wedge whose **outer edge is the curb arc itself** (radius `r` about the fillet centre `C`), **inner edge its concentric offset**, and **sides the two tangent radii** (`tA`/`tB`). Extended up each leg by `c.trim` so it laps the leg slabs (closes the leg↔corner seam). `pad = shallow ∩ sector`. **No disk, ever** — `circlePoly` is only a dead-end-cap helper.
 2. **EXACT leg trim** (`tangentTrim`). Each leg strip is trimmed to **where its fillet tangent actually begins** — `dot(tangent − node, legDir)` off the frozen fillet — not the old `e.a + R` approximation. This is what makes the leg strips meet the arc with no cream step / green sliver. (Falls back to `e.a + R` only where no fillet rounds the corner.)
@@ -288,10 +295,7 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 > `perp = C→T`; `sectionPassTile` computes `C − T`, i.e. **T→C**, and it must, because `d` increases
 > INWARD from the kerb toward the arc centre. **The arrow in step 5 is backwards.**
 
-> ### ⭐⭐⭐ AND THE RAMP IS UNCONDITIONAL — `§4`'s "THE RAMP" carries the ruling (2026-09-07)
-> **Every corner gets one.** SW↔SW subsumes it (both walks at the kerb, zero length) · TL↔SW shows a
-> SLOPE connecting the two depths · TL↔TL shows the ADA pad BELOW the walk, no slope. ⛔ The two
-> depths decide the FORM, never WHETHER. A guard that fires only on a difference gives TL↔TL nothing.
+> ⭐ **The RAMP is unconditional and lives in `§4`.** ⛔ Not restated here — one home.
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).
@@ -306,8 +310,8 @@ The corner is a small, legible pipeline — each knob is one spot in `sectionPas
 |---|---|
 | **how round / how deep the arc reads** | `cMin` (step 4) — currently `min(conD)`. Use `max` → concentric at the deeper depth (Idea C: shallow walk fattens). Use a constant → fixed ADA width everywhere. |
 | **what's concrete vs parcel at the corner** | the `conD` rule (step 4, recorded per leg) — it decides how deep concrete runs before LU. |
-| **the ramp gentleness** | `rampLen` (step 5) — bigger = gentler slide, less perceptible. |
-| **the leg↔arc seam tightness** | `tangentTrim` (step 2) and the sector `margin` (`c.trim`, step 1). |
+| **the ramp gentleness** | `rampLen` — the slope RATIO (`2 ×` the depth to travel), in both painters. |
+| **the leg↔arc seam tightness** | `tangentTrim` (step 2) + the sector `margin` — ⛔ WALK PAINTER ONLY; the stamp painter has no seam to tighten. |
 | **whether the corner wraps treelawn at all** | step 3 doctrine — today the curb is always concrete; to let treelawn wrap, route part of `concrete` to `cornerTreelawn` instead (this is the *reverted* "wrap" experiment — see history). |
 | **a smooth S vs straight transition** | a `smoothstep(u)=u²(3−2u)` on any of the depth interpolations (we used it on the earlier divider-taper; the slide is currently linear). |
 
@@ -528,7 +532,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 - **§3.1 best-effort fill** — treelawn Y/N gleaned + ADA depths; the noisy slivers gone.
 - **§3.2 material override** — per-edge LU↔SW swap reads `blockCustoms`, re-strokes the FILL live off the frozen silhouette; byte-identical when un-overridden.
 - **§3.3 per-edge depth + divider** — the mono-width slice (`RIBBONS §1`): the depth override renders, the corner takes `cw + max-adjacent` (`cornerT`).
-- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). The **corner** construction (§6.1) runs in BOTH painters — `arcSectorPoly` in the walk painter, the same five steps as a stamp in ③'s.
+- **The mono-width strip swap** — two equal strips; treelawn Y/N is a material decision, not a width (sidewalk-only = "sidewalk then lawn", never collapse). ⛔ **The two painters' corners are NOT the same construction** — `arcSectorPoly` in the walk painter, `§4`'s RAMP (one multiplier on the leg, nothing at the corner) in ③'s.
 - **Dead-end caps built into the curb offset** — the cap (round semicircle / blunt segment) is part of `offsetRingVariable`, so it's tangent to the achieved per-fe width by construction (D6a, `[[project_d6a_curb_offset]]`). NB: the *ped* wrap at the cap is still open (below).
 - **One depth truth** — handle placement and FILL stroke both read `resolvePedDepths`; the handle rides the achieved curb (`sectionCurbRings`).
 - **Revert UI** — whole-scene + per-edge (§5.1).
@@ -561,13 +565,12 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
 - **⛔ Ribbon monowidth, strips variable — and the mono-width is SACROSANCT.** One uniform outer depth per block (clean corners); the **divider + materials** vary per edge. The corner is the band **bent**, a slice — never a built shape. The mono-width was the hardest-won step (the corner saga ended on it); the per-edge work builds *inside* it, never re-architects it.
 - **The FILL is curb → center.** Strips near the curb; the LU remainder flows to the polygon center (no hard property line). Both-strips-LU → an open field.
 - **Two strips always — AUTHORABLE, VARIABLE widths — they SWAP, never collapse.** *(Jacob, 2026-09-07: "inside that variable mono-width there are exactly two strips, with authorable, variable widths.")* ⛔ **EQUAL width is the calculated DEFAULT, not the rule** — this line said "EQUAL width" flatly and every session that read it built a fixed-width model. The **divider handle** authors where they meet; the **property-line handle** authors the band's total (§5). Treelawn-Y reads `grass → walk → lawn`; treelawn-N reads `walk → lawn`. The gleaned Y/N is a **material** decision, never a width — a sidewalk-only edge is the same ribbon with the materials swapped, not a half-ribbon. Both→LU is an open field.
-- **The corner is the band BENT** — a slice, never a primitive (`RIBBONS §1` invariant 1), and ⛔ **NOT predicated on the arc: it works square OR round** (invariant 3). **Located by the OWNER CHANGING**; a fillet supplies only its EXTENT where one eased that corner (§6.1).
-  ⛔ **Two things this line got wrong for months and they cost a full day on 2026-09-07:** it gave the depth as `cw + max-adjacent` while §6.1 gives `cMin = min(both owners' conD)` — **a straight contradiction between §8 and §6.1, and §8 is the page everyone reads first** — and it named `arcSectorPoly` off the frozen fillets as *the* construction, which is arc-predicated and so is invariant 3 broken in the doctrine summary itself.
+- **The corner is the band BENT** — a slice, never a primitive (`RIBBONS §1` invariant 1), and ⛔ **NOT predicated on the arc: it works square OR round** (invariant 3). ⛔ **Nothing is constructed there and it has no cross-section of its own.** ①'s `iaCorner` says WHERE; `iaArc` says how far it reaches; the depth that arrives is the **leg's**, already at the kerb. `§4` (THE RAMP).
 - **⭐ THE THREE CORNER CONFIGS, IN THE OPERATOR'S WORDS** *(Jacob, 2026-09-07)*, and they apply **at corners only**:
   · **SW↔SW** — "the corner is just a continuous stripe around the outer band." Nothing is added; the walk is already the outer strip and already reaches the curb. *(This retires the "SW↔SW → concrete→LU refinement" that stood here as open.)*
   · **TL↔TL** — "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to the street."
-  · **SW↔TL** — the RAMP (Jacob's "slope joiner", renamed 2026-09-07).
-  ⇒ **One rule, no case split: at a corner the walk REACHES THE STREET and the grass stops.** ⛔ The pad moves ONE depth; `walkTo` and the leg's arrangement are untouched, or the frontage stops responding to authoring. ▶ `node scratch/claims-swap-reaches-the-paint.mjs`
+  · **SW↔TL** — a SLOPE connecting the two depths.
+  ⇒ **One rule, no case split: the grass slopes out ALONG THE LEG, so the walk arrives at the street already.** ⛔ `walkTo` and the leg's arrangement are untouched, or the frontage stops responding to authoring. ▶ `node scratch/claims-swap-reaches-the-paint.mjs`
 - **⭐ END CAPS FOLLOW THE SAME RULES** *(Jacob, 2026-09-07)*: **no centre seam in a cap**, and where a cap meets its legs **the same connectors apply**. `§6.3` owns the coupler; ⛔ the fold is still unbuilt.
 - **⛔⛔ AND THE ONE-LINE TEST FOR ALL OF IT — `RIBBONS` Slice 2, ruled 2026-08-14: THERE IS EXACTLY ONE LICENSED HARD SEAM, `ADA → TL|LU`. ANY OTHER HARD SEAM IS A DEFECT.** Leg into corner, corner into cap, block into block are offsets of one contour, so a seam there is not constructible. ⛔ **The joints are not seam LOCATIONS — they are the places most REQUIRED to be seamless**, and "a seam belongs at a real corner, a block end, or a cap" is struck by name as the exact inversion.
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).

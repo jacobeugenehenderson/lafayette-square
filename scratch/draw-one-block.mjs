@@ -27,7 +27,16 @@ const WANT = num('--block', NaN), PAD = num('--pad', 12), NTH = num('--nth', 1)
 const STREET = (() => { const i = argv.indexOf('--street'); return i > 0 ? argv[i + 1].toLowerCase() : null })()
 
 const f = feed(scene); if (!f) process.exit(1)
-const r = buildProto(f, { quiet: false })
+// ⛔⛔ `protoProducer` — DRAW WHAT SECTION PAINTS, NOT WHAT THE PRODUCER STRUCK.
+// This harness drew `r.protoBands`, which is `buildTileGround`'s OWN band strike and is read by
+// NOTHING on screen — only by probes. The map is painted by `sectionPassProtoTile` through
+// `sectionOpen`, past the wall, off the frozen stamp; `protoProducer: true` is what routes the
+// return through it. ⇒ Without this flag the harness renders a layer no operator can ever see, and
+// a change to the FILL painter leaves the picture BYTE-IDENTICAL — which is exactly what happened:
+// two A/B renders of a rebuilt corner came out the same file, to the byte.
+// ⭐ Same class as every other instrument failure in this arc: ask what the probe is STRUCTURALLY
+// UNABLE TO SEE. This one could not see the painter.
+const r = buildProto(f, { quiet: false, protoProducer: true })
 const SA = (rg) => { let a = 0; for (let i = 0; i < rg.length; i++) { const j = (i+1)%rg.length; a += rg[i][0]*rg[j][1] - rg[j][0]*rg[i][1] } return a / 2 }
 const cen = (rg) => { let a=0,cx=0,cy=0; for(let i=0;i<rg.length;i++){const j=(i+1)%rg.length;const c=rg[i][0]*rg[j][1]-rg[j][0]*rg[i][1];a+=c;cx+=(rg[i][0]+rg[j][0])*c;cy+=(rg[i][1]+rg[j][1])*c} a/=2; return a?[cx/(6*a),cy/(6*a)]:rg[0] }
 const inRing = (rg,x,y)=>{let c=false;for(let i=0,j=rg.length-1;i<rg.length;j=i++){const[a,b]=rg[i],[e,d]=rg[j];if((b>y)!==(d>y)&&x<(e-a)*(y-b)/(d-b)+a)c=!c}return c}
@@ -86,10 +95,10 @@ const layer = (rings, fill, stroke, w) => {
   if (!keep.length) return
   P.push(`<path d="${keep.map(d).join(' ')}" fill="${fill}" fill-rule="evenodd" stroke="${stroke}" stroke-width="${w}"/>`)
 }
-layer(r.protoBands?.lu,       '#3f4a33', 'none', 0)
-layer(r.protoBands?.treelawn, '#5d8f35', 'none', 0)
-layer(r.protoBands?.sidewalk, '#efe9dc', 'none', 0)
-layer(r.protoBands?.curb,     '#6f6f68', 'none', 0)
+layer(Object.values(r.luByClass || {}).flat(),     '#3f4a33', 'none', 0)
+layer(Object.values(r.treelawnByLu || {}).flat(),  '#5d8f35', 'none', 0)
+layer(r.sidewalk,                                  '#efe9dc', 'none', 0)
+layer(r.curb,                                      '#6f6f68', 'none', 0)
 layer(r.protoCurb,            'none', '#2fe0e0', W/400)     // ② the curb
 P.push(`<path d="${d(pick.ring)}" fill="none" stroke="#f0b429" stroke-width="${W/700}"/>`)  // ① this hole
 const out = `scratch/one-block-${scene}.svg`
