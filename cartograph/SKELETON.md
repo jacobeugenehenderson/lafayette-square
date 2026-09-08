@@ -350,6 +350,25 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 - **One straight extension from the zone-exit vertex, no interpolated crossing** (an interpolated boundary point lands on the kinked segment → a subtle bend in the stroked edge).
 - **Connectivity:** the corrected tip is spliced onto the through-road's `faceStreets` chain (a shared vertex) so the median face CLOSES against the through-road's segment instead of pinching to a point.
 
+> ### ⛔⛔ AND THE OVERLAY DOES NOT REACH ① — SO IT REACHES NO CORNER. Measured 2026-09-08.
+> `strokePoints` is written in `derive.js` and consumed **there** (E2's median lens + `faceStreets`).
+> It is **NOT promoted**: `0 of 343` chains carry it in `src/data/ribbons.json`, and the string does
+> not occur anywhere outside `derive.js`. `mintProtopolygon({ streets: streetsOrig })` takes
+> `streets[].points` — the survey chain. ⇒ **the prevailing-direction correction is invisible to ①,
+> to the ease, and to every corner.**
+> ⭐ **THIS IS THE CONSTRAINT ON GENERALISING IT** *(Jacob, 2026-09-08: "streets should continue
+> their predominant direction into an intersection… I believe this will need to happen before the
+> ease")*. The mechanism exists and is eye-gated; what is missing is that it never travels far
+> enough. ⛔ And it cannot be fixed by moving `points`: rule 1 above is **"construction overlay,
+> NEVER a survey edit"**, and the 2026-07-21 frame-straighten was reverted precisely for relocating
+> an endpoint (deg-3 T → deg-1). The correction must be **CARRIED** — promoted through
+> `ribbons.json` and read by the mint — so the survey chain stays immutable and the corrected
+> approach still arrives before the ease.
+> ⚠️ Scope today is the divided→through class only: LS **1** tip, HPDM **5**. "Every leg continues
+> its predominant direction IN" is a large widening of `OVL_KINK_DEG`'s population, not a port.
+> ▶ `node scratch/claims-intersections-are-over-described.mjs <scene>` sizes what it would face:
+> junction centreline density, median 4 vertices but **p90 26 on HPDM against 8 on LS**.
+
 **Surgical + regression-clean.** HPDM: 5 tips map-wide. LS: **1 tip** (`geyer-avenue-2`) — the four park corners are **UNTOUCHED** (they run straight in, no kink); `correctness-detector` CLEAN junctions unchanged (75→75), +2 sub-8m² cosmetic slivers at the one deliberately-fixed node. **Live home: `derive.js` `correctedTipChain` + the through-edge overlay pass** (consumed by E2's `a`/`b`, `faceStreets`, and the `strokePoints` output field). Trail: `_archive/BRIEF-through-road-edge-straight-LANDED-2026-07-22.md`.
 
 ---
