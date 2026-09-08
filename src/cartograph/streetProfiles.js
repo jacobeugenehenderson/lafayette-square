@@ -195,7 +195,11 @@ export function measureFromSeed(seed, type) {
     }
     // Survey-pinned side → sidewalk sits where the survey put it.
     if (sd && sd.source !== 'standard') {
-      return { pavementHW, treelawn: sd.treelawn, sidewalk: sd.sidewalk, terminal: 'sidewalk' }
+      // ⛔ `tlClamped` travels with the side: its treelawn 0 is the ASPHALT CLAMP's residue, not a
+      // surveyed fact, and the glean must not read it as "no treelawn here" (`skeleton.js`'s
+      // `fromSurveyDist`). Carried, never re-derived — the one place that knows, stamping it.
+      return { pavementHW, treelawn: sd.treelawn, sidewalk: sd.sidewalk, terminal: 'sidewalk',
+               ...(sd.tlClamped ? { tlClamped: true } : {}) }
     }
     // Unsurveyed side of a street whose OTHER side is surveyed: likely faces
     // open space / park — modest grass strip (mirrors defaultSideMeasure).

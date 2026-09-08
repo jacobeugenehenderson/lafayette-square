@@ -1414,14 +1414,29 @@ function stampCustomWidths(streets, survey, sidewalks) {
   // lanes/AASHTO seed unless that would cross the sidewalk.
   const fromSurveyDist = (seed, swDist) => {
     const swInner = swDist - SV_SIDEWALK / 2
-    const pav = Math.min(seed.pavementHW, Math.max(0.5, swInner - CURB_WIDTH))
+    const room = swInner - CURB_WIDTH
+    const pav = Math.min(seed.pavementHW, Math.max(0.5, room))
     const treelawn = Math.max(0, swInner - (pav + CURB_WIDTH))
+    // ⛔⛔ A CLAMPED ZERO IS AN ARTIFACT, NOT A SURVEY FACT — and downstream it flips a MATERIAL
+    // decision. When the lanes/AASHTO asphalt seed is wider than the room the surveyed walk leaves,
+    // `pav` is pinned flush and the treelawn is crushed to exactly 0. `gleanTreelawn` then reads
+    // that 0 and answers "the city says there is no treelawn here" — N — which is `SECTION §3.1`'s
+    // Y/N, i.e. WHICH STRIP IS GRASS, not merely a width.
+    // ⭐ AND THE SUSPECT NUMBER IS THE ASPHALT, NOT THE TREELAWN: the clamp fires precisely because
+    // the LANES GUESS did not fit a MEASURED sidewalk position. Reading its residue as evidence
+    // about the treelawn is a guess laundering itself into a fact.
+    // ⛔ NOTHING IS REDISTRIBUTED HERE — every width is an operator handle and the override is the
+    // product (`ORIENTATION`, Layer 0 q3). This records that the value is UNKNOWN rather than
+    // measured, so the glean stops treating it as a survey N.
+    // ▶ `node scratch/claims-the-survey-reaches-the-measure.mjs <scene>` — LS 83 of 301 sides.
+    const tlClamped = treelawn <= 0.01 && seed.pavementHW > room + 0.01
     return {
       pavementHW: +pav.toFixed(2),
       treelawn: +treelawn.toFixed(2),
       sidewalk: +SV_SIDEWALK.toFixed(2),
       blockEdgeHW: +(swDist + SV_SIDEWALK / 2).toFixed(2),
       source: 'survey',
+      ...(tlClamped ? { tlClamped: true } : {}),
     }
   }
   // Assessor tier: ROW/2 IS the block edge; work the ped section back from it.

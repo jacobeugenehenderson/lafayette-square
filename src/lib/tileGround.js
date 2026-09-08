@@ -2128,8 +2128,21 @@ const TREELAWN_YN_THRESHOLD = 0.6   // natural gap below this → no treelawn (t
 const STD_TREELAWN = 1.5            // standard treelawn depth where present (m) — tunable
 const ADA_SIDEWALK = 1.5            // ADA-standard sidewalk depth — the Revert default (m) — tunable
 const VALLEY_LO = 0.25, VALLEY_HI = 0.75   // the bimodal valley span (the ~92 ambiguous run-sides)
-const gleanGap = (measure, side) =>
-  Math.max(0, Number.isFinite(measure?.[side]?.treelawn) ? measure[side].treelawn : 0) >= TREELAWN_YN_THRESHOLD
+// ⛔⛔ A CLAMPED ZERO IS NOT A SURVEYED ZERO. `skeleton.js`'s `fromSurveyDist` pins the asphalt
+// flush when the lanes/AASHTO seed will not fit inside a MEASURED sidewalk position, and the
+// treelawn is crushed to exactly 0 as the residue. Thresholding that 0 answers "the city says no
+// treelawn here" — and this Y/N is a MATERIAL decision (`SECTION §3.1`: which strip is grass),
+// not a width. ⭐ The suspect number is the ASPHALT, not the treelawn: the clamp fires *because*
+// the guess did not fit the measurement. `tlClamped` says the value is UNKNOWN, so the side falls
+// back to the standard verdict instead of inheriting a guess's residue as evidence.
+// ⛔ Nothing is redistributed and no width moves — every width is an operator handle and the
+// override is the product. This changes only what the glean is allowed to CONCLUDE.
+// ▶ `node scratch/claims-the-survey-reaches-the-measure.mjs <scene>` · LS 83 of 301 sides.
+const gleanGap = (measure, side) => {
+  const sd = measure?.[side]
+  if (sd?.tlClamped) return true          // unknown, not N — the standard sidewalk-eligible default
+  return Math.max(0, Number.isFinite(sd?.treelawn) ? sd.treelawn : 0) >= TREELAWN_YN_THRESHOLD
+}
 // ── PER-STREET glean (2026-06-22) ──────────────────────────────────────────
 // The raw gap-threshold mis-assigns the UNMEASURED side of a one-sided street.
 // In LS, 14 streets are surveyed on ONE side (`source:'sidewalk-1side'`) and 4
