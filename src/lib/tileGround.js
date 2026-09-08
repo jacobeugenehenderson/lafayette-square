@@ -4073,29 +4073,30 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // 0 inside the corner, and RAMPING across the edges the densifier just made room on. A pair is
     // returned only where the two ends differ, so every unchanged edge stays a scalar and the
     // common path is byte-identical.
+    // ⭐⭐⭐ THE TAPER HAPPENS TO THE LEG AND NOT THE CORNER. *(Jacob, 2026-09-07, twice — the second
+    // time in capitals, because I had done it to the corner anyway.)*
+    // ⛔⛔ THE CORNER GETS NOTHING. No cross-section of its own, no pad depth, no override. It comes
+    // out flush concrete simply BECAUSE THE LEG'S GRASS HAS ALREADY GONE TO ZERO by the time it
+    // arrives — the ADA ramp is flush to the kerb through the whole ramp, and that is a consequence
+    // of the leg, not a rule about the corner.
+    // ⭐ AND THAT IS `RIBBONS §1` INVARIANT 1 SATISFIED RATHER THAN WORKED AROUND: "the corner is
+    // the band BENT — a slice of the same continuous concentric offsets, NEVER a separately-
+    // constructed primitive… same materials, SAME DEPTHS, bent around an arc." Nothing is
+    // constructed at the corner and nothing decides anything there. `§6.1` step 3 (the street edge
+    // of a corner is concrete ALWAYS) is then an OUTCOME, not a second rule that has to agree.
+    // ⛔ WHAT I HAD, AND IT WAS WRONG: `k` interpolated between a CORNER cross-section (concrete to
+    // `cMin`) and the leg's. That is a cross-section belonging to the corner — the primitive
+    // invariant 1 forbids, spelled as a depth. I added it after "the slope is happening inside the
+    // ramp area", read as "the pad needs its own cross-section". It needed the opposite: the pad
+    // needs NO cross-section, and the slope needed to be entirely the leg's.
+    // ⭐ `k` scales ONE thing — the OUTER STRIP'S WIDTH on the leg: 1 on the open leg, 0 where it
+    // meets the corner, ramping across the edges the densifier made room on. So a kerb-side walk
+    // (`outWalk`) is untouched, which is why SW↔SW is "subsumed"; a set-back walk has its grass
+    // taper out and reaches the kerb by the corner, which is TL↔TL's "ADA pad below" and SW↔TL's
+    // slope, both falling out of the one multiplier with no case split.
     const kS = p.dkS, kE = p.dkE, src = p.dsrc
-    // ⭐⭐⭐ INSIDE THE PAD THERE IS ONE CROSS-SECTION, NOT TWO LEGS' HALVES MEETING.
-    // *(Jacob, on a 4-way at zoom: "looks like the slope is happening inside the ramp area.")*
-    // ⛔ THAT WAS EXACTLY IT. Each half of the arc was still resolving its OWN LEG's arrangement, so
-    // at a corner whose two legs differ the two spans MET MID-ARC and jumped — a step INSIDE the pad,
-    // which is the notch. The ramp outside was correct and irrelevant: the seam was never on the leg.
-    // ⭐ `§6.1` step 4 rules it and `cornerAt` already stores the number: "a clean constant-offset
-    // ring at `cMin = min(both legs' concrete depth)`. The band shallower than `cMin` → concrete;
-    // deeper → LU (parcel-matched)." One ring, one depth, across the whole arc — which is also
-    // `RIBBONS §1` invariant 1, the band BENT rather than two things meeting.
-    // ⇒ `k` now interpolates between two whole CROSS-SECTIONS: the CORNER's at k=0 and the LEG's at
-    // k=1. Inside the pad every edge takes the corner's, so a seam there is not constructible; on
-    // the ramp edges the whole cross-section slides from one to the other; on the open leg it is the
-    // leg's, untouched. ⛔ No fourth configuration and no branch — one interpolation.
-    const dcm = p.dcm
-    const at = (j, k, f) => {
-      const l = L(src[j]), c = dcm[j]
-      if (k >= 1 || c == null) return f(l, false, 0)     // the LEG's own arrangement
-      const legV = f(l, false, 0), padV = f(l, true, c)  // the PAD's: concrete to cMin, no lawn
-      return k <= 0 ? padV : padV + (legV - padV) * k
-    }
     const span = (j, f) => {
-      const a = at(j, kS[j], f), b = at(j, kE[j], f)
+      const l = L(src[j]), a = f(l, kS[j]), b = f(l, kE[j])
       return a === b ? cw + a : [cw + a, cw + b]
     }
     return {
@@ -4105,10 +4106,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // ⭐ `pad` = "use the corner's cross-section here"; `c` = its `cMin`. `§6.1` step 4: concrete
       // from the kerb to `cMin`, parcel beyond, and NO treelawn — the street edge of a corner is
       // concrete ALWAYS (step 3), so the grass has already stopped by the time the pad begins.
-      walkFromD: (j) => span(j, (l, pad) => pad ? 0 : (l.outWalk ? 0 : (l.inWalk ? l.dOut : 0))),
-      walkToD:   (j) => span(j, (l, pad, c) => pad ? c : (l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0))),
-      lawnFromD: (j) => span(j, (l, pad) => pad ? 0 : (l.outWalk ? l.dOut : 0)),
-      lawnToD:   (j) => span(j, (l, pad) => pad ? 0 : (l.inWalk ? l.dOut : lim)),
+      walkFromD: (j) => span(j, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
+      walkToD:   (j) => span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
+      lawnFromD: (j) => span(j, (l) => l.outWalk ? l.dOut : 0),
+      lawnToD:   (j) => span(j, (l, k) => l.inWalk ? l.dOut * k : lim),
       walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
       walkTo:   (i) => cw + L(i).walkTo,
       lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
