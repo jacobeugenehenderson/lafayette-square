@@ -65,7 +65,20 @@ const DEFAULT_CAP_BY_KIND = {
 // where the street curb isn't, because paths offset with the robust Clipper
 // offsetter and buildPathRibbons never sees a street polygon (HANDOFF: the
 // smoother is path-kind-gated and physically cannot reach a street).
-const ORGANIC_PATH_KINDS = new Set(['footway', 'cycleway', 'path'])
+// ⭐ ALLEYS JOINED THE SMOOTHED SET 2026-09-08 (Jacob: "alleys need chain smoothing"). This
+// reverses the BUILT/ORGANIC split above for alleys ONLY, and the split's own safeguard is what
+// makes it safe: `smoothChain` pins any vertex turning harder than `CORNER_TOL_DEG` (30°) as
+// INTENTIONAL and leaves it hard, so a genuine right-angle alley corner survives untouched on a
+// town nobody has inspected. What it removes is the FACETING — a quarter-turn carried by several
+// vertices of ~10-19°, which reads as a chain of flats on the drawn ribbon.
+// ▶ MEASURED on LS: 159 alley chains, 4.3 pts each · interior turn p50 0.6° · p90 25.9° · max 91°.
+//   32 of 372 interior vertices turn past the 30° pin and STAY HARD — real alley corners, kept —
+//   while 82 sit in the 5-30° band that reads as faceting and is what this bows.
+//   ⛔ RE-RUN, NEVER QUOTE — and read `ribbons.alleys`, NOT the `service` chains in
+//   `ribbons.streets`. They are different collections (9 vs 159 here) and I sized this off the
+//   wrong one first: `service` in `streets` is not the alley ribbon.
+// ⛔ `steps` stays BUILT — a stepped run is meant to be crisp between endpoints.
+const ORGANIC_PATH_KINDS = new Set(['footway', 'cycleway', 'path', 'alley'])
 const PATH_SMOOTH = 0.5   // tension → ~6 m sample spacing (spacingFor); gentle sweep
 function smoothPathPoints(kind, points) {
   if (!ORGANIC_PATH_KINDS.has(kind)) return points
