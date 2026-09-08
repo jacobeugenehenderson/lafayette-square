@@ -3801,6 +3801,33 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
+  // ══ ONE ARC, ONE DEPTH — `§6.1` step 4's `cMin`, restored as a STAMP ═════════════════════════
+  // ⛔⛔ THE DEFECT, IN THE OPERATOR'S WORDS: *"There's not supposed to be a hard edge angle in the
+  // middle of the corner!"* (Jacob, 2026-09-08). An arc's OWNER CHANGES at its middle — that is
+  // what makes it a corner — so with no depth of its own, each half of the arc takes its own leg's
+  // cross-section and the two meet at a STEP, mid-arc. `RIBBONS §1` invariant 1 says the opposite
+  // in as many words: the same cross-section persists into the corner, *"same materials, SAME
+  // DEPTHS, bent around an arc."*
+  // ⭐⭐ AND `min` IS NOT A CHOICE I MADE — IT IS MEASURED OFF THE SHIPPED SLAB, the map whose
+  // corners were correct: the corner's walk runs kerb → the SHALLOWER leg's concrete depth, about
+  // 5:1 over the deeper one, in all three arrangements.
+  // ▶ `node scratch/_fx-slab-corner-spec.mjs <slabdir>` — reads the artifact, restates nothing.
+  // ⛔ NOT A CONSTRUCTED PRIMITIVE (invariant 1) and not a decline: one depth is resolved for the
+  // arc and the same four offsets draw it, which is the whole difference between a stamp and the
+  // walk painter's bid.
+  const arcMin = new Map()                    // `${ri}|arcId` → cMin for that whole arc
+  for (const p of parts) {
+    const arc = st.iaArc?.[p.si]; if (!arc) continue
+    for (let q = 0; q < p.ring.length; q++) {
+      if (!inC.has(`${p.ri}|${q}`)) continue
+      const id = arc[q]; if (id == null) continue
+      const m = M(p.ri, q); if (!m) continue
+      const l = arrOf(m), conD = l.inWalk ? lim : l.dOut       // §6.1 step 4's `conD`, per leg
+      const key = `${p.ri}|${id}`, cur = arcMin.get(key)
+      if (cur == null || conD < cur) arcMin.set(key, conD)
+    }
+  }
+
   // ══ THE RAMP NEEDS VERTICES ON THE LEG, SO PUT THEM THERE ════════════════════════════════════
   // ⭐⭐⭐ THE MISSING HALF, BUILT. *(Jacob: "now add the vertices on the leg.")* `SECTION §4`'s RAMP
   // entry and this file's own comment both filed it: "the honest home for it is a per-vertex ramp,
@@ -3955,17 +3982,26 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const l = L(src[j]), a = f(l, kS[j]), b = f(l, kE[j])
       return a === b ? cw + a : [cw + a, cw + b]
     }
+    // ⭐ Inside a licensed arc every edge answers with the ARC'S one depth, so the contour carries
+    // no step across the corner: the band is BENT, not two bands meeting. Off an arc this returns
+    // undefined and the leg is untouched — the leg keeps its own cross-section and its own ramp.
+    const cAt = (j) => { const e = src[j], id = st.iaArc?.[p.si]?.[e]
+      return (id != null && inC.has(`${p.ri}|${e}`)) ? arcMin.get(`${p.ri}|${id}`) : undefined }
     return {
       // ⛔ THE TAPER SCALES THE OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK.
       // A kerb-side walk is already at the street and the corner changes nothing about it — which
       // is why SW↔SW is "subsumed" and why it must stay untouched here.
-      // ⭐ `pad` = "use the corner's cross-section here"; `c` = its `cMin`. `§6.1` step 4: concrete
-      // from the kerb to `cMin`, parcel beyond, and NO treelawn — the street edge of a corner is
-      // concrete ALWAYS (step 3), so the grass has already stopped by the time the pad begins.
-      walkFromD: (j) => span(j, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
-      walkToD:   (j) => span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
-      lawnFromD: (j) => span(j, (l) => l.outWalk ? l.dOut : 0),
-      lawnToD:   (j) => span(j, (l, k) => l.inWalk ? l.dOut * k : lim),
+      // ⭐ `§6.1` step 4 at an arc: concrete from the kerb to `cMin`, and the lawn is a ZERO span —
+      // deeper than `cMin` is PARCEL, never a treelawn bent round the kerb (step 3).
+      walkFromD: (j) => { const c = cAt(j); return c == null ? span(j, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)) : cw },
+      walkToD:   (j) => { const c = cAt(j); return c == null ? span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)) : cw + c },
+      // ⛔ NOT AN EMPTY SPAN. `luByLu` only floods inboard of the WHOLE envelope, so a zero-width
+      // lawn at an arc leaves `cMin → lim` painted by NOBODY — a hole at every corner, which is
+      // what an empty span cost on the first attempt. `§6.1` step 4 says where it goes: deeper
+      // than `cMin` is PARCEL, routed through `tlByLu[lu]`, i.e. the tile's own land use — not a
+      // treelawn bent round the kerb, and not an absence.
+      lawnFromD: (j) => { const c = cAt(j); return c == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw + c },
+      lawnToD:   (j) => { const c = cAt(j); return c == null ? span(j, (l, k) => l.inWalk ? l.dOut * k : lim) : cw + lim },
     }
   }
   if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {

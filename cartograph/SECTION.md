@@ -168,9 +168,26 @@ pointer that does not resolve reads as evidence already gathered.)*
   | **SW↔SW** | both at the kerb, equal | **nothing — the ramp is SUBSUMED.** Zero length by construction |
   | **TL↔SW** | different | **a SLOPE**, connecting the two depths |
   | **TL↔TL** | both set back, equal | **the ADA pad BELOW** (outboard of the walk, reaching the street) — **no slope** |
-  ### ⭐⭐⭐ AND THE WHOLE CONSTRUCTION IS **ONE MULTIPLIER ON THE LEG.**
-  The corner gets **nothing** — no cross-section, no pad depth, no override (`RIBBONS §1`
-  invariant 1). What exists is a scalar on the **outer strip's width**: **1** along the open leg,
+  ### ⭐⭐⭐ THE SLOPE IS ONE MULTIPLIER ON THE LEG — AND THE ARC HAS ONE DEPTH.
+  ⛔⛔ **THIS READ *"the corner gets NOTHING — no cross-section, no pad depth"*, AND THAT HALF WAS
+  A REGRESSION, MEASURED 2026-09-08.** The corner **constructs** nothing — invariant 1 stands, no
+  primitive, no sector, no bid — but it **resolves ONE depth for the whole arc**, `§6.1` step 4's
+  `cMin = min(both legs' conD)`. ⭐ An arc's OWNER CHANGES at its middle; that is what makes it a
+  corner. So with no depth of its own, each half of the arc takes its own leg's cross-section and
+  the two meet at a **step, mid-arc** — the operator's *"there's not supposed to be a hard edge
+  angle in the middle of the corner."*
+  ⭐⭐ **`min` IS NOT A PREFERENCE — IT IS READ OFF THE SHIPPED SLAB**, the map whose corners were
+  correct: the corner's walk runs kerb → the **shallower** leg's concrete depth, ~5:1 over the
+  deeper one, in all three arrangements. ▶ `node scratch/_fx-slab-corner-spec.mjs <slabdir>`
+  ⚠️ **And the same probe settles a doctrine question:** grass at the kerb inside a corner happens
+  in the correct map — a few percent of corners. **UNCOMMON, NOT FORBIDDEN** (Jacob, 2026-09-08).
+  ⛔ So `§6.1` step 3 is a default, never a gate, and no check may score it as a defect.
+  ⚠️ **`claims-every-corner-is-one-of-three` CANNOT SEE THIS AND CURRENTLY LIES IN BOTH DIRECTIONS:**
+  step 4 routes the band beyond `cMin` to `tlByLu[lu]`, which is the *treelawn accumulator*, and the
+  gate tests "is there lawn anywhere across the pad's full depth" — so it scores the prescribed
+  parcel fill as *grass on the ADA pad*. **Open; do not tune against it.**
+
+  What exists on the leg is a scalar on the **outer strip's width**: **1** along the open leg,
   **0** where the leg ends, ramping across vertices the painter inserts on the leg itself. A
   kerb-side walk is untouched by it (SW↔SW subsumed); a set-back walk has its grass slope out and
   arrives at the kerb (TL↔TL's pad below, TL↔SW's slope). ⇒ the ADA ramp is **flush to the kerb
