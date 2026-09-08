@@ -3934,66 +3934,6 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         if (best && best.got.length) slidWalk.push(...best.got)
       }
     }
-      // ══ §6.1 STEP 5 AT A CORNER — THE WALK SLIDES TO THE KERB ON ITS OWN LEG ═══════════════════
-    // ⭐⭐⭐ RECOVERED, NOT DESIGNED — `sectionPassTile:3143`, live and correct since 2026-06-10.
-    // It did not come across when ③'s corner was re-expressed as a STAMP, and that is the
-    // regression: the pad (steps 3–4) arrived, the SLIDE did not. Jacob: "it's been fixed for
-    // months" · "the only correct blocks as far as I can see are sw <> sw."
-    //
-    // ⛔ WHY THE STAMP ALONE CANNOT DO IT. The walk painter TRIMS each leg back to the fillet's
-    // tangent (`tangentTrim`, step 2), so the leg's treelawn PHYSICALLY ENDS at the corner. ③ never
-    // cuts the ring — that is why a seam is unconstructible — so the grass runs into the corner and
-    // only a per-edge depth STEP stops it. A step is not a trim: the offset bridges it.
-    //
-    // ⛔⛔ AND THE RAMP STARTS AT THE **TANGENT**, NOT AT THE CORNER VERTEX. `sectionPassTile` is
-    // explicit — `pt(s,d) = T + dir·s + perp·(cw+d)`, where `T` is `best.tA`/`best.tB`. I first
-    // struck it from the apex, and it did NOTHING VISIBLE: the corner's extent is a ~7 m arc over
-    // which the pad already brings the walk to the kerb, `rampLen` is ~3 m, so the whole ramp sat
-    // INSIDE the pad and added walk where there already was walk. *(Jacob, on the lit app: "no
-    // visible change at local 5173." The geometry was correct and located where nothing needed it.)*
-    // ⭐ THE STEP IS AT THE FAR END OF THE PAD — where the extent ends and the leg's own arrangement
-    // resumes, `walkFrom` jumping from `cw` back to `cw + dOut`. That is the discontinuity, so that
-    // is where the transition belongs, running OUTWARD up the leg.
-    //
-    // ⛔ ADDITIVE, UNIONED IN, NEVER CUT — a cut re-joined along its own edge leaves Clipper two
-    // touching records and the band reads BROKEN at unchanged area (79 → 54, once already).
-    // ⛔ NO SIZE HARDWIRED — `rampLen` is twice the depth the walk travels: a slope ratio.
-    for (const p2 of parts) {
-      const ring = p2.ring, n = ring.length
-      const done = new Set()
-      for (let q = 0; q < n; q++) {
-        if (!seamAt.has(`${p2.ri}|${q}`)) continue
-        // the pad's own extent on this ring — its two ends ARE the tangents
-        let s0 = q, len = 0
-        while (len < n && cornerAt.has(`${p2.ri}|${(s0 - 1 + n) % n}`)) { s0 = (s0 - 1 + n) % n; len++ }
-        let e1 = q
-        while (len < n && cornerAt.has(`${p2.ri}|${e1}`)) { e1 = (e1 + 1) % n; len++ }
-        // two tangents: `s0` (walking backward up its leg) and `e1` (forward up its leg)
-        for (const [tv, away] of [[s0, (s0 - 1 + n) % n], [e1, e1 % n]]) {
-          const kk = `${p2.ri}|${tv}|${away}`; if (done.has(kk)) continue; done.add(kk)
-          const m = M(p2.ri, away); if (!m) continue
-          const a = arrOf(m)
-          const conMax = a.dOut                    // where this leg's walk begins, past the kerb
-          if (!(conMax > 1e-6)) continue           // already at the kerb — nothing to slide
-          const T = ring[tv]
-          const A2 = tv === s0 ? ring[away] : ring[(away + 1) % n]
-          const dir = nrm2([A2[0] - T[0], A2[1] - T[1]])
-          const rampLen = conMax * 2
-          const at = (pv, s2, d) => [T[0] + dir[0] * s2 + pv[0] * (cw + d), T[1] + dir[1] * s2 + pv[1] * (cw + d)]
-          // at the tangent the whole setback `[0, conMax]` is walk (the pad reaches the street);
-          // by `rampLen` up the leg it is gone and the leg's own arrangement resumes untouched.
-          const quadFor = (pv) => [at(pv, 0, 0), at(pv, 0, conMax), at(pv, rampLen, 0)]
-          // ⭐ THE INWARD NORMAL IS DECIDED BY ASKING THE BAND, never by winding.
-          let best2 = null
-          for (const pv of [[-dir[1], dir[0]], [dir[1], -dir[0]]]) {
-            const got = intersectRings(fullBand, [quadFor(pv)])
-            const ar = got.reduce((tot, g) => { let x = 0; for (let i = 0; i < g.length; i++) { const j = (i + 1) % g.length; x += g[i][0] * g[j][1] - g[j][0] * g[i][1] } return tot + Math.abs(x / 2) }, 0)
-            if (!best2 || ar > best2.a) best2 = { got, a: ar }
-          }
-          if (best2 && best2.got.length) slidWalk.push(...best2.got)
-        }
-      }
-    }
   }
 
   const mk = (p) => {
