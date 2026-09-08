@@ -3995,15 +3995,25 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const L = Math.hypot(b[0] - a[0], b[1] - a[1])
       if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1); continue }
       const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+      // ⛔⛔ A LEG SHORTER THAN ITS RAMP TAKES THE LEG IT HAS. This used to REFUSE the split, and
+      // the refusal was the residue: **317 of the 380 remaining steps sat on an edge under 3 m** —
+      // short block faces, where the ramp did not fit and the depth went back to jumping.
+      // ⭐ Shrinking to the leg's own extent hardwires NOTHING — it is the leg's length, not a
+      // chosen number — and it is the ruled behaviour, not a clamp on the design: `§6.9.5`, a
+      // feature that cannot fit "goes to ZERO there". A shorter leg gets a steeper ramp, which is
+      // what a short block face looks like on the ground.
+      // ⛔ Two corners on one edge each get at most HALF of it, so the two ramps cannot overrun
+      // each other — the same topological bound `easeContour` uses ("a tangent point may not pass
+      // its leg's midpoint, because past that the leg belongs to the next corner").
+      const room = (backC && fwdC) ? L / 2 : L
+      const r2 = Math.min(rampLen, room)
+      if (!(r2 > 1e-6)) { rampShort++; push(a, i, 0, 0); continue }
       if (backC && fwdC) {
-        if (L <= 2 * rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
-        push(a, i, 0, 1); push(at(rampLen / L), i, 1, 1); push(at(1 - rampLen / L), i, 1, 0)
+        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       } else if (backC) {
-        if (L <= rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
-        push(a, i, 0, 1); push(at(rampLen / L), i, 1, 1)
+        push(a, i, 0, 1); push(at(r2 / L), i, 1, 1)
       } else {
-        if (L <= rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
-        push(a, i, 1, 1); push(at(1 - rampLen / L), i, 1, 0)
+        push(a, i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       }
     }
     p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE
@@ -6550,6 +6560,28 @@ export function buildTileGround(ribbons, opts = {}) {
     const protoBase = new Map()          // skelId → the pre-authoring base measure
     streetsOrig.forEach((st, i) => { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, measures[i]) })
     for (const st of gradeSep) { const k = st?.skelId ?? st?.name; if (k != null && !protoBase.has(k)) protoBase.set(k, st?.measure) }
+    // ⭐⭐⭐ skelId → the CANONICAL ROAD identity. Supplied because the consumer asks "is this the
+    // same ROAD?" and, without an answer, treats every chain cut as a corner.
+    // ⛔⛔ `protoRoadKey` EXISTED ONLY IN A COMMENT. Twenty lines downstream a comment states that
+    // `roadKey` "is SUPPLIED (it was refused, and that refusal was the bug)" and even records the
+    // count it moved — 511 → 593 corners — for a map that is never built and a field never assigned.
+    // Measured: `run.roadId` is undefined on ALL 1,190 of LS's ① runs (chain path: 548 of 582 carry
+    // it), so `isNameTransition` returns false everywhere and EVERY chain cut mints a corner where
+    // the block does not turn. 1,185 minted sites against ①'s 532 stamped corners; 653 of them sit
+    // on no corner at all, median 78 m from the nearest. That is the chevron.
+    // ⭐ Reading the street table here is legitimate and ruled: this is the PRODUCER, pre-Wall, and
+    // `RIBBONS §1` names the mint as "the one place a chain may be read". `§1` also files this
+    // exactly — "OWED: the road reasoning still resolves live because ①'s frozen owners carry only
+    // `skelId`… `mintProtopolygon` stamps it now but it reaches nothing until a re-pour." This
+    // supplies it live so it reaches the paint without waiting for one.
+    // ⛔ BOTH UNIONS, AS SCALARS — the downstream comment's own warning, and it is a real trap:
+    // storing an object makes every comparison a REFERENCE compare, so every owner change classes
+    // as "different roads" and the census reads clean while the map gets worse.
+    const protoRoadKey = new Map()       // skelId → { roadId, throughId }, both scalar
+    const addRoad = (st) => { const k = st?.skelId ?? st?.name; if (k == null || protoRoadKey.has(k)) return
+      protoRoadKey.set(k, { roadId: (st.roadId || st.skelId || st.name) ?? null,
+                            throughId: (st.throughId || st.roadId || st.skelId || st.name) ?? null }) }
+    streetsOrig.forEach(addRoad); gradeSep.forEach(addRoad)
     // ⭐⭐⭐ THE UNIT IS THE LEG — `SECTION §3.3` step 1, "resolve a SINGLE per-edge depth… use
     // this ONE resolution everywhere", and §5, "Section edits are ALWAYS per-fe".
     // ⛔ A ROAD-LEVEL MERGE LIVED HERE ON 2026-09-07 AND IT WAS WRONG TWICE OVER. It averaged the
@@ -7451,7 +7483,11 @@ export function buildTileGround(ribbons, opts = {}) {
               // treelawn Y/N is "gleaned from data", and `resolvePedDepths(baseMeasure, side, custom)`
               // is the one depth truth the FILL and the handle both read. Surveyed DATA keyed by
               // frozen identity, not chain geometry — it crosses the wall by the ruled rule.
-              if (!cur || cur.key !== key) { cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [],
+              if (!cur || cur.key !== key) { const rk = protoRoadKey.get(o.skelId) || null
+                cur = { key, skelId: o.skelId, side: o.side, segOrd: o.segOrd, poly: [],
+                // ⭐ SUPPLIED, NOT REFUSED — see `protoRoadKey` at the mint. Without these the
+                // consumer cannot ask "same road?" and every chain cut becomes a corner.
+                roadId: rk?.roadId ?? null, throughId: rk?.throughId ?? null,
                 // ⭐ ROAD-continuous ped, per-chain everything else. `roadKey` is SUPPLIED (it was
                 // refused, and that refusal was the bug): a consumer must be able to ask "is this
                 // the same road" without asking the chain graph.
