@@ -33,6 +33,7 @@ for (const scene of scenes) {
   const f = feed(scene); if (!f) { failures++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   const steps = [], lawnKilled = [0, 0]
+  sectionDump.ramp.length = 0
   let short = 0, edges = 0
   const longPerFrontage = []
   for (const st of T) {
@@ -55,26 +56,30 @@ for (const scene of scenes) {
         if (L > 5) run++
       }
       if (own != null) longPerFrontage.push(run)
-      // the step: corner↔leg boundaries, and what the band's outer edge does across ONE vertex
-      for (let i = 0; i < n; i++) {
-        const a = rows[i], b = rows[(i + 1) % n]; if (!a || !b) continue
-        if ((a.corner == null) === (b.corner == null)) continue        // not a corner↔leg boundary
-        steps.push(Math.abs(a.walk[0] - b.walk[0]))
-        const leg = a.corner == null ? a : b
-        lawnKilled[1]++
-        if ((leg.lawn[1] - leg.lawn[0]) > 0.01) lawnKilled[0]++        // a real treelawn, ended at a stroke
-      }
+      // ⛔ measured on the ORIGINAL edges only for the room count above; the STEP is measured on
+      // the DENSIFIED ring below, because that is what the offset is handed.
     }
   }
+  // ⭐ THE STEP, ON THE RING THE OFFSET IS ACTUALLY HANDED. A jump between one edge's END depth
+  // and the next edge's START depth is a discontinuity the offset must bridge — the chevron. Where
+  // the ramp has room, those two agree and the change happens ALONG an edge instead.
+  const jumps = [], ramped = []
+  for (let x = 0; x < sectionDump.ramp.length; x++) {
+    const a = sectionDump.ramp[x], b = sectionDump.ramp[x + 1]
+    if (b && b.ri === a.ri) jumps.push(Math.abs(a.walkFrom[1] - b.walkFrom[0]))
+    if (Math.abs(a.walkFrom[0] - a.walkFrom[1]) > 1e-9) ramped.push(a.len)
+  }
   console.log(`\n══ ${scene} · has the RAMP anywhere to happen? ══`)
-  console.log(`  corner↔leg boundaries                    ${steps.length}`)
-  console.log(`  the band's outer edge STEPS across one vertex — median ${med(steps).toFixed(2)} m · p90 ${pct(steps, 0.9).toFixed(2)} m · max ${Math.max(0, ...steps).toFixed(2)} m`)
-  console.log(`  a real treelawn taken to ZERO at one     ${lawnKilled[0]} of ${lawnKilled[1]}  (${(100 * lawnKilled[0] / Math.max(1, lawnKilled[1])).toFixed(1)}%)`)
+  console.log(`  corner↔leg boundaries                    ${lawnKilled[1] || steps.length}`)
+  console.log(`  ⭐ edges that RAMP (depth varies along them) ${ramped.length} · median length ${med(ramped).toFixed(2)} m`)
+  console.log(`  ⛔ depth JUMPS between adjacent edges     ${jumps.filter(v => v > 1e-6).length} of ${jumps.length} · max ${jumps.reduce((m,v)=>v>m?v:m,0).toFixed(2)} m`)
   console.log(`  contour edges under 1 m (inside the arcs) ${short} of ${edges}  (${(100 * short / Math.max(1, edges)).toFixed(1)}%)`)
   console.log(`  ⛔ LONG (>5 m) edges per frontage — the ramp's only room — median ${med(longPerFrontage)}`)
-  const ok = med(longPerFrontage) >= 2
-  if (!ok) { failures++; console.log(`  ⛔ FAIL — a frontage has one place to put a depth, so the change can only be a STEP.`) }
-  else console.log(`  ✅ a frontage has room to ramp.`)
+  // ⭐ THE ACCEPTANCE IS THE JUMP, NOT THE ROOM. Room on ①'s own contour is a fact about ① and
+  // does not change; what must be true is that the depth handed to the offset is CONTINUOUS.
+  const bad = jumps.filter(v => v > 1e-6).length
+  if (bad) { failures++; console.log(`  ⛔ FAIL — ${bad} discontinuities remain; the offset must bridge them, and the bridge is the chevron.`) }
+  else console.log(`  ✅ the depth is continuous — a step is not constructible.`)
 }
 // ⚠️ NOT AN EYE VERDICT. This says the ramp CANNOT be expressed, not that anything looks wrong.
 process.exit(failures ? 1 : 0)

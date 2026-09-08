@@ -2467,7 +2467,7 @@ export const cornerDump = { on: (typeof process !== 'undefined' && process.env?.
 // It exists because every probe that wanted to know "what cross-section did this edge resolve
 // to" had to RESTATE the resolution, and two instruments with one blind spot are one instrument
 // (`c9a0d783`). Same pattern and same discipline as `cornerDump` above.
-export const sectionDump = { on: (typeof process !== 'undefined' && process.env?.SECTION_DUMP === '1'), rows: [] }
+export const sectionDump = { on: (typeof process !== 'undefined' && process.env?.SECTION_DUMP === '1'), rows: [], ramp: [] }
 
 export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
   // PROTOTYPE C (env-gated, off in the browser): slope the SW↔(TL|SW) corner
@@ -3953,6 +3953,73 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
+  // ══ THE RAMP NEEDS VERTICES ON THE LEG, SO PUT THEM THERE ════════════════════════════════════
+  // ⭐⭐⭐ THE MISSING HALF, BUILT. *(Jacob: "now add the vertices on the leg.")* `SECTION §4`'s RAMP
+  // entry and this file's own comment both filed it: "the honest home for it is a per-vertex ramp,
+  // which needs vertices inserted along the leg that the frozen contour does not have."
+  //
+  // ⛔ WHY IT WAS IMPOSSIBLE WITHOUT THIS. Depth is per-EDGE. ~three quarters of ①'s contour
+  // vertices sit inside the eased corner arcs, where the depth must be CONSTANT, and the straight
+  // leg gets a MEDIAN OF ONE long edge per frontage. One edge is one place to put a value, so the
+  // corner's depth change could only ever be a STEP — the 1.5 m jog at every corner on the map.
+  // ▶ `SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs`
+  //
+  // ⭐ THIS DOES NOT TOUCH ① AND IT DOES NOT MOVE A SINGLE POINT. The inserted vertices are
+  // COLLINEAR — they lie exactly on the edge they split — so the contour is geometrically
+  // identical and only its SAMPLING changes. `SKELETON §0.1` licenses precisely this distinction
+  // ("a change of SAMPLING, not of shape"), and it is why nothing upstream needs to know: ①, ②,
+  // the stamp, the authoring keys and the frozen artifact are all untouched. It is local to the
+  // consumer, per pass.
+  // ⛔ AND EVERY NEW EDGE CARRIES ITS SOURCE EDGE'S IDENTITY (`src`), so `M`, `cornerAt` and the
+  // authored slot resolve exactly as before — identity CARRIED, never recovered from geometry.
+  //
+  // ⭐ `rampLen` is twice the depth the walk must travel on that leg — a SLOPE RATIO, the same one
+  // `§6.1` step 5 rules and the cap coupler uses. ⛔ No size is hardwired, and there is no floor:
+  // a leg with nothing to travel gets no vertex, which is "subsumed" expressed as an absence.
+  // ⛔ A leg SHORTER than its own ramp is not split — the ramp would overrun the frontage. That is
+  // a real state (a short block face), and it is COUNTED, not silently truncated.
+  let rampShort = 0
+  for (const p of parts) {
+    const ring = p.ring, n = ring.length
+    const cA = (i) => cornerAt.get(`${p.ri}|${i}`)
+    const out = [], src = [], kS = [], kE = []
+    for (let i = 0; i < n; i++) {
+      const a = ring[i], b = ring[(i + 1) % n]
+      const inC = cA(i) != null
+      const push = (pt, s0, k0, k1) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1) }
+      if (inC) { push(a, i, 0, 0); continue }                       // inside the corner: depth is flat
+      const backC = cA((i - 1 + n) % n) != null, fwdC = cA((i + 1) % n) != null
+      const m = M(p.ri, i), l = m ? arrOf(m) : null
+      const travel = l ? l.dOut : 0                                  // what the divider must cross
+      const rampLen = travel * 2
+      const L = Math.hypot(b[0] - a[0], b[1] - a[1])
+      if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1); continue }
+      const at = (t) => [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t]
+      if (backC && fwdC) {
+        if (L <= 2 * rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
+        push(a, i, 0, 1); push(at(rampLen / L), i, 1, 1); push(at(1 - rampLen / L), i, 1, 0)
+      } else if (backC) {
+        if (L <= rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
+        push(a, i, 0, 1); push(at(rampLen / L), i, 1, 1)
+      } else {
+        if (L <= rampLen + 1e-6) { rampShort++; push(a, i, 0, 0); continue }
+        push(a, i, 1, 1); push(at(1 - rampLen / L), i, 1, 0)
+      }
+    }
+    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE
+  }
+  // ⛔ The VARIABLE-depth offsets run on the densified ring; the CONSTANT-depth ones (`insAt`) do
+  // not need it and are left alone — a constant depth over collinear extra vertices is the same
+  // curve, so the two cannot disagree at a boolean.
+  const insD = (pick) => {
+    const o = [], h = []
+    for (const p of parts) {
+      const rs = offsetRingVariable(p.dring, pick(p), () => true, () => null, false, null, false, p.hole)
+      ;(p.hole ? h : o).push(...rs)
+    }
+    return (o.length && h.length) ? differenceRings(o, h) : o
+  }
+
   const mk = (p) => {
     // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`, the same call `buildTileGround`'s ③ emit
     // makes. ⛔ The arrangement is NOT re-expressed here; what is local to this painter is only
@@ -3986,7 +4053,24 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     //   the class ~3× (1088 slots/75.6% against 1195 slots/27.5% painted both ways).
     // ⭐ AND THE GRASS STOPPING IS THE LAWN'S OUTER EDGE, NOT A FOURTH DEPTH: where the lawn is
     // the OUTER strip its start is pushed to the envelope, which inverts its span to nothing.
+    // ⭐ `j` indexes the DENSIFIED ring; `src[j]` is the ① edge it came from, so the leg's resolved
+    // measure and its authored slot are unchanged. `k` is the divider's taper: 1 on the open leg,
+    // 0 inside the corner, and RAMPING across the edges the densifier just made room on. A pair is
+    // returned only where the two ends differ, so every unchanged edge stays a scalar and the
+    // common path is byte-identical.
+    const kS = p.dkS, kE = p.dkE, src = p.dsrc
+    const span = (j, f) => {
+      const l = L(src[j]), a = f(l, kS[j]), b = f(l, kE[j])
+      return a === b ? cw + a : [cw + a, cw + b]
+    }
     return {
+      // ⛔ THE TAPER SCALES THE OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK.
+      // A kerb-side walk is already at the street and the corner changes nothing about it — which
+      // is why SW↔SW is "subsumed" and why it must stay untouched here.
+      walkFromD: (j) => span(j, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
+      walkToD:   (j) => span(j, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
+      lawnFromD: (j) => span(j, (l) => l.outWalk ? l.dOut : 0),
+      lawnToD:   (j) => span(j, (l, k) => l.inWalk ? l.dOut * k : lim),
       walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
       walkTo:   (i) => cw + L(i).walkTo,
       lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
@@ -4002,6 +4086,18 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       walk: [l.walkFrom, l.walkTo], lawn: [l.lawnFrom, l.lawnTo] })
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
+  // ⛔ THE RAMP LIVES ON THE DENSIFIED RING, so a check reading the ORIGINAL edges cannot see it and
+  // would report the very step it was built to remove. Disclose the densified spans — the depths the
+  // offset is actually handed — so the gate measures continuity where continuity is decided.
+  if (sectionDump.on) for (const p of parts) {
+    const g = F.get(p), S = (v) => Array.isArray(v) ? v[0] : v, E = (v) => Array.isArray(v) ? v[1] : v
+    for (let j = 0; j < p.dring.length; j++) {
+      const a = p.dring[j], b = p.dring[(j + 1) % p.dring.length]
+      const w = g.walkFromD(j)
+      sectionDump.ramp.push({ ri: p.ri, j, src: p.dsrc[j], kS: p.dkS[j], kE: p.dkE[j],
+        walkFrom: [S(w) - cw, E(w) - cw], len: Math.hypot(b[0] - a[0], b[1] - a[1]) })
+    }
+  }
   const pedOuter = insAt(cw)
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
@@ -4010,10 +4106,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // 79 → 54 on geometry that was a strict SUPERSET of the original. The stamp above needs no cut
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
-  const W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
+  const W = band(insD(p => F.get(p).walkFromD), insD(p => F.get(p).walkToD))
   return {
     Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
-    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo)), slidWalk) : band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
+    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD)), slidWalk) : band(insD(p => F.get(p).lawnFromD), insD(p => F.get(p).lawnToD))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
