@@ -486,6 +486,18 @@
 >   an arc, and that arc IS the corner. The owner still answers **WHOSE**; it may not answer
 >   **WHETHER**. ▶ `node scratch/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
 >   its teeth after the fix (a residual arc with no ramp is still reported, with its turn).
+>   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`), NEVER OFF `protoTurns`
+>   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
+>   `protoTurns.has(labs[i])` marks **every ② vertex on that frontage** once its owner turns
+>   anywhere. `end()` reads `iaCorner` to end a leg, so each one inserts a ramp **mid-block**:
+>   LS went to **10,606 marked vertices of 14,651 (72.4%, from 3.6%)** and the eye caught sawtooth
+>   notches down straight streets — *"weird geometry everywhere; looks like contour nodes."*
+>   ⭐⭐ **THE LESSON, AND IT GENERALISES PAST CORNERS: the owner-change half was doing TWO jobs —
+>   wrongly answering WHETHER, and necessarily supplying WHERE.** Deleting a term that carries a
+>   second, unnamed job deletes that job too, and the gates stayed green because none of them
+>   measured locality. **Name every job a term is doing before removing it.**
+>   ⇒ `iaCorner[i] = EC.arc[i] != null` — the ease stamped the locality at the moment it made the
+>   arc. ▶ 0 vertices marked outside an arc, both towns; 100% of arcs carry a ramp.
 >   ⛔ **The turn tolerance is `FILLET_TURN_TOL`, and it is not new** — `filletRing`'s ruled constant,
 >   which `easeContour` already carries for the same reason (*"a near-straight vertex is a CURVE
 >   SAMPLE, not a corner"*). A third READER of one rule, never a third rule.

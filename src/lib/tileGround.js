@@ -7524,12 +7524,21 @@ export function buildTileGround(ribbons, opts = {}) {
           const iaCorner = mine.map(EC => {
             const n2 = EC.ring.length
             const o = (i) => (EC.labs?.[i] != null ? (ownAt.get(EC.labs[i]) ?? null) : null)
-            // ⭐⭐⭐ THE SHAPE ANSWERS IT ALONE. ① TURNS here ⇒ it is a corner. The owner half was
-            // a chain identity overruling a question about a shape, and it vetoed half the real
-            // corners on both towns (see the `protoTurns` block). `o` is retained because the
-            // OWNER still answers WHOSE — it is simply not allowed to answer WHETHER.
-            void o
-            return EC.ring.map((_, i) => protoTurns.has(EC.labs[i]))
+            // ⭐⭐⭐ THE EASE IS THE CORNER, AND IT IS THE EASE'S OWN PER-VERTEX STAMP THAT SAYS SO.
+            // Where the contour turned past `FILLET_TURN_TOL` the ease made an arc; that arc IS the
+            // corner. No label, no conjunction, no conditional.
+            // ⛔⛔ AND IT MUST BE READ OFF `EC.arc`, NOT OFF `protoTurns`. `protoTurns` holds
+            // LABELS (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so testing
+            // `protoTurns.has(labs[i])` marks EVERY ② vertex on that frontage once its owner turns
+            // anywhere. `end()` reads `iaCorner` to end a leg, so each one inserts a ramp: LS went
+            // to 10,606 marked vertices of 14,651 (72.4%, from 3.6%) and the operator's eye caught
+            // sawtooth notches mid-block — "weird geometry everywhere; looks like contour nodes."
+            // ⭐⭐ THE LESSON, AND IT IS THE ONE TO CARRY: the owner-change half was doing TWO jobs —
+            // wrongly answering WHETHER, and necessarily supplying WHERE. Deleting a term that
+            // carries a second, unnamed job deletes that job too. `EC.arc` supplies the locality
+            // honestly, because the ease stamped it at the moment it made the arc.
+            void o; void protoTurns
+            return EC.ring.map((_, i) => (EC.arc?.[i] ?? null) != null)
           })
           // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
           // consumer never has to ask the eased geometry a question it cannot answer.
