@@ -3934,6 +3934,69 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         if (best && best.got.length) slidWalk.push(...best.got)
       }
     }
+      // ══ §6.1 STEP 5 AT A CORNER — THE WALK SLIDES TO THE KERB ON ITS OWN LEG ════════════════
+    // ⭐⭐⭐ RECOVERED, NOT DESIGNED. This is the block at `sectionPassTile:3143` — `conD`, `cMin`,
+    // `conMax`, `tloD`, the slid quad, `rampLen` — which has been live and correct for months and
+    // did NOT come across when ③'s corner was re-expressed as a stamp. Jacob, 2026-09-07: "This is
+    // *absolutely* a regression, it's been fixed for months." · "the only correct blocks as far as
+    // I can see are sw <> sw."
+    //
+    // ⛔ WHY THE STAMP ALONE IS NOT ENOUGH, AND IT IS A DIFFERENCE BETWEEN THE TWO MODELS.
+    // The walk painter TRIMS each leg back to the fillet's tangent (`tangentTrim`, `§6.1` step 2),
+    // so the leg's treelawn PHYSICALLY ENDS at the corner and the wedge is painted separately.
+    // ③ never cuts the ring — that is the whole point of it, and why a seam is unconstructible —
+    // so the leg's grass runs straight into the corner and only a per-edge depth STEP stops it.
+    // A step in an offset distance is not a trim: the offset bridges it, and the grass arrives on
+    // the pad anyway. ▶ measured: grass on the ADA pad at LS 117 · HPDM 863.
+    // ⇒ The transition has to be BUILT, and `§6.1` step 5 says where: **on the leg, not in the
+    // corner** — "the deeper leg's set-back sidewalk SLIDES to the kerb over a short ramp on its
+    // own straight leg (the treelawn tapering out), so the arc reads concentric and the transition
+    // lives where a real curb ramp puts it."
+    //
+    // ⭐ THE CHANGE BEING CARRIED IS LEG→CORNER, NOT LEG→LEG. The joiner above fires where two
+    // spans' cross-sections differ; here both legs may be identical (TL↔TL) and there is still a
+    // change to carry, because the CORNER's walk starts at the kerb and the LEG's starts at
+    // `dOut`. So `cMin` is 0 — the corner reaches the street, `§6.1` step 3, absolute — and
+    // `conMax` is that leg's own `dOut`. Each of the corner's two legs gets its own ramp.
+    // ⛔ ADDITIVE, UNIONED IN, NEVER CUT — the same rule as the joiner, and for the same reason:
+    // a cut re-joined along its own edge leaves Clipper two touching records and the band reads
+    // BROKEN at unchanged area. That cost the acceptance 79 → 54 once already.
+    // ⛔ NO SIZE HARDWIRED: `rampLen` is twice the depth the walk must travel — a slope ratio.
+    for (const p2 of parts) {
+      const ring = p2.ring, n = ring.length
+      for (let q = 0; q < n; q++) {
+        if (!seamAt.has(`${p2.ri}|${q}`)) continue
+        // the corner's two legs: the edge arriving at q, and the edge leaving it
+        for (const [eLeg, away] of [[(q - 1 + n) % n, (q - 1 + n) % n], [q, (q + 1) % n]]) {
+          const m = M(p2.ri, eLeg); if (!m) continue
+          const a = arrOf(m)
+          const conMax = a.dOut                      // where this leg's walk begins, past the kerb
+          if (!(conMax > 1e-6)) continue             // already at the kerb — nothing to slide
+          const J = ring[q]
+          const A2 = ring[away]
+          const dir = nrm2([A2[0] - J[0], A2[1] - J[1]])
+          const rampLen = conMax * 2
+          const at = (pv, s2, d) => [J[0] + dir[0] * s2 + pv[0] * (cw + d), J[1] + dir[1] * s2 + pv[1] * (cw + d)]
+          // ⭐ THE TAPER, IN THE LEG'S OWN (along, depth) FRAME. At the corner the whole setback
+          // `[0, conMax]` becomes walk — that IS the pad reaching the street — and it shrinks to
+          // nothing by `rampLen` up the leg, which is where the leg's own arrangement resumes
+          // untouched. A triangle, not a quad: `(0,0) · (0,conMax) · (rampLen,0)`.
+          // ⛔ MY FIRST ATTEMPT REPEATED `(0,0)` AS THE FOURTH VERTEX and drew a thin wedge
+          // between `tloD` and `conMax` instead — a degenerate shape that added walk nowhere the
+          // grass was, and moved the gate by 1 corner. The frame was right and the polygon was not.
+          const quadFor = (pv) => [at(pv, 0, 0), at(pv, 0, conMax), at(pv, rampLen, 0)]
+          // ⭐ THE INWARD NORMAL IS DECIDED BY ASKING THE BAND, never by winding — a hole ring and
+          // an outer ring wind opposite ways and `p.hole` is itself read off winding.
+          let best2 = null
+          for (const pv of [[-dir[1], dir[0]], [dir[1], -dir[0]]]) {
+            const got = intersectRings(fullBand, [quadFor(pv)])
+            const ar = got.reduce((tot, g) => { let x = 0; for (let i = 0; i < g.length; i++) { const j = (i + 1) % g.length; x += g[i][0] * g[j][1] - g[j][0] * g[i][1] } return tot + Math.abs(x / 2) }, 0)
+            if (!best2 || ar > best2.a) best2 = { got, a: ar }
+          }
+          if (best2 && best2.got.length) slidWalk.push(...best2.got)
+        }
+      }
+    }
   }
 
   const mk = (p) => {
