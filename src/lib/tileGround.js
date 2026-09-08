@@ -4069,20 +4069,25 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // is why SW↔SW is "subsumed" and why it must stay untouched here.
       // ⭐ `§6.1` step 4 at an arc: concrete from the kerb to `cMin`, and the lawn is a ZERO span —
       // deeper than `cMin` is PARCEL, never a treelawn bent round the kerb (step 3).
-      // ⭐ THE ARC TAKES ITS LEGS' CROSS-SECTION. `fAt` is 0 wherever the legs disagree (the
-      // shallower is at the kerb), so SW↔SW and SW↔TL are byte-identical to before.
-      walkFromD: (j) => { const f = fAt(j); return f == null ? span(j, wFrom) : cw + f },
+      // ⭐⭐⭐ THE PAD IS THE SIDEWALK CONTINUING TO THE KERB ACROSS THE TREELAWN, AND IT IS MADE
+      // FROM THE TANGENTS *(Jacob, 2026-09-08)*. So the arc's outer edge IS the kerb — the walk
+      // fills through — and that is not the arc overriding its legs: it is the ADA ramp, the
+      // sidewalk's access to the street, which the legs' own cross-section cannot provide.
+      // ⛔ Made FROM THE TANGENTS ⇒ its extent is exactly the arc, "coexistent with the arc".
+      // Never longer: the leg's taper is what used to carry it `rampLen` up both legs and eat the
+      // treelawn well past the corner, which is what read as one blanket.
+      walkFromD: (j) => (cAt(j) == null ? span(j, wFrom) : cw),
       walkToD:   (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
       // ⛔ NOT AN EMPTY SPAN. `luByLu` only floods inboard of the WHOLE envelope, so a zero-width
       // lawn at an arc leaves `cMin → lim` painted by NOBODY — a hole at every corner, which is
       // what an empty span cost on the first attempt. `§6.1` step 4 says where it goes: deeper
       // than `cMin` is PARCEL, routed through `tlByLu[lu]`, i.e. the tile's own land use — not a
       // treelawn bent round the kerb, and not an absence.
-      // ⭐ THE LAWN IS THE STRIP THE WALK IS NOT — through the arc as well as along the leg. At
-      // TL↔TL that is the legs' own grass carrying round the kerb; where the legs disagree the
-      // span inverts to nothing, which is "treelawn ends at the tangents" as an OUTCOME.
-      lawnFromD: (j) => { const f = fAt(j); return f == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw },
-      lawnToD:   (j) => { const f = fAt(j); return f == null ? span(j, (l, k, c, a) => l.inWalk ? wFrom(l, k, c, a) : lim) : cw + f },
+      // ⭐ THE LAWN IS THE STRIP THE WALK IS NOT. Inside the arc the pad has taken the whole outer
+      // band, so the lawn's span there is the parcel beyond `cMin` — "treelawn ends at the
+      // tangents", now literally at them rather than a taper's length before them.
+      lawnFromD: (j) => { const c = cAt(j); return c == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw + c },
+      lawnToD:   (j) => { const c = cAt(j); return c == null ? span(j, (l, k, cc, a) => l.inWalk ? wFrom(l, k, cc, a) : lim) : cw + lim },
       // ⛔ THE DEEP TAIL — `§6.1` step 5's `luWedge`, the OTHER half of the slide. As the walk
       // slides out, the ground it vacates on the INBOARD side is the walk's deep tail, and step 4
       // rules where it goes: deeper than the walk is PARCEL, `tlByLu[lu]`, the tile's own land use
@@ -4093,7 +4098,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // ⛔ THE DEEP TAIL — parcel inboard of the walk (`§6.1` step 4). Inside an arc this is the
       // ground beyond `cMin`, which the lawn span used to carry; it moves here so the lawn can
       // carry the legs' grass instead. Zero on an open leg and zero at TL↔TL, by construction.
-      tailFromD: (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
+      tailFromD: (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + lim },
       tailToD:   () => cw + lim,
     }
   }

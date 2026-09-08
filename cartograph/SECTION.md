@@ -194,10 +194,25 @@ pointer that does not resolve reads as evidence already gathered.)*
   blindness in the CONSTRUCTION that the gate had in the MEASUREMENT. The leg's own outer strip is
   a FLOOR, not a constant — at a frontage change there is no arc to target and a kerb-side leg
   would otherwise compute zero travel. Dropping it cost HPDM 574 → 633 leg↔leg steps.
-  ⛔ **OWED, NOT BUILT: the ADA pad at TL↔TL.** With the grass carrying round, the walk has no
-  access to the street at those corners, and Jacob's rule is that it always must. The pad is
-  *coexistent with the arc*; what is not settled is how it reaches the kerb without becoming the
-  blanket this just removed. **Do not close TL↔TL until it exists.**
+  ### ⭐⭐⭐ AND THE PAD IS THE SIDEWALK CONTINUING TO THE KERB ACROSS THE TREELAWN — **MADE FROM THE TANGENTS**
+  > *"The pad is the sidewalk continuing to the curb across the treelawn, it is made from the
+  > tangents."* (Jacob, 2026-09-08.)
+  So the arc's outer edge **is** the kerb, and that is not the arc overriding its legs — it is the
+  ADA ramp, the sidewalk's access to the street, which the legs' cross-section cannot provide.
+  ⛔⛔ **"NO RAMP" AT TL↔TL MEANS NO *LEG TAPER*, NOT "NO PAD" — and mistaking the one for the other
+  cost two passes.** `_archive/CORNER_DEBUG.md` had the word all along: **"Treelawn always
+  dead-ends (ADA curb ramp). The sidewalk fills through behind the treelawn's blunt end."**
+  **BLUNT.** The lawn runs FULL WIDTH to the tangent and stops; the pad fills through behind it.
+  ⇒ **Made from the tangents ⇒ the pad's extent is exactly the arc** — "coexistent with the arc",
+  never longer. What made it read as one blanket was the LEG taper carrying it `rampLen` up both
+  legs and eating the treelawn well past the corner. Removing the taper at TL↔TL (`travel` is 0
+  there, because the legs agree) is the whole of it: ramp edges LS 652 → 504, HPDM 8980 → 4124.
+  ⭐⭐ **A BLUNT END IS NOT A CHEVRON, AND THE GATE HAD TO BE TAUGHT THE DIFFERENCE.** The step at a
+  TL↔TL tangent is the authoring gesture's intended output; scoring it as damage is `CLAUDE.md`
+  Layer 0 q3 committed by an instrument. It is **recognised, never suppressed** — the predicate is
+  the arc side sitting at the kerb and the step measuring the leg's own outer strip, and anything
+  else at a tangent still counts. **The count is exactly 2 × the TL↔TL corners** (LS 148 = 74 × 2),
+  which is what makes it a class rather than a tolerance.
   ⚠️ **And the same probe settles a doctrine question:** grass at the kerb inside a corner happens
   in the correct map — a few percent of corners. **UNCOMMON, NOT FORBIDDEN** (Jacob, 2026-09-08).
   ⛔ So `§6.1` step 3 is a default, never a gate, and no check may score it as a defect.

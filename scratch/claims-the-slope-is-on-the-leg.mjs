@@ -51,10 +51,26 @@ for (const st of T) {
         steps++; jump.push(worst)
         // ⛔ A step AT A TANGENT is the corner. A step between two legs with no corner between
         // them is the frontage-change class — a different defect, never folded into this counter.
+        // ⭐⭐⭐ A BLUNT END IS NOT A CHEVRON. `_archive/CORNER_DEBUG.md`: "Treelawn always
+        // dead-ends (ADA curb ramp). The sidewalk fills through behind the treelawn's blunt end."
+        // At a TL↔TL tangent the lawn runs full width and STOPS, and the pad fills to the kerb —
+        // so `walkFrom` steps by exactly the lawn's width onto an arc that is AT the kerb. That is
+        // the authoring gesture's intended output, and a gate that scores it as damage is
+        // `CLAUDE.md` Layer 0 q3 committed by an instrument.
+        // ⛔ It is RECOGNISED, never suppressed: the predicate is the arc side sitting at the kerb
+        // and the step measuring the leg's own outer strip. Anything else at a tangent is a real
+        // chevron and still counts.
+        const arcSide = cur.inArc ? cur : nxt.inArc ? nxt : null
+        const legSide = cur.inArc ? nxt : nxt.inArc ? cur : null
+        const blunt = arcSide && legSide
+          && Math.abs(S(arcSide.walkFrom)) < 1e-6                 // the pad is at the kerb
+          && Math.abs(worst - Math.abs(E(legSide.walkFrom))) < 0.02  // the step IS the lawn width
         const k = (cur.inArc && nxt.inArc) ? 'inside one arc'
+                : blunt ? 'BLUNT treelawn end at a tangent (the ADA pad — EXPECTED)'
                 : (cur.inArc || nxt.inArc) ? 'leg <-> ARC (the corner)'
                                            : 'leg <-> leg (frontage change, NO corner)'
-        byClass[k] = (byClass[k] || 0) + 1
+        if (!blunt) byClass[k] = (byClass[k] || 0) + 1
+        else { byClass[k] = (byClass[k] || 0) + 1; steps-- ; jump.pop() }
       }
     }
   }
