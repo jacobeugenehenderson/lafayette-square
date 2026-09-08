@@ -3992,51 +3992,60 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   }
 
   const mk = (p) => {
-    // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`, the same call `buildTileGround`'s ③ emit
-    // makes. ⛔ The arrangement is NOT re-expressed here; what is local to this painter is only
-    // the datum (`cw`) and the CORNER override below. Two hand-written copies of these four spans
-    // produced three half-fixes in one day (`67e8b944`/`45b7aa60`, `17ebb477`, `f7a38ba0`), each
-    // landing in whichever copy the author was reading. They cannot drift again.
-    // ⛔ AN EDGE WITH NO RESOLVED MEASURE IS THE OPEN FIELD — `stripLadder({})` reads neither
-    // strip as SW, i.e. all-LU curb→centre. Byte-identical to what the hand-written copy gave a
-    // null, and the ruled answer (`ARCHITECTURE §"The compound shape"`: the drawing has no holes).
+    // ⭐⭐⭐ THE CORNER'S DEPTH IS REACHED BY A TAPER, NEVER A STEP — `§6.1` step 5, extended to the
+    // one case the walk painter did not need it for. *(Jacob, on the lit app: a NOTCH bitten out of
+    // the sidewalk at both corners of a T. "all the corners are the same, all the corners are shite.")*
+    //
+    // ⛔ THE NOTCH IS A DEPTH STEP. `§6.1` step 4 makes the corner concrete to `cMin`, which on a
+    // set-back leg means the walk's outer edge is at the KERB through the corner and at `cw + dOut`
+    // on the leg. Expressed as a per-edge depth that JUMPS between adjacent edges, the offset has to
+    // bridge it — and the bridge is a jog. That jog is the artifact on screen.
+    //
+    // ⭐⭐ WHY THE SHIPPED PAINTER NEVER HAD IT, AND IT IS THE DIFFERENCE BETWEEN THE TWO MODELS:
+    // `sectionPassTile` TRIMS each leg back to the tangent (`§6.1` step 2), so the leg's strip simply
+    // ENDS and the corner wedge is painted separately — no step exists to bridge. ③ never cuts the
+    // ring (that is why a seam is unconstructible), so it CANNOT trim, and every place the walk
+    // painter had a trim this one needs a TRANSITION.
+    // ⇒ `§6.1` step 5 already rules what that transition is — "the sidewalk SLIDES to the kerb over a
+    // short ramp ON ITS OWN STRAIGHT LEG, the treelawn tapering out" — and its guard
+    // (`conMax > cMin`) skips the equal-legs case only because the walk painter's trim covers it.
+    // Here it must not be skipped. ⛔ This is the doc's own construction applied where the doc's own
+    // reason for omitting it does not hold — not a new rule.
+    //
+    // ⭐ AND IT IS THE DIVIDER THAT MOVES, which is exactly what invariant 4 licenses to vary
+    // ("ribbon monowidth, strips variable: what varies per-edge is the DIVIDER"). Invariant 1 is
+    // honoured because NOTHING IS CONSTRUCTED: no polygon is added, so there is no primitive at the
+    // corner and nothing that can leave a notch. `offsetRingVariable` has taken a `[start,end]`
+    // per-edge ramp since it was written and nothing used it.
+    // ⛔ `k === 1` everywhere reduces to the plain ladder EXACTLY, expression for expression.
+    // ⭐ `k` scales the OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK. A kerb-side
+    // walk is already at the street and the corner changes nothing about it — which is why SW↔SW was
+    // the one configuration the operator called correct.
+    const n = p.ring.length
+    // ⛔ AN EDGE WITH NO RESOLVED MEASURE IS THE OPEN FIELD — `stripLadder({})` reads neither strip
+    // as SW, i.e. all-LU kerb→centre, which is the ruled answer (`ARCHITECTURE §"The compound
+    // shape"`: the drawing has no holes) and is what the hand-written ladders gave a null.
     const L = (i) => stripLadder(M(p.ri, i) || {}, lim)
     const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
-    // ⛔⛔ THE PAD MOVES ONE DEPTH, NOT FOUR — AND THAT IS THE WHOLE OF IT.
-    // *(Jacob's three configs, in his words, 2026-09-07:)*
-    //   SW↔SW → "the corner is just a continuous stripe around the outer band"  ⇒ NOTHING to do:
-    //           the walk is already the outer strip and already reaches the curb.
-    //   TL↔TL → "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to
-    //           the street"                                                     ⇒ the walk WRAPS at
-    //           its own depth and additionally REACHES the curb: `walkFrom → cw`.
-    //   SW↔TL → "there is a slope joiner"                                       ⇒ the set-back side
-    //           reaches the curb at the corner so the two walks meet. The same one depth.
-    // ⇒ ONE RULE, NO CASE SPLIT: at a corner the walk REACHES THE STREET and the grass stops.
-    // ⛔ `walkTo` and the leg's whole arrangement are UNTOUCHED, and that is load-bearing.
-    //
-    // ⛔ WHY THE PREVIOUS VERSION WAS A REGRESSION: overriding all four depths let the corner's
-    // cross-section REPLACE the leg's, so wherever a pad landed the frontage stopped responding to
-    // authoring — 58.8% of LS contour edges sit inside a corner extent and 33.7% of frontage
-    // stretches are ENTIRELY inside one. Jacob: "The swap regime doesn't work on adjacent blocks
-    // anymore." ▶ measure it with the BOTH-ARRANGEMENTS method, never by writing a literal:
-    //   `node scratch/claims-swap-reaches-the-paint.mjs` writes `{outer:'SW', inner:'LU'}`, which
-    //   IS the default on a treelawn-N edge, so it scores a no-op as a dead gesture and overstates
-    //   the class ~3× (1088 slots/75.6% against 1195 slots/27.5% painted both ways).
-    // ⭐ AND THE GRASS STOPPING IS THE LAWN'S OUTER EDGE, NOT A FOURTH DEPTH: where the lawn is
-    // the OUTER strip its start is pushed to the envelope, which inverts its span to nothing.
+    const kAt = (i) => {
+      if (cAt(i) != null) return [0, 0]                                  // inside the corner
+      const back = cAt((i - 1 + n) % n) != null, fwd = cAt((i + 1) % n) != null
+      return (back && fwd) ? [0, 0] : back ? [0, 1] : fwd ? [1, 0] : [1, 1]
+    }
+    // ⛔ Returns a SCALAR when the two ends agree, so the unchanged path stays the common one.
+    const span = (i, f) => {
+      const l = L(i), k = kAt(i)
+      return k[0] === k[1] ? cw + f(l, k[0]) : [cw + f(l, k[0]), cw + f(l, k[1])]
+    }
     return {
-      walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
-      walkTo:   (i) => cw + L(i).walkTo,
-      // ⚠️ THE LAWN'S SPAN IS INVERTED HERE ON PURPOSE — `lawnFrom` is pushed to `lim`, past its own
-      // `lawnTo`, to mean "the grass stops at the corner". ⛔ I CHANGED THIS TO A ZERO-WIDTH SPAN ON
-      // 2026-09-07, ARGUING AN INVERTED SPAN IS A SIGN ERROR, AND THE A/B REFUTED IT: LS 190 → 186
-      // corners correct, HPDM 2301 → 2269 — no effect, marginally negative. Reverted rather than kept
-      // on the strength of the argument, because the argument's prediction failed.
-      // ⭐ WHY IT IS HARMLESS: `band` is `differenceRings(ringAt(from), ringAt(to))` and a deeper
-      // depth is a SMALLER ring, so `from > to` differences a smaller ring from a larger one and
-      // yields nothing — the inversion already collapses to empty. ⛔ Do not "fix" it again.
-      lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
-      lawnTo:   (i) => cw + L(i).lawnTo,
+      walkFrom: (i) => span(i, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
+      walkTo:   (i) => span(i, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
+      // ⛔⛔ THE LAWN IS THE STRIP THE WALK IS NOT — symmetrically, in both arrangements. It STARTS
+      // where an outer walk ends and ENDS where an inner walk begins; the taper moves that end, and
+      // is never a second rule. Both strips SW ⇒ the walk takes the envelope and there is no lawn;
+      // both LU ⇒ the OPEN FIELD. Neither is a case and neither collapses (`SECTION §3.1`).
+      lawnFrom: (i) => span(i, (l) => l.outWalk ? l.dOut : 0),
+      lawnTo:   (i) => span(i, (l, k) => l.inWalk ? l.dOut * k : lim),
     }
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
@@ -4056,7 +4065,12 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
         hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
         legWalk: [l.walkFrom, l.walkTo], legLawn: [l.lawnFrom, l.lawnTo],
-        walk: [g.walkFrom(i) - cw, g.walkTo(i) - cw], lawn: [g.lawnFrom(i) - cw, g.lawnTo(i) - cw] })
+        // ⛔ THE RAW VALUES, PAIR OR SCALAR — the offset takes a `[start,end]` ramp, and flattening
+        // it here would hide the very discontinuity a continuity check exists to find.
+        walkFromRaw: g.walkFrom(i), walkToRaw: g.walkTo(i),
+        lawnFromRaw: g.lawnFrom(i), lawnToRaw: g.lawnTo(i),
+        walk: [g.walkFrom(i), g.walkTo(i)].map(v => (Array.isArray(v) ? v[0] : v) - cw),
+        lawn: [g.lawnFrom(i), g.lawnTo(i)].map(v => (Array.isArray(v) ? v[0] : v) - cw) })
     }
   }
   const pedOuter = insAt(cw)
