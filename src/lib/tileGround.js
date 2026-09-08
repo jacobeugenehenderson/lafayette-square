@@ -3856,21 +3856,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const arc = arcAt.get(q)
       // ⛔ THE ARC SUPPLIES THE EXTENT, IT DOES NOT LICENSE THE PAD. Square corner ⇒ no arc ⇒ the
       // extent is the one edge the owners meet across, and the pad is drawn there just the same.
-      // ⛔ Same arity: `len` EDGES from `s0`.
-      // ⭐⭐ THE BLOCK IS ONE POLYGON AND A CORNER IS ONE OF ITS VERTICES. Both edges meeting there
-      // are this block's own contour, so the band runs through both — a fillet's span already does,
-      // tangent to tangent, and the arc-less case must say the same thing rather than stop at the
-      // outgoing edge. Stamping only that one gave the pad to one leg and not the other, so the
-      // incoming leg's walk never reached the kerb: `§6.1` step 3 ("the street edge of a corner is
-      // concrete ALWAYS") failing on one side of a corner that is correct on the other.
-      // ⛔ NOT "symmetric about the vertex" — that framing was mine and Jacob struck it (2026-09-07:
-      // "irrelevant, because we treat each block individually as a polygon"). Symmetry is a claim
-      // about two things meeting at a boundary, which is the chain-world picture; there is one
-      // polygon here and the contour simply passes through the vertex.
-      // ⛔ Not a widening and not a tolerance: it is the span the arc case already has, stated for
-      // the degenerate case instead of falling out of it wrongly.
-      const [s0, len] = arc || [(q - 1 + n) % n, 2]
-      for (let k = 0; k < len; k++) {
+      // ⛔ Same arity: `len` EDGES from `s0`. A square corner (no arc) is `len = 0` — and it must
+      // then stamp the ONE edge the owners meet across, which is `k <= 0`, i.e. exactly one pass.
+      const [s0, len] = arc || [q, 0]
+      for (let k = 0; k < Math.max(1, len); k++) {
         const e = (s0 + k) % n
         const prev = cornerAt.get(`${p.ri}|${e}`)
         if (prev == null || cMin < prev) cornerAt.set(`${p.ri}|${e}`, cMin)
@@ -3896,64 +3885,9 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // unchanged area, and that cost the acceptance 79 → 54 once already.
   // ⛔ NO SIZE IS HARDWIRED (Jacob: "no sizes or distances can be hardwired"). `rampLen` is 2× the
   // depth the walk must travel — a SLOPE RATIO, a shape, not a length, and deliberately no floor.
-  // ══ §6.1 STEP 5 — THE DEEP LEG SLIDES TO THE KERB, PORTED VERBATIM ═══════════════════════════
-  // ⛔⛔ PORTED, NOT RE-DERIVED. Jacob, 2026-09-07: "Do what the docs tell you" · "it's all there."
-  // Both are true and I had been re-deriving: `SECTION §6.1` step 5 specifies the frame, both
-  // polygons and the ramp length, and `sectionPassTile:3143` implements them. Two earlier attempts
-  // of mine invented a triangle and probed for the normal; the eye rejected both.
-  //   pt(s,d) = T + dir·s + perp·(cw + d)          local (along-leg, depth) frame AT THE TANGENT
-  //   slid-walk quad  [0,cMin] at the tangent → [tloD,conMax] up the leg      → concrete
-  //   LU wedge        [cMin,conMax] at the tangent, tapering to zero up the leg → parcel, and
-  //                   CARVED from the SW strip (`swCarve`)
-  //   rampLen = max(2, 2·(conMax − cMin))
-  // ⚠️ ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE AND FLAGGED: `§6.1` writes
-  // `perp = C→T`, but `sectionPassTile` computes `C − T`, i.e. T→C — and it must, because `d`
-  // increases INWARD from the kerb toward the arc centre. The doc's arrow is backwards; the
-  // construction is right. Recorded here rather than silently followed either way.
-  const nrm2 = (v) => { const L2 = Math.hypot(v[0], v[1]) || 1; return [v[0] / L2, v[1] / L2] }
   const slidWalk = []
-  const swCarve = []                          // the deep walk's tail, slid to parcel (§6.1 step 5)
-  const cornerLu = []                         // the LU wedge, routed to tlByLu — parcel-matched
-  for (const p of parts) {
-    const ring = p.ring, n = ring.length
-    const ix = ringVertexIndex(ring)
-    for (const fl of st.fillets || []) {
-      const a = findRingVertex(ix, ring, fl.tA), b = findRingVertex(ix, ring, fl.tB)
-      if (a == null || b == null || !fl.C) continue
-      const fwd = (b - a + n) % n, bwd = (a - b + n) % n
-      const [s0, len] = fwd <= bwd ? [a, fwd] : [b, bwd]
-      if (len === 0 || len * 2 > n) continue
-      const e1 = (s0 + len) % n
-      // the two LEGS are the edges immediately OUTSIDE the arc, one at each tangent
-      const legs = [
-        { tv: s0, eLeg: (s0 - 1 + n) % n, away: (s0 - 1 + n) % n, back: true },
-        { tv: e1, eLeg: e1, away: (e1 + 1) % n, back: false },
-      ].map(L2 => { const m = M(p.ri, L2.eLeg); return m ? { ...L2, a: arrOf(m) } : null }).filter(Boolean)
-      if (legs.length !== 2) continue
-      // ⭐ `§6.1` step 4 + `[A7 · JACOB'S RULE]` from the shipped painter: the depth vote is taken
-      // over the legs that actually CARRY concrete — a leg with no sidewalk does not drag `cMin`
-      // to 0 and paint the whole pad LU, it simply does not vote.
-      const conc = legs.map(l => l.a.conD).filter(d => d > 1e-6)
-      if (!conc.length) continue
-      const cMin = Math.min(...conc)
-      const deep = legs[0].a.conD >= legs[1].a.conD ? legs[0] : legs[1]
-      const conMax = deep.a.conD
-      if (!(conMax > cMin + 1e-6)) continue          // same cross-section — nothing to slide
-      const T = ring[deep.tv]
-      const perp = (() => { const dx = fl.C[0] - T[0], dy = fl.C[1] - T[1]; const L2 = Math.hypot(dx, dy) || 1; return [dx / L2, dy / L2] })()
-      const A2 = ring[deep.back ? deep.away : (deep.away + 1) % n]
-      const dir = nrm2([A2[0] - T[0], A2[1] - T[1]])
-      const tloD = deep.a.outWalk ? 0 : deep.a.dOut  // the treelawn tapering out
-      const rampLen = Math.max(2, (conMax - cMin) * 2)
-      const pt = (s2, d) => [T[0] + dir[0] * s2 + perp[0] * (cw + d), T[1] + dir[1] * s2 + perp[1] * (cw + d)]
-      const slidQuad = [pt(0, 0), pt(rampLen, tloD), pt(rampLen, conMax), pt(0, cMin)]
-      slidWalk.push(...intersectRings(fullBand, [slidQuad]))
-      const luWedge = [pt(0, cMin), pt(0, conMax), pt(rampLen, conMax)]
-      const w = intersectRings(fullBand, [luWedge])
-      if (w.length) { cornerLu.push(...w); swCarve.push(...w) }
-    }
-  }
   if (fullBand.length) {
+    const nrm2 = (v) => { const L = Math.hypot(v[0], v[1]) || 1; return [v[0] / L, v[1] / L] }
     for (const p of parts) {
       const ring = p.ring, n = ring.length, stp = stamps[p.si] || []
       for (let q = 0; q < n; q++) {
@@ -3992,87 +3926,54 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   }
 
   const mk = (p) => {
-    // ⭐⭐⭐ THE CORNER'S DEPTH IS REACHED BY A TAPER, NEVER A STEP — `§6.1` step 5, extended to the
-    // one case the walk painter did not need it for. *(Jacob, on the lit app: a NOTCH bitten out of
-    // the sidewalk at both corners of a T. "all the corners are the same, all the corners are shite.")*
-    //
-    // ⛔ THE NOTCH IS A DEPTH STEP. `§6.1` step 4 makes the corner concrete to `cMin`, which on a
-    // set-back leg means the walk's outer edge is at the KERB through the corner and at `cw + dOut`
-    // on the leg. Expressed as a per-edge depth that JUMPS between adjacent edges, the offset has to
-    // bridge it — and the bridge is a jog. That jog is the artifact on screen.
-    //
-    // ⭐⭐ WHY THE SHIPPED PAINTER NEVER HAD IT, AND IT IS THE DIFFERENCE BETWEEN THE TWO MODELS:
-    // `sectionPassTile` TRIMS each leg back to the tangent (`§6.1` step 2), so the leg's strip simply
-    // ENDS and the corner wedge is painted separately — no step exists to bridge. ③ never cuts the
-    // ring (that is why a seam is unconstructible), so it CANNOT trim, and every place the walk
-    // painter had a trim this one needs a TRANSITION.
-    // ⇒ `§6.1` step 5 already rules what that transition is — "the sidewalk SLIDES to the kerb over a
-    // short ramp ON ITS OWN STRAIGHT LEG, the treelawn tapering out" — and its guard
-    // (`conMax > cMin`) skips the equal-legs case only because the walk painter's trim covers it.
-    // Here it must not be skipped. ⛔ This is the doc's own construction applied where the doc's own
-    // reason for omitting it does not hold — not a new rule.
-    //
-    // ⭐ AND IT IS THE DIVIDER THAT MOVES, which is exactly what invariant 4 licenses to vary
-    // ("ribbon monowidth, strips variable: what varies per-edge is the DIVIDER"). Invariant 1 is
-    // honoured because NOTHING IS CONSTRUCTED: no polygon is added, so there is no primitive at the
-    // corner and nothing that can leave a notch. `offsetRingVariable` has taken a `[start,end]`
-    // per-edge ramp since it was written and nothing used it.
-    // ⛔ `k === 1` everywhere reduces to the plain ladder EXACTLY, expression for expression.
-    // ⭐ `k` scales the OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK. A kerb-side
-    // walk is already at the street and the corner changes nothing about it — which is why SW↔SW was
-    // the one configuration the operator called correct.
-    const n = p.ring.length
-    // ⛔ AN EDGE WITH NO RESOLVED MEASURE IS THE OPEN FIELD — `stripLadder({})` reads neither strip
-    // as SW, i.e. all-LU kerb→centre, which is the ruled answer (`ARCHITECTURE §"The compound
-    // shape"`: the drawing has no holes) and is what the hand-written ladders gave a null.
+    // ⭐⭐⭐ ONE LADDER, BOTH PAINTERS — `stripLadder`, the same call `buildTileGround`'s ③ emit
+    // makes. ⛔ The arrangement is NOT re-expressed here; what is local to this painter is only
+    // the datum (`cw`) and the CORNER override below. Two hand-written copies of these four spans
+    // produced three half-fixes in one day (`67e8b944`/`45b7aa60`, `17ebb477`, `f7a38ba0`), each
+    // landing in whichever copy the author was reading. They cannot drift again.
+    // ⛔ AN EDGE WITH NO RESOLVED MEASURE IS THE OPEN FIELD — `stripLadder({})` reads neither
+    // strip as SW, i.e. all-LU curb→centre. Byte-identical to what the hand-written copy gave a
+    // null, and the ruled answer (`ARCHITECTURE §"The compound shape"`: the drawing has no holes).
     const L = (i) => stripLadder(M(p.ri, i) || {}, lim)
     const cAt = (i) => cornerAt.get(`${p.ri}|${i}`)
-    const kAt = (i) => {
-      if (cAt(i) != null) return [0, 0]                                  // inside the corner
-      const back = cAt((i - 1 + n) % n) != null, fwd = cAt((i + 1) % n) != null
-      return (back && fwd) ? [0, 0] : back ? [0, 1] : fwd ? [1, 0] : [1, 1]
-    }
-    // ⛔ Returns a SCALAR when the two ends agree, so the unchanged path stays the common one.
-    const span = (i, f) => {
-      const l = L(i), k = kAt(i)
-      return k[0] === k[1] ? cw + f(l, k[0]) : [cw + f(l, k[0]), cw + f(l, k[1])]
-    }
+    // ⛔⛔ THE PAD MOVES ONE DEPTH, NOT FOUR — AND THAT IS THE WHOLE OF IT.
+    // *(Jacob's three configs, in his words, 2026-09-07:)*
+    //   SW↔SW → "the corner is just a continuous stripe around the outer band"  ⇒ NOTHING to do:
+    //           the walk is already the outer strip and already reaches the curb.
+    //   TL↔TL → "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to
+    //           the street"                                                     ⇒ the walk WRAPS at
+    //           its own depth and additionally REACHES the curb: `walkFrom → cw`.
+    //   SW↔TL → "there is a slope joiner"                                       ⇒ the set-back side
+    //           reaches the curb at the corner so the two walks meet. The same one depth.
+    // ⇒ ONE RULE, NO CASE SPLIT: at a corner the walk REACHES THE STREET and the grass stops.
+    // ⛔ `walkTo` and the leg's whole arrangement are UNTOUCHED, and that is load-bearing.
+    //
+    // ⛔ WHY THE PREVIOUS VERSION WAS A REGRESSION: overriding all four depths let the corner's
+    // cross-section REPLACE the leg's, so wherever a pad landed the frontage stopped responding to
+    // authoring — 58.8% of LS contour edges sit inside a corner extent and 33.7% of frontage
+    // stretches are ENTIRELY inside one. Jacob: "The swap regime doesn't work on adjacent blocks
+    // anymore." ▶ measure it with the BOTH-ARRANGEMENTS method, never by writing a literal:
+    //   `node scratch/claims-swap-reaches-the-paint.mjs` writes `{outer:'SW', inner:'LU'}`, which
+    //   IS the default on a treelawn-N edge, so it scores a no-op as a dead gesture and overstates
+    //   the class ~3× (1088 slots/75.6% against 1195 slots/27.5% painted both ways).
+    // ⭐ AND THE GRASS STOPPING IS THE LAWN'S OUTER EDGE, NOT A FOURTH DEPTH: where the lawn is
+    // the OUTER strip its start is pushed to the envelope, which inverts its span to nothing.
     return {
-      walkFrom: (i) => span(i, (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)),
-      walkTo:   (i) => span(i, (l) => l.outWalk ? (l.inWalk ? lim : l.dOut) : (l.inWalk ? lim : 0)),
-      // ⛔⛔ THE LAWN IS THE STRIP THE WALK IS NOT — symmetrically, in both arrangements. It STARTS
-      // where an outer walk ends and ENDS where an inner walk begins; the taper moves that end, and
-      // is never a second rule. Both strips SW ⇒ the walk takes the envelope and there is no lawn;
-      // both LU ⇒ the OPEN FIELD. Neither is a case and neither collapses (`SECTION §3.1`).
-      lawnFrom: (i) => span(i, (l) => l.outWalk ? l.dOut : 0),
-      lawnTo:   (i) => span(i, (l, k) => l.inWalk ? l.dOut * k : lim),
+      walkFrom: (i) => cAt(i) != null ? cw : cw + L(i).walkFrom,
+      walkTo:   (i) => cw + L(i).walkTo,
+      lawnFrom: (i) => { const l = L(i); return cw + (cAt(i) != null && !l.outWalk && l.inWalk ? lim : l.lawnFrom) },
+      lawnTo:   (i) => cw + L(i).lawnTo,
     }
+  }
+  if (sectionDump.on) for (const p of parts) for (let i = 0; i < p.ring.length; i++) {
+    const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
+    sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
+      owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
+      resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
+      hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
+      walk: [l.walkFrom, l.walkTo], lawn: [l.lawnFrom, l.lawnTo] })
   }
   const F = new Map(parts.map(p => [p, mk(p)]))
-  // ⛔⛔ THE DUMP RECORDS WHAT IS PAINTED, NOT WHAT THE LADDER WOULD HAVE SAID. It used to report
-  // `stripLadder`'s raw spans, which do NOT carry the corner override — so a probe asking "does the
-  // corner change the lawn here" was reading the LEG's answer and could never see the corner at all.
-  // It reported 0 inverted spans where there are 301 on LS and 3316 on HPDM.
-  // ⭐ It is `F`'s four functions, evaluated: the exact numbers `ins()` is handed. An instrument that
-  // reads an earlier stage than the one it is judging is the same defect as one reading the
-  // INTENTION instead of the ACHIEVEMENT — this file's recurring failure, and it caught me here.
-  if (sectionDump.on) for (const p of parts) {
-    const g = F.get(p)
-    for (let i = 0; i < p.ring.length; i++) {
-      const m = M(p.ri, i), l = stripLadder(m || {}, lim), r = (stamps[p.si] || [])[i]
-      sectionDump.rows.push({ ri: p.ri, i, lu: key, cw, lim, corner: cornerAt.get(`${p.ri}|${i}`) ?? null,
-        owner: r == null ? null : `${runs[r].skelId}|${runs[r].side}|${runs[r].segOrd}`,
-        resolved: m ? `${m.matOuter}/${m.matInner}` : null, tl: m?.treelawn ?? null, sw: m?.sidewalk ?? null,
-        hasTL: m?.hasTL ?? null, outWalk: l.outWalk, inWalk: l.inWalk, dOut: l.dOut,
-        legWalk: [l.walkFrom, l.walkTo], legLawn: [l.lawnFrom, l.lawnTo],
-        // ⛔ THE RAW VALUES, PAIR OR SCALAR — the offset takes a `[start,end]` ramp, and flattening
-        // it here would hide the very discontinuity a continuity check exists to find.
-        walkFromRaw: g.walkFrom(i), walkToRaw: g.walkTo(i),
-        lawnFromRaw: g.lawnFrom(i), lawnToRaw: g.lawnTo(i),
-        walk: [g.walkFrom(i), g.walkTo(i)].map(v => (Array.isArray(v) ? v[0] : v) - cw),
-        lawn: [g.lawnFrom(i), g.lawnTo(i)].map(v => (Array.isArray(v) ? v[0] : v) - cw) })
-    }
-  }
   const pedOuter = insAt(cw)
   // ⛔⛔ THE SLIDE IS UNIONED IN — NEVER CUT AND ADDED BACK ALONG THE SAME EDGE. Clipper is
   // integer-space (1 mm); a difference followed by a union on the same boundary leaves the two
@@ -4081,19 +3982,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // 79 → 54 on geometry that was a strict SUPERSET of the original. The stamp above needs no cut
   // at all — the arc is drawn by the same four offsets as the legs — and this is the one piece
   // that is genuinely additional.
-  let W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
-  // ⭐ `§6.1` step 5's own routing, in its own order: the slid walk is UNIONED in as concrete, and
-  // the LU wedge is CARVED from the SW strip (`swCarve`) and routed to the parcel accumulator.
-  // ⛔ The carve is the half that was never built here, and it is what makes the deep walk's tail
-  // become parcel instead of running to the kerb as concrete.
-  if (slidWalk.length) W = unionRings([...W, ...slidWalk])
-  if (swCarve.length) W = differenceRings(W, swCarve)
-  let LW = band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))
-  if (slidWalk.length) LW = differenceRings(LW, slidWalk)
-  if (cornerLu.length) LW = unionRings([...LW, ...cornerLu])
+  const W = band(ins(p => F.get(p).walkFrom), ins(p => F.get(p).walkTo))
   return {
-    Wacc:   inBlock(W),
-    tlByLu: { [key]: inBlock(LW) },
+    Wacc:   inBlock(slidWalk.length ? unionRings([...W, ...slidWalk]) : W),
+    tlByLu: { [key]: inBlock(slidWalk.length ? differenceRings(band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo)), slidWalk) : band(ins(p => F.get(p).lawnFrom), ins(p => F.get(p).lawnTo))) },
     luByLu: { [key]: inBlock(insAt(WB)) },
     curb:   inBlock(band(curbOuter, pedOuter)),
     capped,
