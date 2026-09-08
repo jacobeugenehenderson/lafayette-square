@@ -176,7 +176,15 @@ export function buildPathRibbons(ribbons, { alleyCap, intersect, subtract } = {}
   }
   const ALLEY_CAP = alleyCap || DEFAULT_CAP_BY_KIND.alley
   for (const a of (ribbons?.alleys || [])) {
-    push('alley', offsetPolyline(a.points, (a.pavedWidth || DEFAULT_PAVED_WIDTH) / 2, ALLEY_CAP))
+    // ⛔⛔ ALLEYS ARE A SEPARATE LOOP AND IT DID NOT CONSULT THE SMOOTHER. `ribbons.alleys` is its
+    // own collection, offset straight from `a.points`, so adding 'alley' to `ORGANIC_PATH_KINDS`
+    // reached NOTHING — the set is only read by the `ribbons.paths` loop above. Two collections,
+    // one of them bypassing the layer entirely.
+    // ⭐ AND THE FIRST ATTEMPT'S EVIDENCE COULD NOT SEE IT: I measured `smoothChain` by calling it
+    // directly in a probe (690 → 1378 vertices) instead of through `buildPathRibbons`. That tests
+    // the FUNCTION, not the PATH, and a function that is never called measures beautifully.
+    const pts = smoothPathPoints('alley', a.points)
+    push('alley', offsetPolyline(pts, (a.pavedWidth || DEFAULT_PAVED_WIDTH) / 2, ALLEY_CAP))
   }
   const clipFn = intersect?.length
     ? (rings) => intersectRings(rings, intersect)
