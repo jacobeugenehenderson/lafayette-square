@@ -2,8 +2,15 @@
 // ⭐⭐⭐ THE ACCEPTANCE FOR THE RAMP, AND IT IS A CONTINUITY TEST, NOT A DIMENSION ONE.
 // `RIBBONS §1`: "an AUTHORED feature is checked by DIMENSION; a DERIVED feature is checked by
 // CONTINUITY." The ramp is derived — nothing authors its length — so the only honest question is
-// whether the walk's outer boundary MOVES ACROSS ONE VERTEX, which is the chevron the operator
-// photographed. It is measured on the DENSIFIED ring (`sectionDump.ramp`), because that is where
+// whether the walk's boundary MOVES ACROSS ONE VERTEX, which is the chevron the operator
+// photographed.
+// ⛔⛔ BOTH EDGES. A BAND HAS TWO, AND A GATE THAT WATCHES ONE OF THEM IS A FALLBACK. This read
+// only `walkFrom` and reported 0 while the INNER edge stepped by a whole sidewalk width at every
+// mixed corner — 376 on LS, 1228 on HPDM — because `sectionDump.ramp` did not even disclose
+// `walkTo`. A clean pass over half the evidence is the silent substitution `CLAUDE.md` Layer 0 q2
+// names, inside the detector. The steps are also CLASSIFIED, because "at a corner" and "at a
+// frontage change with no corner" are two different defects that shared one counter.
+// It is measured on the DENSIFIED ring (`sectionDump.ramp`), because that is where
 // the depth the offset is handed actually lives; reading the ① edges cannot see the ramp at all
 // and reports the very step the ramp removes.
 // ⛔ It reads the painter's own disclosure channel. It re-derives nothing and writes nothing —
@@ -19,7 +26,7 @@ const r = buildProto(f, { quiet: true, protoProducer: true })
 const T = r.protoShapeTiles || []
 const S = (v) => Array.isArray(v) ? v[0] : v, E = (v) => Array.isArray(v) ? v[1] : v
 let tiles = 0, edges = 0, steps = 0, ramps = 0, threw = 0
-const jump = []
+const jump = [], byClass = {}
 for (const st of T) {
   sectionDump.ramp.length = 0
   try { sectionPassProtoTile(st, f.curbWidth, { outer: 'LU', inner: 'SW' }, f.blockCustoms) } catch (e) { threw++; continue }
@@ -35,8 +42,20 @@ for (const st of T) {
       if (Math.abs(E(cur.walkFrom) - S(cur.walkFrom)) > 1e-6) ramps++
       // a STEP is a discontinuity BETWEEN two edges: this edge ends at one depth, the next starts
       // at another. That is the jog; there is no length over which it happens.
+      // OUTER edge
       const d = Math.abs(S(nxt.walkFrom) - E(cur.walkFrom))
-      if (d > 0.05) { steps++; jump.push(d) }
+      // INNER edge — the half this gate used to be blind to
+      const di = (cur.walkTo != null && nxt.walkTo != null) ? Math.abs(S(nxt.walkTo) - E(cur.walkTo)) : 0
+      const worst = Math.max(d, di)
+      if (worst > 0.05) {
+        steps++; jump.push(worst)
+        // ⛔ A step AT A TANGENT is the corner. A step between two legs with no corner between
+        // them is the frontage-change class — a different defect, never folded into this counter.
+        const k = (cur.inArc && nxt.inArc) ? 'inside one arc'
+                : (cur.inArc || nxt.inArc) ? 'leg <-> ARC (the corner)'
+                                           : 'leg <-> leg (frontage change, NO corner)'
+        byClass[k] = (byClass[k] || 0) + 1
+      }
     }
   }
 }
@@ -44,5 +63,7 @@ const q = (a, p) => { const b = [...a].sort((x, y) => x - y); return b.length ? 
 console.log(`${scene}: ${tiles} tile(s) painted${threw ? ` · ⛔ ${threw} THREW` : ''}`)
 console.log(`  densified edges                        : ${edges}`)
 console.log(`  edges the walk's outer depth TRAVELS on : ${ramps}  ← the slope, on the leg`)
-console.log(`  DISCONTINUITIES > 5 cm across one vertex: ${steps}  ← the chevron. 0 is the acceptance`)
+console.log(`  DISCONTINUITIES > 5 cm across one vertex: ${steps}  ← the chevron, EITHER edge. 0 is the acceptance`)
 if (jump.length) console.log(`     jump size (m): median ${q(jump, .5).toFixed(2)} · p90 ${q(jump, .9).toFixed(2)} · max ${q(jump, 1).toFixed(2)}`)
+for (const k of Object.keys(byClass).sort()) console.log(`     ${String(byClass[k]).padStart(6)}  ${k}`)
+if (!steps) console.log('  \u2705 both edges continuous across every vertex.')

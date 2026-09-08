@@ -187,11 +187,29 @@ pointer that does not resolve reads as evidence already gathered.)*
   gate tests "is there lawn anywhere across the pad's full depth" — so it scores the prescribed
   parcel fill as *grass on the ADA pad*. **Open; do not tune against it.**
 
-  What exists on the leg is a scalar on the **outer strip's width**: **1** along the open leg,
-  **0** where the leg ends, ramping across vertices the painter inserts on the leg itself. A
-  kerb-side walk is untouched by it (SW↔SW subsumed); a set-back walk has its grass slope out and
-  arrives at the kerb (TL↔TL's pad below, TL↔SW's slope). ⇒ the ADA ramp is **flush to the kerb
-  through the whole corner because the leg already brought it there** — an outcome, not a rule.
+  ### ⭐⭐⭐ THE SCALAR MOVES THE **STRIP**, NOT ONE OF ITS EDGES — restored 2026-09-08
+  What exists on the leg is one scalar `k`: **1** along the open leg, **0** where the leg ends,
+  ramping across vertices the painter inserts on the leg itself. **It carries BOTH of the walk's
+  boundaries** — the outer to the kerb, and the inner to the arc's own `cMin` — which is `§6.1`
+  step 5's `slidQuad`, whose four corners `pt(0,0) · pt(rampLen,tloD) · pt(rampLen,conMax) ·
+  pt(0,cMin)` travel on both sides. The ground the walk vacates inboard is step 5's `luWedge`,
+  routed to `tlByLu[lu]` — parcel, never an absence.
+  ⛔⛔ **THE PORT KEPT ONLY THE OUTER EDGE, AND THAT WAS THE WHOLE DEFECT.** `walkTo` stayed pinned
+  at `lim` while `walkFrom` ramped, so the walk **widened** along the leg instead of **sliding**,
+  then met the arc at a step of exactly `lim − cMin`. **It was never a corner defect: the corner
+  resolved correctly and the leg arrived at the wrong cross-section.**
+  ⭐⭐ **AND IT WAS A RESTORE, NOT A BUILD** (`[[feedback_it_was_finished_restore_dont_rebuild]]`).
+  The construction was already in `sectionPassTile` and had been shipped; the stamp painter dropped
+  a piece in the port. ⛔ The first attempt at it *did* rebuild — it assumed the inner edge's target
+  was the leg's own width rather than the arc's `cMin`, which is true only at a mixed corner. That
+  made TL↔TL slide when it must not, and cost HPDM 1228 → 4906 steps while LS improved: **town #2
+  punishing an LS-shaped guess, inside one edit.**
+  ⇒ A kerb-side walk is untouched (SW↔SW subsumed, `wFrom` is 0 for every `k`); at TL↔TL `cMin` is
+  `lim`, so the inner edge has nowhere to travel and only the grass goes. **The three configs are
+  still three outcomes of one multiplier, with no case split.**
+  ▶ `node scratch/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
+  CLASSIFIES the steps.** Watching one edge is a fallback inside the detector: it read `walkFrom`
+  only and reported 0 while the inner edge stepped 1.50 m at every mixed corner.
   - **A leg ends in exactly three places and they are ONE test**: an eased corner's **tangent** ·
     ①'s **square** corner (R = 0, so the ease made no arc) · a change of **frontage**. ⛔ No gate on
     the two depths, so TL↔TL is not skipped and the additive quad that used to cover the
