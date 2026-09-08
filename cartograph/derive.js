@@ -2175,19 +2175,9 @@ export function deriveLayers(highways) {
 
   // ── Alleys: separate internal layer ─────────────────────────
   console.log('  [7/8] Processing alleys...')
-  // ⭐⭐⭐ THE ALLEY IS CUT AT THE ASPHALT, NOT AT THE SIDEWALK (Jacob, 2026-09-08:
-  // "We have/had a rule that the alleys are cut off flush with the *sidewalks* but it would make
-  // more sense to have them cut off at the asphalt").
-  // ⛔ THIS BUFFER USED TO REACH `pavementHW + curb + treelawn + sidewalk` — the back of the
-  // sidewalk — so an alley stopped at the OUTER edge of the ped zone and never touched the road.
-  // That is why an alley crossing a street is stored as two stubs with a hole in it: the hole is
-  // the whole right-of-way, not the roadway. ▶ MEASURED: 104 of 108 facing stub pairs on LS have a
-  // street dead-centre in the gap, median gap 16.5 m — `scratch/claims-alley-stub-pairs.mjs`.
-  // ⇒ Reaching only to the asphalt edge lets the alley run through the ped zone and meet the road,
-  // which is what it does on the ground. The remaining gap is then the ROADWAY, not the ROW.
-  // ⛔ The ped band must then be cut BY the alley rather than merely overdrawn by it — the tree
-  // gate (`forbidden-surface.mjs`) reads the painted polygons as truth, so an overdraw would leave
-  // plantable treelawn under an alley. That subtraction is a separate, deliberate step.
+  // Per-street ROW buffer out to the computed back-of-sidewalk — the SAME
+  // math that drives ribbon rendering, so the alley clip line matches the
+  // visible sidewalk back-edge per street (not a standards-based average).
   // Preference order: centerlines.json measure (per-side, surveyor-authored)
   // → standards.crossSection fallback.
   let _centerlineForAlleys = new Map()
@@ -2215,8 +2205,9 @@ export function deriveLayers(highways) {
       // that StreetRibbons renders).
       const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
       const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
-      // ⭐ ASPHALT EDGE — pavement + curb. ⛔ NOT `+ treelawn + sidewalk`; see the block above.
-      rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)
+      const leftOuter  = L.pavementHW + lCurb + (L.treelawn || 0) + (L.sidewalk || 0)
+      const rightOuter = R.pavementHW + rCurb + (R.treelawn || 0) + (R.sidewalk || 0)
+      rowHW = Math.max(leftOuter, rightOuter)
     } else {
       const hw = f.tags?.highway
       const type = hw === 'motorway' ? 'motorway'
@@ -2231,7 +2222,9 @@ export function deriveLayers(highways) {
       const L = dm.left, R = dm.right
       const lCurb = L.terminal === 'none' ? 0 : CURB_WIDTH
       const rCurb = R.terminal === 'none' ? 0 : CURB_WIDTH
-      rowHW = Math.max(L.pavementHW + lCurb, R.pavementHW + rCurb)   // asphalt edge, as above
+      const leftOuter  = L.pavementHW + lCurb + (L.treelawn || 0) + (L.sidewalk || 0)
+      const rightOuter = R.pavementHW + rCurb + (R.treelawn || 0) + (R.sidewalk || 0)
+      rowHW = Math.max(leftOuter, rightOuter)
     }
     // NOTE: no divide-by-2 for divided streets here.  For alley clipping we
     // want the ROW buffer to reach the outer back-of-sidewalk regardless of
@@ -2299,7 +2292,7 @@ export function deriveLayers(highways) {
     c.AddPaths(alleyKeptPieces, PolyType.ptSubject, true)
     c.Execute(ClipType.ctUnion, alleyUnion, PolyFillType.pftNonZero, PolyFillType.pftNonZero)
   }
-  console.log(`    ${alleyUnion.length} alley polygons (trimmed at the ASPHALT edge, not the back of sidewalk)`)
+  console.log(`    ${alleyUnion.length} alley polygons (block-trim polyline, caps inside sidewalk)`)
 
   // ── Street markings ─────────────────────────────────────────
   const stripeMeta = []
