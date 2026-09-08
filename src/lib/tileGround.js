@@ -3342,8 +3342,18 @@ export function sectionPassTile(st, cw, stripMat, blockCustoms = null) {
           const legWalkOuter = e.mat.outer === 'SW'
           const legTotal = e.total, capTotal = capE.total
           if (legTotal <= 1e-6 || capTotal <= 1e-6) continue
-          // Nothing to reconcile — same parity AND same width → no transition, and
-          // the un-coupled cap renders exactly as it always did.
+          // ⛔⛔ EVERY SHOULDER GETS A RAMP — the SAME regime as the corner, and Jacob says so:
+          // "This same regime applies to end caps." *(2026-09-07, immediately after ruling "every
+          // corner gets a joiner/ramp… sometimes that means it's subsumed.")*
+          // ⭐ Equal parity AND equal width ⇒ the walk's two slots coincide and the depth taper has
+          // zero travel ⇒ the transition is ZERO-LENGTH and draws nothing. It is SUBSUMED, exactly
+          // as SW↔SW is at a corner — an OUTCOME, not a branch.
+          // ⛔ WHAT THIS LINE USED TO BE: "fires ONLY on a real difference" (`SECTION §6.3`), which
+          // is the identical guard shape struck at the corner in `47694f7e` — a transition made
+          // CONDITIONAL on the thing it exists for.
+          // ⚠️ KEPT AS A CHEAP SKIP AND DOCUMENTED AS NOT A DECISION. Removing it entirely was
+          // measured a geometric NO-OP (uniform caps stay byte-identical, which is what "subsumed"
+          // predicts); it stays only to avoid the work, and the construction is correct without it.
           if (legWalkOuter === capWalkOuter && Math.abs(legTotal - capTotal) < 1e-6) continue
           // Where the WALK sits at each end. The walk must stay CONTIGUOUS across
           // the joint (the ADA path can't break), so it is one unbroken band from
