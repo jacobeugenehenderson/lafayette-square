@@ -159,6 +159,35 @@ pointer that does not resolve reads as evidence already gathered.)*
   the bug — **a joiner joins two things, and there is only ONE shape**; anyone building to that word
   builds something that stitches two pieces together, which is the walk model climbing back in
   through the vocabulary.)*
+  ### ⭐⭐⭐ RAMP vs SLOPE — TWO NAMED THINGS, AND THEY ARE THE BAND'S TWO EDGES *(Jacob, 2026-09-08)*
+  > **"The Ramp is the ADA pad, and the Slope is the sidewalk angling to meet the inner silhouette
+  > of the mono-width."**
+
+  | the name | WHAT it is | which boundary it moves | in code |
+  |---|---|---|---|
+  | **the RAMP** | **the ADA pad** — the concrete reaching the street. ⛔ Ramp and pad are ONE thing, not two | the walk's **OUTER** edge, to the kerb | `walkFromD` · `wFrom` |
+  | **the SLOPE** | **the sidewalk angling to meet the INNER SILHOUETTE of the mono-width band** | the walk's **INNER** edge, to the arc's depth | `walkToD` · `wTo` |
+
+  ⭐⭐ **THAT IS WHY THE BAND MUST BE CARRIED ON BOTH EDGES, AND WHY WATCHING ONE OF THEM IS A
+  FALLBACK.** The two names are not two constructions — they are the two boundaries of ONE band, and
+  each has its own target: the ramp's is the **kerb**, the slope's is the arc's own resolved depth
+  (`§6.1` step 4's `cMin`). ⛔ A gate that measured only `walkFrom` reported 0 discontinuities while
+  the inner edge stepped a whole sidewalk width at every mixed corner.
+
+  ⛔⛔ **AND THIS IS HOW TO READ JACOB'S EARLIER SENTENCE, WHICH COST A WHOLE PASS ON 2026-09-08:**
+  > *"TL↔TL the ADA ramp appears below, **no ramp**."*
+  **The first "ramp" is the RAMP — the pad. The second means the SLOPE.** At TL↔TL the legs AGREE, so
+  the inner edge has nowhere to travel: **no slope**, and the lawn dead-ends **blunt**. The pad still
+  appears, because it is unconditional. An agent reading both words as one thing removes the pad
+  along with the slope — which is exactly what happened. ⛔ **"No ramp" NEVER means "no pad."**
+
+  ⇒ The three configs, in the disambiguated vocabulary: **SW↔SW** — the walk is already at the kerb,
+  so the ramp is subsumed and there is no slope · **SW↔TL** — ramp, **plus a slope** on the deeper leg
+  · **TL↔TL** — ramp (the pad), **no slope**.
+  ⚠️ **`rampLen` is named for the wrong one of the two.** It is the length of the on-leg transition
+  — the SLOPE's run — and `§6.2` calls it "the slope RATIO" in the same breath as calling it
+  `rampLen`. Left as-is because it is load-bearing in two painters; **read it as `slopeLen`.**
+
   ### ⭐⭐⭐ THE RULE, IN JACOB'S WORDS — **EVERY CORNER GETS A RAMP** (2026-09-07)
   > *"every corner gets a joiner/ramp. Sometimes, that means it's subsumed by the SW <> SW. but if
   > it's TL <> SW, a slope appears to connect the different depths. TL <> TL the ADA ramp appears
@@ -395,7 +424,7 @@ The corner is a small, legible pipeline — each knob is one spot in `sectionPas
 |---|---|
 | **how round / how deep the arc reads** | `cMin` (step 4) — currently `min(conD)`. Use `max` → concentric at the deeper depth (Idea C: shallow walk fattens). Use a constant → fixed ADA width everywhere. |
 | **what's concrete vs parcel at the corner** | the `conD` rule (step 4, recorded per leg) — it decides how deep concrete runs before LU. |
-| **the ramp gentleness** | `rampLen` — the slope RATIO (`2 ×` the depth to travel), in both painters. |
+| **the ramp gentleness** | `rampLen` — ⛔ **read it as `slopeLen`: it is the SLOPE's run on the leg** (the RAMP is the ADA pad — `§4`'s vocabulary block). A ratio, `2 ×` the depth to travel, in both painters. |
 | **the leg↔arc seam tightness** | `tangentTrim` (step 2) + the sector `margin` — ⛔ WALK PAINTER ONLY; the stamp painter has no seam to tighten. |
 | **whether the corner wraps treelawn at all** | step 3 doctrine — today the curb is always concrete; to let treelawn wrap, route part of `concrete` to `cornerTreelawn` instead (this is the *reverted* "wrap" experiment — see history). |
 | **a smooth S vs straight transition** | a `smoothstep(u)=u²(3−2u)` on any of the depth interpolations (we used it on the earlier divider-taper; the slide is currently linear). |

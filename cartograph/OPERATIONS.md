@@ -72,6 +72,20 @@ The hardscape silhouette: centerlines, smoothing, caps, anchor, road metadata, c
 The pedestrian cross-section, stroked **inward** off the frozen curb (LU = the remainder).
 
 - **Ped handles** — treelawn / sidewalk widths per edge.
+- ⭐ **Where the treelawn Y/N default comes from — and what changed 2026-09-08.** Whether an edge
+  seeds WITH a treelawn is read from the city's own survey (`raw/survey.json`: the measured distance
+  from centreline to each sidewalk). ⛔ **A street whose lanes/AASHTO asphalt guess was WIDER than
+  its measured sidewalk position used to seed with NO treelawn** — the asphalt was clamped flush to
+  the surveyed walk and the gap was crushed to zero, which the Y/N test then read as *"the city says
+  there is no treelawn here."* It now reads that as UNKNOWN and falls back to the standard, because
+  the doubtful number is the ASPHALT (the clamp fires precisely when the guess did not fit the
+  measurement). ⇒ **83 street-sides on LS seed with a treelawn that previously did not.**
+  ⛔ **No width moved and nothing was redistributed** — every width is still a handle and your
+  override still wins; only the first draft changed. ▶ Check any town:
+  `node scratch/claims-the-survey-reaches-the-measure.mjs <scene>` — it also says LOUDLY when a town
+  has no `raw/survey.json` at all (HPDM and Altadena do not; their ped sections are AASHTO guesses
+  end to end). ⚠️ Reaches the map only after a **skeleton pour** — a Survey-exit freeze rewrites
+  `shape.json`, not the seed.
 - **Strip-material swap** — ctrl-click an LU↔SW strip to flip it.
 - **Edit-row vs edit-block** — author one frontage-edge or a whole block.
 - **Translucency-focus** — the selected element renders translucent / context opaque (by design, `RIBBONS.md §5`).

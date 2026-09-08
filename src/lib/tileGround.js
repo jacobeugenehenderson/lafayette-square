@@ -3855,7 +3855,13 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
-  // ══ THE RAMP NEEDS VERTICES ON THE LEG, SO PUT THEM THERE ════════════════════════════════════
+  // ══ THE SLOPE NEEDS VERTICES ON THE LEG, SO PUT THEM THERE ═══════════════════════════════════
+  // ⛔ VOCABULARY (Jacob, 2026-09-08): "The Ramp is the ADA pad, and the Slope is the sidewalk
+  // angling to meet the inner silhouette of the mono-width." They are the band's TWO EDGES — the
+  // RAMP is the OUTER edge reaching the kerb (`walkFromD`), the SLOPE is the INNER edge reaching
+  // the arc's `cMin` (`walkToD`). What needs vertices on the leg is the SLOPE.
+  // ⚠️ `rampLen` below is named for the wrong one: it is the SLOPE's run. Left as-is because it is
+  // load-bearing in both painters — read it as `slopeLen`. Full table: `SECTION §4`.
   // ⭐⭐⭐ THE MISSING HALF, BUILT. *(Jacob: "now add the vertices on the leg.")* `SECTION §4`'s RAMP
   // entry and this file's own comment both filed it: "the honest home for it is a per-vertex ramp,
   // which needs vertices inserted along the leg that the frozen contour does not have."
