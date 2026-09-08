@@ -7463,10 +7463,23 @@ export function buildTileGround(ribbons, opts = {}) {
               // ⛔ `FILLET_TURN_TOL` is not a new threshold — it is `filletRing`'s existing ruled
               // constant, the same one `easeContour` carries for the same reason ("a near-straight
               // vertex is a CURVE SAMPLE, not a corner"). A third reader, not a third rule.
-              // ⭐⭐ WHY BOTH AND NOT TURN ALONE: a street that BENDS mid-block turns without any
-              // intersection, and a pad there would be an ADA ramp in the middle of a frontage.
-              // The conjunction is a strict NARROWING of what shipped — it can only remove a pad,
-              // never invent one, which is what makes it safe to land on a town nobody has seen.
+              // ⛔⛔⛔ AND THE CONJUNCTION IS GONE, 2026-09-08 (Jacob): **"THE PROTOPOLYGON DOES NOT
+              // INCLUDE NODES."** The sentence that justified it — "a street that BENDS mid-block
+              // turns without any INTERSECTION" — is a CHAIN-WORLD sentence. An intersection is a
+              // graph concept; ① has no nodes and no intersections, only a contour that turns. The
+              // worry imported a chain concern into a shape and then vetoed the shape with it.
+              // ⛔ ITS SAFETY ARGUMENT WAS BACKWARDS FOR A KIT. "It can only remove a pad, never
+              // invent one, which is what makes it safe on a town nobody has seen" is blind to
+              // false NEGATIVES — and a removed corner is a MISSING ADA RAMP on exactly that town.
+              // ▶ MEASURED before removal: of the arcs the ease actually made, the label REFUSED
+              //   LS 580 of 1058 (54.8%) · HPDM 3035 of 6350 (47.8%) — and the refused arcs carry
+              //   the SAME median turn as the licensed ones, 90°. Square street corners, vetoed by
+              //   a chain label. The operator found two of them by eye in places every gate called
+              //   green, and neither could respond to authoring because nothing was there to
+              //   respond. ▶ `node scratch/claims-the-ease-is-the-corner.mjs <scene>`
+              // ⇒ THE EASE IS THE CORNER TEST. Where the contour turns past `FILLET_TURN_TOL` the
+              // ease made an arc, and that arc IS the corner — no label, no conjunction, and no
+              // conditional ("the corner is what it is, where it is").
               // ▶ MEASURED on ①'s own ring, both towns: LS 39 of 1283 owner changes (3.0%) and
               //   HPDM 269 of 5527 (4.9%) sit where ① DOES NOT TURN. They are exactly the ones no
               //   fillet rounds — nothing turns, so nothing was rounded — so downstream they fell
@@ -7511,13 +7524,12 @@ export function buildTileGround(ribbons, opts = {}) {
           const iaCorner = mine.map(EC => {
             const n2 = EC.ring.length
             const o = (i) => (EC.labs?.[i] != null ? (ownAt.get(EC.labs[i]) ?? null) : null)
-            // ⛔ TWO QUESTIONS, TWO SOURCES, AND ONLY ONE OF THEM IS THE CHAIN'S. ① must TURN here
-            // (its own shape) AND the owner must change (whose cross-sections meet). See the
-            // `protoTurns` block above for why the first half was missing and what it cost.
-            return EC.ring.map((_, i) => {
-              const a = o((i - 1 + n2) % n2), b = o(i)
-              return a != null && b != null && a !== b && protoTurns.has(EC.labs[i])
-            })
+            // ⭐⭐⭐ THE SHAPE ANSWERS IT ALONE. ① TURNS here ⇒ it is a corner. The owner half was
+            // a chain identity overruling a question about a shape, and it vetoed half the real
+            // corners on both towns (see the `protoTurns` block). `o` is retained because the
+            // OWNER still answers WHOSE — it is simply not allowed to answer WHETHER.
+            void o
+            return EC.ring.map((_, i) => protoTurns.has(EC.labs[i]))
           })
           // per ② contour vertex: is this ①'s corner? ⛔ Emitted as a FACT of the shape, so the
           // consumer never has to ask the eased geometry a question it cannot answer.

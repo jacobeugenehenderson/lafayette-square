@@ -468,10 +468,24 @@
 >   ⭐ **Where ① does not turn there is NO CORNER, whatever the labels say** — the contour runs
 >   straight through, exactly as `① HAS NO NODES` states. ▶ measure it on ①'s own sharp ring, never
 >   on ②: `node scratch/claims-a-corner-is-where-one-turns.mjs <scene>`.
->   ⛔ **AND NOT THE TURN ALONE** — a street that BENDS mid-block turns with no intersection there,
->   and a pad there is an ADA ramp in the middle of a frontage. The conjunction is a strict
->   NARROWING of the identity test: it can only remove a corner, never invent one, which is what
->   makes it safe on a town nobody has inspected.
+>   ### ⛔⛔⛔ THE CONJUNCTION IS RETIRED, 2026-09-08 — **"THE PROTOPOLYGON DOES NOT INCLUDE NODES."** *(Jacob)*
+>   This read *"AND NOT THE TURN ALONE — a street that BENDS mid-block turns with no **intersection**
+>   there."* ⛔ **That is a CHAIN-WORLD sentence.** An intersection is a graph concept; ① has no
+>   nodes and no intersections, only a contour that turns. The worry imported a chain concern into
+>   a shape and then let it veto the shape. **Excised, not bannered.**
+>   ⛔ **AND ITS SAFETY ARGUMENT WAS BACKWARDS FOR A KIT.** *"It can only remove a corner, never
+>   invent one, which is what makes it safe on a town nobody has inspected"* is blind to false
+>   NEGATIVES — and a removed corner is a **MISSING ADA RAMP** on precisely that town. ⭐ **A
+>   one-sided safety argument is not a safety argument; name the error it CANNOT catch.**
+>   ▶ MEASURED at removal: of the arcs the ease actually made, the label refused **LS 580 of 1058
+>   (54.8%) · HPDM 3035 of 6350 (47.8%)**, and the refused arcs carried the **same median turn as
+>   the licensed ones, 90°** — square street corners, vetoed by a chain label. The operator found
+>   two of them by eye in places every gate called green, and neither could respond to authoring
+>   because there was nothing there to respond.
+>   ⇒ **THE EASE IS THE CORNER TEST.** Where the contour turns past `FILLET_TURN_TOL` the ease made
+>   an arc, and that arc IS the corner. The owner still answers **WHOSE**; it may not answer
+>   **WHETHER**. ▶ `node scratch/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
+>   its teeth after the fix (a residual arc with no ramp is still reported, with its turn).
 >   ⛔ **The turn tolerance is `FILLET_TURN_TOL`, and it is not new** — `filletRing`'s ruled constant,
 >   which `easeContour` already carries for the same reason (*"a near-straight vertex is a CURVE
 >   SAMPLE, not a corner"*). A third READER of one rule, never a third rule.
