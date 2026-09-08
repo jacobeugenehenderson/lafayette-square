@@ -150,13 +150,56 @@ pointer that does not resolve reads as evidence already gathered.)*
 ### ⛔ OPEN
 - **Cap folds** — one chain's two sides meeting at a tip. `§6.3` rules it (the bulb has NO halves,
   one cross-section, whole to the cap owner). **Not built.**
-- ⭐ **The ANGLED SLOPE JOINER at a same-road chain change — ASPIRATION, filed, not built.** *(Jacob,
+- ⭐⭐ **THE RAMP — the curb ramp, and it is UNBUILT.** *(Named 2026-09-07. Jacob coined "the angled
+  slope corner joiner" that morning and RETIRED the word the same night: "'joiner' sounds like
+  chains." He is right, and the name would have caused the bug — **a joiner joins two things, and
+  there is only ONE shape**; anyone building to that word builds something that stitches two pieces
+  together, which is the walk model climbing back in through the vocabulary.)* *(Jacob,
   2026-09-07: "even if we think something changes mid-leg, that's what the angled slope corner joiner
   is for.")* The kit cuts one road into many chains and rule 4 says their cross-sections genuinely
   differ, so the ped band steps mid-street with no corner to carry it. ⛔ **The cure is NOT to merge
-  the chains** — that averages away the survey and was built and excised the same day. The joiner is
+  the chains** — that averages away the survey and was built and excised the same day. The RAMP is
   the cap coupler's shoulder taper (`§6.3`, "width is germane") applied at an ordinary chain change.
   ▶ `node scratch/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run; it names the instances.
+  ### ⭐⭐⭐ THE RULE, IN JACOB'S WORDS — **EVERY CORNER GETS A RAMP** (2026-09-07)
+  > *"every corner gets a joiner/ramp. Sometimes, that means it's subsumed by the SW <> SW. but if
+  > it's TL <> SW, a slope appears to connect the different depths. TL <> TL the ADA ramp appears
+  > below, no ramp."*
+  ⛔⛔ **IT IS UNCONDITIONAL, AND THE TWO DEPTHS DECIDE ONLY WHAT IT LOOKS LIKE.** The three configs
+  are three OUTCOMES of one construction, not three cases to branch on:
+  | config | the two walk depths | what appears |
+  |---|---|---|
+  | **SW↔SW** | both at the kerb, equal | **nothing — the ramp is SUBSUMED.** Zero length by construction |
+  | **TL↔SW** | different | **a SLOPE**, connecting the two depths |
+  | **TL↔TL** | both set back, equal | **the ADA pad BELOW** (outboard of the walk, reaching the street) — **no slope** |
+  ⭐ **THAT IS WHY SW↔SW WAS THE ONLY CONFIG THE EYE CALLED CORRECT** — it is the one where the
+  missing construction is *supposed* to be invisible, so its absence cannot be seen.
+  ⛔ **AND IT CONDEMNS THE CURRENT GUARD.** The code fires its transition only where the two legs
+  DIFFER (`conMax > cMin`), so TL↔TL — the config that needs the pad below — gets nothing at all.
+  A difference decides the FORM; it must not decide WHETHER.
+  ### ⛔⛔ THE COST OF THE ABSENCE, AND IT IS EVERY CORNER ON THE MAP
+  The band steps sideways by a full treelawn width across ONE vertex, at essentially every corner↔leg
+  boundary on both towns — the chevron the operator photographed all evening ("all the corners are
+  the same, all the corners are shite"). ⭐ The doctrine being applied is CORRECT (`§6.1` step 3, the
+  street edge is concrete and the grass stops); what is missing is the ramp that carries it.
+  ▶ `SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs` — ⛔ re-run, never quote.
+  ### ⭐⭐⭐ WHY IT WAS NEVER BUILT, AND IT IS A PROPERTY OF ①, NOT A BUG IN EITHER PAINTER
+  **①'s contour has nowhere to put it.** Its vertices are spent inside the eased corner arcs, where
+  the depth must be CONSTANT; the straight leg, where the depth must CHANGE, gets a **median of ONE
+  long edge per frontage** (▶ the check above). A per-edge depth ladder therefore has exactly one
+  place to put a value along a frontage, so the corner's depth change *must* be a step. ⛔ Not a join
+  error, not a walk error — a RESOLUTION property of the frozen contour, and the code says so at the
+  site: *"the honest home for it is a per-vertex ramp, which needs vertices inserted along the leg
+  that the frozen contour does not have."*
+  ⇒ **The Ramp is therefore two things: points on the leg, and a depth that varies across them.**
+  `offsetRingVariable` has accepted a `[start,end]` per-edge ramp since it was written and nothing
+  uses it — the missing half is the POINTS.
+  ⚠️ **⛔ COUNT LONG EDGES, NEVER RAW EDGES.** At the span level ①'s contour looks rich, and that
+  reading REFUTES the sparsity finding. The real number appears only when arc edges are separated
+  from straight ones — nearly four fifths of ①'s vertices sit inside the eased arcs, where the depth
+  must be constant. The forensic that found this nearly reported it the other way.
+  ⛔ Attempts that failed because they had no room: a taper multiplier on the divider, and a slide
+  quad struck first at the apex and then at the tangent. All three reverted the same evening.
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
   **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all
@@ -244,6 +287,11 @@ The corner is built in **`sectionPass` (`tileGround.js`)** entirely off the **fr
 > ⚠️ **AND ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE:** step 5 above writes
 > `perp = C→T`; `sectionPassTile` computes `C − T`, i.e. **T→C**, and it must, because `d` increases
 > INWARD from the kerb toward the arc centre. **The arrow in step 5 is backwards.**
+
+> ### ⭐⭐⭐ AND THE RAMP IS UNCONDITIONAL — `§4`'s "THE RAMP" carries the ruling (2026-09-07)
+> **Every corner gets one.** SW↔SW subsumes it (both walks at the kerb, zero length) · TL↔SW shows a
+> SLOPE connecting the two depths · TL↔TL shows the ADA pad BELOW the walk, no slope. ⛔ The two
+> depths decide the FORM, never WHETHER. A guard that fires only on a difference gives TL↔TL nothing.
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
 - **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).
@@ -450,7 +498,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 > **tile's** edges (`:1286`), so authoring an edge deeper grows the whole block's band while shallower routes
 > its residual to LU (`:1511`) ⇒ **the envelope is per-BLOCK, only ownership is per-edge, and the partition
 > runs purely along the ring** (§3.3 step 2) · the bent corner as a band slice (§6.1) · the inside/outside
-> strip swap with its slope-joiner (§3.1, §6.1 Idea A) · **`jtMiter`, never `jtRound`** (invariant 2).
+> strip swap with its RAMP (§3.1, §6.1 Idea A) · **`jtMiter`, never `jtRound`** (invariant 2).
 >
 > ⭐ **On clamps — settled 2026-05-30, don't re-open it.** `§6.9`.5 (*"no cusp guard; self-intersection is
 > signal, not error"*) governs **geometrically MEANINGFUL** degeneracy: the authored input shrinks the
@@ -507,7 +555,7 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
 - **⭐ THE THREE CORNER CONFIGS, IN THE OPERATOR'S WORDS** *(Jacob, 2026-09-07)*, and they apply **at corners only**:
   · **SW↔SW** — "the corner is just a continuous stripe around the outer band." Nothing is added; the walk is already the outer strip and already reaches the curb. *(This retires the "SW↔SW → concrete→LU refinement" that stood here as open.)*
   · **TL↔TL** — "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to the street."
-  · **SW↔TL** — "there is a slope joiner."
+  · **SW↔TL** — the RAMP (Jacob's "slope joiner", renamed 2026-09-07).
   ⇒ **One rule, no case split: at a corner the walk REACHES THE STREET and the grass stops.** ⛔ The pad moves ONE depth; `walkTo` and the leg's arrangement are untouched, or the frontage stops responding to authoring. ▶ `node scratch/claims-swap-reaches-the-paint.mjs`
 - **⭐ END CAPS FOLLOW THE SAME RULES** *(Jacob, 2026-09-07)*: **no centre seam in a cap**, and where a cap meets its legs **the same connectors apply**. `§6.3` owns the coupler; ⛔ the fold is still unbuilt.
 - **⛔⛔ AND THE ONE-LINE TEST FOR ALL OF IT — `RIBBONS` Slice 2, ruled 2026-08-14: THERE IS EXACTLY ONE LICENSED HARD SEAM, `ADA → TL|LU`. ANY OTHER HARD SEAM IS A DEFECT.** Leg into corner, corner into cap, block into block are offsets of one contour, so a seam there is not constructible. ⛔ **The joints are not seam LOCATIONS — they are the places most REQUIRED to be seamless**, and "a seam belongs at a real corner, a block end, or a cap" is struck by name as the exact inversion.

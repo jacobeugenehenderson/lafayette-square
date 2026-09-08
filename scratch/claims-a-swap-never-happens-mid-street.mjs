@@ -101,6 +101,7 @@ for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-dem
 }
 console.log(bad ? `\n⛔ FAIL — the cross-section changes where no corner is. ⛔ THE CURE IS NOT TO MERGE THE CHAINS
    (SECTION §4 rule 4 — that averages away the survey, and it was built and excised on 2026-09-07).
-   It is Jacob's rule 3, and it is UNBUILT: "that's what the angled slope corner joiner is for."`
+   It is Jacob's rule 3, and it is UNBUILT: THE RAMP (he coined "angled slope corner joiner" and
+   retired the word the same day — a joiner joins two things and there is only one shape).`
                 : `\n✅ PASS — every cross-section change sits at a corner or a cap fold.`)
 process.exit(bad ? 1 : 0)

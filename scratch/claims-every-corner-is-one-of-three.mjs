@@ -7,7 +7,7 @@
 //   SW↔SW  both walks at the curb   → "the corner is just a continuous stripe around the outer band"
 //   TL↔TL  both walks set back      → "the sidewalk wraps around, but there is an added ADA pad to
 //                                      get the pedestrian to the street"
-//   SW↔TL  mixed                    → "there is a slope joiner"
+//   SW↔TL  mixed                    → the RAMP (Jacob's "slope joiner", renamed 2026-09-07)
 //
 // ⭐⭐ THE ACCEPTANCE IS WHAT ALL THREE SHARE, NOT THREE SEPARATE TESTS. Whichever spec a corner is,
 // the drawn walk must be (A) ONE PIECE through the corner — `PIPELINE` step 6, "a seam between two

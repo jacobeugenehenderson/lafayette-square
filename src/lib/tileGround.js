@@ -3628,7 +3628,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // ⛔ AND THE TWO SPANS STILL RESOLVE SEPARATELY — `SECTION §4` rule 4: a road's spans genuinely
     // carry different authored cross-sections and THAT VARIATION IS THE SURVEY. Merging them was
     // built and excised the same day. They keep their own arrangements; what changes is that the
-    // boundary between them is not a corner, so it gets the ANGLED SLOPE JOINER (§6.1 step 5 with
+    // boundary between them is not a corner, so it gets THE RAMP (§6.1 step 5 with
     // no arc), not a pad.
     const roadOf = (id) => String(id ?? '').replace(/-\d+$/, '')
     const feKey = (r) => r == null ? null : `${roadOf(runs[r].skelId)}|${runs[r].side}`
@@ -3867,16 +3867,20 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     }
   }
 
-  // ══ THE ANGLED SLOPE JOINER — a road's two spans meeting where NO CORNER IS ═══════════════════
+  // ══ THE RAMP — a road's two spans meeting where NO CORNER IS ════════════════════════════════
   // ⭐ RECOVERED from `92c4d824` + `e7c5198c` (2026-09-07), built and then stranded on a branch.
   // ⛔ NOT re-derived: the constants, the guards and the two-sided probe are that build's.
   // *(Jacob: "even if we think something changes mid-leg, that's what the angled slope corner
-  // joiner is for." And, on the far-kerb T: "ABSOLUTELY DO NOT APPLY IT HERE because it's not a
+  // joiner is for" — his word that morning, RETIRED the same night: "'joiner' sounds like chains."
+  // ⛔ A JOINER JOINS TWO THINGS AND THERE IS ONLY ONE SHAPE. The word would cause the bug: anyone
+  // building to it builds something that stitches two pieces together, which is the walk model
+  // returning through the vocabulary. It is THE RAMP — the curb ramp, a thing that exists on the
+  // ground. And, on the far-kerb T: "ABSOLUTELY DO NOT APPLY IT HERE because it's not a
   // corner!" — so it fires HERE and the corner construction does not.)*
   //
   // ⛔⛔ THE CURE IS NOT TO MERGE THE SPANS. `SECTION §4` rule 4 — a road's spans genuinely carry
   // different authored cross-sections and THAT VARIATION IS THE SURVEY. A road-level merge was
-  // built for this exact symptom on 2026-09-07 and excised the same day. The joiner makes the
+  // built for this exact symptom on 2026-09-07 and excised the same day. The RAMP makes the
   // difference SURVIVABLE: both keep their arrangement along their span, and only a short
   // transition at the joint slopes.
   // ⭐⭐ IT IS `§6.1` STEP 5 WITH NO ARC — `conD`, `cMin`, `conMax`, the slid quad, all step 5's,
@@ -3891,9 +3895,20 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     for (const p of parts) {
       const ring = p.ring, n = ring.length, stp = stamps[p.si] || []
       for (let q = 0; q < n; q++) {
-        // ⛔ A CORNER OWNS ITS OWN JOINT — the pad is already carrying the change there, and a
-        // second construction at the same place is the fourth configuration.
-        if (seamAt.has(`${p.ri}|${q}`)) continue
+        // ⛔⛔ NO GATE HERE. **EVERY CORNER GETS A RAMP** — Jacob, 2026-09-07:
+        // > "every corner gets a joiner/ramp. Sometimes, that means it's subsumed by the SW <> SW.
+        // >  but if it's TL <> SW, a slope appears to connect the different depths. TL <> TL the
+        // >  ADA ramp appears below, no ramp."
+        // ⭐ THE TWO DEPTHS DECIDE THE FORM, NEVER WHETHER. The three configs are three OUTCOMES of
+        // one unconditional construction, and each falls out of `conMax − cMin` with no branch:
+        //   SW↔SW  both at the kerb, equal    → `rampLen` 0 ⇒ SUBSUMED, nothing drawn
+        //   TL↔SW  different                  → a SLOPE connecting the two depths
+        //   TL↔TL  both set back, equal       → `rampLen` 0 here; the ADA pad BELOW the walk is the
+        //                                       corner stamp's own job (`walkFrom → cw`), not a slope
+        // ⛔ WHAT STOOD HERE — `if (seamAt.has(...)) continue`, "a corner owns its own joint" — made
+        // the construction fire ONLY where there is no corner, i.e. everywhere except the place the
+        // operator was looking at. That is the transition being CONDITIONAL on the thing it exists
+        // for. It is also why TL↔SW showed a step: the slope was gated off at every corner on the map.
         const eA = (q - 1 + n) % n, eB = q
         const mA = M(p.ri, eA), mB = M(p.ri, eB)
         if (!mA || !mB || mA === mB) continue
@@ -3903,7 +3918,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         const cMin = Math.min(...conc)
         const deepA = A.conD >= B.conD
         const deep = deepA ? A : B
-        if (deep.conD <= cMin + 1e-6) continue           // the same cross-section — invisible
+        // ⭐ EQUAL DEPTHS ⇒ `rampLen` 0 ⇒ a degenerate quad ⇒ nothing drawn. That is "subsumed",
+        // and it falls out rather than being branched on. ⛔ Kept only as a cheap skip, NOT as a
+        // decision: the construction still ran and still produced the right answer without it.
+        if (deep.conD <= cMin + 1e-6) continue           // subsumed — zero-length by construction
         // the ramp runs up the DEEPER span, away from the joint
         const J = ring[q], away = deepA ? (q - 1 + n) % n : (q + 1) % n
         const dir = nrm2([ring[away][0] - J[0], ring[away][1] - J[1]])
@@ -3943,7 +3961,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     //   TL↔TL → "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to
     //           the street"                                                     ⇒ the walk WRAPS at
     //           its own depth and additionally REACHES the curb: `walkFrom → cw`.
-    //   SW↔TL → "there is a slope joiner"                                       ⇒ the set-back side
+    //   SW↔TL → the RAMP                                                        ⇒ the set-back side
     //           reaches the curb at the corner so the two walks meet. The same one depth.
     // ⇒ ONE RULE, NO CASE SPLIT: at a corner the walk REACHES THE STREET and the grass stops.
     // ⛔ `walkTo` and the leg's whole arrangement are UNTOUCHED, and that is load-bearing.
