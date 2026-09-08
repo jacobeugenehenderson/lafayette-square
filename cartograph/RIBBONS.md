@@ -459,7 +459,10 @@
 >   > *(Jacob, 2026-09-07, on the ADA pad eating a whole block: "Are you **positive** you are working
 >   > from and only from the protopolygon? **The protopolygon doesn't have a node/corner there in the
 >   > first place.**")*
->   **A corner is a vertex where ① TURNS *and* the owner changes. Both, and for different reasons.**
+>   **A corner is a vertex where ① TURNS — and that is the whole test.** ⛔ It read *"…**and** the
+>   owner changes. Both, and for different reasons"* until 2026-09-08. **RETIRED, and excised rather
+>   than bannered** (a false sentence is shorter than its correction and gets read first): the owner
+>   is a chain identity, and see the retirement block below for what it cost.
 >   ⛔ This section used to read *"the corner is found by carried identity: the OWNER CHANGING along
 >   the ring… so no angle test"* — and that sentence, taken at its word, put a chain label in charge
 >   of a question about a shape. It is **excised**, not bannered: an owner is `protoOwners[].skelId`

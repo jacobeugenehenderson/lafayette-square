@@ -140,7 +140,10 @@ pointer that does not resolve reads as evidence already gathered.)*
    unreachable — a **recorded regression**, re-committed here on 2026-09-07 for want of reading it.
 6. ### ⛔⛔ **AND THE POSITIVE FORM RULE 5 NEVER STATED — WHICH IS WHY RULE 5 DID NOT SAVE US.**
    *(Jacob, 2026-09-07: "The protopolygon doesn't have a node/corner there in the first place.")*
-   **A corner is a vertex where ① TURNS *and* the owner changes.** Rule 5 says what a corner is NOT;
+   **A corner is a vertex where ① TURNS.** ⛔ This read *"…**and** the owner changes"* until
+   2026-09-08; the conjunction is RETIRED and the sentence is excised rather than bannered — a
+   chain label vetoed 54.8% of LS's arcs, all turning 90°, each refusal a missing ADA ramp
+   (`RIBBONS §1`). Rule 5 says what a corner is NOT;
    with no rule saying what it IS, the corner test fell back to the only thing to hand — the owner
    label — and that is a chain identity wearing a shape's job. ⛔ **A prohibition without its
    positive is half a rule, and the half that is missing is the half the code will invent.**
@@ -172,8 +175,10 @@ pointer that does not resolve reads as evidence already gathered.)*
   ⛔⛔ **THIS READ *"the corner gets NOTHING — no cross-section, no pad depth"*, AND THAT HALF WAS
   A REGRESSION, MEASURED 2026-09-08.** The corner **constructs** nothing — invariant 1 stands, no
   primitive, no sector, no bid — but it **resolves ONE depth for the whole arc**, `§6.1` step 4's
-  `cMin = min(both legs' conD)`. ⭐ An arc's OWNER CHANGES at its middle; that is what makes it a
-  corner. So with no depth of its own, each half of the arc takes its own leg's cross-section and
+  `cMin = min(both legs' conD)`. ⭐ An arc's OWNER CHANGES at its middle — that is what makes it
+  span TWO legs, and it is why one depth must be resolved for the whole arc. ⛔ **It is NOT what
+  makes it a corner**: ① TURNING is (`RIBBONS §1`, 2026-09-08). So with no depth of its own, each
+  half of the arc takes its own leg's cross-section and
   the two meet at a **step, mid-arc** — the operator's *"there's not supposed to be a hard edge
   angle in the middle of the corner."*
   ⭐⭐ **`min` IS NOT A PREFERENCE — IT IS READ OFF THE SHIPPED SLAB**, the map whose corners were
@@ -345,18 +350,27 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 > > arc… it is what naturally happens when the band follows the rounded curb silhouette."*
 > ⛔ **So "where is the pad located" is the wrong question, and asking it is what produced four
 > constructions in thirty hours.** The band is already continuous through the corner; nothing is
-> placed there. ⭐ **`§6.1` step 5 is how that coexists with step 3** (*"the street edge of a corner
-> is ALWAYS concrete; treelawn never wraps the kerb"*): **the treelawn tapers out ALONG THE LEG**, so
-> the cross-section arriving at the corner is already all concrete and the corner carries it through
-> unchanged. **The transition is on the leg, not at the corner** — and what moves is the DIVIDER,
-> which is the one thing invariant 4 licenses to vary.
+> placed there. ⭐ **`§6.1` step 5 is how that coexists with step 3** — but ⛔ **ONLY WHERE THE LEGS
+> DISAGREE.** At **SW↔TL** the treelawn tapers out along the leg, so the cross-section arriving at
+> the corner is already at the kerb and the corner carries it through unchanged: the transition is
+> on the leg, and what moves is the DIVIDER, the one thing invariant 4 licenses to vary.
+> ⛔⛔ **AT TL↔TL IT DOES NOT TAPER — IT DEAD-ENDS BLUNT** (2026-09-08). The legs agree, so there is
+> nothing to travel and the ramp is zero-length; the lawn runs FULL WIDTH to the tangent and stops,
+> and the pad fills through behind it, tangent to tangent. `_archive/CORNER_DEBUG.md` had the word:
+> *"Treelawn always dead-ends (ADA curb ramp). The sidewalk fills through behind the treelawn's
+> blunt end."* ⚠️ And step 3's *"treelawn never wraps the kerb"* is a **DEFAULT, never a gate**
+> (`§4`, 2026-09-08: grass at the kerb inside a corner is UNCOMMON, NOT FORBIDDEN); ⛔ no check may
+> score it as a defect.
 > ⛔ **THE PALIMPSEST IS RETIRED** — three stacked answers ("the arc" → "the owner changing" → "① turns
 > AND the owner changes"), each correcting its predecessor without deleting it, none ever reconciled
 > against invariant 1. → `_archive/SECTION-pad-location-palimpsest-2026-09-07.md`. Two facts from it
 > stay live because they are properties of the code, not of the doctrine:
-> - **The corner MARK is `iaCorner`: ① turns AND the owner changes.** The shape answers *whether*, the
->   label answers *whose*; an owner is a chain identity and cannot answer a question about ①'s shape.
->   `RIBBONS §1`, "the corner test, in its corrected form".
+> - **The corner MARK is `iaCorner`, and it is the EASE'S OWN PER-VERTEX STAMP: `EC.arc[i] != null`.**
+>   ⛔ **This read *"① turns AND the owner changes"* until 2026-09-08 and the conjunction is RETIRED**
+>   — the owner is a chain identity, it vetoed **54.8% of LS's arcs** (same 90° median turn as the
+>   ones it licensed), and every refusal was a missing ADA ramp. ⛔ And it must be read off the ease,
+>   never off `protoTurns`, which is keyed by LABEL and smears the mark down a whole frontage.
+>   Full form + the two-jobs lesson: `RIBBONS §1`, "the corner test, in its corrected form".
 > - **An arc's extent is `len` EDGES, not `len + 1`.** The inclusive bound also claimed the first edge
 >   of the next leg, and on ①'s sparse contour a straight frontage is ONE EDGE — a quadrilateral block
 >   painted 458 m of 458 m as curb ramp. ▶ `SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs`

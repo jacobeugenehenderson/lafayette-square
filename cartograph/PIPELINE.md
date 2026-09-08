@@ -374,7 +374,9 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
   ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a small divider residual,
   cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
   draws and **warns**, and the cure is a re-pour.
-  ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-proto-has-no-nodes.mjs`
+  ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-a-corner-is-where-one-turns.mjs`
+  *(⛔ this cited `claims-proto-has-no-nodes.mjs`, which does not exist in the tree — a pointer that
+  does not resolve reads as evidence already gathered. `MEMORY §C` quotes a result from it too.)*
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
   name rather than letting the class vanish silently. **A known gap, not a fallback.**
 - ⛔ **47 in-disc blocks bounded by a single street** get ordinary-block treatment.

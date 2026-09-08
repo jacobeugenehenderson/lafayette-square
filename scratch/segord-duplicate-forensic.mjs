@@ -2,7 +2,7 @@
 // Builds the partition for every duplicate-carrying chain WITH and WITHOUT the duplicate and
 // diffs the slot→span mapping. If the ordinals do not move, the lead is dead and gets struck.
 import { readFileSync } from 'node:fs'
-import { resolveChainSegmentation } from '../src/lib/buildBlockGeometryV2.js'
+import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'  // moved out of buildBlockGeometryV2; the old import left `ROADMAP A17`'s key-space evidence unreproducible
 
 const ribbons = JSON.parse(readFileSync('src/data/ribbons.json', 'utf8'))
 const streets = ribbons.streets.filter(s => s.points?.length >= 2)
