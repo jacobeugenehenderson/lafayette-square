@@ -368,6 +368,26 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 > its predominant direction IN" is a large widening of `OVL_KINK_DEG`'s population, not a port.
 > ▶ `node scratch/claims-intersections-are-over-described.mjs <scene>` sizes what it would face:
 > junction centreline density, median 4 vertices but **p90 26 on HPDM against 8 on LS**.
+>
+> ### ⭐⭐⭐ AND ITS HOME IS THE MINT — `mintProtopolygon`, OR A SUB-STEP OF IT *(Jacob, 2026-09-08: "it's either the protopolygonization step OR a .n to that step")*
+> The canon already settles the placement: **"the MINT is the one place reading a chain is
+> legitimate, because ① IS the expanded chain"** (`RIBBONS §1`). A chain-geometry correction has
+> exactly one sanctioned home, and this is it. Three things fall out for free:
+> - **ONE CONSTRUCTION, TWO CALLERS** — `derive.js:5113` (frozen/prebake) and `tileGround.js:6581`
+>   (live re-derive) call the same function, so the correction cannot exist in one path and not the
+>   other. That is the failure mode `feedback_no_parallel_pipeline_for_scenes` names.
+> - **The survey stays immutable** — correct a working copy INSIDE the mint; `streets[].points` is
+>   never written, so `§5h` rule 1 holds without a separate discipline.
+> - **It is upstream of the ease** by construction, which is the whole requirement.
+> ### ⛔⛔ THE ONE ORDERING CONSTRAINT, AND IT IS THE AUTHORING KEY
+> `mintProtopolygon`'s FIRST act is `resolveChainSegmentation(streets)` → the `segOrd` every
+> `blockCustoms` slot is keyed on. ⛔ **If the correction runs before it, moving a vertex can move
+> an ordinal and silently RE-POINT authored slots** — the invisible failure, not the loud one
+> (`claims-simplify-preserves-authoring`: re-pointing is the class to fear, orphaning merely shows).
+> ⇒ **Resolve segmentation on the UNCORRECTED chain; apply the correction only to the geometry that
+> gets expanded.** The `.n` sub-step sits between those two, not before both.
+> ▶ Gate any such change with `node scratch/claims-simplify-preserves-authoring.mjs <scene>` —
+> 0 orphaned AND 0 re-pointed, on every town, before it is believed.
 
 **Surgical + regression-clean.** HPDM: 5 tips map-wide. LS: **1 tip** (`geyer-avenue-2`) — the four park corners are **UNTOUCHED** (they run straight in, no kink); `correctness-detector` CLEAN junctions unchanged (75→75), +2 sub-8m² cosmetic slivers at the one deliberately-fixed node. **Live home: `derive.js` `correctedTipChain` + the through-edge overlay pass** (consumed by E2's `a`/`b`, `faceStreets`, and the `strokePoints` output field). Trail: `_archive/BRIEF-through-road-edge-straight-LANDED-2026-07-22.md`.
 
