@@ -3815,7 +3815,19 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // ⛔ NOT A CONSTRUCTED PRIMITIVE (invariant 1) and not a decline: one depth is resolved for the
   // arc and the same four offsets draw it, which is the whole difference between a stamp and the
   // walk painter's bid.
-  const arcMin = new Map()                    // `${ri}|arcId` → cMin for that whole arc
+  // ⭐⭐⭐ THE LEGS DECIDE THE CORNER (Jacob, 2026-09-08) — BOTH EDGES OF IT, NOT ONE.
+  // The arc already resolved its INNER edge from its legs (`cMin`). Its OUTER edge was hardwired
+  // to the kerb, and that was the one place a leg did not get to decide anything: at TL↔TL the two
+  // legs AGREE that the grass is at the kerb, and the arc overrode them both and paved it.
+  // ⛔ `RIBBONS §1` invariant 1 is the authority — "the same cross-section persists from
+  // straight-spans into the corner, SAME MATERIALS, SAME DEPTHS, bent around an arc." A corner
+  // that overrides its legs is a cross-section of its own, which invariant 1 forbids in as many
+  // words, and the override is why the whole TL↔TL arc came out as one concrete blanket.
+  // ⭐ AND IT IS STILL `min`, ON THE SAME PRINCIPLE AS `cMin`: the shallower leg wins, so SW↔SW
+  // and SW↔TL resolve 0 exactly as before and are BYTE-IDENTICAL. Only TL↔TL, where both legs
+  // are set back, resolves non-zero — which is the one case Jacob reports missing.
+  const arcMin = new Map()                    // `${ri}|arcId` → cMin for that whole arc (INNER)
+  const arcFrom = new Map()                   // `${ri}|arcId` → the arc's own OUTER edge
   for (const p of parts) {
     const arc = st.iaArc?.[p.si]; if (!arc) continue
     for (let q = 0; q < p.ring.length; q++) {
@@ -3825,6 +3837,8 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       const l = arrOf(m), conD = l.inWalk ? lim : l.dOut       // §6.1 step 4's `conD`, per leg
       const key = `${p.ri}|${id}`, cur = arcMin.get(key)
       if (cur == null || conD < cur) arcMin.set(key, conD)
+      const curF = arcFrom.get(key)
+      if (curF == null || l.walkFrom < curF) arcFrom.set(key, l.walkFrom)
     }
   }
 
@@ -3884,27 +3898,54 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // the ramp fires on every leg end exactly as before; it is the same lerp, and TL↔TL simply
     // has nowhere to go. Assuming the target was the leg's own width made TL↔TL slide and cost
     // HPDM 1228 → 4906 steps while LS improved: town #2 punishing an LS-shaped guess.
-    const arcC = (v) => {
+    const arcAt = (v, table) => {
       const back = (v - 1 + n) % n
       const e = isC(back) ? back : (isC(v) ? v : -1)
       if (e < 0) return null                        // a frontage change with no corner: no target
       const id = st.iaArc?.[p.si]?.[e]
       if (id == null) return null
-      const c = arcMin.get(`${p.ri}|${id}`)
+      const c = table.get(`${p.ri}|${id}`)
       return c == null ? null : c
     }
-    const out = [], src = [], kS = [], kE = [], cS = [], cE = []
+    const arcC = (v) => arcAt(v, arcMin)
+    // ⛔ The OUTER target defaults to the kerb where there is no arc, which is what a frontage
+    // change already did — this keeps that class byte-identical rather than quietly re-ruling it.
+    const arcF = (v) => arcAt(v, arcFrom) ?? 0
+    // ⛔⛔ TWO TARGETS, TWO ARRAYS. A band has two edges and they ramp toward DIFFERENT arc values —
+    // the inner toward `cMin`, the outer toward the arc's own `arcFrom`. Carrying one array for
+    // both made the outer edge chase the INNER target, which the corner-continuity gate caught as
+    // 211 steps on LS / 773 on HPDM. ⭐ The gate earned its keep on the very next edit after it
+    // was widened to see both edges.
+    const out = [], src = [], kS = [], kE = [], cS = [], cE = [], fS = [], fE = []
     for (let i = 0; i < n; i++) {
       const a = ring[i], b = ring[(i + 1) % n]
       const cB = arcC(i), cF = arcC((i + 1) % n)
-      // `c` matters only where `k` is 0 — at k = 1 the lerp returns the leg's own depth whatever
-      // the target is — so an end that is not ramping carries null and cannot influence anything.
+      const fB = arcAt(i, arcFrom), fF = arcAt((i + 1) % n, arcFrom)
+      // A target matters only where `k` is 0 — at k = 1 the lerp returns the leg's own depth
+      // whatever the target is — so an end that is not ramping carries null and cannot influence.
       const push = (pt, s0, k0, k1) => { out.push(pt); src.push(s0); kS.push(k0); kE.push(k1)
-        cS.push(k0 === 1 ? null : cB); cE.push(k1 === 1 ? null : cF) }
+        cS.push(k0 === 1 ? null : cB); cE.push(k1 === 1 ? null : cF)
+        fS.push(k0 === 1 ? null : fB); fE.push(k1 === 1 ? null : fF) }
       if (isC(i)) { push(a, i, 0, 0); continue }     // inside the corner: flush to the kerb, flat
       const backC = end(i), fwdC = end((i + 1) % n)
       const m = M(p.ri, i), l = m ? arrOf(m) : null
-      const travel = l ? l.dOut : 0                  // what the divider must cross
+      // ⭐ WHAT THE BAND MUST CROSS — measured against where the ARC actually is, never assumed to
+      // be the kerb. At TL↔TL the arc sits at the legs' own divider, so there is nothing to cross
+      // and the ramp is zero-length: SUBSUMED, exactly as SW↔SW is, as an OUTCOME.
+      // ⛔ Not a gate on the two depths (`SECTION §4`): the ramp still fires at every leg end.
+      // ⛔⛔ AND IT IS THE MAX OVER BOTH EDGES. A ramp sized from one edge is too short for the
+      // other, and "too short" means the vertices are never inserted and that edge steps instead —
+      // which is the same one-edged blindness in the CONSTRUCTION that the gate had in the
+      // MEASUREMENT. Sizing it from `dOut` alone cost HPDM 59 extra leg↔leg steps.
+      const v = backC ? i : (i + 1) % n
+      const tF = l ? Math.abs(l.walkFrom - (arcAt(v, arcFrom) ?? 0)) : 0
+      const tT = l ? Math.abs(l.walkTo   - (arcAt(v, arcMin) ?? l.walkTo)) : 0
+      // ⛔ AND THE LEG'S OWN STRIP IS A FLOOR. At a frontage change there is no arc to target, so
+      // both targets collapse and a kerb-side leg would compute zero travel — no vertices, and the
+      // arrangement steps against its neighbour instead. `dOut` is the leg's own outer strip, not
+      // a constant: "every leg end gets a ramp with room for its own strip." Dropping it cost
+      // HPDM 574 → 633 leg↔leg steps, isolated by putting it back.
+      const travel = Math.max(tF, tT, l ? l.dOut : 0)
       const rampLen = travel * 2
       const L = Math.hypot(b[0] - a[0], b[1] - a[1])
       if ((!backC && !fwdC) || !(travel > 1e-6)) { push(a, i, 1, 1); continue }
@@ -3928,7 +3969,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
         push(a, i, 1, 1); push(at(1 - r2 / L), i, 1, 0)
       }
     }
-    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcS = cS; p.dcE = cE
+    p.dring = out; p.dsrc = src; p.dkS = kS; p.dkE = kE; p.dcS = cS; p.dcE = cE; p.dfS = fS; p.dfE = fE
   }
   // ⛔ The VARIABLE-depth offsets run on the densified ring; the CONSTANT-depth ones (`insAt`) do
   // not need it and are left alone — a constant depth over collinear extra vertices is the same
@@ -4000,9 +4041,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // (`outWalk`) is untouched, which is why SW↔SW is "subsumed"; a set-back walk has its grass
     // taper out and reaches the kerb by the corner, which is TL↔TL's "ADA pad below" and SW↔TL's
     // slope, both falling out of the one multiplier with no case split.
-    const kS = p.dkS, kE = p.dkE, src = p.dsrc, cSa = p.dcS, cEa = p.dcE
+    const kS = p.dkS, kE = p.dkE, src = p.dsrc, cSa = p.dcS, cEa = p.dcE, fSa = p.dfS, fEa = p.dfE
+    // ⛔ `c` is the INNER target (`cMin`), `a` the OUTER (`arcFrom`). Never one array for both.
     const span = (j, f) => {
-      const l = L(src[j]), a = f(l, kS[j], cSa[j]), b = f(l, kE[j], cEa[j])
+      const l = L(src[j]), a = f(l, kS[j], cSa[j], fSa[j]), b = f(l, kE[j], cEa[j], fEa[j])
       return a === b ? cw + a : [cw + a, cw + b]
     }
     // ⭐⭐⭐ THE SLIDE — `§6.1` step 5's `slidQuad`, both of whose edges travel. The port kept only
@@ -4012,28 +4054,35 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // ⛔ ONE MULTIPLIER STILL. `k` is the same scalar; it now moves the STRIP rather than one of its
     // edges. Nothing is constructed at the corner and the arc still resolves one depth for itself
     // (`RIBBONS §1` invariant 1) — the leg simply ARRIVES at that depth instead of stepping onto it.
-    const wFrom = (l, k) => l.outWalk ? 0 : (l.inWalk ? l.dOut * k : 0)
+    const wFrom = (l, k, _c, a) => { const t = a == null ? 0 : a; return t + (l.walkFrom - t) * k }
     const wTo   = (l, k, c) => (c == null ? l.walkTo : c + (l.walkTo - c) * k)
     // ⭐ Inside a licensed arc every edge answers with the ARC'S one depth, so the contour carries
     // no step across the corner: the band is BENT, not two bands meeting. Off an arc this returns
     // undefined and the leg is untouched — the leg keeps its own cross-section and its own ramp.
     const cAt = (j) => { const e = src[j], id = st.iaArc?.[p.si]?.[e]
       return (id != null && inC.has(`${p.ri}|${e}`)) ? arcMin.get(`${p.ri}|${id}`) : undefined }
+    const fAt = (j) => { const e = src[j], id = st.iaArc?.[p.si]?.[e]
+      return (id != null && inC.has(`${p.ri}|${e}`)) ? (arcFrom.get(`${p.ri}|${id}`) ?? 0) : undefined }
     return {
       // ⛔ THE TAPER SCALES THE OUTER STRIP'S WIDTH, so it only bites where the walk is SET BACK.
       // A kerb-side walk is already at the street and the corner changes nothing about it — which
       // is why SW↔SW is "subsumed" and why it must stay untouched here.
       // ⭐ `§6.1` step 4 at an arc: concrete from the kerb to `cMin`, and the lawn is a ZERO span —
       // deeper than `cMin` is PARCEL, never a treelawn bent round the kerb (step 3).
-      walkFromD: (j) => { const c = cAt(j); return c == null ? span(j, wFrom) : cw },
+      // ⭐ THE ARC TAKES ITS LEGS' CROSS-SECTION. `fAt` is 0 wherever the legs disagree (the
+      // shallower is at the kerb), so SW↔SW and SW↔TL are byte-identical to before.
+      walkFromD: (j) => { const f = fAt(j); return f == null ? span(j, wFrom) : cw + f },
       walkToD:   (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
       // ⛔ NOT AN EMPTY SPAN. `luByLu` only floods inboard of the WHOLE envelope, so a zero-width
       // lawn at an arc leaves `cMin → lim` painted by NOBODY — a hole at every corner, which is
       // what an empty span cost on the first attempt. `§6.1` step 4 says where it goes: deeper
       // than `cMin` is PARCEL, routed through `tlByLu[lu]`, i.e. the tile's own land use — not a
       // treelawn bent round the kerb, and not an absence.
-      lawnFromD: (j) => { const c = cAt(j); return c == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw + c },
-      lawnToD:   (j) => { const c = cAt(j); return c == null ? span(j, (l, k) => l.inWalk ? l.dOut * k : lim) : cw + lim },
+      // ⭐ THE LAWN IS THE STRIP THE WALK IS NOT — through the arc as well as along the leg. At
+      // TL↔TL that is the legs' own grass carrying round the kerb; where the legs disagree the
+      // span inverts to nothing, which is "treelawn ends at the tangents" as an OUTCOME.
+      lawnFromD: (j) => { const f = fAt(j); return f == null ? span(j, (l) => l.outWalk ? l.dOut : 0) : cw },
+      lawnToD:   (j) => { const f = fAt(j); return f == null ? span(j, (l, k, c, a) => l.inWalk ? wFrom(l, k, c, a) : lim) : cw + f },
       // ⛔ THE DEEP TAIL — `§6.1` step 5's `luWedge`, the OTHER half of the slide. As the walk
       // slides out, the ground it vacates on the INBOARD side is the walk's deep tail, and step 4
       // rules where it goes: deeper than the walk is PARCEL, `tlByLu[lu]`, the tile's own land use
@@ -4041,7 +4090,10 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
       // leg and zero inside an arc, where `lawnFrom`/`lawnTo` already own that ground.
       // ⛔ NOT AN ADDITIVE QUAD: it is a whole-contour offset of the SAME curve, like every other
       // boundary here, so there is no piece to join and no join to open.
-      tailFromD: (j) => (cAt(j) != null) ? cw + lim : span(j, wTo),
+      // ⛔ THE DEEP TAIL — parcel inboard of the walk (`§6.1` step 4). Inside an arc this is the
+      // ground beyond `cMin`, which the lawn span used to carry; it moves here so the lawn can
+      // carry the legs' grass instead. Zero on an open leg and zero at TL↔TL, by construction.
+      tailFromD: (j) => { const c = cAt(j); return c == null ? span(j, wTo) : cw + c },
       tailToD:   () => cw + lim,
     }
   }

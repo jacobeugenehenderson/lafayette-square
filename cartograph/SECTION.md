@@ -179,6 +179,25 @@ pointer that does not resolve reads as evidence already gathered.)*
   ⭐⭐ **`min` IS NOT A PREFERENCE — IT IS READ OFF THE SHIPPED SLAB**, the map whose corners were
   correct: the corner's walk runs kerb → the **shallower** leg's concrete depth, ~5:1 over the
   deeper one, in all three arrangements. ▶ `node scratch/_fx-slab-corner-spec.mjs <slabdir>`
+  ### ⭐⭐⭐ THE LEGS DECIDE THE CORNER — **BOTH ITS EDGES** *(Jacob, 2026-09-08)*
+  > *"The legs decide the corner."* · *"The ramp is coexistent with the arc."* · *"The ADA ramp
+  > connected the sidewalk to the street. The sidewalk always has to have access to the street."*
+  `min` decided the arc's INNER edge and nothing decided its OUTER one — it was hardwired to the
+  kerb. That was the one place a leg did not get to decide anything, and it is `RIBBONS §1`
+  invariant 1's forbidden case wearing a default's clothes: a corner with a cross-section of its
+  own. At **TL↔TL both legs AGREE the grass is at the kerb**, and the arc overrode them both.
+  ⇒ The arc resolves its outer edge from its legs by the same `min`, so **SW↔SW and SW↔TL are
+  byte-identical** (a leg at the kerb resolves 0) and **only TL↔TL moves** — kerb+0.00→3.00 becomes
+  **kerb+1.50→3.00**, the legs' own ladder bent round the arc. Measured on both towns.
+  ⛔ **AND THE RAMP MUST BE SIZED FROM BOTH EDGES** — a ramp sized from one is too short for the
+  other, so its vertices are never inserted and that edge steps instead: the same one-edged
+  blindness in the CONSTRUCTION that the gate had in the MEASUREMENT. The leg's own outer strip is
+  a FLOOR, not a constant — at a frontage change there is no arc to target and a kerb-side leg
+  would otherwise compute zero travel. Dropping it cost HPDM 574 → 633 leg↔leg steps.
+  ⛔ **OWED, NOT BUILT: the ADA pad at TL↔TL.** With the grass carrying round, the walk has no
+  access to the street at those corners, and Jacob's rule is that it always must. The pad is
+  *coexistent with the arc*; what is not settled is how it reaches the kerb without becoming the
+  blanket this just removed. **Do not close TL↔TL until it exists.**
   ⚠️ **And the same probe settles a doctrine question:** grass at the kerb inside a corner happens
   in the correct map — a few percent of corners. **UNCOMMON, NOT FORBIDDEN** (Jacob, 2026-09-08).
   ⛔ So `§6.1` step 3 is a default, never a gate, and no check may score it as a defect.
@@ -333,7 +352,9 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 > ⭐ **The RAMP is unconditional and lives in `§4`.** ⛔ Not restated here — one home.
 
 **What each corner type comes out as** (all from the SAME construction — the flat cases fall out):
-- **TL↔TL** (both set back) → all concrete to `c.T` (cMin = both, no carve, no slide).
+- **TL↔TL** (both set back) → ⭐⭐⭐ **the legs' own cross-section, bent: GRASS AT THE KERB through the
+  whole arc, walk behind it.** ⛔ **NOT "all concrete to `c.T`"** — that read was the arc overriding
+  both legs, and it paved every TL↔TL corner as one blanket. See `§4`, THE LEGS DECIDE THE CORNER.
 - **SW↔SW** (both at curb) → concrete one width + LU (cMin = the SW width; carve, no slide).
 - **SW↔(TL\|SW)** (mixed) → concentric ramp at the SW depth + the TL walk slides in on its leg.
 
