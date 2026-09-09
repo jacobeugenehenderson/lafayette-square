@@ -6540,7 +6540,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
-  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoStackCollapse = null, protoAuthoring = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoStackCollapse = null, protoAuthoring = null
   // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
   // because the producer swap at the end of the build reads it (`SURVEY §4`: one corner truth).
   const protoCornerSet = []
@@ -7294,7 +7294,11 @@ export function buildTileGround(ribbons, opts = {}) {
       protoBands = { curb: [], treelawn: [], sidewalk: [], lu: [] }
       // ⭐ BLOCK INDEX → its own bands. The tile artifact needs to know which band belongs to which
       // block; that is known at emit time and must be CARRIED, not recovered by containment later.
-      const protoBandsByBlock = {}
+      // ⛔⛔ AND IT WAS NOT RETURNED UNTIL 2026-09-08 — built, correct, and unreachable, so a probe
+      // could count 183 hairline rings on LS and could NOT say whose they were. That is the comment
+      // above filed as done while half of it was unbuilt: the carrying happened, the handing over
+      // did not. Declared in the outer scope now, assigned here, unchanged otherwise.
+      protoBandsByBlock = {}
       let capped = 0, tooNarrow = 0, severed = 0
       for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
         const labs = (protoBlockLabels || R.labels)[k]
@@ -8156,7 +8160,12 @@ export function buildTileGround(ribbons, opts = {}) {
     _shapeArtifact = protoShapeTiles
     console.log(`[tileGround][①⇢FREEZE] the artifact Section opens is now ①②③: ${protoShapeTiles.length} tile(s)`)
   }
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  // ⭐ `protoBandsByBlock` — WHICH BLOCK each band ring belongs to, keyed by ① block index. It was
+  // computed (`:7297`) and never returned, so a probe could see the band rings and not say WHOSE
+  // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
+  // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
+  // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
