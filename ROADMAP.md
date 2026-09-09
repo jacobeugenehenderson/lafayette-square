@@ -99,7 +99,20 @@
   - ▶ **① MINTS MORE THAN FOUR HOLES AT A CROSSING — 5 nodes on LS, one of them SIX.** `166.5,221.9` (Jacob's own junction) · `121.2,526.0` · `424.4,-88.7` · `-426.4,134.1` · `-355.0,-253.9` (six).
   - ▶ **AND 26 OF ①'s HOLES ARE SLIVERS** (≤6 vertices, <2000 m²) — **three of them are 0 m², 1 m² and 1 m²** (tiles 103, 21, 24). ⛔ A zero-area block is not a block; ① asserted a hole where its own ink should have closed.
   - ### ⭐⭐⭐ THE CORNERS OFF THE PARK — the eye report this item exists for *(Jacob, 2026-09-08: "one corner doesn't draw an eligible corner geometry so all the ADA/treelawn, etc. doesn't work")*
-    **`shape.json` tile #79 IS LAFAYETTE PARK** — `lu: park`, 148,707 m², frontages on Park · Mississippi · Lafayette · Missouri — **and it loses the corner at BOTH of its Mississippi junctions**: Mississippi × Park `229.0,-158.9` and Mississippi × Lafayette `166.5,221.9`. ⚠️ *(That index is `shape.json`'s tile space — 148 entries — NOT ①'s block space, 276. Name the collection.)*
+    **THE PARK IS ONE OBJECT WITH THREE INDICES, AND THIS ITEM QUOTED THE WRONG ONE FOR AN HOUR.** ⛔ Address it by GEOMETRY — `lu: park`, **148,707 m²**, frontages on Park · Mississippi · Lafayette · Missouri — never by number:
+    | space | index | count |
+    |---|---|---|
+    | live `protoShapeTiles` | **#79** | 148 |
+    | frozen `shape.json.tiles` | **#80** | 147 |
+    | `RIBBONS §6.2a` (2026-08-12) | **#8** | a third era |
+    ⚠️ This item said "`shape.json` tile #79", which is the live index labelled with the frozen artifact's name — **the fourth index-space error of the session, in the line filed for Jacob's own priority.** ⚠️ And the canon's entry names the frontages as `lafayette-avenue-3 · missouri-avenue-2 · park-avenue-1` where the pour now reports `-4 · -3 · -4`: **the chain ordinals have moved too**, so neither the index nor the ordinal is a durable handle.
+    ### ⛔⛔ AND ITS TWO CORNERS FAIL FOR **DIFFERENT** REASONS — measured per corner, 2026-09-08
+    | junction | ① turns | ① stamp on the contour | arc built |
+    |---|---|---|---|
+    | Mississippi × Park `229.0,-158.9` | 109.4° | ✅ present | ✅ **YES** |
+    | Mississippi × Lafayette `166.5,221.9` | 112.0° | ⛔ **absent** | ⛔ no |
+    ⇒ **Miss × Park's arc IS built** — its visible defect is signature 1's near-reversal spike in ②, downstream of a corner that exists. **Miss × Lafayette has no ① stamp reaching the contour at all** — the UNREACHED class. ⛔ **Do not look for one cure.**
+    ⭐ **NOT a loop interior:** the block carries **4 distinct owners** (`park-avenue-4 · mississippi-avenue · lafayette-avenue-4 · missouri-avenue-3`) over 11 runs, so `RIBBONS §1`'s "medians and loop interiors — one street, so the owner never changes" does **not** apply. Excluded by measurement, not by argument.
     ⛔ **AND ① IS NOT AT FAULT AT EITHER: its contour turns 109.4° and 112.0° there — clean corners, far past the 18° tolerance.** The curb built from them carries a **163–165° near-reversal spike** where the corner should be. ⇒ the park's missing ADA/treelawn is **not** an approach-geometry problem, so ⛔ **the mint straighten Jacob originally asked about is not its cure** — that was established before any of it was built.
     ▶ `node scratch/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [scene] [--list]` — the gate for this class, RED: **99 of 862 ① corners genuinely lost · 48 of them to ① and the offset ring disagreeing about what turns · 376 a traceability gap.** ⛔ Its complement `claims-the-ease-is-the-corner` reads 100% on the same map — run BOTH or the class is invisible.
     ▶ `node scratch/claims-a-kink-recovers-but-a-corner-does-not.mjs [scene] [--list]` — the discriminator that retired the straighten: on LS **one** near-junction vertex is a single street bending, and it is a real corner, not a kink.
