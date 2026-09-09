@@ -148,3 +148,41 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > ⚠️ A **deliberate, scoped exception** to *archive-don't-delete*: it covers **dead code and the artifacts
 > of a state we will not return to** — never design record or rulings. *(Doctrine: §6.)*
 
+
+---
+
+## APPENDIX — `ROADMAP` A17's `clipRun` duplicate-vertex lead, retired 2026-09-08
+
+> ⛔ **A DEAD LEAD, KEPT ONLY SO ITS METHOD IS NOT RE-DERIVED.** It attributed A17's unreliable
+> sidewalk/treelawn swap to duplicate vertices `clipRun` inserted (`a+(b−a)·t`, `t=1` not bit-exact).
+> **Struck 2026-09-08** — `node scratch/segord-duplicate-forensic.mjs` returns 0 duplicate-carrying
+> chains, 0 zero-length spans, 0 partitions that move. **And the clip itself was excised 2026-09-05
+> (`ec7dd3f4`), so the mechanism cannot recur.**
+> ⭐ Its two LIVE consequences stayed in `ROADMAP` A17 and are not repeated here.
+> ⛔ Nothing below is true of the code today. Verbatim text follows.
+
+  - ### ⭐⭐⭐ THE LEAD — **JACOB, 2026-08-21: *"the streets we manually clipped way back at the beginning are causing us trouble."*** MEASURED, AND THE CORRELATION IS STRONG.
+    ⛔ **This is a LEAD WITH A RECEIPT, NOT A CAUSE.** The last link is unmeasured and named below.
+    - **`clipRun` inserts a duplicate vertex into chains it never clips** — it rebuilds polylines as `a+(b−a)·t` and `t=1` is not bit-exact. **16 of 209 shipped chains carry one** *(reproduces agent Ferrule's 2026-08-12 figure independently)*.
+      ▶ `node -e "const r=require('./src/data/ribbons.json');let n=0;for(const s of r.streets){if(!s.points)continue;for(let i=1;i<s.points.length;i++)if(Math.hypot(s.points[i][0]-s.points[i-1][0],s.points[i][1]-s.points[i-1][1])<1e-6){n++;break}}console.log(n,'of',r.streets.length)"`
+    - ⭐⭐ **THE AUTHORING SITS ON THEM: 27 of LS's 49 authored `blockCustoms` slots — 55% — are on a duplicate-vertex chain** (`park-avenue-1` 12 · `mississippi-avenue` 9 · `south-18th-street-3` 5 · `south-jefferson-avenue-3` 1). 12 more affected chains carry no authoring.
+    - ⭐⭐⭐ **AND 13 OF THE 16 DUPLICATES SIT ON AN INTERSECTION COORDINATE** (shared by ≥2 chains), **every one of them interior** — so each passes `naturalSegments`' `i > 0 && i < n-1` filter (`buildBlockGeometryV2.js:660`). Three of the four authored streets are in that set.
+    - **Why that would break the swap, IF the last link holds:** `segOrd` is an **ordinal over the chain's POINT-INDEX array**, partitioned at IX vertices, and `blockCustoms` is keyed `skelId · side · segOrd`. A duplicate **at an IX** would let coordinate-match resolve **two** indices for one intersection ⇒ a **zero-length segment consuming an ordinal** ⇒ **every later slot on that chain addresses the wrong span.** That is "the swap is unreliable," and it would be **worst on the most-authored streets** — the kit's signature failure shape.
+    - ### ⛔⛔ STRUCK 2026-09-08 — **THE ORDINALS NO LONGER MOVE. THE LEAD IS DEAD.**
+      ▶ `node scratch/segord-duplicate-forensic.mjs` → **0 duplicate-carrying chains · 0 where the
+      resolver returns both indices · 0 zero-length spans minted · 0 chains whose partition MOVES.**
+      The skeleton has moved under this lead (the ①/tessellation work), and `clipRun`'s duplicates
+      are gone from the shipped chains. ⛔ **Do not reason from the block below — it is the record
+      of a lead that no longer reproduces**, kept only so its method is not re-derived.
+      ⚠️ **AND IT WAS UNRUNNABLE THE WHOLE TIME IT WAS BEING CITED**: the probe imported
+      `resolveChainSegmentation` from `buildBlockGeometryV2.js` after it moved to
+      `chainSegmentation.js`, so A17's key-space evidence could not be reproduced by anyone who
+      tried. Repaired 2026-09-08; **existence is not runnability**, which is why
+      `scratch/claims-doc-pointers-resolve.mjs --run` exists.
+      ⭐ Consequence for the operator: the authoring key space is MORE stable than this ticket
+      implies — a re-authoring pass is not exposed to the duplicate-vertex class it describes.
+    - ### ~~MEASURED 2026-08-28 — THE ORDINALS MOVE. THE LEAD SURVIVES.~~ *(struck, above)*
+      ▶ `node scratch/segord-duplicate-forensic.mjs` — builds the partition for every duplicate-carrying chain WITH and WITHOUT the duplicate and diffs the slot→span mapping.
+      **12 of 16 duplicate-carrying chains move.** `resolveChainSegmentation` adds **every** point index whose 0.5 m coord bucket is shared by ≥2 chains (`:724-727` — per-INDEX, no dedup by coordinate), so a duplicate at an IX returns **both** indices; `naturalSegments` then pushes `{start:i, end:i+1}` — a **zero-length span that consumes an ordinal** — and every later `segOrd` on that chain shifts by one. 12 phantom spans minted on LS.
+      ⭐ **3 of the 4 authored streets are hit:** `mississippi-avenue`, `south-18th-street-3`, `park-avenue-1` (and `park-avenue-0`/`-3` unauthored). ⛔ `south-jefferson-avenue-3` is **NOT** — its duplicate is not at an IX, which is the control that makes the other 12 mean something.
+      ⛔⛔ **STILL NOT A DIAGNOSIS OF THE SWAP.** This proves the KEY SPACE shifts, not that the click writes the shifted key. **The remaining measurement is the polygon-side one already named above:** click an edge whose swap does not take → which frozen tile ring contains it → what `tile.runs` says owns that arc → is that the key the write produced. **Do not close A17 on this.**
