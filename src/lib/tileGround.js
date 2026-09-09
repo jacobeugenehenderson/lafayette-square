@@ -6540,7 +6540,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // 2026-09-04: "it will eventually need to be wired and the detritus must be removed."
   let protoShapeTiles = null
   let protoBoundaryRing = null   // ⭐ the circle, carried out so EVERY consumer can stamp with it
-  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoStackCollapse = null, protoAuthoring = null
+  let protoSource = null, protoLabels = null, protoRefused = null, protoOwners = null, protoCurb = null, protoCurbGs = null, protoBands = null, protoBandsByBlock = null, protoBlockLabelsOut = null, protoStackCollapse = null, protoAuthoring = null
   // ⭐ ②'s ACHIEVED corner arcs — the handle's ONE truth. Hoisted beside the other proto outputs
   // because the producer swap at the end of the build reads it (`SURVEY §4`: one corner truth).
   const protoCornerSet = []
@@ -7299,6 +7299,17 @@ export function buildTileGround(ribbons, opts = {}) {
       // above filed as done while half of it was unbuilt: the carrying happened, the handing over
       // did not. Declared in the outer scope now, assigned here, unchanged otherwise.
       protoBandsByBlock = {}
+      // ⭐ THE BLOCK'S IDENTITY, IN THE SAME INDEX SPACE AS ITS BANDS — `protoOwners[labs[i]]` gives
+      // block k's frontage owners directly, so a consumer never has to recover block → ① ring by
+      // containment. That recovery is what `:7295` forbids, and without this it was the only route:
+      // it left 6 blocks in NO ① ring and 12 sharing one on LS (35 and 62 on HPDM) — blocks whose
+      // class simply could not be stated.
+      // ⛔⛔ THE RESOLVED ARRAY, NOT THE RAW VARIABLE. `protoBlockLabels` is null on the holes path
+      // and the loop below silently reads `R.labels` instead; handing back the raw one would give a
+      // consumer `null` while the emit used something else — a silent substitution AT THE HANDOVER,
+      // which is the defect class this file spends most of its comments on. Hand over what was
+      // actually indexed.
+      protoBlockLabelsOut = (protoBlockLabels || R.labels)
       let capped = 0, tooNarrow = 0, severed = 0
       for (const [k, ring] of (protoBlockRings || R.rings).entries()) {
         const labs = (protoBlockLabels || R.labels)[k]
@@ -8165,7 +8176,7 @@ export function buildTileGround(ribbons, opts = {}) {
   // they were: "this map has 183 hairline rings" was answerable, "they are on the medians" was not.
   // ⛔ Identity, not geometry — the same rings `protoBands` already hands back, addressed. Returned
   // 2026-09-08 for the hairline attribution; nothing is recomputed and nothing moves.
-  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
+  return { asphalt, highway, curb, sidewalk, grout, proto, protoLabels, protoRefused, protoCurb, protoCurbGs, protoBands, protoBandsByBlock, protoBlockLabels: protoBlockLabelsOut, protoStackCollapse, protoSource, protoOwners, protoAuthoring, protoShapeTiles, treelawnByLu, luByClass, block, cornerFillets, cornerSet, _tiles: tiles, _perRunMeta: perTileMeta, _jPolys: jPolys, _jCornerCuts: jCornerCuts, _shapeArtifact, _thruWins: opts.emitArtifact ? thruWins : undefined,
     // [A07] The two disclosures, kept apart all the way out. Consumers: the bake
     // prints both once per pour; the Survey/Section tool surfaces the census.
     _curbProducers: curbProducerCensus.summary(),
