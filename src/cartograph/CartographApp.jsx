@@ -43,6 +43,7 @@ import Terrain from '../components/Terrain'
 import { V_EXAG, reloadTerrain } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject, useHeroAuthoring } from '../stage/StageApp.jsx'
+import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
 import { transitionMs } from '../camera/transitions.js'
@@ -182,6 +183,29 @@ function ShotLookFork({ shot }) {
 // override with a fixed oblique framing that puts the cluster mid-screen.
 const TOY_CAM = { position: [38, 32, 58], target: [0, 4, 0], fov: 35 }
 
+// ── The authored Browse frame (SC.5) ────────────────────────────────────────
+// Browse is a PLAN VIEW — pan and zoom, nothing else (2026-09-05) — so its
+// pose has exactly three degrees of freedom: where on the ground it is centred
+// and how high it sits. `fov` and `heading` are already authored channels, so
+// those three are all that was missing to make a frame REPRODUCIBLE.
+// ⛔ Stored as `center: [x, z]` + `altitude` on the top-level `browseFrame`
+// design field (a PLACE, so it is strip-declared in serve.js and does NOT
+// travel into another town's seeded Look), NOT a position/target pair: a
+// pair can express a tilted overhead, which this view must never have, and a
+// round trip through one would let an impossible pose be authored.
+// ⛔⛔ NO DEFAULT. Absent = the operator has not framed this town, and the
+// frame is derived as before (Designer hand-off, else fit-to-bounds). A kit
+// default here would be LS's numbers pushed onto every town — the exact shape
+// of the bleed this repo keeps paying for.
+function authoredBrowseFrame() {
+  const f = useCartographStore.getState().browseFrame
+  const c = f?.center
+  return (Array.isArray(c) && Number.isFinite(c[0]) && Number.isFinite(c[1])
+    && Number.isFinite(f?.altitude) && f.altitude > 0)
+    ? { center: [c[0], c[1]], altitude: f.altitude }
+    : null
+}
+
 function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
@@ -294,6 +318,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // are runtime-input scaffolds — SHOTS const remains the canonical
         // Stage shot-switch framing until per-shot position authoring lands.
         const storeShots = useCartographStore.getState().shots?.values
+        const browseFrame = shot === 'browse' ? authoredBrowseFrame() : null
         let fov = storeShots?.[shot]?.fov ?? s.fov
         let toPos
         let toTarget = [...s.target]
@@ -321,9 +346,21 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
             const y = visibleH / (2 * Math.tan((fov * Math.PI / 180) / 2))
             toPos = [ortho.position.x, y, ortho.position.z]
             toTarget = [ortho.position.x, 0, ortho.position.z]
+          } else if (browseFrame) {
+            // ⭐ THE AUTHORED FRAME (2026-09-08). Reached on a reload straight
+            // into Browse, or arriving from Hero/Street — every entry the
+            // hand-off does not cover. Before this the frame was DERIVED on
+            // every entry and nothing about it survived a reload, so a series
+            // of screenshots could not be made to match: the operator's framing
+            // existed only as the Designer's live pan/zoom.
+            // ⛔ It does NOT outrank the hand-off. Framing a corner in the
+            // Designer and stepping into 3D is the authoring gesture (2026-09-05)
+            // — authoring is what makes that frame STICK, not what overrides it.
+            toPos = [browseFrame.center[0], browseFrame.altitude, browseFrame.center[1]]
+            toTarget = [browseFrame.center[0], 0, browseFrame.center[1]]
           } else {
-            // No Designer pose to inherit (first entry, a reload straight into
-            // Browse, or arriving from Hero/Street): fit the whole neighborhood.
+            // Nothing inherited and nothing authored (first entry into a town):
+            // fit the whole neighborhood.
             const aspect = size.width / Math.max(size.height, 1)
             const y = computeBrowseAltitude(aspect, fov)
             toPos = [s.position[0], y, s.position[2]]
@@ -357,7 +394,12 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // true overhead over center fit to the circle; hero = scaled oblique;
         // street = ground-level at center. Until per-scene shot authoring lands.
         const nb = sceneBoundary
-        if (sceneKey !== 'lafayette-square' && sceneKey !== 'toy' && nb?.radius > 0) {
+        // ⛔ `browseFrame` short-circuits this for Browse: the generic reframe is
+        // the scaffold for a town NOBODY has framed yet ("until per-scene shot
+        // authoring lands"), and an authored frame IS that authoring. Without
+        // this guard the feature would work on LS and be silently overridden in
+        // every other town — the kit's signature failure shape.
+        if (sceneKey !== 'lafayette-square' && sceneKey !== 'toy' && nb?.radius > 0 && !browseFrame) {
           const R = nb.radius
           if (shot === 'browse') {
             const aspect = size.width / Math.max(size.height, 1)
@@ -440,6 +482,69 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // fov interpolation between Hero/Browse/Street perspective shots.
   useFrame(() => {
     if (tweenRef.current.isActive()) tweenRef.current.tick(performance.now())
+  })
+
+  // ── The Stage CAMERA card, live in Cartograph (2026-09-08) ────────────────
+  // The panel Cartograph mounts is the Stage's own, and its CAMERA card talks
+  // to the shared bridge (../stage/cameraBridge.js). Only `StageCamera` — the
+  // standalone /stage page — ever filled that bridge, so in THIS app the card
+  // showed the bridge's initial constants (Center 0/0, Altitude 0 m, FOV 22°)
+  // while the camera sat wherever it sat, and every number typed into it went
+  // into a `pending` nobody drained. Three jobs per frame: drain, publish,
+  // record.
+  const bridgeFrames = useRef(0)
+  const settle = useRef({ key: null, at: 0 })
+  useFrame(() => {
+    if (shot === 'designer' || shot === 'extent') return
+    const cam = perspRef.current
+    if (!cam) return
+    const ctl = controlsRef.current
+    // A tween owns the camera while it runs — do not fight it, and do not
+    // record the poses it passes through.
+    if (tweenRef.current.isActive()) return
+
+    // 1) DRAIN — the panel's numbers win over the current pose.
+    if (cameraPush.pending) {
+      const u = cameraPush.pending
+      cameraPush.pending = null
+      if (u.position) cam.position.set(u.position[0], u.position[1], u.position[2])
+      if (u.fov != null) { cam.fov = u.fov; cam.updateProjectionMatrix() }
+      if (u.up) cam.up.set(u.up[0], u.up[1], u.up[2])
+      const aim = u.target || (ctl ? [ctl.target.x, ctl.target.y, ctl.target.z] : null)
+      if (aim) {
+        // ⛔ BROWSE IS A PLAN VIEW (2026-09-05). The card's Center X/Z push
+        // nudges the camera 1 m off the target so a generic lookAt is not
+        // degenerate; here that nudge would be a tilt this view may not have.
+        // Snap the camera over its own target instead — dead overhead.
+        if (shot === 'browse') { cam.position.x = aim[0]; cam.position.z = aim[2] }
+        cam.lookAt(aim[0], aim[1], aim[2])
+        if (ctl) { ctl.target.set(aim[0], aim[1], aim[2]); ctl.update() }
+      }
+    }
+
+    if (++bridgeFrames.current % 10 !== 0) return
+
+    // 2) PUBLISH — what the card reads.
+    const aim = ctl
+      ? [ctl.target.x, ctl.target.y, ctl.target.z]
+      : [cam.position.x, 0, cam.position.z]
+    publishCameraState(cam, aim)
+
+    // 3) RECORD — the authored frame, on SETTLE.
+    // ⭐ Implicit, like the rest of the Stage: what you are looking at IS the
+    // frame; there is no Save step (STAGE.md §1.5). Only on settle, though —
+    // committing mid-pan would push a store write + design autosave through
+    // every frame of a drag.
+    if (shot !== 'browse') return
+    const cx = Math.round(aim[0]), cz = Math.round(aim[2]), alt = Math.round(cam.position.y)
+    const key = cx + ',' + cz + ',' + alt
+    if (key !== settle.current.key) { settle.current = { key, at: performance.now() }; return }
+    if (settle.current.at === 0) return                       // already committed
+    if (performance.now() - settle.current.at < 400) return   // still moving
+    settle.current.at = 0
+    const cur = useCartographStore.getState().browseFrame
+    if (cur?.center?.[0] === cx && cur?.center?.[1] === cz && cur?.altitude === alt) return
+    useCartographStore.getState().setBrowseFrame([cx, cz], alt)
   })
 
   // Persist designer pan/zoom (ortho only). Browse ↔ Designer view sync is

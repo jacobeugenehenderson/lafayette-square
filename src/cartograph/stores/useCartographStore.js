@@ -358,6 +358,17 @@ const DESIGN_FIELDS = [
         street: { ...SHOTS_FLAT_DEFAULTS.street, ...(d.shots.values.street || {}) },
       } }
     : { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) } },
+  // SC.5 — the authored Browse FRAME. Sits beside browseHeading (top-level, not
+  // inside `shots`) because it is a PLACE, not a style: `shots` carries fov /
+  // padding, which are meant to travel to another town's Look, and a frame is
+  // the one thing that must not. Declared in serve.js's
+  // SCENE_KEYED_DESIGN_FIELDS so seeding a new town's Look strips it.
+  // ⛔ null = unframed. There is deliberately no default: a kit default here
+  // would be LS's coordinates handed to every town.
+  { key: 'browseFrame', hydrate: (d) => (
+    Array.isArray(d.browseFrame?.center) && Number.isFinite(d.browseFrame?.altitude)
+      ? { center: [d.browseFrame.center[0], d.browseFrame.center[1]], altitude: d.browseFrame.altitude }
+      : null) },
   { key: 'browseHeading', hydrate: (d) => d.browseHeading?.values
     ? { values: { ...BROWSE_HEADING_FLAT_DEFAULTS, ...d.browseHeading.values } }
     : { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } } },
@@ -667,6 +678,7 @@ const useCartographStore = create((set, get) => ({
   // position/target) are explicitly NOT here.
   shots:         { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
   browseHeading: { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+  browseFrame:   null,   // SC.5 — authored Browse frame {center:[x,z], altitude}; null = unframed
   // SC.7 — arch + horizon channels (Hero & Horizon card). Replaces the
   // module-scope archState bridge in src/stage/StageApp.jsx.
   // arch starts ABSENT: it's a set-piece the Look installs by carrying the block
@@ -1461,6 +1473,18 @@ const useCartographStore = create((set, get) => ({
   },
   revertShots: () => {
     set({ shots: { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) } })
+    get()._saveDesignDebounced()
+  },
+
+  // SC.5 — the authored Browse frame. Recorded implicitly when the Browse
+  // camera settles (CartographApp's CameraRig), like every other Stage edit:
+  // what you are looking at IS the frame, there is no Save step.
+  setBrowseFrame: (center, altitude) => {
+    set({ browseFrame: { center: [center[0], center[1]], altitude } })
+    get()._saveDesignDebounced()
+  },
+  clearBrowseFrame: () => {
+    set({ browseFrame: null })
     get()._saveDesignDebounced()
   },
   ...createGroupChannelActions({

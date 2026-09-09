@@ -86,8 +86,8 @@ The Stage is **WYSIWYG**: a color change in Surfaces, a bloom tweak in Post, an 
 **Looks are material-keyed, never feature-keyed** (`ARCHITECTURE.md §3`): `design.json` says *"asphalt is pink,"* not *"chain-43A12's asphalt is pink."* So adding geometry in Survey/Section never invalidates a Look — new streets inherit the active Look's rules; the re-bake just enlarges the slab with consistent styling. **Survey/Section → Stage is purely additive.**
 
 Where channels persist (verified in `bake-scene.js`):
-- **Baked & consumed:** SC.1 (8 channels), SC.2/SC.3 (10 channels), SC.7 (`arch`, `horizon`), `neon`, `palette`, `materialPhysics/Colors`, `layerColors/luColors`, `layerVis`, `lampGlow`, `browseHeading`.
-- **Baked, partially consumed:** SC.5 `shots` / `heroSubject` / `heroKeyframes` / `heroMotion` — the *authored* keyframes bake; the *runtime* inputs (Browse altitude, Hero target centroid, Street double-click position) are deliberately **not** baked — they're computed at runtime (`bake-scene.js:115`). Only Browse heading is a fully-baked camera channel today.
+- **Baked & consumed:** SC.1 (8 channels), SC.2/SC.3 (10 channels), SC.7 (`arch`, `horizon`), `neon`, `palette`, `materialPhysics/Colors`, `layerColors/luColors`, `layerVis`, `lampGlow`, `browseHeading`. ⚠️ `browseFrame` bakes but is **NOT** confirmed consumed — §5.1.
+- **Baked, partially consumed:** SC.5 `shots` / `heroSubject` / `heroKeyframes` / `heroMotion` — the *authored* keyframes bake; the *runtime* inputs (Browse altitude, Hero target centroid, Street double-click position) are deliberately **not** baked — they're computed at runtime (`bake-scene.js:115`). Only Browse heading is a fully-baked camera channel today (`browseFrame` is unproven — §5.1).
 - **Forward-compat, not yet consumed:** SC.6 `clouds` — round-trips a `{ preset: 'auto' }` ref so the future `<Atmosphere />` plugs in mechanically; v1's renderer defers to the Almanac (§5).
 - **Not persisted at all:** SC.4 time defaults — DawnTimeline calls `setTime` on the shared clock directly; no `design.time` or sun-curve override is written (`bake-scene.js:139`).
 
@@ -112,7 +112,7 @@ Where channels persist (verified in `bake-scene.js`):
 - ✅ **Per-shot look overrides** (channel-variant cascade, §1.5) — implicit per-channel overrides per shot (`shotLooks`), resolved at `useSceneJson` (production) / `activeChannel` (Stage); shot axis shipped end-to-end. Platform axis still unbuilt.
 
 **PARTIAL (the V1 tail — "Slab completeness" in `BACKLOG.md`):**
-- 🟡 **SC.5 camera** — Browse heading fully baked; Hero keyframes author + bake but runtime motion is minimal; Browse altitude / Hero target / Street position intentionally live (§4). Closing SC.5 = baking the full per-shot framing.
+- 🟡 **SC.5 camera** — Browse heading fully baked; Hero keyframes author + bake but runtime motion is minimal; Browse altitude / Hero target / Street position intentionally live (§4). Closing SC.5 = baking the full per-shot framing. ⛔ **A first attempt at the Browse half is in the tree and does not work — §5.1.**
   - **Hero authoring/runtime control modes (2026-06-24).** The Hero shot is a deliberate two-mode UX: **runtime** (default) plays the bounce with the orbit controls **locked** (`OrbitControlsShot enabled={false}` in `CartographApp`), exactly as it ships; **clicking a keyframe dot** enters **authoring** — pause, jump to the pose, controls unlocked for free orbit, which pivots on the subject because `HeroPreview` pins `controls.target` to the subject centroid every frame (the **Hero Lock** holds for free). **Save keyframe** captures `{position, fov}` and re-locks, staying paused on the saved frame. The mode is an ephemeral module singleton (`heroAuthoring` / `useHeroAuthoring`, `StageApp.jsx`) on the same R3F⇄DOM rail as `heroScrub` — **not persisted, not baked**; the keyframe **data model is unchanged** (`{position, fov}`, subject-locked), so `bake-scene.js` / `SLAB-CONTRACT §4` are untouched. *(Eye-gate pending; `HANDOFF-hero-camera-authoring-mode.md`.)*
   - **⚠️ Poured-scene 3D framing (`CartographApp.jsx CameraRig`) — PARTIAL / OPEN BUG (2026-07-03/04).** The `SHOTS` table is **LS-authored ABSOLUTE coordinates** — browse sits on LS's building centroid (95, −158) framed to LS's 1292×1025 bounds. For any *other* poured scene those numbers frame the wrong place, so the perspective-shot apply branch gained a **scene-scaled, origin-centered override** (analogous to the existing `TOY_CAM`) for `sceneKey !== 'lafayette-square' && !== 'toy' && sceneBoundary?.radius > 0`: **browse** = overhead over the origin, altitude fit to the boundary radius R (`(R*1.12)/(min(1,aspect)·tan(fov/2))`); **hero** = a scaled static oblique (`[-R·.75, R·.5, R·.75] → [0, R·.02, 0]`); **street** = ground-level at the origin. `sceneBoundary` is added to the effect deps + the applied-shot key so the override re-applies when the async boundary lands.
     - **⚠️ STILL BROKEN — this did NOT fix the symptom.** Browse still frames **"too high and slightly to the left"** for a poured scene, and after the upstream street clip (`BAKE.md` / `pipeline.js`) made the 2D content bounds symmetric the operator reports **"no difference"** in 3D. The baked ground is a **centered ±1461 disc** and the ribbons content bounds are now symmetric (center ≈ origin), yet browse does not frame centered — **root cause unfound.** Jacob: **"don't correct the wrong symptom"** — do *not* just tweak the altitude factor (a 1.3 bump was tried and reverted to 1.12). The open question is why the origin-centered override does not produce a centered frame — a camera-path / content-fit that overrides it, unexamined. **This is the primary open item; the next agent must own it.**
@@ -125,6 +125,104 @@ Where channels persist (verified in `bake-scene.js`):
 **The Meteorologist relationship (important — and a doc-vs-intent correction).** `STAGE_MIGRATION.md` (2026-05-20) sketched the cloud-authoring UI living *inside* a Stage right-panel card. **That plan was not executed** — Meteorologist shipped as a **standalone app** (`/meteorologist.html`), the "staging area for the slab" (`[[project_meteorologist_is_slab_staging_area]]`). So clouds are authored in Meteorologist (→ `public/clouds/{presets,almanac,modulators}.json`, a *separate* publish-loop), and the runtime `<Atmosphere />` consumes them directly. The Stage's only cloud surface is the forward-compat `scene.json.clouds` ref. *(`STAGE_MIGRATION.md` is historical; this is the current architecture.)*
 
 ---
+
+## 5.1. The Browse frame is not remembered — ⛔ OPEN (2026-09-09)
+
+**The symptom (operator):** *"I want a series of screenshots which are exactly
+the same from shot to shot; when I render to Stage the frame gets messed up and
+resets the camera."* The reset is on the Designer **"Stage →"** path, into
+**Browse**.
+
+### What is MEASURED
+
+1. **No Browse camera pose is persisted anywhere.** `design.json`'s
+   `shots.values.browse` carries `{fov, padding, bounds}` — no position, no
+   target. The only persisted camera is the Designer's ortho `{x,z,zoom}` in
+   `localStorage['cartograph-camera']`, written only while `shot==='designer'`.
+2. **So the Browse frame is re-derived on every entry** (`CartographApp.jsx`,
+   the browse branch of the shot-apply effect): hand-off from the Designer's
+   live ortho pan/zoom if `prevShot.current === 'designer'`, **else** fit to
+   `SHOTS.browse` — the whole-neighbourhood overview. ⛔ That `else` is a
+   **silent substitution**: the frame is wrong and nothing says so. Layer 0 q2,
+   in the camera.
+3. **The hand-off's gate is fragile by construction.** `prevShot.current` is
+   assigned only inside `applyTarget`, which runs inside a
+   `requestAnimationFrame`; `appliedShot.current = key` is claimed *before* that
+   rAF is scheduled, and the effect's cleanup can `cancelAnimationFrame` it. If
+   that cancel lands, the re-entry guard refuses to retry and the apply is
+   dropped for good. A `CANCEL applyTarget` with no matching fire was observed.
+4. **The Stage CAMERA card was inert in Cartograph.** `cameraState`/`cameraPush`
+   were module-private to `StageApp.jsx`, so only the standalone `/stage` page
+   filled them. With Browse live at `[95, 1299.1, −158]` fov 45, the card read
+   `Center 0 / 0 · Altitude 0 m · FOV 22°` — the module's initial constants —
+   and every number typed into it went into a `pending` nobody drained.
+
+### What is NOT established
+
+⛔ **Which event on the "Stage →" path drops the camera apply.** The repro tab
+ran backgrounded, which suspends `requestAnimationFrame`, so that A/B could not
+separate the app's race from the environment's throttling. **Cause not
+established.** It needs the bake run in a foreground window.
+
+### The attempt in the tree — ⛔ IT DOES NOT WORK
+
+`browseFrame` (top-level design field, `{center:[x,z], altitude}`), the shared
+`src/stage/cameraBridge.js`, and `CameraRig`'s drain/publish/record loop.
+Rationale for the shape is sound and worth keeping if the arc resumes: it is a
+PLACE not a style (hence top-level, and strip-declared in `serve.js` so it
+cannot travel into another town's seeded Look — that guard's residue check walks
+object **keys** for street names and structurally cannot catch a numeric
+coordinate); `center`+`altitude` not a position/target pair, because Browse is a
+plan view with three degrees of freedom; **no default**, because a kit default
+would be LS's coordinates handed to every town; and it deliberately does **not**
+outrank the Designer→Browse hand-off (2026-09-05).
+
+⛔⛔ **The operator tried it and the frame still did not hold** — but the halves
+have now separated, and the split is evidence, not guesswork:
+
+- ✅ **The RECORD half works.** After the operator's attempt,
+  `public/looks/lafayette-square/design.json` carries
+  `browseFrame {"center":[243,-285],"altitude":544}` — written by the settle
+  recorder, plausible values (a zoomed corner, not the overview). So the bridge,
+  the `useFrame` loop, the store action and the autosave all ran.
+- ⛔ **The APPLY half does not deliver on the operator's actual path.**
+  ⭐ **Leading suspect, and it is a design error of mine, not a bug:** the
+  precedence was deliberately set **hand-off → authored frame → fit-to-bounds**,
+  to avoid overriding the 2026-09-05 Designer→Browse decision. But the operator's
+  loop is Designer → **"Stage →"** → Browse, which is *always* `prevShot ===
+  'designer'`, so the hand-off branch always wins and **the authored frame is
+  never consulted on the one path that matters.** The feature is inert exactly
+  where it was asked for.
+- ⚠️ That does not yet explain the reset itself: if the hand-off ran, it should
+  have delivered the Designer's own pan. So either the hand-off is being dropped
+  (§5.1 measurement 3) *and* the authored frame failed to catch it, or a third
+  thing. ⛔ **Cause not established.**
+
+⭐ **The open decision for the operator: should an authored frame OUTRANK the
+Designer→Browse hand-off?** Saying yes makes the feature work for the screenshot
+loop and costs the "frame a corner in 2D, step into 3D" gesture its primacy.
+That is a product call, not a code call.
+
+▶ Data path only: `node scratch/claims-browse-frame.mjs` (20/20). The live half
+was never exercised *in the agent's session* — a frame counter in `CameraRig`'s
+`useFrame` returned `undefined`, because that tab was backgrounded and Chrome
+suspends `requestAnimationFrame` there.
+
+⚠️ **LOCAL-ONLY, AND THE BRANCH NAME IS NOW CLAIMED (2026-09-09).**
+`origin/screenshot-framing` exists as of the A21 session's first push, and it
+carries that session's commits and **none of this work** — the nine files below
+are uncommitted on one machine and exist nowhere else. A fetch of that branch on
+a second machine gets the retraction arc and no camera work at all.
+Modified: `src/cartograph/CartographApp.jsx` · `src/cartograph/stores/useCartographStore.js` ·
+`src/stage/StageApp.jsx` · `cartograph/bake-scene.js` · `cartograph/serve.js` (1 line) ·
+`cartograph/STAGE.md` · `cartograph/OPERATIONS.md` · `SLAB-CONTRACT.md`.
+New: `src/stage/cameraBridge.js` · `scratch/claims-browse-frame.mjs`.
+⛔ Uncommitted **deliberately** — the feature does not work and the precedence
+question above is unruled — not because it is scratch. A hard reset destroys it.
+
+⚠️ **Related, pre-existing, undeclared:** `shots.values.browse.bounds` is
+`{cx:95, cz:-158, …}` — an LS-absolute coordinate that already travels into
+every seeded Look. Same class as the one the strip list exists to stop.
 
 ## 6. The doctrine, in one place
 

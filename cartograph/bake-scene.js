@@ -134,6 +134,9 @@ export async function bakeScene({ look } = {}) {
     // See `hardwires-come-out-when-channels-install` category 3.
     shots:         design.shots         || { values: JSON.parse(JSON.stringify(SHOTS_FLAT_DEFAULTS)) },
     browseHeading: design.browseHeading || { values: { ...BROWSE_HEADING_FLAT_DEFAULTS } },
+    // SC.5 — the authored Browse frame. null when the town is unframed; ⛔ NO
+    // default, so an unframed town bakes `null` and each camera derives as before.
+    browseFrame:   design.browseFrame || null,
     heroSubject:   design.heroSubject   || null,
     // ⭐ KEYFRAMES CARRY THEIR OWN AIM as of 2026-09-05 — {position, target,
     // fov}. The Hero Lock derived the aim from the subject every frame, which

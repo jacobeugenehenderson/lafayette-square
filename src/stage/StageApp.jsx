@@ -32,6 +32,9 @@ import { catmullRom, EASINGS } from '../preview/heroAnim'
 // no local binding; this file needs its own import to call it.
 import { resolveHeroSubject as _resolveHeroSubject } from '../lib/heroSubject.js'
 import { browseUpFromHeading } from '../lib/browseHeading.js'
+import {
+  cameraState, cameraPush, subscribeCameraState, pushCamera, publishCameraState,
+} from './cameraBridge.js'
 import useCamera from '../hooks/useCamera'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -273,12 +276,10 @@ export function computeBrowseAltitude(aspect, fov = SHOTS.browse.fov) {
   return browseAltitude(aspect, fov, SHOTS.browse.bounds, SHOTS.browse.padding ?? 1.05)
 }
 
-// Live camera state bridge (R3F ↔ React DOM)
-const cameraState = { position: [0, 0, 0], target: [0, 0, 0], fov: 22, up: [0, 1, 0] }
-const cameraPush = { pending: null } // DOM → R3F: set .pending to apply next frame
-let cameraListeners = new Set()
-function subscribeCameraState(fn) { cameraListeners.add(fn); return () => cameraListeners.delete(fn) }
-function notifyCameraListeners() { for (const fn of cameraListeners) fn() }
+// Live camera state bridge (R3F ↔ React DOM) — lives in ./cameraBridge.js so
+// the Cartograph app's own CameraRig fills the SAME record this panel reads.
+// It was module-private here, which is exactly why the CAMERA card was inert
+// in Cartograph (the header on cameraBridge.js has the full account).
 
 // Browse heading: site-wide cosmetic screen-orientation, persisted into
 // the slab via the cartograph store + design.json (SC.5, 2026-05-13;
@@ -396,11 +397,7 @@ export function StageCamera({ shot }) {
       const dir = new THREE.Vector3(); camera.getWorldDirection(dir)
       tx = p.x + dir.x * 100; ty = p.y + dir.y * 100; tz = p.z + dir.z * 100
     }
-    cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
-    cameraState.target = [Math.round(tx), Math.round(ty), Math.round(tz)]
-    cameraState.fov = Math.round(camera.fov)
-    cameraState.up = [camera.up.x, camera.up.y, camera.up.z]
-    notifyCameraListeners()
+    publishCameraState(camera, [tx, ty, tz])
   })
 
   // Browse is a planar overhead by default — LEFT-drag pans, wheel zooms.
@@ -594,12 +591,6 @@ function ColorRow({ label, value, onChange }) {
         style={{ width: 40, height: 20, padding: 0, border: 'none', background: 'none' }} />
     </div>
   )
-}
-
-// ── Camera push helper ──────────────────────────────────────────────────────
-
-function pushCamera(update) {
-  cameraPush.pending = update
 }
 
 // ── Default keyframes per shot ──────────────────────────────────────────────
@@ -1245,14 +1236,9 @@ export function HeroPreview({ keyframes, motion, subject }) {
 
     // 4) Broadcast camera state to the panel (every 10 frames)
     if (++frameCount.current % 10 !== 0) return
-    const p = camera.position
-    cameraState.position = [Math.round(p.x), Math.round(p.y), Math.round(p.z)]
-    cameraState.target = controls
-      ? [Math.round(controls.target.x), Math.round(controls.target.y), Math.round(controls.target.z)]
-      : [Math.round(aim[0]), Math.round(aim[1]), Math.round(aim[2])]
-    cameraState.fov = Math.round(camera.fov)
-    cameraState.up = [camera.up.x, camera.up.y, camera.up.z]
-    notifyCameraListeners()
+    publishCameraState(camera, controls
+      ? [controls.target.x, controls.target.y, controls.target.z]
+      : aim)
   })
 
   return null
