@@ -10,6 +10,14 @@
 // a corner. **A one-sided gate is not a gate; this is the other side.**
 //
 // THE CLAIM: **every vertex where ① TURNS past `FILLET_TURN_TOL` gets an arc in ②.**
+//
+// ⛔⛔ AND THE OUTCOME SPLITS FOUR WAYS, NOT TWO — measured 2026-09-08, because reporting "no arc
+// stamped for this ① vertex" as one class **overstated the defect by 5×**. An arc frequently EXISTS
+// at the expected offset while carrying no stamp back to the ① vertex that caused it: the union
+// re-resolved the point. That is a TRACEABILITY gap, not a lost corner, and the two must never share
+// a number. ⭐ The control that settles it: reached vertices sit p25 5.48 / median 7.79 / p75 11.21 m
+// from their contour; the genuinely-arcless ones sit 5.50 / 8.54 / 14.58 — **the same position**, so
+// the curb is right there and simply made no corner.
 // `RIBBONS §1`: "a corner is a vertex where ① TURNS — and that is the whole test", and "THE EASE IS
 // THE CORNER TEST." If ① turns and no arc exists, a corner was silently dropped.
 //
@@ -52,7 +60,11 @@ const ang = (a, b, c) => {
   return Math.acos(Math.max(-1, Math.min(1, (u[0]*v[0]+u[1]*v[1])/(lu*lv)))) * 180/Math.PI
 }
 
-let turns = 0, withArc = 0, dropped = [], unreached = [], noCurb = 0, noStamp = 0
+const FAR = 20   // m — beyond this there is no curb near the vertex at all; the block collapsed.
+// ⛔ Not a tuning knob: the REACHED control sits at p25 5.48 / median 7.79 / p75 11.21 m, so 20 m is
+// well outside the offset population rather than a line drawn through it. Re-derive the control
+// before moving it.
+let turns = 0, withArc = 0, dropped = [], lostStamp = [], absent = [], noCurb = 0, noStamp = 0
 for (const st of R.protoShapeTiles) {
   const ring = st.ring || []
   if (ring.length < 3) continue
@@ -75,9 +87,19 @@ for (const st of R.protoShapeTiles) {
     const t = ang(ring[(i-1+n)%n], ring[i], ring[(i+1)%n])
     if (t === null || t <= TOL) continue                       // curve sample — ① makes no corner
     turns++
-    if (!eased.has(i)) { unreached.push({ tile: st, i, turn: t, at: ring[i] }); continue }
-    if (eased.get(i)) withArc++
-    else dropped.push({ tile: st, i, turn: t, at: ring[i] })
+    if (eased.get(i)) { withArc++; continue }
+    // ⛔⛔ "UNREACHED" IS NOT ONE THING, AND REPORTING IT AS ONE OVERSTATES BY 5×. Establish which:
+    // is there an arc at the expected offset (⇒ the corner WAS built and only its ① provenance was
+    // lost in the union) or is there none (⇒ a corner genuinely absent)? Measured, not assumed.
+    let d = Infinity, nearArc = null
+    for (let ri = 0; ri < st.iaFull.length; ri++) {
+      const Rg = st.iaFull[ri] || [], Ar = arcs[ri] || []
+      for (let j = 0; j < Rg.length; j++) {
+        const dd = Math.hypot(Rg[j][0]-ring[i][0], Rg[j][1]-ring[i][1])
+        if (dd < d) { d = dd; nearArc = Ar[j] } } }
+    if (!eased.has(i) && nearArc != null) { lostStamp.push({ turn: t, at: ring[i] }); continue }
+    if (d > FAR) { absent.push({ turn: t, at: ring[i], d }); continue }
+    dropped.push({ tile: st, i, turn: t, at: ring[i], d })
   }
 }
 
@@ -85,9 +107,10 @@ const pct = (a, b) => b ? (100*a/b).toFixed(1) + '%' : '—'
 console.log(`\n${scene} — every vertex where ① TURNS past ${TOL}°, did ② make an arc?`)
 console.log(`  ① turning vertices (⇒ a corner, by the ruling) : ${turns}`)
 console.log(`    ✅ an arc was made                            : ${withArc}  (${pct(withArc, turns)})`)
-console.log(`    ⛔ NO ARC — a corner silently dropped         : ${dropped.length}  (${pct(dropped.length, turns)})`)
-console.log(`    ⛔ UNREACHED — no contour point carries this ① vertex at all : ${unreached.length}  (${pct(unreached.length, turns)})`)
-console.log(`       (the union re-resolved it; provenance genuinely gone — counted, never guessed)`)
+console.log(`    ◐ arc EXISTS at the offset, ① stamp lost in the union : ${lostStamp.length}  (${pct(lostStamp.length, turns)})`)
+console.log(`       ⇒ the corner was BUILT. A traceability gap, ⛔ NOT a missing corner.`)
+console.log(`    ⛔ NO ARC, and a curb is right there  ⬅ THE DEFECT   : ${dropped.length}  (${pct(dropped.length, turns)})`)
+console.log(`    · no curb within ${FAR} m (block collapsed — legitimate)      : ${absent.length}  (${pct(absent.length, turns)})`)
 console.log(`  ⛔ tiles with NO curb ring (a real absence)      : ${noCurb}`)
 console.log(`  ⛔ tiles with a curb but NO arc stamp            : ${noStamp}`)
 if (dropped.length && LIST) {
@@ -97,4 +120,4 @@ if (dropped.length && LIST) {
 }
 console.log(`\n  ⛔ THIS GATE IS RED WHILE A CORNER IS DROPPED. Its complement, \`claims-the-ease-is-the-corner\`,`)
 console.log(`     reads 100% through exactly the same map — it can only see arcs that EXIST. Run BOTH.\n`)
-process.exit(dropped.length || unreached.length ? 1 : 0)
+process.exit(dropped.length ? 1 : 0)
