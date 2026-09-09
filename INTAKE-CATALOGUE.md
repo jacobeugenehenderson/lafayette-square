@@ -34,6 +34,21 @@
 
 ---
 
+> ### ⛔⛔ THE TWO POLISH SCENES ARE CHILLERED — read every Łódź severity below through this
+> **`centrum` and `ksi-y-m-yn` are out, not deferred** *(Jacob, 2026-08-13: "we made them for a pitch,
+> we made the pitch, it is over"; re-affirmed 2026-09-08: permanently defunct until further notice)*.
+> ⛔ **Never size a class on them; a check reports CHILLERED, not a number.** Home for the ruling —
+> and the only copy — is **`ROADMAP.md`'s scope ruling**; this is a pointer, not a restatement.
+>
+> ⭐⭐ **AND IT CHANGES WHAT SOME ROWS BELOW MEAN, WHICH IS WHY THIS BANNER IS HERE AND NOT JUST IN
+> `ROADMAP`.** Several sites are rated on a Łódź deployment being LIVE — *"HIGH — live and wrong on
+> Łódź today"*, *"State of Missouri governing law rendered on a Polish deployment"*. ⛔ **Those are no
+> longer live harms.** ⭐ **The KIT defect is undiminished and the severity stands on that ground** —
+> the bleed hits town #3 exactly as it hit town #2 (`CLAUDE.md` Layer 0: the subject is the kit, and
+> LS-is-the-fallback is the systemic defect). ⇒ **re-read them as "what this does to the NEXT town",
+> never as "what is broken in production today".** ⛔ Do not downgrade a row on the strength of the
+> chill alone; the two claims are different and only one of them died.
+
 ## 0. ⛔ THE HEADLINE FINDING — the LS-bleed is the kit's systemic defect
 
 Every domain found it independently, without being told the others existed. **Absence does not degrade

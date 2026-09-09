@@ -27,8 +27,23 @@ export const lookFor = (scene) => {
   return (ls.find(l => l.id === scene) || ls[0]).id      // prefer the same-named Look
 }
 
+// ⛔⛔ CHILLERED SCENES — the scope ruling's own requirement, made mechanical.
+// `ROADMAP`'s scope ruling (Jacob 2026-08-13, re-affirmed 2026-09-08 "permanently defunct until
+// further notice"): centrum + ksi-y-m-yn are OUT, not deferred — "we made them for a pitch, we made
+// the pitch, it is over" — and **"never size a class on them; a check must report CHILLERED, not a
+// number."** Enforced HERE rather than per-probe, because seven copies of a rule is why the last
+// correction could not hold (see this file's own header).
+// ⛔ THIS IS NOT A SKIP LIST — the distinction is the whole point (`CLAUDE.md` Layer 0). A skip list
+// makes an unhandled case LOOK handled; this reports a NAMED STATUS, loudly, and the scene is still
+// reachable by asking for it by name (`{ chillered: true }`) exactly like `bare`. Nothing is hidden.
+export const CHILLERED = new Set(['centrum', 'ksi-y-m-yn'])
+
 // Returns null and prints why — the caller must treat that as a FAILURE, not an empty result.
-export function feed(scene) {
+export function feed(scene, { chillered = false } = {}) {
+  if (CHILLERED.has(scene) && !chillered) {
+    console.log(`⛔ ${scene}: CHILLERED — out of scope, not deferred (ROADMAP's scope ruling). Reporting a STATUS, not a number; this scene was NOT measured. Pass { chillered: true } if you deliberately want it.`)
+    return null
+  }
   const rp = ribbonsPath(scene)
   if (!fs.existsSync(rp)) { console.log(`⛔ ${scene}: no ribbons at ${rp} — SKIPPED LOUDLY, this scene was NOT checked`); return null }
   const look = lookFor(scene)
