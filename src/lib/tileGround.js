@@ -1497,7 +1497,17 @@ function oneSideClaim(poly, W, leftInside) {
 // `rAt(i)` → the authored radius at vertex i (0 ⇒ broken handles ⇒ the contour turns).
 // `labs` (optional) rides along: every emitted point inherits the label of the edge it lies on, so
 // ①'s per-edge identity survives the ease instead of being recovered from the rounded geometry.
+// ⭐⭐⭐ WHY A CORNER WAS NOT EASED — WIRED 2026-09-08. It was DECLARED here and referenced NOWHERE
+// ELSE, so every skip below was a bare `continue`: the construction knew its own reason and never
+// said it. That is the silent-decline shape this repo keeps finding, in the one place a corner is
+// decided — and it cost a session inferring predicates from outside the function that the function
+// was already evaluating. ⛔ DISCLOSURE ONLY: no branch changes, no geometry moves.
+// ⭐ `noR` is the one that earns this: `isCorner_` is `R_[i] > 1e-9 && turn >= FILLET_TURN_TOL`, so a
+// vertex whose authored radius resolves to ZERO is not a corner AT ALL — it fails the first test and
+// is indistinguishable, from outside, from a vertex that simply does not turn. Those are opposite
+// facts and they must never share a silence.
 const easeSkips = { noR: 0, straight: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0 }
+export function easeSkipsTake() { const o = { ...easeSkips }; for (const k in easeSkips) easeSkips[k] = 0; return o }
 const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may miss by (= `derive.js`'s ARC_TOL)
 // `out` (optional) collects the ACHIEVED arc per eased corner — {i, V, R, C, r, tA, tB}. This is
 // the corner TRUTH the authoring handle rides: `SURVEY §4` — "the ONE corner truth the magenta
@@ -1576,17 +1586,30 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
     // ⛔ Plan a corner only where there IS one — a curve sample is passed through, exactly as
     // `filletRing` passes it through. Rounding an 18° vertex is invisible and it costs its
     // neighbours their legs.
-    const R = R_[i]; if (!isCorner_[i]) continue
+    const R = R_[i]
+    if (!isCorner_[i]) {
+      // ⛔ TWO DIFFERENT FACTS, AND THEY LOOKED IDENTICAL FROM OUTSIDE: a vertex that does not turn
+      // is a curve sample (correct, expected); a vertex that TURNS and has no radius is a corner
+      // whose authored R did not resolve — a lost corner, and the operator gets no ADA pad there.
+      if (turnAt_[i] >= FILLET_TURN_TOL) easeSkips.noR++
+      else easeSkips.straight++
+      continue
+    }
     const P = ring[(i - 1 + n) % n], V = ring[i], N = ring[(i + 1) % n]
     const A = seg(P, V), B = seg(V, N)
-    if (!(A.L > 1e-9) || !(B.L > 1e-9)) continue
+    if (!(A.L > 1e-9) || !(B.L > 1e-9)) { easeSkips.degenerateLeg++; continue }
     const cross = A.d[0]*B.d[1] - A.d[1]*B.d[0], dot = A.d[0]*B.d[0] + A.d[1]*B.d[1]
     const theta = Math.atan2(Math.abs(cross), dot)
-    if (!(theta > 1e-6)) continue
-    if (theta > Math.PI - 1e-6) continue
+    if (!(theta > 1e-6)) { easeSkips.straight++; continue }
+    if (theta > Math.PI - 1e-6) { easeSkips.reversal++; continue }
     const want = R * Math.tan(theta / 2)
     const s = Math.min(want, legBack[i] / 2, legFwd[i] / 2)
-    if (!(s > 1e-9)) continue
+    if (!(s > 1e-9)) { easeSkips.zeroSetback++; continue }
+    // ⭐ NOT a skip — the corner IS eased, at less than the authored R because its own leg bounds it
+    // (the topological bound, `RIBBONS §1`). Counted so a shrunken corner is never mistaken for an
+    // absent one, and never for an achieved authored radius either.
+    if (s < want - 1e-9) easeSkips.legClamped++
+    easeSkips.eased++
     const Reff = s / Math.tan(theta / 2)
     // ⭐ The tangent points are placed ALONG THE RING, not along the adjacent edge's infinite line —
     // on a curved leg those diverge and the arc would lift off the curb.
@@ -7131,6 +7154,21 @@ export function buildTileGround(ribbons, opts = {}) {
         (protoCornerBend ? ` · ${protoCornerBend} are a street BENDING (broken handles, no chain pair — the class seed is correct there)` : '') +
         (protoCornerNoNode ? ` — ⚠️ ${protoCornerNoNode} had an AMBIGUOUS chain pair (two chains sharing more than one vertex) and took the class seed; a per-IX override cannot reach them` : ''))
       if (protoCornerAuthored) console.warn(`[tileGround][PROTO②] ⛔ this Look carries PER-CORNER radius overrides and ② cannot key them yet (the leg f/b flag is a tile-edge fact) — ${protoCornerAuthored} corner(s) took per-IX or the class seed instead. NOT silently applied.`)
+      // ⭐⭐⭐ THE EASE NOW SAYS WHY IT DECLINED A CORNER — wired 2026-09-08 (`easeSkips`, declared
+      // and unreferenced since it was written). ⛔ `noR` is the line to read: those vertices TURN
+      // past `FILLET_TURN_TOL` and were still not corners, because `isCorner_` also requires
+      // R > 0 — so an authored radius that fails to resolve removes the corner ENTIRELY, and from
+      // outside the function it is indistinguishable from a straight run. A missing corner is a
+      // MISSING ADA RAMP (`RIBBONS §1`), so it may not be silent.
+      // ⚠️ Counts are cumulative since the last read and are RESET by reading them, so this is this
+      // pour's tally only if nothing else eased in between.
+      {
+        const sk = easeSkipsTake()
+        const lost = sk.noR + sk.reversal + sk.degenerateLeg + sk.zeroSetback
+        if (lost) console.warn(`[tileGround][PROTO②] ⛔ ${lost} corner(s) the ease DECLINED — noR ${sk.noR} (turns past the tolerance but its radius resolved to 0 ⇒ not a corner at all) · reversal ${sk.reversal} · degenerate leg ${sk.degenerateLeg} · zero setback ${sk.zeroSetback}. ⛔ Each is a corner the operator does not get.`)
+        if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
+        console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
+      }
       if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) lie over MORE THAN ONE ① edge — the union minted or collapsed them. Attributed to the LONGEST ① edge they span, which is the FILL's own tie-break, not a guess at a single owner.`)
       if (compoundNoEase) console.warn(`[tileGround][PROTO②] ⛔ ${compoundNoEase} compound face(s) went through SHARP — the vertex correspondence does not survive the hole subtraction, so their corners carry no authored radius.`)
       if (compoundFaces) console.log(`[tileGround][PROTO②] ${compoundFaces} compound face(s) — outer eroded inward, holes dilated into the face, subtracted as one object`)
