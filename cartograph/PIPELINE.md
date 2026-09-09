@@ -227,8 +227,9 @@ least one design question.
 ⛔ **The boundary CLIP that used to live here is GONE — excised 2026-09-05 (`ec7dd3f4`).** It trimmed
 every street polyline to `max(streetFade.outer, radius) + 30`, which let **a render knob decide what
 exists** and cut inside the frozen bb. ⭐ **The disc HIDES, the bb HOLDS, and nothing at this step
-DELETES geometry.** ⚠️ Consequently **nothing bounds the DRAWING today** — a bake-time crop is named
-and unbuilt: *chop at the BAKE, never at the chain.* → `PREBAKE.md §2.5`.
+DELETES geometry.** ✅ **The hiding is built and happens LAST**, on finished geometry — the `[PROTO⊙]`
+stencil stamp (`tileGround.js:7758`), landed 2026-09-06: *chop the picture, never the chain.*
+→ `PREBAKE.md §2.5`.
 
 **The rule.** ⭐⭐ **The neighborhood is ONE CLOSED SHAPE — a compound path.** Think of it the way
 Illustrator does: the boundary is the outer contour, and the streets and land-use fills run out and

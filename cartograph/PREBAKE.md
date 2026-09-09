@@ -77,13 +77,22 @@ degenerate input is **UNDECIDABLE and loud**, never a silent keep.
 > operator is looking at**; it is a blocker on the walk becoming the producer, and scoped to that.
 > ▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
 
-> ### ⚠️ OPEN, AND IT IS AN ASPIRATION FILED AS DONE: **NOTHING BOUNDS THE DRAWING.**
-> `ec7dd3f4` carved this out explicitly — *"a bake-time crop is a SEPARATE, still-unbuilt concern:
-> **chop at the BAKE, never at the chain**"* — and nothing has been built since. ⇒ a chain wholly
-> outside the boundary is drawn, and a real degree-1 tip out there takes a **round cap**, which reads
-> as a cul-de-sac at the rim. ⛔ **That is the same SYMPTOM the clip used to manufacture and it is
-> now a different CAUSE** — the chain and its tip are genuine. ⛔ Do not answer it by reinstating a
-> clip on the chain. **Unscoped; Jacob's ruling owed.**
+> ### ✅ AND THE CROP THE EXCISION OWED IS **BUILT** — the circle is stamped LAST, on finished geometry.
+> `ec7dd3f4` (2026-09-05) called a bake-time crop *"a SEPARATE, still-unbuilt concern"*. **It landed
+> the NEXT DAY** with the ① stencil: `[PROTO⊙]` (`tileGround.js:7758`) — *"stamped the circle LAST,
+> on the finished geometry … Bands are CUT at the rim, never bent to follow it."*
+> ⭐ **So the two halves of the ruling are both in place: the bb HOLDS the data, the disc HIDES it,
+> and the hiding happens on finished geometry rather than on the chain.** `streetFade` still sets the
+> stencil radius (`stencilFromBoundary` = `streetFade.outer + 50`) — ⭐ **which is now its CORRECT
+> role**: deciding what is DRAWN, never what EXISTS. That distinction is the whole of the excision.
+> ⛔ **NO FALLBACK:** an unbounded pour is a real state — `[PROTO⊙]` says the circle was not stamped
+> and that the artifact is the whole frame, rather than stencilling with a guess.
+> ▶ the drawing is bounded — re-derive, never quote:
+> `node -e "const S=require('./public/baked/lafayette-square/shape.json');let m=0;for(const t of (S.tiles||S)){for(const p of (t.ring||t.iA||[]))m=Math.max(m,Math.hypot(p[0],p[1]))}console.log('max drawn radius',m.toFixed(1),'m')"`
+> ⚠️ *(This block briefly read "NOTHING BOUNDS THE DRAWING, unbuilt, Jacob's ruling owed" — written
+> 2026-09-08 by reading `ec7dd3f4`'s **"still-unbuilt"** as a statement about today. It was a
+> statement about 2026-09-05. ⛔ **A commit message describes the moment it was written; check what
+> landed after it.** Corrected the same day, on Jacob's "that might be a ghost, or subsumed".)*
 
 > ### ⚠️ RETAINED HAZARD, AND IT OWES A HOME: `commit-extent`/`rescope` RESET THE LOOK FIELDS.
 > They overwrite `center`, `fade`, `streetFade`, `innerFadeOffset` with hardcoded values, no warning
