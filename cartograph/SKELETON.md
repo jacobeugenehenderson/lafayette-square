@@ -364,10 +364,23 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 > an endpoint (deg-3 T → deg-1). The correction must be **CARRIED** — promoted through
 > `ribbons.json` and read by the mint — so the survey chain stays immutable and the corrected
 > approach still arrives before the ease.
-> ⚠️ Scope today is the divided→through class only: LS **1** tip, HPDM **5**. "Every leg continues
-> its predominant direction IN" is a large widening of `OVL_KINK_DEG`'s population, not a port.
-> ▶ `node scratch/claims-intersections-are-over-described.mjs <scene>` sizes what it would face:
-> junction centreline density, median 4 vertices but **p90 26 on HPDM against 8 on LS**.
+> ⚠️ Scope today is the divided→through class only. "Every leg continues its predominant direction
+> IN" is a large widening of `OVL_KINK_DEG`'s population, not a port.
+> ▶ `node scratch/claims-intersections-are-over-described.mjs <scene>` sizes what it would face.
+>
+> ### ⛔⛔ AND CARRYING IT WOULD NOT FIX THE PARK CORNERS — RE-MEASURED 2026-09-09, ON TODAY'S MAP
+> *(Jacob routed exactly this: "carry §5h through to the mint." The premise did not survive the
+> read, and the read is the work — `CLAUDE.md`'s confirm-then-build gate.)*
+> ▶ `node scratch/_pk-leg-kink.mjs` — the angle between each leg's TIP approach and its BODY
+> direction, tested against `OVL_KINK_DEG` itself:
+> - **Mississippi × Park: NO chain ENDS at the node.** The legs pass through as interior vertices,
+>   so there is no tip to straighten — the mechanism has nothing to act on, at any threshold.
+> - **Mississippi × Lafayette: three chains end there and NONE is kinked** (well under the
+>   threshold; `lafayette-avenue-4` is dead straight). Widening `OVL_KINK_DEG` reaches none of them.
+> ⇒ **The "Surgical" note below is still true after a day of re-authoring: the park corners run
+> straight in.** ⛔ So the prevailing-direction correction is NOT the cure for them, and this is the
+> second independent time that was established (`ROADMAP A21`: ① turns 109.4°/112.0° there — clean).
+> ⭐ The correction is still worth carrying for its own class; it is simply not this defect's fix.
 >
 > ### ⭐⭐⭐ AND ITS HOME IS THE MINT — `mintProtopolygon`, OR A SUB-STEP OF IT *(Jacob, 2026-09-08: "it's either the protopolygonization step OR a .n to that step")*
 > The canon already settles the placement: **"the MINT is the one place reading a chain is
