@@ -1173,6 +1173,17 @@ function offsetRingVariable(ring, depthAt, cornerAt = () => true, capAt = () => 
   const t0 = clean ? dropFoldSpursTracked(W) : null
   const W0 = clean ? t0.ring : W
   const L0 = clean ? t0.src.map(k => WL[k]) : WL
+  // ⭐⭐⭐ WHICH STEP LOSES A SOURCE VERTEX — the fold-spur drop, or the union? Wired 2026-09-08 to
+  // settle "why does the offset flatten a turn ① makes". ⛔ THE OFFSET ITSELF CANNOT: each offset
+  // edge is parallel to its own ① edge whatever the per-edge depth, so the miter intersection
+  // preserves the angle exactly. The flattening therefore happens in one of the two steps below,
+  // and they are different defects — one drops a REVERSAL (deliberate), one resolves an OVERLAP.
+  if (stamp && clean) {
+    const before = new Set(WL.filter(v => v != null)), after = new Set(L0.filter(v => v != null))
+    const lostSet = []; for (const v of before) if (!after.has(v)) lostSet.push(v)
+    stamp.foldDropped = lostSet.length
+    stamp.foldLostLabels = lostSet     // build-time only; `st` is scratch and is not frozen
+  }
   let uni, uniL = null, uniA = null
   if (stamp) { const r = unionRingLabelled(W0, L0); uni = r.rings; uniL = r.labels; if (r.refused) stamp.refused = r.refused }
   else uni = unionRings([W0])
@@ -6792,7 +6803,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⭐⭐⭐ WHY R RESOLVED TO ZERO — wired 2026-09-08, alongside `easeSkips`. R = 0 does not mean
     // "a corner with no rounding": `isCorner_` requires R > 0, so a zero here DELETES the corner.
     // Four different facts shared that one silence; they are separated and counted now.
-    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0 }
+    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0, foldLost: 0, foldLostCorner: 0 }
     const protoRAt = (labs, i, n, hwHere = 0, turnHere = null) => {
       const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
       // ⛔⛔ NO OWNER ⇒ NO RADIUS ⇒ `isCorner_` IS FALSE ⇒ THE CORNER DOES NOT EXIST. Counted since
@@ -7072,6 +7083,11 @@ export function buildTileGround(ribbons, opts = {}) {
                                                         const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r })
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
+        if (st.foldDropped) protoRZero.foldLost += st.foldDropped
+        // ⭐ of the ① vertices the fold-spur pass dropped, how many were CORNERS? That is the half
+        // that costs the operator something; dropping a reversal on a straight run costs nothing.
+        if (st.foldLostLabels) for (const v of st.foldLostLabels)
+          if (v != null && v < ring.length && turnOf(ring, v) >= FILLET_TURN_TOL * 180 / Math.PI) protoRZero.foldLostCorner++
         let outRings = rings2
         let outLabs = rings2.map((rg, ri) => carryEdgeLabels(rg, st.labels?.[ri], labs, ring.length, labelCarryLost, ring))
         let outR = rings2.map((rg, ri) => { const src = st.labels?.[ri]; return rg.map((_, i) => (src && src[i] != null ? (rSrc[src[i]] || 0) : 0)) })
@@ -7197,6 +7213,7 @@ export function buildTileGround(ribbons, opts = {}) {
       // and correctly, zero. ⛔ That is NOT the same population as "a corner ① turns at and ② never
       // built", and conflating the two overstates the defect. Measure the defect on ①'s ring
       // (`claims-every-turn-in-the-protopolygon-gets-an-arc`), never on this counter.
+      console.warn(`[tileGround][PROTO②] ① source vertices dropped by the FOLD-SPUR pass (a contour REVERSAL, dropped deliberately): ${protoRZero.foldLost}, of which ${protoRZero.foldLostCorner} were ① CORNERS (turn past the tolerance) — anything flattened beyond these was flattened by the UNION resolving an OVERLAP.`)
       console.warn(`[tileGround][PROTO②] easeAt asked at an offset vertex and got 0 from a VALID ① source: ${protoRZero.fromRAt} — i.e. ① had already ruled that vertex not a corner.`)
       {
         const sk = easeSkipsTake()
