@@ -1506,7 +1506,7 @@ function oneSideClaim(poly, W, leftInside) {
 // vertex whose authored radius resolves to ZERO is not a corner AT ALL — it fails the first test and
 // is indistinguishable, from outside, from a vertex that simply does not turn. Those are opposite
 // facts and they must never share a silence.
-const easeSkips = { noR: 0, straight: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0 }
+const easeSkips = { noR: 0, straight: 0, straightWithR: 0, reversal: 0, degenerateLeg: 0, zeroSetback: 0, legClamped: 0, eased: 0 }
 export function easeSkipsTake() { const o = { ...easeSkips }; for (const k in easeSkips) easeSkips[k] = 0; return o }
 const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may miss by (= `derive.js`'s ARC_TOL)
 // `out` (optional) collects the ACHIEVED arc per eased corner — {i, V, R, C, r, tA, tB}. This is
@@ -1592,6 +1592,12 @@ function easeContour(ring, rAt, labs = null, arcsOut = null) {
       // is a curve sample (correct, expected); a vertex that TURNS and has no radius is a corner
       // whose authored R did not resolve — a lost corner, and the operator gets no ADA pad there.
       if (turnAt_[i] >= FILLET_TURN_TOL) easeSkips.noR++
+      // ⭐⭐⭐ THE THIRD FACT IN THIS SILENCE: a vertex that HAS an authored radius and is skipped
+      // for not turning — on the OFFSET ring. ① ruled it a corner (that is why R resolved), the
+      // offset ring says it is straight, and the ease walks the offset ring. ⛔ If this is non-zero
+      // the two rings disagree about what a corner is, and ① is the authority by ruling
+      // (`RIBBONS §1`: read the corner off ①, never off ②).
+      else if (R_[i] > 1e-9) easeSkips.straightWithR++
       else easeSkips.straight++
       continue
     }
@@ -6783,9 +6789,17 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⇒ Any next attempt must BOUND the apex, or rejoin the legs some way that is not an unbounded
     // line intersection. ⛔ Do not rebuild either of the two above.
     // the authored R at ② ring vertex `i`. 0 ⇒ BROKEN HANDLES ⇒ the contour turns (`RIBBONS §1`).
+    // ⭐⭐⭐ WHY R RESOLVED TO ZERO — wired 2026-09-08, alongside `easeSkips`. R = 0 does not mean
+    // "a corner with no rounding": `isCorner_` requires R > 0, so a zero here DELETES the corner.
+    // Four different facts shared that one silence; they are separated and counted now.
+    const protoRZero = { noOwner: 0, belowTol: 0, smoothBend: 0, noSrc: 0, fromRAt: 0 }
     const protoRAt = (labs, i, n, hwHere = 0, turnHere = null) => {
       const a = protoOwners[labs[(i - 1 + n) % n]], b = protoOwners[labs[i]]
-      if (!a || !b || a.skelId == null || b.skelId == null) return 0
+      // ⛔⛔ NO OWNER ⇒ NO RADIUS ⇒ `isCorner_` IS FALSE ⇒ THE CORNER DOES NOT EXIST. Counted since
+      // 2026-09-08: this is a corner lost to LOST PROVENANCE, not to geometry, and it had been
+      // indistinguishable from a straight run. ⭐ Measured on LS, every ① owner carries a non-null
+      // `skelId`, so this fires only when the LABEL is missing — the union re-resolved that vertex.
+      if (!a || !b || a.skelId == null || b.skelId == null) { protoRZero.noOwner++; return 0 }
       // ⭐⭐⭐ A DEAD-END CAP IS TWO ORDINARY CORNER NODES — `RIBBONS §1`, ruled by measurement:
       // "there are 2 apexes… blunt = both apexes at R=0 (zero-length handles) · round = both eased.
       // One dial, no case split." So the cap needs NO cap machinery: it is this same knob, asked at
@@ -6877,8 +6891,12 @@ export function buildTileGround(ribbons, opts = {}) {
       // eased by the skeleton and must not be rounded twice (INVARIANT 2). It can no longer MINT a
       // corner on its own, which is what made a chain endpoint read as one.
       const turnDeg = turnHere == null ? 0 : turnHere
-      if (turnDeg < FILLET_TURN_TOL * 180 / Math.PI) return 0
-      if (!(a.hard || b.hard) && turnDeg < PROTO_HARD_TURN) return 0
+      if (turnDeg < FILLET_TURN_TOL * 180 / Math.PI) { protoRZero.belowTol++; return 0 }
+      // ⭐ LEGITIMATE BY RULING, and counted so it cannot be confused with the line above it: both
+      // handles are continuous and the turn is gentle, so the SKELETON's own bezier already eased
+      // this bend — INVARIANT 2, nothing rounds twice. ⛔ A corner refused here is correct; a corner
+      // refused for `noOwner` is not. They were one silence.
+      if (!(a.hard || b.hard) && turnDeg < PROTO_HARD_TURN) { protoRZero.smoothBend++; return 0 }
       protoCornerN++
       const key = a.skelId < b.skelId ? `${a.skelId}|${b.skelId}` : `${b.skelId}|${a.skelId}`
       // ⛔ A BEND HAS NO PAIR, AND THAT IS NOT A FAILURE. Where one street turns, both sides of the
@@ -7044,8 +7062,14 @@ export function buildTileGround(ribbons, opts = {}) {
         // ⛔ NOT a cleanup fudge of the forbidden kind: the pass drops vertices where the contour
         // REVERSES, which is a self-intersection the offset created, never a shape the operator
         // authored. The legacy path has always had it (`buildCurbRings` passes `curved`).
+        // ⛔⛔ THE LAST HOP, AND IT IS WHERE THE CORNERS GO. `srcIdx` is the ① vertex this offset
+        // point was struck from; a point the offset or its self-union MINTED has none, so `easeAt`
+        // returns 0 — and R = 0 is not "a corner with no rounding", it fails `isCorner_` and the
+        // corner CEASES TO EXIST. Counted since 2026-09-08 because it was silent, and because it is
+        // a different fact from `protoRAt` deciding a vertex is genuinely not a corner.
         const rings2 = offsetRingVariable(ring, depthAt, () => true, () => null, true, st, true, false,
-                                          (srcIdx) => (srcIdx != null ? (rSrc[srcIdx] || 0) : 0))
+                                          (srcIdx) => { if (srcIdx == null) { protoRZero.noSrc++; return 0 }
+                                                        const r = rSrc[srcIdx] || 0; if (!r) protoRZero.fromRAt++; return r })
         // ⭐ per-vertex ① OWNER for each offset ring — `st.labels` maps an offset vertex back to
         // the ① ring vertex it was struck from, so this is one hop off the carried stamp.
         let outRings = rings2
@@ -7162,11 +7186,24 @@ export function buildTileGround(ribbons, opts = {}) {
       // MISSING ADA RAMP (`RIBBONS §1`), so it may not be silent.
       // ⚠️ Counts are cumulative since the last read and are RESET by reading them, so this is this
       // pour's tally only if nothing else eased in between.
+      // ⭐ and WHY the radius was zero, which is the layer under `easeSkips.noR`.
+      if (protoRZero.noSrc) console.warn(`[tileGround][PROTO②] ⛔⛔ ${protoRZero.noSrc} offset vertex/vertices carry NO ① SOURCE INDEX ⇒ easeAt returns 0 ⇒ \`isCorner_\` false ⇒ THE CORNER CEASES TO EXIST. These were MINTED by the offset or its self-union and have no provenance to resolve a radius through. ⛔ Not a shape without a corner — a corner without an identity.`)
+      if (protoRZero.noOwner) console.warn(`[tileGround][PROTO②] ⛔ ${protoRZero.noOwner} vertex/vertices had NO ① OWNER on an adjacent edge ⇒ R=0 ⇒ NOT A CORNER. Provenance lost in the union, not a shape without a corner. ⛔ These are the ADA pads the operator does not get.`)
+      console.warn(`[tileGround][PROTO②] R=0, by ① vertex: ${protoRZero.belowTol} below the turn tolerance (curve samples) · ${protoRZero.smoothBend} gentle bends the SKELETON already eased (INVARIANT 2) · ${protoTipBlunt} blunt cap apexes · ${protoRZero.noOwner} no owner · ${protoRZero.noSrc} no source index.`)
+      // ⭐⭐⭐ THE RECONCILIATION, AND IT IS THE WHOLE ANSWER TO "WHY noR": the ease asks for R at
+      // OFFSET-ring vertices, `protoRAt` decides it at ① vertices, and the two rings do not agree
+      // about which vertices turn. A vertex ① passes through as a curve sample can turn past the
+      // tolerance once offset — so the ease sees a corner-shaped vertex whose radius was already,
+      // and correctly, zero. ⛔ That is NOT the same population as "a corner ① turns at and ② never
+      // built", and conflating the two overstates the defect. Measure the defect on ①'s ring
+      // (`claims-every-turn-in-the-protopolygon-gets-an-arc`), never on this counter.
+      console.warn(`[tileGround][PROTO②] easeAt asked at an offset vertex and got 0 from a VALID ① source: ${protoRZero.fromRAt} — i.e. ① had already ruled that vertex not a corner.`)
       {
         const sk = easeSkipsTake()
         const lost = sk.noR + sk.reversal + sk.degenerateLeg + sk.zeroSetback
         if (lost) console.warn(`[tileGround][PROTO②] ⛔ ${lost} corner(s) the ease DECLINED — noR ${sk.noR} (turns past the tolerance but its radius resolved to 0 ⇒ not a corner at all) · reversal ${sk.reversal} · degenerate leg ${sk.degenerateLeg} · zero setback ${sk.zeroSetback}. ⛔ Each is a corner the operator does not get.`)
         if (sk.legClamped) console.warn(`[tileGround][PROTO②] ⚠️ ${sk.legClamped} corner(s) eased BELOW their authored radius — bounded by their own leg, not by a budget. Not absent, but not the authored dimension either.`)
+        if (sk.straightWithR) console.warn(`[tileGround][PROTO②] ⛔⛔ ${sk.straightWithR} vertex/vertices CARRY AN AUTHORED RADIUS and were skipped as STRAIGHT — ① ruled them corners, the OFFSET ring says they do not turn, and the ease walks the offset ring. ① is the authority (\`RIBBONS §1\`). These are corners lost to a disagreement between two rings.`)
         console.warn(`[tileGround][PROTO②] ease: ${sk.eased} corner(s) built · ${sk.straight} vertex/vertices passed through as curve samples.`)
       }
       if (labelCarryLost.lost) console.warn(`[tileGround][PROTO②] ⛔ ${labelCarryLost.lost} contour point(s) lie over MORE THAN ONE ① edge — the union minted or collapsed them. Attributed to the LONGEST ① edge they span, which is the FILL's own tie-break, not a guess at a single owner.`)
