@@ -6,8 +6,8 @@
       "name": "Lafayette Square",
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
-      "bakedAt": 1788653142886,
-      "updatedAt": 1788735819068
+      "bakedAt": 1788933348186,
+      "updatedAt": 1788931261029
     },
     {
       "id": "toy",
@@ -23,7 +23,7 @@
       "scene": "hipointe-demun",
       "createdAt": 1782000000000,
       "bakedAt": 1784701750406,
-      "updatedAt": 1788663152009
+      "updatedAt": 1784701476066
     },
     {
       "id": "altadena",
