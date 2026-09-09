@@ -287,7 +287,10 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 >   key could not find are **vertices the CLIP manufactured after `junctionMap` was frozen** — no source
 >   declined them; at derive time they did not exist. **25/25 LS · 67/67 HPDM within 0.5 m of `keepR`.**
 >   ⇒ **`junctionMap`'s coverage is not the defect; a frozen index outliving its geometry is.**
->   ⛔ Home is `PREBAKE §2.5a` — the mechanism, the populations and the ruling live there, not here.
+>   ⛔⛔ **THE MECHANISM THIS RESTS ON IS GONE — the clip was excised 2026-09-05 (`ec7dd3f4`), so the
+>   class is closed BY REMOVAL rather than explained.** The conclusion stands; its evidence is now
+>   historical, and `keepR` populations no longer reproduce (0 of 343 LS chains end at 1030 m).
+>   ⛔ Home is `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`; live prebake is `PREBAKE §2.5`.
 >   *(This bullet was wrong twice in one day — first as a design finding, then as "re-measure owed." Both
 >   retired to `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`.)*
 > - ⚠️ **The consult tolerance does not survive town #2** — on HPDM it falls **below the 0.5 m EPS

@@ -114,7 +114,7 @@ The bake's outputs **are** the slab. Their byte-level format — top-level field
 | OSM (`raw/osm_street_lamps.json`) | 641 | hood-wide; ~35 fall inside the park |
 | authored (`loadAuthoredLamps`) | 80 | **all 80 inside Lafayette Park** — never covered streets |
 | proximity dupes removed (<4 m) | 33 | threshold stable 2–6 m, measured |
-| **union, pre-clip** | **688** | → ~583 after the boundary clip |
+| **union** | **688** | ⚠️ the *"→ ~583 after the boundary clip"* that sat here is **stale — the clip was excised 2026-09-05 (`ec7dd3f4`)**. ⛔ Re-derive, don't quote: `node -e "console.log(require('./public/baked/lafayette-square/lamps.json').length)"` against a fresh bake |
 
 The authored well prefers a per-scene `data/<scene>/authored_lamps.json`; LS's still sits at the shared default `src/data/street_lamps.json` (one of the 13 name-imports — moving it retires both the import and the scene-name special case). ⛔ **The LS-bleed guard is unchanged:** an authored well is read only for **its own** scene, never as a fallback for a lampless town (`BRIEF-ls-bleed-excision.md` site 1). *(The `park` flag `bake-lamps` writes is currently read by nobody — vestigial; park and street lamps render identically.)*
 

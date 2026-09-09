@@ -2,7 +2,7 @@
 
 **The compile that turns the Skeleton's clean frame into the document Survey opens — and the stage where the Data Wall belongs.** Today it is a thin, **two-source** compile that freezes the *wrong* polygons; the program is to elevate it into the **polygon-ization + freeze** stage. This is its single-source-of-truth reference: what it does now (grounded in code), what `ribbons.json` actually holds, the gap, and the target.
 
-> **Status: v0.2 (2026-07-04) — + the boundary clip / Data-Wall neuter (§2.5).** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`PIPELINE` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
+> **Status: v0.3 (2026-09-08) — §2.5 rewritten: the boundary clip was EXCISED `ec7dd3f4`; what remains there is building membership + the coupler's switched-off consumer.** The SSOT for the prebake stage. **Grounded in code** (`pipeline.js`, `derive.js`, `promote-ribbons.js`, `io.js`), verified against `ribbons.json` 2026-06-05. The middle of the front-half rebuild spec: **`SKELETON.md` → this → `SURVEY.md`.** Register docs (`PIPELINE` execution · `ARCHITECTURE` build · `FEATURES` what-it-is) reference this; they carry only their audience's slice.
 
 ---
 
@@ -40,118 +40,57 @@ Intake → Skeleton → ⟦ PREBAKE ⟧ → Survey → ⟦DATA WALL⟧ → Secti
 
 ---
 
-## 2.5 ⭐ The boundary clip — the Data-Wall neuter (2026-07-04)
+## 2.5 ⭐ What prebake does at the boundary — membership, and nothing else (rev. 2026-09-08)
 
-`pipeline.js` runs a **boundary clip** immediately **after `deriveLayers(...)` and before the `map.json` write** — a **KIT** step, **gated on the scene carrying a `neighborhood_boundary.json`** (a bare `existsSync`). ⚠️ **Every scene including `toy` carries the file, so the clip fires everywhere** (LS: `keepR = 1030 m`). What LS lacks is a **`polygon` key** — the different fact that makes the building-membership test fall back to the disc. It is the Data Wall doing its defining job (§0): **neutering a spurious polygon *at the wall* rather than carrying it whole downstream.**
+> ### ⛔⛔ THE BOUNDARY CLIP IS GONE — EXCISED 2026-09-05, `ec7dd3f4`. It ran here for two months and this section described it in the present tense until 2026-09-08.
+> It trimmed every street/alley/path polyline to `max(streetFade.outer, radius) + 30` and kept only
+> the longest inside run. ⛔ **It was a contract breach, not a perf question:** the bb is the frozen
+> "forever zone" (`EXTENT-DESIGN §3.3`), and the clip cut **inside** it on every kit-built scene —
+> so growing the radius revealed nothing, because the data was already destroyed. ⭐ **The root is
+> the one to carry: the boundary record has no bb field, so the clip reached for `streetFade` — A
+> RENDER KNOB DECIDING WHAT EXISTS.** *(Jacob: "the edge gets faded but AFTER it's drawn.")*
+> ⭐ **The verb was wrong. The disc HIDES; the bb HOLDS. This was the one step that DELETED.**
+>
+> **⇒ Chains now run to the full bb.** ▶ re-derive, never quote:
+> `node -e "const r=require('./src/data/ribbons.json');const d=p=>Math.hypot(p[0],p[1]);console.log(r.streets.filter(s=>(s.points||[]).some(p=>d(p)>1030)).length,'of',r.streets.length,'chains run past the old keepR')"`
+> ⛔ **The manufactured rim tips and their nodeless-vertex reciprocal are closed BY REMOVAL** — not
+> fixed, removed. ⛔ **NOT the interior dead-end tips**, which the clip never touched; `A0` stands.
+> ⚠️ **Anything citing a `keepR` population is reading a dead mechanism.** Full retired text, the
+> census, and the instrument status → **`_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`**.
 
-The canonical spur is a named **boundary arterial** that enters the fetch at full *city* length and overshoots the hood. **South Big Bend ran 3882 m across a 2502 m hood** (Forsyth 3677 m, Wydown 2905 m); kept whole, these arterials stick out asymmetrically (south + east) and **skew the entire content bbox SE.** The clip has three moves, keyed to the layer:
+**What prebake still does here is BUILDING MEMBERSHIP, and only that** (`pipeline.js`, gated on the
+scene carrying `neighborhood_boundary.json`). **`((polygon − exclusions) ∪ activate) − hide`** —
+⭐ **the POLYGON decides; the disc RENDERS**, and a scene with no polygon falls back to the disc.
+Applied here so `map.json` is the single filtered source the 2D Designer and the bake both inherit;
+`bake-buildings.js` re-applies it belt-and-braces. One function, not three copies (`2585292f`);
+degenerate input is **UNDECIDABLE and loud**, never a silent keep.
+▶ `createMembershipFilter` — live home `INTAKE.md §0.5`, design of record `EXTENT-DESIGN.md`.
 
-- **⭐ Streets / alleys / paths are polyline-CLIPPED, not kept whole** (`clipRun`): each polyline is trimmed to the boundary circle and **only the longest inside run is kept — the rest are silently discarded.** ⚠️ **Lossy, and unfixed:** a street that leaves and re-enters the hood loses its shorter in-hood run. **0 chains on LS produce a second piece**, so it fires nowhere here — a town-#2 landmine, not a measured loss. ⛔ Its fix is **not** a second street entry: minting an id downstream of `skeleton.js:1681` orphans authored slots (`RIBBONS §2`). It goes as a **loud report**. After the clip the ribbons street bbox is **symmetric** — `x[-1439..1434] z[-1441..1441]` (was `x[-2110..1770] z[-1940..1940]`, skewed SE); max street span **3882 → 2144 m**.
-- **Faces / tiles / features drop-if-outside** — a feature entirely outside `keepR` is **removed**: top-level `layers[cat]` arrays + ribbons faces / tiles / medians / corridors / junctions / nameTransitions. The `touches` test is **inclusive** so a tile→street edge ref straddling the edge survives. ⭐ **This is the move that earns the size win below**, not the polyline clip. `keepR = max(streetFade.outer, radius) + 30` — **floored and fail-loud** since `b54cbaae`; gate `node scratch/claims-clip-extent-floor.mjs` (§2.5a).
-- **⭐ Building MEMBERSHIP = `((polygon − exclusions) ∪ activate) − hide`** (2026-07-20). **The POLYGON decides; the disc RENDERS.** The operator's **inclusion polygon** (`nb.polygon`, lon/lat, re-projected into the re-centered frame) is the membership test; the flattened **exclusion loops** (`nb.exclusions`) carve strays OUT via `pointInPolygon`, and per-building `activate`/`hide` overrides layer on top (`NEIGHBORHOOD-INPUTS §5.2`). **A scene with no polygon falls back to the disc.** Applied in `pipeline.js` so `map.json` is the single filtered source (2D Designer + bake); `bake-buildings.js` re-applies the same belt-and-suspenders. Live home: `INTAKE.md §0.5` · design of record `EXTENT-DESIGN.md`.
-- **The 3D ground mesh is stencil-bounded to ±1461 regardless** (a clean disc) — the clip changes the **ribbons/content bounds**, not the ground mesh.
+> ### ⭐ THE COUPLER RELATION IS PRODUCED HERE AND ITS CONSUMER IS SWITCHED OFF
+> *(The consumer-status fact `RIBBONS §1` and `POLYGON-FIRST §2.1/§3` point at this section for —
+> keep it here, do not restate it there.)*
+> `junctionMap.nodes[].cornersAdjacent` is stamped at prebake (`derive.js:4353`/`:4358`, serialized
+> `:4410`) and is complete at every T and cross. **Its only consumer is `src/lib/substrateWalk.js`,
+> and the walk is DEFAULT-OFF STRUCTURALLY** — `tileGround.js:4709` gates it on `opts.substrateTiles`
+> (passed by nothing) or `SUBSTRATE_TILES=1` (absent in the browser). ⇒ **production tiles are the
+> frozen `shape.json`.** ⛔ **So a defect reasoned through `cornersAdjacent` explains nothing the
+> operator is looking at**; it is a blocker on the walk becoming the producer, and scoped to that.
+> ▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
 
-Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 → 8 MB**, streets **2117 → 300**.
+> ### ⚠️ OPEN, AND IT IS AN ASPIRATION FILED AS DONE: **NOTHING BOUNDS THE DRAWING.**
+> `ec7dd3f4` carved this out explicitly — *"a bake-time crop is a SEPARATE, still-unbuilt concern:
+> **chop at the BAKE, never at the chain**"* — and nothing has been built since. ⇒ a chain wholly
+> outside the boundary is drawn, and a real degree-1 tip out there takes a **round cap**, which reads
+> as a cul-de-sac at the rim. ⛔ **That is the same SYMPTOM the clip used to manufacture and it is
+> now a different CAUSE** — the chain and its tip are genuine. ⛔ Do not answer it by reinstating a
+> clip on the chain. **Unscoped; Jacob's ruling owed.**
 
-> ### ⛔ 2.5a — THE RIM CHOP IS A MISSING RIM CHAIN, NOT THE CLIP (2026-08-12)
-> **Jacob, seeing round-capped stubs north of Chouteau: *"I am seeing artificially cut off streets in this
-> whole area."* Then, on the mechanism: *"cut off streets are on the map boundary, very rough chop that
-> gets 'close enough' to the edge of the disc."***
->
-> ▶ **Reproduce, any scene: `node scratch/claims-deadend-populations.mjs [scene]`.** It prints the three
-> populations this section used to tabulate — skeleton (pre-clip) · rendered (post-clip, the one
-> `tileGround.js:2787` recomputes and caps) · `junctionMap` (frozen stamp) — plus the frozen tile caps.
-> ⚠️ **Name the population or the old figures do not reproduce:** they count **degree-1 nodes EXCLUDING
-> `gradeSeparated`** (57 chains held out on LS). On that population `94` total, `42` beyond the hood and
-> `33` interior-at-`<0.8R` reproduce exactly. **`29 at clip radius` does NOT — it measures 25.**
-> ✅ **CAUSE ESTABLISHED 2026-08-21** — that 25 is the nodeless-tip population below, and it is exact.
->
-> **What the clip does, measured:** it **never touches the interior dead-end population** — 51 interior
-> degree-1 tips pre-clip, 51 post. It manufactures **31 tips at the rim**, at exactly `keepR` (1030 m on
-> LS) to the metre — the guillotine — and the cap machinery then gives each a **round cap**, so a chopped
-> street renders as a cul-de-sac.
-> - ⛔ **`streetFade` IS A RENDER PARAMETER** (a shader fade — `boundary.js:10`, `BakedGround.jsx:117`)
->   deciding **content extent**. Same defect shape as the outer-polygon finding (`RIBBONS §1`).
-> - ✅ **THE FROZEN TILE/CAP SYSTEM IS CLEAN** — no caps sit at the clip radius, because the tile and cap
->   freeze run **before the clip exists** (`pipeline.js:111` `deriveLayers` vs `:139`; `derive.js:4707`
->   resolves caps against the original chain endpoints). ⇒ `RIBBONS §1`'s ruled dead-end class is **not**
->   contaminated. ▶ `node scratch/claims-deadend-populations.mjs`
-> ### ⛔⛔ THE RECIPROCAL HALF — **THE CLIP MANUFACTURES VERTICES THAT HAVE NO NODE** *(2026-08-21, agent Gimbal, `6d2fcb4d`)*
-> This section knew the clip **strands** nodes outside the rim. It did not record the other direction, and
-> **that direction is what breaks the sidewalk band.**
-> ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour`
-> - **The sequence, in source:** `pipeline.js:111` `deriveLayers` builds `junctionMap` over **full-length
->   chains**; the clip then runs and `clipRun` **mints brand-new endpoint coordinates** at the circle. The
->   category filter is `if (Array.isArray(arr))` — `junctionMap` is an **object**, so it is **skipped**.
->   ⇒ **A frozen index outlives a mutation of the geometry it indexes, with no re-derive and no refusal.**
-> - **Every nodeless degree-1 tip sits within 0.5 m of `keepR` — 25/25 LS · 67/67 HPDM, zero exceptions,
->   zero unexplained.** ⛔ **No node source declined them; at derive time those vertices DID NOT EXIST.**
->   Every source is correct. **There is no coverage gap in `junctionMap`.**
-> - **Downstream — and ⛔ READ THE SCOPE BEFORE THE CONSEQUENCE:** no node ⇒ no `cornersAdjacent` ⇒ the
->   walk hits `no-successor`/`no-node` ⇒ **the run does not close** (`substrateWalk.js:262-280`).
->   ⛔⛔ **THAT CHAIN ENDS INSIDE A SWITCHED-OFF PRODUCER. IT DOES NOT REACH THE SHIPPED MAP.**
->   `cornersAdjacent` has exactly **one** consumer, `substrateWalk.js`, and the walk is **default-off,
->   structurally**: `tileGround.js:3047` gates it on `opts.substrateTiles` (passed by nothing) or
->   `SUBSTRATE_TILES=1` (absent in the browser). Flag off ⇒ **tiles are the frozen `shape.json`,
->   byte-for-byte** (`tileGround.js:3042`, its own comment).
->   ▶ `grep -rn "substrateTiles\|cornersAdjacent" src cartograph --include="*.js" --include="*.jsx"`
->   ⇒ **This defect explains nothing the operator is looking at today.** It is a blocker on the walk
->   becoming the producer — real, and scoped to that. *(Corrected 2026-08-21: this line said "⇒ a hole in
->   the ped band" flatly, and that framing sent two sessions into the chain graph after production
->   symptoms.)*
-> - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — a small share
->   on LS, a large majority on HPDM. HPDM's index mostly describes streets that are not in the map.
->   ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour` ("THE RECIPROCAL HALF")
-> - ⛔ **THE NAIVE CURE IS A PLAUSIBLE-LOOKING WRONG MAP:** minting a node at the cut promises a **cap
->   coupler** there, i.e. the kit would render a guillotined arterial as a **cul-de-sac by design**.
-> - ⚠️ **Bears on the ruling below but does not overturn it** — that ruling rests on there being no
->   interior population to recover, which still holds (51 interior tips pre-clip, 51 post). **What is new
->   is the invalidation defect, which is general and not rim-specific.** Jacob's ruling owed.
-> - ⛔ **Populations here are POST-MINT (95 pendant-tip nodes, 25 rim tips); the figures above are
->   PRE-MINT (29 deg-1 nodes, 31 rim tips). Different populations — never merge them.**
->
-> - ⚠️ **`junctionMap` is stamped pre-clip and never re-filtered** — none of its degree-1 nodes sit at the
->   clip radius, but a minority of unlocatable stamps name a chain the whole-feature drop removed
->   (agent A, `a2e0f6c4`). ⛔ **Do not read this as "Slice 1 is mostly artifact."** That reading came from
->   quoting the `<0.8R` column as though it were the real-tip count — by hood radius it is a larger
->   share, and the interior population the tip couplers sit on is untouched by the clip.
->   ▶ `node scratch/claims-deadend-populations.mjs` — re-derive both columns; ⚠️ this whole §2.5a
->   census has drifted further since 2026-08-21 (the grade-separated holdout count alone has moved),
->   so treat every number in this subsection as unverified until re-measured.
->
-> ### ✅ RULED 2026-08-12 — THE RIM IS THE SUBSTRATE'S JOB; ② CLOSED WITHOUT REMOVING THE CLIP
-> `__boundary__` is a **synthetic id with no chain behind it in `ribbons.streets`** (`RIBBONS §1`), so
-> `derive.js:4697` closes the faces against the contour at **892** while the streets run on to **1030** and
-> get capped. ⇒ **the cure ships with the substrate slice.** ⛔ **Do not re-open the clip for it.**
-> ⛔⛔ **ROT EVICTED 2026-08-21 — this sentence used to read "when the boundary becomes an ordinary chain
-> with an ordinary band." JACOB RETRACTED THAT ON 2026-08-12** (`RIBBONS §1`: *"I was wrong; the radius is
-> not an ordinary chain"*). **The rim BOUNDS, it does not OWN — no coupler, no band.** ⇒ the rim will
-> **never** supply junction nodes, so ⛔ **do not expect the nodeless-tip class to close as a side effect
-> of the boundary becoming a participant. It cannot.** *(The live candidate is different and unmeasured:
-> `derive.js:4632`'s own "build full, crop last" — the punch-out walks the FULL graph and the stencil
-> crops, in which case the clip's manufactured vertices are never walked. Unestablished; see the brief.)* *(Superseded: an earlier sequencing ruled "remove the artificial cut and reconnect the nodes
-> first." The measurement above closed it — there is no interior population to recover.)*
->
-> What the clip did need was the two defects it shared with the bake bbox (`bake-ground.js`): a **floor**,
-> so a look band narrower than the disc cannot cut inside the hood, and **no fallback** — `?? Infinity`
-> clipped nothing and still printed a clean kept/dropped line. Both landed `b54cbaae`; the gate for the
-> class is `node scratch/claims-clip-extent-floor.mjs`. ⭐ `§2.5`'s original job is real (a city-length
-> arterial skewing the content bbox) and was **kept, not removed**.
->
-> ⛔⛔ **NEVER AN EXTENT OPERATION. THIS IS THE TRAP.** `EXTENT-DESIGN §3.3` (D4, measured 2026-08-08):
-> **`commit-extent`/`rescope` ALWAYS reset `center`, `fade`, `streetFade`, `innerFadeOffset` to hardcoded
-> values, with no protection and no warning** — and **LS is the ONLY scene carrying authored values there**
-> (`center:[-15,-15]` = Lafayette Park's centroid; `innerFadeOffset:134`; every other scene `[0,0]`/200).
-> **`streetFade` is in that reset set, and it is the very field `keepR` reads.** ⇒ **the tool would
-> silently destroy LS's authored centre and fade** — on production `lafayette-square.com`, a scene that
-> **has never been poured** (`EXTENT-DESIGN §2`) and that the worklist rules is **conformed LAST**.
->
-> ⛔ **CLEAN IT UP; DO NOT PATCH, AND DO NOT KEEP AN IMPRINT** *(Jacob: "this is the very definition of
-> clogging dead code effluvium… we will not return to this state, so it is no benefit to save an imprint
-> of it. **This is true in the documentation as well.**")* Excise knobs, wiring **and prose** in one pass.
-> ⚠️ A **deliberate, scoped exception** to *archive-don't-delete*: it covers **dead code and the artifacts
-> of a state we will not return to** — never design record or rulings. *(Doctrine: §6.)*
-
+> ### ⚠️ RETAINED HAZARD, AND IT OWES A HOME: `commit-extent`/`rescope` RESET THE LOOK FIELDS.
+> They overwrite `center`, `fade`, `streetFade`, `innerFadeOffset` with hardcoded values, no warning
+> — and **LS is the only scene carrying authored values there** (`center` = Lafayette Park's
+> centroid). ⛔ Independent of the clip and **still live**, so it does not go to the archive with it.
+> ⚠️ It cites `EXTENT-DESIGN §3.3` as its home and **§3.3 does not carry it** — the pointer does not
+> resolve. Owed there; kept here meanwhile rather than dropped.
 ---
 
 ## 3. What `ribbons.json` contains
@@ -260,16 +199,17 @@ The split this buys: **corner identity (topology) = prebake, frozen once; curb p
 - **Freezing serves perf, not just correctness** — it's the precondition for activated-only live redraw (`SURVEY.md §4.1`), which the sticky high-res Designer needs.
 - **One source for faces: the skeleton.** Retire the raw-OSM face path; the two-source seam is the palimpsest.
 - **The Data Wall belongs at the prebake→Survey boundary (~P3).** Past it, no geometry derived from chains.
-- **⭐ The Data Wall neuters spurious polygons (§2.5).** A boundary arterial carried in at full city length is **polyline-clipped to the hood** at the wall, never kept whole; features fully outside drop, buildings held to the **boundary polygon** (+ roster `activate`/`hide`, §5.2). A KIT step gated on `neighborhood_boundary.json`.
+- **⛔ The Data Wall does NOT neuter geometry any more (§2.5).** The polyline clip was **excised 2026-09-05 (`ec7dd3f4`)** — it let `streetFade`, a render knob, decide what exists, and cut inside the frozen bb. **The disc HIDES; the bb HOLDS; nothing here DELETES.** What survives at the boundary is **building membership** — `((polygon − exclusions) ∪ activate) − hide`, a KIT step gated on `neighborhood_boundary.json`. ⚠️ **Bounding the DRAWING is unbuilt** — chop at the BAKE, never at the chain.
 - **Two-step rebuild, always:** `skeleton.js` → `pipeline.js` → `promote-ribbons.js`.
 
 ---
 
 ## Cross-references
+- `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md` — the retired clip, its census, and the instruments that read it. ⛔ Nothing in it is true of the code today.
 - `SKELETON.md` — the frame prebake consumes.
 - `SURVEY.md §5.1` (polygon-first) + `§4.1` (the activated-block editing/perf model) — this doc is where that cure is built.
 - `PIPELINE.md step 3 (prebake)` + `§Wall` + `P3` — the execution spine.
 - `OSM-FORENSICS-EVAL.md` — the two-source seam + the Layer-2 (faces-on-frame) cleanup, in detail.
 - `src/lib/tileGround.js` — the downstream consumer that today re-derives the polygon.
-- `pipeline.js` (the boundary clip, §2.5) · `bake-buildings.js` (the belt-and-suspenders building cull) · `neighborhood_boundary.json` (the gate — center/radius disc).
+- `pipeline.js` (building membership, §2.5 — ⛔ the boundary clip is gone, `ec7dd3f4`) · `bake-buildings.js` (the belt-and-suspenders building cull) · `neighborhood_boundary.json` (the gate — center/radius disc).
 - Memory: `[[project_two_bakes_two_walls]]`, `[[project_the_palimpsest_code_path_multiplicity]]`, `[[project_skeleton_is_the_first_bake]]`.

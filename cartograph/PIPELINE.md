@@ -222,10 +222,13 @@ the to-code default instead of the actual town; anything that depends only on st
 does not.** ⛔ The overgeneralisation *"prebake is authoring-blind"* is false and has mis-scoped at
 least one design question.
 
-**The boundary clip lives here**, and it is a kit step, not a local fix: features wholly outside the
-hood are dropped, buildings are resolved by the membership formula, and streets are **clipped, not
-kept whole** — an arterial running 3882 m across a 2502 m hood, kept whole, drags the content bounds
-sideways.
+**Building membership lives here** — `((polygon − exclusions) ∪ activate) − hide`, applied once so
+`map.json` is the single source the 2D Designer and the bake both inherit.
+⛔ **The boundary CLIP that used to live here is GONE — excised 2026-09-05 (`ec7dd3f4`).** It trimmed
+every street polyline to `max(streetFade.outer, radius) + 30`, which let **a render knob decide what
+exists** and cut inside the frozen bb. ⭐ **The disc HIDES, the bb HOLDS, and nothing at this step
+DELETES geometry.** ⚠️ Consequently **nothing bounds the DRAWING today** — a bake-time crop is named
+and unbuilt: *chop at the BAKE, never at the chain.* → `PREBAKE.md §2.5`.
 
 **The rule.** ⭐⭐ **The neighborhood is ONE CLOSED SHAPE — a compound path.** Think of it the way
 Illustrator does: the boundary is the outer contour, and the streets and land-use fills run out and

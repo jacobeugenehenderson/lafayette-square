@@ -6,6 +6,22 @@ receipt, it is not in this document.** *(Written this way deliberately: on 2026-
 was wrong six times in one session and every correction came from reading the repo. Do not trust a
 framing — including this one. Re-run the commands.)*
 
+
+> ## ⛔⛔⛔ PREMISE CHANGE, 2026-09-08 — **§1'S ESTABLISHED ROOT CAUSE NO LONGER EXISTS.**
+> **The boundary clip was excised 2026-09-05, `ec7dd3f4`** ("the clip is gone"). §1 below attributes
+> the band's rim holes to `clipRun` minting endpoints that `junctionMap` never indexes. **That
+> mechanism is removed**, so the class is **closed by removal, not by this brief.**
+> ▶ re-derive before reading further:
+> `node -e "const r=require('./src/data/ribbons.json');const d=p=>Math.hypot(p[0],p[1]);let e=0,b=0;for(const s of r.streets){const P=s.points||[];if(P.length<2)continue;if([P[0],P[P.length-1]].some(p=>Math.abs(d(p)-1030)<0.5))e++;if(P.some(p=>d(p)>1030.5))b++}console.log('endpoints at old keepR:',e,'| chains past it:',b,'of',r.streets.length)"`
+> — measured 2026-09-08: **0 endpoints at `keepR`, 138 of 343 chains running past it.**
+> ⚠️ **`scratch/claims-nodeless-tip-classifier.mjs` now FAILS LOUDLY** (its source-read of `keepR`
+> can no longer find the rule — the guard working as designed), and `claims-preclip-walk.mjs` is
+> separately broken (`resolveChainSegmentation is not a function`, `scratch/_substrate-feed.mjs:58`).
+> **Both commands cited in §1 are dead.**
+> ⛔ **NOT struck, because the SCOPE section and the walk's own design may still stand** — only the
+> root-cause attribution is void. **Jacob's ruling owed on whether this brief survives the excision.**
+> Retired mechanism → `cartograph/_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`.
+
 ---
 
 ## ⛔⛔ SCOPE — READ THIS FIRST OR THE WHOLE DOCUMENT MISLEADS YOU *(added 2026-08-21)*
@@ -31,7 +47,7 @@ proposal makes a material choice change the geometry, it is wrong.
 
 ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour`
 ▶ `node scratch/claims-preclip-walk.mjs`
-**Home: `cartograph/PREBAKE.md §2.5a`.** Commits `6d2fcb4d` · `846c9535` · `566dff4c` · `fc9e881d`.
+**Home: `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`** (was `PREBAKE §2.5a`; excised). Commits `6d2fcb4d` · `846c9535` · `566dff4c` · `fc9e881d`.
 
 - `pipeline.js:111` `deriveLayers` builds `junctionMap` over **full-length chains**. The clip runs
   after, and `clipRun` **mints new endpoint coordinates**. The category filter is
@@ -99,13 +115,13 @@ proposal makes a material choice change the geometry, it is wrong.
   coupler, no `baseMeasure`, no band, no ADA, no corner rule.**
   ⇒ **The rim will NEVER supply junction nodes.** ⛔ Do not expect the nodeless-tip class to close as a
   side effect of the boundary becoming a participant. *(A stale pre-retraction sentence in `PREBAKE
-  §2.5a` misled two readers on 2026-08-21; evicted in `565c4bd9`.)*
+  §2.5a` misled two readers on 2026-08-21; evicted in `565c4bd9`, and the whole section was retired 2026-09-08.)*
 - **A walk does not close the perimeter** — unclipped, of tiles carrying a `__boundary__` edge, those
   closing on real streets alone: **LS 14/31 · HPDM 25/53** (`RIBBONS §1`, Tessel). ⭐ **EXPECTED, not a
   failure — the stencil closes those.** ⛔ Do not report it as a defect. **Every** interior tile lands
   inside a bounded face on all six scenes — that control is what makes the instrument trustworthy.
 - ⛔ **MOVING THE CLIP BEFORE DERIVE IS DISQUALIFIED.** `keepR` reads `streetFade`, a **render
-  parameter** (`PREBAKE §2.5`). It would let a look setting decide `roadId` unions and reconciled
+  parameter** (`PREBAKE §2.5` — and this is exactly why the clip was excised on 2026-09-05). It would let a look setting decide `roadId` unions and reconciled
   widths. Measured cost on HPDM: 7 road components lose a member, 6 corridor unions lost, 6 divided
   pairs truncated (LS: 0/0/1 — ⭐ **the mould would have reported "no dependency"**).
 
@@ -146,7 +162,7 @@ once `design.json` settles.
   a guard caught it. **Live for every slice-2 probe that imports the feed. Own ticket.**
 - ⛔ **Name the artifact on every number: pre-clip · post-clip · pre-mint · post-mint · consulted-set ·
   rim · interior are seven different populations.** Merging them has caused three wrong findings.
-- ⛔ **A doc is not a source.** `PREBAKE §2.5a` was wrong for nine days. Route, then test the doc
+- ⛔ **A doc is not a source.** `PREBAKE §2.5a` was wrong for nine days — and then described a removed mechanism for three more (excised `ec7dd3f4` 2026-09-05, evicted 2026-09-08). Route, then test the doc
   against the code, and say which of ROT / REGRESSION / ASPIRATION.
 - ⛔ **A difference is not a defect.** Ask what the map looks like if the code is RIGHT first.
 - ⛔ **The eye is the gate, and it may see nothing** — `dolman-street-1`, `west-18th-street` and
