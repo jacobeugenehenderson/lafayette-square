@@ -33,7 +33,10 @@ import NeonBands from './NeonBands.jsx'
 import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
 
 // ── Open-by-hours filter ────────────────────────────────────────────
-// Glows when the place is currently open AND it's dark enough to see.
+// Glows when the place is currently open. ⛔ THERE IS NO DARKNESS TERM — this
+// line used to claim "AND it's dark enough to see" and nothing in this file or
+// NeonBands has ever read sun elevation. Believed on sight, it sends the next
+// reader hunting for a gate that does not exist.
 const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 function _isWithinHours(hours, time) {
   if (!hours) return false // no hours set → neon off
@@ -46,24 +49,27 @@ function _isWithinHours(hours, time) {
   return mins >= oh * 60 + om && mins < ch * 60 + cm
 }
 
-// Default neon window for a real POI with NO authored hours: dusk → late. Lets a
-// fresh install (e.g. HPDM, where only ~6/192 listings carry hours) glow out of
-// the box instead of sitting dark. An authored `hours` object always takes the
-// `_isWithinHours` path instead; only listing-less bare buildings stay dark.
-const _DEFAULT_NEON_OPEN_HOUR = 17  // 5pm
-const _DEFAULT_NEON_CLOSE_HOUR = 2  // 2am (wraps midnight)
-function _isWithinDefaultNeonWindow(time) {
-  const h = time.getHours()
-  return h >= _DEFAULT_NEON_OPEN_HOUR || h < _DEFAULT_NEON_CLOSE_HOUR
-}
-
-// The WHICH-tubes gate, unified across the slab and live paths. `hasListing` =
-// a real POI (in neonLookup); Stage's `forceNeonOn` master overrides everything.
-function _neonOn({ forceNeonOn, hours, hasListing, now }) {
+// The WHICH-tubes gate, unified across the slab and live paths. Stage's
+// `forceNeonOn` master overrides everything; otherwise authored hours are the
+// sole arbiter, exactly as the docblock above has always said.
+//
+// ⛔ A DEFAULT DUSK→LATE WINDOW LIVED HERE AND WAS CUT (Jacob, 2026-09-10:
+//    "Neon is on for buildings with open hours. A new town with nothing on is
+//    dark. Just no.").
+//    It lit any POI with no authored hours from 5pm to 2am so that a fresh
+//    install would "glow out of the box instead of sitting dark" — which is a
+//    FALLBACK, and a fallback that makes an unauthored town look authored is
+//    the exact failure the kit doctrine names: it converts missing data into a
+//    plausible-looking success, and the operator sees a lit map and never
+//    learns nothing has been entered.
+//    ⚠️ It also contradicted this file's own docblock — eleven lines apart —
+//    and every doc that describes the rule (README's neon row, cartograph
+//    ARCHITECTURE §8 "hours gate is sole arbiter"). None of them ever adopted
+//    it; it arrived inside an unrelated tube-sizing commit and was never
+//    written down. Dark IS the correct rendering of a town with no hours.
+function _neonOn({ forceNeonOn, hours, now }) {
   if (forceNeonOn !== undefined) return !!forceNeonOn
-  if (hours) return _isWithinHours(hours, now)
-  if (hasListing) return _isWithinDefaultNeonWindow(now) // POI, no hours → default window
-  return false // bare building, no real POI → dark
+  return _isWithinHours(hours, now)
 }
 
 // ── Default neon classification ─────────────────────────────────────
@@ -149,7 +155,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         const listingInfo = neonLookup[e.id]
         const category = listingInfo ? listingInfo.category : defaultNeonCategoryForZoning(e.zoning)
         const hours = listingInfo ? listingInfo.hours : null
-        const on = _neonOn({ forceNeonOn, hours, hasListing: !!listingInfo, now })
+        const on = _neonOn({ forceNeonOn, hours, now })
         if (!on) continue
         // baseY + groundYRaw (== centroidY) are baked into the index by the
         // SAME anchor math the live path uses below, so tubes lift in lockstep
@@ -175,7 +181,7 @@ export default function SceneNeon({ forceNeonOn, lookId = INSTANCE.lookId }) {
         hours: null,
         category: defaultNeonCategoryForBuilding(b),
       }
-      const on = _neonOn({ forceNeonOn, hours: info.hours, hasListing: !!listingInfo, now })
+      const on = _neonOn({ forceNeonOn, hours: info.hours, now })
       if (!on) continue
       // baseY = world Y of the building TOP (the wall/roof joint, the eave) —
       // dropped the roof-peak lift so neon HUGS the building instead of hovering
