@@ -120,16 +120,45 @@ words in the site's own vocabulary and must not be "corrected" here.
   second copy of a statement that lives here, on a domain that collects nothing.**
   If any of those three behaviours change, `LegalPage.jsx` is the page to change.
 
+## ⚠️ The site now DOCUMENTS this product, in public, in prose
+
+*(2026-09-09/10.)* It has five publications: the front page, **`/guide` the Trail
+Guide** (a seven-chapter manual for somebody using a Ward), **`/handbook` the Host
+Handbook** (for whoever runs one), `/works` the technical prospectus, and
+`legal.html`. ⛔ **Do not restate what they say here** — the site's `README.md`
+owns them.
+
+⭐ **Why it belongs in this doc:** two of them describe THIS product's behaviour
+in the reader's words — the Ticker, Guardian and Keyholder permissions, claim
+cards vs check-in cards, handles, linked devices, what a Ward can and cannot
+know, moderation, and what a Host may see in aggregate. **That is a second copy
+of behaviour that lives in this repo**, and the privacy-page entry above is the
+same hazard caught early. The difference is that these copies shipped on purpose.
+⛔ **So a behaviour change here can silently falsify a public manual.** If you
+change what a Guardian may edit, what standing a device carries, what a review
+reply shows, or what moderation can do, the pages that say so are on that site —
+grep it before assuming nobody wrote it down.
+
+⚠️ **The Host Handbook carries NO fee figure**, deliberately (`README §7d` there),
+and it is indexed only because that is true. If the rate is ever printed on it,
+that ruling is revisited in the same breath.
+
 ## Generated from this repo, so it cannot drift
 
-Two blocks on that page are built from source in *this* repo:
+**One** block is built from source in *this* repo:
 
 | the page shows | built from |
 |---|---|
 | where a Ward's data comes from | `src/cartograph/SourcesPanel.jsx` → `GROUPS` |
-| the sky band's colours | `src/cartograph/skyGrid.js` → `ANCHOR_CARDS_PROCEDURAL` |
 
-⭐ **So editing either file can change a public page.** The generators fail loudly
+⛔ **IT WAS TWO UNTIL 2026-09-10.** The sky band's colours were generated from
+`skyGrid.js`'s `ANCHOR_CARDS_PROCEDURAL` — until the band came off the page
+(2026-09-05) and the site **deleted `tools/build-sky.mjs` and `data/sky.json`
+rather than leave a generator running against nothing.** Verified on disk today:
+neither file exists. ⚠️ So this table told a reader that editing `skyGrid.js`
+could change a public page. It cannot, and has not for five days.
+
+⭐ **So editing that file can change a public page.** The generators fail loudly
 on anything they have not been taught to classify — an unclassified source
 breaks that build rather than publishing something unverified. If you add a row
 or reshape the sky model, expect to classify it.
@@ -143,20 +172,22 @@ The site's own list is `BACKLOG.md`. **Nothing on it is blocked on this product.
 ⚠️ **This slot listed a blocker twice and was wrong both times** — first that the
 tree GLBs were undeployed, then that `?embed=sky` could not size. Both were
 retracted the same day, the second by the agent the brief was written for.
-✅ **`?embed=tree` — the diorama — SHIPPED.** Sky and specimen in one Canvas, one
-clock, on the baked path; it is the live band under "A Day in the Life" on the page
-today. This slot called it "the open work" until 2026-08-29, which is the third time
-this section has described the world as it was rather than as it is.
+✅ **`?embed=tree` — the diorama — SHIPPED, AND THEN CAME OFF THE PAGE**
+*(2026-09-05, Jacob: "get rid of the diorama, time slider, light/dark maker,
+everything")*. ⛔ **The route is UNPLACED, not retired** — it still works, and
+`INTEGRATION.md` keeps the record; §03 describes what a Slab is instead of
+demonstrating it. ⚠️ Grepped today: the only embeds on the page are the hero,
+`?embed=society` and `?embed=card`. **This slot has now described the world as it
+was rather than as it is four times** — twice as a blocker that did not exist,
+once as open work that had shipped, and once as a live band that had gone.
 `BRIEF-tree-and-sky-embed.md` §2 remains a record of the two traps.
 
-⭐⭐ **AND ITS BIGGEST CATCH TO DATE, 2026-08-29: the embedded Ward was killing a
-phone tab, and it was the only surface that showed it.** The cause was not any recent
-commit — measured, the payload moved 0.5% across the six suspects — it was **1,006 MB
-of hero-impostor albedo, 78% of the whole texture budget**, in a pool whose encoder
-had been written and left switched off. The page did not diagnose it; it made a
-standing cost impossible to keep ignoring. ✅ Fixed by transcoding the pool
-(`arborist/FEATURES` ▸ the impostor pool), and confirmed by the only gate that
-counts — Jacob, on his own handset: *"It works fine on my phone."*
+⭐⭐ **ITS BIGGEST CATCH TO DATE, 2026-08-29 — CLOSED:** the embedded Ward was
+killing a phone tab, and this was the only surface that showed it. **1,006 MB of
+hero-impostor albedo, 78% of the texture budget**, in a pool whose encoder was
+written and left off. ✅ Fixed by transcoding it — `arborist/FEATURES` ▸ the
+impostor pool owns that story; Jacob confirmed on his own handset. ⭐ **Kept here
+for one reason only,** which is the paragraph below.
 
 ⭐ **The lesson this doc should carry: a marketing page is an unusually good
 detector, and an unusually good LIAR, about this product.** It found the real
