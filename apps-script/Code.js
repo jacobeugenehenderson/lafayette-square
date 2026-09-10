@@ -513,6 +513,10 @@ function getCheckinStatus(deviceHash) {
   if (!deviceHash) return errorResponse('Missing dh parameter', 'bad_request')
 
   const rows = sheetToObjects(getSheet('Checkins'))
+  // ⛔ MUST MATCH isTownie EXACTLY. This is the number the visitor is SHOWN
+  // ("2 of 3 days"); isTownie is the gate that lets them post. Fixing one and
+  // not the other ships a button that works beside a page saying it should not.
+  const hashes = getLinkedHashes(deviceHash)
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
   const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
@@ -520,7 +524,7 @@ function getCheckinStatus(deviceHash) {
   const distinctDates = new Set()
   rows.forEach(r => {
     var d = toDateStr(r.date)
-    if (r.device_hash === deviceHash && d >= cutoffStr) {
+    if (hashes.indexOf(r.device_hash) !== -1 && d >= cutoffStr) {
       distinctDates.add(d)
     }
   })
@@ -841,15 +845,30 @@ function postRemoveListing(body) {
 
 // ─── Helper: verify device is a townie (local) ─────────────────────────────
 
+/**
+ * ⭐ COUNTS ACROSS LINKED DEVICES. Standing belongs to the PERSON, not to the
+ * handset they happened to scan with — and linking is the gesture that says
+ * "both of these are me". Guardian, keyholder and residence have always
+ * resolved this way (`getLinkedHashes`); townie did not, so someone who earned
+ * it on their phone and then linked a laptop could not post from the laptop.
+ * ⛔ Townie is the standing MOST people hold, so this was the common case
+ * failing, and /guide/privacy promises the opposite.
+ * ⚠️ `toDateStr` is not cosmetic here: a Sheets cell can deserialise as a Date,
+ * and `Date >= 'yyyy-MM-dd'` does not compare the way the string does. This was
+ * the only one of the three check-in readers without that guard, so the GATE
+ * and the DISPLAY could already disagree before linked devices entered into it.
+ */
 function isTownie(deviceHash) {
   const checkins = sheetToObjects(getSheet('Checkins'))
+  const hashes = getLinkedHashes(deviceHash)
   const cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
   const cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
   const distinctDates = new Set()
   checkins.forEach(r => {
-    if (r.device_hash === deviceHash && r.date >= cutoffStr) {
-      distinctDates.add(r.date)
+    const d = toDateStr(r.date)
+    if (hashes.indexOf(r.device_hash) !== -1 && d >= cutoffStr) {
+      distinctDates.add(d)
     }
   })
   return distinctDates.size >= LOCAL_THRESHOLD
@@ -1843,10 +1862,14 @@ function grantTownieStatus(deviceHash) {
   var cutoff = new Date()
   cutoff.setDate(cutoff.getDate() - LOCAL_WINDOW_DAYS)
   var cutoffStr = Utilities.formatDate(cutoff, TIMEZONE, 'yyyy-MM-dd')
+  // ⭐ Same resolution again, for a different reason: without it a claim or a
+  // residence-verify on a SECOND device backfills days the person already has,
+  // writing synthetic check-ins nobody needs.
+  var hashes = getLinkedHashes(deviceHash)
   var distinctDates = {}
   existing.forEach(function(r) {
     var d = toDateStr(r.date)
-    if (r.device_hash === deviceHash && d >= cutoffStr) {
+    if (hashes.indexOf(r.device_hash) !== -1 && d >= cutoffStr) {
       distinctDates[d] = true
     }
   })

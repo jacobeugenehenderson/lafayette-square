@@ -17,7 +17,7 @@ Every QR encodes a **deep-link URL** into the app. Routes are parsed in `src/App
 | **Guardian (claim)** | `/claim/<listingId>/<secret>` | claims the listing (1st = guardian, then keyholder) | the 8-char `claim_secret` | business owner / staff |
 | **Device link** | `/link/<token>` | syncs your identity onto another device | a 6-char token (5-min TTL) | one person, multiple devices |
 
-The same `/checkin/<id>` route serves both **Check-in** and **Resident** QRs; `CheckinPage.jsx` branches on whether the target is residential (`:181`). **Residential places have no Guardian QR** — residents are invited via the Resident QR; there's no staff-claim override (`PlaceCard.jsx:2418`, `(!isResidential || isHouse)`).
+The same `/checkin/<id>` route serves both **Check-in** and **Resident** QRs; `CheckinPage.jsx` branches on whether the target is residential. **Residential places have no Guardian QR** — residents are invited via the Resident QR; there's no staff-claim override (`PlaceCard.jsx:2418`, `(!isResidential || isHouse)`).
 
 QR images are rendered **client-side** via the `QRCode` lib (`QRCode.toDataURL(url, …)` — e.g. `PlaceCard.jsx:2331`/`2350`, `App.jsx:100`).
 
@@ -25,16 +25,16 @@ QR images are rendered **client-side** via the `QRCode` lib (`QRCode.toDataURL(u
 
 ## 2. The claim secret (Guardian QR) — the security model
 
-The Guardian QR embeds an 8-char hex `claim_secret` directly in its URL, so **the printed card is the credential** — there's no separate auth token. Generated lazily and persisted on the Listings sheet (`getClaimSecret`, `apps-script/Code.js:792`):
+The Guardian QR embeds an 8-char hex `claim_secret` directly in its URL, so **the printed card is the credential** — there's no separate auth token. Generated lazily and persisted on the Listings sheet (`getClaimSecret`, `apps-script/Code.js`):
 
 ```js
-var secret = Utilities.getUuid().split('-')[0]   // 8-char hex, generated on first fetch if missing
+var secret = Utilities.getUuid.split('-')[0]   // 8-char hex, generated on first fetch if missing
 // persisted to the listing's claim_secret column
 ```
 
-- **Who may fetch it:** a **full guardian** of the listing (`isFullGuardianOf`) or an **admin** (`getClaimSecretAdmin`). For a non-existent listing, **admin only** — it auto-provisions a minimal `residential/houses` row so a card can be printed (`Code.js:800`).
-- **Validation on claim:** `postClaim` (`Code.js:601`) rejects a mismatched secret (`:614`); first claimant becomes guardian, the rest keyholders (`:629`). See [`GUARDIANS.md`](GUARDIANS.md).
-- **Stripped from public reads:** `claim_secret` (with `guardian_hash`/`guardian_token`) is deleted from the `getListings` response (`Code.js:337`).
+- **Who may fetch it:** a **full guardian** of the listing (`isFullGuardianOf`) or an **admin** (`getClaimSecretAdmin`). For a non-existent listing, **admin only** — it auto-provisions a minimal `residential/houses` row so a card can be printed (`Code.js`).
+- **Validation on claim:** `postClaim` (`Code.js`) rejects a mismatched secret; first claimant becomes guardian, the rest keyholders. See [`GUARDIANS.md`](GUARDIANS.md).
+- **Stripped from public reads:** `claim_secret` (with `guardian_hash`/`guardian_token`) is deleted from the `getListings` response (`Code.js`).
 
 Check-in and Resident QRs carry **no secret** — they encode only an id; the trust there is the physical card itself (the Resident QR copy warns "a gesture of trust between neighbors, please don't share it outside your building," `CheckinPage.jsx:286`).
 
@@ -42,11 +42,11 @@ Check-in and Resident QRs carry **no secret** — they encode only an id; the tr
 
 ## 3. The device-link token
 
-The Link QR (`/link/<token>`) syncs one person's identity (handle + avatar + vignette) across devices. The token is a **6-char alphanumeric, 5-minute TTL** held in Apps Script cache (`createLinkToken`, `Code.js:1035`):
+The Link QR (`/link/<token>`) syncs one person's identity (handle + avatar + vignette) across devices. The token is a **6-char alphanumeric, 5-minute TTL** held in Apps Script cache (`createLinkToken`, `Code.js`):
 - **Push mode** — the creating device has a handle → identity is embedded in the token; the scanning device adopts it.
 - **Pull mode** — the creating device has no handle → the token is pending; the scanning device pushes *its* identity back.
 
-Flow: `createLinkToken` → `postClaimLinkToken` (`Code.js:1059`) → `checkLinkToken` poll (`Code.js:1109`). UI lives in the account popover (`App.jsx:100–128`, `LinkPage.jsx`). A linked device also unlocks the **linked-device** residence auto-verify path — see [`RESIDENTS.md`](RESIDENTS.md).
+Flow: `createLinkToken` → `postClaimLinkToken` (`Code.js`) → `checkLinkToken` poll (`Code.js`). UI lives in the account popover (`App.jsx:100–128`, `LinkPage.jsx`). A linked device also unlocks the **linked-device** residence auto-verify path — see [`RESIDENTS.md`](RESIDENTS.md).
 
 ---
 
@@ -89,7 +89,7 @@ The design shape (`qr_sync_pipeline.js`):
     modulesMode, modulesEmoji, modulesScale, centerMode, centerEmoji,
     centerScale, eyeCenterMode, eyeCenterEmoji, eyeCenterScale } }
 ```
-- **Backend:** the **Designs** sheet `['biz_id', 'design_json', 'updated_at']` (`Code.js:1940`), keyed `biz_id = <listingId>-<Type>` (e.g. `lmk-010-Guardian`). `getDesign(bizId)` (`Code.js:1556`) / `saveDesign(body)` (`Code.js:1569`, auto-creates the sheet). API wrapper `getQrDesign(listingId, type)` (`api.js:225`).
+- **Backend:** the **Designs** sheet `['biz_id', 'design_json', 'updated_at']` (`Code.js`), keyed `biz_id = <listingId>-<Type>` (e.g. `lmk-010-Guardian`). `getDesign(bizId)` (`Code.js`) / `saveDesign(body)` (`Code.js`, auto-creates the sheet). API wrapper `getQrDesign(listingId, type)` (`api.js:225`).
 - **Local-first:** designs cache in `localStorage` under `lsq-qr-design-<bizId>-<type>`; **save is explicit** (the Save button), remote save is fire-and-forget; on load, a newer remote `updated_at` wins. Switching type preserves the prior design in a session cache (no data loss) and auto-fetches the claim secret when switching to Guardian.
 
 > Design records are **keyed by `bizId-type` and not access-gated** — anyone who knows a `bizId` could read a design. Low-sensitivity (cosmetic card styling), but noted.
@@ -99,10 +99,10 @@ The design shape (`qr_sync_pipeline.js`):
 ## Source map
 | Thing | File | Key lines |
 |---|---|---|
-| Route parsing | `src/App.jsx` | 609–629 (checkin 613 · claim 615 · link 617) |
+| Route parsing | `src/App.jsx` | — |
 | QR rendering (client) | `src/components/PlaceCard.jsx` · `src/App.jsx` | `QrTab` 2299–2489 (Townie 2331 · secret 2343 · Guardian 2350) · link 100 |
-| Check-in / resident flow | `src/pages/CheckinPage.jsx` | 173–217 (residential branch 181; invite copy 286) |
-| Claim flow | `src/pages/ClaimPage.jsx` | 9–27 |
+| Check-in / resident flow | `src/pages/CheckinPage.jsx` | — |
+| Claim flow | `src/pages/ClaimPage.jsx` | — |
 | Device link | `src/pages/LinkPage.jsx` · `src/App.jsx` | 6–50 · 100–128 |
 | QR Studio host | `src/components/CodeDeskModal.jsx` | store 6–21 · iframe 169 · postMessage 83–114 |
 | QR Studio app — ⛔ **the in-app COPY, not production** (§4) | `public/codedesk/` | `qr_sync_pipeline.js` (design shape, persistence) + engine files |

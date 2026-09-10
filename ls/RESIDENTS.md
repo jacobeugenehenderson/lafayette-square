@@ -10,24 +10,24 @@ Last verified: 2026-06-29 against the working tree (`curb-offset-draw`).
 
 > ⚠️ **"Residents" (this doc) ≠ "resident place card."** This doc is the **role/system** — claiming residency, the four verify paths, the private Lobby. The **resident place card** is a *card kind* (a residential home's card: rent range + the Lobby tab) and is documented in [`PLACE-CARDS.md`](PLACE-CARDS.md) §1. Same neighborhood, two different things.
 
-A **Resident** is someone verified as living in a specific building. Residence is per-building, **lasts one year**, and unlocks that building's **private Lobby** — a residents-only message board (text + photos), the co-resident view, and a verified-resident count. Anyone can *claim* a home; the claim is only useful once *verified*. Verifying a residence also auto-grants **townie** status — on **all four** verify paths: the three auto-verify paths call `grantTownieStatus` (`apps-script/Code.js:1766`), and co-resident approval grants it too (`postVerifyResident`, `Code.js:1830`, added 2026-06-30 for parity). See [`TOWNIES.md`](TOWNIES.md).
+A **Resident** is someone verified as living in a specific building. Residence is per-building, **lasts one year**, and unlocks that building's **private Lobby** — a residents-only message board (text + photos), the co-resident view, and a verified-resident count. Anyone can *claim* a home; the claim is only useful once *verified*. Verifying a residence also auto-grants **townie** status — on **all four** verify paths: the three auto-verify paths call `grantTownieStatus` (`apps-script/Code.js`), and co-resident approval grants it too (`postVerifyResident`, `Code.js`, added 2026-06-30 for parity). See [`TOWNIES.md`](TOWNIES.md).
 
 ---
 
 ## 2. Claiming + the four verification paths
 
-A residential claim starts by scanning the building's QR card. `CheckinPage.jsx` detects a residential target (`landmark.category === 'residential'` or a bare building id, `:181`) and calls `claimResidence(dh, buildingId, true)` with `auto_verify` on (`:197`). The backend (`postClaimResidence`, `apps-script/Code.js:1680`) sets `status` to `verified` or `pending` depending on which path qualifies:
+A residential claim starts by scanning the building's QR card. `CheckinPage.jsx` detects a residential target (`landmark.category === 'residential'` or a bare building id) and calls `claimResidence(dh, buildingId, true)` with `auto_verify` on. The backend (`postClaimResidence`, `apps-script/Code.js`) sets `status` to `verified` or `pending` depending on which path qualifies:
 
 | Path | `verified_by` | How it qualifies |
 |---|---|---|
 | **Admin** | `admin` | Caller holds the admin token (`isAdmin`) |
 | **QR invite** | `qr-invite` | The claim carries `auto_verify=true` (the neighbor-QR invite flow from `CheckinPage:197`) |
-| **Linked device** | `linked-device` | Another device sharing the caller's `@handle` is already a verified resident of this building (`Code.js:1731–1744`) |
-| **Co-resident** | (verified) | A pending claim is later approved by an already-verified resident of the building (`postVerifyResident`, `Code.js:1798`) |
+| **Linked device** | `linked-device` | Another device sharing the caller's `@handle` is already a verified resident of this building (`Code.js`) |
+| **Co-resident** | (verified) | A pending claim is later approved by an already-verified resident of the building (`postVerifyResident`, `Code.js`) |
 
 If none qualify, the claim is stored `pending` until a co-resident or admin verifies it.
 
-**The year.** On verify, expiry is set to **+1 year** (`Code.js:1750`): `expiryDate.setFullYear(+1)` → an ISO `expires_at`. On any status read, an expired record is treated as **no residence** (`Code.js:1631`, `exp < now → null`).
+**The year.** On verify, expiry is set to **+1 year** (`Code.js`): `expiryDate.setFullYear(+1)` → an ISO `expires_at`. On any status read, an expired record is treated as **no residence** (`Code.js`, `exp < now → null`).
 
 **Device linking** (`LinkPage.jsx`, `App.jsx`): a 6-char link token (5-min expiry) carries your `@handle` onto a second device. Once linked, that device qualifies for the **linked-device** auto-verify path on any building your other device already holds.
 
@@ -35,7 +35,7 @@ If none qualify, the claim is stored `pending` until a co-resident or admin veri
 
 ## 3. The data model
 
-**Residents sheet** (`apps-script/Code.js:1938`):
+**Residents sheet** (`apps-script/Code.js`):
 ```
 ['device_hash', 'building_id', 'status', 'verified_by', 'created_at', 'verified_at', 'expires_at']
 ```
@@ -43,17 +43,17 @@ If none qualify, the claim is stored `pending` until a co-resident or admin veri
 - `verified_by`: `admin | qr-invite | linked-device` (or set by co-resident verify)
 - `expires_at`: ISO, verification + 1 year
 
-**Status read** (`getResidenceStatus` → `fetchResidenceData`, `Code.js:1604`) resolves the caller either by direct `device_hash` or via any device sharing their handle, and returns:
+**Status read** (`getResidenceStatus` → `fetchResidenceData`, `Code.js`) resolves the caller either by direct `device_hash` or via any device sharing their handle, and returns:
 ```js
 { building_id, status, expires_at }   // or null if none / expired
 ```
 Client store `useResidence` (`src/hooks/useResidence.js`) holds `{ buildingId, status }`, hydrated at boot from the `init` batch (`useInit.js:88`).
 
-**LobbyPosts sheet** (`Code.js:1939`):
+**LobbyPosts sheet** (`Code.js`):
 ```
 ['id', 'building_id', 'device_hash', 'text', 'photo_url', 'created_at']
 ```
-A lobby post served to the client (`Code.js:1665`) is **anonymous by design** — `handle` and `avatar` are always `null`; only `is_mine` (does the caller own it) is exposed:
+A lobby post served to the client (`Code.js`) is **anonymous by design** — `handle` and `avatar` are always `null`; only `is_mine` (does the caller own it) is exposed:
 ```js
 { id, text, photo_url, created_at, handle: null, avatar: null, is_mine }
 ```
@@ -68,7 +68,7 @@ const isResidentHere = isResidential && residenceBuildingId === building?.id && 
 // …
 if (isResidentHere || isAdmin) t.push({ id: 'lobby', label: 'Lobby' })
 ```
-It shows the residents-only board (text + photos, posts anonymous), a co-resident view, and the verified-resident count (`getResidentCount`, `Code.js:1643`). A resident can delete their own posts (`removeLobbyPost`, author-only). `postLeaveResidence` (`Code.js:1895`) clears all residence records for a device.
+It shows the residents-only board (text + photos, posts anonymous), a co-resident view, and the verified-resident count (`getResidentCount`, `Code.js`). A resident can delete their own posts (`removeLobbyPost`, author-only). `postLeaveResidence` (`Code.js`) clears all residence records for a device.
 
 ---
 
@@ -76,9 +76,9 @@ It shows the residents-only board (text + photos, posts anonymous), a co-residen
 
 Residence access is enforced **server-side**, not just hidden in the UI — the backend re-verifies the caller on every lobby read and write:
 
-- **Read** (`getLobbyPosts`, `Code.js:1650`): rejects unless the caller's resolved residence matches the building **and** `status === 'verified'` (`:1655`, `forbidden`).
-- **Write** (`postLobbyPost`, `Code.js:1836`): same verified-resident check before inserting (`forbidden` otherwise).
-- Resolution honors linked devices (`fetchResidenceData`, `Code.js:1604`) so a verified resident's other linked devices also pass.
+- **Read** (`getLobbyPosts`, `Code.js`): rejects unless the caller's resolved residence matches the building **and** `status === 'verified'` (`forbidden`).
+- **Write** (`postLobbyPost`, `Code.js`): same verified-resident check before inserting (`forbidden` otherwise).
+- Resolution honors linked devices (`fetchResidenceData`, `Code.js`) so a verified resident's other linked devices also pass.
 
 The frontend tab gate (`isResidentHere`) is convenience; the security boundary is the server check.
 
@@ -94,7 +94,7 @@ The frontend tab gate (`isResidentHere`) is convenience; the security boundary i
 | Lobby read/write/count | `apps-script/Code.js` | `getLobbyPosts` 1650 · `postLobbyPost` 1836 · `removeLobbyPost` 1865 · `getResidentCount` 1643 |
 | Leave residence | `apps-script/Code.js` | `postLeaveResidence` 1895 |
 | Sheets | `apps-script/Code.js` | Residents 1938 · LobbyPosts 1939 |
-| Claim UI (residential QR) | `src/pages/CheckinPage.jsx` | 173–217 |
+| Claim UI (residential QR) | `src/pages/CheckinPage.jsx` | — |
 | Device linking | `src/pages/LinkPage.jsx` · `src/App.jsx` | link-token flow |
 | Residence store + hydration | `src/hooks/useResidence.js` · `src/hooks/useInit.js` | store 1–15 · hydrate 88–92 |
 | Lobby UI + tab gate | `src/components/PlaceCard.jsx` | `LobbyTab` 2492 · tab gate 3635/3650 |
