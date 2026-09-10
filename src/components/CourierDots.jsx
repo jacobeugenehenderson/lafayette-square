@@ -2,14 +2,29 @@
  * Live courier dots on the 3D map.
  *
  * Subscribes to courier_locations via Supabase real-time.
- * Blue dot = courier on active delivery, yellow = idle/available.
- * Idle couriers snap to Lafayette Park center to protect home privacy.
+ * Blue dot = courier on an active delivery, yellow = idle/available.
+ *
+ * ⛔⛔ THIS FILE USED TO CLAIM A PRIVACY SNAP IT DOES NOT PERFORM, and the
+ * claim outlived the reason for it. The line read "idle couriers snap to the
+ * park centre to protect home privacy"; the render has always passed the real
+ * lat/lon, and the IDLE_* constants were referenced nowhere.
+ * ⭐ THE SNAP IS NOT NEEDED, and wiring it would make things worse. Migration
+ * `011` (SECURITY.md F-10, closed and verified 2026-08-24) scoped
+ * `courier_locations` so a row is readable ONLY by the courier themselves and
+ * by the requester on a currently-running session with them. Nobody else
+ * receives a position at all, so there is nothing to anonymise — and freezing
+ * the one courier a requester IS entitled to watch, mid-delivery, at a park
+ * bench would break the only case that survives.
+ * ⚠️ The client-side snap was the pre-011 mitigation. RLS replaced it. The
+ * constants are excised rather than parked: dead code that describes a
+ * protection is read as a protection.
  */
 import { useRef, useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { supabase } from '../lib/supabase'
 import useCamera from '../hooks/useCamera'
+import useCary from '../hooks/useCary'
 import { INSTANCE } from '../instance.js'
 
 // Same coordinate system as useUserLocation
@@ -17,14 +32,6 @@ const CENTER_LAT = INSTANCE.geography.lat
 const CENTER_LON = INSTANCE.geography.lon
 const LON_TO_METERS = INSTANCE.geography.lonToMeters
 const LAT_TO_METERS = INSTANCE.geography.latToMeters
-
-// Idle courier default position — the neighborhood's park/privacy snap point.
-// TODO(universal-reader Phase 2): installation-specific coordinate — promote to
-// an INSTANCE field (kept literal here to preserve LS's exact idle position).
-const IDLE_LAT = 38.6158
-const IDLE_LON = -90.2155
-const IDLE_X = (IDLE_LON - CENTER_LON) * LON_TO_METERS
-const IDLE_Z = (CENTER_LAT - IDLE_LAT) * LAT_TO_METERS
 
 // Convert lat/lon to scene coords
 function toScene(lat, lon) {
@@ -81,6 +88,10 @@ function CourierDot({ x, z, active }) {
 export default function CourierDots() {
   const [couriers, setCouriers] = useState([])
   const viewMode = useCamera((s) => s.viewMode)
+  /* Two facts, selected narrowly so a dot does not re-render on every Cary
+     state change: who I am as a courier, and whether I am mid-delivery. */
+  const myCourierId = useCary((s) => s.courierProfile?.id ?? null)
+  const hasActiveSession = useCary((s) => !!s.activeSession && !s.activeSession.completed_at)
 
   // Fetch initial courier locations + subscribe to real-time changes
   useEffect(() => {
@@ -139,15 +150,22 @@ export default function CourierDots() {
   return (
     <group>
       {liveCouriers.map(c => {
-        // TODO: determine active vs idle based on whether courier has an active session
-        // For now, all live couriers show as idle/available (yellow)
+        /* ⭐ MIGRATION 011 MAKES THIS DECIDABLE WITHOUT ASKING THE SERVER AGAIN.
+           A row reaches this client only if it is the viewer's own courier
+           position, or that of a courier on a live session WITH the viewer. So
+           anyone who is not you is, by the policy's own definition, mid-delivery
+           for you — and you are idle unless your own session says otherwise.
+           ⛔ Do not reintroduce a status column for this. The authorization rule
+           already carries the fact; a second copy of it in the row is a second
+           thing to keep in step. */
+        const isMe = !!myCourierId && c.courier_id === myCourierId
         const pos = toScene(c.lat, c.lon)
         return (
           <CourierDot
             key={c.courier_id}
             x={pos.x}
             z={pos.z}
-            active={false}
+            active={!isMe || hasActiveSession}
           />
         )
       })}
