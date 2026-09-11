@@ -23,7 +23,9 @@ Cary is a neighborhood request-and-dispatch courier system. Unlike the rest of L
 
 ## 2. The Supabase boundary
 
-Cary is **separate from the GAS backend**. Tables (canonical schema in `cary/supabase/migrations/`): `profiles`, `courier_profiles`, `verification_checks`, `requests`, `sessions`, `courier_locations`, `safety_reports`, `onboarding_steps`. **Realtime** channels publish `requests`, `sessions`, `courier_locations`. **Edge functions**: `onboarding` (verification orchestration — Stripe Identity, Checkr), `credential-check`, `complete-session` (fare settlement), `dispatch` (matching), the `sms-*` / `web-messages` handlers. **Auth**: Supabase phone OTP via Twilio.
+Cary is **separate from the GAS backend**. Tables (canonical schema in `cary/supabase/migrations/`): `profiles`, `courier_profiles`, `verification_checks`, `requests`, `sessions`, `courier_locations`, `safety_reports`, `onboarding_steps`, and — from `018` — `commerce_places`, `commerce_items`, `commerce_item_events`.
+
+⭐ **`018` is the first place the two backends touch.** It is keyed on the GAS `listing_id` and on the menu item's stable `item_id`; ⛔ neither is a foreign key, because Postgres cannot see a spreadsheet. That fails the safe way — the join runs from the menu inward, so a row naming an item that has left the menu is simply never read. A price cannot haunt a menu it has fallen off of. **Realtime** channels publish `requests`, `sessions`, `courier_locations`. **Edge functions**: `onboarding` (verification orchestration — Stripe Identity, Checkr), `credential-check`, `complete-session` (fare settlement), `dispatch` (matching), the `sms-*` / `web-messages` handlers. **Auth**: Supabase phone OTP via Twilio.
 
 ---
 
@@ -83,6 +85,29 @@ Formalized 2026-07-09 from the code (`PlaceCard.jsx` `MenuTab`, ~L2837–3256). 
 The prefix is provenance: it reads at a glance which items have been through the editor and which still ride their derived bridge id. Ids are filled at ingest (`normalizeListingMenu`, `useListings.js`) and minted at every item-creation site in the editor. ⚠️ **Derivation is a bootstrap, not an ongoing rule** — once an item has an id it keeps it, so identity survives a rename.
 
 ⛔ **A cart line whose item has left the menu is NOT silently dropped from the total** — `strandedCount` counts it and the order summary says so. A checkout total that quietly shrinks is the worst shape this surface could have.
+
+### The price of record — what may actually be charged *(2026-09-10, migration 018)*
+
+⛔⛔ **A SEEDED PRICE IS NOT A PRICE.** `item.price` — the number on the bundled editorial menu or on the guardian's authored copy — is a **display figure**. It may be shown; it may never be charged. The only chargeable number is `price_cents` on a **confirmed** `commerce_items` row.
+
+This is what "one owner per field" means in practice, and it is why the three menu homes are not a SSoT problem: **content** (section · name · description · tags · menu type · schedule) is poured from the bundle and overridden by the guardian, exactly as before; **commercial state** (price of record · availability · confirmation) lives once, in Cary, with no seed and no merge. There is no price in two places — there is one price and one display figure, and they are different kinds of thing.
+
+⭐ The consequence worth having: it is **structurally impossible to charge a price nobody confirmed.** Not "we are careful not to" — `resolveCart` has no display figure to reach for, and the schema's `commerce_items_confirmed_has_price` forbids the half-state where it would matter.
+
+`itemOrderability` (`src/lib/commerce.js`) is the one predicate, and it names **why** rather than just refusing — "we're out of that" and "nobody has priced this" are different sentences to a customer and different jobs for a guardian:
+
+| Blocked by | Means |
+|---|---|
+| `no_commerce` | commercial state has not loaded — unconfigured, still loading, or it failed. ⛔ Never permissive. |
+| `paused` | `commerce_places.ordering_paused` — the restaurant stopped taking orders |
+| `unconfirmed` | no price of record. **The default state of every item.** |
+| `eighty_sixed` | `commerce_items.available = false` — the kitchen is out |
+| `out_of_window` | the menu type isn't served at this hour (the pills already say so, so it is quiet) |
+| `stranded` | in a cart, but no longer on the menu |
+
+⚠️ **Wiring this made the whole surface unsellable until items are confirmed** — correctly, and with no customer impact, since the CTA is still admin-gated. An admin sees a banner naming which of the three no-commerce states applies rather than a menu of quietly un-addable items.
+
+▶ `node scratch/claims-price-of-record.mjs` — 73 commercial states; asserts none charges a display figure and none sells unconfirmed, 86'd, paused, out-of-window or unloaded. ⭐ Mutation-tested: a "fall back to `item.price`" fails 72 of 73; dropping the load gate or the confirmation requirement each fail exactly 2 — the narrow states a human would not think to try.
 
 ▶ `node scratch/claims-menu-item-ids.mjs` — proves every item across every live payload is addressable, unique, and **stable under reorder** (819/819 on LS). It caught a real collision on its first run: `lmk-008` carries two sections named "Mocktails" (one `brunch`, one `drinks`) holding the same three drinks, so the identity basis needs the menu **type** as well as the section name.
 

@@ -71,6 +71,8 @@ pending_payment ──payment_intent.succeeded──▶ paid ──▶ injected|
 
 1. **Server-side authority.** The client sends `{ line_refs, qtys, note, destination_choice }` only. `place-order` **re-prices from the authoritative menu** and holds the POS tokens. Client totals are display-only — never the charge basis (anti-tamper). The `MenuTab` math (`ls/CARY.md §6`) moves server-side as the authority.
 
+   ⭐ **Where that authority IS, settled 2026-09-10 (migration 018):** `commerce_items.price_cents` on a row with a non-null `confirmed_at`. ⛔ Not the menu — the menu's price is a **display figure** and is not chargeable, so `place-order` re-prices from Cary's own table and never reads GAS `menu_json` for money. The schema enforces it (`commerce_items_confirmed_has_price`), so there is no half-state in which an unpriced confirmation could be charged.
+
 2. **Persist-then-pay, webhook-confirmed.** Persist `pending_payment` *first* (a recoverable orphan) → PaymentIntent → webhook flips to `paid` → *then* inject + dispatch. Charge-fails ⇒ no kitchen ticket, no orphan. **Idempotent on `cary_order_id`** (webhook retries never double-inject / double-dispatch).
 
 3. **Capacity-first is a PRE-payment gate.** Re-check courier availability at step 3, *before* the PaymentIntent. Never charge and then discover nobody can deliver. (The capacity-first invariant — `REFLECTIONS §4` — enforced at the one moment it bites.)

@@ -56,6 +56,13 @@ const fetchWithDeviceHash = (input, init = {}) => {
   return fetch(input, { ...init, headers })
 }
 
+// ⛔ The stub answers every query `{ data: null, error: null }` — a silent
+// success carrying nothing. That is survivable for a courier surface that simply
+// stays empty, and NOT survivable for commerce, where "no rows came back" and
+// "there is no database" must lead to different sentences on screen. Anything
+// deciding whether money may change hands has to be able to tell them apart.
+export const supabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
+
 export const supabase = (SUPABASE_URL && SUPABASE_ANON_KEY)
   ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY, { global: { fetch: fetchWithDeviceHash } })
   : { from: STUB.from, auth: stubAuth, functions: stubFunctions, removeChannel: () => {}, channel: () => ({ on: () => ({ subscribe: () => ({}) }), subscribe: () => ({}) }) }

@@ -1,6 +1,8 @@
 import React, { useMemo, useState, useEffect, useCallback, useContext, useRef } from 'react'
 import { INSTANCE } from '../instance.js'
-import { indexMenuItems, itemIdOf, lineKey, mintItemId } from '../lib/menuIdentity.js'
+import { indexMenuItems, lineKey, mintItemId } from '../lib/menuIdentity.js'
+import { itemOrderability, resolveCart, BLOCKED, BLOCKED_COPY } from '../lib/commerce.js'
+import useCommerce, { useListingCommerce } from '../hooks/useCommerce'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -2936,36 +2938,38 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   // a line at different food (`src/lib/menuIdentity.js`).
   const itemIndex = useMemo(() => indexMenuItems(menu), [menu])
 
-  // Resolve the cart against the live menu ONCE; count, total and the stranded
-  // notice below all read the same resolution, so they cannot disagree.
-  const { cartLines, strandedCount } = useMemo(() => {
-    const lines = []
-    let stranded = 0
-    for (const [key, qty] of Object.entries(cart)) {
-      if (!(qty > 0)) continue
-      const entry = itemIndex.get(itemIdOf(key))
-      // ⛔ An item that left the menu (or its price did) while the cart was open
-      // is NOT quietly dropped from the total — it is counted and said out loud.
-      // A cart that silently gets cheaper is the worst shape a checkout can have.
-      if (!entry || entry.item.price == null) { stranded += qty; continue }
-      // Out-of-window is not stranding: the menu type simply isn't being served
-      // right now, which the menu pills already show.
-      if (!orderableSections.has(entry.sectionIdx)) continue
-      lines.push({ key, qty, item: entry.item })
-    }
-    return { cartLines: lines, strandedCount: stranded }
-  }, [cart, itemIndex, orderableSections])
+  // Commercial state — the price of record, availability, pause. Ward content
+  // and Cary authority meet HERE and nowhere else, joined on the item id.
+  const { commerceLoaded, rows: commerceRows, place: commercePlace, status: commerceStatus } =
+    useListingCommerce(listingId)
+  useEffect(() => { if (listingId && hasDelivery) useCommerce.getState().load(listingId) }, [listingId, hasDelivery])
 
-  const cartCount = cartLines.reduce((acc, l) => acc + l.qty, 0)
-  const cartTotal = cartLines.reduce((acc, l) => acc + l.item.price * l.qty, 0)
+  // Resolve the cart against the live menu AND the live commercial state, once.
+  // Count, money and every notice below read this one resolution, so they cannot
+  // disagree with each other.
+  const resolved = useMemo(() => resolveCart(cart, {
+    itemIndex, rows: commerceRows, place: commercePlace, orderableSections, commerceLoaded,
+  }), [cart, itemIndex, commerceRows, commercePlace, orderableSections, commerceLoaded])
 
-  const MIN_ORDER = 4000 // $40 minimum order for delivery
+  const cartCount = resolved.count
+  // ⛔ The price of record, never `item.price`. The number on the menu is a
+  // DISPLAY FIGURE and is not chargeable (`src/lib/commerce.js`).
+  const cartTotal = resolved.subtotalCents
+  const strandedCount = resolved.stranded.reduce((a, l) => a + l.qty, 0)
+
+  const MIN_ORDER = commercePlace?.min_order_cents ?? 4000 // per-restaurant; $40 default
   const STL_TAX_RATE = INSTANCE.commerce.salesTaxRate // per-installation sales-tax jurisdiction
   const salesTax = Math.round(cartTotal * STL_TAX_RATE) // tax on food only, not delivery
   const caryFee = Math.round(cartTotal * 0.22) // 22% service charge — courier keeps 75%, platform keeps 25%
   const processingFee = cartTotal > 0 ? Math.round((cartTotal + salesTax + caryFee) * 0.029) + 30 : 0 // Stripe 2.9% + $0.30
   const orderTotal = cartTotal + salesTax + caryFee + processingFee
   const belowMinimum = cartTotal > 0 && cartTotal < MIN_ORDER
+
+  // The same predicate the cart resolution uses — one rule, so what the row
+  // shows and what the total charges can never diverge. `inWindow` is already
+  // folded into the section's `ordering` flag below.
+  const verdictFor = (item) =>
+    itemOrderability(item, commerceRows.get(item?.id), commercePlace, { inWindow: true, commerceLoaded })
 
   const setQty = (itemId, delta) => {
     const key = lineKey(itemId)
@@ -3014,6 +3018,18 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             </div>
           )
         ) : null
+      )}
+
+      {/* Why the menu is unsellable, for the operator. Commercial state is the
+          gate on every price, so when it is missing the surface says so rather
+          than presenting a menu of quietly un-addable items. */}
+      {isAdmin && ordering && !commerceLoaded && (
+        <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 px-3 py-2.5">
+          <p className="text-body-sm text-amber-400/90 leading-snug">
+            No prices of record {commerceStatus === 'error' ? '— commercial state failed to load' : commerceStatus === 'unconfigured' ? '— Supabase is not configured for this installation' : 'yet'}.
+            Nothing here can be ordered until items are confirmed. <span className="text-on-surface-disabled">(migration 018)</span>
+          </p>
+        </div>
       )}
 
       {ordering && (
@@ -3134,6 +3150,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             key={si}
             section={section}
             ordering={canOrderSection}
+            verdictFor={verdictFor}
             sectionCartCount={sectionCartCount}
             getQty={getQty}
             setQty={setQty}
@@ -3179,6 +3196,15 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
               {strandedCount} item{strandedCount !== 1 ? 's are' : ' is'} no longer on the menu and {strandedCount !== 1 ? 'have' : 'has'} not been charged.
             </p>
           )}
+
+          {/* Still on the menu, but not sellable this minute — 86'd, or never
+              priced. Named per item, because "we're out of that" and "nobody
+              priced this" are different sentences and different remedies. */}
+          {resolved.blocked.map(b => (
+            <p key={b.key} className="text-caption text-amber-400/80 mt-1">
+              {b.item?.name} — {BLOCKED_COPY[b.blockedBy]}. Not charged.
+            </p>
+          ))}
 
           {/* Order notes — special requests for the kitchen */}
           <div className="pt-2 border-t border-outline-variant space-y-1.5">
@@ -3255,7 +3281,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   )
 }
 
-function MenuSection({ section, ordering, sectionCartCount, getQty, setQty, defaultOpen }) {
+function MenuSection({ section, ordering, verdictFor, sectionCartCount, getQty, setQty, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen)
   const itemCount = section.items?.length || 0
 
@@ -3293,6 +3319,7 @@ function MenuSection({ section, ordering, sectionCartCount, getQty, setQty, defa
               key={item.id || ii}
               item={item}
               ordering={ordering}
+              verdict={verdictFor?.(item)}
               qty={getQty(item.id)}
               onAdd={() => setQty(item.id, 1)}
               onRemove={() => setQty(item.id, -1)}
@@ -3304,11 +3331,15 @@ function MenuSection({ section, ordering, sectionCartCount, getQty, setQty, defa
   )
 }
 
-function MenuItemRow({ item, ordering, qty, onAdd, onRemove }) {
+function MenuItemRow({ item, ordering, verdict, qty, onAdd, onRemove }) {
   const [expanded, setExpanded] = useState(false)
   const hasMods = item.modifiers?.length > 0
   const tags = item.tags || []
-  const hasPrice = item.price != null
+  // ⛔ Show the price of record when there is one. `item.price` is the DISPLAY
+  // figure — it may be shown, never charged (`src/lib/commerce.js`).
+  const shownPrice = verdict?.priceOfRecord ?? item.price
+  const hasPrice = shownPrice != null
+  const sellable = verdict ? verdict.orderable : false
   const hasDesc = !!item.description
   const longDesc = hasDesc && item.description.length > 60
   return (
@@ -3340,10 +3371,17 @@ function MenuItemRow({ item, ordering, qty, onAdd, onRemove }) {
       <div className="flex items-center gap-1.5 flex-shrink-0">
         {hasPrice && (
           <span className={`text-body-sm tabular-nums ${qty > 0 ? 'text-emerald-400 font-medium' : 'text-on-surface-subtle'}`}>
-            {(item.price / 100).toFixed(0)}
+            {(shownPrice / 100).toFixed(0)}
           </span>
         )}
-        {ordering && hasPrice && (
+        {/* Blocked, and the reason said plainly. A dead + button that gives no
+            account of itself is the thing this replaces. */}
+        {ordering && !sellable && verdict?.blockedBy && verdict.blockedBy !== BLOCKED.OUT_OF_WINDOW && (
+          <span className="text-caption text-on-surface-disabled whitespace-nowrap">
+            {BLOCKED_COPY[verdict.blockedBy]}
+          </span>
+        )}
+        {ordering && sellable && hasPrice && (
           <div className="flex items-center gap-0.5">
             {qty > 0 && (
               <>

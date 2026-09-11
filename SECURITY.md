@@ -480,6 +480,26 @@ by `017` as a `comment on table` carrying the marker `PUBLIC REFERENCE DATA`, wh
 names, whereas a schema declaration lets each town rule on its own tables. ⛔ The declaration excuses an
 open READ only — an open WRITE stays an unconditional finding.
 
+### commerce_places · commerce_items · RULED PUBLIC 2026-09-10 (not a finding)
+Same pattern, same marker, ruled on the same reasoning: a price of record and an availability flag **are
+the menu in the window**, and a customer has to see both before ordering. Neither table carries personal
+data. Declared in `018_commerce_menu.sql` as `comment on table … PUBLIC REFERENCE DATA`.
+
+⭐ **Both are read-only to the whole world, and that is not an oversight — it is the current correct state.**
+`018` deliberately defines **no write policy at all**, because guardianship is a GAS concept (the Guardians
+sheet, keyed by device hash) and Postgres cannot verify it; Supabase auth knows only an anonymous
+`auth.uid()` (`010`). Any client-side write rule we could express would be a rule about someone we cannot
+identify. Writes therefore belong to a service-role edge function that checks guardianship against GAS
+first — unbuilt as of this entry. ⛔ **Until it exists, a write policy here would be worse than the gap.**
+
+⛔ `commerce_item_events` is **not** public — it names actors. RLS is enabled with **zero policies**, which
+denies anon and authenticated every row while service_role (which bypasses RLS) can still append. A census
+that reports "no policies" on it is reporting the intent.
+
+⚠️ `018` also **revokes** insert/update/delete from `anon, authenticated` alongside having no policy — two
+independent locks, deliberately redundant. Do not tidy either away: each one alone still holds if the other
+is restored by mistake.
+
 ### F-11 · LOW · `credential-check` cron auth is fail-open
 - **Where:** `cary/supabase/functions/credential-check/index.js` (`if (cronSecret && authHeader !== …)`).
 - **Impact:** If `CRON_SECRET` is unset, the guard is skipped and the endpoint (which suspends
