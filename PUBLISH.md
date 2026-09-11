@@ -14,24 +14,19 @@ The external drive (`/Volumes/Today/lafayette-square`) is a manual archive copy 
 
 ## Single source of truth: the deployment ID
 
-Every API URL in this project must use the same Apps Script deployment ID. It appears in **four** places:
+Every API URL in this project must use the same Apps Script deployment ID.
 
-| Location | File / Setting | Used by |
-|----------|---------------|---------|
-| This file | Section 2 below | Humans reading docs |
-| `.env` | `VITE_API_URL` | Local dev server (`npm run dev`) |
-| GitHub Secret | `VITE_API_URL` | Production build (`npm run build` in Actions) |
-| CodeDesk iframe | `public/codedesk/index.html` → `window.LSQ_API_URL` | QR Generator |
+> ▶ **`node scratch/claims-deployment-id-single-source.mjs`** — it **searches** for every occurrence and fails if two disagree.
+>
+> ⛔ **This section used to list the locations by hand, and say "four".** There are **six** in the repo: the hand-list omitted `README.md`, `ls/reference/INVENTORY-API.md` and — the one that matters — **`worker.js:1`**, whose `GAS_API` constant fronts the whole Ward. Worse, the verification grep beside it named only three files, so a drifted `worker.js` reported clean. ⭐ A hand-kept list of where a value lives rots exactly like a hand-kept copy of the value; the check above searches instead, so a new location is found without editing this page.
 
 **Current deployment ID:** `AKfycbxv3JihCx0U7JfGqle6ZpsLamkRS5PAEGRn6_NaM0Nc7r5zdY7kyctDioScGy8nVcAqWQ`
 
-If these drift apart, you get "Unknown-action" errors because old deployments don't have newer endpoints. **After any `clasp deploy`, verify all four match.** Run this to check the code locations:
+If these drift apart you get "Unknown-action" errors, because an older deployment lacks the newer actions — a failure that reads like a broken feature rather than a stale URL. **After any `clasp deploy`, run the check.**
 
-```bash
-grep -r 'AKfycb' .env public/codedesk/index.html PUBLISH.md --include='*.md' --include='*.html' --include='*.env' | grep -v node_modules
-```
+⚠️ **Two locations are not reachable from the filesystem and the check reports them as MANUAL rather than passing them silently:** the GitHub Secret `VITE_API_URL` ([Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions)) and the Supabase secret **`GAS_API_URL`**, which the `commerce-write` edge function uses to reach `guardian-check`.
 
-The GitHub Secret must be checked manually at [Settings > Secrets > Actions](https://github.com/jacobeugenehenderson/lafayette-square/settings/secrets/actions).
+⭐ **Use `clasp deploy -i <ID>`** (see Quick reference below). The `-i` reuses the existing deployment, which is what keeps the URL — and therefore all six locations — valid. A fresh `clasp deploy` mints a NEW id and breaks every one of them at once.
 
 ---
 
