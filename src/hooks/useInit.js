@@ -1,7 +1,7 @@
 import { getInit } from '../lib/api'
 import { getDeviceHash } from '../lib/device'
 import { supabase } from '../lib/supabase'
-import useListings, { bareBuildingListings, landmarksWithMenus, _landmarksReady } from './useListings'
+import useListings, { bareBuildingListings, landmarksWithMenus, _landmarksReady, normalizeListingMenu } from './useListings'
 import useHandle from './useHandle'
 import useEvents from './useEvents'
 import useResidence from './useResidence'
@@ -56,7 +56,11 @@ export async function runInit() {
             out[k] = v
           }
         }
-        return out
+        // ⛔ The line above can overwrite an already-normalized static menu with
+        // the API's, so ids are ensured AFTER the merge, never before it. This is
+        // the live ingest path — a menu that misses it has items the cart cannot
+        // address, and the + button would silently do nothing.
+        return normalizeListingMenu(out)
       })
 
       const apiIds = new Set(apiListings.map(l => l.id))

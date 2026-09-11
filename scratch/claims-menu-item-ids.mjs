@@ -66,5 +66,26 @@ for (const [look, rel] of PAYLOADS) {
   if (problems.length > 10) console.log(`    … and ${problems.length - 10} more`)
 }
 
-console.log(`\n${failures === 0 ? 'ALL PAYLOADS PASS' : `${failures} PAYLOAD(S) FAILED`}`)
+// ── 4. WIRING ──────────────────────────────────────────────────────────────
+// Ids are useless if an ingest path skips normalizing. This bit twice in one
+// afternoon: the normalizer first went onto `useListings.refresh`, which had had
+// no callers since auto-refresh moved to useInit (so it reached nothing on the
+// live path), and was then deleted outright by an unrelated edit while the build
+// still passed. So: every site that hydrates the listings store must normalize.
+const SRC = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')
+const HYDRATORS = ['src/hooks/useInit.js', 'src/hooks/useListings.js']
+
+console.log('\nIngest wiring')
+let wiringFailed = false
+for (const rel of HYDRATORS) {
+  const src = SRC(rel)
+  const hydrates = /setState\(\s*\{[^}]*listings:|listings:\s*\[/.test(src)
+  const normalizes = src.includes('normalizeListingMenu')
+  const ok = !hydrates || normalizes
+  if (!ok) { wiringFailed = true; failures++ }
+  console.log(`  ${ok ? 'PASS' : 'FAIL'}  ${rel}  hydrates=${hydrates} normalizes=${normalizes}`)
+}
+if (wiringFailed) console.log('  ⛔ a path hydrates the listings store without ensuring menu ids — its items cannot be added to a cart')
+
+console.log(`\n${failures === 0 ? 'ALL PAYLOADS PASS' : `${failures} FAILURE(S)`}`)
 process.exit(failures === 0 ? 0 : 1)

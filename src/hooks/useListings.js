@@ -1,5 +1,4 @@
 import { create } from 'zustand'
-import { getListings } from '../lib/api'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { INSTANCE } from '../instance.js'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
@@ -8,10 +7,14 @@ import { ensureMenuIds } from '../lib/menuIdentity.js'
 /**
  * Listing data store.
  *
- * Initializes instantly with the bundled landmarks.json so the scene
- * renders without delay.  When a Sheets API URL is configured, the store
- * silently refreshes in the background — API data wins over static
- * so guardian edits are reflected.
+ * Seeded from the bundled landmarks.json so the scene has places to draw, then
+ * hydrated by `useInit.runInit()` — the ONE API ingest path, which merges GAS
+ * over the bundle so guardian edits win.
+ *
+ * ⛔ There used to be a second `refresh()` here doing a byte-for-byte identical
+ * merge, with no callers since auto-refresh was removed. Excised 2026-09-10 —
+ * two hydration paths for one store is how the two drift apart, and it had
+ * already happened: the menu-id normalizer went onto the dead one first.
  *
  * Bare buildings (no landmark listing) are included as synthetic
  * listings, categorized by St. Louis zoning code.
@@ -23,33 +26,17 @@ import { ensureMenuIds } from '../lib/menuIdentity.js'
 // Was a SYNCHRONOUS module-scope seed ("renders without delay"); now fills
 // post-ready and rides the app splash (Scene mounts on splashReady ~1500ms;
 // SidePanel fades ~1.0s) — the same gate that already masks the async buildings
-// load. The API merge (refresh + useInit.runInit) awaits `_landmarksReady` so
-// the static fallback fields are never lost to a race. (Phase 2, Batch B.)
+// load. The API merge (`useInit.runInit`) awaits `_landmarksReady` so the
+// static fallback fields are never lost to a race. (Phase 2, Batch B.)
 export let landmarksWithMenus = []
 
-// Hours arrive from the backend as a JSON STRING (`hours_json`, per backend
-// schema: `{"monday":{"open":"11:00","close":"22:00"}}`), but the consumers —
-// the neon open-by-hours gate (SceneNeon) AND the place card (PlaceCard) — read
-// a parsed `hours` OBJECT. Nothing parsed it, so `l.hours` was always undefined:
-// the neon gate never lit (no business ever "open") and cards showed "Hours not
-// available". Parse it here on ingest. Idempotent: a value that's already an
-// object passes through; a bad string is dropped, not thrown. (2026-06-29)
-function parseListingHours(l) {
-  if (!l || (l.hours && typeof l.hours === 'object')) return l
-  const raw = l.hours_json ?? (typeof l.hours === 'string' ? l.hours : null)
-  if (!raw) return l
-  try {
-    const parsed = JSON.parse(raw)
-    return parsed && typeof parsed === 'object' ? { ...l, hours: parsed } : l
-  } catch { return l }
-}
-
 // A menu item needs an IDENTITY, not a position. Menus arrive from two homes —
-// the bundled instance payload and GAS `menu_json` — and the merge below can
-// swap one for the other under a live cart, so both are normalized on the way
-// in and independently derive the SAME id for the same item. Idempotent: an
-// item that already carries an id keeps it. See `src/lib/menuIdentity.js`.
-function normalizeListingMenu(l) {
+// the bundled instance payload and GAS `menu_json` — and the merge in
+// `useInit.runInit` can swap one for the other under a live cart, so both are
+// normalized on the way in and independently derive the SAME id for the same
+// item. Idempotent: an item that already carries an id keeps it.
+// See `src/lib/menuIdentity.js`.
+export function normalizeListingMenu(l) {
   if (!l?.menu?.sections?.length) return l
   const menu = ensureMenuIds(l.menu)
   return menu === l.menu ? l : { ...l, menu }
@@ -142,66 +129,6 @@ const useListings = create((set, get) => ({
   listings: [],
   loading: false,
   fetched: false,
-
-  /** Background refresh from Sheets API — safe to call multiple times */
-  refresh: async () => {
-    if (get().fetched || get().loading) return
-    set({ loading: true })
-    try {
-      await _landmarksReady   // static fallback map must be filled before the merge
-      const res = await getListings()
-      const apiListings = (Array.isArray(res.data) ? res.data
-        : Array.isArray(res.data?.listings) ? res.data.listings
-        : []).map(parseListingHours).map(normalizeListingMenu)
-      if (apiListings.length > 0) {
-        // Build lookup from static data for fallback fields (logo, reviews, etc.)
-        const staticLookup = new Map()
-        landmarksWithMenus.forEach(lm => staticLookup.set(lm.id, lm))
-
-        // Merge: API wins over static (guardian edits override bundled data)
-        // but skip null/empty API fields so rich static data (history, photos, etc.) is preserved
-        const merged = apiListings.map(api => {
-          const lm = staticLookup.get(api.id)
-          if (!lm) return api
-          const out = { ...lm }
-          for (const [k, v] of Object.entries(api)) {
-            if (v != null && !(Array.isArray(v) && v.length === 0)) {
-              // For menu: keep static bundled menu if API has no sections
-              if (k === 'menu' && lm.menu?.sections?.length) {
-                if (!v?.sections?.length) continue  // keep static
-              }
-              // For photos: prefer whichever array has richer entries (objects with credits)
-              if (k === 'photos' && Array.isArray(v) && Array.isArray(lm.photos)) {
-                const apiHasCredits = v.some(p => typeof p === 'object' && p?.credit)
-                const staticHasCredits = lm.photos.some(p => typeof p === 'object' && p?.credit)
-                if (staticHasCredits && !apiHasCredits) continue  // keep static
-                // API has credits or both do — take the longer/richer array
-                if (staticHasCredits && apiHasCredits) {
-                  out[k] = v.length >= lm.photos.length ? v : lm.photos
-                  continue
-                }
-              }
-              out[k] = v
-            }
-          }
-          return out
-        })
-
-        // Add any static landmarks not in API (shouldn't happen, but safety net)
-        const apiIds = new Set(apiListings.map(l => l.id))
-        landmarksWithMenus.forEach(lm => {
-          if (!apiIds.has(lm.id)) merged.push(lm)
-        })
-
-        set({ listings: [...merged, ...bareBuildingListings], fetched: true, loading: false })
-      } else {
-        set({ fetched: true, loading: false })
-      }
-    } catch {
-      // API unavailable — keep static data
-      set({ loading: false })
-    }
-  },
 
   /** Lookup by listing id */
   getById: (id) => get().listings.find(l => l.id === id),
