@@ -3,6 +3,7 @@ import { getListings } from '../lib/api'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { INSTANCE } from '../instance.js'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
+import { ensureMenuIds } from '../lib/menuIdentity.js'
 
 /**
  * Listing data store.
@@ -41,6 +42,17 @@ function parseListingHours(l) {
     const parsed = JSON.parse(raw)
     return parsed && typeof parsed === 'object' ? { ...l, hours: parsed } : l
   } catch { return l }
+}
+
+// A menu item needs an IDENTITY, not a position. Menus arrive from two homes —
+// the bundled instance payload and GAS `menu_json` — and the merge below can
+// swap one for the other under a live cart, so both are normalized on the way
+// in and independently derive the SAME id for the same item. Idempotent: an
+// item that already carries an id keeps it. See `src/lib/menuIdentity.js`.
+function normalizeListingMenu(l) {
+  if (!l?.menu?.sections?.length) return l
+  const menu = ensureMenuIds(l.menu)
+  return menu === l.menu ? l : { ...l, menu }
 }
 
 // Generate synthetic listings for bare buildings using zoning codes
@@ -99,7 +111,7 @@ export const _landmarksReady = Promise.all([
 ]).then(([staticData, menuData]) => {
   const menus = menuData || {}
   landmarksWithMenus = (staticData?.landmarks || []).map(lm =>
-    menus[lm.id] ? { ...lm, menu: menus[lm.id] } : lm
+    menus[lm.id] ? normalizeListingMenu({ ...lm, menu: menus[lm.id] }) : lm
   )
   _landmarkBids = new Set(landmarksWithMenus.map(l => l.building_id).filter(Boolean))
   _landmarkAddrs = new Set(landmarksWithMenus.map(l => (l.address || '').toLowerCase().replace(/\s+/g, ' ').trim()).filter(Boolean))
@@ -140,7 +152,7 @@ const useListings = create((set, get) => ({
       const res = await getListings()
       const apiListings = (Array.isArray(res.data) ? res.data
         : Array.isArray(res.data?.listings) ? res.data.listings
-        : []).map(parseListingHours)
+        : []).map(parseListingHours).map(normalizeListingMenu)
       if (apiListings.length > 0) {
         // Build lookup from static data for fallback fields (logo, reviews, etc.)
         const staticLookup = new Map()

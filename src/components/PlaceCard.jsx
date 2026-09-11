@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect, useCallback, useContext, useRef } from 'react'
 import { INSTANCE } from '../instance.js'
+import { indexMenuItems, itemIdOf, lineKey, mintItemId } from '../lib/menuIdentity.js'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -2897,7 +2898,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
 
   // Ordering state
   const [ordering, setOrdering] = useState(false)
-  const [cart, setCart] = useState({}) // { "sectionIdx-itemIdx": qty }
+  const [cart, setCart] = useState({}) // { [lineKey]: qty } — keyed on item IDENTITY, never position
   const [orderNote, setOrderNote] = useState('')
   const [orderPlaced, setOrderPlaced] = useState(false)
 
@@ -2930,23 +2931,33 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     return set
   }, [menus, orderableMenus, sections])
 
-  const cartCount = Object.entries(cart).reduce((acc, [key, qty]) => {
-    const si = parseInt(key.split('-')[0], 10)
-    return acc + (orderableSections.has(si) ? qty : 0)
-  }, 0)
+  // Every item on the menu, addressed by id. The cart keys on identity, so a
+  // guardian reordering or inserting a section mid-cart can no longer re-point
+  // a line at different food (`src/lib/menuIdentity.js`).
+  const itemIndex = useMemo(() => indexMenuItems(menu), [menu])
 
-  const cartTotal = useMemo(() => {
-    let total = 0
-    sections.forEach((section, si) => {
-      if (!orderableSections.has(si)) return
-      ;(section.items || []).forEach((item, ii) => {
-        const key = `${si}-${ii}`
-        const qty = cart[key] || 0
-        if (qty > 0 && item.price != null) total += item.price * qty
-      })
-    })
-    return total
-  }, [cart, sections, orderableSections])
+  // Resolve the cart against the live menu ONCE; count, total and the stranded
+  // notice below all read the same resolution, so they cannot disagree.
+  const { cartLines, strandedCount } = useMemo(() => {
+    const lines = []
+    let stranded = 0
+    for (const [key, qty] of Object.entries(cart)) {
+      if (!(qty > 0)) continue
+      const entry = itemIndex.get(itemIdOf(key))
+      // ⛔ An item that left the menu (or its price did) while the cart was open
+      // is NOT quietly dropped from the total — it is counted and said out loud.
+      // A cart that silently gets cheaper is the worst shape a checkout can have.
+      if (!entry || entry.item.price == null) { stranded += qty; continue }
+      // Out-of-window is not stranding: the menu type simply isn't being served
+      // right now, which the menu pills already show.
+      if (!orderableSections.has(entry.sectionIdx)) continue
+      lines.push({ key, qty, item: entry.item })
+    }
+    return { cartLines: lines, strandedCount: stranded }
+  }, [cart, itemIndex, orderableSections])
+
+  const cartCount = cartLines.reduce((acc, l) => acc + l.qty, 0)
+  const cartTotal = cartLines.reduce((acc, l) => acc + l.item.price * l.qty, 0)
 
   const MIN_ORDER = 4000 // $40 minimum order for delivery
   const STL_TAX_RATE = INSTANCE.commerce.salesTaxRate // per-installation sales-tax jurisdiction
@@ -2956,8 +2967,9 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   const orderTotal = cartTotal + salesTax + caryFee + processingFee
   const belowMinimum = cartTotal > 0 && cartTotal < MIN_ORDER
 
-  const setQty = (sectionIdx, itemIdx, delta) => {
-    const key = `${sectionIdx}-${itemIdx}`
+  const setQty = (itemId, delta) => {
+    const key = lineKey(itemId)
+    if (!key) return
     setCart(prev => {
       const cur = prev[key] || 0
       const next = Math.max(0, cur + delta)
@@ -2969,7 +2981,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
     })
   }
 
-  const getQty = (sectionIdx, itemIdx) => cart[`${sectionIdx}-${itemIdx}`] || 0
+  const getQty = (itemId) => cart[lineKey(itemId)] || 0
 
   if (!sections.length && !isGuardian) return <p className="text-on-surface-disabled text-body-sm">No menu available yet.</p>
 
@@ -3057,7 +3069,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
               <button
                 key={k}
                 onClick={() => {
-                  const newSection = { name: '', menu: k, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }
+                  const newSection = { name: '', menu: k, items: [{ id: mintItemId(), name: '', description: '', price: null, tags: [], modifiers: [] }] }
                   const newMenu = { sections: [...sections, newSection] }
                   editCtx?.setField('menu', newMenu)
                   setActiveMenu(k)
@@ -3077,7 +3089,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             if (!raw) return
             const key = raw.toLowerCase().replace(/\s+/g, '_')
             if (menus.find(m => m.key === key)) return
-            const newSection = { name: '', menu: key, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }
+            const newSection = { name: '', menu: key, items: [{ id: mintItemId(), name: '', description: '', price: null, tags: [], modifiers: [] }] }
             const newMenu = { sections: [...sections, newSection] }
             editCtx?.setField('menu', newMenu)
             setActiveMenu(key)
@@ -3116,12 +3128,11 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
         const absSi = sections.indexOf(section)
         const canOrderSection = ordering && orderableSections.has(absSi)
         // Count cart items in this section
-        const sectionCartCount = (section.items || []).reduce((acc, _, ii) => acc + getQty(absSi, ii), 0)
+        const sectionCartCount = (section.items || []).reduce((acc, item) => acc + getQty(item.id), 0)
         return (
           <MenuSection
             key={si}
             section={section}
-            absSi={absSi}
             ordering={canOrderSection}
             sectionCartCount={sectionCartCount}
             getQty={getQty}
@@ -3158,6 +3169,14 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
           {belowMinimum && (
             <p className="text-caption text-amber-400/80 mt-1">
               ${((MIN_ORDER - cartTotal) / 100).toFixed(2)} more to meet the $40 minimum
+            </p>
+          )}
+
+          {/* The menu changed under an open cart. Say so — a total that quietly
+              shrinks is the one thing a checkout must never do. */}
+          {strandedCount > 0 && (
+            <p className="text-caption text-amber-400/80 mt-1">
+              {strandedCount} item{strandedCount !== 1 ? 's are' : ' is'} no longer on the menu and {strandedCount !== 1 ? 'have' : 'has'} not been charged.
             </p>
           )}
 
@@ -3236,7 +3255,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
   )
 }
 
-function MenuSection({ section, absSi, ordering, sectionCartCount, getQty, setQty, defaultOpen }) {
+function MenuSection({ section, ordering, sectionCartCount, getQty, setQty, defaultOpen }) {
   const [open, setOpen] = useState(defaultOpen)
   const itemCount = section.items?.length || 0
 
@@ -3271,12 +3290,12 @@ function MenuSection({ section, absSi, ordering, sectionCartCount, getQty, setQt
         <div className="px-3 pb-2">
           {section.items?.map((item, ii) => (
             <MenuItemRow
-              key={ii}
+              key={item.id || ii}
               item={item}
               ordering={ordering}
-              qty={getQty(absSi, ii)}
-              onAdd={() => setQty(absSi, ii, 1)}
-              onRemove={() => setQty(absSi, ii, -1)}
+              qty={getQty(item.id)}
+              onAdd={() => setQty(item.id, 1)}
+              onRemove={() => setQty(item.id, -1)}
             />
           ))}
         </div>
@@ -3393,11 +3412,11 @@ function MenuEditor({ menu, activeMenuType, onSave, onCancel }) {
     }))
   }
 
-  const addSection = () => setAllSections(prev => [...prev, { name: '', menu: editType, items: [{ name: '', description: '', price: null, tags: [], modifiers: [] }] }])
+  const addSection = () => setAllSections(prev => [...prev, { name: '', menu: editType, items: [{ id: mintItemId(), name: '', description: '', price: null, tags: [], modifiers: [] }] }])
   const removeSection = (absIdx) => setAllSections(prev => prev.filter((_, i) => i !== absIdx))
   const updateSection = (absIdx, field, val) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, [field]: val } : s))
 
-  const addItem = (absIdx) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: [...s.items, { name: '', description: '', price: null, tags: [], modifiers: [] }] } : s))
+  const addItem = (absIdx) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: [...s.items, { id: mintItemId(), name: '', description: '', price: null, tags: [], modifiers: [] }] } : s))
   const removeItem = (absIdx, ii) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: s.items.filter((_, j) => j !== ii) } : s))
   const updateItem = (absIdx, ii, field, val) => setAllSections(prev => prev.map((s, i) => i === absIdx ? { ...s, items: s.items.map((item, j) => j === ii ? { ...item, [field]: val } : item) } : s))
 
