@@ -2,9 +2,22 @@
 
 **The boundary object between order-capture and order-injection.** One shape, agreed by both sides: the LS app's `MenuTab` **produces** it at checkout; every POS adapter (`README.md`) **consumes** it to inject a paid-external ticket. Define it once → checkout and all four POS adapters can't drift.
 
-Drafted 2026-07-09 from the built `MenuTab` surface (`ls/CARY.md §6`). Status: **v1 design, unbuilt — except line identity, which shipped 2026-09-10.** Prices are integer cents throughout (matches `MenuTab`). ⭐ Anchors are symbol names, not line numbers: the numbers this doc was drafted with had all drifted within eight weeks.
+Drafted 2026-07-09 from the built `MenuTab` surface (`ls/CARY.md §6`). Status: **v1 design; line identity and the contract itself shipped 2026-09-10** (`cary/supabase/functions/_shared/caryOrder.js`) — the pipeline that fills it has not.
+
+⚠️ **The field table below is CHECKED, not trusted.** `node scratch/claims-cary-order-contract.mjs` parses it and fails if it drifts from `CONTRACT` in either direction — a field in the code and not here, or here and not in the code. Prices are integer cents throughout (matches `MenuTab`). ⭐ Anchors are symbol names, not line numbers: the numbers this doc was drafted with had all drifted within eight weeks.
 
 ---
+
+## ⛔ Two shapes: `CaryOrderIntent` and `CaryOrder`
+
+**This doc used to say the LS app's `MenuTab` *produces* a `CaryOrder` at checkout. It does not, and must not.** `ORDER-PIPELINE.md §3.1`, written the same day, settled the opposite: the client sends refs and quantities, and `place-order` **re-prices from the authoritative menu**. Both could not be true, and ORDER-PIPELINE is the one that holds — a `CaryOrder` carries money, and money the client computed is money the client can edit. `018` sharpened it from the other end: the chargeable price lives in `commerce_items`, so the browser has no access to an authoritative number at all.
+
+| | Produced by | Carries | Consumed by |
+|---|---|---|---|
+| **`CaryOrderIntent`** | the Ward (`MenuTab`) | `listing_id` · `lines[{ ref, qty, modifier_ids? }]` · `order_note` · `destination_choice`. ⛔ **No money, ever.** | `place-order` |
+| **`CaryOrder`** | `place-order`, by re-pricing the intent | everything below | the POS adapters, the ledger |
+
+⭐ `validateOrderIntent` **rejects** any money-shaped key rather than ignoring it — ignored is one careless destructure away from trusted.
 
 ## Provenance — where each field already exists
 
@@ -28,7 +41,7 @@ Almost every field is already computed by `MenuTab` today; the contract mostly *
 {
   ref:            "d_7a29963a",           // the item's STABLE id (menuIdentity.js) — never a position
   name:           string,                 // Guardian-authored item name
-  unit_price_cents: integer,              // = item.price (already cents)
+  unit_price_cents: integer,              // the PRICE OF RECORD (commerce_items), ⛔ never item.price
   qty:            integer,
   pos_item_ref:   string | null,          // ⚠️ SEAM 1 — the POS's own catalog GUID; null in v1
   modifiers:      Modifier[]              // ⚠️ SEAM 2 — [] in v1 (intent rides order_note)
@@ -41,6 +54,9 @@ Modifier = { id: string, name: string, price_delta_cents: integer, pos_modifier_
 
 ### `money` (cents)
 
+⛔ **`unit_price_cents` is the price of record, not the menu price.** The number on a menu is a **display figure** — showable, never chargeable (migration `018`, `src/lib/commerce.js`).
+
+
 ```
 {
   subtotal_cents,        // Σ unit_price_cents × qty   (MenuTab cartTotal)
@@ -48,6 +64,7 @@ Modifier = { id: string, name: string, price_delta_cents: integer, pos_modifier_
   service_charge_cents,  // round(subtotal × 0.22)     — Cary's, OFF-POS
   processing_fee_cents,  // round((subtotal+tax+service) × 0.029)+30 — Cary's, OFF-POS
   total_cents,           // what the customer paid Cary's Stripe
+  tax_remitter,          // 'platform' | 'restaurant' | 'undetermined' — snapshotted at order time
   food_payment_intent_id // Stripe — the paid-external reference
 }
 ```
@@ -89,7 +106,8 @@ Injecting the service charge or processing fee would **pollute the restaurant's 
   "order_note": "One taco no onions. Allergy: cilantro.",
   "money": {
     "subtotal_cents": 2250, "tax_cents": 196, "service_charge_cents": 495,
-    "processing_fee_cents": 116, "total_cents": 3057, "food_payment_intent_id": "pi_…"
+    "processing_fee_cents": 116, "total_cents": 3057, "tax_remitter": "platform",
+    "food_payment_intent_id": "pi_…"
   },
   "fulfillment": { "type": "delivery", "courier_session_id": "…", "destination": { "address": "…", "unit": "…" } },
   "schedule_ok": true,
@@ -104,7 +122,7 @@ Injecting the service charge or processing fee would **pollute the restaurant's 
 ## Open decisions (for Jacob)
 
 1. **`ref` stability across menu edits — ✅ DONE 2026-09-10 (`src/lib/menuIdentity.js`).** `"sectionIdx-itemIdx"` is positional, so a Guardian reordering the menu shifts every ref behind it. The old note called this low urgency because "orders are short-lived" — **that was true only while nothing persisted.** Once orders are rows that get reconciled against a POS tender record and refunded weeks later, a positional ref names the wrong item; and a menu edited mid-cart re-points a live cart. Stable per-item ids landed **before** persistence, not after. ⭐ They are also what makes menu **re-pour diffable** (a new PDF must match an existing item to leave it confirmed), so the id scheme is designed for re-pour, not just for orders. ▶ `node scratch/claims-menu-item-ids.mjs`.
-2. **Where the contract is enforced** — a shared TS/JSDoc type imported by both `MenuTab` (producer) and the edge-function adapters (consumer), so drift is a compile error, not a runtime surprise.
+2. **Where the contract is enforced — ✅ DONE 2026-09-10 (`cary/supabase/functions/_shared/caryOrder.js`).** ⭐ Not as a type. A compile error was not available: the Ward is plain JS with no typecheck step and the adapters are Deno TS, so a shared `.ts` type would be enforced on one side and **decorative on the other** — worse than nothing, because it would look enforced. It is a **runtime validator** instead, checking what a type cannot: that `subtotal_cents` *equals* the lines, that `total_cents` equals the stack, that a `ref` is not a position, and that the POS tender excludes Cary's own charges. Those are the invariants that cost money. ▶ `node scratch/claims-cary-order-contract.mjs`.
 3. **Persist-then-pay-then-inject ordering** at submit — the still-unbuilt middle (`CARY-BRIEF §"What's next" #2`). The contract is the target shape; the submit pipeline that fills it is the next build.
 
 ## Cross-refs
