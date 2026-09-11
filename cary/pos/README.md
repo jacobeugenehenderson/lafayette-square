@@ -180,9 +180,9 @@ Use this everywhere the restaurant pitch appears (`CARY-BRIEF.md §4`, onboardin
 - ⬜ **Toast partner/certification application** — the long pole; start now.
 - ⬜ Confirm the pilot Lightspeed **series** (Restaurant K-/L vs Retail R).
 - ⬜ Pull current Toast + Lightspeed order-injection + external-tender API docs; write `toast.md` / `lightspeed.md`.
-- ⬜ Define the injected-order **payload schema** (line items, modifiers, Cary order ID, external tender) so the three-way reconciliation is airtight.
-- ⬜ Wire the requester **order submit** — the *order-capture* surface is **already built client-side** (`ls/CARY.md §6` — `MenuTab`: cart + full priced order + kitchen note, legal-canon-accurate, instance-parameterized tax). What's missing is everything past "Place order": **persist → Stripe food-PaymentIntent → `requests`/`sessions` row → dispatch → inject** — the full design is **[`../ORDER-PIPELINE.md`](../ORDER-PIPELINE.md)** (injection is step 8 there). The canonical `CaryOrder` object is ~defined by the UI already (this file's sibling `cary-order.md`).
-- ⬜ **"86 / pause ordering" toggle** — the Guardian's tool to block a ticket the kitchen can't fill (menu accuracy is the restaurant's job; no POS menu-sync needed).
+- ✅ **DONE 2026-09-10** — the injected-order payload schema is `cary/supabase/functions/_shared/caryOrder.js`, a runtime validator rather than a type (a type would have been decorative on the plain-JS side). `posTenderCents()` is the single definition of the paid-external amount, so ⛔ no adapter recomputes food+tax its own way. ▶ `node scratch/claims-cary-order-contract.mjs`
+- ⬜ Wire the requester **order submit** — everything past "Place order": **persist → Stripe food-PaymentIntent → `requests`/`sessions` row → dispatch → inject** ([`../ORDER-PIPELINE.md`](../ORDER-PIPELINE.md); injection is step 8). ⛔ The client sends a **`CaryOrderIntent`** (refs + quantities, no money); `place-order` builds the `CaryOrder` by re-pricing against the price of record — the UI does **not** define it (`cary-order.md`).
+- ✅ **BUILT 2026-09-10, not yet deployed** — per-item **86** and per-restaurant **pause** live in the guardian's *Delivery prices* panel, backed by `commerce_items.available` / `commerce_places.ordering_paused` (migration `018`). ⭐ They share one orderability predicate with *unconfirmed*, so a blocked item always states **which** reason applies.
 - ⬜ Settlement **ledger** keyed to the Stripe PaymentIntent (`CARY-BRIEF.md §"What's next" #3`).
 
 ## Cross-refs

@@ -137,13 +137,16 @@ Customer → **Cary's Stripe** collects `total_cents` (`subtotal + tax + service
 
 ## 8. Open items / next
 
+> ⛔⛔ **BLOCKED FIRST ON DEPLOYMENT, NOT ON CODE.** The commercial half of a menu shipped 2026-09-10 and **has never run against Postgres, Deno or Apps Script** — four operator steps are outstanding (`ls/OPERATIONS.md §5`). Until they land there is **no price of record in existence**, so `place-order` would have nothing to re-price against and every item below would stack on four unverified layers. ⭐ The cheapest proof is one loop: confirm a single item on Barrio and add it to a cart — it exercises the migration, the RLS posture, the edge function, the GAS oracle, the shared-secret handshake and the ingest path in about two minutes.
+
+- ✅ **DONE 2026-09-10** — the commercial menu: stable item ids (`menuIdentity.js`), `commerce_items`/`commerce_places`/`commerce_item_events` (`018`), the price-of-record predicate (`commerce.js`), the guardian write path (`commerce-write` + GAS `guardian-check`), and the `CaryOrder`/`CaryOrderIntent` contract (`_shared/caryOrder.js`).
 - ⬜ `orders` / `order_line_items` / `pos_connections` migration + the `requests` additions.
 - ⬜ `place-order` edge function (gate · re-price · capacity gate · persist · PaymentIntent).
 - ⬜ Extend `handlePaymentEvent` with the order-keyed branch → inject + dispatch on `paid`.
 - ⬜ `inject-order` edge function (idempotent; POS adapter or relay).
 - ⬜ Destination picker UI in `MenuTab` (Home / Here / Somewhere-else) + live-dot resolve-to-place + consent.
 - ⬜ Wire "Place order" → `place-order` (retire the "coming soon" stub, `ls/CARY.md §6`).
-- ⬜ Remove the `isAdmin` CTA gate when going live (`PlaceCard.jsx ~L2982`).
+- ⬜ Remove the `isAdmin` CTA gate when going live (`MenuTab`, the `isAdmin ?` branch on the delivery CTA — ⭐ cite the symbol, not a line; this one had already drifted).
 - ⬜ Delivery-shaped `sessions` money (order-derived payout, not meter).
 
 ## Cross-refs

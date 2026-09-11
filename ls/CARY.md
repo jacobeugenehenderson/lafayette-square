@@ -51,15 +51,19 @@ Cary is **separate from the GAS backend**. Tables (canonical schema in `cary/sup
 
 - ✅ **Live:** courier onboarding (both tiers), the courier dashboard (GPS, request accept, meter, safety), live courier dots, phone-OTP auth.
 - ⏳ **Placeholder:** the **requester** delivery CTA (`CaryButton` shows "coming soon"); the masthead courier count (stub store).
-- 🟨 **Built but not wired (client-only):** the **menu ordering surface** (§6) — cart, the full priced order (subtotal/tax/service-charge/processing/total), the $40 minimum, the kitchen note. It computes a complete, legal-canon-accurate order **but nothing leaves the browser**: "Place order" is a stub.
-- ❌ **Unbuilt:** the **order submit and everything after it** — no persistence, no Stripe food-PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection. Also: settlement ledger / payouts, restaurant onboarding, ride-request creation + matching.
+- 🟨 **Built, NOT DEPLOYED** (2026-09-10): the **commercial half of a menu** — stable item ids, the price of record, availability/86, the guardian write path. ⚠️ Four operator steps outstanding (`OPERATIONS.md §5`); until they run, **no price of record exists anywhere** and nothing is orderable — which is the correct default, not a fault.
+- 🟨 **Built but not wired (client-only):** the **menu ordering surface** (§6) — cart, the price stack, the $40 minimum, the kitchen note. "Place order" is still a stub.
+- ❌ **Unbuilt:** the **order submit and everything after it** — no `place-order`, no persistence, no Stripe food-PaymentIntent, no `requests`/`sessions` row, no dispatch, no POS injection. Also: settlement ledger / payouts, restaurant onboarding, ride-request creation + matching. ⭐ The **`CaryOrder` contract** these will fill exists and is checked (`_shared/caryOrder.js`).
 
 The **delivery hookup from place cards** (`PLACE-CARDS.md` §3: a menu order needs the `delivery` tag + a live courier + an in-window menu) captures a full priced cart in `MenuTab` today, then terminates at a "coming soon" card — the **submit → persist → pay → dispatch → inject** path is the unbuilt requester side above.
 
 ---
 
 ## 5. Known gaps / next (app side)
-Requester request-creation UI (the place-card → pickup/destination form) · wire the masthead count to Supabase · settlement ledger · restaurant onboarding. The program-level roadmap is `_handoffs/CARY-BRIEF.md §"What's next"`.
+
+> ⛔ **The next move is DEPLOYMENT, not code** — `OPERATIONS.md §5`'s four steps. Everything built on 2026-09-10 is unverified against a running system.
+
+Requester request-creation UI (the place-card → pickup/destination form) · wire the masthead count to Supabase · settlement ledger · restaurant onboarding. **Still-open UX, and no track owns it:** modifier *selection* (the card displays priced modifiers the cart cannot order — §6), the destination picker (`ORDER-PIPELINE §4`), and retiring the `isAdmin` CTA gate. The program-level roadmap is `_handoffs/CARY-BRIEF.md §"What's next"`.
 
 **Order → kitchen.** The requester flow ends at a *checkout*; how that order then reaches the restaurant's line is the **POS-injection canon** — `../cary/pos/README.md`. Key invariant: payment stays on Cary's Stripe, the order is injected into the POS as *paid-external* (POS never touches the money). Pilot POS = Toast + Lightspeed; head-direct / tail-aggregator.
 
