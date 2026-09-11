@@ -147,6 +147,6 @@ Customer → **Cary's Stripe** collects `total_cents` (`subtotal + tax + service
 ## Cross-refs
 - [`../ls/CARY.md §6`](../ls/CARY.md) — the built order-capture surface (`MenuTab`) this pipeline consumes.
 - [`pos/README.md`](pos/README.md) · [`pos/cary-order.md`](pos/cary-order.md) — POS injection (step 8) + the `CaryOrder` contract.
-- [`../CARY-BRIEF.md`](../CARY-BRIEF.md) — program roadmap (#2 = this; #3 = settlement).
+- [`../_handoffs/CARY-BRIEF.md`](../_handoffs/CARY-BRIEF.md) — program roadmap (#2 = this; #3 = settlement). **Gitignored, local-only.**
 - [`legal/sender-agreement.md`](legal/sender-agreement.md) — §5–§10 (payment agency, order prep, refunds).
 - [`REFLECTIONS-2026-06-20.md`](REFLECTIONS-2026-06-20.md) §4 — capacity-first / non-extraction doctrine.

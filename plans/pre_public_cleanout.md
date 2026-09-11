@@ -27,7 +27,7 @@ This plan resolves every **strip** and **gate** verdict from [`../ls/reference/R
 | S2 | Authoring source trees (`src/cartograph/`, `src/arborist/`, `src/preview/`, `src/stage/`) | **validate, do not delete** | Three-part gate: §S1 + couplers §1 + §S6 grep | No `cartograph-*.js` chunk in `dist/assets/`; source trees intact |
 | S3 | `public/` asset whitelisting + two verified-orphan deletes | strip (build) + delete (two files) | `copyPublicDir: false` + explicit allow-list plugin; quarantine-then-delete for `public/data/landmarks.json` and `public/cartograph-ground.svg` | `dist/clouds/`, `dist/trees/`, `dist/models/`, `dist/looks/` absent; two files gone from `public/` |
 | S4 | Helper backends (`cartograph/serve.js`, `arborist/serve.js`, `meteorologist/serve.js`) and their `data/` dirs | gate (already dev-only) | No-op for build; documented in PUBLISH.md | n/a (servers never deploy) |
-| S5 | Stale handoff docs (root `HANDOFF-*.md`, `cartograph/SHADOW_HANDOFF.md`) + `CARY-BRIEF.md` relocation | gate / relocate | Handoff docs → `_archive/handoffs/`; `CARY-BRIEF.md` → its own home (NOT archive) | Repo root contains no `HANDOFF-*.md`; `CARY-BRIEF.md` colocated with Cary infrastructure |
+| S5 | Stale handoff docs (root `HANDOFF-*.md`, `cartograph/SHADOW_HANDOFF.md`) + `CARY-BRIEF.md` relocation | gate / relocate | Handoff docs → `_archive/handoffs/`; `CARY-BRIEF.md` → ✅ resolved: out of git (`_handoffs/`, gitignored) | Repo root contains no `HANDOFF-*.md`; `CARY-BRIEF.md` local-only, refs repointed |
 | S6 | `useCartographStore` runtime seam | strip — owned by couplers §1 | **No-op here**; this plan validates closure | Grep returns zero `useCartographStore` imports in `src/components/`, `src/hooks/`, `src/lib/`, `src/App.jsx`, `src/main.jsx` |
 | S7 | `apps-script/Code.js` source | gate | Vite never reaches it; documented | `grep -c apps-script dist/...` returns zero |
 | S8 | Five-place deployment-ID audit | operational | Pre-deploy `scripts/audit-deployment-id.sh` + CI step | Audit script exits 0; mutation test blocks deploy |
@@ -346,42 +346,15 @@ A session on (e.g.) cloud shader tuning loses the historical pointer. Recovery: 
 
 None.
 
-### S5b — `CARY-BRIEF.md` relocation (NOT archival)
+### S5b — `CARY-BRIEF.md` — ✅ RESOLVED 2026-07-21 (out of git, not relocated)
 
-#### Current state
+**Ruled by Jacob in `.gitignore` (§`_handoffs/*`, lines 242–256), in a direction this step never contemplated: neither repo root nor `cary/`, but _out of git entirely_.**
 
-`CARY-BRIEF.md` exists at repo root. It is **not** a stale handoff. Cary is active LS-instance infrastructure with planned expansion: rideshare as second Courier role; two-level onboarding; toll-free number (`+18773351917`, per couplers plan §4) serves both roles. `CARY-BRIEF.md` is the Cary persona spec.
+> `⛔ The directory contents stay local: dispatch briefs are working state, and CARY-BRIEF.md is program/legal material this repo is PUBLIC enough that it must not carry.`
 
-A directory `cary/` also exists at repo root (verified `ls`). The Cary surface in `src/` is also live production code (R3 non-target list).
+The file lives at `_handoffs/CARY-BRIEF.md`, gitignored and local-only. ⛔ **Do not move it into `cary/` — `cary/` is tracked, and the move publishes program/pricing/legal material into a public-facing repo.** The negative gate this step named (never `_archive/`) still holds and is satisfied.
 
-#### Strip mechanism (decision)
-
-**Relocate, do not archive.** `CARY-BRIEF.md` moves to a more appropriate colocated home — either:
-
-- staying at repo root (if it doc-indexes equally for orchestration purposes), or
-- into `cary/CARY-BRIEF.md` (if `cary/`'s contents are the operational home of the Cary persona).
-
-Final destination is **deferred to Phase C** when the orchestrator inspects `cary/`'s contents and decides. This plan rules out `_archive/handoffs/` explicitly: archival framing misrepresents the doc's status.
-
-Justification: the doc is active infrastructure documentation, not a historical artifact. Mis-archiving would obscure live planning material.
-
-#### Quarantine step
-
-n/a — relocation, not deletion. If the final destination is `cary/`, the move commit is the operation.
-
-#### What breaks if this is wrong
-
-Mis-archive → Cary planning material disappears from orchestration view. Caught by orchestrator pre-commit (don't allow `git mv CARY-BRIEF.md _archive/...`).
-
-#### Verification gate
-
-1. `ls _archive/handoffs/CARY-BRIEF.md` returns "No such file" (negative gate — never archive).
-2. `CARY-BRIEF.md` exists at its Phase-C-chosen home (root or `cary/`).
-3. `ls/BACKLOG.md`'s "Stale handoff docs" table does NOT list `CARY-BRIEF.md` (removing the framing it had previously).
-
-#### V1 carve-out
-
-Final-location decision deferred to Phase C.
+⚠️ Its cost, before this was written down: the three canon docs that cite it pointed at `CARY-BRIEF.md` *at repo root* — a path that has not existed since the move — so `cary/pos/README.md` and `cary/ORDER-PIPELINE.md` each carried dead links, and this step read as live work inviting the move. Refs repointed to `../../_handoffs/` + `../_handoffs/` with the local-only note (2026-09-10).
 
 ### Cross-references
 
@@ -599,7 +572,7 @@ Inherits from couplers plan's non-scope:
 Adds (this plan's own non-scope):
 - **Does not delete any authoring source tree.** `src/cartograph/`, `src/arborist/`, `src/preview/`, `src/stage/` all stay. Build-side production exclusion via §S1 + couplers §1 + §S6 gate; not source deletion.
 - **Does not touch Cary production infrastructure.** The following are production consumer surface, not authoring code, and are **non-targets** of every section in this plan: `src/components/CourierDashboard.jsx`, `src/components/CourierOnboarding.jsx`, `src/components/CourierDots.jsx`, `src/components/CaryAuth.jsx`, `src/components/SmsInbox.jsx`, `src/components/ContactModal.jsx`, `src/components/ChatModal.jsx`, `src/hooks/useCary.js`, `src/lib/supabase.js`. The `cary/` directory at repo root also stays.
-- **Does not archive `CARY-BRIEF.md`.** Relocates per §S5b; final destination Phase-C-deferred.
+- **Does not archive `CARY-BRIEF.md`.** §S5b resolved 2026-07-21: it lives out of git at `_handoffs/CARY-BRIEF.md`. ⛔ Never move it into tracked `cary/`.
 - **Does not delete `apps-script/Code.js`** (§S7 gate only).
 - **Does not retire helper backends or their `data/` dirs** (§S4 dev-only, stays through v1).
 - **Does not perform the `public/models/` per-file audit.** Specifies its shape; execution deferred to a Phase C source-hygiene pass.

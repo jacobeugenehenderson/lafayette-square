@@ -3139,7 +3139,7 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
             <span className="tabular-nums">${(cartTotal / 100).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm text-on-surface-subtle">
-            <span>Tax (8.725%)</span>
+            <span>Tax ({(STL_TAX_RATE * 100).toFixed(3).replace(/\.?0+$/, '')}%)</span>
             <span className="tabular-nums">${(salesTax / 100).toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-body-sm text-on-surface-subtle">

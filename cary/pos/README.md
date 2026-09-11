@@ -2,7 +2,7 @@
 
 **The canon for how a Cary order reaches a restaurant's kitchen.** When a customer checks out in the LS app, Cary has taken the money — but "the kitchen" is not an addressable endpoint. This doc is how we place that order onto a surface the kitchen already watches: **their POS.**
 
-> Reference-kind. The *program/pricing/legal* live in [`../../CARY-BRIEF.md`](../../CARY-BRIEF.md) + [`../legal/`](../legal/); the *app-integration surfaces* in [`../../ls/CARY.md`](../../ls/CARY.md); the *money/settlement* model in `CARY-BRIEF.md §Pricing` + `../legal/sender-agreement.md §5–§6`. This doc owns **only** the order→kitchen wire.
+> Reference-kind. The *program/pricing/legal* live in [`../../_handoffs/CARY-BRIEF.md`](../../_handoffs/CARY-BRIEF.md) (**gitignored, local-only** — program/legal material this repo is public enough not to carry, `.gitignore` §`_handoffs/*`) + [`../legal/`](../legal/); the *app-integration surfaces* in [`../../ls/CARY.md`](../../ls/CARY.md); the *money/settlement* model in `CARY-BRIEF.md §Pricing` + `../legal/sender-agreement.md §5–§6`. This doc owns **only** the order→kitchen wire.
 
 Last authored: 2026-07-09 (`curb-offset-draw`). Status: **design canon, unbuilt.** Pilot = **Barrio (Toast)** + **Extra Wavy (Lightspeed)**.
 
@@ -188,6 +188,6 @@ Use this everywhere the restaurant pitch appears (`CARY-BRIEF.md §4`, onboardin
 ## Cross-refs
 
 - [`../../ls/CARY.md`](../../ls/CARY.md) — app-integration surfaces (the `CaryButton` order path terminates here today).
-- [`../../CARY-BRIEF.md`](../../CARY-BRIEF.md) — program, pricing, settlement, next steps.
+- [`../../_handoffs/CARY-BRIEF.md`](../../_handoffs/CARY-BRIEF.md) — program, pricing, settlement, next steps. **Gitignored, local-only.**
 - [`../legal/sender-agreement.md`](../legal/sender-agreement.md) §5–§9 — payment agency, order preparation, alcohol checkout rules.
 - [`../REFLECTIONS-2026-06-20.md`](../REFLECTIONS-2026-06-20.md) — the non-extraction doctrine that makes the "no middleware" call.
