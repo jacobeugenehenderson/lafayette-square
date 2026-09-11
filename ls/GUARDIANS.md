@@ -101,7 +101,10 @@ if (!isFullGuardian) {
 | `accept-listing` / `remove-listing` | `Code.js` / `751` | `isFullGuardianOf` (guardian only) |
 | `listing-staff`, `update-staff-perms`, `promote/demote/revoke-staff` | `Code.js` | `isFullGuardianOf` (guardian only) |
 
-> Note on menus: a guardian's menu edits write `menu_json` to GAS, but for the curated listings in `src/data/menus.json` the bundled file **overrides** GAS at boot — see [`PLACE-CARDS.md`](PLACE-CARDS.md) §3.
+> Note on menus: a guardian's menu edits write `menu_json` to GAS. ⛔ The bundled `src/data/<look>/menus.json` does **not** override that — it is the editorial **seed**, kept only when GAS has no sections, so the guardian wins (this note said the opposite until 2026-09-10). See [`PLACE-CARDS.md`](PLACE-CARDS.md) §3.
+>
+> ⭐⭐ **The `menu` permission now governs TWO different things, and the second one spends the customer's money.** Editing the menu is *content*: names, descriptions, sections, hours. Confirming a **price of record** is *commerce* — it is what makes an item sellable and fixes what a customer is charged (`CARY.md §6`, migration `018`). Both are gated on `menu`, deliberately: the person who knows what the kitchen serves is the person who knows what it costs, and splitting them would mean a second permission nobody would remember to grant.
+> ⛔ **But the gate is enforced in a different place.** A content edit is checked by `Code.js` against the Guardians sheet; a price is checked by the `commerce-write` edge function, which *asks GAS the same question* via the `guardian-check` action before touching Supabase. The client's `lsq_guardian_listings` is a localStorage cache and is trusted by neither.
 
 > Note on replies (2026-06-30): a reply to a review is a business-write (guardian, or a keyholder with the `replies` permission), but it **renders in the business voice** — the listing's logo + name (a generic glass Arch when there's no logo), never the replier's personal `@handle`/emoji — in both the compose preview and the public render (`PlaceCard.jsx:1196`/). Staff stay anonymous; a keyholder's reply is indistinguishable from the owner's. This is why there is no keyholder role-medallion — see [`ONBOARDING.md §c`](ONBOARDING.md).
 

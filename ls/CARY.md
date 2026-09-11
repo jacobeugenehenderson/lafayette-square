@@ -109,6 +109,27 @@ This is what "one owner per field" means in practice, and it is why the three me
 
 ▶ `node scratch/claims-price-of-record.mjs` — 73 commercial states; asserts none charges a display figure and none sells unconfirmed, 86'd, paused, out-of-window or unloaded. ⭐ Mutation-tested: a "fall back to `item.price`" fails 72 of 73; dropping the load gate or the confirmation requirement each fail exactly 2 — the narrow states a human would not think to try.
 
+### The write path — who may set a price *(2026-09-10)*
+
+`commerce_items` and `commerce_places` have **no write policy at all**, so there is no direct client write and there must not be one. Everything goes through the **`commerce-write`** edge function:
+
+```
+PricingPanel  →  commerceApi  →  commerce-write (edge fn)  →  GAS ?action=guardian-check  →  yes/no
+                                          └─ only on yes ─→  service-role write + audit append
+```
+
+⭐ **As strong as the existing guardian write path, and no stronger — by construction.** It asks the same authority the same question `Code.js` already asks before mutating a listing. ⛔ The client's `lsq_guardian_listings` is a **localStorage cache**: it decides what UI to show and is trusted by neither side.
+
+- **`guardian-check`** (new GAS action) is **shared-secret gated and fails closed when the secret is unset** — it answers about a third party rather than its caller, so open it would let anyone probe which listings a device hash controls. It reuses `staffHasPermission`, so a guardian who paired a desktop (`DEVICE-LINK`) is correctly the same person.
+- **`mayEditMenu` denies on every failure path** — unreachable, non-200, bad JSON, missing secrets. ⛔ "Could not reach the authority, so allowed" is the one outcome that must never exist.
+- **Bulk by design.** Confirming a poured menu one item at a time is the difference between a sitting at the bar and an afternoon — `op: 'items'` takes up to 500.
+- **⛔ No sanity ceiling on a price.** A $900 item is a whole pig or a rare bottle; refusing it would be calling the operator's authoring a defect. **The human confirmation IS the sanity check** — that is what the operation is for.
+- **The audit is appended after the write and its failure does not fail the call** — the change already happened, and reporting failure would lie in the other direction. It logs loudly instead.
+
+The **Delivery prices** panel (`PricingPanel`, guardian-only) is the surface: every item with its menu price pre-filled, per-item 86, pause-all, and an *"N of M confirmed"* header. The pre-fill is deliberate — a gate people dread is a gate people route around.
+
+▶ `node scratch/claims-commerce-write-gate.mjs` — 17 source-level properties asserting no write path skips GAS. Mutation-tested four ways, each killed by name.
+
 ▶ `node scratch/claims-menu-item-ids.mjs` — proves every item across every live payload is addressable, unique, and **stable under reorder** (819/819 on LS). It caught a real collision on its first run: `lmk-008` carries two sections named "Mocktails" (one `brunch`, one `drinks`) holding the same three drinks, so the identity basis needs the menu **type** as well as the section name.
 
 **The price stack** (all integer cents — this is the money model, and it matches the legal canon exactly):

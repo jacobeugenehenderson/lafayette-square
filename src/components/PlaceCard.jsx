@@ -3,6 +3,7 @@ import { INSTANCE } from '../instance.js'
 import { indexMenuItems, lineKey, mintItemId } from '../lib/menuIdentity.js'
 import { itemOrderability, resolveCart, BLOCKED, BLOCKED_COPY } from '../lib/commerce.js'
 import useCommerce, { useListingCommerce } from '../hooks/useCommerce'
+import { writeCommerceItems, writeCommercePlace } from '../lib/commerceApi'
 import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
@@ -3242,6 +3243,20 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
         </div>
       )}
 
+      {/* Guardian: the price of record. Separate from Edit Menu on purpose —
+          editing the MENU is content, confirming a PRICE is commerce, and they
+          are owned by different systems (ls/CARY.md §6). */}
+      {isGuardian && sections.length > 0 && hasDelivery && (
+        <PricingPanel
+          listingId={listingId}
+          sections={sections}
+          rows={commerceRows}
+          place={commercePlace}
+          commerceLoaded={commerceLoaded}
+          commerceStatus={commerceStatus}
+        />
+      )}
+
       {/* Guardian: edit menu button */}
       {isGuardian && (
         <div className={sections.length > 0 ? 'pt-2 border-t border-outline-variant' : ''}>
@@ -3274,6 +3289,187 @@ function MenuTab({ listing, building, isGuardian, isAdmin }) {
               }}
               onCancel={() => setEditingMenu(false)}
             />
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/**
+ * The guardian's price-of-record surface.
+ *
+ * ⭐ This is the CONFIRM GATE, and it is the load-bearing step in the whole
+ * commerce design. A menu price is a display figure until a human says "yes,
+ * that is what we charge." Nothing here is clever — the point is that a person
+ * looked at each number once, which is the only check that can catch a price
+ * that is wrong in a way no machine can see.
+ *
+ * The price field is PRE-FILLED from the menu, so confirming a correct menu is a
+ * glance and a tap rather than re-typing eighty numbers. That is deliberate: a
+ * gate people dread is a gate people route around.
+ */
+function PricingPanel({ listingId, sections, rows, place, commerceLoaded, commerceStatus }) {
+  const [open, setOpen] = useState(false)
+  const [draft, setDraft] = useState({})       // itemId -> dollars string
+  const [saving, setSaving] = useState(false)
+  const [result, setResult] = useState(null)
+
+  const items = useMemo(() => {
+    const out = []
+    for (const section of sections) {
+      for (const item of section.items || []) {
+        if (!item?.id) continue
+        out.push({ item, section, row: rows?.get(item.id) })
+      }
+    }
+    return out
+  }, [sections, rows])
+
+  const confirmedCount = items.filter(i => i.row?.confirmed_at && i.row?.price_cents != null).length
+  const dollarsFor = (entry) => {
+    if (draft[entry.item.id] !== undefined) return draft[entry.item.id]
+    const cents = entry.row?.price_cents ?? entry.item.price
+    return cents == null ? '' : (cents / 100).toFixed(2)
+  }
+
+  const save = async (entries, { confirm }) => {
+    setSaving(true); setResult(null)
+    const payload = []
+    for (const e of entries) {
+      const raw = dollarsFor(e)
+      const cents = raw === '' ? null : Math.round(Number(raw) * 100)
+      // ⛔ Refuse locally rather than sending something the server will reject —
+      // but with the SAME rule, not a looser one. A positive integer of cents.
+      if (confirm && (cents == null || !Number.isFinite(cents) || cents <= 0)) {
+        setSaving(false)
+        setResult({ ok: false, error: `${e.item.name || 'An item'} needs a price above zero before it can be confirmed.` })
+        return
+      }
+      payload.push({
+        item_id: e.item.id,
+        price_cents: cents,
+        confirm,
+        available: e.row?.available !== false,
+      })
+    }
+    const res = await writeCommerceItems(listingId, payload)
+    setSaving(false)
+    setResult(res)
+    if (res.ok) { setDraft({}); useCommerce.setState(st => ({ byListing: { ...st.byListing, [listingId]: undefined } })); useCommerce.getState().load(listingId) }
+  }
+
+  const toggle86 = async (entry) => {
+    setSaving(true); setResult(null)
+    const res = await writeCommerceItems(listingId, [{
+      item_id: entry.item.id,
+      price_cents: entry.row?.price_cents ?? null,
+      confirm: !!entry.row?.confirmed_at,
+      available: entry.row?.available === false,
+    }])
+    setSaving(false); setResult(res)
+    if (res.ok) { useCommerce.setState(st => ({ byListing: { ...st.byListing, [listingId]: undefined } })); useCommerce.getState().load(listingId) }
+  }
+
+  return (
+    <div className="pt-2 border-t border-outline-variant">
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full text-left py-2 px-3 rounded-lg bg-surface-container-high hover:bg-surface-container-highest transition-colors flex items-center justify-between gap-2"
+      >
+        <span className="text-body-sm text-on-surface-variant">Delivery prices</span>
+        <span className={`text-caption tabular-nums ${confirmedCount === items.length && items.length > 0 ? 'text-emerald-400' : 'text-amber-400/90'}`}>
+          {commerceLoaded ? `${confirmedCount} of ${items.length} confirmed` : commerceStatus === 'unconfigured' ? 'not configured' : commerceStatus === 'error' ? 'unavailable' : '…'}
+        </span>
+      </button>
+
+      {open && (
+        <div className="mt-2 space-y-2">
+          {/* ⛔ Say what confirming MEANS. A guardian tapping this is taking
+              responsibility for a number a customer will be charged. */}
+          <p className="text-caption text-on-surface-subtle leading-snug">
+            A price on your menu is what customers <em>read</em>. A confirmed price is what they are <em>charged</em>.
+            Nothing can be ordered until you confirm it here.
+          </p>
+
+          {!commerceLoaded ? (
+            <p className="text-caption text-amber-400/80">
+              {commerceStatus === 'unconfigured'
+                ? 'Ordering is not set up for this installation yet.'
+                : commerceStatus === 'error'
+                  ? 'Could not load current prices — nothing has been changed.'
+                  : 'Loading…'}
+            </p>
+          ) : (
+            <>
+              {items.map(entry => {
+                const confirmed = entry.row?.confirmed_at && entry.row?.price_cents != null
+                const eightySixed = entry.row?.available === false
+                return (
+                  <div key={entry.item.id} className="flex items-center gap-2 py-1 border-b border-outline-variant/30 last:border-0">
+                    <span className="flex-1 min-w-0 text-body-sm text-on-surface truncate">{entry.item.name || <em className="text-on-surface-disabled">untitled</em>}</span>
+                    {eightySixed && <span className="text-caption text-amber-400/90 flex-shrink-0">86</span>}
+                    {confirmed && !eightySixed && <span className="text-caption text-emerald-400 flex-shrink-0">✓</span>}
+                    <span className="text-caption text-on-surface-disabled flex-shrink-0">$</span>
+                    <input
+                      value={dollarsFor(entry)}
+                      onChange={e => setDraft(d => ({ ...d, [entry.item.id]: e.target.value }))}
+                      inputMode="decimal"
+                      className="w-16 bg-surface-container-high text-on-surface text-body-sm rounded px-2 py-1 border border-outline-variant focus:border-on-surface-subtle outline-none tabular-nums text-right"
+                    />
+                    <button
+                      onClick={() => toggle86(entry)}
+                      disabled={saving || !confirmed}
+                      className="text-caption px-2 py-1 rounded bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest disabled:opacity-40 transition-colors flex-shrink-0"
+                      title={confirmed ? (eightySixed ? 'Put back on' : 'Mark 86 — the kitchen is out') : 'Confirm a price first'}
+                    >
+                      {eightySixed ? 'On' : '86'}
+                    </button>
+                  </div>
+                )
+              })}
+
+              <div className="flex gap-2 pt-1">
+                <button
+                  onClick={() => save(items, { confirm: true })}
+                  disabled={saving || items.length === 0}
+                  className="flex-1 py-2 rounded-lg text-body-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-50 transition-colors"
+                >
+                  {saving ? 'Saving…' : `Confirm ${items.length} price${items.length !== 1 ? 's' : ''}`}
+                </button>
+                {confirmedCount > 0 && (
+                  <button
+                    onClick={() => save(items, { confirm: false })}
+                    disabled={saving}
+                    className="px-3 py-2 rounded-lg text-body-sm bg-surface-container-high text-on-surface-variant hover:bg-surface-container-highest disabled:opacity-50 transition-colors"
+                    title="Withdraw every price — nothing will be orderable"
+                  >
+                    Withdraw
+                  </button>
+                )}
+              </div>
+
+              <label className="flex items-center gap-2 pt-1 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={place?.ordering_paused === true}
+                  disabled={saving}
+                  onChange={async e => {
+                    setSaving(true); setResult(null)
+                    const res = await writeCommercePlace(listingId, { ordering_paused: e.target.checked })
+                    setSaving(false); setResult(res)
+                    if (res.ok) { useCommerce.setState(st => ({ byListing: { ...st.byListing, [listingId]: undefined } })); useCommerce.getState().load(listingId) }
+                  }}
+                />
+                <span className="text-body-sm text-on-surface-variant">Pause all ordering</span>
+              </label>
+            </>
+          )}
+
+          {result && (
+            <p className={`text-caption ${result.ok ? 'text-emerald-400' : 'text-amber-400/90'}`}>
+              {result.ok ? 'Saved.' : `Not saved — ${result.error}`}
+            </p>
           )}
         </div>
       )}

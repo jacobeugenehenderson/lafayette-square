@@ -251,6 +251,7 @@ function doGet(e) {
       case 'comments':        return getComments(e.parameter.bid, e.parameter.dh)
       case 'claim-secret':   return getClaimSecret(e.parameter.lid, e.parameter.dh, e.parameter.admin)
       case 'listing-staff':  return getListingStaff(e.parameter.lid, e.parameter.dh)
+      case 'guardian-check': return getGuardianCheck(e.parameter.lid, e.parameter.dh, e.parameter.perm, e.parameter.s)
       case 'create-link-token':  return createLinkToken(e.parameter.dh)
       case 'check-link-token':   return checkLinkToken(e.parameter.token)
       case 'linked-devices':     return getLinkedDeviceCount(e.parameter.dh)
@@ -960,6 +961,46 @@ function getStaffRole(listingId, deviceHash) {
   const row = rows.find(r => r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1)
   if (!row) return null
   return (!row.role || row.role === 'guardian') ? 'guardian' : row.role
+}
+
+/**
+ * guardian-check — the permission ORACLE for Cary's commerce edge function.
+ *
+ * Cary owns the commercial half of a menu (Supabase migration 018), but
+ * guardianship lives HERE, in the Guardians sheet, keyed by device hash.
+ * Postgres cannot see a spreadsheet and Supabase auth knows only an anonymous
+ * uid, so there is no honest RLS policy Cary could write about a guardian. This
+ * is how it asks instead: the edge function presents a listing, a device hash
+ * and a permission, and this answers yes or no.
+ *
+ * ⛔ SHARED-SECRET GATED, AND IT FAILS CLOSED. Unlike every other read here this
+ * is not answering for its caller, it is answering ABOUT a third party — so left
+ * open it would let anyone probe which listings a device hash controls. If
+ * COMMERCE_SHARED_SECRET is unset the answer is NO, never yes: an unconfigured
+ * deployment must not become an open oracle.
+ *     PropertiesService.getScriptProperties().setProperty('COMMERCE_SHARED_SECRET', '<secret>')
+ * The same value goes in the Supabase secret of the same name.
+ *
+ * ⭐ Reuses staffHasPermission, so it inherits linked-hash resolution — a
+ * guardian who paired a desktop (DEVICE-LINK) is the same person here, which a
+ * fresh device-hash comparison would have got wrong.
+ */
+function getGuardianCheck(listingId, deviceHash, perm, secret) {
+  var expected = PropertiesService.getScriptProperties().getProperty('COMMERCE_SHARED_SECRET')
+  if (!expected || secret !== expected) return errorResponse('Not authorized', 'unauthorized')
+  if (!listingId || !deviceHash || !perm) return errorResponse('Missing fields', 'bad_request')
+
+  return jsonResponse({
+    listing_id: listingId,
+    permission: perm,
+    allowed: staffHasPermission(listingId, deviceHash, perm),
+    role: (function () {
+      var rows = sheetToObjects(getSheet('Guardians'))
+      var hashes = getLinkedHashes(deviceHash)
+      var row = rows.find(function (r) { return r.listing_id === listingId && hashes.indexOf(r.device_hash) !== -1 })
+      return row ? ((!row.role || row.role === 'guardian') ? 'guardian' : row.role) : null
+    })()
+  })
 }
 
 /** Returns parsed permissions array for a staff member */

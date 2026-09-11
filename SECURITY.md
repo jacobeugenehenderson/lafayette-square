@@ -485,12 +485,29 @@ Same pattern, same marker, ruled on the same reasoning: a price of record and an
 the menu in the window**, and a customer has to see both before ordering. Neither table carries personal
 data. Declared in `018_commerce_menu.sql` as `comment on table … PUBLIC REFERENCE DATA`.
 
-⭐ **Both are read-only to the whole world, and that is not an oversight — it is the current correct state.**
+⭐ **Both are read-only to the whole world, and that is not an oversight — it is the intended end state.**
 `018` deliberately defines **no write policy at all**, because guardianship is a GAS concept (the Guardians
 sheet, keyed by device hash) and Postgres cannot verify it; Supabase auth knows only an anonymous
 `auth.uid()` (`010`). Any client-side write rule we could express would be a rule about someone we cannot
-identify. Writes therefore belong to a service-role edge function that checks guardianship against GAS
-first — unbuilt as of this entry. ⛔ **Until it exists, a write policy here would be worse than the gap.**
+identify.
+
+### The write path · `commerce-write` (2026-09-10)
+Writes go through the `commerce-write` edge function, which asks GAS — via the new `guardian-check` action —
+whether the calling device hash holds the `menu` permission on that listing, and only then writes with the
+service role. ⭐ **This is exactly as strong as the existing guardian write path and no stronger**, by
+construction: it asks the same authority the same question `Code.js` already asks before mutating a listing.
+⛔ The client's `lsq_guardian_listings` is a localStorage cache and is trusted by neither.
+
+- **`guardian-check` is shared-secret gated and fails closed when `COMMERCE_SHARED_SECRET` is unset.** Unlike
+  every other GAS read it answers about a THIRD PARTY, not its caller, so left open it would let anyone probe
+  which listings a device hash controls. An unconfigured deployment must deny, never allow.
+- **`mayEditMenu` denies on every failure path** — unreachable GAS, non-200, bad JSON, missing secrets. ⛔ The
+  one outcome forbidden is "could not reach the authority, so allowed."
+- **`tax_remitter` is not settable through it.** It is a legal determination pending the DOR letter ruling,
+  not a restaurant setting; it moves by migration or by an operator holding the service key.
+- ▶ `node scratch/claims-commerce-write-gate.mjs` — 17 source-level properties asserting there is no write
+  path that skips GAS. Mutation-tested: making the network-failure branch permissive, adding a write policy,
+  dropping the oracle's secret check, or exposing `tax_remitter` each fail it by name.
 
 ⛔ `commerce_item_events` is **not** public — it names actors. RLS is enabled with **zero policies**, which
 denies anon and authenticated every row while service_role (which bypasses RLS) can still append. A census

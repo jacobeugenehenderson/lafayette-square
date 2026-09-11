@@ -40,6 +40,7 @@ Dev fallback: when `VITE_API_URL` is unset in dev, `lib/api.js` serves a 30+ ent
 | GET | `claim-secret` | `getClaimSecret(lid, dh)` / `getClaimSecretAdmin(lid)` | Guardian flow / admin | `dh` or `admin` |
 | GET | `getDesign` | `getQrDesign(lid, type)` | QR Studio | None |
 | GET | `listing-staff` | `getListingStaff(dh, lid)` | Guardian flow | `dh` |
+| GET | `guardian-check` | *(no client caller — server-to-server)* | **Cary's `commerce-write` edge function only.** Permission oracle: does this device hash hold `menu` on this listing? ⛔ Shared-secret gated (`COMMERCE_SHARED_SECRET`) and **fails closed when unset** — it answers about a third party, not its caller, so left open it would let anyone probe which listings a hash controls. | `lid`, `dh`, `perm`, `s` |
 | GET | `residence-status` | `getResidenceStatus(dh)` | `useResidence` | `dh` |
 | GET | `resident-count` | `getResidentCount(bid)` | `BulletinModal.jsx` | None |
 | GET | `lobby-posts` | `getLobbyPosts(dh, bid)` | `BulletinModal.jsx` (lobby tab) | `dh` |
