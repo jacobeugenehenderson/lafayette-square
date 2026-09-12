@@ -1,6 +1,6 @@
 # LS — Enhanced Place Cards & the Society Pages
 
-The neighborhood directory and the rich card behind every place. This is the reference for **what a place card holds** — every data field, the menu/delivery model, and how a card gets authored. For the pitch see [`FEATURES.md`](FEATURES.md); for the operator/guardian procedures see [`OPERATIONS.md`](OPERATIONS.md); for endpoint/data-source catalogs see [`reference/INVENTORY-API.md`](reference/INVENTORY-API.md) + [`reference/INVENTORY-DATA.md`](reference/INVENTORY-DATA.md). Delivery **economics + the courier system** live in the Cary docs ([`../CARY-BRIEF.md`](../CARY-BRIEF.md), [`../cary/`](../cary/)) — not duplicated here.
+The neighborhood directory and the rich card behind every place. This is the reference for **what a place card holds** — every data field, the menu/delivery model, and how a card gets authored. For the pitch see [`FEATURES.md`](FEATURES.md); for the operator/guardian procedures see [`OPERATIONS.md`](OPERATIONS.md); for endpoint/data-source catalogs see [`reference/INVENTORY-API.md`](reference/INVENTORY-API.md) + [`reference/INVENTORY-DATA.md`](reference/INVENTORY-DATA.md). Delivery **economics + the courier system** live in the Cary docs ([`../_handoffs/CARY-BRIEF.md`](../_handoffs/CARY-BRIEF.md), [`../cary/`](../cary/)) — not duplicated here.
 
 Last verified: 2026-06-29 against the working tree (`curb-offset-draw`).
 
@@ -21,7 +21,7 @@ Opening any place gives a **place card** (`src/components/PlaceCard.jsx`). Its t
 
 ## 2. The data model — every field
 
-**Canonical column order** is the `row()` header in `apps-script/Code.js` (~line 2072). The backend serializer (`getListings`, ~line 326) parses the `*_json` columns into objects and **strips the secrets** (`guardian_hash`, `guardian_token`, `claim_secret`, and the raw `*_json`) from the public response, adding a derived `has_guardian`.
+**Canonical column order** is the `row` header in `apps-script/Code.js` (~line 2072). The backend serializer (`getListings`, ~line 326) parses the `*_json` columns into objects and **strips the secrets** (`guardian_hash`, `guardian_token`, `claim_secret`, and the raw `*_json`) from the public response, adding a derived `has_guardian`.
 
 ### Core columns (stored flat)
 | Field | Type | Example | Notes |
@@ -103,10 +103,10 @@ menu = {
 ### Delivery gating
 Ordering from a card is gated by **all** of:
 - the listing carries the **`delivery`** tag (guardian-toggled via `ServiceToggles` → `update-listing`),
-- a courier is available (`useCourierAvailable()` reads live Cary state from Supabase),
+- a courier is available (`useCourierAvailable` reads live Cary state from Supabase),
 - the chosen menu type is **currently in its schedule window**.
 
-A guardian is warned when a menu has no `schedule` ("won't be available for delivery until you set its hours"). The cart enforces a **$40 minimum**. The end-to-end order flow is a "coming soon" placeholder today (`CaryButton`); the fare/fee/tax math + the courier system are **Cary's**, documented in [`../CARY-BRIEF.md`](../CARY-BRIEF.md) and [`../cary/`](../cary/) — see Cary for the economics rather than reading them off `PlaceCard.jsx`.
+A guardian is warned when a menu has no `schedule` ("won't be available for delivery until you set its hours"). The cart enforces a **$40 minimum**. The end-to-end order flow is a "coming soon" placeholder today (`CaryButton`); the fare/fee/tax math + the courier system are **Cary's**, documented in [`../_handoffs/CARY-BRIEF.md`](../_handoffs/CARY-BRIEF.md) and [`../cary/`](../cary/) — see Cary for the economics rather than reading them off `PlaceCard.jsx`.
 
 ---
 
@@ -133,7 +133,7 @@ Procedures + the role/permission matrix live in [`OPERATIONS.md`](OPERATIONS.md)
 | Place card (all tabs) | `src/components/PlaceCard.jsx` | header ~2655; tab nav ~2768; Overview ~816; Hours ~450; Photos ~1548; Reviews ~1221; Menu ~2829 |
 | Menu types | `src/components/PlaceCard.jsx` | `MENU_ORDER` 2827 |
 | Curated menus | `src/data/menus.json` | merge `src/hooks/useListings.js:22` |
-| Data model (canonical) | `apps-script/Code.js` | `row()` header ~2072; `getListings` serializer ~326 |
+| Data model (canonical) | `apps-script/Code.js` | `row` header ~2072; `getListings` serializer ~326 |
 | Society Pages unlock | `src/pages/CheckinPage.jsx` | ~340–346 |
 | Facade / auto-card source | `src/data/facade_mapping.json` | — |
 

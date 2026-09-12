@@ -31,13 +31,13 @@ The three **Neighbors** sections default to anonymous (`ANON_DEFAULT_SECTIONS`, 
 
 ## 3. Posting — the gate, the editor, anonymity
 
-- **Townie gate** (`postBulletin`, `apps-script/Code.js:1261`): `if (!isTownie(device_hash)) return errorResponse('Must be a verified local to post', 'unauthorized')` (`:1267`).
-- **Markdown editor** `FormattedTextarea` (`BulletinModal.jsx:257`) with a 15+ tool toolbar and a live **Preview** toggle (`:945`). Supports: bold `**` · italic `*` · strikethrough `~~` · links `[](url)` · H1/H2 · lists `-` · blockquote `>` · divider `---` · `{big}` / `{small}` · `{center}` / `{right}` · `{color:name}` (8 curated colors). Rendered by `renderMarkdown` (`:90`).
-- **Anonymity choice** — before posting, `IdentityPopup` (`:461`) offers "@handle" vs "Anonymous", defaulting per section; a "don't ask again" preference is stored in `localStorage` (`lsq_bulletin_identity_pref`). When anonymous, the server nulls `handle`/`avatar`/`vignette` in the response (`Code.js:1243`).
+- **Townie gate** (`postBulletin`, `apps-script/Code.js`): `if (!isTownie(device_hash)) return errorResponse('Must be a verified local to post', 'unauthorized')`.
+- **Markdown editor** `FormattedTextarea` (`BulletinModal.jsx:257`) with a 15+ tool toolbar and a live **Preview** toggle. Supports: bold `**` · italic `*` · strikethrough `~~` · links `[](url)` · H1/H2 · lists `-` · blockquote `>` · divider `---` · `{big}` / `{small}` · `{center}` / `{right}` · `{color:name}` (8 curated colors). Rendered by `renderMarkdown`.
+- **Anonymity choice** — before posting, `IdentityPopup` offers "@handle" vs "Anonymous", defaulting per section; a "don't ask again" preference is stored in `localStorage` (`lsq_bulletin_identity_pref`). When anonymous, the server nulls `handle`/`avatar`/`vignette` in the response (`Code.js`).
 
-**Bulletins sheet** (`Code.js:1932`): `id, device_hash, handle, section, text, anonymous, created_at, expires_at, status`.
+**Bulletins sheet** (`Code.js`): `id, device_hash, handle, section, text, anonymous, created_at, expires_at, status`.
 
-**Post shape** (`getBulletins`, `Code.js:1220`):
+**Post shape** (`getBulletins`, `Code.js`):
 ```js
 { id, handle, avatar, vignette, section, text, anonymous, created_at, status, is_mine, comment_count }
 // handle/avatar/vignette = null when anonymous
@@ -47,9 +47,9 @@ The three **Neighbors** sections default to anonymous (`ANON_DEFAULT_SECTIONS`, 
 
 ## 4. Comments
 
-Threaded under a post (`CommentSection`, `BulletinModal.jsx:546`). Posting is townie-gated (`postComment`, `Code.js:1344`, gate at `:1354`); removal is **author-only** (`postRemoveComment`, `:1374`). Comment text is plain (no markdown).
+Threaded under a post (`CommentSection`, `BulletinModal.jsx:546`). Posting is townie-gated (`postComment`, `Code.js`, gate at); removal is **author-only** (`postRemoveComment`). Comment text is plain (no markdown).
 
-**Comments sheet** (`Code.js:1935`): `id, bulletin_id, device_hash, handle, anonymous, text, created_at`.
+**Comments sheet** (`Code.js`): `id, bulletin_id, device_hash, handle, anonymous, text, created_at`.
 **Shape:** `{ id, bulletin_id, handle, avatar, vignette, anonymous, text, created_at, is_mine }`.
 
 ---
@@ -58,13 +58,13 @@ Threaded under a post (`CommentSection`, `BulletinModal.jsx:546`). Posting is to
 
 Any post can spin off a **1:1 private thread** between the poster and a reader. The "Message" action (`BulletinModal.jsx:799`) is available only when the post is **not your own**, **not anonymous**, and you're a **townie with a handle**.
 
-- **Start** (`postStartThread`, `Code.js:1395`, townie gate `:1401`): party A = the bulletin poster, party B = the initiator; an existing thread for that pair+post is reused (no duplicates, `:1415`).
-- **Send** (`postSendMessage`, `Code.js:1443`): sender must be a party of an active thread (`:1454`).
-- **Read** (`getThreadMessages`, `Code.js:1505`): rejects non-parties (`:1512`).
-- **Close** (`postCloseThread`, `Code.js:1532`): party-only; deletes the thread and all its messages.
+- **Start** (`postStartThread`, `Code.js`, townie gate): party A = the bulletin poster, party B = the initiator; an existing thread for that pair+post is reused (no duplicates).
+- **Send** (`postSendMessage`, `Code.js`): sender must be a party of an active thread.
+- **Read** (`getThreadMessages`, `Code.js`): rejects non-parties.
+- **Close** (`postCloseThread`, `Code.js`): party-only; deletes the thread and all its messages.
 
-**Threads sheet** (`Code.js:1933`): `id, bulletin_id, party_a_hash, party_b_hash, a_handle, b_handle, status, created_at, expires_at`.
-**Messages sheet** (`Code.js:1934`): `id, thread_id, sender_hash, text, created_at`.
+**Threads sheet** (`Code.js`): `id, bulletin_id, party_a_hash, party_b_hash, a_handle, b_handle, status, created_at, expires_at`.
+**Messages sheet** (`Code.js`): `id, thread_id, sender_hash, text, created_at`.
 **Thread shape** (`getThreads`): `{ id, bulletin_id, other_handle, last_message, last_message_at, message_count, created_at }`. **Message shape:** `{ id, text, is_mine, created_at }`.
 
 ---

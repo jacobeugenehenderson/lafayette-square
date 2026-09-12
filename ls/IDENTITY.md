@@ -18,11 +18,11 @@ Every participatory action (reviews, bulletin posts/comments, DMs, guardian/staf
 ## 2. Setting it up
 
 - **Avatar editor** (`src/components/AvatarEditor.jsx`): a two-step flow — emoji picker (`@emoji-mart`) → vignette/style chooser → `onSave(emoji, vignette)`. `AvatarCircle.jsx` renders the emoji-on-vignette everywhere.
-- **Store** (`src/hooks/useHandle.js`): holds `{ handle, avatar, vignette }`, mirrored to `localStorage` (`lsq_handle` / `lsq_avatar` / `lsq_vignette`). Actions: `setHandle(handle, avatar, vignette)` (first-time set → `set-handle`), `updateAvatar(...)` (→ `update-avatar`), `refresh()` (pulls from `handle` GET), and availability check (`checkHandleAvailability` → `check-handle`).
+- **Store** (`src/hooks/useHandle.js`): holds `{ handle, avatar, vignette }`, mirrored to `localStorage` (`lsq_handle` / `lsq_avatar` / `lsq_vignette`). Actions: `setHandle(handle, avatar, vignette)` (first-time set → `set-handle`), `updateAvatar(...)` (→ `update-avatar`), `refresh` (pulls from `handle` GET), and availability check (`checkHandleAvailability` → `check-handle`).
 
 ## 3. The data model
 
-**Handles sheet** (`apps-script/Code.js:1931`):
+**Handles sheet** (`apps-script/Code.js`):
 ```
 ['device_hash', 'handle', 'avatar', 'created_at', 'vignette']
 ```

@@ -46,7 +46,7 @@ The runtime has a **single `OrbitControls` rig** (drei), constraint-swapped per 
 | `browse` | The everyday overhead explorer | pan + zoom; rotate OFF; `minDistance 50` / `maxDistance 4000` |
 | `planetarium` | **Street view** — eye-level, orbit-in-place | rotate + pan ON, zoom OFF; **`minDistance == maxDistance == 0.5`** (locked orbit radius) |
 
-Constraints are defined in `Scene.jsx:77-105` (`MODE_CONSTRAINTS`) and applied by `applyConstraints(ctl, mode)` (`:107`). Street view's profile (`:95-104`):
+Constraints are defined in `Scene.jsx:77-105` (`MODE_CONSTRAINTS`) and applied by `applyConstraints(ctl, mode)`. Street view's profile:
 
 ```js
 planetarium: {
@@ -66,9 +66,9 @@ So the eye is pinned at a point and you **rotate the world around your head**, c
 ### 2.2 Entering and leaving
 - **Enter:** **double-click** (desktop) or **double-tap** (mobile) on the Browse map — both via the same tap-detector (450 ms window, 24 px slop), or Ctrl+click / right-click. The click **raycasts the ground plane** for the origin, stored as `planetariumOrigin: [x, z]`; `enterPlanetarium(x, z)` flips the mode (and dismisses any open place card — see the gotcha below).
 - **The transition** (`Scene.jsx`): camera flies to `[originX, eyeY, originZ]` looking a hair north, FOV → `streetFov`, over **1500 ms**, `up → [0,1,0]`, eased by `easeInOutCubic`. ⭐ **`eyeY = getElevation(originX, originZ) + streetEye`** — the eye sits *above the terrain* at the clicked point, not at an absolute `Y = eyeHeight` (that buried the camera under any raised ground). `getElevation` already applies `V_EXAG`, matching the rendered ground; the call is guarded so a non-finite sample falls back to flat ground rather than NaN-ing the camera (a NaN Y blanks the view). Production keeps terrain at `V_EXAG` — it does **not** drop to exag 1 like Preview/Cartograph, so at eye level the relief is ~1.5× tall.
-- **Exit:** **ESC**, or a **2-minute idle timeout** (`IDLE_TIMEOUT_PLANET`). `exitPlanetarium()` returns to Browse.
+- **Exit:** **ESC**, or a **2-minute idle timeout** (`IDLE_TIMEOUT_PLANET`). `exitPlanetarium` returns to Browse.
 
-> ⚠️ **Gotchas that bit on the way in (all fixed, 2026-06-17 — kept as as-built):** (1) **EventTicker hook crash** — `EventTicker` read `useCamera(s => s.panelState)` *after* `if (viewMode==='planetarium') return null`, so entering street view skipped a hook → "Rendered fewer hooks than expected" → React tore down the root → **WebGL context lost → dark screen**. A latent Rules-of-Hooks bug that the new easy double-click entry surfaced; fixed by hoisting the hook above the early return. (2) **Place-card pause** — a double-click's first click could select a building, opening the near-fullscreen PlaceCard (`data-scene-pause` freezes the render loop); `enterPlanetarium` now `deselect()`s on entry. (3) **Overlay had no error boundary** — see §3.2.
+> ⚠️ **Gotchas that bit on the way in (all fixed, 2026-06-17 — kept as as-built):** (1) **EventTicker hook crash** — `EventTicker` read `useCamera(s => s.panelState)` *after* `if (viewMode==='planetarium') return null`, so entering street view skipped a hook → "Rendered fewer hooks than expected" → React tore down the root → **WebGL context lost → dark screen**. A latent Rules-of-Hooks bug that the new easy double-click entry surfaced; fixed by hoisting the hook above the early return. (2) **Place-card pause** — a double-click's first click could select a building, opening the near-fullscreen PlaceCard (`data-scene-pause` freezes the render loop); `enterPlanetarium` now `deselect`s on entry. (3) **Overlay had no error boundary** — see §3.2.
 
 ### 2.3 What the slab authors vs. what's live
 Only **FOV + eye height** transit the slab — `scene.json#/shots/street.{fov, eyeHeight}` (default `eyeHeight 1.73 m`, `SHOTS_FLAT_DEFAULTS` in `skyLightChannels.js`). The **origin is a runtime raycast** (wherever the visitor clicks), never authored. This matches the doctrine in `cartograph/STAGE.md §4`: browse altitude / hero target / **street position** are intentionally *live*; only the framing scalars bake. *(Per-shot position authoring is scaffolded but not the canonical path — `CartographApp.jsx` notes the `SHOTS` const remains the source of shot framing.)*
@@ -121,7 +121,7 @@ So the figures show **only in street view (planetarium), all day** — never in 
 
 **The look — gold figures, real-temperature joints** (LANDED 2026-06-17, spectral-node pass):
 - **Lines + name labels stay GOLD** (`#c4a265`) — deliberately, the **Grand Central Terminal ceiling** aesthetic (Jacob).
-- **Nodes are colored by their real star's spectral color.** A constellation vertex *is* a real star, so `vertexStarColor()` matches it to the catalog (`bright_stars.json`, 1.5° tolerance) and tints the node by that star's **B–V color index** (`ci`) → hot blue-white / gold / cool red by temperature. White-hot core fading out to the true color; degree-≥3 junctions keep their 4-pointed rays. This makes the figure *informative* at its joints while the gold lines hold the look.
+- **Nodes are colored by their real star's spectral color.** A constellation vertex *is* a real star, so `vertexStarColor` matches it to the catalog (`bright_stars.json`, 1.5° tolerance) and tints the node by that star's **B–V color index** (`ci`) → hot blue-white / gold / cool red by temperature. White-hot core fading out to the true color; degree-≥3 junctions keep their 4-pointed rays. This makes the figure *informative* at its joints while the gold lines hold the look.
 - **Shared SSoT:** the `ci → RGB` ladder lives once in **`src/lib/starColor.js`** (`bvToRGB`), used by both the main catalog field (`CelestialBodies`) and the overlay nodes — no forked copy, so every star recolors together if the ladder ever changes.
 
 **Open follow-ups (not blocking):**
@@ -196,7 +196,7 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 
 **Camera**
 - `src/hooks/useCamera.js` — the mode store (`viewMode`, `planetariumOrigin`, `enter/exitPlanetarium`).
-- `src/components/Scene.jsx` — `MODE_CONSTRAINTS` (`:77`), `applyConstraints` (`:107`), CameraRig transitions + entry/exit + idle (`:299-660`).
+- `src/components/Scene.jsx` — `MODE_CONSTRAINTS`, `applyConstraints`, CameraRig transitions + entry/exit + idle.
 - `src/preview/cameraTween.js` — the shared transition state machine + `easeInOutCubic`.
 
 **Sky / constellations**
@@ -208,7 +208,7 @@ State, not doctrine — these belong in `ls/BACKLOG.md` once we decide to act. O
 - Authoring: `src/cartograph/CartographSkyLight.jsx`, `src/cartograph/skyLightChannels.js`, `cartograph/bake-scene.js` → `scene.json` SC.1 channels.
 
 **Trees**
-- `src/components/InstancedTrees.jsx` — tier dispatch (`computeTier`, `:392`), instancing.
+- `src/components/InstancedTrees.jsx` — tier dispatch (`computeTier`), instancing.
 - `src/components/treeAtlasMaterial.js` — the shared bark/leaf material + tier shader.
 - `arborist/` — the bake that publishes `public/trees/<species>/*` and `public/baked/<look>.json`.
 

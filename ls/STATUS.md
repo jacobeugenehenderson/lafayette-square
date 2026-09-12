@@ -19,13 +19,13 @@
 | 4 | **Events / Bulletins / Community** | 🟢 robust (4 robust / 2 partial of 7) | EventTicker aggregator; bulletin board (posts→comments→DM threads). |
 | 5 | **Time / Atmosphere / Environment** | 🟢 robust (12 / 2 partial) | Live wall-clock vs scrub duality; meteorologist 3-layer consumer contract. |
 | 6 | **Data / Backends / API** | 🟢 robust, sound (**~54 GAS actions / 57 routes**) | One Google Sheet, 25+ server-gated privileged writes. Security: see below. (Count reconciled 2026-06-30 against `Code.js` — 24 GET + 33 POST cases, 3 dual-verb; the old "59" was an overcount. Full catalog: `reference/INVENTORY-API.md`.) |
-| 7 | **Cary / Courier** | 🟢 **inventoried** (app-integration view) | Courier side live (onboarding, dashboard, dots, OTP); requester side "coming soon". Full app-integration spec now exists: [`CARY.md`](CARY.md); program/legal/schema = `CARY-BRIEF.md` + `cary/`. (Was "ON HOLD" — superseded 2026-06-29.) |
+| 7 | **Cary / Courier** | 🟢 **inventoried** (app-integration view) | Courier side live (onboarding, dashboard, dots, OTP); requester side "coming soon". Full app-integration spec now exists: [`CARY.md`](CARY.md); program/legal/schema = `_handoffs/CARY-BRIEF.md` + `cary/`. |
 
 **Verdict:** the production app is robust, well-architected, and (for the rendered neighborhood) slab-complete (**buildings now render off the slab — `SlabBuildings`, L1.3 shipped 2026-05-26**). No dead paths found in sections 1–7. The gaps that exist are completeness gaps (below), not broken features.
 
 **The 2026-06-29 spec cluster** (the deep per-surface specs that fold this map's sections out): [`PLACE-CARDS.md`](PLACE-CARDS.md) (the Society Pages + card model) · [`GUARDIANS.md`](GUARDIANS.md) · [`RESIDENTS.md`](RESIDENTS.md) · [`TOWNIES.md`](TOWNIES.md) · [`QR-CODES.md`](QR-CODES.md) · [`BULLETIN.md`](BULLETIN.md) · [`CARY.md`](CARY.md) · [`ONBOARDING.md`](ONBOARDING.md) (the field procedure — **Phase 1 prose + Phase 2 code-verify complete 2026-06-30**) · [`IDENTITY.md`](IDENTITY.md) · [`DEVICE-LINK.md`](DEVICE-LINK.md).
 
-> **Landed 2026-06-30 (onboarding arc, `curb-offset-draw`):** the trust-role trio playbook + rights matrix ([`ONBOARDING.md`](ONBOARDING.md)); and three code changes ride the next deploy — **co-resident verify now grants townie** (`Code.js:1830`, all four residence paths reach townie), **`postClaim` rejects a listing with no secret set** (`Code.js:616`), and **business-voice replies** (a review reply renders as the business, not the staffer — `PlaceCard.jsx`). Backlogged: generic business place-card templates · admin-bestowed "honorary townie".
+> **Landed 2026-06-30 (onboarding arc, `curb-offset-draw`):** the trust-role trio playbook + rights matrix ([`ONBOARDING.md`](ONBOARDING.md)); and three code changes ride the next deploy — **co-resident verify now grants townie** (`Code.js`, all four residence paths reach townie), **`postClaim` rejects a listing with no secret set** (`Code.js`), and **business-voice replies** (a review reply renders as the business, not the staffer — `PlaceCard.jsx`). Backlogged: generic business place-card templates · admin-bestowed "honorary townie".
 
 ---
 

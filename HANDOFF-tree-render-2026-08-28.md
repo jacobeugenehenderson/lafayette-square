@@ -82,8 +82,9 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
 6. **`size_urban` / `size_natural`** — the sources answer different questions (street 60 ft vs forest
    120 ft). Data already harvested for all 34. ⭐ The selector belongs on the **installation**, not the
    species. `BACKLOG.md` 2026-08-28. **Needs a standup** (touches the rubric keystone).
-7. **Smaller:** LS's tree anchors are stale (4,995 vs 5,146) so trees seat on the smooth field, not the
-   drawn ground · `bake-ao` bakes shadows from only the 280 MESH trees, so 4,866 cast none · staging
+7. **Smaller:** ✅ stale tree anchors CLOSED 2026-09-08 (root was the pour's step order;
+   ▶ `claims-anchors-follow-the-placements.mjs`) · `bake-ao` bakes shadows from only the 280 MESH
+   trees, so 4,866 cast none · staging
    ships 1,889 culled trees · the Supabase CORS loop (`x-device-hash`) breaks chat · shell
    value-separation for dark trees (front 1.0 / back 0.6 is *multiplicative*, so it collapses on dark
    species — push apart around the midpoint instead).
