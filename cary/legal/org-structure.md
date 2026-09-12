@@ -19,7 +19,7 @@ A **closely-held for-profit** (Jacob Henderson LLC) owns the *kit* and runs the 
 |---|---|---|
 | **Holds** | the mission / meaning (memorials, community installations) | the **kit IP** + the commerce (Cary, kit sales) |
 | **Funded by** | grants, private/community/disaster philanthropy, individual giving, **earned revenue** (fee-for-service installations) | commercial revenue (platform fees, **kit sales to organizations**) + Jacob's for-profit raise + vendor income from the nonprofit |
-| **Pays** | Erinne's ED salary; Jacob's creative-director salary; vendor payments to the for-profit (arm's-length) | the **developers**; Cary operating costs; Jacob's owner income (profit after costs) |
+| **Pays** | the ED's salary; Jacob's creative-director salary; vendor payments to the for-profit (arm's-length) | the **developers**; Cary operating costs; Jacob's owner income (profit after costs) |
 | **Governed by** | an independent-majority board | Jacob (closely held; no equity partners) |
 | **Money is** | restricted (must serve the grant's purpose) | unrestricted (ordinary business income) |
 
@@ -28,9 +28,9 @@ The nonprofit is **national and multi-installation.** Its mission isn't disaster
 
 **Not every installation is a nonprofit one.** The split follows ability-to-pay:
 - **Can pay → for-profit (commercial).** A city, campus, BID, tourism board, developer, or moneyed historic district *buys* its installation through the for-profit (the kit-sales line).
-- **Can't pay but should exist → nonprofit (philanthropy).** Memorials, under-resourced communities, civic memory where there's no budget — funded by grants + giving. This is the subset Erinne's grant-writing serves.
+- **Can't pay but should exist → nonprofit (philanthropy).** Memorials, under-resourced communities, civic memory where there's no budget — funded by grants + giving. This is the subset the ED's grant-writing serves.
 
-**The grant operation is central-apparatus + local co-raise — not one person writing every grant.** Erinne (a) lands big **national / multi-site program grants** (national funders fund *scalable models*, so the pitch is "fund our replicable program across communities" — the kit story), and (b) builds a **repeatable fundraising apparatus** (templates, funder relationships, the umbrella) that **local champions** (a "Mia" per place) plug into to co-raise for their own installations — from community foundations, local donors, civic budgets, and situational sources. Same shape as the rest of the kit: central core + local instances. *Start centralized to prove the model; productize the fundraising as it scales so it never bottlenecks on one person.*
+**The grant operation is central-apparatus + local co-raise — not one person writing every grant.** The ED (a) lands big **national / multi-site program grants** (national funders fund *scalable models*, so the pitch is "fund our replicable program across communities" — the kit story), and (b) builds a **repeatable fundraising apparatus** (templates, funder relationships, the umbrella) that **local champions** (a "Mia" per place) plug into to co-raise for their own installations — from community foundations, local donors, civic budgets, and situational sources. Same shape as the rest of the kit: central core + local instances. *Start centralized to prove the model; productize the fundraising as it scales so it never bottlenecks on one person.*
 
 > **▸ Rationale (two tiers of money).** National program grants fund the *core capacity*; local co-raising funds each *instance* — mirroring the two-pocket structure. It also keeps national fundraising from depending on a single human writing a bespoke grant for every town.
 
@@ -92,7 +92,7 @@ Two or three people over six to nine months. **At loaded cost $250–500k; quote
 ## The money flow (keep these channels distinct)
 The single discipline: **two pockets, kept clean, with documented arm's-length between them.** The channels:
 
-1. **Nonprofit → Erinne (salary).** She is the ED; paid directly as a nonprofit employee.
+1. **Nonprofit → the executive director (salary).** Paid directly as a nonprofit employee.
 2. **Nonprofit → Jacob (salary).** For his *creative-director* work; paid directly as a nonprofit employee — **not** routed through his company.
 3. **Nonprofit → for-profit (vendor payment).** When the nonprofit commissions a mission *installation*, it pays the for-profit a **fair-market** contract for that service — board-approved, **Jacob recused.**
 4. **For-profit → developers (+ costs).** The for-profit pays its dev team and operating costs from its own funds (raise + commercial revenue + vendor income).
@@ -146,13 +146,13 @@ Unlike a for-profit board (represents shareholders; members hold equity), a nonp
 - **Size:** ~3–5 to start (3 is a common statutory minimum; funders want 3+).
 - **Independence:** a **majority** with no employment by the org, no family tie, and no stake in the for-profit — so they can approve the two conflicted items (the founders' **salaries** and the **vendor contract**) with the conflicted parties **recused.**
 - **Recruit for:** finance/CPA, a community representative from Altadena's world, foundation/grant expertise, a civic/arts figure. Mission + network + standing, not pay.
-- Jacob (and Erinne) **may sit on it**, but recuse from votes on their own pay / their company's contract.
+- Jacob (and the ED) **may sit on it**, but recuse from votes on their own pay / their company's contract.
 
 ## Salaries & roles
 - **Reasonable comp, set early, by the independent board, using comparables** — the IRS rebuttable-presumption safe harbor. Don't leave it to "eventually"; bless the policy up front so it's clean before anyone transitions.
-- **Lateral target.** Setting the ED salary at ~Erinne's current paralegal comp makes "reasonable" trivial to defend — it's a match, not a windfall. No one is asked to impoverish themselves; the move is lateral *at the point of transition.*
+- **Lateral target.** Set the ED salary at ~the candidate's current comp: a match is trivial to defend as "reasonable", where a raise is not. No one is asked to impoverish themselves; the move is lateral *at the point of transition.*
 - **Phased transition.** Founders keep current income until the funded role is real: stand up under the sponsor + write grants (budgeting both salaries) *while still employed* → transition when funding lands. Never leap into a void; step onto a built rung.
-- **Roles:** Erinne — **founding ED of the national nonprofit** (the central fundraising apparatus, operations, governance; legal backbone via her attorney husband). Jacob — creative director of the nonprofit (the meaning/look) **and** owner of the for-profit (the kit + commerce). Local **community anchors** (a "Mia" per place) hold the meaning of each installation — scoped to their place, real authority over its soul, not equity in the enterprise.
+- **Roles:** **Founding ED of the national nonprofit — ⚠️ OPEN SEAT** (the central fundraising apparatus, operations, governance). The candidate this structure was designed around declined in September 2026; ⭐ **the role survives the person, which is the point of putting values in the structure rather than in anyone's heart.** It is the **first hire and the first ask** — nothing else here gets funded until someone holds it, including every engineering seat. Jacob — creative director of the nonprofit (the meaning/look) **and** owner of the for-profit (the kit + commerce). Local **community anchors** (a "Mia" per place) hold the meaning of each installation — scoped to their place, real authority over its soul, not equity in the enterprise.
 
 > **▸ Rationale (values in the structure, not the people).** Partners need not share the founder's politics; the values live in the charter, the contracts, the flows, the (eventual) community land trust — not in anyone's heart. That makes the mission robust to a competent, security-oriented operator running ops, and robust to staff turnover. Structure outlasts sentiment.
 
@@ -170,12 +170,13 @@ The federal funding environment is contracted — DOGE/retraction hit **federal*
 ## End-to-end sequence
 1. Stand up under a **fiscal sponsor** (raise + pay people now).
 2. Recruit a small **independent-majority board**; bless the **comp policy** early (comparables).
-3. Erinne writes **grants** (budgeting both salaries) + diversifies into private/community/disaster philanthropy + earned revenue.
+3. The ED writes **grants** (budgeting both salaries) + diversifies into private/community/disaster philanthropy + earned revenue.
 4. Nonprofit **contracts the for-profit** (arm's-length, Jacob recused) for mission installations.
 5. **For-profit raise + revenue + vendor income** fund the **developers** (one at a time).
 6. Form the standalone **501(c)(3)** once there's traction; graduate off the sponsor.
 
 ## Open items (for the professionals)
+- ⚠️ **Recruit the founding ED.** The seat is open as of September 2026 and it gates the rest of this page.
 - Choose a fiscal sponsor + model.
 - Nonprofit attorney + hybrid-experienced CPA to paper: the two-pocket separation, conflict-of-interest policy, the inter-entity vendor/IP-license terms, the comp policy.
 - Recruit the independent board.
