@@ -1,8 +1,14 @@
 # Lafayette Square
 
-3D neighborhood visualization of Lafayette Square, St. Louis.
+A **kit for pouring 3D neighborhoods.** You feed it real city data; it produces a **slab** — a flat,
+fast, fortified map the public app stands on like a foundation. **Lafayette Square is the first
+neighborhood off the line**, not the subject: the whole point is that the *next* neighborhood pours
+from the same kit, by a different operator, with almost no hand-work.
 
-**Live site:** https://lafayette-square.com
+*(The repository is named for instance #1 because it was first. Read every Lafayette Square proper
+noun below as a worked example — `ORIENTATION.md` states the constraint in full.)*
+
+**Live site:** https://lafayette-square.com — instance #1, running on a poured slab.
 
 ---
 
