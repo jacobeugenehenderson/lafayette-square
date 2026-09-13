@@ -1770,7 +1770,7 @@ export function buildBlockGeometryV2(ribbons, opts = {}) {
   // that `isTileScene` had short-circuited since the tile cutover, and on
   // Altadena it cost 285 s of the Designer's 320 s load (frontageBands alone
   // was ~cubic in street count: 77x LS's cost on 4.2x its streets).
-  // DESIGNER-LOAD-FORENSIC.md has the budget.
+  // _archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md has the budget.
   //
   // It is deleted. What survives is the ONE live output: `frontageEdges` —
   // the chain-anchored block-edge identity (feCustomKey = [chainSkelId, side,

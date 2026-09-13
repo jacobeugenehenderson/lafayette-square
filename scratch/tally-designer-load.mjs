@@ -6,7 +6,7 @@
  * measured standalone. Adapted from scratch/section-open.mjs.
  *
  * Measures the CPU-bound stages only. Fetch/React-commit/GPU-upload are
- * browser-side and are NOT covered here (see DESIGNER-LOAD-FORENSIC.md).
+ * browser-side and are NOT covered here (see _archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md).
  *
  * usage: node scratch/tally-designer-load.mjs <scene> [dataRoot]
  */

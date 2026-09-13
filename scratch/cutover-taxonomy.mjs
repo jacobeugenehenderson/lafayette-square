@@ -1,5 +1,5 @@
 /**
- * Taxonomy cutover 19 → 31 axes. PROPOSAL-rubric-axes.md, approved 2026-08-24.
+ * Taxonomy cutover 19 → 31 axes. _archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md, approved 2026-08-24.
  * ⛔ Rewrites authored state (rubric.json, dossiers, part-index). Reversible via git.
  * ⛔ NO GUESSING: a value that cannot be resolved deterministically is DROPPED and REPORTED.
  */
@@ -62,7 +62,7 @@ out.push(mk('overlay.conspicuous','overlay','Conspicuousness','enum',['showy','p
 
 rubric.axes = out
 rubric.version = (rubric.version || 1)
-rubric._cutover = { at: '2026-08-24', from: 19, to: out.length, spec: 'PROPOSAL-rubric-axes.md' }
+rubric._cutover = { at: '2026-08-24', from: 19, to: out.length, spec: '_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md' }
 wr(RUBRIC, rubric)
 console.log(`rubric: 19 → ${out.length} axes`)
 

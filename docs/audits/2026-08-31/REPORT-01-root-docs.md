@@ -41,29 +41,29 @@ $(wc -l < "$b")  $b"; done | sort
 
 | File | Lines | Created | Last touch | Commits | Verdict | Evidence |
 |---|---|---|---|---|---|---|
-| `SIEVE-DETECTOR-FINDINGS.md` | 191 | 06-13 | 06-22 | 3 | SUPERSEDED | Extended by LOOM then THROAT on the same harness |
-| `LOOM-TOPO-FINDINGS.md` | 210 | 06-13 | 06-22 | 3 | SUPERSEDED | Superseded by THROAT |
-| `THROAT-JUNCTION-FINDINGS.md` | 201 | 06-13 | 06-22 | 3 | SUPERSEDED | Terminal entry of a 3-part chain; harness is `scratch/correctness-detector.mjs` |
-| `DESIGNER-LOAD-FORENSIC.md` | 166 | 07-14 | 07-22 | 3 | SUPERSEDED | Creating commit `37c537b0` names the root; figure-ground deleted at T4, 180s→18s |
-| `BRIEF-ls-bleed-excision.md` | 204 | 07-20 | 07-31 | 4 | **LIVE** | 3 inbound refs (2 from ROADMAP); root cure is `EXTENT-DESIGN §6` step 4, unshipped |
-| `BRIEF-terminal-node-sweep.md` | 104 | 07-21 | **07-21** | **1** | ⚠️ **ABANDONED → ASPIRATION** | "DRAFT, dispatch-ready" for 41 days, never revised. *(See REPORT-07a — this verdict was later refined to HALF BUILT.)* |
-| `BRIEF-street-labels.md` | 110 | 07-21 | **07-21** | **1** | SUPERSEDED | `7ddd87f1 feat(labels)` — the brief's exact scope landed; the file was never told |
-| `BRIEF-land-use-derivation.md` | 205 | 07-21 | 08-06 | 5 | SUPERSEDED | Poured, baked, eye-gated 2026-08-24 (`29955e46`). File still says "PHASE 1 … EYE-GATED AND FAILED" |
-| `BRIEF-arborist-slab-weight.md` | 117 | 07-21 | 08-29 | 2 | SUPERSEDED | `2e8112af` — 1,121 MB of VRAM becomes 282. ⛔ Its promised deliverable `ARBORIST-SLAB-WEIGHT.md` **does not exist** |
-| `BRIEF-pair-free-edge-anchor.md` | 56 | 07-22 | **07-22** | **1** | ⚠️ **ABANDONED → ASPIRATION** | 40 days, never revised. `git log --grep="edge anchor"` → 0 commits |
-| `BRIEF-hpdm-curve-fit.md` | 81 | 07-22 | **07-22** | **1** | SUPERSEDED | `d15d7dd2 fix(A01): CURVE_FIT default-on` — the one knob it asks to turn on. 0 inbound refs |
-| `BRIEF-dead-end-mouth-junction.md` | 288 | 07-22 | 07-30 | 5 | **ROTTEN** | Its own line 3: "⛔ **RETIRED 2026-07-22** … do NOT dispatch this separately" |
-| `BRIEF-excise-the-banners.md` | 121 | 08-06 | 08-06 | 3 | ABANDONED (held) | "⛔ ON HOLD", 25 days; release condition still unmet |
-| `BRIEF-freeze-the-curb.md` | 134 | 08-21 | 08-21 | 2 | ✅ **LIVE** | "OPEN, undispatched", closes `ROADMAP A3`. `git log --grep=curbFacts` → the finding + the brief, no fix |
-| `BRIEF-slice2-walk-full-crop-last.md` | 165 | 08-21 | 08-21 | 3 | LIVE, but misleading | ROADMAP-referenced; the WALK is switched off and explains nothing on screen |
-| `BRIEF-arborist-exorcism.md` | 311 | 08-23 | 08-23 | 3 | SUPERSEDED | Arborist arc closed 2026-08-28 |
-| `TRAIT-SURVEY-FINDINGS.md` | **1361** | 08-24 | 08-24 | 8 | SUPERSEDED | Its conclusion is `PROPOSAL-rubric-axes.md`. Largest root file (139 KB) |
-| `BRIEF-tree-trait-survey.md` | 120 | 08-24 | **08-24** | **1** | SUPERSEDED | Answered by the file above |
-| `BRIEF-arborist-join-and-budget.md` | 426 | 08-24 | 08-24 | 19 | SUPERSEDED | Largest brief; tree arc landed 2026-08-28 |
-| `BRIEF-ground-seam.md` | 80 | 08-24 | **08-24** | **1** | ⚠️ **ABANDONED → ASPIRATION** | Blocked on join-and-budget §0a, **which has since closed — the block is lifted and nobody noticed** |
-| `BRIEF-deploy-arborist-grove.md` | 108 | 08-25 | **08-25** | **1** | SUPERSEDED | Grove pour landed (74 commits mention "grove") |
-| `BRIEF-species-pipeline-adversarial.md` | 113 | 08-25 | **08-25** | **1** | **landing NOT ESTABLISHED** | 3 commits match; insufficient to call |
-| `HANDOFF-tree-render-2026-08-28.md` | 113 | 08-28 | 08-29 | 5 | DIARY + a live OPEN tail | The only root `HANDOFF-*`; the other 54 live in gitignored `_handoffs/` |
+| `_archive/SIEVE-DETECTOR-FINDINGS-SUPERSEDED-2026-09-13.md` | 191 | 06-13 | 06-22 | 3 | SUPERSEDED | Extended by LOOM then THROAT on the same harness |
+| `_archive/LOOM-TOPO-FINDINGS-SUPERSEDED-2026-09-13.md` | 210 | 06-13 | 06-22 | 3 | SUPERSEDED | Superseded by THROAT |
+| `_archive/THROAT-JUNCTION-FINDINGS-SUPERSEDED-2026-09-13.md` | 201 | 06-13 | 06-22 | 3 | SUPERSEDED | Terminal entry of a 3-part chain; harness is `scratch/correctness-detector.mjs` |
+| `_archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md` | 166 | 07-14 | 07-22 | 3 | SUPERSEDED | Creating commit `37c537b0` names the root; figure-ground deleted at T4, 180s→18s |
+| `docs/briefs/BRIEF-ls-bleed-excision.md` | 204 | 07-20 | 07-31 | 4 | **LIVE** | 3 inbound refs (2 from ROADMAP); root cure is `EXTENT-DESIGN §6` step 4, unshipped |
+| `docs/briefs/BRIEF-terminal-node-sweep.md` | 104 | 07-21 | **07-21** | **1** | ⚠️ **ABANDONED → ASPIRATION** | "DRAFT, dispatch-ready" for 41 days, never revised. *(See REPORT-07a — this verdict was later refined to HALF BUILT.)* |
+| `_archive/BRIEF-street-labels-SUPERSEDED-2026-09-13.md` | 110 | 07-21 | **07-21** | **1** | SUPERSEDED | `7ddd87f1 feat(labels)` — the brief's exact scope landed; the file was never told |
+| `docs/briefs/BRIEF-land-use-derivation.md` | 205 | 07-21 | 08-06 | 5 | SUPERSEDED | Poured, baked, eye-gated 2026-08-24 (`29955e46`). File still says "PHASE 1 … EYE-GATED AND FAILED" |
+| `_archive/BRIEF-arborist-slab-weight-SUPERSEDED-2026-09-13.md` | 117 | 07-21 | 08-29 | 2 | SUPERSEDED | `2e8112af` — 1,121 MB of VRAM becomes 282. ⛔ Its promised deliverable `ARBORIST-SLAB-WEIGHT.md` **does not exist** |
+| `docs/briefs/BRIEF-pair-free-edge-anchor.md` | 56 | 07-22 | **07-22** | **1** | ⚠️ **ABANDONED → ASPIRATION** | 40 days, never revised. `git log --grep="edge anchor"` → 0 commits |
+| `_archive/BRIEF-hpdm-curve-fit-SUPERSEDED-2026-09-13.md` | 81 | 07-22 | **07-22** | **1** | SUPERSEDED | `d15d7dd2 fix(A01): CURVE_FIT default-on` — the one knob it asks to turn on. 0 inbound refs |
+| `_archive/BRIEF-dead-end-mouth-junction-RETIRED-2026-07-22.md` | 288 | 07-22 | 07-30 | 5 | **ROTTEN** | Its own line 3: "⛔ **RETIRED 2026-07-22** … do NOT dispatch this separately" |
+| `docs/briefs/BRIEF-excise-the-banners.md` | 121 | 08-06 | 08-06 | 3 | ABANDONED (held) | "⛔ ON HOLD", 25 days; release condition still unmet |
+| `docs/briefs/BRIEF-freeze-the-curb.md` | 134 | 08-21 | 08-21 | 2 | ✅ **LIVE** | "OPEN, undispatched", closes `ROADMAP A3`. `git log --grep=curbFacts` → the finding + the brief, no fix |
+| `docs/briefs/BRIEF-slice2-walk-full-crop-last.md` | 165 | 08-21 | 08-21 | 3 | LIVE, but misleading | ROADMAP-referenced; the WALK is switched off and explains nothing on screen |
+| `_archive/BRIEF-arborist-exorcism-SUPERSEDED-2026-09-13.md` | 311 | 08-23 | 08-23 | 3 | SUPERSEDED | Arborist arc closed 2026-08-28 |
+| `_archive/TRAIT-SURVEY-FINDINGS-SUPERSEDED-2026-09-13.md` | **1361** | 08-24 | 08-24 | 8 | SUPERSEDED | Its conclusion is `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md`. Largest root file (139 KB) |
+| `_archive/BRIEF-tree-trait-survey-SUPERSEDED-2026-09-13.md` | 120 | 08-24 | **08-24** | **1** | SUPERSEDED | Answered by the file above |
+| `_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` | 426 | 08-24 | 08-24 | 19 | SUPERSEDED | Largest brief; tree arc landed 2026-08-28 |
+| `docs/briefs/BRIEF-ground-seam.md` | 80 | 08-24 | **08-24** | **1** | ⚠️ **ABANDONED → ASPIRATION** | Blocked on join-and-budget §0a, **which has since closed — the block is lifted and nobody noticed** |
+| `_archive/BRIEF-deploy-arborist-grove-SUPERSEDED-2026-09-13.md` | 108 | 08-25 | **08-25** | **1** | SUPERSEDED | Grove pour landed (74 commits mention "grove") |
+| `docs/briefs/BRIEF-species-pipeline-adversarial.md` | 113 | 08-25 | **08-25** | **1** | **landing NOT ESTABLISHED** | 3 commits match; insufficient to call |
+| `docs/briefs/HANDOFF-tree-render-2026-08-28.md` | 113 | 08-28 | 08-29 | 5 | DIARY + a live OPEN tail | The only root `HANDOFF-*`; the other 54 live in gitignored `_handoffs/` |
 
 **Tally: 2 LIVE · 1 live-but-misleading · 12 SUPERSEDED · 4 ABANDONED/ASPIRATION · 1 ROTTEN ·
 1 not-established · 1 mixed. Two of twenty-three still govern work — 8.7%.**
@@ -104,7 +104,7 @@ for b in BRIEF-*.md; do echo "$b :: $(git log --diff-filter=A --format='%h %s' -
 The mechanism:
 
 1. **A brief is a prompt, and prompts got persisted.** Every one opens in the second person to
-   an AI — *"You are a FRESH agent"*, *"Name yourself"*, *"⛔ Do not read `BOZ.md`"*. A file is
+   an AI — *"You are a FRESH agent"*, *"Name yourself"*, *"⛔ Do not read `docs/agents/BOZ.md`"*. A file is
    how you hand a long prompt to a subagent, and then the file stayed.
 2. **Dispatch happens daily, so briefs accrue daily.** 17 across ~45 working days.
 3. **`0e308e30` is the disease naming itself** — the pressure valve for a document getting too
@@ -118,8 +118,8 @@ several hundred duplicated lines whose home is `CLAUDE.md`.
 | Rule | Status | Evidence |
 |---|---|---|
 | No net-new doc without retiring one | **Broken 17×** | 17 briefs created; `_archive` gained 0 root entries |
-| Superseded content **moves** to the Diary | **Broken** | `BRIEF-dead-end-mouth-junction.md` self-declared RETIRED, still at root 40 days later |
-| "RESOLVED, kept for context" is the anti-pattern | **Broken, verbatim** | `BRIEF-land-use-derivation.md` opens *"It is kept, not deleted, because the reasoning is sound"* |
+| Superseded content **moves** to the Diary | **Broken** | `_archive/BRIEF-dead-end-mouth-junction-RETIRED-2026-07-22.md` self-declared RETIRED, still at root 40 days later |
+| "RESOLVED, kept for context" is the anti-pattern | **Broken, verbatim** | `docs/briefs/BRIEF-land-use-derivation.md` opens *"It is kept, not deleted, because the reasoning is sound"* |
 | Excise the sentence, not just banner it | **Broken** | Same file: *"§1's HEADLINE IS WRONG"* — and §1 is still there |
 | Put it in the commit message | **Followed, and it works** | `e302848f` "THE CURB IS NEVER FROZEN — tile.curbFacts is read at one site and written nowhere" is a better artifact than most briefs |
 
@@ -159,10 +159,10 @@ today's never-revisited files without knowing anything about this project.
 
 | File | The decision that dies with it |
 |---|---|
-| `BRIEF-terminal-node-sweep.md` | The "universal solvent" for the false corner. Designed with Jacob, never dispatched. |
-| `BRIEF-pair-free-edge-anchor.md` | Divided/frontage overlap-holes on HPDM — **HPDM is the entire town-#2 evidence base**, which makes this more load-bearing than its 56 lines suggest. |
-| `BRIEF-ground-seam.md` | "An upright object should meet the ground correctly" — trunks *and* lamp posts. Its stated blocker has cleared. |
-| `BRIEF-excise-the-banners.md` | The doc-hygiene pass this audit duplicates. **Should be released, not archived.** |
+| `docs/briefs/BRIEF-terminal-node-sweep.md` | The "universal solvent" for the false corner. Designed with Jacob, never dispatched. |
+| `docs/briefs/BRIEF-pair-free-edge-anchor.md` | Divided/frontage overlap-holes on HPDM — **HPDM is the entire town-#2 evidence base**, which makes this more load-bearing than its 56 lines suggest. |
+| `docs/briefs/BRIEF-ground-seam.md` | "An upright object should meet the ground correctly" — trunks *and* lamp posts. Its stated blocker has cleared. |
+| `docs/briefs/BRIEF-excise-the-banners.md` | The doc-hygiene pass this audit duplicates. **Should be released, not archived.** |
 
 ---
 
@@ -174,9 +174,9 @@ today's never-revisited files without knowing anything about this project.
 | `ORIENTATION.md` | 147 | 08-21 | The kit's mental model + dependency chain | **CANON** | **KEEP — make it the sole entry** |
 | `ROADMAP.md` | 493 | 08-29 | The cross-domain board | **CANON + DIARY fused** | KEEP, split closed→Diary (Q3) |
 | `CLAUDE.md` | 209 | 08-29 | Agent routing gate | **INTERNAL-ONLY** | KEEP, never share |
-| `BOZ.md` | 216 | 08-14 | Coordinator persona | **INTERNAL-ONLY** | KEEP, never share |
-| `PIP.md` | 36 | 06-24 | Named-summon persona | **INTERNAL-ONLY** | KEEP, never share |
-| `AGENT-VALIDATION-SURFACES.md` | 133 | 07-11 | Index for brief-writers | **INTERNAL-ONLY** | KEEP → `.claude/` |
+| `docs/agents/BOZ.md` | 216 | 08-14 | Coordinator persona | **INTERNAL-ONLY** | KEEP, never share |
+| `docs/agents/PIP.md` | 36 | 06-24 | Named-summon persona | **INTERNAL-ONLY** | KEEP, never share |
+| `docs/agents/AGENT-VALIDATION-SURFACES.md` | 133 | 07-11 | Index for brief-writers | **INTERNAL-ONLY** | KEEP → `.claude/` |
 | `SLAB-CONTRACT.md` | 462 | 07-14 | Producer↔consumer interface | **CANON** | **KEEP — flagship external doc**; lowest glyph density at 0.2/100 lines |
 | `SECURITY.md` | 598 | 08-25 | Surface catalog + register F-1…F-15 | **CANON** | KEEP; NDA only |
 | `NEIGHBORHOOD-INPUTS.md` | 388 | 08-24 | The pour template | **CANON** | KEEP |
@@ -184,18 +184,18 @@ today's never-revisited files without knowing anything about this project.
 | `ONBOARDING.md` | 73 | 07-19 | intake→hydration runbook | **CANON** | **KEEP — what a licensee wants; badly underweighted at 73 lines** |
 | `PUBLISH.md` | 265 | 08-24 | Deploy procedure | CANON, ROTTEN head | KEEP, fix `:5` (names `~/Desktop/lafayette-square`; actual is `…-square.nosync`) |
 | `EXTENT-DESIGN.md` | 418 | 08-21 | Extent design of record | **CANON** | KEEP |
-| `EXTENT-EXCAVATION.md` | 450 | 08-12 | Its evidence layer | **DIARY** (self-labelled) | ARCHIVE |
+| `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` | 450 | 08-12 | Its evidence layer | **DIARY** (self-labelled) | ARCHIVE |
 | `PIPELINE-CLAIMS.md` | 281 | 08-05 | The chain as falsifiable claims | **CANON** | **KEEP — the best instrument in the root** |
 | `ACCORDANCE-REVIEW.md` | 176 | 08-29 | Outside-in diligence | CANON, competing front door | KEEP, retitle, demote from entry |
 | `SHOW-BIBLE.md` | 119 | 08-06 | Master pitch, 3 audiences | ⚠️ **ASPIRATION** + ~25% overlap | **KEEP, FLAG** — §0's four-tier product stack is **the commercial thesis and exists nowhere else** |
 | `SALON-INTERFACE.md` | 185 | 08-28 | Salon plate-rack pivot | ⚠️ **ASPIRATION** | **KEEP, FLAG** — "in flight, 2026-06-25", 9 weeks |
-| `PROPOSAL-rubric-axes.md` | 189 | 08-24 | Rubric axes spec | ⚠️ **ASPIRATION — textbook case** | **KEEP, FLAG** — carries ✅ and *"Not yet executed"*. ⚠️ **REPORT-05 later measured this as LANDED 2026-08-28 — it is ROT, not aspiration.** |
+| `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` | 189 | 08-24 | Rubric axes spec | ⚠️ **ASPIRATION — textbook case** | **KEEP, FLAG** — carries ✅ and *"Not yet executed"*. ⚠️ **REPORT-05 later measured this as LANDED 2026-08-28 — it is ROT, not aspiration.** |
 | `TREE-INTAKE.md` | 162 | 08-29 | Per-town tree pipeline | **CANON** | KEEP |
 | `THEWARD-ONLINE.md` | 172 | 08-31 | Pointer to the marketing-site repo | **CANON (pointer-kind)** | KEEP — correctly built as pointer-not-restatement |
-| `AUDIT-MATRIX.md` | 203 | 06-30 | Spec for the closed 2026-06 campaign | **DIARY** | ARCHIVE |
-| `HIPOINTE-DEMUN-ROSTER.md` | 501 | 08-06 | Second-pour building roster | **ROTTEN (self-declared)** | ARCHIVE — its banner: *"⛔ Quote no number from this doc"* |
-| `DEPLOY-CHECKLIST-backend-tenancy.md` | 44 | 07-07 | One deploy's checklist | **DIARY** | ARCHIVE |
-| `BUSINESS_LISTINGS.md` | 96 | **05-14** | LS business tracker | **ROTTEN / instance data** | **EXCISE to `ls/`** — oldest root doc; instance content at kit root violates Layer 0 |
+| `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` | 203 | 06-30 | Spec for the closed 2026-06 campaign | **DIARY** | ARCHIVE |
+| `_archive/HIPOINTE-DEMUN-ROSTER-ROTTEN-2026-09-13.md` | 501 | 08-06 | Second-pour building roster | **ROTTEN (self-declared)** | ARCHIVE — its banner: *"⛔ Quote no number from this doc"* |
+| `_archive/DEPLOY-CHECKLIST-backend-tenancy-DIARY-2026-09-13.md` | 44 | 07-07 | One deploy's checklist | **DIARY** | ARCHIVE |
+| `ls/BUSINESS_LISTINGS.md` | 96 | **05-14** | LS business tracker | **ROTTEN / instance data** | **EXCISE to `ls/`** — oldest root doc; instance content at kit root violates Layer 0 |
 
 ### Root `_archive/` — healthy
 
@@ -357,7 +357,7 @@ grep -lE '/Users/jacobhenderson|/Volumes/|supabase\.co|script\.google\.com|ANON_
   endpoint** as example `.env` values. The Apps Script URL is a callable production endpoint.
   **Replace with placeholders before sharing.**
 - `PUBLISH.md` / `THEWARD-ONLINE.md` embed the owner's filesystem paths.
-- `BUSINESS_LISTINGS.md` names 76 real local businesses. Decide deliberately whether that ships.
+- `ls/BUSINESS_LISTINGS.md` names 76 real local businesses. Decide deliberately whether that ships.
 
 ---
 
@@ -365,7 +365,7 @@ grep -lE '/Users/jacobhenderson|/Volumes/|supabase\.co|script\.google\.com|ANON_
 
 | Doc | The unbuilt thing, in its own words | Why it is at risk |
 |---|---|---|
-| `PROPOSAL-rubric-axes.md` | *"✅ APPROVED … Not yet executed: `arborist/rubric.json` is unchanged."* | Carries a ✅; a pruner sees a closed item. **Not on ROADMAP.** ⚠️ *Later measured as LANDED — see REPORT-05.* |
+| `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` | *"✅ APPROVED … Not yet executed: `arborist/rubric.json` is unchanged."* | Carries a ✅; a pruner sees a closed item. **Not on ROADMAP.** ⚠️ *Later measured as LANDED — see REPORT-05.* |
 | `SALON-INTERFACE.md` | "in flight, 2026-06-25"; "Rubric-forward (**decided direction**)" | 9 weeks old; reads stale, is ratified |
 | `SHOW-BIBLE.md` §0 | Cartograph=factory (licensable) · Slab=format · Consumers · API | **The commercial thesis of the company lives only here** |
 | `README.md` "Architecture intent" | *"today many of these are hardwired into the LS runtime; ultimately they all route through the Slab"* | One sentence inside a 4KB line — trivially lost in a rewrite |
@@ -400,6 +400,6 @@ EXCISE                                  2   BRIEF-dead-end-mouth-junction · BUS
 3. **Ship two checks** — `claims-root-doc-hygiene.mjs` and `claims-doc-pointer-health.mjs`. ⚠️ **Both are STILL UNWRITTEN as of 2026-09-13** — named here as work owed, never as work done.
    Rules without forcing functions have already failed here.
 
-**One caveat owed:** for `BRIEF-species-pipeline-adversarial.md` I could not establish whether
+**One caveat owed:** for `docs/briefs/BRIEF-species-pipeline-adversarial.md` I could not establish whether
 its work landed. **Cause not established**; treat as unclassified until someone who knows the arc
 rules on it.

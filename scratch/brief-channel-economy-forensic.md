@@ -65,7 +65,7 @@ measurable delta on top). Carry this as your acceptance test for every opportuni
      camera work; what's already been normalized across the three hosts).
 4. **Reuse, don't re-derive:** `scratch/audit-arborist.md` (Increment) already inventoried the
    *tree* channels (atlas/bark/leaf/detail/posterized/gradient/wind/lampGlow/heroTier) with cost
-   notes + cruft classes — **absorb its tree rows; don't re-audit them.** Use `AUDIT-MATRIX.md` for
+   notes + cruft classes — **absorb its tree rows; don't re-audit them.** Use `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` for
    the classification method (real / duct-tape / vestigial; classify-before-cutting).
 
 If anything contradicts this brief, flag Boz before building the analysis around it.

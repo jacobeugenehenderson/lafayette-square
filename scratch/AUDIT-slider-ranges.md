@@ -20,7 +20,7 @@ multiplier fully saturating) **plus a little style headroom** — not 10× past 
 
 Tight ranges were the direct cause of the Halo/"Aerial Perspective" confusion: max 0.5 + a screen-Y band +
 mid-tone gating meant even maxed it barely moved, so it read as broken. Operator legibility *is*
-correctness here (`BOZ.md §3` agent-accessibility standard, applied to the panel).
+correctness here (`docs/agents/BOZ.md §3` agent-accessibility standard, applied to the panel).
 
 ## Checklist (seeded from `skyLightChannels.js` — review when touched)
 

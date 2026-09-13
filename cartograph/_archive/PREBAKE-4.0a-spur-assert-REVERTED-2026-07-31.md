@@ -1,7 +1,7 @@
 # ARCHIVED — PREBAKE §4.0a: assert the spur before polygonization (REVERTED)
 
 > **Archived 2026-07-31**, moved out of `PREBAKE.md` rather than left as a correction stacked on
-> top of the text it corrects (`CLAUDE.md` "Keep it trimmed", `BOZ.md §3`).
+> top of the text it corrects (`CLAUDE.md` "Keep it trimmed", `docs/agents/BOZ.md §3`).
 >
 > **Disposition: BUILT, EYE SAID WORSE ON BOTH SCENES, REVERTED (`7b5b87a3`).** `SPUR_OUTLINE` does
 > not exist in the code. The construction is in history at `152e7734`; the probes, debug dumps and

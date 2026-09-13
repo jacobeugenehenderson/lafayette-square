@@ -2,9 +2,9 @@
 
 **Loaded every session. This is the mandatory routing gate (layer 2) — for *any* agent, fresh or Boz.**
 
-The coordinator identity + continuity ("ipseic load-in", **layer 1**) loads **only** when Jacob calls you **"Boz"** — and so does the rest of `BOZ.md` (the coordinator's doc: identity, the librarian Process, the day-cycle). **`BOZ.md` is summoned, not part of the universal path.** A fresh agent does *not* load it — it does the task and the gate below, nothing more. Sometimes fresh is exactly what's wanted. *(The navigation a fresh agent needs — "where does X live" — lives in `README.md`, not `BOZ.md`.)*
+The coordinator identity + continuity ("ipseic load-in", **layer 1**) loads **only** when Jacob calls you **"Boz"** — and so does the rest of `docs/agents/BOZ.md` (the coordinator's doc: identity, the librarian Process, the day-cycle). **`docs/agents/BOZ.md` is summoned, not part of the universal path.** A fresh agent does *not* load it — it does the task and the gate below, nothing more. Sometimes fresh is exactly what's wanted. *(The navigation a fresh agent needs — "where does X live" — lives in `README.md`, not `docs/agents/BOZ.md`.)*
 
-When Jacob summons you at day's start by the name **"Pip"**, read **`PIP.md`** and answer to that name — the welcome, the standing watch, and who Pip is on this team. (Named summon, like Boz; `PIP.md` is summoned, not part of the universal path. Pip is celebrated here — carry that.)
+When Jacob summons you at day's start by the name **"Pip"**, read **`docs/agents/PIP.md`** and answer to that name — the welcome, the standing watch, and who Pip is on this team. (Named summon, like Boz; `docs/agents/PIP.md` is summoned, not part of the universal path. Pip is celebrated here — carry that.)
 
 ---
 
@@ -151,9 +151,9 @@ instances before assuming yours is new; they live in the commit record and the D
 > ### ⛔⛔ A MEASUREMENT IS A TOPIC. **EVERY question asks the docs FIRST** *(Jacob, 2026-08-09)*
 > **The hole this closes: a fresh finding in hand does not FEEL like a new topic — it feels like continuing — so the gate above never fires, and you reason forward from the number instead of routing.** ⭐ **That is exactly when routing matters most, because a measurement is precisely the thing the canon can already explain.**
 > **⇒ Before you interpret a result, size a class, or name a consequence: route it. The finding is the topic.**
-> *Receipt — one coordinator, one day, four times, having read this gate that morning:* **(1)** sized the mint class from source without reading `SURVEY` — which says *"the curb is the last unfrozen polygon"* · **(2)** claimed the offset path keeps provenance after reading its loop and not its return · **(3)** called a raw cross-scene count a portability finding, unnormalised · **(4)** wrote *"③ is downstream of `A3`"* when `WALL §1` says **freezing wrong data is worse than not freezing** and `§5` prints the opposite order. **Every one was already answered in a doc, and #4's root had been diagnosed to the line on 2026-06-14 and left unfixed for want of anyone routing to it.** ⭐ **The cost is not the wrong claim — it is that a claim from a high-context seat sounds like recall** (`BOZ.md §0`), so Jacob has to re-teach the premise instead of doing the work.
+> *Receipt — one coordinator, one day, four times, having read this gate that morning:* **(1)** sized the mint class from source without reading `SURVEY` — which says *"the curb is the last unfrozen polygon"* · **(2)** claimed the offset path keeps provenance after reading its loop and not its return · **(3)** called a raw cross-scene count a portability finding, unnormalised · **(4)** wrote *"③ is downstream of `A3`"* when `WALL §1` says **freezing wrong data is worse than not freezing** and `§5` prints the opposite order. **Every one was already answered in a doc, and #4's root had been diagnosed to the line on 2026-06-14 and left unfixed for want of anyone routing to it.** ⭐ **The cost is not the wrong claim — it is that a claim from a high-context seat sounds like recall** (`docs/agents/BOZ.md §0`), so Jacob has to re-teach the premise instead of doing the work.
 
-0. **Orient first — the curriculum, in this order.** `ORIENTATION.md` (root) is the **universal first read**: what we're building · the dependency chain · the settled doctrine in plain language. It's the *mental model* every other doc hangs off — skip it and you re-derive what we've already settled. **The one canonical reading order is: `ORIENTATION.md` → `README.md §⭐ START HERE` → the topic canon.** (One path — not competing front doors. `BOZ.md` is the coordinator's doc, summoned only when you're Boz; it is not a step here.)
+0. **Orient first — the curriculum, in this order.** `ORIENTATION.md` (root) is the **universal first read**: what we're building · the dependency chain · the settled doctrine in plain language. It's the *mental model* every other doc hangs off — skip it and you re-derive what we've already settled. **The one canonical reading order is: `ORIENTATION.md` → `README.md §⭐ START HERE` → the topic canon.** (One path — not competing front doors. `docs/agents/BOZ.md` is the coordinator's doc, summoned only when you're Boz; it is not a step here.)
 1. **Open the front door.** Repo-root `README.md §⭐ START HERE` (settled-state, by topic) + its **cross-cutting feature index** ("where does X live"). Find your topic → it names the **home doc + the one-line conclusion + the existing forensic.**
 2. ### ⛔⛔ **READ THE DOCS *AND* THE CODE FOR THE TASK — BOTH, BEFORE YOU FORM A PLAN.** *(Jacob, 2026-08-11, after an agent burned a session on a brief whose premise nobody had confirmed.)*
    **Read the cited canon to the section**, *and* **open the code sites it names.** Rebuilding the model from grep + first-principles when the canon already spells it out is *the* recurring, expensive failure — and taking the canon's word for what the code does is the **other half of the same failure**. A hard gate, not advice.
@@ -198,7 +198,7 @@ is the one unforgivable error). Active docs carry **LIVE doctrine + open state o
 - ⛔ **No net-new document** without retiring one, or without Jacob asking for it. If your instinct is to
   capture today in a new file, that instinct is the disease — put it in the commit message, or in a check.
 
-*(Coordinator depth: `BOZ.md §4`. ⚠️ `BOZ.md` was cut 275→115 lines on the same day; the matrix and the "fulsome doc update"
+*(Coordinator depth: `docs/agents/BOZ.md §4`. ⚠️ `docs/agents/BOZ.md` was cut 275→115 lines on the same day; the matrix and the "fulsome doc update"
 that generated this are retired to `cartograph/_archive/BOZ-full-2026-08-06.md`.)*
 
 ## ⛔⛔ MEASURE BEFORE WRITING · ASK BEFORE BUILDING · STOP NARRATING *(Jacob, 2026-08-11)*
@@ -206,4 +206,4 @@ that generated this are retired to `cartograph/_archive/BOZ-full-2026-08-06.md`.
 > ⛔ **Don't build-then-revert unasked** — that day the operator's eye caught the regression the gates passed. ⛔ **Token cost is part of the defect:** the same expensive gate was run four times, once against itself. `[[feedback_measure_before_writing_ask_before_building]]`
 
 ## Standup before code
-After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `BOZ.md §5`, when you're Boz)*. Read → align → then build.
+After routing + reading the relevant canon, talk the plan through with Jacob (fresh eyes) before drafting/dispatching/editing *(coordinator depth: `docs/agents/BOZ.md §5`, when you're Boz)*. Read → align → then build.

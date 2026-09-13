@@ -10,7 +10,7 @@ built, not a separate defect population.
 
 ## 1 · Verdicts
 
-### `BRIEF-terminal-node-sweep.md` — ⚠️ PARTIALLY BUILT, and this is the most important finding in the audit
+### `docs/briefs/BRIEF-terminal-node-sweep.md` — ⚠️ PARTIALLY BUILT, and this is the most important finding in the audit
 
 **Not unbuilt. The stamp landed:**
 
@@ -49,7 +49,7 @@ fires. **Its effect on a town without the stamp: cause not established.**
 
 ---
 
-### `BRIEF-pair-free-edge-anchor.md` — OPEN, verbatim. Not one line built.
+### `docs/briefs/BRIEF-pair-free-edge-anchor.md` — OPEN, verbatim. Not one line built.
 
 - The coupling the brief calls "the whole bug" is intact: `derive.js:3836-3840` still stamps
   `anchor='inner-edge'` + `innerSign` **only** on detected pairs (`innerSideSign(A.points, B.points)`).
@@ -69,7 +69,7 @@ makes HPDM's asphalt render with holes in it.**
 
 ---
 
-### `BRIEF-ground-seam.md` — OPEN, verbatim, and TRACKED ON ZERO BOARDS
+### `docs/briefs/BRIEF-ground-seam.md` — OPEN, verbatim, and TRACKED ON ZERO BOARDS
 
 - The wrong operator is at `src/components/treeAtlasMaterial.js:1036`, exactly as specified:
   `diffuseColor.rgb = mix(diffuseColor.rgb, gcol, baseF);`
@@ -91,7 +91,7 @@ time — it is dispatch-ready as written.**
 
 ---
 
-### `BRIEF-freeze-the-curb.md` — OPEN, verbatim, every receipt reproduces
+### `docs/briefs/BRIEF-freeze-the-curb.md` — OPEN, verbatim, every receipt reproduces
 
 - `node -e "…shape.json…"` → **`curbFacts: 0 of 101`.**
 - `grep -rn curbFacts src cartograph` → **exactly two hits**: `tileGround.js:4186` (`const curbFacts

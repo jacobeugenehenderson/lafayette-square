@@ -18,7 +18,7 @@
  * ▶ The fuller design is `_handoffs/HANDOFF-mobile-profile.md §2` — ⭐ TRACKED as of
  * 2026-09-02 (it and HANDOFF-preview-measurement.md are the two exceptions to the
  * `_handoffs/` ignore, precisely because source cites them). Board row: `ROADMAP.md H1`.
- * Also: `plans/clean-for-handoff.md §W1` · `cartograph/PREVIEW.md §0.1` · `AUDIT-MATRIX.md`. Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi /
+ * Also: `plans/clean-for-handoff.md §W1` · `cartograph/PREVIEW.md §0.1` · `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`. Keyed by the SAME ids as deviceProfiles.js (desktop / phone-hi /
  * phone-lo) so the gauge budget and the render degree speak one vocabulary.
  *
  * This is "Preview = Pyramid" made data: each environment is a BRACKET POSITION

@@ -5,9 +5,12 @@ Branch `metcalf-section-per-edge` off trunk `2b39451`.
 
 ## Reproduce
 ```
-node scratch/metcalf-fill-snapshot.mjs <out.json> [--empty-customs]   # full buildTileGround → coordinate dump + areas
-node scratch/metcalf-fill-diff.mjs <before> <after> [out.svg]         # per-class XOR (signed, donut-safe) + locations
-node scratch/metcalf-fill-render.mjs <snap> <out.svg> [cx cz halfW]   # eyeball render (LU cream/TL green/SW pink)
+# ⛔ THE THREE PROBES BELOW WERE NEVER COMMITTED and are not on disk — `git log --all -- 'scratch/metcalf-fill-*'`
+#    is empty. This block is HISTORY, not a usage line: nothing here runs today, and git cannot
+#    bring them back. Kept because the evidence they produced is cited below.
+# node metcalf-fill-snapshot.mjs <out.json> [--empty-customs]   # full buildTileGround → coordinate dump + areas
+# node metcalf-fill-diff.mjs <before> <after> [out.svg]         # per-class XOR (signed, donut-safe) + locations
+# node metcalf-fill-render.mjs <snap> <out.svg> [cx cz halfW]   # eyeball render (LU cream/TL green/SW pink)
 node scratch/metcalf-migrate-customs.mjs [--write]                    # the design.json depth-baggage strip
 ```
 Snapshots kept: `metcalf-BEFORE-{empty,customs}.json` (HEAD `2b39451` code) ·

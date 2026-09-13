@@ -3,7 +3,7 @@
 **Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Written 2026-07-22 (Kestrel) from a
 live eye-session with Jacob on the Lafayette strip + a full day in the dead-end class. Successor to
 the dead-end leg-flip + cap-slope work (**LANDED** 2026-07-22 — brief retired, outcome in
-`cartograph/BACKLOG.md §"Retired BRIEFs"`) and `BRIEF-dead-end-mouth-junction.md` (**RETIRED into
+`cartograph/BACKLOG.md §"Retired BRIEFs"`) and `_archive/BRIEF-dead-end-mouth-junction-RETIRED-2026-07-22.md` (**RETIRED into
 this brief** 2026-07-22 — it is now the mouth's evidence appendix, not a separate campaign; its §3
 measurements stand, its §4 fix direction is superseded here). **Jacob dispatches.**
 
@@ -174,7 +174,7 @@ deleted a heuristic. This brief is that move generalized to the whole node.
 | Face | Evidence | Where the detail lives |
 |---|---|---|
 | Corner co-claim, map-wide | 1400.6 m², 243 of 568 corners | §1 |
-| The dead-end MOUTH | 0 m² unclaimed, ~15 m²/mouth co-claimed | `BRIEF-dead-end-mouth-junction.md` §3 (retired-in; read as appendix) |
+| The dead-end MOUTH | 0 m² unclaimed, ~15 m²/mouth co-claimed | `_archive/BRIEF-dead-end-mouth-junction-RETIRED-2026-07-22.md` §3 (retired-in; read as appendix) |
 | Triple-derived dead-ends | 70 / 29 / 50 | §3.1 |
 | Inert `thruNodeEnds` | 0 markers across 101 tiles | §3.3 — ⛔ replace, don't leave beside |
 

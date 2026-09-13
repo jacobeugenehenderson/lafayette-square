@@ -6,7 +6,7 @@ which artifact each one reads, and what is done / owed / abandoned. Everything e
 
 *Measured against the code 2026-08-23; §2 and §7 re-measured 2026-08-24. What is still owed
 to make it true: `LEDGER-exorcism-wren.md`. The night-shift baton:
-`BRIEF-arborist-join-and-budget.md` (repo root). Prior versions: `_archive/`.*
+`_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` (repo root). Prior versions: `_archive/`.*
 
 > ⛔ **Every number below is a COMMAND, not a figure.** A count written into prose is stale
 > the day it is written and is then quoted for months (`CLAUDE.md`). Run the line.

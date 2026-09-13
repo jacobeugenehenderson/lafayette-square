@@ -6,7 +6,7 @@ code — and the ranked work to close the gap in **both** directions:
 
 - **Product → Promise** — *build the thing we claim.* (Homes in `ROADMAP.md` + `SECURITY.md`.)
 - **Promise → Product** — *correct the claim to match the thing.* (Homes in the pitch/canon docs;
-  the discipline instrument is `AUDIT-MATRIX.md`'s "capability statement = dead-code detector.")
+  the discipline instrument is `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`'s "capability statement = dead-code detector.")
 
 > **What this is / isn't.** A **reference-kind synthesis**, pointer-not-restatement. It does not own
 > any fact — every punchlist line points to its detail home. It exists because the *outside-in* read
@@ -29,7 +29,7 @@ code — and the ranked work to close the gap in **both** directions:
 > meta-lesson *is* Part III.3, demonstrated on the reviewer. Kept visible on purpose.
 >
 > **Reading order:** `ORIENTATION.md` → `README §⭐ START HERE` → this. Sits *beside* `ROADMAP.md`
-> (what's left) and `AUDIT-MATRIX.md` (the promise↔product instrument); it is the *lens*, they are the
+> (what's left) and `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` (the promise↔product instrument); it is the *lens*, they are the
 > *boards*.
 
 ---

@@ -50,7 +50,7 @@ function resolveLookId() {
 //
 // We still fall back (a blank screen would be worse), but loudly, and the
 // fallback is now legible in the console instead of invisible. No behaviour
-// change for a registered look. (`BRIEF-ls-bleed-excision.md` site 5.)
+// change for a registered look. (`docs/briefs/BRIEF-ls-bleed-excision.md` site 5.)
 function resolveInstance() {
   const id = resolveLookId()
   const hit = INSTANCES[id]

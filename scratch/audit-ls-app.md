@@ -3,7 +3,7 @@
 > **Pathologist: Lintel.** The load-bearing beam spanning the slab↔consumer opening.
 > Read-only walk, no code changes. Domain: the production consumer app + the
 > integration/emit seam (`Scene.jsx`, `LafayetteScene.jsx`, listings/place-cards,
-> `ContactModal`, nav/UI, `index.html`, deploy, auth). Matrix format per `AUDIT-MATRIX.md`.
+> `ContactModal`, nav/UI, `index.html`, deploy, auth). Matrix format per `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`.
 > Walked against branch `cartograph-looks-pass-ab` @ `4335009`.
 
 ---

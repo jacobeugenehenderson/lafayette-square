@@ -36,7 +36,7 @@ IMPACT: a listed prod crash-risk is spent. Someone "applying the one-liner" woul
 CLAIM: "`luForRing` decides a whole block's LU from one point sample; on a miss it falls to `pickLuFromHash`, a weighted random palette… **Root for HPDM: `derive.js:1020` reads only `stl_parcels.json`; the 14,597 County parcels are… ignored by the land-use join.**"
 ACTUAL: fixed at `40c7e2e5` and logged in this cluster's own sibling doc as `DOC-CODE-COHERENCE` **C15 ✅ excised 2026-08-01**. `derive.js:1038` now loops `[['stl_parcels.json','city'], ['stlco_parcels.json','county']]` jurisdiction-tagged; mapping moved to `cartograph/parcel-landuse.mjs`; the third rung is `underived`, not `'residential'` (C16), with a pour-time report at `derive.js:3059-3066`. `pickLuFromHash` is the mechanism C16 explicitly retracts as the headline cause.
 `blockLandUse` = **0 entries in all 7 scenes** — CONFIRMED (broader than "both scenes").
-IMPACT: **ROADMAP's #1 starred live defect and DOC-CODE-COHERENCE C15/C16 directly contradict each other, in the same cluster.** Anyone reading ROADMAP dispatches `BRIEF-land-use-derivation.md` at work that already landed.
+IMPACT: **ROADMAP's #1 starred live defect and DOC-CODE-COHERENCE C15/C16 directly contradict each other, in the same cluster.** Anyone reading ROADMAP dispatches `docs/briefs/BRIEF-land-use-derivation.md` at work that already landed.
 ⚠️ **Residual that survives the excision, and is not tracked anywhere:** `tileGround.js:3079` still ends `return best || pickLuFromHash(hashKey(blockKeyFromRing(ring)))` — the hash palette is *still wired as a live fallback* on the FILL side. C16 marks its row ✅; the fallback it names is only half gone.
 
 ### ROADMAP.md:51 (A00 · RIP OUT THE LS FALLBACKS) — FALSE for 4 of its 5 measured sites
@@ -67,7 +67,7 @@ IMPACT: a live warning that *worktree dispatch is unreliable* — which would de
 
 ### BACKLOG.md:104 (Intake Manifest) — FALSE
 CLAIM: "three absent inputs today fall back to **Lafayette Square's** data rather than to nothing (`bake-lamps.js:99`, `bake-trees.js:427/:430`); the known Altadena wrong-lamps bug is a *class*."
-ACTUAL: both excised. `bake-lamps.js:96` reads the authored well **only** `if (scene === 'lafayette-square')`, with `:80-82` explicitly stating it is not a fallback for a lampless town. `bake-trees.js:458-463`: "⭐ Defaults resolve against THIS SCENE, never a literal 'lafayette-square'. Both of these used to fall back to LS's files… for every other scene absence now means absence. (`BRIEF-ls-bleed-excision.md` sites 2 + 3.)"
+ACTUAL: both excised. `bake-lamps.js:96` reads the authored well **only** `if (scene === 'lafayette-square')`, with `:80-82` explicitly stating it is not a fallback for a lampless town. `bake-trees.js:458-463`: "⭐ Defaults resolve against THIS SCENE, never a literal 'lafayette-square'. Both of these used to fall back to LS's files… for every other scene absence now means absence. (`docs/briefs/BRIEF-ls-bleed-excision.md` sites 2 + 3.)"
 IMPACT: same as A00 — the class was closed; the brief entry still asks for it.
 
 ---
@@ -87,7 +87,7 @@ IMPACT: **the largest single miscalibration in the cluster.** Three docs carry a
 ### ROADMAP.md:16 vs BACKLOG.md:150 — the active-brief roster disagrees, and both are wrong
 CLAIM (ROADMAP): "The **6** *active* dispatch briefs stay tracked at root (`BRIEF-land-use-derivation`, `-terminal-node-sweep`, `-street-labels`, `-ls-bleed-excision`, `-arborist-slab-weight`, `-extent-excavation-and-design`)."
 CLAIM (BACKLOG:150): `BRIEF-extent-excavation-and-design` is "✅ **DELIVERED** — fully superseded by its own outputs."
-ACTUAL: root holds **8** briefs — the 5 ROADMAP names that survive, plus **`BRIEF-dead-end-mouth-junction.md`**, **`BRIEF-hpdm-curve-fit.md`**, **`BRIEF-pair-free-edge-anchor.md`**. `BRIEF-extent-excavation-and-design.md` does **not** exist (BACKLOG is right, ROADMAP is wrong). Zero root `HANDOFF-*.md` — that half of the relocation claim CONFIRMED.
+ACTUAL: root holds **8** briefs — the 5 ROADMAP names that survive, plus **`_archive/BRIEF-dead-end-mouth-junction-RETIRED-2026-07-22.md`**, **`_archive/BRIEF-hpdm-curve-fit-SUPERSEDED-2026-09-13.md`**, **`docs/briefs/BRIEF-pair-free-edge-anchor.md`**. `BRIEF-extent-excavation-and-design.md` does **not** exist (BACKLOG is right, ROADMAP is wrong). Zero root `HANDOFF-*.md` — that half of the relocation claim CONFIRMED.
 IMPACT: the index of what is dispatchable is not the set of what is dispatchable, in either direction.
 
 ### BACKLOG.md:5 — trunk CONFIRMED, count stale

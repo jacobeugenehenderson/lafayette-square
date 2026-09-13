@@ -1,7 +1,7 @@
 # BRIEF — the Arborist: the join, the geometry budget, and the tree
 
 **You are a FRESH agent.** Read `CLAUDE.md` (the routing gate) first. ⛔ Do **not** read
-`BOZ.md`. Then `arborist/ORIENTATION.md` — the front door.
+`docs/agents/BOZ.md`. Then `arborist/ORIENTATION.md` — the front door.
 
 > ⚠️ **EVERY PREMISE BELOW IS A CLAIM, INCLUDING ITS NUMBERS.** Each carries the command
 > that produced it. Confirm before building on it and say what you found.
@@ -54,7 +54,7 @@ with London Plane finally appearing at all. Real, and currently missing. **But i
 | # | step | state today |
 |---|---|---|
 | **1** | **Wire `arborist/vocabulary.mjs`** into `roster-coverage.js` | built + tested, **unwired**. 160 of 180 census names resolve to nothing |
-| **2** | **Cut over the taxonomy**, 19 → 31 (`PROPOSAL-rubric-axes.md` §7) | approved, **unexecuted**. ⛔ stale-key check FIRST |
+| **2** | **Cut over the taxonomy**, 19 → 31 (`_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` §7) | approved, **unexecuted**. ⛔ stale-key check FIRST |
 | **3** | **Dossiers — what each species NEEDS** | ⚠️ **10 of 180** |
 | **4** | **Tag parts on those axes** | ⚠️ **4 of 239 chassis ratified · 0 of 9 bark · 0 of 18 leaf** |
 | **5** | green/red finally means something | — |
@@ -193,7 +193,7 @@ smaller canopy card sits inside a shadow sized for the mesh tree it replaced —
 led with the shadows.** Nothing about the impostor split can be judged honestly until the
 shadow and the drawn tree agree.
 
-### ⛔ ② THE GROUND SEAM (white bands at trunk bases) — ▶ `BRIEF-ground-seam.md`
+### ⛔ ② THE GROUND SEAM (white bands at trunk bases) — ▶ `docs/briefs/BRIEF-ground-seam.md`
 Fully diagnosed and specced, **not implemented — trees first.** One line: the trunk lerps
 toward ground **albedo**, which can only lighten. Not a regression — the blend was dormant on
 the map and the land-use pour switched it on. Spec, origin, two ruled-out theories and two

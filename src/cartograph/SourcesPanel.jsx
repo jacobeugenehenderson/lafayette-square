@@ -7,7 +7,7 @@ import { fetchIntake, saveIntakeSource } from './api.js'
  *
  * Reached from the Stage toolbar. The outward-facing face of
  * `INTAKE-CATALOGUE.md` — same germane fact as the Extent tool's Intake panel,
- * other register (`BOZ.md §0`): Intake answers *"what does THIS town still
+ * other register (`docs/agents/BOZ.md §0`): Intake answers *"what does THIS town still
  * need"*, Sources answers *"what goes into a town at all, and where do I go."*
  *
  * ⛔ TWO THINGS THIS PANEL IS NOT, both corrected by Jacob 2026-07-20:

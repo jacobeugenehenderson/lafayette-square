@@ -11,8 +11,8 @@ Jacob: *"we do the first 20 to get our sea legs before we attempt the big corpus
 ⭐ Ultimately we want **all 84, then every town.** This run tells us whether the machinery is
 ready for that — and which axes need more aliases before it is.
 
-▶ Route first (`CLAUDE.md`): `arborist/ORIENTATION.md §2` (the join) · `PROPOSAL-rubric-axes.md`
-(the 31 axes, approved + executed) · `TRAIT-SURVEY-FINDINGS.md` (the sources, all six verified).
+▶ Route first (`CLAUDE.md`): `arborist/ORIENTATION.md §2` (the join) · `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md`
+(the 31 axes, approved + executed) · `_archive/TRAIT-SURVEY-FINDINGS-SUPERSEDED-2026-09-13.md` (the sources, all six verified).
 
 ---
 
@@ -69,7 +69,7 @@ already carry `canopyBaseNorm` **with no data source behind it**) · `leaf.type`
 
 ---
 
-## 3. SOURCES — verified. ⛔ Read `TRAIT-SURVEY-FINDINGS.md` before fetching anything.
+## 3. SOURCES — verified. ⛔ Read `_archive/TRAIT-SURVEY-FINDINGS-SUPERSEDED-2026-09-13.md` before fetching anything.
 - **NC State Plant Toolbox** — the vocabulary source. 4 bark fields, 13 leaf, 10 stem.
   Vocabularies are two open endpoints: `plants.ces.ncsu.edu/ajax_filters/` ·
   `/ajax_id_filters/`. Labels differ from prose — ⛔ **key on `field_key`, never a copied label.**

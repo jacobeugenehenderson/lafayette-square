@@ -66,4 +66,4 @@ Instance #1 was not built by the kit. Measured, not asserted — re-derive befor
 
 `cartograph/OPERATIONS.md` (the pour runbook gains its real worked example) · `FEATURES.md` if the hardwire retirements change what the kit can claim. Commit message names the register, or says "reaches no register."
 
-▶ Related and **not** prerequisites any more, given the ruling above: carrying OSM node ids through `fetch.js` (`EXTENT-DESIGN §4.1`, *"own ticket"* — makes the key exact rather than positional, so *future* towns re-pour without losing authoring) · `BRIEF-scene-inputs-are-not-committed.md`.
+▶ Related and **not** prerequisites any more, given the ruling above: carrying OSM node ids through `fetch.js` (`EXTENT-DESIGN §4.1`, *"own ticket"* — makes the key exact rather than positional, so *future* towns re-pour without losing authoring) · `_archive/BRIEF-scene-inputs-are-not-committed-LANDED-2026-09-13.md`.

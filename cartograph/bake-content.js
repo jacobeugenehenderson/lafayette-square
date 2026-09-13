@@ -303,7 +303,7 @@ function classifyPoi(tags) {
 // tags then refine (`refineUseFromListing`); that one is per-FACE and produces a
 // paint class with no catch-all. The code→bucket meaning is what they share, and
 // it is homed in parcel-landuse.mjs — change a bucket's meaning there and check
-// this site (`BOZ.md §3`, one home per fact).
+// this site (`docs/agents/BOZ.md §3`, one home per fact).
 function classifyUse(parcel, luMap) {
   const code = parcel && parcel.land_use_code
   if (!code) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }

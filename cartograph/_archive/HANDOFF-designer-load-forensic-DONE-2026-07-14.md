@@ -48,4 +48,4 @@ Your budget decides *what* gets chunked. Don't build the repair; hand back the n
 - ⛔ **Do not touch Lafayette Square.** LS is PROD, was contaminated and clobbered earlier today, and is now restored + verified byte-clean. Altadena only. **Never partial-bake against LS** (standalone `bake-ground.js` drops `poolmap`/`colormap` from `ground.json` — I did that and had to restore).
 - Don't fix, don't refactor, don't "improve" the building build.
 - The instrumentation is **throwaway** — leave it in for now; it gets stripped when the repair lands.
-- Deliverable: **`DESIGNER-LOAD-FORENSIC.md`** at repo root — the budget table, the chunk boundaries, the cheap wins, and anything that contradicts the framing above.
+- Deliverable: **`_archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md`** at repo root — the budget table, the chunk boundaries, the cheap wins, and anything that contradicts the framing above.

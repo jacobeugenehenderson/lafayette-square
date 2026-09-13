@@ -23,7 +23,7 @@ ACTUAL: skeleton.js:843  `const CURVE_FIT = process.env.CURVE_FIT === '1'   // O
         So the on-disk LS frame was produced with `CURVE_FIT=1`. Running the documented
         command (`node cartograph/skeleton.js`) reproduces a DIFFERENT, curve-less frame.
         `CURVE_FIT` appears nowhere in SKELETON.md (or any doc in this cluster). It is
-        documented only in `ROADMAP.md` A4, `ACCORDANCE-REVIEW.md` PA-3, `BRIEF-hpdm-curve-fit.md`
+        documented only in `ROADMAP.md` A4, `ACCORDANCE-REVIEW.md` PA-3, `_archive/BRIEF-hpdm-curve-fit-SUPERSEDED-2026-09-13.md`
         — all three of which say it is **OFF**, i.e. they too disagree with the artifact.
 IMPACT: Kit-critical, and exactly the silent-substitution shape. An operator pouring town #2
         follows the documented two-step, gets faceted polylines instead of bezier chains, and

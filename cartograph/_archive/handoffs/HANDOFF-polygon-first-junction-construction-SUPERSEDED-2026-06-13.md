@@ -12,14 +12,14 @@ There is **ONE source of truth per junction**: the constructed intersection poly
 
 ## ⛔ FORENSIC-FIRST — read the canon before you touch code
 
-This exact problem burned a full session (2026-06-12) by **skipping the docs and patching the wrong (FILL) layer.** The canon already holds the answer. Per `CLAUDE.md` + `BOZ.md §4` (a hard gate): read the sections below, to the section, **before** you diagnose or build. "I'll check the code" verifies code against doctrine — it is not a substitute for reading the doctrine.
+This exact problem burned a full session (2026-06-12) by **skipping the docs and patching the wrong (FILL) layer.** The canon already holds the answer. Per `CLAUDE.md` + `docs/agents/BOZ.md §4` (a hard gate): read the sections below, to the section, **before** you diagnose or build. "I'll check the code" verifies code against doctrine — it is not a substitute for reading the doctrine.
 
 ---
 
 ## FIRST READS — the route (cite-by-section)
 
 0. **`CLAUDE.md`** (repo root) — the routing gate: route → read canon → reuse forensics → name the SHAPE/FILL layer → the **operator's eye is the gate** (proxy renders mislead on this map).
-1. **`BOZ.md §0`** feature index — rows **"Weird-street junction mess"** + **"Polygon-first / the Data Wall"** + **"Junction / corner construction"**; then **§4** (the hard gate) + **§3** (trim-on-subsume — if you settle a doc, trim it).
+1. **`docs/agents/BOZ.md §0`** feature index — rows **"Weird-street junction mess"** + **"Polygon-first / the Data Wall"** + **"Junction / corner construction"**; then **§4** (the hard gate) + **§3** (trim-on-subsume — if you settle a doc, trim it).
 2. **`OSM2STREETS-GROUNDING.md` — THE build spec.**
    - **§4.2** = your task, named: *intersection-everywhere at prebake* (every node → an intersection record: kind + per-leg **trim by edge-collision** + **intersection polygon** + **corner-pairs by clockwise adjacency** + absorb legs consumed by trim as `internal_junction_road`).
    - §1.4 (the trim-back / assemble algorithm), §1.2 (cross-section on the road), §1.6 (blocks = faces — our tiles).

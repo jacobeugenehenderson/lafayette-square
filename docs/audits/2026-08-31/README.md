@@ -58,7 +58,7 @@ Recorded because each was asserted confidently and measured false:
 - `scratch/` is **not** the clone-weight problem. 2.6% of the pack. (**03**)
 - "12 npm vulnerabilities, 2 critical" **overstates shipped risk ~12×** — 11 of 12 are dev-only
   tooling; `npm audit --omit=dev` returns one. (**07**)
-- `PROPOSAL-rubric-axes.md` says "not yet executed"; **it landed 2026-08-28**. Rot, not
+- `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` says "not yet executed"; **it landed 2026-08-28**. Rot, not
   aspiration. (**05**)
 - `CLAUDE.md`'s producer-stamp receipt cites `tileGround.js:3749`; the stamp is at **`:4748`**,
   and `producerReason` is **conditional**, so "on every tile" is true of `producer` only. (**02**)

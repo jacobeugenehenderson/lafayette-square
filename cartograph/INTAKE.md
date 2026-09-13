@@ -14,7 +14,7 @@ The neighborhood frame is **assembled from many open + measured sources**, not o
 
 ## 0.5 ⭐ The Extent tool — the INCLUSION POLYGON (LANDED 2026-07-14; boundary model corrected 2026-07-20)
 
-> ⭐ **Design of record for this subsystem: [`EXTENT-DESIGN.md`](../EXTENT-DESIGN.md)** (ratified 2026-07-22) — what the Extent tool actually *makes* (the served skeleton = a labeled point cloud + node stamps), the hood<disc<bb size model, the two centers, the seal-as-identity-registry, and the ordered v1 worklist. `EXTENT-EXCAVATION.md` is its evidence layer. **This §0.5 is the as-built flow;** read EXTENT-DESIGN before changing the model.
+> ⭐ **Design of record for this subsystem: [`EXTENT-DESIGN.md`](../EXTENT-DESIGN.md)** (ratified 2026-07-22) — what the Extent tool actually *makes* (the served skeleton = a labeled point cloud + node stamps), the hood<disc<bb size model, the two centers, the seal-as-identity-registry, and the ordered v1 worklist. `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` is its evidence layer. **This §0.5 is the as-built flow;** read EXTENT-DESIGN before changing the model.
 
 **Intake used to be "hand-edit `geography.json` + `neighborhood_boundary.json`, then run the CLI." It is now a screen: the `◎ Extent` tool (`src/cartograph/ExtentApp.jsx`).** It is the intake/step-0 destination — the operator-driven onboarding of a *new* place, front-to-back, with no JSON hand-editing and no CLI. This IS the "intake — onboard a place" stage `PIPELINE.md` had marked deferred; it is no longer deferred.
 

@@ -1,6 +1,6 @@
 # BRIEF — a live tree (and the sky) the marketing site can embed
 
-**You are a fresh agent.** Do not read `BOZ.md`. Read `CLAUDE.md` (the gate), then
+**You are a fresh agent.** Do not read `docs/agents/BOZ.md`. Read `CLAUDE.md` (the gate), then
 this, then the code sites named below **before** forming a plan.
 
 **The deliverable, in one line:** a Ward surface that renders **one tree, fully

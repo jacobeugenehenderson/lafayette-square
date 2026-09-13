@@ -1,16 +1,16 @@
 # EXTENT — the rebuild design (make every scene the same, built by the one kit)
 
 **Status:** DESIGN, ratified in conversation with Jacob 2026-07-22 (Boz). Successor to
-`EXTENT-EXCAVATION.md` (the forensic — the evidence for every claim here). This doc is the
+`_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` (the forensic — the evidence for every claim here). This doc is the
 *design of record*: what the Extent tool makes, what "the same" means, the two operator surfaces,
 the seal sequence, and the ordered v1 worklist. Not yet decomposed into dispatch briefs.
 
 > ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README §⭐ START HERE` → then the canon this
 > design builds on: **`cartograph/SKELETON.md §0–§2, §6`** (the skeleton is the First Bake, a black
 > box, the artifact a gajillion consumers trust) · **`cartograph/ARCHITECTURE.md §"The Extent tool &
-> the Pour"`** (the live procedure) · **`EXTENT-EXCAVATION.md §0–§0.8`** (Jacob's ruled spec) ·
+> the Pour"`** (the live procedure) · **`_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md §0–§0.8`** (Jacob's ruled spec) ·
 > **`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`** (the same disease one layer down) ·
-> **`BRIEF-ls-bleed-excision.md`** + **`INTAKE-CATALOGUE.md`** (the bleed class; the Inputs tab).
+> **`docs/briefs/BRIEF-ls-bleed-excision.md`** + **`INTAKE-CATALOGUE.md`** (the bleed class; the Inputs tab).
 
 ---
 
@@ -22,7 +22,7 @@ The Extent subsystem and the polygon/stamp subsystem have the **same disease**, 
   the type away and emits `{ring, edges}`; the FILL re-guesses identity *from shape* and co-claims
   1400 m². Cure: *the polygon asks the stamp* — carry identity onto the face; the FILL **reads**
   ownership instead of negotiating it.
-- **Extent (`EXTENT-EXCAVATION.md` PART D):** *membership is computed, never recorded.* Membership is
+- **Extent (`_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` PART D):** *membership is computed, never recorded.* Membership is
   re-derived in **nine** places, two disagreeing. ✅ **The identity half is FIXED for `msbf-`** — the
   registry + high-water allocator landed at `fetch-msbf.js:179` (*"an existing footprint keeps its
   PERMANENT msbfId; an unseen one appends at highWater+1; nothing is renumbered"*), so `msbfId: i` =
@@ -428,4 +428,4 @@ None block steps 1–4. Step 5 (LS) is gated on the step 3 checks, by ruling, no
 
 *Written 2026-07-22 (Boz), from the session that assembled this model with Jacob. Reference-kind —
 keep it lean; when the design changes, change it here and repoint. Evidence lives in
-`EXTENT-EXCAVATION.md`; do not duplicate it.*
+`_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md`; do not duplicate it.*

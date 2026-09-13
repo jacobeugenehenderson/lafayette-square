@@ -21,7 +21,7 @@ Places). Continues the dead-end class: the LANDED leg-flip + cap-slope work (the
 
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → then
 > **`RIBBONS.md §1`** (the derivation chain + the CONSTRUCT-the-hard-polygons doctrine) +
-> **`SECTION.md §6`** (the corner construction) + **`THROAT-JUNCTION-FINDINGS.md`** (the detector
+> **`SECTION.md §6`** (the corner construction) + **`_archive/THROAT-JUNCTION-FINDINGS-SUPERSEDED-2026-09-13.md`** (the detector
 > invariant that measures this class). Memory: `[[project_dead_end_cap_is_an_end_coupler]]`,
 > `[[feedback_shape_pass_fix_needs_rebake_before_the_eye]]`,
 > `[[feedback_geometry_bugs_may_be_data_bugs]]`, `[[project_the_palimpsest_code_path_multiplicity]]`.
@@ -46,7 +46,7 @@ junction-construction class (`RIBBONS §1` doctrine), **not** a FILL defect.
 
 > ⛔ **Do NOT fix this in the FILL.** `README §START HERE` on the through-node break: *"the
 > through-node break is NOT a FILL patch (that class was tried + reverted —
-> `THROAT-JUNCTION-FINDINGS.md`)."* Four separate FILL patches already sit on top of this collapse
+> `_archive/THROAT-JUNCTION-FINDINGS-SUPERSEDED-2026-09-13.md`)."* Four separate FILL patches already sit on top of this collapse
 > (`mouths` disc, through-road pullback, corner-leg synthesis, cap-segOrd identity). A fifth is the
 > wrong move.
 

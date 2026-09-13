@@ -1,6 +1,6 @@
 # Correction-banners excised from the active docs — 2026-08-06
 
-**Diary. One file for the whole banner-excision pass** (`BRIEF-excise-the-banners.md`, Quill). Not
+**Diary. One file for the whole banner-excision pass** (`docs/briefs/BRIEF-excise-the-banners.md`, Quill). Not
 authoritative — this is where the *false sentences* went, so the active docs could stop carrying them.
 
 **Why this exists.** `CLAUDE.md §PRUNE AS YOU GO` (2026-08-06): *"a correction banner sitting next to the

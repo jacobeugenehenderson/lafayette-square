@@ -2,7 +2,7 @@
 
 **Status: v1 (2026-06-15) — the productization deliverable of the forensic-audit campaign.** The one doc that frames the *whole* project for the three audiences who need it: **Marketing** (you can do this), **Fundraising** (here are all the moving pieces), **Engineering** (what it is, how you reach it, how to fix it). It is a **synthesis + index**, not a new source of truth — each section points to the canonical home and aggregates it for its audience.
 
-> **Provenance.** Built from the four pathologist walks (`scratch/audit-{cartograph,arborist,ls-app,docs}.md`), their aggregation (`AUDIT-MATRIX.md` "THE MASTER MATRIX"), the per-app pitches (`*/FEATURES.md`), the pipeline + architecture canon, and the productization seed (`plans/front-front-end-and-productization.md`). The three purposes are defined there (`§"three documentation purposes"`).
+> **Provenance.** Built from the four pathologist walks (`scratch/audit-{cartograph,arborist,ls-app,docs}.md`), their aggregation (`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` "THE MASTER MATRIX"), the per-app pitches (`*/FEATURES.md`), the pipeline + architecture canon, and the productization seed (`plans/front-front-end-and-productization.md`). The three purposes are defined there (`§"three documentation purposes"`).
 >
 > ⚠️ **Honesty note.** The *structure* and the *engineering/fundraising* content are drafted from the audited record. The **marketing voice is Jacob's to sharpen** — the per-app product sheets (the `FEATURES.md` docs) are the sales-voice SSoT; this doc aggregates their claims, it doesn't replace them. A capability that reads as nonsense here is a **dead-code flag**, not just a copy nit (the campaign's vestigial-detector).
 
@@ -69,7 +69,7 @@ Raw data flows downhill; each stage freezes a thing the next trusts (`PIPELINE.m
 The hard-won doctrine: *the skeleton is the first bake · chains die at the wall · the curb is a concentric offset of the centerline · every output is a best guess, and everything is overridable* (`NEIGHBORHOOD-INPUTS §0.0`).
 
 ### The inventory at a glance
-The forensic audit walked every rendering environment (Designer · Toy · Stage · Preview · Production) across all domains and inventoried **~108 classified capabilities** (the three code domains; plus 86 docs): **~58 keep · ~31 fix · ~10 queued-for-removal**. The dev-doc spine is healthy; the cruft is contained and tagged. Full rollup + per-item detail: **`AUDIT-MATRIX.md` "THE MASTER MATRIX"** → `scratch/audit-*.md`.
+The forensic audit walked every rendering environment (Designer · Toy · Stage · Preview · Production) across all domains and inventoried **~108 classified capabilities** (the three code domains; plus 86 docs): **~58 keep · ~31 fix · ~10 queued-for-removal**. The dev-doc spine is healthy; the cruft is contained and tagged. Full rollup + per-item detail: **`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` "THE MASTER MATRIX"** → `scratch/audit-*.md`.
 
 ### The inputs are real, not guessed
 OpenStreetMap geometry · City of St. Louis parcels + right-of-way + land-use (municipal) · operator-measured street widths (61/68 LS streets) · ML building footprints · Mapillary facades · elevation DEM — all fortified against max-res aerials. A generic 3D map extrudes a default city; ours is grounded in the actual record, block by block. (`cartograph/INTAKE.md`.)
@@ -82,17 +82,17 @@ LOOK is authored; the open work is the SHAPE campaign (make the skeleton produce
 ## 3. ENGINEERING — "what it is / how you reach it / how to fix it"
 
 ### How you reach any piece (the routing)
-One canonical reading order, every session: **`ORIENTATION.md`** (the plain-language mental model) → **`README.md §⭐ START HERE`** (the settled conclusion per topic + the cross-cutting feature index "where does X live") → **the topic canon** it names. (`BOZ.md` is the coordinator's doc, summoned only when you're Boz.)
+One canonical reading order, every session: **`ORIENTATION.md`** (the plain-language mental model) → **`README.md §⭐ START HERE`** (the settled conclusion per topic + the cross-cutting feature index "where does X live") → **the topic canon** it names. (`docs/agents/BOZ.md` is the coordinator's doc, summoned only when you're Boz.)
 
 ### What it is, per stage (the authoritative homes)
-Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · the freeze (folded into `PIPELINE.md` §5) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
+Each pipeline stage has ONE deep home: `INTAKE` · **`SKELETON`** (the frame) · `PREBAKE` · `SURVEY` (SHAPE) · the freeze (folded into `PIPELINE.md` §5) · **`SECTION`** (FILL) · `BAKE` · `STAGE` (look). Geometry doctrine: **`RIBBONS.md`** (the tile model). Execution spine: **`PIPELINE.md`**. The doc system itself (3 kinds × 3 registers) is `docs/agents/BOZ.md §4` + `CLAUDE.md §PRUNE AS YOU GO`.
 
 ### How to fix / troubleshoot
 - **First diagnostic: "is this chains again?"** A wrong silhouette is upstream (skeleton/survey); how the ribbon *bends* is Section. The fix is to move the wall earlier, never patch chains deeper. (`PIPELINE §Wall`.)
 - **The derivation chain:** centerline → polygon → ribbon. Fix at the centerline; patching the shadow comes right back. (`RIBBONS §1`, `SKELETON §3.5`.)
 - **The eye is the gate.** Proxy renders mislead on this map; verify map-wide, zoomed-out, on the operator's eye (`feedback_proxy_render_is_not_the_operator_eye`).
 - **The correctness suite** automates the operator's eye — one RED-until-true invariant per bug-class; the detector is the deliverable. (`POLYGON-FIRST §5`.)
-- **The open fix queue + blocked-on knots** (what's broken, what's stuck behind it): `AUDIT-MATRIX.md` "THE MASTER MATRIX" ⓷.
+- **The open fix queue + blocked-on knots** (what's broken, what's stuck behind it): `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` "THE MASTER MATRIX" ⓷.
 
 ### The proto-API
 The three `serve.js` backends already serve `/api/*` (cartograph Looks/bake · meteorologist presets/almanac · arborist library). The audit inventoried them (master matrix ⓶ Tier-4); formalizing over the cleaned single-source-of-truth is the tier-4 horizon.
@@ -113,7 +113,7 @@ The de-hardwiring inventory *is* the productization spec, seen through four lens
 
 ## Status & maintenance
 
-- **v1 drafted 2026-06-15.** This is the campaign's productization deliverable (the "Show Bible" step 2 of `AUDIT-MATRIX.md` named).
+- **v1 drafted 2026-06-15.** This is the campaign's productization deliverable (the "Show Bible" step 2 of `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` named).
 - **The per-app `FEATURES.md` docs are the marketing SSoT** — sharpen the sales voice there; this doc aggregates.
 - **Remaining campaign steps** (`cartograph/BACKLOG.md §"Forensic audit → Show Bible"`): execute the removal queue (post-v1) · route the Tier-1/2/4 register into `plans/` · re-audit the held ribbons/corners exclusion zone (now the tile model landed) · build out `OPERATIONS.md` (the stalled operator register) as T3 authoring lands.
 - **Keep it honest:** when a per-app pitch or a productization tier changes at its home, update the one-liner here in the same sweep (the accord rule, `BOZ §4`). A stale Show Bible mistrains every audience it serves.

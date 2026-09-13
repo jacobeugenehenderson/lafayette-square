@@ -10,7 +10,7 @@ sidewalk/treelawn band BREAKS at the junction station** — green treelawn punch
 pale sliver appears where the band should run straight past. **Invisible in Survey** (the curb
 silhouette `iA` is clean — this is why it "doesn't show in Survey") → it is a FILL/ribbon-interior
 *manifestation* of an upstream *un-constructed junction polygon*, NOT a curb-silhouette defect and
-NOT a FILL bug (the FILL band-neck patch for this class was tried and reverted — see `THROAT-JUNCTION-FINDINGS.md`).
+NOT a FILL bug (the FILL band-neck patch for this class was tried and reverted — see `_archive/THROAT-JUNCTION-FINDINGS-SUPERSEDED-2026-09-13.md`).
 
 ## The matched pair — ONE mechanism
 - **Kennett Place × S 18th** `(386.5,149.0)` — the **clean archetype**. Through-street

@@ -3,7 +3,7 @@
 > **Pathologist: Increment.** (An increment borer cores a living tree to read its
 > growth rings without felling it — a read-only read of an accreted pipeline.)
 > Read-only walk, 2026-05-27. No code changed. Classifications carry evidence per
-> `AUDIT-MATRIX.md`; deletions await Boz sign-off. The gated LOD/novelty brief is
+> `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`; deletions await Boz sign-off. The gated LOD/novelty brief is
 > **deferred to the end** (§7) per `HANDOFF-audit-arborist.md` sequencing — inventory
 > first, payoff last.
 

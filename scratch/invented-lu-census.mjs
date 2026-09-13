@@ -1,7 +1,7 @@
 /**
  * invented-lu-census.mjs — how many tiles get their land use from the HASH?
  *
- * BRIEF-land-use-derivation.md §5, step 1: "re-measure the invented-LU share
+ * docs/briefs/BRIEF-land-use-derivation.md §5, step 1: "re-measure the invented-LU share
  * properly, using `ringInteriorPoint` (not centroid), on both scenes."
  *
  * ⭐ THE KIT POINT: this is not an LS/HPDM number, it is a per-scene detector.

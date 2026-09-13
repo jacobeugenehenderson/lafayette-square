@@ -56,7 +56,7 @@ to nothing — it degrades to Lafayette Square.** That is a direct violation of 
 ("the system just doesn't show them"): a bleed doesn't show a *missing* feature, it shows *someone
 else's*.
 
-**Eight verified sites** — full detail + the excision plan in **`BRIEF-ls-bleed-excision.md`**.
+**Eight verified sites** — full detail + the excision plan in **`docs/briefs/BRIEF-ls-bleed-excision.md`**.
 
 | # | Site | What bleeds | Severity |
 |---|---|---|---|

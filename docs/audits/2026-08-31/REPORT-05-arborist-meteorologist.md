@@ -30,7 +30,7 @@ vanished.** `grep -rn "MAX_VERTEX_ATTRIBS\|getProgramParameter\|VALIDATE_STATUS"
 scripts cartograph` returns **only prose comments**. **The ceiling is enforced by commentary; the
 failure is a silent GPU link error.** Pure Layer 0 question 2, and ~10 lines to fix.
 
-**3 · A landed spec advertises itself as pending.** `PROPOSAL-rubric-axes.md:3-4` says *"Not yet
+**3 · A landed spec advertises itself as pending.** `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md:3-4` says *"Not yet
 executed: `arborist/rubric.json` is unchanged."* **`rubric.json` now carries all 36 proposed axes
 exactly** — `leaf.type/shape/margin/arrangement/growthway/length/width`, `bark.texture`,
 `bark.plate_outline`, and all six of §3's new axes. Doc froze 2026-08-24; rubric moved 2026-08-28
@@ -79,10 +79,10 @@ execution). PARTIAL: `README.md` (207), `FEATURES.md` (277), `OPERATIONS.md` (85
 about — it is aspiration handled correctly.**
 
 **Domain root — 12 docs, 3,706 lines.** KEEP: `TREE-INTAKE.md` (162, explicitly per-town/Tier ①,
-kit-shaped), `HANDOFF-tree-render-2026-08-28.md` (113, live — and the only home of two sized work
-items), `TRAIT-SURVEY-FINDINGS.md` (1,361, honest research output; MERGE to `_archive` once cited).
-ARCHIVE: `PROPOSAL-rubric-axes.md` (189, landed). `SALON-INTERFACE.md` (185) says *"in flight,
-2026-06-25"* on a doc touched 2026-08-28 and names a non-trunk branch. `HIPOINTE-DEMUN-ROSTER.md`
+kit-shaped), `docs/briefs/HANDOFF-tree-render-2026-08-28.md` (113, live — and the only home of two sized work
+items), `_archive/TRAIT-SURVEY-FINDINGS-SUPERSEDED-2026-09-13.md` (1,361, honest research output; MERGE to `_archive` once cited).
+ARCHIVE: `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` (189, landed). `SALON-INTERFACE.md` (185) says *"in flight,
+2026-06-25"* on a doc touched 2026-08-28 and names a non-trunk branch. `_archive/HIPOINTE-DEMUN-ROSTER-ROTTEN-2026-09-13.md`
 (501) is ROT-by-own-admission and honest about it.
 
 ⛔ **17 `BRIEF-*.md` at repo root, 6 arborist-domain, and `grep -niE
@@ -350,7 +350,7 @@ authoring UI 3,407. Mounted at `Scene.jsx:990-996` outside every conditional, pl
    **Catches the class at intake.**
 5. **Fix `atlas-kind-classifier.js:52-55`** — anchor, resolve the `/branch/` contradiction, add
    `needle`, print the ambiguous count; then decide the deeper one (`:53` matches the species name).
-6. **Doc triage, cheapest first** — archive `PROPOSAL-rubric-axes.md` and `meteorologist/SPEC.md`;
+6. **Doc triage, cheapest first** — archive `_archive/PROPOSAL-rubric-axes-LANDED-2026-09-13.md` and `meteorologist/SPEC.md`;
    excise `README.md:63` and the arborist README contradiction; replace "13 params" in six files with
    the command; give the six spent briefs an outcome line.
 7. **To Jacob** — C-08 (is the killed impostor's emission removable?) and C-10

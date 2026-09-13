@@ -203,7 +203,8 @@ scratch; it is the work item that comes *with* promotion.
 
 **Promotion set:** the 57 doc-cited `claims-*` (**0.61 MiB**) plus `correctness-detector.mjs`,
 `rebake-shape.mjs`, `tree-lu-exclusion-census.mjs`, `thrunode-frozen-verify.mjs`,
-`coupler-slit-universal.mjs`. Move to `checks/`, add `"check": "node checks/run-all.mjs"`, repoint
+`coupler-slit-universal.mjs`. Move to `checks/`, add `"check": "node <runner>"` (proposed as `run-all.mjs`), repoint
+⚠️ **PROPOSAL — and it SHIPPED under a different name 2026-09-13.** The runner is `checks/run.mjs`, wired as `npm test`. `run-all.mjs` was never created; ⛔ do not cite it as a thing that exists.
 doc references **in the same commit**, write a 30-line `checks/README.md` listing each check's claim
 in one line.
 
@@ -308,8 +309,8 @@ git grep -n -o '_handoffs/[A-Za-z0-9_.-]*\.md' -- ':!.gitignore' ':!scratch' | s
 | `HANDOFF-pipeline-reproducibility.md` | `cartograph/POLYGON-FIRST.md` |
 | `HANDOFF-freeze-the-curb-in-the-first-bake.md` | `cartograph/PREBAKE.md` |
 | `HANDOFF-hero-impostor-foundation.md` | `arborist/ARCHITECTURE.md` |
-| `HANDOFF-hero-impostor-and-startup-weight.md` | `BRIEF-arborist-join-and-budget.md` |
-| `HANDOFF-curve-primitive-skeleton.md` | `BRIEF-hpdm-curve-fit.md` |
+| `HANDOFF-hero-impostor-and-startup-weight.md` | `_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` |
+| `HANDOFF-curve-primitive-skeleton.md` | `_archive/BRIEF-hpdm-curve-fit-SUPERSEDED-2026-09-13.md` |
 | `HANDOFF-doc-sweep-corrections.md` | archive×2 |
 
 **All 10 exist on disk; none exist in any clone.** `README.md:167` and `cartograph/SECTION.md:278`
@@ -437,7 +438,7 @@ Two things the grep does not catch, both to check by hand:
   paths. Read those 4 sites first.
 - **Intra-`scratch/` imports** were excluded from the scan by design. If a promoted check imports a
   helper still in `scratch/`, the helper must travel with it — **verify with `node
-  checks/run-all.mjs`, not by inspection.**
+  checks/run.mjs` (the proposal’s `run-all.mjs` shipped under this name), not by inspection.**
 
 **Verification of no side effects:** every script executed was first confirmed free of
 `writeFileSync`/`mkdirSync`/`rmSync`/`unlinkSync`/`execSync`/`spawnSync`/`fetch(`.

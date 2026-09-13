@@ -1,7 +1,7 @@
 # BRIEF — the Arborist: find the spine, then exorcise the ghosts
 
 **You are a FRESH agent.** Read `CLAUDE.md` (the routing gate) first. ⛔ Do **not**
-read `BOZ.md` — this is not a coordinator job.
+read `docs/agents/BOZ.md` — this is not a coordinator job.
 
 > ⚠️ **EVERY PREMISE BELOW IS A CLAIM, NOT A FACT.** The numbers were measured on
 > 2026-08-23 and are reproducible with the commands given. **Confirm before you
@@ -35,7 +35,7 @@ confusing. Say your name in your first reply.
 ### Your first four moves, in order
 
 1. **Read `CLAUDE.md`.** All of it. Layer 0 is not a preamble — the three
-   questions decide whether a finding is a finding. ⛔ Do not read `BOZ.md`.
+   questions decide whether a finding is a finding. ⛔ Do not read `docs/agents/BOZ.md`.
 2. **Read the Arborist quartet in this order:** `arborist/ORIENTATION.md` →
    `README.md` → `ARCHITECTURE.md` → `FEATURES.md` → `BACKLOG.md` → `NOTES.md`.
    ⭐ **Take notes on what you CANNOT answer after reading them.** That list is

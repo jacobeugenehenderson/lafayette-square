@@ -19,7 +19,7 @@ with no stake in the prior verdicts is the right instrument. You are not Boz. **
 word, your choice; it joins the name-trail.)*
 
 > ⛔ **ROUTE FIRST.** `CLAUDE.md` (the gate — read **Layer 0** and mean it) → `ORIENTATION.md` →
-> `README.md §⭐ START HERE`. Then `BOZ.md §2` (the three kinds of doc) and `§3` (trim-on-subsume +
+> `README.md §⭐ START HERE`. Then `docs/agents/BOZ.md §2` (the three kinds of doc) and `§3` (trim-on-subsume +
 > the accord sweep) — **those two sections are the specification for this entire task.** Do not
 > start editing before you have read them; the rule below is meaningless without them.
 
@@ -120,7 +120,7 @@ eviction, not correction.**
 | a line number (`serve.js:531`) | "freezing wrong data launders it into authority" |
 
 **If evicting a status claim would lose something load-bearing, MOVE it — never drop it.** A one-line
-entry in `ROADMAP`/`BACKLOG`, or a dated file in `cartograph/_archive/` for narrative. `BOZ.md §0`:
+entry in `ROADMAP`/`BACKLOG`, or a dated file in `cartograph/_archive/` for narrative. `docs/agents/BOZ.md §0`:
 **additive/archiving, never destructive.** ⚠️ Confirm anything you put in `_archive/` is **tracked** —
 that folder was gitignored until `f9bbee28`.
 
@@ -211,7 +211,7 @@ a doc that oversells. Sweep for these deliberately; they are easy to skip.
 
 ## 5. The accord gate — you are not done when the edits are done
 
-`BOZ.md §3`: **the unit of work is not "the doc you edited" — it is the corpus in accord.**
+`docs/agents/BOZ.md §3`: **the unit of work is not "the doc you edited" — it is the corpus in accord.**
 
 > **The accord test:** read any two docs side by side. Could they disagree about *what is current ·
 > what is superseded · where the live home is*? If yes, you are not finished.

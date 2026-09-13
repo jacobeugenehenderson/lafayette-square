@@ -142,7 +142,7 @@ still holds after `ORIENTATION → README → ARCHITECTURE → FEATURES → BACK
     `README §⭐ START HERE` as the front door. ⭐ **Three front doors, and the
     disease `ORIENTATION` names in its own second paragraph.**
 33. **How does an Arborist doc relate to the root-level ones?** `SALON-INTERFACE.md`,
-    `TREE-INTAKE.md`, `SHOW-BIBLE.md`, `HIPOINTE-DEMUN-ROSTER.md` live at repo root
+    `TREE-INTAKE.md`, `SHOW-BIBLE.md`, `_archive/HIPOINTE-DEMUN-ROSTER-ROTTEN-2026-09-13.md` live at repo root
     and are cited as live Arborist canon.
 
 ---
@@ -165,7 +165,7 @@ still holds after `ORIENTATION → README → ARCHITECTURE → FEATURES → BACK
 
 ---
 
-## F-01 · `BRIEF-arborist-exorcism.md §2.A.2` · **the brief miscounts the surfaces**
+## F-01 · `_archive/BRIEF-arborist-exorcism-SUPERSEDED-2026-09-13.md §2.A.2` · **the brief miscounts the surfaces**
 - **Claims:** "There are eleven workstages in `src/arborist/`."
 - **Code:** `src/arborist/` holds 14 files, of which **7 are mountable surfaces**
   (`ArboristApp.jsx:100-107` is the whole router): `SalonWorkstage` (default) ·

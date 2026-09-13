@@ -3,7 +3,7 @@
  * "WILL THE READ-IN STILL LOAD?" — the standing guard on the coordinator memory index.
  *
  * WHY THIS EXISTS (2026-08-07). `MEMORY.md` is the first thing loaded every
- * session and the spine of Boz's read-in (`BOZ.md §5`). It is also the file
+ * session and the spine of Boz's read-in (`docs/agents/BOZ.md §5`). It is also the file
  * every session APPENDS to. On 2026-08-07 it reached 20 KB against a 24.4 KB
  * read limit — one more session from **silently truncating its own tail**,
  * which is the exact failure mode the read-in exists to prevent: the index
@@ -21,7 +21,7 @@
  *   2. DEAD LINKS — every `[label](file.md)` target exists, and every `[[slug]]`
  *      resolves to a memory's frontmatter `name:` (NOT its filename — `[[boz]]`
  *      lives in `boz-the-continuous-coordinator.md`). A dead pointer is the one
- *      unforgivable doc error (`BOZ.md §4`).
+ *      unforgivable doc error (`docs/agents/BOZ.md §4`).
  *   3. UNREACHABLE MEMORIES — files no index line points at. A memory nobody can
  *      reach is as absent as one that was never written. Reported, not fatal:
  *      index files legitimately hold the pointers for their own topic.
@@ -130,7 +130,7 @@ if (bytes > BUDGET) {
 
 if (deadMd.length || deadWiki.length) {
   failed = true
-  console.log('⛔ DEAD POINTERS — a dead pointer is the one unforgivable doc error (BOZ.md §4):')
+  console.log('⛔ DEAD POINTERS — a dead pointer is the one unforgivable doc error (docs/agents/BOZ.md §4):')
   for (const t of deadMd) console.log(`     [](${t})  → no such file`)
   for (const s of deadWiki) console.log(`     [[${s}]]  → no memory declares name: ${s}`)
   console.log()
@@ -204,7 +204,7 @@ if (unreachable.length) {
 // rotted: 16 dead citations were repaired by hand on 2026-09-13 and nothing
 // would have caught any of them, or the next one. A memory that cites a path
 // which no longer exists is worse than silent — it is read as recall from a
-// high-context seat and acted on (`BOZ.md §0`).
+// high-context seat and acted on (`docs/agents/BOZ.md §0`).
 //
 // ⛔⛔ NEVER RESOLVE BY BASENAME. `arborist/OPERATIONS.md` does not exist;
 //    `meteorologist/OPERATIONS.md` does. A check that "helpfully" found the

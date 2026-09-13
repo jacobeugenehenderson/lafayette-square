@@ -26,7 +26,7 @@
  * A persisted status is one that goes stale and then lies; a wrong-but-real
  * status is useful, a hardcoded green one is worse than nothing.
  *
- * ⛔ THIS IS AN INDEX, NOT A MANUAL (`BRIEF §2.1a`, `BOZ.md §3` — one home per
+ * ⛔ THIS IS AN INDEX, NOT A MANUAL (`BRIEF §2.1a`, `docs/agents/BOZ.md §3` — one home per
  * fact). A row carries a POINTER to the doc and one line of what it unlocks.
  * Do not copy procedure text in here. When the procedure changes, the doc
  * changes; this file keeps pointing at it.
@@ -140,7 +140,7 @@ function measureBuildingFabric(scene) {
  * kit does not reliably degrade to nothing, it degrades to *Lafayette Square*,
  * and a row that bleeds must be visibly distinct from one that honestly
  * vanishes. Recording it here is what lets the panel tell the truth about it
- * before the excision lands (`BRIEF-ls-bleed-excision.md`).
+ * before the excision lands (`docs/briefs/BRIEF-ls-bleed-excision.md`).
  */
 export const ABSENT = {
   /** The feature simply isn't rendered. The aspirational model, working. */

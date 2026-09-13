@@ -1,7 +1,7 @@
 # A14 WITHDRAWN + the LS-substitution triage that produced it — retired 2026-08-08
 
 **Why this is here.** Three things were retired from live docs on 2026-08-08. None was deleted; all
-three are below with what replaced them. Live homes: `ROADMAP.md` (A11 · A12 · A13 · the two orderings) · `EXTENT-DESIGN.md §2.1/§3.3/§6` · `BOZ.md §5` ·
+three are below with what replaced them. Live homes: `ROADMAP.md` (A11 · A12 · A13 · the two orderings) · `EXTENT-DESIGN.md §2.1/§3.3/§6` · `docs/agents/BOZ.md §5` ·
 `[[feedback_layer_toggles_are_troubleshooting_not_drift]]`.
 
 ---

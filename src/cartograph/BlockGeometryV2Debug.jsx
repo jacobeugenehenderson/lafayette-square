@@ -410,7 +410,7 @@ export default function BlockGeometryV2Debug({
     // ⛔ GATE — the fe consumers mount only under tool==='surveyor'|'measure';
     // the neutral Design view reads none of this. Pre-T4 this pass also built the
     // figure-ground meshes and cost 285 s on Altadena — 95% of a 320 s load, drawing
-    // nothing (DESIGNER-LOAD-FORENSIC.md). That geometry is gone and the build is
+    // nothing (_archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md). That geometry is gone and the build is
     // now ~0.5 s, so the gate is no longer load-bearing — it stays because the work
     // is still not free and still unread outside those two tools.
     // surveyActive/measureActive are in the deps: entering either tool builds it.
@@ -560,7 +560,7 @@ export default function BlockGeometryV2Debug({
   // "the freeze hasn't arrived yet". Seeded true so the very first render (before
   // this effect fires) can't slip through. (Found in the browser console
   // 2026-07-15 — an async race is invisible to a Node harness; the ~80 s it cost
-  // was the bulk of DESIGNER-LOAD-FORENSIC.md's unattributed "gray screen".)
+  // was the bulk of _archive/DESIGNER-LOAD-FORENSIC-SUPERSEDED-2026-09-13.md's unattributed "gray screen".)
   const [frozenPending, setFrozenPending] = useState(() => !surveyActive && !!scene)
   const frozenKeyRef = useRef(null)
   useEffect(() => {

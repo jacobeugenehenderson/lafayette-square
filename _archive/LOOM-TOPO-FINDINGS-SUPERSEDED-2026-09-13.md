@@ -2,7 +2,7 @@
 
 **Read-only.** Extends Sieve's harness: `scratch/correctness-detector.mjs` (now carries two
 graph-level invariants beside the five geometric ones). No production code touched. Continues
-`SIEVE-DETECTOR-FINDINGS.md` and `POLYGON-FIRST.md §5` (the "two unbuilt topological invariants").
+`_archive/SIEVE-DETECTOR-FINDINGS-SUPERSEDED-2026-09-13.md` and `POLYGON-FIRST.md §5` (the "two unbuilt topological invariants").
 
 ```
 node scratch/correctness-detector.mjs            # full report (geometric + topological)

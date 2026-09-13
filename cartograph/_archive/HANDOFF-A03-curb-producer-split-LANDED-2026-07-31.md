@@ -107,7 +107,7 @@ The live stroke is not only a perf wart; **it is how the tools work.** Handles a
 - ⛔ **Standup with Jacob before writing code.** Bring §1 (confirm you read it right), the Check A number, and the §4 fork **as prose**.
 - ⛔ **Do NOT re-promote over a committed artifact without Jacob's eye on the difference** — `ROADMAP A01`: the pipeline does not reproduce its own committed output, and re-deriving destroyed the map three times on 2026-07-31. The inputs are tracked as of `4e3dd70a`; `promote-ribbons.js` refuses a material change without `--yes`.
 - **Writers require an explicit scene** — `node pipeline.js` alone exits 2. Pass `--scene=lafayette-square`.
-- **Write bounds:** your branch/worktree + `scratch/` (tracked on purpose — reuse the 200+ probes before building one). ⛔ Canonical docs are off-limits **except** `ROADMAP A03` + `WALL.md §2` if you land it — and if you do, **move superseded text to `cartograph/_archive/` dated; never leave a correction stacked on top of what it corrects** (`CLAUDE.md` "Keep it trimmed", `BOZ.md §3`).
+- **Write bounds:** your branch/worktree + `scratch/` (tracked on purpose — reuse the 200+ probes before building one). ⛔ Canonical docs are off-limits **except** `ROADMAP A03` + `WALL.md §2` if you land it — and if you do, **move superseded text to `cartograph/_archive/` dated; never leave a correction stacked on top of what it corrects** (`CLAUDE.md` "Keep it trimmed", `docs/agents/BOZ.md §3`).
 - **Everything inside `lafayette-square.nosync/`**; worktrees under `.claude/worktrees/` (cleaned 2026-07-31 — the tree is empty, dispatch is safe). ⛔ **Do not start a dev server** — one is running.
 - ⭐ **The eye is the gate, and a proxy render is not the eye.**
 

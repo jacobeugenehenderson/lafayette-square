@@ -2,7 +2,7 @@
 
 **Read-only.** Extends the harness `scratch/correctness-detector.mjs` (now carries THREE
 graph-level invariants beside the five geometric ones). No production code touched. Continues
-`SIEVE-DETECTOR-FINDINGS.md` + `LOOM-TOPO-FINDINGS.md`; builds the third topological class
+`_archive/SIEVE-DETECTOR-FINDINGS-SUPERSEDED-2026-09-13.md` + `_archive/LOOM-TOPO-FINDINGS-SUPERSEDED-2026-09-13.md`; builds the third topological class
 `POLYGON-FIRST.md §5` / `SECTION.md §7` name: **does the constructed PED junction agree with
 the constructed ASPHALT junction?**
 

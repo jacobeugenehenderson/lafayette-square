@@ -60,7 +60,7 @@ The classifier + plumbing already exist; the **billboard render is the unbuilt p
 ## REPO STATE at handoff (`curb-offset-draw`, NOT pushed/deployed — branch deploys nothing)
 - **Dirty tracked, = Jacob's 19:33 Grove rebake (post-fix, full leaves, CORRECT):** `public/baked/lafayette-square.json`, `trees-atlas.json`, baked GLBs for birch/blackgum/maple_silver/oak_bur. Commit-or-discard = Jacob's call (regenerable via `/grove/bake`).
 - **Dirty tracked, NOT this work (leave / Jacob's):** `ground.bin`/`ground.json`/`ground.colormap.png`/`scene.json`, `public/looks/index.json`, `public/looks/lafayette-square/design.json` (dev-server timestamp/auto-bake noise).
-- **131 untracked** = `scratch/` (Linden tree arc) + `PIP.md`-adjacent — leave as-is (Jacob's instruction earlier).
+- **131 untracked** = `scratch/` (Linden tree arc) + `docs/agents/PIP.md`-adjacent — leave as-is (Jacob's instruction earlier).
 
 ## ⭐ ARC-2 STANDUP DECISIONS (2026-06-25, with Jacob) — build to these
 

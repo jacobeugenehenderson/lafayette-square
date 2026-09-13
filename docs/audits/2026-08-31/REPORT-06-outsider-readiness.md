@@ -395,7 +395,7 @@ instance name appears in 704 tracked non-markdown files. By every mechanical mea
 | `_handoffs/` | **56 local files, 0 tracked, cited by 17 docs** | **0** | ❌ — C7 |
 | `.github/` | exactly two workflow files | 2 | ✅ but empty of everything else |
 | `public/codedesk/` | a QR-code app + a screenshot + `love.jpg` | ~12 | ❌ **entirely unguessable**; holds a committed endpoint URL |
-| `loom` | **does not exist** — only `LOOM-TOPO-FINDINGS.md` at root | — | a doc naming a directory that isn't there |
+| `loom` | **does not exist** — only `_archive/LOOM-TOPO-FINDINGS-SUPERSEDED-2026-09-13.md` at root | — | a doc naming a directory that isn't there |
 
 ⛔ **Undeclared toolchain:** 35 tracked `.py` files with two `requirements.txt`, and
 `grep -niE 'python|pip install|\.py' README.md` → **no output.** A stranger following the README
@@ -454,7 +454,7 @@ and will assume the latter, because it is safer.
    *"This file configures AI coding agents working on this repository. If you are a person orienting
    to the project, read `ORIENTATION.md` and `README.md` instead."* **That single edit removes most
    of the damage** — it reframes everything below as tooling configuration rather than a confession.
-2. **Move `BOZ.md`, `PIP.md`, `AGENT-VALIDATION-SURFACES.md`, `AUDIT-MATRIX.md`,
+2. **Move `docs/agents/BOZ.md`, `docs/agents/PIP.md`, `docs/agents/AGENT-VALIDATION-SURFACES.md`, `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`,
    `ACCORDANCE-REVIEW.md` → `docs/internal/`.** (Not `.claude/` — that's gitignored and would hide
    them from collaborating agents.)
 3. **Move the 17 `BRIEF-*.md` and the `*-FINDINGS.md` set → `docs/briefs/` and `docs/forensics/`.**

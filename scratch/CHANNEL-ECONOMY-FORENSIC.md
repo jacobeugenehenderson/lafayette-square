@@ -2,7 +2,7 @@
 
 > **Pathologist: Prism.** (A prism splits one white beam into its component channels —
 > the exact move this forensic makes on the render.) Read-only walk, 2026-06-18. **No code
-> changed, no pipeline touched.** Classifications carry evidence per `AUDIT-MATRIX.md`;
+> changed, no pipeline touched.** Classifications carry evidence per `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`;
 > every load-bearing claim re-verified against the code/library myself (two `Explore`
 > sweeps fed breadth — I re-checked each finding; one missed the tree bloom-stability
 > constraint, corrected below per `audit-arborist.md §6`'s "verify the artifact" rule).

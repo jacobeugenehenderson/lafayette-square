@@ -1,6 +1,6 @@
 # Doc sweep — TIER 2 report
 
-**Agent: Wren.** Fresh. Routed `CLAUDE.md` → `ORIENTATION.md` → `README §⭐ START HERE` → `BOZ.md §2/§3`,
+**Agent: Wren.** Fresh. Routed `CLAUDE.md` → `ORIENTATION.md` → `README §⭐ START HERE` → `docs/agents/BOZ.md §2/§3`,
 then `_handoffs/HANDOFF-doc-sweep-corrections.md` (Tier 1's closed list) and all six sweep reports.
 No pours, no bakes, no dev server. Docs only. `PIPELINE-CLAIMS.md` untouched.
 

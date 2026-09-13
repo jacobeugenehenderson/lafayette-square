@@ -99,6 +99,6 @@ G12 has **two subclasses**, conflated in the docs:
 1. **`HANDOFF-tile-feature-ledger.md` row G12** — keep "PARTIAL/open"; add that subclass 1's fix (`8e1e414`) is **stranded, never landed**, and subclass 2's clamp was **reverted** (`7a2e2db`). The Albion band-neck is the live exemplar.
 2. **`SECTION.md §7`** — G12 stays in the open tail; note the two subclasses + the orphaned `thinTile` wiring.
 3. **`HANDOFF-band-fold-fix-RESULT.md`** — flag that its "DONE/flip the ledger/retire HANDOFFs" follow-ups were **never run** and `8e1e414` never merged; it is a *stranded* result, not a landed one.
-4. **`BOZ.md` feature index** — the "Band-fold / thorns" row should point here for the cap/clamp half.
+4. **`docs/agents/BOZ.md` feature index** — the "Band-fold / thorns" row should point here for the cap/clamp half.
 
 *(Corrections deferred to Jacob's go — this doc is the study; the edits are the follow-through.)*

@@ -2,7 +2,7 @@
 
 **STATUS: ✅ APPROVED by Jacob 2026-08-24 — all four questions YES.** Not yet executed:
 `arborist/rubric.json` is unchanged. §7 is the cutover surface.
-**Evidence:** `TRAIT-SURVEY-FINDINGS.md` (13 sources) · vocabularies pulled live from the two
+**Evidence:** `_archive/TRAIT-SURVEY-FINDINGS-SUPERSEDED-2026-09-13.md` (13 sources) · vocabularies pulled live from the two
 open NC State endpoints, 2026-08-24.
 
 ---

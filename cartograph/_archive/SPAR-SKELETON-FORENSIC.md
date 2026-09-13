@@ -6,7 +6,7 @@
 
 ## Verdict
 
-**West 18th ↔ Dolman IS a genuine skeleton-level defect — the §5a dog-leg mechanism firing at a NAME-TRANSITION node**, a class no prior fix ever touched. The other four flagged junctions (Carroll, Hickory St, Hickory Lane, Grattan) are **NOT** skeleton defects — clean centerlines, no name-transition; their fragmentation is downstream junction-band FILL (`THROAT-JUNCTION-FINDINGS.md`, `SECTION §7`). **Do not chase those in `skeleton.js`.**
+**West 18th ↔ Dolman IS a genuine skeleton-level defect — the §5a dog-leg mechanism firing at a NAME-TRANSITION node**, a class no prior fix ever touched. The other four flagged junctions (Carroll, Hickory St, Hickory Lane, Grattan) are **NOT** skeleton defects — clean centerlines, no name-transition; their fragmentation is downstream junction-band FILL (`_archive/THROAT-JUNCTION-FINDINGS-SUPERSEDED-2026-09-13.md`, `SECTION §7`). **Do not chase those in `skeleton.js`.**
 
 ## What the skeleton produces
 

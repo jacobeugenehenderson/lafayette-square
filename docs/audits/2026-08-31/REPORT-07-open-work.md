@@ -35,7 +35,7 @@ release ledger.
 **And critically, the drift is not uniform — it tracks board age:**
 
 > **Of 20 cited `file:line` references checked, 12 resolve today, 8 drifted (40%). All 8 drifted
-> citations come from `AUDIT-MATRIX.md` (2026-06-15) and `ACCORDANCE-REVIEW.md` (2026-07-18). Every
+> citations come from `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` (2026-06-15) and `ACCORDANCE-REVIEW.md` (2026-07-18). Every
 > citation written after ~2026-08-20 — ROADMAP A17, ROADMAP A0, SECURITY.md, the substrate-walk flag
 > — resolved exactly.**
 
@@ -209,8 +209,8 @@ IDs are this report's (`L-`), to survive the ROADMAP's own ID collision (§6.2).
 `PRESETS.browse` · `lsq-tokens.css`. ⚠️ **Two queue rows already executed and one rationale now
 false — the queue needs one re-verify pass**, which its own `Verify-before-cut` column asks for.
 
-**Doc-currency debt (4):** `SLAB-CONTRACT.md:9` · `AUDIT-MATRIX.md` frozen 06-15 · `ls/STATUS.md`
-(**self-declared, deliberate**, blocked on Extent) · `AGENT-VALIDATION-SURFACES.md`.
+**Doc-currency debt (4):** `SLAB-CONTRACT.md:9` · `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` frozen 06-15 · `ls/STATUS.md`
+(**self-declared, deliberate**, blocked on Extent) · `docs/agents/AGENT-VALIDATION-SURFACES.md`.
 
 **Dependency/build (2):** `poly2tri` + polyfill · dev-tooling CVEs.
 
@@ -357,7 +357,7 @@ key, `CRON_SECRET`, Apps-Script admin passphrase.
 |---|---|---|---|---|
 | `ROADMAP.md` | **Board** | 58 top-level (20 closed) | 08-29 | **The live master. Keep.** |
 | `cartograph/BACKLOG.md` | **Board** | 50 bullets (12 closed) | 08-28 | ⚠️ **The fifth board.** Substantially disjoint. |
-| `AUDIT-MATRIX.md` | Instrument + queue | ~108 rows, 10-row queue | **06-30** | **Stalest. 2 of 10 rows executed; 1 rationale false.** |
+| `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` | Instrument + queue | ~108 rows, 10-row queue | **06-30** | **Stalest. 2 of 10 rows executed; 1 rationale false.** |
 | `ACCORDANCE-REVIEW.md` | **Lens** | 18 rows | 08-29 | Explicitly pointer-not-restatement. Keep as lens. |
 | `PIPELINE-CLAIMS.md` | Claims ledger, one family | 43 (16 REQ / 27 OUR) | 08-05 | Honest about scope. Keep. |
 | `SECURITY.md` | Board, one domain | 17 findings | 08-25 | **Best-run board here.** Keep. |
@@ -396,7 +396,7 @@ which is `A0`, unrelated to `A00`. **Renumber before anything else.**
 2. **Fold `cartograph/BACKLOG.md` into Column A**, or demote it explicitly with a one-line pointer
    per item. **It is a second board with 50 bullets a ROADMAP reader never sees — the real
    duplication.**
-3. **`AUDIT-MATRIX.md` → the Diary**, keeping two live extracts: the **removal queue**
+3. **`_archive/AUDIT-MATRIX-DIARY-2026-09-13.md` → the Diary**, keeping two live extracts: the **removal queue**
    (re-verified) and the **productization register**, both moved into ROADMAP `C`/`H`. Its
    *methodology* is good and belongs in the Process doc, not on a board.
 4. **`ACCORDANCE-REVIEW.md` stays a lens.** Its rows should carry ROADMAP IDs rather than a third ID

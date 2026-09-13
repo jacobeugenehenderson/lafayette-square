@@ -1,7 +1,7 @@
 /**
  * lu-provenance-census.mjs — WHERE does each block face's land use come from?
  *
- * BRIEF-land-use-derivation.md §5 step 1, done properly. The brief's harness
+ * docs/briefs/BRIEF-land-use-derivation.md §5 step 1, done properly. The brief's harness
  * measured the wrong stage: it assumed `luForRing` tests a tile against PARCEL
  * faces and falls to `pickLuFromHash` when the probe misses. It does not —
  * `faceList` is `ribbons.faces`, which derive.js walks from the SAME centreline

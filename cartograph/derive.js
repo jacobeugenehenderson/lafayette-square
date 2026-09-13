@@ -780,7 +780,7 @@ function clipParcelsToRoundedBlocks(parcels, parkParcelIds, roundedBlocks, class
 // is `parcel-landuse.mjs` (jurisdiction-aware, no catch-all, returns null for a
 // code it cannot read) wrapped by deriveLayers's `classifyLandUse(parcel)`,
 // which turns a null into the honest `underived` class and tallies it for the
-// pour report. See BRIEF-land-use-derivation.md §2.
+// pour report. See docs/briefs/BRIEF-land-use-derivation.md §2.
 
 function loadSurvey() {
   const p = join(RAW_DIR, 'survey.json')

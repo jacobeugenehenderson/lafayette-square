@@ -2,7 +2,7 @@
 
 **One job: an upright object should meet the ground correctly.** Trunks and lamp posts both.
 
-⛔ **DO THIS AFTER THE TREES ARE PLACED CORRECTLY** (`BRIEF-arborist-join-and-budget.md` §0a).
+⛔ **DO THIS AFTER THE TREES ARE PLACED CORRECTLY** (`_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` §0a).
 A seam tuned against impostors is wrong for mesh trees — an impostor's bark is a single rear
 card with no trunk at the base.
 

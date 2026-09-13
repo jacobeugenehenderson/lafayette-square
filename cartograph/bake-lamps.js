@@ -82,7 +82,7 @@ function clipToBoundary(lamps, scene) {
 // is the LS-bleed root: it is simultaneously "the shared default" and "LS's own
 // data" (`EXTENT-DESIGN §2.1`). It is read here ONLY for lafayette-square and
 // never as a fallback for anyone else — absence must render nothing, never
-// another installation's lamps (`BRIEF-ls-bleed-excision.md` site 1; before that
+// another installation's lamps (`docs/briefs/BRIEF-ls-bleed-excision.md` site 1; before that
 // guard, any lampless town baked LS's 80 under its own name, in its own frame).
 //
 // ▶ The clean end-state is a per-scene `data/<scene>/authored_lamps.json`; moving

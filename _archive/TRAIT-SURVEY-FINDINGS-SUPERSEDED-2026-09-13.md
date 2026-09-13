@@ -1,6 +1,6 @@
 # TRAIT SURVEY — what the world actually records about trees
 
-**Answers `BRIEF-tree-trait-survey.md`. Research output only — no schema, no collection, no code.**
+**Answers `_archive/BRIEF-tree-trait-survey-SUPERSEDED-2026-09-13.md`. Research output only — no schema, no collection, no code.**
 Every field list below was observed on a page or API response that was actually fetched, and the URL
 or endpoint is given. Anything not directly observed is marked **unconfirmed** and left at that.
 

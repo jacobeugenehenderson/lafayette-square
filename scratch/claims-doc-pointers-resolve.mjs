@@ -14,8 +14,18 @@
 //   default: existence only (fast).  --run: also import each module, catching moved exports.
 import fs from 'fs'
 import path from 'path'
-const DOCS = ['README.md', 'ORIENTATION.md', 'ROADMAP.md',
-  ...fs.readdirSync('cartograph').filter(f => f.endsWith('.md')).map(f => `cartograph/${f}`)]
+import { execSync } from 'node:child_process'
+// ⛔ THIS WAS A LITERAL LIST, AND A LITERAL LIST GOES GREEN BY NOT LOOKING.
+//    It named README/ORIENTATION/ROADMAP + cartograph/*.md, so it never covered the root briefs —
+//    and when 37 root docs moved to docs/briefs, docs/agents and _archive on 2026-09-13 it would
+//    have kept passing while covering none of them. A pointer check that stops looking at moved
+//    files is worse than a red one: it reports "every pointer resolves" about a corpus it no
+//    longer reads. So the set is DERIVED from the repo, and it widens by itself.
+// ⛔ `_archive/` is excluded ON PURPOSE: a Diary doc legitimately cites what was live when it was
+//    written, and demanding those resolve would manufacture failures for correct history.
+const DOCS = execSync('git ls-files "*.md"', { encoding: 'utf8' })
+  .split('\n').filter(Boolean)
+  .filter(f => !f.includes('_archive/') && fs.existsSync(f))
 const RUN = process.argv.includes('--run')
 const cited = new Map()                       // script → [docs citing it]
 for (const d of DOCS) {

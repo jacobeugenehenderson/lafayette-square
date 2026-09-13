@@ -4,7 +4,7 @@
 > linkage — fitting, since the central finding here is copied sources of truth). Read-only
 > walk, 2026-05-27. Domain: the authoring corpus — Designer (Survey/Measure/Design), Toy,
 > Stage, Preview (Desktop+Mobile), the `cartograph/` backend + serve.js, the cartograph store.
-> Instrument: `AUDIT-MATRIX.md`. Slab emit/bake is a shared seam (coordinated, not owned).
+> Instrument: `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`. Slab emit/bake is a shared seam (coordinated, not owned).
 
 ---
 
@@ -76,7 +76,7 @@ ones. The `toy` scene is a live proof that a second instance already runs throug
 
 ## Matrix
 
-Columns per `AUDIT-MATRIX.md`. Cruft-class: `real` · `duct-tape` · `vestigial`.
+Columns per `_archive/AUDIT-MATRIX-DIARY-2026-09-13.md`. Cruft-class: `real` · `duct-tape` · `vestigial`.
 Productization: `future-setting` (tier1) · `slab-field` (tier2) · `api-route` (tier4) · `none`.
 
 ### A. Designer — modes, tools, overlays

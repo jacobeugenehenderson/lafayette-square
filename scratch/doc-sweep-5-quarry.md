@@ -1,6 +1,6 @@
 # DOC SWEEP — CLUSTER 5 (Intake & extent) — agent **Quarry**
 
-Docs: `cartograph/INTAKE.md` · `INTAKE-CATALOGUE.md` · `EXTENT-DESIGN.md` · `EXTENT-EXCAVATION.md` · `NEIGHBORHOOD-INPUTS.md`
+Docs: `cartograph/INTAKE.md` · `INTAKE-CATALOGUE.md` · `EXTENT-DESIGN.md` · `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` · `NEIGHBORHOOD-INPUTS.md`
 Read-only. Nothing fixed. Findings only.
 
 **62 load-bearing claims extracted** → **39 CONFIRMED · 14 FALSE · 5 PARTIAL (was-true-now-stale) · 4 UNVERIFIABLE**
@@ -26,7 +26,7 @@ CLAIM: "`commit-extent` **refuses** to re-center a committed hood by >5 m withou
 ACTUAL: `serve.js:1398-1405` — *"(Re-center guard **REMOVED** 2026-07-23 — EXTENT-DESIGN §3.3) … `allowRecenter` is now unused; kept in the destructure for payload compatibility."* Zero occurrences of `recenter-blocked` in the tree.
 IMPACT: The doc presents a safety mechanism that no longer exists as the thing protecting committed hoods. Anyone auditing the destruction surface (or writing the seal gate `EXTENT-DESIGN §4` calls for) will count a guard that isn't there. Note this is a *three-way* disagreement: `INTAKE` says >5 m, `EXTENT-EXCAVATION §A2` says ">100 m", the code says no re-center at all.
 
-### `EXTENT-DESIGN.md` §0/§3.3/§4/§6-step-2 + `EXTENT-EXCAVATION.md` §0.8② — **FALSE (the fix landed)**
+### `EXTENT-DESIGN.md` §0/§3.3/§4/§6-step-2 + `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` §0.8② — **FALSE (the fix landed)**
 CLAIM: "Building identity is `msbfId: i` = the fetch **array index**; a re-fetch renumbers every building and every listing/logo/card silently re-points." And §6 worklist step 2: "**HPDM identity lock** … **the single thing between HPDM and 'safe to hand a customer'**."
 ACTUAL: `cartograph/fetch-msbf.js:179-190` — *"── IDENTITY LOCK (EXTENT-DESIGN §4) ── Consult the per-scene registry: an existing footprint keeps its PERMANENT msbfId; an unseen one appends at highWater+1; **nothing is renumbered**."* `assignIds(...)` + `loadRegistry`/`saveRegistry`, with a coincident-centroid collision warning. `msbfId: ids[i]`, not `i`.
 IMPACT: The worklist's #2 priority — named as the customer blocker — is **done**, and three documents still describe it as the subsystem's structural root. A pass picking up this design would rebuild an allocator that exists.
@@ -61,7 +61,7 @@ ACTUAL: comparing `public/baked/lafayette-square/scene.json` to `ksi-y-m-yn`'s t
 ### `INTAKE-CATALOGUE.md` §2.5 "`BACKLOG.md:235` asserts 'Meteorologist already owns per-Look climate fields'" — **FALSE (citation dead)**
 ACTUAL: `cartograph/BACKLOG.md` contains **zero** occurrences of "climate". The parked idea the section calls "precisely this intake manifest" no longer exists at the cited home. The underlying point (no per-Look climate record exists) is unaffected.
 
-### `EXTENT-EXCAVATION.md` §B4 "the retraction is incomplete in the CANON, and the gap is on the routing path" — **FALSE today**
+### `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` §B4 "the retraction is incomplete in the CANON, and the gap is on the routing path" — **FALSE today**
 CLAIM: `PREBAKE.md:56`, `ARCHITECTURE.md:168`, `INTAKE.md:26`, `OPERATIONS.md:20`, `NEIGHBORHOOD-INPUTS.md:318/327-329` still state the retracted excluder model — *"On this evidence that is still true today."*
 ACTUAL: all swept. `PREBAKE.md` now leads with `(polygon ∪ activate) − (exclusions ∪ hide)` and closes *"(This file was the one the retraction commit `004a33e3` missed; fixed in the 2026-07-23 canon sweep.)"* `ARCHITECTURE.md` §disc, `OPERATIONS.md` step 6 and `NEIGHBORHOOD-INPUTS §11` step 3 each now state the corrected model with an explicit retraction note.
 IMPACT: B4 is the section that tells the next agent *the canon will misinform you*. Left standing, it manufactures distrust of docs that are now correct — and it costs a re-sweep to discover that.
@@ -78,7 +78,7 @@ ACTUAL: no such file. The 756-record artifact is `cartograph/data/lafayette-squa
 ### `NEIGHBORHOOD-INPUTS.md` §5.1 "the render ledger … `bake-buildings.loadBuildings` reads it uniformly **for every scene**" — **MISLEADING**
 ACTUAL: `cartograph/data/*/buildings.json` exists for **`lafayette-square` only**. Every other scene falls through to adapting `clean/map.json`. The *loader* is uniform; the *artifact* is LS-only — which is `EXTENT-EXCAVATION` D7, **CONFIRMED**, and inverts R19 ("one filtered source") for LS specifically.
 
-### `EXTENT-EXCAVATION.md` §0.2 — `clean/street-index.json` "already built" — **PARTIAL**
+### `_archive/EXTENT-EXCAVATION-DIARY-2026-09-13.md` §0.2 — `clean/street-index.json` "already built" — **PARTIAL**
 ACTUAL: exists for **2 of 6 scenes** (`centrum` 2.0 MB, `lafayette-square-staging` 0.3 MB). Absent for `hipointe-demun`, `altadena`, `ksi-y-m-yn`, `lafayette-square`. The two-pass SOFT-fetch design (§0.2) and PART C's face-enumeration hinge both assume it is a per-scene given.
 
 ---

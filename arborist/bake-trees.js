@@ -77,7 +77,7 @@ const LAMP_MAX = 1.5
 // so a Łódź tree took its night glow from Lafayette Square's park geometry at
 // geographically meaningless spots. There was no flag to override it. It is the
 // same file as the bake-lamps bleed, entering by a second, independent door
-// (`BRIEF-ls-bleed-excision.md` site 4).
+// (`docs/briefs/BRIEF-ls-bleed-excision.md` site 4).
 //
 // The scene's OWN baked lamps are the honest source. Absent → no glow, which is
 // correct: a town with no lamp census has no lamp light.
@@ -581,7 +581,7 @@ export async function bakeTrees({
   // its own silently planted LS's 756 park trees under its name, routed through
   // a St-Louis species-collapse table. For LS the resolved paths are unchanged
   // (they are LS's own files); for every other scene absence now means absence.
-  // (`BRIEF-ls-bleed-excision.md` sites 2 + 3.)
+  // (`docs/briefs/BRIEF-ls-bleed-excision.md` sites 2 + 3.)
   // ⚠️ The default is EVERY canonical well this scene has, unioned — not just
   // `park_census.json`. Reading one well was the 2026-07-22 regression: LS baked
   // 729 placements, all `source:'park'`, while its own `park_trees.json` (2,635)
