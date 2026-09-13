@@ -29,7 +29,7 @@ process.exit((console.error('⛔ VOID probe — see the header. Refusing to prod
 // annulus's gross |area| summed 127× high, outer-minus-holes across a pooled band invented 237
 // solids. A point either is or is not inside a ring; that has no sign convention to get wrong.
 // ⛔ Authored state only, through `_proto-feed` (Layer 0 q3).
-// ▶ node scratch/claims-proto-paints-into-medians.mjs [scene ...]
+// ▶ node checks/claims-proto-paints-into-medians.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

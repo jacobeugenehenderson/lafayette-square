@@ -19,7 +19,7 @@
 //
 // ⛔⛔ READ THE `① SOURCE` LINE — only lafayette-square is frozen (`ROADMAP A20`).
 //
-// ▶ node scratch/claims-the-corner-record-reports-the-achieved-radius.mjs [scene ...]
+// ▶ node checks/claims-the-corner-record-reports-the-achieved-radius.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

@@ -15,7 +15,7 @@
 // and reports the very step the ramp removes.
 // ⛔ It reads the painter's own disclosure channel. It re-derives nothing and writes nothing —
 // "a probe that WRITES a value cannot see that the value was already there."
-// ▶ SECTION_DUMP=1 node scratch/claims-the-slope-is-on-the-leg.mjs [scene]
+// ▶ SECTION_DUMP=1 node checks/claims-the-slope-is-on-the-leg.mjs [scene]
 process.env.SECTION_DUMP = '1'
 import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'

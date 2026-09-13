@@ -1,7 +1,7 @@
 // ⛔ SURVEY AND SECTION MUST BE THE SAME THING. Survey draws `buildTileGround`'s live layers;
 // Section opens `_shapeArtifact` through `sectionOpen`. Under ① both must come from ①②③ and
 // agree geometrically — if they disagree, two constructions are on screen at once.
-// ▶ node scratch/claims-survey-and-section-agree.mjs [scene ...]
+// ▶ node checks/claims-survey-and-section-agree.mjs [scene ...]
 import { feed } from './_proto-feed.mjs'
 import { buildTileGround, sectionOpen } from '../src/lib/tileGround.js'
 

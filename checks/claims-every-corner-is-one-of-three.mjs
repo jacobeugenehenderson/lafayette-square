@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ EVERY CORNER RENDERS AS ONE OF THE THREE SANCTIONED SPECS — OR IT IS A DEFECT.
-// ▶ SECTION_DUMP=1 node scratch/claims-every-corner-is-one-of-three.mjs [scene ...]
+// ▶ SECTION_DUMP=1 node checks/claims-every-corner-is-one-of-three.mjs [scene ...]
 //
 // `SECTION §6.1`, in Jacob's words. There are THREE and they fall out of ONE rule; a fourth thing is
 // always a defect, never a new case:
@@ -38,7 +38,7 @@ const pieces = (rings, c, r) => intersectRings(rings, [disc(c, r)]).filter(g => 
 
 if (!sectionDump.on) {
   console.log('⛔ NOT RUN — this check reads ③\'s own resolution and will not reconstruct it.')
-  console.log('   ▶ SECTION_DUMP=1 node scratch/claims-every-corner-is-one-of-three.mjs [scene ...]')
+  console.log('   ▶ SECTION_DUMP=1 node checks/claims-every-corner-is-one-of-three.mjs [scene ...]')
   process.exit(1)
 }
 const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))

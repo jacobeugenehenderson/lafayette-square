@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07.
-// ▶ SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs [scene ...]
+// ▶ SECTION_DUMP=1 node checks/claims-the-pad-is-the-size-of-the-corner.mjs [scene ...]
 //
 // THE DEFECT. The pad's extent came from a fillet's arc where one existed, and otherwise from
 // "the one edge the owners meet across". Two things went wrong at once and both are `RIBBONS §1`:
@@ -25,7 +25,7 @@ import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {
   console.log('⛔ NOT RUN. This check reads ③\'s own per-edge resolution and will not reconstruct it.')
-  console.log('   ▶ SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs [scene ...]')
+  console.log('   ▶ SECTION_DUMP=1 node checks/claims-the-pad-is-the-size-of-the-corner.mjs [scene ...]')
   process.exit(1)
 }
 const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))

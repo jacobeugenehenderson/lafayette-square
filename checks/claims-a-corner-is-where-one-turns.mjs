@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ A CORNER IS A VERTEX WHERE ① TURNS *AND* THE OWNER CHANGES — the shape answers WHETHER,
-// the label answers WHOSE. ▶ node scratch/claims-a-corner-is-where-one-turns.mjs [scene ...]
+// the label answers WHOSE. ▶ node checks/claims-a-corner-is-where-one-turns.mjs [scene ...]
 //
 // ⛔ THE DEFECT THIS EXISTS FOR. `iaCorner` asked ONLY "did the owner change", and an owner is
 // `protoOwners[].skelId` with the chain ordinal stripped — a CHAIN identity. `RIBBONS §1`: "① HAS
@@ -66,6 +66,6 @@ for (const scene of scenes) {
   // state (a road's chunks meet on a straight face; the back of a T). What must never happen is
   // that state being treated as a corner — and THAT is gated by the pad-extent check, not here.
   console.log(`  ⇒ reported, not failed: these are legitimate label changes. The gate is that none`)
-  console.log(`    of them draws a corner — ▶ node scratch/claims-the-pad-is-the-size-of-the-corner.mjs ${scene}`)
+  console.log(`    of them draws a corner — ▶ node checks/claims-the-pad-is-the-size-of-the-corner.mjs ${scene}`)
 }
 process.exit(failures ? 1 : 0)

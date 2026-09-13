@@ -8,7 +8,7 @@
 // ⭐ THIS IS THE LAYER 0 SHAPE EXACTLY: the defect is silent on the commonest class and loud on the
 // rare one, so a town that is mostly residential looks clean and town #2 may not be.
 // ⛔ The gap is measured in m², per tile, against the tile's OWN block silhouette — never by eye.
-// ▶ node scratch/claims-the-block-underlay-never-shows.mjs [scene ...]
+// ▶ node checks/claims-the-block-underlay-never-shows.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'

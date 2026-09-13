@@ -2,7 +2,7 @@
 // the gate is: does ②'s eased contour actually turn at the radius the operator asked for?
 // Measured as the circumradius of consecutive triples along the curb — a straight leg reads huge,
 // an arc reads its radius. ⛔ Compared to the AUTHORED value, never to a hard-coded 4.5.
-// ▶ node scratch/claims-proto-corner-is-authored-radius.mjs [scene ...]
+// ▶ node checks/claims-proto-corner-is-authored-radius.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

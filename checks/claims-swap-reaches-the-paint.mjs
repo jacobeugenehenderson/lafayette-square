@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ THE OPERATOR'S GESTURE, AS A GATE. (Jacob, 2026-09-07: "The swap regime doesn't work on
-// adjacent blocks anymore.") ▶ node scratch/claims-swap-reaches-the-paint.mjs [scene]
+// adjacent blocks anymore.") ▶ node checks/claims-swap-reaches-the-paint.mjs [scene]
 //
 // Paint a slot's TWO arrangements and ask the only question that matters: DO THEY DIFFER?
 // ⛔ A slot whose two arrangements paint alike cannot express the operator's swap — Layer 0 q3,

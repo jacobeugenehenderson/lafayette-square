@@ -2,7 +2,7 @@
 // ⭐⭐⭐ THINK IN ①. A block IS a closed polygon; each edge carries one owner; a CORNER is a vertex
 // where the owner CHANGES. ⇒ A block with N frontages has exactly N corners. ⛔ If an owner appears
 // in TWO arcs, one is a mis-attribution, and every extra arc mints a corner the block does not have.
-// ▶ node scratch/claims-one-frontage-one-arc.mjs [scene ...]
+// ▶ node checks/claims-one-frontage-one-arc.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0

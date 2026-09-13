@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ ③'s FILL, STRUCK LIVE PAST THE WALL — the STAMP INQUIRY, measured.
-// ▶ node scratch/claims-proto-fill-is-live.mjs [scene]
+// ▶ node checks/claims-proto-fill-is-live.mjs [scene]
 //
 // `SECTION §4`'s keystone: freeze the SILHOUETTE, author the FILL live. ③ shipped the FILL frozen
 // (`bands` on the tile), so authoring could not reach it. The flip is not "delete `bands`" — that

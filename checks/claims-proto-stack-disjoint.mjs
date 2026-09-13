@@ -15,7 +15,7 @@
 //      An undeclared collapse is the failure this check is named for.
 //
 // ⛔ Runs on every scene given, WITH the scene's authored state loaded (Layer 0 q3).
-// ▶ node scratch/claims-proto-stack-disjoint.mjs [scene ...]
+// ▶ node checks/claims-proto-stack-disjoint.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

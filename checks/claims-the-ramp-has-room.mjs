@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT.
-// ▶ SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs [scene ...]
+// ▶ SECTION_DUMP=1 node checks/claims-the-ramp-has-room.mjs [scene ...]
 //
 // TWO NUMBERS, AND THEY ARE ONE FINDING (`SECTION §4`, "THE RAMP"):
 //  1. how big is the step the band takes at a corner?   — the chevron, sized
@@ -20,7 +20,7 @@ import { feed, buildProto } from './_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {
-  console.log('⛔ NOT RUN — ▶ SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs [scene ...]')
+  console.log('⛔ NOT RUN — ▶ SECTION_DUMP=1 node checks/claims-the-ramp-has-room.mjs [scene ...]')
   process.exit(1)
 }
 const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))

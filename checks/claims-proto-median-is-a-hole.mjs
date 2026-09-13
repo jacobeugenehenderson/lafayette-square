@@ -14,7 +14,7 @@
 // requires ("a median is a BLOCK"; "the chain apparatus knows NOTHING the polygon does not").
 // ⛔ `pairId` is used HERE ONLY AS AN ORACLE to score the geometric test. It is NOT the mechanism —
 // `RIBBONS §1`'s retirement list names it as apparatus this arc exists to delete.
-// ▶ node scratch/claims-proto-median-is-a-hole.mjs [scene ...]
+// ▶ node checks/claims-proto-median-is-a-hole.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 const scenes = process.argv.slice(2); if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
 // ⛔⛔ THE PRODUCER'S CONVENTION, NOT A COPIED ONE. `tileGround.js:1121` uses the cross-product

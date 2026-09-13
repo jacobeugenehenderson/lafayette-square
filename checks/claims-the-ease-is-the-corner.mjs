@@ -5,7 +5,7 @@
 // ⛔ It READS both sides off the artifact and restates neither: the arcs come from `iaArc` (stamped
 // by the ease that made them) and the licence from `iaCorner`. It cannot go stale against a rule
 // change because it never encodes the rule.
-// ▶ node scratch/claims-the-ease-is-the-corner.mjs [scene]
+// ▶ node checks/claims-the-ease-is-the-corner.mjs [scene]
 import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)

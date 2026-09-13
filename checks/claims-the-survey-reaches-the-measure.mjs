@@ -19,7 +19,7 @@
 // flip, so which physical side each lands on is re-resolved per chain. Joining by the key would
 // manufacture disagreements. Each street's two values are matched to its two measured sides as
 // SORTED MULTISETS (near↔near, far↔far), which is side-agnostic and reversal-proof.
-// ▶ node scratch/claims-the-survey-reaches-the-measure.mjs [scene]
+// ▶ node checks/claims-the-survey-reaches-the-measure.mjs [scene]
 import fs from 'fs'
 import { SV_SIDEWALK, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { feed } from './_proto-feed.mjs'

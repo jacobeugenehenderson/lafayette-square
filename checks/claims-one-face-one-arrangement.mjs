@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ "There should be no seams in runs, ever, period." (Jacob, 2026-09-07)
-// ▶ node scratch/claims-one-face-one-arrangement.mjs [scene ...]
+// ▶ node checks/claims-one-face-one-arrangement.mjs [scene ...]
 // A RUN is a BLOCK FACE — one road, one side, one block. It carries exactly ONE arrangement.
 // ⛔ `SECTION §4` rule 4 is preserved and is a different statement: a road's cross-section varies
 // ALONG THE STREET, between blocks, and a block boundary is a CORNER. Within one face, never.

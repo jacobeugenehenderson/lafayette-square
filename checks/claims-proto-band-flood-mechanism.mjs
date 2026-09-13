@@ -20,7 +20,7 @@
 // band just floods the hole where the subtraction should have been. Same failure, smaller
 // scale, opposite visibility — the shape Layer 0 calls worst.
 //
-// ▶ node scratch/claims-proto-band-flood-mechanism.mjs [scene ...]
+// ▶ node checks/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 // ⛔⛔ THIS PROBE NAMES PRODUCER STAGES BY STRING and therefore rots the moment they are renamed.

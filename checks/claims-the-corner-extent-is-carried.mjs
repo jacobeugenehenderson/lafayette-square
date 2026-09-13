@@ -9,7 +9,7 @@
 // through a 1 mm grid hash. That is proximity recovery of a carried fact (`A15`), done across a
 // boolean that is allowed to move a point, and its own site conceded a far class it could not
 // reach. ⭐ Both columns come out of one run: a claim about which is better is measured here.
-// ▶ node scratch/claims-the-corner-extent-is-carried.mjs [scene]
+// ▶ node checks/claims-the-corner-extent-is-carried.mjs [scene]
 import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)

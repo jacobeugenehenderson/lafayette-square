@@ -11,7 +11,7 @@
 //
 // Reads: src/data/ribbons.json (prebake output) + public/looks/lafayette-square/design.json
 // (the mouth-disc side only, via fillByRing). Writes nothing.
-//   node scratch/claims-deadend-set-decomposition.mjs
+//   node checks/claims-deadend-set-decomposition.mjs
 // ⭐ DUAL STATE (CLAUDE.md Layer 0 q3 / the a03-curb-identity pattern). A and B are read
 // off `ribbons.json` — PREBAKE output, which does not read design.json/blockCustoms, so
 // they are invariant on the authoring channel by construction. C runs the SHAPE pass, so

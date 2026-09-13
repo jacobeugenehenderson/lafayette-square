@@ -26,7 +26,7 @@
  *        own polyline lies on. `side` is then READ BACK from the order — which is
  *        §4.1's load-bearing ⭐⭐ claim, and measurement ④ is the test of it.
  *
- * usage: node scratch/claims-node-pair-key-parity.mjs [scene ...]
+ * usage: node checks/claims-node-pair-key-parity.mjs [scene ...]
  *        default scenes: lafayette-square hipointe-demun
  *        (ksi-y-m-yn / centrum / altadena are CHILLERED — do not size on them.)
  */
@@ -514,7 +514,7 @@ export const SOURCE = (argv.find(a => a.startsWith('--source=')) || '').split('=
 const scenes = argv.filter(a => !a.startsWith('--')).length ? argv.filter(a => !a.startsWith('--')) : ['lafayette-square', 'hipointe-demun']
 if (isMain && !SOURCE) {
   console.error(`⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.\n` +
-    `   usage: node scratch/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]\n` +
+    `   usage: node checks/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]\n` +
     `   pour   = the fresh cartograph/data/<scene>/clean/map.json — POST 9f53ef39's node mint\n` +
     `   bundle = what artifact production reads — PRE-mint on BOTH towns\n` +
     `   Reading the bundle and calling the result a design finding is the error this guard stops.`)

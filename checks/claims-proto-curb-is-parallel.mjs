@@ -12,7 +12,7 @@
 // ⚠️ The owning edge is found as the NEAREST ① edge, and its width read off that edge's own carried
 // stamp. That is a geometric nearest-point for MEASUREMENT, not an identity assignment — ①'s label
 // is already on the edge; nothing is being recovered.
-// ▶ node scratch/claims-proto-curb-is-parallel.mjs [scene] [--worst N]
+// ▶ node checks/claims-proto-curb-is-parallel.mjs [scene] [--worst N]
 import { feed, buildProto } from './_proto-feed.mjs'
 const argv = process.argv.slice(2)
 const scene = argv.find(a => !a.startsWith('--')) || 'lafayette-square'

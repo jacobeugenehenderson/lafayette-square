@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ CAN ONE FRONTAGE OWN THREE SIDES OF A BLOCK? On some blocks it does, and that is the
 // operator's "when I swap one treelawn/sidewalk pair, it swaps all 4 sides."
-// ▶ node scratch/claims-frontage-covers-the-block.mjs [scene] [--tile N]
+// ▶ node checks/claims-frontage-covers-the-block.mjs [scene] [--tile N]
 //
 // ⛔ IT IS NOT THE LEG UNIT. On the block this was found on (LS tile 107, the 62-vertex block the
 // painter's own comment names) the leg cut is CORRECT: 14 legs, all four corners found, every
@@ -17,7 +17,7 @@
 // ⛔ DO NOT FILL-PATCH THIS. `SECTION §7`: clamp, wrap, re-key and snap were each built and
 // reverted — each treats the OUTPUT of a wrong ownership decision. The cure is upstream, where the
 // runs are built (`tileGround.js` ~:6890, the ① label carry) — the polygon must ask the stamp.
-// ▶ the sibling gate on the same invariant: node scratch/claims-ring-partition.mjs
+// ▶ the sibling gate on the same invariant: node checks/claims-ring-partition.mjs
 import { feed, buildProto } from './_proto-feed.mjs'
 const plen = p => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0]-p[i-1][0], p[i][1]-p[i-1][1]); return L }
 const periOf = t => { let L = 0

@@ -1,7 +1,7 @@
 // ⛔ THE OPERATOR'S EYE, MADE ADDRESSABLE. The Marker Tool writes circled regions to
 // `clean/marker_strokes.json`; this classifies what is inside each one by CARRIED IDENTITY, so a
 // circle becomes a named class instead of "a corner looks wrong".
-// ▶ node scratch/claims-marked-corners.mjs [scene]
+// ▶ node checks/claims-marked-corners.mjs [scene]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

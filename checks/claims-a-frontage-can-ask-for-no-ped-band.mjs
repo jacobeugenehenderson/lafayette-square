@@ -28,7 +28,7 @@
 // row is evidence — but weaker, and a reader who cannot see which is which will treat
 // them alike.
 //
-// ▶ node scratch/claims-a-frontage-can-ask-for-no-ped-band.mjs [scene ...]
+// ▶ node checks/claims-a-frontage-can-ask-for-no-ped-band.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 import { resolvePedDepths } from '../src/lib/tileGround.js'

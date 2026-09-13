@@ -13,7 +13,7 @@
 // authored width? A thin run under a wide authored width is the tool working.
 //
 // ⛔ Runs WITH the scene's authoring loaded, and reports each thin run's authored vs base width so
-// the two populations can never be reported as one. ▶ node scratch/claims-proto-thin-curb-runs.mjs [scene]
+// the two populations can never be reported as one. ▶ node checks/claims-proto-thin-curb-runs.mjs [scene]
 import { feed, buildProto } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)

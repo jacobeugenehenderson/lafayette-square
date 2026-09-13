@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ JACOB'S RULE, MADE CHECKABLE: "A treelawn swap NEVER happens mid-leg, period. It's
 // illogical. That's what the corners are for." (2026-09-07; `SECTION §4` rule 1.)
-// ▶ node scratch/claims-a-swap-never-happens-mid-street.mjs [scene...]
+// ▶ node checks/claims-a-swap-never-happens-mid-street.mjs [scene...]
 //
 // ⛔ MEASURE THE DEFINITION, NOT THE CUT SET. The tempting check is "what does the leg cut fire on"
 // — and it answers the wrong question. A leg boundary with the SAME owner on both sides resolves to

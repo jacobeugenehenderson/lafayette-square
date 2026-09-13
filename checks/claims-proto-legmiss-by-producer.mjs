@@ -18,7 +18,7 @@
 // ⛔ Vertices are attributed to a tile BY GEOMETRY (nearest iA edge), never by tile index — the
 // live pass and the frozen artifact number tiles differently (`CLAUDE.md` routing gate).
 // ⛔ Authored state only, through `_proto-feed`. ⛔ Grade-separated rings excluded (no baseline).
-// ▶ node scratch/claims-proto-legmiss-by-producer.mjs [scene ...]
+// ▶ node checks/claims-proto-legmiss-by-producer.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)

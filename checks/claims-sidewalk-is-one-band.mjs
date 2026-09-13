@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ THE ACCEPTANCE, IN THE OPERATOR'S WORDS.
-// ▶ node scratch/claims-sidewalk-is-one-band.mjs [scene]
+// ▶ node checks/claims-sidewalk-is-one-band.mjs [scene]
 //
 //   `SECTION §7`: "The sidewalk should be one continuous smooth line all around the entire polygon."
 //   (2026-09-07): "The sidewalk creates one continuous band around the block; it has 3 different

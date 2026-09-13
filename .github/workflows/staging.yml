@@ -41,7 +41,7 @@ jobs:
           # instead break staging's slab visibly, because a broken preview is recoverable
           # in a minute and a preview that lies about being a preview is not.
           # ⛔ Set repo variable VITE_ASSET_BASE_STAGING to the same host with `staging/`
-          # appended. Verify the wiring: node scratch/claims-the-slab-envs-do-not-collide.mjs
+          # appended. Verify the wiring: node checks/claims-the-slab-envs-do-not-collide.mjs
           VITE_ASSET_BASE: ${{ vars.VITE_ASSET_BASE_STAGING }}
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}

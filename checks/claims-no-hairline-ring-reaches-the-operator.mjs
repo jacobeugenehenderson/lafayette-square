@@ -28,7 +28,7 @@
 // produced every row — it does not hide the difference and it does not refuse
 // the live path, because a live row is still evidence. It is just weaker
 // evidence, and a reader who cannot see which is which will treat them alike.
-// ▶ node scratch/claims-no-hairline-ring-reaches-the-operator.mjs [scene ...]
+// ▶ node checks/claims-no-hairline-ring-reaches-the-operator.mjs [scene ...]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 

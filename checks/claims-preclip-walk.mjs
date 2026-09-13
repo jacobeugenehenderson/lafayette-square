@@ -20,7 +20,7 @@
  * that a bare walk closes only LS 14/31 rim tiles on real streets alone, and THE
  * STENCIL CLOSES THOSE. INTERIOR closure is the control and must not regress.
  *
- * usage: node scratch/claims-preclip-walk.mjs [--scene=<name>] [--ribbons=<path>]
+ * usage: node checks/claims-preclip-walk.mjs [--scene=<name>] [--ribbons=<path>]
  */
 import fs from 'fs'
 import { loadScene, banner, ARG, CHILLERED, H } from './_substrate-feed.mjs'

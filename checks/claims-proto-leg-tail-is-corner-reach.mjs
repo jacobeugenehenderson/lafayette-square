@@ -23,7 +23,7 @@
 // was frozen before the current curve fit ("verify the baseline before comparing to it").
 // ⛔ Grade-separated rings are EXCLUDED: the shipped curb builds no highway curb at all, so
 // they have no baseline and averaging them in makes the number meaningless.
-// ▶ node scratch/claims-proto-leg-tail-is-corner-reach.mjs [scene ...]
+// ▶ node checks/claims-proto-leg-tail-is-corner-reach.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ DOES A ② CONTOUR EDGE CARRY THE OWNER OF THE ① EDGE IT LIES ALONG?
-// ▶ node scratch/claims-stamp-follows-the-edge.mjs [scene...]
+// ▶ node checks/claims-stamp-follows-the-edge.mjs [scene...]
 //
 // ⛔ THIS IS THE DEFINITION, NOT A PROXY. ②'s whole claim is "identity carried THROUGH the offset,
 // never recovered from ring geometry afterward" (`RIBBONS §1`). The carried thing must therefore be

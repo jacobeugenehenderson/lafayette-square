@@ -1,7 +1,7 @@
 // ⛔ NOTHING IS BUILT AT THE MAP EDGE — it is where the drawing stops. A ped band that WRAPS the
 // rim runs ALONG the arc for tens of metres; a band that is CUT by the stamp meets it in chords
 // no longer than the band is wide. So measure the LENGTH of band boundary lying on the arc.
-// ▶ node scratch/claims-ped-does-not-follow-the-rim.mjs [scene ...]
+// ▶ node checks/claims-ped-does-not-follow-the-rim.mjs [scene ...]
 import { feed } from './_proto-feed.mjs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 

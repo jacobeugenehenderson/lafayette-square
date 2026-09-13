@@ -18,7 +18,7 @@
 // unresolved slot is an override the operator made that the proto stack cannot see.
 //
 // ⛔ Look→scene comes from `public/looks/index.json`, never from the directory name (`A11`).
-// ▶ node scratch/claims-proto-stack-reads-authoring.mjs [scene ...]
+// ▶ node checks/claims-proto-stack-reads-authoring.mjs [scene ...]
 import { feed, buildProto } from './_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)

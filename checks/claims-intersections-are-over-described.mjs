@@ -7,7 +7,7 @@
 // minted, missed, or doubled. This sizes that before anyone designs the cure.
 // ⛔ Clusters are found by GEOMETRY (endpoints within `R`), never by chain name — a road's name is
 // exactly what a cut throws away, so grouping by it would hide the thing being measured.
-// ▶ node scratch/claims-intersections-are-over-described.mjs [scene] [radius=12]
+// ▶ node checks/claims-intersections-are-over-described.mjs [scene] [radius=12]
 import { feed } from './_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const R = Number(process.argv[3] || 12)

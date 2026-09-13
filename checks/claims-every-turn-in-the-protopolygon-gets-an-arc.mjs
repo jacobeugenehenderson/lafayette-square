@@ -38,7 +38,7 @@
 // ⛔ NO SILENT SKIP (`POLYGON-FIRST §5` RULE 2): a tile with no curb ring or no arc stamp is its own
 // counted class. The 25 blocks that legitimately yield no curb are a REAL ABSENCE, reported, not
 // dropped into a percentage.
-// ▶ node scratch/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [scene] [--list]
+// ▶ node checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs [scene] [--list]
 import fs from 'fs'
 import { feed, buildProto } from './_proto-feed.mjs'
 
