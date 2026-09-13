@@ -1,5 +1,12 @@
 # ⛔ ON HOLD — DO NOT DISPATCH (Jacob, 2026-08-06)
 
+<!-- BRIEF-STATE
+status: HOLD
+dispatched: no
+written: 2026-08-06
+evict-when: RULING: have POLYGON-FIRST and ROADMAP settled enough to release the hold Jacob placed 2026-08-06? The condition is his to call, not a command.
+-->
+
 > **Held until the live work in `cartograph/POLYGON-FIRST.md` and `ROADMAP.md` is finished.** Those are the
 > two densest targets in §2 *and* the two docs the substrate investigation is actively editing — dispatching
 > into them now means an agent excising text while it is still being written. **`git status` cleanliness does

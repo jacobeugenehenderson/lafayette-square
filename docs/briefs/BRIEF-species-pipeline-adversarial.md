@@ -1,5 +1,12 @@
 # BRIEF — adversarial pass on the species pipeline
 
+<!-- BRIEF-STATE
+status: UNVERIFIED
+dispatched: no
+written: 2026-08-25
+evict-when: RULING: did this brief's REPORT land, and where? Its deliverable is a written report, not code, so no src/ grep can decide it.
+-->
+
 You are a **fresh agent**. Nothing below is context you already have; nothing above the line
 in your window applies. Read `CLAUDE.md`, then `ORIENTATION.md`, then
 `arborist/ARCHITECTURE.md §The species pipeline` before touching anything.

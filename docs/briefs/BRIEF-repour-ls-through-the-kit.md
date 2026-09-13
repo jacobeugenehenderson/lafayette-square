@@ -1,5 +1,12 @@
 # BRIEF — re-pour Lafayette Square through the kit
 
+<!-- BRIEF-STATE
+status: PARKED
+dispatched: no
+written: 2026-09-13
+evict-when: RULING: Jacob's hands on the Extent tool are step 1. He said NOT THIS WEEK ahead of his trip; this evicts only when he starts it.
+-->
+
 > ## ⛔ NOT NOW. NOT THIS WEEK.
 > Drafted 2026-09-13 while Jacob was heading out of town, at his request, **to be read when he is back**. ⛔ Do not start this, do not "get a head start on the safe parts," and do not dispatch it. **Step 1 is Jacob's hands on the Extent tool**; nothing downstream is real until that happens. Boz drafted; **Jacob dispatches.**
 

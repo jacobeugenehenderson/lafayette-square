@@ -1,5 +1,12 @@
 # HANDOFF — the tree render, 2026-08-28
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-08-28
+evict-when: node checks/claims-the-capture-frame-is-the-clip-frame.mjs && echo LANDED
+-->
+
 > **State:** the neighbourhood renders. Jacob, on a phone: *"there's a stunning moment when you glance
 > at the phone and you realize the trees are 'real'."* Gauge blue in Browse, blue→green in Hero, well
 > inside budget. **Nine commits, `36c8ded8` → `3b857caa`.** This is the ledger of what was wrong, what

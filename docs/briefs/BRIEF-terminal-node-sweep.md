@@ -1,5 +1,12 @@
 # BRIEF — The terminal-node sweep (the "universal solvent" for the false corner)
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-07-21
+evict-when: git grep -qE 'thruNodeEnds|isThruNode|DOT_CONTINUES|isNameTransition' -- src cartograph || echo LANDED
+-->
+
 **Status:** DRAFT, dispatch-ready. Fresh-agent brief (identity + bounds below). Boz drafted 2026-07-21 from a long design session with Jacob; **Jacob dispatches.** Supersedes the *approach* in `HANDOFF-thrunode-gate-fix.md` / `scratch/THRUNODE-GATE-LANDING.md` (that cure landed on a proxy and was overturned on the eye the same day — see "Why the last cure died"). This is the reframe that dissolves that whole class.
 
 > ⛔ **ROUTE FIRST (CLAUDE.md gate).** Read `ORIENTATION.md` → `README §⭐ START HERE` → **`SKELETON.md §5` + `RIBBONS.md §1/§4` + `PREBAKE.md §4/§5`** before touching code. This brief assumes that canon. The relevant memory: `[[project_skeleton_is_the_first_bake]]`, `[[feedback_read_canon_before_forensics]]`, `[[feedback_proxy_render_is_not_the_operator_eye]]`.

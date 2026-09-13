@@ -1,5 +1,12 @@
 # BRIEF — slice 2: give the walk the geometry it was designed for
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-08-21
+evict-when: RULING: does the walk's band continuity show ONE licensed seam on Jacob's eye? No mechanical proxy exists; the acceptance is the operator's view.
+-->
+
 **Status: OPEN, undispatched. Written 2026-08-21.** ⛔ **Nothing here is a conclusion of the author's
 reasoning. Every line carries a receipt — a commit, a `file:line`, or a command. If a claim has no
 receipt, it is not in this document.** *(Written this way deliberately: on 2026-08-21 the coordinator

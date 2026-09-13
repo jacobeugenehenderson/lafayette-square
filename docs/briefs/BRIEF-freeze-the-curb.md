@@ -1,5 +1,12 @@
 # BRIEF — freeze the curb
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-08-21
+evict-when: node -e "const t=require('./public/baked/lafayette-square/shape.json').tiles;console.log(t.filter(x=>x.curbFacts).length?'LANDED':'OPEN')"
+-->
+
 **Status: OPEN, undispatched. Written 2026-08-21.** Closes **`ROADMAP A3`**.
 ⛔ **Every claim below carries a receipt — a `file:line` or a command. Re-run them. Do not trust the
 framing, including this one.**

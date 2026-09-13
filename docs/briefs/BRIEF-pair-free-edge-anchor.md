@@ -1,5 +1,12 @@
 # BRIEF — Pair-free edge-anchor (fix the overlap-holes on divided & frontage roads)
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-07-22
+evict-when: git grep -q 'left-edge' -- src cartograph && echo LANDED
+-->
+
 **Status:** DRAFT, dispatch-ready. Active brief (tracked at root). Boz drafted 2026-07-21 from a live eye-session with Jacob on **HPDM** (divided/frontage overlap-holes). Fresh-agent brief (identity + bounds below); **Jacob dispatches.** This is a **construction / authoring** fix — it does **not** touch the frame chains.
 
 > ⛔ **ROUTE FIRST (`CLAUDE.md` gate):** `ORIENTATION.md` → `README §⭐ START HERE` → **`RIBBONS.md §3.1` (the divided-road inner-edge anchor — LOCKED) + `RIBBONS.md §1`.** Memory: `[[feedback_survey_chains_immutable_corner_is_stroke]]`, `[[feedback_fix_at_source_never_hack_the_symptom]]`, `[[project_v2_authoring_asphalt_phase2]]` ("one asphalt mesh").

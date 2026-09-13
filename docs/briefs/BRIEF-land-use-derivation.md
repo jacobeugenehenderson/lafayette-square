@@ -1,5 +1,12 @@
 # BRIEF — Land use is invented for most of the map. Derive it instead.
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-07-21
+evict-when: RULING: is the 17-entry OSM_TO_LU in cartograph/derive.js the intended final set? The board says 32 and cites classify.js, which is the wrong file. Cause not established.
+-->
+
 **Status: 🟡 PHASE 1 LANDED 2026-08-01 · EYE-GATED AND FAILED 2026-08-02 · the arc continues under a CORRECTED diagnosis.** Boz drafted 2026-07-21 from the HPDM bald-blocks investigation with Jacob. Detail-home for the ROADMAP line.
 
 > # ⛔⛔ READ THIS BEFORE ANY OF THE BODY BELOW — §1's HEADLINE IS WRONG.

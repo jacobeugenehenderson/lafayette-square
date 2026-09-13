@@ -1,5 +1,12 @@
 # BRIEF — how we plant the trees (audit)
 
+<!-- BRIEF-STATE
+status: UNVERIFIED
+dispatched: no
+written: 2026-09-03
+evict-when: RULING: did this READ brief's report land, and where? Its deliverable is a written report, not code.
+-->
+
 **You are a fresh agent.** Read `CLAUDE.md` (the gate), then `ORIENTATION.md`, then
 `README.md §⭐ START HERE`, then the tree canon: `arborist/ARCHITECTURE.md`
 §"Tree-render reality at LS", `arborist/FEATURES.md`, `SLAB-CONTRACT.md`.

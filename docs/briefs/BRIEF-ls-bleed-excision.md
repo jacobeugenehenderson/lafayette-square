@@ -1,5 +1,12 @@
 # BRIEF — excise the LS-bleed: absence must degrade to NOTHING, never to Lafayette Square
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-07-20
+evict-when: git grep -q "from '\\.\\./data/ribbons" -- src || echo LANDED
+-->
+
 **Agent: FRESH.** — this is a mechanical excision across four domains against a verified site list; there is no prior session-context worth inheriting. ⚠️ **Serialize against `BRIEF-intake-manifest.md`** where they touch the same bake scripts, and **do not dispatch into a worktree** until `cartograph/BACKLOG.md §NEXT`'s stale-worktree cleanup lands (25 stale trees; a 2026-07-20 dispatch silently landed on a months-old branch and did nothing).
 
 > ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` → the topic canon for whichever domain you're in. The findings behind this brief are `INTAKE-CATALOGUE.md §0`; read it before touching anything.

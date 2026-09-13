@@ -1,5 +1,12 @@
 # BRIEF — the impostors must participate in the scene's lighting
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-03
+evict-when: git grep -q MeshBasicMaterial -- src/components/HeroImpostorTrees.jsx src/components/OverheadTrees.jsx || echo LANDED
+-->
+
 Root, measured 2026-09-03: the cards are `MeshBasicMaterial` — UNLIT
 (`HeroImpostorTrees.jsx:182`, `OverheadTrees.jsx:204`). Mesh trees are
 `MeshStandardMaterial` (`treeAtlasMaterial.js:1438`). That one difference is the

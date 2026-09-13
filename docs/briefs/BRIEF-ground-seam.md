@@ -1,5 +1,12 @@
 # BRIEF — the ground seam: trunks, lamps, contact shadow
 
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-08-24
+evict-when: git grep -q 'mix(diffuseColor.rgb, gcol' -- src || echo LANDED
+-->
+
 **One job: an upright object should meet the ground correctly.** Trunks and lamp posts both.
 
 ⛔ **DO THIS AFTER THE TREES ARE PLACED CORRECTLY** (`_archive/BRIEF-arborist-join-and-budget-SUPERSEDED-2026-09-13.md` §0a).
