@@ -136,7 +136,7 @@ The neighborhood is **assembled from many open + measured sources**, not one —
 - **[`ORIENTATION.md`](ORIENTATION.md)** — the **universal first read**: what we're building · the dependency chain · the settled doctrine in plain language. The mental model everything else hangs off (and the read a tech-DD pass needs of *our* understanding).
 - **This `README.md`** — the doc index (you're in it): §⭐ START HERE (settled-state by topic), the Documentation map, the cross-cutting feature index ("where does X live"), + dev setup.
 - → then the **topic canon** the index names.
-- *(**[`BOZ.md`](BOZ.md)** is the **coordinator's doc** — the Boz identity, the librarian Process, the day-cycle. It loads **only when you're summoned as Boz**; it is not a step in the universal path.)*
+- *(**[`BOZ.md`](BOZ.md)** is the **coordinator's charter** — the Boz identity, the doc law, dispatch, and the tiered read-in. Re-founded 2026-09-13; the dated receipts it used to carry inline are in `cartograph/_archive/BOZ-full-2026-09-13.md`. It loads **only when you're summoned as Boz**; it is not a step in the universal path.)*
 
 ### Per-domain docs
 
