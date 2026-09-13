@@ -235,11 +235,23 @@ if (unreachable.length) {
   )
 
   const cites = new Map() // path as written → Set of memory files citing it
+  const owed  = new Map() // same, but the memory says the file is NOT WRITTEN YET
+
+  // ⭐ A citation can name a doc that does not exist because NOBODY HAS WRITTEN IT YET.
+  //    That is an ASPIRATION, not rot — `CLAUDE.md`: "neither evict nor correct; surface it
+  //    as work" — and it is the conformance job's own failure mode, because an aspiration
+  //    looks exactly like rot and a pass that 'fixes' it DELETES A DECISION.
+  //    ⛔ A check that cannot tell the two apart reports intent as decay, and a check that
+  //    cries wolf is ignored inside a week. So the memory must SAY SO on the line.
+  const ASPIRATION = /\bSTILL UNWRITTEN\b|\bnot yet written\b|\bdoes not exist yet\b|\bwrite\s+\*{0,2}`/i
+
   for (const f of files.concat('MEMORY.md')) {
     const body = readFileSync(join(DIR, f), 'utf8')
+    for (const line of body.split('\n')) {
+    const planned = ASPIRATION.test(line)
     const raw = new Set()
-    for (const m of body.matchAll(/`([^`\n]+)`/g)) for (const t of m[1].split(/\s+/)) raw.add(t)
-    for (const m of body.matchAll(/\]\(([^)\s]+)\)/g)) raw.add(m[1])
+    for (const m of line.matchAll(/`([^`\n]+)`/g)) for (const t of m[1].split(/\s+/)) raw.add(t)
+    for (const m of line.matchAll(/\]\(([^)\s]+)\)/g)) raw.add(m[1])
     for (let t of raw) {
       t = t.replace(/^[(\['"«]+/, '').replace(/[)\],.;:'"»]+$/, '')
       t = t.replace(/[:#].*$/, '')                              // drop :line and #anchor
@@ -247,10 +259,15 @@ if (unreachable.length) {
       if (/[{}*|()?<>…\\]/.test(t)) continue                     // globs, braces, regex, ellipsis
       if (/^https?:|^www\.|\.(com|org|gov|io|pl)\//.test(t)) continue
       if (!TOP.has(t.split('/')[0])) continue                    // ⭐ the repo decides
-      if (!cites.has(t)) cites.set(t, new Set())
-      cites.get(t).add(f)
+      const bucket = planned ? owed : cites
+      if (!bucket.has(t)) bucket.set(t, new Set())
+      bucket.get(t).add(f)
+    }
     }
   }
+  // Named as owed anywhere ⇒ owed everywhere. One honest "not written yet" outranks
+  // a bare mention elsewhere; the alternative is failing on a doc we KNOW is unbuilt.
+  for (const k of owed.keys()) cites.delete(k)
 
   // A citation naming a FILE (an extension) or a DIRECTORY (a trailing slash) is
   // an exact claim and must resolve. One without either — `scripts/15`,
@@ -292,6 +309,18 @@ if (unreachable.length) {
     console.log('\n   ⛔ DO NOT BULK-FIX. Several of these need a ruling, not a sed.\n')
   } else {
     console.log('✅ every repo-path citation resolves as written.\n')
+  }
+
+  // Reported, never failed: these are decisions filed as owed, and the whole point of
+  // separating them is that a conformance pass must not quietly delete them.
+  if (owed.size) {
+    console.log(`⭐ ${owed.size} citation(s) name work that is OWED, not rotted —`)
+    console.log(`   the memory says so on the line. Surface as work; ⛔ do not "correct" these:`)
+    for (const [pth, srcs] of [...owed].sort()) {
+      console.log(`     ${pth}`)
+      console.log(`        owed per: ${[...srcs].join(', ')}`)
+    }
+    console.log()
   }
 
   if (untracked.length) {
