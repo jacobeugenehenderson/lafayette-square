@@ -9,7 +9,7 @@
 //   · the gap distribution — a rule that bridges 14 m must not join two unrelated alleys 14 m apart
 //   · whether a STREET actually lies in the gap (what makes it a junction rather than a hole)
 // ▶ node checks/claims-alley-stub-pairs.mjs [scene]
-import { feed } from './_proto-feed.mjs'
+import { feed } from '../scratch/_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)
 const XY = p => Array.isArray(p) ? [p[0], p[1]] : [p.x, p.z]

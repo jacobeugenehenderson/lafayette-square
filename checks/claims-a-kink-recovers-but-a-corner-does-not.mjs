@@ -48,7 +48,7 @@
 //   node -e "const r=require('./src/data/ribbons.json').protopolygon;const L=[];for(const g of r.rings)for(let i=0;i<g.length;i++){const a=g[i],b=g[(i+1)%g.length];L.push(Math.hypot(b[0]-a[0],b[1]-a[1]))}L.sort((x,y)=>x-y);console.log('median',L[L.length>>1].toFixed(2),'| >=20m',L.filter(x=>x>=20).length,'of',L.length)"
 // ▶ node checks/claims-a-kink-recovers-but-a-corner-does-not.mjs [scene ...] [--list]
 import fs from 'fs'
-import { feed } from './_proto-feed.mjs'
+import { feed } from '../scratch/_proto-feed.mjs'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)

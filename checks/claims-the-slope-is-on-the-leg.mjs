@@ -17,7 +17,7 @@
 // "a probe that WRITES a value cannot see that the value was already there."
 // ▶ SECTION_DUMP=1 node checks/claims-the-slope-is-on-the-leg.mjs [scene]
 process.env.SECTION_DUMP = '1'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const { sectionPassProtoTile, sectionDump } = await import('../src/lib/tileGround.js')
 sectionDump.on = true

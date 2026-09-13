@@ -22,7 +22,7 @@
 // ▶ node checks/claims-the-survey-reaches-the-measure.mjs [scene]
 import fs from 'fs'
 import { SV_SIDEWALK, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
-import { feed } from './_proto-feed.mjs'
+import { feed } from '../scratch/_proto-feed.mjs'
 
 const scene = process.argv[2] || 'lafayette-square'
 const sp = `cartograph/data/${scene}/raw/survey.json`

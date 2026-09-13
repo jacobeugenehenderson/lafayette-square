@@ -30,7 +30,7 @@
 // evidence, and a reader who cannot see which is which will treat them alike.
 // ▶ node checks/claims-no-hairline-ring-reaches-the-operator.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const W_MIN = 0.05   // metres of mean width
 const A_MIN = 1.0    // m² — a ring smaller than a floor tile is not a place

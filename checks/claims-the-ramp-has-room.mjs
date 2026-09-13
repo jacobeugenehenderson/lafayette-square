@@ -16,7 +16,7 @@
 //
 // ⛔ Reads the painter's own resolution through `SECTION_DUMP` — it does not restate the ladder.
 // Derived from the forensic's `_fx-corner-step.mjs` + `_fx-taper-room.mjs` (2026-09-07).
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {

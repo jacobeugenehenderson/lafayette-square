@@ -2,7 +2,7 @@
 //   2. the largest live ② ring is comparable to the largest real city block, not to the disc
 //   3. in-disc block coverage stays at today's level or better
 // ▶ node checks/claims-proto-curb-is-block-sized.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const sa = r => { let a = 0; for (let i = 0; i < r.length; i++) { const [x1, y1] = r[i], [x2, y2] = r[(i + 1) % r.length]; a += x1 * y2 - x2 * y1 } return a / 2 }
 const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square']

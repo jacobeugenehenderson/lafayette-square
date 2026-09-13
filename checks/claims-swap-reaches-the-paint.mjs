@@ -19,7 +19,7 @@
 // whether they DIFFER. That has no notion of "the default", so it cannot mistake one for a no-op.
 // ⭐ THE LESSON IS `9f43a99a`'s, for the eighth time today: BEFORE TRUSTING A PROBE, ASK WHAT IT IS
 // STRUCTURALLY UNABLE TO SEE. A probe that writes a value cannot see that the value was already there.
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 const SA=r=>{let a=0;for(let i=0;i<r.length;i++){const j=(i+1)%r.length;a+=r[i][0]*r[j][1]-r[j][0]*r[i][1]}return a/2}

@@ -1,5 +1,5 @@
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const rb = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
 const f = feed('lafayette-square')
 if (!f) process.exit(1)

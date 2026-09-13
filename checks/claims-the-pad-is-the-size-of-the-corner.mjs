@@ -20,7 +20,7 @@
 // blind spot are one instrument.
 // ⛔ AND THE EXPECTATION IS DERIVED, NOT TUNED: a corner's pad should be about its own arc, so the
 // map-wide share is compared against the arc length the FILLETS THEMSELVES declare. No constant.
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {

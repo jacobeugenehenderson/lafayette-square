@@ -21,7 +21,7 @@
 // INTENTION, not the ACHIEVEMENT" defect this corpus has now hit twice (`RIBBONS §1`).
 // ⛔ AND IT SAMPLES ALONG THE INWARD NORMAL, never in a fixed-width box — `9f43a99a`: a box 1.5 m
 // deep cannot reach a set-back walk and reports a correct cross-section as a hole.
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 import { intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 

@@ -19,7 +19,7 @@
 // live pass and the frozen artifact number tiles differently (`CLAUDE.md` routing gate).
 // ⛔ Authored state only, through `_proto-feed`. ⛔ Grade-separated rings excluded (no baseline).
 // ▶ node checks/claims-proto-legmiss-by-producer.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)
 if (!scenes.length) scenes.push('lafayette-square')

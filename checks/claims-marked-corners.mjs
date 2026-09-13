@@ -3,7 +3,7 @@
 // circle becomes a named class instead of "a corner looks wrong".
 // ▶ node checks/claims-marked-corners.mjs [scene]
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f || f.curbWidth == null) process.exit(1)

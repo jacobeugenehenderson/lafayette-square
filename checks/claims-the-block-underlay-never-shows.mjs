@@ -9,7 +9,7 @@
 // rare one, so a town that is mostly residential looks clean and town #2 may not be.
 // ⛔ The gap is measured in m², per tile, against the tile's OWN block silhouette — never by eye.
 // ▶ node checks/claims-the-block-underlay-never-shows.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 

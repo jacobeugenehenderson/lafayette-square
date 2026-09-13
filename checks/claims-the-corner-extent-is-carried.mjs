@@ -10,7 +10,7 @@
 // boolean that is allowed to move a point, and its own site conceded a far class it could not
 // reach. ⭐ Both columns come out of one run: a claim about which is better is measured here.
 // ▶ node checks/claims-the-corner-extent-is-carried.mjs [scene]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)
 const r = buildProto(f, { quiet: true, protoProducer: true })

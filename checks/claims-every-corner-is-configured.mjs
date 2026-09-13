@@ -19,7 +19,7 @@
 // ▶ node checks/claims-a-swap-never-happens-mid-street.mjs
 // This check answers only its own narrower question: which corners get NO corner construction.
 // ▶ node checks/claims-every-corner-is-configured.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const FILLET_TURN_TOL = 18 * Math.PI / 180
 const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`

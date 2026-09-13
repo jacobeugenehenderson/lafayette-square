@@ -17,7 +17,7 @@
 //     block (`SURVEY §4`); the corner is what absorbs it
 // ⛔ AND NOT THIS EITHER: counting unstamped CONTOUR POINTS. 0.5% of points is 4.7% of LENGTH,
 // because one long frontage is a single edge. Measure what the eye sees: metres, and closure.
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, resolvePedDepths } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i+1)%r.length; a += r[i][0]*r[j][1] - r[j][0]*r[i][1] } return a/2 }

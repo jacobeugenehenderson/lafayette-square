@@ -23,7 +23,7 @@
  * usage: node checks/claims-preclip-walk.mjs [--scene=<name>] [--ribbons=<path>]
  */
 import fs from 'fs'
-import { loadScene, banner, ARG, CHILLERED, H } from './_substrate-feed.mjs'
+import { loadScene, banner, ARG, CHILLERED, H } from '../scratch/_substrate-feed.mjs'
 
 const o = console.log; console.log = () => {}
 const { walkSubstrate } = await import('../src/lib/substrateWalk.js')

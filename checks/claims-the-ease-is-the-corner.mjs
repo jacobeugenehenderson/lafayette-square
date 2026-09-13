@@ -6,7 +6,7 @@
 // by the ease that made them) and the licence from `iaCorner`. It cannot go stale against a rule
 // change because it never encodes the rule.
 // ▶ node checks/claims-the-ease-is-the-corner.mjs [scene]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const scene = process.argv[2] || 'lafayette-square'
 const f = feed(scene); if (!f) process.exit(1)
 const prev = console.log; console.log = () => {}

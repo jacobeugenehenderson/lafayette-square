@@ -4,7 +4,7 @@
 // an arc reads its radius. ⛔ Compared to the AUTHORED value, never to a hard-coded 4.5.
 // ▶ node checks/claims-proto-corner-is-authored-radius.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue

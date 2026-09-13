@@ -24,7 +24,7 @@
 // ⛔ Grade-separated rings are EXCLUDED: the shipped curb builds no highway curb at all, so
 // they have no baseline and averaging them in makes the number meaningless.
 // ▶ node checks/claims-proto-leg-tail-is-corner-reach.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)
 if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')

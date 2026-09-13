@@ -1,7 +1,7 @@
 // ⛔ WHICH corners are still square, classified by CARRIED IDENTITY — so the remaining work is a
 // named set of classes, not "some corners look wrong".
 // ▶ node checks/claims-proto-unrounded-corners.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue

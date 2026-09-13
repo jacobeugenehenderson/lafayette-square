@@ -30,7 +30,7 @@
 //
 // ▶ node checks/claims-a-frontage-can-ask-for-no-ped-band.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { resolvePedDepths } from '../src/lib/tileGround.js'
 
 for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {

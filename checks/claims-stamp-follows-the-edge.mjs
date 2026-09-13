@@ -24,7 +24,7 @@
 // after five successive errors in `claims-proto-curb-is-parallel`. Picking candidates by
 // line-distance lets a distant parallel edge match by coincidence.
 import fs from 'fs'
-import { feed, buildProto, ribbonsPath } from './_proto-feed.mjs'
+import { feed, buildProto, ribbonsPath } from '../scratch/_proto-feed.mjs'
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]]
 const len = (v) => Math.hypot(v[0], v[1])

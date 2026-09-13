@@ -19,7 +19,7 @@
 //
 // ⛔ Look→scene comes from `public/looks/index.json`, never from the directory name (`A11`).
 // ▶ node checks/claims-proto-stack-reads-authoring.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const scenes = process.argv.slice(2)
 if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')

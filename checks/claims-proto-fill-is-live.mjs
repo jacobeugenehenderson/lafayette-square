@@ -18,7 +18,7 @@
 //     question from "how much ground is painted". Every figure here is a UNION.
 //   · `run.baseMeasure.treelawn` is the AUTHORED OVERRIDE ONLY — median 0. The painted depth comes
 //     from `resolvePedDepths`. Off the raw field you get a 3.00 m envelope gap that does not exist.
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 import { sectionOpen, hasStampInquiry } from '../src/lib/tileGround.js'
 import { differenceRings, intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 

@@ -15,7 +15,7 @@
 // ⛔ NO THRESHOLD IS INVENTED HERE: FILLET_TURN_TOL is read OUT OF THE SOURCE, so it cannot go
 // stale if the ruled constant ever moves.
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)

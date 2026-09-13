@@ -25,7 +25,7 @@
 //                                          ANGLED SLOPE CORNER JOINER is for." ASPIRATION, filed.
 //   · same chain, same side, segOrd     ⛔ an authoring ordinal is not a place on the map
 import fs from 'fs'
-import { feed, buildProto, ribbonsPath } from './_proto-feed.mjs'
+import { feed, buildProto, ribbonsPath } from '../scratch/_proto-feed.mjs'
 import { resolvePedDepths } from '../src/lib/tileGround.js'
 
 const TOL = 18 * Math.PI / 180          // ⛔ FILLET_TURN_TOL, the ruled constant — not a new one

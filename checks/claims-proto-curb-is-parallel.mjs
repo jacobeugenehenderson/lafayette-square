@@ -13,7 +13,7 @@
 // stamp. That is a geometric nearest-point for MEASUREMENT, not an identity assignment — ①'s label
 // is already on the edge; nothing is being recovered.
 // ▶ node checks/claims-proto-curb-is-parallel.mjs [scene] [--worst N]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const argv = process.argv.slice(2)
 const scene = argv.find(a => !a.startsWith('--')) || 'lafayette-square'
 const WORST = (() => { const i = argv.indexOf('--worst'); return i > 0 ? Number(argv[i + 1]) : 12 })()

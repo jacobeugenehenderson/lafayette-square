@@ -22,7 +22,7 @@
 //
 // ▶ node checks/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 // ⛔⛔ THIS PROBE NAMES PRODUCER STAGES BY STRING and therefore rots the moment they are renamed.
 // It did: `PROTO_DUMP`'s stages moved from `hw / hw+cw / WB` (measured from ①) to
 // `curb / curb+cw / curb+WB` when ③'s subject became the eased curb, and this file threw

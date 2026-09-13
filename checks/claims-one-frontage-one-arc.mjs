@@ -3,7 +3,7 @@
 // where the owner CHANGES. ⇒ A block with N frontages has exactly N corners. ⛔ If an owner appears
 // in TWO arcs, one is a mis-attribution, and every extra arc mints a corner the block does not have.
 // ▶ node checks/claims-one-frontage-one-arc.mjs [scene ...]
-import { feed, buildProto } from './_proto-feed.mjs'
+import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0
 for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square','hipointe-demun'])) {

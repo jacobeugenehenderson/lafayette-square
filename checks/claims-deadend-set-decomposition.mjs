@@ -17,7 +17,7 @@
 // they are invariant on the authoring channel by construction. C runs the SHAPE pass, so
 // it is measured TWICE and both results are printed with the state that produced them.
 import fs from 'node:fs'
-import { foldLegs, mouthInfo, loadRibbons, ringKey } from './coupler-fold-legs.mjs'
+import { foldLegs, mouthInfo, loadRibbons, ringKey } from '../scratch/coupler-fold-legs.mjs'
 
 const ribbons = loadRibbons()
 const tiles = ribbons.tiles || []
