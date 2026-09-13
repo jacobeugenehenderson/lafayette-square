@@ -9,6 +9,8 @@
 // evidence, is dead (`resolveChainSegmentation` moved to `chainSegmentation.js`). Existence is not
 // runnability, and A17's evidence was unreproducible without anyone noticing.
 // ▶ node scratch/claims-doc-pointers-resolve.mjs [--run]
+// ⛔ --run IMPORTS EVERY CITED CHECK, WHICH RUNS IT — live tier included. Never --run with the
+//    network up: `checks/tier.mjs` classifies THIS file `live` for exactly that reason.
 //   default: existence only (fast).  --run: also import each module, catching moved exports.
 import fs from 'fs'
 import path from 'path'
@@ -23,8 +25,10 @@ for (const d of DOCS) {
   // DELETED — `POLYGON-FIRST` names two by filename precisely to record that a figure is
   // unreproducible, and flagging those would train the reader to ignore this check. The signal is
   // `node scratch/…`, i.e. the doc telling you to run it.
-  for (const m of txt.matchAll(/node\s+`?scratch\/([A-Za-z0-9._-]+\.mjs)/g)) {
-    const f = `scratch/${m[1]}`
+  // ⛔ BOTH HOMES. The safe tier was promoted to `checks/` on 2026-09-13; a scan that still looked
+  //    only at `scratch/` would go green by no longer seeing 124 of the pointers it exists to guard.
+  for (const m of txt.matchAll(/node\s+`?(scratch|checks)\/([A-Za-z0-9._-]+\.mjs)/g)) {
+    const f = `${m[1]}/${m[2]}`
     ;(cited.get(f) || cited.set(f, []).get(f)).push(d)
   }
 }
@@ -39,7 +43,7 @@ for (const [f, docs] of cited) {
     if (/does not provide an export|Cannot find module|SyntaxError|is not defined/.test(msg)) broken.push([f, docs, msg.split('\n')[0]])
   }
 }
-console.log(`${cited.size} distinct scratch pointer(s) cited across ${DOCS.length} live doc(s)${RUN ? ' · --run: modules imported' : ''}`)
+console.log(`${cited.size} distinct check pointer(s) cited across ${DOCS.length} live doc(s)${RUN ? ' · --run: modules imported' : ''}`)
 if (missing.length) {
   console.log(`\n⛔ ${missing.length} POINTER(S) DO NOT EXIST — they read as evidence already gathered:`)
   for (const [f, docs] of missing) console.log(`   ${f}\n      cited by: ${[...new Set(docs)].join(', ')}`)

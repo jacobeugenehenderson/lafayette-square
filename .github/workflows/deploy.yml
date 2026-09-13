@@ -27,6 +27,15 @@ jobs:
 
       - run: npm ci
 
+      - name: Check suite (safe tier)
+        # ⭐ The `safe` tier only: checks that read repo files and contact nothing. The tier is
+        # DERIVED from each check's source at run time (`checks/tier.mjs`), never from a list, so a
+        # check added tomorrow is gated without anyone remembering to gate it.
+        # ⛔ `local-effect` (writes to disk) and `live` are excluded by construction. `live` includes
+        # `claims-onboarding-guard.sh`, which POSTs /auth/v1/signup at the production Supabase
+        # project with no teardown — CI must never be able to reach it.
+        run: npm test
+
       - run: npm run build
         env:
           VITE_API_URL: ${{ secrets.VITE_API_URL }}

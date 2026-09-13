@@ -268,6 +268,58 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
 - **Ground-contact effect knobs (2026-06-22) — where they live, for later tuning / panel promotion.** `bake-ground-ao.js` emits three ground textures and carries the *bake-time* shape constants (edit + re-bake to retune): **lamp pool** — `POOL_RADIUS_M` / `POOL_RING_POS` / `POOL_RING_SHARP` (lower = blurrier ring) / `POOL_SHADOW_FRAC`; **contact shadow** (tree + lamp bases) — `TREE_SHADOW_RADIUS_M` / `TREE_SHADOW_STR`, `LAMP_SHADOW_RADIUS_M` / `LAMP_SHADOW_STR`. The *live* (shader) knobs: **trunk-base ground blend** — `uTrunkBlend` (strength) / `uTrunkBlendTop` (metres up the trunk) in `treeAtlasMaterial.js` (`injectFoliageSway`); **contact-shadow strength** — `uShadowStr` (0.5) in `grassMaterial.js` + `BakedGround` FadeMesh; **pool warm colour** — `vec3(0.80,0.62,0.32)` in both ground shaders. Pool *intensity* + arch *uplight* values are live TOD channels (Lamps / Arch Lighting cards). ⚠️ These are bake-time today — a future arc promotes pool diameter/blur to panel controls (overlap build-up forces baking the shape; see `HANDOFF-channel-variant-cascade.md` neighbours).
 - Server edits (`cartograph/serve.js`) require a `carto` restart — the browser + bake scripts auto-pick-up, but the long-lived server does not (`ARCHITECTURE.md`).
 
+## The check suite — `npm test`
+
+The repo's `claims-*` checks. One per bug-class, each stating a claim that can be **shown false**;
+a non-zero exit is a **finding**, not a broken runner. Wired 2026-09-13 — before that all 157
+existed and none ran, while 116 were cited by name in the docs as the corpus's own proof.
+
+| gesture | runs | contacts |
+|---|---|---|
+| `npm test` | the `safe` tier | **nothing** |
+| `npm run test:all` | `safe` + `local-effect` | nothing; ⛔ writes to disk, so not CI |
+| `npm run test:live` | the `live` tier | ⛔ **production.** Refuses without `CHECKS_LIVE=i-mean-it` |
+| `npm test -- --list` | — | prints what would run, runs nothing |
+| `npm run test:tiers` | — | regenerates `checks/TIERS.json` + `checks/README.md` |
+
+`npm test` runs in CI on both workflows. It takes ~8 min and writes nothing — run it twice and
+`git status` is unchanged.
+
+### ⛔ Why there are tiers at all, and why you must not flatten them
+
+**A blanket run over every check hits the production Supabase project.**
+`checks/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
+teardown**, and has already left anonymous users on the live project that were never removed —
+a recorded incident (`SECURITY.md`, the 2026-08-31 audit disclosure), not a hypothetical. Every
+invocation creates another.
+
+⭐ **The tier is DERIVED from each check's source on every run** (`checks/tier.mjs`), never read
+from a list. A hand-maintained manifest is a skip list: it is wrong the first time someone adds a
+check, and wrong silently. `TIERS.json` is a generated artifact for reading and diffing — the
+runner does not consult it, so it cannot go stale in a way that matters.
+
+**Undecidable ⇒ excluded.** A check whose source cannot be read (a computed `import()`, an exec
+whose command is not a literal) is tiered `live` even though it may contact nothing, because
+"cannot be shown safe" is the only honest gate. ⛔ Do not resolve ambiguity in favour of `safe`.
+
+**And the tier is not the only guard.** Every check in a default run is spawned with
+`checks/_no-network.mjs` preloaded, which makes `fetch`, DNS and the socket layer throw. So
+"`npm test` contacts nothing" is enforced on every run — including on checks added by people who
+never read this page — rather than asserted once by someone who read the sources and felt sure.
+That confidence is what produced the incident above.
+
+### Adding a check
+
+Drop it in `checks/` (or `scratch/`, which is also scanned) named `claims-*.mjs`. It is tiered
+automatically. Give it a one-line header stating **the claim it falsifies** — that line is what
+`checks/README.md` prints. ⛔ Don't edit `checks/README.md`; run `npm run test:tiers`.
+
+⚠️ **Many checks name Lafayette Square with no way for a caller to choose a scene, and the ones
+that are parameterised use four conventions that do not agree** (`--scene`, `--only`, `--look`, a
+bare `argv[2]`). A check that runs only on town #1 fails Layer 0's first question. ⛔ Don't quote a
+figure — re-derive it: **`node checks/scene-portability.mjs`** (`--list` names them). Known open
+ticket; not a property of the wiring.
+
 ## Save → ship — the lifecycle, the git tree, and the troubleshooting door
 
 > **The door + the knobs for "the tree is dirty / how do I save / why is staging stale / it works here but not there."** Written so a future troubleshoot is a *lookup*, not a forensic. The bake *mechanism* is `BAKE.md`; the slab *byte format* is `SLAB-CONTRACT.md`; this is the **operator's** view of save-and-ship. Grounded against `serve.js`, the workflows, and `.gitignore` (verified 2026-06-17).

@@ -1,0 +1,1182 @@
+{
+  "generated_by": "node checks/tier.mjs --json",
+  "total": 158,
+  "counts": {
+    "safe": 125,
+    "local-effect": 5,
+    "live": 28
+  },
+  "checks": [
+    {
+      "file": "checks/claims-a-corner-is-where-one-turns.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-frontage-can-ask-for-no-ped-band.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-kink-recovers-but-a-corner-does-not.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-pour-adds-no-gitignore-lines.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git ls-files -z -- cartograph/` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-swap-never-happens-mid-street.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-tile-is-one-tree.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-a16-materials-write.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-alley-stub-pairs.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-anchors-follow-the-placements.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-atlas-uv-rect-survives-the-bake.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-axis-keys-resolve.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-band-is-one-ring.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-band-vs-partition-state.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-boundary-record-split.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-browse-frame.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-cap-vs-skeleton.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-cards-light-from-the-scene-key.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-cary-order-contract.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-commerce-write-gate.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-contact-sms-rate-limit.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-corner-decline-vs-partition.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/tileGround.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-corner-takeover.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/tileGround.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-coupler-totality.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-curated-centerlines-unread.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-curvature-vs-band.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-cutover-casualties.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-dblock-arc-diagnosis.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-deadend-notch-standoff.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-deadend-populations.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-deadend-set-decomposition.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-deployment-id-single-source.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-divided-seam-step.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-docs-carry-their-commands.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-corner-is-configured.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-corner-is-one-of-three.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-shadowed-placement-renders.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-turn-in-the-protopolygon-gets-an-arc.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-faces-on-the-ssot.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-false-deadend-census.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-fetch-contains-the-forever-zone.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-frontage-covers-the-block.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-gas-schema.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-grout-is-a-valid-polygon.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-handle-rides-its-arc.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/tileGround.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-hero-degrade-static.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-inboard-side-convention.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-inner-edge-deletion-gates.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-inner-edge-side-selector.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-intersections-are-over-described.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-leaf-pack-cells-agree.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) sharp — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-look-seed-scene-clean.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-marked-corners.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-matched-axes-have-matrices.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-memory-index-health.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git ls-files -z` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-menu-item-ids.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-named-way-becomes-street.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-coarse-value-decides.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-hairline-ring-reaches-the-operator.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-shadowed-chains.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-tree-stands-on-drawn-hardscape.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-node-pair-key-parity.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-nodeless-tip-classifier.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-one-face-one-arrangement.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-one-frontage-one-arc.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-orphaned-customs.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-override-provenance.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-ped-does-not-follow-the-rim.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-physical-side-reconcile.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/lib/tileGround.js — read, safe"
+      ]
+    },
+    {
+      "file": "checks/claims-preclip-walk.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-price-of-record.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-producer-does-not-decide-partition.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-band-flood-mechanism.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-blocks-are-faces.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-corner-is-authored-radius.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-curb-is-block-sized.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-curb-is-parallel.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-curb.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-fill-is-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-frozen-matches-live.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-identity.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-leg-tail-is-corner-reach.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-legmiss-by-producer.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-median-is-a-hole.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-paints-into-medians.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-stack-disjoint.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-stack-reads-authoring.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-thin-curb-runs.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-tip-has-two-apexes.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-unrounded-corners.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-vertex-provenance.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-proto-wall.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-recentre-removes-asymmetry.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-reference-credits.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-repour-changes-nothing.mjs",
+      "tier": "safe",
+      "why": [
+        "runs `git show HEAD:${P}` — local, read-only"
+      ]
+    },
+    {
+      "file": "checks/claims-revert-field-coverage.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-rim-census.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-ring-partition.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-scene-at-default.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-shader-fragments-declare-what-they-use.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-side-baseline-audit.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-side-chain-falsifiers.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-sidewalk-is-one-band.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-simplify-preserves-authoring.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-spur-leg-offset.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-stamp-follows-the-edge.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-stat-scope.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-survey-and-section-agree.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-swap-reaches-the-paint.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-block-underlay-never-shows.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-capture-frame-is-the-clip-frame.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) @gltf-transform/core, @gltf-transform/extensions, meshoptimizer — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-the-corner-extent-is-carried.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-corner-record-reports-the-achieved-radius.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ease-is-the-corner.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ramp-has-room.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-slab-envs-do-not-collide.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-slab-freshness-key-is-not-stale.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-slope-is-on-the-leg.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-survey-reaches-the-measure.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-through-node-width-step.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-twilio-webhook-guard.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-uturn-outer-edge-walk.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-verify-taxon.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-zero-separation-offset.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "scratch/claims-a-rename-cannot-repaint.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-attribution-is-per-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-band-reaches-lu.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-building-identity-survives-repour.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync"
+      ]
+    },
+    {
+      "file": "scratch/claims-cary-anon-exposure.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "child_process with a non-literal command — cannot be read",
+        "references a hosted-service credential"
+      ]
+    },
+    {
+      "file": "scratch/claims-clip-extent-floor.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-corner-delta.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "deletes files",
+        "child_process with a non-literal command — cannot be read",
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-corner-leg-suppression.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-curb-ramp-neutral.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-deadend-look.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "imports package(s) sharp — not read from source"
+      ]
+    },
+    {
+      "file": "scratch/claims-decline-fate.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-doc-code-citations.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "runs `git ls-files` — local, read-only",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-doc-pointers-resolve.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-dossier-writers-agree.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "deletes files",
+        "copies/renames files",
+        "runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-every-declared-page-ships.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "runs `git` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-every-placed-asset-has-a-size-band.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/salon-options.js, which can: imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-hook-bindings-declared.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-ia-source-stamp.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import of scratch/.stamp-probe/tileGround.stamp.mjs — read, safe"
+      ]
+    },
+    {
+      "file": "scratch/claims-junctionmap-blast-radius.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "runs `grep -rl junctionMap src carto` — local, read-only",
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-keyhole-carry-to-ia.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-keyhole-splice-survival.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports scratch/claims-band-reaches-lu.mjs, which can: writeFileSync, mkdirSync, computed import() with no readable target — runs arbitrary modules, computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-label-loss-bisect.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-mesh-equals-the-bar.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-notch-origin-bisect.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-offset-reversal.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-onboarding-guard.sh",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "shell: runs curl",
+        "shell: redirects to a file"
+      ]
+    },
+    {
+      "file": "scratch/claims-postwall-provenance.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-protopolygon.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "imports package(s) clipper-lib — not read from source"
+      ]
+    },
+    {
+      "file": "scratch/claims-regime-census.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
+      "file": "scratch/claims-the-leaf-face-axis-reaches-the-shader.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/salon-options.js, which can: imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-the-roster-light-tells-the-truth.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports arborist/roster-coverage.js, which can: imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command"
+      ]
+    },
+    {
+      "file": "scratch/claims-unpainted-arcs.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
+      ]
+    },
+    {
+      "file": "scratch/claims-wind-tier-extraction.mjs",
+      "tier": "local-effect",
+      "why": [
+        "deletes files",
+        "runs `git show ${BASE}:src/component` — local, read-only",
+        "imports package(s) three, esbuild — not read from source"
+      ]
+    }
+  ]
+}
