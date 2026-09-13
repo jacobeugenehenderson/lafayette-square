@@ -18,7 +18,7 @@
  */
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { classifyAll, claimOf, ROOT } from './tier.mjs'
+import { classifyAll, claimOf, blockedReason, ROOT } from './tier.mjs'
 
 /**
  * ⭐ ACCEPTANCE IS ENFORCED, NOT ASSERTED. Every check in a default run is spawned with the network
@@ -66,14 +66,26 @@ for (const r of run) {
 }
 console.log(`\n\n${'─'.repeat(72)}`)
 
-const red = results.filter(r => r.code !== 0)
+// ⛔ A check that FAILED because it was spawned without an argument it requires is not a finding
+//    about the product — it is wiring debt in this suite. Decided from the failure, never from a
+//    grep of the source (see tier.mjs): a check is only "blocked" if it actually failed AND says so.
+//    ⛔ Never hidden: counted and printed every run, because a suite that gets greener by looking at
+//    less is the failure mode this repo has hit twice today.
+const failed  = results.filter(r => r.code !== 0)
+const blocked = failed.filter(r => blockedReason(r.file) && /NO DEFAULT|VOID probe|Refusing to produce|usage:/.test(r.out))
+const red     = failed.filter(r => !blocked.includes(r))
 for (const r of red) {
   console.log(`\n⛔ ${r.file}  → exit ${r.code}`)
   console.log(`   claim: ${claimOf(r.file) || '(no header claim)'}`)
   console.log(r.out.trim().split('\n').slice(-14).map(l => `   │ ${l}`).join('\n'))
 }
 console.log(`\n${'─'.repeat(72)}`)
-console.log(`${results.length - red.length}/${results.length} green · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
+console.log(`${results.length - failed.length}/${results.length} green · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
+if (blocked.length) {
+  console.log(`\n⛔ ${blocked.length} BLOCKED — these cannot run in a no-argument tier and say so themselves.`)
+  console.log(`   They report NOTHING about the product. This is wiring debt, not a green light:`)
+  for (const r of blocked) console.log(`   ${r.file} — ${blockedReason(r.file)}`)
+}
 if (red.length) {
   console.log(`\n⛔ ${red.length} RED. Each is a FINDING for the board, not a runner fault:`)
   for (const r of red) console.log(`   ${r.file} (exit ${r.code})`)

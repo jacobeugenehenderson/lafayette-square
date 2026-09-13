@@ -204,6 +204,36 @@ export function classify(file, seen = new Set(), depth = 0) {
   return { file, tier, why, reasonClass: tier === 'live' ? (outbound ? 'outbound' : 'unreadable') : undefined }
 }
 
+/**
+ * ⛔ A CHECK THAT CANNOT RUN WITHOUT AN ARGUMENT IS NOT A FINDING — IT IS MIS-WIRED.
+ *
+ * `run.mjs` spawns every check with NO arguments. A check that requires `--scene`, or that has
+ * voided itself, is therefore red on every run forever: it reports nothing about the product,
+ * only that it was put in a tier that cannot satisfy it. Measured 2026-09-13: 5 of 45 reds.
+ *
+ * ⛔ The answer is NOT to drop them from the run. A check excluded quietly makes the suite greener
+ *    by looking at less, which is the vacuous-green failure this repo has now hit twice in one day.
+ *    They are reported LOUDLY and counted, as wiring debt, every run — see `run.mjs`.
+ *
+ * ⛔⛔ AND IT MUST BE DECIDED FROM THE ACTUAL FAILURE, NEVER FROM THE SOURCE. `claims-browse-frame`
+ *    contains the string "NO DEFAULT" and PASSES with no arguments. Marking it blocked from a static
+ *    grep would have dropped a working check from the run — the very failure this comment warns
+ *    about, committed by the guard against it. So: `blockedReason` is applied by `run.mjs` to the
+ *    OUTPUT OF A CHECK THAT ACTUALLY FAILED, and to nothing else.
+ */
+const BLOCKED = [
+  [/\bNO DEFAULT\b/,            'declares NO DEFAULT — requires an explicit --scene'],
+  [/\bVOID probe\b/,            'declares itself a VOID probe and refuses to produce numbers'],
+  [/Refusing to produce/,        'refuses to produce numbers'],
+  [/^\s*usage:/m,                'prints a usage line — takes a required argument'],
+]
+
+export function blockedReason(file) {
+  const src = readFileSync(join(ROOT, file), 'utf8')
+  for (const [re, why] of BLOCKED) if (re.test(src)) return why
+  return null
+}
+
 export function classifyAll() {
   const files = []
   for (const d of DIRS) {
