@@ -1,0 +1,14 @@
+{
+  "_comment": "Committed extent — center = the boundary centroid; bbox = the fetch extent; timezone derived from center.",
+  "lat": 34.19212,
+  "lon": -118.13529,
+  "timezone": "America/Los_Angeles",
+  "lonToMeters": 92079,
+  "latToMeters": 111000,
+  "bbox": {
+    "minLat": 34.16347,
+    "maxLat": 34.22285,
+    "minLon": -118.17794,
+    "maxLon": -118.08879
+  }
+}
