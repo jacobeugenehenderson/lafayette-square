@@ -493,7 +493,9 @@
 >   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
 >   `protoTurns.has(labs[i])` marks **every ② vertex on that frontage** once its owner turns
 >   anywhere. `end()` reads `iaCorner` to end a leg, so each one inserts a ramp **mid-block**:
->   LS went to **10,606 marked vertices of 14,651 (72.4%, from 3.6%)** and the eye caught sawtooth
+>   LS went to **10,606 marked vertices of 14,651 (72.4%, from 3.6%)** — measured when `protoTurns`
+>   was read for the mark; that read is RETIRED (`protoTurns` is computed and discarded, `void
+>   protoTurns` in `tileGround.js`), so no command reproduces this figure — and the eye caught sawtooth
 >   notches down straight streets — *"weird geometry everywhere; looks like contour nodes."*
 >   ⭐⭐ **THE LESSON, AND IT GENERALISES PAST CORNERS: the owner-change half was doing TWO jobs —
 >   wrongly answering WHETHER, and necessarily supplying WHERE.** Deleting a term that carries a

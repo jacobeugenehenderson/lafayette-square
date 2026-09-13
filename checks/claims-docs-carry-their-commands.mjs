@@ -31,14 +31,26 @@ for (const p of DOCS) {
   let fence = false, fig = 0, ban = 0
   for (let i = 0; i < lines.length; i++) {
     const L = lines[i]
-    if (/^\s*```/.test(L)) { fence = !fence; continue }
+    // ⛔ A FENCE INSIDE A BLOCKQUOTE IS STILL A FENCE. This read /^\s*```/ and so went blind
+    //    to every "> ```" block — RIBBONS.md fences almost everything that way, so the check was
+    //    scanning measured tables it is explicitly meant to skip and reporting their cells as
+    //    bare prose figures. The instrument was wrong, not the doc.
+    if (/^\s*(>\s*)*```/.test(L)) { fence = !fence; continue }
     if (fence) continue
     if (BANNER.test(L)) { ban++; if (LIST) console.log(`  BANNER  ${p}:${i+1}  ${L.trim().slice(0,110)}`) }
     if (!FIG.test(L)) continue
     if (NOISE.test(L) && !/%|\d of \d/.test(L.replace(NOISE,''))) { /* keep: the figure survives the noise strip */ }
     // a figure is EXCUSED if its own line, or one within two lines, names the command that makes it
     const near = lines.slice(Math.max(0,i-2), i+3).join(' ')
-    if (/▶|node scratch\/|`node |git |grep |\.mjs\b/.test(near)) continue
+    if (/▶|node scratch\/|node checks\/|`node |git |grep |\.mjs\b/.test(near)) continue
+    // ⭐ …and a figure that is explicitly HISTORICAL is excused too, because no command can
+    //    reproduce it: the mechanism it measured is GONE. "vetoed 54.8% of LS's arcs" describes
+    //    a rule retired 2026-09-08 — demanding a reproducing command for it asks the doc to run
+    //    code that no longer exists, and deleting the number would erase why the rule was retired.
+    //    ⛔ The excuse requires an EXPLICIT marker on or beside the line, never a guess at tense:
+    //    the harm this check exists to prevent is a stale figure read as CURRENT, and a figure
+    //    labelled retired cannot be read that way.
+    if (/\bRETIRED\b|\bwas retired\b|\bno longer\b|\buntil 20\d\d-\d\d-\d\d\b|\bexcised\b/i.test(near)) continue
     fig++
     if (LIST) console.log(`  FIGURE  ${p}:${i+1}  ${L.trim().slice(0,110)}`)
   }

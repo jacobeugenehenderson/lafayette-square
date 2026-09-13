@@ -353,6 +353,7 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 > ### ⛔⛔ AND THE OVERLAY DOES NOT REACH ① — SO IT REACHES NO CORNER. Measured 2026-09-08.
 > `strokePoints` is written in `derive.js` and consumed **there** (E2's median lens + `faceStreets`).
 > It is **NOT promoted**: `0 of 343` chains carry it in `src/data/ribbons.json`, and the string does
+> ▶ `node -e "const r=require('./src/data/ribbons.json');const a=r.streets;console.log(a.filter(x=>x.strokePoints).length,'of',a.length)"`
 > not occur anywhere outside `derive.js`. `mintProtopolygon({ streets: streetsOrig })` takes
 > `streets[].points` — the survey chain. ⇒ **the prevailing-direction correction is invisible to ①,
 > to the ease, and to every corner.**

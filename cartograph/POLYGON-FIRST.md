@@ -33,6 +33,8 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 >   the carve.
 > - **`degenerate:*`** — an offset that *passed* the gate and came back unusable (empty · collapsed
 >   below 5% of the tile · overflowed past it). **THAT is a failure**, it is now counted and LOUD, and
+>   *(the 5% is the THRESHOLD ITSELF, not a measurement — it is set at `degenerate:collapsed` in
+>   `src/lib/tileGround.js`: `offArea <= 0.05 * ringArea`. ▶ `grep -n "degenerate:collapsed" src/lib/tileGround.js`)*
 >   it is reported **separately** so it can never be buried among the routine structural carves.
 >
 > **Measured live, per scene, by the offset/carve split it reports per tile:**

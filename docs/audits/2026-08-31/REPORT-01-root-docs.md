@@ -145,6 +145,7 @@ SUPERSEDED limbo. **The cheap moment to record a brief's fate is the commit that
 **The check that makes it stick:**
 
 ```
+# ⚠️ PROPOSED, NOT BUILT (still unwritten as of 2026-09-13) — this block is a SPEC, not a receipt.
 # scratch/claims-root-doc-hygiene.mjs — READS the repo, restates nothing
 #  FAIL if any tracked ^(BRIEF|HANDOFF)-.*\.md$ or .*-(FINDINGS|FORENSIC)\.md$ exists at root
 #  FAIL if any ROADMAP.md pointer resolves to a brief, or to an untracked/absent path
@@ -317,6 +318,7 @@ The 10 absent, with citers: `ARBORIST-SLAB-WEIGHT.md` ← its own brief ·
 enforcement, and discipline does not survive a reduction pass:
 
 ```
+# ⚠️ PROPOSED, NOT BUILT (still unwritten as of 2026-09-13) — this block is a SPEC, not a receipt.
 # scratch/claims-doc-pointer-health.mjs — fails CI on:
 #  (a) any markdown link OR backtick path that does not exist AS WRITTEN
 #  (b) any cited path that is gitignored or untracked
@@ -395,7 +397,7 @@ EXCISE                                  2   BRIEF-dead-end-mouth-junction · BUS
 1. **Fix `README.md`'s first screen** — line 3 names the wrong product. Highest-leverage edit in the corpus.
 2. **Evacuate the brief class from root** — 44% of the corpus, 91% of it dead. Extract the 4
    aspirations to ROADMAP, archive 18 dated, delete the 1 self-retired file.
-3. **Ship two checks** — `claims-root-doc-hygiene.mjs` and `claims-doc-pointer-health.mjs`.
+3. **Ship two checks** — `claims-root-doc-hygiene.mjs` and `claims-doc-pointer-health.mjs`. ⚠️ **Both are STILL UNWRITTEN as of 2026-09-13** — named here as work owed, never as work done.
    Rules without forcing functions have already failed here.
 
 **One caveat owed:** for `BRIEF-species-pipeline-adversarial.md` I could not establish whether
