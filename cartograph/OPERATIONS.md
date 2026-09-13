@@ -288,7 +288,7 @@ existed and none ran, while 116 were cited by name in the docs as the corpus's o
 ### ⛔ Why there are tiers at all, and why you must not flatten them
 
 **A blanket run over every check hits the production Supabase project.**
-`checks/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
+`scratch/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
 teardown**, and has already left anonymous users on the live project that were never removed —
 a recorded incident (`SECURITY.md`, the 2026-08-31 audit disclosure), not a hypothetical. Every
 invocation creates another.

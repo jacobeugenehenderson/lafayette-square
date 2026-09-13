@@ -252,7 +252,7 @@ Two reason classes, and they are not the same thing. **outbound** — a demonstr
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
 to. Both are excluded, because "cannot be shown safe" is the only honest gate (\`CLAUDE.md\` Layer 0 q2).
 
-⛔ \`checks/claims-onboarding-guard.sh\` POSTs \`/auth/v1/signup\` at the live Supabase project **with no
+⛔ \`scratch/claims-onboarding-guard.sh\` POSTs \`/auth/v1/signup\` at the live Supabase project **with no
 teardown** — every invocation leaves another anonymous user behind. That is a recorded incident
 (\`SECURITY.md\`, the 2026-08-31 audit disclosure), not a hypothetical.
 
