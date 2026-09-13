@@ -17,7 +17,7 @@
  *      returns `m` untouched when `!m.left || !m.right`, and only runs for chains in
  *      `dividedPairs` — so an operator-set `anchor:'inner-edge'` with no mate never gets it.
  *
- *   node scratch/claims-inboard-side-convention.mjs [scene ...]
+ *   node checks/claims-inboard-side-convention.mjs [scene ...]
  */
 import fs from 'fs'
 const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']

@@ -30,7 +30,7 @@
 // cleanup; the detector is allowed, the fix-up is not).
 // ⛔ Where a number arrives without a mechanism this prints CAUSE NOT ESTABLISHED.
 //
-//   node scratch/claims-curvature-vs-band.mjs [--near=X,Z] [--radius=120]
+//   node checks/claims-curvature-vs-band.mjs [--near=X,Z] [--radius=120]
 //
 import fs from 'fs'
 import crypto from 'crypto'

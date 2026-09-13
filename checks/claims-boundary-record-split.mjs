@@ -4,7 +4,7 @@
  * records and recomposes BYTE-IDENTICALLY, and an AUTHORED fade set survives a
  * commit / rescope that would previously have regenerated it from constants.
  *
- *   node scratch/claims-boundary-record-split.mjs
+ *   node checks/claims-boundary-record-split.mjs
  *
  * The defect (`EXTENT-DESIGN §5.1`, D4): the write routes CONSTRUCTED A FRESH
  * OBJECT, so `innerFadeOffset` / `fade` / `streetFade` were rebuilt from hardcoded

@@ -166,7 +166,7 @@ aggregate is still quoted as evidence**, and a number from a blind instrument is
 **The centerline the operator SEES is not the line ① is built from.** `ribbons.streets[].points` versus
 the simplified skeleton: **median 1.00 m apart, p90 7.50 m, max 20.8 m — 4,781 of 9,547 points more than
 a meter off.** ⇒ **The curb is a perfect offset of a line nobody can see** (② is parallel to ① at the
-authored width on 101/101 blocks, max error 0.00 m — `scratch/claims-proto-curb-is-parallel.mjs`).
+authored width on 101/101 blocks, max error 0.00 m — `checks/claims-proto-curb-is-parallel.mjs`).
 
 Also landmined, same day: **the authored corner radius is not built** on the ① path. It belongs in the
 node's bezier handles; a rounding pass was written, grew four guards each propping up the last, and was

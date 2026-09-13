@@ -19,7 +19,7 @@
  * ⛔ Stops sampling at an AUTHORED width change rather than averaging across it.
  * ⭐ No cap-style branch: the cap is not measured, so `round` vs `blunt` never arises here.
  *
- *   node scratch/claims-spur-leg-offset.mjs [scene]
+ *   node checks/claims-spur-leg-offset.mjs [scene]
  *
  * Sibling (the ray-march form of the same question, per station): claims-deadend-notch-standoff.mjs
  */

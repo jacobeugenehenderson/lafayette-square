@@ -12,7 +12,7 @@
  * them — it does not restate the algorithm. A check that re-implements what it
  * is checking passes forever, including after the source is broken.
  *
- *   node scratch/claims-twilio-webhook-guard.mjs
+ *   node checks/claims-twilio-webhook-guard.mjs
  *
  * The expected signatures below are not remembered constants — they were
  * produced by the OFFICIAL `twilio` package's `getExpectedTwilioSignature()`

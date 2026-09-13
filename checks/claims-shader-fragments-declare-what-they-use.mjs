@@ -20,7 +20,7 @@
  * constant each BEGIN constant is concatenated with at its injection site. A new material
  * is covered the day it is written.
  *
- *   node scratch/claims-shader-fragments-declare-what-they-use.mjs
+ *   node checks/claims-shader-fragments-declare-what-they-use.mjs
  *   exit 0 = every fragment's identifiers are declared · exit 2 = a program would not link
  */
 import { readFileSync } from 'node:fs'

@@ -15,7 +15,7 @@
  * knowledge. ⛔ A chain whose width varies is the operator's authoring and is REPORTED AS
  * SUCH, never as a defect.
  *
- *   node scratch/claims-recentre-removes-asymmetry.mjs [scene ...]
+ *   node checks/claims-recentre-removes-asymmetry.mjs [scene ...]
  */
 import fs from 'fs'
 const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']

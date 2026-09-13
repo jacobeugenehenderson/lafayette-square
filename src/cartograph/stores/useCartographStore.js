@@ -909,7 +909,7 @@ const useCartographStore = create((set, get) => ({
   // ⚠️ There is no PER-CAP revert gesture: ⌃-click on a cap IS the flip
   // (MeasureOverlay.jsx:796), so the manual way back is flipping twice. This
   // list governs the whole-scene revert, which is the path that was lying.
-  // Guard: `node scratch/claims-revert-field-coverage.mjs` fails if any authored
+  // Guard: `node checks/claims-revert-field-coverage.mjs` fails if any authored
   // blockCustoms field is absent from BOTH lists (the class, not this instance).
   _SECTION_FE_FIELDS: ['treelawn', 'sidewalk', 'materials', 'capFlip'],
   // blockCustoms with `fields` stripped from every fe slot (empty slots pruned).

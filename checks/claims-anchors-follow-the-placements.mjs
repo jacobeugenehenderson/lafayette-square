@@ -25,7 +25,7 @@
  * serve.js, the key out of the artifacts — so this cannot go stale the way a number in
  * a doc does (`CLAUDE.md` "PRUNE AS YOU GO" rule 1).
  *
- *   node scratch/claims-anchors-follow-the-placements.mjs
+ *   node checks/claims-anchors-follow-the-placements.mjs
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'

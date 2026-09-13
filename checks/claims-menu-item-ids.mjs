@@ -15,7 +15,7 @@
  *                  whole point: the positional key it replaced failed exactly
  *                  here, silently, under a live cart.
  *
- *   node scratch/claims-menu-item-ids.mjs
+ *   node checks/claims-menu-item-ids.mjs
  */
 import { readFileSync } from 'node:fs'
 import { ensureMenuIds, auditMenuIds, indexMenuItems } from '../src/lib/menuIdentity.js'

@@ -58,7 +58,7 @@ const ARC_TOL = 0.01 * SCALE  // 1cm — smooth arcs
 // ⛔ AND EVERY ANCHOR SURVIVES, which is what makes it safe for authoring: `segOrd` is an ordinal
 // over the IX partition of the point array, and the IX vertices ARE anchors. Adding points BETWEEN
 // them shifts indices but changes no ordinal.
-// ▶ node scratch/claims-simplify-preserves-authoring.mjs <scene>
+// ▶ node checks/claims-simplify-preserves-authoring.mjs <scene>
 const CURVE_TOL = 0.10   // m — the sagitta a tessellated chord may miss the true curve by
 
 function tessellateAdaptive(points, segments, tol = CURVE_TOL) {
@@ -2182,7 +2182,7 @@ export function deriveLayers(highways) {
   // sidewalk — so an alley stopped at the OUTER edge of the ped zone and never touched the road.
   // That is why an alley crossing a street is stored as two stubs with a hole in it: the hole is
   // the whole right-of-way, not the roadway. ▶ MEASURED: 104 of 108 facing stub pairs on LS have a
-  // street dead-centre in the gap, median gap 16.5 m — `scratch/claims-alley-stub-pairs.mjs`.
+  // street dead-centre in the gap, median gap 16.5 m — `checks/claims-alley-stub-pairs.mjs`.
   // ⇒ Reaching only to the asphalt edge lets the alley run through the ped zone and meet the road,
   // which is what it does on the ground. The remaining gap is then the ROADWAY, not the ROW.
   // ⛔⛔ ACCEPTED AS A STOPGAP, NOT AS CORRECT (Jacob, 2026-09-08: "It looked better when the
@@ -4056,7 +4056,7 @@ export function deriveLayers(highways) {
         // 34 ends spine-wider, 2 spine-NARROWER (russell-boulevard-1/-3, +0.52 m at
         // the node) — and those 2 carry the LARGEST world-space curb step on the
         // map. The discontinuity is |cwHW − spineOuter| in EITHER direction, so the
-        // ramp runs in either direction. (`scratch/claims-divided-seam-step.mjs`.)
+        // ramp runs in either direction. (`checks/claims-divided-seam-step.mjs`.)
         const dHW = cwHW - spineOuter                  // > 0 ⇒ carriageway wider than the spine
         if (Math.abs(dHW) < 1e-6) continue             // already continuous → nothing to ramp
         const noseLat = Math.abs(dHW)                  // the splay at which the median has fully
@@ -4593,7 +4593,7 @@ export function deriveLayers(highways) {
       // successor for EVERY directed side-chain at EVERY node it touches, and a
       // weld is a node the walk arrives at like any other.
       // ⛔ NO NEW COUPLER KIND. Measured before the change, all six scenes
-      // (`node scratch/claims-coupler-totality.mjs`): the degree-2 population is
+      // (`node checks/claims-coupler-totality.mjs`): the degree-2 population is
       // 100% an end-to-end weld of two DISTINCT chains — 0 interior through-pass
       // of one chain, 0 chain welded to itself. The sweep below pairs that
       // correctly on its own: with 2 arms it emits both wedges, (A,B) and (B,A),
@@ -4755,7 +4755,7 @@ export function deriveLayers(highways) {
       // silently moving 17 of LS's 83 authored slots to different spans. ⭐ Ruled acceptable by Jacob
       // ("I don't care about losing authoring") — LS's hand-authoring is a fixture on the mould town,
       // not the product. ⛔ Nothing is destroyed on disk: `design.json` is untouched, so reverting
-      // this emit restores the old meaning. ▶ `node scratch/claims-simplify-preserves-authoring.mjs`
+      // this emit restores the old meaning. ▶ `node checks/claims-simplify-preserves-authoring.mjs`
       points: (() => {
         const p = simplifiedPoints?.get(st.skelId ?? st.name)
         if (!(p?.length >= 2)) throw new Error(`[derive] ⛔ no simplified skeleton geometry for chain "${st.skelId ?? st.name}" — refusing to emit the densified trace for it. The drawn centreline and the protopolygon must be ONE line; a per-chain mix is invisible because both render.`)
@@ -4913,7 +4913,7 @@ export function deriveLayers(highways) {
     // ⭐ And the objection to this collapsed on measurement: `strokePoints` straightens carriageway
     // tips at divided→through nodes and I expected retiring it to cost the median faces — EXACTLY
     // ONE CHAIN IN THE MAP CARRIES IT, and one of the eight movers touches it.
-    // ▶ `node scratch/claims-faces-on-the-ssot.mjs <scene>` — re-run it; the digits are a snapshot.
+    // ▶ `node checks/claims-faces-on-the-ssot.mjs <scene>` — re-run it; the digits are a snapshot.
     // ⛔ NO FALLBACK to the densified chains: a face walk that silently uses a different geometry
     // from ① is what produced two partitions in the first place, and it is invisible — both render.
     const faceSimplified = (() => {
@@ -5034,7 +5034,7 @@ export function deriveLayers(highways) {
   // `CLAUDE.md` Layer 0 q3, baked into an artifact. ⛔ That objection cannot reach
   // ①, because ① HAS NO WIDTH. It is chains and ε and nothing else, so there is
   // no authored value for the freeze to pin. Enforced, not asserted:
-  // `node scratch/claims-proto-wall.mjs` claim A fails if any authored read
+  // `node checks/claims-proto-wall.mjs` claim A fails if any authored read
   // appears inside the mint.
   //
   // ⭐ The per-edge stamp carries IDENTITY ONLY — {skelId, side, segOrd,

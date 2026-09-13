@@ -3,7 +3,7 @@
  * claims-browse-frame.mjs — the authored Browse frame (SC.5), checked by
  * READING the source, never by restating it.
  *
- *   node scratch/claims-browse-frame.mjs
+ *   node checks/claims-browse-frame.mjs
  *
  * What it defends, and why each one is a defect that has actually happened:
  *

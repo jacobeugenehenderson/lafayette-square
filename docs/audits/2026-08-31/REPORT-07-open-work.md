@@ -295,8 +295,8 @@ code importer anywhere.** **Unreachable source, not a live forged-webhook path.*
 block at `:48-50`; **F-8 carries none and says so** — *"DDL applied; catalog not read."* ⭐ **The one
 true gap is self-disclosed, not hidden.**
 
-Three run: (1) `node scratch/claims-twilio-webhook-guard.mjs` — **PASS**, exit 0, 9 assertions incl.
-*"NO FAIL-OPEN"*; tick earned. (2) `node scratch/claims-contact-sms-rate-limit.mjs` — **PASS**, exit
+Three run: (1) `node checks/claims-twilio-webhook-guard.mjs` — **PASS**, exit 0, 9 assertions incl.
+*"NO FAIL-OPEN"*; tick earned. (2) `node checks/claims-contact-sms-rate-limit.mjs` — **PASS**, exit
 0, 22 assertions; tick earned. (3) `node scratch/claims-cary-anon-exposure.mjs` — **NOT RUN against
 prod** (fetches live PostgREST); with no credentials it **fails closed**. Script correct; those
 closures unverified from here.

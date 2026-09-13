@@ -17,7 +17,7 @@
  *     what buildPathRibbons.js:114 already ships. If the two agree, the degenerate
  *     ring is a working primitive and no epsilon is needed.
  *
- * Usage: node scratch/claims-zero-separation-offset.mjs
+ * Usage: node checks/claims-zero-separation-offset.mjs
  */
 import fs from 'node:fs'
 import path from 'node:path'

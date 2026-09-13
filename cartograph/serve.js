@@ -75,7 +75,7 @@ function runCapture(cmd, opts = {}) {
 // before and it fails SILENTLY: the publish panel pushed HEAD to a branch nothing
 // deploys, reported success, and staging never moved. `curb-offset-draw` last saw a
 // commit on 2026-08-02 while the workflow had moved to `land-use-derivation`.
-// ▶ node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs
+// ▶ node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs
 const STAGING_BRANCH = 'land-use-derivation'
 const PROD_BRANCH = 'main'
 // Where the baked slab is actually served from. Must match the VITE_ASSET_BASE the
@@ -85,7 +85,7 @@ const ASSET_BASE_URL = process.env.ASSET_BASE || 'https://assets.theward.online/
 // environment, per PREVIEW.md §0.2" — true until the prefix split, and the reason
 // `/deployed` reported prod's slab under staging's name. ⛔ KEEP IN STEP WITH
 // `scripts/upload-baked-to-r2.mjs`'s ENV_PREFIX; the two drifting apart means the panel
-// measures a key space nothing writes. ▶ node scratch/claims-the-slab-envs-do-not-collide.mjs
+// measures a key space nothing writes. ▶ node checks/claims-the-slab-envs-do-not-collide.mjs
 const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
 const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
 const PROD_SITE_URL = 'https://lafayette-square.com/'

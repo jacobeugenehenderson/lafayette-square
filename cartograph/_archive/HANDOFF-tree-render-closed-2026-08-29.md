@@ -6,7 +6,7 @@ work by everyone who scans the list afterwards. They are here so nothing is lost
 their live homes are named so nobody has to come looking.
 
 **Live homes.** The capture-frame mechanism is enforced by
-`scratch/claims-the-capture-frame-is-the-clip-frame.mjs`, and OPEN item 0 in the
+`checks/claims-the-capture-frame-is-the-clip-frame.mjs`, and OPEN item 0 in the
 handoff carries what is still owed on it (the fix has not propagated). The
 duplicate-identity rule is written up in `arborist/FEATURES` ▸ the roster light, and
 in `[[project_one_tree_two_library_ids]]`.
@@ -20,7 +20,7 @@ in `[[project_one_tree_two_library_ids]]`.
    all. Scale ≥1 pushed the cuts inside the crown and passed, every time, which is why it looked
    species-specific. ⭐ The same slip shipped the **card height** in the wrong frame roster-wide
    (`maple_silver` 29.7 m for a 21.0 m tree; HPDM's `picea_abies` **681 m**) — ⛔ **every Look baked
-   before today must re-bake.** Fixed in `captureImpostor.js`; ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`.
+   before today must re-bake.** Fixed in `captureImpostor.js`; ▶ `node checks/claims-the-capture-frame-is-the-clip-frame.mjs`.
    ⚠️ **Jacob's *"silver maple leaves have fronts and backs"* hint is UNACCOUNTED FOR** — it points at
    colour and nothing measured here touches colour. Still open as its own question, not as this bug.
 2. ✅ **The duplicate-identity class — CLOSED 2026-08-28** (`a56328dd` · corrected `deab54ed`).

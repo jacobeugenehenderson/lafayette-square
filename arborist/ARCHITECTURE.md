@@ -72,7 +72,7 @@ This is the load-bearing as-built of how Arborist trees actually render in produ
 > ### ⛔⛔ AND "IF DENSITY LOOKS THIN" WAS THE WHOLE DEFECT — it made a human the detector *(Jacob, 2026-08-27)*
 > **The ground stamps a contact-shadow ring for EVERY placement, unconditionally, at bake** (`ground.poolmap.png` G channel, `groundColorState.js:22`) — while trees hydrate at runtime. So a foundation-off look renders **rings over bare ground and still looks like a map.** ⭐ **Jacob's tell, and it is the instrument: *"if you look at the ground and see circles without trees, we are not hydrating fully."*** The retirement above is real but **conditional**, and every look that never had its hero impostors shot is still living in the pre-retirement world — including, when this was written, the **staging** target.
 > - ⛔ It was **silent**: `heroCulled` sat mid-string in an info-level `console.log` while its two *lesser* siblings (`meshNoRecord`, `legacyRoles`) each had their own ⛔ warn. It now warns, naming the look, the count and the fix (`InstancedTrees.jsx`).
-> - ▶ **Offline, every look at once — this is the check, not the prose:** `node scratch/claims-every-shadowed-placement-renders.mjs`. It **pins** the two runtime lines it models and refuses to report if they drift. ⛔ Never quote a cull count from this doc; run it.
+> - ▶ **Offline, every look at once — this is the check, not the prose:** `node checks/claims-every-shadowed-placement-renders.mjs`. It **pins** the two runtime lines it models and refuses to report if they drift. ⛔ Never quote a cull count from this doc; run it.
 > - ⭐ **The fix is always to SHOOT the missing impostors in the Grove** (browser-GPU; the CLI bake cannot reproduce them), never to widen or re-tune the cull. An authored `scene.heroImpostor === false` is the **operator's decision** and the check reports it as such.
 
 > ### ⛔⛔ SEATING: THE LIFT IS THE SHADER'S JOB, OFF A LIVE UNIFORM *(2026-08-28, Jacob's eye twice)*
@@ -124,7 +124,7 @@ Both are **RTT captures of the real tree** — rendered from the actual `lod1` g
 > - ⭐ **Mean-preserving by construction:** at the hemisphere-average normal the directional term is exactly 1.0, so the flag **redistributes** light across a canopy without changing how bright the canopy is. `uKeyGain` is a CONTRAST dial, not a brightness one. The operator's acceptance test — *"recognisably the same trees, differing only in how light falls on them"* — is structural, not a matter of taste in tuning.
 > - **The trunk/ground joint came back with it, on the bark card.** `injectFoliageSway`'s ground-colour blend was mesh-only, so with meshes at zero every card met the ground as a hard edge. The hero stack's `kind:'bark'` layer has its own material — the card's equivalent of the mesh's per-vertex `vBark` gate. ⚠️ **It cannot help a card that never reaches the ground:** the hero card is CANOPY-framed, so a species whose frame starts above the blend band is correctly a no-op. Measured on LS: 6 of 10 species' cards reach y≤0, 3 start 0.5–0.6 m up, `birch` starts **4.3 m** up and floats — that one is a framing question, not a shading one.
 > - ⛔ **STILL OWED: cast shadows.** All four tree draw sites hard-code `castShadow={false} receiveShadow={false}`. "Cast" needs a `customDepthMaterial` replaying the billboard + wind + ground-lift vertex displacement, or the shadow is an unrotated quad in the wrong place. **"Receive" is blocked by the material choice** — a `MeshBasicMaterial` cannot receive a shadow map at all.
-> - ▶ `node scratch/claims-cards-light-from-the-scene-key.mjs` — pins the whole chain and fails on the sun-instead-of-key fork.
+> - ▶ `node checks/claims-cards-light-from-the-scene-key.mjs` — pins the whole chain and fails on the sun-instead-of-key fork.
 
 
 ⛔ **`impostorBySpecies` / `buildImpostorGeometry` (the whole-tree octahedral cross) is KILLED, not parked — do not revive.** It read as "floating dark leaf-slabs + a stone trunk" (operator, 2026-06-25). It is a *third*, analytic construction that predates both captures above; `bake-impostors.js` and `ImpostorSpecies` remain on disk only as the seam the foundation grew out of.
@@ -150,7 +150,7 @@ Both are **RTT captures of the real tree** — rendered from the actual `lod1` g
 - **Three overhead bands baked BLANK and shipped undetected** — `platanus_acerifolia` canopy+branch, `linden_american` canopy (measured 2026-07-22, `scratch/overhead-band-coverage.mjs`). Root cause for the platanus: `applyBarkUniforms` sets `uBarkTileScale (0,0)` when a species has no `barkDetailBySpecies` record, so all its bark samples an empty atlas region — and only Salon-composed species get that record, which the merged London plane never was. `OverheadBaker` now **refuses to POST a species with any blank band** rather than shipping a hole. ✅ **The linden's canopy was the FRAME bug above** (scale 0.782 → 27% retained), not a second mystery.
 
 ⭐⭐ **THE RULE, AND IT IS THE TRANSFERABLE PART: THE FRAME A BAND IS CUT IN MUST BE THE FRAME THE CAMERA CLIPS IN.** The same slip also shipped the card **height** in the wrong frame — `maple_silver` 29.7 m for a 21.0 m tree, `picea_abies` **681 m** on HPDM — because `heightM` came off un-transformed geometry bboxes while `canopyRadiusM` was already world-corrected. ⛔ One record, two frames, and nothing said a word. **A look baked before the fix carries wrong heights and must re-bake.**
-▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs` — pins both measures + the cut rule, and reports any stored height that is not the GLB's world height.
+▶ `node checks/claims-the-capture-frame-is-the-clip-frame.mjs` — pins both measures + the cut rule, and reports any stored height that is not the GLB's world height.
 
 > ⚠️ **The GPU "gauge" is NOT a perf signal.** The Preview emulator gauge is a count-vs-**interim-fake-budget** verdict (draws/200, tris/1M) that **ignores frame-ms and reads red even with no trees on screen.** It drove a whole tree-degradation arc (the impostor-tiering "gauge is red → geometry must go" reasoning) that was then reverted. **Gate tree perf on real device frame-ms + the operator's eye on the cinematic pan** ([[feedback_instrument_verdict_then_fix]], `[[project_smooth_pan_is_the_only_perf_target]]`) — the pan's visible set is fixed/predictable, so it's the only surface that must be smooth. Fixing the gauge's fake budgets is a backlog item, not a render trigger.
 
@@ -559,13 +559,13 @@ So: a coarse value is declared in `COARSE_FIELDS` (`hydrate-dossiers.mjs`) and b
 
 ### The checks — run these, do not trust prose
 ```
-node scratch/claims-no-coarse-value-decides.mjs   # §8a — and REPORTS every field that is sole
+node checks/claims-no-coarse-value-decides.mjs   # §8a — and REPORTS every field that is sole
                                                   # evidence for an axis it cannot fully reach
-node scratch/claims-axis-keys-resolve.mjs        # axis ids, enum values, scalar units — SEVEN stores
-node scratch/claims-verify-taxon.mjs             # every verdict branch, mutation-tested
+node checks/claims-axis-keys-resolve.mjs        # axis ids, enum values, scalar units — SEVEN stores
+node checks/claims-verify-taxon.mjs             # every verdict branch, mutation-tested
 node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence
-node scratch/claims-cutover-casualties.mjs       # authored values the old rubric could not express
-node scratch/claims-reference-credits.mjs        # plate credits, generated from the dossiers
+node checks/claims-cutover-casualties.mjs       # authored values the old rubric could not express
+node checks/claims-reference-credits.mjs        # plate credits, generated from the dossiers
 ```
 ⚠️ **`claims-verify-taxon` is RED on purpose right now.** It asserts no mismatched taxon reaches the observations file, and §4's SelecTree fallback puts one there. The assertion is right and the harvest is inconsistent — USDA skips, SelecTree flags. **Do not silence it; fix the fallback.**
 

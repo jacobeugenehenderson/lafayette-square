@@ -45,7 +45,7 @@
  *    (Jacob: "the medians are fine, with no sidewalks").
  * ⛔ Runs with the scene's authored blockCustoms (Rule 1).
  *
- * Usage: node scratch/claims-band-is-one-ring.mjs [--scene <name>] [--tiles]
+ * Usage: node checks/claims-band-is-one-ring.mjs [--scene <name>] [--tiles]
  * Exit 0 = every banded block is one clean ring · 1 = RED · 2 = instrument failure
  * → SECTION §7/§8 · RIBBONS §1 · CLAUDE.md Layer 0
  */

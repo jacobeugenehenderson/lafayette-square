@@ -38,7 +38,7 @@ these tiny edge cases"*, *"the protopoly is a simplified shape with no rounding"
 checked the input.
 
 **Measured before moving, and the digits are a snapshot — re-run it:**
-▶ `node scratch/claims-faces-on-the-ssot.mjs <scene>` · `node scratch/claims-repour-changes-nothing.mjs <scene>`
+▶ `node checks/claims-faces-on-the-ssot.mjs <scene>` · `node checks/claims-repour-changes-nothing.mjs <scene>`
 - topology **unchanged** — 102 faces on either input; the pour holds 101 tiles / 178 faces
 - 94 of 102 blocks move **under 5%** (median 0.05%)
 - the tail is **eight blocks, and the canon already names them**: `park-place-2` + `st-vincent-court-0`
@@ -261,7 +261,7 @@ A sibling skeleton-fortification gap, **distinct** from the across-intersection 
 > #### ⛔⛔ THE `A0` DE-RISK THIS SECTION USED TO CLAIM IS **WITHDRAWN, 2026-08-11** — AND ITS WORKED EXAMPLE WAS A CORRECT MAP.
 > **Jacob:** *"Carroll is severed by Truman — it's a cul de sac on one side and butts up to Truman on the other side"* · *"it's already correct in the survey tool, so it's only the corner naming and the ribbons reading the labels."*
 >
-> This block asserted that a same-name fragment seam renders as a false dead end, and used **Carroll Street** as its instance. **Carroll is a genuine severance.** Its `round`/degree-1 tip is correct, the frame is correct, and the SHAPE layer already draws it correctly. ⛔ **A same-name test cannot separate a SEVERED street from a FRAGMENTED one — both keep the name on both sides — so it yields a shortlist, never a verdict.** `node scratch/claims-false-deadend-census.mjs` prints it as `CANDIDATE` for exactly that reason; ⛔ **do not size `A0` by subtracting its count.**
+> This block asserted that a same-name fragment seam renders as a false dead end, and used **Carroll Street** as its instance. **Carroll is a genuine severance.** Its `round`/degree-1 tip is correct, the frame is correct, and the SHAPE layer already draws it correctly. ⛔ **A same-name test cannot separate a SEVERED street from a FRAGMENTED one — both keep the name on both sides — so it yields a shortlist, never a verdict.** `node checks/claims-false-deadend-census.mjs` prints it as `CANDIDATE` for exactly that reason; ⛔ **do not size `A0` by subtracting its count.**
 >
 > ⭐⭐ **AND THE CORPUS ALREADY HELD THE RIGHT ANSWER — [`OSM-FORENSICS §1.3`](OSM-FORENSICS.md) names Carroll Street (26.9 m) in its list of GENUINE severances, *"these are correct multi-chain cases,"* and rules the class: *"don't build a split tool — make the frame UNDERSTAND the severance,"* resolved by *"gap-distance + dead-end typing, operator-confirm for ambiguous cases."* Two live docs contradicted each other for two months and the untested half won.** *(Same shape as `INTAKE §Cul-de-sacs`' "the tagging is sparse". A cross-doc contradiction is the richest seam we have — `[[project_find_the_code_error_by_finding_the_thinking_error]]`.)*
 >
@@ -366,7 +366,7 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 > approach still arrives before the ease.
 > ⚠️ Scope today is the divided→through class only. "Every leg continues its predominant direction
 > IN" is a large widening of `OVL_KINK_DEG`'s population, not a port.
-> ▶ `node scratch/claims-intersections-are-over-described.mjs <scene>` sizes what it would face.
+> ▶ `node checks/claims-intersections-are-over-described.mjs <scene>` sizes what it would face.
 >
 > ### ⛔⛔ AND CARRYING IT WOULD NOT FIX THE PARK CORNERS — RE-MEASURED 2026-09-09, ON TODAY'S MAP
 > *(Jacob routed exactly this: "carry §5h through to the mint." The premise did not survive the
@@ -399,7 +399,7 @@ The residual "d" bulge at the divided→undivided transitions (the thin block to
 > (`claims-simplify-preserves-authoring`: re-pointing is the class to fear, orphaning merely shows).
 > ⇒ **Resolve segmentation on the UNCORRECTED chain; apply the correction only to the geometry that
 > gets expanded.** The `.n` sub-step sits between those two, not before both.
-> ▶ Gate any such change with `node scratch/claims-simplify-preserves-authoring.mjs <scene>` —
+> ▶ Gate any such change with `node checks/claims-simplify-preserves-authoring.mjs <scene>` —
 > 0 orphaned AND 0 re-pointed, on every town, before it is believed.
 
 **Surgical + regression-clean.** HPDM: 5 tips map-wide. LS: **1 tip** (`geyer-avenue-2`) — the four park corners are **UNTOUCHED** (they run straight in, no kink); `correctness-detector` CLEAN junctions unchanged (75→75), +2 sub-8m² cosmetic slivers at the one deliberately-fixed node. **Live home: `derive.js` `correctedTipChain` + the through-edge overlay pass** (consumed by E2's `a`/`b`, `faceStreets`, and the `strokePoints` output field). Trail: `_archive/BRIEF-through-road-edge-straight-LANDED-2026-07-22.md`.

@@ -161,7 +161,7 @@ optional. Tier 3 is on demand. Say what you skipped.**
 
 **Tier 0 — can the read-in load at all?** ⛔ First, before you read a word:
 ```
-node scratch/claims-memory-index-health.mjs
+node checks/claims-memory-index-health.mjs
 ```
 `MEMORY.md` only ever grows, and past its hard limit **it truncates silently and still looks whole** — a
 Layer-0 silent substitution in the read-in itself. If it fails, **compact before reading**. ⭐ Unreferenced

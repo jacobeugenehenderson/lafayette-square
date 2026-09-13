@@ -1428,7 +1428,7 @@ function stampCustomWidths(streets, survey, sidewalks) {
     // ⛔ NOTHING IS REDISTRIBUTED HERE — every width is an operator handle and the override is the
     // product (`ORIENTATION`, Layer 0 q3). This records that the value is UNKNOWN rather than
     // measured, so the glean stops treating it as a survey N.
-    // ▶ `node scratch/claims-the-survey-reaches-the-measure.mjs <scene>` — LS 83 of 301 sides.
+    // ▶ `node checks/claims-the-survey-reaches-the-measure.mjs <scene>` — LS 83 of 301 sides.
     const tlClamped = treelawn <= 0.01 && seed.pavementHW > room + 0.01
     return {
       pavementHW: +pav.toFixed(2),
@@ -1597,7 +1597,7 @@ function main() {
   // `start_date=2031`, a studied busway) shadowed South Jefferson Avenue over
   // 852 m at 100%, plus South 18th and Chouteau — 10 of the 18 chains that any
   // other chain shadows. Jacob's eye found it as two navy lines with a sliver
-  // between them (`node scratch/claims-no-shadowed-chains.mjs`).
+  // between them (`node checks/claims-no-shadowed-chains.mjs`).
   // ⛔ This is a CLASS rule, never a name: it is keyed on the OSM tag that says
   // "not built", so it holds in a town nobody has looked at. And it is LOUD —
   // what it drops is printed, because a silent drop is the same defect as a

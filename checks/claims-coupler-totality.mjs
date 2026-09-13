@@ -14,7 +14,7 @@
 // side and as `b` on the other. So the relation is total at a node iff EVERY
 // dir appears exactly once in the `a` role and exactly once in the `b` role.
 //
-//   node scratch/claims-coupler-totality.mjs [--scene <name>] [--verbose]
+//   node checks/claims-coupler-totality.mjs [--scene <name>] [--verbose]
 //
 // ⛔ MEASUREMENT ONLY. This says nothing about whether any absence is visible.
 import { readFileSync, existsSync } from 'node:fs'

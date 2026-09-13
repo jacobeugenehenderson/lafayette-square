@@ -3,7 +3,7 @@
 // artifact's age cannot be mistaken for the code's behaviour. Reports the block-containment
 // acceptance from `BRIEF-compound-faces.md` #1.
 //
-// ▶ node scratch/claims-proto-blocks-are-faces.mjs [scene ...]
+// ▶ node checks/claims-proto-blocks-are-faces.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 

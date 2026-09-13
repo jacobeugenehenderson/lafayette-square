@@ -15,7 +15,7 @@
 // LS tip in the FROZEN artifact — the collapsed-node signature. If ① separates them and the freeze
 // does not, the two apexes are real and the freeze is where they die.
 // ⛔ ① is width-free by ruling, so this reads the mint directly and takes NO authoring (correct here).
-// ▶ node scratch/claims-proto-tip-has-two-apexes.mjs [scene ...]
+// ▶ node checks/claims-proto-tip-has-two-apexes.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 

@@ -7,8 +7,8 @@
  * a doc is wrong the moment the rubric changes, and NEIGHBORHOOD-INPUTS said "19 botanical
  * axes" for a day after the cutover made it 31.
  *
- *   node scratch/claims-reference-credits.mjs
- *   node scratch/claims-reference-credits.mjs --markdown   # paste-ready
+ *   node checks/claims-reference-credits.mjs
+ *   node checks/claims-reference-credits.mjs --markdown   # paste-ready
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'
@@ -54,7 +54,7 @@ if (MD) {
     `${[...byLicence].sort((a, b) => b[1] - a[1]).map(([l, n]) => `${l} (${n})`).join(', ')}. ` +
     `Contributed by ${artists.size} photographers. Nothing is mirrored — the dossier stores the URL and the credit. ` +
     (cites ? `A further ${cites} source(s) are cited as links only (${[...citedHosts.keys()].join(', ')}) because their licence forbids embedding. ` : '') +
-    `▶ regenerate: \`node scratch/claims-reference-credits.mjs --markdown\``)
+    `▶ regenerate: \`node checks/claims-reference-credits.mjs --markdown\``)
   process.exit(0)
 }
 

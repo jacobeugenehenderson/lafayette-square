@@ -6,7 +6,7 @@
  * data sits on disk. That is the exact shape of every bug in this repo this week, and the
  * taxonomy cutover (19 → 31 axes) is the moment it would happen at scale.
  *
- *   node scratch/claims-axis-keys-resolve.mjs
+ *   node checks/claims-axis-keys-resolve.mjs
  *
  * Reads the rubric as the source of truth; restates nothing. Rook, 2026-08-24.
  */

@@ -18,7 +18,7 @@
  * claims-node-pair-key-parity.mjs (191fb61d) is inherited verbatim: there are two
  * ribbon artifacts per scene and they are not the same node population.
  *
- * usage: node scratch/claims-nodeless-tip-classifier.mjs --source=pour [scene ...]
+ * usage: node checks/claims-nodeless-tip-classifier.mjs --source=pour [scene ...]
  *        default scenes: lafayette-square hipointe-demun
  *        (ksi-y-m-yn / centrum / altadena are CHILLERED — do not size on them.)
  */
@@ -300,6 +300,6 @@ for (const scene of scenes) {
       console.log(`   ⛔ DRY RUN NOT MEASURED — ${e.message}. Absence of a number here means nothing.`)
     }
     console.log(`   ⭐ THE GATE: when a cure lands, both counts go to 0 while the interior population is unmoved`)
-    console.log(`      (node scratch/claims-deadend-populations.mjs). 0/0 is when arming the refusal becomes safe.`)
+    console.log(`      (node checks/claims-deadend-populations.mjs). 0/0 is when arming the refusal becomes safe.`)
   }
 }

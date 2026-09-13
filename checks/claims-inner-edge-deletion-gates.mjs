@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // claims-inner-edge-deletion-gates — the regression gates for deleting
 // streetProfiles.innerEdgeMeasure (2026-08-13). Per-scene, no street names in
-// source. Run: node scratch/claims-inner-edge-deletion-gates.mjs [--customs]
+// source. Run: node checks/claims-inner-edge-deletion-gates.mjs [--customs]
 //
 // The DELETED transform is reproduced below ONLY so the gate can compute the
 // BEFORE state. ⛔ It is not a spare copy to restore from — see streetProfiles.js.

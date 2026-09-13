@@ -66,7 +66,7 @@ managed the absence rather than removed it.
   quoted in `PIPELINE §5 (the Wall)` is ~2× — it is used to argue the mask's size, so it matters.
 - **D5 [OUR] ✅** Mouth discs cover **40 fold-chains**; **10 folds (9 distinct chains)** have none, so
   the snap cannot fire there. The 10-vs-9 is `waverly-place-1`, which caps twice in one tile. *Method:
-  `scratch/claims-deadend-set-decomposition.mjs` — `_shapeArtifact[].mouths[].spurSkel` ∌ the fold's
+  `checks/claims-deadend-set-decomposition.mjs` — `_shapeArtifact[].mouths[].spurSkel` ∌ the fold's
   `skelId`.* **Measured in BOTH states — authored `blockCustoms` and bare defaults — identical, 10 and
   10**, so this set is not an authoring artifact.
 - **D6 [REQ] 📄 ⭐⭐** **The one-line test for any dead-end proposal: DOES IT CREATE THE SECOND MOUTH
@@ -99,7 +99,7 @@ managed the absence rather than removed it.
   the SAME 9 folds, not two different measurements.** Set-identical, member for member:
   `allen-avenue-0[start] · carroll-street-0[end] · geyer-avenue-0[end] · mackay-place-1[start] ·
   park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
-  waverly-place-1[start]`. *Method: `node scratch/claims-deadend-set-decomposition.mjs`, both sets
+  waverly-place-1[start]`. *Method: `node checks/claims-deadend-set-decomposition.mjs`, both sets
   derived from `mouthInfo()` over the same 50 folds; `A ∩ B = 9`, `A only = none`, `B only = none`.*
   ⛔ `POLYGON-FIRST §2.1`, `PIPELINE §5 (the Wall)`, `README` and `ROADMAP A0` all state these are **distinct
   measurements yielding 6 and 9**. The **6** came from `stamp-mouth-audit.mjs`, which `7b5b87a3`
@@ -260,7 +260,7 @@ All read-only. No pour, no bake, no dev server.
 node scratch/coupler-slit-universal.mjs           # D1 D4 D5 — tips, displacement, mouth coverage
 node scratch/coupler-slit-anatomy.mjs             # C3 C6   — the ring dump + Check 5 map-wide
 node scratch/coupler-fe-coverage.mjs              # C7      — leg slots vs frontage edges
-node scratch/claims-deadend-set-decomposition.mjs # C4 C5 D5 — the three sets + dual-state
+node checks/claims-deadend-set-decomposition.mjs # C4 C5 D5 — the three sets + dual-state
 node scratch/hadrian-wall-open-proof.mjs          # B2      — sectionOpen off the frozen artifact
 node scratch/cap-mouth-classify.mjs [skelId]      # S9      — per-mouth layer ownership
 ```

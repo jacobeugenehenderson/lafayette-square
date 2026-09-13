@@ -2122,7 +2122,7 @@ if (typeof window !== 'undefined') {
 // that is this function.
 //
 // ⚠️ NAMED CONSTANTS, NOT INLINE TEMPLATES, ON PURPOSE. These blocks are checked by
-// `node scratch/claims-shader-fragments-declare-what-they-use.mjs`, which reads the
+// `node checks/claims-shader-fragments-declare-what-they-use.mjs`, which reads the
 // pairings out of the source — and it can only see GLSL that lives in a named
 // `const NAME = ` + backtick + ` block. The fragment halves used to be inline literals and
 // were therefore INVISIBLE to the one instrument that exists to catch a non-linking

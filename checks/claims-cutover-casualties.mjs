@@ -19,7 +19,7 @@
  * ⛔ Reports only. Re-authoring a hard identity axis is the operator's call, never a
  * script's -- the output is a worklist, not a patch.
  *
- *   node scratch/claims-cutover-casualties.mjs
+ *   node checks/claims-cutover-casualties.mjs
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'

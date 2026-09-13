@@ -21,7 +21,7 @@
  * added later: every other assertion still passes with such a fallback in place
  * as long as a confirmed row exists, which it usually would in testing.
  *
- *   node scratch/claims-price-of-record.mjs
+ *   node checks/claims-price-of-record.mjs
  */
 import { itemOrderability, resolveCart, BLOCKED } from '../src/lib/commerce.js'
 

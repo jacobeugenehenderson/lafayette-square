@@ -16,7 +16,7 @@
  * look entirely correct on the way past.
  *
  * ⭐ Everything downstream reads `priceOfRecord` and never `item.price`. The
- * check `scratch/claims-price-of-record.mjs` asserts there is no input at all
+ * check `checks/claims-price-of-record.mjs` asserts there is no input at all
  * for which this returns an orderable line carrying a display figure.
  */
 

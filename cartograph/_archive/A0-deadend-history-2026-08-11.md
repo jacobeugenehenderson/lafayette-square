@@ -76,7 +76,7 @@ the labels."*
 ⭐ `OSM-FORENSICS §1.3` had listed Carroll (26.9 m) among **genuine** severances since June, so two
 live docs contradicted each other for two months and the untested half won.
 
-Surviving: the probes are shortlists (`scratch/claims-false-deadend-census.mjs`,
-`scratch/claims-curated-centerlines-unread.mjs`), and the one derivable half is **`A09`** —
+Surviving: the probes are shortlists (`checks/claims-false-deadend-census.mjs`,
+`checks/claims-curated-centerlines-unread.mjs`), and the one derivable half is **`A09`** —
 `highway=turning_circle` typing, already measured onto `carroll-street-1` · `caroline-street-0` ·
 `henrietta-street-0`, fetched at `fetch.js:97` and dropped at `:123`.

@@ -33,7 +33,7 @@
 //
 // ⛔ Absence is a claim: every count below walks parsed structure. No string greps.
 //
-//   node scratch/claims-dblock-arc-diagnosis.mjs [--arc=west-18th-street]
+//   node checks/claims-dblock-arc-diagnosis.mjs [--arc=west-18th-street]
 //
 import fs from 'fs'
 import crypto from 'crypto'

@@ -60,13 +60,13 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
    fingerprint, so the drain skips every one of them. ▶ Remedy today: the Grove's explicit
    buttons still FORCE — use those, not the arrival bake. ⭐ Remedy for the kit: **fold a version
    of the capture code into `captureKey`**, or every future capture fix fails silently the same
-   way and looks landed. ▶ `node scratch/claims-the-capture-frame-is-the-clip-frame.mjs`
+   way and looks landed. ▶ `node checks/claims-the-capture-frame-is-the-clip-frame.mjs`
 
 1–2. ✅ **The `maple_silver` overhead capture and the duplicate-identity class — CLOSED 2026-08-28,
    and RETIRED from this list 2026-08-29** to `cartograph/_archive/HANDOFF-tree-render-closed-2026-08-29.md`.
    ⛔ They sat here marked ✅ for a day, which is the anti-pattern `CLAUDE.md` names: a resolved item
    left in an OPEN list is read as work by everyone who scans it. Live homes: the capture-frame rule
-   is enforced by `scratch/claims-the-capture-frame-is-the-clip-frame.mjs` (and what is still owed on
+   is enforced by `checks/claims-the-capture-frame-is-the-clip-frame.mjs` (and what is still owed on
    it is item 0 above); the twin rule is in `arborist/FEATURES` ▸ the roster light.
 
 3. **`acer_saccharum`'s 123 m card** — its GLB is 65 × 106 m and 10.4 m tall: a merged **group shot**
@@ -92,11 +92,11 @@ tint/counter/guard bind to the live path, or to a retired sibling? A dead-code t
 ## ▶ THE CHECKS WRITTEN TODAY — run these before believing anything
 
 ```
-node scratch/claims-every-shadowed-placement-renders.mjs      # rings without trees, per look
+node checks/claims-every-shadowed-placement-renders.mjs      # rings without trees, per look
 node scratch/claims-the-roster-light-tells-the-truth.mjs      # green-but-unexported / placed-but-unexported
-node scratch/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
+node checks/claims-the-slab-freshness-key-is-not-stale.mjs   # bakedAt vs artifact mtimes
 node scratch/claims-every-placed-asset-has-a-size-band.mjs    # flat 1:1 scale, ranked by PLACED demand
-node scratch/claims-the-capture-frame-is-the-clip-frame.mjs   # band cuts outside the tree; pre-fix card heights
+node checks/claims-the-capture-frame-is-the-clip-frame.mjs   # band cuts outside the tree; pre-fix card heights
 node scratch/claims-every-declared-page-ships.mjs             # declared pages + GLBs that never reach the deploy
 ```
 *(the last one written 2026-08-29, when the KTX2 pool landed — it is the check that

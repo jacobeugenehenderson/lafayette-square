@@ -16,7 +16,7 @@ The external drive (`/Volumes/Today/lafayette-square`) is a manual archive copy 
 
 Every API URL in this project must use the same Apps Script deployment ID.
 
-> ▶ **`node scratch/claims-deployment-id-single-source.mjs`** — it **searches** for every occurrence and fails if two disagree.
+> ▶ **`node checks/claims-deployment-id-single-source.mjs`** — it **searches** for every occurrence and fails if two disagree.
 >
 > ⛔ **This section used to list the locations by hand, and say "four".** There are **six** in the repo: the hand-list omitted `README.md`, `ls/reference/INVENTORY-API.md` and — the one that matters — **`worker.js:1`**, whose `GAS_API` constant fronts the whole Ward. Worse, the verification grep beside it named only three files, so a drifted `worker.js` reported clean. ⭐ A hand-kept list of where a value lives rots exactly like a hand-kept copy of the value; the check above searches instead, so a new location is found without editing this page.
 
@@ -34,14 +34,14 @@ If these drift apart you get "Unknown-action" errors, because an older deploymen
 
 | What changed | What to do |
 |---|---|
-| Frontend → **staging** | commit, then push the trunk → `staging.yml` deploys staging. ⛔ **Do not read the branch name off this page** — it has been wrong for four weeks before now: `node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives it from the workflow |
+| Frontend → **staging** | commit, then push the trunk → `staging.yml` deploys staging. ⛔ **Do not read the branch name off this page** — it has been wrong for four weeks before now: `node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` derives it from the workflow |
 | Promote **staging → prod** | once staging is verified: `git push origin <branch>:main` → `deploy.yml` deploys lafayette-square.com (clean fast-forward; main + trunk stay a few commits apart) |
 | Apps Script only | `cd apps-script && npx clasp push && npx clasp deploy -i <ID>` |
 | Both | Do both. Order doesn't matter. |
 | Worker only | Update in Cloudflare dashboard |
 | New env var needed in prod | Add to GitHub Secrets + `deploy.yml`, push to trigger rebuild |
 | **Re-poured a town** | nothing to push — the bake uploads the slab to R2 **STAGING** (`staging/baked/…`) and it is live on the staging site immediately. ⛔ **It does NOT reach production.** Verify on staging, then promote: `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` (§6) |
-| **Promote a slab to prod** | `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys; live on lafayette-square.com immediately, still without a push. ⛔ `--env` is required and has no default. ▶ `node scratch/claims-the-slab-envs-do-not-collide.mjs` |
+| **Promote a slab to prod** | `node scripts/upload-baked-to-r2.mjs --env=prod --look=<id>` — writes the production keys; live on lafayette-square.com immediately, still without a push. ⛔ `--env` is required and has no default. ▶ `node checks/claims-the-slab-envs-do-not-collide.mjs` |
 | **Slab looks stale / canopy missing** | `node scripts/verify-baked-in-r2.mjs` — reads the bucket, compares to disk, names what is absent |
 
 ---

@@ -12,7 +12,7 @@
 // ⛔ `strokePoints` exists to stop a divided→through median face PINCHING; the skeleton does not
 // carry that correction. So the hypothesis under test is: the tail IS the divided→through set.
 // A hypothesis, not a finding — the probe prints which chains bound each mover so it can be read.
-// ▶ node scratch/claims-faces-on-the-ssot.mjs [scene]
+// ▶ node checks/claims-faces-on-the-ssot.mjs [scene]
 import fs from 'fs'
 import { extractFaces } from '../src/lib/tileGround.js'
 const scene = process.argv[2] || 'lafayette-square'

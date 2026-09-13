@@ -119,7 +119,7 @@ Customer → **Cary's Stripe** collects `total_cents` (`subtotal + tax + service
 - Tables: `orders` (+ state, money, destination, `food_payment_intent_id`, `pos_order_id`) · `order_line_items` (or line items as jsonb on `orders`) · `pos_connections` (per-restaurant OAuth tokens, §`cary/pos`).
 - `requests` gains: `order_id`, `destination` (resolved building + address), `order_total_cents`.
 - Edge functions: **`place-order`** (the orchestrator, steps 1–6) · **`inject-order`** (step 8 — POS adapter or relay, idempotent).
-- ✅ **DONE 2026-09-10** — the shared contract, `cary/supabase/functions/_shared/caryOrder.js`. ⛔ Its producer is **`place-order`, not `MenuTab`**: the client sends a **`CaryOrderIntent`** (refs + quantities, *no money*) and the server builds the `CaryOrder` by re-pricing it — which is what makes §3.1 above real rather than aspirational. `validateOrderIntent` **rejects** any money-shaped key from a client rather than ignoring it. ▶ `node scratch/claims-cary-order-contract.mjs`
+- ✅ **DONE 2026-09-10** — the shared contract, `cary/supabase/functions/_shared/caryOrder.js`. ⛔ Its producer is **`place-order`, not `MenuTab`**: the client sends a **`CaryOrderIntent`** (refs + quantities, *no money*) and the server builds the `CaryOrder` by re-pricing it — which is what makes §3.1 above real rather than aspirational. `validateOrderIntent` **rejects** any money-shaped key from a client rather than ignoring it. ▶ `node checks/claims-cary-order-contract.mjs`
 
 ---
 

@@ -4,7 +4,7 @@
  * classified-delta gate. Written BEFORE the cure, to judge it.
  *
  * ─────────────────────────────────────────────────────────────────────────────
- * WHY THIS EXISTS (2026-08-08). D1 (`scratch/claims-corner-takeover.mjs`) named
+ * WHY THIS EXISTS (2026-08-08). D1 (`checks/claims-corner-takeover.mjs`) named
  * the population: of every corner that BIDS, which ones the takeover DECLINES,
  * and by which of four gates. D1 answers "where is it broken." It cannot answer
  * "did the fix fix it," because a decline count going down is not evidence — a

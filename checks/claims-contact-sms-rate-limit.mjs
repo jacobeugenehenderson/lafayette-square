@@ -17,7 +17,7 @@
  * "probably fine". Both turn a money-spending endpoint back into an open one
  * while still looking like it has a limit.
  *
- *   node scratch/claims-contact-sms-rate-limit.mjs
+ *   node checks/claims-contact-sms-rate-limit.mjs
  */
 
 import { readFileSync } from 'node:fs';

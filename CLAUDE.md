@@ -184,7 +184,7 @@ pointing at the command.** Only *judgment* stays prose: doctrine, rulings, why-w
 - ⛔ **Never write a number into a doc without the command that reproduces it** — and prefer *deleting the
   number* and keeping the command. A count in prose is stale the moment it is written and is then quoted
   for months by people who cannot re-derive it.
-- ⭐ **A check must READ the source, never restate it.** `scratch/claims-revert-field-coverage.mjs` parses
+- ⭐ **A check must READ the source, never restate it.** `checks/claims-revert-field-coverage.mjs` parses
   the field lists out of the store instead of copying them, so it cannot go stale. That is the pattern.
   This is Layer 0's *"the deliverable is the check"* extended from defects to **facts**.
 

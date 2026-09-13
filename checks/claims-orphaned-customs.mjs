@@ -42,7 +42,7 @@
 // Cross-references every blockCustoms slot against the feCustomKey of every real
 // frontage edge, plus the synthetic cap fes.
 //
-//   node scratch/claims-orphaned-customs.mjs [scene]
+//   node checks/claims-orphaned-customs.mjs [scene]
 // Read-only. No pour, no bake.
 import fs from 'fs'
 import { feCustomKey, makeCapFe, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'

@@ -14,7 +14,7 @@
  * side comes from the topology method in claims-physical-side-reconcile.mjs
  * (deg-2 ends only, ENDPOINT_SNAP) — no street names, no per-town table.
  *
- * usage: node scratch/claims-side-baseline-audit.mjs [scene ...]
+ * usage: node checks/claims-side-baseline-audit.mjs [scene ...]
  */
 import { deriveNodePairs, classifySides, nodeKey, dist, quantiles } from './claims-node-pair-key-parity.mjs'
 
@@ -24,7 +24,7 @@ const ARGV = process.argv.slice(2)
 const SOURCE = (ARGV.find(a => a.startsWith('--source=')) || '').split('=')[1] || null
 if (!SOURCE) {
   console.error(`⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.\n` +
-    `   usage: node scratch/claims-side-baseline-audit.mjs --source=pour|bundle [scene ...]`)
+    `   usage: node checks/claims-side-baseline-audit.mjs --source=pour|bundle [scene ...]`)
   process.exit(2)
 }
 

@@ -91,7 +91,7 @@ function loadAxes() {
 // use. ⛔ The target must already exist in the rubric; `axisTerms` asserts it.
 // Aliases INTO those closed sets — the words botanical descriptions actually use.
 // ⛔ The target must already exist in the rubric; `axisTerms` asserts it, and
-// `scratch/claims-axis-keys-resolve.mjs` asserts the AXIS ids too.
+// `checks/claims-axis-keys-resolve.mjs` asserts the AXIS ids too.
 //
 // ⚠️ REGRESSION, found 2026-08-24: this table was keyed on the PRE-CUTOVER axis ids
 // (`bark.type`, `leaf.silhouette`, `leaf.ways`) and had therefore been dead since the

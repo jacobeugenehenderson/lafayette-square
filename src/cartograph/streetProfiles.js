@@ -476,7 +476,7 @@ export function innerEdgeOffsetPolyline(pts, innerSign, pavementHW) {
 // sidewalk↔treelawn was impossible there. ⛔ Layer 0 q3 — the code called the
 // operator's own authoring surface a median. Measured LS: 26 chains restored,
 // both-ped-zeroed 36 → 10 (the 10 = the motorway class the bake zeroed on purpose).
-// ▶ `node scratch/claims-inner-edge-deletion-gates.mjs [--customs]` — 5 gates, per
+// ▶ `node checks/claims-inner-edge-deletion-gates.mjs [--customs]` — 5 gates, per
 //   scene, all six towns. `claims-inner-edge-side-selector.mjs --all` re-derives the census.
 //
 // ⭐ THE D1 RECLAIM GUARD WENT WITH IT — adjudicated, not absorbed (Jacob asked).

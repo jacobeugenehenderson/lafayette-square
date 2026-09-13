@@ -278,7 +278,7 @@ Severity = impact × exposure. IDs are stable; cite them in fixes.
   the exact string configured in its console. The rejection log prints the URL the HMAC was computed
   over, so it reads as one line in the dashboard rather than "SMS stopped working"; set
   `TWILIO_WEBHOOK_URL` to the configured URL.
-- **Check:** `node scratch/claims-twilio-webhook-guard.mjs` — loads the real helpers **out of the
+- **Check:** `node checks/claims-twilio-webhook-guard.mjs` — loads the real helpers **out of the
   function's source** (never a re-implementation) and asserts that forged, misrouted, mis-keyed and
   unverifiable requests are all rejected. The HMAC is pinned against the official `twilio` package's
   `getExpectedTwilioSignature`, not against a remembered constant.
@@ -505,7 +505,7 @@ construction: it asks the same authority the same question `Code.js` already ask
   one outcome forbidden is "could not reach the authority, so allowed."
 - **`tax_remitter` is not settable through it.** It is a legal determination pending the DOR letter ruling,
   not a restaurant setting; it moves by migration or by an operator holding the service key.
-- ▶ `node scratch/claims-commerce-write-gate.mjs` — 17 source-level properties asserting there is no write
+- ▶ `node checks/claims-commerce-write-gate.mjs` — 17 source-level properties asserting there is no write
   path that skips GAS. Mutation-tested: making the network-failure branch permissive, adding a write policy,
   dropping the oracle's secret check, or exposing `tax_remitter` each fail it by name.
 
@@ -553,7 +553,7 @@ is restored by mistake.
   `CONTACT_ALLOWED_ORIGINS`; ⭐ the staging origin had to be added this way after the lock silently
   broke the button there, which is the knob paying for itself.
 - ⭐ The same allowlist is reused as the safety boundary for the reply deep-link's origin — see F-2.
-- **Check:** `node scratch/claims-contact-sms-rate-limit.mjs`.
+- **Check:** `node checks/claims-contact-sms-rate-limit.mjs`.
 - **Still OPEN:** `sms-inbox`, `sms-reply`, `web-messages` remain `Access-Control-Allow-Origin: *`.
   Lower stakes (admin-token gated, or no spend), but the same treatment applies.
 

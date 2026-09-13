@@ -12,7 +12,7 @@
 //       agree with the geometric oracle (derive.js inboardKeyGeom == tileGround
 //       inboardSideOf == the detector's toMate)?
 //
-// Usage: node scratch/claims-inner-edge-side-selector.mjs [--scene=<id>|--all]
+// Usage: node checks/claims-inner-edge-side-selector.mjs [--scene=<id>|--all]
 //        --customs   also apply the look's blockCustoms over the measure first
 import fs from 'fs'
 import path from 'path'

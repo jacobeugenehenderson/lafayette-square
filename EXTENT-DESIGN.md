@@ -179,7 +179,7 @@ independent centers**, and the two fetches doing **different jobs**:
    chosen deliberately, not casually.
 
 > ### ⛔⛔ THE ZONE IS RULED HERE AND IS NOT BOUGHT ON DISK — measured 2026-09-06, and it is the CLASS
-> ▶ **`node scratch/claims-fetch-contains-the-forever-zone.mjs`** — per side, per scene, input stamped.
+> ▶ **`node checks/claims-fetch-contains-the-forever-zone.mjs`** — per side, per scene, input stamped.
 > Three of five scenes fail; on two the fetch does not reach **the disc rim itself**, so the map is
 > simply missing town on one side. ⭐ **It is SILENT** — nothing errors, nothing looks broken, the
 > streets just stop, and you only find it by looking at that one compass direction (Jacob's eye,
@@ -213,7 +213,7 @@ The server already accepts `center:[x,z]`; un-gating the handle is the work.
 > ⭐⭐ **LS IS THE ONLY SCENE WITH AN AUTHORED FADE SET — WHICH IS WHY NO OTHER SCENE COULD REVEAL D4.**
 > Every other v2 scene is the formula to the metre, so a gate that preserves LS's values *and* leaves
 > the generated scenes byte-identical is what proves the kit can tell authored from generated.
-> ▶ `node scratch/claims-boundary-record-split.mjs` for the census — run it, don't quote it.
+> ▶ `node checks/claims-boundary-record-split.mjs` for the census — run it, don't quote it.
 > ⭐ LS's missing `polygon` is the same artifact and is already on the board as **B6**'s tree-membership
 > fallback — *the file exists; the polygon inside it does not.* ⚠️ The recurring
 trap: resizing the **bb** when the **disc** is the problem (an un-authored scene auto-fits the disc to
@@ -281,7 +281,7 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 > *(agent Gimbal, `aa7bdf44`. The retired "settled" text + a clause-by-clause verdict:
 > `cartograph/_archive/EXTENT-4.1-node-pair-key-asserted-spec-2026-08-12.md`. ⭐ It was **ASPIRATION
 > filed as done** — `CLAUDE.md`'s third mismatch cause — so it is surfaced as work, never evicted.)*
-> ▶ **`node scratch/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
+> ▶ **`node checks/claims-node-pair-key-parity.mjs`** — LS + hipointe-demun, authoring ON, six gates.
 > ⛔ **Reproduce, never quote.** In the order that matters:
 > - ✅ **THE SUPERSET QUESTION IS CLOSED, AND IT WAS NEVER A COVERAGE GAP** *(2026-08-21)*. The nodes the
 >   key could not find are **vertices the CLIP manufactured after `junctionMap` was frozen** — no source
@@ -298,7 +298,7 @@ building id, and it obeys the same rule: **carry it, never re-derive it.**
 >   ⚠️ **Computed off the same pre-mint node set as the bullet above ⇒ this number moves too. Re-measure
 >   with it.**
 > - ⚠️ **`side` and the pair's ORDER disagree on 18 fes — but only ONE is a real contradiction**
->   *(re-measured 2026-08-21, `f5e76aef`. ▶ `node scratch/claims-side-baseline-audit.mjs`.)* On 4 of the
+>   *(re-measured 2026-08-21, `f5e76aef`. ▶ `node checks/claims-side-baseline-audit.mjs`.)* On 4 of the
 >   18, `fe.side` is **UNDEFINED** — its own probe point sits ~0 m off the centerline against half-widths
 >   of 4–8 m, so the comparison was against a coin flip. ⛔ **`fe.side` is NOT a point-order-relative
 >   label** — `buildBlockGeometryV2.js:1271-1273` computes the same cross product the test used, so
@@ -348,7 +348,7 @@ branch you can forget.
 ⛔ **Three RECORDS, not three files:** thirteen production sites open the artifact by literal path, so
 the composed file stays the wire format. ⭐ **Authored-vs-generated is DERIVED, never stamped.**
 ⛔ Authored fade + a **changed** radius **throws** — absolute metres, neither holdable nor scalable
-without inventing intent. ▶ `node scratch/claims-boundary-record-split.mjs` (the rules, and the gate)
+without inventing intent. ▶ `node checks/claims-boundary-record-split.mjs` (the rules, and the gate)
 
 ### 5.2 Record membership per building, with a reason code
 

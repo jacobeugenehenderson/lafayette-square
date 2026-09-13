@@ -1069,7 +1069,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
     // still looks like a map — the operator sees circles without trees and has to work out
     // that four trees in five never hydrated. That is the tell Jacob named (2026-08-27) and
     // the one ARCHITECTURE.md already records for HPDM: "bare ground with shadow-spots."
-    // ▶ Offline, every look at once: node scratch/claims-every-shadowed-placement-renders.mjs
+    // ▶ Offline, every look at once: node checks/claims-every-shadowed-placement-renders.mjs
     if (heroCulled > 0) {
       console.warn(
         `[InstancedTrees] ⛔ ${heroCulled} of ${bake.instances.length} placements ` +

@@ -116,7 +116,7 @@ the 2026-09-07 flip — the **STAMP**: `iaStamp` (per contour point, the run tha
 gone from the tile; the FILL is frozen nowhere.** Survey and Section agree to 0 m² because they run
 the **same painter**, which is what "the same thing" was always supposed to mean.
 
-▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-a-swap-never-happens-mid-street.mjs`
+▶ `node checks/claims-proto-fill-is-live.mjs` · `node checks/claims-a-swap-never-happens-mid-street.mjs`
 *(`claims-ped-resolves-per-leg.mjs` was cited here and in `RIBBONS §1` and has never existed. ⛔ A
 pointer that does not resolve reads as evidence already gathered.)*
 ⛔ Re-run them; do not quote numbers from here.
@@ -275,7 +275,7 @@ pointer that does not resolve reads as evidence already gathered.)*
   ⇒ A kerb-side walk is untouched (SW↔SW subsumed, `wFrom` is 0 for every `k`); at TL↔TL `cMin` is
   `lim`, so the inner edge has nowhere to travel and only the grass goes. **The three configs are
   still three outcomes of one multiplier, with no case split.**
-  ▶ `node scratch/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
+  ▶ `node checks/claims-the-slope-is-on-the-leg.mjs <scene>` — ⛔ **it now gates BOTH edges and
   CLASSIFIES the steps.** Watching one edge is a fallback inside the detector: it read `walkFrom`
   only and reported 0 while the inner edge stepped 1.50 m at every mixed corner.
   - **A leg ends in exactly three places and they are ONE test**: an eased corner's **tangent** ·
@@ -288,11 +288,11 @@ pointer that does not resolve reads as evidence already gathered.)*
     failed **worst on the most authored town**.
   - ⛔ **The cure is NOT to merge the chains** — that averages away the survey (rule 4) and was
     built and excised the same day.
-  ▶ `node scratch/claims-the-slope-is-on-the-leg.mjs <scene>` — the acceptance: a DERIVED feature is
+  ▶ `node checks/claims-the-slope-is-on-the-leg.mjs <scene>` — the acceptance: a DERIVED feature is
   checked by CONTINUITY, so it counts discontinuities in the walk's outer depth across one vertex,
   on the **densified** ring. ⛔ Reading ①'s own edges cannot see the ramp and reports the step it
   removed.
-  ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` — scores the carry against the
+  ▶ `node checks/claims-the-corner-extent-is-carried.mjs <scene>` — scores the carry against the
   tangent match it replaced, both columns from one run.
   ⛔ Re-run them; never quote a figure from here.
   ### ⛔ STILL OPEN, MEASURED, CAUSE NOT ESTABLISHED
@@ -300,13 +300,13 @@ pointer that does not resolve reads as evidence already gathered.)*
   they cannot overlap by construction — and they do, in pieces 1–2 m wide, on both towns and before
   this work. Removing the additive quad and ramping every leg end made it larger while making the
   piece COUNT smaller, i.e. the same pieces grew. It is the `~3% divider residual` below, seen from
-  the other end. ▶ `node scratch/claims-proto-fill-is-live.mjs`
+  the other end. ▶ `node checks/claims-proto-fill-is-live.mjs`
 - **The fe-key partition** — authoring writes `blockCustoms[skelId][side][segOrd]`; ①'s runs carry a
   DIFFERENT segOrd partition, so a majority of LS's authored slots resolve to no run at all. `§7`'s
   **T3**; its gate `scratch/t4-fe-parity.mjs` is stale and unrun. ⛔ **This is NOT the "swap one, all
   four swap" symptom** — that was the ② label carry (an EDGE label read off a VERTEX stamp on a
   reversed ring, `RIBBONS §1`, 2026-09-07) and it is fixed. Two defects shared one sentence.
-  ▶ the slot count is a check, not a number to quote: `node scratch/claims-stamp-follows-the-edge.mjs`
+  ▶ the slot count is a check, not a number to quote: `node checks/claims-stamp-follows-the-edge.mjs`
   for the carry, `t4-fe-parity.mjs` for the key.
 - **~3% divider residual** vs ③, cause not established.
 - ⚠️ A `shape.json` poured before the flip still carries `bands`; that path draws and **warns**. The
@@ -402,7 +402,7 @@ The walk painter's corner is built entirely off the **frozen fillet** the curb a
 >   Full form + the two-jobs lesson: `RIBBONS §1`, "the corner test, in its corrected form".
 > - **An arc's extent is `len` EDGES, not `len + 1`.** The inclusive bound also claimed the first edge
 >   of the next leg, and on ①'s sparse contour a straight frontage is ONE EDGE — a quadrilateral block
->   painted 458 m of 458 m as curb ramp. ▶ `SECTION_DUMP=1 node scratch/claims-the-pad-is-the-size-of-the-corner.mjs`
+>   painted 458 m of 458 m as curb ramp. ▶ `SECTION_DUMP=1 node checks/claims-the-pad-is-the-size-of-the-corner.mjs`
 > ⚠️ **AND ONE DOC/CODE DISAGREEMENT, RESOLVED IN FAVOUR OF THE CODE:** step 5 above writes
 > `perp = C→T`; `sectionPassTile` computes `C − T`, i.e. **T→C**, and it must, because `d` increases
 > INWARD from the kerb toward the arc centre. **The arrow in step 5 is backwards.**
@@ -453,7 +453,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
   > ⭐ **MEASURED, not asserted: removing the guard entirely is a geometric NO-OP** — sidewalk and curb
   > byte-identical either way, which is what "subsumed" predicts. So uniform caps DO stay
   > byte-identical; that was the true half. It survives in the code as a cheap skip and is commented
-  > as NOT a decision. ▶ `node scratch/claims-survey-and-section-agree.mjs`
+  > as NOT a decision. ▶ `node checks/claims-survey-and-section-agree.mjs`
 - ⚠️ **A road may be authored with different `pavementHW` per side** (Nicholson Place = left 2.50 m, right 6.70 m). Any dead-end detector keyed on "both shoulders at the same radius" is wrong by construction — grow by the radius **jump** and confirm with a **signed** ~180° sweep.
 - ⛔ **The MOUTH is a different layer — and it is a CO-CLAIM, not a gap** (classified 2026-07-22, `scratch/cap-mouth-classify.mjs`). The spur collapses to a zero-width slit in the face walk; measured, the mouth is **0 m² unclaimed** and **~15 m²/mouth claimed by TWO layers at once**. So it is an **identity** defect, not a missing-fill one — which is why the junction-band cannot gate it and why `mouths` (a FILL-layer patch over the slit) is the wrong shape of cure. ⛔ **Do not FILL-patch it** (that class was tried and reverted — `THROAT-JUNCTION-FINDINGS.md`). It belongs to the junction-construction class (61 of 152 LS junctions fragment) and its brief was ARCHIVED 2026-07-30 (`cartograph/_archive/BRIEF-polygon-asks-the-stamp-2026-07-30.md`) — live doctrine now in `POLYGON-FIRST.md` + `PIPELINE.md §5 (the Wall)` — *the polygon must ask the stamp*, i.e. carry node identity onto the emitted face so the FILL **reads** ownership instead of negotiating it. *(`BRIEF-dead-end-mouth-junction.md` §3 survives as the evidence appendix; its §4 fix direction is superseded.)* ⚠️ **Waverly is NOT this class** — loop×loop (E2/E3); the mouth fix will not touch it.
 
@@ -614,7 +614,7 @@ Doctrine set by Jacob during the cap pass; it governs the whole dead-end class.
 >
 > `groupRuns` (`:1060`) groups consecutive ring edges sharing `(streetIdx, side)` and consumes the whole
 > ring ⇒ **every ring edge lands in exactly one run**, already frozen into `shape.json`.
-> ▶ **`node scratch/claims-ring-partition.mjs`** — ⛔ run it, don't quote it; **only "0 double-covered
+> ▶ **`node checks/claims-ring-partition.mjs`** — ⛔ run it, don't quote it; **only "0 double-covered
 > edges" is the live gate.** Off-ring run vertices land on **dead-end** tiles (**A0**) and do not block this.
 >
 > ⇒ **The defect was a ROUND TRIP** — the FILL took each run's polyline back out, re-stroked an **area**
@@ -684,7 +684,7 @@ When in doubt: a too-round or too-square *curb* is Survey; how the *ribbon bends
   · **SW↔SW** — "the corner is just a continuous stripe around the outer band." Nothing is added; the walk is already the outer strip and already reaches the curb. *(This retires the "SW↔SW → concrete→LU refinement" that stood here as open.)*
   · **TL↔TL** — "the sidewalk wraps around, but there is an added ADA pad to get the pedestrian to the street."
   · **SW↔TL** — a SLOPE connecting the two depths.
-  ⇒ **One rule, no case split: the grass slopes out ALONG THE LEG, so the walk arrives at the street already.** ⛔ `walkTo` and the leg's arrangement are untouched, or the frontage stops responding to authoring. ▶ `node scratch/claims-swap-reaches-the-paint.mjs`
+  ⇒ **One rule, no case split: the grass slopes out ALONG THE LEG, so the walk arrives at the street already.** ⛔ `walkTo` and the leg's arrangement are untouched, or the frontage stops responding to authoring. ▶ `node checks/claims-swap-reaches-the-paint.mjs`
 - **⭐ END CAPS FOLLOW THE SAME RULES** *(Jacob, 2026-09-07)*: **no centre seam in a cap**, and where a cap meets its legs **the same connectors apply**. `§6.3` owns the coupler; ⛔ the fold is still unbuilt.
 - **⛔⛔ AND THE ONE-LINE TEST FOR ALL OF IT — `RIBBONS` Slice 2, ruled 2026-08-14: THERE IS EXACTLY ONE LICENSED HARD SEAM, `ADA → TL|LU`. ANY OTHER HARD SEAM IS A DEFECT.** Leg into corner, corner into cap, block into block are offsets of one contour, so a seam there is not constructible. ⛔ **The joints are not seam LOCATIONS — they are the places most REQUIRED to be seamless**, and "a seam belongs at a real corner, a block end, or a cap" is struck by name as the exact inversion.
 - **One depth truth** — the FILL stroke and the handle placement read the *same* per-edge depth, or they diverge (§5).

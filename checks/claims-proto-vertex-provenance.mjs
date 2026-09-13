@@ -4,7 +4,7 @@
 // (`owners[label].srcIdx`); a MINTED vertex cannot, and needs the frozen coupler relation
 // (`junctionMap.nodes[].cornersAdjacent`) instead. ⛔ Never by proximity (`A15`).
 // ⭐ A minted vertex is not a defect — it is where two chains CROSS, which is where a corner is.
-// ▶ node scratch/claims-proto-vertex-provenance.mjs [scene ...]
+// ▶ node checks/claims-proto-vertex-provenance.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 const scenes = process.argv.slice(2); if (!scenes.length) scenes.push('lafayette-square','hipointe-demun')

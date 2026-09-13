@@ -20,7 +20,7 @@
  * road may be drawn too wide, or the gate's surface model may be missing a layer the ground
  * draws. ⛔ Do not "fix" it by widening the gate until you have looked at one.
  *
- *   node scratch/claims-no-tree-stands-on-drawn-hardscape.mjs [scene ...]
+ *   node checks/claims-no-tree-stands-on-drawn-hardscape.mjs [scene ...]
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'

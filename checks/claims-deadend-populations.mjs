@@ -3,7 +3,7 @@
  * The dead-end population, reproduced — THREE populations, side by side, because
  * they are three different things and the corpus has quoted them interchangeably.
  *
- *   node scratch/claims-deadend-populations.mjs [scene]
+ *   node checks/claims-deadend-populations.mjs [scene]
  *
  * ⛔ PREBAKE §2.5a printed "94 chain endpoints / 29 at 1030 / 29 junctionMap
  * degree-1, only 10 real" with NO reproduction command — the CLAUDE.md §PRUNE

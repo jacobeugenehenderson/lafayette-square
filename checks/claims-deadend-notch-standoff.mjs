@@ -8,7 +8,7 @@
 // the defect. (Layer 0 q3: the only honest test is a DISTANCE one, run WITH
 // authoring loaded. shape.json IS the authored bake.)
 //
-//   node scratch/claims-deadend-notch-standoff.mjs [scene] [skelId]
+//   node checks/claims-deadend-notch-standoff.mjs [scene] [skelId]
 //
 // Reports per cap: the ray-marched half-width per side vs the authored set.
 // Writes nothing.

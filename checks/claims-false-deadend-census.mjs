@@ -60,7 +60,7 @@
  *
  * Read-only. Writes nothing.
  *
- * Usage: node scratch/claims-false-deadend-census.mjs [--scene=<name>] [--verbose]
+ * Usage: node checks/claims-false-deadend-census.mjs [--scene=<name>] [--verbose]
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'

@@ -111,7 +111,7 @@ routed to it.** `[[feedback_every_question_asks_the_docs_first]]`
 
 ### ⭐ WHAT IS MEASURED (trust these)
 - `eastern_black_oak`, White Oak's leaf pack, is genuinely **full-season**: 1 green, 1
-  brown-red, 1 bright red, 1 turning. ▶ `node scratch/claims-leaf-pack-cells-agree.mjs` — 5 of
+  brown-red, 1 bright red, 1 turning. ▶ `node checks/claims-leaf-pack-cells-agree.mjs` — 5 of
   15 multi-cell packs fail; `generate-salon#rewriteCardUVs` picks a cell **per card at random**,
   so a mixed pack paints a canopy in whatever proportion its cells happen to be.
 - The live GLB and the baked slab **sample different cell pairs** from that pack — live

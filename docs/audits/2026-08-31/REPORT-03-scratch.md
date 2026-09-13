@@ -53,7 +53,7 @@ Classify as **ROT** — evict the number, replace with the command.
 - `README.md:196` — *"**`scratch/`** — git-tracked working files; **throwaway-ish, not
   canonical**."*
 - `README.md:28,29,30,35,37,173,180` — **13 citations as the harness of record**: *"verify with
-  `node scratch/claims-scene-at-default.mjs`, never by belief"*, *"harness
+  `node checks/claims-scene-at-default.mjs`, never by belief"*, *"harness
   `scratch/correctness-detector.mjs`"*.
 - `PIPELINE-CLAIMS.md` — 14 references; its constitution is *"A number without its method is not a
   claim"*, and the methods are `node scratch/…`.

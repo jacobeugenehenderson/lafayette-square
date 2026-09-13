@@ -17,7 +17,7 @@
  * rectangle out, for every baked primitive in every look. A town nobody has opened gets
  * it free, and it fails LOUDLY naming the species, the material and both rectangles.
  *
- *   node scratch/claims-atlas-uv-rect-survives-the-bake.mjs [look ...]
+ *   node checks/claims-atlas-uv-rect-survives-the-bake.mjs [look ...]
  */
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'

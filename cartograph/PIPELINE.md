@@ -198,8 +198,8 @@ skeleton is right, Survey shrinks to thin fortification** — which is the real 
 here is worth more than cleverness anywhere downstream. *(Carried from the excised `SKELETON.md §0`.)*
 
 **How you would tell it was wrong:**
-▶ `node scratch/claims-faces-on-the-ssot.mjs <scene>` — do the blocks change when you swap the input?
-▶ `node scratch/claims-repour-changes-nothing.mjs <scene>` — a re-pour must move nothing.
+▶ `node checks/claims-faces-on-the-ssot.mjs <scene>` — do the blocks change when you swap the input?
+▶ `node checks/claims-repour-changes-nothing.mjs <scene>` — a re-pour must move nothing.
 And the blunt one: **a city block should have about 8 vertices.** If it has 700, stop (Law 3).
 
 → `SKELETON.md` (§0.1 is the ruling; §2 the schema; §3 the build stages; §5 the open gap)
@@ -306,7 +306,7 @@ ON in the Designer (`BlockGeometryV2Debug.jsx`, grep `protoProducer`), and the b
 ⭐ **It is a change of CONSUMER, not of construction.** ②③ already offset the grout contour; the
 artifact freezes what they made, and `sectionOpen` already consumed a tile carrying its own bands. **No
 geometry was written to land it.**
-▶ `node scratch/claims-survey-and-section-agree.mjs` — asphalt, curb, sidewalk and block agree to
+▶ `node checks/claims-survey-and-section-agree.mjs` — asphalt, curb, sidewalk and block agree to
 **0 m²** between the two tools, LU class sets identical. **That gate is the definition of "the same
 thing," and it is what "Survey and Section are one construction" means operationally.**
 
@@ -369,7 +369,7 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
 - ✅ **CLOSED — ③ NO LONGER SHIPS THE FILL FROZEN.** The tile freezes the SILHOUETTE and the
   **STAMP** (`iaStamp` per contour point, `iaFull` the uncut contour it indexes) and Section strikes
   ③'s own ladder live off them — ⭐ Survey and Section now agree because they run the **same
-  painter**, not because both read one frozen strike. ▶ `node scratch/claims-proto-fill-is-live.mjs`
+  painter**, not because both read one frozen strike. ▶ `node checks/claims-proto-fill-is-live.mjs`
   reports the frozen-vs-live band/asphalt delta and the authoring-reaches-the-fill check per scene.
   ⭐⭐ **AND THE OPERATOR'S "JOIN LINE" WAS THREE FABRICATED JOINS, ALL FOUND BY EYE:** the ped
   resolved per **chain** instead of per road · the ring's own **array seam at index 0** read as a
@@ -378,7 +378,7 @@ here.** The pour warns by name for each; re-read it from a run, never from this 
   ⛔ Open: **cap folds** (`§6.3`, the bulb has no halves — unbuilt) and a small divider residual,
   cause not established. ⚠️ A `shape.json` poured before the flip still carries `bands`; that path
   draws and **warns**, and the cure is a re-pour.
-  ▶ `node scratch/claims-proto-fill-is-live.mjs` · `node scratch/claims-a-corner-is-where-one-turns.mjs`
+  ▶ `node checks/claims-proto-fill-is-live.mjs` · `node checks/claims-a-corner-is-where-one-turns.mjs`
   *(⛔ this cited `claims-proto-has-no-nodes.mjs`, which does not exist in the tree — a pointer that
   does not resolve reads as evidence already gathered. `MEMORY §C` quotes a result from it too.)*
 - ⛔ **There is no `median` land-use class** — ③ carries no median or loop concept, and the pour warns by
@@ -406,7 +406,7 @@ Converging them without finding that would have **deleted the curve from both si
 `_archive/PIPELINE-3a-artifact-contract-2026-09-06.md`.)*
 
 **How you would tell it was wrong:**
-▶ `node scratch/claims-proto-curb-is-parallel.mjs` — is the curb the authored width from ① everywhere?
+▶ `node checks/claims-proto-curb-is-parallel.mjs` — is the curb the authored width from ① everywhere?
 ▶ `node scratch/draw-one-block.mjs --street NAME` — **draw one block and look at it.**
 ⭐⭐ **The unit is the block.** Every whole-map total used during this arc hid a localised defect: a
 mean over 101 blocks cannot tell you that one of them is inside out.

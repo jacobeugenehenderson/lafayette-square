@@ -2,7 +2,7 @@
 > exterior leaves with its holes, and a block is an outer ring plus `blockHoles`. Acceptance 1 reads
 > **0 nested on both LS and HPDM**. ⭐ Kept for the DIARY only: its "state on arrival" and its
 > reproduce command describe a map that no longer exists. Live home: `RIBBONS §1`
-> ("A BLOCK IS A COMPOUND FACE"). ▶ `node scratch/claims-proto-blocks-are-faces.mjs <scene>`
+> ("A BLOCK IS A COMPOUND FACE"). ▶ `node checks/claims-proto-blocks-are-faces.mjs <scene>`
 > ⚠️ Its three "still open" items OUTLIVED it and are live in `RIBBONS §1` / `SECTION §4`:
 > ③ has no median or loop concept · turning circles facet to pentagons · `[F]` `clipStreet` still
 > chops centrelines for the face walk.
@@ -113,7 +113,7 @@ from that. A face with holes must never be handed to the offset as N independent
   Round curb corners mean the proto path is NOT running (② is `jtMiter`, sharp by ruling).
 - ⛔ **A difference between blocks is the product**, never by itself evidence of a bug. Measure with
   the scene's authored state loaded — `scratch/_proto-feed.mjs`, never a hand-rolled call.
-- ⛔ **`scratch/claims-proto-paints-into-medians.mjs` is VOID.** It pooled even-odd parity across
+- ⛔ **`checks/claims-proto-paints-into-medians.mjs` is VOID.** It pooled even-odd parity across
   every band on the map. Do not run it, do not quote it.
 
 ## Scenes

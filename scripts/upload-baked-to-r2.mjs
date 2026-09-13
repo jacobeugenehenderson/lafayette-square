@@ -73,7 +73,7 @@ const PUBLIC_BASE = (process.env.ASSET_BASE || 'https://assets.theward.online/')
  * already serving. `staging` is additive.
  * ⛔ Keep in step with the VITE_ASSET_BASE repo variables the workflows read; the drift
  * between them is the same class as the publish-branch drift that went unnoticed for four
- * weeks. `scratch/claims-the-slab-envs-do-not-collide.mjs` is the guard.
+ * weeks. `checks/claims-the-slab-envs-do-not-collide.mjs` is the guard.
  */
 const ENV_PREFIX = { prod: '', staging: 'staging/' }
 

@@ -25,7 +25,7 @@
  *
  * Read-only. Writes nothing.
  *
- * Usage: node scratch/claims-corner-decline-vs-partition.mjs [--scene <name>]
+ * Usage: node checks/claims-corner-decline-vs-partition.mjs [--scene <name>]
  */
 import fs from 'fs'
 import path from 'path'

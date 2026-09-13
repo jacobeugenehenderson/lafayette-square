@@ -14,7 +14,7 @@ Stood as the one open engineering objection to primitive lanes.
 >
 
 **Answered 2026-09-04** — coincident side-chains stroke and union to the single-chain road with delta
-exactly 0, both integer scales. ▶ `node scratch/claims-zero-separation-offset.mjs`
+exactly 0, both integer scales. ▶ `node checks/claims-zero-separation-offset.mjs`
 
 **Then made moot by the ruling:** under the grout model the chains are never coincident, because the grout
 is stroked at ε. ⭐ And the question it was really guarding was never numerical robustness but **NODE
@@ -34,7 +34,7 @@ COLLAPSED-node signature, not a clean through-node.**
 ▶ `node scratch/coupler-slit-universal.mjs` — every LS tip prints `FACE=SLIT  gap=0.000m`.
 
 ⭐ **Its measured residue SURVIVES and is cited live in `RIBBONS §1`:** the cap-leg standoff harness
-`scratch/claims-deadend-notch-standoff.mjs` is a LEG measurement (distance from the chain to `iA` against
+`checks/claims-deadend-notch-standoff.mjs` is a LEG measurement (distance from the chain to `iA` against
 the authored half-width) and therefore still legitimate under the 2026-09-04 rule that an offset is
 measured from a leg and never from a cap.
 
@@ -50,7 +50,7 @@ measured from a leg and never from a cap.
 > tip already carries a real notch: sides standing off **5.50 / 6.94 m** against an authored
 > **5.49 / 6.9269** (`clean/overlay.json`, asymmetric BY AUTHORING), a round cap at r=6.93, and a
 > continuous leg→cap slope. ⇒ **Do not cite this tip as the thing the substrate fixes.**
-> ▶ `node scratch/claims-deadend-notch-standoff.mjs` — the general form: at every frozen cap, march
+> ▶ `node checks/claims-deadend-notch-standoff.mjs` — the general form: at every frozen cap, march
 > out from the spur centerline to `iA` and compare against the half-width **the producer itself was
 > handed** (`shape.json runs[].measure`), station by station on the cap leg. Asymmetric authoring
 > PASSES by construction. **31 of 49 caps clean at every station; 18 carry ≥1 station off by >0.1 m

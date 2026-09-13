@@ -20,7 +20,7 @@
  * That is stated, not silently assumed — an instrument that implies coverage it lacks is
  * worse than no instrument.
  *
- *   node scratch/claims-the-slab-envs-do-not-collide.mjs
+ *   node checks/claims-the-slab-envs-do-not-collide.mjs
  *   exit 0 = the environments are separated · exit 2 = they collide
  */
 import { readFileSync } from 'node:fs'

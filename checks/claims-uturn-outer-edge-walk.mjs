@@ -12,7 +12,7 @@
 // PASSES and is reported as AUTHORED. Only a step the construction was told is a
 // through-node, or a genuine offset self-crossing, is reported as a finding.
 //
-//   node scratch/claims-uturn-outer-edge-walk.mjs [scene] [--near x,y] [--radius m]
+//   node checks/claims-uturn-outer-edge-walk.mjs [scene] [--near x,y] [--radius m]
 //
 // Writes nothing. Exit 1 if any finding.
 import fs from 'fs'

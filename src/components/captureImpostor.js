@@ -381,7 +381,7 @@ export function captureTreeOverhead(gl, gltfScene, treeMaterial, { canopyRadiusM
  * tilia_americana (0.004) retained nothing at all in any band.
  * ⭐ It also fixes the POSTed card height, which was the local number: maple_silver
  * shipped 29.7 m for a 21.0 m tree, maple_red 11.8 m for a 15.0 m one.
- * ▶ node scratch/claims-the-capture-frame-is-the-clip-frame.mjs
+ * ▶ node checks/claims-the-capture-frame-is-the-clip-frame.mjs
  *
  * Falls back to a ~1/3-up broadleaf break when no classified foliage is present.
  */

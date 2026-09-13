@@ -12,7 +12,7 @@
 // USE: pour, then diff against what is committed.
 //   node cartograph/skeleton.js  --scene=<scene>
 //   node cartograph/pipeline.js  --scene=<scene> [--skip-elevation]
-//   node scratch/claims-repour-changes-nothing.mjs <scene>
+//   node checks/claims-repour-changes-nothing.mjs <scene>
 // ⛔ Compares the LAYERS the map is made of, key by key — never counts. A same-count
 // different-geometry pour is exactly what `promote-ribbons.js`'s guard cannot see.
 import { execSync } from 'child_process'

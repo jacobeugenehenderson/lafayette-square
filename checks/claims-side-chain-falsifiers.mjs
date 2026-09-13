@@ -14,7 +14,7 @@
  * ⚠️ `inboardSideOf` below MIRRORS `src/lib/tileGround.js` (grep the function name; it is not
  * exported). If that function moves, this probe is stale — it prints its own mirror check.
  *
- *   node scratch/claims-side-chain-falsifiers.mjs [scene ...]
+ *   node checks/claims-side-chain-falsifiers.mjs [scene ...]
  */
 import fs from 'fs'
 const scenes = process.argv.slice(2).length ? process.argv.slice(2)

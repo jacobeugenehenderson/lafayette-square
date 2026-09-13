@@ -21,7 +21,7 @@
  * reach `guardian-check`). A check that says nothing about what it cannot see is
  * a check that lies toward "fine".
  *
- *   node scratch/claims-deployment-id-single-source.mjs
+ *   node checks/claims-deployment-id-single-source.mjs
  */
 import { readFileSync, readdirSync, statSync, existsSync } from 'node:fs'
 import { join, relative } from 'node:path'

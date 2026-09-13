@@ -31,7 +31,7 @@
  * names. Reads the polygon (tile runs), not the chain graph — the classification
  * of which skelId is a carriageway comes from the frozen frame fact `phase`.
  *
- * Usage: node scratch/claims-divided-seam-step.mjs [--scene <name>]
+ * Usage: node checks/claims-divided-seam-step.mjs [--scene <name>]
  * → SKELETON §5d/§5e/§5h · SECTION §7 · CLAUDE.md Layer 0 q3 · ROADMAP A06
  */
 import fs from 'fs'

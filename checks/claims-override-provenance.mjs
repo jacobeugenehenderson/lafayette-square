@@ -54,9 +54,9 @@
  *    nothing. Deleting authoring is the operator's call, never a detector's.
  *
  * Usage:
- *   node scratch/claims-override-provenance.mjs            # every Look
- *   node scratch/claims-override-provenance.mjs altadena   # one Look
- *   node scratch/claims-override-provenance.mjs --slots    # every slot, one line each
+ *   node checks/claims-override-provenance.mjs            # every Look
+ *   node checks/claims-override-provenance.mjs altadena   # one Look
+ *   node checks/claims-override-provenance.mjs --slots    # every slot, one line each
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
 import { join } from 'path'

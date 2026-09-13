@@ -17,7 +17,7 @@
  *
  * ⛔ READ-ONLY. Reads serve.js, public/looks/**, public/baked/**. Writes nothing.
  *
- * Usage: node scratch/claims-look-seed-scene-clean.mjs
+ * Usage: node checks/claims-look-seed-scene-clean.mjs
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join } from 'path'

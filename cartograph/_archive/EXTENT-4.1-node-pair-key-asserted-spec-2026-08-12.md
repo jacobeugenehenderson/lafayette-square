@@ -13,7 +13,7 @@ This is `CLAUDE.md`'s third mismatch cause — **ASPIRATION**, intent filed as d
 conformance job's own failure mode: it looks exactly like rot, so a tidying pass would have deleted
 it instead of surfacing it as work. It is preserved here in full rather than corrected in place.
 
-▶ **Reproduce, never quote: `node scratch/claims-node-pair-key-parity.mjs`** (LS + hipointe-demun,
+▶ **Reproduce, never quote: `node checks/claims-node-pair-key-parity.mjs`** (LS + hipointe-demun,
 authoring ON). Live home of the open question: `EXTENT-DESIGN §4.1`.
 
 ---

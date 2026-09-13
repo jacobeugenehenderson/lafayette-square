@@ -25,10 +25,10 @@
 > which is what `ec7dd3f4` predicted ("what dies with it — measured, not hoped").
 > ⛔ **NOT the 51 interior dead-end tips** — 51 pre-clip, 51 post. `A0` does not close.
 >
-> ⚠️ **Instrument status:** `scratch/claims-nodeless-tip-classifier.mjs` parses `keepR` out of
+> ⚠️ **Instrument status:** `checks/claims-nodeless-tip-classifier.mjs` parses `keepR` out of
 > `pipeline.js` and now **fails loudly and correctly** ("the probe's source-read is stale — FIX
 > THE PROBE against the new source; do not guess the rule"). That is the guard working as
-> designed. `scratch/claims-preclip-walk.mjs` is separately broken
+> designed. `checks/claims-preclip-walk.mjs` is separately broken
 > (`resolveChainSegmentation is not a function`, via `scratch/_substrate-feed.mjs:58`) — a
 > different fault, not this one.
 >
@@ -54,7 +54,7 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > whole area."* Then, on the mechanism: *"cut off streets are on the map boundary, very rough chop that
 > gets 'close enough' to the edge of the disc."***
 >
-> ▶ **Reproduce, any scene: `node scratch/claims-deadend-populations.mjs [scene]`.** It prints the three
+> ▶ **Reproduce, any scene: `node checks/claims-deadend-populations.mjs [scene]`.** It prints the three
 > populations this section used to tabulate — skeleton (pre-clip) · rendered (post-clip, the one
 > `tileGround.js:2787` recomputes and caps) · `junctionMap` (frozen stamp) — plus the frozen tile caps.
 > ⚠️ **Name the population or the old figures do not reproduce:** they count **degree-1 nodes EXCLUDING
@@ -71,11 +71,11 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 > - ✅ **THE FROZEN TILE/CAP SYSTEM IS CLEAN** — no caps sit at the clip radius, because the tile and cap
 >   freeze run **before the clip exists** (`pipeline.js:111` `deriveLayers` vs `:139`; `derive.js:4707`
 >   resolves caps against the original chain endpoints). ⇒ `RIBBONS §1`'s ruled dead-end class is **not**
->   contaminated. ▶ `node scratch/claims-deadend-populations.mjs`
+>   contaminated. ▶ `node checks/claims-deadend-populations.mjs`
 > ### ⛔⛔ THE RECIPROCAL HALF — **THE CLIP MANUFACTURES VERTICES THAT HAVE NO NODE** *(2026-08-21, agent Gimbal, `6d2fcb4d`)*
 > This section knew the clip **strands** nodes outside the rim. It did not record the other direction, and
 > **that direction is what breaks the sidewalk band.**
-> ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour`
+> ▶ `node checks/claims-nodeless-tip-classifier.mjs --source=pour`
 > - **The sequence, in source:** `pipeline.js:111` `deriveLayers` builds `junctionMap` over **full-length
 >   chains**; the clip then runs and `clipRun` **mints brand-new endpoint coordinates** at the circle. The
 >   category filter is `if (Array.isArray(arr))` — `junctionMap` is an **object**, so it is **skipped**.
@@ -97,7 +97,7 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 >   symptoms.)*
 > - **The reciprocal population is the larger one:** `junctionMap` nodes beyond `keepR` — a small share
 >   on LS, a large majority on HPDM. HPDM's index mostly describes streets that are not in the map.
->   ▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour` ("THE RECIPROCAL HALF")
+>   ▶ `node checks/claims-nodeless-tip-classifier.mjs --source=pour` ("THE RECIPROCAL HALF")
 > - ⛔ **THE NAIVE CURE IS A PLAUSIBLE-LOOKING WRONG MAP:** minting a node at the cut promises a **cap
 >   coupler** there, i.e. the kit would render a guillotined arterial as a **cul-de-sac by design**.
 > - ⚠️ **Bears on the ruling below but does not overturn it** — that ruling rests on there being no
@@ -111,7 +111,7 @@ Result on a wide 5.4 km test fetch: `map.json` **180 → 52 MB**, ribbons **22 �
 >   (agent A, `a2e0f6c4`). ⛔ **Do not read this as "Slice 1 is mostly artifact."** That reading came from
 >   quoting the `<0.8R` column as though it were the real-tip count — by hood radius it is a larger
 >   share, and the interior population the tip couplers sit on is untouched by the clip.
->   ▶ `node scratch/claims-deadend-populations.mjs` — re-derive both columns; ⚠️ this whole §2.5a
+>   ▶ `node checks/claims-deadend-populations.mjs` — re-derive both columns; ⚠️ this whole §2.5a
 >   census has drifted further since 2026-08-21 (the grade-separated holdout count alone has moved),
 >   so treat every number in this subsection as unverified until re-measured.
 >

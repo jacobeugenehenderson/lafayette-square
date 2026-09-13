@@ -14,7 +14,7 @@
 //
 // ⛔ RUN IT AFTER EVERY POUR. A pass means the artifact IS the construction; a fail means the
 // scene needs re-pouring and the map you are looking at was built from a stale ①.
-// ▶ node scratch/claims-proto-frozen-matches-live.mjs [scene ...]
+// ▶ node checks/claims-proto-frozen-matches-live.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
 

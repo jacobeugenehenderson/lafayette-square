@@ -32,14 +32,14 @@ rather than restore this text.
 > `best.r + c.trim + 1` (`:1575`), and again on the intersection coming back non-empty (`:1583`).
 > **Step over is unconditional; step back is not.**
 >
-> ▶ **The population is measured, not estimated — `node scratch/claims-corner-takeover.mjs`** (all 7 scenes,
+> ▶ **The population is measured, not estimated — `node checks/claims-corner-takeover.mjs`** (all 7 scenes,
 > both states, runs the real `sectionPassTile` under `CORNER_DUMP=1`; the dump is inert — output is
 > byte-identical armed and disarmed). What it establishes:
 > - **Four decline modes exist, and LS fires all four** — `bandRem-empty` · `bandRem-empty + no-fillets` ·
 >   `no-fillet-in-range` · **`empty-pad` (`:1583`)**. ⛔ **No town carries a mode LS lacks**, so the cure
 >   does not need a town nobody has looked at in order to be designed.
 > - ⚠️ **But the MIX is not portable, and that is the trap.** `bandRem-empty` as a share of a town's bids
->   swings widely by town (▶ `node scratch/claims-corner-takeover.mjs` prints the per-town split and the
+>   swings widely by town (▶ `node checks/claims-corner-takeover.mjs` prints the per-town split and the
 >   overall decline-rate range), LS mid-range. **A cure tuned to LS's dominant gate is tuned wrong for both extremes** — handle all four
 >   structurally, never optimise for the common one.
 > - **Two gates are dead:** `zero-depth` (`:1569`) and the pure no-fillets tile gate fired **0 times in

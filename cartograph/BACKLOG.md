@@ -143,7 +143,7 @@ operator who has already seen this street. ⛔ A per-street extension list is no
 real one, and `ROADMAP A09`'s `highway=turning_circle` tag is the only arbiter we have for
 severed-vs-fragmented. Distance alone yields a shortlist, never a verdict.
 
-▶ Reproduce: `node scratch/claims-marked-corners.mjs` is the WRONG lens (a corner classifier); use a
+▶ Reproduce: `node checks/claims-marked-corners.mjs` is the WRONG lens (a corner classifier); use a
 region count — ① blocks inside the mark vs drawn — and the endpoint-gap scan above.
 
 ## 📐 the kit-correctness track — shrink automation-debt (automate the eye)

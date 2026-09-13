@@ -111,7 +111,7 @@ This is what "one owner per field" means in practice, and it is why the three me
 
 ⚠️ **Wiring this made the whole surface unsellable until items are confirmed** — correctly, and with no customer impact, since the CTA is still admin-gated. An admin sees a banner naming which of the three no-commerce states applies rather than a menu of quietly un-addable items.
 
-▶ `node scratch/claims-price-of-record.mjs` — 73 commercial states; asserts none charges a display figure and none sells unconfirmed, 86'd, paused, out-of-window or unloaded. ⭐ Mutation-tested: a "fall back to `item.price`" fails 72 of 73; dropping the load gate or the confirmation requirement each fail exactly 2 — the narrow states a human would not think to try.
+▶ `node checks/claims-price-of-record.mjs` — 73 commercial states; asserts none charges a display figure and none sells unconfirmed, 86'd, paused, out-of-window or unloaded. ⭐ Mutation-tested: a "fall back to `item.price`" fails 72 of 73; dropping the load gate or the confirmation requirement each fail exactly 2 — the narrow states a human would not think to try.
 
 ### The write path — who may set a price *(2026-09-10)*
 
@@ -132,9 +132,9 @@ PricingPanel  →  commerceApi  →  commerce-write (edge fn)  →  GAS ?action=
 
 The **Delivery prices** panel (`PricingPanel`, guardian-only) is the surface: every item with its menu price pre-filled, per-item 86, pause-all, and an *"N of M confirmed"* header. The pre-fill is deliberate — a gate people dread is a gate people route around.
 
-▶ `node scratch/claims-commerce-write-gate.mjs` — 17 source-level properties asserting no write path skips GAS. Mutation-tested four ways, each killed by name.
+▶ `node checks/claims-commerce-write-gate.mjs` — 17 source-level properties asserting no write path skips GAS. Mutation-tested four ways, each killed by name.
 
-▶ `node scratch/claims-menu-item-ids.mjs` — proves every item across every live payload is addressable, unique, and **stable under reorder** (819/819 on LS). It caught a real collision on its first run: `lmk-008` carries two sections named "Mocktails" (one `brunch`, one `drinks`) holding the same three drinks, so the identity basis needs the menu **type** as well as the section name.
+▶ `node checks/claims-menu-item-ids.mjs` — proves every item across every live payload is addressable, unique, and **stable under reorder** (819/819 on LS). It caught a real collision on its first run: `lmk-008` carries two sections named "Mocktails" (one `brunch`, one `drinks`) holding the same three drinks, so the identity basis needs the menu **type** as well as the section name.
 
 **The price stack** (all integer cents — this is the money model, and it matches the legal canon exactly):
 

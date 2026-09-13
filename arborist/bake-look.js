@@ -691,7 +691,7 @@ async function buildViz(rosterTiles, baked, atlasName, outDir) {
 // ⛔ Measured, not assumed: for v in [0,1], `Math.floor(v)` is 0 everywhere except
 // v === 1, so declining the wrap on an in-range axis CANNOT change any other value.
 // Per-axis, because a set can repeat in one axis and be a rectangle in the other.
-// ▶ node scratch/claims-atlas-uv-rect-survives-the-bake.mjs
+// ▶ node checks/claims-atlas-uv-rect-survives-the-bake.mjs
 function transformUVs(uvArr, t) {
   const { offsetU, offsetV, scaleU, scaleV } = t
   const EPS = 1e-6

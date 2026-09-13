@@ -7,7 +7,7 @@
 // real reconcile lives in derive.js and only lands on a re-pour, which is a
 // shared artifact; this predicts the outcome without touching it.
 //
-//   node scratch/claims-physical-side-reconcile.mjs
+//   node checks/claims-physical-side-reconcile.mjs
 //
 // ⛔ Loads the scene's authored blockCustoms (Layer 0 q3).
 import fs from 'fs'

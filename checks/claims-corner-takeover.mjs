@@ -48,9 +48,9 @@
  *    row). Nothing here re-derives the gates.
  *
  * Usage:
- *   node scratch/claims-corner-takeover.mjs                  # every baked scene
- *   node scratch/claims-corner-takeover.mjs lafayette-square # one scene
- *   node scratch/claims-corner-takeover.mjs --rows           # dump every row
+ *   node checks/claims-corner-takeover.mjs                  # every baked scene
+ *   node checks/claims-corner-takeover.mjs lafayette-square # one scene
+ *   node checks/claims-corner-takeover.mjs --rows           # dump every row
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'

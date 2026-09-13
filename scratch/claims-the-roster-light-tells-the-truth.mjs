@@ -114,7 +114,7 @@ for (const scene of scenes) {
       `all ${instances.length} placements across ${placed.size} assets ship without them.\n` +
       `       This is a whole-look fact, not a per-species one: nothing was ever captured for this Look.\n` +
       `       Bake it in the Grove. ⚠️ A missing HERO set also switches the render to the legacy\n` +
-      `       prominence path — ▶ node scratch/claims-every-shadowed-placement-renders.mjs`)
+      `       prominence path — ▶ node checks/claims-every-shadowed-placement-renders.mjs`)
   }
 
   if (!findings.length && !wholeLook.length) {

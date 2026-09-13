@@ -13,7 +13,7 @@
 //   RE-POINTED — the slot still resolves, at a different span. INVISIBLE, and it is the real risk:
 //                the authoring still "works", it just describes somewhere else.
 // ⛔ Do not run the convergence until this reports 0 in BOTH columns, or until a re-key is built.
-// ▶ node scratch/claims-simplify-preserves-authoring.mjs [scene]
+// ▶ node checks/claims-simplify-preserves-authoring.mjs [scene]
 import fs from 'fs'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 const scene = process.argv[2] || 'lafayette-square'

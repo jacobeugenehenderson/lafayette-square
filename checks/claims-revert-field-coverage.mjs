@@ -15,7 +15,7 @@
 // formula is how they drift apart, which is the same reason feCustomKey is a
 // single helper.
 //
-//   node scratch/claims-revert-field-coverage.mjs
+//   node checks/claims-revert-field-coverage.mjs
 // Read-only. Exits 1 on an orphaned field.
 import fs from 'fs'
 import path from 'path'

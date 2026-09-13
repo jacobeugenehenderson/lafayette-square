@@ -16,7 +16,7 @@
 // the artifacts, the double-carry is derived by joining `streets[]` to `paths[]`. No number here
 // is copied from a doc, and none should be copied OUT of here — re-run it.
 //
-// ▶ node scratch/claims-named-way-becomes-street.mjs [scene ...]
+// ▶ node checks/claims-named-way-becomes-street.mjs [scene ...]
 import fs from 'fs'
 
 // Non-vehicular classes. ⛔ `service` is deliberately NOT here: a service road is vehicular

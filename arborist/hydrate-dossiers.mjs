@@ -574,4 +574,4 @@ for (const [file, add] of pending) {
 }
 console.log(`✅ wrote ${applied} cell(s) across ${pending.size} dossier(s).` +
   (rederived ? `  (${rederived} re-derived over prior MACHINE values; authored cells untouched)` : ''))
-console.log('▶ node scratch/claims-axis-keys-resolve.mjs   — confirm no key went stale')
+console.log('▶ node checks/claims-axis-keys-resolve.mjs   — confirm no key went stale')

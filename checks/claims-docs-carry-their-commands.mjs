@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // ⭐⭐⭐ THE DOC WRAP, AS A GATE INSTEAD OF A PROMISE. (Jacob, 2026-09-07: "The docs must be fixed
-// when we wrap!") ▶ node scratch/claims-docs-carry-their-commands.mjs [--list]
+// when we wrap!") ▶ node checks/claims-docs-carry-their-commands.mjs [--list]
 //
 // `CLAUDE.md` states two rules that are mechanically checkable, so they are checked, not restated:
 //  1. ⛔ "Never write a number into a doc without the command that reproduces it — and prefer

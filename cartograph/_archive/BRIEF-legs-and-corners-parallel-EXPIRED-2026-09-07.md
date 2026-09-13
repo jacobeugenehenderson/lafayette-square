@@ -35,7 +35,7 @@ collision. The boundary is not a suggestion.
 | | **LEGS** | **CORNERS** |
 |---|---|---|
 | owns | the run construction + `iaStamp` (~`:6860–6975`) · the `// ══ THE LEG ══` block in `sectionPassProtoTile` | the `// ══ THE CORNER ══` block (`cornerAt`, `slidWalk`) · `mk`'s four depth functions |
-| its gate | `scratch/claims-frontage-covers-the-block.mjs` · `scratch/claims-ring-partition.mjs` | `scratch/claims-sidewalk-is-one-band.mjs` |
+| its gate | `checks/claims-frontage-covers-the-block.mjs` · `checks/claims-ring-partition.mjs` | `checks/claims-sidewalk-is-one-band.mjs` |
 | its open class | **two:** frontage runs that do not cover their own block · **the turn test minting rule-2 seams** (§5) | the **unfilleted (R=0) corner** |
 
 **⛔ NEITHER of you edits `const M = (ri, i) => legArr.get(...)`. That line is the interface.**
@@ -102,8 +102,8 @@ intend to rely on inside your own worktree**, and treat a figure from the main t
 ## 3. Both of you must keep these green — they are not yours to move
 
 ```
-node scratch/claims-survey-and-section-agree.mjs      # 0 m² on all four layers. If it moves, STOP.
-node scratch/claims-proto-fill-is-live.mjs            # PASS both towns
+node checks/claims-survey-and-section-agree.mjs      # 0 m² on all four layers. If it moves, STOP.
+node checks/claims-proto-fill-is-live.mjs            # PASS both towns
 npx vite build                                        # ⚠️ a green build is NOT a rendering build
 ```
 ⚠️ **A green build is not a rendering build.** A TDZ `ReferenceError` blanked both tools tonight and
@@ -133,9 +133,9 @@ the tile's own contour, so the few runs it has are stamped across the rest of th
 slot owns three sides. Each straight side is ONE ring edge whose only vertex is a fillet **tangent** — a
 corner vertex — so the side inherits its owner from the corner.
 
-▶ `node scratch/claims-frontage-covers-the-block.mjs lafayette-square --tile 107` — the instance
-▶ `node scratch/claims-frontage-covers-the-block.mjs` — the class, both towns
-▶ `node scratch/claims-ring-partition.mjs` — the sibling gate, already failing and saying so
+▶ `node checks/claims-frontage-covers-the-block.mjs lafayette-square --tile 107` — the instance
+▶ `node checks/claims-frontage-covers-the-block.mjs` — the class, both towns
+▶ `node checks/claims-ring-partition.mjs` — the sibling gate, already failing and saying so
 
 ⛔ **DO NOT FILL-PATCH IT.** `SECTION §7`: clamp, wrap, re-key and snap were each built and each
 reverted — every one treated the *output* of a wrong ownership decision. Yours would be the fifth. The
@@ -149,7 +149,7 @@ street for most of its ring. Only the **coverage** line is evidence.
 The turn test is **minting the seam Jacob's rule 2 forbids.** Corners the leg cut sees but the corner
 construction cannot reach, classified by carried identity across the vertex (`stp[q-1]` vs `stp[q]`):
 **the largest class by far is "same run both sides" — a mid-block BEND.**
-▶ `node scratch/claims-every-corner-is-configured.mjs lafayette-square hipointe-demun` — **run it.**
+▶ `node checks/claims-every-corner-is-configured.mjs lafayette-square hipointe-demun` — **run it.**
 
 A bend is not a corner. Each one cuts a leg in two so the halves resolve independently — *"the leg is
 either *or* and never both; a seam or joint should be disqualified from possibility."* So the road test
@@ -171,7 +171,7 @@ tightens until you land. ⛔ Do not quote either as settled.
 
 **Acceptance, Jacob's words (`SECTION §7`):** *"the sidewalk should be one continuous smooth line all
 around the entire polygon."*
-▶ `node scratch/claims-sidewalk-is-one-band.mjs` — **re-run it; do not quote a number from here.**
+▶ `node checks/claims-sidewalk-is-one-band.mjs` — **re-run it; do not quote a number from here.**
 
 **The open class, measured:** blocks that still do not close correlate hard with the **unfilleted (R=0)
 corner** — broken tiles carry ~13× the sharp-corner count of whole ones, and the same split holds in the
@@ -205,7 +205,7 @@ answered in `SECTION §3.3/§4/§6.1/§7` and `CLAUDE.md` Layer 0.
 
 *From CORNERS, 2026-09-07, relayed because it has no channel to you. Its worktree is
 `.claude/worktrees/corners` on `corner-r0-and-slide`; it has edited nothing under `src/` and has not
-touched your `scratch/claims-stamp-follows-the-edge.mjs`.*
+touched your `checks/claims-stamp-follows-the-edge.mjs`.*
 
 1. ⛔ **IGNORE ITS SPLIT UNTIL YOU LAND — its own request, and it is right.** CORNERS classified the
    unreached corners into bends vs real corners by reading `iaStamp`. If your 30.2%-by-length finding

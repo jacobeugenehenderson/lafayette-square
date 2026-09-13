@@ -14,7 +14,7 @@ framing — including this one. Re-run the commands.)*
 > ▶ re-derive before reading further:
 > `node -e "const r=require('./src/data/ribbons.json');const d=p=>Math.hypot(p[0],p[1]);let e=0,b=0;for(const s of r.streets){const P=s.points||[];if(P.length<2)continue;if([P[0],P[P.length-1]].some(p=>Math.abs(d(p)-1030)<0.5))e++;if(P.some(p=>d(p)>1030.5))b++}console.log('endpoints at old keepR:',e,'| chains past it:',b,'of',r.streets.length)"`
 > — measured 2026-09-08: **0 endpoints at `keepR`, 138 of 343 chains running past it.**
-> ⚠️ **`scratch/claims-nodeless-tip-classifier.mjs` now FAILS LOUDLY** (its source-read of `keepR`
+> ⚠️ **`checks/claims-nodeless-tip-classifier.mjs` now FAILS LOUDLY** (its source-read of `keepR`
 > can no longer find the rule — the guard working as designed), and `claims-preclip-walk.mjs` is
 > separately broken (`resolveChainSegmentation is not a function`, `scratch/_substrate-feed.mjs:58`).
 > **Both commands cited in §1 are dead.**
@@ -45,8 +45,8 @@ proposal makes a material choice change the geometry, it is wrong.
 
 ## 1. ESTABLISHED — the band's rim holes, root cause
 
-▶ `node scratch/claims-nodeless-tip-classifier.mjs --source=pour`
-▶ `node scratch/claims-preclip-walk.mjs`
+▶ `node checks/claims-nodeless-tip-classifier.mjs --source=pour`
+▶ `node checks/claims-preclip-walk.mjs`
 **Home: `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`** (was `PREBAKE §2.5a`; excised). Commits `6d2fcb4d` · `846c9535` · `566dff4c` · `fc9e881d`.
 
 - `pipeline.js:111` `deriveLayers` builds `junctionMap` over **full-length chains**. The clip runs

@@ -26,7 +26,7 @@
  * ⛔ An authored `scene.heroImpostor === false` is the OPERATOR'S DECISION, never a
  * defect (CLAUDE.md Layer 0 Q3) — reported as AUTHORED and never failed.
  *
- *   node scratch/claims-every-shadowed-placement-renders.mjs [look ...]
+ *   node checks/claims-every-shadowed-placement-renders.mjs [look ...]
  */
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'

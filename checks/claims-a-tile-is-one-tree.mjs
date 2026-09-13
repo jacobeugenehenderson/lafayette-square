@@ -21,7 +21,7 @@
  * The rule is an order of magnitude from every real tree, so it is not a tuned threshold —
  * and it needs no species list, no roster and no operator who has already looked. Any town.
  *
- *   node scratch/claims-a-tile-is-one-tree.mjs
+ *   node checks/claims-a-tile-is-one-tree.mjs
  */
 import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'

@@ -31,7 +31,7 @@ export default {
     // the disc rim itself was unfetched and the north streets simply stopped (Jacob's eye,
     // 2026-09-06). Grown to 1115 m = 1.25 × 892 on every side; `lat`/`lon` UNTOUCHED, which
     // is the one operation the extent may never do (`§3.3`: grow yes, shrink yes, MOVE never).
-    // ▶ `node scratch/claims-fetch-contains-the-forever-zone.mjs` — re-run, don't quote.
+    // ▶ `node checks/claims-fetch-contains-the-forever-zone.mjs` — re-run, don't quote.
     bbox: { minLat: 38.605955, maxLat: 38.626045, minLon: -90.2290, maxLon: -90.203251 },
     // City/state the installation sits in (legal + display copy).
     cityState: 'St. Louis, MO',

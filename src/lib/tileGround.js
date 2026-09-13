@@ -1019,7 +1019,7 @@ function unionRingLabelled(ring, labels) {
 // applies when one leg spans more than one frontage (`sectionPassProtoTile`, `SECTION §3.3` step 1),
 // and it is a choice among KNOWN contributors, never a proximity lookup against unrelated geometry.
 // ⛔ Still counted: a plural edge is a real fact about the union and the count must not go quiet.
-// ▶ node scratch/claims-stamp-follows-the-edge.mjs
+// ▶ node checks/claims-stamp-follows-the-edge.mjs
 // ⭐⭐⭐ AND THE RING HAS ONE DIRECTION, SO A VERTEX THAT CANNOT SAY WHICH WAY ASKS THE RING.
 // Where two consecutive ② points share a source (a corner's ease arc, a bevel's two points) the
 // pair carries no direction of its own, and taking "the edge leaving a" is right only if ② runs
@@ -1528,7 +1528,7 @@ const EASE_ARC_TOL = 0.01            // m — the sagitta a tessellated arc may 
 // ⛔ THIS IS THE CORNER'S EXTENT, AND IT IS THE ONE PLACE THAT KNOWS IT. The consumer used to
 // recover it by matching the frozen fillet's TANGENT COORDINATES back onto the contour across a
 // boolean — `A15`'s forbidden proximity recovery, wearing a 1 mm grid hash — and it reached only
-// part of the corners (▶ `node scratch/claims-the-corner-extent-is-carried.mjs`, which reports the
+// part of the corners (▶ `node checks/claims-the-corner-extent-is-carried.mjs`, which reports the
 // share on any town). ⭐ Identity CARRIED through, never recovered afterward (`RIBBONS §1`).
 function easeContour(ring, rAt, labs = null, arcsOut = null) {
   const n = ring.length
@@ -2177,7 +2177,7 @@ const VALLEY_LO = 0.25, VALLEY_HI = 0.75   // the bimodal valley span (the ~92 a
 // back to the standard verdict instead of inheriting a guess's residue as evidence.
 // ⛔ Nothing is redistributed and no width moves — every width is an operator handle and the
 // override is the product. This changes only what the glean is allowed to CONCLUDE.
-// ▶ `node scratch/claims-the-survey-reaches-the-measure.mjs <scene>` · LS 83 of 301 sides.
+// ▶ `node checks/claims-the-survey-reaches-the-measure.mjs <scene>` · LS 83 of 301 sides.
 const gleanGap = (measure, side) => {
   const sd = measure?.[side]
   if (sd?.tlClamped) return true          // unknown, not N — the standard sidewalk-eligible default
@@ -3813,7 +3813,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // walk `[cw+tl, cw+WB]` meets a curb-side walk `[cw, cw+sw]` — two depth ranges that DO NOT
   // OVERLAP, and the sidewalk simply stops. ▶ MEASURED on LS: 231 of 681 corners (33.9%) have
   // disagreeing arrangements. That is the operator's "the sidewalk breaks" and "the ADA pads are
-  // missing" — one defect, one cure. ▶ `node scratch/claims-sidewalk-is-one-band.mjs`
+  // missing" — one defect, one cure. ▶ `node checks/claims-sidewalk-is-one-band.mjs`
   // ══ THE CORNER — READ, NOT MEASURED. `iaCorner` LOCATES IT; `iaArc` IS ITS EXTENT ═══════════
   // ⭐⭐⭐ TWO FACTS, TWO SOURCES, BOTH CARRIED ONTO THE CONTOUR. Nothing here derives, matches,
   // thresholds or declines:
@@ -3832,7 +3832,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // conceded the far class: "a tangent 10 cm off the contour is NOT on it, and those still miss."
   // ⭐ MEASURED, and the miss is not a tail: it reached under two thirds of LS's corners, so a
   // third of them had NO extent — one edge to change depth over, i.e. the chevron.
-  // ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` — re-run it, never quote it.
+  // ▶ `node checks/claims-the-corner-extent-is-carried.mjs <scene>` — re-run it, never quote it.
   // ⇒ `fillets` and `vertR` are now read by NO consumer on this path. They stay FROZEN because
   // Survey's corner handle rides them (`SECTION §4`'s freeze list); the FILL does not.
   //
@@ -3910,7 +3910,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
   // vertices sit inside the eased corner arcs, where the depth must be CONSTANT, and the straight
   // leg gets a MEDIAN OF ONE long edge per frontage. One edge is one place to put a value, so the
   // corner's depth change could only ever be a STEP — the 1.5 m jog at every corner on the map.
-  // ▶ `SECTION_DUMP=1 node scratch/claims-the-ramp-has-room.mjs`
+  // ▶ `SECTION_DUMP=1 node checks/claims-the-ramp-has-room.mjs`
   //
   // ⭐ THIS DOES NOT TOUCH ① AND IT DOES NOT MOVE A SINGLE POINT. The inserted vertices are
   // COLLINEAR — they lie exactly on the edge they split — so the contour is geometrically
@@ -4069,7 +4069,7 @@ export function sectionPassProtoTile(st, cw, stripMat, blockCustoms = null) {
     // authoring — 58.8% of LS contour edges sit inside a corner extent and 33.7% of frontage
     // stretches are ENTIRELY inside one. Jacob: "The swap regime doesn't work on adjacent blocks
     // anymore." ▶ measure it with the BOTH-ARRANGEMENTS method, never by writing a literal:
-    //   `node scratch/claims-swap-reaches-the-paint.mjs` writes `{outer:'SW', inner:'LU'}`, which
+    //   `node checks/claims-swap-reaches-the-paint.mjs` writes `{outer:'SW', inner:'LU'}`, which
     //   IS the default on a treelawn-N edge, so it scores a no-op as a dead gesture and overstates
     //   the class ~3× (1088 slots/75.6% against 1195 slots/27.5% painted both ways).
     // ⭐ AND THE GRASS STOPPING IS THE LAWN'S OUTER EDGE, NOT A FOURTH DEPTH: where the lawn is
@@ -6644,7 +6644,7 @@ export function buildTileGround(ribbons, opts = {}) {
     // ⛔ NOT a refusal: an unauthored scene is a LEGITIMATE state (a fresh pour of town #2 has
     // no `blockCustoms` at all) and refusing to build would make onboarding impossible — the
     // same call `A02`/`shapeFreezeMissing` makes at the wall. So it DRAWS, and it is LABELLED.
-    // ▶ node scratch/claims-proto-stack-reads-authoring.mjs
+    // ▶ node checks/claims-proto-stack-reads-authoring.mjs
     protoAuthoring = blockCustoms
       ? `${Object.keys(blockCustoms).length} authored street(s)`
       : 'ABSENT — no blockCustoms passed; ②③ are the to-code default, not this town'
@@ -7602,7 +7602,7 @@ export function buildTileGround(ribbons, opts = {}) {
               //   the SAME median turn as the licensed ones, 90°. Square street corners, vetoed by
               //   a chain label. The operator found two of them by eye in places every gate called
               //   green, and neither could respond to authoring because nothing was there to
-              //   respond. ▶ `node scratch/claims-the-ease-is-the-corner.mjs <scene>`
+              //   respond. ▶ `node checks/claims-the-ease-is-the-corner.mjs <scene>`
               // ⇒ THE EASE IS THE CORNER TEST. Where the contour turns past `FILLET_TURN_TOL` the
               // ease made an arc, and that arc IS the corner — no label, no conjunction, and no
               // conditional ("the corner is what it is, where it is").
@@ -7761,7 +7761,7 @@ export function buildTileGround(ribbons, opts = {}) {
             // freezes the STAMP (`iaStamp` + `iaFull`) and `sectionPassProtoTile` re-strikes ③'s own
             // ladder past the wall, per contour POINT — no walk, no runs to stroke, no corner to
             // decline. ⭐ Jacob: "we don't do a WALK anymore… there are no nodes there now."
-            // ▶ node scratch/claims-proto-fill-is-live.mjs — band within 0.1% of what the frozen
+            // ▶ node checks/claims-proto-fill-is-live.mjs — band within 0.1% of what the frozen
             //   bands drew, on two towns; authoring now moves it +35,819 m² where it moved 0.
             // ⭐ the SHAPE the wall freezes (`SECTION §4`'s own list) — carried NOW, so the flip is
             // one deletion rather than a rebuild.

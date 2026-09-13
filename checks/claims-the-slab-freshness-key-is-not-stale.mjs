@@ -28,7 +28,7 @@
  * guards is invisible and permanent, and a false alarm costs one re-bake. Re-bake and re-run;
  * if it still fails, it is real.
  *
- *   node scratch/claims-the-slab-freshness-key-is-not-stale.mjs [look ...]
+ *   node checks/claims-the-slab-freshness-key-is-not-stale.mjs [look ...]
  */
 import { readdirSync, existsSync, readFileSync, statSync } from 'node:fs'
 import path from 'node:path'

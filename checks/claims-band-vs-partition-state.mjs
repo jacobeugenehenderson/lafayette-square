@@ -39,7 +39,7 @@
  * ⛔ NOT MEASURED, never zero: a scene whose artifact carries no `iaEdge`/`producer`
  *    stamp cannot be staged at all and exits 2.
  *
- * Usage: node scratch/claims-band-vs-partition-state.mjs [--scene <name>] [--all]
+ * Usage: node checks/claims-band-vs-partition-state.mjs [--scene <name>] [--all]
  *                                                       [--pairs] [--stations N]
  * Exit 0 = measured   1 = partition state predicts band loss   2 = NOT MEASURED
  * → RIBBONS §1 (invariant 4, diagnostic step 3) · SECTION §3.3 · ROADMAP A10

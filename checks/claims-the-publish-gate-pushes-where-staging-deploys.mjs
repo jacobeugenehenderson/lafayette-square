@@ -13,7 +13,7 @@
  * has warned twice that the trunk moves and must never be quoted from memory; this is that
  * warning made executable.
  *
- *   node scratch/claims-the-publish-gate-pushes-where-staging-deploys.mjs
+ *   node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs
  */
 import { readFileSync, readdirSync } from 'node:fs'
 import path from 'node:path'

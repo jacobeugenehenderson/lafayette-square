@@ -56,7 +56,7 @@
  *
  * Read-only. Writes nothing.
  *
- * Usage: node scratch/claims-curated-centerlines-unread.mjs [--scene=<name>]
+ * Usage: node checks/claims-curated-centerlines-unread.mjs [--scene=<name>]
  */
 import { readFileSync, readdirSync, existsSync } from 'fs'
 import { resolve, dirname } from 'path'

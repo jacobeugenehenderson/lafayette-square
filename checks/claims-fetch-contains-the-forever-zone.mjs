@@ -20,7 +20,7 @@
 // not on derived ribbons, which can reach further than their input and would mask the hole.
 // ⛔ The margin is reported PER SIDE. A pooled bb area or a mean radius hides a one-sided
 // hole, which is precisely the shape of the live defect.
-// ▶ node scratch/claims-fetch-contains-the-forever-zone.mjs [scene ...]
+// ▶ node checks/claims-fetch-contains-the-forever-zone.mjs [scene ...]
 import fs from 'fs'
 
 const ZONE = 0.20                       // the FLOOR of the ~20–25% forever zone; failing this is unambiguous

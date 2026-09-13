@@ -8,7 +8,7 @@
  * never opens; 9 real tabs undocumented). A copy of a source list cannot be kept
  * true. This parses `apps-script/Code.js` instead, so it cannot go stale.
  *
- *   node scratch/claims-gas-schema.mjs
+ *   node checks/claims-gas-schema.mjs
  */
 import { readFileSync } from 'node:fs'
 

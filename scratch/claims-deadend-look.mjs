@@ -16,7 +16,7 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 
 const MODE = process.argv[2] === 'bare' ? 'bare' : 'authored'
 
-// The nine, from scratch/claims-deadend-set-decomposition.mjs.
+// The nine, from checks/claims-deadend-set-decomposition.mjs.
 // 'genuine' = two mouth passes, one missing a corner. 'onepass' = only one pass
 // presented at all — a DIFFERENT condition sharing the counter (C5).
 const NINE = [

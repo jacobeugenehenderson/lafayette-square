@@ -85,11 +85,11 @@ answer. USDA's skip-on-mismatch is the shape it should take. It is contained dow
 ## Commands
 
 ```
-node scratch/claims-axis-keys-resolve.mjs        # 6 stores, axis ids AND enum values, scalar units
-node scratch/claims-verify-taxon.mjs             # ⚠️ RED ON PURPOSE — target 4
+node checks/claims-axis-keys-resolve.mjs        # 6 stores, axis ids AND enum values, scalar units
+node checks/claims-verify-taxon.mjs             # ⚠️ RED ON PURPOSE — target 4
 node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence
-node scratch/claims-cutover-casualties.mjs       # authored values the old rubric could not express
-node scratch/claims-reference-credits.mjs        # plate credits, generated from dossiers
+node checks/claims-cutover-casualties.mjs       # authored values the old rubric could not express
+node checks/claims-reference-credits.mjs        # plate credits, generated from dossiers
 
 node arborist/hydrate-dossiers.mjs               # dry run; --write to apply; --in <file>
 node arborist/mint-dossiers.mjs                  # dry run; --write; --in <file>

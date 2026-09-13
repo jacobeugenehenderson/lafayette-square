@@ -94,6 +94,6 @@ a sweep reports them that output is **noise**, and ⛔ **not a licence for a ski
   scene's authored state loaded (`design.json` / `blockCustoms`), never with authoring off.
 
 ## Deliverable — ⭐ ONE CHECK, NOT A DOCUMENT
-`scratch/claims-rim-census.mjs`, which **reads the source** rather than restating it, prints all four
+`checks/claims-rim-census.mjs`, which **reads the source** rather than restating it, prints all four
 answers, and can be re-run. **No new `.md`.** Reply with **≤10 lines**: the four headline numbers plus
 anything that contradicted P1–P5. The corpus is already the problem; do not add to it.

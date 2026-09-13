@@ -23,7 +23,7 @@
  * no type system was ever going to catch them.
  *
  * ⛔ THE SPEC BELOW IS THE ONLY DEFINITION. The validator is derived from it and
- * `scratch/claims-cary-order-contract.mjs` asserts that the field table in
+ * `checks/claims-cary-order-contract.mjs` asserts that the field table in
  * `cary/pos/cary-order.md` still matches it — so the doc cannot quietly drift
  * from the code the way this contract's own `unit_price_cents` note did.
  *

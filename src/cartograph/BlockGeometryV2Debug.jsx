@@ -837,7 +837,7 @@ export default function BlockGeometryV2Debug({
   // was read as a flat ring list. Carrying the faces as COMPOUND PATHS out of the boolean
   // (`booleanLabelled`'s `asTree`) removes it at the source.
   // ▶ measured, LS, with authoring loaded: 120 curb rings, largest 0.1397 km² = 5.6% of the disc
-  //   — `node scratch/claims-proto-curb-is-block-sized.mjs lafayette-square`
+  //   — `node checks/claims-proto-curb-is-block-sized.mjs lafayette-square`
   // ⭐⭐⭐ AND `protoArtifact` IS ON TOO — SURVEY AND SECTION MUST BE THE SAME THING.
   // `protoProducer` swaps what SURVEY DRAWS; `protoArtifact` swaps what SECTION OPENS. With only
   // the first, Survey showed ①②③ and Section showed the chain artifact — two constructions of the

@@ -82,7 +82,7 @@ eye to catch, after two wrong explanations from a coordinator who had "measured"
 mean colour and read it as green: an average across one green cell and three red ones is not
 a measurement of anything.
 
-▶ **`node scratch/claims-leaf-pack-cells-agree.mjs` — run it on anything you propose.**
+▶ **`node checks/claims-leaf-pack-cells-agree.mjs` — run it on anything you propose.**
 It samples each cell's HUE and fails a pack whose cells disagree. **5 of our 15 multi-cell
 packs fail it today.** A pack that fails is not a candidate.
 

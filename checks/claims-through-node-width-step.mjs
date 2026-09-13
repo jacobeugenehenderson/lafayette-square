@@ -12,7 +12,7 @@
 // PASSES; a CORNER (different roadId) changing width PASSES — that is the
 // product. Only same-road-different-depth is reported.
 //
-//   node scratch/claims-through-node-width-step.mjs [scene|--all]
+//   node checks/claims-through-node-width-step.mjs [scene|--all]
 //
 // Writes nothing. Exit 1 if any step exceeds TOL.
 import fs from 'fs'

@@ -28,7 +28,7 @@
  * the hard failures below are sound; a band that is thin-but-populated may still be a bad
  * capture and this check will not say so. It is the cheap upstream sieve, not the eye.
  *
- *   node scratch/claims-the-capture-frame-is-the-clip-frame.mjs [look ...]
+ *   node checks/claims-the-capture-frame-is-the-clip-frame.mjs [look ...]
  */
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'

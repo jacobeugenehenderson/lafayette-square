@@ -25,7 +25,7 @@ from a real 90° corner **truncated its leg**, `s = min(want, legBack/2, legFwd/
 ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled.
 
 **Figures at the close** (⛔ historical — re-derive with
-`node scratch/claims-proto-corner-is-authored-radius.mjs`, never quote these):
+`node checks/claims-proto-corner-is-authored-radius.mjs`, never quote these):
 marks achieving <60% of stamped radius **19 → 0** · planned corners **2,089 → 1,208** · collapsed
 setbacks **426 → 230** · achieved-radius **p10 1.45 → 2.71 m** · within 25% of authored **66% → 79%**.
 

@@ -28,7 +28,7 @@
  *
  * ⛔ Read-only. Writes nothing.
  *
- * Usage:  node scratch/claims-cap-vs-skeleton.mjs [scene]
+ * Usage:  node checks/claims-cap-vs-skeleton.mjs [scene]
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'

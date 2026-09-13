@@ -15,7 +15,7 @@
  *     chargeable number. So the table is CHECKED against CONTRACT rather than
  *     trusted, and the doc cannot drift without this failing.
  *
- *   node scratch/claims-cary-order-contract.mjs
+ *   node checks/claims-cary-order-contract.mjs
  */
 import { readFileSync } from 'node:fs'
 import {

@@ -568,7 +568,7 @@ export function LampGlowEditor() {
 // how far the card's synthetic normal bends from flat.
 //
 // TOD-animatable like every other look channel, so a town can carry a hard noon and
-// a flat dusk. ▶ `node scratch/claims-cards-light-from-the-scene-key.mjs` pins the
+// a flat dusk. ▶ `node checks/claims-cards-light-from-the-scene-key.mjs` pins the
 // whole path, design.json → bake → the two card carriers.
 function CanopyLightEditor() {
   return (

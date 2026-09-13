@@ -8,7 +8,7 @@
  *   SEVERED  <- public/baked/<scene>/shape.json tiles[] = { ring, runs, ... } (baked)
  * The join is GEOMETRIC and is PROVEN 1:1 and total before it is used.
  *
- * SEVERED reproduces predicate 1 of scratch/claims-band-is-one-ring.mjs ONLY.
+ * SEVERED reproduces predicate 1 of checks/claims-band-is-one-ring.mjs ONLY.
  * (Its SLIT/FLAP predicates are declared UNVALIDATED there and are not touched.)
  *
  * Usage: node scratch/overlap-retrace-x-severed.mjs [--scene <name>] [--lists]

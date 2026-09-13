@@ -24,7 +24,7 @@
 // `axes` come back EMPTY — so `concrete` is false, every part scores 0, and readiness reports
 // GAP for a species whose parts match perfectly. It does not throw. That is the third place
 // axis ids are stored (dossiers · part-index · here) and it cost the longest to find during the
-// 19→31 cutover. ▶ `node scratch/claims-axis-keys-resolve.mjs` covers all three now.
+// 19→31 cutover. ▶ `node checks/claims-axis-keys-resolve.mjs` covers all three now.
 const MATCH_AXES = {
   // chassis.trunks joins the match axes — UNLIKE orientation and spread, which are
   // recorded-not-matched. A multi-stem chassis is genuinely different geometry, and it was

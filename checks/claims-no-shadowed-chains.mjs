@@ -19,7 +19,7 @@
 // are reported SEPARATELY, by `pairId`, and never counted as shadows — a difference between
 // blocks is the product (`CLAUDE.md` Layer 0 q3).
 // ⛔ Measured on the promoted artifact the operator's map is made of, not on a live rebuild.
-// ▶ node scratch/claims-no-shadowed-chains.mjs [scene ...]
+// ▶ node checks/claims-no-shadowed-chains.mjs [scene ...]
 import fs from 'fs'
 
 const ribbonsPath = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`

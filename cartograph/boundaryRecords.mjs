@@ -28,7 +28,7 @@
  * ⛔ NOT a redesign and NOT three files on disk. Thirteen production sites open
  * `neighborhood_boundary.json` by literal path; the composed file remains the wire
  * format and stays byte-identical. Split/compose round-trips every existing scene
- * byte-for-byte — `node scratch/claims-boundary-record-split.mjs` proves it.
+ * byte-for-byte — `node checks/claims-boundary-record-split.mjs` proves it.
  *
  * ⭐ AUTHORED vs GENERATED is DERIVED, never stamped. A fade set is "generated" iff
  * it equals `generatedFade(radius)` exactly; otherwise it is the operator's. That

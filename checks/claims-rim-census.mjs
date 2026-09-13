@@ -2,7 +2,7 @@
 /**
  * THE RIM CENSUS — what `pipeline.js`'s boundary clip costs, per scene. READ-ONLY.
  *
- *   node scratch/claims-rim-census.mjs [scene ...]
+ *   node checks/claims-rim-census.mjs [scene ...]
  *
  * Every number here is re-derived from data on disk. Nothing is quoted from a doc.
  * The script READS `cartograph/pipeline.js` and `src/lib/tileGround.js` for the
@@ -255,4 +255,4 @@ for (const scene of TARGETS) {
 }
 
 o('\n' + '═'.repeat(78))
-o('Re-run: node scratch/claims-rim-census.mjs [scene ...]')
+o('Re-run: node checks/claims-rim-census.mjs [scene ...]')

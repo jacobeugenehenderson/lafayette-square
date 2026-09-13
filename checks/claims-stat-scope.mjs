@@ -21,7 +21,7 @@
  *    check only asserts that an area-scoped stat DECLARES its boundary. Until §5.2
  *    lands, a declared-but-wrong scope still passes.
  *
- * USAGE   node scratch/claims-stat-scope.mjs --scene <scene>
+ * USAGE   node checks/claims-stat-scope.mjs --scene <scene>
  * EXIT    0 clean · 1 finding · 2 usage/inputs
  */
 
@@ -36,7 +36,7 @@ const SCENE = i >= 0 ? argv[i + 1] : null
 
 if (!SCENE) {
   console.error('⛔ LOUD FAIL — no --scene given, and there is deliberately NO DEFAULT.')
-  console.error('   usage: node scratch/claims-stat-scope.mjs --scene <scene>')
+  console.error('   usage: node checks/claims-stat-scope.mjs --scene <scene>')
   console.error('   scenes:', readdirSync(join(ROOT, 'src', 'instances')).filter(f => f.endsWith('.js') && f !== 'index.js').map(f => f.replace(/\.js$/, '')).join(' '))
   process.exit(2)
 }

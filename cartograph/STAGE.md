@@ -203,7 +203,7 @@ Designer→Browse hand-off?** Saying yes makes the feature work for the screensh
 loop and costs the "frame a corner in 2D, step into 3D" gesture its primacy.
 That is a product call, not a code call.
 
-▶ Data path only: `node scratch/claims-browse-frame.mjs` (20/20). The live half
+▶ Data path only: `node checks/claims-browse-frame.mjs` (20/20). The live half
 was never exercised *in the agent's session* — a frame counter in `CameraRig`'s
 `useFrame` returned `undefined`, because that tab was backgrounded and Chrome
 suspends `requestAnimationFrame` there.
@@ -216,7 +216,7 @@ a second machine gets the retraction arc and no camera work at all.
 Modified: `src/cartograph/CartographApp.jsx` · `src/cartograph/stores/useCartographStore.js` ·
 `src/stage/StageApp.jsx` · `cartograph/bake-scene.js` · `cartograph/serve.js` (1 line) ·
 `cartograph/STAGE.md` · `cartograph/OPERATIONS.md` · `SLAB-CONTRACT.md`.
-New: `src/stage/cameraBridge.js` · `scratch/claims-browse-frame.mjs`.
+New: `src/stage/cameraBridge.js` · `checks/claims-browse-frame.mjs`.
 ⛔ Uncommitted **deliberately** — the feature does not work and the precedence
 question above is unruled — not because it is scratch. A hard reset destroys it.
 

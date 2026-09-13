@@ -16,7 +16,7 @@
  * ⛔ Reports only. Which season a pack should be is curation, never a script's call —
  * `eastern_black_oak`'s own metadata says "~20 leaves available for atlas/curation".
  *
- *   node scratch/claims-leaf-pack-cells-agree.mjs
+ *   node checks/claims-leaf-pack-cells-agree.mjs
  */
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 import path from 'node:path'

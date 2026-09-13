@@ -13,7 +13,7 @@
  * review. That is the only kind of regression this file can catch, and the only
  * kind likely to happen.
  *
- *   node scratch/claims-commerce-write-gate.mjs
+ *   node checks/claims-commerce-write-gate.mjs
  */
 import { readFileSync } from 'node:fs'
 const read = (rel) => readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8')

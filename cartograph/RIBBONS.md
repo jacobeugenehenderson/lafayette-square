@@ -113,7 +113,7 @@
 > ⚠️ **THE ONE CONSTRAINT ON ε: it must exceed the integer floor of the stage that FREEZES it.** Clipper is
 > integer-space and every converter rounds; prebake is the coarse one. Below the floor the object you
 > asserted is silently rounded back into an absence **in the artifact**.
-> ▶ `node scratch/claims-zero-separation-offset.mjs` — floors read live from source, so they cannot go stale.
+> ▶ `node checks/claims-zero-separation-offset.mjs` — floors read live from source, so they cannot go stale.
 >
 > #### ⭐⭐⭐ RULED 2026-09-05 (Jacob) — **SHARP. ROUNDING HAPPENS ONCE, DOWNSTREAM, WHERE IT ALREADY DOES.**
 > > *"A protopolygon. The humunculus… it's .00001 symmetrical between nodes… That is **separate** from the
@@ -162,7 +162,7 @@
 > ring; it now excludes it. ⇒ **107 curb rings against 101 tiles**, and "too tight" 90 → 39.
 > ⛔ **STILL OPEN:** 28 holes bounded by ORDINARY streets also have their curbs meet. Unexplained —
 > they may be alleys or medians closing legitimately (*"if the curbs touch, there's no block"*) or
-> they may not. ⛔ Cause not established. ▶ `node scratch/claims-proto-thin-curb-runs.mjs <scene>`,
+> they may not. ⛔ Cause not established. ▶ `node checks/claims-proto-thin-curb-runs.mjs <scene>`,
 > which reports every thin run with its authored-vs-base width so the two can never be merged.
 >
 > ① the **protopolygon** — width-free, permanent, never seen, never authored: every chain expanded at ε,
@@ -202,7 +202,7 @@
 > *Jacob, marking a fresh set: "sharp corners which look to be skipped altogether."* ⛔ **They were
 > being planned, stamped at the authored 4.50 m, and DRAWN at 0.9–1.9 m** — which reads as sharp.
 > **A majority of his marked corners were achieving well under their stamped radius** —
-> ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs` measures the achieved-vs-authored split.
+> ▶ `node checks/claims-proto-corner-is-authored-radius.mjs` measures the achieved-vs-authored split.
 > ⭐⭐ **THE CAUSE: `easeContour` did not carry `filletRing`'s `FILLET_TURN_TOL`** — it planned a corner
 > at every vertex wanting a radius, including curve samples, and those truncated the real corners' legs.
 > ⛔ Not a new threshold: the constant already existed, at the other constructor, ruled. **`FILLET_TURN_TOL`
@@ -211,7 +211,7 @@
 > reason the narrative above is retired rather than kept:** the gate read the **stamped** `r`, which said
 > 4.50 m the whole time. ⛔ **An instrument that reads the INTENTION cannot see the ACHIEVEMENT** — check
 > an authored feature by DIMENSION on the drawn geometry (fit a circle to the arc), never by the value it
-> was asked for. ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs`
+> was asked for. ▶ `node checks/claims-proto-corner-is-authored-radius.mjs`
 > ⭐ Also closed the same day: **a cap apex is where ONE chain's two sides meet** — the cap branch fired
 > on "either edge belongs to a tip", so in-disc street corners next to a dead end took the cap rule and a
 > blunt default returned R = 0. Same `skelId` both sides is the apex.
@@ -254,7 +254,7 @@
 >
 > **A tip is TWO ordinary corner vertices, not one node turning 180°** — ① butt-ends, so its left and
 > right boundaries each stand ε off the centreline and the two vertices sit 2ε apart, each turning about
-> a right angle. ▶ `node scratch/claims-proto-tip-has-two-apexes.mjs`
+> a right angle. ▶ `node checks/claims-proto-tip-has-two-apexes.mjs`
 > *(The half-turn framing this replaced — "a single cubic cannot hold a half-turn, so the coupler is two
 > segments" — is retired to `_archive/RIBBONS-corner-radius-collapse-2026-09-07.md`. ⛔ Quoting a retired
 > framing beside its correction is the anti-pattern `CLAUDE.md` names: the false sentence is shorter and
@@ -288,7 +288,7 @@
 > what an off-centre trace looks like — but it applies that **only at the tip**. Applied to the whole chain
 > (recentre by `(hwR−hwL)/2`, stroke at `hwL+hwR`), asymmetry stops existing and what remains is **VARIABLE
 > WIDTH ALONG A STREET, WHICH IS AUTHORING.** ⛔ Two "cases" collapse into one authored parameter.
-> ▶ `node scratch/claims-recentre-removes-asymmetry.mjs` — ⛔ **town-dependent; re-run, never quote.** The
+> ▶ `node checks/claims-recentre-removes-asymmetry.mjs` — ⛔ **town-dependent; re-run, never quote.** The
 > direction holds on both safeguarded towns; the share does not.
 >
 > #### ⛔ AN OFFSET IS MEASURED FROM A LEG, NEVER FROM A CAP.
@@ -297,8 +297,8 @@
 > cap "defects" was manufactured and struck (`fbf3fb84`). ⭐ **An AUTHORED feature is checked by DIMENSION; a
 > DERIVED feature is checked by CONTINUITY.** ⛔ And a zero gap at a tip is the COLLAPSED-node signature, not
 > a seamless join — `node scratch/coupler-slit-universal.mjs` prints `FACE=SLIT gap=0.000m` on every LS tip.
-> ▶ `node scratch/claims-spur-leg-offset.mjs` (leg offset, station-local, authoring-aware) ·
-> `node scratch/claims-deadend-notch-standoff.mjs` (the per-station ray-march form).
+> ▶ `node checks/claims-spur-leg-offset.mjs` (leg offset, station-local, authoring-aware) ·
+> `node checks/claims-deadend-notch-standoff.mjs` (the per-station ray-march form).
 >
 > #### ⭐⭐⭐ AND THE NODES BECOME BEZIER **INTENTIONS** — a blunt cap TURNS, a rounded cap EASES.
 > > *"The nodes become bezier 'intentions' where a blunt cap turns and a rounded cap eases."* (Jacob, the
@@ -391,7 +391,7 @@
 >   layer from it** — a change of CONSUMER, not of construction, with no per-layer reimplementation.
 >   ⛔ `highway` is deliberately NOT swapped: grade-separated roads are flat strokes through their own
 >   accumulator and ② builds no highway curb, so swapping it would invent a production never had.
->   ▶ `node scratch/claims-survey-and-section-agree.mjs` — LS: 118 tiles, all `producer:'proto'`,
+>   ▶ `node checks/claims-survey-and-section-agree.mjs` — LS: 118 tiles, all `producer:'proto'`,
 >   all carrying bands; **asphalt, curb, sidewalk and block agree to 0 m²** and the LU class sets are
 >   identical. That gate is the definition of "the same thing".
 >
@@ -401,7 +401,7 @@
 >   its faces AGAINST the disc, a substantial share on the arc**, and `filletRing` then ROUNDS the corner the
 >   circle made. ⇒ *"why are the sidewalks trying to bend and create corners at the edge of the
 >   stencil?"* is the TILE WORLD, and the cure is to stop consuming it — not a rim patch.
->   ▶ `node scratch/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
+>   ▶ `node checks/claims-ped-does-not-follow-the-rim.mjs` — ped boundary lying ON the arc:
 >   **legacy 0 m** (its ribbon wraps the rounded corner and never reaches the edge) · **① 190 m of
 >   sidewalk, longest unbroken run 6.6 m** — chords no longer than the band is wide, i.e. a CUT.
 >
@@ -442,7 +442,7 @@
 >   **max 0.000737 m**. A change of SAMPLING, not of shape.
 >   ⭐ **AND IT COSTS NO AUTHORING** — `segOrd` is an ordinal over the IX partition, the IX vertices
 >   ARE anchors, and anchors all survive: **0 orphaned, 0 re-pointed of 88 slots.**
->   ▶ `node scratch/claims-simplify-preserves-authoring.mjs <scene>`
+>   ▶ `node checks/claims-simplify-preserves-authoring.mjs <scene>`
 >   ⭐ **The editor is untouched:** `SurveyorOverlay.controlVertices()` draws nodes off `segments`,
 >   never off `points` — the architecture already separated the chain's NODES from its SAMPLING.
 >
@@ -470,7 +470,7 @@
 >   already says so; what was missing was the positive rule to put in its place).
 >   ⭐ **Where ① does not turn there is NO CORNER, whatever the labels say** — the contour runs
 >   straight through, exactly as `① HAS NO NODES` states. ▶ measure it on ①'s own sharp ring, never
->   on ②: `node scratch/claims-a-corner-is-where-one-turns.mjs <scene>`.
+>   on ②: `node checks/claims-a-corner-is-where-one-turns.mjs <scene>`.
 >   ### ⛔⛔⛔ THE CONJUNCTION IS RETIRED, 2026-09-08 — **"THE PROTOPOLYGON DOES NOT INCLUDE NODES."** *(Jacob)*
 >   This read *"AND NOT THE TURN ALONE — a street that BENDS mid-block turns with no **intersection**
 >   there."* ⛔ **That is a CHAIN-WORLD sentence.** An intersection is a graph concept; ① has no
@@ -487,7 +487,7 @@
 >   because there was nothing there to respond.
 >   ⇒ **THE EASE IS THE CORNER TEST.** Where the contour turns past `FILLET_TURN_TOL` the ease made
 >   an arc, and that arc IS the corner. The owner still answers **WHOSE**; it may not answer
->   **WHETHER**. ▶ `node scratch/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
+>   **WHETHER**. ▶ `node checks/claims-the-ease-is-the-corner.mjs <scene>` — ⛔ re-run it; it keeps
 >   its teeth after the fix (a residual arc with no ramp is still reported, with its turn).
 >   ### ⛔⛔ AND READ IT OFF THE EASE'S OWN PER-VERTEX STAMP (`EC.arc`), NEVER OFF `protoTurns`
 >   `protoTurns` holds **LABELS** (`protoTurns.add(L[q])`), and a label spans a whole ① edge — so
@@ -523,7 +523,7 @@
 >   **① IS SHARP** (this §, above: smoothing is SKELETON, rounding is SURVEY, ① does neither). ②
 >   eases a 90° corner into a dozen vertices each turning a few degrees, so **a turn test on ②'s
 >   contour finds no corners at all on a plain rectangle** while ①'s own hole for it turns four
->   right angles. ▶ `node scratch/claims-marked-corners.mjs` — ⛔ re-run, never quote.
+>   right angles. ▶ `node checks/claims-marked-corners.mjs` — ⛔ re-run, never quote.
 >   ⇒ **Reading the corner off ② is reading the ROUNDING, not the shape.** The producer stamps ①'s
 >   corners onto ②'s contour by the label each vertex already carries (`iaCorner`) — identity carried
 >   through the offset, never recovered from the eased geometry afterward. A corner ARC is **one**
@@ -558,24 +558,24 @@
 >   ⇒ **An arity error is not proportional to its unit; it is proportional to the SPACING of what it
 >   indexes** — and every simplification we do makes the spacing coarser. ⚠️ Re-audit `<=` against
 >   `<` on anything spanning ① by index whenever a construction moves onto sparser geometry.
->   ▶ `node scratch/claims-the-pad-is-the-size-of-the-corner.mjs <scene>` — reports the pad's extent
+>   ▶ `node checks/claims-the-pad-is-the-size-of-the-corner.mjs <scene>` — reports the pad's extent
 >   BY LENGTH, reading the painter through `SECTION_DUMP=1` rather than restating its rule.
 >   ⛔ **BY LENGTH, NEVER BY VERTEX COUNT.** ② eases one corner into ~12 vertices while a straight
 >   leg needs 2, so counting contour EDGES inside a corner over-weights the arc several-fold — that
 >   is how *"58.8% of contour edges sit inside a corner extent"* was read as *"a third of the map is
 >   pad"*. The two are not the same claim and the second one is not measurable in that unit.
->   ▶ `node scratch/claims-stamp-follows-the-edge.mjs <scene>` — the ORACLE is geometric (the inward
+>   ▶ `node checks/claims-stamp-follows-the-edge.mjs <scene>` — the ORACLE is geometric (the inward
 >   offset of ① edge E is parallel to E), so it can only be run where ① is **frozen**. ⛔ Re-run it.
 >   ⚠️ **OWED:** the road/`hard` reasoning still resolves live because ①'s frozen owners carry only
 >   `skelId`. **The mint is the one place a chain may be read**, so it belongs stamped INTO ①;
 >   `mintProtopolygon` stamps it now but it reaches nothing until a re-pour.
->   ▶ `node scratch/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run, never quote.
+>   ▶ `node checks/claims-a-swap-never-happens-mid-street.mjs` — ⛔ re-run, never quote.
 >   *(This cited `claims-ped-resolves-per-leg.mjs`, which has never existed in the tree. A pointer that
 >   does not resolve is worse than no pointer: it reads as evidence already gathered.)*
 >   ⭐ **ROUNDING HAPPENS ONCE, AT THE NODE** — INVARIANT 2 — so ③ insets an already-curved contour
 >   and its bands are concentric with the arc BY CONSTRUCTION: *"the corner is the band bent around
 >   the curb arc, never a constructed primitive."*
->   ▶ `node scratch/claims-proto-corner-is-authored-radius.mjs <scene>` — an AUTHORED feature is
+>   ▶ `node checks/claims-proto-corner-is-authored-radius.mjs <scene>` — an AUTHORED feature is
 >   checked by DIMENSION: achieved radius off the curb, **median 4.50 m = the class seed exactly.**
 >   ⚠️ **OPEN:** the per-corner tier (`ixKey|legA|legB`) is not reachable from a contour vertex —
 >   the leg `f/b` flag is a tile-edge fact — so a Look carrying per-corner overrides is **warned
@@ -590,11 +590,11 @@
 >   legitimate, because ① *is* the expanded chain.
 >   ⭐ **`protoNodeOf` and its four maps were EXCISED** — dead since the ease was removed, and 2 of
 >   the 3 reads keeping ②③ from being chain-free. **Dead code is excised, not archived.**
->   ▶ `node scratch/claims-proto-wall.mjs <scene>` — **"no chain lookup outside the base table;
+>   ▶ `node checks/claims-proto-wall.mjs <scene>` — **"no chain lookup outside the base table;
 >   every downstream value comes off the stamp."** It was failing this before.
 >
 >   ### ⭐⭐⭐ ②'s ACCEPTANCE, IN THE OPERATOR'S WORDS — *"if the centerline is smooth, their offsets should match."*
->   ▶ `node scratch/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**
+>   ▶ `node checks/claims-proto-curb-is-parallel.mjs <scene>` — **101 of 101 blocks, max error 0.00 m.**
 >   ⛔ **The "50 blocks are not parallel" finding was FIVE successive errors in that one probe** — bbox
 >   assignment → centroid assignment → nearest-edge scoring → segment clamping → candidate selection.
 >   The "~2.4 m constant" was `hw/sin(θ/2)`: a MITER APEX measured to a CLAMPED SEGMENT instead of the
@@ -643,7 +643,7 @@
 >   curve sample. ⛔ It replaced matching the frozen fillets' TANGENT COORDINATES back onto the contour
 >   through a 1 mm grid hash — `A15`'s forbidden proximity recovery, done across a boolean that is
 >   allowed to move a point — and that failed **worst on the most authored town**, the kit's signature
->   blindness. ▶ `node scratch/claims-the-corner-extent-is-carried.mjs <scene>` scores both.
+>   blindness. ▶ `node checks/claims-the-corner-extent-is-carried.mjs <scene>` scores both.
 >
 >   ### ⛔⛔ AND THE EYE SAYS THE SHAPES ARE STILL WRONG (Jacob, 2026-09-06, on the ①-produced map)
 >   > *"FIX THE CURBS. The polygons suck, these should be clean shapes."*
@@ -678,7 +678,7 @@
 >   with **no `blockCustoms`**, and `claims-proto-stack-disjoint`'s own header asserted the opposite.
 >   ⭐ **This is `ROADMAP A05` reproduced in the new stack** — Layer 0 q3 committed by an instrument — and
 >   it wore A05's signature: it moves LS (22 authored streets) hard and barely touches HPDM (6), i.e.
->   **blind exactly where the map is most worked-on.** ▶ `node scratch/claims-proto-stack-reads-authoring.mjs`
+>   **blind exactly where the map is most worked-on.** ▶ `node checks/claims-proto-stack-reads-authoring.mjs`
 >   (the dual-state gate; both outcomes are findings, and it reports which state produced each row).
 >   - **Fixed at BOTH levels, because one of them alone drifts back.** ① The construction now **discloses**:
 >     ② and ③ warn when no `blockCustoms` is passed and stamp `protoAuthoring` on the result — ⛔ it still
@@ -706,7 +706,7 @@
 >    the 2.71 entirely and strays to 10.71 m. ▶ `scratch/benton-grout-joint.mjs` ⛔ **ONE NODE, ONE READ
 >    — this does not close Gate C; it forbids STARTING it from "a construction is owed".**
 >    ### ⛔⛔ MEASURED WHOLE-TOWN 2026-09-06 — **GATE C IS REAL. THE HANDLES ARE NECESSARY AND NOT SUFFICIENT.**
->    ▶ `node scratch/claims-proto-leg-tail-is-corner-reach.mjs` — bins every non-highway ② vertex by
+>    ▶ `node checks/claims-proto-leg-tail-is-corner-reach.mjs` — bins every non-highway ② vertex by
 >    distance to the nearest node, because **12 m was an arbitrary cut and "leg" vs "corner" was one
 >    population split at a guess.** The question it settles: does the miss DECAY away from nodes (⇒ it is
 >    corner reach, and building the handles closes it) or PLATEAU (⇒ a mid-leg error handles cannot touch)?
@@ -716,7 +716,7 @@
 >      run's own `iA`, and `A06` says 42 of LS's 101 tiles still build `iA` by the legacy carve, so the
 >      obvious reading was *"② only disagrees with the half we know is chain-built."* **It does not** —
 >      split by A07's producer stamp, ② misses `offset` and `carve` about equally, and carve is if anything
->      the closer of the two. ▶ `node scratch/claims-proto-legmiss-by-producer.mjs`
+>      the closer of the two. ▶ `node checks/claims-proto-legmiss-by-producer.mjs`
 >      *(`feedback_verify_the_baseline_before_comparing_to_it`, applied before the conclusion, not after.)*
 >    - ⛔ **CAUSE NOT ESTABLISHED.** Nothing here says what the mid-leg error IS.
 >    - ⛔ **HPDM CANNOT ANSWER THIS QUESTION TODAY** — a majority of its ② vertices find no baseline edge
@@ -754,7 +754,7 @@
 > ⛔ **AND THE RELATION IS NOT TOTAL, despite `derive.js:4373` claiming it is** — `dirs.length < 3`
 > silently drops **degree-2** (continuation · same-corridor-join · divided-transition). LS 4 nodes /
 > HPDM 18. No new coupler *kind* is needed: 100% of the hole is an end-to-end weld of two distinct
-> chains, which the existing CCW sweep pairs correctly. ▶ `node scratch/claims-coupler-totality.mjs`.
+> chains, which the existing CCW sweep pairs correctly. ▶ `node checks/claims-coupler-totality.mjs`.
 >
 > ### ⭐⭐⭐ RULED 2026-08-13 (Jacob) — SMOOTHNESS IS ACHIEVED BY CONSTRUCTION, NEVER BY CLEANUP.
 > > *"We should achieve that smoothness through construction and not by cleanup patch."*
@@ -852,7 +852,7 @@
 > `innerSideSign` (writes the persisted `innerSign`) and `inboardKeyGeom`/`inboardSideOf` (byte-identical
 > duplicates, `derive.js:3799` == `tileGround.js:1246`) map the SAME perp to OPPOSITE labels. Read out of
 > the artifact — which geometric side production's own `side` label lands on — **`(-dz,dx)` is measure-RIGHT**,
-> which makes the geometric pair the inverted one. Consequence, tested label-free (▶ `node scratch/claims-inboard-side-convention.mjs`): **the ped is zeroed on the
+> which makes the geometric pair the inverted one. Consequence, tested label-free (▶ `node checks/claims-inboard-side-convention.mjs`): **the ped is zeroed on the
 > side AWAY from the mate on a large majority of pairs across four towns** — the outboard side losing its treelawn and
 > sidewalk, the opposite of the documented intent (`tileGround.js:1222`). ⛔ `tileGround.js:1234` asserts the
 > opposite of this measurement, so ONE OF THE TWO IS WRONG and it is not ruled.
@@ -862,7 +862,7 @@
 > half-edge bounds the median face — because the foot-vote cannot be authoritative. `OSM2STREETS-GROUNDING`
 > notes the standard has no `innerSign` at all: "which side faces the median" **falls out of the block walk.**
 > ⛔ Still gated on the eye below; a cure for an inversion nobody has confirmed is a guess.
-> ▶ `node scratch/claims-inboard-side-convention.mjs` · **the gate is the EYE: on a divided road in the lit
+> ▶ `node checks/claims-inboard-side-convention.mjs` · **the gate is the EYE: on a divided road in the lit
 > app, is the treelawn at the CURB or in the MEDIAN?** A consistent inversion renders as a planted median,
 > which on a boulevard is plausible-looking — Layer 0 q2, which is how it could survive an eye gate. ⭐ **So it
 > is not a discriminator we lack — it is one that the `side` labels cannot currently support**, and it waits
@@ -1089,8 +1089,8 @@
 > to recover which band belonged to which tile by sampling 12 points of every band in the map against
 > that tile's rings — identity recovered from ring geometry, which this § forbids, and which a compound
 > face breaks outright (a hole ring "contains" every band of the faces nested inside it).
-> ▶ `node scratch/claims-proto-blocks-are-faces.mjs <scene>` (no block contains another face's interior
-> point) · `node scratch/claims-proto-curb-is-block-sized.mjs <scene>` (the largest ② ring reads as a
+> ▶ `node checks/claims-proto-blocks-are-faces.mjs <scene>` (no block contains another face's interior
+> point) · `node checks/claims-proto-curb-is-block-sized.mjs <scene>` (the largest ② ring reads as a
 > block, not as the town; in-disc coverage).
 > ⚠️ **AND THE COVERAGE FIGURE THAT WAS QUOTED FOR IT WAS THE GHOST.** *"117/118 tiles covered"* counted
 > the 4.49 km² ring covering 10 of them. Excluding it, coverage was **107/118 before and 107/118 after** —
@@ -1441,7 +1441,7 @@ Per tile, per edge: stroke the centerline outward by `pavementHW` (per-side, per
 > - **Why the side labels flip at this seam.** The flip and the width step co-occur here; the two non-flipping sites carry Δ 0. **Cause not established.**
 > - **Whether `continuesAs` should join these three streets at all.** It builds `roadId`, and `roadId` is what the width reconcile uses to force ONE `pavementHW` per side across the union — plausibly the source of the 1.4369 m step. **Unmeasured.** (Next §, the width-step line: the reconcile compares by literal side label, and this seam joins a *left* run to a *right* run, so the two values that physically meet are never compared.)
 >
-> ⭐ **The class ports — the test names no street:** `roadId agrees ∧ throughId disagrees`. **LS: 6 stations, 3 sites.** ▶ `node scratch/claims-uturn-outer-edge-walk.mjs`
+> ⭐ **The class ports — the test names no street:** `roadId agrees ∧ throughId disagrees`. **LS: 6 stations, 3 sites.** ▶ `node checks/claims-uturn-outer-edge-walk.mjs`
 > ⚠️ **`scratch/correctness-detector.mjs` already flagged this** (`West 18th Street: curb(1.45m) bump(97°)`) and it sat unjudged in the "grid false-positives" bucket. **The detector worked; nobody read it.**
 
 ### 3.4 The ped FILL — `sectionPass` / `sectionOpen` (`:801` / `:1161`)

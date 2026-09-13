@@ -16,7 +16,7 @@
  * A ring that fails 1 or 3 is not a boundary of anything, and drawing it puts a line on
  * screen that encloses nothing — which is what a stray diagonal would be.
  *
- *   node scratch/claims-grout-is-a-valid-polygon.mjs [--mode raw|filleted]
+ *   node checks/claims-grout-is-a-valid-polygon.mjs [--mode raw|filleted]
  */
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'

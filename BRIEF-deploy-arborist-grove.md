@@ -76,11 +76,11 @@ the slab), or the render? Patching the wrong layer is this repo's recurring wast
 
 ## Commands
 ```
-node scratch/claims-axis-keys-resolve.mjs        # 7 stores: ids, enum values, scalar units
-node scratch/claims-verify-taxon.mjs             # ⚠️ RED ON PURPOSE
+node checks/claims-axis-keys-resolve.mjs        # 7 stores: ids, enum values, scalar units
+node checks/claims-verify-taxon.mjs             # ⚠️ RED ON PURPOSE
 node scratch/claims-dossier-writers-agree.mjs    # one vocabulary + order independence
-node scratch/claims-cutover-casualties.mjs
-node scratch/claims-reference-credits.mjs        # plate credits, generated
+node checks/claims-cutover-casualties.mjs
+node checks/claims-reference-credits.mjs        # plate credits, generated
 
 node arborist/hydrate-dossiers.mjs               # dry run; --write; --in <file>
 node arborist/mint-dossiers.mjs                  # dry run; --write; --in <file>

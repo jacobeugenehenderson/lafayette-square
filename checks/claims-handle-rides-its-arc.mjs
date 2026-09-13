@@ -35,7 +35,7 @@
 // ⛔ TOL below only classifies how far a RAY strayed, for reporting. Nothing here
 // uses a distance to decide ownership.
 //
-//   node scratch/claims-handle-rides-its-arc.mjs [scene]
+//   node checks/claims-handle-rides-its-arc.mjs [scene]
 
 import fs from 'fs'
 import path from 'path'

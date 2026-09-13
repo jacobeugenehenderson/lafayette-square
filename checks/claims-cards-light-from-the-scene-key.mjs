@@ -23,7 +23,7 @@
  * ⭐ Nothing here is enumerated or restated: every assertion greps the live source,
  * so it cannot go stale the way a written-down number can.
  *
- *   node scratch/claims-cards-light-from-the-scene-key.mjs
+ *   node checks/claims-cards-light-from-the-scene-key.mjs
  *   exit 0 = one publisher, one consumer chain · exit 2 = the chain is broken or forked
  */
 import { readFileSync } from 'node:fs'

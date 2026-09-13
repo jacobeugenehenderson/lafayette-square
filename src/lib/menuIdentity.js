@@ -74,7 +74,7 @@ const norm = (s) => String(s ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
  * genuinely distinct orderable lines: they sit in different serving windows, and
  * `orderableSections` decides orderability per section. Keying on section name
  * alone collapsed them and minted duplicate ids (caught by
- * `scratch/claims-menu-item-ids.mjs` on its first run).
+ * `checks/claims-menu-item-ids.mjs` on its first run).
  *
  * `occurrence` disambiguates what is left — two items of the same name in the
  * same section. It is 0 for the first, so the common case carries no suffix.

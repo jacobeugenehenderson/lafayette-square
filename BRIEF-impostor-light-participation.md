@@ -76,7 +76,7 @@ night and it cost the operator two rounds of vanished trees. `?litCards=1` + a
 ⚠️ **AND VERIFY THE SHADER LINKS.** GLSL here is assembled by string concatenation: a
 uniform declared in the wrong half links to nothing and the canopy silently DOES NOT DRAW —
 no exception, no error, just no trees. That happened twice tonight.
-▶ `node scratch/claims-shader-fragments-declare-what-they-use.mjs` before you ship.
+▶ `node checks/claims-shader-fragments-declare-what-they-use.mjs` before you ship.
 
 ## AO and CAST SHADOWS are in scope too (Jacob: "there should be AO and cast shadows in addition to whatever normals")
 
@@ -101,7 +101,7 @@ the hero foundation took over. Recorded here because the LESSON is yours to inhe
 the bug: ⛔ **`heroTier` reaches no pixel on a foundation-on slab.** If you find yourself
 reading it, you are reading the wrong field; the ones that decide are `meshTier` and
 `heroRole`.
-⚠️ **Still owed:** `scratch/claims-every-shadowed-placement-renders.mjs` passes on LS and
+⚠️ **Still owed:** `checks/claims-every-shadowed-placement-renders.mjs` passes on LS and
 always would have — it asks whether SHADOWED placements render, never whether RENDERED
 placements are shadowed. Blind in exactly the direction that broke. Sharpening it is in
 scope for you.

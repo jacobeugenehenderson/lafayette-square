@@ -47,7 +47,7 @@ if (!ribbons) throw new Error('map.json has no layers.ribbons')
 // made of — streets, tiles, faces, junctionMap, medians, corridors, paths, alleys,
 // intersections, junctions, nameTransitions — byte-identical to the committed artifact. The
 // only delta was one ADDED key (`protopolygon`), which is additive and cannot move the map.
-// ⛔ RE-RUN IT, DO NOT QUOTE IT: `node scratch/claims-repour-changes-nothing.mjs <scene>`.
+// ⛔ RE-RUN IT, DO NOT QUOTE IT: `node checks/claims-repour-changes-nothing.mjs <scene>`.
 // The stale alarm cost a session: it was raised as a blocker against a re-pour that had
 // already been settled, because the doc still read as live.
 //

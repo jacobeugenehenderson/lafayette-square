@@ -89,7 +89,7 @@ the eye:
 > is just *the grout has an interior at the mouth*, which is true of every point of a positive object. There
 > is no dead-end case. ⛔ Zero-width and ε-width **render identically and are different objects** — zero is an
 > ABSENCE, ε a PRESENCE with two nodes at every mouth — so ε is a **declaration, not a tolerance**, and it
-> must clear the freezing stage's integer floor (`node scratch/claims-zero-separation-offset.mjs`).
+> must clear the freezing stage's integer floor (`node checks/claims-zero-separation-offset.mjs`).
 > ⚠️ **The five below are NOT wrong** — they name real failures. They diagnose them from the wrong side.
 > **Keep running them until the grout exists; they are the negative-side shadow of the four above.**
 
@@ -104,7 +104,7 @@ the eye:
 > ⭐ **The checkable form of this whole class — `/PIPELINE-CLAIMS.md` (root).** The dead-end → corner →
 > sidewalk chain as `[REQ]`/`[OUR]` claims, each with the method that produced its number and a re-run
 > command. ⛔ **Read its `C4` before quoting an older split against the mouth-corner numbers below** —
-> ▶ `node scratch/claims-deadend-set-decomposition.mjs` shows the two sets are the SAME set; an earlier,
+> ▶ `node checks/claims-deadend-set-decomposition.mjs` shows the two sets are the SAME set; an earlier,
 > smaller count came from a probe that has since been deleted.
 
 ⚠️ **This is a gate to MAKE green, not a regression test that passes today: on the frozen LS face it fails
@@ -151,7 +151,7 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > park-avenue-3[end] · south-13th-street[end] · south-18th-street-3[end] · waverly-place-1[end] ·
 > waverly-place-1[start]`
 >
-> ▶ `node scratch/claims-deadend-set-decomposition.mjs` — the three sets, dual-state.
+> ▶ `node checks/claims-deadend-set-decomposition.mjs` — the three sets, dual-state.
 >
 > | measurement | count | what it is |
 > |---|---|---|
@@ -163,7 +163,7 @@ an equivalent. Checks 1–2 are computed by `scratch/coupler-slit-universal.mjs`
 > `isCorner` is an **edge-identity** test at the mouth vertex (`inc.skelId !== out.skelId`); `runThrough` is
 > a **leg-span** test (does a leg's endpoint land somewhere other than a mouth pass?). Two unrelated
 > computations over `mouthInfo()` selecting the same nine members. *Method:
-> `node scratch/claims-deadend-set-decomposition.mjs`; both sets off the frozen artifact, `C` run in **both**
+> `node checks/claims-deadend-set-decomposition.mjs`; both sets off the frozen artifact, `C` run in **both**
 > the authored and bare-defaults state (identical — this set is authoring-invariant).*
 >
 > ⭐⭐ **What this CONFIRMS — read it as support for `ROADMAP A0`, not just as a correction.** A0's thesis is

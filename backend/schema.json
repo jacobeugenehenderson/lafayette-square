@@ -7,7 +7,7 @@
     "tabs it does open and 7 columns a guardian can edit (menu_json and menu_url among them).",
     "Nothing in the repo read this file. A copy of a source list cannot be kept true; a check can."
   ],
-  "_run_this_instead": "node scratch/claims-gas-schema.mjs",
+  "_run_this_instead": "node checks/claims-gas-schema.mjs",
   "_source_of_truth": "apps-script/Code.js",
   "_prose_homes": {
     "endpoints": "ls/reference/INVENTORY-API.md",
