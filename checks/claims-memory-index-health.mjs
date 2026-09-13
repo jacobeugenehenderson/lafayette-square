@@ -29,12 +29,13 @@
  * ⛔ Read-only. Writes nothing.
  *
  * Usage:
- *   node scratch/claims-memory-index-health.mjs
- *   MEMORY_DIR=/some/other/memory node scratch/claims-memory-index-health.mjs
+ *   node checks/claims-memory-index-health.mjs
+ *   MEMORY_DIR=/some/other/memory node checks/claims-memory-index-health.mjs
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs'
-import { join } from 'path'
+import { join, resolve as resolvePath, dirname, basename } from 'path'
 import { homedir } from 'os'
+import { execSync } from 'node:child_process'
 
 // The harness compacts at ~17.1 KB and refuses to read past ~24.4 KB. Budget at
 // the compaction point, so the failure lands while there is still headroom to
@@ -194,6 +195,118 @@ if (unreachable.length) {
   // that goes silent is the failure this file exists to prevent.)
   if (liveFront.length <= LIVE_CAP && !fat.length && !dupes.length) {
     console.log(`✅ pruning program: §C ${liveFront.length}/${LIVE_CAP} live · no fat lines · no duplicate index routing.\n`)
+  }
+}
+
+// ── REPO-PATH CITATIONS (added 2026-09-13) ─────────────────────────────────
+// The axis nothing watched. Everything above validates MEMORY.md → memory files.
+// It has no opinion about memory files → THE REPO, and that is the axis that
+// rotted: 16 dead citations were repaired by hand on 2026-09-13 and nothing
+// would have caught any of them, or the next one. A memory that cites a path
+// which no longer exists is worse than silent — it is read as recall from a
+// high-context seat and acted on (`BOZ.md §0`).
+//
+// ⛔⛔ NEVER RESOLVE BY BASENAME. `arborist/OPERATIONS.md` does not exist;
+//    `meteorologist/OPERATIONS.md` does. A check that "helpfully" found the
+//    basename elsewhere would license repointing a citation at the WRONG
+//    DOCUMENT — a live pointer to the wrong thing, which is strictly worse than
+//    a dead one, because nothing downstream will ever question it. Paths are
+//    compared AS WRITTEN. Candidates are printed as CANDIDATES and never as
+//    resolutions, and the operator must read both files before repointing.
+//
+// ⭐ What counts as a repo path is READ FROM THE REPO, never restated: a
+//    citation qualifies only if its first segment is a real top-level entry.
+//    That is what separates `cartograph/spurOutline.js` (a path) from `lon/lat`,
+//    `tan(θ/2`, `/stem/`, `origin/main` and `clean/map.json` (notation, a regex,
+//    an HTTP route, a git ref, a scene-relative fragment). Without it the naive
+//    parse reports 240 citations dead, ~92% of them false, and a check nobody
+//    believes is a check nobody runs.
+{
+  const REPO = resolvePath(process.env.REPO_ROOT ?? process.cwd())
+
+  // The repo's own top-level names decide what a path looks like.
+  const TOP = new Set(readdirSync(REPO).filter(n => !n.startsWith('.')))
+
+  // Tracked set, so a citation that exists only on THIS disk can be told apart
+  // from one a clone would also find. One command literal so `checks/tier.mjs`
+  // can read it and keep this check in the `safe` tier (see the sibling check).
+  const tracked = new Set(
+    execSync('git ls-files -z', { cwd: REPO, maxBuffer: 1e9 }).toString().split('\0').filter(Boolean)
+  )
+
+  const cites = new Map() // path as written → Set of memory files citing it
+  for (const f of files.concat('MEMORY.md')) {
+    const body = readFileSync(join(DIR, f), 'utf8')
+    const raw = new Set()
+    for (const m of body.matchAll(/`([^`\n]+)`/g)) for (const t of m[1].split(/\s+/)) raw.add(t)
+    for (const m of body.matchAll(/\]\(([^)\s]+)\)/g)) raw.add(m[1])
+    for (let t of raw) {
+      t = t.replace(/^[(\['"«]+/, '').replace(/[)\],.;:'"»]+$/, '')
+      t = t.replace(/[:#].*$/, '')                              // drop :line and #anchor
+      if (!t.includes('/')) continue
+      if (/[{}*|()?<>…\\]/.test(t)) continue                     // globs, braces, regex, ellipsis
+      if (/^https?:|^www\.|\.(com|org|gov|io|pl)\//.test(t)) continue
+      if (!TOP.has(t.split('/')[0])) continue                    // ⭐ the repo decides
+      if (!cites.has(t)) cites.set(t, new Set())
+      cites.get(t).add(f)
+    }
+  }
+
+  // A citation naming a FILE (an extension) or a DIRECTORY (a trailing slash) is
+  // an exact claim and must resolve. One without either — `scripts/15`,
+  // `arborist/README` — is the house shorthand for a numbered or extensionless
+  // sibling, so it is only reported when nothing on disk begins with it.
+  const exact = [], abbrev = []
+  for (const [p, srcs] of [...cites].sort()) {
+    const onDisk = existsSync(join(REPO, p))
+    const isExact = /\.\w+$/.test(p) || p.endsWith('/')
+    if (isExact) { if (!onDisk) exact.push([p, srcs]) }
+    else if (!onDisk && !readdirSync(join(REPO, dirname(p)), { withFileTypes: true })
+      .some(d => d.name.startsWith(basename(p)))) abbrev.push([p, srcs])
+  }
+
+  // Present here, absent from a clone. Asserted separately and labelled, because
+  // "it works on my disk" is the defect this repo closed for scene inputs today.
+  const untracked = [...cites].filter(([p]) =>
+    existsSync(join(REPO, p)) && !tracked.has(p) && !p.endsWith('/') &&
+    !/\.\w+$/.test(p) === false && !tracked.has(p)).filter(([p]) => /\.\w+$/.test(p))
+
+  console.log(`REPO-PATH CITATIONS — do the memories still point at real files?\n`)
+  console.log(`  ${cites.size} citation(s) whose first segment is a real top-level repo entry`)
+  console.log(`  asserted against: the working tree (existence on disk), AS WRITTEN\n`)
+
+  if (exact.length) {
+    failed = true
+    console.log(`⛔ ${exact.length} DEAD REPO CITATION(S) — the path does not exist as written:`)
+    for (const [p, srcs] of exact) {
+      console.log(`     ${p}`)
+      console.log(`        cited by: ${[...srcs].sort().join(', ')}`)
+      // ⛔ A CANDIDATE IS NOT A RESOLUTION. Printed to save a search, never to
+      //    license a sed: `arborist/OPERATIONS.md` → `meteorologist/OPERATIONS.md`
+      //    is a DIFFERENT DOCUMENT about a different subsystem.
+      const hits = [...tracked].filter(t => basename(t) === basename(p)).slice(0, 3)
+      if (hits.length) console.log(`        ⚠️  same basename elsewhere: ${hits.join(', ')}`)
+      console.log(`            ⛔ CANDIDATE ONLY — not a resolution. Read both files before repointing;`)
+      console.log(`               a live pointer to the wrong document is worse than a dead one.`)
+    }
+    console.log('\n   ⛔ DO NOT BULK-FIX. Several of these need a ruling, not a sed.\n')
+  } else {
+    console.log('✅ every repo-path citation resolves as written.\n')
+  }
+
+  if (untracked.length) {
+    console.log(`⚠️  ${untracked.length} citation(s) exist HERE but are not tracked in git —`)
+    console.log('    a clone would not find them. Not a failure; a disclosure:')
+    for (const [p, srcs] of untracked.slice(0, 10)) console.log(`     ${p}  (${[...srcs].sort()[0]})`)
+    if (untracked.length > 10) console.log(`     … and ${untracked.length - 10} more`)
+    console.log()
+  }
+
+  if (abbrev.length) {
+    console.log(`⚠️  ${abbrev.length} extensionless citation(s) matching nothing on disk —`)
+    console.log('    shorthand that has gone stale, or a path that lost its file:')
+    for (const [p, srcs] of abbrev) console.log(`     ${p}  (${[...srcs].sort().join(', ')})`)
+    console.log()
   }
 }
 
