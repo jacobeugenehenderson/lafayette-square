@@ -1,0 +1,260 @@
+{
+  "committed": true,
+  "name": "Lafayette Square",
+  "blurb": "St. Louis's oldest neighborhood — a Victorian district of painted-lady townhouses wrapped around 30-acre Lafayette Park, bounded by Chouteau, South Jefferson, Lafayette, and Truman Parkway.",
+  "radius": 892,
+  "timezone": "America/Chicago",
+  "sides": [
+    "Chouteau Avenue",
+    "South Jefferson Avenue",
+    "Lafayette Avenue",
+    "Truman Parkway"
+  ],
+  "_note": "BACKFILL (not poured): LS predates the Extent tool but is fully wired/baked. Marks it committed so Extent shows its real extent with radius/buildings/details editable. The bake was NOT re-run. No destructive re-fetch is offered post-bake (there is no re-fetch control).",
+  "exclusions": [
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -90.21014787148223,
+          "lat": 38.61075810810811,
+          "type": "corner"
+        },
+        {
+          "lon": -90.2148631087653,
+          "lat": 38.612357567567564,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -90.21446275842995,
+            "lat": 38.61224306306306
+          },
+          "handleOut": {
+            "lon": -90.21526345910065,
+            "lat": 38.61247207207207
+          }
+        },
+        {
+          "lon": -90.22159219812386,
+          "lat": 38.61353261261261,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -90.22122457648604,
+            "lat": 38.61351243243243
+          },
+          "handleOut": {
+            "lon": -90.22170928388688,
+            "lat": 38.61353900900901
+          }
+        },
+        {
+          "lon": -90.2233360384447,
+          "lat": 38.61456648648649,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22701237006477,
+          "lat": 38.61493279279279,
+          "type": "corner",
+          "handleIn": {
+            "lon": -90.22701237006477,
+            "lat": 38.61493279279279
+          }
+        },
+        {
+          "lon": -90.22457546500104,
+          "lat": 38.61069558558559,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -90.22507757392768,
+            "lat": 38.61117216216216
+          },
+          "handleOut": {
+            "lon": -90.2240733560744,
+            "lat": 38.61021900900901
+          }
+        },
+        {
+          "lon": -90.21726647843823,
+          "lat": 38.60762675675676,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -90.21781191831654,
+            "lat": 38.60775891891892
+          },
+          "handleOut": {
+            "lon": -90.21672103855994,
+            "lat": 38.60749459459459
+          }
+        },
+        {
+          "lon": -90.2107177426418,
+          "lat": 38.60850468468468,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -90.2110936616959,
+            "lat": 38.60847567567568
+          },
+          "handleOut": {
+            "lon": -90.21034182358771,
+            "lat": 38.608533693693694
+          }
+        }
+      ]
+    },
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -90.2201913176758,
+          "lat": 38.61828720720721,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22052828497014,
+          "lat": 38.617084684684684,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22276801115541,
+          "lat": 38.61730027027027,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22328302717403,
+          "lat": 38.615048288288286,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22701237006477,
+          "lat": 38.61557567567568,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22652397492337,
+          "lat": 38.619146666666666,
+          "type": "corner"
+        },
+        {
+          "lon": -90.22348619863092,
+          "lat": 38.623444774774775,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21524939958974,
+          "lat": 38.624856036036036,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20945342383664,
+          "lat": 38.62336531531532,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20630282573121,
+          "lat": 38.62087891891892,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20543032936132,
+          "lat": 38.618268288288284,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20532810980248,
+          "lat": 38.61502990990991,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20604698872934,
+          "lat": 38.612495585585584,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20745512941664,
+          "lat": 38.61129810810811,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20844275243736,
+          "lat": 38.61209063063063,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20788302256436,
+          "lat": 38.61310711711712,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20699692765113,
+          "lat": 38.614085045045044,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20686094221772,
+          "lat": 38.614806036036036,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20703126973517,
+          "lat": 38.615158468468465,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20686935487588,
+          "lat": 38.61554774774775,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20907381704197,
+          "lat": 38.61623810810811,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20814761795008,
+          "lat": 38.61927243243243,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20798074768939,
+          "lat": 38.620022342342345,
+          "type": "corner"
+        },
+        {
+          "lon": -90.20842512042778,
+          "lat": 38.62078576576577,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21320074446263,
+          "lat": 38.622055135135135,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21530794247124,
+          "lat": 38.62251711711712,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21611774725147,
+          "lat": 38.622706396396396,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21749477262775,
+          "lat": 38.62295828828829,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21833891949201,
+          "lat": 38.62309630630631,
+          "type": "corner"
+        },
+        {
+          "lon": -90.21860386060341,
+          "lat": 38.622233513513514,
+          "type": "corner"
+        }
+      ]
+    }
+  ]
+}
