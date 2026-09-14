@@ -134,7 +134,6 @@ Writes into the repo or a scratch dir.
 | `checks/claims-no-shadowed-chains.mjs` | WHY. Jacob's eye, 2026-09-06, on Survey: two navy centerlines running near-parallel with a |
 | `checks/claims-no-tree-stands-on-drawn-hardscape.mjs` | NO TREE MAY STAND ON A SURFACE THE MAP DRAWS AS HARDSCAPE. |
 | `checks/claims-node-pair-key-parity.mjs` | SLICE 1 of "fix the key". PROVE, DON'T SWITCH. |
-| `checks/claims-nodeless-tip-classifier.mjs` | WHY do degree-1 tips carry no junction node? |
 | `checks/claims-one-face-one-arrangement.mjs` | ⭐⭐⭐ "There should be no seams in runs, ever, period." (Jacob, 2026-09-07) |
 | `checks/claims-one-frontage-one-arc.mjs` | ⭐⭐⭐ THINK IN ①. A block IS a closed polygon; each edge carries one owner; a CORNER is a vertex |
 | `checks/claims-orphaned-customs.mjs` | It reported "27 of 76 authored leg slots are never read" (commit c430f4e9). |

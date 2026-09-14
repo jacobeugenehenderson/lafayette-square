@@ -113,7 +113,8 @@ o(`\n═══ ③ THE MEASUREMENT — POST-CLIP walk, and what a PRE-CLIP walk 
 const widthAt = (skelId, side, vertexIdx, arc) => widthAtSegOrd(skelId, side, vertexIdx, arc)
 const R = walkSubstrate({ streets, junctionMap: ribbons.junctionMap, widthAt, orientation: 'a-to-b' })
 
-// the clip-manufactured vertex set — the SAME predicate as claims-nodeless-tip-classifier
+// the clip-manufactured vertex set. (This predicate was shared with
+// claims-nodeless-tip-classifier, RETIRED 2026-09-13 along with the clip it measured.)
 const curbed = s => !s.gradeSeparated && !s.disabled
 const endsAt = new Map(), interiorAt = new Map()
 for (const s of (ribbons.streets || [])) {

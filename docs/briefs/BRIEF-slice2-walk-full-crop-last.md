@@ -21,9 +21,12 @@ framing — including this one. Re-run the commands.)*
 > ▶ re-derive before reading further:
 > `node -e "const r=require('./src/data/ribbons.json');const d=p=>Math.hypot(p[0],p[1]);let e=0,b=0;for(const s of r.streets){const P=s.points||[];if(P.length<2)continue;if([P[0],P[P.length-1]].some(p=>Math.abs(d(p)-1030)<0.5))e++;if(P.some(p=>d(p)>1030.5))b++}console.log('endpoints at old keepR:',e,'| chains past it:',b,'of',r.streets.length)"`
 > — measured 2026-09-08: **0 endpoints at `keepR`, 138 of 343 chains running past it.**
-> ⚠️ **`checks/claims-nodeless-tip-classifier.mjs` now FAILS LOUDLY** (its source-read of `keepR`
-> can no longer find the rule — the guard working as designed), and `claims-preclip-walk.mjs` is
-> separately broken (`resolveChainSegmentation is not a function`, `scratch/_substrate-feed.mjs:58`).
+> ⭐ **Both instruments this section used to name are now resolved.** `claims-preclip-walk.mjs` was
+> repointed and runs green (`d6f38057` — `resolveChainSegmentation` had moved to
+> `src/lib/chainSegmentation.js`). `claims-nodeless-tip-classifier.mjs` is **RETIRED**: it parsed
+> `keepR` out of `pipeline.js`, and the boundary clip it measured was excised (`ec7dd3f4`).
+> ⛔ Do not rebuild it against the new source — there is no clip left to measure. Why the clip died:
+> `cartograph/_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`.
 > **Both commands cited in §1 are dead.**
 > ⛔ **NOT struck, because the SCOPE section and the walk's own design may still stand** — only the
 > root-cause attribution is void. **Jacob's ruling owed on whether this brief survives the excision.**
@@ -52,7 +55,6 @@ proposal makes a material choice change the geometry, it is wrong.
 
 ## 1. ESTABLISHED — the band's rim holes, root cause
 
-▶ `node checks/claims-nodeless-tip-classifier.mjs --source=pour`
 ▶ `node checks/claims-preclip-walk.mjs`
 **Home: `_archive/PREBAKE-2.5-boundary-clip-EXCISED-2026-09-05.md`** (was `PREBAKE §2.5a`; excised). Commits `6d2fcb4d` · `846c9535` · `566dff4c` · `fc9e881d`.
 
