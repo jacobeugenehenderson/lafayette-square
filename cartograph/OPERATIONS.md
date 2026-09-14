@@ -313,9 +313,9 @@ That confidence is what produced the incident above.
 **Every check runs on every town that has the data it needs.** By default — no flag.
 
 ```
-node checks/claims-x.mjs                 # every measurable town
-node checks/claims-x.mjs altadena        # just that one
-node checks/claims-x.mjs --scene=altadena  # the same thing, older spelling
+node checks/claims-<name>.mjs                 # every measurable town
+node checks/claims-<name>.mjs altadena        # just that one
+node checks/claims-<name>.mjs --scene=altadena  # the same thing, older spelling
 ```
 
 ⛔ **Never type a scene roster into a check.** Ask `checks/_scenes.mjs`:
