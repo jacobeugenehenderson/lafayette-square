@@ -44,6 +44,15 @@ const ARG_CONVENTIONS = [
 ]
 // A roster typed into the file: an array (or pushes) of scene-name string literals.
 const TYPED_ROSTER = /(\[|push\()\s*['"](lafayette-square|toy|hipointe-demun|altadena)['"]/
+// ⛔ AND THE SINGLE-SCENE SPELLING, which is the SAME defect and which this instrument missed
+//    until 2026-09-13 — after it had already missed `process.argv.slice(2)` and invented a
+//    phantom class off the back of it. `const scene = process.argv[2] || 'lafayette-square'` is a
+//    typed roster of length one: the caller can override it, and nobody ever does, so the check
+//    reports on town #1 forever.
+//    ⚠️ TWO DETECTORS HAVE NOW BEEN WRONG ABOUT THIS CLASS THREE TIMES BETWEEN TWO SESSIONS
+//    (mine missed slice(2) then this; another session's missed slice(2) too, and published "58
+//    stuck on town #1" off it). ⛔ So do not quote this instrument's count either — run it.
+const TYPED_DEFAULT = /^\s*(?:const|let)\s+(?:\w*[Ss]cene\w*|SCENE\w*|LOOK\w*)\s*=\s*(?:[^\n]*?\|\|\s*)?['"](?:lafayette-square|toy|hipointe-demun|altadena)['"]\s*$/m
 // Scenes read off disk — the shape that survives a new pour.
 const DISCOVERS = /readdirSync\s*\([^)]*(looks|baked|data)|looks\/index\.json|\b(ribbonScenes|feedScenes|scenes)\s*\(|from '[^']*_scenes\.mjs'/
 
@@ -53,12 +62,14 @@ const rows = classifyAll().map(r => {
     ...r,
     convs: ARG_CONVENTIONS.filter(([, re]) => re.test(code)).map(([n]) => n),
     typed: TYPED_ROSTER.test(code),
+    typedOne: TYPED_DEFAULT.test(code),
     discovers: DISCOVERS.test(code),
   }
 })
 
 const takesArg = rows.filter(r => r.convs.length)
 const typedOnly = rows.filter(r => r.typed && !r.discovers)
+const typedOneOnly = rows.filter(r => r.typedOne && !r.discovers)
 const discovers = rows.filter(r => r.discovers)
 const noArgNoDiscover = rows.filter(r => !r.convs.length && !r.discovers)
 const pct = (n) => `${((n / rows.length) * 100).toFixed(0)}%`
@@ -68,6 +79,8 @@ console.log(`A caller CAN name a scene:            ${String(takesArg.length).pad
 console.log(`Scenes DISCOVERED from disk:          ${String(discovers.length).padStart(3)}  ${pct(discovers.length)}   ← the shape that survives a new pour`)
 console.log(`⛔ Default roster TYPED into the file: ${String(typedOnly.length).padStart(3)}  ${pct(typedOnly.length)}   ← THE CLASS. A town poured tomorrow is invisible to these.`)
 console.log(`   of which in the safe tier:         ${String(typedOnly.filter(r => r.tier === 'safe').length).padStart(3)}`)
+console.log(`⛔ SINGLE typed default, no discovery: ${String(typedOneOnly.length).padStart(3)}  ${pct(typedOneOnly.length)}   ← same defect, length-one roster. THE OPEN CLASS.`)
+console.log(`   of which in the safe tier:         ${String(typedOneOnly.filter(r => r.tier === 'safe').length).padStart(3)}`)
 console.log(`Neither arg nor discovery:            ${String(noArgNoDiscover.length).padStart(3)}  ${pct(noArgNoDiscover.length)}   (scene-agnostic, or the scene is implicit)`)
 
 console.log(`\nHow a caller names a scene — ⚠️ ${ARG_CONVENTIONS.length} conventions, not one:`)
@@ -78,6 +91,10 @@ for (const [n] of ARG_CONVENTIONS) {
 console.log(`   ⚠️ ${takesArg.filter(r => r.convs.length > 1).length} accept more than one, so they are not even disjoint per file.`)
 
 if (process.argv.includes('--list')) {
-  console.log(`\n── typed roster, no discovery (the class) ──`)
+  console.log(`\n── typed roster, no discovery ──`)
   for (const r of typedOnly) console.log(`   [${r.tier}] ${r.file}`)
+  console.log(`\n── SINGLE typed default, no discovery (THE OPEN CLASS) ──`)
+  console.log(`   ⛔ Porting these is NOT mechanical: several are genuinely single-scene probes and`)
+  console.log(`      making one loop is a per-file semantic call, not a regex.`)
+  for (const r of typedOneOnly) console.log(`   [${r.tier}] ${r.file}`)
 }

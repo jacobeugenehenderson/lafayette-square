@@ -351,7 +351,23 @@ automatically. Give it a one-line header stating **the claim it falsifies** — 
 `checks/README.md` prints. ⛔ Don't edit `checks/README.md`; run `npm run test:tiers`. Take the
 scene roster from `checks/_scenes.mjs`, never from a literal.
 
-▶ Re-derive the portability state, don't quote it: **`node checks/scene-portability.mjs`**.
+▶ Re-derive the portability state, don't quote it: **`node checks/scene-portability.mjs`**
+(`--list` names the files).
+
+⛔ **OPEN: the length-one roster.** A batch of checks still do
+`const scene = process.argv[2] || 'lafayette-square'`. That is the same defect as a typed roster —
+a roster of length one — and it is *not* mechanical to port: several are genuinely single-scene
+probes, and making one loop is a per-file semantic call. ⚠️ **Two instruments have now been wrong
+about this class three times between two sessions**, so ⛔ don't quote a figure from either; run
+the command. And note the ceiling: **only `lafayette-square` carries a frozen protopolygon** — no
+other town has been poured since ① landed — so a family of these cannot measure anything elsewhere
+however portable they become. Portability ahead of the pour buys capacity nothing can use.
+
+⚠️ **`npm test` in CI is currently a HOLD, not a gate.** A fresh clone has no `public/baked/`
+(gitignored, 0 tracked files), so most checks fail for want of data: 82/126 green locally vs
+36/126 on a clone. The CI step is `continue-on-error` until either CI bakes first, or
+"cannot measure" gets its own exit code and the runner buckets it as NOT CHECKED rather than RED.
+**Until then a green CI check-suite step means nothing.** ▶ `git clone --depth 1 file://$PWD /tmp/c && cd /tmp/c && npm test`
 
 ## Save → ship — the lifecycle, the git tree, and the troubleshooting door
 
