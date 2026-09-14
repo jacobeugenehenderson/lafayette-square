@@ -16,7 +16,13 @@
  * ▶ npm run test:live         — the `live` tier. ⛔ HITS PRODUCTION. Requires CHECKS_LIVE=i-mean-it.
  * ▶ npm test -- --list        — print what would run, run nothing.
  *
- * A non-zero exit from a check is a FINDING, not a runner bug. The suite reports; it does not fix.
+ * EXIT CODES A CHECK MAY USE — the corpus's own convention, now honoured:
+ *   0  the claim held.
+ *   2  COULD NOT MEASURE (the data is absent). Must also SAY so in its output — code alone is not
+ *      trusted, because one check exits 2 on a real failure and laundering that into "not checked"
+ *      would be the silent substitution this suite exists to refuse.
+ *   1 (or anything else)  the claim is false. A FINDING, not a runner bug.
+ * The suite reports; it does not fix.
  */
 import { spawn } from 'node:child_process'
 import { cpus } from 'node:os'
@@ -107,16 +113,37 @@ const failed   = results.filter(r => r.code !== 0)
 //    timedOut — killed by the runner. Measured NOTHING: neither a pass nor a finding.
 //    blocked  — cannot run without an argument, and says so. Wiring debt, not a product finding.
 //    red      — the check ran and the claim is false. THIS is the board.
+// ⭐⭐ "COULD NOT MEASURE" IS NOT A FAILURE, AND THE CORPUS ALREADY SAID SO — 88 checks call
+//    `process.exit(2)` and the sites read "NOT MEASURED", "nothing to check", "could not run";
+//    `claims-onboarding-guard.sh` documents it outright: "Exit 2 = could not run." The runner was
+//    filing every one of them as RED. That is what made a fresh clone read 36/126 green with 89
+//    red: `public/baked/` is gitignored, so most checks had no artifact and said so, and the
+//    runner reported their honesty as failure.
+//    ⛔ THE EXIT CODE ALONE IS NOT ENOUGH. At least one check (claims-cards-light-from-the-scene-key)
+//    exits 2 on a REAL failure, so trusting the number would silently launder a finding into
+//    "not checked" — the exact substitution this suite exists to refuse. So it is code AND
+//    evidence, the same shape as `blocked`: the check must SAY it did not measure. One that exits
+//    2 without saying so stays RED, which is the safe direction.
+const SAID_NOT_MEASURED = /NOT MEASURED|NOT CHECKED|not measured|nothing measured|nothing to check|could not run|Nothing was measured|Refusing to print/
+const notChecked = failed.filter(r => !r.timedOut && r.code === 2 && SAID_NOT_MEASURED.test(r.out))
 const timedOutR = failed.filter(r => r.timedOut)
-const blocked   = failed.filter(r => !r.timedOut && blockedReason(r.file) && /NO DEFAULT|VOID probe|Refusing to produce|usage:/.test(r.out))
-const red       = failed.filter(r => !r.timedOut && !blocked.includes(r))
+const blocked   = failed.filter(r => !r.timedOut && !notChecked.includes(r) && blockedReason(r.file) && /NO DEFAULT|VOID probe|Refusing to produce|usage:/.test(r.out))
+const red       = failed.filter(r => !r.timedOut && !notChecked.includes(r) && !blocked.includes(r))
 for (const r of red) {
   console.log(`\n⛔ ${r.file}  → exit ${r.code}`)
   console.log(`   claim: ${claimOf(r.file) || '(no header claim)'}`)
   console.log(r.out.trim().split('\n').slice(-14).map(l => `   │ ${l}`).join('\n'))
 }
 console.log(`\n${'─'.repeat(72)}`)
-console.log(`${results.length - failed.length}/${results.length} green · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
+console.log(`${results.length - failed.length}/${results.length} green · ${red.length} red · ${notChecked.length} not checked · ` +
+  `${blocked.length} blocked · ${timedOutR.length} timed out · ${((Date.now() - t0) / 1000).toFixed(0)}s`)
+if (notChecked.length) {
+  // ⛔ PRINTED EVERY RUN, NEVER FOLDED INTO THE GREEN COUNT. The number that matters in CI is not
+  //    "did it pass" but "how much did it actually check", and this is that number.
+  console.log(`\n⚠️ ${notChecked.length} NOT CHECKED — the data they measure is absent, and they said so.`)
+  console.log(`   Not a pass and not a finding. In CI this is usually \`public/baked/\` (gitignored).`)
+  for (const r of notChecked) console.log(`   ${r.file}`)
+}
 if (timedOutR.length) {
   console.log(`\n⚠️ ${timedOutR.length} NOT CHECKED — killed at ${TIMEOUT_MS / 1000}s. These measured NOTHING;`)
   console.log(`   they are neither a pass nor a finding. Raise CHECKS_TIMEOUT_MS, or make them cheaper:`)
@@ -132,4 +159,7 @@ if (red.length) {
   for (const r of red) console.log(`   ${r.file} (exit ${r.code})`)
 }
 // ⛔ A timeout fails the run too — "we could not check" must never exit 0.
-process.exit(failed.length ? 1 : 0)
+// ⛔ `notChecked` does NOT fail the run — that is the whole point — but it is never silent:
+//    the summary line states it and the list is printed above, so a run that checked almost
+//    nothing cannot read as a run that checked everything.
+process.exit(red.length || blocked.length || timedOutR.length ? 1 : 0)

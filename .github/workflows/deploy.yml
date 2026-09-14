@@ -35,22 +35,23 @@ jobs:
         # `claims-onboarding-guard.sh`, which POSTs /auth/v1/signup at the production Supabase
         # project with no teardown — CI must never be able to reach it.
         #
-        # ⚠️⚠️ NON-BLOCKING, AND THIS IS A HOLD, NOT A DESIGN. Measured 2026-09-13 on a fresh
-        # clone — which is exactly what this runner gets:
-        #       local working tree : 82/126 green
-        #       fresh clone        : 36/126 green, 89 red
-        # The 47-check difference is not code quality. `public/baked/` is gitignored (0 tracked
-        # files), so most of the corpus has no artifact to measure here and fails for want of
-        # DATA, not for want of correctness. Blocking on that would break every deploy for a
-        # reason no commit can fix.
-        # ⛔ `continue-on-error` is a fallback, and this repo's Layer 0 forbids exactly this shape
-        # — a run that looks successful while having checked almost nothing. It is accepted ONLY
-        # as a visible, dated hold with the decision named, never as the answer:
-        #   (a) bake the artifacts in CI before this step, or
-        #   (b) give "cannot measure — no data" its own exit code so the runner buckets it as
-        #       NOT CHECKED rather than RED (the same distinction already drawn for timeouts),
-        #       and CI is honest about how much it actually checked.
-        # ▶ Reproduce: git clone --depth 1 file://$PWD /tmp/c && cd /tmp/c && npm test
+        # ⚠️⚠️ NON-BLOCKING, AND THE REASON IS NOT THE ONE FIRST WRITTEN HERE.
+        # The original note said a fresh clone scores 36/126 because `public/baked/` is gitignored.
+        # ⛔ THAT MEASUREMENT WAS WRONG: the clone it came from never ran `npm ci`, so most checks
+        # died on a missing `clipper-lib`, not on missing data. Re-measured with dependencies
+        # installed — which is what this runner actually has, two lines above:
+        #       local working tree        : 85/126 green · 36 red
+        #       fresh clone + npm ci      : 74/126 green · 38 red · 12 not checked
+        # The gap is ~2 checks, not 47. CI is not data-starved.
+        #
+        # ⇒ So this step is held open for a DIFFERENT and more ordinary reason: the board carries
+        # ~36 genuine red findings that predate the wiring and fail everywhere. Blocking on them
+        # would stop every deploy until the board is clean, which is a scheduling decision, not a
+        # CI one. ⛔ `continue-on-error` is still a fallback and Layer 0 still forbids the shape —
+        # it stays only while the count is visible and dated here.
+        # ▶ Re-derive both numbers, never quote them:
+        #     npm test
+        #     T=$(mktemp -d); git clone --depth 1 file://$PWD $T/c; cd $T/c; npm ci; npm test
         continue-on-error: true
         run: npm test
 

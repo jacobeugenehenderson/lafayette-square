@@ -260,6 +260,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-measurable-town-is-declared.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-shadowed-placement-renders.mjs",
       "tier": "safe",
       "why": [
@@ -436,13 +443,6 @@
     },
     {
       "file": "checks/claims-node-pair-key-parity.mjs",
-      "tier": "safe",
-      "why": [
-        "reads repo files only"
-      ]
-    },
-    {
-      "file": "checks/claims-nodeless-tip-classifier.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

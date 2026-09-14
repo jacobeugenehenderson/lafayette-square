@@ -25,6 +25,7 @@ import { readFileSync, readdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { heroAnimPose } from '../src/preview/heroAnim.js'
+import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const SCENE_JSX = join(ROOT, 'src/components/Scene.jsx')
@@ -90,6 +91,7 @@ console.log('\n[tracks] pose must follow the scene it is given')
 
 // ── Per-scene sweep ──────────────────────────────────────────────────────────
 const bakedDir = join(ROOT, 'public/baked')
+requireArtifact(bakedDir.replace(process.cwd() + '/', ''), 'public/baked')
 const looks = readdirSync(bakedDir, { withFileTypes: true })
   .filter(d => d.isDirectory() && existsSync(join(bakedDir, d.name, 'scene.json')))
   .map(d => d.name)

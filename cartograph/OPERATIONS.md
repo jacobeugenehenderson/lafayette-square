@@ -363,11 +363,32 @@ the command. And note the ceiling: **only `lafayette-square` carries a frozen pr
 other town has been poured since ① landed — so a family of these cannot measure anything elsewhere
 however portable they become. Portability ahead of the pour buys capacity nothing can use.
 
-⚠️ **`npm test` in CI is currently a HOLD, not a gate.** A fresh clone has no `public/baked/`
-(gitignored, 0 tracked files), so most checks fail for want of data: 82/126 green locally vs
-36/126 on a clone. The CI step is `continue-on-error` until either CI bakes first, or
-"cannot measure" gets its own exit code and the runner buckets it as NOT CHECKED rather than RED.
-**Until then a green CI check-suite step means nothing.** ▶ `git clone --depth 1 file://$PWD /tmp/c && cd /tmp/c && npm test`
+### "I could not measure that" is not a failure — exit 2
+
+A check that finds no data to examine must **exit 2 and say so** (`NOT MEASURED` / `NOT CHECKED` /
+`could not run`). The runner then buckets it **NOT CHECKED** — printed every run, counted in the
+summary, and it does **not** fail the build. ⛔ The exit code alone is not trusted: at least one
+check exits 2 on a genuine failure, so a check that exits 2 **without saying so stays RED**. Code
+*and* evidence, the same rule the `blocked` bucket uses.
+
+```js
+import { requireArtifact } from './_scenes.mjs'
+const shape = requireArtifact(`public/baked/${scene}/shape.json`, 'baked shape.json')
+```
+
+⭐ **Why it matters:** `public/baked/` is gitignored, so a fresh clone has no slab. A check that
+*crashes* on the missing file is indistinguishable from one that found a defect — it reports ENOENT,
+the run goes red, and nobody can tell which. Crashing turns *"I could not look"* into *"I looked and
+it was broken."* The summary line now states green / red / **not checked** / blocked / timed out, so
+the number that actually matters in CI — **how much did it verify** — is visible every run.
+
+⚠️ **`npm test` in CI is a HOLD, not a gate** — but ⛔ **not for the reason first written here.** That
+note claimed a fresh clone scores 36/126 because the slab is gitignored. **The measurement was
+wrong:** the clone had never run `npm ci`, so most checks died on a missing `clipper-lib`, not on
+missing data. Re-measured with dependencies installed, the gap is about **2 checks, not 47** — CI is
+not data-starved. The step is held open because the board carries **~36 genuine red findings that
+fail everywhere**, and blocking on those is a scheduling decision, not a CI one.
+▶ Re-derive both, never quote them: `npm test` · `T=$(mktemp -d); git clone --depth 1 file://$PWD $T/c; cd $T/c; npm ci; npm test`
 
 ## Save → ship — the lifecycle, the git tree, and the troubleshooting door
 

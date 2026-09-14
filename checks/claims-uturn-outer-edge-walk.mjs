@@ -17,6 +17,7 @@
 // Writes nothing. Exit 1 if any finding.
 import fs from 'fs'
 import crypto from 'crypto'
+import { requireArtifact } from './_scenes.mjs'
 
 const argv = process.argv.slice(2)
 const scene = argv.find(a => !a.startsWith('--')) || 'lafayette-square'
@@ -29,6 +30,7 @@ const SHAPE = `public/baked/${scene}/shape.json`
 const DESIGN = `public/looks/${scene}/design.json`
 const o = console.log
 
+requireArtifact(SHAPE.replace(process.cwd() + '/', ''), 'baked shape.json')
 const RAW = fs.readFileSync(SHAPE)
 const sh = JSON.parse(RAW)
 if (!Array.isArray(sh.tiles)) { o(`⛔ ${scene}: no tiles in shape.json — not a poured artifact`); process.exit(2) }

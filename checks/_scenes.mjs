@@ -84,8 +84,12 @@ export function scenes(need, opt = {}) {
     //    returning [] here would print "0 problems found" and read as a pass.
     const bad = asked.filter(s => !has(s))
     if (bad.length) {
-      throw new Error(`⛔ NOT CHECKED — no ${what} for: ${bad.join(', ')}\n` +
-        `   Known towns: ${declaredScenes().join(', ')}. This is a failure to check, not a pass.`)
+      // ⛔ exit 2 + the words, the corpus convention (`claims-onboarding-guard.sh`: "Exit 2 =
+      //    could not run"). A throw exits 1 and the runner would file this as a FINDING, which
+      //    would be a claim about the map that nobody measured.
+      console.error(`⛔ NOT CHECKED — no ${what} for: ${bad.join(', ')}`)
+      console.error(`   Known towns: ${declaredScenes().join(', ')}. This is a failure to check, not a pass.`)
+      process.exit(2)
     }
     return asked.sort()
   }
@@ -117,7 +121,11 @@ export function scenes(need, opt = {}) {
     console.log(`   ⛔ HAS ${what} BUT IS NOT IN ${MANIFEST}: ${undeclared.join(', ')}`)
     console.log(`      NOT CHECKED, and it would not have been mentioned. Declare it or retire it.`)
   }
-  if (!found.length) throw new Error(`⛔ NOT CHECKED — no town has ${what}. Nothing was measured; this is not a pass.`)
+  if (!found.length) {
+    console.error(`⛔ NOT CHECKED — no town has ${what}. Nothing was measured; this is not a pass.`)
+    console.error(`   In a fresh clone this is normal: public/baked/ is gitignored.`)
+    process.exit(2)
+  }
 
   // Loud about what it did NOT cover, every run.
   const silent = declared.filter(s => !found.includes(s))
@@ -153,4 +161,24 @@ export const CHILLERED = new Set(['centrum', 'ksi-y-m-yn'])
 /** The towns whose ribbons can be measured. The roster for every ribbons-reading check. */
 export function ribbonScenes(argv = process.argv.slice(2)) {
   return scenes('<scene>', { argv, has: (s) => !CHILLERED.has(s) && existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
+}
+
+// ── "I have nothing to measure" ──────────────────────────────────────────────────────────────
+// ⛔ EXIT 2 AND SAY SO. The corpus already converged on this: 88 checks call `process.exit(2)` and
+//    their messages read "NOT MEASURED" / "nothing to check" / "could not run", and
+//    `claims-onboarding-guard.sh` documents it — "Exit 2 = could not run." The runner honours the
+//    code AND the words together, because one check exits 2 on a real failure and trusting the
+//    number alone would launder a finding into "not checked".
+//
+// ⭐ WHY IT MATTERS MOST IN CI: `public/baked/` is gitignored, so a fresh clone has no slab. A
+//    check that CRASHES on the missing file is indistinguishable from a check that found a defect
+//    — it reports ENOENT, the run goes red, and nobody can tell which. Crashing is the fallback
+//    shape one layer down: it turns "I could not look" into "I looked and it was broken."
+//
+//   const shape = requireArtifact(`public/baked/${scene}/shape.json`, 'baked shape.json')
+export function requireArtifact(rel, what = rel) {
+  if (existsSync(join(ROOT, rel))) return join(ROOT, rel)
+  console.error(`⛔ NOT MEASURED — no ${what} at ${rel}. Nothing was measured; this is not a pass.`)
+  console.error(`   In a fresh clone this is expected: public/baked/ is gitignored. Bake, or name a town that has one.`)
+  process.exit(2)
 }

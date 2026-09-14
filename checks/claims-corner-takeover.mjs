@@ -54,6 +54,7 @@
  */
 import { readFileSync, existsSync, readdirSync } from 'fs'
 import { join } from 'path'
+import { requireArtifact } from './_scenes.mjs'
 
 process.env.CORNER_DUMP = '1'          // must precede the import — the flag is read at module init
 const ROOT = new URL('..', import.meta.url).pathname
@@ -124,6 +125,7 @@ const tally = (rows) => {
 const argv = process.argv.slice(2)
 const showRows = argv.includes('--rows')
 const only = argv.find(a => !a.startsWith('--'))
+requireArtifact(String(BAKED).replace(process.cwd() + '/', ''), 'public/baked')
 const scenes = (only ? [only] : readdirSync(BAKED))
   .filter(s => existsSync(join(BAKED, s, 'shape.json')))
   .sort()

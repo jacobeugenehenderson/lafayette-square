@@ -19,6 +19,7 @@
  */
 import fs from 'fs'
 import clipperLib from 'clipper-lib'
+import { ribbonScenes } from '../checks/_scenes.mjs'
 const { Clipper, ClipType, PolyType, PolyFillType, PolyTree } = clipperLib
 const args = process.argv.slice(2)
 const EPS = args.includes('--eps') ? Number(args[args.indexOf('--eps') + 1]) : 0.05
@@ -30,7 +31,7 @@ const SVG = args.includes('--svg')
 // NO re-pour. Points there are {x,z} objects, not [x,z] arrays.
 const FROM_SKEL = args.includes('--from-skeleton')
 const SCENES = args.filter(a => !a.startsWith('--') && !/^[\d.]+$/.test(a))
-const scenes = SCENES.length ? SCENES : ['lafayette-square', 'hipointe-demun']
+const scenes = ribbonScenes()
 const SCALE = 1000                          // Clipper integer space: 1 mm floor
 const toC = p => ({ X: Math.round(p[0] * SCALE), Y: Math.round(p[1] * SCALE) })
 const areaC = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i + 1) % r.length; a += r[i].X * r[j].Y - r[j].X * r[i].Y } return a / 2 / (SCALE * SCALE) }

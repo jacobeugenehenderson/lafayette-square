@@ -37,6 +37,7 @@
 //
 import fs from 'fs'
 import crypto from 'crypto'
+import { requireArtifact } from './_scenes.mjs'
 
 const CHILLERED = new Set(['ksi-y-m-yn', 'centrum'])
 const SCENE = 'lafayette-square'
@@ -48,6 +49,7 @@ const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(f
 const R_PATH = 'src/data/ribbons.json', D_PATH = `public/looks/${SCENE}/design.json`, S_PATH = `public/baked/${SCENE}/shape.json`
 const ribbons = JSON.parse(fs.readFileSync(R_PATH, 'utf8'))
 const design = JSON.parse(fs.readFileSync(D_PATH, 'utf8'))
+requireArtifact(S_PATH.replace(process.cwd() + '/', ''), 'baked shape.json')
 const shape = JSON.parse(fs.readFileSync(S_PATH, 'utf8'))
 
 const STD_TREELAWN = 1.5, ADA_SIDEWALK = 1.5              // tileGround.js:1206-1207

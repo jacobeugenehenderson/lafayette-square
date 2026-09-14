@@ -27,6 +27,7 @@ import { NodeIO } from '@gltf-transform/core'
 import { ALL_EXTENSIONS } from '@gltf-transform/extensions'
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
+import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = path.join(import.meta.dirname, '..')
 const TREES = path.join(ROOT, 'public/trees')
@@ -52,6 +53,7 @@ function extents(doc) {
 }
 
 let checked = 0, fail = 0
+requireArtifact(TREES.replace(process.cwd() + '/', ''), 'baked tree dir')
 for (const sp of readdirSync(TREES).sort()) {
   const mf = path.join(TREES, sp, 'manifest.json'); if (!existsSync(mf)) continue
   const m = JSON.parse(readFileSync(mf, 'utf8')); if (m.source !== 'glb') continue

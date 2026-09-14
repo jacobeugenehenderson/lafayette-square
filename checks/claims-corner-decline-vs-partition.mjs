@@ -30,6 +30,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 process.env.CORNER_DUMP = '1'          // must precede the import — read at module init
@@ -43,6 +44,7 @@ const argScene = process.argv.includes('--scene') ? process.argv[process.argv.in
 const STRIP_MAT = { outer: 'LU', inner: 'SW' }
 const CW = 0.381
 
+requireArtifact('public/baked', 'public/baked')
 const scenes = (argScene ? [argScene] : fs.readdirSync(path.join(ROOT, 'public/baked')))
   .filter(s => fs.existsSync(path.join(ROOT, 'public/baked', s, 'shape.json')))
 

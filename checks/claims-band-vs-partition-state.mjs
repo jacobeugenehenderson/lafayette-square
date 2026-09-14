@@ -48,6 +48,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { ringRunOwners, bandSpans, sectionPassTile, resolvePedDepths } from '../src/lib/tileGround.js'
+import { requireArtifact } from './_scenes.mjs'
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const argv = process.argv.slice(2)
@@ -98,6 +99,7 @@ const atFrac = (poly, cl, f) => {
 
 let worstExit = 0
 for (const scene of scenes) {
+  requireArtifact(`public/baked/${scene}/shape.json`, 'baked shape.json')
   const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'public/baked', scene, 'shape.json'), 'utf8'))
   const tiles = Array.isArray(raw) ? raw : (raw.tiles || [])
   const designP = path.join(ROOT, 'public/looks', scene, 'design.json')
