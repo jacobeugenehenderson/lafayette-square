@@ -31,10 +31,22 @@
  *        (ksi-y-m-yn / centrum / altadena are CHILLERED — do not size on them.)
  */
 import { readFileSync } from 'fs'
-import { buildBlockGeometryV2, resolveChainSegmentation } from '../src/lib/buildBlockGeometryV2.js'
+import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
+// ⛔ `resolveChainSegmentation` MOVED to its own module. It is no longer exported
+// by buildBlockGeometryV2.js, and importing it there throws at load — so this
+// check (and claims-side-baseline-audit.mjs, which imports FROM this file) was
+// dying before it asserted anything. Same shape as the citation rot the corpus
+// keeps finding: the symbol moved, its callers were never repointed.
+// ▶ the live home: git grep -n "export function resolveChainSegmentation"
+import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { feCustomKey, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
+import { ribbonScenes } from './_scenes.mjs'
+import { ROOT as SCENES_ROOT } from './_scenes.mjs'
 
-const ROOT = '/Users/jacobhenderson/Desktop/lafayette-square.nosync'
+// ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
+//    in CI, not for a second developer. Same shape as the town-portability defect: it works only
+//    where somebody already is. `_scenes.mjs` resolves the repo root from its own location.
+const ROOT = SCENES_ROOT
 const rd = p => readFileSync(`${ROOT}/${p}`, 'utf8')
 
 // ── READ naturalSegments OUT OF THE SOURCE (never restate it) ──────────────
@@ -511,7 +523,7 @@ function measure(scene, source) {
 const isMain = process.argv[1] && process.argv[1].endsWith('claims-node-pair-key-parity.mjs')
 const argv = process.argv.slice(2)
 export const SOURCE = (argv.find(a => a.startsWith('--source=')) || '').split('=')[1] || null
-const scenes = argv.filter(a => !a.startsWith('--')).length ? argv.filter(a => !a.startsWith('--')) : ['lafayette-square', 'hipointe-demun']
+const scenes = ribbonScenes()
 if (isMain && !SOURCE) {
   console.error(`⛔ LOUD FAIL — no --source given, and there is deliberately NO DEFAULT.\n` +
     `   usage: node checks/claims-node-pair-key-parity.mjs --source=pour|bundle [scene ...]\n` +

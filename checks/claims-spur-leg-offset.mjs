@@ -89,17 +89,40 @@ function score(sign) {
   return rows
 }
 const A = score(+1), B = score(-1)
-const q = (a, f) => { const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length * f)] }
+// ⛔ AN EMPTY SAMPLE IS NOT A NUMBER. This used to index an empty array, hand back
+// `undefined`, and die on `.toFixed` — so a scene with no scorable leg CRASHED the
+// check instead of reporting that it had nothing to measure. A crash tells you
+// nothing about the map; it is wiring debt wearing a finding's clothes.
+// ⛔ The fix is NOT a default. Returning 0 here would print "median 0.000 m" for a
+// scene that measured nothing, which is the plausible-looking success Layer 0 forbids.
+// `null` forces the caller to say NOT MEASURED out loud.
+const q = (a, f) => { if (!a.length) return null; const s = [...a].sort((x, y) => x - y); return s[Math.floor(s.length * f)] }
+const m3 = v => v == null ? 'n/a' : v.toFixed(3)
 o(`\nLEG OFFSET — is the boundary at the AUTHORED half-width, along the leg? (${LEG} m window, ${STEP} m step, tol ${TOL} m)`)
 for (const [nm, rows] of [['+1', A], ['-1', B]])
-  o(`   forced side-sign ${nm}: PASS ${rows.filter(r => r.max < TOL).length}/${rows.length}   median ${q(rows.map(r => r.max), .5).toFixed(3)} m   p90 ${q(rows.map(r => r.max), .9).toFixed(3)} m   worst ${Math.max(...rows.map(r => r.max)).toFixed(3)} m`)
+  o(rows.length
+    ? `   forced side-sign ${nm}: PASS ${rows.filter(r => r.max < TOL).length}/${rows.length}   median ${m3(q(rows.map(r => r.max), .5))} m   p90 ${m3(q(rows.map(r => r.max), .9))} m   worst ${m3(Math.max(...rows.map(r => r.max)))} m`
+    : `   forced side-sign ${nm}: ⛔ NOT MEASURED — 0 legs scored on this scene. Not a pass.`)
 const best = A.filter(r => r.max < TOL).length >= B.filter(r => r.max < TOL).length ? A : B
 const sgn = best === A ? '+1' : '-1'
 o(`   ⇒ ONE global convention (${sgn}) carries the map — the sign is DERIVED, not fitted per cap.`)
-o(`   legs truncated at an AUTHORED width change: ${best.filter(r => r.stopped).length}/${best.length}  (median stop ${q(best.filter(r => r.stopped).map(r => r.stopAt), .5)?.toFixed(2) ?? '-'} m)`)
+o(`   legs truncated at an AUTHORED width change: ${best.filter(r => r.stopped).length}/${best.length}  (median stop ${q(best.filter(r => r.stopped).map(r => r.stopAt), .5)?.toFixed(2) ?? 'n/a'} m)`)
 const fail = best.filter(r => r.max >= TOL).sort((a, b) => b.max - a.max)
 o(`\n⛔ LEGS OFF THE AUTHORED WIDTH: ${fail.length}   — cause NOT established`)
 o(`   ${'skelId'.padEnd(26)} ${'hwL'.padStart(6)} ${'hwR'.padStart(6)} ${'worst'.padStart(7)} ${'stop'.padStart(6)}  producer`)
 for (const r of fail) o(`   ${r.id.padEnd(26)} ${r.hwL.toFixed(2).padStart(6)} ${r.hwR.toFixed(2).padStart(6)} ${r.max.toFixed(3).padStart(7)} ${(r.stopped ? r.stopAt.toFixed(1) : '-').padStart(6)}  ${r.prod}`)
 o(`\n⛔ NOT MEASURED HERE, BY DESIGN: the cap (no authored value) and the tip/mouth node count.`)
 o(`   ▶ node scratch/coupler-slit-universal.mjs   — 50/50 tips FACE=SLIT, gap 0.000 (collapsed, not joined)`)
+
+// ⛔⛔ NOTHING MEASURED IS NOT A PASS, AND THIS EXIT IS THE POINT OF THE FIX.
+// Before this, an empty sample CRASHED (`undefined.toFixed`). Simply not crashing
+// would have been worse than the crash: the check would print its banner, measure
+// nothing, and exit 0 — a scene with no scorable leg would read as green forever.
+// That is the plausible-looking success Layer 0 names as the worst outcome, and
+// putting one inside a detector is how a suite stops being evidence.
+if (!A.length && !B.length) {
+  o(`\n⛔ LOUD FAIL — 0 legs scored on this scene, so nothing here was measured.`)
+  o(`   A check that measured nothing has not passed. Fix the input or the window`)
+  o(`   (LEG=${LEG} m, STEP=${STEP} m); do not read this as a clean result.`)
+  process.exit(1)
+}

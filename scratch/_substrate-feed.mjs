@@ -6,8 +6,12 @@
 //
 // ⭐ PER SEGORD, THROUGH THE MECHANISM THAT ALREADY EXISTS — the producer's rule,
 // mirrored and NOT reinvented:
-//   · IX identity  — `resolveChainSegmentation` (buildBlockGeometryV2.js:701),
-//     the SSoT for "what is an IX on this chain"; imported, not copied.
+//   · IX identity  — `resolveChainSegmentation`, the SSoT for "what is an IX on
+//     this chain"; imported, not copied. ⛔ It lives in its OWN module now —
+//     `src/lib/chainSegmentation.js`, NOT buildBlockGeometryV2.js. Cited by the
+//     symbol on purpose: this line carried a file:line that rotted, and the
+//     import below rotted with it.
+//     ▶ git grep -n "export function resolveChainSegmentation"
 //   · segOrd of a SPAN — tileGround.js:2739 `runSegOrd` / :2779 `segOrdAtVertex`:
 //     the number of interior-IX vertices at or before the span's LOWER original
 //     index. This is why the walk hands `widthAt` the arc: a custom resolves per
@@ -34,7 +38,7 @@ export const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--
 export async function loadScene(scene, ribbonsPathArg) {
   if (CHILLERED.includes(scene)) return { chillered: true, scene }
   const o = console.log; console.log = () => {}
-  const { resolveChainSegmentation } = await import('../src/lib/buildBlockGeometryV2.js')
+  const { resolveChainSegmentation } = await import('../src/lib/chainSegmentation.js')
   console.log = o
 
   const ribbonsPath = ribbonsPathArg || (scene === 'lafayette-square'
