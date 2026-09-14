@@ -28,9 +28,9 @@
  *   import { scenes } from './_scenes.mjs'
  *   for (const scene of scenes('public/baked/<scene>/shape.json')) { … }
  *
- *   node checks/claims-x.mjs                        # every town that has the artifact
- *   node checks/claims-x.mjs altadena               # just that one
- *   node checks/claims-x.mjs --scene=altadena       # same thing
+ *   node checks/claims-<name>.mjs                        # every town that has the artifact
+ *   node checks/claims-<name>.mjs altadena               # just that one
+ *   node checks/claims-<name>.mjs --scene=altadena       # same thing
  */
 import { readdirSync, existsSync, readFileSync } from 'node:fs'
 import { join, dirname } from 'node:path'
