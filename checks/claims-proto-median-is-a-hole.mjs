@@ -15,8 +15,8 @@
 // ⛔ `pairId` is used HERE ONLY AS AN ORACLE to score the geometric test. It is NOT the mechanism —
 // `RIBBONS §1`'s retirement list names it as apparatus this arc exists to delete.
 // ▶ node checks/claims-proto-median-is-a-hole.mjs [scene ...]
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
-const scenes = process.argv.slice(2); if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
+const scenes = feedScenes()
 // ⛔⛔ THE PRODUCER'S CONVENTION, NOT A COPIED ONE. `tileGround.js:1121` uses the cross-product
 // shoelace and decides "hole" with `signedArea(ring) > 0 → skip`. Two probes in `scratch/` carry
 // the OPPOSITE-SIGN trapezoid form, and pasting that here inverted the test: it skipped all 155

@@ -21,10 +21,9 @@
 // ⛔ Measured on the promoted artifact the operator's map is made of, not on a live rebuild.
 // ▶ node checks/claims-no-shadowed-chains.mjs [scene ...]
 import fs from 'fs'
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 
-const ribbonsPath = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun', 'altadena')
+const scenes = ribbonScenes()
 const TOL = 6, FRAC = 0.8, STEP = 5
 
 const d2seg = (p, a, b) => { const ex = b[0]-a[0], ez = b[1]-a[1], L2 = ex*ex+ez*ez || 1

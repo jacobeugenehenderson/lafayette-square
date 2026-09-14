@@ -17,6 +17,7 @@
  * usage: node checks/claims-side-baseline-audit.mjs [scene ...]
  */
 import { deriveNodePairs, classifySides, nodeKey, dist, quantiles } from './claims-node-pair-key-parity.mjs'
+import { ribbonScenes } from './_scenes.mjs'
 
 // ⛔ The instrument-input guard applies here too — this probe consumes the same
 // derivation, so it inherits the same "which artifact?" hazard. NO DEFAULT.
@@ -266,7 +267,7 @@ function audit(scene) {
     bNoFront: bNoFront.length, bNonContig: bNonContig.length, flips: phys.flips, breaks: sideBreaks.length }
 }
 
-const scenes = ARGV.filter(a => !a.startsWith('--')).length ? ARGV.filter(a => !a.startsWith('--')) : ['lafayette-square', 'hipointe-demun']
+const scenes = ribbonScenes()
 const res = scenes.map(audit)
 console.log(`\n${'='.repeat(78)}\nSUMMARY (reproduce, never quote)\n${'='.repeat(78)}`)
 for (const r of res) console.log(`${r.scene}: ${r.breaks} breaks = A ${r.A} · B ${r.B} · C ${r.C} · unpartitioned ${r.rest} | A on a label-flip chain: ${r.aWithFlip}/${r.A}, in-span ${r.aInSpan}/${r.A}, HARD (baseline well-defined) ${r.aHard}/${r.A} | B not fronting span: ${r.bNoFront}/${r.B} (non-contiguous ${r.bNonContig}) | road label-flips on town: ${r.flips}`)

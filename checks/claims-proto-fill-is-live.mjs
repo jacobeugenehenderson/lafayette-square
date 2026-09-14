@@ -18,7 +18,7 @@
 //     question from "how much ground is painted". Every figure here is a UNION.
 //   · `run.baseMeasure.treelawn` is the AUTHORED OVERRIDE ONLY — median 0. The painted depth comes
 //     from `resolvePedDepths`. Off the raw field you get a 3.00 m envelope gap that does not exist.
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionOpen, hasStampInquiry } from '../src/lib/tileGround.js'
 import { differenceRings, intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 
@@ -28,7 +28,7 @@ const luA = o => Object.values(o||{}).reduce((s,v)=>s+U(v),0)
 const pct = (a,b) => b > 0 ? `${(100*a/b).toFixed(1)}%` : 'n/a'
 
 let bad = 0
-for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square','hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const g = buildProto(f, { protoArtifact: true })
   const T = g.protoShapeTiles, cw = f.curbWidth

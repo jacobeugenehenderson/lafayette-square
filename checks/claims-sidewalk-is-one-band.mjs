@@ -17,12 +17,12 @@
 //     block (`SURVEY §4`); the corner is what absorbs it
 // ⛔ AND NOT THIS EITHER: counting unstamped CONTOUR POINTS. 0.5% of points is 4.7% of LENGTH,
 // because one long frontage is a single edge. Measure what the eye sees: metres, and closure.
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, resolvePedDepths } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i+1)%r.length; a += r[i][0]*r[j][1] - r[j][0]*r[i][1] } return a/2 }
 let bad = 0
-for (const scene of (process.argv[2] ? [process.argv[2]] : ['lafayette-square', 'hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   let one = 0, broken = 0, none = 0, legs = 0, multi = 0

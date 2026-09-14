@@ -4,9 +4,9 @@
 // an arc reads its radius. ⛔ Compared to the AUTHORED value, never to a hard-coded 4.5.
 // ▶ node checks/claims-proto-corner-is-authored-radius.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
   const design = JSON.parse(fs.readFileSync(`public/looks/${f.look}/design.json`, 'utf8'))
   const scale = Number.isFinite(design.cornerRadiusScale) ? design.cornerRadiusScale : 1

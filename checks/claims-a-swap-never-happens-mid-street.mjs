@@ -25,7 +25,7 @@
 //                                          ANGLED SLOPE CORNER JOINER is for." ASPIRATION, filed.
 //   · same chain, same side, segOrd     ⛔ an authoring ordinal is not a place on the map
 import fs from 'fs'
-import { feed, buildProto, ribbonsPath } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, ribbonsPath, feedScenes } from '../scratch/_proto-feed.mjs'
 import { resolvePedDepths } from '../src/lib/tileGround.js'
 
 const TOL = 18 * Math.PI / 180          // ⛔ FILLET_TURN_TOL, the ruled constant — not a new one
@@ -37,8 +37,8 @@ const xs = (run, bc) => { if (!run) return null
   return `${(d.tl || 0).toFixed(3)}|${(d.sw || 0).toFixed(3)}|${c?.materials?.outer ?? (d.hasTL ? 'LU' : 'SW')}|${c?.materials?.inner ?? (d.hasTL ? 'SW' : 'LU')}` }
 
 let bad = 0
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-demun'])) {
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const rb = JSON.parse(fs.readFileSync(ribbonsPath(scene), 'utf8'))
   const road = new Map()

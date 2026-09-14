@@ -16,6 +16,7 @@
 //        --customs   also apply the look's blockCustoms over the measure first
 import fs from 'fs'
 import path from 'path'
+import { ribbonScenes } from './_scenes.mjs'
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname)
 const argv = process.argv.slice(2)
@@ -36,7 +37,7 @@ function scenes() {
   if (WANT) return [WANT]
   const dir = path.join(ROOT, 'cartograph/data')
   const all = fs.readdirSync(dir).filter(d => fs.statSync(path.join(dir, d)).isDirectory())
-  return ALL ? all : ['lafayette-square']
+  return ALL ? all : ribbonScenes()
 }
 
 // ── THE ONE ORACLE, copied by SHAPE from derive.js:3733 inboardKeyGeom ==

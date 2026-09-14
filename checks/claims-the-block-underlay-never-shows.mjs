@@ -9,14 +9,14 @@
 // rare one, so a town that is mostly residential looks clean and town #2 may not be.
 // ⛔ The gap is measured in m², per tile, against the tile's OWN block silhouette — never by eye.
 // ▶ node checks/claims-the-block-underlay-never-shows.mjs [scene ...]
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile } from '../src/lib/tileGround.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 
 const SA = r => { let a = 0; for (let i = 0; i < r.length; i++) { const j = (i + 1) % r.length; a += r[i][0] * r[j][1] - r[j][0] * r[i][1] } return a / 2 }
 const area = rs => (rs || []).reduce((s, r) => s + SA(r), 0)
 
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   if (!T?.length) { console.log(`⛔ ${scene}: no protoShapeTiles — NOT measured`); continue }

@@ -20,7 +20,8 @@
  *   node checks/claims-inboard-side-convention.mjs [scene ...]
  */
 import fs from 'fs'
-const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']
+import { ribbonScenes } from './_scenes.mjs'
+const scenes = ribbonScenes()
 const o = console.log
 const mid = p => p[Math.floor(p.length / 2)]
 

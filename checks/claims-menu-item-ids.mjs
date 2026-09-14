@@ -17,14 +17,21 @@
  *
  *   node checks/claims-menu-item-ids.mjs
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, existsSync } from 'node:fs'
+import { scenes } from './_scenes.mjs'
 import { ensureMenuIds, auditMenuIds, indexMenuItems } from '../src/lib/menuIdentity.js'
 
 // The payloads src/data/loadInstanceData.js actually maps to `menus`.
-const PAYLOADS = [
-  ['lafayette-square', 'src/data/lafayette-square/menus.json'],
-  ['hipointe-demun', 'cartograph/data/hipointe-demun/content/menus.json'],
-]
+// ⛔ The pair was typed here, so a town onboarded with a menu was simply not audited — silently,
+//    which is the worst shape for a check about identity. Discovered now; LS's bundled location is
+//    the same palimpsest asymmetry as its ribbons (`ORIENTATION`, the shared-default paths).
+const menusPath = (s) => s === 'lafayette-square'
+  ? 'src/data/lafayette-square/menus.json'
+  : `cartograph/data/${s}/content/menus.json`
+const PAYLOADS = scenes('<scene>', {
+  has: (s) => existsSync(new URL(`../${menusPath(s)}`, import.meta.url)),
+  label: 'menus.json',
+}).map(s => [s, menusPath(s)])
 
 const read = (rel) => JSON.parse(readFileSync(new URL(`../${rel}`, import.meta.url), 'utf8'))
 let failures = 0

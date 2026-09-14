@@ -13,6 +13,7 @@
  */
 import fs from 'fs'
 import path from 'path'
+import { ribbonScenes } from './_scenes.mjs'
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname)
 const R = p => fs.readFileSync(path.join(ROOT, p), 'utf8')
@@ -24,7 +25,7 @@ const MB = b => (b / 1048576).toFixed(1) + ' MB'
 
 const args = process.argv.slice(2)
 const SCENES = args.filter(a => !a.startsWith('--'))
-const TARGETS = SCENES.length ? SCENES : ['lafayette-square', 'hipointe-demun', 'altadena']
+const TARGETS = ribbonScenes()
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 0. SOURCE GUARDS — read the expressions this census reproduces. Drift = refuse.

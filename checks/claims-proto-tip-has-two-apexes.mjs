@@ -18,9 +18,10 @@
 // ▶ node checks/claims-proto-tip-has-two-apexes.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 
-const scenes = process.argv.slice(2); if (!scenes.length) scenes.push('lafayette-square')
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+const scenes = ribbonScenes()
+const RIB = ribbonsPath
 const EPS = 0.005
 const ang = (a, b, c) => {   // interior turn at b, degrees
   const u = [a[0]-b[0], a[1]-b[1]], v = [c[0]-b[0], c[1]-b[1]]

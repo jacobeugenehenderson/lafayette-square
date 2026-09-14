@@ -17,10 +17,9 @@
 // ⛔ Runs on every scene given, WITH the scene's authored state loaded (Layer 0 q3).
 // ▶ node checks/claims-proto-stack-disjoint.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes()
 const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
 
 const signedArea = (r) => { let a = 0; for (let i = 0, j = r.length - 1; i < r.length; j = i++) a += (r[j][0] + r[i][0]) * (r[j][1] - r[i][1]); return a / 2 }

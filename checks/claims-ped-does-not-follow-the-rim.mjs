@@ -2,10 +2,10 @@
 // rim runs ALONG the arc for tens of metres; a band that is CUT by the stamp meets it in chords
 // no longer than the band is wide. So measure the LENGTH of band boundary lying on the arc.
 // ▶ node checks/claims-ped-does-not-follow-the-rim.mjs [scene ...]
-import { feed } from '../scratch/_proto-feed.mjs'
+import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 
-for (const scene of (process.argv.slice(2).length?process.argv.slice(2):['lafayette-square'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
   const bR = f.ribbons.protopolygon?.boundaryRing
   if (!bR) { console.log(`⛔ ${scene}: no frozen boundaryRing — NOT checked`); continue }

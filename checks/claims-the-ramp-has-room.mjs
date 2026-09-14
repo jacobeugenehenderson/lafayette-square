@@ -16,15 +16,14 @@
 //
 // ⛔ Reads the painter's own resolution through `SECTION_DUMP` — it does not restate the ladder.
 // Derived from the forensic's `_fx-corner-step.mjs` + `_fx-taper-room.mjs` (2026-09-07).
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {
   console.log('⛔ NOT RUN — ▶ SECTION_DUMP=1 node checks/claims-the-ramp-has-room.mjs [scene ...]')
   process.exit(1)
 }
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
 const med = (a) => a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.length / 2)] : 0
 const pct = (a, p) => a.length ? a.slice().sort((x, y) => x - y)[Math.floor(a.length * p)] : 0
 

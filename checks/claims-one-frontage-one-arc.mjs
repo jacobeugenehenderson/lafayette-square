@@ -3,10 +3,10 @@
 // where the owner CHANGES. ⇒ A block with N frontages has exactly N corners. ⛔ If an owner appears
 // in TWO arcs, one is a mis-attribution, and every extra arc mints a corner the block does not have.
 // ▶ node checks/claims-one-frontage-one-arc.mjs [scene ...]
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square','hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   let rings = 0, ok = 0, frag = 0, extra = 0, tiny = 0, arcsAll = 0, minted = 0, raw = 0

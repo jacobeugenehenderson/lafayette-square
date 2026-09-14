@@ -48,7 +48,7 @@
 //   node -e "const r=require('./src/data/ribbons.json').protopolygon;const L=[];for(const g of r.rings)for(let i=0;i<g.length;i++){const a=g[i],b=g[(i+1)%g.length];L.push(Math.hypot(b[0]-a[0],b[1]-a[1]))}L.sort((x,y)=>x-y);console.log('median',L[L.length>>1].toFixed(2),'| >=20m',L.filter(x=>x>=20).length,'of',L.length)"
 // ▶ node checks/claims-a-kink-recovers-but-a-corner-does-not.mjs [scene ...] [--list]
 import fs from 'fs'
-import { feed } from '../scratch/_proto-feed.mjs'
+import { feed, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)
@@ -56,8 +56,7 @@ if (!m) { console.log('⛔ LOUD FAIL: cannot read FILLET_TURN_TOL out of tileGro
 const TOL = Number(m[1])
 
 const LIST = process.argv.includes('--list')
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
 
 const NEAR_R = 12    // m — "on the approach to a junction"
 const BODY_IN = 4, BODY_OUT = 20   // m — the heading window either side, skipping the deviation itself

@@ -7,11 +7,11 @@
 // ⚠️ A far-kerb T cuts the line, so one face can carry two chain spans under two `skelId`s. That is
 // why this check exists: the authoring write fans across ONE chain's `segOrd`s and cannot cross
 // into the other, so a face split that way was half-authorable and seamed where the cut fell.
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { resolvePedDepths } from '../src/lib/tileGround.js'
 const roadOf = id => String(id ?? '').replace(/-\d+$/, '')
 let bad = 0
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square','hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   let faces = 0, multi = 0, splitFaces = 0; const eg = []

@@ -18,7 +18,7 @@
 // reverted — each treats the OUTPUT of a wrong ownership decision. The cure is upstream, where the
 // runs are built (`tileGround.js` ~:6890, the ① label carry) — the polygon must ask the stamp.
 // ▶ the sibling gate on the same invariant: node checks/claims-ring-partition.mjs
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 const plen = p => { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0]-p[i-1][0], p[i][1]-p[i-1][1]); return L }
 const periOf = t => { let L = 0
   for (const ring of t.iaFull || []) for (let q = 0; q < ring.length; q++) {
@@ -28,7 +28,7 @@ const argv = process.argv.slice(2)
 const ONE = (() => { const i = argv.indexOf('--tile'); return i >= 0 ? +argv[i+1] : null })()
 const scenes = argv.filter(a => !a.startsWith('--') && !/^\d+$/.test(a))
 let bad = 0
-for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-demun'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   const T = buildProto(f, { protoArtifact: true }).protoShapeTiles
   const rows = []

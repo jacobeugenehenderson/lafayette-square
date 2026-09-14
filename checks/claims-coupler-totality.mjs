@@ -18,21 +18,15 @@
 //
 // ⛔ MEASUREMENT ONLY. This says nothing about whether any absence is visible.
 import { readFileSync, existsSync } from 'node:fs'
+import { ribbonScenes, ribbonsPath } from './_scenes.mjs'
 
 const argv = process.argv.slice(2)
 const VERBOSE = argv.includes('--verbose')
-const sceneArg = argv.includes('--scene') ? argv[argv.indexOf('--scene') + 1] : null
-
-// LS proper has no cartograph/data/lafayette-square/clean/ribbons.json — the
-// operator's LS map is the BUNDLED artifact. Named so the difference is visible.
-const SCENES = [
-  ['lafayette-square (bundled)', 'src/data/ribbons.json'],
-  ['lafayette-square-staging', 'cartograph/data/lafayette-square-staging/clean/ribbons.json'],
-  ['altadena', 'cartograph/data/altadena/clean/ribbons.json'],
-  ['centrum', 'cartograph/data/centrum/clean/ribbons.json'],
-  ['hipointe-demun', 'cartograph/data/hipointe-demun/clean/ribbons.json'],
-  ['ksi-y-m-yn', 'cartograph/data/ksi-y-m-yn/clean/ribbons.json'],
-].filter(([n]) => !sceneArg || n.startsWith(sceneArg))
+// ⛔ The roster used to be typed here, including the two chillered towns, so this check reported
+//    on two dead maps and on no town poured after the list was written. The bundled-LS difference
+//    the old comment preserved is real and still visible — `ribbonsPath` is where it now lives,
+//    once, instead of in a table per check.
+const SCENES = ribbonScenes(argv).map(s => [s === 'lafayette-square' ? `${s} (bundled)` : s, ribbonsPath(s)])
 
 const vKey = (p) => p[0].toFixed(3) + ',' + p[1].toFixed(3)
 const curbed = (s) => !s.gradeSeparated && !s.disabled

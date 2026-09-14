@@ -21,7 +21,7 @@
 // INTENTION, not the ACHIEVEMENT" defect this corpus has now hit twice (`RIBBONS §1`).
 // ⛔ AND IT SAMPLES ALONG THE INWARD NORMAL, never in a fixed-width box — `9f43a99a`: a box 1.5 m
 // deep cannot reach a set-back walk and reports a correct cross-section as a hole.
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 import { intersectRings } from '../src/lib/buildBlockGeometryV2.js'
 
@@ -41,8 +41,7 @@ if (!sectionDump.on) {
   console.log('   ▶ SECTION_DUMP=1 node checks/claims-every-corner-is-one-of-three.mjs [scene ...]')
   process.exit(1)
 }
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
 const LIST = process.argv.includes('--list')
 
 const inRing = (rg, x, y) => { let c = false

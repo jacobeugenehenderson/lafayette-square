@@ -1,12 +1,19 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 158,
+  "total": 159,
   "counts": {
-    "safe": 125,
+    "safe": 126,
     "local-effect": 5,
     "live": 28
   },
   "checks": [
+    {
+      "file": "checks/claims-a-brief-declares-how-it-dies.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
     {
       "file": "checks/claims-a-corner-is-where-one-turns.mjs",
       "tier": "safe",
@@ -999,7 +1006,8 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "computed import() with no readable target — runs arbitrary modules"
+        "computed import() with no readable target — runs arbitrary modules",
+        "runs `git ls-files \"*.md\"` — local, read-only"
       ]
     },
     {

@@ -308,17 +308,50 @@ whose command is not a literal) is tiered `live` even though it may contact noth
 never read this page — rather than asserted once by someone who read the sources and felt sure.
 That confidence is what produced the incident above.
 
+### Which towns a check runs on
+
+**Every check runs on every town that has the data it needs.** By default — no flag.
+
+```
+node checks/claims-x.mjs                 # every measurable town
+node checks/claims-x.mjs altadena        # just that one
+node checks/claims-x.mjs --scene=altadena  # the same thing, older spelling
+```
+
+⛔ **Never type a scene roster into a check.** Ask `checks/_scenes.mjs`:
+
+```js
+import { ribbonScenes, scenes } from './_scenes.mjs'
+for (const scene of ribbonScenes()) { … }                      // ribbons-reading checks
+for (const scene of scenes('public/baked/<scene>/shape.json')) { … }   // any other corpus
+```
+
+**Why this is a rule and not a style note.** 45 checks used to end
+`if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')`. Every copy looked like a
+sensible default, which is exactly why it survived: the corpus carried **a skip list spread across
+45 files and nothing named it one.** Pour a new town and it was invisible to all of them until
+somebody edited 45 files — and **nothing failed when they didn't.** The checks just kept reporting
+on the towns someone typed in. That is Layer 0 q1 answered *"nothing for town #2"* and q2 (a
+plausible-looking pass) in the same line.
+
+The roster is **the look manifest ∩ has-the-artifact**. ⛔ Neither half alone: a bare directory
+listing answers with `clean/`, `raw/`, `public/baked/default/` and two dead towns; an artifact
+filter alone *looks* sufficient and counted `default/` as a town until a mutation test asked for an
+artifact it happened to have. And **nothing is skipped silently** — a declared town that lacks the
+artifact prints `⚠️ NOT CHECKED`, every run. Naming a town that cannot be measured exits 2.
+
+⚠️ **A consequence to expect:** a check now covers 4–5 towns instead of 1–2, so it is slower and it
+finds more. New reds after this change are usually **real defects in towns that were never
+measured**, not regressions.
+
 ### Adding a check
 
 Drop it in `checks/` (or `scratch/`, which is also scanned) named `claims-*.mjs`. It is tiered
 automatically. Give it a one-line header stating **the claim it falsifies** — that line is what
-`checks/README.md` prints. ⛔ Don't edit `checks/README.md`; run `npm run test:tiers`.
+`checks/README.md` prints. ⛔ Don't edit `checks/README.md`; run `npm run test:tiers`. Take the
+scene roster from `checks/_scenes.mjs`, never from a literal.
 
-⚠️ **Many checks name Lafayette Square with no way for a caller to choose a scene, and the ones
-that are parameterised use four conventions that do not agree** (`--scene`, `--only`, `--look`, a
-bare `argv[2]`). A check that runs only on town #1 fails Layer 0's first question. ⛔ Don't quote a
-figure — re-derive it: **`node checks/scene-portability.mjs`** (`--list` names them). Known open
-ticket; not a property of the wiring.
+▶ Re-derive the portability state, don't quote it: **`node checks/scene-portability.mjs`**.
 
 ## Save → ship — the lifecycle, the git tree, and the troubleshooting door
 

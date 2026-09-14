@@ -20,7 +20,7 @@
 // blind spot are one instrument.
 // ⛔ AND THE EXPECTATION IS DERIVED, NOT TUNED: a corner's pad should be about its own arc, so the
 // map-wide share is compared against the arc length the FILLETS THEMSELVES declare. No constant.
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 import { sectionPassProtoTile, sectionDump } from '../src/lib/tileGround.js'
 
 if (!sectionDump.on) {
@@ -28,8 +28,7 @@ if (!sectionDump.on) {
   console.log('   ▶ SECTION_DUMP=1 node checks/claims-the-pad-is-the-size-of-the-corner.mjs [scene ...]')
   process.exit(1)
 }
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
 
 let failures = 0
 for (const scene of scenes) {

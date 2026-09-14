@@ -24,7 +24,7 @@
 // after five successive errors in `claims-proto-curb-is-parallel`. Picking candidates by
 // line-distance lets a distant parallel edge match by coincidence.
 import fs from 'fs'
-import { feed, buildProto, ribbonsPath } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, ribbonsPath, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const sub = (a, b) => [a[0] - b[0], a[1] - b[1]]
 const len = (v) => Math.hypot(v[0], v[1])
@@ -47,8 +47,8 @@ const PARALLEL = 0.995    // |cos| — an offset segment is parallel to its sour
 const REACH = 30          // m: no authored half-width + ped envelope on these towns approaches this
 
 let bad = 0
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-for (const scene of (scenes.length ? scenes : ['lafayette-square', 'hipointe-demun'])) {
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) { bad++; continue }
   // ⛔ NO FALLBACK: the frozen ① is the subject. A scene poured before ① landed has none, and
   // re-minting one here would measure a DIFFERENT OBJECT than the one ② was struck from —

@@ -6,9 +6,9 @@
 // ▶ node checks/claims-proto-blocks-are-faces.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 
-const ribbonsPath = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
-const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square']
+const scenes = ribbonScenes()
 
 const sa = g => { let a = 0; for (let i = 0, j = g.length - 1; i < g.length; j = i++) a += g[j][0] * g[i][1] - g[i][0] * g[j][1]; return a / 2 }
 const inR = (p, g) => { let o = false; for (let i = 0, j = g.length - 1; i < g.length; j = i++) { const a = g[i], b = g[j]; if ((a[1] > p[1]) !== (b[1] > p[1]) && p[0] < (b[0] - a[0]) * (p[1] - a[1]) / ((b[1] - a[1]) || 1e-12) + a[0]) o = !o } return o }

@@ -21,9 +21,9 @@
 //
 // ▶ node checks/claims-the-corner-record-reports-the-achieved-radius.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f) continue
   const warns = []
   const realWarn = console.warn

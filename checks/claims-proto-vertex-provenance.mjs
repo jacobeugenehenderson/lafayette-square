@@ -7,8 +7,9 @@
 // ▶ node checks/claims-proto-vertex-provenance.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
-const scenes = process.argv.slice(2); if (!scenes.length) scenes.push('lafayette-square','hipointe-demun')
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
+const scenes = ribbonScenes()
+const RIB = ribbonsPath
 for (const scene of scenes) {
   const p = RIB(scene); if (!fs.existsSync(p)) { console.log(`⛔ ${scene}: no ribbons — SKIPPED LOUDLY`); continue }
   const rb = JSON.parse(fs.readFileSync(p,'utf8'))

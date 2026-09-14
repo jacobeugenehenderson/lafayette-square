@@ -23,8 +23,13 @@
  *        (ksi-y-m-yn / centrum / altadena are CHILLERED — do not size on them.)
  */
 import { readFileSync } from 'fs'
+import { ribbonScenes } from './_scenes.mjs'
+import { ROOT as SCENES_ROOT } from './_scenes.mjs'
 
-const ROOT = '/Users/jacobhenderson/Desktop/lafayette-square.nosync'
+// ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
+//    in CI, not for a second developer. Same shape as the town-portability defect: it works only
+//    where somebody already is. `_scenes.mjs` resolves the repo root from its own location.
+const ROOT = SCENES_ROOT
 const rd = p => readFileSync(`${ROOT}/${p}`, 'utf8')
 
 // ── READ THE RULES OUT OF THE SOURCE ───────────────────────────────────────
@@ -92,7 +97,7 @@ if (!SOURCE || !SOURCES[SOURCE]) {
   There is deliberately NO DEFAULT: silently reading the stale one is the failure this guard exists to stop.`)
   process.exit(2)
 }
-const scenes = SCENES.length ? SCENES : ['lafayette-square', 'hipointe-demun']
+const scenes = ribbonScenes()
 
 console.log(`RULES READ FROM SOURCE (never restated):`)
 console.log(`  derive.js   Source 6 skip : if (${S6_GATE}) continue`)

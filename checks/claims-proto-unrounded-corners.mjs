@@ -1,13 +1,19 @@
 // ⛔ WHICH corners are still square, classified by CARRIED IDENTITY — so the remaining work is a
 // named set of classes, not "some corners look wrong".
 // ▶ node checks/claims-proto-unrounded-corners.mjs [scene ...]
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
-for (const scene of (process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square'])) {
+for (const scene of feedScenes()) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
   const tg = buildProto(f, { protoProducer: true })
   const O = tg.protoOwners || []
   const PP = f.ribbons.protopolygon
+  if (!PP) {
+    // ⛔ Only LS carries a frozen protopolygon today; every other town has not been poured since ①
+    //    landed. SKIPPED LOUDLY — this town was NOT checked, which is a state, never a pass.
+    console.log(`⛔ ${scene}: no frozen protopolygon in its ribbons — SKIPPED LOUDLY. Not poured since ① landed; NOT checked.`)
+    continue
+  }
   // a block ring is "single-street" when no non-grade-separated owner change occurs on it
   const cls = { sameOwner: 0, ownerChange: 0, boundary: 0, gradeSep: 0, noLabel: 0 }
   let sharp = 0

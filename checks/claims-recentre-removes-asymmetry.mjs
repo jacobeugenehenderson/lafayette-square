@@ -18,7 +18,8 @@
  *   node checks/claims-recentre-removes-asymmetry.mjs [scene ...]
  */
 import fs from 'fs'
-const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square', 'hipointe-demun']
+import { ribbonScenes } from './_scenes.mjs'
+const scenes = ribbonScenes()
 const spread = a => Math.max(...a) - Math.min(...a)
 for (const scene of scenes) {
   const shp = `public/baked/${scene}/shape.json`

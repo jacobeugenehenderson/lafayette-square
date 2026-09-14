@@ -31,10 +31,9 @@ process.exit((console.error('⛔ VOID probe — see the header. Refusing to prod
 // ⛔ Authored state only, through `_proto-feed` (Layer 0 q3).
 // ▶ node checks/claims-proto-paints-into-medians.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square')
+const scenes = feedScenes()
 
 // even-odd containment: a point is inside a compound path if it is inside an odd number of rings
 const inRing = (p, r) => {

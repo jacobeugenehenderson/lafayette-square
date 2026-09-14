@@ -17,8 +17,8 @@
  *   node checks/claims-side-chain-falsifiers.mjs [scene ...]
  */
 import fs from 'fs'
-const scenes = process.argv.slice(2).length ? process.argv.slice(2)
-  : ['lafayette-square', 'lafayette-square-staging', 'hipointe-demun', 'altadena']
+import { ribbonScenes } from './_scenes.mjs'
+const scenes = ribbonScenes()
 const o = console.log
 
 // mirror of tileGround.js `inboardSideOf` — the ONE geometric inboard oracle

@@ -19,7 +19,7 @@
 // ▶ node checks/claims-a-swap-never-happens-mid-street.mjs
 // This check answers only its own narrower question: which corners get NO corner construction.
 // ▶ node checks/claims-every-corner-is-configured.mjs [scene ...]
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const FILLET_TURN_TOL = 18 * Math.PI / 180
 const KP = (p) => `${p[0].toFixed(6)},${p[1].toFixed(6)}`
@@ -29,7 +29,7 @@ const turnAt = (g, q) => { const n = g.length, P = g[(q - 1 + n) % n], V = g[q],
   const t = Math.atan2(N[1] - V[1], N[0] - V[0]) - Math.atan2(V[1] - P[1], V[0] - P[0])
   return Math.abs(Math.atan2(Math.sin(t), Math.cos(t))) }
 
-const scenes = process.argv.slice(2).length ? process.argv.slice(2) : ['lafayette-square']
+const scenes = feedScenes()
 for (const scene of scenes) {
   const f = feed(scene); if (!f || f.curbWidth == null) continue
   const tg = buildProto(f, { protoArtifact: true })

@@ -18,6 +18,7 @@
 //
 // ▶ node checks/claims-named-way-becomes-street.mjs [scene ...]
 import fs from 'fs'
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 
 // Non-vehicular classes. ⛔ `service` is deliberately NOT here: a service road is vehicular
 // (driveways, alleys) and legitimately bounds a block. The canon's §2 list lumps it in because
@@ -27,9 +28,8 @@ const NONVEHICULAR = ['pedestrian', 'footway', 'path', 'cycleway', 'steps']
 // report CHILLERED, never a number — sizing a class on them is how noise becomes a skip list.
 const CHILLERED = ['ksi-y-m-yn', 'centrum']
 
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun', 'altadena')
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+const scenes = ribbonScenes()
+const RIB = ribbonsPath
 
 let anyBound = false
 for (const scene of scenes) {

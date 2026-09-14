@@ -22,7 +22,7 @@
 //
 // ▶ node checks/claims-proto-band-flood-mechanism.mjs [scene ...]
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 // ⛔⛔ THIS PROBE NAMES PRODUCER STAGES BY STRING and therefore rots the moment they are renamed.
 // It did: `PROTO_DUMP`'s stages moved from `hw / hw+cw / WB` (measured from ①) to
 // `curb / curb+cw / curb+WB` when ③'s subject became the eased curb, and this file threw
@@ -31,8 +31,7 @@ import { feed, buildProto } from '../scratch/_proto-feed.mjs'
 // is coupled to it without a compiler to say so; assert the stages exist before reading them.
 
 process.env.PROTO_DUMP = '1'
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes()
 const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
 
 let verdictAll = []

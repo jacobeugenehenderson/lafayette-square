@@ -17,10 +17,10 @@
 // ▶ node checks/claims-proto-frozen-matches-live.mjs [scene ...]
 import fs from 'fs'
 import { mintProtopolygon } from '../src/lib/tileGround.js'
+import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 
-const scenes = process.argv.slice(2)
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
-const RIB = (s) => s === 'lafayette-square' ? 'src/data/ribbons.json' : `cartograph/data/${s}/clean/ribbons.json`
+const scenes = ribbonScenes()
+const RIB = ribbonsPath
 
 let failed = false
 for (const scene of scenes) {

@@ -16,9 +16,10 @@
 import fs from 'fs'
 import { buildTileGround } from '../src/lib/tileGround.js'
 
-export const ribbonsPath = (scene) => scene === 'lafayette-square'
-  ? 'src/data/ribbons.json'
-  : `cartograph/data/${scene}/clean/ribbons.json`
+// ⛔ ONE OWNER — `checks/_scenes.mjs`. Re-exported here so the 27 forensics that import
+//    `ribbonsPath` from this feed keep working; the definition lives in exactly one file.
+export { ribbonsPath, CHILLERED, ribbonScenes as feedScenes } from '../checks/_scenes.mjs'
+import { ribbonsPath, CHILLERED } from '../checks/_scenes.mjs'
 
 export const lookFor = (scene) => {
   const idx = JSON.parse(fs.readFileSync('public/looks/index.json', 'utf8'))
@@ -36,7 +37,6 @@ export const lookFor = (scene) => {
 // ⛔ THIS IS NOT A SKIP LIST — the distinction is the whole point (`CLAUDE.md` Layer 0). A skip list
 // makes an unhandled case LOOK handled; this reports a NAMED STATUS, loudly, and the scene is still
 // reachable by asking for it by name (`{ chillered: true }`) exactly like `bare`. Nothing is hidden.
-export const CHILLERED = new Set(['centrum', 'ksi-y-m-yn'])
 
 // Returns null and prints why — the caller must treat that as a FAILURE, not an empty result.
 export function feed(scene, { chillered = false } = {}) {

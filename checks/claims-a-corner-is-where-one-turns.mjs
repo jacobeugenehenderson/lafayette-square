@@ -15,15 +15,14 @@
 // ⛔ NO THRESHOLD IS INVENTED HERE: FILLET_TURN_TOL is read OUT OF THE SOURCE, so it cannot go
 // stale if the ruled constant ever moves.
 import fs from 'fs'
-import { feed, buildProto } from '../scratch/_proto-feed.mjs'
+import { feed, buildProto, feedScenes } from '../scratch/_proto-feed.mjs'
 
 const src = fs.readFileSync(new URL('../src/lib/tileGround.js', import.meta.url), 'utf8')
 const m = src.match(/const FILLET_TURN_TOL\s*=\s*([0-9.]+)\s*\*\s*Math\.PI\s*\/\s*180/)
 if (!m) { console.log('⛔ cannot read FILLET_TURN_TOL out of tileGround.js — this check will not guess one'); process.exit(1) }
 const TOL_DEG = Number(m[1]), TOL = TOL_DEG * Math.PI / 180
 
-const scenes = process.argv.slice(2).filter(a => !a.startsWith('--'))
-if (!scenes.length) scenes.push('lafayette-square', 'hipointe-demun')
+const scenes = feedScenes().filter(a => !a.startsWith('--'))
 const road = (id) => String(id ?? '').replace(/-\d+$/, '')
 const SA = (rg) => { let a = 0; for (let i = 0; i < rg.length; i++) { const j = (i + 1) % rg.length; a += rg[i][0] * rg[j][1] - rg[j][0] * rg[i][1] } return a / 2 }
 
