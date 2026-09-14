@@ -198,8 +198,11 @@ is the one unforgivable error). Active docs carry **LIVE doctrine + open state o
 - ⛔ **No net-new document** without retiring one, or without Jacob asking for it. If your instinct is to
   capture today in a new file, that instinct is the disease — put it in the commit message, or in a check.
 
-*(Coordinator depth: `docs/agents/BOZ.md §4`. ⚠️ `docs/agents/BOZ.md` was cut 275→115 lines on the same day; the matrix and the "fulsome doc update"
-that generated this are retired to `cartograph/_archive/BOZ-full-2026-08-06.md`.)*
+*(Coordinator depth: `docs/agents/BOZ.md §4`. ⚠️ That file has now been cut twice — 275→115 on 2026-08-06, then
+re-founded 2026-09-13 as a charter. The dated receipts are in `cartograph/_archive/BOZ-full-2026-09-13.md`;
+the older sweep is `BOZ-full-2026-08-06.md`. ⛔ **Don't write its line count here again** — this sentence
+claimed "115" while the file was 203, which is the expired-receipt failure this document warns about two
+sections up. `wc -l docs/agents/BOZ.md` is the answer.)*
 
 ## ⛔⛔ MEASURE BEFORE WRITING · ASK BEFORE BUILDING · STOP NARRATING *(Jacob, 2026-08-11)*
 > **"WRITING WRONG SHIT DOWN IS WHY YOU ARE FAILING."** ⛔ **Never write the EXPLANATION of a number — only the number.** One day's measurements were sound and **the prose laid on top of them was every single error**: five claims went onto the board as fact and were measured FALSE within the hour. **If the mechanism has not been measured, write "cause not established" and stop.**

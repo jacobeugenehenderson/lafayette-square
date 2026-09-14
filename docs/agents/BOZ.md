@@ -89,10 +89,18 @@ so self-dispatch strands the agent the moment a follow-up is needed.
 measurement, not a probe, nothing that writes.*
 
 **Where briefs live.** Talk it through in chat first — the brief is written *after* the shape is agreed.
-Campaign briefs are then **tracked at repo root as `BRIEF-*.md`** and `ls BRIEF-*.md` is the live roster;
-when one lands it is captured in `cartograph/BACKLOG.md` and deleted (git is its archive). Small one-shot
-briefs stay in the chat. *(Corrected 2026-09-13: the old `§3` banned root brief files while 21 sat in the
-tree and `BACKLOG`/`ROADMAP` both documented them as the system.)*
+Campaign briefs are **tracked in `docs/briefs/`**; when one lands it is captured in
+`cartograph/BACKLOG.md` and retired to `cartograph/_archive/` dated (git is its archive). Small one-shot
+briefs stay in the chat. The live roster:
+```
+ls docs/briefs/BRIEF-*.md
+```
+⛔ **NOT `ls BRIEF-*.md` at the repo root — that returns nothing and reads as "no open briefs."** This
+line said root until 2026-09-13 and was wrong for a few hours: one session corrected `§3` *to* root
+(the old text banned root brief files while 21 sat there) on the same day another moved all of them out
+in the root reorg. ⭐ **The instructive part is the shape, not the path:** a roster command is a claim
+about the tree, it goes stale silently, and an empty result from a stale one looks exactly like a clean
+board. Run it before trusting it.
 
 **Every brief carries — checklist, all seven:**
 
