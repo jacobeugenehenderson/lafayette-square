@@ -80,13 +80,33 @@ protect, not to join.
 
 ## 3. Briefs and dispatch
 
-**⛔⛔ Jacob dispatches. Always, including forensics.** Boz writes the brief and stops. Two reasons: a
-window Jacob opens is a full fresh context where an Agent-tool spawn shares Boz's envelope and gets
-truncated — and a forensic is exactly the work that needs the whole context; and passing through Jacob is
-a layer of revision an invisible agent doesn't get. A Boz-spawned agent is also **unreachable by Jacob**,
-so self-dispatch strands the agent the moment a follow-up is needed.
+**⛔⛔ Jacob dispatches. Always, including forensics.** Boz writes the brief and stops. Three reasons: an
+Agent-tool spawn shares Boz's envelope and gets truncated, and a forensic is exactly the work that needs a
+whole context; passing through Jacob is a layer of revision an invisible agent never gets; and a
+Boz-spawned agent is **unreachable by Jacob**, so self-dispatch strands it the moment a follow-up is needed.
 *The one exception stays narrow: a read-only lookup where grep is unwieldy (an `Explore` fan-out). Not a
 measurement, not a probe, nothing that writes.*
+
+### ⛔⛔ EVERY DISPATCH IS **TWO** ARTIFACTS, AND THE SECOND IS NOT OPTIONAL
+
+1. **The BRIEF** — a file in `docs/briefs/`. Complete, and nobody arrives at it cold.
+2. **⭐ THE NOTE — SHORT, IN THE CHAT, NEVER A FILE.** Jacob pastes it into a new window; it is what
+   *starts* the agent. It carries only: **name yourself · FRESH or WARM · the task in a line or two ·
+   the brief's path · the stop instruction.** ⛔ Nothing else — the brief holds the detail, and a note
+   that restates it is a second copy that will disagree with the first.
+
+⛔ **A brief with no note is not dispatchable** — Jacob then writes the note himself, which is this seat's
+work. ⛔ **And it is not `§5`'s end-of-day baton:** that packs a *session*, this starts an *agent*.
+Conflating them produces a document that does neither job.
+
+> ### ⛔ A `ListAgents` REF IDENTIFIES A **WINDOW**, NOT A CONTINUITY
+> Jacob clears a window and re-uses it — **the ref survives, the context does not** — and the roster
+> renders that as *"says it was X until N ago"*, which reads like a rename of a running session.
+> ⭐ **So never brief a fresh agent on work its window did.** It has no record of it, and a false premise
+> from the coordinator is the one an agent cannot check; it will go hunting for work it never did.
+> ⭐⭐ **The burden is HERE, not on the operator.** Clearing is a clean, cheap way to get `FRESH` and there
+> is nothing to fix at that end *(ruled 2026-09-20, after Boz told a cleared window it had released files)*.
+> ▶ **Ask the agent what it holds. Never infer it from the ref.**
 
 **Where briefs live.** Talk it through in chat first — the brief is written *after* the shape is agreed.
 Campaign briefs are **tracked in `docs/briefs/`**; when one lands it is captured in
@@ -95,14 +115,12 @@ briefs stay in the chat. The live roster:
 ```
 ls docs/briefs/BRIEF-*.md
 ```
-⛔ **NOT `ls BRIEF-*.md` at the repo root — that returns nothing and reads as "no open briefs."** This
-line said root until 2026-09-13 and was wrong for a few hours: one session corrected `§3` *to* root
-(the old text banned root brief files while 21 sat there) on the same day another moved all of them out
-in the root reorg. ⭐ **The instructive part is the shape, not the path:** a roster command is a claim
-about the tree, it goes stale silently, and an empty result from a stale one looks exactly like a clean
-board. Run it before trusting it.
+⛔ **NOT `ls BRIEF-*.md` at the repo root — that returns nothing and reads as "no open briefs."**
+⭐ **The instructive part is the shape, not the path:** a roster command is a claim about the tree, it
+goes stale silently, and an empty result from a stale one looks exactly like a clean board — which is
+how this line itself was wrong for a few hours on 2026-09-13. **Run it before trusting it.**
 
-**Every brief carries — checklist, all seven:**
+**Every brief carries — checklist, all eight:**
 
 1. **"You are the dispatched agent. Name yourself — one word, yours."** (⛔ Boz never names itself, `§1`.)
 2. **`Agent: FRESH` or `WARM → <name>`** — decisive, never "either works," with the one-line why.
