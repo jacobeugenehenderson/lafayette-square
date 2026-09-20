@@ -161,10 +161,33 @@ and the fade now derives from `radius + center + fadeBand`; **rebase before you 
 **Downstream by name:** `bake-trees --placements` → `public/baked/<scene>/trees.json` + `trees/` →
 `InstancedTrees` / `HeroImpostorTrees` / `OverheadTrees` / `DesignerTrees`.
 
-⚠️ **AND A LIVE UNANSWERED QUESTION FROM TODAY'S FADE WORK, HANDED TO YOU BECAUSE IT IS NOW YOURS:**
-**trees and lamps take no fade but are governed ENTIRELY by the stencil, which grew ~40 m in
-`77aa5aa9`.** ⛔ Nobody has looked at what that does to them. **You are the first person who will have
-trees on screen after that change. Look, and report — even if the answer is "nothing changed."**
+### ⚠️⚠️ A LIVE UNANSWERED QUESTION FROM TODAY'S FADE WORK — IT IS NOW YOURS
+
+**Trees and lamps take NO fade** — `DesignerTrees.jsx` and `DesignerLamps.jsx` reference no fade, no
+`pointInBoundary`, no boundary at all (measured by Quill 2026-09-20). ⇒ **They are governed ENTIRELY
+by the bake-time stencil.**
+
+⛔⛔ **AND THE STENCIL SHRANK TODAY.** `targetR` was `streetFade.outer + 50`; `streetFade` is deleted
+and the fade reverted inward, so `fade.outer === radius` and `targetR = radius + 50`:
+```
+                 stencil BEFORE → NOW        lost ring
+lafayette-square   1050  →   942             −108 m
+huron              3749  →  3589             −160 m
+hipointe-demun     1461  →  1301             −160 m
+altadena           4371  →  4211             −160 m
+```
+> ⚠️ **AN EARLIER VERSION OF THIS BRIEF SAID THE STENCIL GREW ~40 m. THAT WAS WRONG** — it described
+> the additive model, which was ruled out the same day. **It shrank.** ⛔ If you saw the +40 figure
+> anywhere, it is dead.
+
+✅ **Measured: the lost ring holds ZERO LAMPS** — LS's furthest lamp is at 888 against R=892, HPDM's at
+1220 against R=1251, and neither town has a lamp beyond `radius`, let alone beyond `radius + 50`.
+⛔ **TREES ARE NOT MEASURED.** A first pass returned 0 for both towns, which means the extractor did
+not parse the baked tree schema — **not** that there are no trees. ⭐ **You own the tree schema; go and
+get the real number before you assume this is harmless.** *(Absence is a claim too.)*
+
+▶ **You are the first person who will have trees on screen since the stencil moved. Look, and report —
+even if the answer is "nothing changed."**
 
 ⭐ **Convert the constraint to a check** (`BOZ §3.5`):
 > **No scene bakes trees using another scene's species map.** One assertion, kills the bleed class.
