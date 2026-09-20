@@ -69,7 +69,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 128. This is `npm test`.
+## safe — 130. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -123,6 +123,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-inboard-side-convention.mjs` | READ-ONLY. Two questions left by claims-side-chain-falsifiers.mjs: |
 | `checks/claims-inner-edge-deletion-gates.mjs` | the regression gates for deleting |
 | `checks/claims-inner-edge-side-selector.mjs` | WHAT actually selects the ped-zeroed side on |
+| `checks/claims-intake-is-consumed.mjs` | consumed.mjs — WHAT DID THIS TOWN FETCH THAT NOTHING USES? |
 | `checks/claims-intersections-are-over-described.mjs` | ⭐⭐⭐ HOW OVER-DESCRIBED IS AN INTERSECTION? *(Jacob, 2026-09-08: "We need to simplify the corners |
 | `checks/claims-leaf-pack-cells-agree.mjs` | A leaf pack's CELLS MUST BE INTERCHANGEABLE — the system assumes it and nothing checked. |
 | `checks/claims-look-default-has-no-town.mjs` | "IS THE KIT'S 0-STATE A KIT, OR IS IT A TOWN?" — A11 / A00, the root gate. |
@@ -188,6 +189,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-corner-extent-is-carried.mjs` | ⭐⭐⭐ THE CORNER'S EXTENT IS CARRIED, NOT RECOVERED — and this reads the artifact, never a rule. |
 | `checks/claims-the-corner-record-reports-the-achieved-radius.mjs` | CLAIM: the corner record the operator's handle rides reports the radius the arc |
 | `checks/claims-the-ease-is-the-corner.mjs` | ⭐⭐⭐ THE EASE IS THE CORNER TEST. `iaCorner` used to be "① TURNS *and* the owner changes" — a |
+| `checks/claims-the-fade-tracks-the-active-disc.mjs` | disc.mjs — WHOSE CIRCLE IS THE MAP FADING OVER? |
 | `checks/claims-the-pad-is-the-size-of-the-corner.mjs` | ⭐⭐⭐ THE ADA PAD IS THE SIZE OF THE CORNER — the gate on the canary Jacob marked 2026-09-07. |
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-ramp-has-room.mjs` | ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT. |

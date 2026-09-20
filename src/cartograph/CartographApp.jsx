@@ -901,7 +901,15 @@ function genericSceneConfig(sceneBoundary) {
   return {
     ribbons: null,                                  // → store.sceneRibbons at render
     stencil: sceneBoundary ? stencilFromBoundary(sceneBoundary) : null,
-    useBoundary: false,
+    // ⭐ EVERY POURED INSTALLATION DRAWS THE SOFT CIRCLE. This was false while
+    // boundary.js was LS-module-hardcoded (64cb6387, 2026-07-02: "the soft-circle
+    // fade … remain LS-only; a bake + boundary.js scene-param are the next
+    // pieces"). That next piece landed the same day — 47e2ca81's makeBoundary(nb)
+    // kit factory — and this consumer was never rewired, so a poured town got the
+    // stencil's CUT and never the FADE. ⛔ This is ONE kit default for towns
+    // #2…#100, not a per-town flag; BlockGeometryV2Debug resolves the bands from
+    // the active installation's own boundary.
+    useBoundary: true,
     hasAerial: true,                                // AerialTiles reads the active installation's geography
     hasHero: false,
     // Generic poured-installation 3D — ONLY slab-driven consumers, read BY

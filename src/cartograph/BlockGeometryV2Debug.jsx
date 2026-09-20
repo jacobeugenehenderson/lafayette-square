@@ -39,6 +39,7 @@ import {
   BOUNDARY_CENTER_XZ,
   FADE_INNER, FADE_OUTER,
   STREET_FADE_INNER, STREET_FADE_OUTER,
+  makeBoundary,
 } from './boundary.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
@@ -249,10 +250,34 @@ export default function BlockGeometryV2Debug({
   scene = null,
   useRingBandEmitter = true,  // C5: keeper for all scenes (LS cutover); legacy else-branch removed in commit 3
 }) {
-  // Gate fade on the per-scene flag. LS turns on the soft-circle
-  // silhouette; toy stays rectangular (its stencil is a 360×360 box).
-  const faceFade = useBoundary ? FACE_FADE : null
-  const bandFade = useBoundary ? BAND_FADE : null
+  // ⭐⭐ THE FEATHER MUST TRACK THE ACTIVE INSTALLATION'S DISC — the same hazard
+  // `MapLayers`' injectRadialFade names, and this consumer did not learn it.
+  // `FACE_FADE`/`BAND_FADE` above are the DEFAULT installation's bands, built from
+  // boundary.js's static LS import. Feeding them to a poured town feathers it on
+  // someone else's radius, and past the band the shader drives alpha to 0 — so it
+  // is not a misplaced edge, it is most of the map going missing.
+  // ⛔ So resolve the bands from the ACTIVE installation's own
+  // neighborhood_boundary.json, BY ID out of the store, via the kit factory
+  // `makeBoundary(nb)`. ⛔ Never a static per-installation map: 47e2ca81 removed
+  // one precisely to kill cross-installation refs.
+  // `useBoundary` stays the switch for WHETHER this installation draws a soft
+  // circle at all — toy is the deliberate false (its stencil is a 360×360 box, so
+  // it stays rectangular). Every real poured town gets true from the generic
+  // branch: one kit default, not a per-town flag.
+  // ▶ node checks/claims-the-fade-tracks-the-active-disc.mjs
+  const sceneBoundaryRaw = useCartographStore(s => s.sceneBoundary)
+  const isLS = !scene || scene === 'lafayette-square'
+  const { faceFade, bandFade } = useMemo(() => {
+    if (!useBoundary) return { faceFade: null, bandFade: null }
+    // LS keeps the module constants verbatim — byte-identical to before.
+    if (isLS || !sceneBoundaryRaw) return { faceFade: FACE_FADE, bandFade: BAND_FADE }
+    const B = makeBoundary(sceneBoundaryRaw)
+    const center = { x: B.center[0], z: B.center[1] }
+    return {
+      faceFade: { center, inner: B.fadeInner,       outer: B.fadeOuter },
+      bandFade: { center, inner: B.streetFadeInner, outer: B.streetFadeOuter },
+    }
+  }, [useBoundary, isLS, sceneBoundaryRaw])
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps
   // the V2 mount simple (just `ribbons` + `stencil` as props) and lets the

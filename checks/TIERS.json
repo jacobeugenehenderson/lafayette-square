@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 160,
+  "total": 164,
   "counts": {
-    "safe": 127,
+    "safe": 130,
     "local-effect": 5,
-    "live": 28
+    "live": 29
   },
   "checks": [
     {
@@ -337,6 +337,14 @@
       ]
     },
     {
+      "file": "checks/claims-hero-subject-resolves-in-its-own-slab.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-inboard-side-convention.mjs",
       "tier": "safe",
       "why": [
@@ -358,14 +366,14 @@
       ]
     },
     {
-      "file": "checks/claims-intersections-are-over-described.mjs",
+      "file": "checks/claims-intake-is-consumed.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
       ]
     },
     {
-      "file": "checks/claims-hero-subject-resolves-in-its-own-slab.mjs",
+      "file": "checks/claims-intersections-are-over-described.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -814,6 +822,13 @@
     },
     {
       "file": "checks/claims-the-ease-is-the-corner.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-fade-tracks-the-active-disc.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
