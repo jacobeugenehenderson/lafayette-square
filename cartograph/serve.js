@@ -759,12 +759,25 @@ function buildingFootprintsFor(scene) {
 // the per-Look bake bundle (ground.json + bin + lightmap + buildings + lamps
 // + scene snapshot) under public/baked/<id>/. design.json (authoring state)
 // lives under public/looks/<id>/. index.json tracks names + order; the
-// default Look 'lafayette-square' is the project's 0-state and can't be
-// deleted.
+// default Look is the project's 0-state and can't be deleted.
+//
+// ⛔⛔ THE 0-STATE IS THE KIT, NOT A TOWN. It was 'lafayette-square' — so every
+// new Look seeded from LS, and `index.default` doubled as "the town we fall back
+// to". A00: "falling back to a generic is fine; falling back to Lafayette Square
+// is the thing that must never happen." The default is now 'kit-default', whose
+// design.json is `{}` and whose entry carries NO `scene` — it is not a town and
+// cannot be baked (the bake refuses a Look with no scene, below).
+// ⭐ `{}` is deliberate: every channel then resolves from the store's own
+// DESIGN_FIELDS descriptors, so the 0-state cannot drift from the kit defaults.
+// Writing the defaults into the file would restate the source and go stale.
 const PUBLIC_DIR = join(import.meta.dirname, '..', 'public')
 const LOOKS_DIR = join(PUBLIC_DIR, 'looks')
 const LOOKS_INDEX = join(LOOKS_DIR, 'index.json')
-const DEFAULT_LOOK_ID = 'lafayette-square'
+// The kit's 0-state Look id. ⛔ Not a town — see the block above.
+const DEFAULT_LOOK_ID = 'kit-default'
+// The historical 0-state, kept ONLY so migrateLooksOnBoot can still name the
+// Look it creates out of a pre-Looks overlay.design. ⛔ Never a fallback target.
+const LEGACY_LS_LOOK_ID = 'lafayette-square'
 const PORT = Number(process.env.CARTO_PORT) || 3333
 
 // ── Looks helpers ──────────────────────────────────────────────────────────
@@ -779,6 +792,36 @@ function writeJson(path, obj) {
 }
 function lookDir(id) { return join(LOOKS_DIR, id) }
 function lookDesignPath(id) { return join(lookDir(id), 'design.json') }
+// ⛔⛔ ABSENT AND CORRUPT ARE NOT THE SAME ANSWER, AND `readJsonOrNull(p) || {}`
+// gave them the same one. Both produced `{}`, which used to be merely vague —
+// but the kit 0-state's design.json IS `{}` now, so an unreadable file renders
+// as THE PRISTINE KIT DEFAULT: a plausible-looking success, which for a kit is
+// the worst outcome available (CLAUDE.md Layer 0 q2). Worse, the client then
+// autosaves that empty state back over the operator's real authoring, and the
+// `trees` merge below silently drops Arborist's roster on the same path.
+// ⭐ Absent ⇒ `{}` and that is honest — a Look genuinely has no design until its
+// first autosave. Present-but-unparseable ⇒ THROW, loudly, naming the file.
+function readLookDesign(id) {
+  const p = lookDesignPath(id)
+  if (!existsSync(p)) return {}
+  try { return JSON.parse(readFileSync(p, 'utf-8')) }
+  catch (err) {
+    const e = new Error(`design.json for look "${id}" exists but could not be parsed (${err.message}). ` +
+      `⛔ Refusing to report it as an empty design: that is indistinguishable from the kit default ` +
+      `and the next autosave would overwrite whatever is really in the file. Fix or move ${p}.`)
+    e.statusCode = 500
+    throw e
+  }
+}
+// Wrap a handler so a readLookDesign throw becomes a loud HTTP error, never {}.
+function orFail(res, fn) {
+  try { return fn() } catch (err) {
+    console.error(`[looks] ${err.message}`)
+    res.writeHead(err.statusCode || 500, { 'Content-Type': 'application/json' })
+    res.end(JSON.stringify({ error: err.message }))
+    return undefined
+  }
+}
 function readLooksIndex() {
   return readJsonOrNull(LOOKS_INDEX) || { default: DEFAULT_LOOK_ID, looks: [] }
 }
@@ -891,21 +934,26 @@ function seedDesignForScene(seedDesign, seedScene, newScene) {
 // the design block from overlay.json so it stops drifting from the Look.
 function migrateLooksOnBoot() {
   if (existsSync(LOOKS_INDEX)) return
+  // This migration lifts LS's own overlay.design into LS's own Look — so it
+  // names LS explicitly. The INDEX DEFAULT is the kit 0-state, not that Look.
+  mkdirSync(lookDir(LEGACY_LS_LOOK_ID), { recursive: true })
   mkdirSync(lookDir(DEFAULT_LOOK_ID), { recursive: true })
   const overlay = readJsonOrNull(OVERLAY) || {}
   const design = overlay.design || {}
-  writeJson(lookDesignPath(DEFAULT_LOOK_ID), design)
+  writeJson(lookDesignPath(LEGACY_LS_LOOK_ID), design)
+  writeJson(lookDesignPath(DEFAULT_LOOK_ID), {})
   saveLooksIndex({
     default: DEFAULT_LOOK_ID,
     looks: [
-      { id: DEFAULT_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_SCENE, createdAt: Date.now() },
+      { id: DEFAULT_LOOK_ID, name: 'Kit Default', createdAt: Date.now() },
+      { id: LEGACY_LS_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_SCENE, createdAt: Date.now() },
     ],
   })
   if (overlay.design) {
     delete overlay.design
     writeJson(OVERLAY, overlay)
   }
-  console.log(`[looks] migrated overlay.design → ${DEFAULT_LOOK_ID}`)
+  console.log(`[looks] migrated overlay.design → ${LEGACY_LS_LOOK_ID}; 0-state = ${DEFAULT_LOOK_ID}`)
 }
 migrateLooksOnBoot()
 
@@ -921,7 +969,12 @@ function backfillLookScenesOnBoot() {
     // ASSIGNED Lafayette Square, and the wrong value then PERSISTED, so the bleed
     // outlived the request (BRIEF-ls-bleed-excision site 13). Leave it unset and
     // let the consumer refuse; a Look whose town we don't know is not an LS Look.
-    if (!entry.scene) console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_SCENE}')`)
+    // ⛔ The kit 0-state has no scene BY DESIGN — it is not a town. Warning on it
+    // every boot would train the operator to ignore this line, which is the one
+    // line that matters when a REAL Look has lost its scene.
+    if (!entry.scene && entry.id !== idx.default) {
+      console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_SCENE}')`)
+    }
   }
   if (changed) {
     saveLooksIndex(idx)
@@ -1883,7 +1936,8 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'unknown look' }))
       return
     }
-    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    const design = orFail(res, () => readLookDesign(id))
+    if (design === undefined) return
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(design))
     return
@@ -1906,7 +1960,9 @@ createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const parsed = JSON.parse(body)
-        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        // ⛔ Throws rather than merging into `{}` — an unreadable file here would
+        // silently drop Arborist's `trees` and then persist the loss.
+        const existing = readLookDesign(id)
         // Preserve Arborist-owned keys if the incoming payload omits them.
         const merged = { ...parsed }
         for (const k of ['trees']) {
@@ -1921,7 +1977,11 @@ createServer(async (req, res) => {
         res.writeHead(200, { 'Content-Type': 'application/json' })
         res.end('{"ok":true}')
       } catch (err) {
-        res.writeHead(400, { 'Content-Type': 'application/json' })
+        // 500 for an unreadable existing design (readLookDesign), 400 for a bad
+        // payload — the caller must be able to tell "your body was wrong" from
+        // "the file on disk is damaged; do not retry, you will overwrite it".
+        if (err.statusCode) console.error(`[looks] ${err.message}`)
+        res.writeHead(err.statusCode || 400, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: err.message }))
       }
     })
@@ -1938,7 +1998,8 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({ error: 'unknown look' }))
       return
     }
-    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    const design = orFail(res, () => readLookDesign(id))
+    if (design === undefined) return
     const trees = Array.isArray(design.trees) ? design.trees : []
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify({ trees }))
@@ -1966,7 +2027,10 @@ createServer(async (req, res) => {
         const clean = trees
           .filter(t => t && t.species && (t.variantId != null))
           .map(t => ({ species: String(t.species), variantId: Number(t.variantId) }))
-        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        // ⛔ Throws rather than `{}` — this is a read-merge-write, so an unreadable
+        // file would spread into an EMPTY object and write the whole design.json
+        // down to just `trees`, destroying every other channel silently.
+        const existing = readLookDesign(id)
         const merged = { ...existing, trees: clean }
         mkdirSync(lookDir(id), { recursive: true })
         writeJson(lookDesignPath(id), merged)
@@ -1990,7 +2054,8 @@ createServer(async (req, res) => {
   // (null = no cut, every species eligible — today's behaviour).
   if (req.method === 'GET' && (m = path.match(/^\/looks\/([^/]+)\/grove-threshold$/))) {
     const id = m[1]
-    const design = readJsonOrNull(lookDesignPath(id)) || {}
+    const design = orFail(res, () => readLookDesign(id))
+    if (design === undefined) return
     const gt = design.groveThreshold || { topN: null, meshTopN: null, pinned: [], withheld: [] }
     res.writeHead(200, { 'Content-Type': 'application/json' })
     res.end(JSON.stringify(gt))
@@ -2020,7 +2085,8 @@ createServer(async (req, res) => {
         // server enforces that rather than trusting the client to keep them disjoint.
         const withheld = list(parsed.withheld)
         const pinnedClean = pinned.filter(s => !withheld.includes(s))
-        const existing = readJsonOrNull(lookDesignPath(id)) || {}
+        // ⛔ Same read-merge-write hazard as the trees writer above.
+        const existing = readLookDesign(id)
         // ⛔ THE MESH BAR IS NESTED INSIDE THE IMPOSTOR BAR and the server enforces it.
         // A mesh species still needs an impostor — only its TALLEST placements keep
         // geometry, the rest of that same species render as impostors — so meshTopN above
@@ -2709,13 +2775,25 @@ createServer(async (req, res) => {
         const seedEntry = (fromLookId && idx.looks.find(l => l.id === fromLookId))
           || idx.looks.find(l => l.id === idx.default)
         const seedId = seedEntry ? seedEntry.id : idx.default
-        const newScene = (scene && String(scene).trim()) || (seedEntry && seedEntry.scene) || DEFAULT_SCENE
+        // ⛔⛔ Was: `|| DEFAULT_SCENE`. A Look created with no scene — and seeded
+        // from a seed that has none either (the kit 0-state has none by design) —
+        // was silently BOUND TO LAFAYETTE SQUARE, and the binding then persisted.
+        // That is A00's exact defect: an unanswerable question answered with the
+        // mould. A Look whose town we cannot name is unbuildable, not an LS Look.
+        const newScene = (scene && String(scene).trim()) || (seedEntry && seedEntry.scene) || null
+        if (!newScene) {
+          res.writeHead(400, { 'Content-Type': 'application/json' })
+          res.end(JSON.stringify({ error:
+            `refusing to create look "${name}": no scene given and seed ` +
+            `"${seedEntry?.id ?? idx.default}" has none to inherit. Pass { scene }.` }))
+          return
+        }
         const id = uniqueLookId(slugify(name), idx.looks.map(l => l.id))
         const seedScene = seedEntry?.scene || null
         // ⛔ A11 — the seed's STYLE travels, its scene-keyed AUTHORING does not.
         // Throws 409 if an undeclared scene-keyed field survives the strip.
         const { design: seedDesign, stripped } =
-          seedDesignForScene(readJsonOrNull(lookDesignPath(seedId)) || {}, seedScene, newScene)
+          seedDesignForScene(readLookDesign(seedId), seedScene, newScene)
         if (stripped.length) {
           console.log(`[looks] "${id}" (scene ${newScene}) seeded from "${seedId}" (scene ${seedScene}) — ` +
                       `dropped ${seedScene}'s scene-keyed authoring: ${stripped.join(', ')}. Starts at defaults.`)

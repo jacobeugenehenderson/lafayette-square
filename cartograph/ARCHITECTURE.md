@@ -96,7 +96,37 @@ A **Look** is a styling snapshot. Each Look is `{ design.json, public/baked/<id>
 Three layers, in order:
 
 1. **Working draft (autosave, always on).** Every panel tweak hits the active Look's `design.json` within ~300ms. Survives reloads. No prompts.
-2. **Looks (named saved configurations).** First-class names: `lafayette-square` (the project's 0-state, can't be deleted), `valentines`, `cardinals-win`, `winter`. User explicitly forks via "＋ Save as new Look…". Each carries its own autosaved working state.
+2. **Looks (named saved configurations).** First-class names: `kit-default` (the project's 0-state, can't be deleted), `lafayette-square`, `valentines`, `winter`. User explicitly forks via "＋ Save as new Look…". Each carries its own autosaved working state.
+
+> ### ⭐⭐ THE 0-STATE IS THE KIT, NOT A TOWN *(ruled 2026-09-19)*
+> `index.json`'s **`default`** is two things at once: the Look every new pour **seeds from**, and the id
+> a client falls back to when it cannot resolve one. It was **`lafayette-square`** — so the kit's zero
+> state was a real, heavily-authored neighborhood, and every town poured since inherited its sky, its
+> labels and its camera. Huron, the freshest pour, arrived **46 of 46 channels byte-identical to LS**.
+> ⛔ `A00`: *"falling back to a generic is fine; falling back to Lafayette Square is the thing that must
+> never happen."*
+>
+> The default is now **`kit-default`**: its `design.json` is **`{}`** and its index entry carries **no
+> `scene`** — it is not a town and cannot be baked (the bake refuses a Look with no scene).
+> - ⭐ **`{}` is the point, not laziness.** Every channel then resolves from the store's own
+>   `DESIGN_FIELDS` descriptors — the one source of truth — so the 0-state **cannot drift** from the kit
+>   defaults. Writing the defaults into the file would restate the source and go stale on the next move.
+> - ⛔ **THE KIT STORES NO CAMERA.** `heroKeyframes` / `shots` are coordinates in a scene's **local**
+>   frame, so they mean nothing in town #2 — and the store's own former default was *another* LS-tuned
+>   pair, i.e. "use the store default" would have laundered LS rather than removed it. Absent a
+>   designated hero object the opening view is **derived from the scene's own extent**
+>   (`Scene.jsx`'s `derivedHeroPose`). Jacob: *"the camera motion is not something that carries
+>   realistically from hood to hood."*
+> - ⭐ **The CAMERA may frame the building mass; the DISC may not be centred on it.** Different objects:
+>   the disc is the ground plane and must not move when membership changes (`6a9b5f85`), while framing
+>   the mass is exactly the camera's job. Do not "tidy" these two into one rule.
+>
+> ⛔⛔ **ABSENCE MUST MEAN THE KIT DEFAULT, NEVER "INHERIT".** Four hydrators read `d.X || get().X` —
+> *"if this Look's file omits the channel, keep whatever the previously-opened Look left in the store"*.
+> That is not a default, it is a **carry**: open LS, open a fresh pour, and the fresh pour **displays**
+> LS's values; the next autosave writes them to its `design.json`. It reopened the seed bleed through the
+> front door. `hydrateDesign()` no longer forwards `get` at all, so a hydrator **cannot** reach live
+> state. ▶ `node checks/claims-look-default-has-no-town.mjs`
 3. **Stage channels.** Every Stage channel (materials, color, visibility, sky, post-FX, neon, camera) folds **field-by-field into the Look's `scene.json`** at bake. The once-planned separate `stage-config.json` shader layer never materialized (`DOC-CODE-COHERENCE.md` B1).
 
 **The implicit bake.** Designer's "Stage →" navigates immediately and bakes async in the background, so the Stage view's slab refreshes via `bakeLastMs` cache-bust when the bake finishes. Stage's "↻" re-bakes in place. The user never explicitly "saves the bake" — that language is misleading. The deliberate save action is *forking* into a new named Look.

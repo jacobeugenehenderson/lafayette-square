@@ -372,6 +372,13 @@
       ]
     },
     {
+      "file": "checks/claims-look-default-has-no-town.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-look-seed-scene-clean.mjs",
       "tier": "safe",
       "why": [

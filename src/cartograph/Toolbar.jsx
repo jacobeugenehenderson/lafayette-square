@@ -20,7 +20,6 @@ function shotEnabled(currentShot, candidateShot) {
   const adj = SHOT_ADJACENCY[currentShot]
   return !adj || adj.has(candidateShot)
 }
-const DEFAULT_LOOK_ID = 'lafayette-square'
 
 function cap(s) { return s[0].toUpperCase() + s.slice(1) }
 
@@ -34,6 +33,7 @@ export default function Toolbar() {
   const runBake = useCartographStore(s => s.runBake)
   const lastStageShot = useCartographStore(s => s.lastStageShot)
   const activeLookId = useCartographStore(s => s.activeLookId)
+  const defaultLookId = useCartographStore(s => s.defaultLookId)
   const scene = useCartographStore(s => s.scene)
   // "What goes into a town" — the outward face of the intake catalogue.
   // Lives in Stage beside Preview: both answer "what does this install
@@ -47,7 +47,15 @@ export default function Toolbar() {
   // A cache-bust token (the bake's bakeLastMs) forces a reload to the just-baked
   // slab even if the URL is otherwise unchanged. (HANDOFF-authoring-session-hardening §3.)
   const openPreview = (token) => {
-    const id = encodeURIComponent(activeLookId || DEFAULT_LOOK_ID)
+    // ⛔ Was `activeLookId || DEFAULT_LOOK_ID` — with no active Look this opened
+    // Preview on Lafayette Square, i.e. the operator asked to preview THEIR map
+    // and got the mould. There is no honest substitute for "which Look?"; if it
+    // is unresolved the Looks index has not loaded yet, so say so and do nothing.
+    if (!activeLookId) {
+      console.warn('[preview] no active Look resolved yet — not opening Preview')
+      return
+    }
+    const id = encodeURIComponent(activeLookId)
     const q = token ? `?look=${id}&t=${token}` : `?look=${id}`
     window.open(`/preview${q}`, 'cartograph-preview')
   }
@@ -281,7 +289,7 @@ function LooksMenu() {
           <button type="button" className="carto-looks-option" onClick={onNew}>
             ＋ Save as new Look…
           </button>
-          {activeLookId && activeLookId !== DEFAULT_LOOK_ID && (
+          {activeLookId && defaultLookId && activeLookId !== defaultLookId && (
             <button type="button" className="carto-looks-option carto-looks-danger" onClick={onDelete}>
               🗑 Delete this Look
             </button>

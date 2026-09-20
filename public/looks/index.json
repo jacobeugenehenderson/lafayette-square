@@ -1,6 +1,11 @@
 {
-  "default": "lafayette-square",
+  "default": "kit-default",
   "looks": [
+    {
+      "id": "kit-default",
+      "name": "Kit Default",
+      "createdAt": 1789900000000
+    },
     {
       "id": "lafayette-square",
       "name": "Lafayette Square",
@@ -40,6 +45,13 @@
       "createdAt": 1784789317317,
       "bakedAt": 1784842912485,
       "updatedAt": 1785517518609
+    },
+    {
+      "id": "huron",
+      "name": "huron",
+      "scene": "huron",
+      "createdAt": 1789875167347,
+      "bakedAt": 1789875204444
     }
   ]
 }

@@ -126,12 +126,30 @@ absence.** What is live is **scene-blind, module-scope static imports of LS's ri
 app** — `CartographApp.jsx:53`, `MapLayers.jsx:14`, `useCartographStore.js:9` (`measureModel.js:25`
 records a fixed instance of the same class, `08d61ce1`). Retire the imports → the bleed class closes at
 the root instead of site-by-site.
-⚠️ **UNMEASURED — establish before sizing step 4 on it:** whether those three imports are *live* with a
-non-LS scene open, or superseded at runtime. **Cause not established.**
+✅ **MEASURED 2026-09-19 — THEY ARE NOT LIVE. All three are scene-gated, and a non-LS scene gets EMPTY,
+never LS.** Read the gates, don't take this sentence's word for it:
+`useCartographStore.js` — `scene === 'toy' ? toyRibbonsData : BUNDLED_SCENES.has(scene) ? ribbonsData :
+(fetchedRibbons || { streets: [] })`, where `BUNDLED_SCENES = {DEFAULT_INSTALLATION, 'toy'}` ·
+`MapLayers.jsx` — `isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)` ·
+`CartographApp.jsx` — the import sits **inside `SCENE_REGISTRY['lafayette-square']`**, keyed to LS by
+construction. *(The one that WAS live — `measureModel.js`, every scene seeding its widths from LS by
+street name — was excised at `08d61ce1`; `useCartographStore.js`'s own comment records it as site 9.)*
+
+⭐⭐ **THIS RESIZES STEP 4, AND DOWNWARD.** Retiring these imports is **coupling and bundle weight**
+— LS's `ribbons.json` compiles into the cartograph chunk for every town — **not an open bleed**. ⛔ Do
+not size or justify the sweep as "closing the bleed class"; that half is already closed, and a ticket
+that claims otherwise will be measured false the way this paragraph was.
 
 > ⭐ **COUNT THE SITES, DON'T QUOTE THEM** *(2026-08-08 — this paragraph said "19 sites" and the
 > figure does not reproduce; nobody can say how it was counted, and it is the number the work is
-> sized on).* Run it:
+> sized on. ⚠️ "18 sites" has since been quoted too, from served-parity's output; it does not
+> reproduce either.* ⭐⭐ **THE FIGURE WAS NEVER THE PROBLEM — THE MISSING COUNTING RULE WAS. State
+> one before you count, or the next agent quotes your number and cannot rebuild it.** The rule used
+> 2026-09-19: **a SITE = one line in a `.js`/`.jsx`/`.mjs` file under `src/` or `cartograph/`,
+> excluding `_archive/`, that resolves one of the five filenames** — as an ES import, a dynamic
+> `import()`, or a filesystem path reaching `src/data/<name>.json`. `.md` mentions excluded.
+> ⛔ **And SPLIT the total: the static ES imports are the ticket; the path reads in the bake scripts
+> mostly already take a scene argument.**) Run it:
 > ```
 > grep -rn "data/\(ribbons\|buildings\|street_lamps\|landmarks\|park-feature-elev\)\.json" src cartograph
 > ```
@@ -403,8 +421,12 @@ never the night before a demo).
    enters/leaves and why) + the **scene-parity layer-count check** (raw OSM feature count vs `map.json`
    per layer — the detector that would've caught the park drop 63→0). Plus the served-parity guard
    (§2, already built). These make conforming *provable*, not hopeful.
-4. **Retire the `src/data/*` name-imports** → per-scene served path (§2.1 — ⛔ count them, don't quote a
-   figure). Closes the bleed class at the root. Each import is independent — land smallest first.
+4. **Retire the `src/data/*` name-imports** → per-scene served path (§2.1 — ⛔ count them under a
+   STATED RULE, don't quote a figure). Each import is independent — land smallest first.
+   ⛔ **Was: *"closes the bleed class at the root."* MEASURED FALSE 2026-09-19** — the three
+   authoring-app ribbons imports are scene-gated and a non-LS scene gets EMPTY (§2.1 has the gates).
+   The live bleed was `measureModel.js`, excised at `08d61ce1`. ⇒ **this step buys decoupling and
+   bundle weight, not bleed closure**, and it is the poorer for being sold as the latter.
 5. **Conform LS, last** — pour LS through the one path → `clean/lafayette-square/{skeleton,ribbons,map}.json`,
    served like HPDM; **geometry-match `bldg-NNNN` → the locked scheme once** (anchored on lon/lat
    centroid so it survives a frame-origin shift); excise the exemptions (`scene !== 'lafayette-square'`

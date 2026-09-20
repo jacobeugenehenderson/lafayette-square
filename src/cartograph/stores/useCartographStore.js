@@ -68,7 +68,13 @@ import {
 import { migrateSkyChannel, SKY_BANDS, SKY_HOURS } from '../skyGrid.js'
 
 const ACTIVE_LOOK_KEY = 'cartograph-active-look'
-const DEFAULT_LOOK_ID = 'lafayette-square'
+// ⛔⛔ There is deliberately NO `DEFAULT_LOOK_ID = 'lafayette-square'` here any
+// more. It was the client's own copy of "when in doubt, Lafayette Square" — the
+// A00 class — and it outlived the server-side fixes because it is a literal in
+// the browser bundle. The 0-state Look id is SERVED (`index.json`'s `default`,
+// now the town-less `kit-default`) and lands in `defaultLookId` below.
+// ⭐ useArboristStore / useMeteorologistStore have always done it this way;
+// this store was the outlier.
 
 function readActiveLookFromStorage() {
   // ?look=<id> wins (deep-link any installation's baked Look directly, symmetric
@@ -81,7 +87,10 @@ function readActiveLookFromStorage() {
     const v = localStorage.getItem(ACTIVE_LOOK_KEY)
     if (v && typeof v === 'string') return v
   } catch { /* ignore */ }
-  return DEFAULT_LOOK_ID
+  // ⛔ null, not a town. Nothing is stored and nothing is deep-linked, so the
+  // honest answer is "not resolved yet" — `_loadLooks` fills it from the served
+  // index default. Returning a Look id here guessed, and it guessed LS.
+  return null
 }
 
 // ── Channel-variant cascade (HANDOFF-channel-variant-cascade.md, Phase 2) ──
@@ -288,6 +297,47 @@ function migrateLabels(labels) {
 // so the set can never diverge again. Order = on-disk JSON key order (matches
 // the prior save writer → keeps design.json diffs clean). Add a future channel
 // in ONE place here.
+// ── Kit defaults for the inherit-shaped channels ────────────────────────────
+// ⛔ These four hydrated as `d.X || get().X` — "absent ⇒ keep whatever the
+// PREVIOUSLY-OPENED Look left in the store". That is not a default, it is a
+// carry: open Lafayette Square, open a fresh pour, and the fresh pour DISPLAYS
+// LS's values; the next save writes them to its design.json. A11's Look-seed
+// strip closed the seeding path and this reopened it through the front door
+// (A11:230, feedback_absence_means_inherit_in_authored_blocks).
+// ⭐ Absent now means THE KIT DEFAULT — a fixed constant, never another town's
+// live state. Referenced by both the hydrator and the initial state so the two
+// cannot drift (the same one-descriptor rule the block below was written for).
+const LABELS_DEFAULT = {
+  // sizeK absent → Auto (size ∝ real width). Set to a number to override scale.
+  weight:        600,          // 300 | 400 | 500 | 600 | 700
+  fill:          '#e8e8f0',
+  halo:          '#14141c',
+  haloWidth:     0.07,         // fontSize units (Troika outlineWidth) — % of glyph height
+  letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
+  opacity:       1,
+  case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
+  fontFamily:    '',           // fontsource id (e.g. 'inter'); empty = Troika default (Roboto)
+}
+// 12 generic tints. Genuinely a KIT default — no town's authoring in it; the
+// bake carries the same list as DEFAULT_PALETTE (bake-buildings.js:702).
+const BUILDING_PALETTE_DEFAULT = [
+  '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
+  '#d2b48c', '#778899', '#8b4513', '#a52a2a',
+  '#f5deb3', '#696969', '#b22222', '#808080',
+]
+// Period + easing are a CADENCE, not a place — portable between towns.
+const HERO_MOTION_DEFAULT = { period: 720, easing: 'sine' }
+// ⛔⛔ THE KIT STORES NO CAMERA. There is deliberately no default hero path.
+// The pair that stood here — [-540,55,362] / [-260,55,98] — is Lafayette
+// Square's, and it was handed to every Look whose design.json omitted the
+// channel. Jacob, 2026-09-19: "the camera motion is not something that carries
+// realistically from hood to hood"; absent a designated hero object the opening
+// view is DERIVED from the scene's own extent (Scene.jsx's derivedHeroPose
+// already does this — bounds-framed, never LS's coordinate).
+// ⭐ Same rule `browseFrame` below already states: a kit default here would be
+// LS's coordinates handed to every town. Empty ⇒ the consumer derives or shouts.
+const HERO_KEYFRAMES_DEFAULT = []
+
 const _isObj = (v) => v && typeof v === 'object'
 const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => migrateGroupChannel(d[key], KEYS, DEFAULTS) })
 
@@ -307,7 +357,7 @@ const DESIGN_FIELDS = [
   // move survives and ships.
   { key: 'parkTitlePos', hydrate: (d) => Array.isArray(d.parkTitlePos) && d.parkTitlePos.length === 2 ? d.parkTitlePos : null },
   { key: 'alleyCap',     hydrate: (d) => ['square', 'rounded', 'round'].includes(d.alleyCap) ? d.alleyCap : 'square' },
-  { key: 'labels',       hydrate: (d, get) => migrateLabels({ ...get().labels, ...(_isObj(d.labels) ? d.labels : {}) }) },
+  { key: 'labels',       hydrate: (d) => migrateLabels({ ...LABELS_DEFAULT, ...(_isObj(d.labels) ? d.labels : {}) }) },
   { key: 'blockCustoms', hydrate: (d) => _isObj(d.blockCustoms) ? d.blockCustoms : {} },
   // The blessed Survey "Default" (Set Default snapshots the curated state here;
   // Revert to Default restores it). null until the operator blesses one.
@@ -315,7 +365,7 @@ const DESIGN_FIELDS = [
   { key: 'blockLandUse', hydrate: (d) => _isObj(d.blockLandUse) ? d.blockLandUse : {} },
   { key: 'materialColors',  hydrate: (d) => d.materialColors || {} },
   { key: 'materialPhysics', hydrate: (d) => d.materialPhysics || {} },
-  { key: 'buildingPalette', hydrate: (d, get) => d.buildingPalette || get().buildingPalette },
+  { key: 'buildingPalette', hydrate: (d) => d.buildingPalette || [...BUILDING_PALETTE_DEFAULT] },
   { key: 'lampGlow',     hydrate: (d) => migrateLampGlow(d.lampGlow) },
   _grp('bloom',          BLOOM_FIELD_KEYS,          BLOOM_FLAT_DEFAULTS),
   _grp('warmth',         WARMTH_FIELD_KEYS,         WARMTH_FLAT_DEFAULTS),
@@ -340,9 +390,9 @@ const DESIGN_FIELDS = [
   _grp('dirSun',         DIRSUN_FIELD_KEYS,         DIRSUN_FLAT_DEFAULTS),
   _grp('dirMoon',        DIRMOON_FIELD_KEYS,        DIRMOON_FLAT_DEFAULTS),
   { key: 'heroSubject',   hydrate: (d) => d.heroSubject || null },
-  { key: 'heroKeyframes', hydrate: (d, get) => d.heroKeyframes || get().heroKeyframes },
-  { key: 'heroMotion',    hydrate: (d, get) => {
-    const m = { ...get().heroMotion, ...(d.heroMotion || {}) }
+  { key: 'heroKeyframes', hydrate: (d) => Array.isArray(d.heroKeyframes) ? d.heroKeyframes : [...HERO_KEYFRAMES_DEFAULT] },
+  { key: 'heroMotion',    hydrate: (d) => {
+    const m = { ...HERO_MOTION_DEFAULT, ...(d.heroMotion || {}) }
     // 'sawtooth' was a one-way snap masquerading as a loop; retired now the Hero
     // motion is explicitly a bounce. Migrate legacy Looks to 'sine'.
     if (m.easing === 'sawtooth') m.easing = 'sine'
@@ -408,9 +458,15 @@ const DESIGN_FIELDS = [
 ]
 
 // Build the design-state patch from a fetched design.json (both hydrate paths).
-function hydrateDesign(design, get) {
+// ⛔ `get` is deliberately NOT forwarded to the hydrators. A hydrate that can
+// reach live store state can write "whatever the last Look left here" into the
+// Look being opened — that is exactly how the LS carry survived A11's seed
+// strip. A hydrator sees the fetched design.json and module-scope kit defaults,
+// nothing else. Adding a `get` back re-arms the bleed; checks/claims-look-default-
+// has-no-town.mjs asserts no DESIGN_FIELDS hydrator declares a second parameter.
+function hydrateDesign(design) {
   const out = {}
-  for (const f of DESIGN_FIELDS) out[f.key] = f.hydrate(design, get)
+  for (const f of DESIGN_FIELDS) out[f.key] = f.hydrate(design)
   return out
 }
 // Build the design.json payload from live state (the save writer).
@@ -486,17 +542,7 @@ const useCartographStore = create((set, get) => ({
   // UPPER/lower at render. `fontFamily` is a fontsource id (empty =
   // Troika default, Roboto). Landmark labels (park title, etc.) are authored
   // directly in their components — singular, not part of this kit.
-  labels: {
-    // sizeK absent → Auto (size ∝ real width). Set to a number to override scale.
-    weight:        600,          // 300 | 400 | 500 | 600 | 700
-    fill:          '#e8e8f0',
-    halo:          '#14141c',
-    haloWidth:     0.07,         // fontSize units (Troika outlineWidth) — % of glyph height
-    letterSpacing: 0.05,         // fontSize units (TroikaText letterSpacing)
-    opacity:       1,
-    case:          'mixed',      // 'mixed' | 'upper' | 'lower' — applied at render time
-    fontFamily:    '',           // fontsource id (e.g. 'inter'); empty = Troika default (Roboto)
-  },
+  labels: { ...LABELS_DEFAULT },
   // Look-level global curb width (meters). V2 emits the curb as a single
   // unified stroke around the rounded asphalt boundary, so width is
   // global (not per-side, not per-chain). Default 6 inches = 0.1524 m;
@@ -629,11 +675,7 @@ const useCartographStore = create((set, get) => ({
   // palette[hash(building.id) % 12]. Operator authors per-Look; per-building
   // overrides (in buildingOverrides.json) can still trump the palette so
   // landmarks/known-real colors lock to specific values.
-  buildingPalette: [
-    '#dcdcdc', '#a0522d', '#cd853f', '#8b2500',
-    '#d2b48c', '#778899', '#8b4513', '#a52a2a',
-    '#f5deb3', '#696969', '#b22222', '#808080',
-  ],
+  buildingPalette: [...BUILDING_PALETTE_DEFAULT],
   // ── Time-of-day slots ───────────────────────────────────────
   // The TOD vocabulary is the same 7 SunCalc waypoints the DawnTimeline
   // card renders (Dawn / Sunrise / Noon / Golden / Sunset / Dusk / Night),
@@ -734,12 +776,10 @@ const useCartographStore = create((set, get) => ({
   // Authored Hero camera path. Each keyframe = { position: [x,y,z], fov }.
   // Two sensible defaults at the swing extremes; operator captures more via
   // the timeline. Hydrated from per-Look design.json on switch.
-  heroKeyframes: [
-    { position: [-540, 55, 362], fov: 22 },
-    { position: [-260, 55, 98],  fov: 22 },
-  ],
+  // ⛔ Empty, not a pair. See HERO_KEYFRAMES_DEFAULT — the kit stores no camera.
+  heroKeyframes: [...HERO_KEYFRAMES_DEFAULT],
   // Authored motion params (preview/speed are transient runtime UI, not here)
-  heroMotion: { period: 720, easing: 'sine' },
+  heroMotion: { ...HERO_MOTION_DEFAULT },
   openSections: {},
   bgColor: '#1a1a18',
   _designHydrated: false,
@@ -1687,16 +1727,26 @@ const useCartographStore = create((set, get) => ({
   // and is shared across every Look — Looks vary styling, not shape.
   looks: [],
   activeLookId: readActiveLookFromStorage(),
+  // The served 0-state Look id (index.json `default`). null until _loadLooks.
+  defaultLookId: null,
   _looksHydrated: false,
 
   _loadLooks: async () => {
     try {
       const idx = await fetchLooks()
       const looks = Array.isArray(idx.looks) ? idx.looks : []
+      const defaultLookId = idx.default || null
       let activeLookId = get().activeLookId
       if (!looks.some(l => l.id === activeLookId)) {
-        activeLookId = idx.default || DEFAULT_LOOK_ID
-        try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ }
+        // ⛔ Was `idx.default || DEFAULT_LOOK_ID` — the served index failing to
+        // name a default resolved to Lafayette Square. If the index cannot say
+        // what the 0-state is, that is a broken install; say so and leave the
+        // Look unresolved rather than opening someone else's town.
+        if (!defaultLookId) console.error('[looks] index.json names no `default` — no 0-state Look to fall back to')
+        activeLookId = defaultLookId
+        if (activeLookId) {
+          try { localStorage.setItem(ACTIVE_LOOK_KEY, activeLookId) } catch { /* ignore */ }
+        }
       }
       // The store inits with bakeStale=true (no prior session knowledge).
       // If the looks index reports a non-null bakedAt for the active Look,
@@ -1727,7 +1777,7 @@ const useCartographStore = create((set, get) => ({
       if (sceneUpdate.scene) {
         try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
       }
-      set({ looks, activeLookId, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
+      set({ looks, activeLookId, defaultLookId, _looksHydrated: true, bakeStale: !wasBaked, ...sceneUpdate })
     } catch (err) {
       console.warn('[looks] load failed:', err)
       set({ _looksHydrated: true })
@@ -1759,7 +1809,7 @@ const useCartographStore = create((set, get) => ({
     // baked Look should still surface the Stage button as stale.
     try {
       const design = await fetchLookDesign(id)
-      set({ ...hydrateDesign(design, get), bakeStale: !entry?.bakedAt })
+      set({ ...hydrateDesign(design), bakeStale: !entry?.bakedAt })
     } catch (err) {
       console.warn('[looks] hydrate failed for', id, err)
     }
@@ -1786,10 +1836,14 @@ const useCartographStore = create((set, get) => ({
 
   deleteActiveLook: async () => {
     const id = get().activeLookId
-    if (!id || id === DEFAULT_LOOK_ID) return
+    // The 0-state Look is undeletable — but WHICH id that is comes from the
+    // served index, not a literal. (The server enforces this too; this only
+    // keeps the button honest.)
+    const defaultId = get().defaultLookId
+    if (!id || !defaultId || id === defaultId) return
     try {
       await apiDeleteLook(id)
-      await get().setActiveLook(DEFAULT_LOOK_ID)
+      await get().setActiveLook(defaultId)
       await get()._loadLooks()
     } catch (err) {
       console.warn('[looks] delete failed:', err)
@@ -2402,7 +2456,7 @@ const useCartographStore = create((set, get) => ({
       if (stale()) return
       // Re-hydrated from disk → _saveOverlay's guard will pass again; clear
       // the loud save-blocked flag.
-      set({ ...hydrateDesign(design, get), _designHydrated: true, overlaySaveBlocked: false })
+      set({ ...hydrateDesign(design), _designHydrated: true, overlaySaveBlocked: false })
     } catch (e) { console.warn('[skeleton] load failed:', e) }
   },
 

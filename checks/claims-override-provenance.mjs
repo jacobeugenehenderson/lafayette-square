@@ -106,6 +106,9 @@ for (const b of bakes.values()) for (const s of (b.streets || [])) allStreets.ad
 // detector that assumed it would mis-attribute every hand-named Look.
 const idx = JSON.parse(readFileSync(join(LOOKS, 'index.json'), 'utf8'))
 const registered = new Map(idx.looks.map(l => [l.id, l]))
+// The kit 0-state's id, read from the index — never a literal. See the
+// isKitDefault note below for why it is exempt from the scene-binding rule.
+const defaultLookId = idx.default || null
 const lookDirs = readdirSync(LOOKS).filter(d => statSync(join(LOOKS, d)).isDirectory())
 
 const looks = []
@@ -144,12 +147,26 @@ const classifySlot = (skelId, side, segOrd, own) => {
 const results = []
 for (const l of looks) {
   const r = { ...l, notChecked: null, slots: [], families: [] }
-  if (l.designErr)          r.notChecked = `design.json unreadable — ${l.designErr}`
+  // ⭐ The kit 0-state (index.json's `default`) binds NO scene BY DESIGN — it is
+  // not a town, it is the empty Look every new pour seeds from. It therefore has
+  // no bake to classify against, and saying "NOT CHECKED" about it reports a
+  // designed state as a defect — the same crying-wolf this detector exists to
+  // avoid. It carries no slots, so there is nothing to classify either way.
+  // ⛔ This exempts the DEFAULT only: any OTHER Look with no scene is still the
+  // real finding it always was.
+  const isKitDefault = l.id === defaultLookId && !l.scene
+  if (isKitDefault)         r.kitDefault = true
+  else if (l.designErr)     r.notChecked = `design.json unreadable — ${l.designErr}`
   else if (!l.design)       r.notChecked = 'no design.json'
   else if (!l.entry)        r.notChecked = 'look directory is not registered in index.json — scene unknown'
   else if (!l.scene)        r.notChecked = 'index.json entry carries no scene binding'
   else if (!bakes.has(l.scene)) r.notChecked = `scene "${l.scene}" has no public/baked/<scene>/shape.json`
   else if (bakes.get(l.scene).broken) r.notChecked = `own bake unreadable — ${bakes.get(l.scene).broken}`
+  if (r.kitDefault) {
+    const n = Object.keys(l.design || {}).length
+    if (n) { r.notChecked = `the kit 0-state must carry NO channels; it declares ${n}` }
+    results.push(r); continue
+  }
   if (r.notChecked) { results.push(r); continue }
 
   const own = bakes.get(l.scene)
