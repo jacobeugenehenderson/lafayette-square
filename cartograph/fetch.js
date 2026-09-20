@@ -8,6 +8,11 @@
  *   - buildings
  *   - amenity=parking
  *   - barriers (fences, walls)
+ *   - MULTIPOLYGON RELATIONS, with their inner rings carried as holes — a lake,
+ *     a river surface or a wood is a relation, and its member ways are untagged,
+ *     so a ways-only fetch cannot see it at any tag set. Members are scoped to
+ *     the envelope; a ring that closes outside it is marked `clipped` and said
+ *     aloud, never closed here (the stencil is stamped last).
  *
  * Outputs:  data/raw/osm.json
  *
@@ -163,10 +168,33 @@ function main() {
   const ways = pass === 'heavy' ? HEAVY_WAYS : pass === 'light' ? LIGHT_WAYS : [...LIGHT_WAYS, ...HEAVY_WAYS]
   const nodeTags = pass === 'heavy' ? HEAVY_NODES : pass === 'light' ? LIGHT_NODES : [...LIGHT_NODES, ...HEAVY_NODES]
 
+  // ⭐⭐⭐ RELATIONS ARE FETCHED, NOT JUST WAYS — and on a coastal town this is the whole
+  // ballgame. Measured on Huron 2026-09-19: `way["natural"=water](bbox)` returns 54 ways
+  // (golf hazards, ponds, Parker Lake) and `way["natural"=coastline]` returns 0 — the
+  // Great Lakes are not coastline. **Lake Erie is relation 4039900**, a multipolygon, and
+  // its member ways carry NO tags at all (`source: PGS`). ⛔ So no tag query of any kind
+  // reaches them: this was never a missing entry in a tag set, it is that we never asked
+  // for relations. The lake bounding the town was absent from `raw/osm.json` entirely,
+  // and 35.5% of Huron's disc — 13.96 of 39.35 km² — is that lake.
+  //
+  // ⛔⛔ MEMBERS ARE SCOPED TO THE ENVELOPE (`way(r.rels)(bbox)`), AND THAT IS NOT AN
+  // OPTIMISATION — IT IS WHAT MAKES THIS FETCHABLE AT ALL. Erie's relation has 1,223
+  // members spanning the entire 400 km lake; the bare recursion `relation["natural"](bbox);>;`
+  // pulls 94,124 nodes for one town, and a town on an ocean pulls a continent's coastline.
+  // Scoped: 33 ways / 2,349 nodes / 342 KB. ⭐ The cost is that a big ring CANNOT CLOSE
+  // inside our envelope — which is correct and is disclosed per relation below, never
+  // papered over. Closing it is the STENCIL's job and the stencil is stamped LAST
+  // (`RIBBONS §1`, "THE CIRCLE IS STAMPED LAST, ON FINISHED GEOMETRY"); intake acquires.
   const groundQuery = `(
 ${ways.map(t => `  way["${t}"](${bbox});`).join('\n')}
 ${nodeTags.map(t => `  node["${t}"](${bbox});`).join('\n')}
 );
+out body;>;out skel qt;
+(
+${ways.map(t => `  relation["${t}"](${bbox});`).join('\n')}
+)->.rels;
+.rels out body;
+way(r.rels)(${bbox});
 out body;>;out skel qt;`
 
   console.log('\n[1/2] Ground features...')
@@ -194,13 +222,23 @@ out body;>;out skel qt;`
   const nodes = {}
   const groundWays = []
   const buildingWays = []
+  const relations = []
+  // ⛔ MEMBER WAYS ARE KEPT WHETHER OR NOT THEY CARRY TAGS, and that is the entire point.
+  // A multipolygon puts its tags on the RELATION; Erie's 1,223 members are bare geometry
+  // (`source: PGS` and nothing else). The `el.tags` test below is right for a standalone
+  // way — an untagged way with no relation is noise — and it is exactly wrong for a member.
+  // So members are indexed by id here and resolved against the relation's tags later.
+  const waysById = new Map()
 
   function ingestElements(elements, target) {
     for (const el of elements) {
       if (el.type === 'node') {
         nodes[el.id] = [el.lon, el.lat]
-      } else if (el.type === 'way' && el.tags) {
-        target.push(el)
+      } else if (el.type === 'way') {
+        waysById.set(el.id, el)
+        if (el.tags) target.push(el)
+      } else if (el.type === 'relation') {
+        relations.push(el)
       }
     }
   }
@@ -211,6 +249,7 @@ out body;>;out skel qt;`
   console.log(`\n  ${Object.keys(nodes).length} nodes`)
   console.log(`  ${groundWays.length} ground ways`)
   console.log(`  ${buildingWays.length} building ways`)
+  console.log(`  ${relations.length} relations`)
 
   // Convert to features with local coords
   function wayToFeature(way) {
@@ -244,23 +283,161 @@ out body;>;out skel qt;`
 
   // Categorize ground features (which BUCKET a way lands in — this is NOT a tag
   // filter; every tag above is preserved regardless of category).
+  // ⭐ `railway` was acquired by `7fae362f` and had NO entry here, so every railway way
+  // fell through to `other` — 43 features on Huron, the NS Chicago Line among them.
+  // `EXCAVATION-DIARY §0.7` item 4 called this two fixes; the fetch was one and this is
+  // the other. ⛔ It is a BUCKET, not a filter: the tag was always carried either way,
+  // but a consumer reading `ground.railway` got nothing and had no way to know why.
   const tagPriority = [
     'highway', 'landuse', 'leisure', 'natural',
-    'amenity', 'barrier', 'waterway', 'surface',
+    'amenity', 'barrier', 'waterway', 'railway', 'surface',
   ]
 
   const ground = {}
-  for (const way of groundWays) {
-    const feat = wayToFeature(way)
-    if (!feat) continue
-
+  const bucket = (feat) => {
     let category = 'other'
     for (const tag of tagPriority) {
       if (feat.tags[tag]) { category = tag; break }
     }
-
     if (!ground[category]) ground[category] = []
     ground[category].push(feat)
+  }
+
+  for (const way of groundWays) {
+    const feat = wayToFeature(way)
+    if (!feat) continue
+    bucket(feat)
+  }
+
+  // ⭐⭐⭐ MULTIPOLYGON RELATIONS → FEATURES. A relation's members are bare geometry and
+  // often SPLIT — one ring arrives as several ways in arbitrary order and direction — so
+  // they are stitched endpoint-to-endpoint, per role, before anything can use them.
+  //
+  // ⛔⛔ AN OPEN RING IS REPORTED AS OPEN. A ring whose members we scoped away at the
+  // envelope cannot close, and stamping `isClosed: true` on it would be Layer 0's second
+  // question committed at intake: a plausible-looking success the operator never learns
+  // is wrong. It carries `isClosed: false` + `clipped: true` and the console says so per
+  // relation. ⛔ It is NOT closed here against the bbox — the stencil is stamped LAST.
+  //
+  // ⛔ INNER RINGS ARE HOLES, NOT LAND, and they are carried on the feature rather than
+  // emitted beside it. Erie has 3 inner members inside Huron's envelope (islands); emitted
+  // as peers they would read as more water, and dropped they would read as lake. Either
+  // way the map is wrong and silent about it.
+  function stitch(memberWays) {
+    // Each entry: array of node ids. Join on shared endpoints until nothing more joins.
+    const open = memberWays.map(w => [...(w.nodes || [])]).filter(a => a.length >= 2)
+    const rings = []
+    while (open.length) {
+      let cur = open.pop()
+      let joined = true
+      while (joined) {
+        joined = false
+        if (cur[0] === cur[cur.length - 1]) break      // closed
+        for (let i = 0; i < open.length; i++) {
+          const o = open[i]
+          const head = cur[0], tail = cur[cur.length - 1]
+          if (o[0] === tail) { cur = cur.concat(o.slice(1)) }
+          else if (o[o.length - 1] === tail) { cur = cur.concat(o.slice(0, -1).reverse()) }
+          else if (o[o.length - 1] === head) { cur = o.slice(0, -1).concat(cur) }
+          else if (o[0] === head) { cur = o.slice(1).reverse().concat(cur) }
+          else continue
+          open.splice(i, 1); joined = true; break
+        }
+      }
+      rings.push(cur)
+    }
+    return rings
+  }
+  const ringToCoords = (nodeIds) => {
+    const coords = []
+    for (const nid of nodeIds) {
+      const pt = nodes[nid]
+      if (!pt) continue
+      const [x, z] = wgs84ToLocal(pt[0], pt[1])
+      coords.push({
+        lon: Math.round(pt[0] * 1e7) / 1e7,
+        lat: Math.round(pt[1] * 1e7) / 1e7,
+        x: Math.round(x * 100) / 100,
+        z: Math.round(z * 100) / 100,
+      })
+    }
+    return coords
+  }
+
+  let relFeatures = 0, relClipped = 0, relHoles = 0, relOpenHoles = 0
+  const relLog = []
+  for (const rel of relations) {
+    const members = (rel.members || []).filter(m => m.type === 'way' && waysById.has(m.ref))
+    if (!members.length) continue
+    const outerWays = members.filter(m => m.role !== 'inner').map(m => waysById.get(m.ref))
+    const innerWays = members.filter(m => m.role === 'inner').map(m => waysById.get(m.ref))
+    const ringClosed = (r) => r.length >= 4 &&
+      r[0].lon === r[r.length - 1].lon && r[0].lat === r[r.length - 1].lat
+    const outerRings = stitch(outerWays).map(ringToCoords).filter(c => c.length >= 2)
+    const innerRings = stitch(innerWays).map(ringToCoords).filter(c => c.length >= 3)
+    if (!outerRings.length) continue
+    // ⛔ AN OPEN HOLE IS AS MISLEADING AS AN OPEN OUTER and is counted separately. On
+    // Huron, Erie's 3 inner members stitch to 2 island rings, one of which runs out of
+    // the envelope. A half-island silently treated as whole is the same silent
+    // substitution as a half-lake treated as land.
+    const openHoles = innerRings.filter(r => !ringClosed(r)).length
+
+    const total = (rel.members || []).filter(m => m.type === 'way').length
+    for (const ring of outerRings) {
+      const closed = ringClosed(ring)
+      relFeatures++
+      if (!closed) relClipped++
+      bucket({
+        osmId: rel.id,
+        osmType: 'relation',
+        tags: rel.tags || {},
+        isClosed: closed,
+        // ⛔ The reason an open ring is open, on the feature itself — a consumer must be
+        // able to tell "this town has a ragged edge" from "we only fetched part of it".
+        ...(closed ? {} : { clipped: true, clipReason: `${members.length} of ${total} member ways lie inside the fetch envelope; the ring closes outside it` }),
+        coords: ring,
+        // ⭐ Holes travel WITH the outer ring. Empty array, not absent, so a consumer
+        // that reads `.holes` cannot mistake "no holes" for "this producer has none".
+        holes: innerRings,
+      })
+    }
+    relHoles += innerRings.length
+    relOpenHoles += openHoles
+    // ⭐ The kind label is read off `tagPriority`, the same order that buckets the feature,
+    // so the line the operator reads names the bucket the thing actually landed in.
+    const kind = tagPriority.map(t => rel.tags?.[t] && `${t}=${rel.tags[t]}`).find(Boolean) ||
+                 (rel.tags?.boundary ? `boundary=${rel.tags.boundary}` : '(untyped)')
+    relLog.push({ id: rel.id, name: rel.tags?.name || null, kind,
+                  rings: outerRings.length, open: outerRings.filter(r => !ringClosed(r)).length,
+                  holes: innerRings.length, openHoles, members: members.length, total })
+  }
+
+  if (relLog.length) {
+    console.log(`\n  Relations assembled — ${relFeatures} feature(s), ${relHoles} inner ring(s) carried as holes:`)
+    for (const r of relLog) {
+      const tail = r.members < r.total ? `  ⚠️ ${r.members}/${r.total} members in envelope` : ''
+      const holeTail = r.openHoles ? `, ${r.openHoles} OPEN` : ''
+      console.log(`    r${r.id} ${r.name || `(${r.kind})`} — ${r.rings} ring(s), ${r.open} OPEN, ${r.holes} hole(s)${holeTail}${tail}`)
+    }
+    // ⛔ LOUD, not a footnote. An open water ring is the state H-4 has to meet, and a
+    // pour that quietly treats it as land is the failure this whole acquisition exists
+    // to prevent (`ROADMAP H-2`/`H-4`).
+    if (relOpenHoles) console.log(`  ⛔ ${relOpenHoles} inner ring(s) also do not close inside this envelope.`)
+    // ⛔⛔ NAME THE CONSUMER GAP HERE, BECAUSE NOTHING DOWNSTREAM WILL. Holes are NEW to
+    // this artifact and no reader of `ground.*` knows about them: `classify.js` builds its
+    // overlay from `f.coords` alone (so an island inside a water or grass relation is typed
+    // as the surface around it) and `derive.js`'s `naturalOverlays`/`leisureOverlays` do the
+    // same. ⭐ Those consumers are NOT wrong — they were written against a vocabulary with no
+    // compound faces in it. The defect would be shipping a richer artifact into them quietly.
+    // ⇒ Until a compound-face gate lands in `classify.js` (`ROADMAP H-2`, the vocabulary
+    // half), a re-pour of a town with hole-carrying relations FILLS those holes.
+    const holed = relLog.filter(r => r.holes)
+    if (holed.length) {
+      console.log(`  ⚠️ ${holed.length} relation(s) carry inner rings and EVERY current consumer of ground.* ignores \`holes\`:`)
+      for (const r of holed) console.log(`       r${r.id} ${r.name || `(${r.kind})`} — ${r.holes} hole(s) will read as ${r.kind}`)
+      console.log(`     ⛔ This is a POUR-TIME wrong, not a fetch-time one. classify.js#createVocabularyGate is where it belongs.`)
+    }
+    if (relClipped) console.log(`  ⛔ ${relClipped} of ${relFeatures} relation ring(s) DO NOT CLOSE inside this envelope. They are marked \`clipped\`; closing them is the stencil's job, not intake's.`)
   }
 
   const buildings = buildingWays.map(wayToFeature).filter(Boolean)
