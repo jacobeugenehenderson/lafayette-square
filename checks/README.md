@@ -15,7 +15,7 @@ gated without anyone remembering to gate it, which is what makes this work on to
 
 A non-zero exit is a **finding for the board**, not a runner fault. The suite reports; it does not fix.
 
-## ⛔ live — 28. Never in a default run.
+## ⛔ live — 29. Never in a default run.
 
 Two reason classes, and they are not the same thing. **outbound** — a demonstrated call out.
 **unreadable** — runs code the parser cannot read, so it *may* contact nothing but cannot be shown
@@ -27,6 +27,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 
 | check | why | what it reaches |
 |---|---|---|
+| `checks/claims-hero-subject-resolves-in-its-own-slab.mjs` | unreadable | child_process with a non-literal command — cannot be read |
 | `scratch/claims-a-rename-cannot-repaint.mjs` | unreadable | imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
 | `scratch/claims-attribution-is-per-town.mjs` | unreadable | imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `scratch/claims-band-reaches-lu.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
@@ -68,7 +69,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 127. This is `npm test`.
+## safe — 128. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -124,6 +125,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-inner-edge-side-selector.mjs` | WHAT actually selects the ped-zeroed side on |
 | `checks/claims-intersections-are-over-described.mjs` | ⭐⭐⭐ HOW OVER-DESCRIBED IS AN INTERSECTION? *(Jacob, 2026-09-08: "We need to simplify the corners |
 | `checks/claims-leaf-pack-cells-agree.mjs` | A leaf pack's CELLS MUST BE INTERCHANGEABLE — the system assumes it and nothing checked. |
+| `checks/claims-look-default-has-no-town.mjs` | "IS THE KIT'S 0-STATE A KIT, OR IS IT A TOWN?" — A11 / A00, the root gate. |
 | `checks/claims-look-seed-scene-clean.mjs` | "DOES A NEW LOOK START CLEAN?" — A11 / D-C, the recurrence gate. |
 | `checks/claims-marked-corners.mjs` | `clean/marker_strokes.json`; this classifies what is inside each one by CARRIED IDENTITY, so a |
 | `checks/claims-matched-axes-have-matrices.mjs` | Without one, enumDistance returns farDistance (9) for ANY non-identical pair |
