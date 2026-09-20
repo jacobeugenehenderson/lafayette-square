@@ -822,8 +822,29 @@ function orFail(res, fn) {
     return undefined
   }
 }
+// ⛔⛔ THE SAME ABSENT-VS-CORRUPT TRAP AS readLookDesign, ONE LAYER UP, AND THIS
+// ONE DESTROYS THE REGISTRY. `readJsonOrNull(LOOKS_INDEX) || {...}` answered an
+// UNPARSEABLE index.json with "no Looks exist, and the default is the kit" —
+// whereupon the very next saveLooksIndex() (any create, delete, rename or bake)
+// WRITES THAT BACK, erasing every Look registration on disk. Silent, total, and
+// it looks exactly like a fresh install.
+// ⭐ Absent ⇒ the first-boot skeleton, which is honest: there genuinely are no
+// Looks yet, and migrateLooksOnBoot is about to create the 0-state. Present but
+// unparseable ⇒ refuse, and say which file, because the recovery is to fix that
+// file — never to let the server rebuild it from nothing.
 function readLooksIndex() {
-  return readJsonOrNull(LOOKS_INDEX) || { default: DEFAULT_LOOK_ID, looks: [] }
+  if (!existsSync(LOOKS_INDEX)) return { default: DEFAULT_LOOK_ID, looks: [] }
+  try {
+    const idx = JSON.parse(readFileSync(LOOKS_INDEX, 'utf-8'))
+    if (!idx || !Array.isArray(idx.looks)) throw new Error('no `looks` array')
+    return idx
+  } catch (err) {
+    const e = new Error(`${LOOKS_INDEX} exists but is not a usable Looks index (${err.message}). ` +
+      `⛔ Refusing to treat it as empty: the next write would overwrite it and every Look ` +
+      `registration would be lost. Fix or restore that file.`)
+    e.statusCode = 500
+    throw e
+  }
 }
 function saveLooksIndex(idx) { writeJson(LOOKS_INDEX, idx) }
 function slugify(name) {
@@ -1076,6 +1097,13 @@ function analyzeMarkers() {
 }
 
 createServer(async (req, res) => {
+ // ⛔ TOP-LEVEL CATCH. This handler is `async`, so anything that throws inside it
+ // became an unhandled rejection and the request simply HUNG — which is how a
+ // loud refusal (readLooksIndex / readLookDesign) would have presented to the
+ // operator: as a spinner, indistinguishable from a slow bake. A refusal has to
+ // ARRIVE to be a refusal. ⭐ The body below is deliberately NOT re-indented, so
+ // this stays a two-line diff that can be reviewed rather than re-read.
+ try {
   // Strip query string for route matching. Clients add cache-busting
   // ?t=... that would otherwise miss exact-equality checks.
   const path = (req.url || '').split('?')[0]
@@ -2860,6 +2888,11 @@ createServer(async (req, res) => {
   const ext = extname(filePath)
   res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' })
   res.end(readFileSync(filePath))
+ } catch (err) {
+  console.error(`[serve] ${req.method} ${req.url} — ${err.message}`)
+  if (!res.headersSent) res.writeHead(err.statusCode || 500, { 'Content-Type': 'application/json' })
+  if (!res.writableEnded) res.end(JSON.stringify({ error: err.message }))
+ }
 }).listen(PORT, () => {
   console.log(`Cartograph preview → http://localhost:${PORT}`)
 })
