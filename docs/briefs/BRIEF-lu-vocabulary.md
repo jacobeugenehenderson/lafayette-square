@@ -103,6 +103,40 @@ no"* and *"nobody has looked"* are the same silence today. That is `sources.js`'
 UNDECLARED / DECLARED-NONE / DECLARED arriving in a third domain — ⛔ reuse the idea, do not re-invent
 the mechanism.
 
+### ⛔⛔ AND AN ENTIRE BUCKET IS MISSING — `man_made`. THE 80 ABOVE WAS TOO SMALL.
+
+**CORRECTED 2026-09-20.** The count above swept `landuse · leisure · natural · amenity`. It **did not
+sweep `man_made` at all.** Re-measured across the same four towns:
+
+> **105 distinct unmapped tags · 2,423 features** *(was 80 / 1,937)*
+> **`man_made` alone: 476 features** — LS 34 · huron 244 · hipointe-demun 133 · altadena 65.
+> ⛔ **Every `man_made` value is unmapped. All of them.**
+
+```
+man_made:pier       213      man_made:planter          19
+man_made:bridge     123      man_made:embankment       11
+man_made:gantry      29      man_made:reservoir_covered 8
+man_made:storage_tank 22     man_made:tower             4
+man_made:breakwater  22      man_made:silo              3
+```
+
+⭐⭐ **AND IT IS THE `railway` BUG, THIRD INSTANCE.** `man_made` IS in `fetch.js`'s `HEAVY_WAYS` — it
+is **fetched** — and it is **NOT in `tagPriority`**, so it is never **bucketed.** Every one of those
+476 falls through to `ground.other[]`. On huron that is **214 of 246 `other[]` features.**
+`fetch.js:309` records the lesson in its own comment about railway: ***"the fetch was one and this is
+the other."*** Somebody added `man_made` to the query and never to the bucket.
+
+⇒ ⛔ **THIS BRIEF HAS TWO HALVES, NOT ONE.** The tag→class vocabulary (`OSM_TO_LU`) **and** the
+fetch→bucket vocabulary (`tagPriority`). A tag can be missing from either and the symptom is
+identical: it is on disk and reaches nothing. ▶ **The check in §7 must cover BOTH**, or it will pass
+a town whose piers are in `other[]`.
+
+⚠️ **`man_made:bridge` at 123 is its own question and probably not yours** — bridges are structural,
+`skeleton.js` already has grade-separation fields (`layer`/`bridge`/`tunnel`), and a bridge is not a
+land use. ⛔ **Surface it; do not classify it.**
+⭐ **And huron's waterfront is why this surfaced**: breakwater 22 · pier 215 · groyne 1 · reef 4 ·
+`barrier=retaining_wall` 6. See `BRIEF-boulder-revetment.md`, which is BLOCKED ON THIS BRIEF.
+
 ## 4a. ⭐⭐ NEW CLASSES UNLOCK FOLIAGE — the mechanism already exists
 
 *Jacob: "Will we be able to fill a field with Corn? Just realizing we should add more foliage if
