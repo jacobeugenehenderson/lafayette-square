@@ -72,6 +72,17 @@ if (!idx) { console.error('⛔ FAIL — public/looks/index.json unreadable.'); p
 const entry  = (idx.looks || []).find(l => l.id === idx.default)
 const design = readJsonOrNull(join(PUBLIC_DIR, 'looks', String(idx.default), 'design.json'))
 
+// ⛔ A VACUOUS PASS IS A LIE IN GREEN INK. `design` is null when the 0-state's
+// design.json is absent or unparseable — and the three "carries no X" assertions
+// below are all satisfied BY NOTHING BEING THERE, so they reported ✅ about a file
+// that did not exist. The run still failed on the existence check, but three green
+// ticks were asserting a path they never touched. Every assertion that reads
+// `design` must first refuse to run without it.
+// (Caught 2026-09-19 by hiding the file and reading the output, after a peer shipped
+// a gate whose --dry-run returned before the line it claimed to have mutation-tested.)
+const needDesign = () => design ? null
+  : 'NOT MEASURED — the default Look has no readable design.json, so this asserts nothing'
+
 let pass = 0, fail = 0
 const check = (label, fn) => {
   try { const why = fn(); if (why) { console.log(`  ⛔ FAIL  ${label}\n           ${why}`); fail++ } else { console.log(`  ✅ pass  ${label}`); pass++ } }
@@ -88,19 +99,23 @@ check('index.json names a default Look, and it exists on disk', () => {
 })
 
 check('the default Look is NOT a town — its entry binds no scene', () => (
-  entry?.scene
+  // ⛔ No entry ⇒ `entry?.scene` is undefined ⇒ this would pass on nothing.
+  !entry ? `NOT MEASURED — index.default is "${idx.default}" but no entry with that id exists` :
+  entry.scene
     ? `the 0-state is bound to scene "${entry.scene}". A town cannot be the kit's default: ` +
       `every new Look seeds from it and every unresolved client falls back to it (A00).`
     : null
 ))
 
 check('the default Look carries no scene-keyed authoring', () => {
+  const v = needDesign(); if (v) return v
   const found = SCENE_KEYED.filter(f => design?.[f] != null &&
     (typeof design[f] !== 'object' || Object.keys(design[f]).length))
   return found.length ? `carries ${found.join(', ')} — a town's own keys are the kit's 0-state` : null
 })
 
 check('the default Look stores no CAMERA and no PLACE', () => {
+  const v = needDesign(); if (v) return v
   const found = CAMERA_AND_PLACE.filter(f => design?.[f] != null &&
     (!Array.isArray(design[f]) || design[f].length))
   return found.length
@@ -110,7 +125,8 @@ check('the default Look stores no CAMERA and no PLACE', () => {
 })
 
 check('the 0-state RESTATES NOTHING — design.json is empty, so it cannot drift from the defaults', () => {
-  const keys = Object.keys(design || {})
+  const v = needDesign(); if (v) return v
+  const keys = Object.keys(design)
   return keys.length
     ? `design.json declares ${keys.length} channel(s): ${keys.slice(0, 8).join(', ')}${keys.length > 8 ? '…' : ''}. ` +
       `Every channel already has a kit default in the store's DESIGN_FIELDS; writing them here copies ` +
@@ -142,6 +158,9 @@ check('no design hydrator can reach live store state (`d.X || get().X` is the ca
 
 check('no client module hardcodes a Look id that names a town', () => {
   const townIds = new Set((idx.looks || []).filter(l => l.scene).map(l => l.id))
+  // ⛔ With no town-bound Looks there is nothing a literal COULD name, so a green
+  // tick here would mean "we looked for nothing and did not find it".
+  if (!townIds.size) return 'NOT MEASURED — no Look in the index binds a scene, so no literal can be recognised as naming a town'
   const bad = []
   for (const rel of ['src/cartograph/stores/useCartographStore.js', 'src/cartograph/Toolbar.jsx']) {
     const p = join(ROOT, rel)
