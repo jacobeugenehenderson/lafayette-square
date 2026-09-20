@@ -127,10 +127,35 @@ function relativeImports(code, fromFile) {
   return out
 }
 
+/**
+ * Read a check's source, tolerating ONLY the one race this suite actually hits:
+ * a file listed by `readdirSync` and gone before it is read — someone reverting a
+ * commit, switching a branch, or landing a rename while the suite enumerates.
+ *
+ * ⛔⛔ THIS COST A BASELINE ON 2026-09-20. The read was unguarded, an agent reverted
+ * two commits mid-enumeration, and `classifyAll` threw ENOENT before a SINGLE check
+ * had run. A ten-minute suite died on a file that was never going to be executed —
+ * and the run that was lost was the pre-rename baseline, i.e. exactly the run whose
+ * absence makes a 297-substitution sweep unverifiable.
+ *
+ * ⛔ ENOENT ONLY. A permission error, a directory where a file should be, an I/O
+ * fault — those are real and must still throw. Swallowing every error here would
+ * turn a broken checkout into a silently smaller suite, which is the failure this
+ * whole corpus exists to prevent (`CLAUDE.md` Layer 0 q2).
+ */
+function readCheckSource(file) {
+  try { return readFileSync(join(ROOT, file), 'utf8') }
+  catch (err) { if (err.code === 'ENOENT') return null; throw err }
+}
+
 export function classify(file, seen = new Set(), depth = 0) {
   if (seen.has(file)) return { file, tier: 'safe', why: [] }
   seen.add(file)
-  const src = readFileSync(join(ROOT, file), 'utf8')
+  const src = readCheckSource(file)
+  // Not runnable, and not classifiable. Tiered as `vanished` so it matches no run
+  // tier and is excluded by the runner's own filter — reported by classifyAll, never
+  // quietly dropped.
+  if (src === null) return { file, tier: 'vanished', why: ['disappeared between enumeration and read'] }
   const shell = file.endsWith('.sh')
   const code = stripComments(src, shell)
   const why = []
@@ -229,7 +254,8 @@ const BLOCKED = [
 ]
 
 export function blockedReason(file) {
-  const src = readFileSync(join(ROOT, file), 'utf8')
+  const src = readCheckSource(file)
+  if (src === null) return 'the file disappeared while the suite was reading it'
   for (const [re, why] of BLOCKED) if (re.test(src)) return why
   return null
 }
@@ -240,12 +266,26 @@ export function classifyAll() {
     if (!existsSync(join(ROOT, d))) continue
     for (const f of readdirSync(join(ROOT, d)).sort()) if (/^claims-.*\.(mjs|js|sh)$/.test(f)) files.push(`${d}/${f}`)
   }
-  return files.map(f => classify(f))
+  const classified = files.map(f => classify(f))
+  // ⛔ LOUD, NEVER SILENT. A check that vanishes is excluded from the run because it
+  // cannot be run — but a suite that quietly got smaller is worse than one that died,
+  // and this is the only place that knows it happened.
+  const gone = classified.filter(r => r.tier === 'vanished')
+  if (gone.length) {
+    console.error(`\n⚠️  ${gone.length} check(s) DISAPPEARED while the suite was enumerating —`)
+    console.error(`    listed by the directory read, absent by the time they were opened.`)
+    for (const r of gone) console.error(`      ${r.file}`)
+    console.error(`    ⛔ They were NOT run and are NOT counted. If the tree was changing under this`)
+    console.error(`       run (a revert, a branch switch, a rename landing), the result is not a`)
+    console.error(`       baseline — re-run it against a still tree.\n`)
+  }
+  return classified.filter(r => r.tier !== 'vanished')
 }
 
 /** The claim each check falsifies, taken from its own header — ⛔ never typed into a doc. */
 export function claimOf(file) {
-  const src = readFileSync(join(ROOT, file), 'utf8')
+  const src = readCheckSource(file)
+  if (src === null) return null
   for (const line of src.split('\n').slice(0, 12)) {
     const t = line.replace(/^#!.*/, '').replace(/^\s*(\/\/|\*|#|\/\*\*?)\s?/, '').trim()
     if (!t || /^(import|const|set -|cd |@|⛔|▶)/.test(t)) continue
