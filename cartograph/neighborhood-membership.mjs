@@ -19,11 +19,24 @@
  *
  * ⚠️ A DISSOLVE, never an on/off cut (Jacob: *"I'd rather a dissolve [than an]
  * on/off edge fade dichotomy"*). The ramp is not invented here — it is the ground's
- * own authored `fade: {inner, outer}` from `neighborhood_boundary.json`, so objects
- * thin out over exactly the band the ground fades on. Today trees ignore it
- * entirely (they clip to the raw disc), which is the "trees don't fade" tell.
+ * fade band, so objects thin out over exactly the band the ground fades on.
+ *
+ * ⛔⛔ AND IT IS DERIVED, NOT READ. This module used to read a stored
+ * `fade: {inner, outer}` off the artifact with `?? R` on both sides. The fade-SSoT
+ * work (77aa5aa9) deleted that stored field — it was a copy of numbers derivable
+ * from `radius` — and BOTH `??` then fired, collapsing fadeIn and fadeOut onto R.
+ * `density()` became 1-inside / 0-outside: exactly the on/off dichotomy quoted
+ * above, reinstated four lines below the ruling against it, silently, in every
+ * town. ⭐ 77aa5aa9 found ONE consumer of the deleted field (bake-ground's manifest
+ * gate) and there were FOUR; the other three reach it through here. Found by the
+ * arborist seat 2026-09-20, measured on HPDM: 34 lamps and 1,417 derived trees had
+ * stopped thinning.
+ *
+ * ⛔ NO `??` HERE EVER AGAIN. An absent fade is a MEANINGFUL state, not a hole to
+ * plug with a default — see the `fadeBand` gate in `makeMembership`.
  */
 import { readFileSync } from 'node:fs'
+import { deriveFade } from './boundaryRecords.mjs'
 
 /** Ray-cast point-in-polygon. Accepts [{x,z}] or [[x,z]]. */
 function pointInPolygon(px, pz, poly) {
@@ -61,9 +74,23 @@ export function makeMembership(boundaryPath) {
   const poly = Array.isArray(b.polygon) && b.polygon.length >= 3 ? b.polygon : null
   const excl = (Array.isArray(b.exclusions) ? b.exclusions : []).filter(e => Array.isArray(e) && e.length >= 3)
   const R = b.radius ?? Infinity
-  // The ground's own fade band — reused, not reinvented.
-  const fadeIn = b.fade?.inner ?? R
-  const fadeOut = b.fade?.outer ?? R
+  // The ground's own fade band — DERIVED from the same SSoT the stencil and the
+  // terrain bake use (`deriveFade`), so objects thin over exactly the band the
+  // ground fades on. This is that rule's fourth call site.
+  //
+  // ⛔⛔ THE GATE IS THE POINT: an absent `fadeBand` means the scene authored NO
+  // dissolve, and that absence is LEGAL AND READ elsewhere in the kit
+  // (`classifyFade` → 'absent'; `sceneStencil` → `manifest.stencil = null`). Deriving
+  // unconditionally would INVENT a band for such a scene — toy (radius 180, no
+  // fadeBand) would gain a dissolve across its entire disc, 0 → 180, where the
+  // author asked for none. ⭐ That is a sentinel treated as a value
+  // (`project_a_sentinel_is_not_a_value`). For a scene with no authored fade, a hard
+  // cut AT the radius is the intended behaviour, so fadeIn === fadeOut === R is
+  // correct there — and only there.
+  const hasFade = Number.isFinite(b.fadeBand)
+  const { inner: fadeIn, outer: fadeOut } = hasFade
+    ? deriveFade(R, b.fadeBand)
+    : { inner: R, outer: R }
 
   const isInside = (x, z) => {
     for (const e of excl) if (pointInPolygon(x, z, e)) return false
@@ -90,5 +117,9 @@ export function makeMembership(boundaryPath) {
     return hash01(x, z, salt) < d
   }
 
-  return { isInside, keep, density, hasPolygon: !!poly, radius: R }
+  // ⭐ `fade` is exposed so the band can be asserted DIRECTLY. It cannot be inferred
+  // from density(): on a scene with no boundary-street polygon, isInside covers the
+  // whole disc and SHADOWS the band entirely, so an invented band is invisible to
+  // every behavioural probe. A check that can only see symptoms cannot pin this.
+  return { isInside, keep, density, hasPolygon: !!poly, hasFade, fade: { inner: fadeIn, outer: fadeOut }, radius: R }
 }
