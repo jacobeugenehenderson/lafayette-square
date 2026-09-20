@@ -1204,39 +1204,6 @@ export default function ExtentApp() {
   // shared predicate for the centroid + fit passes below. `activate` force-keeps.
   const loopOrHandOut = (id) => hide.has(id) || (!activate.has(id) && loopExcluded.has(id))
 
-  // The extent circle center: pre-commit = the centroid of KEPT buildings (auto-fit);
-  // a COMMITTED hood is re-centered so its circle sits at the origin.
-  const keptCenter = useMemo(() => {
-    if (committed) return { x: 0, z: 0 }
-    // Authored disc center (the draggable handle) wins over the auto-fit. Stored
-    // lon/lat, projected into the live frame; never forced to origin (that force,
-    // for committed hoods, is D4 — its fix is the re-center removal, tracked
-    // separately). EXTENT-DESIGN §3.3.
-    if (centerLL && geo) {
-      const [x, z] = wgs84ToLocal(geo, centerLL.lon, centerLL.lat)
-      return { x: r2(x), z: r2(z) }
-    }
-    if (!buildingCentroids?.length) return { x: 0, z: 0 }
-    let sx = 0, sz = 0, n = 0
-    for (const c of buildingCentroids) { if (loopOrHandOut(c.id)) continue; sx += c.x; sz += c.z; n++ }
-    if (!n) return { x: 0, z: 0 }
-    return { x: r2(sx / n), z: r2(sz / n) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildingCentroids, committed, hide, activate, loopExcluded, centerLL, geo])
-
-  // Membership (INVERTED): a building is EXCLUDED if hand-hidden, or (not force-kept
-  // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
-  // that auto-fits the kept set (removes nothing by default); loops are the fine
-  // carve. Mirrors the pour/bake exactly (circle fallback + exclusions). All O(1).
-  // The inclusion polygon projected into the live frame, for the preview + overlay.
-  const polygonXZ = useMemo(() => {
-    if (!Array.isArray(polygonLL) || polygonLL.length < 3 || !geo) return null
-    return polygonLL.map(a => {
-      const [x, z] = wgs84ToLocal(geo, a.lon, a.lat)
-      return { x: r2(x), z: r2(z) }
-    })
-  }, [polygonLL, geo])
-
   // The TINT in the live frame — every anchor's shape, projected. Drawn, never read.
   const coverageXZ = useMemo(() => {
     if (!Array.isArray(coverage) || !coverage.length || !geo) return null
@@ -1268,6 +1235,48 @@ export default function ExtentApp() {
     return { x: cx, z: cz, radius: Math.round(r) }
   }, [coverageXZ])
 
+  // ⛔⛔ THE DISC IS NEVER CENTRED ON BUILDING MASS. Ruled by Jacob 2026-09-19:
+  // "get rid of any notion of putting the circle around the mass (I never asked for
+  // this)."
+  //
+  // What it used to do: average the centroids of every KEPT building and put the circle
+  // there. Three things wrong with it, and the third is the one that broke his map.
+  //   1. `loopExcluded` and `hide` feed the kept set, so the circle CHASED THE EXCLUSION
+  //      PEN — the fourth copy of the coupling pulled out of the slider (b6ce0c89), the
+  //      button (f1192ffe) and the seed (b063871f).
+  //   2. Before membership is authored the "kept" set is simply everything fetched, so
+  //      the basis is the FETCH's mass, not the hood's — it means nothing at seed time.
+  //   3. It silently disagreed with the radius. The radius is seeded from the tint's
+  //      circumscribing circle ABOUT THE TINT'S CENTRE; drawing that circle about a
+  //      different centre left it 335 m short of covering the tint on Huron, 553 m south
+  //      of where it belonged. A circle sized for one origin, drawn at another.
+  //
+  // The centre is now: the operator's authored handle, else the TINT's centre, else the
+  // frame origin. All three are stable — none of them moves when a loop is drawn.
+  const discCenter = useMemo(() => {
+    if (committed) return { x: 0, z: 0 }
+    // The draggable handle wins over everything. Stored lon/lat, projected live.
+    if (centerLL && geo) {
+      const [x, z] = wgs84ToLocal(geo, centerLL.lon, centerLL.lat)
+      return { x: r2(x), z: r2(z) }
+    }
+    if (coverageFit) return { x: coverageFit.x, z: coverageFit.z }
+    return { x: 0, z: 0 }
+  }, [committed, centerLL, geo, coverageFit])
+
+  // Membership (INVERTED): a building is EXCLUDED if hand-hidden, or (not force-kept
+  // AND (inside any loop OR outside the extent circle)). The circle is a coarse dial
+  // the operator sets; loops are the fine carve. ⛔ It no longer "auto-fits the kept
+  // set" — that made membership its own input. Mirrors the pour/bake exactly (circle fallback + exclusions). All O(1).
+  // The inclusion polygon projected into the live frame, for the preview + overlay.
+  const polygonXZ = useMemo(() => {
+    if (!Array.isArray(polygonLL) || polygonLL.length < 3 || !geo) return null
+    return polygonLL.map(a => {
+      const [x, z] = wgs84ToLocal(geo, a.lon, a.lat)
+      return { x: r2(x), z: r2(z) }
+    })
+  }, [polygonLL, geo])
+
   // The advisory ring in the live frame. Separate memo, separate mark, separate
   // meaning — it is never fed to `excludedIds`, which is the whole point.
   const hintRingXZ = useMemo(() => {
@@ -1292,11 +1301,11 @@ export default function ExtentApp() {
       else if (activate.has(c.id)) out = false
       else if (loopExcluded.has(c.id)) out = true
       else if (polygonXZ) out = !pointInPolygon(c.x, c.z, polygonXZ)
-      else out = ((c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2) > R2
+      else out = ((c.x - discCenter.x) ** 2 + (c.z - discCenter.z) ** 2) > R2
       if (out) set.add(c.id)
     }
     return set
-  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter, radiusM, polygonXZ])
+  }, [buildingCentroids, hide, activate, loopExcluded, discCenter, radiusM, polygonXZ])
 
   // The kept set's reach from the center — drives the auto-fit radius + the Pour gate.
   const keptFit = useMemo(() => {
@@ -1305,12 +1314,12 @@ export default function ExtentApp() {
     for (const c of buildingCentroids) {
       if (loopOrHandOut(c.id)) continue
       count++
-      const d2 = (c.x - keptCenter.x) ** 2 + (c.z - keptCenter.z) ** 2
+      const d2 = (c.x - discCenter.x) ** 2 + (c.z - discCenter.z) ** 2
       if (d2 > radius) radius = d2
     }
     return { radius: Math.round(Math.sqrt(radius)), count }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [buildingCentroids, hide, activate, loopExcluded, keptCenter])
+  }, [buildingCentroids, hide, activate, loopExcluded, discCenter])
 
   // (Removed 2026-07-22: the disc-overshoots-the-fetch warning. Under the forever
   // safety-zone model the bb = disc + ~20–25% padding, so the disc reaching into
@@ -1745,7 +1754,7 @@ export default function ExtentApp() {
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
       setBuildStage('Committing extent…')
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
-      const [lon, lat] = localToWgs84(geo, keptCenter.x, keptCenter.z)
+      const [lon, lat] = localToWgs84(geo, discCenter.x, discCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
       // projects + flattens them into boundary.exclusions, and the pour/bake carve
       // buildings inside any loop. Membership = inside-circle − exclusions + overrides.
@@ -1765,11 +1774,11 @@ export default function ExtentApp() {
       if (Object.keys(update).length) useCartographStore.setState(update)
       setRadiusTouched(true); setCommitted(true); setSeedToken(t => t + 1)
       // Carry the authored Extent view into the Designer (its own camera-init channel).
-      // First pour RE-CENTERS the frame to keptCenter (new origin), so translate the
-      // pose by −keptCenter; zoom is unchanged. Falls back to a centered fit.
+      // First pour RE-CENTERS the frame to the disc centre (new origin), so translate
+      // the pose by −discCenter; zoom is unchanged. Falls back to a centered fit.
       try {
         const c = authoredCam
-          ? { x: authoredCam.x - keptCenter.x, z: authoredCam.z - keptCenter.z, zoom: authoredCam.zoom }
+          ? { x: authoredCam.x - discCenter.x, z: authoredCam.z - discCenter.z, zoom: authoredCam.zoom }
           : { x: 0, z: 0, zoom: clampZoom((((typeof window !== 'undefined' && window.innerHeight) || 900)) / (2 * Math.round(radiusM) * 1.3)) }
         localStorage.setItem('cartograph-camera', JSON.stringify(c))
       } catch { /* ignore */ }
@@ -1845,8 +1854,9 @@ export default function ExtentApp() {
   // Has this hood been hydrated yet? Streets exist → we're past setup (search/fetch),
   // so those setup-time controls collapse and the boundary work takes the panel.
   const hasData = allStreets.length > 0
-  // The circle center = the kept-buildings centroid (origin for a committed hood).
-  const boundaryCentroid = keptCenter
+  // The circle centre: the authored handle, else the TINT, else the origin. ⛔ Never
+  // the building mass — see `discCenter`.
+  const boundaryCentroid = discCenter
 
   return (
     <div className="cartograph carto-flat" style={{ background: '#12140f' }}>
