@@ -1553,23 +1553,41 @@ createServer(async (req, res) => {
   // GET/POST /<scene>/neighborhood — the extent DRAFT + descriptive metadata
   // (name/blurb/border streets/radius). Auto-saved from the Extent panel; loaded
   // on open to restore the operator's selections across reloads.
-  // DELETE /<scene> — discard a DRAFT scene (searched, never fetched).
+  // DELETE /<scene> — discard an UNCOMMITTED scene.
   //
-  // A search materialises a scene directory before anything is fetched, so an
-  // exploratory query leaves a permanent hood behind. This is the way back out.
-  // ⛔ REFUSES any scene that has data — a fetched or poured hood is never
-  // discardable through the picker; that would be a one-click way to delete a
-  // neighborhood. Dataless means: no clean/ artifacts and no raw/osm.json.
+  // ⭐ THE LINE IS `committed`, NOT "has data" (2026-09-19). It used to refuse any
+  // scene carrying raw/ or clean/ artifacts, on the reasoning that a fetched hood
+  // must never be one click from deletion. But a fetch is not a commitment: the
+  // operator searched a ZIP, pulled 31 MB, saw it was the wrong framing, and started
+  // over — and `44839` then sat in the picker FOREVER, un-discardable, wearing the
+  // same name as the real hood. There was no way out of it through the tool at all.
+  //
+  // `neighborhood.json.committed` is the marker that already distinguishes them and
+  // that `GET /scenes` already returns (it is the ✓ in the picker). A committed hood
+  // is a neighborhood and is never discardable here. An uncommitted one is a DRAFT,
+  // however much data it pulled, and the operator must be able to throw it away.
+  //
+  // ⛔ The protection is not weakened, it is aimed correctly: what it guards is the
+  // COMMITMENT, which is the thing that cost work, not the fetch, which cost minutes.
   const dropMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)$/)
   if (req.method === 'DELETE' && dropMatch && !RESERVED_PREFIXES.has(dropMatch[1])) {
     const scene = dropMatch[1]
     try {
       const dir = join(sceneCleanDir(scene), '..')
-      const hasRaw = existsSync(join(dir, 'raw', 'osm.json'))
-      const hasClean = existsSync(join(dir, 'clean', 'skeleton.json')) || existsSync(join(dir, 'clean', 'street-index.json'))
-      if (hasRaw || hasClean) {
+      // ⛔ Read the marker; an unreadable neighborhood.json is NOT "uncommitted".
+      // Absent means never committed (a draft). Present-but-unparseable means we do
+      // not know, and refusing to delete on "we do not know" is the only safe answer.
+      const nbPath = join(dir, 'neighborhood.json')
+      let committed = false, unreadable = false
+      if (existsSync(nbPath)) {
+        try { committed = !!JSON.parse(readFileSync(nbPath, 'utf8')).committed }
+        catch { unreadable = true }
+      }
+      if (committed || unreadable) {
         res.writeHead(409, { 'Content-Type': 'application/json' })
-        res.end(JSON.stringify({ error: `'${scene}' has fetched data — only an un-fetched draft can be discarded.` }))
+        res.end(JSON.stringify({ error: unreadable
+          ? `'${scene}' has an unreadable neighborhood.json — refusing to discard a scene whose committed state cannot be read. Fix or move that file first.`
+          : `'${scene}' is a committed neighborhood — it cannot be discarded from the picker.` }))
         return
       }
       rmSync(dir, { recursive: true, force: true })
