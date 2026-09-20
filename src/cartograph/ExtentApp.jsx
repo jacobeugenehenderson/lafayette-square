@@ -278,6 +278,46 @@ function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
   )
 }
 
+// The gazetteer's published boundary — ⛔ ADVISORY, AND INERT. Nothing downstream
+// reads it: it is not membership, not the disc, not the pour. It exists so the
+// operator can SEE where the published line runs while authoring their own.
+//
+// Drawn as a soft violet tint with a dashed rim, deliberately unlike every other
+// mark on this canvas — cyan is the authored inclusion ring, yellow the disc,
+// amber a street that doesn't close, magenta the centroid. A hint that looked like
+// any of those would be read as a decision.
+//
+// ⭐ WHY IT IS NOT THE POLYGON (Jacob, 2026-09-19): `ORIENTATION` has always said the
+// gazetteer is "a hint, never a requirement" — but the search USED to seed it straight
+// into `polygonLL`, so it silently became the default membership decision. That is the
+// shape `CLAUDE.md` Layer 0 q2 forbids: it looks like a suggestion and behaves like a
+// ruling, and it is invisible on any town whose operator was standing there to correct
+// it. It reaches membership only via an explicit "Adopt as boundary".
+function ExtentHintRing({ corners }) {
+  const shape = useMemo(() => {
+    if (!corners || corners.length < 3) return null
+    // The plane is rotated -90° about X, so local (x, y) lands at world (x, 0, -y).
+    const sh = new THREE.Shape()
+    sh.moveTo(corners[0].x, -corners[0].z)
+    for (let i = 1; i < corners.length; i++) sh.lineTo(corners[i].x, -corners[i].z)
+    sh.closePath()
+    return sh
+  }, [corners])
+  if (!shape) return null
+  const rim = corners.map(c => [c.x, 3, c.z])
+  rim.push([corners[0].x, 3, corners[0].z])
+  return (
+    <group>
+      <mesh position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={6}>
+        <shapeGeometry args={[shape]} />
+        <meshBasicMaterial color="#b39ddb" transparent opacity={0.15} depthWrite={false} />
+      </mesh>
+      <Line points={rim} color="#b39ddb" lineWidth={1.6} dashed dashSize={26} gapSize={18}
+        transparent opacity={0.8} />
+    </group>
+  )
+}
+
 // The HEALED boundary-street process — every hydrated street drawn as a CLICKABLE
 // line. The operator clicks the real boundary streets (any order); selected ones
 // light up cyan, gaps (a selected street that doesn't yet close the ring) go amber.
@@ -981,6 +1021,9 @@ export default function ExtentApp() {
   // 'streets' = resolved from boundary-street selection, 'authored' = hand-drawn).
   const [polygonLL, setPolygonLL] = useState(null)
   const [polygonSource, setPolygonSource] = useState(null)
+  // The gazetteer's ring, held ADVISORY — drawn, never consulted. Adopting it
+  // copies it into `polygonLL`; until then it decides nothing.
+  const [hintRing, setHintRing] = useState(null)
   // ⭐ THE SEARCHED PLACE owns the fetch envelope (procedure step 1→2: "the operator
   // types a name… the system pulls a generous bounding box"). The frustum is only
   // the fallback for a place the gazetteer doesn't know. Holds Nominatim's bbox and,
@@ -1172,6 +1215,16 @@ export default function ExtentApp() {
     })
   }, [polygonLL, geo])
 
+  // The advisory ring in the live frame. Separate memo, separate mark, separate
+  // meaning — it is never fed to `excludedIds`, which is the whole point.
+  const hintRingXZ = useMemo(() => {
+    if (!Array.isArray(hintRing) || hintRing.length < 3 || !geo) return null
+    return hintRing.map(a => {
+      const [x, z] = wgs84ToLocal(geo, a.lon, a.lat)
+      return { x: r2(x), z: r2(z) }
+    })
+  }, [hintRing, geo])
+
   const excludedIds = useMemo(() => {
     const set = new Set()
     if (!buildingCentroids) return set
@@ -1289,6 +1342,9 @@ export default function ExtentApp() {
         // requirement. Projected to the live frame by `penPaths`.
         if (Array.isArray(nb.exclusions) && nb.exclusions.length) setExclusionsLL(nb.exclusions)
         if (Array.isArray(nb.polygon) && nb.polygon.length >= 3) { setPolygonLL(nb.polygon); setPolygonSource(nb.polygonSource || 'authored') }
+        // The hint is persisted too — it is operator-visible, so it must survive a
+        // reload like everything else on this canvas. It stays inert across the trip.
+        if (Array.isArray(nb.hintRing) && nb.hintRing.length >= 3) setHintRing(nb.hintRing)
         setBakedSig(nb.bakedSig || null)
         // Restore the searched place so the pre-fetch envelope keeps its padding and
         // the panel keeps naming what matched — across a reopen AND across an HMR
@@ -1349,15 +1405,19 @@ export default function ExtentApp() {
         draft.polygon = polygonLL
         draft.polygonSource = polygonSource || 'authored'
       }
-      // The place record stays SMALL — the ring is already persisted as `polygon`,
-      // so storing it twice would put 815 points in the file for nothing.
+      // The gazetteer ring persists as `hintRing` — advisory, and the ONLY copy of it
+      // (adopting writes it into `polygon`, after which both exist and mean different
+      // things: what was published, and what the operator decided).
+      if (Array.isArray(hintRing) && hintRing.length >= 3) draft.hintRing = hintRing
+      // The place record stays SMALL — the ring rides in `hintRing`, so storing it
+      // twice would put 815 points in the file for nothing.
       if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
         draft.place = { bbox: placeEnvelope.bbox, label: placeEnvelope.label, cls: placeEnvelope.cls, kind: placeEnvelope.kind, pointish: !!placeEnvelope.pointish }
       }
       saveNeighborhood(scene, draft).catch(() => {})
     }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL])
+  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -1386,7 +1446,7 @@ export default function ExtentApp() {
   const openScene = (id) => {
     setStoreScene(id)
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
-    setPolygonLL(null); setPolygonSource(null)
+    setPolygonLL(null); setPolygonSource(null); setHintRing(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setSceneLocal(id)
   }
@@ -1406,7 +1466,7 @@ export default function ExtentApp() {
     setSceneLocal(null)
     useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
-    setPolygonLL(null); setPolygonSource(null)
+    setPolygonLL(null); setPolygonSource(null); setHintRing(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
   }
@@ -1462,16 +1522,20 @@ export default function ExtentApp() {
         pointish: Math.abs(bboxAreaKm2(r.bbox) - 1.44) < 0.15 && !r.official,
       })
       // ⭐ Mode (a): a named place whose gazetteer entry carries an admin boundary
-      // seeds its inclusion polygon for free — the best-guess first pass the operator
-      // then corrects. For Księży Młyn this beats naming boundary streets outright:
-      // the district's north and east edges are unnamed service roads with nothing
-      // to type, and the ring is digitized ON the road centerlines (median 0.4 m).
-      if (Array.isArray(r.official?.ring) && r.official.ring.length >= 3) {
-        setPolygonLL(r.official.ring.map(([lon, lat]) => ({ lon, lat })))
-        setPolygonSource('official')
-      } else {
-        setPolygonLL(null); setPolygonSource(null)
-      }
+      // offers its published ring as a HINT — drawn, inert, adoptable. It is the
+      // best-guess first pass the operator then accepts or ignores. For Księży Młyn
+      // it beats naming boundary streets outright: the district's north and east edges
+      // are unnamed service roads with nothing to type, and the ring is digitized ON
+      // the road centerlines (median 0.4 m).
+      // ⛔ It used to be written straight into `polygonLL` — i.e. the hint WAS the
+      // membership decision the moment you searched. See `ExtentHintRing`.
+      setHintRing(Array.isArray(r.official?.ring) && r.official.ring.length >= 3
+        ? r.official.ring.map(([lon, lat]) => ({ lon, lat }))
+        : null)
+      // ⛔ Do NOT clear hintRing here — it was just set, two lines up. The polygon is
+      // cleared because a fresh search starts an unauthored hood; the hint is the
+      // search's whole product.
+      setPolygonLL(null); setPolygonSource(null)
       // Fresh authoring pass — clear prior work; the [scene] effect restores a
       // committed hood's own extent from disk if this slug already exists.
       setSides([]); setStreetCorners(null); setFetchSources(null)
@@ -1765,6 +1829,7 @@ export default function ExtentApp() {
           {/* While picking, the LIVE resolved ring wins — the operator watches the
               boundary close as each street lands. Its corners are real junctions, so
               they're worth dotting; a gazetteer polygon's hundreds aren't. */}
+          {located && hintRingXZ && !polygonXZ && <ExtentHintRing corners={hintRingXZ} />}
           {located && (radiusM > 0 || polygonXZ || streetCorners?.corners?.length) && (
             <ExtentBoundary
               corners={(pickingSides && streetCorners?.corners?.length ? streetCorners.corners : polygonXZ) || undefined}
@@ -2063,6 +2128,34 @@ export default function ExtentApp() {
                     )
                   })()}
                 </>
+              )}
+
+              {/* ⭐ THE HINT, AND THE ONE GESTURE THAT PROMOTES IT. The published ring is
+                  drawn violet and decides nothing; this is the only path from "what the
+                  gazetteer says" to "what this neighborhood IS". Explicit, reversible,
+                  and it stamps provenance that now means something — `official` appears
+                  because someone chose it, not because a search happened to match. */}
+              {hintRing?.length >= 3 && !(polygonLL?.length >= 3) && (
+                <div className="carto-row carto-row--wrap" style={{ marginBottom: 8 }}>
+                  <button className="carto-btn carto-btn--grow"
+                    onClick={(e) => { setPolygonLL(hintRing); setPolygonSource('official'); e.currentTarget.blur() }}
+                    title="Use the published municipal boundary as this neighborhood's inclusion polygon. It becomes yours — edit or clear it afterwards like any authored boundary.">
+                    ⬡ Adopt the published boundary ({hintRing.length} pts)
+                  </button>
+                  <div className="carto-meta--value" style={{ flexBasis: '100%', marginTop: 2, opacity: 0.75 }}>
+                    Violet is the gazetteer's line — a hint. It changes nothing until adopted.
+                  </div>
+                </div>
+              )}
+              {polygonSource === 'official' && polygonLL?.length >= 3 && (
+                <div className="carto-row carto-row--wrap" style={{ marginBottom: 8 }}>
+                  <span className="carto-meta--value">Boundary adopted from the gazetteer · {polygonLL.length} pts</span>
+                  <button className="carto-btn-sm"
+                    onClick={() => { setPolygonLL(null); setPolygonSource(null) }}
+                    title="Drop the adopted boundary. The hint stays on screen; membership falls back to the disc.">
+                    release
+                  </button>
+                </div>
               )}
 
               {/* The pen draws EXCLUSION loops — the strays inside each closed loop drop

@@ -51,6 +51,15 @@ the First Bake (`SKELETON.md §0`), the frame all downstream geometry trusts. Th
 small artifact *beside* it. A scene is only "poured" when the skeleton → ribbons chain is **served**
 from `cartograph/data/<scene>/clean/`, the way every consumer reaches a scene's geometry.
 
+> ### ⭐ THE GAZETTEER RING IS ADVISORY — ruled and built 2026-09-19 (Jacob)
+> *"The municipal ring should be a different color and inert… this is supposed to just be a hint."*
+> The search no longer seeds `polygonLL`; the ring lands in **`hintRing`**, drawn as a violet tint,
+> **read by nothing** — not membership, not the disc, not the pour — and promoted only by an explicit
+> **Adopt**. ⛔ The prior behaviour is the Layer-0 q2 shape: it *looked* like a suggestion and *behaved*
+> like the default decision, and no scene could reveal it because the operator was always standing there.
+> ⭐ Provenance now means something: `polygonSource: 'official'` exists because someone chose it.
+> **The deciding chain is the radius + the building picker/excluder** (`ExtentHintRing`, `ExtentApp.jsx`).
+
 **⭐ What the skeleton ACTUALLY is (Jacob, 2026-07-22): a labeled point cloud.** "Skeleton" is a human
 convenience — the real substance is a set of **points, each carrying a label** (its node kind / stamp).
 We unite the points with **line segments** for two reasons only: so a person can *see* it as a
