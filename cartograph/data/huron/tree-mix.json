@@ -1,0 +1,170 @@
+{
+  "_what_this_is": "⛔ A HAND-AUTHORED SEED, NOT AN EMPIRICAL HISTOGRAM. Every other scene's tree-mix.json is the output of scripts/15-derive-tree-mix.py counting a real municipal census. Huron has no municipal census, and its 168 OSM trees carry ZERO species tags (measured 2026-09-20), so there is nothing to count. These weights are a judgement about a real place, authored per TREE-INTAKE.md §5.4 and approved by Jacob 2026-09-20. ⛔ Do not re-derive this file from huron's census — the census cannot produce it, and running scripts/15 here would overwrite judgement with an empty count.",
+  "source": "HAND-AUTHORED SEED (no municipal census) — Huron, Erie County, Ohio",
+  "scene": "huron",
+  "liveTrees": 0,
+  "_liveTrees_why": "0 is honest, not a failure: liveTrees counts census points carrying a REAL species, and huron has none. 168 OSM points exist but are speciesless; they get draped from the weights below, which makes them mix-sampled, never observed.",
+  "_sources": [
+    {
+      "id": "huron-ordinance",
+      "what": "City of Huron Codified Ordinances, Planning & Zoning Ch. 1131.03(a),(d)",
+      "url": "https://files.cityofhuron.org/Documents/Government/City%20Council/Charter%20Codified%20Ordinances/H-PLANZON.pdf",
+      "gives": "the CONSTRAINT, not a list",
+      "⛔": "Huron has NO approved street-tree species list. Ch. 1131 names no species at all, approved or prohibited. It is criteria-based: 'The use of native species is encouraged… All trees and vegetation planted shall be common to northern Ohio or similar climates' (a), plus drought-tolerance (d). TREE-INTAKE §5.4's first input does not exist for this town; that absence is recorded here rather than papered over with another city's list."
+    },
+    {
+      "id": "usda-hardiness",
+      "what": "USDA Plant Hardiness Zone 6b (-5 to 0 °F)",
+      "url": "https://phzmapi.org/44839.json",
+      "gives": "the hardiness ceiling",
+      "⭐": "Verified BY COORDINATE (41.3885, -82.5568 — ~1 km from this scene's geography.json center), not by name. ⛔ Huron city is in ERIE County, Ohio — not Huron County, and not Huron City, Michigan. Both false matches were hit and discarded during this authoring; so was 'Urban Forestry in Erie County' (releaferie.org), which is Erie County NEW YORK."
+    },
+    {
+      "id": "osu-bygl",
+      "what": "OSU Extension, BYGL 'Street Trees of Ohio' (12-part series)",
+      "url": "https://lake.osu.edu/sites/lake/files/imce/Program_Pages/ANR/Street%20Trees%20of%20Ohio.pdf",
+      "gives": "the recommended GENUS set for Ohio street plantings",
+      "genera": "Acer, Aesculus, Betula, Ginkgo, Gymnocladus, Gleditsia, Koelreuteria, Metasequoia, Taxodium, Quercus, Ulmus, Zelkova, Cornus, Cercis, Syringa, Ostrya, Carpinus, Chionanthus, Nyssa, Liquidambar, Platanus, Prunus, Amelanchier, Tilia"
+    },
+    {
+      "id": "huron-osm-leaftype",
+      "what": "Huron's OWN OSM trees — the only local signal that exists",
+      "gives": "the conifer/broadleaf split",
+      "measured": "Of 168 natural=tree nodes, 57 carry leaf_type. 57/57 are broadleaved + deciduous; ZERO needleleaf. ▶ CARTOGRAPH_SCENE=huron python3 scripts/14-fetch-osm-trees.py --reuse-raw",
+      "applied": "conifers total 6% here, against ~11% in a generic Ohio palette."
+    }
+  ],
+  "_excluded_deliberately": {
+    "Pyrus calleryana": "⛔ ILLEGAL IN OHIO. Sale, growth and planting prohibited since 2023-01-01 (Ohio Admin. Code 901:5-30-01; Ohio was the first state to ban it). ⚠️ This is a JURISDICTION fact, not a taste: it is true of every Ohio town forever, and arborist/dossiers/pyrus_calleryana.json exists, so the species is one Salon composition away from being routable here. There is no 'prohibited in this jurisdiction' state in grove-eligibility.mjs today — `withheld` means 'we have one and judge it not good enough', which is a different claim. Until that exists, this comment is the only thing standing between an Ohio town and a legal street tree. ⭐ Hi-Pointe/DeMun plants 306 of them and is RIGHT to.",
+    "_not_excluded_ash": "⭐ Fraxinus is IN, at weight 4. EAB is established in Ohio (since 2003) and has killed most mature ash, but Ohio towns genuinely still carry ash — standing dead, declining, and heavy young regrowth. Excluding it was proposed and OVERRULED by Jacob 2026-09-20: if it is in the town, it is in the mix. A census-observed ash is honoured by scripts/15's 'City points keep their REAL species' rule regardless of this file."
+  },
+  "_weights_are_demand": "⭐ THESE WEIGHTS ARE A DEMAND SIGNAL, NOT A SHIPPING LIST. roster-coverage.js reads every census well, so once these names are draped onto huron's points they become counts, and resolveGrove (arborist/grove-eligibility.mjs) ranks the whole board by them — including species with no composition, because 'a red row at rank 3 is the loudest thing on the board'. ⛔ So this mix deliberately names trees Huron SHOULD have and the Grove cannot yet ship. That is not a defect to prune; it is what gives the operator an ordered queue in the Salon. Shrinking this list to what is already composed was proposed and rejected the same day — it would have deleted the work queue.",
+  "commonWeights": {
+    "Maple, Red": 10,
+    "Maple, Sugar": 9,
+    "Oak, Northern Red": 8,
+    "Honeylocust": 7,
+    "Oak, White": 6,
+    "Oak, Bur": 6,
+    "Linden, American": 6,
+    "Sycamore, American": 5,
+    "Hackberry": 5,
+    "Oak, Swamp White": 5,
+    "Maple, Silver": 4,
+    "Ash, Green": 4,
+    "Blackgum": 4,
+    "Birch, River": 4,
+    "Redbud": 3,
+    "Spruce, Norway": 3,
+    "Elm, American": 2,
+    "Serviceberry": 2,
+    "Ginkgo": 2,
+    "Pine, White": 2,
+    "Magnolia": 2,
+    "Fir, Douglas": 1
+  },
+  "_state_of_each": {
+    "⭐ read with": "node scratch/claims-huron-mix-is-honest.mjs",
+    "composed_ships_today": [
+      "Maple, Red",
+      "Maple, Sugar",
+      "Oak, White",
+      "Oak, Bur",
+      "Linden, American",
+      "Sycamore, American",
+      "Maple, Silver",
+      "Ash, Green",
+      "Blackgum",
+      "Birch, River",
+      "Spruce, Norway",
+      "Magnolia",
+      "Fir, Douglas"
+    ],
+    "dossier_only_awaiting_the_salon": [
+      "Oak, Northern Red",
+      "Honeylocust",
+      "Hackberry",
+      "Redbud",
+      "Serviceberry",
+      "Ginkgo",
+      "Pine, White"
+    ],
+    "no_dossier_needs_harvest_first": [
+      "Oak, Swamp White",
+      "Elm, American"
+    ],
+    "⛔": "These three lists are a SNAPSHOT for the reader, not a source of truth. The live answer is computed by roster-coverage.js + grove-eligibility.mjs on every read, and it changes the moment an operator composes something. Do not consume this field in code.",
+    "⭐ Quercus bicolor is the one worth harvesting": "Swamp white oak is THE lakeplain street tree for this soil and this shoreline, and it is the only entry here with neither a composition nor a dossier."
+  },
+  "commonToLibrary": {
+    "Maple, Red": "maple_red",
+    "Maple, Sugar": "maple_sugar",
+    "Oak, White": "quercus_alba",
+    "Oak, Bur": "oak_bur",
+    "Linden, American": "linden_american",
+    "Sycamore, American": "platanus_acerifolia",
+    "Maple, Silver": "maple_silver",
+    "Ash, Green": "ash_green",
+    "Blackgum": "blackgum",
+    "Birch, River": "birch",
+    "Spruce, Norway": "picea_abies",
+    "Magnolia": "magnolia_sp",
+    "Fir, Douglas": "pseudotsuga_menziesii"
+  },
+  "_unmapped_is_deliberate": "⛔ THE NINE UNMAPPED NAMES ARE NOT AN OVERSIGHT. A COMMON with no entry here falls through to bake-trees#pickVariant's CATEGORY_FALLBACK — the sanctioned substitution ('substitution is the safety net; authored trees are the visible product', ARCHITECTURE.md) — and CoverageView shows it as 🔴 gap, the shopping list. ⭐ The alternative, routing them at ids nothing answers to, produces the IDENTICAL bake but reads as ⚠ dangling: LS's map points 49 roster names at procedural_* ids that can no longer ship. An unmapped name is an honest gap; a dangling route is a gap wearing a routing's clothes. ⛔ Map a name here only when a composition exists for it.",
+  "palette": [
+    {
+      "libraryId": "maple_red",
+      "share": 0.15625
+    },
+    {
+      "libraryId": "maple_sugar",
+      "share": 0.140625
+    },
+    {
+      "libraryId": "quercus_alba",
+      "share": 0.09375
+    },
+    {
+      "libraryId": "oak_bur",
+      "share": 0.09375
+    },
+    {
+      "libraryId": "linden_american",
+      "share": 0.09375
+    },
+    {
+      "libraryId": "platanus_acerifolia",
+      "share": 0.078125
+    },
+    {
+      "libraryId": "maple_silver",
+      "share": 0.0625
+    },
+    {
+      "libraryId": "ash_green",
+      "share": 0.0625
+    },
+    {
+      "libraryId": "blackgum",
+      "share": 0.0625
+    },
+    {
+      "libraryId": "birch",
+      "share": 0.0625
+    },
+    {
+      "libraryId": "picea_abies",
+      "share": 0.046875
+    },
+    {
+      "libraryId": "magnolia_sp",
+      "share": 0.03125
+    },
+    {
+      "libraryId": "pseudotsuga_menziesii",
+      "share": 0.015625
+    }
+  ],
+  "_palette_why_renormalised": "⛔ DERIVED, never hand-written: share = this species' weight ÷ the MAPPED weight total (64 of 100), so the palette cannot drift from commonWeights. The other 36 points of demand are real and carried by commonWeights — they are simply not yet paintable. ▶ node checks/claims-huron-mix-palette-is-derived.mjs"
+}

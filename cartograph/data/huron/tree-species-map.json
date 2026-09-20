@@ -1,0 +1,45 @@
+{
+  "_what_this_is": "⛔ DERIVED FROM tree-mix.json#commonToLibrary — do not hand-edit. Regenerate if the mix changes. Routes a census COMMON name onto the library species bake-trees#pickVariant should plant. Read as speciesMap.map?.[COMMON] → array of library ids.",
+  "_unmapped_is_deliberate": "⛔ Huron's mix names 22 species; only the 13 with a PUBLISHED Salon composition are routed here. The other 9 are real demand with no composition yet — they fall through to CATEGORY_FALLBACK (the sanctioned substitution) and show as 🔴 gap in CoverageView, which is the shopping list. ⛔ Routing them at ids nothing answers to would bake identically but read as ⚠ dangling, which is what LS's 49 procedural_* routes are. Add a name here when, and only when, a composition exists.",
+  "map": {
+    "Maple, Red": [
+      "maple_red"
+    ],
+    "Maple, Sugar": [
+      "maple_sugar"
+    ],
+    "Oak, White": [
+      "quercus_alba"
+    ],
+    "Oak, Bur": [
+      "oak_bur"
+    ],
+    "Linden, American": [
+      "linden_american"
+    ],
+    "Sycamore, American": [
+      "platanus_acerifolia"
+    ],
+    "Maple, Silver": [
+      "maple_silver"
+    ],
+    "Ash, Green": [
+      "ash_green"
+    ],
+    "Blackgum": [
+      "blackgum"
+    ],
+    "Birch, River": [
+      "birch"
+    ],
+    "Spruce, Norway": [
+      "picea_abies"
+    ],
+    "Magnolia": [
+      "magnolia_sp"
+    ],
+    "Fir, Douglas": [
+      "pseudotsuga_menziesii"
+    ]
+  }
+}

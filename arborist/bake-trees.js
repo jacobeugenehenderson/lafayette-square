@@ -1316,10 +1316,34 @@ export async function bakeTrees({
       if (flat.size) {
         const n = [...flat.values()].reduce((a, b) => a + b, 0)
         const worst = [...flat.entries()].sort((a, b) => b[1] - a[1])
-        console.log(`[bake-trees] ⛔ ${n} of ${instances.length} placements (${(100 * n / instances.length).toFixed(1)}%) render at a FLAT 1:1 — ` +
-          `no size band for: ` + worst.map(([sp, c]) => `${sp}(${c})`).join(' '))
-        console.log(`[bake-trees]    A band needs EITHER dossier chassis.size.band (ncsu/selectree) OR the USDA pair ` +
-          `chassis.size_20yr + chassis.size_max. A species with neither has no dossier at all — author one.`)
+        // ⭐⭐ TWO CAUSES, AND THEY PRESCRIBE OPPOSITE WORK. `scale` is null when the
+        // species has no BAND *or* when there is no measured DBH to place the tree
+        // within the band it does have (`per` empty at the percentile lookup above).
+        // ⛔ This block used to assert the first and print "author one" for both. On
+        // huron — a town with no municipal census, so ZERO real-DBH sources — that sent
+        // the reader to author eight dossiers that already existed and already carried
+        // bands. A diagnostic that names the wrong cause is worse than silence: it is a
+        // confident wrong answer about our own pipeline, and it costs a day.
+        // ⚠️ REAL_DBH_SOURCES is city-inventory / forest-park / park. OSM ships a
+        // constant placeholder and canopy fill has none, so a town whose census is only
+        // those two has no trunk spread and CANNOT size, however good its dossiers are.
+        const noBand = worst.filter(([sp]) => !bandVia.has(sp))
+        const noDbh  = worst.filter(([sp]) => bandVia.has(sp))
+        console.log(`[bake-trees] ⛔ ${n} of ${instances.length} placements (${(100 * n / instances.length).toFixed(1)}%) render at a FLAT 1:1.`)
+        if (noBand.length) {
+          console.log(`[bake-trees]    NO SIZE BAND — ` + noBand.map(([sp, c]) => `${sp}(${c})`).join(' '))
+          console.log(`[bake-trees]    A band needs EITHER dossier chassis.size.band (ncsu/selectree) OR the USDA pair ` +
+            `chassis.size_20yr + chassis.size_max. A species with neither has no dossier at all — author one.`)
+        }
+        if (noDbh.length) {
+          console.log(`[bake-trees]    BAND PRESENT, NO MEASURED DBH — ` + noDbh.map(([sp, c]) => `${sp}(${c})`).join(' '))
+          console.log(`[bake-trees]    ⛔ DO NOT AUTHOR A DOSSIER FOR THESE — they have one, and it carries a band. ` +
+            `This town has no trunk diameters to place a tree WITHIN that band: ${dbhGlobal.length} measured ` +
+            `DBH across the whole census. DBH comes only from a municipal inventory ` +
+            `(city-inventory / forest-park / park); OSM ships a constant placeholder and canopy fill has none. ` +
+            `⭐ For a town with no municipal census this is the HONEST output, not a defect — it is what ` +
+            `"no tree census" looks like on screen. Acquire an inventory, or accept a uniform canopy.`)
+        }
       }
       const viaCount = new Map()
       for (const [, v] of bandVia) viaCount.set(v, (viaCount.get(v) || 0) + 1)

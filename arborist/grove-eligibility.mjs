@@ -59,8 +59,8 @@ export function eligibilityFor(species, threshold, rank) {
 
 /**
  * Rank every species by demand and resolve the whole board.
- * ⛔ Rank is over ALL species, not just green ones — the operator reads the demand list as
- * the census wrote it, and a red row at rank 3 is the loudest thing on the board.
+ * ⛔ Rank is over ALL species, not just green ones. WHY, and what it means for anyone
+ * authoring a town's mix: `TREE-INTAKE.md` §5 item 4 (one home — do not restate it here).
  */
 export function resolveGrove(speciesList, threshold) {
   const ranked = [...speciesList].sort((a, b) => (b.count || 0) - (a.count || 0))

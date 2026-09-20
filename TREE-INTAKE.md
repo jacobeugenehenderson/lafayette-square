@@ -122,7 +122,46 @@ Everything below is **re-point-and-run** — nothing is Hi-Pointe-specific:
 1. Pour the scene + create `public/looks/<scene>/design.json` (Extent → Pour).
 2. `CARTOGRAPH_SCENE=<scene> python3 scripts/13-fetch-city-trees.py` — if the town has a City ArcGIS Forestry server (else skip; OSM + canopy still work).
 3. `…14-fetch-osm-trees.py` — always available (OSM is global; the divide clip is optional — drop it if the town is single-jurisdiction).
-4. `…15-derive-tree-mix.py` — derives the roster + map + mix from whatever census exists. **If no municipal census, the mix needs a hand-authored seed** (the `EXACT`/`keyword_collapse` table is STL-flavored — audit it per region).
+4. `…15-derive-tree-mix.py` — derives the roster + map + mix from whatever census exists (the `EXACT`/`keyword_collapse` table is STL-flavored — audit it per region). **If no municipal census, the mix is HAND-AUTHORED**, and the rest of this item is what that seed is *for*, because getting it wrong is silent.
+
+   > ### ⭐⭐ THE MIX IS A DEMAND SIGNAL, NOT A SHIPPING LIST. **NAME WHAT THE TOWN SHOULD HAVE.**
+   > A town's mix becomes counts (`roster-coverage.js` reads **all five** census wells), and
+   > `grove-eligibility.mjs#resolveGrove` ranks the whole board by those counts to decide what a Look
+   > ships. ⭐ **Rank is over ALL species, not just the buildable ones — a red row at rank 3 is the
+   > loudest thing on the board.** So a species you name and cannot yet render is not a mistake in the
+   > file; it is the **work item**, ordered by how much this town actually wants it.
+   >
+   > **THREE STATES, and you must hold all three apart** — no other doc names them together:
+   > | state | means | the queue it feeds |
+   > |---|---|---|
+   > | **COMPOSED** | an operator built it in the Salon → it's in `index.json.variants` | ships today |
+   > | **DOSSIER-ONLY** | harvested + minted (`arborist/dossiers/`, `ARCHITECTURE §485`) but never composed | ⭐ **the Salon's work** |
+   > | **NO DOSSIER** | nothing at all | the harvest queue |
+   >
+   > *Worked example — huron, 2026-09-20: **13 / 7 / 2** of 22 named species.* ⭐ The 7 dossier-only
+   > (N. red oak, honeylocust, hackberry, redbud, serviceberry, ginkgo, white pine) **are the point** —
+   > they became 3,174 placements of visible demand the operator can now see ranked.
+   >
+   > ### ⛔⛔ THE FAILURE MODE, AND IT READS AS DILIGENCE
+   > **PRUNING THE MIX TO WHAT THE GROVE ALREADY HAS DELETES THE OPERATOR'S QUEUE.** It looks careful —
+   > "I only routed things that exist" — and it silently removes the demand that would have told anyone
+   > what to build next. ⚠️ **Receipt, 2026-09-20:** the agent authoring huron's mix did this, *as a
+   > self-correction after a real first error*, and had to be stopped twice by Jacob — *"where would you
+   > be getting your tree info from, if not the Grove?"* The second attempt was worse than the first.
+   > ⛔ **The first error is worth naming too:** the mix was built by reading `index.json`'s **65-name
+   > species list** instead of its **37 `variants`**. Those are different sets, and two of the largest
+   > routes pointed at ids nothing answers to.
+   >
+   > ▶ **ROUTE (`commonToLibrary`) ONLY WHAT IS COMPOSED. LEAVE THE REST UNMAPPED.** An unmapped name
+   > falls through to `pickVariant`'s `CATEGORY_FALLBACK` — the sanctioned substitution — and reads as
+   > 🔴 **gap** in CoverageView, the shopping list. Routing it at an id nothing answers to bakes
+   > *identically* but reads as ⚠ **dangling** (LS carries 49 such routes). Same pixels, opposite
+   > meaning. ▶ `node checks/claims-species-map-routes-are-composed.mjs`
+   >
+   > ⚠️ **A town with no municipal census has no DBH, so every tree renders at a flat 1:1** — bands come
+   > from dossiers, but the *percentile within* the band comes from measured trunks, and only
+   > `city-inventory`/`forest-park`/`park` carry them. ⭐ That uniformity is the honest face of "no tree
+   > census", not a defect to chase.
 5. `…16-fetch-canopy.py` + `node …17-fill-canopy-trees.mjs` — canopy fill (CONUS only; swap NLCD for **ESA WorldCover** S3 COGs outside the US).
 6. `node arborist/bake-look.js --look <scene>` then the cartograph bake (or the one-button `POST /looks/<scene>/bake`).
 
