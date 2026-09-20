@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: LANDED
+dispatched: Overture
+written: 2026-09-20
+evict-when: node checks/claims-an-external-base-survives-a-bake.mjs
+-->
+
 # BRIEF B — AN EXTERNAL LISTINGS BASE, AS A FIRST-CLASS SOURCE
 
 *Written 2026-09-20 by the coordinator seat. Dispatch B of three; runs in PARALLEL with A.*

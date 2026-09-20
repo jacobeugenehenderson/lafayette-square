@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: PARKED
+dispatched: no
+written: 2026-09-20
+evict-when: RULING: Jacob parked this as "only annoying and not blocking" — it leaves the roster when he says it is worth a session, or when the stale holder is named and cleared.
+-->
+
 # BRIEF — A SCENE SWITCH LEAVES THE PREVIOUS TOWN ON SCREEN
 
 *Written 2026-09-20 by the coordinator seat. Reported by Jacob — twice.*

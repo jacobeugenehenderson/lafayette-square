@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Quill
+written: 2026-09-20
+evict-when: node checks/claims-fade-derives-from-radius.mjs && node checks/claims-no-slab-outlives-its-schema.mjs && node checks/claims-opting-out-of-the-fade-is-explicit.mjs
+-->
+
 # BRIEF — THE CIRCLE HAS ONE RADIUS. THE FADE SET MUST BE DERIVED FROM IT.
 
 *Written 2026-09-20 by the coordinator seat. Ruling by Jacob, same day.*

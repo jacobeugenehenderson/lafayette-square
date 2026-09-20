@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: LANDED
+dispatched: Tally
+written: 2026-09-20
+evict-when: node checks/claims-intake-absence-is-loud.mjs
+-->
+
 # BRIEF A — THE ROSTER'S MISSING INPUTS: node POIs · the assessor · the zoning engine
 
 *Written 2026-09-20 by the coordinator seat. Dispatched by Jacob, same day, as the first of three.*

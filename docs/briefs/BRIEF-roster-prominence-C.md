@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: no
+written: 2026-09-20
+evict-when: RULING: its gate (A landed, B landed or ruled out) is now MET — both landed 2026-09-20. It leaves the roster when Jacob dispatches it and a ranked list has been seen on two towns.
+-->
+
 # BRIEF C — PROMINENCE: WHICH BUILDINGS GET PROMOTED, AND IN WHAT ORDER
 
 *Written 2026-09-20 by the coordinator seat.*

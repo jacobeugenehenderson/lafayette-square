@@ -1,3 +1,10 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: Sylva
+written: 2026-09-20
+evict-when: node checks/claims-intake-absence-is-loud.mjs && test -f cartograph/data/huron/tree-species-map.json
+-->
+
 # BRIEF — PLACE TREES IN A TOWN THAT HAS NO TREE DATA
 
 *Written 2026-09-20 by the coordinator seat, after a read-in on the arborist (new context this session).*
