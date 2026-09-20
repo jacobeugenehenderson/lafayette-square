@@ -338,6 +338,24 @@ const HERO_MOTION_DEFAULT = { period: 720, easing: 'sine' }
 // LS's coordinates handed to every town. Empty ⇒ the consumer derives or shouts.
 const HERO_KEYFRAMES_DEFAULT = []
 
+// ⭐⭐ ONE DEFINITION OF "IS THIS A STAGE SHOT", because there were three and one
+// of them disagreed. `setShot` cleared the panel tool on `shot !== 'designer'` —
+// which is not "is a Stage shot", it is "is anything else", and that includes
+// `extent`. Eight lines below it the SAME FUNCTION said the opposite in words:
+// "'extent' is a pre-skeleton destination, not a Stage shot". The tool-init said
+// it correctly too. Two right, one wrong, all spelled out separately.
+// ⛔ The cost: Designer → Extent → Designer destroyed the operator's tool instead
+// of parking it — `tool: null` AND `cartograph-tool := 'design'` — so they came
+// back with NO tool where they left Survey, and the persisted key stayed wrong
+// across reloads, defeating the 2026-06-21 ruling quoted at `tool:` below
+// ("Restore the EXACT tool + shot the operator left"). Introduced by 1452bdfe,
+// the commit that split the Tool/Shot axes; reported from the screen 2026-09-19.
+const STAGE_SHOTS = ['browse', 'hero', 'street']
+const isStageShot = (shot) => STAGE_SHOTS.includes(shot)
+// Every valid destination. ⛔ NOT a superset to test Stage-ness with: 'designer'
+// and 'extent' are here precisely because they are NOT Stage shots.
+const ALL_SHOTS = ['designer', ...STAGE_SHOTS, 'extent']
+
 const _isObj = (v) => v && typeof v === 'object'
 const _grp = (key, KEYS, DEFAULTS) => ({ key, hydrate: (d) => migrateGroupChannel(d[key], KEYS, DEFAULTS) })
 
@@ -1994,7 +2012,7 @@ const useCartographStore = create((set, get) => ({
   tool: (() => {
     try {
       const savedShot = localStorage.getItem('cartograph-shot')
-      if (['browse', 'hero', 'street'].includes(savedShot)) return null
+      if (isStageShot(savedShot)) return null
       const savedTool = localStorage.getItem('cartograph-tool')
       if (savedTool === 'surveyor' || savedTool === 'measure') return savedTool
       if (savedTool === 'design') return null
@@ -2004,7 +2022,10 @@ const useCartographStore = create((set, get) => ({
   shot: (() => {
     try {
       const saved = localStorage.getItem('cartograph-shot')
-      if (['designer', 'browse', 'hero', 'street', 'extent'].includes(saved)) return saved
+      // ⛔ A DIFFERENT SET, deliberately: every VALID destination, not the Stage
+      // subset. 'designer' and 'extent' belong here and must never be folded into
+      // STAGE_SHOTS — conflating the two is the bug fixed above.
+      if (ALL_SHOTS.includes(saved)) return saved
     } catch { /* ignore */ }
     return 'designer'
   })(),
@@ -2015,7 +2036,7 @@ const useCartographStore = create((set, get) => ({
   lastStageShot: (() => {
     try {
       const saved = localStorage.getItem('cartograph-last-stage-shot')
-      if (saved && ['browse', 'hero', 'street'].includes(saved)) return saved
+      if (saved && isStageShot(saved)) return saved
     } catch { /* ignore */ }
     return 'browse'
   })(),
@@ -2094,18 +2115,21 @@ const useCartographStore = create((set, get) => ({
   },
 
   setShot: (shot) => {
-    if (get().shot === 'designer' && shot !== 'designer') {
+    // ⛔ Was `shot !== 'designer'`, which swept in `extent` — see STAGE_SHOTS above.
+    // Entering a Stage shot clears the panel tool — keep the persisted tool
+    // coherent so a reload doesn't restore a stale 'surveyor' (the tool-init
+    // also guards this by shot, but don't leave a stale key behind).
+    // ⭐ Extent is a round TRIP: the operator leaves Survey, edits the frame, and
+    // must come back to Survey. So it parks the tool, it does not clear it.
+    if (get().shot === 'designer' && isStageShot(shot)) {
       set({ tool: null, selectedStreet: null, selectedNode: null, markerActive: false, markerEraserActive: false })
-      // Entering a Stage shot clears the panel tool — keep the persisted tool
-      // coherent so a reload doesn't restore a stale 'surveyor' (the tool-init
-      // also guards this by shot, but don't leave a stale key behind).
       try { localStorage.setItem('cartograph-tool', 'design') } catch { /* ignore */ }
     }
     try { localStorage.setItem('cartograph-shot', shot) } catch { /* ignore */ }
     // Remember the last Stage shot so Designer's "Stage →" returns to it.
     // Only the 3D Stage shots qualify — 'extent' is a pre-skeleton destination,
     // not a Stage shot, so it must never become the Stage-return target.
-    if (['browse', 'hero', 'street'].includes(shot)) {
+    if (isStageShot(shot)) {
       try { localStorage.setItem('cartograph-last-stage-shot', shot) } catch { /* ignore */ }
       set({ shot, status: '', lastStageShot: shot })
     } else {
