@@ -25,9 +25,14 @@
  * Per-installation raw input:
  *   cartograph/data/<scene>/raw/elevation.tif
  *
- * Acquire the LS/HiPointe tile (both share USGS 3DEP n39w091, 1°×1° 1/3
- * arc-second, ~10 m source, 453 MB, .gitignored) via:
- *   curl -O https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n39w091/USGS_13_n39w091.tif
+ * ⛔ THE TILE IS PER TOWN AND THIS FILE NO LONGER NAMES ONE. USGS 3DEP 1/3
+ * arc-second tiles are 1°×1°, ~10 m source, ~450 MB, .gitignored, and are named
+ * for their NORTH-WEST corner — so the tile a scene needs is a function of its
+ * own latitude and longitude. Run this script without the .tif and it prints the
+ * exact curl for THIS scene.
+ * ⚠️ It used to hardcode `n39w091` — Lafayette Square's and HiPointe's tile — in
+ * the acquire instruction, so every other town was told, confidently, to download
+ * St. Louis's terrain (corrected 2026-09-20, found on Huron, which needs n42w083).
  *
  * Run:  node cartograph/bake-terrain.js --scene=<id>   (or CARTOGRAPH_SCENE=<id>)
  */
@@ -111,10 +116,38 @@ async function main() {
   console.log(`Bake terrain  scene=${SCENE}  bbox=${JSON.stringify(bounds)}  span=${spanX}×${spanZ}m`)
   console.log(`              grid=${width}×${height} = ${total} samples  (~${(spanX/(width-1)).toFixed(2)} m/x, ${(spanZ/(height-1)).toFixed(2)} m/z)`)
 
+  // ── Which 1°×1° USGS tile(s) does THIS scene sit on? ─────────────────────
+  // Computed here rather than printed as a constant: the tile is a function of
+  // the scene's own coordinates, and a hardcoded one sent every town but two to
+  // download St. Louis. A scene near a whole-degree line straddles two or four.
+  const _cornersLL = [
+    localToWgs84(bounds.minX, bounds.minZ), localToWgs84(bounds.maxX, bounds.minZ),
+    localToWgs84(bounds.minX, bounds.maxZ), localToWgs84(bounds.maxX, bounds.maxZ),
+  ]
+  let lonMin = Infinity, lonMax = -Infinity, latMin = Infinity, latMax = -Infinity
+  for (const [lon, lat] of _cornersLL) {
+    if (lon < lonMin) lonMin = lon; if (lon > lonMax) lonMax = lon
+    if (lat < latMin) latMin = lat; if (lat > latMax) latMax = lat
+  }
+  // USGS 3DEP names a tile for its NW corner: nDDwDDD.
+  const tileName = (lat, lon) =>
+    `n${String(Math.ceil(lat)).padStart(2, '0')}w${String(Math.ceil(Math.abs(lon))).padStart(3, '0')}`
+  const neededTiles = [...new Set([
+    tileName(latMax, lonMin), tileName(latMax, lonMax),
+    tileName(latMin, lonMin), tileName(latMin, lonMax),
+  ])]
+
   if (!fs.existsSync(TIF_PATH)) {
     console.error(`Missing input: ${TIF_PATH}`)
-    console.error('Acquire via:')
-    console.error('  curl -O https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/n39w091/USGS_13_n39w091.tif')
+    console.error(`  scene spans lat ${latMin.toFixed(4)}..${latMax.toFixed(4)}, lon ${lonMin.toFixed(4)}..${lonMax.toFixed(4)}`)
+    console.error(`Acquire the tile THIS scene needs:`)
+    for (const t of neededTiles) {
+      console.error(`  curl -o ${TIF_PATH} https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/${t}/USGS_13_${t}.tif`)
+    }
+    if (neededTiles.length > 1) {
+      console.error(`  ⚠️ This scene STRADDLES ${neededTiles.length} tiles. One file cannot cover it —`)
+      console.error(`     they must be mosaicked before this script can read them. Not handled here.`)
+    }
     process.exit(1)
   }
 
@@ -126,18 +159,27 @@ async function main() {
   const tifW = image.getWidth(), tifH = image.getHeight()
   console.log(`  tif ${tifW}×${tifH}  origin=(${origLon.toFixed(4)}, ${origLat.toFixed(4)})  res=(${resLon.toExponential(3)}, ${resLat.toExponential(3)}) °/px`)
 
-  // Determine the geographic bbox we need (with a small pad so bilinear
-  // taps inside the bbox always have all 4 neighbors).
-  const corners = [
-    localToWgs84(bounds.minX, bounds.minZ),
-    localToWgs84(bounds.maxX, bounds.minZ),
-    localToWgs84(bounds.minX, bounds.maxZ),
-    localToWgs84(bounds.maxX, bounds.maxZ),
-  ]
-  let lonMin = Infinity, lonMax = -Infinity, latMin = Infinity, latMax = -Infinity
-  for (const [lon, lat] of corners) {
-    if (lon < lonMin) lonMin = lon; if (lon > lonMax) lonMax = lon
-    if (lat < latMin) latMin = lat; if (lat > latMax) latMax = lat
+  // (the scene's geographic bbox — lonMin/lonMax/latMin/latMax — was computed
+  // above the acquire gate so the missing-file message can name the right tile.)
+
+  // ⛔⛔ DOES THIS DEM ACTUALLY COVER THIS SCENE? REFUSE IF NOT.
+  // The window clamp below is `Math.max(0, …)` / `Math.min(tifW, …)`, so a tile
+  // from the wrong region does NOT error — it silently clamps to the tile's edge
+  // and bakes whatever pixels happen to be there. Terrain, confidently, from the
+  // wrong place. That is `CLAUDE.md` Layer 0 q2, and it is exactly what the old
+  // hardcoded `n39w091` instruction would have produced on any town but two.
+  const tifLonMin = origLon, tifLonMax = origLon + tifW * resLon
+  const tifLatMax = origLat, tifLatMin = origLat + tifH * resLat   // resLat < 0
+  if (lonMin < tifLonMin || lonMax > tifLonMax || latMin < tifLatMin || latMax > tifLatMax) {
+    console.error(`\n⛔ THIS DEM DOES NOT COVER THIS SCENE — refusing to bake clamped terrain.`)
+    console.error(`   scene needs  lat ${latMin.toFixed(4)}..${latMax.toFixed(4)}  lon ${lonMin.toFixed(4)}..${lonMax.toFixed(4)}`)
+    console.error(`   tif provides lat ${tifLatMin.toFixed(4)}..${tifLatMax.toFixed(4)}  lon ${tifLonMin.toFixed(4)}..${tifLonMax.toFixed(4)}`)
+    console.error(`   ⇒ ${TIF_PATH} is the wrong tile for scene '${SCENE}'. It needs: ${neededTiles.join(', ')}`)
+    console.error(`   Delete it and re-acquire:`)
+    for (const t of neededTiles) {
+      console.error(`     curl -o ${TIF_PATH} https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/${t}/USGS_13_${t}.tif`)
+    }
+    process.exit(1)
   }
 
   // Pixel window in the tile (geotiff window is [left, top, right, bottom]
