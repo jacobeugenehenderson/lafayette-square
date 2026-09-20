@@ -415,7 +415,7 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
 // Authored values resolve downstream off that identity, so ① is look-agnostic:
 // one scene's ① serves every Look.
-export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null, coast = [] }) {
+export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null, coast = [], coastArcs = [], bb = null }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -437,7 +437,27 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // DRAWING. ① is the ink of the whole network; drop the highway from it and the
   // highway does not exist. ⭐ They carry `gradeSeparated` on the stamp so
   // downstream still tells a highway from a street — by IDENTITY, not by absence.
-  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 }))]
+  // ⭐⭐⭐ THE SHORELINE IS A CHAIN (Jacob, 2026-09-20): "stroke the coast as a two-sided chain."
+  // It joins `chains` so it goes through the IDENTICAL expansion below — right boundary forward,
+  // left boundary back, one stamp per vertex — rather than a second implementation of stroking.
+  // ⇒ The land closes against ①'s OWN edge, ε off the water, carrying `side` and `srcIdx`; that
+  // articulated edge is what a slipway T's into. As an area clip the coast had ONE owner for all
+  // 1,177 of its edges and no landward side at all, so nothing could meet it.
+  // ⛔ NOT A STREET, and the stamp says so rather than a downstream `if`: `hard` is FALSE at every
+  // vertex, so ① mints no corner on the shore (`RIBBONS §1`: no coupler, no baseMeasure, no band,
+  // no ADA, no cap — "it closes faces; nothing offsets a curb from it"), and it carries no `caps`,
+  // so `tipOf` returns null and the arc gets no dead-end tip where it runs off the bb.
+  // ⛔ The ARC, never the closed ring — see `coastline.mjs`: stroking a closed ring fragments it.
+  const coastChains = (Array.isArray(coastArcs) ? coastArcs : [])
+    .filter(a => Array.isArray(a) && a.length >= 2)
+    .map(a => ({ st: { skelId: WATER_EDGE_SKEL, points: a.map(p => [p[0], p[1]]),
+                       hard: a.map(() => false), gradeSeparated: false }, ci: -1 }))
+  const chains = [...streets.map((st, ci) => ({ st, ci })), ...gradeSep.map(st => ({ st, ci: -1 })), ...coastChains]
+  // ⛔ COUNTED, NOT ASSUMED. A coast that silently failed to expand would leave the land closing
+  // against the lake's clip edge again, which looks identical on screen and is the state this
+  // change exists to end.
+  if (coastChains.length) console.log(`    [①] shoreline expanded as INK: ${coastChains.length} arc(s), ${coastChains.reduce((a, c) => a + c.st.points.length, 0)} vertices → two-sided at ε=${eps} m`)
+  else if (Array.isArray(coast) && coast.length) console.warn(`    ⛔ [①] ${coast.length} water ring(s) but NO shoreline arc to expand — the land will close against the clip edge, which carries ONE owner and no landward side.`)
   for (const { st, ci } of chains) {
     if (!(st?.points?.length >= 2)) continue
     const P = st.points, nrm = []
@@ -478,7 +498,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // adjacent dead end" changing when he swaps a leg two blocks away.
     // ⛔ `srcIdx` STAYS THE VERTEX — the corner ease resolves its radius through it, and that is a
     // per-VERTEX question. Only the span ordinal takes the edge's answer.
-    const stamp = (side, i, segI) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i) }) - 1
+    // ⭐ `water` rides the stamp for the same reason `gradeSeparated` does: downstream tells a
+    // shore edge from a street edge by IDENTITY, never by the absence of a measure.
+    const isCoast = skelId === WATER_EDGE_SKEL
+    const stamp = (side, i, segI) => owners.push({ skelId, side, segOrd: ci >= 0 ? segOrdAt(ci, segI) : 0, gradeSeparated: gs, srcIdx: i, hard: hardAt ? !!hardAt[i] : true, tipEnd: tipOf(i), ...(isCoast && { water: true }) }) - 1
     const ring = [], labs = []
     for (let i = 0; i < P.length; i++) {
       ring.push([P[i][0] + nrm[i][0], P[i][1] + nrm[i][1]])
@@ -630,10 +653,32 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // out the circle last", and "obviously the circle stencil is happening too early". A disc, or
     // a disc plus a margin, is STILL the circle deciding block geometry — one step further out is
     // the same error. The subject is a plain rectangle around everything.
+    // ⭐⭐⭐ THE FRAME IS THE bb (Jacob, 2026-09-20): "use the bb as the frame" · "the water should
+    // go to the edge of the bb just like the roads and everything else."
+    // ⛔ THE INK BBOX CANNOT BE THE FRAME ONCE THERE IS A COAST, and it is measured, not argued:
+    // Overpass returns WHOLE ways, so highway tails push the ink bbox to 20.6 × 16.4 km on Huron
+    // while the shoreline spans the bb's 9.9 × 6.4 km — the coast ends 4.2 km short of the frame,
+    // the land flows around both of its ends, and the coastal strip stays joined to the exterior
+    // no matter how the shoreline is stroked. `coastline.mjs`'s header predicted exactly this.
+    // ⭐ AND THE bb IS NOT THE CIRCLE. `RIBBONS §1` forbids the DISC from deciding block geometry
+    // because a radius is a live render knob; the bb is the FROZEN DATA EXTENT, declared at the
+    // hard fetch and never moved (`EXTENT-DESIGN §3.3`). Closing against it is not the circle
+    // deciding geometry by another name — the circle still stamps LAST, over the result.
+    // ⛔ NO MARGIN. The water ring is closed exactly ON the bb edge, so a margin would leave a
+    // strip of phantom "land" seaward of the lake.
     let fx0 = Infinity, fx1 = -Infinity, fz0 = Infinity, fz1 = -Infinity
-    for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
-    for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
-    const M = 50
+    let M = 50
+    if (bb && Number.isFinite(bb.x0) && Number.isFinite(bb.x1) && Number.isFinite(bb.z0) && Number.isFinite(bb.z1)) {
+      fx0 = bb.x0; fx1 = bb.x1; fz0 = bb.z0; fz1 = bb.z1; M = 0
+      console.log(`    [①] frame = the bb (declared data extent): ${((fx1-fx0)/1000).toFixed(1)} × ${((fz1-fz0)/1000).toFixed(1)} km — ink beyond it is cut by the frame, as the roads and the water both are.`)
+    } else {
+      // ⛔ LOUD. Without a bb the frame falls back to the ink bbox, and a coast then cannot divide
+      // it — the land will not close against the shoreline and nothing on screen will say so.
+      for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+      for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
+      if (Array.isArray(coast) && coast.length) console.warn(`    ⛔ [①] NO bb PASSED and this town has a coast — the frame is the ink bbox, which the shoreline cannot reach. The land will NOT close against the water.`)
+      else console.log(`    [①] frame = the ink bbox + ${M} m (no bb passed)`)
+    }
     const rect = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
     // ⭐⭐⭐ bb − (WATER ∪ INK), IN ONE MOVE. Jacob, 2026-09-20: "bb <> land/water chop <>
     // water is discrete object, land is joined to the protopoly in a combine/exclude move."
@@ -688,11 +733,18 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       // construction outside every street and inside exactly one output component: the exterior.
       // That is a containment test, so it has no tuning and no town where it degrades.
       let unlabelledHoles = 0
-      const corner = [fx0 - M + 1e-3, fz0 - M + 1e-3]
+      // ⛔⛔ ALL FOUR CORNERS, because with the frame ON the bb a corner can lie IN THE WATER.
+      // The old single corner (x0,z0) is Huron's NW — which is Lake Erie, subtracted, held by no
+      // face at all. Testing one corner there identifies no exterior, and the giant outer face
+      // goes unrecognised: that is the solid-blue Survey incident, arriving by a new route.
+      // ⭐ Still a containment test with nothing to tune — a corner is either in a face or in the
+      // water, and any face holding any corner reaches the edge of the declared data.
+      const corners = [[fx0 - M + 1e-3, fz0 - M + 1e-3], [fx1 + M - 1e-3, fz0 - M + 1e-3],
+                       [fx1 + M - 1e-3, fz1 + M - 1e-3], [fx0 - M + 1e-3, fz1 + M - 1e-3]]
       const FT = 1e-3
       const touchesFrame = (p) => Math.abs(p[0] - (fx0 - M)) < FT || Math.abs(p[0] - (fx1 + M)) < FT
                                 || Math.abs(p[1] - (fz0 - M)) < FT || Math.abs(p[1] - (fz1 + M)) < FT
-      const holdsCorner = (rg) => {
+      const holdsPoint = (rg, corner) => {
         let inside = false
         for (let a = 0, b = rg.length - 1; a < rg.length; b = a++) {
           const p1 = rg[a], p2 = rg[b]
@@ -701,14 +753,36 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         }
         return inside
       }
+      const holdsCorner = (rg) => corners.some(c => holdsPoint(rg, c))
       let degenerate = 0
       let keptOnEdge = 0
       let outerZones = 0
+      // ⭐⭐⭐ A FACE THINNER THAN ε HAS NO INTERIOR — it is a residue of the boolean, not a region.
+      // ⛔ NOT A SIZE THRESHOLD, and the distinction is the whole reason this is allowed to exist:
+      // ε is the minimum width the construction ASSERTS (every chain, and now the shoreline, is
+      // expanded to exactly ε), so nothing in ① can be thinner than ε. A face that is has no
+      // width the ink could have given it. The cut is the declaration itself — there is no number
+      // to tune, and it moves with ε rather than needing to be re-picked per town.
+      // ⛔ AREA ALONE IS THE WRONG MEASURE, and extent alone is too: Huron's residues are 0.5 m
+      // and 1.3 m ACROSS while being 0.2 mm thick, so a small-area cut catches real blocks and an
+      // extent cut misses these. Thickness = area / bbox diagonal separates them with four orders
+      // of magnitude to spare — measured: residues 1.75e-4 … 4.29e-4 m, next real block 2.02 m.
+      // ⭐ THEY APPEARED WITH THE SHORELINE STROKE — where ε-wide coast ink crosses ε-wide street
+      // ink the union leaves a sliver triangle — so this is disclosed as its own class, never
+      // folded into `degenerate`, which counts a DIFFERENT failure (no vertices, or no identity).
+      let slivers = 0
+      const thickness = (rg) => {
+        let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+        for (const q of rg) { if (q[0]<x0)x0=q[0]; if (q[0]>x1)x1=q[0]; if (q[1]<z0)z0=q[1]; if (q[1]>z1)z1=q[1] }
+        const diag = Math.hypot(x1 - x0, z1 - z0)
+        return diag > 0 ? Math.abs(signedArea(rg)) / diag : 0
+      }
       for (const f of D.faces) {
         const rg = D.rings[f.outer], lb = D.labels?.[f.outer]
         // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
         // identity is a real state and must be countable — on town #2 nobody is looking.
         if (!(rg?.length >= 3) || !lb) { degenerate++; continue }
+        if (thickness(rg) < eps) { slivers++; continue }
         // ⛔⛔ EVERY COMPONENT THAT TOUCHES THE FRAME IS ARTIFICIAL, not just the one holding the
         // corner. The frame is a construction convenience, so any face resting against it exists
         // only because we drew a rectangle — it is not a face of the street graph.
@@ -767,6 +841,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
       if (degenerate) console.warn(`    ⛔ [①] ${degenerate} face(s) came back degenerate (<3 vertices or no identity) and are NOT blocks — reported, not hidden.`)
+      if (slivers) console.warn(`    ⛔ [①] ${slivers} face(s) are THINNER THAN ε (${eps} m) and are NOT blocks — a region the ink cannot have made, dropped as a boolean residue. Counted, never silent.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
       if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
     } else if (D.refused) {

@@ -7,9 +7,20 @@
  *
  * ⇒ The coast is COMBINED with the street ink and EXCLUDED from the bb in one move, so the
  * land faces come out bounded by the coast and the water comes out as a discrete positive
- * object to be shaded. ⛔ It is NOT stroked as a chain: the stroke is only safe for OPEN
- * polylines and fragments on a closed ring (measured — square → filled, circle → annulus,
- * Lake Erie → 3 pieces).
+ * object to be shaded.
+ *
+ * ⭐⭐⭐ AND THE SHORELINE IS ALSO STROKED AS A TWO-SIDED CHAIN (Jacob, 2026-09-20): "the lake is
+ * a discrete polygon made of shoreline and bb. The OTHER SIDE of the shoreline isn't necessarily
+ * a continuous ring; it is separate, via the protopoly, from the lake."
+ * ⇒ TWO objects, not one. The closed RING is the lake face (shoreline + bb). The open ARC is ink
+ * — expanded at ε like any chain, so the landward boundary is the protopoly's own edge, ε off the
+ * water, carrying a per-vertex `left`/`right` stamp. That articulation is what a slipway T's into,
+ * exactly as a street T's into a street; without it the coast is one anonymous clip edge and
+ * nothing can meet it.
+ * ⛔ THE EARLIER "NOT STROKED" RULING WAS MEASURED ON THE CLOSED RING and stands for it (square →
+ * filled, circle → annulus, Lake Erie → 3 pieces). Its own wording names the safe case — "the
+ * stroke is only safe for OPEN polylines" — and `clipToRect` already yields exactly that: the
+ * single longest run inside the bb, both ends ON the bb edge. ⇒ We stroke the ARC, never the ring.
  *
  * ⛔ THIS IS NOT THE DISC AND MUST NEVER BECOME IT. `RIBBONS §1` forbids the *circle* from
  * deciding block geometry because the circle is a render knob. A shoreline is ground truth
@@ -125,14 +136,19 @@ function clipToRect(arc, R) {
 }
 
 /**
- * @returns {{ rings: number[][][], report: string[] }} CLOSED water rings — combined with
- *          the ink and excluded from the bb by ①. The land-use polygons close against them.
+ * @returns {{ rings: number[][][], arcs: number[][][], report: string[] }}
+ *          `rings` — CLOSED water rings (shoreline + bb), combined with the ink and excluded from
+ *          the bb by ①: the lake, as a discrete polygon.
+ *          `arcs` — the OPEN shoreline polylines those rings were closed from, for ① to expand at
+ *          ε as two-sided ink. ⛔ Same coast, two objects; a caller that takes one and not the
+ *          other gets a lake with no landward edge, or a landward edge with no lake.
  */
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
   const rings = []
+  const arcs = []
   let interior = 0, held = 0, far = 0
-  if (!Array.isArray(center) || !(discR > 0) || !bb) return { rings, report }
+  if (!Array.isArray(center) || !(discR > 0) || !bb) return { rings, arcs, report }
   const R = bb
 
   for (const cat of Object.keys(ground)) for (const f of ground[cat]) {
@@ -160,12 +176,15 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     const water = cands.filter(r => !pointInRing(center, r))
     if (water.length !== 1) { report.push(`    ⛔ coast "${name}": the disc centre does not separate the two sides — not applied`); continue }
     rings.push(water[0])
+    // ⭐ The ARC, not the ring — the open polyline ① expands at ε. Its two ends sit ON the bb
+    // edge, so the ink it becomes is cut by the frame rather than stopping in mid-air.
+    arcs.push(inside)
     report.push(`    coast "${name}" — ${inside.length} pts in the bb, closed on the bb edge → ${water[0].length}-pt water ring, combined with the ink and excluded from the bb`)
   }
 
   if (interior) report.push(`    ⚠️ ${interior} water bod${interior === 1 ? 'y lies' : 'ies lie'} wholly inside the disc — a pond is not a coast, not applied`)
   if (held) report.push(`    ⚠️ ${held} closed water bod${held === 1 ? 'y crosses' : 'ies cross'} the rim but ${held === 1 ? 'is' : 'are'} held WHOLE by the fetch — not an edge of the land, not applied`)
-  if (!rings.length) { report.push(`    (no coastline — ① is the street network alone, as always)`); return { rings, report } }
+  if (!rings.length) { report.push(`    (no coastline — ① is the street network alone, as always)`); return { rings, arcs, report } }
 
   // ⛔ VERIFY THE SIDE. Buildings are on land; any inside a water ring means it is inverted.
   let wet = 0
@@ -176,8 +195,8 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   }
   if (wet) {
     report.push(`    ⛔ ${wet} building footprint(s) fall INSIDE the water — the land/water sides are inverted. No coast applied.`)
-    return { rings: [], report }
+    return { rings: [], arcs: [], report }
   }
-  report.push(`    ✅ ${rings.length} water ring(s); ${buildings.length} footprint(s) checked, none in the water`)
-  return { rings, report }
+  report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, none in the water`)
+  return { rings, arcs, report }
 }

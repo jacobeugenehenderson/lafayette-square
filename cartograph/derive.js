@@ -5139,7 +5139,7 @@ export function deriveLayers(highways) {
     const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
                                center: boundaryCenter, discR: boundaryRadius, bb: _bb })
     for (const line of _coast.report) console.log(line)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings })
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
     protoWaterRings = MP.waterRings || null
     ribbonsLayer.protopolygon = {
       eps: 0.005,
