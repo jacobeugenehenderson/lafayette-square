@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
-evict-when: sites 5 · 6 · 8 · 12 · 15 · 16 · 17 · B2-boundary all closed AND the class check is green
+evict-when: sites 6 · 8 · 12 · 15 · 16 · 17 · B2-boundary all closed AND the widened class check is green
 -->
 
 **Agent: FRESH.** ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` →
@@ -12,7 +12,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 
 > ### ✅ ACT 0 COMPLETE — 2026-09-20 (Kiln). Every site re-measured; the dead ones are gone from this file.
 > The pre-clean 409-line version is `cartograph/_archive/BRIEF-ls-bleed-excision-preAct0-2026-09-20.md`.
-> **13 of the original 22 sites were already dead.** They are **deleted, not ticked** — the killing
+> **14 of the original 22 sites are gone** — 13 measured dead, and site 5 **ruled closed by Jacob**. They are **deleted, not ticked** — the killing
 > commits are in `§0` in one line each, and nowhere else. ⛔ **Do not re-open them.**
 
 ---
@@ -26,8 +26,9 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **9** `measureModel.js` name-keyed seed · **11** `SCENE` default · **13** Look scene assign · **14** bake-over-LS | `08d61ce1` |
 | **B1** `CartographApp` · **B2** `MapLayers` ribbons · **B3** `useCartographStore` | never a fallback — measured scene-gated 2026-09-19 (`EXTENT-DESIGN §2.1` has the gates) |
 | **B4** `SurveyorPanel` landmarks | retired 2026-09-19 via the `loadInstanceData` seam |
+| **5** `src/instance.js` unregistered look → LS identity | ⛔ **RULED CLOSED, NOT A DEFECT** — Jacob, 2026-09-20, **twice**: *"an alarm for a non-existent fire… if `?look` is unregistered that's basically tautological"* · *"When would/could this ever even happen? And who cares if it does?"* ⛔ **Do not re-open, and do not re-derive it from the general no-fallbacks doctrine** — the operator ruled this specific case. `ROADMAP A12` retired to match. |
 
-⭐ **The argument for Act 0, kept because it recurs:** those thirteen were closed by **six different
+⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
 agents, none of whom knew this brief existed.** The class is being closed incidentally and nobody was
 keeping score. ▶ That is what `§4`'s check is for.
 
@@ -90,7 +91,6 @@ by the consumer, or you have built the same defect wearing a different hat
 | **6** | `cartograph/pipeline/hydrate-anchor-cards.js:28-30` | A | `LAT=38.6160 / LON=-90.2161 / TZ=-6` hardcoded. ⭐⭐ **Every town's sky is St. Louis's sky**, two months after filing. See `§3.1`. | **HIGH** |
 | **15** | `src/lib/terrainCommon.js:18` | B | `V_EXAG = 1.5`, chosen against LS's relief and applied to every town. **Relief across the disc: LS 35.2 m · HPDM 43.1 m · altadena 1,480.3 m.** One multiplier for a river bluff, a lake plain and the San Gabriels. See `§3.2`. | **HIGH** |
 | **16** ⭐ | `arborist/bake-trees.js:545` + `:1372` | **C** | **NEW, found in Act 0.** `scene = DEFAULT_MAP` with **no `requireExplicitMap()`** — the file imports `DEFAULT_MAP` from `config.js` and not the guard sitting beside it. ⛔⛔ **`node arborist/bake-trees.js` with no `--scene` overwrites `public/baked/lafayette-square/trees.json` — with a bake that has NO census, NO species map, NO allow-zone and NO boundary**, because `:1372` reads `args.scene ? treeBakeInputsForMap(…) : {}` and the empty-census branch at `:599` **warns and proceeds** rather than throwing. Site 14's exact shape, destructive, in the one directory the guard does not cover. See `§3.3`. | **HIGH** |
-| **5** | `src/instance.js:110-124` | A | An unregistered look wears **LS's identity, geography, park label, tax rate and legal jurisdiction.** ⭐ **CHANGED SHAPE:** now `console.error`s loudly and keeps the asked-for `lookId`, and stamps `identityResolved: false` — **which nothing reads.** The fallback itself stands. `ROADMAP A12` wants a refusal; the file says that is *"a product decision and is NOT taken here."* ⇒ **needs Jacob's ruling, not a unilateral fix.** | HIGH |
 | **8** | `InfoModal.jsx` (0 `INSTANCE` reads) · `src/pages/LegalPage.jsx` · `CourierOnboarding.jsx` | A | LS prose + **State of Missouri governing law** + the LS delivery zone, hardcoded. **`INSTANCE.legal` exists, LS and HPDM both populate it, and it has ZERO consumers** (`git grep 'INSTANCE.legal'` → nothing). ⭐ **Exposure is currently nil** — Łódź was excised 2026-09-19, and HPDM runs `cary:false`. So this is **structural, not urgent**; it becomes urgent the day a second delivery install exists. | MED — legal, latent |
 | **12** | `cartograph/serve.js:1142` | C | `sceneRouteMatch[1] \|\| DEFAULT_MAP` — a scene-less request is served **LS's** artifacts. ⛔ **Deliberately deferred:** `api.js sceneUrl()` emits scene-less URLs for the default scene, so refusing breaks the running app. **Sequence with the client; do not cut it alone.** | MED — blocked |
 | **17** ⭐ | `arborist/serve.js:1107` | C | **NEW, found in Act 0.** `routeScene = routeLook ? … : 'lafayette-square'` — a routing **write** with no `?look=` lands in **LS's species-map.** Soft (authoring only) but it is a write. | LOW |
@@ -179,8 +179,6 @@ not prose.
 
 1. **Sites 6 · 15 · 16 · B2b** excised per `§2`. Independent — **land separately, smallest first**
    (16 is smallest; 6 is largest).
-2. **Site 5** — ⛔ **take Jacob the ruling first.** `ROADMAP A12` wants a refusal; the code says the
-   product decision is untaken. Do not decide it in a commit.
 3. **Site 8** — instance-derive the prose. ⚠️ This is `ROADMAP C1` Phase 4
    (`_handoffs/HANDOFF-blank-app-instance-decoupling.md`), **not intake** — coordinate, don't duplicate.
 4. **Site 12** — ⛔ blocked on the client. Sequence with `api.js sceneUrl()`.
