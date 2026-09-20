@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
-evict-when: sites 6 · 8 · 12 · 15 · 17 · B2-boundary all closed (16/18/19 done) AND node checks/claims-writers-name-the-scene.mjs is green
+evict-when: sites 6 · 8 · 12 · 17 · B2-boundary all closed (15/16/18/19 done) AND node checks/claims-writers-name-the-scene.mjs is green
 -->
 
 **Agent: FRESH.** ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` →
@@ -12,7 +12,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 
 > ### ✅ ACT 0 COMPLETE — 2026-09-20 (Kiln). Every site re-measured; the dead ones are gone from this file.
 > The pre-clean 409-line version is `cartograph/_archive/BRIEF-ls-bleed-excision-preAct0-2026-09-20.md`.
-> **17 of 24 sites are gone** — 13 measured dead, site 5 **ruled closed**, sites 16/18/19 **fixed 2026-09-20**. (24, not 22: the widened check found two new ones.) They are **deleted, not ticked** — the killing
+> **18 of 24 sites are gone** — 13 measured dead, site 5 **ruled closed**, sites 15/16/18/19 **fixed 2026-09-20**. (24, not 22: the widened check found two new ones.) They are **deleted, not ticked** — the killing
 > commits are in `§0` in one line each, and nowhere else. ⛔ **Do not re-open them.**
 
 ---
@@ -28,6 +28,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **B4** `SurveyorPanel` landmarks | retired 2026-09-19 via the `loadInstanceData` seam |
 | **5** `src/instance.js` unregistered look → LS identity | ⛔ **RULED CLOSED, NOT A DEFECT** — Jacob, 2026-09-20, **twice**: *"an alarm for a non-existent fire… if `?look` is unregistered that's basically tautological"* · *"When would/could this ever even happen? And who cares if it does?"* ⛔ **Do not re-open, and do not re-derive it from the general no-fallbacks doctrine** — the operator ruled this specific case. `ROADMAP A12` retired to match. |
 | **16** `bake-trees.js` bakes over LS · **18** `pack-impostor-ktx2` · **19** `17-fill-canopy-trees` | `8e90eeb7` — 16 guarded at the CLI entry; 18's `\|\| '--look=lafayette-square'` and 19's **dead refusal** (`\|\| 'lafayette-square'` above an `if (!SCENE)` that could never fire) both now exit 2. ⭐ **18 and 19 were found BY the widened check, not by reading** — which is the argument for §4. |
+| **15** `terrainExag` sized against LS | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
 
 ⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
 agents, none of whom knew this brief existed.** The class is being closed incidentally and nobody was
@@ -90,7 +91,6 @@ by the consumer, or you have built the same defect wearing a different hat
 | # | Site | Class | What bleeds | Sev |
 |---|---|---|---|---|
 | **6** | `cartograph/pipeline/hydrate-anchor-cards.js:28-30` | A | `LAT=38.6160 / LON=-90.2161 / TZ=-6` hardcoded. ⭐⭐ **Every town's sky is St. Louis's sky**, two months after filing. See `§3.1`. | **HIGH** |
-| **15** | `src/lib/terrainCommon.js:18` | B | `V_EXAG = 1.5`, chosen against LS's relief and applied to every town. **Relief across the disc: LS 35.2 m · HPDM 43.1 m · altadena 1,480.3 m.** One multiplier for a river bluff, a lake plain and the San Gabriels. See `§3.2`. | **HIGH** |
 | **8** | `InfoModal.jsx` (0 `INSTANCE` reads) · `src/pages/LegalPage.jsx` · `CourierOnboarding.jsx` | A | LS prose + **State of Missouri governing law** + the LS delivery zone, hardcoded. **`INSTANCE.legal` exists, LS and HPDM both populate it, and it has ZERO consumers** (`git grep 'INSTANCE.legal'` → nothing). ⭐ **Exposure is currently nil** — Łódź was excised 2026-09-19, and HPDM runs `cary:false`. So this is **structural, not urgent**; it becomes urgent the day a second delivery install exists. | MED — legal, latent |
 | **12** | `cartograph/serve.js:1142` | C | `sceneRouteMatch[1] \|\| DEFAULT_MAP` — a scene-less request is served **LS's** artifacts. ⛔ **Deliberately deferred:** `api.js sceneUrl()` emits scene-less URLs for the default scene, so refusing breaks the running app. **Sequence with the client; do not cut it alone.** | MED — blocked |
 | **17** ⭐ | `arborist/serve.js:1107` | C | **NEW, found in Act 0.** `routeScene = routeLook ? … : 'lafayette-square'` — a routing **write** with no `?look=` lands in **LS's species-map.** Soft (authoring only) but it is a write. | LOW |
@@ -119,22 +119,6 @@ baked into `scene.json` with the consumers rewired to read the slab.
 latitude** and hardcode northern solstice/equinox day-numbers, while `useCalendar.js:26` correctly
 inverts seasons for `lat < 0`. A southern-hemisphere town gets a summer calendar against a winter sky.
 Latent; no install affected.
-
-### 3.2 Site 15 — `terrainExag`, RULED by Jacob 2026-09-20
-
-▶ **`terrainExag` becomes a per-town authored value in `design.json`, defaulting to 1.**
-
-⛔⛔ **THE DEFAULT OF 1 IS THE POINT, NOT A DETAIL: LS's 1.5 becomes LS's AUTHORED DATA.** The kit
-default is the neutral value. ⚠️ **This CHANGES LS's Hero terrain unless LS authors 1.5** — intended,
-and it must be **a declared line in the commit**, not a surprise at the eye gate.
-
-⭐ **Easier than first scoped** (see `§0`): terrain is already per-look. `BakedGround` already reads
-`useSceneJson`, so `scene?.terrainExag ?? 1` is the React path; `makeElevationSampler(terrain)` is
-already built per-terrain, so taking the exag as a parameter is the clean shape. ⚠️ **Enumerate its
-callers before changing the signature** — `V_EXAG` is imported by ~12 runtime files **plus the bake**
-(`bake-ground.js` reads the same SSoT), and `cartograph/BACKLOG.md:204` notes a hardcoded `1.5` still
-sitting in `bake-ground.js`. **Bake and runtime must move together or the slab and the shader
-disagree.**
 
 ### 3.3 ⭐⭐ Site 16 — and why the checker missed it. THIS IS THE REAL PRIZE.
 
@@ -181,8 +165,7 @@ not prose.
 
 ## 5. Deliver
 
-1. **Sites 6 · 15 · 16 · B2b** excised per `§2`. Independent — **land separately, smallest first**
-   (16 is smallest; 6 is largest).
+1. **Sites 6 · B2b** excised per `§2`. Independent — land separately, smallest first.
 3. **Site 8** — instance-derive the prose. ⚠️ This is `ROADMAP C1` Phase 4
    (`_handoffs/HANDOFF-blank-app-instance-decoupling.md`), **not intake** — coordinate, don't duplicate.
 4. **Site 12** — ⛔ blocked on the client. Sequence with `api.js sceneUrl()`.
