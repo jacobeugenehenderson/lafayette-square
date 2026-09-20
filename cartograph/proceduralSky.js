@@ -251,3 +251,120 @@ export function proceduralSkyAt(altitude, isDawn, seasonTransform = SEASON_TRANS
     sunGlow,
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────
+// buildAnchorCards — THE SKY'S COLOUR TABLE, SAMPLED AT THE HOST MAP'S LAT/LON.
+//
+// ⛔⛔ THIS USED TO BE A STATIC 4×24×5 TABLE OF HEX STRINGS IN skyGrid.js, GENERATED
+// ONCE AT LAFAYETTE SQUARE'S COORDINATES AND SHIPPED TO EVERY TOWN. Jacob, 2026-09-20:
+// "the sky should be set to the lat long of its host map, another place where LS is
+// totally inappropriate." (BRIEF-ls-bleed-excision site 6.)
+//
+// ⭐⭐ WHY THIS IS A SAMPLING FIX AND NOT A REWRITE — the thing to understand before
+// touching it. `proceduralSkyAt(altitude, isDawn, transform)` TAKES NO LATITUDE. It maps
+// SUN ALTITUDE → colour, and that relationship is the same everywhere on Earth: winter
+// noon's low sun produces the colours summer reaches at 8am, automatically (the
+// 2026-05-20 ADR's point 3). So the colour canon was ALREADY universal. What was
+// LS-specific was only WHICH ALTITUDES OCCUR AT WHICH CLOCK HOUR — pure geometry, and
+// the one thing a town's lat/lon answers.
+// ⇒ The artistic layer (SEASON_TRANSFORMS) stays kit canon and does NOT vary by town.
+// Only the trajectory is resampled. A town is not given a different palette; it is given
+// its own sun.
+//
+// ⭐ The geometry half of the sky was never wrong: CelestialBodies already computes the
+// true sun, moon, star field and celestial-pole tilt from INSTANCE.geography. The defect
+// was that the sky was PAINTED on St. Louis's schedule while the sun stood in the right
+// place — so in Łódź (51.75°N) the sun set ~90 min before the dome darkened.
+//
+// ⚠️ Deriving this is ~96 SunCalc calls + 96 colour evaluations, once at module load.
+// It replaces ~118 lines of checked-in hex that could only ever be right for one town.
+export const SKY_SEASONS = ['winter', 'spring', 'summer', 'autumn']
+
+// Cardinal year anchors — ASTRONOMICAL dates, not "this town's summer". On 21 June the
+// sun is at its northern extreme whether you are in St. Louis or Sydney; what differs is
+// whether you CALL that day summer. The anchor slot keeps the astronomical name so the
+// day-of-year interpolation in skyGrid.flankingAnchors stays simple; the hemisphere
+// enters below, in which artistic TINT each date is painted with.
+const REF_DATES = {
+  winter: { year: 2026, month: 11, day: 21 },  // Dec 21 — solstice
+  spring: { year: 2026, month:  2, day: 20 },  // Mar 20 — equinox
+  summer: { year: 2026, month:  5, day: 21 },  // Jun 21 — solstice
+  autumn: { year: 2026, month:  8, day: 22 },  // Sep 22 — equinox
+}
+
+/**
+ * The 4 × 24 × 5 seasonal colour table for one location.
+ *
+ * @param SunCalc  the suncalc module (injected so this file stays dependency-free and
+ *                 usable from both the browser bundle and a node script).
+ * @param lat,lon  the HOST MAP's coordinates — `INSTANCE.geography` at runtime,
+ *                 `cartograph/data/<scene>/geography.json` on the node side.
+ * @param tzOffsetHours  the town's standard-time UTC offset, used only to place the
+ *                 clock hours. ⛔ DST is deliberately ignored: these are cardinal
+ *                 reference days for interpolation, not wall-clock predictions.
+ */
+export function buildAnchorCards(SunCalc, lat, lon, tzOffsetHours) {
+  const hourClock = (ref, hour) => new Date(Date.UTC(
+    ref.year, ref.month, ref.day, hour - tzOffsetHours, 0, 0,
+  ))
+  // ⛔⛔ THE HEMISPHERE ENTERS HERE, AND ONLY HERE. The sun ALTITUDES are already right
+  // for any latitude — SunCalc handles that — so a southern town's 21 June card carries a
+  // genuinely low winter sun without anyone asking. What does NOT follow automatically is
+  // the artistic tint: SEASON_TRANSFORMS is keyed by season NAME, so Sydney's June would
+  // otherwise get summer's warm, saturated wash laid over a winter sky.
+  // ⇒ Below the equator the tints swap, exactly as `useCalendar.seasonFromDoy` already
+  // inverts the season names for `lat < 0`. Two places that must agree; they now do.
+  // (The old static table could not express this at all — it was one northern town's
+  // output, so a southern install had a summer calendar against a winter sky.)
+  const southern = lat < 0
+  const FLIP = { winter: 'summer', summer: 'winter', spring: 'autumn', autumn: 'spring' }
+  const cards = {}
+  for (const season of SKY_SEASONS) {
+    const ref = REF_DATES[season]
+    const transform = SEASON_TRANSFORMS[southern ? FLIP[season] : season]
+    // Solar noon splits the day into dawn-side and dusk-side, which is what selects the
+    // warm keyframe pair. It MOVES with longitude, so it has to be recomputed per town —
+    // hardcoding it is the same class of bug as hardcoding the latitude.
+    const times = SunCalc.getTimes(hourClock(ref, 12), lat, lon)
+    const solarNoonLocalH = times.solarNoon.getUTCHours() + tzOffsetHours
+      + times.solarNoon.getUTCMinutes() / 60
+    const card = []
+    for (let h = 0; h < 24; h++) {
+      const sunPos = SunCalc.getPosition(hourClock(ref, h), lat, lon)
+      card.push(proceduralSkyAt(sunPos.altitude, h < solarNoonLocalH, transform))
+    }
+    cards[season] = card
+  }
+  return cards
+}
+
+/**
+ * The STANDARD-time UTC offset, in hours, for an IANA timezone name.
+ *
+ * ⛔ DERIVED FROM THE ZONE, NEVER A LOOKUP TABLE. A hardcoded
+ * `{'America/Chicago': -6, …}` map is a skip list: it is correct for the towns
+ * someone happened to list and silently wrong for town #2 (`CLAUDE.md` Layer 0).
+ *
+ * ⭐ THE RULE, and it is hemisphere-agnostic: DST always moves the clock FORWARD,
+ * so of a zone's two offsets the STANDARD one is the smaller. Sampling January and
+ * July catches both hemispheres without asking which one we are in — northern zones
+ * are standard in January, southern in July, and a zone with no DST returns the same
+ * number twice.
+ *
+ * ⚠️ Standard time on purpose, not an oversight. These are four cardinal reference
+ * days whose cards get interpolated across the year; pinning them to one offset keeps
+ * the anchor set internally consistent. A DST-aware sampling would shift the summer
+ * card an hour against the other three and make the interpolation lumpy.
+ */
+export function standardUtcOffsetHours(timeZone) {
+  const offsetAt = (month) => {
+    const d = new Date(Date.UTC(2026, month, 15, 12, 0, 0))
+    // 'longOffset' yields e.g. "GMT-6" / "GMT-05:30" / "GMT" — parse both forms.
+    const s = new Intl.DateTimeFormat('en-US', { timeZone, timeZoneName: 'longOffset' })
+      .formatToParts(d).find(p => p.type === 'timeZoneName')?.value || 'GMT'
+    const m = /GMT([+-])(\d{1,2})(?::(\d{2}))?/.exec(s)
+    if (!m) return 0
+    return (m[1] === '-' ? -1 : 1) * (Number(m[2]) + Number(m[3] || 0) / 60)
+  }
+  return Math.min(offsetAt(0), offsetAt(6))
+}
