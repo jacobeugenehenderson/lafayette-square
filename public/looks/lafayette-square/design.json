@@ -1,7 +1,7 @@
 {
   "layerVis": {
     "street": true,
-    "highway": false,
+    "highway": true,
     "stripe": true,
     "edgeline": false,
     "bikelane": false,
@@ -1480,7 +1480,7 @@
     }
   },
   "openSections": {
-    "Streets": false,
+    "Streets": true,
     "Blocks": false,
     "Paths": false,
     "Features": false,

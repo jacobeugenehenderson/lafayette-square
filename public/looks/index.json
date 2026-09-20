@@ -12,7 +12,7 @@
       "scene": "lafayette-square",
       "createdAt": 1777317275119,
       "bakedAt": 1788933348186,
-      "updatedAt": 1788931261029
+      "updatedAt": 1789918493410
     },
     {
       "id": "toy",
@@ -51,7 +51,7 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1789875204444
+      "bakedAt": 1789912497622
     }
   ]
 }
