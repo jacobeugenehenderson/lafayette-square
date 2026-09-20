@@ -1056,6 +1056,37 @@
 > `boundaryRing` — **a payload, not a clip** — and applied per object at every consumer (`[PROTO⊙]`
 > and the live curb). ⛔ **A disc, or a disc plus a margin, is STILL the circle deciding block
 > geometry**; the subtraction subject is a plain rectangle around all the ink.
+>
+> ### ⭐⭐⭐ AND THAT RULE IS ABOUT **THE CIRCLE**, NOT ABOUT CLOSING A FACE — added 2026-09-20, after it was read the other way and cost a day
+> **THE DISC IS A RENDER KNOB. GROUND TRUTH IS NOT.** The radius, `streetFade` and the aesthetic
+> padding are all live-editable and none of them is a fact about the town — *that* is why the circle
+> may not decide block geometry, and why it stamps LAST.
+> ⛔ **It does NOT say "only a chain may close a face."** A **shoreline** is absolute and permanent
+> (`ROADMAP H-4`, Jacob: *"this should be EASIER than a man-made feature, because a shoreline is
+> absolute and permanent(ish) where a curb is authored and negotiable"*). A block that runs to the
+> water genuinely ends there. ⇒ **A coast is INK**: stroked into ① like a chain under
+> `WATER_EDGE_SKEL`, it closes the land-use polygons on the landward side — *especially the
+> dead-ends*, which a graph walk can never close (`PREBAKE §4.0`) — and the **water field** falls out
+> of `frame − ink` on the other side. *(Jacob, 2026-09-20: "it is both; we see the difference between
+> land and water, and the geometry creates the water field and on the other side (land-ward side)
+> closes the rest of the LU polygons, especially the dead-ends.")*
+> ⭐ **It is still not a street:** no coupler, no `baseMeasure`, no band, no ADA, no cap. It closes
+> faces; nothing offsets a curb from it.
+> ⛔⛔ **AND THE RADIUS IS UNTOUCHED BY ANY OF IT.** The coast closes against **the bb** — the frozen
+> data extent — and the circle still stamps last, over the result. *(Jacob: "the shoreline is cut and
+> made into a closed polygon by the final radial stamp, it doesn't replace it" · "the water should go
+> to the edge of the bb just like the roads and everything else.")*
+>
+> ⚠️ **THE INSTANCE, because this is the failure this paragraph exists to stop (2026-09-20).** An
+> agent read *"a disc plus a margin is still the circle deciding block geometry"* as *"nothing but a
+> chain may close a block"*, and therefore built the shoreline as a **replacement boundary**: it
+> carved the disc at the head of `derive.js`, pushed the carved ring into `streetPolylines`, and
+> wrote the result into `neighborhood_boundary.json` beside the radius, where the renderer preferred
+> it. **That inverted which one is the SSoT** — a radius edit could no longer reshape the drawing,
+> breaking `EXTENT-DESIGN §3.3` R15, the living boundary — and it minted **19 spurious perimeter
+> blocks**, which is precisely the *"weird odd shapes"* option this section rejects. Reverted at
+> `dcfe9d18`/`9bbc3bc7`. ⭐ **Two readings of one sentence, and the doc did not distinguish them.
+> Now it does.**
 > ⚠️ **THIS SECTION USED TO SAY the mint "unites the whole grid and then INTERSECTS" and that a rim
 > edge "comes out owned" by `__boundary__`. Both are ROT** — the code carries the explicit counter-note
 > (*"① is NOT cut here"*), and **0 of LS's 275 block faces carry a single `__boundary__` label**: the

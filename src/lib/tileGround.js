@@ -549,15 +549,25 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // of streets and the circle stencils out the circle OR the circle adds the geometry such that
   // the whole perimeter is made of weird odd shapes", and "there should be no tips; the streets
   // clip at the perimeter edge."
-  // ⇒ Build the WHOLE grid, then INTERSECT. The boundary is the CLIP, never a subject.
+  // ⇒ Build the WHOLE grid. ⛔ ① IS NEVER CUT HERE — the boundary is carried out as
+  // `boundaryRing`, A PAYLOAD, and stamped LAST on finished geometry (`[PROTO⊙]`).
   //
-  // ⛔ WHY THE OTHER READING IS WORSE, AND IT IS NOT A STYLE CHOICE. Uniting a boundary line
-  // into ① leaves every street's ink running THROUGH and PAST the perimeter, so the rim becomes
-  // a chain of slivers between the circle and each crossing street — Jacob's "weird odd shapes".
-  // Intersecting cuts every street SQUARE at the edge: "there should be no tips; the streets clip
-  // at the perimeter edge." A square cut has no endpoint, so there is nothing for a cap, a bulb
-  // or a fillet to be built on. That is the point — the defect class is removed rather than
-  // guarded against downstream.
+  // ⛔⛔ THE "UNITE THEN INTERSECT / THE RIM EDGE COMES OUT OWNED BY `__boundary__`" TEXT THAT
+  // STOOD HERE IS EXCISED — `_archive/PROTO-rim-owned-ROT-2026-09-20.md`. `RIBBONS §1` struck it
+  // on 2026-09-06 and this header was not updated, so it read as current for two weeks and was
+  // believed on 2026-09-20, costing a day. **0 of LS's 275 block faces carry a `__boundary__`
+  // label**: under stamp-last a block runs PAST the rim and is cut after, so no rim edge is owned.
+  //
+  // ⭐⭐⭐ AND THE DISTINCTION THAT DAY TURNED ON, BECAUSE THIS HEADER DID NOT MAKE IT:
+  // **THE DISC IS A RENDER KNOB. GROUND TRUTH IS NOT.** `RIBBONS §1`'s "a disc, or a disc plus a
+  // margin, is STILL the circle deciding block geometry" is about THE CIRCLE — radius,
+  // `streetFade` and aesthetic padding, all live-editable, none of them facts about the town. It
+  // is NOT a rule that only a chain may close a block. A SHORELINE is absolute (`ROADMAP H-4`),
+  // so it is INK: stroked in like a chain, it closes land-use faces and coast-facing dead ends,
+  // and the water field falls out of `frame − ink` on the other side. See `RIBBONS §1`.
+  // ⛔ Read as "nothing but a chain may close a face", this header sent an agent to carve the disc
+  // up front and write the result beside the radius — inverting which one is the SSoT. The radius
+  // is sacrosanct and the circle stamps last; a coast is neither of those things.
   //
   // ⭐ IDENTITY SURVIVES THE CUT, which is the only reason this can be done here. The clip ring
   // is labelled like any subject, so `booleanLabelled` carries `__boundary__` THROUGH the boolean
@@ -590,10 +600,10 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // against 6 kept). Jacob's eye found it as Park Avenue having chains on both sides of the
     // circle and NO drawing between them. Interior blocks were untouched, which is why every
     // aggregate gate stayed green.
-    // ⇒ Subtract the ink FROM the disc: a rim block comes out whole, bounded by ink on some edges
-    // and by the circle on the rest. Its circle-side edges carry `__boundary__` and resolve to NO
-    // measure, so `depthAt` returns 0 there — which is already the ruled behaviour at the map edge
-    // ("edgeDepth → 0, land-use floods to the boundary, no curb/sidewalk on the map edge").
+    // ⇒ Subtract the ink from the FRAME — a plain rectangle around everything, never the disc.
+    // ⛔ The "its circle-side edges carry `__boundary__` and resolve to NO measure" claim that
+    // stood here is ROT and is excised with the header's copy above; a rim block is CUT by the
+    // stamp afterwards and owns no rim edge.
     //
     // ⛔⛔ ORIENTATION IS CONVERTED DELIBERATELY, NOT ASSUMED. The consumer walks blocks wound as
     // HOLES of ① (it skips `signedArea(ring) > 0`) and insets by a POSITIVE depth. `disc − ink`
