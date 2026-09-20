@@ -162,6 +162,17 @@ function toRecord(r) {
     name: r.names?.primary || null,
     category: r.categories?.primary || null,
     alternate: r.categories?.alternate || [],
+    // ⭐⭐ THE ROOT-TO-LEAF PATH, AND IT IS WHAT MAKES THE CLASSIFIER A KIT
+    // METHOD RATHER THAN A LOOKUP TABLE. Overture has ~2000 leaf categories; an
+    // enumerated leaf table would be correct on the town it was built for and
+    // silently thin everywhere else. The HIERARCHY's root set is closed and
+    // small (14, measured over a whole release), so `bake-content.js`'s
+    // OVERTURE_ROOTS maps a closed vocabulary and a town nobody has looked at
+    // classifies on the same table.
+    // ⛔ Without this field every record classifies as NO CATEGORY — which is a
+    // plausible-looking success, so `buildBaseListingsFromOverture` refuses an
+    // artifact where no record carries one rather than reporting a thin town.
+    hierarchy: r.taxonomy?.hierarchy || [],
     confidence: r.confidence ?? null,
     operating_status: r.operating_status || null,
     lon: r.bbox.xmin, lat: r.bbox.ymax,
@@ -204,7 +215,7 @@ async function main() {
     console.log(`  prune 2 — ${h.id}: ${groups.length}/${meta.row_groups.length} row groups intersect`)
     for (const [rowStart, rowEnd] of groups) {
       const rows = await parquetReadObjects({ file, compressors, rowStart, rowEnd,
-        columns: ['id', 'names', 'categories', 'confidence', 'addresses', 'websites', 'phones', 'socials', 'sources', 'bbox', 'operating_status'] })
+        columns: ['id', 'names', 'categories', 'taxonomy', 'confidence', 'addresses', 'websites', 'phones', 'socials', 'sources', 'bbox', 'operating_status'] })
       scanned += rows.length
       for (const r of rows) {
         const b = r.bbox

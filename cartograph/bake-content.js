@@ -48,6 +48,7 @@ import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
 import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
 import { classifyZoning } from '../src/tokens/categories.js'
+import { createVocabularyGate } from './osm-vocabulary.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -650,6 +651,176 @@ function buildBaseListings(pois, buildingGrid, luByBuilding) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// Layer 2 — base listings from an EXTERNAL base: Overture Places
+//
+// ⭐ THE SECOND PRODUCER. This is the open work the guard below used to name and
+// have nowhere to send you: the guard was generic (it reads `meta.baseSource`
+// out of the DATA) but its remedy never was, so a town with a non-OSM base was
+// protected from the destructive re-bake and then stranded.
+//
+// ⛔ IT IS A PRODUCER, NOT A PIPELINE. It emits the SAME record shape as
+// `buildBaseListings` and hands it to the SAME `applyListingOverrides`, so
+// anchor re-resolution, `add_dropped`, display-id assignment and the orphan
+// invariant are all INHERITED rather than reimplemented. A second merge path is
+// how those protections quietly stop applying to the towns that need them most.
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * ⭐⭐ MAP OVERTURE'S TAXONOMY **ROOT**, NOT ITS LEAVES.
+ *
+ * Overture Places carries on the order of two thousand leaf categories. An
+ * enumerated leaf table would be an instance patch wearing a method's clothes —
+ * correct for the town you built it on and silently thin everywhere else
+ * (`CLAUDE.md` Layer 0 q1). But every record also carries
+ * `taxonomy.hierarchy`, a root-to-leaf path, and ⭐ THE ROOT SET IS CLOSED AND
+ * SMALL: measured 2026-09-20 over a whole release file, **14 roots and no
+ * others**, and the first town measured used exactly the same 14. Level 2 is
+ * likewise closed per root. So the kit maps a closed vocabulary of ~14×N, and a
+ * town nobody has looked at classifies on the same table.
+ *   ▶ re-derive, never quote — `scratch/overture-taxonomy-census.mjs`
+ *
+ * ⛔ The VALUES are `[category, subcategory]` in the installation's OWN
+ * vocabulary (`src/tokens/categories.js`) — the same pairs `classifyPoi`
+ * returns. NOT a new taxonomy, and not an extension of that one.
+ *
+ * ⛔ A `null` SUBCATEGORY IS THE HONEST ANSWER where Overture's second level
+ * does not resolve to one of ours; `useListings.js:89` already tolerates it.
+ * Inventing a sub-bucket to fill the column would be a confident wrong answer
+ * about a real business, which is worse than an empty field.
+ */
+const OVERTURE_ROOTS = {
+  food_and_drink: {
+    default: ['dining', null],
+    l2: {
+      restaurant: ['dining', 'restaurants'],
+      casual_eatery: ['dining', 'restaurants'],
+      alcoholic_beverage_venue: ['dining', 'bars'],
+      non_alcoholic_beverage_venue: ['dining', 'cafes'],
+    },
+  },
+  shopping: { default: ['shopping', 'retail'], l2: { market: ['shopping', 'grocery'], food_and_beverage_retail: ['shopping', 'grocery'] } },
+  services_and_business: { default: ['services', null], l2: {} },
+  lifestyle_services: { default: ['services', null], l2: { beauty_service: ['services', 'beauty'], fitness_or_wellness_service: ['services', 'fitness'] } },
+  health_care: { default: ['services', 'health'], l2: {} },
+  education: { default: ['community', 'schools'], l2: {} },
+  community_and_government: { default: ['community', 'organizations'], l2: {} },
+  cultural_and_historic: {
+    default: ['historic', 'landmarks'],
+    l2: {
+      place_of_worship: ['community', 'churches'],
+      religious_organization: ['community', 'churches'],
+      historic_site: ['historic', 'landmarks'],
+      memorial_site: ['historic', 'markers'],
+      cultural_center: ['arts', 'venues'],
+    },
+  },
+  arts_and_entertainment: { default: ['arts', 'venues'], l2: { museum: ['arts', 'galleries'], art_gallery: ['arts', 'galleries'] } },
+  sports_and_recreation: { default: ['parks', 'recreation'], l2: { park: ['parks', 'parks'], garden: ['parks', 'gardens'] } },
+  lodging: { default: ['hospitality', 'hotels'], l2: { bed_and_breakfast: ['hospitality', 'bed-and-breakfast'] } },
+  travel_and_transportation: { default: ['services', null], l2: { parking: ['services', 'parking'], fueling_station: ['services', 'automotive'], vehicle_service: ['services', 'automotive'] } },
+  geographic_entities: { default: ['parks', null], l2: { water_feature: ['parks', null], land_feature: ['parks', null] } },
+}
+
+/**
+ * ⛔ Returns null when the kit cannot classify this record — it does NOT guess.
+ * A null category flows into the UNRESOLVED census the roster bake already
+ * prints, which is the surface for "we do not know" and is deliberately NOT a
+ * category. ⛔ Never reintroduce a `|| 'residential'`-shaped default here; that
+ * is the exact fallback the unclassified census was built to expose.
+ */
+function classifyOverturePlace(place) {
+  const h = place.hierarchy || []
+  const root = h[0]
+  if (!root) return null                       // Overture itself has no category for it
+  const entry = OVERTURE_ROOTS[root]
+  if (!entry) return { unknownRoot: root }     // a root the kit has never seen — LOUD, not guessed
+  const l2 = h[1] && entry.l2[h[1]]
+  return { cls: l2 || entry.default }
+}
+
+/**
+ * Read the acquired artifact. ⛔ Declared-but-missing THROWS: a town that says
+ * its base is Overture and has no Overture file is a broken setup, and
+ * proceeding on the OSM base would silently produce a different map than the one
+ * the operator declared.
+ */
+function loadOverturePlaces(scene) {
+  const p = join(mapDir(scene), 'raw', 'overture-places.json')
+  if (!existsSync(p)) throw new Error(
+    `scene "${scene}" declares meta.baseSource "overture" but has no raw/overture-places.json.\n` +
+    `   ▶ node cartograph/fetch-overture-places.js --scene=${scene}\n` +
+    `   ⛔ Not falling back to the OSM base: you would get a different map than the one you declared.`)
+  return JSON.parse(readFileSync(p, 'utf8'))
+}
+
+function buildBaseListingsFromOverture(artifact, buildingGrid) {
+  const out = []
+  let skipped = 0, closed = 0, unclassified = 0
+
+  // ⛔⛔ AN ARTIFACT WITH NO TAXONOMY AT ALL IS A BROKEN ARTIFACT, NOT A TOWN
+  // WITH NO CATEGORIES — and the two are indistinguishable downstream, which is
+  // exactly why this is checked here and loudly. An early cut of the fetcher did
+  // not request Overture's `taxonomy` column; the bake then produced a full,
+  // plausible-looking set of listings in which EVERY SINGLE ONE was
+  // uncategorised, and the only reason it was caught is that the census prints
+  // the number. A thin town and a stale artifact must never look alike.
+  const places = artifact.places || []
+  if (places.length && !places.some(p => (p.hierarchy || []).length)) throw new Error(
+    `raw/overture-places.json has ${places.length} places and NOT ONE carries \`hierarchy\`.\n` +
+    `   That is a STALE ARTIFACT, not a town without categories — it was fetched before the\n` +
+    `   taxonomy field was requested, so every listing would be emitted with no category.\n` +
+    `   ▶ re-acquire: node cartograph/fetch-overture-places.js --scene=<scene>`)
+  const gate = createVocabularyGate('overture-taxonomy',
+    'Add the root to OVERTURE_ROOTS in cartograph/bake-content.js, mapping it to a [category, subcategory] ' +
+    'pair from src/tokens/categories.js. ⛔ Do not map it to a nearby-looking category to clear the warning — ' +
+    'an unmapped root emits a null category, which the UNRESOLVED census already reports honestly.',
+    { noun: 'place', classNoun: 'taxonomy root', unit: 'records', weighted: false,
+      body: ['   Overture classified these, and the kit has no mapping for the root it used.',
+             '   ⛔ They are emitted with NO CATEGORY rather than a guessed one. Most records first:'] })
+
+  for (const place of artifact.places || []) {
+    // ⛔ A permanently closed business rendered as a place card is a wrong map,
+    // not a thin one. Overture says so explicitly; dropping it is not a guess.
+    if (place.operating_status === 'permanently_closed') { closed++; continue }
+    const building_id = joinPointToBuilding(place.x, place.z, buildingGrid, 25)
+    if (!building_id) { skipped++; continue }  // outside the baked set — the orphan invariant, inherited
+
+    const verdict = classifyOverturePlace(place)
+    let category = null, subcategory = null
+    if (verdict?.unknownRoot) { gate.record(verdict.unknownRoot, null, { example: place.name }); unclassified++ }
+    else if (verdict?.cls) { [category, subcategory] = verdict.cls }
+    else unclassified++
+
+    out.push({
+      _key: `ovt-${place.id}`,           // GERS id — stable across Overture releases
+      id: null,
+      building_id,
+      name: place.name,
+      category, subcategory,
+      address: place.address || null,
+      phone: place.phone || null,
+      website: place.website || null,
+      logo: null,
+      hours: null,
+      opening_hours_raw: null,           // ⛔ Overture carries no opening hours. Absent, never zero.
+      photos: [],
+      amenities: [],
+      tags: [],
+      description: null,
+      history: null,
+      menu_url: null,
+      reservation_url: null,
+      status: 'unverified',
+      source: 'overture',
+      osm_type: null,
+      overture_category: place.category || null,
+      overture_confidence: place.confidence ?? null,
+    })
+  }
+  return { listings: out, skipped, closed, unclassified, gate }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Overrides — apply patches (per stable key / name) + adds (research records
 // with anchor re-resolution so hand-added listings inherit slab membership).
 // ──────────────────────────────────────────────────────────────────────────
@@ -893,40 +1064,75 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const parcelByAddr = new Map()
   for (const par of parcels) { const na = normAddress(par.address); if (na && !parcelByAddr.has(na)) parcelByAddr.set(na, par) }
 
-  // Layer 2 — base listings
-  let skipListings = false
-  const { listings: baseListings, skipped } = buildBaseListings(pois, buildingGrid)
-  console.log(`  base listings (OSM): ${baseListings.length} (${skipped} POIs outside the baked set → correctly absent)`)
-
-  // overrides
-  const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
-
-  // ⛔ EXTERNAL-BASE GUARD. This step derives the listings BASE from OSM POIs.
-  // A scene whose base came from somewhere else — Łódź's came from OVERTURE
-  // PLACES — cannot be regenerated here: the OSM join yields ~0, so we would
-  // write out only the surviving hand-authored adds and silently destroy the
-  // generated base. That is not hypothetical: baking Łódź after an Extent edit
-  // took listings.json from 84 → 5 (2026-07-20).
+  // ── Layer 2 — base listings. TWO PRODUCERS, SELECTED BY THE DATA. ─────────
   //
-  // Same shape as the LS guard below it (LS content is hand-curated), but
-  // DECLARED IN THE DATA rather than hardcoded by scene name, so the next town
-  // with a non-OSM base is protected without touching this file.
-  // Declare it as `meta.baseSource` in listings.overrides.json.
-  const externalBase = listingOverrides?.meta?.baseSource
-  if (externalBase && externalBase !== 'osm' && !force) {
-    console.log(`[bake-content] listings base is EXTERNAL ('${externalBase}') — this step can only derive an OSM base,`)
-    console.log(`               so regenerating would DESTROY it. Skipping listings.json; roster/profile still bake.`)
-    // ⛔ THERE IS NO MERGE TOOL TO SEND YOU TO, AND SAYING SO IS THE POINT. This line used to
-    //    name `scratch/merge-lodz-listings.mjs`, which was hardcoded to one scene's content dir
-    //    and was deleted with that scene (2026-09-19). The guard above is generic — it reads
-    //    `meta.baseSource` out of the DATA — but the remedy never was. ⭐ So this is an unbuilt
-    //    thing that read as done: the next town with a non-OSM base is protected from the
-    //    destructive bake and then has nowhere to go. Folding an external base in as a
-    //    first-class bake-content source is OPEN WORK, not a missing file.
-    console.log(`               ⛔ NO MERGE TOOL EXISTS for an external base — it is unbuilt kit work,`)
-    console.log(`               not a path you are missing. Author content/listings.json directly, or`)
-    console.log(`               --force to regenerate from OSM and LOSE the external base.`)
-    skipListings = true
+  // ⛔ THE DECLARATION LIVES IN THE DATA, NOT IN THIS FILE, and that is the
+  // whole design: `meta.baseSource` in the town's own listings.overrides.json.
+  // The next town with a non-OSM base is handled without anyone editing here,
+  // and no scene name appears in this block.
+  //
+  // ⭐ WHY THIS USED TO BE A GUARD WITH NOWHERE TO GO. Deriving the base from
+  // OSM on a town whose base came from somewhere else yields ~0 joins, so the
+  // bake would write out only the surviving hand-authored adds and DESTROY the
+  // generated base. That is not hypothetical — it took one town's listings from
+  // 84 to 5 on 2026-07-20. The guard that stopped it was correct and generic;
+  // what did not exist was anywhere to send a protected town. Now there is.
+  // (`checks/claims-an-external-base-survives-a-bake.mjs` pins that regression.)
+  let skipListings = false
+  const listingOverrides = loadJsonOr(join(contentDir(scene), 'listings.overrides.json'), { adds: [], patches: {} })
+  const declaredBase = listingOverrides?.meta?.baseSource || 'osm'
+
+  let baseListings, producer, producerReason
+  if (declaredBase === 'osm') {
+    producer = 'osm'
+    producerReason = listingOverrides?.meta?.baseSource
+      ? 'declared meta.baseSource: "osm"'
+      : 'no meta.baseSource declared — the default'
+    const r = buildBaseListings(pois, buildingGrid)
+    baseListings = r.listings
+    console.log(`  base listings: ${baseListings.length} · producer=osm (${producerReason})`)
+    console.log(`    ${r.skipped} POIs outside the baked set → correctly absent`)
+
+  } else if (declaredBase === 'overture' && !force) {
+    producer = 'overture'
+    producerReason = 'declared meta.baseSource: "overture"'
+    const artifact = loadOverturePlaces(scene)
+    const r = buildBaseListingsFromOverture(artifact, buildingGrid)
+    baseListings = r.listings
+    console.log(`  base listings: ${baseListings.length} · producer=overture (${producerReason})`)
+    console.log(`    release ${artifact.meta?.release ?? '(unstated)'} · ${artifact.places?.length ?? 0} acquired` +
+                ` · ${r.skipped} outside the baked set → correctly absent` +
+                ` · ${r.closed} permanently closed → dropped` +
+                ` · ${r.unclassified} with no category`)
+    const report = r.gate.report(scene)
+    if (report) console.log(report)
+
+  } else if (declaredBase !== 'osm' && force) {
+    // ⛔ THE DESTRUCTIVE PATH, AND IT STAYS REACHABLE BUT LOUD. `--force` is the
+    // operator saying "regenerate from OSM anyway"; it is the only way to leave
+    // an external base, and it must never happen by accident.
+    console.warn(`[bake-content] ⛔ --force ON A SCENE WITH AN EXTERNAL BASE ('${declaredBase}').`)
+    console.warn(`               Regenerating the base from OSM. The external base WILL BE LOST from`)
+    console.warn(`               content/listings.json. Re-acquire it and drop --force to get it back.`)
+    producer = 'osm'
+    producerReason = `⛔ FORCED off the declared '${declaredBase}' base`
+    const r = buildBaseListings(pois, buildingGrid)
+    baseListings = r.listings
+    console.log(`  base listings: ${baseListings.length} · producer=osm (${producerReason})`)
+
+  } else {
+    // ⛔⛔ A DECLARED BASE WITH NO PRODUCER FAILS LOUD — it does not skip, and it
+    // does not quietly fall through to OSM. This is the slot the old guard sat
+    // in, and a silent skip here is precisely the failure mode that made "an
+    // external base is supported" read as true for months while nothing could
+    // produce one. An unrecognised base is a QUESTION, and a question is never
+    // answered with a plausible-looking default.
+    throw new Error(
+      `scene "${scene}" declares meta.baseSource "${declaredBase}" and this step has no producer for it.\n` +
+      `   Known producers: 'osm' (raw/osm.json) · 'overture' (raw/overture-places.json).\n` +
+      `   ⛔ Refusing to fall back to the OSM base: the OSM join yields ~0 on a town whose base is\n` +
+      `     external, so the write would keep only hand-authored adds and DESTROY the rest.\n` +
+      `   ▶ Add a producer, fix the spelling, or --force to deliberately regenerate from OSM and lose it.`)
   }
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
   const { listings: merged, report } = applyListingOverrides(baseListings, listingOverrides,
