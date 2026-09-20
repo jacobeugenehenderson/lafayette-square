@@ -29,7 +29,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { ZONE_PAD } from '../../cartograph/discSquare.mjs'
+import { ZONE_PAD, squareAroundDisc } from '../../cartograph/discSquare.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
@@ -430,30 +430,27 @@ function ringAreaHa(corners) {
 // square of the longer padded side. Pad the long dimension, then square to it.
 // Costs area on the short axis and nothing else — Centrum goes 21.7 -> 33 km²,
 // still 16% of the 200 km² cap.
+// ⭐ WE ARE BUILDING FROM A CENTROID (Jacob, 2026-09-19: "why make it so complicated?
+// We're building from a centroid"). The model is a CENTRE and a RADIUS. The circle is
+// that. The square is centre ± radius × (1 + ZONE_PAD). There is no bbox in the model —
+// a bbox is the shape Nominatim happens to answer in, and every line of arithmetic that
+// treated it as the primitive (pad the sides, take the max axis, chase the diagonal) was
+// me converting the response format into geometry it was never meant to carry. Two wrong
+// derivations came out of that in one evening.
+//
+// So this converts ONCE, at the edge, and hands the real primitive to the one function
+// that owns the rule — the same `squareAroundDisc` the heavy fetch seals with, so the
+// envelope and the seal cannot drift apart.
 function padBbox(b, metres = FETCH_MARGIN_M) {
-  const midLat = (b.minLat + b.maxLat) / 2
-  const cosLat = Math.cos((midLat * Math.PI) / 180)
-  // ⛔ NOT pad-the-sides-then-square. That was the first attempt and it does not reach
-  // the zone: the circumscribing radius is the DIAGONAL half-length, so padding each
-  // side by 25% of it and then taking the max half-AXIS lands at ~1.03x the radius
-  // where the zone wants 1.25x. Measured on Huron: 1.03 for the city ring, 0.96 for the
-  // ZIP box — i.e. the square did not even contain its own disc.
-  //
-  // The square is built DIRECTLY from the circle, which is what `§0.4` means by "the
-  // heavy pass squares because the disc is a circle and a circle cannot fit a rectangle
-  // narrower than its diameter", and what `cartograph/discSquare.mjs` does server-side.
-  // One derivation, both ends.
-  const hLat0 = ((b.maxLat - b.minLat) / 2) * 111000
-  const hLon0 = ((b.maxLon - b.minLon) / 2) * 111320 * cosLat
-  const circumM = Math.hypot(hLat0, hLon0)
-  const halfM = Math.max(circumM * (1 + ZONE_PAD), circumM + metres)
-  const midLon = (b.minLon + b.maxLon) / 2
-  const halfLat = halfM / 111000
-  const halfLon = halfM / (111320 * cosLat)
-  return {
-    minLat: midLat - halfLat, maxLat: midLat + halfLat,
-    minLon: midLon - halfLon, maxLon: midLon + halfLon,
-  }
+  const centre = { lon: (b.minLon + b.maxLon) / 2, lat: (b.minLat + b.maxLat) / 2 }
+  const cosLat = Math.cos((centre.lat * Math.PI) / 180)
+  const radiusM = Math.hypot(
+    ((b.maxLat - b.minLat) / 2) * 111000,
+    ((b.maxLon - b.minLon) / 2) * 111320 * cosLat)
+  // The floor keeps a small hood reaching the junctions past its boundary streets.
+  const pad = Math.max(ZONE_PAD, radiusM > 0 ? metres / radiusM : ZONE_PAD)
+  const sq = squareAroundDisc(centre, radiusM, pad)
+  return { minLat: sq.minLat, maxLat: sq.maxLat, minLon: sq.minLon, maxLon: sq.maxLon }
 }
 
 // The fetched bbox in local metres — the envelope OSM was actually pulled over.
