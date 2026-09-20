@@ -56,9 +56,9 @@
 > ▶ **Detail-home relocation (2026-07-21).** The `HANDOFF-*.md` files these lines point to were moved
 > out of git into the local, **gitignored `_handoffs/`** folder (Jacob: declutter root + no git backup).
 > Pointers below name the file by **basename** — find it in **`_handoffs/`**. Active dispatch briefs
-> stay tracked at root — **`ls BRIEF-*.md` is the roster; do not maintain a copy of it here.**
-> *(The enumerated list that stood here was wrong in both directions: it named
-> `-extent-excavation-and-design`, which no longer exists, and omitted three that do.)* Landed/superseded
+> are tracked in **`docs/briefs/`** — **`ls docs/briefs/BRIEF-*.md` is the roster; do not maintain a
+> copy of it here.** ⛔ Not the repo root: that returns nothing and reads as *"no open briefs"*
+> (`docs/agents/BOZ.md §3`, which owns this fact). Landed/superseded
 > items from the 2026-07-18/21 retirement batches are in `cartograph/_archive/` (Diary, tracked). Git
 > history is the permanent archive of every version.
 >
