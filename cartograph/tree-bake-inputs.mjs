@@ -117,7 +117,9 @@ export function treeBakeInputsForMap(scene) {
   if (!placements.length) return null
 
   // Per-scene species routing collapses the census onto the scene's library
-  // palette; absent → bake-trees falls back to LS's global map.
+  // palette. Absent → `undefined`, and bake-trees resolves this scene's own map
+  // or an EMPTY one; it never reaches for LS's (`bake-trees.js` — "Refusing to
+  // route through LS's map", b12627c8 2026-07-20).
   const sceneMap = join(clean, '..', 'tree-species-map.json')
   const speciesMapPath = existsSync(sceneMap) ? sceneMap : undefined
   const forbiddenMapPath = join(clean, 'map.json')
@@ -128,10 +130,11 @@ export function treeBakeInputsForMap(scene) {
   // literal obstructions inside land-use (buildings/water/parking/paths) only.
   //
   // ⚠️ ORDERING: this is a BAKE OUTPUT, so the ground bake must have run for
-  // this scene before its trees can be placed honestly. Absent → we fall back to
-  // the legacy paint-layer mask, which cannot see the road and will scatter
-  // trees into the carriageway. That fallback is a known-wrong last resort, not
-  // a supported mode; it is loud on purpose.
+  // this scene before its trees can be placed honestly. Absent → bake-trees
+  // THROWS (`bake-trees.js` — "no shape.json for '<scene>' — bake the ground
+  // first"). There is no fallback: the legacy paint-layer mask could not see the
+  // road and scattered trees into the carriageway, so it was deleted outright
+  // (`forbidden-surface.mjs` header), not demoted to a last resort.
   const shapePath = join(REPO_ROOT, 'public', 'baked', scene, 'shape.json')
   const zoneShapePath = existsSync(shapePath) ? shapePath : undefined
 

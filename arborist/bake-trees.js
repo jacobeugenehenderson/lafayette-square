@@ -559,7 +559,7 @@ export async function bakeTrees({
   heroBandMaxM = 250,
   placements,    // override path (string) or paths (array, unioned)
   output,        // override output path; defaults to public/baked/<scene>/trees.json
-  speciesMapPath, // override COMMON->library routing; defaults to LS's global map
+  speciesMapPath, // override COMMON->library routing; defaults to THIS scene's map, else empty
   forbiddenMapPath, // poured scene's clean/map.json — obstructions (+ legacy mask)
   zoneShapePath, // poured scene's baked shape.json — the FROZEN Section surfaces
   boundaryPath, // poured scene's neighborhood_boundary.json — the literal/GPU line

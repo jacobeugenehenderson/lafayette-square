@@ -195,6 +195,19 @@ def make_dedup(city_trees):
     return coincides
 
 
+def _scope_label(city, divide):
+    """What this run ACTUALLY did to the disc — the one place the answer is spelled.
+
+    Read by both the console line and `meta.side`, so the log and the artifact
+    cannot disagree (they did: the artifact was a hardcoded St. Louis string).
+    """
+    if divide is not None:
+        return "County (DeMun) only — West of the City/County divide"
+    if city:
+        return "Whole disc, deduped against this town's City census"
+    return "Whole disc — this town has no City census and no City/County divide"
+
+
 def main():
     ensure_dirs()
     ring = load_boundary_ring()
@@ -267,7 +280,7 @@ def main():
             "condition": "",    # OSM has no condition; unknown
         })
 
-    print(f"\nKept {len(trees)} County-side trees ({dict(skipped)} skipped)")
+    print(f"\nKept {len(trees)} trees — {_scope_label(city, divide)} ({dict(skipped)} skipped)")
     print(f"Shapes: {dict(Counter(t['shape'] for t in trees))}")
     named = sum(1 for t in trees if t["species"] != "Unknown")
     print(f"With a species tag: {named}/{len(trees)}")
@@ -277,7 +290,17 @@ def main():
             "source": "OpenStreetMap (natural=tree, Overpass)",
             "url": OVERPASS,
             "scene": SCENE,
-            "side": "County (DeMun) only — West of the City/County divide",
+            # ⛔ Provenance must describe what THIS run actually did. This was a
+            # literal "County (DeMun) only — West of the City/County divide",
+            # stamped even when the divide cull never ran: huron (no City census,
+            # no divide) kept its whole disc and was still labelled with a St.
+            # Louis jurisdictional filter it had never been subject to. A false
+            # provenance string is worse than none — the bake reports BY source.
+            # ⚠️ THREE states, not two (main() above): a City census means the
+            # disc is kept and DEDUPED, which is not the same fact as a disc kept
+            # because nothing existed to cull against. Collapsing them was this
+            # fix's own first draft.
+            "side": _scope_label(city, divide),
             "center": {"lat": CENTER_LAT, "lon": CENTER_LON},
             "total": len(trees),
             "license": "ODbL — OpenStreetMap contributors",
