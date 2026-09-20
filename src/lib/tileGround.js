@@ -670,7 +670,6 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     // being carried out as a block. See `booleanLabelled`'s header for the measurement.
     const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, true, true)
     let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
-    let outRemainder = null, outRemainderLabels = null, outRemainderHoles = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
       // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
@@ -704,8 +703,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       }
       let degenerate = 0
       let keptOnEdge = 0
-      const remainder = [], remainderLabels = [], remainderHoles = []
-      outRemainder = remainder; outRemainderLabels = remainderLabels; outRemainderHoles = remainderHoles
+      let outerZones = 0
       for (const f of D.faces) {
         const rg = D.rings[f.outer], lb = D.labels?.[f.outer]
         // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
@@ -719,44 +717,32 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         // the corner test is the containment one, the frame test catches a component resting on
         // an edge without enclosing a corner. Under `asTree` the exterior is ONE face and its
         // holes leave with it, which is what removed the ghost block.
-        // ⭐⭐⭐ RESTING ON THE RECTANGLE IS NO LONGER ENOUGH TO DROP A FACE — only HOLDING A
-        // CORNER is. (Jacob, 2026-09-20: "in a map, why would the area between a street and a
-        // coastline... not exist? Yes it's a face, yes, it's LU.")
-        // ⛔ THE REASON THIS RULE EXISTS IS THAT THE RECTANGLE IS ARTIFICIAL — we invented it, so
-        // the region beyond the outermost streets is not a face of anything. That reason is about
-        // THE RECTANGLE. It does not reach a strip bounded by a COAST, which is real ground: the
-        // land between the last street and the water is land, it has a land use, and it belongs
-        // in the map. Dropping it deleted a real face for an artificial reason.
-        // ⭐ `holdsCorner` is the containment test and still removes the true exterior, which by
-        // construction encloses a corner of the subtraction rectangle. A coastal strip touches an
-        // EDGE (the data simply stops there) and holds no corner — and a face running off the
-        // edge is exactly what the stamp is for: "a block runs PAST the rim and is cut afterwards."
-        // ⭐⭐⭐ THE RULE IS ELABORATED, NOT REMOVED (Jacob, 2026-09-20: "I think 'the rule' is
-        // not helping. Perhaps we elaborate the rule?"). It used to map {touches the frame} →
-        // DISCARD, which collapsed two different things into one verdict:
-        //   · the ARTIFICIAL rectangle margin — correctly not a face of the map; and
-        //   · REAL LAND that simply has no street around it — the fringe, and on a coastal town
-        //     the whole waterfront strip between the last street and the shore.
-        // ⛔ Discarding the second is why a shoreline could never close a land-use polygon: the
-        // region a coast-facing dead end points into had already ceased to exist. Invisible on
-        // LS, whose disc sits inside the street mesh; on Huron it discarded every waterfront
-        // face (~812 of 881 sample points 40 m inshore were in no face at all).
+        // ⭐⭐⭐ THE OUTER ZONE IS A BLOCK. IT IS NOT DROPPED AND IT IS NOT A SEPARATE CLASS.
+        // (Jacob, 2026-09-20) "each of the blue centerlines is *forbidden* from being a chain,
+        // and instead is ringed polygon. At the bb, that uninterrupted polygon hits the bb and
+        // merges there… it encounters the shore side of the split shoreline chain and joins
+        // there too… thus creating one large continuous zone with the streets, grout, dead
+        // ends, cul de sacs, etc etc etc already there."
+        // ⇒ The bb edge, the street ink that runs off it, and the shoreline JOIN into one
+        // closed path, and what it encloses is a COMPOUND FACE whose holes are the streets.
+        // Nothing about it needs a special class: it is a block, and the streets inside it are
+        // painted because ② offsets a block inward from ALL its edges, holes included.
         //
-        // ⇒ It now maps {holds a frame corner} → THE REMAINDER: still a face, still land, still
-        // carrying land use — but NOT A BLOCK.
-        // ⛔⛔ AND "NOT A BLOCK" IS THE WHOLE REASON THE OLD RULE EXISTED, SO IT IS KEPT EXACTLY.
-        // ② offsets inside every block and runs BEFORE the stamp; handing it a frame-sized
-        // region is what produced a frame-sized curb ring and turned Survey solid blue (Jacob:
-        // "basically just wrecked survey interface"). The remainder therefore leaves by its own
-        // door — `remainder`, never `blocks` — so nothing offsets a curb from it. It has NO
-        // FRONTAGE, which is also just true: no street bounds it.
-        // ⭐ The stamp cuts it to the disc like anything else, so on a town whose disc sits
-        // inside its street mesh the remainder simply lands empty and nothing changes.
-        if (holdsCorner(rg)) {
-          remainder.push(rg); remainderLabels.push(lb || null)
-          remainderHoles.push((f.holes || []).map(hi => D.rings[hi]).filter(h => h?.length >= 3))
-          continue
-        }
+        // ⛔⛔ WHY THIS DOES NOT REPRODUCE THE SOLID-BLUE INCIDENT, and it is identity, not luck.
+        // The old rule dropped this face because ② offset it and handed back a frame-sized curb
+        // ring ("basically just wrecked survey interface"). ② reads a depth per edge from
+        // `freezeCurbEdgeFacts`, which builds facts ONLY from `runs` — and runs come from the
+        // chain world via `streetIdx`. A `__boundary__` or `__water__` edge has no run, so it
+        // has NO FACT, and `depthAt` returns 0 for it. The zone's bb and shore edges are
+        // therefore silent by construction; only its street-hole edges carry a measure.
+        // ⭐ That is also why the face had to be dropped BEFORE the coast existed: with no
+        // shoreline and no identity on the frame, the whole outer ring was anonymous.
+        //
+        // ⛔ Dropping it is what made a coast-facing dead end impossible to close: the region
+        // the spur points into had already ceased to exist. Measured before this: 833 street
+        // centreline points across 74 streets sat under an undifferentiated fill with no
+        // pavement — "these are supposed to be streets."
+        if (holdsCorner(rg)) outerZones++
         if (rg.some(touchesFrame)) keptOnEdge++
         // ⛔⛔ A HOLE IS WOUND OPPOSITE ITS OUTER AND MUST STAY THAT WAY. The outer is converted
         // below to the winding the consumer expects (blocks wound as ①'s holes, offset inward by
@@ -778,7 +764,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
       const withHoles = blockHoles.filter(h => h.length).length
-      if (remainder.length) console.log(`    [①] ${remainder.length} REMAINDER face(s) — land with no street around it (fringe, waterfront). Land use YES, block NO, no curb offset from them.`)
+      if (outerZones) console.log(`    [①] ${outerZones} OUTER ZONE face(s) kept as blocks — the bb + coast + street ink close into one continuous zone; its streets are its holes and are painted from them.`)
       if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
       if (degenerate) console.warn(`    ⛔ [①] ${degenerate} face(s) came back degenerate (<3 vertices or no identity) and are NOT blocks — reported, not hidden.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
@@ -790,8 +776,6 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length,
              crossings: R.crossings, stencilled: false, boundaryOwner: bIdx, blocks, blockLabels,
              blockHoles, blockHoleLabels, boundaryRing: bRing,
-             // ⭐ The remainder travels BESIDE blocks, never inside it — see the drop rule above.
-             remainder: outRemainder, remainderLabels: outRemainderLabels, remainderHoles: outRemainderHoles,
              // ⭐ Carried so the painter can SHADE the water. ⛔ Not a hole and not a gap —
              // "360 degrees of circle filled with map"; a blank here would be the absence the
              // rim doctrine forbids.
@@ -6723,12 +6707,9 @@ export function buildTileGround(ribbons, opts = {}) {
              // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
              nodes: frozenProto.nodes || null,
              boundaryRing: frozenProto.boundaryRing || null,
-             // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped these would lose its
+             // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped this would lose its
              // waterfront silently — every other field present, the pour looking complete.
-             waterRings: frozenProto.waterRings || null,
-             remainder: frozenProto.remainder || null,
-             remainderLabels: frozenProto.remainderLabels || null,
-             remainderHoles: frozenProto.remainderHoles || null }
+             waterRings: frozenProto.waterRings || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'

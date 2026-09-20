@@ -1330,7 +1330,7 @@ export function deriveLayers(highways) {
   // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
-  let protoWaterRings = null, protoRemainder = null, protoRemainderHoles = null
+  let protoWaterRings = null
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
@@ -5141,8 +5141,6 @@ export function deriveLayers(highways) {
     for (const line of _coast.report) console.log(line)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings })
     protoWaterRings = MP.waterRings || null
-    protoRemainder = MP.remainder || null
-    protoRemainderHoles = MP.remainderHoles || null
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
@@ -5150,13 +5148,10 @@ export function deriveLayers(highways) {
       owners: MP.owners,
       // ⭐⭐ THE WATER AND THE REMAINDER TRAVEL WITH ①, for the same reason `blocks` does: the
       // bake reads this artifact and never re-mints. The water is a POSITIVE OBJECT to be
-      // shaded ("360 degrees of circle filled with map"); the remainder is the land no street
-      // bounds — waterfront and fringe — which carries land use but is NOT a block and must
-      // never reach ②.
+      // shaded ("360 degrees of circle filled with map"). The land no street bounds is NOT a
+      // separate class: it is the OUTER ZONE, an ordinary compound block whose holes are the
+      // streets — see `mintProtopolygon`'s drop rule.
       waterRings: MP.waterRings ? MP.waterRings.map(r => r.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6])) : null,
-      remainder: MP.remainder ? MP.remainder.map(r => r.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6])) : null,
-      remainderLabels: MP.remainderLabels || null,
-      remainderHoles: MP.remainderHoles ? MP.remainderHoles.map(hs => hs.map(h => h.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]))) : null,
       // ⭐⭐ `blocks` = boundary − stroked roads (the substrate ruling), frozen WITH ① because the
       // bake reads ① from this artifact and never re-mints. Without it the consumer falls back to
       // ①'s holes, which LOSE every block the circle cuts — 36 on LS, 30 of them at the rim.
@@ -5296,16 +5291,9 @@ export function deriveLayers(highways) {
   // ⛔ They are LAYERS, not blocks: nothing offsets a curb from either, and neither carries an
   // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
   // editable surface abuts the coast and the Wall is not crossed to draw them.
-  // ⭐ `remainder` carries its HOLES — the lake is a hole in the fringe land, which is how the
-  // two meet. Drawn as a compound face or the water is painted over twice.
+  // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face.
   const waterFeats = (protoWaterRings || []).map(r => ({ ring: r.map(([x, z]) => ({ x, z })), use: 'water' }))
-  const remainderFeats = (protoRemainder || []).map((r, i) => ({
-    ring: r.map(([x, z]) => ({ x, z })),
-    holes: ((protoRemainderHoles || [])[i] || []).map(h => h.map(([x, z]) => ({ x, z }))),
-    use: 'remainder',
-  }))
-  if (waterFeats.length || remainderFeats.length)
-    console.log(`  [LAND/WATER] ${waterFeats.length} water face(s), ${remainderFeats.length} remainder face(s) emitted as layers`)
+  if (waterFeats.length) console.log(`  [LAND/WATER] ${waterFeats.length} water face(s) emitted as a layer`)
 
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)
@@ -5331,7 +5319,6 @@ export function deriveLayers(highways) {
     leisure:        leisureOverlays,
     natural:        naturalOverlays,
     water:          waterFeats,
-    remainder:      remainderFeats,
     barrier:        barrierLines,
     ribbons:        ribbonsLayer,
   }

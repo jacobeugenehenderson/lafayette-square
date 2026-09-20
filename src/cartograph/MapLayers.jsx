@@ -148,7 +148,7 @@ function makeLineMat(color, opacity = 1) {
 // the shader can follow the ground faithfully instead of interpolating a
 // long flat triangle across a terrain bump (the "spillage" artifact).
 // ⭐ `holes` — a COMPOUND face, outer ring plus its holes, triangulated as one. Added for the
-// remainder, which wraps the water: filling its outer ring alone would paint land over the lake.
+// water, whose face can carry island holes: filling its outer ring alone would paint over them.
 // ⛔ Extended here rather than given a second triangulator, so both paths keep the per-feature
 // centroid stamp the terrain shader samples — two triangulators would drift on that silently.
 function triangulateRing(ring, { maxEdge = 0, holes = null } = {}) {
@@ -618,9 +618,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // here to avoid rendering both (visible double outline at compass-frame).
   const landscapeByKind = useMemo(() => {
     const groups = {}  // kind → [geo,...]
-    // ⛔ `water` and `remainder` are NOT here. They are the pour's own GROUND and draw in
-    // every view, Survey included — see `groundByKind` below. The `natural=water` skip on the
-    // next line is OSM's water, which `park_water.json` already owns on LS; a different object.
+    // ⛔ `water` is NOT here. It is the pour's own GROUND and draws in every view, Survey
+    // included — see `groundByKind` below. The `natural=water` skip on the next line is OSM's
+    // water, which `park_water.json` already owns on LS; a different object.
     for (const cat of ['leisure', 'natural']) {
       for (const item of (mapData.layers?.[cat] || [])) {
         if (cat === 'natural' && item.use === 'water') continue
@@ -640,7 +640,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return merged
   }, [mapData, B])
 
-  // ── The pour's own GROUND: water + remainder ──────────────────────────
+  // ── The pour's own GROUND: the water ─────────────────────────────────
   // ⭐⭐⭐ THESE ARE GROUND, NOT OVERLAY, AND THEY DRAW IN EVERY VIEW INCLUDING SURVEY.
   // `landscapeByKind` is gated on `!surveyActive` and `SURVEY_HIDE` carries 'water', both
   // correct for OSM decoration — Survey hides stripes, buildings, lamps and trees so the
@@ -652,12 +652,12 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // re-pour (`EXTENT-DESIGN §3.3` R15), so a disc baked into map.json would go stale the moment
   // the operator drags the radius.
   // ⛔ AND NO CENTROID TEST. `landscapeByKind` keeps an overlay only if its centroid is inside
-  // the boundary — fine for a small OSM polygon, fatal here: the remainder wraps the whole town
-  // and the water fills a third of the disc, so BOTH centroids fall outside and both would
-  // vanish entirely while every small overlay kept working.
+  // the boundary — fine for a small OSM polygon, fatal here: the water fills a third of the
+  // disc and its centroid falls outside, so it would vanish entirely while every small overlay
+  // kept working.
   const groundByKind = useMemo(() => {
     const groups = {}
-    for (const cat of ['water', 'remainder']) {
+    for (const cat of ['water']) {
       for (const item of (mapData.layers?.[cat] || [])) {
         const ring = item.ring
         if (!ring || ring.length < 3) continue
