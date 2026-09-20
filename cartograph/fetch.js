@@ -57,6 +57,29 @@ const dryRun = (process.argv || []).includes('--dry-run')
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 const TIMEOUT = 120
 
+/**
+ * Merge a heavy pass's ground features into a light pass's, BY CATEGORY.
+ * `ground` is `{ highway: [...], natural: [...], … }` — never a flat array.
+ * Exported as a pure function so it can be exercised without a network fetch;
+ * the bug it replaces survived because the only way to reach it was a real pull.
+ */
+export function mergeGround(prior = {}, incoming = {}) {
+  const out = {}
+  let before = 0, after = 0, added = 0
+  for (const cat of new Set([...Object.keys(prior || {}), ...Object.keys(incoming || {})])) {
+    const byId = new Map()
+    for (const f of (prior?.[cat] || [])) { before++; byId.set(f.id ?? `p${byId.size}`, f) }
+    for (const f of (incoming?.[cat] || [])) {
+      const k = f.id ?? `n${byId.size}`
+      if (!byId.has(k)) added++
+      byId.set(k, f)
+    }
+    out[cat] = [...byId.values()]
+    after += out[cat].length
+  }
+  return { ground: out, before, after, added }
+}
+
 function overpassQuery(queryBody, attempt = 1) {
   const MAX_ATTEMPTS = 4
   const full = `[out:json][timeout:${TIMEOUT}];${queryBody}`
@@ -469,18 +492,24 @@ out body;>;out skel qt;`
       console.error(`\n⛔ --pass=heavy with no prior ${outPath}. The heavy pass augments a light one; there is nothing to augment.\n`)
       process.exit(2)
     }
-    const byId = new Map()
-    for (const g of (prior.ground || [])) byId.set(g.id ?? `${byId.size}`, g)
-    let added = 0
-    for (const g of ground) { const k = g.id ?? `n${byId.size}`; if (!byId.has(k)) added++; byId.set(k, g) }
+    // ⛔ `ground` IS KEYED BY CATEGORY, NOT AN ARRAY. The first cut of this merge
+    // iterated it as a flat list — `for (const g of ground)` — which threw
+    // `TypeError: ground is not iterable` and meant the heavy pass could never
+    // complete. Found by agent STRAND, on the first attempt to actually run it.
+    //
+    // ⚠️ And the reason I did not find it: I only ever ran `--dry-run`, which returns
+    // BEFORE this merge. The flag I added so the gate could be exercised safely is
+    // the same flag that made the code it guards unreachable in testing. A safety
+    // valve that also shortens the path under test is not a test.
+    const merged = mergeGround(prior.ground, ground)
     output = {
       ...prior,
       bbox: prior.bbox,
       heavyBbox: { ...bboxObj },
-      ground: [...byId.values()],
+      ground: merged.ground,
       nodeCount: Math.max(prior.nodeCount || 0, Object.keys(nodes).length),
     }
-    console.log(`  merged: ${prior.ground?.length || 0} light + ${added} new heavy = ${output.ground.length} ground features; ${output.buildings?.length || 0} buildings preserved`)
+    console.log(`  merged: ${merged.before} light + ${merged.added} new heavy = ${merged.after} ground features across ${Object.keys(merged.ground).length} categories; ${output.buildings?.length || 0} buildings preserved`)
   } else {
     output = {
       bbox: { ...bboxObj },
