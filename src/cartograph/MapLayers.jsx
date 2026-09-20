@@ -1,7 +1,6 @@
 import { useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
-import { INSTANCE } from '../instance.js'
 import { ParkTitleMesh } from '../components/LafayettePark.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 // ── LS-DEFAULT data (the mold the kit was cast around). These stay static
@@ -846,7 +845,15 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       {/* Park title — the SHARED ParkTitleMesh (one source, used by the 3D scene
           too, so they're in both by construction). Reliable depth-off quad, so
           it can't be clipped by the terrain-displaced Designer ground. LS-only. */}
-      {!hide.parkTitle && INSTANCE.lookId === 'lafayette-square' && <ParkTitleMesh y={2.6} />}
+      {/* ⛔⛔ THIS ASKED `INSTANCE.lookId`, AND IN THE AUTHORING APP THAT IS A
+          CONSTANT. `INSTANCE` resolves from the URL's `?look=`, but Cartograph
+          switches maps through the STORE — the pulldown never touches the URL —
+          so `INSTANCE.lookId` is 'lafayette-square' no matter which town is open,
+          and "LAFAYETTE PARK" printed over Huron's aerial (Jacob, 2026-09-19).
+          ⭐ `isLS` three hundred lines up is the same question asked of the STORE,
+          which is the thing that actually changes. One file had two answers to
+          "am I Lafayette Square" and the label picked the frozen one. */}
+      {!hide.parkTitle && isLS && <ParkTitleMesh y={2.6} />}
     </group>
   )
 }
