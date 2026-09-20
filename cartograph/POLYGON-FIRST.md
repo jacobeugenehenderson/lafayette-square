@@ -45,19 +45,22 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 > either extreme.** ⛔ Re-derive with the command; never quote a figure from here.
 >
 > ⚠️ **THE TOP OF THE RANGE WENT WITH THE POLISH SCENES (excised 2026-09-19), AND THAT COSTS THIS
-> SECTION EVIDENCE, NOT DOCTRINE.** The widest spread ever measured — a small minority of tiles at one
-> end, roughly three quarters at the other — spanned six scenes, and the majority-carve end was
-> `ksi-y-m-yn`. The four surviving towns span a **narrower** range, so a reader running the command
-> today will see a weaker version of the very effect this section exists to teach. ⛔ Do not conclude
-> the spread is small: it was measured wide, on real data, and the observation that the split is a
-> property of *the town's block geometry* is what survives. The next non-US pour is where it becomes
-> re-measurable.
+> SECTION EVIDENCE, NOT DOCTRINE.** The widest spread ever measured spanned six scenes, and the
+> majority-carve end of it was `ksi-y-m-yn` — a town that no longer exists. The surviving roster spans
+> a **narrower** range, so a reader running the command today sees a weaker version of the very effect
+> this section exists to teach. ⛔ Do not conclude from that run that the spread is small: it was
+> measured wide, on real data. What survives is the observation that the split is a property of *the
+> town's block geometry*; the dynamic range that made it obvious re-appears at the next non-US pour.
+> ⛔ **No figure is quoted here on purpose** — the old one ("7%→75%") outlived the scenes it was
+> measured on and became exactly the unreproducible number `CLAUDE.md`'s prune rule forbids. The
+> command above is the only answer.
 >
 > ⛔⛔ **THAT SPREAD IS THE POINT.** The invariant's truth is a
 > property of *the town's block geometry*, not of the kit, so no single scene can tell you whether it
-> holds. On the first non-US pour, **three quarters of the map is built by the producer the docs do
-> not mention.** An operator there reads "concentric offset," sees a plausible curb, and has no way to
-> learn otherwise — which is exactly the silent-substitution shape `CLAUDE.md` Layer 0 forbids.
+> holds. On the first non-US pour, **the clear majority of the map was built by the producer the docs
+> did not mention** *(measured 2026-08-04 on a scene since excised — ⛔ the figure is not requotable;
+> run the command on the current roster)*. An operator there reads "concentric offset," sees a
+> plausible curb, and has no way to learn otherwise — which is exactly the silent-substitution shape `CLAUDE.md` Layer 0 forbids.
 >
 > **∴ every tile now carries `producer` + `producerReason` in `shape.json`**, the bake prints the split
 > once per pour, and the tool shows it in the status bar. ⭐ **Degeneracy count: 0 on every scene** —
