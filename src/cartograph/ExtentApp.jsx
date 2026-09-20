@@ -1771,31 +1771,14 @@ export default function ExtentApp() {
     return () => clearTimeout(t)
   }, [sides, scene, seedToken])
 
-  // ⭐ EVERY SCENE HAS A RADIUS — there is no such thing as one without (Jacob,
-  // 2026-09-19). So the disc is seeded the moment there is a frame to seed it from,
-  // and it is seeded from the FETCH, never from the buildings.
-  //
-  // ⛔ It used to be `keptFit.radius + 120` — the reach of whichever footprints
-  // currently survive membership. That made the ground plane a function of the
-  // exclusion pen, which is the coupling b6ce0c89 and f1192ffe pulled out of the
-  // slider and the button; this was the third copy of it.
-  //
-  // Two thirds of the fetched half-width: inside the envelope by construction, and
-  // it satisfies the forever zone (`EXTENT-DESIGN §3.3` wants bb ≥ radius × 1.25;
-  // this gives 1.5) without knowing anything about where the town is. A guess the
-  // operator then drags — which is the whole contract: everything is a best guess,
-  // everything is overridable.
-  //
-  // Still guarded on `!(radiusM > 0)` — that is NOT "a scene with no radius", it is
-  // "nothing has set it in this session yet". A reopen can transiently reset
-  // radiusTouched, and this used to overwrite the restored value on reload.
+  // Default the radius to circumscribe + margin — ONLY for a fresh polygon that
+  // has no radius yet. Never clobber an existing radius (persisted-then-hydrated,
+  // or operator-set): a scene-reopen can transiently reset radiusTouched, which
+  // used to let this overwrite the restored value on reload. "fit to streets"
+  // re-seeds the default explicitly (below), so it no longer needs this effect.
   useEffect(() => {
-    if (radiusM > 0 || radiusTouched || !geo?.bbox) return
-    const halfW = Math.min(
-      ((geo.bbox.maxLon - geo.bbox.minLon) / 2) * geo.lonToMeters,
-      ((geo.bbox.maxLat - geo.bbox.minLat) / 2) * geo.latToMeters)
-    if (halfW > 0) setRadiusM(Math.round((halfW * 2) / 3 / 10) * 10)
-  }, [geo, radiusTouched, radiusM])
+    if (keptFit.radius && !radiusTouched && !(radiusM > 0)) setRadiusM(keptFit.radius + 120)
+  }, [keptFit, radiusTouched, radiusM])
 
   // Has this hood been hydrated yet? Streets exist → we're past setup (search/fetch),
   // so those setup-time controls collapse and the boundary work takes the panel.
