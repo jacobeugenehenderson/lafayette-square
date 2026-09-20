@@ -10,9 +10,10 @@
  *
  *   A row's DEFINITION is kit-global. A row's PROVENANCE is per-town.
  *
- * What `raw/elevation.tif` IS — terrain relief, lands here, obtained from any
- * GeoTIFF — is identical for Lafayette Square and for Łódź. They do not
- * disagree about what elevation is. So the definitions live HERE, once, and
+ * What `raw/elevation.tif` IS — terrain relief, landing at this path — is
+ * identical for Lafayette Square and for Łódź. They do not disagree about what
+ * elevation is. (⚠️ This example once read "obtained from any GeoTIFF"; that
+ * clause was false and is gone — see the row itself.) So the definitions live HERE, once, and
  * `cartograph/data/<scene>/intake.json` carries only what is genuinely that
  * town's: where its copy came from, and its `verified-absent` marks.
  *
@@ -312,11 +313,19 @@ export const INTAKE_ROWS = [
     path: 'raw/elevation.tif',
     unlocks: 'terrain relief — the ground stops being flat',
     absent: { kind: ABSENT.FALLBACK, note: 'flat ground (bake-terrain.js exits)' },
-    // Verified 2026-07-20: bake-terrain.js is source-agnostic — it samples ANY
-    // GeoTIFF against the scene geography. USGS appears only in comments and an
-    // error string. ⚠️ The no-data sentinel IS USGS-specific and wants checking
-    // per source (`BRIEF §5.6`).
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'USGS 3DEP for the US; any GeoTIFF elsewhere' },
+    // ⛔ WHAT THE READER ACTUALLY REQUIRES — corrected 2026-09-20, see below.
+    //   · ONE file. A town straddling two tiles is refused; nothing mosaics.
+    //   · LAT/LON. `bake-terrain` reads getOrigin()/getResolution() as degrees.
+    //     A UTM tile (every USGS 1 m product) is refused by the containment gate.
+    //   · COVERAGE. A tile whose extent misses the scene bbox is refused, by
+    //     name, with the right tile printed (`5ab6e555`).
+    // ⚠️ RESOLUTION IS A DECISION, NOT A DETAIL: 1/3 arc-sec is ~10 m and
+    //    smooths anything narrower than ~20 m. On Huron it erased a 15-20 ft
+    //    seawall entirely — 2 ft of rise measured over 200 ft inland. USGS 1 m
+    //    lidar covers the same ground at ~100× density and the kit cannot yet
+    //    ingest it (`docs/briefs/BRIEF-terrain-resolution.md`).
+    // ⚠️ The no-data sentinel IS USGS-specific and wants checking per source.
+    acquisition: { kind: ACQUIRE.SOURCE, note: 'USGS 3DEP 1/3 arc-sec (US) or any national DEM — ONE tile, LAT/LON. Run the bake with no .tif: it names the exact tile for this town.' },
     doc: 'cartograph/INTAKE.md',
   },
   {

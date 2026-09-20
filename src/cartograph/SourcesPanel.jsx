@@ -115,12 +115,15 @@ const GROUPS = [
     rows: [
       { name: 'Ground elevation', act: FETCH, where: 'USGS',
         sources: [
-          { name: 'USGS 3DEP', note: 'US · public domain · free' },
-          { name: 'any GeoTIFF', note: 'the reader is source-agnostic' },
+          { name: 'USGS 3DEP 1/3 arc-sec', note: 'US · ~10 m · public domain · lat/lon' },
+          { name: 'USGS 3DEP 1 metre', note: 'US · ~100× denser · ⚠️ UTM + often multi-tile' },
         ],
         steps: ['Free, no account.',
-                'US: The National Map → select your area → download the 1/3 arc-second DEM as GeoTIFF.',
-                'Outside the US: any national elevation GeoTIFF covering your bounding box.',
+                'Run the bake with no .tif — it prints the exact tile THIS town needs, and its lat/lon span.',
+                'US: The National Map → that tile → 1/3 arc-second DEM as GeoTIFF (lat/lon, one file).',
+                '⛔ The reader needs ONE tile in LAT/LON. It is not source-agnostic: 1 m tiles are UTM and towns often straddle two — both are refused, by name, rather than baked wrong.',
+                '⚠️ ~10 m smooths anything narrower than ~20 m. A seawall or steep bank will not appear.',
+                'Outside the US: a national elevation GeoTIFF in lat/lon covering your bbox.',
                 'Check the no-data value — the US one is USGS-specific and other sources differ.'] },
       { name: 'Parcels, zoning, year built', act: DOC, where: 'cartograph/INTAKE.md',
         sources: [
