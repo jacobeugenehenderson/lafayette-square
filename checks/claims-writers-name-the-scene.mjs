@@ -38,7 +38,7 @@ import { fileURLToPath } from 'node:url'
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIR = 'cartograph'
 const GUARD_MODULE = 'scene.js'
-const GUARD = 'requireExplicitScene'
+const GUARD = 'requireExplicitMap'
 
 const dirAbs = join(ROOT, DIR)
 if (!existsSync(dirAbs)) throw new Error(`⛔ ${DIR}/ is missing — the writer roster is unknowable. NOT CHECKED.`)

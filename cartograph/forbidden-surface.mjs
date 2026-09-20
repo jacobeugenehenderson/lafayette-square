@@ -169,9 +169,9 @@ export function makeZoneTester({ shapePath, mapPath, designPath, curbWidth, allo
   // so an unrecognized class defaults plantable and ANNOUNCES itself rather than
   // silently blanking its blocks. `scene` falls back to the shape path's own
   // directory (public/baked/<scene>/shape.json) so existing callers need no change.
-  const sceneId = scene || path.basename(path.dirname(shapePath || '')) || null
+  const mapId = scene || path.basename(path.dirname(shapePath || '')) || null
   const classesPresent = Object.keys(pr.luByClass || {})
-  const policy = resolveLuPolicy(sceneId, classesPresent)
+  const policy = resolveLuPolicy(mapId, classesPresent)
   if (!quiet) console.log(policy.report())
 
   const luAllow = []                 // plantable-type land-use interiors (flattened)

@@ -71,7 +71,7 @@ function readLookParam() {
 /**
  * THE MAP A LOOK IS A LOOK OF — the one client-side home for this rule.
  *
- * The server already has it (`cartograph/tree-bake-inputs.mjs#sceneForLook`); the
+ * The server already has it (`cartograph/tree-bake-inputs.mjs#mapForLook`); the
  * client had it copied inline in `Grove.jsx` as `l.scene || l.id`. Arborist and
  * Meteorologist both send look-keyed packets (`?look=`, `/looks/<id>/trees`) and
  * resolve the map at the far end, so they should import THIS rather than keep

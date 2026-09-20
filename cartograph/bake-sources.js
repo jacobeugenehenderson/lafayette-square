@@ -40,8 +40,8 @@
 import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { intakeStatusForScene, STATUS, ACQUIRE, KIND } from './intake-rows.mjs'
-import { requireExplicitScene } from './scene.js'
+import { intakeStatusForMap, STATUS, ACQUIRE, KIND } from './intake-rows.mjs'
+import { requireExplicitMap } from './scene.js'
 import { assertBakeTarget } from './bake-target.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -65,8 +65,8 @@ function parseArgs() {
  * "which of my inputs put me under this licence" is the question an operator
  * asks the moment they see the line.
  */
-export function creditsForScene(scene) {
-  const { rows } = intakeStatusForScene(scene)
+export function creditsForMap(scene) {
+  const { rows } = intakeStatusForMap(scene)
   const filled = rows.filter(r => r.status === STATUS.FILLED)
 
   const bySource = new Map()
@@ -110,7 +110,7 @@ export function creditsForScene(scene) {
   return { credits: [...bySource.values()], owed }
 }
 
-// ⭐ THE CLI IS GUARDED so `creditsForScene` can be imported without the module
+// ⭐ THE CLI IS GUARDED so `creditsForMap` can be imported without the module
 // baking anything or calling process.exit. `scratch/claims-attribution-is-per-town.mjs`
 // re-derives every town's credits through this exact function — the check and the
 // bake must never be two implementations that can agree about something false.
@@ -126,7 +126,7 @@ const look = args.look
 // credits Lafayette Square's sources under this town's name, which is the exact
 // lie this artifact exists to prevent. The scene comes from the ONE resolver,
 // which reads --scene= AND CARTOGRAPH_SCENE and refuses when neither names one.
-const scene = requireExplicitScene('bake-sources')
+const scene = requireExplicitMap('bake-sources')
 if (!look) {
   console.error('[sources] ⛔ --look is required. Refusing to guess: a defaulted look bakes over another town.')
   process.exit(1)
@@ -135,7 +135,7 @@ if (!look) {
   // …and the look must EXIST, or this writes a phantom nothing reads.
   assertBakeTarget('bake-sources', look, scene)
 
-const { credits, owed } = creditsForScene(scene)
+const { credits, owed } = creditsForMap(scene)
 
 const out = {
   version: 1,

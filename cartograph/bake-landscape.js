@@ -29,7 +29,7 @@ import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { assertBakeTarget } from './bake-target.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 
 const here = dirname(fileURLToPath(import.meta.url))          // cartograph/
 const REPO_ROOT = join(here, '..')
@@ -38,11 +38,11 @@ const arg = (k) => { const m = process.argv.find(a => a.startsWith(`--${k}=`)); 
 const lookId = arg('look')
 // The scene comes from the ONE resolver (scene.js) — --scene= or CARTOGRAPH_SCENE,
 // read in one place so the two channels cannot disagree.
-const scene = requireExplicitScene('bake-landscape')
+const scene = requireExplicitMap('bake-landscape')
 if (!lookId) { console.error('bake-landscape: need --look=<id>'); process.exit(1) }
 assertBakeTarget('bake-landscape', lookId)
 
-const sceneDir = join(here, 'data', scene)
+const mapDir = join(here, 'data', scene)
 // --source=<repo-relative path to the .obj> — the Look's EXPLICIT Stage-intake
 // opt-in (design.landscape.source). a20619cc moved the landscape assets OUT of the
 // pour dir (a stray sangabriel.obj in data/<scene>/ silently baked the mountains
@@ -53,13 +53,13 @@ const sceneDir = join(here, 'data', scene)
 const sourceArg = arg('source')
 const terrainDir = sourceArg
   ? dirname(join(here, '..', sourceArg))
-  : join(sceneDir, 'terrain')
+  : join(mapDir, 'terrain')
 const objPath = sourceArg
   ? join(here, '..', sourceArg)
   : join(terrainDir, 'sangabriel.obj')
 const metaPath = join(terrainDir, 'meta.json')
 const heightsPath = join(terrainDir, 'heights.f32')
-const geoPath = join(sceneDir, 'geography.json')
+const geoPath = join(mapDir, 'geography.json')
 if (!existsSync(objPath)) { console.error(`bake-landscape: no ${objPath}`); process.exit(1) }
 
 console.log('='.repeat(60))

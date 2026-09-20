@@ -12,9 +12,9 @@ import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
-import { DEFAULT_SCENE, sceneRawDir, sceneCleanDir } from './config.js'
-import { treeBakeInputsForScene } from './tree-bake-inputs.mjs'
-import { intakeStatusForScene, sampleForRow, addAltSource } from './intake-rows.mjs'
+import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
+import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
+import { intakeStatusForMap, sampleForRow, addAltSource } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
 import { splitBoundary, composeBoundary, makeDiscRecord } from './boundaryRecords.mjs'
 import tzLookup from 'tz-lookup'
@@ -128,9 +128,9 @@ const _bakesInFlight = new Set()
 // (lafayette-square) and toy through here; further scenes follow the same
 // pattern. The raw/ + clean/ split inside each scene matches the existing
 // LS layout (raw = OSM ingestion / authored input; clean = derived).
-function sceneDataPaths(scene) {
-  const raw = sceneRawDir(scene)
-  const clean = sceneCleanDir(scene)
+function mapDataPaths(scene) {
+  const raw = mapRawDir(scene)
+  const clean = mapCleanDir(scene)
   return {
     raw, clean,
     markers:      join(clean, 'marker_strokes.json'),
@@ -148,8 +148,8 @@ function sceneDataPaths(scene) {
 
 // Default-scene aliases — preserved so the static-file serving path and
 // the analyze() routine keep working without per-request scene plumbing.
-// Per-scene routes resolve via sceneDataPaths(scene) instead.
-const DEFAULT_PATHS = sceneDataPaths(DEFAULT_SCENE)
+// Per-scene routes resolve via mapDataPaths(scene) instead.
+const DEFAULT_PATHS = mapDataPaths(DEFAULT_MAP)
 const DIR     = DEFAULT_PATHS.clean
 const RAW     = DEFAULT_PATHS.raw
 const MARKERS = DEFAULT_PATHS.markers
@@ -222,7 +222,7 @@ function computeLabelsFromOsm(osm) {
   return [...byName.values()].map(({ _total, ...l }) => l)
 }
 function getOsmLabels(scene) {
-  const p = join(sceneRawDir(scene), 'osm.json')
+  const p = join(mapRawDir(scene), 'osm.json')
   if (!existsSync(p)) return []
   const mtime = statSync(p).mtimeMs
   const cached = _osmLabelCache.get(scene)
@@ -260,7 +260,7 @@ const _streetLookupCache = new Map()   // scene → { mtime, skel }
 // frame; nothing downstream of the Wall may consume it, and nothing may derive
 // geometry from it.
 function getStreetLookup(scene) {
-  const dir = sceneCleanDir(scene)
+  const dir = mapCleanDir(scene)
   let p = join(dir, 'skeleton.json')
   if (!existsSync(p)) {
     p = join(dir, 'street-index.json')
@@ -521,7 +521,7 @@ function writeGeographyFromBbox(scene, bbox) {
     lonToMeters, latToMeters,
     bbox: { minLat: r5(bbox.minLat), maxLat: r5(bbox.maxLat), minLon: r5(bbox.minLon), maxLon: r5(bbox.maxLon) },
   }
-  const p = sceneDataPaths(scene).geography
+  const p = mapDataPaths(scene).geography
   mkdirSync(dirname(p), { recursive: true })
   writeFileSync(p, JSON.stringify(geo, null, 2))
   return geo
@@ -690,7 +690,7 @@ function streetGeom(scene, name) {
 // EXISTS but does not parse or is missing a field THROWS, naming it — the old code
 // swallowed that into "first pour" and wrote defaults over it.
 function readBoundaryRecords(scene) {
-  const p = sceneDataPaths(scene).boundary
+  const p = mapDataPaths(scene).boundary
   if (!existsSync(p)) return null
   return splitBoundary(JSON.parse(readFileSync(p, 'utf8')), `${scene}/neighborhood_boundary.json`)
 }
@@ -733,8 +733,8 @@ function buildingFootprintsFor(scene) {
   // ALWAYS writes OSM buildings into osm.json. What the operator sees while
   // framing == what pours (Jacob, 2026-07-18: no indeterminance). The pour's
   // buildingSource fallthrough (pipeline.js curated→msbf→'osm') mirrors this.
-  const msbfPath = join(sceneRawDir(scene), 'msbf.json')
-  const osmPath  = join(sceneRawDir(scene), 'osm.json')
+  const msbfPath = join(mapRawDir(scene), 'msbf.json')
+  const osmPath  = join(mapRawDir(scene), 'osm.json')
   const src = existsSync(msbfPath) ? msbfPath : (existsSync(osmPath) ? osmPath : null)
   if (!src) return { buildings: [] }
   const mtime = statSync(src).mtimeMs
@@ -967,7 +967,7 @@ function migrateLooksOnBoot() {
     default: DEFAULT_LOOK_ID,
     looks: [
       { id: DEFAULT_LOOK_ID, name: 'Kit Default', createdAt: Date.now() },
-      { id: LEGACY_LS_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_SCENE, createdAt: Date.now() },
+      { id: LEGACY_LS_LOOK_ID, name: 'Lafayette Square', scene: DEFAULT_MAP, createdAt: Date.now() },
     ],
   })
   if (overlay.design) {
@@ -986,7 +986,7 @@ function backfillLookScenesOnBoot() {
   if (!idx || !Array.isArray(idx.looks)) return
   let changed = false
   for (const entry of idx.looks) {
-    // ⛔ Was: `entry.scene = DEFAULT_SCENE` — a Look with no scene was silently
+    // ⛔ Was: `entry.scene = DEFAULT_MAP` — a Look with no scene was silently
     // ASSIGNED Lafayette Square, and the wrong value then PERSISTED, so the bleed
     // outlived the request (BRIEF-ls-bleed-excision site 13). Leave it unset and
     // let the consumer refuse; a Look whose town we don't know is not an LS Look.
@@ -994,7 +994,7 @@ function backfillLookScenesOnBoot() {
     // every boot would train the operator to ignore this line, which is the one
     // line that matters when a REAL Look has lost its scene.
     if (!entry.scene && entry.id !== idx.default) {
-      console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_SCENE}')`)
+      console.warn(`[looks] '${entry.id}' has no scene — left unset (was silently assigned '${DEFAULT_MAP}')`)
     }
   }
   if (changed) {
@@ -1139,9 +1139,9 @@ createServer(async (req, res) => {
   const RESERVED_PREFIXES = new Set(['looks', 'analyze', 'rebuild'])
   const sceneRouteMatch = path.match(/^\/(?:([a-z0-9][a-z0-9-]*)\/)?(markers|measurements|skeleton|centerlines|overlay|ribbons|map|geography|boundary)$/)
   if (sceneRouteMatch && !RESERVED_PREFIXES.has(sceneRouteMatch[1])) {
-    const scene = sceneRouteMatch[1] || DEFAULT_SCENE
+    const scene = sceneRouteMatch[1] || DEFAULT_MAP
     const verb = sceneRouteMatch[2]
-    const paths = sceneDataPaths(scene)
+    const paths = mapDataPaths(scene)
     const filePath = paths[verb]
 
     if (req.method === 'GET' && READ_VERBS.includes(verb)) {
@@ -1197,7 +1197,7 @@ createServer(async (req, res) => {
     const scene = intakeMatch[1]
     try {
       res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' })
-      res.end(JSON.stringify(intakeStatusForScene(scene)))
+      res.end(JSON.stringify(intakeStatusForMap(scene)))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
@@ -1344,7 +1344,7 @@ createServer(async (req, res) => {
   const bldgOvMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/building-overrides$/)
   if (bldgOvMatch && !RESERVED_PREFIXES.has(bldgOvMatch[1])) {
     const scene = bldgOvMatch[1]
-    const ovPath = join(sceneCleanDir(scene), '..', 'building-overrides.json')
+    const ovPath = join(mapCleanDir(scene), '..', 'building-overrides.json')
     if (req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(existsSync(ovPath) ? readFileSync(ovPath) : '{"activate":[],"hide":[]}')
@@ -1456,7 +1456,7 @@ createServer(async (req, res) => {
         // DIFFERENT place into an existing scene (the LS→Altadena clobber). A
         // legitimate re-frame/re-scope of the SAME hood moves metres, never 50 km.
         // The Extent tool now authors per-search scenes, so this is defense-in-depth.
-        const geoPath = sceneDataPaths(scene).geography
+        const geoPath = mapDataPaths(scene).geography
         if (existsSync(geoPath)) {
           try {
             const cur = JSON.parse(readFileSync(geoPath, 'utf8'))
@@ -1473,9 +1473,9 @@ createServer(async (req, res) => {
         const here = import.meta.dirname
         const scriptsDir = join(here, '..', 'scripts')
         const env = { ...process.env, CARTOGRAPH_SCENE: scene }
-        const raw = sceneRawDir(scene)
+        const raw = mapRawDir(scene)
         mkdirSync(raw, { recursive: true })
-        mkdirSync(sceneCleanDir(scene), { recursive: true })
+        mkdirSync(mapCleanDir(scene), { recursive: true })
         const lastLine = (r) => (r.stderr || r.stdout || '').trim().split('\n').filter(Boolean).pop() || 'failed'
         const sources = {}
         // ── OSM (REQUIRED backbone: streets → skeleton → nameable) ──
@@ -1573,7 +1573,7 @@ createServer(async (req, res) => {
   if (req.method === 'DELETE' && dropMatch && !RESERVED_PREFIXES.has(dropMatch[1])) {
     const scene = dropMatch[1]
     try {
-      const dir = join(sceneCleanDir(scene), '..')
+      const dir = join(mapCleanDir(scene), '..')
       // ⛔ Read the marker; an unreadable neighborhood.json is NOT "uncommitted".
       // Absent means never committed (a draft). Present-but-unparseable means we do
       // not know, and refusing to delete on "we do not know" is the only safe answer.
@@ -1602,7 +1602,7 @@ createServer(async (req, res) => {
   const nbdMatch = path.match(/^\/([a-z0-9][a-z0-9-]*)\/neighborhood$/)
   if (nbdMatch && !RESERVED_PREFIXES.has(nbdMatch[1])) {
     const scene = nbdMatch[1]
-    const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+    const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
     if (req.method === 'GET') {
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(existsSync(nPath) ? readFileSync(nPath) : '{}')
@@ -1648,7 +1648,7 @@ createServer(async (req, res) => {
         if (!center || !Number.isFinite(center.lat) || !Number.isFinite(center.lon)) throw new Error('need center {lat,lon}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
         const r5 = (v) => Math.round(v * 1e5) / 1e5
-        const geoPath = sceneDataPaths(scene).geography
+        const geoPath = mapDataPaths(scene).geography
         // ── (Re-center guard REMOVED 2026-07-23 — EXTENT-DESIGN §3.3) ────────
         // It refused a committed hood whose `center` moved >5 m, to stop the FRAME
         // from shifting (which orphans blockCustoms). Under the never-move model
@@ -1660,8 +1660,8 @@ createServer(async (req, res) => {
         // Snapshot the pre-commit frame so a failure mid-Pour can roll back.
         // Consumed by /rollback-extent when onBuild throws before the bake lands.
         // Stale .prebak from a prior run is cleared first so only one exists.
-        const nPathC = join(sceneCleanDir(scene), '..', 'neighborhood.json')
-        for (const src of [geoPath, sceneDataPaths(scene).boundary, nPathC]) {
+        const nPathC = join(mapCleanDir(scene), '..', 'neighborhood.json')
+        for (const src of [geoPath, mapDataPaths(scene).boundary, nPathC]) {
           try { rmSync(src + '.prebak', { force: true }); if (existsSync(src)) writeFileSync(src + '.prebak', readFileSync(src)) } catch { /* best-effort */ }
         }
         const geo = JSON.parse(readFileSync(geoPath, 'utf8'))
@@ -1745,8 +1745,8 @@ createServer(async (req, res) => {
           disc, membership, exclusions: excl.length ? excl : null,
           carry: priorRecs?.carry ?? {}, keyOrder: priorRecs?.keyOrder ?? [],
         })
-        writeFileSync(sceneDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
-        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        writeFileSync(mapDataPaths(scene).boundary, JSON.stringify(boundary, null, 2))
+        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
         // Persist the editable exclusion loops AND the inclusion polygon (both lon/lat)
         // so reopening a committed hood returns them fully editable — the "keep fixing
         // across sessions" contract.
@@ -1805,9 +1805,9 @@ createServer(async (req, res) => {
     _seedsInFlight.add(scene)
     ;(async () => {
       try {
-        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
         let restored = false
-        for (const src of [sceneDataPaths(scene).geography, sceneDataPaths(scene).boundary, nPath]) {
+        for (const src of [mapDataPaths(scene).geography, mapDataPaths(scene).boundary, nPath]) {
           const bak = src + '.prebak'
           if (existsSync(bak)) { writeFileSync(src, readFileSync(bak)); rmSync(bak, { force: true }); restored = true }
         }
@@ -1842,7 +1842,7 @@ createServer(async (req, res) => {
       try {
         const { radius, exclusions, dropPolygon = false, polygon, polygonSource, center } = JSON.parse(body || '{}')
         if (!Number.isFinite(radius) || radius <= 0) throw new Error('need a positive radius')
-        const bPath = sceneDataPaths(scene).boundary
+        const bPath = mapDataPaths(scene).boundary
         if (!existsSync(bPath)) throw new Error('no committed boundary to re-scope — Pour first')
         const prev = JSON.parse(readFileSync(bPath, 'utf8'))
         // ⭐ PRESERVE THE DISC CENTER (D4 residual, fixed 2026-07-23). This called
@@ -1910,7 +1910,7 @@ createServer(async (req, res) => {
           // The polygon is the INTENDED membership mechanism, not a legacy artifact —
           // it is what the boundary-street process produces. Dropping it is now an
           // EXPLICIT act (`dropPolygon: true`), never a side effect of editing extent.
-          const geo = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
+          const geo = JSON.parse(readFileSync(mapDataPaths(scene).geography, 'utf8'))
           const flatExcl = exclusions.map(loop => flattenBoundaryPath(loop, geo)).filter(poly => Array.isArray(poly) && poly.length >= 3)
           excl = flatExcl.length ? flatExcl : null
           if (dropPolygon) {
@@ -1922,7 +1922,7 @@ createServer(async (req, res) => {
             // be authored on a hood's very first pour — and an existing hood (Księży
             // Młyn) could never adopt one at all. lon/lat in, flattened to the committed
             // frame, same as commit-extent.
-            const geoR = JSON.parse(readFileSync(sceneDataPaths(scene).geography, 'utf8'))
+            const geoR = JSON.parse(readFileSync(mapDataPaths(scene).geography, 'utf8'))
             const flat = flattenBoundaryPath({ closed: true, anchors: polygon }, geoR)
             if (!Array.isArray(flat) || flat.length < 3) throw new Error('inclusion polygon flattened to fewer than 3 points')
             membership = { polygon: flat, polygonSource: polygonSource || 'authored' }
@@ -1942,7 +1942,7 @@ createServer(async (req, res) => {
         // rescope was unrecoverable without git.
         try { writeFileSync(`${bPath}.prebak-rescope`, JSON.stringify(prev, null, 2)) } catch { /* best effort */ }
         writeFileSync(bPath, JSON.stringify(boundary, null, 2))
-        const nPath = join(sceneCleanDir(scene), '..', 'neighborhood.json')
+        const nPath = join(mapCleanDir(scene), '..', 'neighborhood.json')
         if (existsSync(nPath)) {
           try { const nb = JSON.parse(readFileSync(nPath, 'utf8')); nb.radius = Math.round(radius); if (Array.isArray(exclusions)) nb.exclusions = exclusions; writeFileSync(nPath, JSON.stringify(nb, null, 2)) } catch { /* leave nb */ }
         }
@@ -2206,20 +2206,20 @@ createServer(async (req, res) => {
       // (toy doesn't have an OSM-derived pipeline yet — its centerlines
       // are hand-authored, so the pipeline step is a no-op for now).
       const bakeLookEntry = idx.looks.find(l => l.id === id)
-      // ⛔⛔ Was: `|| DEFAULT_SCENE` — a bake whose Look carried no scene BAKED OVER
+      // ⛔⛔ Was: `|| DEFAULT_MAP` — a bake whose Look carried no scene BAKED OVER
       // Lafayette Square (BRIEF-ls-bleed-excision site 14). This is the destructive
       // end of the class and the mechanism behind ORIENTATION's palimpsest warning;
       // it already fired once, 2026-07-23. Nothing that WRITES may fall back.
       const bakeScene = bakeLookEntry?.scene
       if (!bakeScene) {
-        const msg = `refusing to bake: look '${bakeLookEntry?.id ?? '?'}' has no scene. Defaulting would bake over '${DEFAULT_SCENE}'.`
+        const msg = `refusing to bake: look '${bakeLookEntry?.id ?? '?'}' has no scene. Defaulting would bake over '${DEFAULT_MAP}'.`
         console.error('[bake] ⛔ ' + msg)
         res.writeHead(409, { 'Content-Type': 'application/json' })
         res.end(JSON.stringify({ error: msg }))
         return
       }
-      const isDefaultScene = bakeScene === DEFAULT_SCENE
-      const bakePaths = sceneDataPaths(bakeScene)
+      const isDefaultMap = bakeScene === DEFAULT_MAP
+      const bakePaths = mapDataPaths(bakeScene)
       // overlay.json + skeleton.json are operator-edited / derived
       // (Survey/Measure write to /overlay → clean/overlay.json; skeleton
       // is derived). Everything else is raw inputs.
@@ -2263,7 +2263,7 @@ createServer(async (req, res) => {
       // pipeline.js is LS-specific (reads OSM ingest → derives map.json).
       // For toy we skip — the toy fixture is hand-authored centerlines +
       // overlay; a future toy-pipeline.js will derive map.json from those.
-      if (isDefaultScene) {
+      if (isDefaultMap) {
         await runIfDirty('pipeline',
           [...RAW_PATHS, ...PIPELINE_SRC],
           [MAP_JSON],
@@ -2360,7 +2360,7 @@ createServer(async (req, res) => {
       // the baked id set). LS is guarded (its content is hand-curated) — the step
       // + bake-content both skip the default scene. Hand-authoring survives via
       // the committed override sidecars (listings.overrides.json).
-      if (!isDefaultScene) {
+      if (!isDefaultMap) {
         const SCENE_BAKED_BUILDINGS = join(REPO_ROOT, 'public', 'baked', bakeScene, 'buildings.json')
         const CONTENT_DIR = join(bakePaths.raw, '..', 'content')
         await runIfDirty('content',
@@ -2422,7 +2422,7 @@ createServer(async (req, res) => {
       // same path — one answer, not two that drift
       // (`cartograph/tree-bake-inputs.mjs`). No census on disk → honest zero.
       if (layerOn('tree')) {
-        const treeInputs = treeBakeInputsForScene(bakeScene)
+        const treeInputs = treeBakeInputsForMap(bakeScene)
         if (!treeInputs) {
           skipped.push(`trees (no census on disk for scene '${bakeScene}' — honest zero)`)
         } else {
@@ -2821,7 +2821,7 @@ createServer(async (req, res) => {
         const seedEntry = (fromLookId && idx.looks.find(l => l.id === fromLookId))
           || idx.looks.find(l => l.id === idx.default)
         const seedId = seedEntry ? seedEntry.id : idx.default
-        // ⛔⛔ Was: `|| DEFAULT_SCENE`. A Look created with no scene — and seeded
+        // ⛔⛔ Was: `|| DEFAULT_MAP`. A Look created with no scene — and seeded
         // from a seed that has none either (the kit 0-state has none by design) —
         // was silently BOUND TO LAFAYETTE SQUARE, and the binding then persisted.
         // That is A00's exact defect: an unanswerable question answered with the

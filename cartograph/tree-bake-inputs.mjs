@@ -24,7 +24,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { sceneCleanDir } from './config.js'
+import { mapCleanDir } from './config.js'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 const LOOKS_INDEX = join(REPO_ROOT, 'public', 'looks', 'index.json')
@@ -41,7 +41,7 @@ const LOOKS_INDEX = join(REPO_ROOT, 'public', 'looks', 'index.json')
  *
  * @returns {string|null} the scene id, or null if the Look is unknown.
  */
-export function sceneForLook(lookId) {
+export function mapForLook(lookId) {
   let idx
   try { idx = JSON.parse(readFileSync(LOOKS_INDEX, 'utf8')) } catch { return null }
   const look = (idx.looks || []).find(l => l.id === lookId)
@@ -60,7 +60,7 @@ export function sceneForLook(lookId) {
  * `"default": "lafayette-square"` pointer, and nothing more. Retired 2026-07-15
  * (Phase 3), which is what makes LS an ordinary neighbourhood here.
  */
-export const placementsPathForScene = (scene) => `public/baked/${scene}/trees.json`
+export const placementsPathForMap = (scene) => `public/baked/${scene}/trees.json`
 
 /**
  * The toy fixture's census is hand-authored and lives outside the scene data
@@ -74,7 +74,7 @@ const TOY_PLACEMENTS = 'src/data/toy/toy-trees.json'
  *   Spread straight into `bakeTrees({ ...inputs, heroLook })`. `inputs` is the
  *   mtime-dirty list for the caller's rebuild check. `null` = no census on disk.
  */
-export function treeBakeInputsForScene(scene) {
+export function treeBakeInputsForMap(scene) {
   // Lafayette Square used to short-circuit here to `bake-trees.js`'s built-in
   // src/data/* defaults (its census, species map and hardscape mask predated
   // scenes). Retired 2026-07-16: its park census + species map moved into this
@@ -88,7 +88,7 @@ export function treeBakeInputsForScene(scene) {
     return {
       scene,
       placements: [TOY_PLACEMENTS],
-      output: placementsPathForScene(scene),
+      output: placementsPathForMap(scene),
       inputs: [join(REPO_ROOT, TOY_PLACEMENTS)],
     }
   }
@@ -106,7 +106,7 @@ export function treeBakeInputsForScene(scene) {
   // through this resolver lost the hand-curated park census, and a bake through
   // the default lost the ENTIRE NEIGHBOURHOOD — which is what shipped, so LS
   // showed 729 park trees and no street trees at all. Add new wells to BOTH.
-  const clean = sceneCleanDir(scene)
+  const clean = mapCleanDir(scene)
   const placements = [
     join(clean, 'park_census.json'),        // authored park census (hand-curated, real species)
     join(clean, 'park_trees.json'),         // City Forestry layer 1 (whole hood, real)

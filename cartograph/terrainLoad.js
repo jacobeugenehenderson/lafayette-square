@@ -16,7 +16,7 @@ import { makeElevationSampler } from '../src/lib/terrainCommon.js'
 
 const CARTOGRAPH_DIR = dirname(fileURLToPath(import.meta.url))
 
-export function sceneTerrainPaths(scene) {
+export function mapTerrainPaths(scene) {
   const dir = join(CARTOGRAPH_DIR, 'data', scene, 'clean')
   return { json: join(dir, 'terrain.json'), bin: join(dir, 'terrain.bin') }
 }
@@ -24,7 +24,7 @@ export function sceneTerrainPaths(scene) {
 // Returns a full sampler ({ getElevation, getElevationRaw, displaceGeometry,
 // bounds, width, height }) or null if this scene has no baked terrain.
 export function loadSceneTerrain(scene) {
-  const { json, bin } = sceneTerrainPaths(scene)
+  const { json, bin } = mapTerrainPaths(scene)
   if (!existsSync(json) || !existsSync(bin)) return null
   const meta = JSON.parse(readFileSync(json, 'utf-8'))
   const buf = readFileSync(bin)

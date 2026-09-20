@@ -23,11 +23,11 @@ import { createInterface } from 'readline'
 import { createGunzip } from 'zlib'
 import { BBOX, RAW_DIR, SCENE, wgs84ToLocal } from './config.js'
 import { registryPath, loadRegistry, saveRegistry, assignIds } from './msbf-identity.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
-requireExplicitScene('fetch-msbf')
+requireExplicitMap('fetch-msbf')
 
 const INDEX_URL = 'https://minedbuildings.z5.web.core.windows.net/global-buildings/dataset-links.csv'
 const CACHE = join(RAW_DIR, '_cache')

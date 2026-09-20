@@ -26,7 +26,7 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import tzLookup from 'tz-lookup'
-import { sceneDir } from './config.js'
+import { mapDir } from './config.js'
 
 /**
  * Coarse regional bucket. This is what decides which source is a scene's
@@ -54,8 +54,8 @@ export function regionForTz(tz) {
  * A true city/country key wants the geocoder's own administrative fields
  * recorded at Extent-commit time; that is the upgrade, not this.
  */
-export function jurisdictionForScene(scene) {
-  const p = join(sceneDir(scene), 'geography.json')
+export function jurisdictionForMap(scene) {
+  const p = join(mapDir(scene), 'geography.json')
   if (!existsSync(p)) return null
   try {
     const g = JSON.parse(readFileSync(p, 'utf8'))

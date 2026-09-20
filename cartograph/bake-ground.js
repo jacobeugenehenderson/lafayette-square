@@ -33,7 +33,7 @@ import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
@@ -1077,7 +1077,7 @@ async function main() {
   // and CARTOGRAPH_SCENE. This loop used to parse --scene itself over a
   // 'lafayette-square' seed, so the env channel was silently ignored and an
   // env-named bake rebuilt LS. See scene.js's header.
-  const scene = requireExplicitScene('bake-ground')
+  const scene = requireExplicitMap('bake-ground')
   let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
   const refine = {}
   for (const arg of process.argv.slice(2)) {

@@ -22,13 +22,13 @@
 import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync } from 'fs'
 import { join } from 'path'
 import { execSync } from 'child_process'
-import { BBOX, RAW_DIR, SCENE, sceneDir, wgs84ToLocal, overpassBbox } from './config.js'
-import { requireExplicitScene } from './scene.js'
+import { BBOX, RAW_DIR, SCENE, mapDir, wgs84ToLocal, overpassBbox } from './config.js'
+import { requireExplicitMap } from './scene.js'
 import { squareAroundDisc, containment, ZONE_PAD } from './discSquare.mjs'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
-requireExplicitScene('fetch')
+requireExplicitMap('fetch')
 
 // ⭐ THE TWO-PASS FETCH (`_archive/EXTENT-EXCAVATION-DIARY §0.1`, Jacob 2026-07-21).
 //   --pass=light   the SOFT fetch: generous envelope, boundary vocabulary + painted
@@ -140,7 +140,7 @@ function main() {
   // pass squares around the authored disc instead — see the header.
   let bboxObj = BBOX
   if (pass === 'heavy') {
-    const nbPath = join(sceneDir(SCENE), 'neighborhood.json')
+    const nbPath = join(mapDir(SCENE), 'neighborhood.json')
     let nb
     try { nb = JSON.parse(readFileSync(nbPath, 'utf-8')) } catch {
       console.error(`\n⛔ --pass=heavy needs the authored disc and ${nbPath} is unreadable.\n   The heavy fetch is scoped to the DISC, not the frame; without a radius there is nothing to scope to.\n   Author the extent first, then re-run.\n`)

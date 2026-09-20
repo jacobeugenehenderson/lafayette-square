@@ -34,11 +34,11 @@ import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
 import {
-  fetchSkeletonLabels, fetchStreetNames, discardScene, geocodePlace, fetchExtent, fetchGeography,
+  fetchSkeletonLabels, fetchStreetNames, discardMap, geocodePlace, fetchExtent, fetchGeography,
   fetchStreetGeom, fetchNeighborhood, saveNeighborhood, commitExtent, fetchBoundary,
-  pourScene, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
-  fetchBuildingOverrides, saveBuildingOverrides, rescopeScene, rollbackExtent,
-  fetchStreets, fetchBoundaryFromStreets, fetchScenes, fetchSkeleton,
+  pourMap, fetchRibbons, fetchMap, fetchLooks, createLook, bakeLook, fetchBuildingFootprints,
+  fetchBuildingOverrides, saveBuildingOverrides, rescopeMap, rollbackExtent,
+  fetchStreets, fetchBoundaryFromStreets, fetchMaps, fetchSkeleton,
 } from './api.js'
 import MarkerOverlay from './MarkerOverlay.jsx'
 import MarkerFAB from './MarkerFAB.jsx'
@@ -200,7 +200,7 @@ function ExtentLabels({ labels, geo }) {
 // Auto-fits once per scene; a user zoom/pan afterward is left alone.
 function ExtentCamera({ geo, controlsRef, orthoRef }) {
   const { camera, size } = useThree()
-  const sceneKey = useCartographStore(s => s.scene)
+  const mapKey = useCartographStore(s => s.scene)
   const fittedFor = useRef(null)
   // Publish the ortho camera up to the HTML MarkerOverlay (which reads the
   // camera frustum to map screen ↔ world for freehand strokes).
@@ -211,7 +211,7 @@ function ExtentCamera({ geo, controlsRef, orthoRef }) {
     if (!camera.isOrthographicCamera || !geo) return
     // Re-fit on scene change AND on a geography change (a ZIP seed rewrites the
     // bbox without changing the scene id); the operator's own zoom is left be.
-    const fitKey = `${sceneKey}:${geo.bbox.minLat},${geo.bbox.minLon},${geo.bbox.maxLat},${geo.bbox.maxLon}`
+    const fitKey = `${mapKey}:${geo.bbox.minLat},${geo.bbox.minLon},${geo.bbox.maxLat},${geo.bbox.maxLon}`
     if (fittedFor.current === fitKey) return
     const halfZ = ((geo.bbox.maxLat - geo.bbox.minLat) * geo.latToMeters) / 2
     const halfX = ((geo.bbox.maxLon - geo.bbox.minLon) * geo.lonToMeters) / 2
@@ -235,7 +235,7 @@ function ExtentCamera({ geo, controlsRef, orthoRef }) {
     }
     const id = requestAnimationFrame(apply)
     return () => cancelAnimationFrame(id)
-  }, [camera, geo, sceneKey, controlsRef, size.width, size.height])
+  }, [camera, geo, mapKey, controlsRef, size.width, size.height])
   return null
 }
 
@@ -908,9 +908,9 @@ export default function ExtentApp() {
     return null
   })
   const setShot = useCartographStore(s => s.setShot)
-  const sceneGeography = useCartographStore(s => s.sceneGeography)
+  const mapGeography = useCartographStore(s => s.mapGeography)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
-  const geo = useMemo(() => extentGeo(sceneGeography), [sceneGeography])
+  const geo = useMemo(() => extentGeo(mapGeography), [mapGeography])
   // Persist Extent's own working scene (incl. the blank workspace, null → '') so a
   // cold restart reappears here — never on the LS default.
   useEffect(() => {
@@ -1452,15 +1452,15 @@ export default function ExtentApp() {
       // don't touch `located`, so the aerial the operator just framed isn't blanked.
       const st = useCartographStore.getState()
       const [g, b] = await Promise.all([
-        st.sceneGeography ? Promise.resolve(st.sceneGeography) : fetchGeography(scene).catch(() => null),
+        st.mapGeography ? Promise.resolve(st.mapGeography) : fetchGeography(scene).catch(() => null),
         fetchBoundary(scene).catch(() => null),
       ])
       if (cancelled) return
       const upd = {}
-      if (g && !st.sceneGeography) upd.sceneGeography = g
+      if (g && !st.mapGeography) upd.mapGeography = g
       if (b) upd.sceneBoundary = b
       if (Object.keys(upd).length) useCartographStore.setState(upd)
-      if (g || st.sceneGeography) setLocated(true)
+      if (g || st.mapGeography) setLocated(true)
       // NO geocode-for-geometry on open. Search is a data bootstrap only; the
       // operator authors the boundary with the pen (never an admin ring — an
       // administrative polygon is not a neighborhood; `HANDOFF-extent-pen-boundary.md`).
@@ -1526,7 +1526,7 @@ export default function ExtentApp() {
   const [scenesList, setScenesList] = useState([])
   useEffect(() => {
     let cancelled = false
-    fetchScenes().then(r => { if (!cancelled) setScenesList(r.scenes || []) }).catch(() => {})
+    fetchMaps().then(r => { if (!cancelled) setScenesList(r.scenes || []) }).catch(() => {})
     return () => { cancelled = true }
   }, [scene])
 
@@ -1546,14 +1546,14 @@ export default function ExtentApp() {
   // data, so this cannot reach a real neighborhood.
   const discardDraft = async (id) => {
     if (!id) return
-    try { await discardScene(id) } catch (e) { setSeedError(e.message); return }
+    try { await discardMap(id) } catch (e) { setSeedError(e.message); return }
     setScenesList(l => l.filter(x => x.id !== id))
     if (id === scene) newNeighborhood()
   }
 
   const newNeighborhood = () => {
     setSceneLocal(null)
-    useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
+    useCartographStore.setState({ mapGeography: null, sceneBoundary: null, sceneRibbons: null })
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
     setPolygonLL(null); setPolygonSource(null); setHintRing(null); setCoverage(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
@@ -1589,7 +1589,7 @@ export default function ExtentApp() {
       const slug = sluggifyPlace(r.anchors, q)
       setSceneLocal(slug)
       setStoreScene(slug)   // clears store geo/boundary; set the fresh frame next
-      useCartographStore.setState({ sceneGeography: geoFromBbox(r.bbox), sceneBoundary: null })
+      useCartographStore.setState({ mapGeography: geoFromBbox(r.bbox), sceneBoundary: null })
       setAnchors(r.anchors || null)
       // Keyed to the slug this search just authored. The scene-change effect fires
       // right after us and resets sibling draft state; keying (rather than clearing
@@ -1701,7 +1701,7 @@ export default function ExtentApp() {
       const r = await fetchExtent(scene, bbox)
       setFetchSources(r?.sources || null)
       const g = await fetchGeography(scene).catch(() => null)
-      if (g) useCartographStore.setState({ sceneGeography: g })
+      if (g) useCartographStore.setState({ mapGeography: g })
       setSides([]); setStreetCorners(null); setRadiusTouched(false)
       setSeedToken(t => t + 1)
     } catch (e) {
@@ -1743,7 +1743,7 @@ export default function ExtentApp() {
       //    "apply my changes and show me" action (no separate Re-scope button).
       if (committed) {
         setBuildStage({ label: 'Re-applying extent', i: 1, n: 2 })
-        await rescopeScene(scene, Math.round(radiusM), exclusionsLL,
+        await rescopeMap(scene, Math.round(radiusM), exclusionsLL,
           Array.isArray(polygonLL) && polygonLL.length >= 3
             ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
             : {})
@@ -1795,7 +1795,7 @@ export default function ExtentApp() {
       committedThisRun = true
       const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
       const update = {}
-      if (g) update.sceneGeography = g
+      if (g) update.mapGeography = g
       if (b) update.sceneBoundary = b
       if (Object.keys(update).length) useCartographStore.setState(update)
       setRadiusTouched(true); setCommitted(true); setSeedToken(t => t + 1)
@@ -1811,7 +1811,7 @@ export default function ExtentApp() {
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
       setBuildStage({ label: 'Pouring map', i: 2, n: 3 })
-      await pourScene(scene)
+      await pourMap(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
@@ -1836,7 +1836,7 @@ export default function ExtentApp() {
         setBuildStage({ label: 'Rolling back', i: 0, n: 0 })
         await rollbackExtent(scene).catch(() => {})
         const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
-        useCartographStore.setState({ sceneGeography: g || null, sceneBoundary: b || null })
+        useCartographStore.setState({ mapGeography: g || null, sceneBoundary: b || null })
         setCommitted(false); setSeedToken(t => t + 1)
         setSeedError(`Pour failed — rolled back to before commit. ${e.message || ''}`.trim())
       } else {

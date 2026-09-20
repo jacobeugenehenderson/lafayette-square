@@ -20,17 +20,17 @@
 
 import { readFileSync, writeFileSync, copyFileSync } from 'fs'
 import { join } from 'path'
-import { SCENE, sceneCleanDir, requireExplicitScene } from './scene.js'
+import { SCENE, mapCleanDir, requireExplicitMap } from './scene.js'
 
 // One-shot migration tool, run against whichever scene you name.
-// ⛔ Was: `process.env.SCENE || DEFAULT_SCENE`, under a comment saying to "pass the
+// ⛔ Was: `process.env.SCENE || DEFAULT_MAP`, under a comment saying to "pass the
 // scene as an env var" — but the repo's variable is CARTOGRAPH_SCENE, and `SCENE`
 // is read by nothing else, so the documented gesture did nothing and every run
 // silently migrated Lafayette Square's overlay whatever town was named. It now
 // WRITES into data/<scene>/ only after the one resolver confirms which town.
-requireExplicitScene('migrate-overlay')
+requireExplicitMap('migrate-overlay')
 
-const ROOT = sceneCleanDir(SCENE)
+const ROOT = mapCleanDir(SCENE)
 const OVERLAY_PATH = join(ROOT, 'overlay.json')
 const SKELETON_PATH = join(ROOT, 'skeleton.json')
 

@@ -24,20 +24,20 @@ import { INSTANCE } from '../src/instance.js'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import {
-  DEFAULT_SCENE, SCENE, SCENE_IS_EXPLICIT, requireExplicitScene,
-  CARTOGRAPH_DIR, sceneDir, sceneRawDir, sceneCleanDir, RAW_DIR, CLEAN_DIR,
+  DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
+  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
 } from './scene.js'
 
 export {
-  DEFAULT_SCENE, SCENE, SCENE_IS_EXPLICIT, requireExplicitScene,
-  CARTOGRAPH_DIR, sceneDir, sceneRawDir, sceneCleanDir, RAW_DIR, CLEAN_DIR,
+  DEFAULT_MAP, SCENE, SCENE_IS_EXPLICIT, requireExplicitMap,
+  CARTOGRAPH_DIR, mapDir, mapRawDir, mapCleanDir, RAW_DIR, CLEAN_DIR,
 }
 
 // Geography resolver: a non-default scene's data/<scene>/geography.json wins;
 // otherwise the instance.js SSOT (LS). Same shape either way.
 function _loadGeography() {
-  if (SCENE !== DEFAULT_SCENE) {
-    const p = join(sceneDir(SCENE), 'geography.json')
+  if (SCENE !== DEFAULT_MAP) {
+    const p = join(mapDir(SCENE), 'geography.json')
     if (existsSync(p)) return JSON.parse(readFileSync(p, 'utf8'))
     // ⛔ Was: warn + fall back to instance.js (Lafayette Square's lat/lon). That
     // projects another town at St. Louis's coordinates — every metre of its

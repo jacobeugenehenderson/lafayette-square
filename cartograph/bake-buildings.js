@@ -26,7 +26,7 @@ import * as THREE from 'three'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
-import { SCENE, requireExplicitScene } from './scene.js'
+import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
 
@@ -1107,7 +1107,7 @@ export async function bakeBuildings({ look, scene } = {}) {
 }
 
 async function main() {
-  const scene = requireExplicitScene('bake-buildings')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  const scene = requireExplicitMap('bake-buildings')   // one resolver: --scene= OR CARTOGRAPH_SCENE
   let look = null
   for (const arg of process.argv.slice(2)) {
     let m

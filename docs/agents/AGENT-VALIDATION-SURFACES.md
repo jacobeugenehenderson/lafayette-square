@@ -30,7 +30,7 @@ Most "I changed it but nothing moved" / "it looks identical" scares are *surface
 | **LS Stage** | baked layers + live-wire authored channels (it auto-rebakes on authoring) | …after its re-bake |
 
 **Per-scene reality (verified 2026-06-02):**
-- **Toy → Designer is the only usable surface, and it's LIVE.** The `SCENE_REGISTRY` has a toy `StageEnvironment` *stub*, but `hasAerial:false / hasHero:false` and it is **not hooked up** (known flag). So to eyeball a toy construction change: **hard-refresh the Toy Designer** — the bake is irrelevant to what you see there. (Baking toy is harmless but does *not* drive the Designer.)
+- **Toy → Designer is the only usable surface, and it's LIVE.** The `MAP_REGISTRY` has a toy `StageEnvironment` *stub*, but `hasAerial:false / hasHero:false` and it is **not hooked up** (known flag). So to eyeball a toy construction change: **hard-refresh the Toy Designer** — the bake is irrelevant to what you see there. (Baking toy is harmless but does *not* drive the Designer.)
 - **LS → Designer (live) + Stage + production/Preview (baked).** A construction change wants the Designer for fast live eyeballing; the bake + Stage/Preview for the at-scale and frozen-slab check.
 
 **The construction file (tile era):** `src/lib/tileGround.js` (`buildTileGround`) — shared by Designer-live AND the bake, which is *why* "live == bake." (`buildBlockGeometryV2.js` is the **dead** figure-ground path, deleted at T4 — ignore it for tile work.)

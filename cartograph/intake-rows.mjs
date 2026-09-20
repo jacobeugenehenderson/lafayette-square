@@ -40,8 +40,8 @@
 import { existsSync, statSync, readFileSync, writeFileSync, mkdirSync, openSync, readSync, closeSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { sceneDir } from './config.js'
-import { jurisdictionForScene } from './intake-jurisdiction.mjs'
+import { mapDir } from './config.js'
+import { jurisdictionForMap } from './intake-jurisdiction.mjs'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 
@@ -112,7 +112,7 @@ function measureBuildingFabric(scene) {
   // Upstream, in precedence order. The hand-authored ledger is how a US town
   // says this at all (its OSM won't carry it); the OSM tags are how a
   // hand-mapped European town gets it for free (`INTAKE-CATALOGUE §5.1`).
-  const ledger = join(sceneDir(scene), 'buildings.json')
+  const ledger = join(mapDir(scene), 'buildings.json')
   if (existsSync(ledger)) {
     const m = cachedMeasure(`fabric:${scene}:ledger`, ledger, () => {
       const raw = JSON.parse(readFileSync(ledger, 'utf8'))
@@ -122,7 +122,7 @@ function measureBuildingFabric(scene) {
     if (m && m.known > 0) return m
   }
 
-  const mapP = join(sceneDir(scene), 'clean', 'map.json')
+  const mapP = join(mapDir(scene), 'clean', 'map.json')
   if (!existsSync(mapP)) return null
   return cachedMeasure(`fabric:${scene}:map`, mapP, () => {
     const b = JSON.parse(readFileSync(mapP, 'utf8')).buildings || []
@@ -417,7 +417,7 @@ export const INTAKE_ROWS = [
 
   // The four census layers are spatially DISJOINT layers of one census,
   // unioned — not alternatives (`tree-bake-inputs.mjs:100`). All four absent →
-  // `treeBakeInputsForScene` returns null, no trees, an honest zero.
+  // `treeBakeInputsForMap` returns null, no trees, an honest zero.
   {
     id: 'census-city', domain: 'cartograph', tier: 'elective',
     label: 'City tree census',
@@ -539,8 +539,8 @@ function readSourcesStore() {
  * jurisdiction start from zero forever, which is the per-session
  * re-derivation this manifest exists to end.
  */
-export function altSourcesForScene(scene) {
-  const j = jurisdictionForScene(scene)
+export function altSourcesForMap(scene) {
+  const j = jurisdictionForMap(scene)
   const store = readSourcesStore()
   const out = {}
   for (const [key, rows] of Object.entries(store)) {
@@ -560,7 +560,7 @@ export function altSourcesForScene(scene) {
  * same city inherits it. Returns the updated list for that row.
  */
 export function addAltSource(scene, rowId, name, url = null) {
-  const j = jurisdictionForScene(scene)
+  const j = jurisdictionForMap(scene)
   if (!j) throw new Error(`no geography for scene '${scene}' — cannot place it in a jurisdiction`)
   const store = readSourcesStore()
   const forJur = store[j.key] || (store[j.key] = {})
@@ -626,11 +626,11 @@ export function sampleForRow(scene, rowId) {
   if (!row || !row.path) return null
 
   let from = scene
-  let file = join(sceneDir(scene), row.path)
+  let file = join(mapDir(scene), row.path)
   if (!existsSync(file)) {
     // Not acquired here — show the reference copy instead, clearly labelled.
     from = 'lafayette-square'
-    file = join(sceneDir('lafayette-square'), row.path)
+    file = join(mapDir('lafayette-square'), row.path)
     if (!existsSync(file)) return null
   }
 
@@ -664,7 +664,7 @@ export function sampleForRow(scene, rowId) {
  * Absent file is the normal case: no town has recorded provenance yet.
  */
 function readSceneOverlay(scene) {
-  const p = join(sceneDir(scene), 'intake.json')
+  const p = join(mapDir(scene), 'intake.json')
   if (!existsSync(p)) return {}
   try {
     const parsed = JSON.parse(readFileSync(p, 'utf8'))
@@ -696,13 +696,13 @@ export const STATUS = {
  *   is a complete collection checklist; the RENDER is what hides missing things
  *   (`BRIEF §5.5`). Those are opposite behaviours and must not be conflated.
  */
-export function intakeStatusForScene(scene) {
-  const dir = sceneDir(scene)
+export function intakeStatusForMap(scene) {
+  const dir = mapDir(scene)
   const overlay = readSceneOverlay(scene)
   // Sources any operator recorded for this JURISDICTION — a well found while
   // pouring Centrum is a fact about Łódź and belongs to Księży Młyn too.
-  const alt = altSourcesForScene(scene)
-  const jurisdiction = jurisdictionForScene(scene)
+  const alt = altSourcesForMap(scene)
+  const jurisdiction = jurisdictionForMap(scene)
 
   const rows = INTAKE_ROWS.map(row => {
     const own = overlay[row.id] || {}

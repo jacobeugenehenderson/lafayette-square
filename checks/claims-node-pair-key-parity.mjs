@@ -42,12 +42,12 @@ import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'
 import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { feCustomKey, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
 import { ribbonScenes } from './_scenes.mjs'
-import { ROOT as SCENES_ROOT } from './_scenes.mjs'
+import { ROOT as MAPS_ROOT } from './_scenes.mjs'
 
 // ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
 //    in CI, not for a second developer. Same shape as the town-portability defect: it works only
 //    where somebody already is. `_scenes.mjs` resolves the repo root from its own location.
-const ROOT = SCENES_ROOT
+const ROOT = MAPS_ROOT
 const rd = p => readFileSync(`${ROOT}/${p}`, 'utf8')
 
 // ── READ naturalSegments OUT OF THE SOURCE (never restate it) ──────────────

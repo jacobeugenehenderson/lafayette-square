@@ -22,7 +22,7 @@ import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -169,7 +169,7 @@ function makeRng(seed) {
 export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
                                      rays = RAYS_PER_TEXEL, scene } = {}) {
   assertBakeTarget('bake-ground-ao', look, scene)
-  const isDefaultScene = scene === 'lafayette-square'
+  const isDefaultMap = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
   const manifestPath = join(lookDir, 'ground.json')
   const binPath = join(lookDir, 'ground.bin')
@@ -295,7 +295,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
     const lampsPath = join(lookDir, 'lamps.json')
     if (existsSync(lampsPath)) {
       lamps = JSON.parse(readFileSync(lampsPath, 'utf-8')).lamps || []
-    } else if (isDefaultScene) {
+    } else if (isDefaultMap) {
       const sp = join(ROOT, 'src', 'data', 'street_lamps.json')
       if (existsSync(sp)) lamps = JSON.parse(readFileSync(sp, 'utf-8')).lamps || []
     }
@@ -501,7 +501,7 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
 
 // CLI
 async function main() {
-  const scene = requireExplicitScene('bake-ground-ao')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  const scene = requireExplicitMap('bake-ground-ao')   // one resolver: --scene= OR CARTOGRAPH_SCENE
   let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL
   for (const arg of process.argv.slice(2)) {
     let m

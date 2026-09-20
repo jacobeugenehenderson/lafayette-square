@@ -10,7 +10,7 @@
 
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_SCENE, requireExplicitScene} from './config.js'
+import { RAW_DIR, CLEAN_DIR, SCENE, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { snapAll } from './snap.js'
 import { deriveLayers, deriveBuildings, _lotPaths } from './derive.js'
@@ -18,7 +18,7 @@ import { fetchElevationGrid, interpolateElevation } from './elevation.js'
 import { createMembershipFilter, buildingIdOf } from './membership.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
-requireExplicitScene('pipeline.js (writes data/<scene>/clean/map.json)')
+requireExplicitMap('pipeline.js (writes data/<scene>/clean/map.json)')
 
 const skipElevation = process.argv.includes('--skip-elevation')
 
@@ -44,7 +44,7 @@ async function main() {
   const PROJECT_ROOT = join(RAW_DIR, '..', '..', '..', '..')
   const projectBldgPath = join(PROJECT_ROOT, 'src', 'data', 'buildings.json')
   const msbfPath = join(RAW_DIR, 'msbf.json')
-  if (SCENE === DEFAULT_SCENE && existsSync(projectBldgPath)) {
+  if (SCENE === DEFAULT_MAP && existsSync(projectBldgPath)) {
     const proj = JSON.parse(readFileSync(projectBldgPath, 'utf-8'))
     const list = proj.buildings || []
     raw.buildings = list

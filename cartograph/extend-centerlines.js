@@ -26,9 +26,9 @@
  */
 import { readFileSync, writeFileSync, existsSync, copyFileSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, SCENE, requireExplicitScene } from './config.js'
+import { RAW_DIR, SCENE, requireExplicitMap } from './config.js'
 
-requireExplicitScene()
+requireExplicitMap()
 const APPLY = process.argv.includes('--apply')
 
 const OUT = join(RAW_DIR, 'centerlines.json')

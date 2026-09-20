@@ -23,7 +23,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
-import { SCENE, requireExplicitScene } from './scene.js'
+import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
@@ -78,7 +78,7 @@ export async function bakeTreeAnchors({ look, scene } = {}) {
 }
 
 async function main() {
-  const scene = requireExplicitScene('bake-tree-anchors')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  const scene = requireExplicitMap('bake-tree-anchors')   // one resolver: --scene= OR CARTOGRAPH_SCENE
   let look = null
   for (const a of process.argv.slice(2)) {
     let m

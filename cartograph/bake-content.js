@@ -45,7 +45,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -83,8 +83,8 @@ const dist2 = (ax, az, bx, bz) => (ax - bx) ** 2 + (az - bz) ** 2
 // Loaders
 // ──────────────────────────────────────────────────────────────────────────
 
-function sceneDir(scene) { return join(ROOT, 'cartograph', 'data', scene) }
-function contentDir(scene) { return join(sceneDir(scene), 'content') }
+function mapDir(scene) { return join(ROOT, 'cartograph', 'data', scene) }
+function contentDir(scene) { return join(mapDir(scene), 'content') }
 
 // The authoritative membership set + render fields: the baked slab index.
 // `.buildings[].id` IS what shipped — every emitted id must be here. The id is
@@ -112,7 +112,7 @@ function loadBakedBuildings(scene) {
 // is the post-membership-filter set the bake consumed; intersect with the
 // baked id set so geometry and membership can never disagree.
 function loadBuildingGeom(scene, bakedIds) {
-  const p = join(sceneDir(scene), 'clean', 'map.json')
+  const p = join(mapDir(scene), 'clean', 'map.json')
   if (!existsSync(p)) throw new Error(`no clean/map.json for scene "${scene}"`)
   const map = JSON.parse(readFileSync(p, 'utf8'))
   const out = new Map()
@@ -140,7 +140,7 @@ function loadBuildingGeom(scene, bakedIds) {
 function loadParcels(scene) {
   const out = []
   for (const [file, jur] of [['stl_parcels.json', 'city'], ['stlco_parcels.json', 'county']]) {
-    const p = join(sceneDir(scene), 'raw', file)
+    const p = join(mapDir(scene), 'raw', file)
     if (!existsSync(p)) { console.warn(`  [parcels] missing ${file} — skipping ${jur}`); continue }
     const j = JSON.parse(readFileSync(p, 'utf8'))
     for (const par of (j.parcels || [])) {
@@ -204,7 +204,7 @@ function loadNrInventory(scene) {
 // { osmId, tags, isClosed, coords:[{lon,lat,x,z}] }. We keep name-bearing
 // features and compute an x/z anchor from their coords.
 function loadOsmPois(scene) {
-  const p = join(sceneDir(scene), 'raw', 'osm.json')
+  const p = join(mapDir(scene), 'raw', 'osm.json')
   if (!existsSync(p)) throw new Error(`no raw/osm.json for scene "${scene}"`)
   const j = JSON.parse(readFileSync(p, 'utf8'))
   const out = []
@@ -843,7 +843,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   }
   // ⛔ Was: `get('--scene') || get('--look')` — the look silently standing in for
   // the scene, and the CARTOGRAPH_SCENE channel not read at all. One resolver now.
-  const scene = requireExplicitScene('bake-content')
+  const scene = requireExplicitMap('bake-content')
   const force = args.includes('--force')
   const dryRun = args.includes('--dry-run')
   try { bakeContent({ scene, force, dryRun }) }

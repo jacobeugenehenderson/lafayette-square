@@ -40,7 +40,7 @@ let _sceneMeasure = new Map()
 let _sceneMeasureScene = null
 
 /** Register the ACTIVE scene's ribbons as the seed source. Call on scene resolve. */
-export function setSceneMeasureSource(ribbons, sceneId = null) {
+export function setSceneMeasureSource(ribbons, mapId = null) {
   const m = new Map()
   for (const st of (ribbons?.streets || [])) {
     if (!st.measure) continue
@@ -48,7 +48,7 @@ export function setSceneMeasureSource(ribbons, sceneId = null) {
     if (st.name) m.set(st.name, st.measure)
   }
   _sceneMeasure = m
-  _sceneMeasureScene = sceneId
+  _sceneMeasureScene = mapId
 }
 
 /** Which scene the current seed came from — for probes/asserts. */

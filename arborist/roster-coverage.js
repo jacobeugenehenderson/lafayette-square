@@ -51,8 +51,8 @@ const ROSTER_CANON = join(__dirname, 'roster-name-canon.json')
 // up with identical content (adjacent geography, same city forestry), but each
 // owns a SEPARATE file and is never listed as related to another. A scene with no
 // clean park_census.json reads EMPTY (honest zero) until its OWN census is
-// authored — do NOT resolve it to LS's. DEFAULT_SCENE keeps pre-scene callers working.
-export const DEFAULT_SCENE = 'lafayette-square'
+// authored — do NOT resolve it to LS's. DEFAULT_MAP keeps pre-scene callers working.
+export const DEFAULT_MAP = 'lafayette-square'
 export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene, 'tree-species-map.json')
 // ⛔⛔ THE CENSUS IS SEVERAL WELLS, NOT ONE FILE (`ORIENTATION §6`): park_census · park_trees ·
 // forest_park_trees · osm_trees · derived_trees. This read ONLY `park_census.json` — 756 of
@@ -64,7 +64,7 @@ export const parkMapForScene = (scene) => join(ROOT, 'cartograph', 'data', scene
 // placements to full mesh: the list that exists to surface it was reading a well it is not in.
 // ⇒ Read every well the BAKE reads, so the queue cannot drift from what actually gets placed.
 const CENSUS_WELLS = ['park_census.json', 'park_trees.json', 'forest_park_trees.json', 'osm_trees.json', 'derived_trees.json']
-const parkTreesForScene = (scene) =>
+const parkTreesForMap = (scene) =>
   CENSUS_WELLS.map(f => join(ROOT, 'cartograph', 'data', scene, 'clean', f))
 const INDEX_PATH   = join(PUBLIC_TREES, 'index.json')
 
@@ -96,8 +96,8 @@ const GENUS_STOP = new Set([
 const norm = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 const toks = (s) => norm(s).split(' ').filter(Boolean)
 
-export async function computeCoverage(scene = DEFAULT_SCENE) {
-  const PARK_TREES = parkTreesForScene(scene)
+export async function computeCoverage(scene = DEFAULT_MAP) {
+  const PARK_TREES = parkTreesForMap(scene)
   const PARK_MAP   = parkMapForScene(scene)
   // ── What actually EXPORTED (the output axis) ────────────────────────────
   // ⛔ THE DEFECT THIS CLOSES (Jacob, 2026-08-27): "the light shouldn't be green in the

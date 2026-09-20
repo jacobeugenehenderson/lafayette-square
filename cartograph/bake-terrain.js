@@ -35,23 +35,23 @@
 import fs from 'fs'
 import { join } from 'path'
 import { fromFile } from 'geotiff'
-import { CARTOGRAPH_DIR, DEFAULT_SCENE, requireExplicitScene} from './config.js'
+import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
-requireExplicitScene('bake-terrain.js (writes terrain into the slab)')
+requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
 
 // Scene resolution — the installation whose terrain we bake. Resolve order:
 // --scene=<id> flag (how serve.js's bake handler invokes us) > CARTOGRAPH_SCENE
 // env (CLI) > the default installation.
 const _sceneArg = process.argv.slice(2).map(a => a.match(/^--scene=(.+)$/)).find(Boolean)
-const SCENE = _sceneArg?.[1] || process.env.CARTOGRAPH_SCENE || DEFAULT_SCENE
+const SCENE = _sceneArg?.[1] || process.env.CARTOGRAPH_SCENE || DEFAULT_MAP
 
-const SCENE_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
-const GEO_PATH      = join(SCENE_DIR, 'geography.json')
-const BOUNDARY_PATH = join(SCENE_DIR, 'neighborhood_boundary.json')
-const TIF_PATH      = join(SCENE_DIR, 'raw', 'elevation.tif')
-const CLEAN_DIR     = join(SCENE_DIR, 'clean')
+const MAP_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
+const GEO_PATH      = join(MAP_DIR, 'geography.json')
+const BOUNDARY_PATH = join(MAP_DIR, 'neighborhood_boundary.json')
+const TIF_PATH      = join(MAP_DIR, 'raw', 'elevation.tif')
+const CLEAN_DIR     = join(MAP_DIR, 'clean')
 const OUT_JSON      = join(CLEAN_DIR, 'terrain.json')
 const OUT_BIN       = join(CLEAN_DIR, 'terrain.bin')
 

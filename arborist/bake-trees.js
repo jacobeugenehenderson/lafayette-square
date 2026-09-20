@@ -43,7 +43,7 @@ import { promises as fs } from 'node:fs'
 import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
-import { DEFAULT_SCENE } from '../cartograph/config.js'
+import { DEFAULT_MAP } from '../cartograph/config.js'
 import { resolveSpecies } from './vocabulary.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -85,7 +85,7 @@ const LAMP_MAX = 1.5
 // glow to land. Absent is honest (zero), not an error — same contract as the
 // frozen-shape mask above.
 let _lamps = []
-function loadLampsForScene(scene) {
+function loadLampsForMap(scene) {
   const p = path.join(REPO_ROOT, 'public', 'baked', scene, 'lamps.json')
   if (!existsSync(p)) {
     console.warn(`[bake-trees] scene=${scene}: no baked lamps.json — tree lampGlow is ZERO. ` +
@@ -542,7 +542,7 @@ function classifyHeroTiers(canopies, heroPan) {
 }
 
 export async function bakeTrees({
-  scene = DEFAULT_SCENE,
+  scene = DEFAULT_MAP,
   styles = ['realistic'],
   lod = 'lod2',
   // Which Look's baked hero pan + canopy dims drive heroTier. Defaults to the
@@ -565,7 +565,7 @@ export async function bakeTrees({
   boundaryPath, // poured scene's neighborhood_boundary.json — the literal/GPU line
   verbose = false,
 } = {}) {
-  const sceneName = scene
+  const mapName = scene
   const activeStyles = new Set(styles)
   const targetLod = lod
 
@@ -573,8 +573,8 @@ export async function bakeTrees({
   // placements may be a single path OR an array of paths to UNION — a poured
   // scene's City Forestry census + OSM County-side floor are two spatially-
   // disjoint layers baked together. Each file is {meta, trees:[]}; concat trees.
-  // This scene's own lamps drive `lampGlow` below (see loadLampsForScene).
-  _lamps = loadLampsForScene(scene)
+  // This scene's own lamps drive `lampGlow` below (see loadLampsForMap).
+  _lamps = loadLampsForMap(scene)
 
   // ⭐ Defaults resolve against THIS SCENE, never a literal 'lafayette-square'.
   // Both of these used to fall back to LS's files, so a town with no census of
@@ -590,9 +590,9 @@ export async function bakeTrees({
   // so a bake that reads one of them silently deletes the others' trees.
   // `SOURCE_BY_BASENAME` above is the enumeration; `cartograph/tree-bake-inputs.mjs`
   // must list the same set (it is the other entry point — keep them in lockstep).
-  const sceneCleanDir = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean')
+  const mapCleanDir = path.join(REPO_ROOT, 'cartograph', 'data', scene, 'clean')
   const sceneDefaultWells = Object.keys(SOURCE_BY_BASENAME)
-    .map(basename => path.join(sceneCleanDir, basename))
+    .map(basename => path.join(mapCleanDir, basename))
     .filter(existsSync)
   const parkPaths = placements
     ? (Array.isArray(placements) ? placements : [placements]).map(p => path.resolve(REPO_ROOT, p))
@@ -811,7 +811,7 @@ export async function bakeTrees({
   }
 
   if (verbose) {
-    console.log(`[bake-trees] scene=${sceneName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
+    console.log(`[bake-trees] scene=${mapName} styles=[${[...activeStyles].join(',')}] lod=${targetLod}`)
     console.log(`[bake-trees] pool: ${variantPool.length} variants, ${park.trees.length} placements`)
 
     if (deduped) console.log(`[bake-trees] cross-well dedup: dropped ${deduped} coincident records (kept the richest source per trunk)`)
@@ -830,7 +830,7 @@ export async function bakeTrees({
     ? makeMembership(path.resolve(REPO_ROOT, boundaryPath))
     : null
   if (forbiddenMapPath && !zoneShapePath) {
-    throw new Error(`[bake-trees] no shape.json for '${sceneName}' — bake the ground first. ` +
+    throw new Error(`[bake-trees] no shape.json for '${mapName}' — bake the ground first. ` +
       `There is no honest forbidden-surface without the frozen shape; refusing to place trees against a wrong mask.`)
   }
   // ⚠️ No zone shape at all → NO allow-test runs and every tree lands wherever its
@@ -839,17 +839,17 @@ export async function bakeTrees({
   // its scene inputs (the bare CLI did exactly this on 2026-07-22 and wiped the
   // allow-zone — the tell was `0 forbidden-surface drops`). Refuse, loudly.
   if (!zoneShapePath) {
-    const bakedShape = path.join(REPO_ROOT, 'public', 'baked', sceneName, 'shape.json')
+    const bakedShape = path.join(REPO_ROOT, 'public', 'baked', mapName, 'shape.json')
     if (existsSync(bakedShape)) {
       throw new Error(
-        `[bake-trees] scene='${sceneName}' has a baked shape.json but no zoneShapePath was passed — ` +
+        `[bake-trees] scene='${mapName}' has a baked shape.json but no zoneShapePath was passed — ` +
         `that would place trees with NO allowed-zone test (bare plantable LU is the only legal ground). ` +
-        `Resolve inputs via cartograph/tree-bake-inputs.mjs#treeBakeInputsForScene, or pass --zone-shape explicitly.`)
+        `Resolve inputs via cartograph/tree-bake-inputs.mjs#treeBakeInputsForMap, or pass --zone-shape explicitly.`)
     }
   }
   // The Look's design.json — its blockCustoms + curbWidth so the rebuilt Section
   // surfaces match what the operator authored (WYSIWYG with the Design view).
-  const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || sceneName, 'design.json')
+  const _designPath = path.join(REPO_ROOT, 'public', 'looks', heroLook || mapName, 'design.json')
   // ⭐ The operator's curated roster for this town — the tiebreak between composed twins.
   // Read from the Look, never enumerated here. Absent/unreadable ⇒ an EMPTY set, which
   // DISABLES the roster rule rather than guessing at one (see preferComposedTwin).
@@ -897,7 +897,7 @@ export async function bakeTrees({
   // never-meaningfully-visible) and was off on Hi-Pointe/DeMun's 6,967. Backwards:
   // switched on where it barely mattered, off where it mattered most. The toy is
   // still skipped — correctly, and for the real reason: it has no hero keyframes.
-  const effHeroLook = heroLook || sceneName
+  const effHeroLook = heroLook || mapName
   let heroPan = null
   let resolveCanopy = null
   try {
@@ -1114,7 +1114,7 @@ export async function bakeTrees({
     if (illegalTotal) {
       const breakdown = Object.entries(illegal).sort((a, b) => b[1] - a[1])
         .map(([z, n]) => `${z}:${n}`).join(', ')
-      throw new Error(`[bake-trees] eligibility guard FAILED for '${sceneName}': ` +
+      throw new Error(`[bake-trees] eligibility guard FAILED for '${mapName}': ` +
         `${illegalTotal} placed tree(s) on forbidden ground (${breakdown}). ` +
         `A kept tree must stand on exposed, plantable Land Use — refusing to write a slab that plants on hardscape.`)
     }
@@ -1256,7 +1256,7 @@ export async function bakeTrees({
     generatedAt: Date.now(),
     // The NEIGHBOURHOOD these placements are of. Was `look` until 2026-07-15,
     // which was never true — it always carried the scene.
-    scene: sceneName,
+    scene: mapName,
     lod: targetLod,
     activeStyles: [...activeStyles],
     // ⭐ THE SLAB-LEVEL FACT the per-instance absence was standing in for. Present ⇒ every
@@ -1281,7 +1281,7 @@ export async function bakeTrees({
   // retired 2026-07-15. An explicit --output still wins.
   const outPath = output
     ? path.resolve(REPO_ROOT, output)
-    : path.join(REPO_ROOT, 'public', 'baked', sceneName, 'trees.json')
+    : path.join(REPO_ROOT, 'public', 'baked', mapName, 'trees.json')
   await fs.mkdir(path.dirname(outPath), { recursive: true })
   await fs.writeFile(outPath, JSON.stringify(out, null, 2))
 
@@ -1344,8 +1344,8 @@ if (isDirect) {
   // exactly the palimpsest the resolver exists to prevent
   // (`project_the_palimpsest_code_path_multiplicity`). Explicit flags still win,
   // so any single input can be overridden for a one-off.
-  const { treeBakeInputsForScene } = await import('../cartograph/tree-bake-inputs.mjs')
-  const resolved = args.scene ? (treeBakeInputsForScene(args.scene) || {}) : {}
+  const { treeBakeInputsForMap } = await import('../cartograph/tree-bake-inputs.mjs')
+  const resolved = args.scene ? (treeBakeInputsForMap(args.scene) || {}) : {}
   const { inputs: _dirty, ...sceneInputs } = resolved
   bakeTrees({
     ...sceneInputs,

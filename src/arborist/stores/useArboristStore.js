@@ -28,7 +28,7 @@ const useArboristStore = create((set, get) => ({
   // directory IS the shared bus — no inter-server polling needed.
   // `scene` is the NEIGHBOURHOOD the Look is a Look of — the axis the Grove's
   // picker runs on. It equals `id` for every Look today; that is history, not a
-  // constraint (see cartograph/tree-bake-inputs.mjs#sceneForLook).
+  // constraint (see cartograph/tree-bake-inputs.mjs#mapForLook).
   looks: [],                    // [{id, name, scene, createdAt, updatedAt}]
   defaultLookId: null,
   activeLookId:  (typeof localStorage !== 'undefined'
@@ -581,7 +581,7 @@ const useArboristStore = create((set, get) => ({
     set({ rosterLoading: true, rosterError: null })
     try {
       // Scope the roster to the active Look's neighbourhood (server resolves the
-      // scene via sceneForLook). Absent look → server's default scene.
+      // scene via mapForLook). Absent look → server's default scene.
       const look = get().activeLookId
       const lookQ = look ? `&look=${encodeURIComponent(look)}` : ''
       const r = await fetch(`/api/arborist/coverage?t=${Date.now()}${lookQ}`)

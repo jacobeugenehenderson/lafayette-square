@@ -196,8 +196,8 @@ check('a damaged design.json cannot masquerade as the kit default', () => {
 })
 
 check('POST /looks refuses a Look it cannot bind to a scene', () => (
-  /const newScene = .*\|\|\s*DEFAULT_SCENE/.test(SERVE)
-    ? 'serve.js still falls back to DEFAULT_SCENE when no scene can be resolved — ' +
+  /const newScene = .*\|\|\s*DEFAULT_MAP/.test(SERVE)
+    ? 'serve.js still falls back to DEFAULT_MAP when no scene can be resolved — ' +
       'a Look whose town we cannot name is unbuildable, not an LS Look'
     : null
 ))

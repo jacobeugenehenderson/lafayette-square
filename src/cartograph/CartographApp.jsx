@@ -209,7 +209,7 @@ function authoredBrowseFrame() {
 function CameraRig({ orthoRef, perspRef, controlsRef }) {
   const { camera, scene, size } = useThree()
   const shot = useCartographStore(s => s.shot)
-  const sceneKey = useCartographStore(s => s.scene)
+  const mapKey = useCartographStore(s => s.scene)
   // Re-assert framing once the design (incl. heroKeyframes) finishes hydrating.
   // shot persists in localStorage, so a refresh can land directly in Hero
   // before the async design fetch resolves — without this the rig reads the
@@ -258,7 +258,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
   // target (and on Designer, also re-assert the ortho's orientation) here
   // after a frame delay — giving the new MapControls instance time to mount.
   useEffect(() => {
-    const key = `${sceneKey}:${shot}:${designHydrated}:${sceneBoundary?.radius || 0}`
+    const key = `${mapKey}:${shot}:${designHydrated}:${sceneBoundary?.radius || 0}`
     if (appliedShot.current === key) return
     appliedShot.current = key
     const applyTarget = () => {
@@ -266,7 +266,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
       // Toy scene runs on its own fixed oblique framing in any non-Designer
       // shot; the SHOTS table is authored for the full neighborhood and
       // would put the toy fixture hundreds of units off-camera.
-      if (sceneKey === 'toy' && shot !== 'designer') {
+      if (mapKey === 'toy' && shot !== 'designer') {
         const cam = perspRef.current
         if (!cam) return
         cam.position.set(...TOY_CAM.position)
@@ -281,7 +281,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
       // Toy + Designer: reset ortho camera to origin so the toy fixture is
       // visible (otherwise localStorage-persisted LS-centered position
       // leaves toy hundreds of meters off-screen → user sees gray canvas).
-      if (sceneKey === 'toy' && shot === 'designer') {
+      if (mapKey === 'toy' && shot === 'designer') {
         const cam = orthoRef.current
         if (!cam) return
         cam.position.set(0, 500, 0)
@@ -399,7 +399,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
         // authoring lands"), and an authored frame IS that authoring. Without
         // this guard the feature would work on LS and be silently overridden in
         // every other town — the kit's signature failure shape.
-        if (sceneKey !== 'lafayette-square' && sceneKey !== 'toy' && nb?.radius > 0 && !browseFrame) {
+        if (mapKey !== 'lafayette-square' && mapKey !== 'toy' && nb?.radius > 0 && !browseFrame) {
           const R = nb.radius
           if (shot === 'browse') {
             const aspect = size.width / Math.max(size.height, 1)
@@ -475,7 +475,7 @@ function CameraRig({ orthoRef, perspRef, controlsRef }) {
     const id = requestAnimationFrame(applyTarget)
     useCamera.getState().setMode(shot === 'street' ? 'planetarium' : shot)
     return () => cancelAnimationFrame(id)
-  }, [shot, sceneKey, designHydrated, sceneBoundary, orthoRef, perspRef, controlsRef])
+  }, [shot, mapKey, designHydrated, sceneBoundary, orthoRef, perspRef, controlsRef])
 
   // Drive the in-flight shot tween. Same vernacular as Preview's
   // ShotCamera + production CameraRig — easeInOutCubic position/target/
@@ -800,7 +800,7 @@ const LS_STENCIL = stencilFromBoundary(lsNeighborhoodBoundary)
 // `ribbons` is the static post-bake intersections + faces artifact
 // (centerline geometry comes from the live store, scene-aware). Once
 // promote-ribbons is scene-keyed (Phase 0e) this can shrink to a path.
-const SCENE_REGISTRY = {
+const MAP_REGISTRY = {
   'lafayette-square': {
     ribbons: ribbonsRaw,
     stencil: LS_STENCIL,
@@ -891,7 +891,7 @@ const SCENE_REGISTRY = {
     },
   },
 }
-// SCENE_REGISTRY holds only the DEFAULT installation ('lafayette-square', with
+// MAP_REGISTRY holds only the DEFAULT installation ('lafayette-square', with
 // its bundled ribbons + StageEnvironment) and the diagnostic 'toy' fixture. Any
 // OTHER installation is a generic "poured neighborhood": its config is built
 // from data loaded BY ID (ribbons + boundary from the store), so no specific
@@ -959,7 +959,7 @@ function genericSceneConfig(sceneBoundary) {
   }
 }
 function sceneConfig(scene, sceneBoundary) {
-  return SCENE_REGISTRY[scene] || genericSceneConfig(sceneBoundary)
+  return MAP_REGISTRY[scene] || genericSceneConfig(sceneBoundary)
 }
 
 // ── App ─────────────────────────────────────────────────────────────────────

@@ -111,7 +111,7 @@ export async function fetchStreetGeom(scene, name) {
 
 // Extent hub: the neighborhoods that exist (scene data dirs) — openable even
 // without a baked Look (the Look pulldown can't reach a fetched-but-unpoured hood).
-export async function fetchScenes() {
+export async function fetchMaps() {
   const res = await fetch(`${BASE}/scenes`)
   if (!res.ok) return { scenes: [] }
   return res.json()
@@ -150,7 +150,7 @@ export async function saveIntakeSource(scene, row, name) {
 
 // Extent hub: discard a DRAFT scene (searched, never fetched). The server refuses
 // any scene that has data — this can never delete a real neighborhood.
-export async function discardScene(scene) {
+export async function discardMap(scene) {
   const res = await fetch(`${BASE}/${encodeURIComponent(scene)}`, { method: 'DELETE' })
   const j = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(j.error || `discard ${res.status}`)
@@ -189,7 +189,7 @@ export async function saveNeighborhood(scene, data) {
 
 // Extent editor: the one-click pour — pipeline (clipped to the boundary) →
 // promote-ribbons → the map the Designer renders. Long-running.
-export async function pourScene(scene) {
+export async function pourMap(scene) {
   const res = await fetch(sceneUrl(scene, 'pour'), { method: 'POST' })
   const j = await res.json().catch(() => ({}))
   if (!res.ok) throw new Error(j.error || `pour ${res.status}`)
@@ -209,7 +209,7 @@ export async function commitExtent(scene, payload) {
 
 // Extent editor: live radius re-scope — rewrite the boundary circle (membership
 // polygon preserved) + re-clip + ribbons, no re-name/re-center. Client re-bakes.
-export async function rescopeScene(scene, radius, exclusions, opts = {}) {
+export async function rescopeMap(scene, radius, exclusions, opts = {}) {
   const body = { radius, exclusions }
   // The inclusion polygon (lon/lat anchors) rides the rescope too — a committed
   // hood's Bake comes through here, so this is the only way an existing hood can

@@ -10,14 +10,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { SCENE, sceneRawDir, requireExplicitScene } from './scene.js'
+import { SCENE, mapRawDir, requireExplicitMap } from './scene.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
-// ⛔ Was: `sceneRawDir(DEFAULT_SCENE)` — this script took NO scene input at all and
+// ⛔ Was: `mapRawDir(DEFAULT_MAP)` — this script took NO scene input at all and
 // rewrote Lafayette Square's centerlines unconditionally, from any cwd, under any
 // CARTOGRAPH_SCENE. It is now scene-keyed like every other writer.
-requireExplicitScene('rejoin-splits')
-const FILE = path.join(sceneRawDir(SCENE), 'centerlines.json')
+requireExplicitMap('rejoin-splits')
+const FILE = path.join(mapRawDir(SCENE), 'centerlines.json')
 const EPS = 0.5
 const dryRun = process.argv.includes('--dry-run')
 

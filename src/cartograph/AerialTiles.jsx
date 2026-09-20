@@ -28,7 +28,7 @@ function makeGeo(g, nb) {
   }
 }
 function useSceneGeo() {
-  const g = useCartographStore(s => s.sceneGeography)
+  const g = useCartographStore(s => s.mapGeography)
   const nb = useCartographStore(s => s.sceneBoundary)
   return useMemo(() => makeGeo(g, nb), [g, nb])
 }

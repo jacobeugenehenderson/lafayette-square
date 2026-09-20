@@ -2,7 +2,7 @@
  * scene.js — THE ONE SCENE RESOLVER. Import this; never re-derive it.
  *
  * ⛔⛔ NO SILENT DEFAULT ON ANYTHING THAT WRITES (`BRIEF-ls-bleed-excision` site 11,
- * Class C). `SCENE = env || DEFAULT_SCENE` meant forgetting the variable silently
+ * Class C). `SCENE = env || DEFAULT_MAP` meant forgetting the variable silently
  * redirected the whole run onto Lafayette Square — no error, no warning. On
  * 2026-07-31 that cost a full day: an agent rebuilt LS repeatedly while the
  * operator worked in `lafayette-square-staging`, and the resulting "no symptom
@@ -12,7 +12,7 @@
  *
  * READ paths may still resolve to the default (the dev server imports this at
  * module load and must not die), but the choice is now VISIBLE. Anything that
- * WRITES must call `requireExplicitScene()` and refuse.
+ * WRITES must call `requireExplicitMap()` and refuse.
  *
  * ⭐⭐ WHY THIS IS A SEPARATE FILE FROM `config.js`, AND WHY IT MUST STAY ONE.
  *
@@ -39,58 +39,58 @@
  *     sees scene==look because the local parser had silently fallen back to LS) —
  *     and rebuilt Lafayette Square while the operator believed they were baking
  *     HiPointe. That is the 2026-07-31 incident above, reachable in 2026-09 by
- *     following `requireExplicitScene()`'s OWN remedy text, which offered both
+ *     following `requireExplicitMap()`'s OWN remedy text, which offered both
  *     channels as if they were interchangeable. A guard whose instructions lead
  *     into the failure it exists to prevent is worse than no guard: it certifies it.
  *
  *     ⇒ A writer does not parse `--scene` itself. It imports `SCENE` from here and
- *       calls `requireExplicitScene()`. One resolver, both channels, no seed.
+ *       calls `requireExplicitMap()`. One resolver, both channels, no seed.
  */
 import { dirname, join } from 'path'
 import { fileURLToPath } from 'url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-export const DEFAULT_SCENE = 'lafayette-square'
+export const DEFAULT_MAP = 'lafayette-square'
 
 const _sceneArg = (process.argv || []).map(a => /^--scene=(.+)$/.exec(a)).find(Boolean)?.[1]
 /** true when the operator actually named the scene (flag or env), false when defaulted. */
 export const SCENE_IS_EXPLICIT = !!(_sceneArg || process.env.CARTOGRAPH_SCENE)
-export const SCENE = _sceneArg || process.env.CARTOGRAPH_SCENE || DEFAULT_SCENE
+export const SCENE = _sceneArg || process.env.CARTOGRAPH_SCENE || DEFAULT_MAP
 
 /**
  * Refuse to proceed unless the operator named the scene. Call this FIRST in any
  * entry point that writes an artifact — a wrong scene there does not show a wrong
  * map, it overwrites a right one.
  */
-export function requireExplicitScene(who = 'this command') {
+export function requireExplicitMap(who = 'this command') {
   if (SCENE_IS_EXPLICIT) return SCENE
   const me = process.argv[1]?.split('/').pop() || '<script>'
   console.error(`
 ⛔ ${who} refuses to run without an explicit scene.
 
-   It writes artifacts, and defaulting would silently target '${DEFAULT_SCENE}' —
+   It writes artifacts, and defaulting would silently target '${DEFAULT_MAP}' —
    overwriting Lafayette Square's build with another town's run, or vice versa.
 
    Name the scene, by EITHER channel — both are read here, by one resolver:
-     node ${me} --scene=${DEFAULT_SCENE}
-     CARTOGRAPH_SCENE=${DEFAULT_SCENE} node ${me}
+     node ${me} --scene=${DEFAULT_MAP}
+     CARTOGRAPH_SCENE=${DEFAULT_MAP} node ${me}
 
    (BRIEF-ls-bleed-excision site 11 · CLAUDE.md Layer 0 — no fallbacks.)
 `)
   process.exit(2)
 }
 
-if (!SCENE_IS_EXPLICIT) console.warn(`[config] scene not named — defaulting to '${DEFAULT_SCENE}'. Pass --scene=<id> to be explicit.`)
+if (!SCENE_IS_EXPLICIT) console.warn(`[config] scene not named — defaulting to '${DEFAULT_MAP}'. Pass --scene=<id> to be explicit.`)
 
 // Paths. Per-scene data lives under cartograph/data/<scene>/. Each scene mirrors
 // the same raw/ + clean/ split (raw = ingested inputs; clean = derived /
 // operator-edited artifacts). Scripts that operate on a specific scene should call
-// sceneRawDir(scene) / sceneCleanDir(scene); the unqualified RAW_DIR / CLEAN_DIR
+// mapRawDir(scene) / mapCleanDir(scene); the unqualified RAW_DIR / CLEAN_DIR
 // aliases resolve to the ACTIVE scene (SCENE).
 export const CARTOGRAPH_DIR = __dirname
-export function sceneDir(scene)      { return join(__dirname, 'data', scene) }
-export function sceneRawDir(scene)   { return join(__dirname, 'data', scene, 'raw') }
-export function sceneCleanDir(scene) { return join(__dirname, 'data', scene, 'clean') }
-export const RAW_DIR   = sceneRawDir(SCENE)
-export const CLEAN_DIR = sceneCleanDir(SCENE)
+export function mapDir(scene)      { return join(__dirname, 'data', scene) }
+export function mapRawDir(scene)   { return join(__dirname, 'data', scene, 'raw') }
+export function mapCleanDir(scene) { return join(__dirname, 'data', scene, 'clean') }
+export const RAW_DIR   = mapRawDir(SCENE)
+export const CLEAN_DIR = mapCleanDir(SCENE)

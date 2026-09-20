@@ -13,8 +13,8 @@ import { join, dirname, basename } from 'path'
 import { fileURLToPath } from 'url'
 import { bakeLook } from './bake-look.js'
 import { encodeToKtx2 } from './encode-ktx2.mjs'
-import { treeBakeInputsForScene, sceneForLook } from '../cartograph/tree-bake-inputs.mjs'
-import { DEFAULT_SCENE } from '../cartograph/config.js'
+import { treeBakeInputsForMap, mapForLook } from '../cartograph/tree-bake-inputs.mjs'
+import { DEFAULT_MAP } from '../cartograph/config.js'
 import { publishLidarSpecies } from './lidar-publish.js'
 import {
   PRESETS as PROCEDURAL_PRESETS,
@@ -957,7 +957,7 @@ const server = createServer(async (req, res) => {
         // output matches the Grove bake's byte-for-byte.
         const t3 = Date.now()
         const { bakeTrees } = await import('./bake-trees.js')
-        const { inputs: _lsInputs, ...lsBakeArgs } = treeBakeInputsForScene(DEFAULT_SCENE)
+        const { inputs: _lsInputs, ...lsBakeArgs } = treeBakeInputsForMap(DEFAULT_MAP)
         await bakeTrees({ ...lsBakeArgs })
         timings.bakeTreesMs = Date.now() - t3
 
@@ -1039,7 +1039,7 @@ const server = createServer(async (req, res) => {
         const { bakeTrees } = await import('./bake-trees.js')
         // Re-bake LS's placements so the cartograph reflects the new rating.
         // LS-only by design; scene named explicitly via the helper.
-        const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForScene(DEFAULT_SCENE)
+        const { inputs: _rateInputs, ...rateBakeArgs } = treeBakeInputsForMap(DEFAULT_MAP)
         await bakeTrees({ ...rateBakeArgs })
       } catch (e) {
         console.warn('[arborist] bake failed:', e.message)
@@ -1081,7 +1081,7 @@ const server = createServer(async (req, res) => {
         // Roster is per-neighbourhood: scope to the active Look's scene (?look=).
         // Absent → computeCoverage's default scene (back-compat).
         const look = new URL(req.url, 'http://x').searchParams.get('look')
-        const scene = look ? (sceneForLook(look) || look) : undefined
+        const scene = look ? (mapForLook(look) || look) : undefined
         return jsonRes(res, 200, await computeCoverage(scene))
       } catch (err) {
         return jsonRes(res, 500, { error: err.message })
@@ -1104,7 +1104,7 @@ const server = createServer(async (req, res) => {
       // Route into the ACTIVE neighbourhood's species-map (?look=), so a
       // not-available / routing write lands in the right scene, not always LS.
       const routeLook = new URL(req.url, 'http://x').searchParams.get('look')
-      const routeScene = routeLook ? (sceneForLook(routeLook) || routeLook) : 'lafayette-square'
+      const routeScene = routeLook ? (mapForLook(routeLook) || routeLook) : 'lafayette-square'
       const mapPath = parkMapForScene(routeScene)
       const doc = readJsonOrNull(mapPath)
       if (!doc || typeof doc.map !== 'object') {
@@ -1259,9 +1259,9 @@ const server = createServer(async (req, res) => {
         //    why a Grove bake changed the tree MODELS but never the census.
         //    heroLook stays the Look: the hero ROLE per placement is read off the
         //    camera tracks, and tracks are authored per Look.
-        const scene = sceneForLook(lookName)
+        const scene = mapForLook(lookName)
         if (!scene) return jsonRes(res, 400, { error: `unknown look '${lookName}' — not in public/looks/index.json` })
-        const treeInputs = treeBakeInputsForScene(scene)
+        const treeInputs = treeBakeInputsForMap(scene)
         let placements
         if (!treeInputs) {
           // Honest zero: no census on disk for this neighbourhood. Skip rather

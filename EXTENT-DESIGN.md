@@ -128,10 +128,10 @@ records a fixed instance of the same class, `08d61ce1`). Retire the imports → 
 the root instead of site-by-site.
 ✅ **MEASURED 2026-09-19 — THEY ARE NOT LIVE. All three are scene-gated, and a non-LS scene gets EMPTY,
 never LS.** Read the gates, don't take this sentence's word for it:
-`useCartographStore.js` — `scene === 'toy' ? toyRibbonsData : BUNDLED_SCENES.has(scene) ? ribbonsData :
-(fetchedRibbons || { streets: [] })`, where `BUNDLED_SCENES = {DEFAULT_INSTALLATION, 'toy'}` ·
+`useCartographStore.js` — `scene === 'toy' ? toyRibbonsData : BUNDLED_MAPS.has(scene) ? ribbonsData :
+(fetchedRibbons || { streets: [] })`, where `BUNDLED_MAPS = {DEFAULT_INSTALLATION, 'toy'}` ·
 `MapLayers.jsx` — `isLS ? _lsRibbonsData : (sceneRibbonsRaw || _EMPTY_RIBBONS)` ·
-`CartographApp.jsx` — the import sits **inside `SCENE_REGISTRY['lafayette-square']`**, keyed to LS by
+`CartographApp.jsx` — the import sits **inside `MAP_REGISTRY['lafayette-square']`**, keyed to LS by
 construction. *(The one that WAS live — `measureModel.js`, every scene seeding its widths from LS by
 street name — was excised at `08d61ce1`; `useCartographStore.js`'s own comment records it as site 9.)*
 
@@ -244,7 +244,7 @@ the forever zone (hood center). That draggable-centroid is R10 made a handle —
 stood here had all drifted — cite the symbol)*: the disc-centre memo in `ExtentApp.jsx` returns
 `{x:0,z:0}` when `committed`, so a committed hood's disc *draws* at the origin however it is authored,
 and `CenterHandle` is gated `!committed`.
-⛔⛔ **AND UN-GATING THE HANDLE IS NOT SUFFICIENT — this section said it was.** `rescopeScene` (`api.js`)
+⛔⛔ **AND UN-GATING THE HANDLE IS NOT SUFFICIENT — this section said it was.** `rescopeMap` (`api.js`)
 builds its body as `{radius, exclusions}` plus an optional `polygon`, and **never adds `center`** — while
 rescope is *the only path a committed hood's Bake takes*. The server has been listening the whole time
 (`/rescope` destructures `center` and logs *"frame origin untouched"*). ⇒ un-gate alone and you get a

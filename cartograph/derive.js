@@ -19,7 +19,7 @@ import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
 import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
-import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_SCENE, wgs84ToLocal } from './config.js'
+import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_MAP, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
 import { classify } from './classify.js'
@@ -1090,7 +1090,7 @@ export function deriveLayers(highways) {
 
   // ── Load parcels ──────────────────────────────────────────────
   // Scene-homed like every other raw input: the ACTIVE scene's raw dir
-  // (RAW_DIR = sceneRawDir(SCENE)). LS's parcels used to be pinned to the
+  // (RAW_DIR = mapRawDir(SCENE)). LS's parcels used to be pinned to the
   // legacy scripts/raw/ dump — the one input that never got the scene fork —
   // which meant a poured scene silently read LS's St. Louis parcels. Now each
   // scene reads its own, and LS's file sits inside the reproject-on-recenter
@@ -1203,7 +1203,7 @@ export function deriveLayers(highways) {
   // poured scene with no lamp file gets honest zero (no cross-installation
   // ghosts) rather than LS's lamps.
   let streetlamps = []
-  const lampSourcePath = SCENE === DEFAULT_SCENE
+  const lampSourcePath = SCENE === DEFAULT_MAP
     ? join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'osm_street_lamps.json')
     : join(RAW_DIR, 'osm_street_lamps.json')
   try {

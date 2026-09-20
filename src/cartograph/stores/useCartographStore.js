@@ -516,10 +516,10 @@ function serializeDesign(s) {
 // installation (hipointe-demun, provincetown, …) is never added here; it
 // fetches. Nothing enumerates the set of installations in code.
 const DEFAULT_INSTALLATION = 'lafayette-square'
-const BUNDLED_SCENES = new Set([DEFAULT_INSTALLATION, 'toy'])
+const BUNDLED_MAPS = new Set([DEFAULT_INSTALLATION, 'toy'])
 // A scene id is any lowercase slug; existence is validated by the server (a
 // missing installation just serves empty). No hardcoded installation list.
-const isValidSceneId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
+const isValidMapId = (s) => typeof s === 'string' && /^[a-z0-9][a-z0-9-]*$/.test(s)
 
 // In-flight _loadCenterlines, KEYED BY SCENE — see the dedupe note on
 // _loadCenterlines. The key is not optional: _loadCenterlinesImpl captures
@@ -1783,7 +1783,7 @@ const useCartographStore = create((set, get) => ({
       // don't cover yet (e.g. a freshly-poured frame with no Look of its own).
       let urlScene = null
       try { urlScene = new URLSearchParams(window.location.search).get('scene') } catch { /* ignore */ }
-      const urlSceneWins = isValidSceneId(urlScene)
+      const urlSceneWins = isValidMapId(urlScene)
       const lookScene = activeEntry?.scene
       // The persisted user scene WINS over the active Look's scene — the Look's
       // scene only fills in when there's no valid persisted scene. Without this,
@@ -1791,7 +1791,7 @@ const useCartographStore = create((set, get) => ({
       // in the Extent tool — e.g. Altadena, which has only the LS Look) gets
       // yanked back to the Look's scene (LS) on every COLD boot (a warm refresh
       // races ahead of _loadLooks and survives; a restart loses the race).
-      const sceneUpdate = (!urlSceneWins && lookScene && !isValidSceneId(get().scene)) ? { scene: lookScene } : {}
+      const sceneUpdate = (!urlSceneWins && lookScene && !isValidMapId(get().scene)) ? { scene: lookScene } : {}
       if (sceneUpdate.scene) {
         try { localStorage.setItem('cartograph-scene', sceneUpdate.scene) } catch { /* ignore */ }
       }
@@ -2052,12 +2052,12 @@ const useCartographStore = create((set, get) => ({
     // choice, else the default installation.
     try {
       const urlScene = new URLSearchParams(window.location.search).get('scene')
-      if (isValidSceneId(urlScene)) return urlScene
+      if (isValidMapId(urlScene)) return urlScene
     } catch { /* ignore */ }
     try {
       const saved = localStorage.getItem('cartograph-scene')
       if (saved === 'neighborhood') return DEFAULT_INSTALLATION
-      if (isValidSceneId(saved)) return saved
+      if (isValidMapId(saved)) return saved
     } catch { /* ignore */ }
     return DEFAULT_INSTALLATION
   })(),
@@ -2065,12 +2065,12 @@ const useCartographStore = create((set, get) => ({
   // fast-path scenes (default + toy) leave sceneRibbons null and read their
   // static import; every other installation fetches these per-scene.
   sceneRibbons: null,
-  sceneGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
+  mapGeography: null,   // fetched geography.json (lat/lon/tz/projection/bbox)
   sceneBoundary: null,    // fetched neighborhood_boundary.json (raw)
   setScene: (scene) => {
-    if (!isValidSceneId(scene)) return
+    if (!isValidMapId(scene)) return
     try { localStorage.setItem('cartograph-scene', scene) } catch { /* ignore */ }
-    set({ scene, sceneRibbons: null, sceneGeography: null, sceneBoundary: null })
+    set({ scene, sceneRibbons: null, mapGeography: null, sceneBoundary: null })
   },
   markerActive: false,
   setTool: (newTool) => {
@@ -2217,7 +2217,7 @@ const useCartographStore = create((set, get) => ({
   // React StrictMode double-invokes CartographApp's mount effect, and the
   // `if (import.meta.hot)` block at the bottom of this file runs at MODULE EVAL
   // on every dev load (not just on a hot update). The guards below
-  // (`!fetchedRibbons`, `!get().sceneGeography`) are read-BEFORE-await, so
+  // (`!fetchedRibbons`, `!get().mapGeography`) are read-BEFORE-await, so
   // concurrent callers all sail past them → 2-3x the 13.9 MB ribbons + 3.4 MB
   // skeleton on the wire, and every downstream memo (sectionOpen, tileGeos)
   // re-runs per duplicate set() — sectionOpen was observed running TWICE on an
@@ -2266,18 +2266,18 @@ const useCartographStore = create((set, get) => ({
       // fetches ribbons + its geography + boundary per-scene. Geography/boundary
       // are fetched for ALL scenes (small) so the kit reads them uniformly.
       let fetchedRibbons = get().sceneRibbons
-      if (!BUNDLED_SCENES.has(scene) && !fetchedRibbons) {
+      if (!BUNDLED_MAPS.has(scene) && !fetchedRibbons) {
         fetchedRibbons = await fetchRibbons(scene).catch(() => null)
         if (stale()) return
         if (fetchedRibbons) set({ sceneRibbons: fetchedRibbons })
       }
-      if (!get().sceneGeography || !get().sceneBoundary) {
+      if (!get().mapGeography || !get().sceneBoundary) {
         const [geo, bnd] = await Promise.all([
           fetchGeography(scene).catch(() => null),
           fetchBoundary(scene).catch(() => null),
         ])
         if (stale()) return
-        set({ sceneGeography: geo, sceneBoundary: bnd })
+        set({ mapGeography: geo, sceneBoundary: bnd })
       }
       const skelStreets = (skel && skel.streets) || []
       const legacyStreets = (legacy && legacy.streets) || []
@@ -2311,7 +2311,7 @@ const useCartographStore = create((set, get) => ({
       // `undefined` measure → MeasureOverlay rendered no handles. Mirror
       // CartographApp's sceneCfg.ribbons keying.
       const ribbonsFixture = scene === 'toy' ? toyRibbonsData
-        : BUNDLED_SCENES.has(scene) ? ribbonsData
+        : BUNDLED_MAPS.has(scene) ? ribbonsData
         : (fetchedRibbons || { streets: [] })
       // ⭐ Register THIS scene's fixture as the Measure seed source. Was a static
       // LS import inside measureModel (BRIEF-ls-bleed-excision site 9) — every

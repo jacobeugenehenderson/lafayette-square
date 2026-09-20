@@ -24,13 +24,13 @@
  */
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { wgs84ToLocal, sceneRawDir, SCENE } from './config.js'
+import { wgs84ToLocal, mapRawDir, SCENE } from './config.js'
 import { writeIfChanged } from './io.js'
-import { requireExplicitScene } from './scene.js'
+import { requireExplicitMap } from './scene.js'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
-requireExplicitScene('reproject-raw')
+requireExplicitMap('reproject-raw')
 
 let reprojected = 0
 // Recursively re-derive x/z from lon/lat wherever a coordinate carries both.
@@ -55,7 +55,7 @@ function reprojectDeep(node) {
 const FRAME_DEPENDENT = ['osm.json', 'msbf.json', 'admin_boundaries.json']
 
 for (const name of FRAME_DEPENDENT) {
-  const path = join(sceneRawDir(SCENE), name)
+  const path = join(mapRawDir(SCENE), name)
   if (!existsSync(path)) continue
   const before = reprojected
   const data = JSON.parse(readFileSync(path, 'utf8'))
@@ -75,7 +75,7 @@ const projectXZ = (lon, lat) => {
   return [Math.round(x * 100) / 100, Math.round(z * 100) / 100]
 }
 for (const name of ['stl_parcels.json', 'stlco_parcels.json']) {
-  const path = join(sceneRawDir(SCENE), name)
+  const path = join(mapRawDir(SCENE), name)
   if (!existsSync(path)) continue
   const data = JSON.parse(readFileSync(path, 'utf8'))
   let n = 0, stale = 0

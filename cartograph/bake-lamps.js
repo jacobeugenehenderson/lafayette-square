@@ -13,7 +13,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
-import { SCENE, requireExplicitScene } from './scene.js'
+import { SCENE, requireExplicitMap } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
@@ -104,7 +104,7 @@ function loadAuthoredLamps(scene) {
   return []
 }
 
-function loadLampsForScene(scene) {
+function loadLampsForMap(scene) {
   const osmPath = join(ROOT, 'cartograph', 'data', scene, 'raw', 'osm_street_lamps.json')
   const geoPath = join(ROOT, 'cartograph', 'data', scene, 'geography.json')
   if (existsSync(osmPath) && existsSync(geoPath)) {
@@ -164,7 +164,7 @@ export async function bakeLamps({ look, scene } = {}) {
   const outDir  = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
 
-  const lamps = loadLampsForScene(scene)
+  const lamps = loadLampsForMap(scene)
   const anchored = anchorLampsToGround(lamps, outDir, scene)
   const out = {
     version: 1,
@@ -178,7 +178,7 @@ export async function bakeLamps({ look, scene } = {}) {
 }
 
 async function main() {
-  const scene = requireExplicitScene('bake-lamps')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  const scene = requireExplicitMap('bake-lamps')   // one resolver: --scene= OR CARTOGRAPH_SCENE
   let look = null
   for (const arg of process.argv.slice(2)) {
     let m

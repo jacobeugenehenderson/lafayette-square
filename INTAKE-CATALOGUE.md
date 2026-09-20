@@ -98,7 +98,7 @@ three-way — `honest-zero` / `documented-fallback` / **`⛔ LS-BLEED`**.
 
 **The good pattern to copy**, already in-repo: `cartograph/tree-bake-inputs.mjs` returns `null` on a
 missing census — *"an HONEST ZERO, not an error"* — and `bake-trees.js:408` defaults `heroLook` to
-`null → sceneName` with the comment *"never a literal 'lafayette-square', which would tier a poured
+`null → mapName` with the comment *"never a literal 'lafayette-square', which would tier a poured
 scene's trees against LS's camera in LS's coordinate frame (garbage)."* Someone already fixed this
 class here; #4 is the one they missed **in the same file**.
 
@@ -149,7 +149,7 @@ Vendor tree GLBs. `arborist/ORIENTATION.md`: *"A tree's identity is mostly its b
 
 **B7 · Curation state** — `_chassis-curation.json`, `state/<id>/compositions.json`, `part-index.json`, `roster-name-canon.json`, `low-poly-mapping.json`, `species-map.json`. All **tracked**. **Pure human judgment; no net source, ever.** Chassis curation + rubric carry over globally; compositions re-author per species.
 
-**Soft bleeds (authoring/UI only, do not reach the render):** `roster-coverage.js:48` (`DEFAULT_SCENE` param) · `serve.js:1056` (`GET /inventory` reads LS's census unscoped) · `serve.js:959,1041` (Salon publish + variant-rating re-bake **LS**, unconditionally — so authoring from a Łódź Look re-bakes LS's placements) · `serve.js:1106`.
+**Soft bleeds (authoring/UI only, do not reach the render):** `roster-coverage.js:48` (`DEFAULT_MAP` param) · `serve.js:1056` (`GET /inventory` reads LS's census unscoped) · `serve.js:959,1041` (Salon publish + variant-rating re-bake **LS**, unconditionally — so authoring from a Łódź Look re-bakes LS's placements) · `serve.js:1106`.
 
 ---
 
