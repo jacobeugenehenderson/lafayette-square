@@ -29,7 +29,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
-import { coastArcs } from './coastline.mjs'
+import { coastRings } from './coastline.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1330,6 +1330,7 @@ export function deriveLayers(highways) {
   // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
+  let protoWaterRings = null, protoRemainder = null, protoRemainderHoles = null
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
@@ -5121,11 +5122,27 @@ export function deriveLayers(highways) {
     // at the perimeter — "there should be no tips; the streets clip at the perimeter edge."
     // ⛔ The boundary is NOT passed as a chain; it is the CLIP. See mintProtopolygon's header.
     // ⭐⭐ THE COAST IS — and that is the difference between a render knob and ground truth.
-    // It is stroked into ① as ink so it CLOSES faces (the water field on one side, the land-use
+    // It is COMBINED with the ink and EXCLUDED from the bb in one move, so it CLOSES faces (the
+    // water is a discrete object on one side, and on the landward side the land-use
     // polygons and the coast-facing dead-ends on the other). The circle still stamps last.
-    const _coast = coastArcs({ ground: osmData.ground || {}, center: boundaryCenter, discR: boundaryRadius })
+    // ⭐ The bb in LOCAL coords — the frozen data extent, recovered from the paired lon/lat +
+    // x/z the fetch already writes on every vertex, so no second projection can disagree with
+    // the first. ⛔ The coast closes against THIS, never against the disc: the disc is a render
+    // knob and the bb is declared data.
+    const _bb = (() => {
+      const bx = osmData.bbox
+      if (!bx) return null
+      const a = wgs84ToLocal(bx.minLon, bx.maxLat), b2 = wgs84ToLocal(bx.maxLon, bx.minLat)
+      return { x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]),
+               z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }
+    })()
+    const _coast = coastRings({ ground: osmData.ground || {}, buildings: osmData.buildings || [],
+                               center: boundaryCenter, discR: boundaryRadius, bb: _bb })
     for (const line of _coast.report) console.log(line)
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.arcs })
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings })
+    protoWaterRings = MP.waterRings || null
+    protoRemainder = MP.remainder || null
+    protoRemainderHoles = MP.remainderHoles || null
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
@@ -5272,6 +5289,24 @@ export function deriveLayers(highways) {
   // ── Assemble layers ─────────────────────────────────────────
   console.log('  [9/9] Assembling layers...')
 
+  // ⭐⭐⭐ THE WATER AND THE REMAINDER ARE DRAWN. "The water is a positive object which will
+  // require shading and not just the empty half of the composition. We have 360 degrees of
+  // circle filled with map" (Jacob, 2026-09-20). A blank here would be the ABSENCE the rim
+  // doctrine forbids — `ORIENTATION`: the rim is an EDGE OF THE DRAWING, never an absence.
+  // ⛔ They are LAYERS, not blocks: nothing offsets a curb from either, and neither carries an
+  // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
+  // editable surface abuts the coast and the Wall is not crossed to draw them.
+  // ⭐ `remainder` carries its HOLES — the lake is a hole in the fringe land, which is how the
+  // two meet. Drawn as a compound face or the water is painted over twice.
+  const waterFeats = (protoWaterRings || []).map(r => ({ ring: r.map(([x, z]) => ({ x, z })), use: 'water' }))
+  const remainderFeats = (protoRemainder || []).map((r, i) => ({
+    ring: r.map(([x, z]) => ({ x, z })),
+    holes: ((protoRemainderHoles || [])[i] || []).map(h => h.map(([x, z]) => ({ x, z }))),
+    use: 'remainder',
+  }))
+  if (waterFeats.length || remainderFeats.length)
+    console.log(`  [LAND/WATER] ${waterFeats.length} water face(s), ${remainderFeats.length} remainder face(s) emitted as layers`)
+
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)
     block:          toFeats(allBlockPaths),                             // parcel-union boundaries
@@ -5295,6 +5330,8 @@ export function deriveLayers(highways) {
     institution:    institutionOverlays,
     leisure:        leisureOverlays,
     natural:        naturalOverlays,
+    water:          waterFeats,
+    remainder:      remainderFeats,
     barrier:        barrierLines,
     ribbons:        ribbonsLayer,
   }

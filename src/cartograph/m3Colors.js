@@ -17,6 +17,12 @@ export const DEFAULT_LAYER_COLORS = {
   building:   '#3A3A3A',  // generic dark gray until a shader is assigned
   park:       '#5E8A3A',  // vibrant grass
   water:      '#4A6A8E',  // lake + grotto (muted blue)
+  // ⭐ `remainder` — land with no street around it: the fringe, and on a coastal town the whole
+  // waterfront strip. It is LAND and must read as land, not as a gap: "360 degrees of circle
+  // filled with map". Sits between `lot` green and the off-map ground, because it is neither a
+  // block nor off-map. ⛔ Not a fallback grey — a grey here would read as "we could not tell",
+  // which is exactly the absence this class exists to stop.
+  remainder:  '#46603A',  // unparcelled land — duller than `lot`, still unmistakably ground
 
   // Streets / alleys / walks
   street:     '#4A4A48',  // midday asphalt (warmer, lighter than muted)

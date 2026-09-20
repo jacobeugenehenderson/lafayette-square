@@ -108,6 +108,44 @@ export function makeBoundary(nb) {
   }
   // Clip a polyline (array of [x,z]) to the boundary polygon — keep in-poly
   // runs, split at crossings. No-boundary fallback returns [points].
+  // ⭐⭐ CLIP A FILLED RING TO THE BOUNDARY — Sutherland–Hodgman, which is exact here because
+  // the boundary is a CONVEX ring (the disc, 256-gon). Added for the pour's `water` and
+  // `remainder` faces, whose outer ring is the whole bb rectangle: drawn raw they would paint a
+  // 340 km² slab across the scene.
+  // ⛔ CLIPPED AT RENDER, NEVER AT POUR. The radius is live-editable with no re-pour
+  // (`EXTENT-DESIGN §3.3` R15, the living boundary), so baking the disc into map.json would
+  // freeze one radius into the artifact and a later radius change would leave a hole.
+  // ⛔⛔ HOLES MUST BE CLIPPED TOO, and the first version of this said otherwise. "A hole outside
+  // the disc cannot affect what the disc shows" is false for a hole that STRADDLES it: the lake
+  // is a 40.11 km² hole in a remainder whose clipped outer is the 39.34 km² disc, so left
+  // unclipped it subtracts more than the whole face — net drawn came out at −40.20 km², and a
+  // hole poking outside its outer contour is not something ShapeGeometry can be trusted with.
+  function clipRingToBoundary(ring) {
+    if (!boundary.length || !ring || ring.length < 3) return ring
+    const xy = (p) => [p[0] ?? p.x, p[1] ?? p.z]
+    let out = ring.map(xy)
+    for (let i = 0; i < boundary.length && out.length; i++) {
+      const a = boundary[i], b = boundary[(i + 1) % boundary.length]
+      // inside = left of a→b; the boundary ring's winding decides the sign, so take it from
+      // the centre, which is inside by construction.
+      const side = (p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
+      const want = Math.sign(side(center)) || 1
+      const inside = (p) => Math.sign(side(p)) === want || side(p) === 0
+      const next = []
+      for (let k = 0; k < out.length; k++) {
+        const P = out[k], Q = out[(k + 1) % out.length]
+        const pi = inside(P), qi = inside(Q)
+        if (pi) next.push(P)
+        if (pi !== qi) {
+          const sp = side(P), sq = side(Q), t = sp / (sp - sq)
+          next.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t])
+        }
+      }
+      out = next
+    }
+    return out.length >= 3 ? out.map(([x, z]) => ({ x, z })) : null
+  }
+
   function clipPolylineToBoundary(points) {
     if (!points || points.length < 2) return points ? [points] : []
     if (!boundary.length) return [points]
@@ -169,6 +207,7 @@ export function makeBoundary(nb) {
     pointInBoundary, streetInBoundary, faceInBoundary,
     clipPolylineToBoundary,
     clipPolylineToRadius,
+    clipRingToBoundary,
   }
 }
 

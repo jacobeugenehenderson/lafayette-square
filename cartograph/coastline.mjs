@@ -1,14 +1,15 @@
 /**
- * coastline.mjs — THE COAST, AS ARCS, TO BE STROKED INTO ①.
+ * coastline.mjs — THE COAST, AS A CLOSED RING, FOR ① TO EXCLUDE FROM THE bb.
  *
  * ⭐⭐⭐ (Jacob, 2026-09-20) "it is both; we see the difference between land and water, and
  * the geometry creates the water field and on the other side (land-ward side) closes the
  * rest of the LU polygons, especially the dead-ends."
  *
- * ⇒ The coast is INK. It is stroked into `mintProtopolygon` like a chain, and `frame − ink`
- * then produces the WATER FIELD on one side and closed land faces on the other. One
- * mechanism, three results: the land/water edge is visible, the water is a face, and a
- * dead-end running at the water finally has something to close against.
+ * ⇒ The coast is COMBINED with the street ink and EXCLUDED from the bb in one move, so the
+ * land faces come out bounded by the coast and the water comes out as a discrete positive
+ * object to be shaded. ⛔ It is NOT stroked as a chain: the stroke is only safe for OPEN
+ * polylines and fragments on a closed ring (measured — square → filled, circle → annulus,
+ * Lake Erie → 3 pieces).
  *
  * ⛔ THIS IS NOT THE DISC AND MUST NEVER BECOME IT. `RIBBONS §1` forbids the *circle* from
  * deciding block geometry because the circle is a render knob. A shoreline is ground truth
@@ -17,10 +18,9 @@
  * beside the radius; that inverted which one was the source of truth and is why this module
  * produces geometry and writes nothing.
  *
- * ⭐ AND BECAUSE IT IS INK, THIS FILE GOT SIMPLE. As a clip it needed a closed region, which
- * needed the open arc closed and a land/water side chosen — a far-field sweep and a
- * centre-is-land rule, both of which were scaffolding for a question ink does not ask. An
- * arc is just an arc.
+ * ⭐ WHAT THIS FILE IS NOT, because each was tried and measured: not a far-field closure (the
+ * bb closes the arc, so no invented constant survives into the result), not a chain stroke
+ * (fragments on a closed ring), and not a replacement boundary (that inverted the SSoT).
  */
 
 /** ⭐ One definition of "this feature is water", so no two callers disagree. */
@@ -125,8 +125,8 @@ function clipToRect(arc, R) {
 }
 
 /**
- * @returns {{ rings: number[][][], report: string[] }} CLOSED water rings, to be stroked
- *          into ① as ink. The land-use polygons then close against them.
+ * @returns {{ rings: number[][][], report: string[] }} CLOSED water rings — combined with
+ *          the ink and excluded from the bb by ①. The land-use polygons close against them.
  */
 export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
@@ -148,24 +148,24 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     if (!f.clipped) { if (d.every(v => v <= discR)) interior++; else held++; continue }
 
     const inside = clipToRect(pts, R)
-    if (!inside || inside.length < 2) { report.push(`    ⛔ coast "${name}" does not cross the bb — not stroked`); continue }
+    if (!inside || inside.length < 2) { report.push(`    ⛔ coast "${name}" does not cross the bb — not applied`); continue }
     const A = inside[0], B = inside[inside.length - 1]
     if (!onRect(A, R) || !onRect(B, R)) {
       // ⛔ An END INSIDE the bb means the fetch stops mid-water: the arc cannot divide the
       // square, and closing it would invent a coastline we never acquired.
-      report.push(`    ⛔ coast "${name}" ENDS INSIDE the bb — the fetch stops mid-coast, so it cannot close. Not stroked.`)
+      report.push(`    ⛔ coast "${name}" ENDS INSIDE the bb — the fetch stops mid-coast, so it cannot close. Not applied.`)
       continue
     }
     const cands = [+1, -1].map(dir => inside.concat(rectWalk(B, A, R, dir)))
     const water = cands.filter(r => !pointInRing(center, r))
-    if (water.length !== 1) { report.push(`    ⛔ coast "${name}": the disc centre does not separate the two sides — not stroked`); continue }
+    if (water.length !== 1) { report.push(`    ⛔ coast "${name}": the disc centre does not separate the two sides — not applied`); continue }
     rings.push(water[0])
-    report.push(`    coast "${name}" — ${inside.length} pts in the bb, closed on the bb edge → ${water[0].length}-pt water ring, stroked into ① as ink`)
+    report.push(`    coast "${name}" — ${inside.length} pts in the bb, closed on the bb edge → ${water[0].length}-pt water ring, combined with the ink and excluded from the bb`)
   }
 
-  if (interior) report.push(`    ⚠️ ${interior} water bod${interior === 1 ? 'y lies' : 'ies lie'} wholly inside the disc — a pond is not a coast, not stroked`)
-  if (held) report.push(`    ⚠️ ${held} closed water bod${held === 1 ? 'y crosses' : 'ies cross'} the rim but ${held === 1 ? 'is' : 'are'} held WHOLE by the fetch — not an edge of the land, not stroked`)
-  if (!rings.length) { report.push(`    (no coastline stroked — ① is the street network alone, as always)`); return { rings, report } }
+  if (interior) report.push(`    ⚠️ ${interior} water bod${interior === 1 ? 'y lies' : 'ies lie'} wholly inside the disc — a pond is not a coast, not applied`)
+  if (held) report.push(`    ⚠️ ${held} closed water bod${held === 1 ? 'y crosses' : 'ies cross'} the rim but ${held === 1 ? 'is' : 'are'} held WHOLE by the fetch — not an edge of the land, not applied`)
+  if (!rings.length) { report.push(`    (no coastline — ① is the street network alone, as always)`); return { rings, report } }
 
   // ⛔ VERIFY THE SIDE. Buildings are on land; any inside a water ring means it is inverted.
   let wet = 0
@@ -175,7 +175,7 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     if (rings.some(r => pointInRing(q, r))) wet++
   }
   if (wet) {
-    report.push(`    ⛔ ${wet} building footprint(s) fall INSIDE the water — the land/water sides are inverted. No coast stroked.`)
+    report.push(`    ⛔ ${wet} building footprint(s) fall INSIDE the water — the land/water sides are inverted. No coast applied.`)
     return { rings: [], report }
   }
   report.push(`    ✅ ${rings.length} water ring(s); ${buildings.length} footprint(s) checked, none in the water`)

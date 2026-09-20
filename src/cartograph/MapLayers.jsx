@@ -147,9 +147,17 @@ function makeLineMat(color, opacity = 1) {
 // whose longest edge exceeds maxEdge, so per-vertex terrain displacement in
 // the shader can follow the ground faithfully instead of interpolating a
 // long flat triangle across a terrain bump (the "spillage" artifact).
-function triangulateRing(ring, { maxEdge = 0 } = {}) {
+// ⭐ `holes` — a COMPOUND face, outer ring plus its holes, triangulated as one. Added for the
+// remainder, which wraps the water: filling its outer ring alone would paint land over the lake.
+// ⛔ Extended here rather than given a second triangulator, so both paths keep the per-feature
+// centroid stamp the terrain shader samples — two triangulators would drift on that silently.
+function triangulateRing(ring, { maxEdge = 0, holes = null } = {}) {
   if (ring.length < 3) return null
   const shape = new THREE.Shape(ring.map(p => new THREE.Vector2(p.x ?? p[0], p.z ?? p[1])))
+  for (const h of (holes || [])) {
+    if (!h || h.length < 3) continue
+    shape.holes.push(new THREE.Path(h.map(p => new THREE.Vector2(p.x ?? p[0], p.z ?? p[1]))))
+  }
   const shapeGeo = new THREE.ShapeGeometry(shape)
   const srcPos = shapeGeo.attributes.position.array
   const srcIdx = shapeGeo.index.array
@@ -610,15 +618,46 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // here to avoid rendering both (visible double outline at compass-frame).
   const landscapeByKind = useMemo(() => {
     const groups = {}  // kind → [geo,...]
-    for (const cat of ['leisure', 'natural']) {
+    // ⭐ `water` and `remainder` are the pour's own faces, not OSM overlays. They are drawn
+    // here because they are landscape in exactly the same sense — flat ground fills grouped by
+    // kind — and drawing them anywhere else would mean a second painter for the same job.
+    // ⛔ The `natural=water` SKIP below stays: that is OSM's water, which `park_water.json`
+    // already owns on LS. THIS water comes from the coast chop and is a different object.
+    for (const cat of ['leisure', 'natural', 'water', 'remainder']) {
       for (const item of (mapData.layers?.[cat] || [])) {
         if (cat === 'natural' && item.use === 'water') continue
         const ring = item.ring
         if (!ring || ring.length < 3) continue
-        let sx = 0, sz = 0
-        for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
-        if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
-        const g = triangulateRing(ring)
+        // ⛔⛔ THE CENTROID TEST IS WRONG FOR THESE TWO AND IT WOULD DELETE THEM SILENTLY.
+        // It is a cheap stand-in for "is this overlay in the hood", fine for a small OSM
+        // polygon. The remainder wraps the whole town and the water fills a third of the disc,
+        // so BOTH have centroids far outside the boundary — they would vanish entirely while
+        // every small overlay kept working, which is the failure that looks like success.
+        // ⭐ They are bounded by construction (the coast and the bb), and the stamp cuts them.
+        const exempt = cat === 'water' || cat === 'remainder'
+        if (exempt) {
+          // ⛔ These two are bb-sized by construction — the remainder's outer ring IS the
+          // rectangle. Cut them to the disc HERE, at render, so a live radius change re-cuts
+          // them (R15) instead of leaving the artifact's frozen radius showing.
+          const cut = B.clipRingToBoundary?.(ring)
+          if (!cut) continue
+          // ⛔ The holes are cut to the disc as well. The lake is a hole that STRADDLES the
+          // rim, so uncut it subtracts more area than the clipped outer even has.
+          const cutHoles = (item.holes || []).map(h => B.clipRingToBoundary?.(h)).filter(Boolean)
+          const g2 = triangulateRing(cut, cutHoles.length ? { holes: cutHoles } : undefined)
+          if (!g2) continue
+          if (!groups[item.use]) groups[item.use] = []
+          groups[item.use].push(g2)
+          continue
+        }
+        {
+          let sx = 0, sz = 0
+          for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
+          if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+        }
+        // ⭐ A compound face: the remainder's holes are the water it wraps. Triangulating the
+        // outer alone would paint the lake twice, land under water.
+        const g = triangulateRing(ring, item.holes?.length ? { holes: item.holes } : undefined)
         if (!g) continue
         if (!groups[item.use]) groups[item.use] = []
         groups[item.use].push(g)
