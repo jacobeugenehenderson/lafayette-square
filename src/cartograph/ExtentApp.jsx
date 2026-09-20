@@ -29,7 +29,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { ZONE_PAD, squareAroundDisc } from '../../cartograph/discSquare.mjs'
+import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
@@ -1221,18 +1221,15 @@ export default function ExtentApp() {
   // not from a fraction of the envelope (that was the inversion reverted in b063871f).
   const coverageFit = useMemo(() => {
     if (!coverageXZ?.length) return null
-    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
-    for (const ring of coverageXZ) for (const p of ring) {
-      if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x
-      if (p.z < z0) z0 = p.z; if (p.z > z1) z1 = p.z
-    }
-    if (!isFinite(x0)) return null
-    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2
-    let r = 0
-    for (const ring of coverageXZ) for (const p of ring) {
-      const d = Math.hypot(p.x - cx, p.z - cz); if (d > r) r = d
-    }
-    return { x: cx, z: cz, radius: Math.round(r) }
+    // ⛔ NOT the bounding box. Centring on a bbox and taking the farthest vertex makes a
+    // circle that touches the shape at ONE point and gaps everywhere else, so the shape
+    // reads as shoved toward that point — and a bbox is an axis-aligned accident of how
+    // the town happens to sit against north, which is largest for a town on a diagonal
+    // shoreline. The minimum enclosing circle touches at two or three points by
+    // construction. That is what "circumscribe" has to mean.
+    const pts = coverageXZ.flat()
+    const c = minimumEnclosingCircle(pts)
+    return c ? { x: r2(c.x), z: r2(c.z), radius: Math.round(c.r) } : null
   }, [coverageXZ])
 
   // ⛔⛔ THE DISC IS NEVER CENTRED ON BUILDING MASS. Ruled by Jacob 2026-09-19:

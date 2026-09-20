@@ -81,3 +81,59 @@ export function containment(outer, inner, tolM = TOLERANCE_M) {
     .map(([s, m]) => ({ side: s, shortM: -m }))
   return { ok: sides.length === 0, shortfall: short, failing: sides }
 }
+
+/**
+ * The smallest circle containing every point — Welzl, randomized, expected O(n).
+ *
+ * ⭐ THIS IS WHAT "CIRCUMSCRIBE THE TINT" HAS TO MEAN. The obvious alternative —
+ * centre on the bounding box, take the farthest vertex — produces a circle that
+ * touches the shape at exactly ONE point and gaps everywhere else, so the shape
+ * reads as shoved toward that point. (Jacob, 2026-09-19, on Huron: "the tint still
+ * doesn't seem truly centered in the circle.") The minimum enclosing circle touches
+ * at two or three points by construction, which is what balanced means geometrically.
+ *
+ * ⛔ It also removes the last place a BBOX was acting as a primitive. A bounding box
+ * is an axis-aligned accident of how a shape happens to sit against north; a town on
+ * a diagonal shoreline is exactly where that accident is largest.
+ *
+ * @param {Array<{x:number,z:number}>} pts
+ * @returns {{x:number,z:number,r:number}|null}
+ */
+export function minimumEnclosingCircle(pts) {
+  if (!pts?.length) return null
+  const d = (a, b) => Math.hypot(a.x - b.x, a.z - b.z)
+  const has = (c, p) => !!c && d(c, p) <= c.r + 1e-7
+  const from2 = (a, b) => ({ x: (a.x + b.x) / 2, z: (a.z + b.z) / 2, r: d(a, b) / 2 })
+  const from3 = (a, b, c) => {
+    const A = b.x - a.x, B = b.z - a.z, C = c.x - a.x, D = c.z - a.z
+    const E = A * (a.x + b.x) + B * (a.z + b.z)
+    const F = C * (a.x + c.x) + D * (a.z + c.z)
+    const G = 2 * (A * (c.z - b.z) - B * (c.x - b.x))
+    if (Math.abs(G) < 1e-12) return null      // collinear
+    const x = (D * E - B * F) / G, z = (A * F - C * E) / G
+    return { x, z, r: Math.hypot(a.x - x, a.z - z) }
+  }
+  // Deterministic shuffle — a fixed seed, so the same tint always yields the same
+  // disc. An operator re-opening a hood must not find the circle a metre different.
+  const p = pts.slice()
+  let seed = 0x2f6e2b1
+  for (let i = p.length - 1; i > 0; i--) {
+    seed = (seed * 1103515245 + 12345) & 0x7fffffff
+    const j = seed % (i + 1)
+    ;[p[i], p[j]] = [p[j], p[i]]
+  }
+  let c = null
+  for (let i = 0; i < p.length; i++) {
+    if (has(c, p[i])) continue
+    c = { x: p[i].x, z: p[i].z, r: 0 }
+    for (let j = 0; j < i; j++) {
+      if (has(c, p[j])) continue
+      c = from2(p[i], p[j])
+      for (let k = 0; k < j; k++) {
+        if (has(c, p[k])) continue
+        c = from3(p[i], p[j], p[k]) || c
+      }
+    }
+  }
+  return c
+}
