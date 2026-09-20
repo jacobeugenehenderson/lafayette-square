@@ -17,12 +17,37 @@
 import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync } from 'fs'
 import { join } from 'path'
 import { execSync } from 'child_process'
-import { BBOX, RAW_DIR, wgs84ToLocal, overpassBbox } from './config.js'
+import { BBOX, RAW_DIR, SCENE, sceneDir, wgs84ToLocal, overpassBbox } from './config.js'
 import { requireExplicitScene } from './scene.js'
+import { squareAroundDisc, containment, ZONE_PAD } from './discSquare.mjs'
 
 // ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
 // silently overwrite Lafayette Square's build with another town's run (scene.js).
 requireExplicitScene('fetch')
+
+// ⭐ THE TWO-PASS FETCH (`_archive/EXTENT-EXCAVATION-DIARY §0.1`, Jacob 2026-07-21).
+//   --pass=light   the SOFT fetch: generous envelope, boundary vocabulary + painted
+//                  footprints. Cheap, reversible, re-runnable.
+//   --pass=heavy   the HARD fetch: pour material, scoped to THE SQUARE CONTAINING THE
+//                  DISC + padding. Irreversible, because it locks its input (`§0.8`).
+//   (omitted)      the pre-split behaviour — one envelope, everything. Still the
+//                  default so no existing caller changes meaning under it.
+//
+// ⛔ The heavy pass does NOT take its bbox from geography.json. That is the whole
+// point: derive the square from the disc and `bbox ⊇ disc` stops being a check that
+// can fail (`§0.1`). Deriving it from the frame is how Altadena's disc came to run
+// 981 m past its own data, silently.
+const _passArg = (process.argv || []).map(a => /^--pass=(light|heavy|all)$/.exec(a)).find(Boolean)?.[1]
+const pass = _passArg === 'all' ? null : (_passArg || null)
+
+// ⭐ --dry-run: resolve the envelope, run the containment gate, print, and STOP before
+// touching Overpass or disk. Two reasons, and the second is the one that matters:
+//   1. the gate is the interesting part, and a gate you cannot exercise is a gate
+//      nobody trusts — `MEMORY §C`: a passing check proves nothing until seen to FAIL;
+//   2. without it, the only way to test this is to run a REAL fetch against a real
+//      scene. Testing it on lafayette-square is one keystroke from overwriting
+//      production's raw OSM, which is exactly the class `scene.js` exists to prevent.
+const dryRun = (process.argv || []).includes('--dry-run')
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 const TIMEOUT = 120
@@ -82,25 +107,65 @@ function main() {
   console.log('='.repeat(60))
 
   mkdirSync(RAW_DIR, { recursive: true })
-  const bbox = overpassBbox()
-  console.log(`BBOX: ${bbox}`)
 
-  // Fetch ground features: ways + tagged nodes (trees, lamps, furniture)
+  // The LIGHT pass (and the undivided default) rides the frame's envelope. The HEAVY
+  // pass squares around the authored disc instead — see the header.
+  let bboxObj = BBOX
+  if (pass === 'heavy') {
+    const nbPath = join(sceneDir(SCENE), 'neighborhood.json')
+    let nb
+    try { nb = JSON.parse(readFileSync(nbPath, 'utf-8')) } catch {
+      console.error(`\n⛔ --pass=heavy needs the authored disc and ${nbPath} is unreadable.\n   The heavy fetch is scoped to the DISC, not the frame; without a radius there is nothing to scope to.\n   Author the extent first, then re-run.\n`)
+      process.exit(2)
+    }
+    const centre = nb.center && Number.isFinite(nb.center.lon) ? nb.center
+      : { lon: BBOX ? (BBOX.minLon + BBOX.maxLon) / 2 : NaN, lat: (BBOX.minLat + BBOX.maxLat) / 2 }
+    let sq
+    try { sq = squareAroundDisc(centre, nb.radius) } catch (err) {
+      console.error(`\n⛔ --pass=heavy: ${err.message}\n   A scene always has a radius; this one does not, so the square cannot be derived.\n`)
+      process.exit(2)
+    }
+    // ⛔ REFUSE rather than fetch a square the soft pass never acquired. Outside the
+    // frozen envelope there is no data and never will be — quietly fetching a bigger
+    // box would return the thin edge of nothing and look like a successful pour.
+    const c = containment(BBOX, sq)
+    if (!c.ok) {
+      console.error(`\n⛔ the disc + ${Math.round(ZONE_PAD * 100)}% zone is NOT inside the frozen fetch envelope.`)
+      for (const f of c.failing) console.error(`   ${f.side} short by ${f.shortM < 10 ? f.shortM.toFixed(1) : Math.round(f.shortM)} m`)
+      console.error(`   Shrink the disc, or re-fetch light with a larger envelope. ⛔ Do not proceed:`)
+      console.error(`   the shortfall is SILENT on screen — the streets just stop on that one side.\n`)
+      process.exit(2)
+    }
+    bboxObj = { minLat: sq.minLat, maxLat: sq.maxLat, minLon: sq.minLon, maxLon: sq.maxLon }
+    console.log(`HEAVY pass — square derived from the disc (r=${nb.radius} m + ${Math.round(ZONE_PAD * 100)}%), half-width ${Math.round(sq.halfM)} m`)
+  }
+  const bbox = overpassBbox(bboxObj)
+  console.log(`BBOX: ${bbox}${pass ? `   [pass: ${pass}]` : ''}`)
+  if (dryRun) {
+    console.log(`\n✅ dry run — envelope resolved and the containment gate passed. Nothing fetched, nothing written.`)
+    return
+  }
+
+  // ⭐ THE TWO PASSES (`_archive/EXTENT-EXCAVATION-DIARY §0.2`). The LIGHT pass keeps
+  // only what a boundary can RUN ALONG — the named linear features — plus the painted
+  // footprints you need to judge an edge. Everything else is POUR material and is
+  // deferred, which is what makes a generous envelope free instead of expensive.
+  //
+  // ⭐ `railway` was in NEITHER set — `§0.7` item 4: "railway is not in the Overpass
+  // query at all… Kolej Scheiblerowska was never fetched, so removing the filter alone
+  // would not surface it. Two fixes, not one." This is the fetch half. It also answers
+  // the operator's "there are no highways or natural features in the boundary list":
+  // waterway and railway are now acquired, so they CAN become boundary-eligible.
+  const LIGHT_WAYS = ['highway', 'waterway', 'railway', 'boundary']
+  const HEAVY_WAYS = ['landuse', 'leisure', 'natural', 'amenity', 'barrier', 'surface', 'man_made']
+  const LIGHT_NODES = ['highway']
+  const HEAVY_NODES = ['natural', 'amenity', 'man_made']
+  const ways = pass === 'heavy' ? HEAVY_WAYS : pass === 'light' ? LIGHT_WAYS : [...LIGHT_WAYS, ...HEAVY_WAYS]
+  const nodeTags = pass === 'heavy' ? HEAVY_NODES : pass === 'light' ? LIGHT_NODES : [...LIGHT_NODES, ...HEAVY_NODES]
+
   const groundQuery = `(
-  way["highway"](${bbox});
-  way["landuse"](${bbox});
-  way["leisure"](${bbox});
-  way["natural"](${bbox});
-  way["amenity"](${bbox});
-  way["barrier"](${bbox});
-  way["waterway"](${bbox});
-  way["surface"](${bbox});
-  way["man_made"](${bbox});
-  way["boundary"](${bbox});
-  node["natural"](${bbox});
-  node["amenity"](${bbox});
-  node["highway"](${bbox});
-  node["man_made"](${bbox});
+${ways.map(t => `  way["${t}"](${bbox});`).join('\n')}
+${nodeTags.map(t => `  node["${t}"](${bbox});`).join('\n')}
 );
 out body;>;out skel qt;`
 
@@ -114,8 +179,16 @@ out body;>;out skel qt;`
 );
 out body;>;out skel qt;`
 
-  console.log('\n[2/2] Buildings...')
-  const buildingData = overpassQuery(buildingQuery)
+  // ⛔ Buildings stay in the LIGHT pass, deliberately. `§0.2`: "Buildings must be
+  // PAINTED, at today's fidelity or better… the aerial alone is not legible enough to
+  // judge an edge against." They are cheap and they are what the operator is looking at.
+  let buildingData = { elements: [] }
+  if (pass !== 'heavy') {
+    console.log('\n[2/2] Buildings...')
+    buildingData = overpassQuery(buildingQuery)
+  } else {
+    console.log('\n[2/2] Buildings — skipped (light-pass material).')
+  }
 
   // Parse nodes and ways
   const nodes = {}
@@ -203,14 +276,43 @@ out body;>;out skel qt;`
   console.log(`  Buildings: ${buildings.length}`)
 
   // Write output
-  const output = {
-    bbox: { ...BBOX },
-    ground,
-    buildings,
-    nodeCount: Object.keys(nodes).length,
+  const outPath = join(RAW_DIR, 'osm.json')
+
+  // ⛔ THE HEAVY PASS AUGMENTS — it never clobbers. It fetched a DIFFERENT tag set over
+  // a DIFFERENT (disc-derived) square, so writing it whole would silently discard the
+  // boundary vocabulary and every painted footprint the light pass acquired — i.e. it
+  // would delete the thing the operator authored against. Merge by element id; the
+  // frame's `bbox` is the light envelope and stays, with the heavy square recorded
+  // beside it so the pour can say what it actually covered.
+  let output
+  if (pass === 'heavy') {
+    let prior = null
+    try { prior = JSON.parse(readFileSync(outPath, 'utf-8')) } catch { prior = null }
+    if (!prior) {
+      console.error(`\n⛔ --pass=heavy with no prior ${outPath}. The heavy pass augments a light one; there is nothing to augment.\n`)
+      process.exit(2)
+    }
+    const byId = new Map()
+    for (const g of (prior.ground || [])) byId.set(g.id ?? `${byId.size}`, g)
+    let added = 0
+    for (const g of ground) { const k = g.id ?? `n${byId.size}`; if (!byId.has(k)) added++; byId.set(k, g) }
+    output = {
+      ...prior,
+      bbox: prior.bbox,
+      heavyBbox: { ...bboxObj },
+      ground: [...byId.values()],
+      nodeCount: Math.max(prior.nodeCount || 0, Object.keys(nodes).length),
+    }
+    console.log(`  merged: ${prior.ground?.length || 0} light + ${added} new heavy = ${output.ground.length} ground features; ${output.buildings?.length || 0} buildings preserved`)
+  } else {
+    output = {
+      bbox: { ...bboxObj },
+      ground,
+      buildings,
+      nodeCount: Object.keys(nodes).length,
+    }
   }
 
-  const outPath = join(RAW_DIR, 'osm.json')
   writeFileSync(outPath, JSON.stringify(output, null, 2))
   const sizeKb = Math.round(JSON.stringify(output).length / 1024)
   console.log(`\n  Saved ${outPath} (${sizeKb} KB)`)

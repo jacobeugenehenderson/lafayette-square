@@ -25,6 +25,19 @@ The flow, top to bottom (the cheap edits auto-save; the one heavy op — **Bake*
 
 > **⭐ The inclusion polygon is first-class (2026-07-20).** It is authored, persisted and PRESERVED — `commit-extent` and `rescope` both accept one, and neither drops it. Previously a re-bake deleted it silently, which left HPDM's hand-authored 4-point boundary one Bake from gone. A scene with no polygon falls back to the disc, so excluder-era hoods bake byte-identical.
 
+### The two-pass fetch — the square is derived from the DISC
+
+`node cartograph/fetch.js --scene=<id> --pass=light|heavy [--dry-run]`
+
+- **light** — the SOFT fetch. The generous envelope, and only what a boundary can *run along*: `highway · waterway · railway · boundary`, plus the painted footprints you need to judge an edge. Cheap, reversible, re-runnable.
+- **heavy** — the HARD fetch. The pour material (`landuse · leisure · natural · amenity · barrier · surface · man_made`), scoped to **the square containing the disc + 25%** — ⛔ **not** to the frame. It *augments* the light pass and never clobbers it.
+- **omit `--pass`** — the pre-split behaviour: one envelope, everything.
+- **`--dry-run`** — resolve the envelope, run the containment gate, print, stop. Touches neither Overpass nor disk. Use it to see the gate refuse before you trust it.
+
+⭐ **Why it is derived from the disc and not the frame:** `bbox ⊇ disc` then stops being a check that can fail. Deriving the box from the search — which is what the single-pass tool does — is how altadena's zone came to sit **1,906 m** outside its own envelope, silently: nothing errors, the streets just stop on one side. ⛔ The heavy pass **refuses** rather than fetch a square the light pass never acquired.
+
+⚠️ **Only the CLI is split so far.** The Extent tool still performs one undivided fetch, so the square does not yet centre the circle in the UI. → `_archive/EXTENT-EXCAVATION-DIARY §0.1`, `EXTENT-DESIGN §3.3`.
+
 ### ⭐ The three sizes and the two centers — read this before you touch a radius
 
 The single most re-derived thing in this tool. **Nested: hood < disc < bounding box.** Two *independent* centers, and they are not the same value:
