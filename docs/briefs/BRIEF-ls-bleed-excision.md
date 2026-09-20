@@ -21,6 +21,75 @@ evict-when: git grep -q "from '\\.\\./data/ribbons" -- src || echo LANDED
 > no scene **bakes over Lafayette Square**). Sites 9–14 there. Read §1–§7 first; the principle is the
 > same and Appendix A only extends the site list and the regression test.
 
+> # ⭐⭐ RE-DISPATCHED 2026-09-20 — **ACT 0 IS A RE-MEASUREMENT, AND CLEANING IS THE DELIVERABLE**
+> *Jacob: **"I want LS OUT of the kit"** · **"paying extra care to CLEANING THE DOCS and the CODE."***
+>
+> **This brief was written 2026-07-20 and never dispatched. Two months of work have happened around
+> it — including five arcs on 2026-09-20 that closed instances of this exact class without knowing
+> this file existed.** ⛔ **DO NOT WORK THE SITE TABLE AS WRITTEN. It is a 2026-07-20 snapshot and
+> you cannot tell a live site from a dead one by reading it.**
+>
+> ### ⛔ ACT 0 — RE-MEASURE EVERY SITE, THEN EXCISE THE DEAD ONES FROM THIS FILE
+> For each of sites **1–14** and **B1–B8**: is it LIVE, DEAD, or CHANGED SHAPE? ⭐ **A dead site does
+> not get a ✅ next to it — IT GETS DELETED FROM THE TABLE**, with the commit that killed it named in
+> one line. *"RESOLVED, kept for context" left in place is the anti-pattern* (`CLAUDE.md`), and this
+> table already carries four ✅ rows that prove it: they are noise in every future read.
+> ⚠️ **AND THE MEASUREMENT IS NOT A GREP FOR `lafayette-square`.** A path construction naming LS is
+> not a bleed; a FALLBACK to LS is. The coordinator spot-checked four sites and got one ambiguous
+> answer for exactly this reason. **Read the branch, not the string.**
+>
+> ### ⚠️ COORDINATOR'S SPOT-CHECKS, 2026-09-20 — ⛔ THESE ARE SPOT-CHECKS, NOT THE MEASUREMENT
+> Offered so you know the brief is **mostly LIVE**, not mostly stale — do not inherit them as fact:
+> · **Site 6 — `hydrate-anchor-cards.js:28-29` still reads `LAT = 38.6160 / LON = -90.2161`. LIVE.**
+>   ⭐⭐ **Every town's sky is still St. Louis's sky, two months after this was filed.**
+> · **Site 5 — `src/instance.js:58,65,67`: `DEFAULT_LOOK = 'lafayette-square'` with `|| DEFAULT_LOOK`. LIVE.**
+> · **Site 1 — `bake-lamps.js` still references `src/data/street_lamps.json`.** ⚠️ But a huron bake
+>   printed *"Refusing to substitute another scene's lamps"* — so the READ may survive while the
+>   FALLBACK is dead. **This is the exact ambiguity Act 0 exists to resolve. Do not guess.**
+> · **Sites 2–3 — the species-map fallback IS DEAD** (`b12627c8`, verified independently by two
+>   sessions). ⛔ The brief still lists them as HIGH. **That row is the disease.**
+>
+> ### ✅ CLOSED SINCE THIS BRIEF WAS WRITTEN — ⛔ DO NOT RE-FIX THESE
+> | what | by |
+> |---|---|
+> | tree species-map → LS's global map | `b12627c8` |
+> | `ZONING_CAT[z] \|\| 'residential'` → every town residential | `8ce518df` (intake A) |
+> | `loadParcels`' hardcoded `stl_parcels.json` filenames | `8ce518df` |
+> | `boundary.js`'s `?? 134` fade fallback | `77aa5aa9` |
+> | `AerialTiles`' private second `?? 134` | `77aa5aa9` |
+> | `bake-terrain`'s hardcoded `n39w091` acquire hint **+ the silent clamp that accepted it** | `5ab6e555` |
+> ⭐ **Six instances, five agents, none of whom knew this brief existed.** That is the argument for
+> Act 0: the class is being closed incidentally and nobody is keeping score.
+>
+> ### ⭐ NEW SITE 15 — `terrainExag`, ruled by Jacob 2026-09-20
+> `src/lib/terrainCommon.js:18` — `export const V_EXAG = 1.5`, and the file says in terms it is
+> *"sized for LS"*: *"For LS the source GeoTIFF spans ~35 m of relief… 1.5 keeps Lafayette Park's
+> raised yard band readable."* ⇒ **A constant chosen against St. Louis's relief, applied to every town.**
+> **Measured 2026-09-20 — relief spread across the disc:** LS **35.2 m** · HPDM **43.1 m** ·
+> **altadena 1,480.3 m.** One multiplier serves a river bluff, a lake plain and the San Gabriels.
+> ▶ **RULED: `terrainExag` becomes a per-town authored value in `design.json`, defaulting to 1.**
+> ⛔⛔ **AND THE DEFAULT OF 1 IS THE POINT, NOT A DETAIL: LS's 1.5 becomes LS's AUTHORED DATA.** The
+> kit default is the neutral value. ⚠️ **This CHANGES LS's Hero terrain unless LS authors 1.5** —
+> intended, and it must be a declared line in the commit, not a surprise at the eye gate.
+> ⚠️ **The hard part is not the React path** (`BakedGround` already reads `useSceneJson` for
+> `layerVis`/`layerColors`, so `scene?.terrainExag ?? 1` is easy). It is **`src/utils/elevation.js:18`'s
+> MODULE-LEVEL SINGLETON sampler**, which has no scene in scope. ⭐ `makeElevationSampler(terrain)`
+> is already built per-terrain, so taking the exag as a parameter is the clean shape — **but
+> enumerate its callers before changing the signature.**
+>
+> ### ⛔⛔ AND THE CLEANING IS NOT A TIDY-UP AT THE END — IT IS THE DELIVERABLE
+> Jacob asked for **extra care to cleaning the docs AND the code**, so:
+> · **CODE:** a dead bleed is **DELETED, not gated** (`feedback_dead_code_gets_excised_not_archived`).
+>   ⭐ B6 already says so — *"Probably an EXCISION, not a migration… confirm it is unmounted, then
+>   delete the file."* **Apply that reasoning to every site, not just B6.**
+> · **DOCS:** every doc that DESCRIBES a bleed you kill must lose the description in the same commit —
+>   ⛔ not a banner beside it. **Superseded text goes to `cartograph/_archive/` dated, and refs are
+>   repointed in the same breath.** A dead pointer is the one unforgivable error.
+> · ⭐ **THIS FILE IS THE FIRST THING TO CLEAN.** It is 340 lines, two months old, carries four ✅
+>   rows and at least one HIGH row that is already dead. **If it survives this work at 340 lines,
+>   the work did not happen.**
+> · ⛔ **NET DOWN.** Report the line count of this brief and of every doc you touch, before and after.
+
 ## 1. The defect, in one sentence
 
 **When an input is absent, the kit does not render nothing — it renders Lafayette Square's data under the other town's name.**
