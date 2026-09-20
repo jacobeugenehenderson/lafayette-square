@@ -46,6 +46,8 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { requireExplicitMap } from './scene.js'
+import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
+import { classifyZoning } from '../src/tokens/categories.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -135,16 +137,54 @@ function loadBuildingGeom(scene, bakedIds) {
   return out
 }
 
-// City + county assessor parcels — merged. Both are pre-projected to the local
-// frame (centroid:[x,z], rings:[[[x,z]]]). jurisdiction distinguishes them.
+// Assessor parcels — every declared well, merged. All are pre-projected to the local
+// frame (centroid:[x,z], rings:[[[x,z]]]); `jurisdiction` distinguishes them.
+//
+// ⛔⛔ THE FILENAMES USED TO BE ST. LOUIS'S, RIGHT HERE:
+//     for (const [file, jur] of [['stl_parcels.json','city'], ['stlco_parcels.json','county']])
+// so every town that was not St. Louis printed "missing stl_parcels.json" and matched
+// 0 parcels — `INTAKE-CATALOGUE §0`'s LS-bleed, in the acquisition path, and `§4.2`'s
+// *"needs a per-town endpoint field"* left unbuilt since 2026-07-20. The town now
+// DECLARES its wells (`cartograph/sources.js`) and this reads the declaration.
+//
+// ⭐ Returns `{ parcels, absentByField }`. The second is the whole reason the
+// declaration exists: a field no declared well provides is a field the roster must
+// emit as null rather than as zero/false. `§3.2`'s correction — what an assessor
+// UNIQUELY gives is valuation · zoning · year_built · units — is only actionable if a
+// town can say which of those its well does not have.
 function loadParcels(scene) {
+  const src = readSources(scene)
+  if (!src.declared) {
+    // ⛔ LOUD, and not a `console.warn` buried between two other lines. An undeclared
+    // town is not a town without an assessor; it is a town nobody has looked into, and
+    // the two must never print the same.
+    console.warn('\n' + undeclaredMessage(scene, src.path) + '\n')
+    return { parcels: [], absentByField: null, declared: false }
+  }
+  if (!src.parcels.length) {
+    console.log(`  [parcels] DECLARED-NONE — ${src.absentReason}`)
+    return { parcels: [], absentByField: new Set(PARCEL_FIELDS), declared: true }
+  }
+
   const out = []
-  for (const [file, jur] of [['stl_parcels.json', 'city'], ['stlco_parcels.json', 'county']]) {
-    const p = join(mapDir(scene), 'raw', file)
-    if (!existsSync(p)) { console.warn(`  [parcels] missing ${file} — skipping ${jur}`); continue }
+  // A field is absent for this SCENE only if EVERY declared well lacks it — two wells
+  // can complement each other (LS's city + county pair is exactly that).
+  const absentByField = new Set(PARCEL_FIELDS)
+  for (const decl of src.parcels) {
+    for (const f of (decl.provides || [])) absentByField.delete(f)
+    for (const f of Object.keys(decl.constants || {})) absentByField.delete(f)
+    const p = join(mapDir(scene), 'raw', decl.file)
+    if (!existsSync(p)) {
+      // ⛔ A DECLARED WELL WITH NO FILE IS AN ERROR, not a skip. The town said this
+      // exists; the pour must not quietly continue as though it had said nothing.
+      throw new Error(`[parcels] scene "${scene}" declares source "${decl.id}" → raw/${decl.file}, which is not there.\n` +
+        `  Acquire it: CARTOGRAPH_SCENE=${scene} node cartograph/fetch-parcels.mjs`)
+    }
     const j = JSON.parse(readFileSync(p, 'utf8'))
+    let n = 0
     for (const par of (j.parcels || [])) {
       if (!par.centroid) continue
+      n++
       out.push({
         handle: par.handle,
         address: par.address ? par.address.replace(/\s+/g, ' ').trim() : null,
@@ -152,26 +192,49 @@ function loadParcels(scene) {
         building_sqft: par.building_sqft || null,
         appraised_value: par.appraised_value || null,
         land_use_code: par.land_use_code != null ? String(par.land_use_code).trim() : null,
+        land_use_code_format: decl.land_use_code_format || null,
+        // ⛔ Undeclared means UNREADABLE, never "assume St. Louis". A zoning letter is
+        // only an STL district if the town says its assessor speaks that alphabet.
+        zoning_code_format: decl.zoning_code_format || null,
         zoning: par.zoning ? par.zoning.trim() : null,
         units: par.units ?? null,
         num_buildings: par.num_buildings ?? null,
-        vacant: !!par.vacant,
-        historic_district: par.historic_district || { national: false, local: false, certified_local: false },
-        municipality: par.municipality || (jur === 'city' ? 'St. Louis' : null),
-        jurisdiction: par.jurisdiction || jur,
+        // ⛔ `!!par.vacant` asserted "not vacant" about every parcel from a well that
+        // does not carry the flag. Undefined stays null; only a real false is false.
+        vacant: par.vacant == null ? null : !!par.vacant,
+        historic_district: par.historic_district || null,
+        // ⭐ A declared constant fills a column the rows do not carry — never a literal
+        // city name in this file. (`jur === 'city' ? 'St. Louis' : null` lived here.)
+        municipality: par.municipality || (decl.constants || {}).municipality || null,
+        jurisdiction: par.jurisdiction || decl.jurisdiction,
         cx: par.centroid[0], cz: par.centroid[1],
         rings: par.rings || [],
       })
     }
+    console.log(`  [parcels] ${decl.id} (${decl.jurisdiction}): ${n} from raw/${decl.file}`)
   }
-  return out
+  if (absentByField.size) console.log(`  [parcels] NO declared well provides: ${[...absentByField].join(', ')} — these stay null, never zero`)
+  return { parcels: out, absentByField, declared: true }
 }
 
 // County land-use code table: CODE,LAND_USE_DESCRIPTION,LUCODE,OBJECTID
+// The assessor's code→description table. ⛔ The FILENAME was hardcoded to St. Louis
+// County's, so every other town printed "county-land-use-codes.csv missing" forever.
+// It is declared now, and `landUseCodes: null` is a POSITIVE declaration — "this well's
+// codes are self-describing, there is no table to acquire" — which is a different state
+// from "nobody has said" and prints differently (`cartograph/sources.js`).
 function loadLandUseCodes(scene) {
-  const p = join(contentDir(scene), 'county-land-use-codes.csv')
   const map = new Map()
-  if (!existsSync(p)) { console.warn('  [landuse] county-land-use-codes.csv missing'); return map }
+  const src = readSources(scene)
+  if (!src.declared) return map          // already shouted about by loadParcels
+  if (src.landUseCodes === null) { console.log('  [landuse] declared self-describing — no decode table needed'); return map }
+  if (src.landUseCodes === undefined) {
+    console.warn(`  ⛔ [landuse] scene "${scene}" declares parcel wells but says nothing about \`landUseCodes\`.`)
+    console.warn(`     Add \`"landUseCodes": { "file": "<name>.csv" }\` or \`"landUseCodes": null\` (self-describing).`)
+    return map
+  }
+  const p = join(contentDir(scene), src.landUseCodes.file)
+  if (!existsSync(p)) { throw new Error(`[landuse] scene "${scene}" declares ${src.landUseCodes.file}, which is not in content/.`) }
   const lines = readFileSync(p, 'utf8').replace(/^﻿/, '').split(/\r?\n/)
   for (let i = 1; i < lines.length; i++) {
     const row = parseCsvLine(lines[i])
@@ -200,9 +263,16 @@ function loadNrInventory(scene) {
   return JSON.parse(readFileSync(p, 'utf8'))
 }
 
-// Named OSM POIs from raw/osm.json (.ground.<class>[]). Each feature:
-// { osmId, tags, isClosed, coords:[{lon,lat,x,z}] }. We keep name-bearing
-// features and compute an x/z anchor from their coords.
+// Named OSM POIs from raw/osm.json. THREE producers, one consumer:
+//   .ground.<class>[]  ways + relation rings  { osmId, tags, isClosed, coords:[…] }
+//   .pois[]            TAGGED NODES          { osmId, osmType:'node', category, tags, coords:[one] }
+//   .buildings[]       named footprints
+// We keep name-bearing features and compute an x/z anchor from their coords.
+//
+// ⭐ The one-coordinate case was ALREADY handled here (`coords.length > 2 ? centroid :
+// coords[0]`) years before anything could produce one — intake was the broken half, and
+// `fetch.js` threw every node's tags away at ingest. Reading `.pois` is the whole of the
+// consumer-side change; nothing about the anchor or the dedupe had to move.
 function loadOsmPois(scene) {
   const p = join(mapDir(scene), 'raw', 'osm.json')
   if (!existsSync(p)) throw new Error(`no raw/osm.json for scene "${scene}"`)
@@ -223,6 +293,11 @@ function loadOsmPois(scene) {
   }
   const ground = j.ground || {}
   for (const cls of Object.keys(ground)) if (Array.isArray(ground[cls])) for (const f of ground[cls]) consume(f)
+  // ⭐ Point features. `consume` keys its dedupe on `osmId|name`, and an OSM node and an
+  // OSM way can share an id — different namespaces, same integer — so a node POI and a
+  // way POI with the same id and name would collapse into one. Namespaced here rather
+  // than in `consume`, because a WAY's key must not change: it is the existing towns'.
+  if (Array.isArray(j.pois)) for (const f of j.pois) consume({ ...f, osmId: `n${f.osmId}` })
   // Named building footprints carry the campus halls / dorms / apartments /
   // churches the ground POIs miss — the bulk of the named directory.
   if (Array.isArray(j.buildings)) for (const f of j.buildings) consume(f)
@@ -308,6 +383,35 @@ function classifyPoi(tags) {
 function classifyUse(parcel, luMap) {
   const code = parcel && parcel.land_use_code
   if (!code) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
+
+  // ⛔⛔ THE NUMERIC RANGES BELOW ARE ST. LOUIS CITY/COUNTY ASSESSOR CODES, and until
+  // now they were applied to whatever digits any town's code happened to contain. That
+  // is not a missing feature, it is a CONFIDENTLY WRONG answer — `CLAUDE.md` Layer 0 q2
+  // in its worst form, because it is louder than silence and reads as a result.
+  //
+  // ⭐ Worked instance, on the town this was found on: Ohio's statewide LUC arrives as
+  // `"500: Res-Vacant Land"`. Stripped to digits that is 500, which lands in
+  // `n >= 400 && n < 700` → **commercial, confidence HIGH** — a residential vacant lot
+  // reported as a confident commercial building. 0% parcel match was better than that.
+  //
+  // ⇒ A town DECLARES what shape its codes are (`land_use_code_format` in sources.json):
+  //     'stl-assessor-numeric' — the St. Louis city/county ranges + the decode CSV
+  //     'self-describing'      — the code carries its own meaning ("500: Res-Vacant Land")
+  //   and an UNDECLARED format gets `unknown`, never a guess. Naming the St. Louis
+  //   taxonomy after St. Louis is the point: a town adopting it is asserting its codes
+  //   mean what St. Louis's mean, which is a claim someone has to actually make.
+  const fmt = parcel.land_use_code_format
+  if (fmt === 'self-describing') {
+    // ⭐ Text, not ranges. The word after the code is English land-use vocabulary and is
+    // the same vocabulary the `bucket` fallback at the end of this function already
+    // matches — so this reuses that classifier rather than adding a second one, and it
+    // is not keyed to any state.
+    return classifyUseFromText(String(code))
+  }
+  if (fmt !== 'stl-assessor-numeric') {
+    return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
+  }
+
   const c = String(code).replace(/\D/g, '')
   const n = parseInt(c, 10)
   // County 3-digit residential codes
@@ -322,13 +426,26 @@ function classifyUse(parcel, luMap) {
   if ((n >= 400 && n < 700) || (n >= 4000 && n < 7000)) return { use: 'commercial', use_subtype: null, use_confidence: 'high' }
   // Exempt / institutional 9xx / city 9xxx
   if ((n >= 900) ) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
-  // fall back to bucket text
-  const bucket = (luMap.get(c) || {}).bucket || ''
-  if (/single/i.test(bucket)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
-  if (/multi|duplex/i.test(bucket)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
-  if (/commercial/i.test(bucket)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
-  if (/industrial|utility/i.test(bucket)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
-  if (/vacant/i.test(bucket)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
+  // fall back to the decode table's bucket text
+  return classifyUseFromText((luMap.get(c) || {}).bucket || '')
+}
+
+// Land-use vocabulary → structural use, from ENGLISH TEXT rather than a code range.
+// ⭐ Shared by two callers on purpose: the decode table's `bucket` column (St. Louis)
+// and a self-describing code (Ohio's `500: Res-Vacant Land`). One classifier, so a town
+// whose codes explain themselves needs no per-state parser and no acquisition step.
+// ⛔ VACANT IS TESTED FIRST. "Res-Vacant Land" contains both words, and a vacant lot
+// reported as a house is the same confident-wrong failure the ranges above produced.
+function classifyUseFromText(text) {
+  const t = String(text || '')
+  if (!t.trim()) return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
+  if (/vacant/i.test(t)) return { use: 'vacant', use_subtype: null, use_confidence: 'medium' }
+  if (/industrial|utility|warehouse|manufactur/i.test(t)) return { use: 'industrial', use_subtype: null, use_confidence: 'medium' }
+  if (/exempt|exm|church|school|municipal|government|public|cemetery|hospital/i.test(t)) return { use: 'institutional', use_subtype: null, use_confidence: 'medium' }
+  if (/commercial|retail|office|com-/i.test(t)) return { use: 'commercial', use_subtype: null, use_confidence: 'medium' }
+  if (/single|1-family|one family/i.test(t)) return { use: 'residential', use_subtype: 'single_family', use_confidence: 'medium' }
+  if (/multi|duplex|apartment|two family|2-family/i.test(t)) return { use: 'residential', use_subtype: 'multi_family', use_confidence: 'medium' }
+  if (/^\s*res\b|residential|dwelling|farm|agricultur/i.test(t)) return { use: 'residential', use_subtype: null, use_confidence: 'low' }
   return { use: 'unknown', use_subtype: null, use_confidence: 'low' }
 }
 
@@ -356,20 +473,33 @@ function refineUseFromListing(use, primary) {
   return use
 }
 
-// Roster category/subcategory (§useListings ZONING_CAT/SUB) — the bare-building
-// default from the assessor zoning letter; overridden by a hosted listing.
-const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'commercial', E: 'residential', F: 'commercial', G: 'commercial', H: 'residential', J: 'industrial' }
-const ZONING_SUB = { A: 'houses', B: 'townhouses', C: 'lofts', D: 'storefronts', E: 'houses', F: 'storefronts', G: 'retail', H: 'houses', J: 'warehouses' }
-function rosterCategoryFromZoning(zoning, use, use_subtype) {
-  const z = (zoning || '').replace(/[^A-Z]/gi, '').charAt(0).toUpperCase()
-  if (ZONING_CAT[z]) return { category: ZONING_CAT[z], subcategory: ZONING_SUB[z] }
-  // county parcels carry zoning "Municipal" → fall back to use
+// Roster category/subcategory — the bare-building default from the assessor zoning
+// letter, overridden by a hosted listing.
+//
+// ⛔⛔ THE LOCAL COPIES OF `ZONING_CAT`/`ZONING_SUB` ARE GONE. They lived here, in
+// `useListings.js`, in `PlaceCard.jsx`, in `SceneNeon.jsx` and (dead) in
+// `categories.js` — five copies, no two agreeing — and the comment above them claimed
+// to MIRROR `useListings`, which it did not: they split on five keys. A comment
+// asserting a parity that does not hold is worse than no comment, because it is the
+// thing a reader checks instead of the code. One home now: `src/tokens/categories.js`.
+// ⭐ Checked against St. Louis Title 26 in the process, and the majority was wrong —
+// see that file's header. `D` is residential; `H` is commercial.
+function rosterCategoryFromZoning(zoning, zoningFormat, use, use_subtype) {
+  const hit = classifyZoning(zoning, zoningFormat)
+  if (hit && hit.category) return { category: hit.category, subcategory: hit.subcategory }
+  // A county parcel carrying zoning "Municipal", or a town whose zoning vocabulary we
+  // cannot read, falls through to the parcel's structural USE — which is derived from
+  // the land-use code and is not St-Louis-shaped.
   if (use === 'residential') return { category: 'residential', subcategory: use_subtype === 'single_family' ? 'houses' : use_subtype === 'multi_family' ? 'lofts' : 'houses' }
   if (use === 'commercial') return { category: 'commercial', subcategory: 'storefronts' }
   if (use === 'industrial') return { category: 'industrial', subcategory: 'warehouses' }
   if (use === 'institutional') return { category: 'community', subcategory: 'organizations' }
   if (use === 'vacant') return { category: 'residential', subcategory: 'unnamed' }
-  return { category: 'residential', subcategory: 'unnamed' }
+  // ⛔⛔ AND HERE IS WHERE `|| 'residential'` USED TO BE. Zoning unreadable AND use
+  // unknown means we know nothing about this building, and the roster must say so.
+  // `category: null` is the honest answer; `'residential'` was a confident wrong one,
+  // and on a town with no STL zoning letter it was every building in the town.
+  return { category: null, subcategory: null }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -642,7 +772,7 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
     // category/subcategory: inherit hosted primary listing, else zoning/use
     const cat = primary
       ? { category: primary.category, subcategory: primary.subcategory }
-      : rosterCategoryFromZoning(par && par.zoning, use.use, use.use_subtype)
+      : rosterCategoryFromZoning(par && par.zoning, par && par.zoning_code_format, use.use, use.use_subtype)
 
     // ⭐ Stories: read what the baker built, never re-derive it.
     //
@@ -730,7 +860,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const bakedBuildings = loadBakedBuildings(scene)
   const bakedIds = new Set(bakedBuildings.keys())
   const buildingGeom = loadBuildingGeom(scene, bakedIds)
-  const parcels = loadParcels(scene)
+  const { parcels, absentByField, declared: parcelsDeclared } = loadParcels(scene)
   const luMap = loadLandUseCodes(scene)
   const nrIndex = buildNrIndex(loadNrInventory(scene))
   const pois = loadOsmPois(scene)
@@ -743,7 +873,21 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   for (const g of buildingGeom.values()) if (joinParcelToBuilding(g, parcelGrid)) contained++
   const alignPct = Math.round((contained / Math.max(1, buildingGeom.size)) * 100)
   console.log(`  frame-alignment: ${contained}/${buildingGeom.size} buildings matched a parcel (${alignPct}%)`)
-  if (alignPct < 40) console.warn(`  ⚠️ LOW parcel-match rate — parcels may be in a stale frame (reproject?)`)
+  // ⛔⛔ PARCELS LOADED AND NOT ONE BUILDING MATCHED IS A FAILURE, NOT A WARNING.
+  // It used to warn-and-continue, which is the silent-substitution class in the one
+  // place it must never happen: the pour proceeds, every roster record gets a null
+  // address, and the Society Pages open on a town that looks surveyed and is not.
+  // ⭐ Zero-with-zero-parcels is a DIFFERENT state and stays quiet — a town that
+  // declared it has no assessor is an honest zero, not a broken join.
+  if (parcels.length && contained === 0) {
+    throw new Error(`frame-alignment: ${parcels.length} parcels loaded and NOT ONE of ${buildingGeom.size} buildings fell inside any of them.\n` +
+      `  That is a frame disagreement, not a sparse town — the parcels and the buildings are in different coordinate\n` +
+      `  systems, or the parcels were fetched over a different envelope. Re-run:\n` +
+      `    CARTOGRAPH_SCENE=${scene} node cartograph/reproject-raw.js\n` +
+      `  Refusing to bake a roster in which every address would be null.`)
+  }
+  if (alignPct < 40 && parcels.length) console.warn(`  ⚠️ LOW parcel-match rate — parcels may be in a stale frame (reproject?)`)
+  if (!parcels.length && parcelsDeclared) console.log(`  (no parcels declared for this town — addresses will come from OSM addr:* only)`)
 
   // parcel-by-normalized-address index (for override anchor re-resolution)
   const parcelByAddr = new Map()
@@ -795,6 +939,22 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   // Layer 1 — roster
   const { roster, stat } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides)
   console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · in-district ${stat.in_district} · with-listings ${stat.with_listings}`)
+
+  // ⛔⛔ THE UNCLASSIFIED CENSUS — the number the old `|| 'residential'` existed to hide.
+  // Every one of these was previously emitted as a confident "residential" building, so
+  // this line going UP is not a regression: it is the first time the pour has been able
+  // to say how much of a town it does not understand. ⭐ It is the operator's decision
+  // whether that share is acceptable, and they cannot make it without the number.
+  const unclassified = roster.filter(b => !b.category).length
+  const noAddress = roster.filter(b => !b.address).length
+  if (unclassified || noAddress) {
+    const pct = (n) => Math.round((n / Math.max(1, roster.length)) * 100)
+    console.log(`  ⚠️ UNRESOLVED: ${unclassified} building(s) have NO CATEGORY (${pct(unclassified)}%) · ${noAddress} have NO ADDRESS (${pct(noAddress)}%)`)
+    if (noAddress > roster.length * 0.5) {
+      console.log(`     ⛔ More than half this town has no address. The Society Pages list bare buildings BY address,`)
+      console.log(`        so most of this roster cannot appear there at all. That is an intake gap — check sources.json.`)
+    }
+  }
 
   // orphan invariant — every listing building_id ∈ baked set
   const orphans = listings.filter(l => l.building_id && !bakedIds.has(l.building_id))

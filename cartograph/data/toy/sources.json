@@ -1,0 +1,6 @@
+{
+  "_comment": "Where toy's data wells are. Shape: cartograph/sources.js.",
+  "parcels": [],
+  "parcels_absent_reason": "toy IS NOT A TOWN. It is the synthetic fixture scene \u2014 hand-authored centerlines, no real geography \u2014 so there is no jurisdiction to have an assessor and no well to search for. \u2b50 This is the one DECLARED-NONE in the repo that is permanent rather than provisional: unlike altadena's, it should never be replaced by a well.",
+  "landUseCodes": null
+}

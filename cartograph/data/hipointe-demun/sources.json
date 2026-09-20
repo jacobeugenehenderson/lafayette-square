@@ -1,0 +1,95 @@
+{
+  "_comment": "Where hipointe-demun's data wells are. Shape: cartograph/sources.js.",
+  "_why_two_wells": "HiPointe\u2013DeMun STRADDLES the City limit: Hi-Pointe is in St. Louis City, DeMun is in St. Louis County / City of Clayton. St. Louis City is an independent city, so its assessor holds no County parcels \u2014 two wells, complementary, and a field is absent for this scene only if BOTH lack it (which is why num_buildings/vacant/historic_district survive here on the city side).",
+  "parcels": [
+    {
+      "id": "stl-city",
+      "jurisdiction": "city",
+      "file": "stl_parcels.json",
+      "attribution": "City of St. Louis Assessor \u2014 Assessor_Public_Parcels",
+      "endpoint": "https://maps8.stlouis-mo.gov/arcgis/rest/services/ASSESSOR/Assessor_Public_Parcels/MapServer/11/query",
+      "land_use_code_format": "stl-assessor-numeric",
+      "fields": {
+        "handle": "Handle",
+        "address": "SITEADDR",
+        "owner": "OwnerName",
+        "year_built": "FirstYearBuilt",
+        "building_sqft": "SQFT",
+        "land_area": "LandArea",
+        "appraised_value": "AprResImprove",
+        "land_use_code": "AsrLandUse1",
+        "zoning": "Zoning",
+        "units": "NbrOfUnits",
+        "num_buildings": "NbrOfBldgsRes",
+        "vacant": "VacantLot",
+        "historic_district": "NatHistDist"
+      },
+      "constants": {
+        "municipality": "St. Louis"
+      },
+      "provides": [
+        "handle",
+        "address",
+        "owner",
+        "year_built",
+        "building_sqft",
+        "land_area",
+        "appraised_value",
+        "land_use_code",
+        "zoning",
+        "units",
+        "num_buildings",
+        "vacant",
+        "historic_district"
+      ],
+      "absent": [],
+      "_note": "St. Louis City is an INDEPENDENT CITY \u2014 its assessor holds only City parcels. The historical acquisition is scripts/03-fetch-stl-parcels.py, which also folds AprComImprove into appraised_value, LastYearBuilt into year_built and NbrOfBldgsCom into num_buildings, and reads LocalHistDist/CertLocalHistDist. cartograph/fetch-parcels.mjs maps one column per field, so re-fetching through the button would lose those second operands. \u26d4 The existing raw/stl_parcels.json is the Python script's output and must NOT be re-fetched through the button until the field map grows a fallback-column form. Declared here so the FILENAME hardcode could die; the endpoint is recorded, not yet exercised on this town.",
+      "zoning_code_format": "stl-letter"
+    },
+    {
+      "id": "stl-county",
+      "jurisdiction": "county",
+      "file": "stlco_parcels.json",
+      "attribution": "St. Louis County OpenData \u2014 Tax Parcels",
+      "endpoint": "https://maps.stlouisco.com/hosting/rest/services/OpenData/OpenData/FeatureServer/7/query",
+      "land_use_code_format": "stl-assessor-numeric",
+      "fields": {
+        "handle": "LOCATOR",
+        "address": "PROP_ADD",
+        "owner": "OWNER_NAME",
+        "year_built": "YEARBLT",
+        "building_sqft": "RESQFT",
+        "land_area": "ACRES",
+        "appraised_value": "TOTAPVAL",
+        "land_use_code": "LUCODE",
+        "zoning": "ZONING",
+        "units": "LIVUNIT",
+        "municipality": "MUNICIPALITY"
+      },
+      "provides": [
+        "handle",
+        "address",
+        "owner",
+        "year_built",
+        "building_sqft",
+        "land_area",
+        "appraised_value",
+        "land_use_code",
+        "zoning",
+        "units",
+        "municipality"
+      ],
+      "absent": [
+        "num_buildings",
+        "vacant",
+        "historic_district"
+      ],
+      "_note": "The SECOND well for a neighborhood that straddles the City limit \u2014 DeMun is in St. Louis County / City of Clayton. Same caveat as stl-city: raw/stlco_parcels.json is scripts/03b's output, the endpoint is recorded but not yet exercised through the generic button.",
+      "zoning_code_format": "stl-letter"
+    }
+  ],
+  "landUseCodes": {
+    "file": "county-land-use-codes.csv"
+  },
+  "_landUseCodes_why": "The county well's LUCODE is numeric and opaque; the CSV is the assessor's own decode table, published alongside the parcel layer and re-acquired per jurisdiction."
+}

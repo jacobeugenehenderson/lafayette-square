@@ -1,0 +1,6 @@
+{
+  "_comment": "Where altadena's data wells are. Shape: cartograph/sources.js.",
+  "parcels": [],
+  "parcels_absent_reason": "NOT YET SEARCHED. Altadena is unincorporated Los Angeles County, CA, and LA County Assessor parcel data is published (Open Data / ArcGIS) \u2014 so a well is expected to exist and this DECLARED-NONE is a placeholder that should not survive the next pass on this town. \u26d4 Recorded as a finding rather than left undeclared, because undeclared and none print differently and only one of them is honest here. Whoever adopts the LA County well replaces this whole block.",
+  "landUseCodes": null
+}

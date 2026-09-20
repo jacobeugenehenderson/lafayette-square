@@ -20,7 +20,13 @@ const useLandmarkFilter = create((set, get) => ({
     if (activeTags.size === 0) return []
     const { listings } = useListings.getState()
     return listings.filter(l =>
-      activeTags.has(l.subcategory) || activeTags.has(l.category)
+      activeTags.has(l.subcategory) || activeTags.has(l.category) ||
+      // ⭐ A listing with no category is UNCLASSIFIED, and it is reachable. Before the
+      // zoning fallback was removed there was no such listing — everything unknown was
+      // asserted residential — so this branch is new, and without it those buildings
+      // would match no tag and quietly leave the Society Pages (`categories.js`, the
+      // unclassified section).
+      (activeTags.has('unclassified') && !l.category)
     )
   },
 }))

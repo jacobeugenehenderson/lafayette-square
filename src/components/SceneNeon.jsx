@@ -27,7 +27,7 @@ import useListings from '../hooks/useListings'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import { getElevationRaw } from '../utils/elevation'
-import { CATEGORY_HEX } from '../tokens/categories'
+import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
 import { INSTANCE } from '../instance.js'
 import NeonBands from './NeonBands.jsx'
 import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
@@ -79,20 +79,38 @@ function _neonOn({ forceNeonOn, hours, now }) {
 //   A B C D E  →  residential   (Sage)
 //   F G H I    →  services      (Prussian Blue)
 //   J          →  community     (Terra Cotta)
-//   null/other →  residential   (safe default for the ~4% missing zoning)
+//
+// ⭐⭐ THIS TABLE IS DELIBERATELY NOT `STL_ZONING`, AND THAT IS A RULING (Jacob,
+// 2026-09-20), not drift. It maps zoning → NEON COLOUR; `categories.js#STL_ZONING`
+// maps zoning → SEARCH CATEGORY. `INTAKE-CATALOGUE §3.6` calls them *"two unrelated
+// systems"* and they are: F/G/H are commercial districts by ordinance, and reading
+// them as Prussian Blue "services" is a look decision about a night skyline, not a
+// claim about what the building is. ⛔ Do not unify these on your own judgement —
+// it was proposed and ruled against.
 const _NEON_ZONING_CATEGORY = {
   A: 'residential', B: 'residential', C: 'residential', D: 'residential', E: 'residential',
   F: 'services',    G: 'services',    H: 'services',    I: 'services',
   J: 'community',
 }
+// ⛔⛔ `|| 'residential'` USED TO LIVE ON THE NEXT LINE, under a comment calling it a
+// *"safe default for the ~4% missing zoning"*. It is not safe and the 4% is an LS
+// figure: on a town with no St. Louis zoning letter at all it is 100%, and the whole
+// map poured Sage — a confident, beautiful, entirely wrong classification of every
+// building in the neighbourhood, visible to the operator as a normal night.
+// ⭐ Unknown now returns null and is painted `UNKNOWN_HEX` — slate, in no category —
+// so the gap is visible on the surface the operator actually eye-gates.
 function defaultNeonCategoryForZoning(zoning) {
-  return _NEON_ZONING_CATEGORY[zoning] || 'residential'
+  return _NEON_ZONING_CATEGORY[zoning] || null
 }
 function defaultNeonCategoryForBuilding(building) {
+  // A town whose assessor does not speak the St. Louis alphabet has no readable letter
+  // here at all, and must not be read as though it did.
+  if (building.zoning_code_format && building.zoning_code_format !== 'stl-letter') return null
   return defaultNeonCategoryForZoning(building.zoning)
 }
 function defaultNeonHexForBuilding(building) {
-  return CATEGORY_HEX[defaultNeonCategoryForBuilding(building)]
+  const cat = defaultNeonCategoryForBuilding(building)
+  return cat ? CATEGORY_HEX[cat] : UNKNOWN_HEX
 }
 
 // ── neonLookup — buildingId → { hex, hours, category } for listings ──

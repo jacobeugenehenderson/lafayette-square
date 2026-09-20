@@ -1,7 +1,7 @@
 import { useMemo, useState, useEffect, useRef } from 'react'
 import { useFrame, useThree } from '@react-three/fiber'
 import * as THREE from 'three'
-import { CATEGORY_HEX } from '../tokens/categories'
+import { CATEGORY_HEX, UNKNOWN_HEX } from '../tokens/categories'
 import { neon as _neonUniforms } from '../preview/neonState.js'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { UNIFORMS as TERRAIN_UNIFORMS } from '../utils/terrainShader'
@@ -240,9 +240,13 @@ function buildTube(building, tubeRadius) {
   return { positions, normals, uvs, centroidYs, indices }
 }
 
+// ⛔ `|| '#ff66cc'` used to be the tail here — a debug magenta standing in for any
+// category the palette did not know, which reads on screen as a deliberate hot-pink
+// accent rather than as an error. `UNKNOWN_HEX` is the one colour that means "we do not
+// know", and an unknown category is exactly that, so it is the honest stand-in for both.
 function categoryColorVec(category) {
   const key = (category || '').replace(/^neon_/, '')
-  const c = new THREE.Color(CATEGORY_HEX[key] || '#ff66cc')
+  const c = new THREE.Color(CATEGORY_HEX[key] || UNKNOWN_HEX)
   return [c.r, c.g, c.b]
 }
 
@@ -406,7 +410,16 @@ export default function NeonBands({ places, forceOn = true, lookId }) {
     const positions = [], normals = [], uvs = [], colors = [], centroidYs = [], indices = []
     let baseVert = 0
     for (const p of places) {
-      if (!p.neon?.category) continue
+      // ⛔⛔ THIS USED TO BE `if (!p.neon?.category) continue`, WHICH CONFLATED TWO
+      // DIFFERENT THINGS — and only became reachable the day the zoning classifier
+      // stopped lying. "This building has no neon record" (skip it) and "this building
+      // has a neon record whose category we cannot determine" (paint it UNKNOWN) are not
+      // the same state. Collapsing them makes an unclassified town render as an EMPTY
+      // night rather than a slate one, which is a plausible-looking success — the
+      // operator sees a quiet neighbourhood, not a missing classification.
+      if (!p.neon) continue
+      // `category: null` falls through on purpose; categoryColorVec paints UNKNOWN_HEX.
+
       const tube = buildTube(p, r)
       if (!tube) continue
       const rgb = categoryColorVec(p.neon.category)

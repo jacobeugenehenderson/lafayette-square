@@ -1,0 +1,52 @@
+{
+  "_comment": "Where Lafayette Square's data wells are. Shape: cartograph/sources.js.",
+  "_ls_is_reference_consumer_one": "\u26d4 LS is the mould the kit was cast around, not the subject. This file exists so bake-content.js#loadParcels could stop hardcoding LS's filenames for every town in the world \u2014 it changes nothing about LS's own pour.",
+  "parcels": [
+    {
+      "id": "stl-city",
+      "jurisdiction": "city",
+      "file": "stl_parcels.json",
+      "attribution": "City of St. Louis Assessor \u2014 Assessor_Public_Parcels",
+      "endpoint": "https://maps8.stlouis-mo.gov/arcgis/rest/services/ASSESSOR/Assessor_Public_Parcels/MapServer/11/query",
+      "land_use_code_format": "stl-assessor-numeric",
+      "fields": {
+        "handle": "Handle",
+        "address": "SITEADDR",
+        "owner": "OwnerName",
+        "year_built": "FirstYearBuilt",
+        "building_sqft": "SQFT",
+        "land_area": "LandArea",
+        "appraised_value": "AprResImprove",
+        "land_use_code": "AsrLandUse1",
+        "zoning": "Zoning",
+        "units": "NbrOfUnits",
+        "num_buildings": "NbrOfBldgsRes",
+        "vacant": "VacantLot",
+        "historic_district": "NatHistDist"
+      },
+      "constants": {
+        "municipality": "St. Louis"
+      },
+      "provides": [
+        "handle",
+        "address",
+        "owner",
+        "year_built",
+        "building_sqft",
+        "land_area",
+        "appraised_value",
+        "land_use_code",
+        "zoning",
+        "units",
+        "num_buildings",
+        "vacant",
+        "historic_district"
+      ],
+      "absent": [],
+      "_note": "St. Louis City is an INDEPENDENT CITY \u2014 its assessor holds only City parcels. The historical acquisition is scripts/03-fetch-stl-parcels.py, which also folds AprComImprove into appraised_value, LastYearBuilt into year_built and NbrOfBldgsCom into num_buildings, and reads LocalHistDist/CertLocalHistDist. cartograph/fetch-parcels.mjs maps one column per field, so re-fetching through the button would lose those second operands. \u26d4 The existing raw/stl_parcels.json is the Python script's output and must NOT be re-fetched through the button until the field map grows a fallback-column form. Declared here so the FILENAME hardcode could die; the endpoint is recorded, not yet exercised on this town.",
+      "zoning_code_format": "stl-letter"
+    }
+  ],
+  "landUseCodes": null,
+  "_landUseCodes_why": "null = self-describing/not needed here. LS sits entirely in St. Louis City, whose AsrLandUse1 codes are read by the stl-assessor-numeric ranges in bake-content.js#classifyUse; the county-land-use-codes.csv decode table is a COUNTY artifact and LS has no county parcels. (LS also has no content/ dir at all \u2014 INTAKE-CATALOGUE \u00a73.5 T3 \u2014 so bake-content refuses it without --force.)"
+}

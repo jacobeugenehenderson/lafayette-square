@@ -298,27 +298,122 @@ export const CATEGORY_HEX = Object.fromEntries(
   Object.entries(CATEGORIES).map(([id, c]) => [id, c.hex])
 )
 
-/** Ordered array for SidePanel accordion rendering */
-export const CATEGORY_LIST = Object.entries(CATEGORIES).map(([id, c]) => ({
-  id,
-  title: c.label,
-  subtitle: c.subtitle,
-  color: c.tw,
-  sections: Object.entries(c.subcategories).map(([subId, s]) => ({
-    id: subId,
-    name: s.label,
-  })),
-}))
+/**
+ * ⭐⭐ THE COLOUR OF "WE DO NOT KNOW" — a desaturated slate that belongs to no category
+ * in the Victorian palette above, so it cannot be mistaken for one at a glance.
+ *
+ * ⛔ THIS IS `CLAUDE.md` LAYER 0 q2 MADE VISIBLE ON THE EYE-GATE SURFACE. The neon tube
+ * for a building whose zoning we cannot read used to be Sage — indistinguishable from a
+ * building we know to be residential — so a town with no St. Louis zoning letter poured
+ * as an entirely residential neighbourhood and looked right. The failure was silent in
+ * the one place the operator actually inspects. It is not silent now: an unclassified
+ * town reads as slate, on sight, before anyone opens a census.
+ *
+ * ⛔ Deliberately NOT a member of `CATEGORIES`. It is not a category and must never
+ * appear in the SidePanel accordion, a filter, or a search facet — it is the absence of
+ * one, and giving it a home in the taxonomy would make "unknown" a thing to browse.
+ */
+export const UNKNOWN_HEX = '#6B7280'
 
-/** Map zoning codes to residential subcategories for bare buildings */
-export const ZONING_TO_SUBCATEGORY = {
-  A: 'houses',
-  B: 'townhouses',
-  C: 'lofts',
-  D: 'commercial',
-  F: 'commercial',
-  G: 'commercial',
-  J: 'industrial',
+/** Ordered array for SidePanel accordion rendering */
+export const CATEGORY_LIST = [
+  ...Object.entries(CATEGORIES).map(([id, c]) => ({
+    id,
+    title: c.label,
+    subtitle: c.subtitle,
+    color: c.tw,
+    sections: Object.entries(c.subcategories).map(([subId, s]) => ({
+      id: subId,
+      name: s.label,
+    })),
+  })),
+  // ⛔⛔ THE UNCLASSIFIED SECTION EXISTS SO THAT KILLING A FALLBACK DID NOT CREATE A
+  // SILENT DROP IN ITS PLACE — and it very nearly did.
+  //
+  // When `category: ZONING_CAT[z] || 'residential'` died, buildings whose zoning we
+  // cannot read started carrying `category: null` instead of a confident "residential".
+  // That is correct in the data. But `useLandmarkFilter` matches a listing by
+  // `activeTags.has(l.subcategory) || activeTags.has(l.category)`, so a null category
+  // matches NO accordion tag: 73 of Hi-Pointe–DeMun's 1,281 buildings would have gone
+  // from wrongly-browsable to unbrowsable, with nothing said. Trading a loud wrong
+  // answer for a quiet missing one is not a fix; it is the same defect facing the other
+  // way (`CLAUDE.md` Layer 0 q2 — silence is the defect).
+  //
+  // ⛔ IT IS APPENDED TO THE LIST, NOT ADDED TO `CATEGORIES`, and that placement is the
+  // whole design. `CATEGORIES` feeds `CATEGORY_HEX`, which paints neon; an entry there
+  // would make "unknown" a colour in the Victorian palette and a category a business
+  // could be filed under. Here it is only what it actually is: a place in the index to
+  // find the buildings nobody has been able to classify yet.
+  {
+    id: 'unclassified',
+    title: 'Unclassified',
+    subtitle: 'Buildings whose use we have not established',
+    color: null,
+    sections: [],
+  },
+]
+
+/**
+ * ⭐⭐ ST. LOUIS CITY ZONING → the Society taxonomy. THE SINGLE HOME.
+ *
+ * ⛔⛔ THIS TABLE EXISTED IN FIVE PLACES AND NO TWO AGREED. `INTAKE-CATALOGUE §3.6 G3`
+ * counted four; the fifth was the dead `ZONING_TO_SUBCATEGORY` that used to sit right
+ * here, exported and imported by nobody. The copies split on `D`, on the five
+ * residential subcategories, and on the district LABELS.
+ *
+ * ⭐⭐⭐ AND WHEN IT WAS FINALLY CHECKED AGAINST THE AUTHORITY, THE MAJORITY WAS WRONG.
+ * St. Louis Revised Code **Title 26** divides the city into twelve districts:
+ *   A Single-Family Dwelling · B Two-Family Dwelling · C/D/E Multiple-Family Dwelling ·
+ *   F Neighborhood Commercial · G Local Commercial and Office · H Area Commercial ·
+ *   I Central Business · J Industrial · K Unrestricted · L Jefferson Memorial
+ * So:
+ *   · `D` is RESIDENTIAL (Multiple-Family), and both `useListings` and `bake-content`
+ *     called it commercial. `SceneNeon` — the copy this was dispatched to treat as the
+ *     odd one out — had `D: 'residential'` and was the only one right.
+ *   · `H` is COMMERCIAL (Area Commercial), and both called it residential.
+ *   · `E` is Multiple-Family, not single-family houses.
+ *   · `I`, `K` and `L` exist and only `SceneNeon` had ever heard of `I`.
+ * ⇒ The lesson is not "pick a winner". Four copies agreeing is not evidence; they were
+ *   copies OF EACH OTHER. The authority is the ordinance.
+ *
+ * ⛔⛔ AND IT IS ST. LOUIS'S ALPHABET, WHICH IS THE WHOLE TOWN-#2 PROBLEM. These letters
+ * mean nothing in Ohio, in Poland, or in the next town. A scene declares whether its
+ * assessor speaks this alphabet (`zoning_code_format: "stl-letter"` in its sources.json);
+ * a town that does not gets `null`, LOUDLY, and never the old `|| 'residential'` — which
+ * turned "we do not know this town's zoning" into "every building here is a house".
+ */
+export const STL_ZONING = {
+  A: { category: 'residential', subcategory: 'houses',        label: 'Single-Family Dwelling' },
+  B: { category: 'residential', subcategory: 'townhouses',    label: 'Two-Family Dwelling' },
+  C: { category: 'residential', subcategory: 'lofts',         label: 'Multiple-Family Dwelling' },
+  D: { category: 'residential', subcategory: 'lofts',         label: 'Multiple-Family Dwelling' },
+  E: { category: 'residential', subcategory: 'lofts',         label: 'Multiple-Family Dwelling' },
+  F: { category: 'commercial',  subcategory: 'storefronts',   label: 'Neighborhood Commercial' },
+  G: { category: 'commercial',  subcategory: 'retail',        label: 'Local Commercial and Office' },
+  H: { category: 'commercial',  subcategory: 'storefronts',   label: 'Area Commercial' },
+  I: { category: 'commercial',  subcategory: 'storefronts',   label: 'Central Business' },
+  J: { category: 'industrial',  subcategory: 'warehouses',    label: 'Industrial' },
+  K: { category: null,          subcategory: null,            label: 'Unrestricted' },
+  L: { category: 'community',   subcategory: 'organizations', label: 'Jefferson Memorial' },
+}
+
+/**
+ * A zoning string → `{ category, subcategory, label }`, or **null**.
+ *
+ * ⛔ NULL IS A RESULT, NOT A FAILURE TO RETURN ONE, and every caller must render it as
+ * "unknown" rather than substituting a default. `CLAUDE.md` Layer 0 q2: a fallback
+ * converts "we do not know" into a confident wrong answer, and on a town with no St.
+ * Louis zoning letter the old default made every building residential and every neon
+ * tube sage — a map that looks surveyed and is not.
+ *
+ * `format` is the scene's declared zoning vocabulary. Anything but `'stl-letter'`
+ * — including undeclared — is unknown, on purpose: a letter that happens to look like
+ * an STL district in some other town's scheme must not be read as one.
+ */
+export function classifyZoning(code, format = 'stl-letter') {
+  if (format !== 'stl-letter') return null
+  const z = String(code || '').replace(/[^A-Za-z]/g, '').charAt(0).toUpperCase()
+  return STL_ZONING[z] || null
 }
 
 export default CATEGORIES

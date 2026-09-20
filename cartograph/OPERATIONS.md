@@ -324,6 +324,32 @@ existed and none ran, while 116 were cited by name in the docs as the corpus's o
 **A blanket run over every check hits the production Supabase project.**
 `scratch/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
 teardown**, and has already left anonymous users on the live project that were never removed —
+- ### ⭐ **THE ASSESSOR BUTTON — giving a town its addresses** *(2026-09-20)*
+  A town's **address spine** is what the property atlas is built on: the Society Pages list bare
+  buildings **by address**, so a town without one opens nearly empty no matter how good its geometry
+  is. OSM `addr:*` carries it in much of the world; in the US the assessor is the well, and it also
+  carries what OSM never does — **valuation, zoning, year built, units**.
+  1. **Declare the well** — `data/<scene>/sources.json`. It names the endpoint, maps their column
+     names onto ours, and — the part that matters — lists the fields the well **does not have**.
+     The shape and a worked example are in `cartograph/sources.js`.
+  2. **Press the button** — `CARTOGRAPH_SCENE=<id> node cartograph/fetch-parcels.mjs`
+     (`--dry-run` first: it prints the parcel count and one sample row without writing).
+  3. **Bake** — `node cartograph/bake-content.js --scene=<id>`. It reports the match rate and, now,
+     how much of the town it could **not** classify or address.
+  - ⛔ **"No parcels" has THREE meanings and the kit keeps them apart.** *Undeclared* (no
+    `sources.json`) means **nobody has looked into it** and shouts; *declared-none* is an honest zero
+    with a written reason; *declared* is a real well. ⛔ A town that yields zero because nobody
+    searched must never print the same as a town that genuinely has no assessor.
+  - ⛔ **A WELL IS USUALLY PARTIAL, AND YOU MUST SAY SO.** Huron's (Ohio's statewide layer) gives
+    address and land use and **no valuation, zoning, year built or units** — those live behind a
+    per-parcel county lookup that is not an endpoint. Listing them as `absent` makes the roster emit
+    **null instead of zero**, so nobody downstream reads "we never had this" as "this is worth $0".
+  - ⛔ **A DEAD JOIN NOW FAILS THE BAKE.** Parcels loaded and not one building inside any of them is
+    a frame disagreement, not a sparse town — it refuses rather than baking a roster whose every
+    address is null. Fix it with `CARTOGRAPH_SCENE=<id> node cartograph/reproject-raw.js`.
+  - ⭐ **What you should see:** huron went from *"missing stl_parcels.json — skipping"* and **0 of
+    3,678** buildings matched, to **3,576 (97%)**, and from ~98% of the town having no address to
+    **3%**. Nothing about huron is in the code; the whole difference is one declaration.
 a recorded incident (`SECURITY.md`, the 2026-08-31 audit disclosure), not a hypothetical. Every
 invocation creates another.
 

@@ -1,0 +1,45 @@
+{
+  "_comment": "Where huron's data wells are. Shape + the three-way UNDECLARED / DECLARED-NONE / DECLARED distinction: cartograph/sources.js. Acquire with `CARTOGRAPH_SCENE=huron node cartograph/fetch-parcels.mjs`.",
+  "_jurisdiction": "Huron, Ohio is in ERIE COUNTY, Ohio \u2014 not Huron County (Erie split off in 1838), and not Huron City, Michigan, which is what a search for 'Huron historic district' returns. Confirmed against the geography record before anything was fetched.",
+  "_why_the_state_layer_and_not_the_county": "Erie County's own ArcGIS publishes Parcels, Parcels_FC, Parcel_Labels and TaxParcels in its portal catalogue (arcgis.eriecounty.oh.gov/arcgis1/rest/services/WMAS/*) and EVERY ONE of them answers `500: Service not started`. The county's per-parcel CAMA lookup (the CAMADataSite column below) is an HTML page keyed by parcel number \u2014 real data, but a per-parcel scrape of a county server, not an endpoint, so it is not a button and is not adopted. OGRIP's statewide layer is the Ohio state GIS body's own publication, is one endpoint for all 88 counties, and is therefore the KIT answer rather than the Huron answer.",
+  "parcels": [
+    {
+      "id": "ohio-statewide",
+      "jurisdiction": "county",
+      "file": "oh_parcels.json",
+      "attribution": "Ohio Statewide Parcels \u2014 OGRIP (Ohio Geographically Referenced Information Program)",
+      "endpoint": "https://services2.arcgis.com/MlJ0G8iWUyC7jAmu/arcgis/rest/services/OhioStatewidePacels_full_view/FeatureServer/0/query",
+      "where": "County = 'Erie'",
+      "land_use_code_format": "self-describing",
+      "_land_use_code_format_why": "Ohio's StateLUC arrives as `500: Res-Vacant Land` \u2014 the code AND its meaning in one string \u2014 so it is read by classifyUseFromText, not by St. Louis's numeric ranges. \u26d4 Declaring 'stl-assessor-numeric' here would strip it to 500 and land it in `400 <= n < 700 => commercial, confidence HIGH`: a residential vacant lot reported as a confident commercial building.",
+      "_zoning_code_format_why": "Deliberately ABSENT. Erie County's parcels carry no zoning column at all (see `absent`), and an undeclared zoning vocabulary means UNREADABLE, never 'assume St. Louis'. Huron's buildings therefore take their category from the land-use code, not from a zoning letter.",
+      "fields": {
+        "handle": "LocalParcelID",
+        "address": "SitusAddressAll",
+        "land_use_code": "StateLUC",
+        "land_area": "LandArea"
+      },
+      "provides": [
+        "handle",
+        "address",
+        "land_use_code",
+        "land_area"
+      ],
+      "absent": [
+        "owner",
+        "year_built",
+        "building_sqft",
+        "appraised_value",
+        "zoning",
+        "units",
+        "num_buildings",
+        "vacant",
+        "historic_district",
+        "municipality"
+      ],
+      "_absent_why": "The statewide layer carries parcel identity, situs address, the state land-use code and lot area \u2014 and nothing else. Valuation, year built, zoning and unit counts live in the county CAMA behind a per-parcel HTML lookup (CAMADataSite), which is not a bulk endpoint. These are declared ABSENT so the roster emits null rather than zero: `INTAKE-CATALOGUE \u00a73.2`'s correction says what an assessor UNIQUELY gives is valuation / zoning / year_built / units, and this well gives none of it. What it does give is the ADDRESS SPINE, which is what huron was actually missing \u2014 51 addr:street tags in OSM against 3,678 buildings."
+    }
+  ],
+  "landUseCodes": null,
+  "_landUseCodes_why": "null is a POSITIVE statement, not an omission \u2014 see cartograph/sources.js. Ohio's StateLUC arrives self-describing: `500: Res-Vacant Land`, `640: Exm-Municipality`. The code and its meaning are one string, so there is no decode table to acquire and a St-Louis-shaped county-land-use-codes.csv would be inventing a step that does not exist in this state."
+}

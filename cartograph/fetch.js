@@ -14,7 +14,11 @@
  *     the envelope; a ring that closes outside it is marked `clipped` and said
  *     aloud, never closed here (the stencil is stamped last).
  *
- * Outputs:  data/raw/osm.json
+ *   - TAGGED NODES, as point features in a top-level `pois[]` — a small business is
+ *     usually a single OSM node, not a footprint. They are a SIBLING of `ground`, never
+ *     a member of it: `ground.*` is polyline/ring material and its consumers say so.
+ *
+ * Outputs:  data/raw/osm.json   { bbox, ground{}, pois[], buildings[] }
  *
  * Usage:    node fetch.js
  */
@@ -266,10 +270,21 @@ out body;>;out skel qt;`
   // So members are indexed by id here and resolved against the relation's tags later.
   const waysById = new Map()
 
+  // ⭐⭐ A TAGGED NODE IS A FEATURE. `nodes[]` below is the GEOMETRY index — the
+  // lon/lat a way's vertices are resolved against — and for years it was the only
+  // thing a node could become, so `el.tags` was dropped on the floor here. A small
+  // business is usually a single OSM node, not a footprint, and `HEAVY_NODES` has
+  // carried `amenity` since forever: every one of them was discarded, in every town
+  // ever poured. This is not a hole opened by the shop/tourism/office/craft tags
+  // added earlier today — those only made it visible.
+  const taggedNodes = []
   function ingestElements(elements, target) {
     for (const el of elements) {
       if (el.type === 'node') {
         nodes[el.id] = [el.lon, el.lat]
+        // ⛔ Geometry nodes come back `out skel qt` — no tags — so this cannot
+        // pick up a way's vertices. Only nodes matched by `nodeTags` carry a body.
+        if (el.tags) taggedNodes.push(el)
       } else if (el.type === 'way') {
         waysById.set(el.id, el)
         if (el.tags) target.push(el)
@@ -483,6 +498,48 @@ out body;>;out skel qt;`
 
   const buildings = buildingWays.map(wayToFeature).filter(Boolean)
 
+  // ⭐⭐⭐ POINT FEATURES GET THEIR OWN TOP-LEVEL BUCKET. ⛔ THEY MAY NOT ENTER `ground.*`,
+  // and this is the deliberate decision the shape forces, not a filing preference:
+  //
+  //   · `wayToFeature` is a WAY function and `:304`'s `coords.length < 2` is CORRECT
+  //     there — a one-vertex way is a broken way. A node is not a degenerate way, so
+  //     it does not go through that door.
+  //   · `snap.js#snapAll` drops any ground feature with `coords.length < 2` (snap.js:46).
+  //     A node filed under `ground.*` would be discarded a SECOND time, silently, one
+  //     stage later — the same defect wearing a different file's name.
+  //   · `LIGHT_NODES = ['highway']`, so a `highway=traffic_signals` node buckets into
+  //     `ground.highway` under `tagPriority` and reaches `skeleton.js:1587`,
+  //     `seed-centerlines.js:38`, `survey.js:44`, `serve.js:184` and
+  //     `extend-centerlines.js:41` — every one of them a POLYLINE consumer that reads
+  //     `coords` as a run. Handing them a point is how you get a street of length zero.
+  //
+  // ⛔ `isClosed` IS ABSENT, NOT `false`. A point has no ring, so the question does not
+  // apply to it; `false` would assert "this is an open path", which is a different and
+  // untrue claim. `osmType: 'node'` is the field that says which shape you are holding,
+  // and it is on every record so a reader never has to infer it from `coords.length`.
+  // ⭐ `category` is stamped here by the SAME `tagPriority` order that buckets a way, so
+  // a consumer can filter points by bucket without re-deriving the precedence rule.
+  const pois = []
+  for (const el of taggedNodes) {
+    const pt = nodes[el.id]
+    if (!pt) continue
+    const [x, z] = wgs84ToLocal(pt[0], pt[1])
+    let category = 'other'
+    for (const tag of tagPriority) { if (el.tags[tag]) { category = tag; break } }
+    pois.push({
+      osmId: el.id,
+      osmType: 'node',
+      category,
+      tags: el.tags,
+      coords: [{
+        lon: Math.round(pt[0] * 1e7) / 1e7,
+        lat: Math.round(pt[1] * 1e7) / 1e7,
+        x: Math.round(x * 100) / 100,
+        z: Math.round(z * 100) / 100,
+      }],
+    })
+  }
+
   // Summary
   console.log('\n  Ground features by category:')
   let total = 0
@@ -492,6 +549,23 @@ out body;>;out skel qt;`
   }
   console.log(`  Total ground: ${total}`)
   console.log(`  Buildings: ${buildings.length}`)
+
+  // ⭐ POINT FEATURES, BY BUCKET AND BY NAMED-NESS. Named ≫ unnamed is the universal,
+  // language-independent prominence signal (`INTAKE-CATALOGUE §4.1`) and the named count
+  // is what `bake-content#loadOsmPois` can actually use, so it is printed beside the
+  // raw one — a bucket with points and no names is a real and different state.
+  const poiNamed = pois.filter(f => f.tags?.name).length
+  console.log(`  POI points: ${pois.length} (${poiNamed} named)`)
+  if (pois.length) {
+    const byCat = {}
+    for (const f of pois) {
+      const c = byCat[f.category] || (byCat[f.category] = { n: 0, named: 0 })
+      c.n++; if (f.tags?.name) c.named++
+    }
+    for (const [cat, c] of Object.entries(byCat).sort((a, b) => b[1].n - a[1].n)) {
+      console.log(`    ${cat}: ${c.n} (${c.named} named)`)
+    }
+  }
 
   // Write output
   const outPath = join(RAW_DIR, 'osm.json')
@@ -520,18 +594,36 @@ out body;>;out skel qt;`
     // the same flag that made the code it guards unreachable in testing. A safety
     // valve that also shortens the path under test is not a test.
     const merged = mergeGround(prior.ground, ground)
+    // ⛔ POINTS AUGMENT TOO, and for the same reason the ground does: the light pass
+    // fetched `highway` nodes over the SOFT envelope and the heavy pass fetches the POI
+    // tags over the disc square, so writing either whole discards the other's nodes.
+    // ⭐ Keyed on `osmId`, which is the field these records actually carry. ⚠️ Note that
+    // `mergeGround` above keys on `f.id` — a field NO feature in this file emits
+    // (`wayToFeature` writes `osmId`) — so its dedupe has never matched and every
+    // merged ground category is prior-then-incoming with duplicates kept. Out of this
+    // brief's bounds; said aloud rather than absorbed.
+    const poiById = new Map()
+    for (const f of (prior.pois || [])) poiById.set(f.osmId, f)
+    const poisBefore = poiById.size
+    let poisAdded = 0
+    for (const f of pois) { if (!poiById.has(f.osmId)) poisAdded++; poiById.set(f.osmId, f) }
+    const mergedPois = [...poiById.values()]
     output = {
       ...prior,
       bbox: prior.bbox,
       heavyBbox: { ...bboxObj },
       ground: merged.ground,
+      pois: mergedPois,
       nodeCount: Math.max(prior.nodeCount || 0, Object.keys(nodes).length),
     }
     console.log(`  merged: ${merged.before} light + ${merged.added} new heavy = ${merged.after} ground features across ${Object.keys(merged.ground).length} categories; ${output.buildings?.length || 0} buildings preserved`)
+    console.log(`  merged pois: ${poisBefore} light + ${poisAdded} new heavy = ${mergedPois.length} point features`)
   } else {
     output = {
       bbox: { ...bboxObj },
       ground,
+      // ⭐ A SIBLING OF `ground`, NOT A MEMBER OF IT. See the producer above for why.
+      pois,
       buildings,
       nodeCount: Object.keys(nodes).length,
     }

@@ -4,7 +4,7 @@ import { indexMenuItems, lineKey, mintItemId } from '../lib/menuIdentity.js'
 import { itemOrderability, resolveCart, BLOCKED, BLOCKED_COPY } from '../lib/commerce.js'
 import useCommerce, { useListingCommerce } from '../hooks/useCommerce'
 import { writeCommerceItems, writeCommercePlace } from '../lib/commerceApi'
-import { CATEGORY_LABELS, SUBCATEGORY_LABELS } from '../tokens/categories'
+import { CATEGORY_LABELS, SUBCATEGORY_LABELS, classifyZoning } from '../tokens/categories'
 import { TAGS_BY_GROUP, TAG_BY_ID, SUBCATEGORY_TAG_IDS, primaryTagToCategory } from '../tokens/tags'
 import useGuardianStatus from '../hooks/useGuardianStatus'
 import useListings from '../hooks/useListings'
@@ -46,18 +46,10 @@ const DAY_LABELS = {
   thursday: 'Thu', friday: 'Fri', saturday: 'Sat'
 }
 
-const ZONING_LABELS = {
-  A: 'Single-Family Residential',
-  B: 'Two-Family Residential',
-  C: 'Multi-Family Residential',
-  D: 'Neighborhood Commercial',
-  E: 'Multiple-Family Dwelling',
-  F: 'Neighborhood Commercial',
-  G: 'Local Commercial & Office',
-  H: 'Area Commercial',
-  J: 'Industrial',
-  K: 'Unrestricted',
-}
+// ⛔ The local ZONING_LABELS table is gone — it was one of five disagreeing copies of
+// the St. Louis zoning alphabet. Home: `src/tokens/categories.js#STL_ZONING`, checked
+// against Title 26. This copy was the closest of the five and was still wrong about
+// `D` (Multiple-Family Dwelling, not Neighborhood Commercial) and missing `I` and `L`.
 
 function formatTime(time) {
   if (!time || typeof time !== 'string' || time.indexOf(':') === -1) return null
@@ -1450,7 +1442,7 @@ function ArchitectureTab({ building }) {
             <DetailRow label="Lot Size">{building.lot_acres} acres</DetailRow>
           )}
           {building.zoning && (
-            <DetailRow label="Zoning">{building.zoning}{ZONING_LABELS[building.zoning] ? ` \u2013 ${ZONING_LABELS[building.zoning]}` : ''}</DetailRow>
+            <DetailRow label="Zoning">{building.zoning}{classifyZoning(building.zoning, building.zoning_code_format || 'stl-letter')?.label ? ` \u2013 ${classifyZoning(building.zoning, building.zoning_code_format || 'stl-letter').label}` : ''}</DetailRow>
           )}
           {building.size && (
             <>

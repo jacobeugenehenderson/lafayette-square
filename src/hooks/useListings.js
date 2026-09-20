@@ -3,6 +3,7 @@ import { loadInstanceData } from '../data/loadInstanceData.js'
 import { INSTANCE } from '../instance.js'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
 import { ensureMenuIds } from '../lib/menuIdentity.js'
+import { classifyZoning } from '../tokens/categories.js'
 
 /**
  * Listing data store.
@@ -42,36 +43,51 @@ export function normalizeListingMenu(l) {
   return menu === l.menu ? l : { ...l, menu }
 }
 
-// Generate synthetic listings for bare buildings using zoning codes
-const ZONING_CAT = { A: 'residential', B: 'residential', C: 'residential', D: 'commercial', E: 'residential', F: 'commercial', G: 'commercial', H: 'residential', J: 'industrial' }
-const ZONING_SUB = { A: 'unnamed', B: 'unnamed', C: 'unnamed', D: 'storefronts', E: 'unnamed', F: 'storefronts', G: 'retail', H: 'unnamed', J: 'warehouses' }
-const ZONING_LABELS = {
-  A: 'Single-Family Residential', B: 'Two-Family Residential', C: 'Multi-Family Residential',
-  D: 'Commercial / Mixed Use', E: 'Residential', F: 'Neighborhood Commercial',
-  G: 'Local Commercial / Retail', H: 'Residential', J: 'Industrial',
-}
+// Generate synthetic listings for bare buildings using zoning codes.
+// ⛔ The three local tables that stood here — ZONING_CAT, ZONING_SUB, ZONING_LABELS —
+// are gone. They were one of five disagreeing copies; the home is
+// `src/tokens/categories.js`, which was also checked against St. Louis Title 26 (the
+// majority of the copies were wrong about `D` and `H`).
 let _landmarkBids = new Set()
 let _landmarkAddrs = new Set()
 function _buildBareBuildingListings(buildings) {
+  // ⛔⛔ `b.address &&` WAS A SILENT DROP, AND IT WAS MOST OF THE TOWN. A building with
+  // no address vanished from the Society Pages with nothing said — on a town whose
+  // assessor has not been wired up that is very nearly the whole roster (huron: ~3,627
+  // of 3,678 before its parcel well was declared). The building still cannot be listed
+  // without something to call it, but the count is now reported rather than swallowed,
+  // so "this town has no address spine" is visible instead of looking like a small town.
+  const addressless = buildings.filter(b => !b.address).length
+  if (addressless) {
+    console.warn(`[listings] ${addressless} of ${buildings.length} buildings have NO ADDRESS and cannot appear in the ` +
+      `Society Pages. That is an intake gap, not an empty town — check this scene's sources.json parcel well.`)
+  }
   return buildings
     .filter(b => b.address && !_landmarkBids.has(b.id) && !_landmarkAddrs.has(b.address.toLowerCase().replace(/\s+/g, ' ').trim()))
     .map(b => {
-      const z = (b.zoning || '').replace(/[^A-Z]/g, '').charAt(0)
       const arch = b.architecture || {}
       const style = arch.style || null
       const yearBuilt = b.year_built || arch.year_built || null
       const stories = b.stories || null
       const historicStatus = b.historic_status || null
       const sqft = b.building_sqft || null
-      const zoningLabel = ZONING_LABELS[z] || null
+      // ⛔⛔ `ZONING_CAT[z] || 'residential'` WAS `CLAUDE.md` LAYER 0 q2 VERBATIM: a town
+      // with no St. Louis zoning letter got every building filed as residential, with no
+      // way for anyone downstream to tell a KNOWN residential building from an unknown
+      // one. `classifyZoning` returns null for an unreadable code and null travels.
+      // ⭐ The roster's own `category`, which the bake now derives from the parcel's
+      // structural USE when zoning is unreadable, is preferred when present — it is a
+      // real signal from a non-St-Louis source rather than a re-guess from the letter.
+      const zoned = classifyZoning(b.zoning, b.zoning_code_format || 'stl-letter')
+      const zoningLabel = zoned ? zoned.label : null
       return {
         id: b.id,
         name: b.name || b.address,
         address: b.address,
         building_id: b.id,
-        category: ZONING_CAT[z] || 'residential',
-        subcategory: ZONING_SUB[z] || 'unnamed',
-        zoning: z,
+        category: b.category || (zoned && zoned.category) || null,
+        subcategory: b.subcategory || (zoned && zoned.subcategory) || null,
+        zoning: b.zoning || null,
         zoning_label: zoningLabel,
         year_built: yearBuilt,
         stories,

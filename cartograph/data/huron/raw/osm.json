@@ -297608,6 +297608,8831 @@
       }
     ]
   },
+  "pois": [
+    {
+      "osmId": 197207032,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "147"
+      },
+      "coords": [
+        {
+          "lon": -82.5249895,
+          "lat": 41.3682441,
+          "x": 3127.45,
+          "z": 2966.57
+        }
+      ]
+    },
+    {
+      "osmId": 197211002,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5800554,
+          "lat": 41.3978691,
+          "x": -1471.04,
+          "z": -321.8
+        }
+      ]
+    },
+    {
+      "osmId": 197212419,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "145"
+      },
+      "coords": [
+        {
+          "lon": -82.565164,
+          "lat": 41.3703659,
+          "x": -227.48,
+          "z": 2731.06
+        }
+      ]
+    },
+    {
+      "osmId": 197213040,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "142"
+      },
+      "coords": [
+        {
+          "lon": -82.5879389,
+          "lat": 41.4038162,
+          "x": -2129.39,
+          "z": -981.93
+        }
+      ]
+    },
+    {
+      "osmId": 197213057,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals": "signal",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5913209,
+          "lat": 41.4058727,
+          "x": -2411.82,
+          "z": -1210.2
+        }
+      ]
+    },
+    {
+      "osmId": 197213353,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.6101216,
+          "lat": 41.3882741,
+          "x": -3981.84,
+          "z": 743.24
+        }
+      ]
+    },
+    {
+      "osmId": 197215547,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "147"
+      },
+      "coords": [
+        {
+          "lon": -82.5170123,
+          "lat": 41.3677008,
+          "x": 3793.62,
+          "z": 3026.88
+        }
+      ]
+    },
+    {
+      "osmId": 197219316,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.611431,
+          "lat": 41.4159763,
+          "x": -4091.19,
+          "z": -2331.7
+        }
+      ]
+    },
+    {
+      "osmId": 197219329,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.6113379,
+          "lat": 41.4132882,
+          "x": -4083.41,
+          "z": -2033.32
+        }
+      ]
+    },
+    {
+      "osmId": 197220172,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals": "signal",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5912734,
+          "lat": 41.4032211,
+          "x": -2407.85,
+          "z": -915.87
+        }
+      ]
+    },
+    {
+      "osmId": 197220188,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "142"
+      },
+      "coords": [
+        {
+          "lon": -82.5947963,
+          "lat": 41.4051074,
+          "x": -2702.04,
+          "z": -1125.25
+        }
+      ]
+    },
+    {
+      "osmId": 197224068,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "ref": "145"
+      },
+      "coords": [
+        {
+          "lon": -82.5717911,
+          "lat": 41.3732268,
+          "x": -780.9,
+          "z": 2413.5
+        }
+      ]
+    },
+    {
+      "osmId": 197230842,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5577913,
+          "lat": 41.3914593,
+          "x": 388.21,
+          "z": 389.69
+        }
+      ]
+    },
+    {
+      "osmId": 197230847,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5597947,
+          "lat": 41.3925329,
+          "x": 220.91,
+          "z": 270.52
+        }
+      ]
+    },
+    {
+      "osmId": 197230894,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "motorway_junction",
+        "old_ref": "143",
+        "ref": "143"
+      },
+      "coords": [
+        {
+          "lon": -82.5808703,
+          "lat": 41.4009584,
+          "x": -1539.1,
+          "z": -664.71
+        }
+      ]
+    },
+    {
+      "osmId": 197230947,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5600069,
+          "lat": 41.3923795,
+          "x": 203.19,
+          "z": 287.55
+        }
+      ]
+    },
+    {
+      "osmId": 197230952,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5581035,
+          "lat": 41.3911745,
+          "x": 362.14,
+          "z": 421.3
+        }
+      ]
+    },
+    {
+      "osmId": 197230954,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5570699,
+          "lat": 41.3905675,
+          "x": 448.45,
+          "z": 488.68
+        }
+      ]
+    },
+    {
+      "osmId": 197234556,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "traffic_signals",
+        "traffic_signals": "signal",
+        "traffic_signals:direction": "both"
+      },
+      "coords": [
+        {
+          "lon": -82.5913968,
+          "lat": 41.4077723,
+          "x": -2418.15,
+          "z": -1421.06
+        }
+      ]
+    },
+    {
+      "osmId": 197235302,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "both",
+        "highway": "stop",
+        "stop": "all"
+      },
+      "coords": [
+        {
+          "lon": -82.5100071,
+          "lat": 41.3649641,
+          "x": 4378.62,
+          "z": 3330.65
+        }
+      ]
+    },
+    {
+      "osmId": 197244942,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "both",
+        "highway": "stop",
+        "stop": "all"
+      },
+      "coords": [
+        {
+          "lon": -82.5367883,
+          "lat": 41.357769,
+          "x": 2142.15,
+          "z": 4129.31
+        }
+      ]
+    },
+    {
+      "osmId": 197253081,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "both",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5907281,
+          "lat": 41.3891855,
+          "x": -2362.31,
+          "z": 642.08
+        }
+      ]
+    },
+    {
+      "osmId": 357422254,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "school",
+        "ele": "180",
+        "gnis:feature_id": "1049968",
+        "name": "Saint Peter School"
+      },
+      "coords": [
+        {
+          "lon": -82.5567683,
+          "lat": 41.3913365,
+          "x": 473.64,
+          "z": 403.32
+        }
+      ]
+    },
+    {
+      "osmId": 357470635,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "place_of_worship",
+        "ele": "178",
+        "gnis:feature_id": "1069110",
+        "name": "Christ Episcopal Church",
+        "religion": "christian",
+        "wikidata": "Q5108865"
+      },
+      "coords": [
+        {
+          "lon": -82.5551732,
+          "lat": 41.3978266,
+          "x": 606.84,
+          "z": -317.08
+        }
+      ]
+    },
+    {
+      "osmId": 357515907,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "place_of_worship",
+        "denomination": "baptist",
+        "ele": "180",
+        "gnis:feature_id": "1807315",
+        "name": "First Baptist Church",
+        "religion": "christian"
+      },
+      "coords": [
+        {
+          "lon": -82.5358639,
+          "lat": 41.3873695,
+          "x": 2219.34,
+          "z": 843.66
+        }
+      ]
+    },
+    {
+      "osmId": 357515917,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "place_of_worship",
+        "denomination": "catholic",
+        "ele": "181",
+        "gnis:feature_id": "1807321",
+        "name": "Saint Peter Catholic Church",
+        "religion": "christian"
+      },
+      "coords": [
+        {
+          "lon": -82.5570915,
+          "lat": 41.3915323,
+          "x": 446.65,
+          "z": 381.58
+        }
+      ]
+    },
+    {
+      "osmId": 357515927,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "place_of_worship",
+        "denomination": "lutheran",
+        "ele": "180",
+        "gnis:feature_id": "1807324",
+        "name": "Zion Evangelical Lutheran Church",
+        "religion": "christian"
+      },
+      "coords": [
+        {
+          "lon": -82.5621182,
+          "lat": 41.3867159,
+          "x": 26.87,
+          "z": 916.21
+        }
+      ]
+    },
+    {
+      "osmId": 368961868,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "addr:state": "OH",
+        "ele": "174",
+        "gnis:feature_id": "1071163",
+        "name": "Harbor North",
+        "natural": "bay"
+      },
+      "coords": [
+        {
+          "lon": -82.5546177,
+          "lat": 41.3914379,
+          "x": 653.23,
+          "z": 392.06
+        }
+      ]
+    },
+    {
+      "osmId": 1440311458,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "name": "Cornell's",
+        "shop": "supermarket"
+      },
+      "coords": [
+        {
+          "lon": -82.5439126,
+          "lat": 41.3881092,
+          "x": 1547.2,
+          "z": 761.55
+        }
+      ]
+    },
+    {
+      "osmId": 2640728795,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5198213,
+          "lat": 41.3821968,
+          "x": 3559.05,
+          "z": 1417.83
+        }
+      ]
+    },
+    {
+      "osmId": 2640729154,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5229906,
+          "lat": 41.381664,
+          "x": 3294.38,
+          "z": 1476.97
+        }
+      ]
+    },
+    {
+      "osmId": 3204931470,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "italian",
+        "name": "Marconi's"
+      },
+      "coords": [
+        {
+          "lon": -82.5426214,
+          "lat": 41.3894923,
+          "x": 1655.03,
+          "z": 608.02
+        }
+      ]
+    },
+    {
+      "osmId": 3204931539,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "american;breakfast;burger;sandwich;fries",
+        "name": "Berardi's"
+      },
+      "coords": [
+        {
+          "lon": -82.5459151,
+          "lat": 41.3888564,
+          "x": 1379.98,
+          "z": 678.61
+        }
+      ]
+    },
+    {
+      "osmId": 3534070893,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fire_station",
+        "name": "Huron Fire Department"
+      },
+      "coords": [
+        {
+          "lon": -82.5572327,
+          "lat": 41.3924928,
+          "x": 434.86,
+          "z": 274.97
+        }
+      ]
+    },
+    {
+      "osmId": 3534070894,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "police",
+        "name": "Huron Police Department"
+      },
+      "coords": [
+        {
+          "lon": -82.5575573,
+          "lat": 41.3924163,
+          "x": 407.75,
+          "z": 283.46
+        }
+      ]
+    },
+    {
+      "osmId": 3534072270,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "courthouse",
+        "name": "Huron Municipal Court House"
+      },
+      "coords": [
+        {
+          "lon": -82.5577577,
+          "lat": 41.3923506,
+          "x": 391.01,
+          "z": 290.75
+        }
+      ]
+    },
+    {
+      "osmId": 3534072758,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "townhall",
+        "name": "Huron City Hall"
+      },
+      "coords": [
+        {
+          "lon": -82.5576256,
+          "lat": 41.3922866,
+          "x": 402.05,
+          "z": 297.86
+        }
+      ]
+    },
+    {
+      "osmId": 3534177765,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "addr:city": "Huron",
+        "addr:housenumber": "402",
+        "addr:postcode": "44839-1750",
+        "addr:state": "OH",
+        "addr:street": "Cleveland Road East",
+        "brand": "Ace Hardware",
+        "brand:wikidata": "Q4672981",
+        "name": "Ace Hardware",
+        "opening_hours": "Mo-Fr 08:00-18:00; Sa 08:00-17:00; Su 11:00-17:00",
+        "phone": "+1 419-433-4797",
+        "ref": "17674",
+        "shop": "doityourself"
+      },
+      "coords": [
+        {
+          "lon": -82.5446196,
+          "lat": 41.3882482,
+          "x": 1488.16,
+          "z": 746.12
+        }
+      ]
+    },
+    {
+      "osmId": 3534183869,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "shop": "vacant"
+      },
+      "coords": [
+        {
+          "lon": -82.5426597,
+          "lat": 41.3880067,
+          "x": 1651.83,
+          "z": 772.93
+        }
+      ]
+    },
+    {
+      "osmId": 3534195876,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "name": "Discount Drugmart",
+        "shop": "convenience"
+      },
+      "coords": [
+        {
+          "lon": -82.5432126,
+          "lat": 41.3879944,
+          "x": 1605.66,
+          "z": 774.29
+        }
+      ]
+    },
+    {
+      "osmId": 3534220617,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5524906,
+          "lat": 41.3905956,
+          "x": 830.86,
+          "z": 485.56
+        }
+      ]
+    },
+    {
+      "osmId": 3534500974,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "name": "Al's Firelands Barbershop",
+        "shop": "beauty"
+      },
+      "coords": [
+        {
+          "lon": -82.5567137,
+          "lat": 41.3902728,
+          "x": 478.2,
+          "z": 521.39
+        }
+      ]
+    },
+    {
+      "osmId": 3534500979,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "name": "Lighthouse Realty",
+        "office": "estate_agent"
+      },
+      "coords": [
+        {
+          "lon": -82.5562623,
+          "lat": 41.3900289,
+          "x": 515.89,
+          "z": 548.46
+        }
+      ]
+    },
+    {
+      "osmId": 3534503637,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fast_food",
+        "cuisine": "ice_cream",
+        "name": "Pied Piper"
+      },
+      "coords": [
+        {
+          "lon": -82.5570402,
+          "lat": 41.3903907,
+          "x": 450.93,
+          "z": 508.3
+        }
+      ]
+    },
+    {
+      "osmId": 3534514030,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "cafe",
+        "name": "Donut Shop"
+      },
+      "coords": [
+        {
+          "lon": -82.5583661,
+          "lat": 41.3916027,
+          "x": 340.21,
+          "z": 373.77
+        }
+      ]
+    },
+    {
+      "osmId": 3534514035,
+      "osmType": "node",
+      "category": "craft",
+      "tags": {
+        "craft": "caterer",
+        "name": "Mesenburgs Catering"
+      },
+      "coords": [
+        {
+          "lon": -82.5584375,
+          "lat": 41.3916498,
+          "x": 334.24,
+          "z": 368.54
+        }
+      ]
+    },
+    {
+      "osmId": 3534514040,
+      "osmType": "node",
+      "category": "craft",
+      "tags": {
+        "craft": "caterer",
+        "name": "Mesenburgs Catering"
+      },
+      "coords": [
+        {
+          "lon": -82.5587201,
+          "lat": 41.3917645,
+          "x": 310.65,
+          "z": 355.81
+        }
+      ]
+    },
+    {
+      "osmId": 3534516474,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fuel",
+        "brand": "Shell",
+        "brand:wikidata": "Q154950",
+        "name": "Shell"
+      },
+      "coords": [
+        {
+          "lon": -82.557577,
+          "lat": 41.3910786,
+          "x": 406.1,
+          "z": 431.95
+        }
+      ]
+    },
+    {
+      "osmId": 3534516479,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "addr:city": "Huron",
+        "addr:housenumber": "500",
+        "addr:postcode": "44839",
+        "addr:state": "OH",
+        "addr:street": "Main Street",
+        "amenity": "fast_food",
+        "brand": "Domino's",
+        "brand:wikidata": "Q839466",
+        "cuisine": "pizza",
+        "name": "Domino's",
+        "opening_hours": "Mo-Th 10:30-23:00; Fr-Sa 10:30-24:00; Su 10:30-23:00",
+        "phone": "+1 419-433-5494",
+        "ref": "2265",
+        "takeaway": "yes",
+        "website": "https://pizza.dominos.com/ohio/huron/500-main-street"
+      },
+      "coords": [
+        {
+          "lon": -82.5572751,
+          "lat": 41.3909584,
+          "x": 431.32,
+          "z": 445.29
+        }
+      ]
+    },
+    {
+      "osmId": 3534516480,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "name": "Mickey Mart",
+        "shop": "convenience"
+      },
+      "coords": [
+        {
+          "lon": -82.5573305,
+          "lat": 41.3909029,
+          "x": 426.69,
+          "z": 451.45
+        }
+      ]
+    },
+    {
+      "osmId": 3534518227,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bank",
+        "name": "Civitas Bank"
+      },
+      "coords": [
+        {
+          "lon": -82.5442398,
+          "lat": 41.3889577,
+          "x": 1519.88,
+          "z": 667.37
+        }
+      ]
+    },
+    {
+      "osmId": 3534530466,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "pizza",
+        "name": "Jim's Pizza Box"
+      },
+      "coords": [
+        {
+          "lon": -82.5610429,
+          "lat": 41.3890629,
+          "x": 116.67,
+          "z": 655.69
+        }
+      ]
+    },
+    {
+      "osmId": 3534530475,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "pizza",
+        "name": "Huron Pizza"
+      },
+      "coords": [
+        {
+          "lon": -82.5602296,
+          "lat": 41.3888803,
+          "x": 184.59,
+          "z": 675.96
+        }
+      ]
+    },
+    {
+      "osmId": 3537304723,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "name": "Huron City School District Office",
+        "office": "government"
+      },
+      "coords": [
+        {
+          "lon": -82.539691,
+          "lat": 41.3874105,
+          "x": 1899.75,
+          "z": 839.1
+        }
+      ]
+    },
+    {
+      "osmId": 3583761764,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5637774,
+          "lat": 41.4011029,
+          "x": -111.68,
+          "z": -680.75
+        }
+      ]
+    },
+    {
+      "osmId": 3593590708,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "kindergarten",
+        "education": "kindergarten",
+        "name": "Little Wonders Preschool",
+        "preschool": "yes"
+      },
+      "coords": [
+        {
+          "lon": -82.555409,
+          "lat": 41.3954774,
+          "x": 587.15,
+          "z": -56.32
+        }
+      ]
+    },
+    {
+      "osmId": 3754996994,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "water_tower"
+      },
+      "coords": [
+        {
+          "lon": -82.5808974,
+          "lat": 41.4004117,
+          "x": -1541.36,
+          "z": -604.03
+        }
+      ]
+    },
+    {
+      "osmId": 3754996995,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "monopole",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5797367,
+          "lat": 41.3988002,
+          "x": -1444.43,
+          "z": -425.15
+        }
+      ]
+    },
+    {
+      "osmId": 3754996996,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "monopole",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5871043,
+          "lat": 41.4004048,
+          "x": -2059.69,
+          "z": -603.26
+        }
+      ]
+    },
+    {
+      "osmId": 3780858861,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "tower",
+        "name": "Light 7",
+        "operator": "U.S. Coast Guard",
+        "seamark:beacon_lateral:category": "port",
+        "seamark:beacon_lateral:colour": "green",
+        "seamark:beacon_lateral:shape": "pile",
+        "seamark:daymark:colour": "green;green",
+        "seamark:daymark:colour_pattern": "border",
+        "seamark:daymark:shape": "square",
+        "seamark:light:character": "Fl",
+        "seamark:light:colour": "green",
+        "seamark:light:exhibition": "night",
+        "seamark:light:height": "7.6",
+        "seamark:light:period": "2.5",
+        "seamark:light:range": "4.0",
+        "seamark:name": "Huron Harbor LIGHT 7",
+        "seamark:reference": "LLNR 4510",
+        "seamark:status": "permanent",
+        "seamark:type": "beacon_lateral",
+        "source": "U.S. Coast Guard, Light List vol. VII, Great Lakes, COMDTPUB P16502.7, 2024",
+        "tower:type": "navigation"
+      },
+      "coords": [
+        {
+          "lon": -82.5481304,
+          "lat": 41.3985218,
+          "x": 1194.98,
+          "z": -394.25
+        }
+      ]
+    },
+    {
+      "osmId": 3780858862,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "tower",
+        "name": "Light 8",
+        "operator": "U.S. Coast Guard",
+        "seamark:beacon_lateral:category": "starboard",
+        "seamark:beacon_lateral:colour": "red",
+        "seamark:beacon_lateral:shape": "stake",
+        "seamark:daymark:colour": "red;red",
+        "seamark:daymark:colour_pattern": "border",
+        "seamark:daymark:shape": "triangle, point up",
+        "seamark:light:character": "Fl",
+        "seamark:light:colour": "red",
+        "seamark:light:exhibition": "night",
+        "seamark:light:height": "8.2",
+        "seamark:light:period": "4.0",
+        "seamark:light:range": "5.0",
+        "seamark:name": "Huron Harbor LIGHT 8",
+        "seamark:reference": "LLNR 4505",
+        "seamark:status": "permanent",
+        "seamark:type": "beacon_lateral",
+        "source": "U.S. Coast Guard, Light List vol. VII, Great Lakes, COMDTPUB P16502.7, 2024",
+        "tower:type": "navigation"
+      },
+      "coords": [
+        {
+          "lon": -82.5488129,
+          "lat": 41.3992306,
+          "x": 1137.99,
+          "z": -472.93
+        }
+      ]
+    },
+    {
+      "osmId": 3780858863,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "tower",
+        "name": "Light 5",
+        "operator": "U.S. Coast Guard",
+        "seamark:beacon_lateral:category": "port",
+        "seamark:beacon_lateral:colour": "green",
+        "seamark:beacon_lateral:shape": "stake",
+        "seamark:daymark:colour": "green;green",
+        "seamark:daymark:colour_pattern": "border",
+        "seamark:daymark:shape": "square",
+        "seamark:light:character": "Fl",
+        "seamark:light:colour": "green",
+        "seamark:light:exhibition": "night",
+        "seamark:light:height": "7.6",
+        "seamark:light:period": "4.0",
+        "seamark:light:range": "5.0",
+        "seamark:name": "Huron Harbor LIGHT 5",
+        "seamark:reference": "LLNR 4500",
+        "seamark:status": "permanent",
+        "seamark:type": "beacon_lateral",
+        "source": "U.S. Coast Guard, Light List vol. VII, Great Lakes, COMDTPUB P16502.7, 2024",
+        "tower:type": "navigation"
+      },
+      "coords": [
+        {
+          "lon": -82.5452234,
+          "lat": 41.4005394,
+          "x": 1437.74,
+          "z": -618.2
+        }
+      ]
+    },
+    {
+      "osmId": 3780858864,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "buoy",
+        "seamark:buoy_lateral:category": "port",
+        "seamark:buoy_lateral:colour": "green",
+        "seamark:buoy_lateral:shape": "can",
+        "seamark:name": "3",
+        "seamark:status": "permanent",
+        "seamark:type": "buoy_lateral"
+      },
+      "coords": [
+        {
+          "lon": -82.5424556,
+          "lat": 41.4038956,
+          "x": 1668.88,
+          "z": -990.74
+        }
+      ]
+    },
+    {
+      "osmId": 3780858866,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "buoy",
+        "seamark:buoy_lateral:category": "port",
+        "seamark:buoy_lateral:colour": "green",
+        "seamark:buoy_lateral:shape": "pillar",
+        "seamark:light:character": "Fl",
+        "seamark:light:colour": "green",
+        "seamark:light:exhibition": "night",
+        "seamark:light:period": "6.0",
+        "seamark:light:range": "4.0",
+        "seamark:light:status": "intermittent",
+        "seamark:name": "1",
+        "seamark:period_end": "--1130",
+        "seamark:period_start": "--0415",
+        "seamark:status": "intermittent",
+        "seamark:type": "buoy_lateral"
+      },
+      "coords": [
+        {
+          "lon": -82.5372396,
+          "lat": 41.4089125,
+          "x": 2104.46,
+          "z": -1547.62
+        }
+      ]
+    },
+    {
+      "osmId": 3780858867,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "buoy",
+        "seamark:buoy_lateral:category": "starboard",
+        "seamark:buoy_lateral:colour": "red",
+        "seamark:buoy_lateral:shape": "conical",
+        "seamark:name": "2",
+        "seamark:status": "permanent",
+        "seamark:type": "buoy_lateral"
+      },
+      "coords": [
+        {
+          "lon": -82.5384497,
+          "lat": 41.4094814,
+          "x": 2003.41,
+          "z": -1610.77
+        }
+      ]
+    },
+    {
+      "osmId": 3808491617,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5877985,
+          "lat": 41.396688,
+          "x": -2117.66,
+          "z": -190.7
+        }
+      ]
+    },
+    {
+      "osmId": 3808491623,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5893109,
+          "lat": 41.3971376,
+          "x": -2243.96,
+          "z": -240.6
+        }
+      ]
+    },
+    {
+      "osmId": 3808491638,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5895789,
+          "lat": 41.3972348,
+          "x": -2266.34,
+          "z": -251.39
+        }
+      ]
+    },
+    {
+      "osmId": 3808501473,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5874907,
+          "lat": 41.396679,
+          "x": -2091.96,
+          "z": -189.7
+        }
+      ]
+    },
+    {
+      "osmId": 3853672054,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "flagpole"
+      },
+      "coords": [
+        {
+          "lon": -82.5937639,
+          "lat": 41.3971083,
+          "x": -2615.83,
+          "z": -237.35
+        }
+      ]
+    },
+    {
+      "osmId": 3942426102,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "water_tower"
+      },
+      "coords": [
+        {
+          "lon": -82.6000878,
+          "lat": 41.4020154,
+          "x": -3143.93,
+          "z": -782.04
+        }
+      ]
+    },
+    {
+      "osmId": 4098733243,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5934613,
+          "lat": 41.3984421,
+          "x": -2590.56,
+          "z": -385.4
+        }
+      ]
+    },
+    {
+      "osmId": 4098739943,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5939158,
+          "lat": 41.3967585,
+          "x": -2628.51,
+          "z": -198.52
+        }
+      ]
+    },
+    {
+      "osmId": 4098739944,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5938986,
+          "lat": 41.3963864,
+          "x": -2627.08,
+          "z": -157.22
+        }
+      ]
+    },
+    {
+      "osmId": 4098740576,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5933411,
+          "lat": 41.3964019,
+          "x": -2580.52,
+          "z": -158.94
+        }
+      ]
+    },
+    {
+      "osmId": 4098740581,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fountain"
+      },
+      "coords": [
+        {
+          "lon": -82.5920701,
+          "lat": 41.3964657,
+          "x": -2474.38,
+          "z": -166.02
+        }
+      ]
+    },
+    {
+      "osmId": 4104092289,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fountain"
+      },
+      "coords": [
+        {
+          "lon": -82.5960697,
+          "lat": 41.3974395,
+          "x": -2808.38,
+          "z": -274.11
+        }
+      ]
+    },
+    {
+      "osmId": 4104094051,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.596069,
+          "lat": 41.3987698,
+          "x": -2808.32,
+          "z": -421.78
+        }
+      ]
+    },
+    {
+      "osmId": 4104094052,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5959543,
+          "lat": 41.3986304,
+          "x": -2798.75,
+          "z": -406.3
+        }
+      ]
+    },
+    {
+      "osmId": 4104094053,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5958416,
+          "lat": 41.3984895,
+          "x": -2789.33,
+          "z": -390.66
+        }
+      ]
+    },
+    {
+      "osmId": 4104094054,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.595721,
+          "lat": 41.3983501,
+          "x": -2779.26,
+          "z": -375.19
+        }
+      ]
+    },
+    {
+      "osmId": 4104094055,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5956123,
+          "lat": 41.3982151,
+          "x": -2770.19,
+          "z": -360.21
+        }
+      ]
+    },
+    {
+      "osmId": 4104094056,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5955213,
+          "lat": 41.3980712,
+          "x": -2762.59,
+          "z": -344.23
+        }
+      ]
+    },
+    {
+      "osmId": 4104094059,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.596174,
+          "lat": 41.3989205,
+          "x": -2817.09,
+          "z": -438.51
+        }
+      ]
+    },
+    {
+      "osmId": 4104107205,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5909302,
+          "lat": 41.3971223,
+          "x": -2379.19,
+          "z": -238.91
+        }
+      ]
+    },
+    {
+      "osmId": 4104107207,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5909354,
+          "lat": 41.3972016,
+          "x": -2379.62,
+          "z": -247.71
+        }
+      ]
+    },
+    {
+      "osmId": 4104107216,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5903388,
+          "lat": 41.3970612,
+          "x": -2329.8,
+          "z": -232.12
+        }
+      ]
+    },
+    {
+      "osmId": 4104184869,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5948757,
+          "lat": 41.4001091,
+          "x": -2708.67,
+          "z": -570.44
+        }
+      ]
+    },
+    {
+      "osmId": 4104192812,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5960873,
+          "lat": 41.3995928,
+          "x": -2809.85,
+          "z": -513.13
+        }
+      ]
+    },
+    {
+      "osmId": 4104192813,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5950279,
+          "lat": 41.3996129,
+          "x": -2721.38,
+          "z": -515.36
+        }
+      ]
+    },
+    {
+      "osmId": 4104192814,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5959506,
+          "lat": 41.3991924,
+          "x": -2798.44,
+          "z": -468.69
+        }
+      ]
+    },
+    {
+      "osmId": 4104192815,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp"
+      },
+      "coords": [
+        {
+          "lon": -82.5951781,
+          "lat": 41.3992206,
+          "x": -2733.93,
+          "z": -471.82
+        }
+      ]
+    },
+    {
+      "osmId": 4108852669,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5948573,
+          "lat": 41.3971592,
+          "x": -2707.14,
+          "z": -243
+        }
+      ]
+    },
+    {
+      "osmId": 4108852670,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5948681,
+          "lat": 41.3973591,
+          "x": -2708.04,
+          "z": -265.19
+        }
+      ]
+    },
+    {
+      "osmId": 4108852671,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5948641,
+          "lat": 41.3972566,
+          "x": -2707.7,
+          "z": -253.81
+        }
+      ]
+    },
+    {
+      "osmId": 4108852672,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5945975,
+          "lat": 41.3972018,
+          "x": -2685.44,
+          "z": -247.73
+        }
+      ]
+    },
+    {
+      "osmId": 4142722965,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "recycling",
+        "indoor": "yes",
+        "operator": "Bowling Green State University",
+        "recycling:clothes": "no",
+        "recycling_type": "container"
+      },
+      "coords": [
+        {
+          "lon": -82.5950082,
+          "lat": 41.3969802,
+          "x": -2719.74,
+          "z": -223.13
+        }
+      ]
+    },
+    {
+      "osmId": 4142725738,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "drinking_water",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5951009,
+          "lat": 41.3969171,
+          "x": -2727.48,
+          "z": -216.13
+        }
+      ]
+    },
+    {
+      "osmId": 4142732895,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5950666,
+          "lat": 41.3969216,
+          "x": -2724.61,
+          "z": -216.63
+        }
+      ]
+    },
+    {
+      "osmId": 4142747309,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5948475,
+          "lat": 41.3968104,
+          "x": -2706.32,
+          "z": -204.28
+        }
+      ]
+    },
+    {
+      "osmId": 4142747317,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5949186,
+          "lat": 41.3967813,
+          "x": -2712.26,
+          "z": -201.05
+        }
+      ]
+    },
+    {
+      "osmId": 4142747318,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5949006,
+          "lat": 41.3968695,
+          "x": -2710.75,
+          "z": -210.84
+        }
+      ]
+    },
+    {
+      "osmId": 4142755398,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "drinking_water",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5949491,
+          "lat": 41.3967607,
+          "x": -2714.8,
+          "z": -198.77
+        }
+      ]
+    },
+    {
+      "osmId": 4142758538,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5951157,
+          "lat": 41.3966788,
+          "x": -2728.72,
+          "z": -189.68
+        }
+      ]
+    },
+    {
+      "osmId": 4142758539,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5950193,
+          "lat": 41.3967267,
+          "x": -2720.66,
+          "z": -194.99
+        }
+      ]
+    },
+    {
+      "osmId": 4142762103,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5948107,
+          "lat": 41.3968764,
+          "x": -2703.24,
+          "z": -211.61
+        }
+      ]
+    },
+    {
+      "osmId": 4142762104,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "recycling",
+        "operator": "Bowling Green State University",
+        "recycling:clothes": "no",
+        "recycling_type": "container"
+      },
+      "coords": [
+        {
+          "lon": -82.5948057,
+          "lat": 41.3968776,
+          "x": -2702.83,
+          "z": -211.74
+        }
+      ]
+    },
+    {
+      "osmId": 4142762105,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "vending_machine",
+        "indoor": "yes",
+        "level": "0",
+        "vending": "drinks"
+      },
+      "coords": [
+        {
+          "lon": -82.5948023,
+          "lat": 41.3968721,
+          "x": -2702.54,
+          "z": -211.13
+        }
+      ]
+    },
+    {
+      "osmId": 4142762106,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "vending_machine",
+        "level": "0",
+        "note": "Coffee Vend",
+        "vending": "drinks"
+      },
+      "coords": [
+        {
+          "lon": -82.5948023,
+          "lat": 41.3968665,
+          "x": -2702.54,
+          "z": -210.51
+        }
+      ]
+    },
+    {
+      "osmId": 4142762107,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "vending_machine",
+        "indoor": "yes",
+        "level": "0",
+        "vending": "sweets"
+      },
+      "coords": [
+        {
+          "lon": -82.5948027,
+          "lat": 41.3968601,
+          "x": -2702.58,
+          "z": -209.8
+        }
+      ]
+    },
+    {
+      "osmId": 4142834398,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "drinking_water",
+        "indoor": "room"
+      },
+      "coords": [
+        {
+          "lon": -82.5947152,
+          "lat": 41.3969344,
+          "x": -2695.27,
+          "z": -218.05
+        }
+      ]
+    },
+    {
+      "osmId": 4142838450,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "telephone",
+        "indoor": "yes",
+        "level": "0"
+      },
+      "coords": [
+        {
+          "lon": -82.5946467,
+          "lat": 41.3969378,
+          "x": -2689.55,
+          "z": -218.43
+        }
+      ]
+    },
+    {
+      "osmId": 4142841521,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5947373,
+          "lat": 41.3970049,
+          "x": -2697.12,
+          "z": -225.87
+        }
+      ]
+    },
+    {
+      "osmId": 4142841522,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5947007,
+          "lat": 41.3970198,
+          "x": -2694.06,
+          "z": -227.53
+        }
+      ]
+    },
+    {
+      "osmId": 4142849331,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5946424,
+          "lat": 41.3970073,
+          "x": -2689.19,
+          "z": -226.14
+        }
+      ]
+    },
+    {
+      "osmId": 4142849332,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5946039,
+          "lat": 41.3970257,
+          "x": -2685.98,
+          "z": -228.18
+        }
+      ]
+    },
+    {
+      "osmId": 4142849333,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5945445,
+          "lat": 41.3970076,
+          "x": -2681.01,
+          "z": -226.17
+        }
+      ]
+    },
+    {
+      "osmId": 4142849334,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5945047,
+          "lat": 41.3970294,
+          "x": -2677.69,
+          "z": -228.59
+        }
+      ]
+    },
+    {
+      "osmId": 4142849339,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5945545,
+          "lat": 41.3971582,
+          "x": -2681.85,
+          "z": -242.89
+        }
+      ]
+    },
+    {
+      "osmId": 4142849340,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5944892,
+          "lat": 41.3971407,
+          "x": -2676.4,
+          "z": -240.95
+        }
+      ]
+    },
+    {
+      "osmId": 4142849341,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5945538,
+          "lat": 41.3971327,
+          "x": -2681.79,
+          "z": -240.06
+        }
+      ]
+    },
+    {
+      "osmId": 4142849348,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric",
+        "ref": "055"
+      },
+      "coords": [
+        {
+          "lon": -82.5946092,
+          "lat": 41.3970092,
+          "x": -2686.42,
+          "z": -226.35
+        }
+      ]
+    },
+    {
+      "osmId": 4142849349,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric",
+        "ref": "056"
+      },
+      "coords": [
+        {
+          "lon": -82.5945117,
+          "lat": 41.397012,
+          "x": -2678.28,
+          "z": -226.66
+        }
+      ]
+    },
+    {
+      "osmId": 4142849350,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric",
+        "ref": "055"
+      },
+      "coords": [
+        {
+          "lon": -82.5947099,
+          "lat": 41.3970052,
+          "x": -2694.83,
+          "z": -225.91
+        }
+      ]
+    },
+    {
+      "osmId": 4142851725,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5948708,
+          "lat": 41.3974455,
+          "x": -2708.26,
+          "z": -274.78
+        }
+      ]
+    },
+    {
+      "osmId": 4142851726,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.594667,
+          "lat": 41.3973505,
+          "x": -2691.24,
+          "z": -264.24
+        }
+      ]
+    },
+    {
+      "osmId": 4142851727,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5946113,
+          "lat": 41.397246,
+          "x": -2686.59,
+          "z": -252.64
+        }
+      ]
+    },
+    {
+      "osmId": 4142851728,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947734,
+          "lat": 41.3973239,
+          "x": -2700.13,
+          "z": -261.28
+        }
+      ]
+    },
+    {
+      "osmId": 4142851729,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947772,
+          "lat": 41.3972118,
+          "x": -2700.45,
+          "z": -248.84
+        }
+      ]
+    },
+    {
+      "osmId": 4142851730,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5946733,
+          "lat": 41.3971862,
+          "x": -2691.77,
+          "z": -246
+        }
+      ]
+    },
+    {
+      "osmId": 4142851731,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5952848,
+          "lat": 41.3974198,
+          "x": -2742.84,
+          "z": -271.93
+        }
+      ]
+    },
+    {
+      "osmId": 4142851732,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "yes"
+      },
+      "coords": [
+        {
+          "lon": -82.5953152,
+          "lat": 41.3974236,
+          "x": -2745.38,
+          "z": -272.35
+        }
+      ]
+    },
+    {
+      "osmId": 4142851733,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "operator": "Bowling Green State University",
+        "tourism": "picnic_site"
+      },
+      "coords": [
+        {
+          "lon": -82.594538,
+          "lat": 41.3976775,
+          "x": -2680.47,
+          "z": -300.53
+        }
+      ]
+    },
+    {
+      "osmId": 4142851738,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "post_box",
+        "drive_through": "no",
+        "operator": "United States Postal Service",
+        "operator:short": "USPS",
+        "operator:type": "public",
+        "operator:website": "https://www.usps.com",
+        "operator:wikidata": "Q668687",
+        "operator:wikipedia": "en:United States Postal Service",
+        "short_name": "USPS"
+      },
+      "coords": [
+        {
+          "lon": -82.5944811,
+          "lat": 41.3974421,
+          "x": -2675.72,
+          "z": -274.4
+        }
+      ]
+    },
+    {
+      "osmId": 4142864092,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket"
+      },
+      "coords": [
+        {
+          "lon": -82.594434,
+          "lat": 41.3969832,
+          "x": -2671.79,
+          "z": -223.47
+        }
+      ]
+    },
+    {
+      "osmId": 4142892477,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "recycling",
+        "indoor": "yes",
+        "level": "1",
+        "operator": "Bowling Green State University",
+        "recycling:clothes": "no",
+        "recycling_type": "container"
+      },
+      "coords": [
+        {
+          "lon": -82.5948453,
+          "lat": 41.3969338,
+          "x": -2706.13,
+          "z": -217.98
+        }
+      ]
+    },
+    {
+      "osmId": 4142892478,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket",
+        "indoor": "yes",
+        "level": "1"
+      },
+      "coords": [
+        {
+          "lon": -82.5948507,
+          "lat": 41.3969351,
+          "x": -2706.59,
+          "z": -218.13
+        }
+      ]
+    },
+    {
+      "osmId": 4142949782,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "shop": "hairdresser"
+      },
+      "coords": [
+        {
+          "lon": -82.558353,
+          "lat": 41.3912197,
+          "x": 341.3,
+          "z": 416.28
+        }
+      ]
+    },
+    {
+      "osmId": 4142949783,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "email": "info@fishconnect.net",
+        "name": "Neuvo Management",
+        "office": "company",
+        "website": "fishconnect.net"
+      },
+      "coords": [
+        {
+          "lon": -82.5583795,
+          "lat": 41.3911343,
+          "x": 339.09,
+          "z": 425.76
+        }
+      ]
+    },
+    {
+      "osmId": 4143108368,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "elevator"
+      },
+      "coords": [
+        {
+          "lon": -82.5943654,
+          "lat": 41.3974929,
+          "x": -2666.06,
+          "z": -280.04
+        }
+      ]
+    },
+    {
+      "osmId": 4143111779,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "information": "terminal",
+        "level": "0",
+        "name": "Work Net Terminal",
+        "tourism": "information"
+      },
+      "coords": [
+        {
+          "lon": -82.5944132,
+          "lat": 41.3974468,
+          "x": -2670.05,
+          "z": -274.92
+        }
+      ]
+    },
+    {
+      "osmId": 4143111780,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "vending_machine",
+        "level": "0",
+        "vending": "drinks"
+      },
+      "coords": [
+        {
+          "lon": -82.5944251,
+          "lat": 41.3974448,
+          "x": -2671.04,
+          "z": -274.7
+        }
+      ]
+    },
+    {
+      "osmId": 4143174531,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "BGSU Firelands Bookstore",
+        "opening_hours": "Mo-Th 08:30-18:00; PH off, Fr 08:30-17:00; PH off",
+        "operator": "Bowling Green State University",
+        "ref": "107",
+        "shop": "books",
+        "website": "https://www.bgsu.edu/bookstore.html",
+        "wheelchair": "yes"
+      },
+      "coords": [
+        {
+          "lon": -82.5942791,
+          "lat": 41.3973125,
+          "x": -2658.85,
+          "z": -260.02
+        }
+      ]
+    },
+    {
+      "osmId": 4143177704,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "indoor": "yes",
+        "information": "office",
+        "level": "0",
+        "name": "Clasen Welcome Center",
+        "operator": "Bowling Green State University",
+        "start_date": "2009-03-26",
+        "tourism": "information"
+      },
+      "coords": [
+        {
+          "lon": -82.5943871,
+          "lat": 41.3972651,
+          "x": -2667.87,
+          "z": -254.76
+        }
+      ]
+    },
+    {
+      "osmId": 4143179189,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "BGSU Firelands Office of Admissions",
+        "office": "educational_institution",
+        "operator": "Bowling Green State University",
+        "ref": "103",
+        "website": "https://www.firelands.bgsu.edu/admissions.html"
+      },
+      "coords": [
+        {
+          "lon": -82.5943424,
+          "lat": 41.3973088,
+          "x": -2664.14,
+          "z": -259.61
+        }
+      ]
+    },
+    {
+      "osmId": 4143179909,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "Student Accounts",
+        "office": "financial",
+        "ref": "103E"
+      },
+      "coords": [
+        {
+          "lon": -82.5943281,
+          "lat": 41.3973862,
+          "x": -2662.94,
+          "z": -268.2
+        }
+      ]
+    },
+    {
+      "osmId": 4143182089,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "Financial Aid",
+        "office": "financial",
+        "ref": "103D"
+      },
+      "coords": [
+        {
+          "lon": -82.5943861,
+          "lat": 41.3973933,
+          "x": -2667.79,
+          "z": -268.99
+        }
+      ]
+    },
+    {
+      "osmId": 4143553045,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "rock"
+      },
+      "coords": [
+        {
+          "lon": -82.5957938,
+          "lat": 41.3974564,
+          "x": -2785.34,
+          "z": -275.99
+        }
+      ]
+    },
+    {
+      "osmId": 4143565134,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "motorcycle_parking",
+        "covered": "no",
+        "operator": "Bowling Green State University"
+      },
+      "coords": [
+        {
+          "lon": -82.5961154,
+          "lat": 41.3989906,
+          "x": -2812.2,
+          "z": -446.29
+        }
+      ]
+    },
+    {
+      "osmId": 4143582190,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "information": "yes",
+        "operator": "Bowling Green State University",
+        "shelter": "yes",
+        "tourism": "information"
+      },
+      "coords": [
+        {
+          "lon": -82.5964096,
+          "lat": 41.3989085,
+          "x": -2836.77,
+          "z": -437.17
+        }
+      ]
+    },
+    {
+      "osmId": 4144892891,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5941132,
+          "lat": 41.3985362,
+          "x": -2645,
+          "z": -395.85
+        }
+      ]
+    },
+    {
+      "osmId": 4144892892,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5939687,
+          "lat": 41.3985868,
+          "x": -2632.93,
+          "z": -401.46
+        }
+      ]
+    },
+    {
+      "osmId": 4144899120,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric",
+        "ref": "054"
+      },
+      "coords": [
+        {
+          "lon": -82.5948009,
+          "lat": 41.3969967,
+          "x": -2702.43,
+          "z": -224.96
+        }
+      ]
+    },
+    {
+      "osmId": 4144935217,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "drinking_water",
+        "outside": "yes"
+      },
+      "coords": [
+        {
+          "lon": -82.5968748,
+          "lat": 41.4005499,
+          "x": -2875.62,
+          "z": -619.37
+        }
+      ]
+    },
+    {
+      "osmId": 4144935339,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "yes"
+      },
+      "coords": [
+        {
+          "lon": -82.5968826,
+          "lat": 41.4005408,
+          "x": -2876.27,
+          "z": -618.36
+        }
+      ]
+    },
+    {
+      "osmId": 4144963110,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "waste_basket"
+      },
+      "coords": [
+        {
+          "lon": -82.5961216,
+          "lat": 41.3989356,
+          "x": -2812.72,
+          "z": -440.18
+        }
+      ]
+    },
+    {
+      "osmId": 4144972301,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bell",
+        "description": "This bell is the former bell of Lafayette School on Columbus Avenue in Erie County Ohio.",
+        "name": "A Firelands School Bell",
+        "start_date": "1973-06-30"
+      },
+      "coords": [
+        {
+          "lon": -82.5949646,
+          "lat": 41.3980599,
+          "x": -2716.1,
+          "z": -342.98
+        }
+      ]
+    },
+    {
+      "osmId": 4144973356,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "operator": "Bowling Green State University",
+        "smoking": "no",
+        "tourism": "picnic_site"
+      },
+      "coords": [
+        {
+          "lon": -82.5948915,
+          "lat": 41.3980903,
+          "x": -2709.99,
+          "z": -346.35
+        }
+      ]
+    },
+    {
+      "osmId": 4144974778,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "artwork_type": "statue",
+        "tourism": "artwork"
+      },
+      "coords": [
+        {
+          "lon": -82.5948842,
+          "lat": 41.3975106,
+          "x": -2709.38,
+          "z": -282.01
+        }
+      ]
+    },
+    {
+      "osmId": 4144974779,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "artwork_type": "statue",
+        "tourism": "artwork"
+      },
+      "coords": [
+        {
+          "lon": -82.5948842,
+          "lat": 41.3974683,
+          "x": -2709.38,
+          "z": -277.31
+        }
+      ]
+    },
+    {
+      "osmId": 4144980274,
+      "osmType": "node",
+      "category": "tourism",
+      "tags": {
+        "artwork_type": "sculpture",
+        "tourism": "artwork"
+      },
+      "coords": [
+        {
+          "lon": -82.5946914,
+          "lat": 41.3976218,
+          "x": -2693.28,
+          "z": -294.35
+        }
+      ]
+    },
+    {
+      "osmId": 4144986793,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "capacity": "15",
+        "highway": "elevator",
+        "note": "1134kg capacity or 15 people",
+        "ref": "1"
+      },
+      "coords": [
+        {
+          "lon": -82.5948821,
+          "lat": 41.398328,
+          "x": -2709.21,
+          "z": -372.74
+        }
+      ]
+    },
+    {
+      "osmId": 4144996594,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "drinking_water",
+        "indoor": "yes",
+        "level": "1"
+      },
+      "coords": [
+        {
+          "lon": -82.5945812,
+          "lat": 41.3984634,
+          "x": -2684.08,
+          "z": -387.77
+        }
+      ]
+    },
+    {
+      "osmId": 4145025752,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "alt_name": "Firelands Cafe",
+        "amenity": "cafe",
+        "cuisine": "american",
+        "indoor": "room",
+        "level": "0",
+        "name": "Firelands Café"
+      },
+      "coords": [
+        {
+          "lon": -82.5946251,
+          "lat": 41.397782,
+          "x": -2687.75,
+          "z": -312.13
+        }
+      ]
+    },
+    {
+      "osmId": 4145037544,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "alt_name": "Firelands Theatre",
+        "amenity": "theatre",
+        "indoor": "room",
+        "level": "0",
+        "name": "McBride Auditorium",
+        "operator": "Bowling Green State University",
+        "room": "theatre",
+        "website": "https://www.firelands.bgsu.edu/arts/firelands-college-theatre.html"
+      },
+      "coords": [
+        {
+          "lon": -82.594546,
+          "lat": 41.3983886,
+          "x": -2681.14,
+          "z": -379.46
+        }
+      ]
+    },
+    {
+      "osmId": 4145039259,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "Balzer Family Student Government Office",
+        "office": "government",
+        "ref": "100",
+        "room": "office"
+      },
+      "coords": [
+        {
+          "lon": -82.5949029,
+          "lat": 41.3977812,
+          "x": -2710.94,
+          "z": -312.04
+        }
+      ]
+    },
+    {
+      "osmId": 4145039260,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "fee": "no",
+        "indoor": "room",
+        "level": "0",
+        "male": "yes",
+        "operator": "Bowling Green State University",
+        "room": "toilets",
+        "toilets:disposal": "flush"
+      },
+      "coords": [
+        {
+          "lon": -82.5940824,
+          "lat": 41.3973059,
+          "x": -2642.43,
+          "z": -259.28
+        }
+      ]
+    },
+    {
+      "osmId": 4145039261,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "fee": "no",
+        "female": "yes",
+        "indoor": "room",
+        "level": "0",
+        "operator": "Bowling Green State University",
+        "room": "toilets",
+        "toilets:disposal": "flush"
+      },
+      "coords": [
+        {
+          "lon": -82.5940747,
+          "lat": 41.3973081,
+          "x": -2641.78,
+          "z": -259.53
+        }
+      ]
+    },
+    {
+      "osmId": 4145039612,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5944741,
+          "lat": 41.3976087,
+          "x": -2675.14,
+          "z": -292.9
+        }
+      ]
+    },
+    {
+      "osmId": 4145039613,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5945467,
+          "lat": 41.397574,
+          "x": -2681.2,
+          "z": -289.04
+        }
+      ]
+    },
+    {
+      "osmId": 4145039614,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5945779,
+          "lat": 41.3975668,
+          "x": -2683.8,
+          "z": -288.24
+        }
+      ]
+    },
+    {
+      "osmId": 4145039615,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5945383,
+          "lat": 41.3975344,
+          "x": -2680.5,
+          "z": -284.65
+        }
+      ]
+    },
+    {
+      "osmId": 4145039616,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5945767,
+          "lat": 41.3974178,
+          "x": -2683.7,
+          "z": -271.71
+        }
+      ]
+    },
+    {
+      "osmId": 4145039617,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5944663,
+          "lat": 41.3974178,
+          "x": -2674.48,
+          "z": -271.71
+        }
+      ]
+    },
+    {
+      "osmId": 4145039618,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "street_lamp",
+        "lamp_type": "electric"
+      },
+      "coords": [
+        {
+          "lon": -82.5945167,
+          "lat": 41.3972967,
+          "x": -2678.69,
+          "z": -258.26
+        }
+      ]
+    },
+    {
+      "osmId": 4145039628,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.59477,
+          "lat": 41.3975776,
+          "x": -2699.85,
+          "z": -289.44
+        }
+      ]
+    },
+    {
+      "osmId": 4145039629,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench",
+        "backrest": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5947634,
+          "lat": 41.3975713,
+          "x": -2699.29,
+          "z": -288.74
+        }
+      ]
+    },
+    {
+      "osmId": 4145041494,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "2",
+        "name": "Instructional Services",
+        "office": "educational_institution",
+        "ref": "335",
+        "room": "office"
+      },
+      "coords": [
+        {
+          "lon": -82.5951332,
+          "lat": 41.3978218,
+          "x": -2730.18,
+          "z": -316.55
+        }
+      ]
+    },
+    {
+      "osmId": 4145044652,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947406,
+          "lat": 41.397642,
+          "x": -2697.39,
+          "z": -296.59
+        }
+      ]
+    },
+    {
+      "osmId": 4145044653,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947604,
+          "lat": 41.397624,
+          "x": -2699.04,
+          "z": -294.59
+        }
+      ]
+    },
+    {
+      "osmId": 4145046921,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "capacity": "3599 lbs",
+        "highway": "elevator",
+        "ref": "17849"
+      },
+      "coords": [
+        {
+          "lon": -82.5948621,
+          "lat": 41.3978532,
+          "x": -2707.54,
+          "z": -320.04
+        }
+      ]
+    },
+    {
+      "osmId": 4145047092,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "yes",
+        "level": "2",
+        "name": "Humanities Department",
+        "office": "educational_institution"
+      },
+      "coords": [
+        {
+          "lon": -82.5949481,
+          "lat": 41.3976189,
+          "x": -2714.72,
+          "z": -294.03
+        }
+      ]
+    },
+    {
+      "osmId": 4145047565,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "yes",
+        "level": "2",
+        "name": "Natural & Social Sciences Department",
+        "office": "educational_institution"
+      },
+      "coords": [
+        {
+          "lon": -82.5949214,
+          "lat": 41.3979163,
+          "x": -2712.49,
+          "z": -327.04
+        }
+      ]
+    },
+    {
+      "osmId": 4145052743,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "level": "0",
+        "name": "Student and Campus Activities",
+        "office": "educational_institution",
+        "ref": "106A"
+      },
+      "coords": [
+        {
+          "lon": -82.5949036,
+          "lat": 41.3977561,
+          "x": -2711,
+          "z": -309.26
+        }
+      ]
+    },
+    {
+      "osmId": 4145055783,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "Registration",
+        "office": "educational_institution",
+        "ref": "135",
+        "room": "office"
+      },
+      "coords": [
+        {
+          "lon": -82.5948552,
+          "lat": 41.3978102,
+          "x": -2706.96,
+          "z": -315.26
+        }
+      ]
+    },
+    {
+      "osmId": 4145057103,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "College Access / Career Services",
+        "office": "educational_institution",
+        "ref": "131",
+        "room": "office"
+      },
+      "coords": [
+        {
+          "lon": -82.5948344,
+          "lat": 41.3978154,
+          "x": -2705.22,
+          "z": -315.84
+        }
+      ]
+    },
+    {
+      "osmId": 4145057104,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "atm",
+        "brand": "PNC Bank",
+        "brand:wikidata": "Q38928",
+        "drive_through": "no",
+        "indoor": "yes",
+        "level": "0",
+        "name": "PNC Bank",
+        "operator": "PNC Bank",
+        "operator:wikidata": "Q38928",
+        "operator:wikipedia": "en:PNC Financial Services"
+      },
+      "coords": [
+        {
+          "lon": -82.5947909,
+          "lat": 41.3978199,
+          "x": -2701.59,
+          "z": -316.34
+        }
+      ]
+    },
+    {
+      "osmId": 4145062189,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "vending_machine",
+        "name": "Vendeteria",
+        "official_name": "VENDETERIA",
+        "operator": "Bowling Green State University"
+      },
+      "coords": [
+        {
+          "lon": -82.5946604,
+          "lat": 41.3978125,
+          "x": -2690.69,
+          "z": -315.52
+        }
+      ]
+    },
+    {
+      "osmId": 4145068281,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "police",
+        "indoor": "room",
+        "level": "0",
+        "name": "Erie County Sheriff"
+      },
+      "coords": [
+        {
+          "lon": -82.5941568,
+          "lat": 41.3975882,
+          "x": -2648.64,
+          "z": -290.62
+        }
+      ]
+    },
+    {
+      "osmId": 4145068282,
+      "osmType": "node",
+      "category": "office",
+      "tags": {
+        "indoor": "room",
+        "level": "0",
+        "name": "Budget & Operation",
+        "office": "financial",
+        "website": "https://www.firelands.bgsu.edu/offices/bando.html"
+      },
+      "coords": [
+        {
+          "lon": -82.594167,
+          "lat": 41.3975878,
+          "x": -2649.49,
+          "z": -290.58
+        }
+      ]
+    },
+    {
+      "osmId": 4145072456,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "post_office",
+        "indoor": "room",
+        "level": "0",
+        "name": "Mail Room",
+        "operator": "Bowling Green State University",
+        "ref": "132"
+      },
+      "coords": [
+        {
+          "lon": -82.594212,
+          "lat": 41.3975999,
+          "x": -2653.25,
+          "z": -291.92
+        }
+      ]
+    },
+    {
+      "osmId": 4145083968,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "surveillance"
+      },
+      "coords": [
+        {
+          "lon": -82.5943371,
+          "lat": 41.3969913,
+          "x": -2663.69,
+          "z": -224.36
+        }
+      ]
+    },
+    {
+      "osmId": 4145083969,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "surveillance"
+      },
+      "coords": [
+        {
+          "lon": -82.5943062,
+          "lat": 41.3969686,
+          "x": -2661.11,
+          "z": -221.84
+        }
+      ]
+    },
+    {
+      "osmId": 4145083970,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "surveillance"
+      },
+      "coords": [
+        {
+          "lon": -82.5943025,
+          "lat": 41.3968195,
+          "x": -2660.81,
+          "z": -205.29
+        }
+      ]
+    },
+    {
+      "osmId": 4145084954,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "surveillance"
+      },
+      "coords": [
+        {
+          "lon": -82.5942351,
+          "lat": 41.3972867,
+          "x": -2655.18,
+          "z": -257.15
+        }
+      ]
+    },
+    {
+      "osmId": 4240052717,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5233411,
+          "lat": 41.3843684,
+          "x": 3265.11,
+          "z": 1176.78
+        }
+      ]
+    },
+    {
+      "osmId": 4240054917,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "traffic_signals",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5424644,
+          "lat": 41.3889712,
+          "x": 1668.14,
+          "z": 665.87
+        }
+      ]
+    },
+    {
+      "osmId": 4240054918,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "traffic_signals",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5424538,
+          "lat": 41.3890496,
+          "x": 1669.03,
+          "z": 657.16
+        }
+      ]
+    },
+    {
+      "osmId": 4405710846,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.6129363,
+          "lat": 41.4161056,
+          "x": -4216.9,
+          "z": -2346.05
+        }
+      ]
+    },
+    {
+      "osmId": 4405710847,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "lattice",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.613226,
+          "lat": 41.4110095,
+          "x": -4241.09,
+          "z": -1780.38
+        }
+      ]
+    },
+    {
+      "osmId": 4557879450,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5965312,
+          "lat": 41.3996724,
+          "x": -2846.92,
+          "z": -521.97
+        }
+      ]
+    },
+    {
+      "osmId": 4557879451,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5964123,
+          "lat": 41.3997152,
+          "x": -2836.99,
+          "z": -526.72
+        }
+      ]
+    },
+    {
+      "osmId": 4557879452,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5962723,
+          "lat": 41.3997518,
+          "x": -2825.3,
+          "z": -530.78
+        }
+      ]
+    },
+    {
+      "osmId": 4557879453,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5961176,
+          "lat": 41.399786,
+          "x": -2812.38,
+          "z": -534.58
+        }
+      ]
+    },
+    {
+      "osmId": 4557879454,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5956974,
+          "lat": 41.3998434,
+          "x": -2777.29,
+          "z": -540.95
+        }
+      ]
+    },
+    {
+      "osmId": 4557879455,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5958391,
+          "lat": 41.39983,
+          "x": -2789.13,
+          "z": -539.46
+        }
+      ]
+    },
+    {
+      "osmId": 4557879456,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5959808,
+          "lat": 41.3998141,
+          "x": -2800.96,
+          "z": -537.7
+        }
+      ]
+    },
+    {
+      "osmId": 4557879457,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5963244,
+          "lat": 41.3993121,
+          "x": -2829.65,
+          "z": -481.97
+        }
+      ]
+    },
+    {
+      "osmId": 4557879458,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5956486,
+          "lat": 41.3994464,
+          "x": -2773.22,
+          "z": -496.88
+        }
+      ]
+    },
+    {
+      "osmId": 4557879459,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5958489,
+          "lat": 41.399433,
+          "x": -2789.94,
+          "z": -495.39
+        }
+      ]
+    },
+    {
+      "osmId": 4557879460,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5957023,
+          "lat": 41.3994245,
+          "x": -2777.7,
+          "z": -494.45
+        }
+      ]
+    },
+    {
+      "osmId": 4557879461,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5955086,
+          "lat": 41.3990275,
+          "x": -2761.53,
+          "z": -450.38
+        }
+      ]
+    },
+    {
+      "osmId": 4557879462,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5956323,
+          "lat": 41.3990238,
+          "x": -2771.86,
+          "z": -449.97
+        }
+      ]
+    },
+    {
+      "osmId": 4557879463,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5959938,
+          "lat": 41.3989334,
+          "x": -2802.04,
+          "z": -439.94
+        }
+      ]
+    },
+    {
+      "osmId": 4557879464,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5959547,
+          "lat": 41.3988247,
+          "x": -2798.78,
+          "z": -427.87
+        }
+      ]
+    },
+    {
+      "osmId": 4557879465,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5961566,
+          "lat": 41.3988467,
+          "x": -2815.64,
+          "z": -430.31
+        }
+      ]
+    },
+    {
+      "osmId": 4557879466,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5959808,
+          "lat": 41.3985841,
+          "x": -2800.96,
+          "z": -401.17
+        }
+      ]
+    },
+    {
+      "osmId": 4557879467,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5953278,
+          "lat": 41.3990238,
+          "x": -2746.43,
+          "z": -449.97
+        }
+      ]
+    },
+    {
+      "osmId": 4557879468,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.595914,
+          "lat": 41.3985487,
+          "x": -2795.38,
+          "z": -397.24
+        }
+      ]
+    },
+    {
+      "osmId": 4557879483,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947644,
+          "lat": 41.3993377,
+          "x": -2699.38,
+          "z": -484.81
+        }
+      ]
+    },
+    {
+      "osmId": 4557879484,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5954467,
+          "lat": 41.3994611,
+          "x": -2756.36,
+          "z": -498.51
+        }
+      ]
+    },
+    {
+      "osmId": 4557879485,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5948947,
+          "lat": 41.3989078,
+          "x": -2710.26,
+          "z": -437.1
+        }
+      ]
+    },
+    {
+      "osmId": 4557879486,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5950152,
+          "lat": 41.398898,
+          "x": -2720.32,
+          "z": -436.01
+        }
+      ]
+    },
+    {
+      "osmId": 4557879487,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5953539,
+          "lat": 41.3994196,
+          "x": -2748.61,
+          "z": -493.91
+        }
+      ]
+    },
+    {
+      "osmId": 4557882797,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5953914,
+          "lat": 41.399955,
+          "x": -2751.74,
+          "z": -553.33
+        }
+      ]
+    },
+    {
+      "osmId": 4557882798,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5952448,
+          "lat": 41.3999574,
+          "x": -2739.5,
+          "z": -553.6
+        }
+      ]
+    },
+    {
+      "osmId": 4557882799,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5950771,
+          "lat": 41.399944,
+          "x": -2725.49,
+          "z": -552.11
+        }
+      ]
+    },
+    {
+      "osmId": 4557882800,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5949436,
+          "lat": 41.3999196,
+          "x": -2714.34,
+          "z": -549.41
+        }
+      ]
+    },
+    {
+      "osmId": 4557882801,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5944176,
+          "lat": 41.3998035,
+          "x": -2670.42,
+          "z": -536.52
+        }
+      ]
+    },
+    {
+      "osmId": 4557882802,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5945055,
+          "lat": 41.3998255,
+          "x": -2677.76,
+          "z": -538.96
+        }
+      ]
+    },
+    {
+      "osmId": 4557882803,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5947873,
+          "lat": 41.3998952,
+          "x": -2701.29,
+          "z": -546.7
+        }
+      ]
+    },
+    {
+      "osmId": 4557882804,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5946472,
+          "lat": 41.3998622,
+          "x": -2689.59,
+          "z": -543.03
+        }
+      ]
+    },
+    {
+      "osmId": 4557882805,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5954142,
+          "lat": 41.3998487,
+          "x": -2753.64,
+          "z": -541.54
+        }
+      ]
+    },
+    {
+      "osmId": 4557882806,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5944665,
+          "lat": 41.3996802,
+          "x": -2674.5,
+          "z": -522.83
+        }
+      ]
+    },
+    {
+      "osmId": 4557882807,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5949615,
+          "lat": 41.3998096,
+          "x": -2715.84,
+          "z": -537.2
+        }
+      ]
+    },
+    {
+      "osmId": 4557882808,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5948442,
+          "lat": 41.3997864,
+          "x": -2706.04,
+          "z": -534.62
+        }
+      ]
+    },
+    {
+      "osmId": 4557882809,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5952595,
+          "lat": 41.399839,
+          "x": -2740.72,
+          "z": -540.46
+        }
+      ]
+    },
+    {
+      "osmId": 4557882810,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5945658,
+          "lat": 41.3997095,
+          "x": -2682.79,
+          "z": -526.08
+        }
+      ]
+    },
+    {
+      "osmId": 4557882811,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5951178,
+          "lat": 41.3998341,
+          "x": -2728.89,
+          "z": -539.92
+        }
+      ]
+    },
+    {
+      "osmId": 4557882812,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5946814,
+          "lat": 41.399751,
+          "x": -2692.45,
+          "z": -530.69
+        }
+      ]
+    },
+    {
+      "osmId": 4557890213,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5935897,
+          "lat": 41.3994049,
+          "x": -2601.28,
+          "z": -492.27
+        }
+      ]
+    },
+    {
+      "osmId": 4557890214,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5934556,
+          "lat": 41.3993144,
+          "x": -2590.08,
+          "z": -482.23
+        }
+      ]
+    },
+    {
+      "osmId": 4557890215,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5933483,
+          "lat": 41.3992017,
+          "x": -2581.12,
+          "z": -469.72
+        }
+      ]
+    },
+    {
+      "osmId": 4557890216,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5932276,
+          "lat": 41.3990568,
+          "x": -2571.04,
+          "z": -453.63
+        }
+      ]
+    },
+    {
+      "osmId": 4557890217,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5931471,
+          "lat": 41.3989281,
+          "x": -2564.32,
+          "z": -439.35
+        }
+      ]
+    },
+    {
+      "osmId": 4557890218,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.593072,
+          "lat": 41.3987812,
+          "x": -2558.05,
+          "z": -423.04
+        }
+      ]
+    },
+    {
+      "osmId": 4557890219,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5929889,
+          "lat": 41.3986303,
+          "x": -2551.11,
+          "z": -406.29
+        }
+      ]
+    },
+    {
+      "osmId": 4557890220,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5929406,
+          "lat": 41.3984734,
+          "x": -2547.07,
+          "z": -388.88
+        }
+      ]
+    },
+    {
+      "osmId": 4557890221,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "leaf_cycle": "deciduous",
+        "leaf_type": "broadleaved",
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5929084,
+          "lat": 41.3983003,
+          "x": -2544.39,
+          "z": -369.66
+        }
+      ]
+    },
+    {
+      "osmId": 4557915591,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "monopole",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5799281,
+          "lat": 41.3987846,
+          "x": -1460.41,
+          "z": -423.42
+        }
+      ]
+    },
+    {
+      "osmId": 4675201416,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "dentist",
+        "healthcare": "dentist"
+      },
+      "coords": [
+        {
+          "lon": -82.5526703,
+          "lat": 41.3964618,
+          "x": 815.86,
+          "z": -165.59
+        }
+      ]
+    },
+    {
+      "osmId": 4675201421,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "name": "Huron Market",
+        "shop": "supermarket"
+      },
+      "coords": [
+        {
+          "lon": -82.5605303,
+          "lat": 41.3989413,
+          "x": 159.48,
+          "z": -440.81
+        }
+      ]
+    },
+    {
+      "osmId": 4675202302,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "restaurant",
+        "cuisine": "chinese",
+        "name": "Jo Wok"
+      },
+      "coords": [
+        {
+          "lon": -82.5602901,
+          "lat": 41.3988048,
+          "x": 179.54,
+          "z": -425.66
+        }
+      ]
+    },
+    {
+      "osmId": 4675203347,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bank",
+        "brand": "KeyBank",
+        "brand:wikidata": "Q1740314",
+        "name": "KeyBank"
+      },
+      "coords": [
+        {
+          "lon": -82.5622627,
+          "lat": 41.3997827,
+          "x": 14.81,
+          "z": -534.21
+        }
+      ]
+    },
+    {
+      "osmId": 5747990602,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5598993,
+          "lat": 41.3923141,
+          "x": 212.17,
+          "z": 294.8
+        }
+      ]
+    },
+    {
+      "osmId": 5747990603,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5597002,
+          "lat": 41.3924864,
+          "x": 228.8,
+          "z": 275.68
+        }
+      ]
+    },
+    {
+      "osmId": 5747990606,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5600613,
+          "lat": 41.3924155,
+          "x": 198.64,
+          "z": 283.55
+        }
+      ]
+    },
+    {
+      "osmId": 5747990607,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5598808,
+          "lat": 41.3925867,
+          "x": 213.72,
+          "z": 264.55
+        }
+      ]
+    },
+    {
+      "osmId": 6864869062,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5449858,
+          "lat": 41.358985,
+          "x": 1457.58,
+          "z": 3994.34
+        }
+      ]
+    },
+    {
+      "osmId": 7199580264,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.588266,
+          "lat": 41.3730723,
+          "x": -2156.7,
+          "z": 2430.64
+        }
+      ]
+    },
+    {
+      "osmId": 7208971418,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fuel"
+      },
+      "coords": [
+        {
+          "lon": -82.5416904,
+          "lat": 41.3886637,
+          "x": 1732.78,
+          "z": 700
+        }
+      ]
+    },
+    {
+      "osmId": 7276626145,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "petroleum_well"
+      },
+      "coords": [
+        {
+          "lon": -82.544963,
+          "lat": 41.3830543,
+          "x": 1459.49,
+          "z": 1322.64
+        }
+      ]
+    },
+    {
+      "osmId": 7717010493,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5571377,
+          "lat": 41.3838972,
+          "x": 442.79,
+          "z": 1229.08
+        }
+      ]
+    },
+    {
+      "osmId": 7929542025,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fountain"
+      },
+      "coords": [
+        {
+          "lon": -82.5974733,
+          "lat": 41.4113097,
+          "x": -2925.6,
+          "z": -1813.71
+        }
+      ]
+    },
+    {
+      "osmId": 7931232680,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5934721,
+          "lat": 41.4112795,
+          "x": -2591.46,
+          "z": -1810.35
+        }
+      ]
+    },
+    {
+      "osmId": 7931232681,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5934688,
+          "lat": 41.4117172,
+          "x": -2591.18,
+          "z": -1858.94
+        }
+      ]
+    },
+    {
+      "osmId": 7932162750,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.59357,
+          "lat": 41.4143813,
+          "x": -2599.64,
+          "z": -2154.65
+        }
+      ]
+    },
+    {
+      "osmId": 7932162751,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5934874,
+          "lat": 41.4145631,
+          "x": -2592.74,
+          "z": -2174.83
+        }
+      ]
+    },
+    {
+      "osmId": 7932191163,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5967001,
+          "lat": 41.4098307,
+          "x": -2861.03,
+          "z": -1649.54
+        }
+      ]
+    },
+    {
+      "osmId": 7932191164,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5973616,
+          "lat": 41.4106447,
+          "x": -2916.27,
+          "z": -1739.89
+        }
+      ]
+    },
+    {
+      "osmId": 7932191165,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5968756,
+          "lat": 41.4104025,
+          "x": -2875.68,
+          "z": -1713.01
+        }
+      ]
+    },
+    {
+      "osmId": 7932191166,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5967737,
+          "lat": 41.4103977,
+          "x": -2867.17,
+          "z": -1712.47
+        }
+      ]
+    },
+    {
+      "osmId": 7932191168,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5970858,
+          "lat": 41.4104283,
+          "x": -2893.24,
+          "z": -1715.87
+        }
+      ]
+    },
+    {
+      "osmId": 7932191169,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5972618,
+          "lat": 41.4105626,
+          "x": -2907.93,
+          "z": -1730.78
+        }
+      ]
+    },
+    {
+      "osmId": 7932191170,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.597412,
+          "lat": 41.4102029,
+          "x": -2920.48,
+          "z": -1690.85
+        }
+      ]
+    },
+    {
+      "osmId": 7932191171,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966717,
+          "lat": 41.4100162,
+          "x": -2858.66,
+          "z": -1670.13
+        }
+      ]
+    },
+    {
+      "osmId": 7932191172,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966631,
+          "lat": 41.4100702,
+          "x": -2857.94,
+          "z": -1676.12
+        }
+      ]
+    },
+    {
+      "osmId": 7932191174,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966868,
+          "lat": 41.4104105,
+          "x": -2859.92,
+          "z": -1713.9
+        }
+      ]
+    },
+    {
+      "osmId": 7932191175,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5974249,
+          "lat": 41.4102947,
+          "x": -2921.55,
+          "z": -1701.04
+        }
+      ]
+    },
+    {
+      "osmId": 7932191176,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.596646,
+          "lat": 41.4102327,
+          "x": -2856.51,
+          "z": -1694.16
+        }
+      ]
+    },
+    {
+      "osmId": 7932191177,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966503,
+          "lat": 41.4101675,
+          "x": -2856.87,
+          "z": -1686.92
+        }
+      ]
+    },
+    {
+      "osmId": 7932191178,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5967151,
+          "lat": 41.4094868,
+          "x": -2862.28,
+          "z": -1611.36
+        }
+      ]
+    },
+    {
+      "osmId": 7932191180,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5975526,
+          "lat": 41.4100509,
+          "x": -2932.22,
+          "z": -1673.98
+        }
+      ]
+    },
+    {
+      "osmId": 7932191181,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5969839,
+          "lat": 41.4104122,
+          "x": -2884.73,
+          "z": -1714.08
+        }
+      ]
+    },
+    {
+      "osmId": 7932191182,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978689,
+          "lat": 41.4093042,
+          "x": -2958.63,
+          "z": -1591.1
+        }
+      ]
+    },
+    {
+      "osmId": 7932191183,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966979,
+          "lat": 41.4098903,
+          "x": -2860.84,
+          "z": -1656.15
+        }
+      ]
+    },
+    {
+      "osmId": 7932191441,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5957286,
+          "lat": 41.4145671,
+          "x": -2779.9,
+          "z": -2175.28
+        }
+      ]
+    },
+    {
+      "osmId": 7932191442,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5952759,
+          "lat": 41.4149574,
+          "x": -2742.09,
+          "z": -2218.6
+        }
+      ]
+    },
+    {
+      "osmId": 7932191443,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5953177,
+          "lat": 41.414893,
+          "x": -2745.58,
+          "z": -2211.45
+        }
+      ]
+    },
+    {
+      "osmId": 7932191444,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5954047,
+          "lat": 41.4148737,
+          "x": -2752.85,
+          "z": -2209.31
+        }
+      ]
+    },
+    {
+      "osmId": 7932191445,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5951664,
+          "lat": 41.4149091,
+          "x": -2732.95,
+          "z": -2213.24
+        }
+      ]
+    },
+    {
+      "osmId": 7932191446,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5954572,
+          "lat": 41.4148286,
+          "x": -2757.23,
+          "z": -2204.3
+        }
+      ]
+    },
+    {
+      "osmId": 7932191447,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.59547,
+          "lat": 41.4147603,
+          "x": -2758.3,
+          "z": -2196.72
+        }
+      ]
+    },
+    {
+      "osmId": 7932210098,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978817,
+          "lat": 41.4090588,
+          "x": -2959.7,
+          "z": -1563.86
+        }
+      ]
+    },
+    {
+      "osmId": 7932210100,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5974388,
+          "lat": 41.409004,
+          "x": -2922.71,
+          "z": -1557.77
+        }
+      ]
+    },
+    {
+      "osmId": 7932210103,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5972714,
+          "lat": 41.4089928,
+          "x": -2908.74,
+          "z": -1556.53
+        }
+      ]
+    },
+    {
+      "osmId": 7932210104,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5971352,
+          "lat": 41.4089815,
+          "x": -2897.36,
+          "z": -1555.28
+        }
+      ]
+    },
+    {
+      "osmId": 7932210105,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978817,
+          "lat": 41.4091665,
+          "x": -2959.7,
+          "z": -1575.81
+        }
+      ]
+    },
+    {
+      "osmId": 7932210119,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966288,
+          "lat": 41.4103284,
+          "x": -2855.07,
+          "z": -1704.78
+        }
+      ]
+    },
+    {
+      "osmId": 7932210133,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5972135,
+          "lat": 41.4104773,
+          "x": -2903.9,
+          "z": -1721.31
+        }
+      ]
+    },
+    {
+      "osmId": 7932210142,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5977509,
+          "lat": 41.4090369,
+          "x": -2948.78,
+          "z": -1561.43
+        }
+      ]
+    },
+    {
+      "osmId": 7932210146,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978163,
+          "lat": 41.4095246,
+          "x": -2954.24,
+          "z": -1615.56
+        }
+      ]
+    },
+    {
+      "osmId": 7932210148,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978249,
+          "lat": 41.4095826,
+          "x": -2954.96,
+          "z": -1622
+        }
+      ]
+    },
+    {
+      "osmId": 7932210151,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5975987,
+          "lat": 41.4090185,
+          "x": -2936.07,
+          "z": -1559.38
+        }
+      ]
+    },
+    {
+      "osmId": 7932211151,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5960526,
+          "lat": 41.4139966,
+          "x": -2806.95,
+          "z": -2111.95
+        }
+      ]
+    },
+    {
+      "osmId": 7932211152,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5963562,
+          "lat": 41.4132661,
+          "x": -2832.31,
+          "z": -2030.87
+        }
+      ]
+    },
+    {
+      "osmId": 7932211153,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5959593,
+          "lat": 41.4141769,
+          "x": -2799.16,
+          "z": -2131.97
+        }
+      ]
+    },
+    {
+      "osmId": 7932211154,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5965762,
+          "lat": 41.4130843,
+          "x": -2850.68,
+          "z": -2010.69
+        }
+      ]
+    },
+    {
+      "osmId": 7932211155,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.596529,
+          "lat": 41.4131679,
+          "x": -2846.74,
+          "z": -2019.97
+        }
+      ]
+    },
+    {
+      "osmId": 7932211156,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5969313,
+          "lat": 41.4129298,
+          "x": -2880.33,
+          "z": -1993.54
+        }
+      ]
+    },
+    {
+      "osmId": 7932211157,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.596588,
+          "lat": 41.4132363,
+          "x": -2851.67,
+          "z": -2027.56
+        }
+      ]
+    },
+    {
+      "osmId": 7932211158,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.595571,
+          "lat": 41.4146388,
+          "x": -2766.74,
+          "z": -2183.24
+        }
+      ]
+    },
+    {
+      "osmId": 7932211159,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5957158,
+          "lat": 41.4144255,
+          "x": -2778.83,
+          "z": -2159.56
+        }
+      ]
+    },
+    {
+      "osmId": 7932211160,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5977807,
+          "lat": 41.4125234,
+          "x": -2951.27,
+          "z": -1948.43
+        }
+      ]
+    },
+    {
+      "osmId": 7932211161,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978774,
+          "lat": 41.4124944,
+          "x": -2959.34,
+          "z": -1945.21
+        }
+      ]
+    },
+    {
+      "osmId": 7932211162,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5971116,
+          "lat": 41.4126884,
+          "x": -2895.39,
+          "z": -1966.74
+        }
+      ]
+    },
+    {
+      "osmId": 7932211163,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5971631,
+          "lat": 41.4126634,
+          "x": -2899.69,
+          "z": -1963.97
+        }
+      ]
+    },
+    {
+      "osmId": 7932211164,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5980704,
+          "lat": 41.4124606,
+          "x": -2975.46,
+          "z": -1941.46
+        }
+      ]
+    },
+    {
+      "osmId": 7932211165,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5970011,
+          "lat": 41.4128309,
+          "x": -2886.16,
+          "z": -1982.56
+        }
+      ]
+    },
+    {
+      "osmId": 7932211166,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966192,
+          "lat": 41.4130134,
+          "x": -2854.27,
+          "z": -2002.82
+        }
+      ]
+    },
+    {
+      "osmId": 7932211167,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5958595,
+          "lat": 41.4142808,
+          "x": -2790.83,
+          "z": -2143.5
+        }
+      ]
+    },
+    {
+      "osmId": 7932211168,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5965386,
+          "lat": 41.4130119,
+          "x": -2847.54,
+          "z": -2002.65
+        }
+      ]
+    },
+    {
+      "osmId": 7932211169,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978645,
+          "lat": 41.4124252,
+          "x": -2958.26,
+          "z": -1937.53
+        }
+      ]
+    },
+    {
+      "osmId": 7932211170,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5968981,
+          "lat": 41.4127833,
+          "x": -2877.56,
+          "z": -1977.28
+        }
+      ]
+    },
+    {
+      "osmId": 7932211171,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5968283,
+          "lat": 41.4128332,
+          "x": -2871.73,
+          "z": -1982.82
+        }
+      ]
+    },
+    {
+      "osmId": 7932211172,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5968251,
+          "lat": 41.4129185,
+          "x": -2871.47,
+          "z": -1992.28
+        }
+      ]
+    },
+    {
+      "osmId": 7932211173,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5961277,
+          "lat": 41.4138647,
+          "x": -2813.23,
+          "z": -2097.31
+        }
+      ]
+    },
+    {
+      "osmId": 7932211174,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5961664,
+          "lat": 41.4138156,
+          "x": -2816.46,
+          "z": -2091.86
+        }
+      ]
+    },
+    {
+      "osmId": 7932211175,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5983279,
+          "lat": 41.4124043,
+          "x": -2996.96,
+          "z": -1935.21
+        }
+      ]
+    },
+    {
+      "osmId": 7932211176,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5982292,
+          "lat": 41.4123529,
+          "x": -2988.72,
+          "z": -1929.5
+        }
+      ]
+    },
+    {
+      "osmId": 7932211177,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5979718,
+          "lat": 41.4124316,
+          "x": -2967.23,
+          "z": -1938.24
+        }
+      ]
+    },
+    {
+      "osmId": 7932211178,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.597309,
+          "lat": 41.412604,
+          "x": -2911.88,
+          "z": -1957.37
+        }
+      ]
+    },
+    {
+      "osmId": 7932211179,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5981199,
+          "lat": 41.4123897,
+          "x": -2979.59,
+          "z": -1933.59
+        }
+      ]
+    },
+    {
+      "osmId": 7932211180,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5964883,
+          "lat": 41.4132709,
+          "x": -2843.34,
+          "z": -2031.4
+        }
+      ]
+    },
+    {
+      "osmId": 7932211181,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5966385,
+          "lat": 41.412949,
+          "x": -2855.88,
+          "z": -1995.67
+        }
+      ]
+    },
+    {
+      "osmId": 7932211182,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5958263,
+          "lat": 41.4143572,
+          "x": -2788.06,
+          "z": -2151.98
+        }
+      ]
+    },
+    {
+      "osmId": 7932211183,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5964582,
+          "lat": 41.4134278,
+          "x": -2840.83,
+          "z": -2048.82
+        }
+      ]
+    },
+    {
+      "osmId": 7932211184,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5956332,
+          "lat": 41.4145269,
+          "x": -2771.93,
+          "z": -2170.82
+        }
+      ]
+    },
+    {
+      "osmId": 7932212885,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5971438,
+          "lat": 41.4127432,
+          "x": -2898.08,
+          "z": -1972.83
+        }
+      ]
+    },
+    {
+      "osmId": 7932212886,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5964432,
+          "lat": 41.4133482,
+          "x": -2839.57,
+          "z": -2039.98
+        }
+      ]
+    },
+    {
+      "osmId": 7932212887,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5977592,
+          "lat": 41.412446,
+          "x": -2949.47,
+          "z": -1939.84
+        }
+      ]
+    },
+    {
+      "osmId": 7932212889,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5964421,
+          "lat": 41.41311,
+          "x": -2839.48,
+          "z": -2013.54
+        }
+      ]
+    },
+    {
+      "osmId": 7932212890,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5970902,
+          "lat": 41.4127962,
+          "x": -2893.6,
+          "z": -1978.71
+        }
+      ]
+    },
+    {
+      "osmId": 7932212891,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5970064,
+          "lat": 41.4127423,
+          "x": -2886.61,
+          "z": -1972.73
+        }
+      ]
+    },
+    {
+      "osmId": 7932212892,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5962028,
+          "lat": 41.4137602,
+          "x": -2819.5,
+          "z": -2085.71
+        }
+      ]
+    },
+    {
+      "osmId": 7932212893,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5967425,
+          "lat": 41.4129587,
+          "x": -2864.57,
+          "z": -1996.75
+        }
+      ]
+    },
+    {
+      "osmId": 7932212894,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5963198,
+          "lat": 41.4135107,
+          "x": -2829.27,
+          "z": -2058.02
+        }
+      ]
+    },
+    {
+      "osmId": 7932212895,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5965323,
+          "lat": 41.4133313,
+          "x": -2847.01,
+          "z": -2038.1
+        }
+      ]
+    },
+    {
+      "osmId": 7945651555,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5961724,
+          "lat": 41.4099792,
+          "x": -2816.96,
+          "z": -1666.02
+        }
+      ]
+    },
+    {
+      "osmId": 7945651565,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5963439,
+          "lat": 41.4099885,
+          "x": -2831.28,
+          "z": -1667.05
+        }
+      ]
+    },
+    {
+      "osmId": 7945912515,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5984602,
+          "lat": 41.4111019,
+          "x": -3008.01,
+          "z": -1790.64
+        }
+      ]
+    },
+    {
+      "osmId": 7945912523,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5983776,
+          "lat": 41.4100815,
+          "x": -3001.11,
+          "z": -1677.38
+        }
+      ]
+    },
+    {
+      "osmId": 7945912529,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5983894,
+          "lat": 41.410562,
+          "x": -3002.1,
+          "z": -1730.71
+        }
+      ]
+    },
+    {
+      "osmId": 7945912535,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.597541,
+          "lat": 41.410728,
+          "x": -2931.25,
+          "z": -1749.14
+        }
+      ]
+    },
+    {
+      "osmId": 7945912536,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978262,
+          "lat": 41.4100968,
+          "x": -2955.07,
+          "z": -1679.07
+        }
+      ]
+    },
+    {
+      "osmId": 7945912538,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5972093,
+          "lat": 41.4110979,
+          "x": -2903.55,
+          "z": -1790.2
+        }
+      ]
+    },
+    {
+      "osmId": 7945912539,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5984732,
+          "lat": 41.4111719,
+          "x": -3009.1,
+          "z": -1798.41
+        }
+      ]
+    },
+    {
+      "osmId": 7945912543,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5979592,
+          "lat": 41.4099769,
+          "x": -2966.17,
+          "z": -1665.77
+        }
+      ]
+    },
+    {
+      "osmId": 7945912544,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5974475,
+          "lat": 41.4109063,
+          "x": -2923.44,
+          "z": -1768.93
+        }
+      ]
+    },
+    {
+      "osmId": 7945912546,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5982017,
+          "lat": 41.4104647,
+          "x": -2986.42,
+          "z": -1719.91
+        }
+      ]
+    },
+    {
+      "osmId": 7945912551,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5983659,
+          "lat": 41.4112419,
+          "x": -3000.14,
+          "z": -1806.18
+        }
+      ]
+    },
+    {
+      "osmId": 7945912552,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5979195,
+          "lat": 41.4099955,
+          "x": -2962.86,
+          "z": -1667.83
+        }
+      ]
+    },
+    {
+      "osmId": 7945912557,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5984205,
+          "lat": 41.4110149,
+          "x": -3004.7,
+          "z": -1780.98
+        }
+      ]
+    },
+    {
+      "osmId": 7945912562,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5978938,
+          "lat": 41.4109241,
+          "x": -2960.71,
+          "z": -1770.91
+        }
+      ]
+    },
+    {
+      "osmId": 7945912573,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5982081,
+          "lat": 41.411229,
+          "x": -2986.96,
+          "z": -1804.75
+        }
+      ]
+    },
+    {
+      "osmId": 7945912578,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5974207,
+          "lat": 41.4109305,
+          "x": -2921.2,
+          "z": -1771.62
+        }
+      ]
+    },
+    {
+      "osmId": 7945912580,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5981115,
+          "lat": 41.4100824,
+          "x": -2978.89,
+          "z": -1677.48
+        }
+      ]
+    },
+    {
+      "osmId": 7945912583,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5980172,
+          "lat": 41.4113127,
+          "x": -2971.02,
+          "z": -1814.04
+        }
+      ]
+    },
+    {
+      "osmId": 7945979193,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5974604,
+          "lat": 41.4108806,
+          "x": -2924.52,
+          "z": -1766.08
+        }
+      ]
+    },
+    {
+      "osmId": 7945979204,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5984185,
+          "lat": 41.4109796,
+          "x": -3004.53,
+          "z": -1777.07
+        }
+      ]
+    },
+    {
+      "osmId": 7945979219,
+      "osmType": "node",
+      "category": "natural",
+      "tags": {
+        "natural": "tree"
+      },
+      "coords": [
+        {
+          "lon": -82.5983197,
+          "lat": 41.4111896,
+          "x": -2996.28,
+          "z": -1800.38
+        }
+      ]
+    },
+    {
+      "osmId": 8280206482,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "pub",
+        "name": "Mulligan's Pub"
+      },
+      "coords": [
+        {
+          "lon": -82.5976421,
+          "lat": 41.4110238,
+          "x": -2939.69,
+          "z": -1781.97
+        }
+      ]
+    },
+    {
+      "osmId": 8280206484,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "fast_food",
+        "cuisine": "american",
+        "name": "Trapper's Deli"
+      },
+      "coords": [
+        {
+          "lon": -82.5956832,
+          "lat": 41.4092239,
+          "x": -2776.11,
+          "z": -1582.18
+        }
+      ]
+    },
+    {
+      "osmId": 8996356592,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "water_tower"
+      },
+      "coords": [
+        {
+          "lon": -82.5495214,
+          "lat": 41.3617479,
+          "x": 1078.82,
+          "z": 3687.65
+        }
+      ]
+    },
+    {
+      "osmId": 9152250359,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "addr:city": "Huron",
+        "addr:housenumber": "524",
+        "addr:postcode": "44839",
+        "addr:state": "OH",
+        "addr:street": "Main Street",
+        "amenity": "cafe",
+        "internet_access": "yes",
+        "internet_access:fee": "no",
+        "name": "Lighthouse Nutrition",
+        "opening_hours": "Mo-Fr 06:00-14:00",
+        "outdoor_seating": "yes",
+        "phone": "+1-419-688-5210"
+      },
+      "coords": [
+        {
+          "lon": -82.558329,
+          "lat": 41.3904532,
+          "x": 343.31,
+          "z": 501.36
+        }
+      ]
+    },
+    {
+      "osmId": 9505228980,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_loop"
+      },
+      "coords": [
+        {
+          "lon": -82.5587041,
+          "lat": 41.3860756,
+          "x": 311.98,
+          "z": 987.28
+        }
+      ]
+    },
+    {
+      "osmId": 9507664099,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5533304,
+          "lat": 41.3957588,
+          "x": 760.73,
+          "z": -87.56
+        }
+      ]
+    },
+    {
+      "osmId": 9509253314,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5559506,
+          "lat": 41.3937829,
+          "x": 541.92,
+          "z": 131.77
+        }
+      ]
+    },
+    {
+      "osmId": 9509253315,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5564046,
+          "lat": 41.3927114,
+          "x": 504.01,
+          "z": 250.7
+        }
+      ]
+    },
+    {
+      "osmId": 9509253316,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5563664,
+          "lat": 41.3926143,
+          "x": 507.2,
+          "z": 261.48
+        }
+      ]
+    },
+    {
+      "osmId": 9509274717,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5565047,
+          "lat": 41.3926195,
+          "x": 495.65,
+          "z": 260.91
+        }
+      ]
+    },
+    {
+      "osmId": 9509274721,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5565374,
+          "lat": 41.3927191,
+          "x": 492.92,
+          "z": 249.85
+        }
+      ]
+    },
+    {
+      "osmId": 9509274722,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked;uncontrolled",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5550617,
+          "lat": 41.3945857,
+          "x": 616.15,
+          "z": 42.66
+        }
+      ]
+    },
+    {
+      "osmId": 9509274723,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.55506,
+          "lat": 41.3947051,
+          "x": 616.3,
+          "z": 29.4
+        }
+      ]
+    },
+    {
+      "osmId": 9509274724,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5541895,
+          "lat": 41.3950702,
+          "x": 688.99,
+          "z": -11.12
+        }
+      ]
+    },
+    {
+      "osmId": 9509274725,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked;uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5534554,
+          "lat": 41.3957846,
+          "x": 750.29,
+          "z": -90.42
+        }
+      ]
+    },
+    {
+      "osmId": 9509274726,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "marked",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5533213,
+          "lat": 41.3957588,
+          "x": 761.49,
+          "z": -87.56
+        }
+      ]
+    },
+    {
+      "osmId": 9618861331,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "backward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5487128,
+          "lat": 41.3578766,
+          "x": 1146.34,
+          "z": 4117.37
+        }
+      ]
+    },
+    {
+      "osmId": 9618861332,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "forward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.517563,
+          "lat": 41.3577065,
+          "x": 3747.63,
+          "z": 4136.25
+        }
+      ]
+    },
+    {
+      "osmId": 9618861333,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "backward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5174079,
+          "lat": 41.3577086,
+          "x": 3760.59,
+          "z": 4136.02
+        }
+      ]
+    },
+    {
+      "osmId": 9618861334,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "forward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5133176,
+          "lat": 41.3576917,
+          "x": 4102.16,
+          "z": 4137.89
+        }
+      ]
+    },
+    {
+      "osmId": 9844577580,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "forward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5691262,
+          "lat": 41.3966197,
+          "x": -558.36,
+          "z": -183.12
+        }
+      ]
+    },
+    {
+      "osmId": 9844577590,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "direction": "forward",
+        "highway": "stop"
+      },
+      "coords": [
+        {
+          "lon": -82.5646873,
+          "lat": 41.3951581,
+          "x": -187.67,
+          "z": -20.88
+        }
+      ]
+    },
+    {
+      "osmId": 11196139327,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5529995,
+          "lat": 41.3930418,
+          "x": 788.37,
+          "z": 214.03
+        }
+      ]
+    },
+    {
+      "osmId": 12298246119,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "monopole",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5444843,
+          "lat": 41.3787419,
+          "x": 1499.46,
+          "z": 1801.32
+        }
+      ]
+    },
+    {
+      "osmId": 12518412367,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.550847,
+          "lat": 41.39097,
+          "x": 968.12,
+          "z": 444
+        }
+      ]
+    },
+    {
+      "osmId": 12518412427,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5529852,
+          "lat": 41.3929359,
+          "x": 789.56,
+          "z": 225.79
+        }
+      ]
+    },
+    {
+      "osmId": 12518412428,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5529909,
+          "lat": 41.3924568,
+          "x": 789.08,
+          "z": 278.97
+        }
+      ]
+    },
+    {
+      "osmId": 12518412429,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5530055,
+          "lat": 41.391988,
+          "x": 787.87,
+          "z": 331
+        }
+      ]
+    },
+    {
+      "osmId": 12518412430,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5529297,
+          "lat": 41.3913081,
+          "x": 794.2,
+          "z": 406.47
+        }
+      ]
+    },
+    {
+      "osmId": 12518412431,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5529297,
+          "lat": 41.3911944,
+          "x": 794.2,
+          "z": 419.09
+        }
+      ]
+    },
+    {
+      "osmId": 12518462313,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5528492,
+          "lat": 41.3907221,
+          "x": 800.92,
+          "z": 471.52
+        }
+      ]
+    },
+    {
+      "osmId": 12518462314,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5528354,
+          "lat": 41.3906988,
+          "x": 802.07,
+          "z": 474.1
+        }
+      ]
+    },
+    {
+      "osmId": 12518473795,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5506896,
+          "lat": 41.3976986,
+          "x": 981.26,
+          "z": -302.87
+        }
+      ]
+    },
+    {
+      "osmId": 12518473796,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5507563,
+          "lat": 41.3976432,
+          "x": 975.69,
+          "z": -296.73
+        }
+      ]
+    },
+    {
+      "osmId": 12580527483,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "turning_circle",
+        "turning_circle": "circle"
+      },
+      "coords": [
+        {
+          "lon": -82.5836163,
+          "lat": 41.3723603,
+          "x": -1768.41,
+          "z": 2509.68
+        }
+      ]
+    },
+    {
+      "osmId": 13305602096,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.554558,
+          "lat": 41.3550862,
+          "x": 658.22,
+          "z": 4427.1
+        }
+      ]
+    },
+    {
+      "osmId": 13334059601,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "52-97",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.59024,
+          "lat": 41.4079967,
+          "x": -2321.55,
+          "z": -1445.96
+        }
+      ]
+    },
+    {
+      "osmId": 13334067201,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "229-274",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5901187,
+          "lat": 41.4081634,
+          "x": -2311.42,
+          "z": -1464.47
+        }
+      ]
+    },
+    {
+      "osmId": 13334070801,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "276-321",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5661679,
+          "lat": 41.3958434,
+          "x": -311.31,
+          "z": -96.95
+        }
+      ]
+    },
+    {
+      "osmId": 13334258301,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "259-304",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5258263,
+          "lat": 41.3869927,
+          "x": 3057.57,
+          "z": 885.48
+        }
+      ]
+    },
+    {
+      "osmId": 13334259601,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "174-219",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.565992,
+          "lat": 41.3841418,
+          "x": -296.62,
+          "z": 1201.93
+        }
+      ]
+    },
+    {
+      "osmId": 13334263301,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "267-312",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.555377,
+          "lat": 41.3902101,
+          "x": 589.82,
+          "z": 528.35
+        }
+      ]
+    },
+    {
+      "osmId": 13334264501,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "86-131",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5561417,
+          "lat": 41.3901569,
+          "x": 525.96,
+          "z": 534.25
+        }
+      ]
+    },
+    {
+      "osmId": 13379009083,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5861318,
+          "lat": 41.4065675,
+          "x": -1978.48,
+          "z": -1287.32
+        }
+      ]
+    },
+    {
+      "osmId": 13379010244,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.585335,
+          "lat": 41.406633,
+          "x": -1911.94,
+          "z": -1294.59
+        }
+      ]
+    },
+    {
+      "osmId": 13379010248,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5861354,
+          "lat": 41.4067074,
+          "x": -1978.78,
+          "z": -1302.85
+        }
+      ]
+    },
+    {
+      "osmId": 13379010272,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5866521,
+          "lat": 41.406618,
+          "x": -2021.93,
+          "z": -1292.93
+        }
+      ]
+    },
+    {
+      "osmId": 13379010316,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5899269,
+          "lat": 41.4080481,
+          "x": -2295.4,
+          "z": -1451.67
+        }
+      ]
+    },
+    {
+      "osmId": 13379010344,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5896556,
+          "lat": 41.4071422,
+          "x": -2272.75,
+          "z": -1351.11
+        }
+      ]
+    },
+    {
+      "osmId": 13379010350,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5898681,
+          "lat": 41.4060605,
+          "x": -2290.49,
+          "z": -1231.05
+        }
+      ]
+    },
+    {
+      "osmId": 13379010351,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.589699,
+          "lat": 41.406705,
+          "x": -2276.37,
+          "z": -1302.59
+        }
+      ]
+    },
+    {
+      "osmId": 13379010357,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5845626,
+          "lat": 41.4066368,
+          "x": -1847.44,
+          "z": -1295.01
+        }
+      ]
+    },
+    {
+      "osmId": 13379010367,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5878764,
+          "lat": 41.408324,
+          "x": -2124.17,
+          "z": -1482.29
+        }
+      ]
+    },
+    {
+      "osmId": 13379010370,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5869739,
+          "lat": 41.4083629,
+          "x": -2048.8,
+          "z": -1486.61
+        }
+      ]
+    },
+    {
+      "osmId": 13379010374,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5861796,
+          "lat": 41.4083908,
+          "x": -1982.47,
+          "z": -1489.71
+        }
+      ]
+    },
+    {
+      "osmId": 13379010381,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5853348,
+          "lat": 41.4084058,
+          "x": -1911.92,
+          "z": -1491.37
+        }
+      ]
+    },
+    {
+      "osmId": 13379010396,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5846119,
+          "lat": 41.4083494,
+          "x": -1851.55,
+          "z": -1485.11
+        }
+      ]
+    },
+    {
+      "osmId": 13379010399,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5838124,
+          "lat": 41.4082873,
+          "x": -1784.79,
+          "z": -1478.22
+        }
+      ]
+    },
+    {
+      "osmId": 13379010402,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5830098,
+          "lat": 41.4082161,
+          "x": -1717.76,
+          "z": -1470.32
+        }
+      ]
+    },
+    {
+      "osmId": 13379010405,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.582231,
+          "lat": 41.4081445,
+          "x": -1652.73,
+          "z": -1462.37
+        }
+      ]
+    },
+    {
+      "osmId": 13379010408,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5814032,
+          "lat": 41.4080706,
+          "x": -1583.6,
+          "z": -1454.17
+        }
+      ]
+    },
+    {
+      "osmId": 13379010411,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5806016,
+          "lat": 41.4080019,
+          "x": -1516.66,
+          "z": -1446.54
+        }
+      ]
+    },
+    {
+      "osmId": 13379010414,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5797922,
+          "lat": 41.4079325,
+          "x": -1449.06,
+          "z": -1438.84
+        }
+      ]
+    },
+    {
+      "osmId": 13379010417,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5781881,
+          "lat": 41.4077928,
+          "x": -1315.11,
+          "z": -1423.33
+        }
+      ]
+    },
+    {
+      "osmId": 13379010420,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5773908,
+          "lat": 41.4077221,
+          "x": -1248.53,
+          "z": -1415.48
+        }
+      ]
+    },
+    {
+      "osmId": 13379010423,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.575771,
+          "lat": 41.4075809,
+          "x": -1113.26,
+          "z": -1399.81
+        }
+      ]
+    },
+    {
+      "osmId": 13379010427,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5742053,
+          "lat": 41.4074291,
+          "x": -982.51,
+          "z": -1382.96
+        }
+      ]
+    },
+    {
+      "osmId": 13379010428,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5743516,
+          "lat": 41.4074428,
+          "x": -994.73,
+          "z": -1384.48
+        }
+      ]
+    },
+    {
+      "osmId": 13379010431,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5712147,
+          "lat": 41.4067685,
+          "x": -732.77,
+          "z": -1309.63
+        }
+      ]
+    },
+    {
+      "osmId": 13379010434,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5691103,
+          "lat": 41.4049478,
+          "x": -557.03,
+          "z": -1107.54
+        }
+      ]
+    },
+    {
+      "osmId": 13379010437,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5669546,
+          "lat": 41.4029258,
+          "x": -377.01,
+          "z": -883.09
+        }
+      ]
+    },
+    {
+      "osmId": 13379010440,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5643595,
+          "lat": 41.4004559,
+          "x": -160.3,
+          "z": -608.93
+        }
+      ]
+    },
+    {
+      "osmId": 13379082417,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5626303,
+          "lat": 41.3993454,
+          "x": -15.89,
+          "z": -485.67
+        }
+      ]
+    },
+    {
+      "osmId": 13379082418,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.562711,
+          "lat": 41.3993968,
+          "x": -22.63,
+          "z": -491.37
+        }
+      ]
+    },
+    {
+      "osmId": 13379082424,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5618277,
+          "lat": 41.398846,
+          "x": 51.13,
+          "z": -430.24
+        }
+      ]
+    },
+    {
+      "osmId": 13379082439,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5574604,
+          "lat": 41.396202,
+          "x": 415.84,
+          "z": -136.75
+        }
+      ]
+    },
+    {
+      "osmId": 13379082443,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5560459,
+          "lat": 41.3974793,
+          "x": 533.96,
+          "z": -278.53
+        }
+      ]
+    },
+    {
+      "osmId": 13379082451,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5558993,
+          "lat": 41.3974926,
+          "x": 546.21,
+          "z": -280.01
+        }
+      ]
+    },
+    {
+      "osmId": 13379082457,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5551295,
+          "lat": 41.3968879,
+          "x": 610.49,
+          "z": -212.89
+        }
+      ]
+    },
+    {
+      "osmId": 13379082461,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5551022,
+          "lat": 41.3967756,
+          "x": 612.77,
+          "z": -200.42
+        }
+      ]
+    },
+    {
+      "osmId": 13379082464,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5549608,
+          "lat": 41.3967815,
+          "x": 624.58,
+          "z": -201.08
+        }
+      ]
+    },
+    {
+      "osmId": 13379082472,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5549744,
+          "lat": 41.3968917,
+          "x": 623.44,
+          "z": -213.31
+        }
+      ]
+    },
+    {
+      "osmId": 13379082478,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5558827,
+          "lat": 41.3973738,
+          "x": 547.59,
+          "z": -266.82
+        }
+      ]
+    },
+    {
+      "osmId": 13379082481,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5560412,
+          "lat": 41.3973653,
+          "x": 534.36,
+          "z": -265.88
+        }
+      ]
+    },
+    {
+      "osmId": 13379082487,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5573164,
+          "lat": 41.3961911,
+          "x": 427.87,
+          "z": -135.54
+        }
+      ]
+    },
+    {
+      "osmId": 13379108627,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.552624,
+          "lat": 41.3974546,
+          "x": 819.72,
+          "z": -275.79
+        }
+      ]
+    },
+    {
+      "osmId": 13379108651,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5541952,
+          "lat": 41.396311,
+          "x": 688.52,
+          "z": -148.85
+        }
+      ]
+    },
+    {
+      "osmId": 13379108658,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5563871,
+          "lat": 41.3956059,
+          "x": 505.47,
+          "z": -70.58
+        }
+      ]
+    },
+    {
+      "osmId": 13379108661,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5572904,
+          "lat": 41.3960958,
+          "x": 430.04,
+          "z": -124.96
+        }
+      ]
+    },
+    {
+      "osmId": 13379108663,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5574231,
+          "lat": 41.3960951,
+          "x": 418.96,
+          "z": -124.89
+        }
+      ]
+    },
+    {
+      "osmId": 13379108668,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5563576,
+          "lat": 41.3955139,
+          "x": 507.94,
+          "z": -60.37
+        }
+      ]
+    },
+    {
+      "osmId": 13379108671,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5564907,
+          "lat": 41.3955125,
+          "x": 496.82,
+          "z": -60.22
+        }
+      ]
+    },
+    {
+      "osmId": 13379108673,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5565259,
+          "lat": 41.3956197,
+          "x": 493.88,
+          "z": -72.12
+        }
+      ]
+    },
+    {
+      "osmId": 13379108682,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5590901,
+          "lat": 41.3932963,
+          "x": 279.75,
+          "z": 185.78
+        }
+      ]
+    },
+    {
+      "osmId": 13379108686,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5584353,
+          "lat": 41.3937591,
+          "x": 334.43,
+          "z": 134.41
+        }
+      ]
+    },
+    {
+      "osmId": 13379108688,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5582795,
+          "lat": 41.3937792,
+          "x": 347.44,
+          "z": 132.18
+        }
+      ]
+    },
+    {
+      "osmId": 13379108696,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.557527,
+          "lat": 41.3932913,
+          "x": 410.28,
+          "z": 186.34
+        }
+      ]
+    },
+    {
+      "osmId": 13379108698,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5575046,
+          "lat": 41.3931783,
+          "x": 412.15,
+          "z": 198.88
+        }
+      ]
+    },
+    {
+      "osmId": 13379108701,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5573358,
+          "lat": 41.3932072,
+          "x": 426.25,
+          "z": 195.67
+        }
+      ]
+    },
+    {
+      "osmId": 13379108709,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5556069,
+          "lat": 41.3950371,
+          "x": 570.63,
+          "z": -7.45
+        }
+      ]
+    },
+    {
+      "osmId": 13379108711,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5554602,
+          "lat": 41.3950298,
+          "x": 582.88,
+          "z": -6.64
+        }
+      ]
+    },
+    {
+      "osmId": 13379108714,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5554361,
+          "lat": 41.3949313,
+          "x": 584.89,
+          "z": 4.3
+        }
+      ]
+    },
+    {
+      "osmId": 13379108715,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.555577,
+          "lat": 41.3949238,
+          "x": 573.12,
+          "z": 5.13
+        }
+      ]
+    },
+    {
+      "osmId": 13379108731,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5598576,
+          "lat": 41.3937756,
+          "x": 215.65,
+          "z": 132.58
+        }
+      ]
+    },
+    {
+      "osmId": 13379108735,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5605424,
+          "lat": 41.3932896,
+          "x": 158.47,
+          "z": 186.52
+        }
+      ]
+    },
+    {
+      "osmId": 13379108738,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5596074,
+          "lat": 41.3927092,
+          "x": 236.55,
+          "z": 250.95
+        }
+      ]
+    },
+    {
+      "osmId": 13379108743,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5586842,
+          "lat": 41.3921288,
+          "x": 313.64,
+          "z": 315.37
+        }
+      ]
+    },
+    {
+      "osmId": 13379108769,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5540376,
+          "lat": 41.3963255,
+          "x": 701.68,
+          "z": -150.46
+        }
+      ]
+    },
+    {
+      "osmId": 13379108772,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5540247,
+          "lat": 41.3962069,
+          "x": 702.75,
+          "z": -137.3
+        }
+      ]
+    },
+    {
+      "osmId": 13379108775,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5541793,
+          "lat": 41.3961962,
+          "x": 689.84,
+          "z": -136.11
+        }
+      ]
+    },
+    {
+      "osmId": 13379108793,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5510499,
+          "lat": 41.3973385,
+          "x": 951.18,
+          "z": -262.9
+        }
+      ]
+    },
+    {
+      "osmId": 13379108799,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5516716,
+          "lat": 41.3969776,
+          "x": 899.26,
+          "z": -222.84
+        }
+      ]
+    },
+    {
+      "osmId": 13379108801,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "bench"
+      },
+      "coords": [
+        {
+          "lon": -82.5508249,
+          "lat": 41.3975916,
+          "x": 969.97,
+          "z": -291
+        }
+      ]
+    },
+    {
+      "osmId": 13379108813,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5589523,
+          "lat": 41.3972146,
+          "x": 291.25,
+          "z": -249.15
+        }
+      ]
+    },
+    {
+      "osmId": 13379108821,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5600224,
+          "lat": 41.3938775,
+          "x": 201.89,
+          "z": 121.27
+        }
+      ]
+    },
+    {
+      "osmId": 13379108828,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5614979,
+          "lat": 41.3938634,
+          "x": 78.67,
+          "z": 122.83
+        }
+      ]
+    },
+    {
+      "osmId": 13379108866,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5631635,
+          "lat": 41.3948631,
+          "x": -60.42,
+          "z": 11.87
+        }
+      ]
+    },
+    {
+      "osmId": 13379108877,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "uncontrolled",
+        "crossing:markings": "yes",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5597607,
+          "lat": 41.3926901,
+          "x": 223.75,
+          "z": 253.07
+        }
+      ]
+    },
+    {
+      "osmId": 13379108880,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5588713,
+          "lat": 41.392069,
+          "x": 298.02,
+          "z": 322.01
+        }
+      ]
+    },
+    {
+      "osmId": 13379108883,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:markings": "no",
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5591399,
+          "lat": 41.3918267,
+          "x": 275.59,
+          "z": 348.91
+        }
+      ]
+    },
+    {
+      "osmId": 13403181464,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "communication:mobile_phone": "yes",
+        "man_made": "mast",
+        "tower:construction": "monopole",
+        "tower:type": "communication"
+      },
+      "coords": [
+        {
+          "lon": -82.5971581,
+          "lat": 41.4061313,
+          "x": -2899.27,
+          "z": -1238.9
+        }
+      ]
+    },
+    {
+      "osmId": 13505066490,
+      "osmType": "node",
+      "category": "shop",
+      "tags": {
+        "brand": "Safelite AutoGlass",
+        "brand:wikidata": "Q28797369",
+        "name": "Safelite AutoGlass",
+        "service:vehicle:glass": "yes",
+        "shop": "car_repair"
+      },
+      "coords": [
+        {
+          "lon": -82.5884685,
+          "lat": 41.4017923,
+          "x": -2173.61,
+          "z": -757.28
+        }
+      ]
+    },
+    {
+      "osmId": 13603300601,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:type": "fixed",
+        "direction": "196-266",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5925127,
+          "lat": 41.4075377,
+          "x": -2511.34,
+          "z": -1395.01
+        }
+      ]
+    },
+    {
+      "osmId": 13738343814,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "utility_pole"
+      },
+      "coords": [
+        {
+          "lon": -82.5149307,
+          "lat": 41.3649368,
+          "x": 3967.45,
+          "z": 3333.69
+        }
+      ]
+    },
+    {
+      "osmId": 13738343815,
+      "osmType": "node",
+      "category": "amenity",
+      "tags": {
+        "amenity": "letter_box",
+        "post:city": "Huron",
+        "post:housenumber": "6050",
+        "post:postcode": "44839",
+        "post:state": "Ohio",
+        "post:street": "Darrow Road"
+      },
+      "coords": [
+        {
+          "lon": -82.5147783,
+          "lat": 41.3649329,
+          "x": 3980.18,
+          "z": 3334.12
+        }
+      ]
+    },
+    {
+      "osmId": 13903178101,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "camera:mount": "pole",
+        "camera:type": "fixed",
+        "direction": "66",
+        "man_made": "surveillance",
+        "manufacturer": "Flock Safety",
+        "manufacturer:wikidata": "Q108485435",
+        "surveillance": "public",
+        "surveillance:type": "ALPR",
+        "surveillance:zone": "traffic"
+      },
+      "coords": [
+        {
+          "lon": -82.5905273,
+          "lat": 41.3891303,
+          "x": -2345.54,
+          "z": 648.21
+        }
+      ]
+    },
+    {
+      "osmId": 14145091347,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "highway": "crossing"
+      },
+      "coords": [
+        {
+          "lon": -82.5845182,
+          "lat": 41.39631,
+          "x": -1843.73,
+          "z": -148.74
+        }
+      ]
+    },
+    {
+      "osmId": 14145091348,
+      "osmType": "node",
+      "category": "highway",
+      "tags": {
+        "crossing": "unmarked",
+        "crossing:island": "no",
+        "crossing:markings": "no",
+        "highway": "crossing",
+        "tactile_paving": "no"
+      },
+      "coords": [
+        {
+          "lon": -82.5854884,
+          "lat": 41.396263,
+          "x": -1924.75,
+          "z": -143.52
+        }
+      ]
+    },
+    {
+      "osmId": 14145091368,
+      "osmType": "node",
+      "category": "other",
+      "tags": {
+        "man_made": "manhole"
+      },
+      "coords": [
+        {
+          "lon": -82.584355,
+          "lat": 41.3964899,
+          "x": -1830.1,
+          "z": -168.71
+        }
+      ]
+    }
+  ],
   "buildings": [
     {
       "osmId": 186844685,
