@@ -103,7 +103,41 @@ it from. ▶ **Establish, first, before any shader work:**
    §4① and §4② still deliver a lake that is not plastic. ⭐ **That is a real, shippable outcome; do
    not treat it as failure.**
 
-## 6. ⚠️ PREREQUISITE — `natural:water` HAS NO LU CLASS
+## 6. ✅ ANSWERED 2026-09-20 — AND THE REAL GAP IS NOT VOCABULARY, IT IS **PRODUCER COVERAGE**
+
+> **This section originally said `natural:water` has no LU class and asked whether it needs one. Lex
+> (BRIEF-lu-vocabulary) answered it and found something bigger while doing so.**
+
+**① THE LU QUESTION IS CLOSED: `natural:water` does NOT need an LU class, and giving it one would be
+the bug.** It already has a producer — `derive.js`'s `waterFeats` ← `mintProtopolygon`'s `waterRings`
+← the coast/relation path → `layers.water`. ⭐ **Both renderers skip `natural=water` DELIBERATELY and
+route to it** (`bake-ground.js`'s `NATURAL_KEYS` comment; `MapLayers.jsx`'s `landscapeByKind`). It is
+now declared `none` in `OSM_LU_DECLARED` with that reason. ⛔ **Do not add an LU class for water. A
+second producer is what this project has too many of already.**
+
+### ⛔⛔ ② AND THE ACTUAL GAP, FROM THE POUR'S OWN OUTPUT — NOT FROM READING CODE
+huron's re-pour printed, verbatim:
+> *"⚠️ 40 water bodies lie wholly inside the disc — **a pond is not a coast, not applied**"*
+> *"15 closed water bodies cross the rim but are held WHOLE by the fetch — not applied"*
+
+⇒ ⭐⭐ **THE WATER PRODUCER REACHES THE COAST AND NOT INLAND PONDS. AN INLAND POND IS DRAWN BY NOTHING
+AT ALL.** On huron that is **55 water bodies** the pipeline acquired, classified, and then did not
+draw.
+
+⛔ **THIS REPLACES §6's PREREQUISITE AND IT CHANGES WHAT THIS BRIEF IS.** The shader work in §3–§5
+assumes water arrives and needs a better material. For **the coast, that is true** — huron's lake is
+drawn. For **55 inland bodies it is false**: there is no geometry to shade.
+▶ **SO §5's MEASUREMENT GAINS A PRIOR STEP:** before the depth signal, establish **which water this
+town actually draws.** A beautiful lake shader that leaves 40 ponds invisible is a worse outcome than
+today, because the lake will look finished.
+⚠️ **And it is a PRODUCER question, not a shader one** — possibly `derive.js`, possibly the fetch's
+relation handling. ⛔ **Establish whether it is in this brief's bounds before you touch it, and come
+back if it is not.** It may want its own dispatch.
+⭐ Note the irony and do not repeat it: this was found **in the pour's printed output**, by someone
+running it for another reason — not by reading the code. The producer says what it is not doing,
+every run, and nobody had read it.
+
+## 6b. (superseded — retained for provenance) THE ORIGINAL PREREQUISITE
 
 `derive.js`'s `OSM_TO_LU` has **no entry for `natural:water`** — 157 features across four towns.
 ⇒ **There is no LU class for a water material to attach to**, the way grass attaches to
