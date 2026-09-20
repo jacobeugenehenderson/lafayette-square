@@ -1,0 +1,212 @@
+{
+  "name": "Huron OH",
+  "blurb": "Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.",
+  "radius": 3539,
+  "timezone": "America/New_York",
+  "exclusions": [
+    {
+      "closed": true,
+      "anchors": [
+        {
+          "lon": -82.60645968650086,
+          "lat": 41.39082441441442,
+          "type": "corner"
+        },
+        {
+          "lon": -82.59927962207665,
+          "lat": 41.39061837837838,
+          "type": "corner"
+        },
+        {
+          "lon": -82.59938943060028,
+          "lat": 41.3870845945946,
+          "type": "corner"
+        },
+        {
+          "lon": -82.57404605443725,
+          "lat": 41.3876727027027,
+          "type": "corner"
+        },
+        {
+          "lon": -82.56789593888084,
+          "lat": 41.38416036036036,
+          "type": "corner"
+        },
+        {
+          "lon": -82.56659536050006,
+          "lat": 41.38343828828829,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5669142482846,
+          "lat": 41.38234945945946,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5667674377612,
+          "lat": 41.38061558558559,
+          "type": "corner"
+        },
+        {
+          "lon": -82.56689101725561,
+          "lat": 41.379043513513516,
+          "type": "corner"
+        },
+        {
+          "lon": -82.56760914344561,
+          "lat": 41.37598279279279,
+          "type": "corner"
+        },
+        {
+          "lon": -82.56060989785531,
+          "lat": 41.375993333333334,
+          "type": "corner"
+        },
+        {
+          "lon": -82.55920992898969,
+          "lat": 41.375844324324326,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5590952108156,
+          "lat": 41.37434774774775,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -82.55967431007436,
+            "lat": 41.374987837837836
+          },
+          "handleOut": {
+            "lon": -82.55851611155683,
+            "lat": 41.37370765765766
+          }
+        },
+        {
+          "lon": -82.55681174436288,
+          "lat": 41.373305675675674,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5547699285107,
+          "lat": 41.37233342342343,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5520418393227,
+          "lat": 41.37260333333333,
+          "type": "corner"
+        },
+        {
+          "lon": -82.55144992707372,
+          "lat": 41.375752972972975,
+          "type": "corner"
+        },
+        {
+          "lon": -82.55031531882791,
+          "lat": 41.38867,
+          "type": "corner"
+        },
+        {
+          "lon": -82.54442146307584,
+          "lat": 41.38693576576576,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -82.54735935001017,
+            "lat": 41.38835837837838
+          },
+          "handleOut": {
+            "lon": -82.54148357614149,
+            "lat": 41.385513153153155
+          }
+        },
+        {
+          "lon": -82.53686419379946,
+          "lat": 41.38356756756757,
+          "type": "corner"
+        },
+        {
+          "lon": -82.53554289908871,
+          "lat": 41.385534864864866,
+          "type": "corner"
+        },
+        {
+          "lon": -82.5343094990959,
+          "lat": 41.387774234234236,
+          "type": "corner"
+        },
+        {
+          "lon": -82.53068270437916,
+          "lat": 41.38745036036036,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -82.53181180423667,
+            "lat": 41.38750972972973
+          },
+          "handleOut": {
+            "lon": -82.52955360452167,
+            "lat": 41.387390990990994
+          }
+        },
+        {
+          "lon": -82.52696933216778,
+          "lat": 41.38719585585586,
+          "type": "smooth",
+          "handleIn": {
+            "lon": -82.52738365876732,
+            "lat": 41.3872672972973
+          },
+          "handleOut": {
+            "lon": -82.52655500556826,
+            "lat": 41.387124414414416
+          }
+        },
+        {
+          "lon": -82.52309645619034,
+          "lat": 41.38604171171171,
+          "type": "corner"
+        },
+        {
+          "lon": -82.52281768384246,
+          "lat": 41.387274954954954,
+          "type": "corner"
+        },
+        {
+          "lon": -82.51760255732914,
+          "lat": 41.38624063063063,
+          "type": "corner"
+        },
+        {
+          "lon": -82.52356287298375,
+          "lat": 41.372752252252255,
+          "type": "corner"
+        },
+        {
+          "lon": -82.53725265492342,
+          "lat": 41.365586576576575,
+          "type": "corner"
+        },
+        {
+          "lon": -82.55765081560071,
+          "lat": 41.361580090090094,
+          "type": "corner"
+        },
+        {
+          "lon": -82.57686670849849,
+          "lat": 41.363146306306305,
+          "type": "corner"
+        },
+        {
+          "lon": -82.59515383922691,
+          "lat": 41.36956801801802,
+          "type": "corner"
+        },
+        {
+          "lon": -82.60455629884204,
+          "lat": 41.38116963963964,
+          "type": "corner"
+        }
+      ]
+    }
+  ],
+  "committed": true,
+  "bakedSig": "{\"r\":3539,\"p\":0,\"p0\":null,\"x\":[33],\"a\":[],\"h\":[],\"c\":null,\"n\":\"Huron OH\",\"b\":\"Explore Huron, Ohio, a Lake Erie waterfront community at the mouth of the Huron River. Discover local businesses, historic places, parks, events, neighborhoods and everyday life in Huron.\"}"
+}
