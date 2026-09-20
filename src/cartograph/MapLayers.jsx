@@ -116,36 +116,62 @@ const _EMPTY_RIBBONS = { streets: [] }
 // a given path/alley/parking-lot lifts by the same amount.  Each feature
 // stays internally flat — terrain ridges can't cut through a path polygon's
 // interior the way they do with per-vertex sampling across sparse geometry.
+// ⛔⛔ THREE STATES, AND THE DIFFERENCE BETWEEN TWO OF THEM IS A REAL DEFECT WE SHIPPED:
+//   fade = {…}       use this scene's band
+//   fade = undefined use the LS module defaults (the LS path relies on this)
+//   fade = null      ⭐ NO FADE AT ALL — opt out, and it is a state you must ASK for
+//
+// ⛔ `null` exists because `undefined` could not say "none". Buildings were taken out
+// of the fade on 2026-09-20 by DELETING the `{ fade }` argument — and `fade?.inner ??
+// FADE_INNER` silently reinstated the LS default band, so they went on fading and
+// twelve of them rendered HALF OPAQUE, HALF DISSOLVED where they straddled
+// fade.inner. Jacob caught it by eye ("the georgian is faded in half").
+// ⭐ That is this arc's own defect class committed by its own fix: a `??` turning an
+// absent value into a plausible default. Removing an argument is not opting out.
+//
+// ⚠️ `null` still injects the TERRAIN displacement — buildings must conform to the
+// elevation field like everything else. Only the alpha multiply is skipped.
 function injectRadialFade(mat, { rigidCentroid = false, fade } = {}) {
+  const faded = fade !== null
   // Per-scene fade (poured scene) or the LS defaults. The feather must track the
   // ACTIVE scene's disc, or a poured scene's edge content fades at LS's radius.
   const fInner = fade?.inner ?? FADE_INNER
   const fOuter = fade?.outer ?? FADE_OUTER
   const fCx = fade?.center ? fade.center[0] : FADE_CENTER.x
   const fCz = fade?.center ? fade.center[1] : FADE_CENTER.z
-  mat.transparent = true
+  if (faded) mat.transparent = true
   mat.onBeforeCompile = (shader) => {
     assignTerrainUniforms(shader)
-    shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fCx, fCz) }
-    shader.uniforms.uFadeInner = { value: fInner }
-    shader.uniforms.uFadeOuter = { value: fOuter }
+    if (faded) {
+      shader.uniforms.uFadeCenter = { value: new THREE.Vector2(fCx, fCz) }
+      shader.uniforms.uFadeInner = { value: fInner }
+      shader.uniforms.uFadeOuter = { value: fOuter }
+    }
     const displaceSnippet = rigidCentroid ? TERRAIN_DISPLACE_CENTROID : TERRAIN_DISPLACE
     const commonDecl = '#include <common>\n' + TERRAIN_DECL +
       (rigidCentroid ? '\nattribute vec2 aCentroidXZ;' : '') +
-      '\nvarying vec3 vFadeWorldPos;'
+      (faded ? '\nvarying vec3 vFadeWorldPos;' : '')
     shader.vertexShader = shader.vertexShader
       .replace('#include <common>', commonDecl)
       .replace('#include <begin_vertex>', displaceSnippet)
       .replace('#include <beginnormal_vertex>', TERRAIN_NORMAL)
-      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;')
-    shader.fragmentShader = shader.fragmentShader
-      .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
-      .replace('#include <opaque_fragment>',
-        '#include <opaque_fragment>\n' +
-        'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
-        'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
+      .replace('#include <worldpos_vertex>', faded
+        ? '#include <worldpos_vertex>\nvFadeWorldPos = (modelMatrix * vec4(transformed, 1.0)).xyz;'
+        : '#include <worldpos_vertex>')
+    if (faded) {
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', '#include <common>\nvarying vec3 vFadeWorldPos;\nuniform vec2 uFadeCenter;\nuniform float uFadeInner;\nuniform float uFadeOuter;')
+        .replace('#include <opaque_fragment>',
+          '#include <opaque_fragment>\n' +
+          'float _fadeR = distance(vFadeWorldPos.xz, uFadeCenter);\n' +
+          'gl_FragColor.a *= 1.0 - smoothstep(uFadeInner, uFadeOuter, _fadeR);')
+    }
   }
-  mat.customProgramCacheKey = () => `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}`
+  // ⛔ The cache key must carry the no-fade case, or a faded material and an opted-out
+  // one with the same geometry flags share a compiled program.
+  mat.customProgramCacheKey = () => faded
+    ? `ml-terrain-fade-${rigidCentroid ? 'c' : 'v'}-${fInner}-${fOuter}`
+    : `ml-terrain-nofade-${rigidCentroid ? 'c' : 'v'}`
   return mat
 }
 
@@ -516,20 +542,35 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     return geo
   }, [mapData])
 
-  // ── Buildings (boundary-clipped) ────────────────────────
+  // ── Buildings — THE ROSTER, DRAWN AS GIVEN ──────────────
+  //
+  // ⛔ NO MEMBERSHIP TEST HERE, deliberately. "The buildings are selected in Extent,
+  // none of anybody else's concern" (Jacob, 2026-09-20). Membership is decided ONCE,
+  // in `pipeline.js` via `createMembershipFilter` — `(polygon − exclusions) ∪
+  // activate − hide` — and the result is written into `clean/map.json`. Both paths
+  // here read that file (the LS import above, and the fetched map for a poured
+  // town), so `mapData.buildings` IS the roster.
+  //
+  // This used to re-test each centroid with `pointInBoundary` — a raw ring test that
+  // knows nothing about exclusions, activate or hide. ⚠️ IT WAS INERT: measured
+  // 2026-09-20, 0 of 21,438 buildings across all four towns fall outside the ring
+  // (furthest centroid vs radius — LS 805/892, HPDM 1129/1251, altadena 3962/4161,
+  // huron 3530/3539), because the ring is a deliberately generous includer. So this
+  // removes a REDUNDANCY, not a live drop, and nothing on screen changes.
+  // ⭐ It is worth removing anyway: a second, weaker answer to a question already
+  // answered from the authored record is the shape that bites the day the ring stops
+  // being generous — tighten a radius in R15 and the renderer would start silently
+  // disagreeing with Extent about what the operator selected.
   const buildingGeo = useMemo(() => {
     const geos = []
     for (const b of (mapData.buildings || [])) {
       if (b.ring?.length >= 3) {
-        const cx = b.ring.reduce((s, p) => s + (p.x ?? p[0]), 0) / b.ring.length
-        const cz = b.ring.reduce((s, p) => s + (p.z ?? p[1]), 0) / b.ring.length
-        if (!pointInBoundary(cx, cz)) continue
         const g = triangulateRing(b.ring)
         if (g) geos.push(g)
       }
     }
     return mergeGeos(geos)
-  }, [mapData, B])
+  }, [mapData])
 
   // ── Center stripes (yellow paint on road, thin ribbon) ──
   const stripeGeo = useMemo(() => {
@@ -815,7 +856,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     // handed the survivor a radial fade, so TWO DIFFERENT SHAPES decided one
     // building's fate: the polygon said in-or-out, the circle then made it
     // translucent. A building that passed membership now renders at full alpha.
-    building: makeFlatMat(color('building'), PRI.building),
+    building: makeFlatMat(color('building'), PRI.building, { fade: null }),
     stripe: makeLineMat(color('stripe')),
     edgeline: makeLineMat(color('edgeline'), 0.7),
     bikelane: makeLineMat(color('bikelane')),
