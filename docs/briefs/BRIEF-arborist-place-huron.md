@@ -63,9 +63,12 @@ DECLARED       one or more wells, each naming endpoint, field map, and ⭐ `abse
 ▶ **THE TREE CENSUS IS ANOTHER KEY IN THAT FILE**, alongside `parcels` and `landUseCodes` — which is
 precisely what Jacob means by *"another item in the intake/setup which is listed in our inputs."*
 
-⚠️⚠️ **COORDINATION, AND IT IS A HARD GATE:** `cartograph/sources.js` and `data/*/sources.json` are
-**brief A's live files, being written right now.** ⛔ **Do not edit them.** ▶ **Design your tree-well
-declaration against that shape, write it up, and bring it to Boz.** A lands first, then you extend it.
+### ✅ GATE LIFTED 2026-09-20 — A HAS LANDED (`8ce518df`, *"A town says where its data comes from,
+### and says what it hasn't got"*). `cartograph/sources.js` and `data/*/sources.json` are **committed
+and yours to extend.** ▶ Read A's commit before you touch them — its three-way distinction, its
+`absent` mechanism and its refusal-on-zero-match are the shapes to follow, not to re-invent.
+⚠️ **Still bring the tree-well declaration SHAPE to Boz before you build it** — extending a schema
+another session just authored is a design decision, not a fill-in-the-blank.
 ⛔ If you find yourself inventing `tree-sources.json`, stop — that is the parallel mechanism this
 section exists to prevent.
 
