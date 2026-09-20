@@ -69,7 +69,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 130. This is `npm test`.
+## safe — 131. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -94,6 +94,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-cary-order-contract.mjs` | The CaryOrder contract — does it hold, and does the doc still describe it? |
 | `checks/claims-commerce-write-gate.mjs` | Is there any way to write commercial state without GAS saying yes? |
 | `checks/claims-contact-sms-rate-limit.mjs` | can a stranger still flood the Host's phone? |
+| `checks/claims-coplanar-ground-has-a-painters-order.mjs` | order.mjs — CAN TWO TOUCHING SURFACES FIGHT? |
 | `checks/claims-corner-decline-vs-partition.mjs` | "IS THE DOMINANT CORNER DECLINE SITTING ON TILES THAT ALREADY OWN THEIR ARC?" |
 | `checks/claims-corner-takeover.mjs` | "WHERE DOES THE CORNER RIBBON'S TAKEOVER DECLINE?" — A10 / D1, the population. |
 | `checks/claims-coupler-totality.mjs` | ── Is the COUPLER RELATION TOTAL? |

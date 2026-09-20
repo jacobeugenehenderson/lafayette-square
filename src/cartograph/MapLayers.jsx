@@ -35,7 +35,14 @@ const STROKE_COLORS = {
 // reads the baked slab (baked/<scene>/trees.json), sized by DBH + tinted by
 // source. MapLayers no longer imports the LS-only park census.
 
-// ── Render priorities (higher = on top via polygonOffset) ────
+// ── Render priorities (higher = on top) ─────────────────────
+// ⛔ THIS IS A PAINTER'S ORDER, NOT A DEPTH ONE. The comment here used to read
+// "higher = on top via polygonOffset", and polygonOffset is not what separates
+// these layers: the coplanar ground family at y=0.12 below all carries the SAME
+// offset, so there is no offset difference between them to resolve. They are
+// separated by `renderOrder` + `depthWrite: false` — see THE COPLANAR GROUND
+// FAMILY below. A slot may be subdivided fractionally (landscape does this), so
+// treat these as band starts, not as the full set of values in play.
 const PRI = {
   ground: 0,
   park: 2,
@@ -51,6 +58,31 @@ const PRI = {
   centerline: 15,
   labels: 16,
 }
+
+// ⭐⭐ THE COPLANAR GROUND FAMILY — every mesh below sits at EXACTLY y=0.12 (the
+// group's own offset, with no local lift): the pour's water ground, the landscape
+// overlays, parking lots, and park_water's lake. Jacob's constraint, 2026-09-20:
+// "practically speaking it's a 2D map with no 'thickness'." A map with no thickness
+// must not ask a depth buffer which of two touching surfaces is in front — there is
+// no answer, and the buffer invents one per pixel, which is the flicker.
+//
+// So the family is separated by PAINTER'S ORDER and nothing else:
+//   • a distinct `renderOrder` per mesh (landscape subdivides its slot fractionally), and
+//   • `depthWrite: false`, so no member can depth-reject another.
+//
+// ⛔ BOTH HALVES, AND THEY COVER DIFFERENT POPULATIONS. renderOrder alone cannot
+// fix it: the first mesh drawn still writes depth, and the next one at the same
+// depth fails the LESS test per-pixel, which is the speckle. And depthWrite alone
+// leaves the draw order arbitrary. Measured on huron 2026-09-20 — 126 of 261
+// landscape polygons overlap a DIFFERENT kind (renderOrder's job), and 16 overlap
+// the SAME kind, which merges into one geometry with one material, so renderOrder
+// provably cannot reach them (depthWrite's job).
+// ⛔ Not a Y-lift: that simulates thickness to feed a test that should not be
+// consulted. ⛔ And NOT polygonOffset — every member carries the same offset value,
+// so there is no difference between them for it to resolve, whatever it does under
+// this Canvas. `depthTest` stays ON, so buildings and terrain still occlude these
+// in the 3D shots; only the family's members stop fighting each other.
+// ▶ node checks/claims-coplanar-ground-has-a-painters-order.mjs
 
 // ── Radial edge fade ──
 // Imported from boundary.js so circle moves are a one-file edit.
@@ -140,6 +172,18 @@ export function makeFlatMat(color, pri, opts = {}) {
 // ── Line material ───────────────────────────────────────────
 function makeLineMat(color, opacity = 1) {
   return new THREE.LineBasicMaterial({ color, transparent: opacity < 1, opacity })
+}
+
+// Unsigned shoelace area of a ring, in m². Used only to ORDER coplanar overlays
+// (big underneath, small on top) — never to measure anything about the map.
+function ringArea(ring) {
+  let a = 0
+  for (let i = 0, nn = ring.length, j = nn - 1; i < nn; j = i++) {
+    const xi = ring[i].x ?? ring[i][0], zi = ring[i].z ?? ring[i][1]
+    const xj = ring[j].x ?? ring[j][0], zj = ring[j].z ?? ring[j][1]
+    a += xj * zi - xi * zj
+  }
+  return Math.abs(a) / 2
 }
 
 // ── Triangulate a ring of {x, z} points into XZ-plane mesh ─
@@ -618,6 +662,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // here to avoid rendering both (visible double outline at compass-frame).
   const landscapeByKind = useMemo(() => {
     const groups = {}  // kind → [geo,...]
+    const area = {}    // kind → total m², for the deterministic sub-order below
     // ⛔ `water` is NOT here. It is the pour's own GROUND and draws in every view, Survey
     // included — see `groundByKind` below. The `natural=water` skip on the next line is OSM's
     // water, which `park_water.json` already owns on LS; a different object.
@@ -633,11 +678,22 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         if (!g) continue
         if (!groups[item.use]) groups[item.use] = []
         groups[item.use].push(g)
+        area[item.use] = (area[item.use] || 0) + ringArea(ring)
       }
     }
     const merged = {}
     for (const kind of Object.keys(groups)) merged[kind] = mergeGeos(groups[kind])
-    return merged
+    // ⭐⭐ A DETERMINISTIC ORDER AMONG THEMSELVES — see THE COPLANAR GROUND FAMILY.
+    // Every kind used to render at the same `renderOrder`, so which one covered
+    // which was decided by traversal + depth-buffer luck. Order by TOTAL AREA,
+    // largest underneath: the bigger feature is the more general one, so the
+    // sand trap draws on its golf course and the pitch on its park rather than
+    // the other way round. ⛔ Area, not a kind table — a table would be a list of
+    // the kinds THIS town happens to have, which is the instance patch Layer 0
+    // forbids. Ties break on the kind name so the result is reproducible.
+    const kinds = Object.keys(merged).sort((a, b) => (area[b] - area[a]) || a.localeCompare(b))
+    const order = new Map(kinds.map((k, i) => [k, (i + 1) / (kinds.length + 1)]))
+    return { byKind: merged, order }
   }, [mapData, B])
 
   // ── The pour's own GROUND: the water ─────────────────────────────────
@@ -764,8 +820,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     centerline: makeLineMat(color('centerline'), 0.9),
     centerlineSurvey: makeLineMat(STROKE_COLORS.surveyCenterline, 1),
     centerlineOutline: makeLineMat(STROKE_COLORS.centerlineOutline, 0.5),
-    tree: makeFlatMat(color('tree'), PRI.park + 1, { fade }),
-    water: makeFlatMat(color('water'), PRI.park + 1, { fade }),
+    // `tree` retired here — DesignerTrees owns the Designer's trees since the
+    // shared baked-slab layer landed; this material had no consumer left.
+    water: makeFlatMat(color('water'), PRI.park + 1, { fade, depthWrite: false }),
     // rigidCentroid=true: sample terrain once per feature, not per vertex.
     // Sparse path triangulations can't capture terrain ridges in their
     // interior; under per-vertex displacement the ground mesh passes through
@@ -846,7 +903,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           "curled paper" floating-edge artifact on uneven terrain. */}
       {!hide.parking_lot && parkingLotGeo && (
         <mesh geometry={parkingLotGeo}
-          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot, { fade })}
+          material={makeFlatMat(luColors.parking || DEFAULT_LU_COLORS.parking || '#6A6A62', PRI.parking_lot, { fade, depthWrite: false })}
           renderOrder={PRI.parking_lot} receiveShadow />
       )}
 
@@ -860,15 +917,18 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // operator, and the override is the product.
         if (!geo || hideIn[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
-        const mat = makeFlatMat(col, PRI.landscape, { fade })
+        const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />
       })}
 
-      {!surveyActive && Object.entries(landscapeByKind).map(([kind, geo]) => {
+      {!surveyActive && Object.entries(landscapeByKind.byKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
-        const mat = makeFlatMat(col, PRI.landscape, { fade })
-        return <mesh key={`ls-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape} receiveShadow />
+        const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
+        // Fractional slot: every kind gets its OWN place in the painter's order,
+        // inside the landscape band so parking_lot above stays clear of them.
+        return <mesh key={`ls-${kind}`} geometry={geo} material={mat}
+          renderOrder={PRI.landscape + landscapeByKind.order.get(kind)} receiveShadow />
       })}
 
       {/* Barriers (fence/wall/hedge/retaining_wall as thin lines) */}
@@ -893,8 +953,13 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
           lamps for every scene; retired 2026-07-23. */}
 
       {/* Trees now render via the shared DesignerTrees layer (baked slab). */}
+      {/* park_water.json's lake/grotto — authored LS content. ⛔ This mesh carried
+          NO renderOrder at all, so it sat at 0 on the same plane as the rest of the
+          family. It gets its own slot: above the pour's water GROUND (landscape − 1,
+          the floor a coastal hood sits on) and below the landscape overlays, so a
+          lake reads on top of open water and under the park drawn around it. */}
       {!hide.water && waterGeo && (
-        <mesh geometry={waterGeo} material={mats.water} />
+        <mesh geometry={waterGeo} material={mats.water} renderOrder={PRI.landscape - 0.5} />
       )}
 
       {/* Labels — the shared StreetLabels group: laid out by labelLayout.js

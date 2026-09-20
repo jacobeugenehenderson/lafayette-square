@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 164,
+  "total": 165,
   "counts": {
-    "safe": 130,
+    "safe": 131,
     "local-effect": 5,
     "live": 29
   },
@@ -152,6 +152,13 @@
       "tier": "safe",
       "why": [
         "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-coplanar-ground-has-a-painters-order.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {
