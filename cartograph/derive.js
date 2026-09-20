@@ -5258,12 +5258,56 @@ export function deriveLayers(highways) {
       institutionOverlays.push({ ring, use: f.tags.amenity })
     }
   }
+  // ⛔⛔ THIS SKIPPED THE WHOLE CLASS BECAUSE ONE PARK ON ONE TOWN HAS A BESPOKE
+  // RENDERER. The line read `if (f.tags?.leisure === 'park') continue  // Lafayette
+  // Park rendered separately` — true of Lafayette Park, applied to every park in
+  // every town. Measured at the fix: huron carries 11 NAMED parks (Fabens,
+  // Oklahoma, Lake Front, Nickleplate, the Marina & Amphitheater…) and drew ZERO;
+  // even on LS it dropped SIX, of which only Lafayette Park is rendered separately
+  // — Fox, Buder, Ray Leisure, Eads Square and Fountain Park Plaza were rendered by
+  // nothing at all. ⭐ Layer 0's signature, and the twin of `MapLayers.jsx`'s
+  // `natural=water` skip (`ROADMAP H-8`): correct on the town it was written for,
+  // blind everywhere else, and invisible in any aggregate taken on LS.
+  //
+  // ⭐ THE SKIP NOW NAMES THE PARK, NOT THE CLASS. The double-draw it exists to
+  // prevent can only happen where the authored polygon actually draws, so the test
+  // is "is this feature THAT park" — the authored polygon's own centroid falling
+  // inside this ring. One point lies inside at most one ring, so there is nothing
+  // to tune and no threshold; a town with no authored park (every town but LS)
+  // skips nothing, which is the correct answer there.
+  // ⛔ NOT a centroid-of-the-OSM-feature test: a park ring is often non-convex and
+  // its centroid can land outside itself, which is the misfiling `RIBBONS §1`'s
+  // reconcile gate already warns about. The AUTHORED polygon is the 4-corner one.
+  const authoredParkPt = parkPolygon ? (() => {
+    const r = pathFromClipper(parkPolygon)
+    let x = 0, z = 0
+    for (const p of r) { x += p.x; z += p.z }
+    return r.length ? { x: x / r.length, z: z / r.length } : null
+  })() : null
+  const ringHasPt = (coords, pt) => {
+    let inside = false
+    for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+      const a = coords[i], b = coords[j]
+      if ((a.z > pt.z) !== (b.z > pt.z) &&
+          pt.x < (b.x - a.x) * (pt.z - a.z) / ((b.z - a.z) || 1e-12) + a.x) inside = !inside
+    }
+    return inside
+  }
   const leisureOverlays = []
+  let parkSkipped = 0, parkDrawn = 0
   for (const f of _leisure) {
     if (!overlayReadable(f)) continue
-    if (f.tags?.leisure === 'park') continue  // Lafayette Park rendered separately
+    if (f.tags?.leisure === 'park') {
+      if (authoredParkPt && ringHasPt(f.coords, authoredParkPt)) { parkSkipped++; continue }
+      parkDrawn++
+    }
     leisureOverlays.push({ ring: f.coords.map(c => ({ x: c.x, z: c.z })), use: f.tags?.leisure })
   }
+  // ⛔ NOT SILENT, either way. A scene with an authored park and NO OSM twin skips
+  // nothing and may double-draw; a scene with no authored park draws every park.
+  // Both are legitimate and neither may be discovered on a map.
+  if (parkSkipped || parkDrawn) console.log(`    ${parkDrawn} leisure=park drawn as overlays; ${parkSkipped} skipped as the AUTHORED park (rendered separately)`)
+  if (authoredParkPt && !parkSkipped) console.warn(`    ⛔ this scene has an AUTHORED park polygon but no OSM leisure=park contains it — nothing was skipped, so the authored park may draw twice.`)
   const naturalOverlays = []
   for (const f of _natural) {
     if (!overlayReadable(f)) continue
