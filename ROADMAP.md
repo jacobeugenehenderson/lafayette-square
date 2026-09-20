@@ -356,11 +356,25 @@
     ways are pavement-only with no measure authoring"* was **built for the unnamed case and never
     qualified by class for the named one.** An unbuilt decision filed as done. ⛔ Do not evict the doc
     and do not "correct" it — the doc is right and the code is short.
-  - ⛔ **THE FIX IS NOT MINE TO PICK, AND IT IS NOT A SKIP LIST.** The shape is presumably *class, not
-    name, decides whether a way is a street* — but that moves 51 chains out of HPDM's `streets[]` and
-    135 out of altadena's, i.e. **it changes the block grid of every town at once**, so it wants Jacob's
-    ruling before a line is written. ⚠️ Also unruled: a way that is genuinely both (a pedestrian **mall**
-    that really does bound blocks), and whether the double carry is double *paint* on the slab today.
+  - ### ✅ RULED 2026-09-20 (Jacob) — **CLASS DECIDES, NOT NAME.** *"Class (another thing where logic would have solved the issue)."*
+    A way's **highway class** decides whether it is a street. A name does not make a service drive or a
+    footway into a block-bounding street, and the ABSENCE of one does not stop a residential road being
+    one — so the same rule closes both halves: the named footways here AND the unnamed public roads
+    (huron: 25 `residential` · 5 `primary` · 2 `tertiary` · 1 `unclassified`) dropped for want of a name.
+    ⭐⭐ **READ THE PARENTHESIS — IT LANDS ON THIS DOC.** This line used to read *"the fix is not mine to
+    pick… it wants Jacob's ruling before a line is written."* **It was never owed.** Layer 0 answers it
+    outright — it is a kit, handle the class — and a name gate is the instance-shaped answer by
+    construction. ⛔ **A doc that files a DERIVABLE question as an open ruling manufactures a blocker**,
+    and this one cost two agents a round trip on 2026-09-20 before anyone re-read it. The sentence is
+    excised rather than bannered; the cost is recorded here so the shape is recognisable next time.
+  - ⛔ **THE RULING IS NOT A LICENCE TO LAND IT ON A GREEN CHECK.** It moves 51 chains out of HPDM's
+    `streets[]` and 135 out of altadena's — **it re-partitions the block grid of both safeguarded
+    towns**, so acceptance is **Jacob's eye on LS and HPDM**, and ⭐ *the eye verdict must record the
+    scene it was taken on* (`A0`). ⚠️ Size the population from **today's run** of
+    `node checks/claims-intake-is-consumed.mjs` — ⛔ never from the two retired highway figures, which
+    were taken on different predicates and must not be differenced.
+    ⚠️ Still unruled, and narrower: a way that genuinely is both (a pedestrian **mall** that really does
+    bound blocks), and whether the double carry is double *paint* on the slab today.
   - **SIDE-TRACKS SPOTTED, NEITHER CHASED:** HPDM carries 2 chains tagged `highway=proposed` — roads that
     do not exist yet, stroked as ink. · `SKELETON §2` documents `paths[]` as `{id, highway, tags, coords,
     osmId}`; the clean artifact carries `{name, kind, points, pavedWidth}`. Different shape, unverified.
