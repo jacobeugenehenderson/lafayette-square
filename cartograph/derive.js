@@ -14,7 +14,7 @@
  *   - Parcels (assessor) → lot lines, land use
  */
 
-import { readFileSync, existsSync, writeFileSync } from 'fs'
+import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
@@ -1361,39 +1361,6 @@ export function deriveLayers(highways) {
       } else if (carve.carved) {
         boundaryPolyXZ = carve.boundary
         console.log(`    ⭐ boundary carved to the shoreline: ${carve.boundary.length} points (was ${boundaryData.boundary.length})`)
-        // ⭐⭐ THE CARVE HAS TO REACH THE RENDERER OR IT IS NOT A SHORELINE, IT IS A
-        // BOOKKEEPING CHANGE. `makeBoundary(nb)` builds the whole clip/fade bundle from
-        // `nb.boundary`, so the drawn edge, `pointInBoundary` and every clip follow this
-        // one field. Carving only in memory shaped the block faces and left the map
-        // still ending at a circle drawn over the lake — which is the exact "plausible
-        // success" Layer 0 q2 is about, and the operator found it by looking.
-        //
-        // ⛔ WRITTEN AS `landBoundary`, NEVER OVER `boundary`. `boundary` is the disc
-        // the operator authored through Extent (center + radius + fade + exclusions are
-        // theirs); overwriting it would make a DERIVED result masquerade as their input
-        // and it would not survive a radius edit coherently. A new field leaves every
-        // existing reader's meaning untouched and is dropped the moment a pour finds no
-        // shoreline, so a scene cannot keep a stale coastline.
-        try {
-          const nbPath = join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json')
-          const nbNow = JSON.parse(readFileSync(nbPath, 'utf-8'))
-          nbNow.landBoundary = carve.boundary.map(([x, z]) => [Math.round(x * 100) / 100, Math.round(z * 100) / 100])
-          writeFileSync(nbPath, JSON.stringify(nbNow, null, 2))
-          console.log(`    → wrote landBoundary to neighborhood_boundary.json (the disc field is untouched)`)
-        } catch (e) {
-          console.log(`    ⛔ could not write landBoundary: ${e.message} — the pour carved but the MAP WILL STILL DRAW THE CIRCLE.`)
-        }
-      } else if (!carve.refusal) {
-        // ⛔ No shoreline this pour ⇒ any landBoundary from a previous one is a LIE.
-        try {
-          const nbPath = join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json')
-          const nbNow = JSON.parse(readFileSync(nbPath, 'utf-8'))
-          if (nbNow.landBoundary) {
-            delete nbNow.landBoundary
-            writeFileSync(nbPath, JSON.stringify(nbNow, null, 2))
-            console.log(`    → cleared a stale landBoundary (no shoreline in this pour)`)
-          }
-        } catch { /* nothing to clear */ }
       }
     }
 
