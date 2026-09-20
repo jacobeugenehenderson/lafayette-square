@@ -119,7 +119,8 @@ reading `data/` can never see it and **a green check would prove nothing.**
 - ⭐ **The honest instrument is a store-level test**, not a render test: drive `setScene(A)` →
   `setScene(B)` and assert no consumer-visible state still sources A. That is checkable without a GPU.
 - ⛔ **A render-level gate is Jacob's eye, and his eye is the gate** (`feedback_proxy_render_is_not_the_operator_eye` — proxy renders mislead on this map).
-- ⭐ **Name the surface:** Survey renders **live**, Section renders **frozen**. The repro crosses both,
+- ⭐ **Name the surface:** Survey renders **live**; Section renders from the frozen **`shape.json`**
+  (⛔ **not** the baked slab — no Designer surface reads `baked/<look>/ground.json`). The repro crosses both,
   and `surveyActive` is in the recompute key — **say which surface you are showing him.**
 - ⛔⛔ **MUTATION-TEST WHATEVER YOU BUILD.** `MEMORY §C`: a passing check proves nothing until it has
   been SEEN TO FAIL. Ground Layers shipped a check on 2026-09-20 that **passed for the wrong reason**

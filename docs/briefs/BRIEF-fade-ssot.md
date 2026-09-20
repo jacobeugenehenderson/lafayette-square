@@ -253,8 +253,13 @@ check reads files, not the live app — `node -e` it in one line and it is decis
 `fade`/`streetFade` at all**, so it is the ONLY scene that exercises the derivation path today.
 Per BOZ §3.8, route validation through it via the production path. ⛔ Do not build a parallel spike.
 
-⚠️ **Eye-gate surface:** Survey renders **live**, Section renders **frozen**. A fade change shows in
-Survey immediately; Section needs a re-bake before it means anything. Say which you are showing.
+⚠️ **Eye-gate surface — ⛔ CORRECTED 2026-09-20, the original was WRONG:** Survey renders **live**;
+Section renders from the frozen **`shape.json`** (`BlockGeometryV2Debug.jsx:611`). ⛔⛔ **NOT the baked
+slab — neither Designer surface reads `baked/<look>/ground.json`.** ⇒ **A fade change is live in BOTH
+Survey and Section immediately; NO BAKE IS INVOLVED.** *(This brief originally said "Section needs a
+re-bake before it means anything." That was the coordinator collapsing "the frozen shape" and "the
+baked slab" into one word. `baked/<look>/ground.json` belongs to `BakedGround` / `GatewayArch` /
+`CartographSurfaces` — the 3D side, downstream of Stage.)*
 
 ## 7. Write/commit bounds
 

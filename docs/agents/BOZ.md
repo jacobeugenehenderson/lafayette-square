@@ -137,7 +137,15 @@ how this line itself was wrong for a few hours on 2026-09-13. **Run it before tr
 6. **⛔ Can the instrument SEE the change?** Before writing any gate: what does it read — **disk or live**?
    Does that artifact already carry the thing the change produces? (`node -e` it. One line.) A gate the
    cure can never satisfy prints the old figure, which reads as *"the cure did nothing."* ⭐ Corollary:
-   name which **surface** the eye-gate happens on — Survey renders live, Section renders frozen.
+   name which **surface** the eye-gate happens on — Survey renders **live**, Section renders from the
+   **frozen `shape.json`** (`BlockGeometryV2Debug.jsx`, explicitly *"NOT from a live re-run"*).
+   ⛔⛔ **"FROZEN" HERE MEANS THE FROZEN SHAPE, NOT THE BAKED SLAB. THEY ARE DIFFERENT ARTIFACTS AND
+   THIS LINE HAS ALREADY BEEN MISREAD ONCE** *(Boz, 2026-09-20: read "frozen" as `baked/<look>/ground.json`,
+   told Jacob three times that Section would show a stale slab until a re-bake, and put a bake on his
+   board as a gate on an arc it had nothing to do with. **Neither Designer surface reads the baked
+   ground slab at all.**)* ⭐ `baked/<look>/ground.json` is read by `BakedGround` / `GatewayArch` /
+   `CartographSurfaces` — **the 3D side, downstream of Stage.** ▶ The precise statement, with both
+   line cites, lives in `ROADMAP.md` (search `Section renders from the frozen`); this is the pointer.
 7. **Write/commit bounds** (canon is off-limits unless stated), and **surface scope drift, don't absorb it.**
 8. **⛔ The validation surface that already exists.** Before drafting any brief that constructs or validates
    geometry, shaders, data-flow or render output, ask: **does the production path already run on a
