@@ -54,54 +54,25 @@ export const FADE_FIELDS = ['fadeBand']
 export const DEFAULT_FADE_BAND = 200
 
 /**
- * ⭐ THE ONE FADE FORMULA, and now it is the only one. ADDITIVE: the feather starts
- * AT the rim and lives OUTSIDE it.
+ * ⭐ THE ONE FADE FORMULA, and it is the only one. INWARD: the feather ends AT the
+ * rim, dissolving content from inside the disc.
  *
- * ⛔ It used to run INWARD (`fade.inner = R - 200`), which put the dissolve inside
- * the disc. Additive was impossible while BUILDINGS were in the fade — buildings
- * stop at the rim, so an additive band has nothing to fade them into and you get a
- * hard building edge. Taking buildings out of the fade (binary membership, decided
- * by the authored polygon alone) is what makes this coherent; the two rulings are
- * one argument and neither works without the other.
+ * ⛔ THE RADIUS CUTS THE GEOMETRY, AND THAT IS THE INTENDED BEHAVIOUR (Jacob,
+ * 2026-09-20): *"We can just adjust the circle in the extent tool… The radius cuts
+ * off the geometry, might as well just keep that."* An operator who wants more
+ * content at the edge PULLS THE CIRCLE OUT — an authoring gesture, not a render
+ * change. The override is the product.
  *
- * Every other population has data for kilometres past the rim, so the outward band
- * has something to dissolve.
+ * ⚠️ An ADDITIVE band (`inner: radius, outer: radius + band`) was tried and reverted
+ * the same day. It is recorded here because the reason is not obvious: outward only
+ * works if every fading population carries geometry all the way to `fade.outer`, and
+ * that precondition is silently false — LS block fill stops INSIDE the rim in 261 of
+ * 360 bearings, so it rendered at full alpha against a ragged straight-sided edge.
+ * ▶ node checks/claims-fade-has-something-to-dissolve.mjs
  */
 export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND) {
   const band = Number.isFinite(fadeBand) ? fadeBand : DEFAULT_FADE_BAND
-  return { inner: radius, outer: radius + band }
-}
-
-/**
- * The membership polygon scaled out to `fade.outer` — the cull for every population
- * that FADES.
- *
- * ⭐ THE RULE (Jacob, 2026-09-20): "the edge should feather and the buildings
- * shouldn't" — a population either takes the fade, and must then be DRAWN OUT to
- * where the fade ends, or it does not, and is culled at membership. The inward fade
- * used to hide the polygon's hard cut from the inside; moving the fade outward
- * without moving this cull leaves the feather running over empty space.
- *
- * ⛔ Lives here, in the pure module, so the browser bundle and the node checks share
- * ONE scaler. Same operation the stencil uses — never a second one.
- */
-export function deriveFadeBoundary(boundary, center, radius, fadeBand) {
-  if (!boundary?.length || !radius) return boundary || []
-  const scale = deriveFade(radius, fadeBand).outer / radius
-  const cx = center?.[0] ?? 0, cz = center?.[1] ?? 0
-  return boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
-}
-
-/** Even-odd point-in-polygon on the XZ plane. */
-export function pointInRing(x, z, poly) {
-  if (!poly?.length) return true
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const xi = poly[i][0], zi = poly[i][1]
-    const xj = poly[j][0], zj = poly[j][1]
-    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside
-  }
-  return inside
+  return { inner: Math.max(0, radius - band), outer: radius }
 }
 
 /** The 256-gon render ring. Always derived from radius + center — never authored. */
@@ -143,7 +114,7 @@ export function classifyFade(nb, where = 'boundary') {
       `without inventing the operator's intent (EXTENT-DESIGN §5.1).`)
   }
   if (!Number.isFinite(nb.fadeBand)) throw new Error(`${where}: fadeBand is not a finite number`)
-  if (nb.fadeBand < 0) throw new Error(`${where}: fadeBand is negative (${nb.fadeBand}) — a feather cannot run inward`)
+  if (nb.fadeBand < 0) throw new Error(`${where}: fadeBand is negative (${nb.fadeBand}) — a width cannot be negative; it would put fade.inner past fade.outer`)
   const fade = { fadeBand: nb.fadeBand }
   return { kind: nb.fadeBand === DEFAULT_FADE_BAND ? 'generated' : 'authored', fade }
 }

@@ -7,9 +7,12 @@
 //   radius        number   — nominal silhouette radius (the polygon hugs it)
 //   polygon       [[x,z]]  — 256-pt closed boundary
 //   fadeBand      number   — ⭐ THE ONE FADE KNOB: feather width in metres,
-//                            measured OUTWARD from the rim. `fade` is DERIVED
-//                            from it (radius → radius + fadeBand) and is never
+//                            measured INWARD from the rim. `fade` is DERIVED
+//                            from it (radius − fadeBand → radius) and is never
 //                            stored; `streetFade` was deleted 2026-09-20.
+//                            ⛔ The radius CUTS the geometry — intended. More
+//                            content at the edge is an Extent-tool gesture
+//                            (pull the circle out), not a render change.
 //
 // The module-level named exports below are the DEFAULT installation (Lafayette
 // Square), kept identical for every existing LS-context consumer. `makeBoundary(nb)`
@@ -20,7 +23,7 @@ import boundaryData from '../../cartograph/data/lafayette-square/neighborhood_bo
 // ⭐ ONE formula, imported — not a second copy. This module used to carry its own
 // `?? 134 / +42 / +108` defaults that disagreed with boundaryRecords' `200/140/160`,
 // which is how one circle came to have three definitions.
-import { deriveFade, DEFAULT_FADE_BAND, deriveFadeBoundary, pointInRing } from '../../cartograph/boundaryRecords.mjs'
+import { deriveFade, DEFAULT_FADE_BAND } from '../../cartograph/boundaryRecords.mjs'
 
 // Clip a polyline to a CIRCLE (center + radius). Scene-agnostic (params only),
 // so it lives at module scope and is shared by every boundary bundle.
@@ -91,21 +94,6 @@ export function makeBoundary(nb) {
   const fadeBand = Number.isFinite(nb?.fadeBand) ? nb.fadeBand : DEFAULT_FADE_BAND
   const { inner: fadeInner, outer: fadeOuter } = deriveFade(radius, fadeBand)
 
-  // ⭐ THE FADE EXTENT — the membership polygon scaled out to `fade.outer`.
-  //
-  // ⛔ THE RULE THIS EXISTS FOR: if a population TAKES THE FADE it must be drawn out
-  // to where the fade ENDS; if it does not fade, it is culled at membership.
-  // Before 2026-09-20 every face was culled to the authored polygon and the fade ran
-  // INWARD, which worked because the feather dissolved content that was actually
-  // drawn — it hid the polygon's hard cut from the inside. Moving the fade OUTWARD
-  // without moving the cull leaves the feather running over empty space and the hard
-  // rim fully exposed. Same scale operation the stencil uses; not a second one.
-  const fadeBoundary = deriveFadeBoundary(boundary, center, radius, fadeBand)
-
-  // Cull for anything that FADES. Buildings must NOT use this — they are binary at
-  // the authored polygon ("there is no such thing as a ghosted building").
-  const pointInFadeExtent = (x, z) => pointInRing(x, z, fadeBoundary)
-
   function pointInBoundary(x, z) {
     if (!boundary.length) return true // no boundary = show everything
     let inside = false
@@ -142,16 +130,12 @@ export function makeBoundary(nb) {
   // is a 40.11 km² hole in a remainder whose clipped outer is the 39.34 km² disc, so left
   // unclipped it subtracts more than the whole face — net drawn came out at −40.20 km², and a
   // hole poking outside its outer contour is not something ShapeGeometry can be trusted with.
-  // `poly` defaults to the authored membership polygon. ⭐ Pass `fadeBoundary` for a
-  // population that FADES — it must be drawn out to where the fade ends, or the clip
-  // leaves a hard edge inside the feather. One clipper, two polygons; never a second
-  // clipper (`project_ribbon_three_representations`).
-  function clipRingToBoundary(ring, poly = boundary) {
-    if (!poly.length || !ring || ring.length < 3) return ring
+  function clipRingToBoundary(ring) {
+    if (!boundary.length || !ring || ring.length < 3) return ring
     const xy = (p) => [p[0] ?? p.x, p[1] ?? p.z]
     let out = ring.map(xy)
-    for (let i = 0; i < poly.length && out.length; i++) {
-      const a = poly[i], b = poly[(i + 1) % poly.length]
+    for (let i = 0; i < boundary.length && out.length; i++) {
+      const a = boundary[i], b = boundary[(i + 1) % boundary.length]
       // inside = left of a→b; the boundary ring's winding decides the sign, so take it from
       // the centre, which is inside by construction.
       const side = (p) => (b[0] - a[0]) * (p[1] - a[1]) - (b[1] - a[1]) * (p[0] - a[0])
@@ -229,7 +213,6 @@ export function makeBoundary(nb) {
     center, radius,
     fadeInner, fadeOuter, fadeBand,
     boundaryPolygon: boundary,
-    fadeBoundary, pointInFadeExtent,
     pointInBoundary, streetInBoundary, faceInBoundary,
     clipPolylineToBoundary,
     clipPolylineToRadius,
@@ -248,7 +231,6 @@ export const FADE_OUTER = _ls.fadeOuter
 export const FADE_BAND = _ls.fadeBand
 export const boundaryPolygon = _ls.boundaryPolygon
 export const pointInBoundary = _ls.pointInBoundary
-export const pointInFadeExtent = _ls.pointInFadeExtent
 export const streetInBoundary = _ls.streetInBoundary
 export const faceInBoundary = _ls.faceInBoundary
 export const clipPolylineToBoundary = _ls.clipPolylineToBoundary

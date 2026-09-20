@@ -100,8 +100,8 @@ else {
   })
   ok(movedAuthored.fade.fadeBand === 134,
     `an AUTHORED band survives a radius change (${nb.radius} → ${nb.radius + 300}); it used to THROW here`)
-  ok(deriveFade(movedAuthored.radius, movedAuthored.fade.fadeBand).outer === nb.radius + 300 + 134,
-    `and the fade re-derives at the NEW radius (${deriveFade(movedAuthored.radius, movedAuthored.fade.fadeBand).outer})`)
+  ok(deriveFade(movedAuthored.radius, movedAuthored.fade.fadeBand).inner === nb.radius + 300 - 134,
+    `and the fade re-derives at the NEW radius (inner ${deriveFade(movedAuthored.radius, movedAuthored.fade.fadeBand).inner}, outer ${deriveFade(movedAuthored.radius, movedAuthored.fade.fadeBand).outer})`)
 
   // The whole artifact. ⚠️ Split in two, because the RING is the one disc field
   // that is genuinely DERIVED and LS's is older than the current constructor: it
@@ -177,8 +177,8 @@ throws(() => splitBoundary({ ...base, radius: undefined }, 'fixture'), 'radius',
   'a boundary with no radius')
 throws(() => splitBoundary({ ...base, boundary: undefined }, 'fixture'), 'boundary ring',
   'a boundary with no ring')
-throws(() => splitBoundary({ ...base, fadeBand: -5 }, 'fixture'), 'inward',
-  'a NEGATIVE fadeBand (a feather cannot run inward)')
+throws(() => splitBoundary({ ...base, fadeBand: -5 }, 'fixture'), 'negative',
+  'a NEGATIVE fadeBand (a width cannot be negative)')
 throws(() => splitBoundary({ ...base, fadeBand: 'wide' }, 'fixture'), 'fadeBand',
   'a non-numeric fadeBand')
 

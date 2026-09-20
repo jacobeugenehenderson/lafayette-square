@@ -77,18 +77,22 @@ for (const { root, look, s, legacy } of seen) {
   const face = bandFor('face', s), ribbon = bandFor('ribbon', s)
   ok(face.outer === ribbon.outer && face.inner === ribbon.inner,
     `${(root + '/' + look).padEnd(40)} one band for both kinds (${face.inner}->${face.outer})`)
-  ok(face.inner === s.radius && face.outer > s.radius,
-    `${(root + '/' + look).padEnd(40)} additive: starts AT the rim and runs outward`)
+  ok(face.outer === s.radius && face.inner < s.radius,
+    `${(root + '/' + look).padEnd(40)} inward: the feather finishes AT the rim`)
 }
 if (!seen.some(x => !x.legacy)) console.log('  ·  no current slabs present (every look needs a re-bake)')
 
 h('D. the two models genuinely disagree — so C is not vacuous')
 {
   const R = 892, band = 200
+  // Both models run inward. What differs is the RIBBON band: v1 gave ribbons a wider
+  // one that trailed PAST the radius, v2 gives every kind the same inward band.
   const v2 = deriveFade(R, band)
-  const v1 = { inner: Math.max(0, R - 134), outer: R }          // the old inward shape
-  ok(v1.outer !== v2.outer, `v1 ends at ${v1.outer} (the rim), v2 ends at ${v2.outer} (outside it) — reading one as the other moves the edge ${v2.outer - v1.outer} m`)
-  ok(v1.inner < R && v2.inner === R, 'v1 feathers INWARD from inside the disc; v2 feathers OUTWARD from the rim')
+  const v1face = { inner: Math.max(0, R - 134), outer: R }
+  const v1ribbon = { inner: R - 92, outer: R + 108 }            // the old streetFade shape
+  ok(v1ribbon.outer > R && v2.outer === R,
+    `v1 ribbons trailed to ${v1ribbon.outer} (past the rim); v2 finishes at ${v2.outer} (the rim) — ${v1ribbon.outer - v2.outer} m of trailing edge is the difference`)
+  ok(v1face.outer === v2.outer, 'both models finish the FACE band at the rim — so the face band alone cannot tell them apart, which is why the marker is streetFade')
 }
 
 if (stale.length) {

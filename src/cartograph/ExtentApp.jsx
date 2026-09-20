@@ -267,11 +267,13 @@ function landInSurvey(store) {
 }
 
 // ⭐ THE FADE INDICATOR (Jacob, 2026-09-20: "maybe even an indicator in the extent
-// tool as to where the fade starts and stops"). The fade is ADDITIVE, so it STARTS at
-// the radius — the yellow circle already marks `fade.inner` and needs no second ring —
-// and STOPS at `radius + fadeBand`. The dashed amber ring is that stop, and the gap
-// between the two IS the feather. Drawing it here makes the one knob legible at the
+// tool as to where the fade starts and stops"). The fade runs INWARD: it STARTS at
+// `radius − fadeBand` and finishes AT the radius, so the solid yellow circle already
+// marks `fade.outer` and the dashed ring marks `fade.inner`, inside it. The gap
+// between them IS the feather. Drawing it here makes the one knob legible at the
 // moment it is turned, which is most of why it drifted into four stored copies.
+// ⛔ The radius is also where the geometry is CUT — content past it is not drawn at
+// all. An operator who wants more at the edge pulls this circle out.
 function ExtentBoundary({ corners, centroid, radiusM, fadeBand = DEFAULT_FADE_BAND, showVertices = true }) {
   const hasPoly = corners?.length >= 2
   // Draw when there's a polygon OR just a circle (a reopened committed hood has
@@ -287,11 +289,11 @@ function ExtentBoundary({ corners, centroid, radiusM, fadeBand = DEFAULT_FADE_BA
       {centroid && radiusM > 0 && (
         <Line points={circlePts(centroid.x, centroid.z, radiusM)} color="#ffd23f" lineWidth={2} />
       )}
-      {/* Where the fade STOPS. Everything that fades is drawn out to here; buildings
-          stop at the solid circle above. The band between the two is the feather. */}
-      {centroid && radiusM > 0 && fadeBand > 0 && (
+      {/* Where the fade STARTS — inside the rim. Content dissolves from here out to
+          the solid circle, which is both fade.outer and the geometry cut. */}
+      {centroid && radiusM > 0 && fadeBand > 0 && deriveFade(radiusM, fadeBand).inner > 0 && (
         <Line
-          points={circlePts(centroid.x, centroid.z, deriveFade(radiusM, fadeBand).outer)}
+          points={circlePts(centroid.x, centroid.z, deriveFade(radiusM, fadeBand).inner)}
           color="#ffd23f" lineWidth={1} dashed dashSize={18} gapSize={14} transparent opacity={0.55} />
       )}
       {showVertices && hasPoly && corners.map((c, i) => (

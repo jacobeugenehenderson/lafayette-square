@@ -1,10 +1,13 @@
 /**
  * CLAIM: the circle has ONE origin, and the fade is DERIVED from it.
  *
- *   radius, center, fadeBand   AUTHORED — the only stored circle facts
- *   fade.inner = radius        DERIVED, never stored
- *   fade.outer = radius + band DERIVED, never stored — ADDITIVE
- *   streetFade                 DELETED
+ *   radius, center, fadeBand     AUTHORED — the only stored circle facts
+ *   fade.inner = radius − band   DERIVED, never stored
+ *   fade.outer = radius          DERIVED, never stored — INWARD
+ *   streetFade                   DELETED
+ *
+ * ⛔ The radius CUTS the geometry, and that is intended. More content at the edge is
+ * an Extent-tool gesture — pull the circle out — not a render change.
  *
  * ⭐ WHY THIS CHECK AND NOT A THRESHOLD. Before 2026-09-20 one circle had FOUR
  * definitions — the stored literals, boundary.js's `?? 134/+42/+108` defaults,
@@ -24,7 +27,7 @@ import { existsSync, readFileSync, mkdirSync, writeFileSync, rmSync } from 'fs'
 import { join } from 'path'
 import { readdirSync } from 'fs'
 import { tmpdir } from 'os'
-import { deriveFade, DEFAULT_FADE_BAND, classifyFade, FADE_FIELDS, deriveFadeBoundary, pointInRing } from '../cartograph/boundaryRecords.mjs'
+import { deriveFade, DEFAULT_FADE_BAND, classifyFade, FADE_FIELDS } from '../cartograph/boundaryRecords.mjs'
 import { loadSceneStencil } from '../cartograph/sceneStencil.js'
 
 let fails = 0
@@ -56,13 +59,14 @@ for (const s of scenes) {
 
 // ── C. THE FORMULA IS ADDITIVE ─────────────────────────────────────────────
 // Read off the live function, not restated: the feather starts AT the rim.
-h('C. deriveFade is additive — the feather starts at the rim and lives outside it')
+h('C. deriveFade is inward — the feather finishes AT the rim')
 for (const R of [180, 892, 3539]) {
   const f = deriveFade(R, 200)
-  ok(f.inner === R, `R=${R}: fade.inner === radius (${f.inner})`)
-  ok(f.outer === R + 200, `R=${R}: fade.outer === radius + band (${f.outer})`)
+  ok(f.outer === R, `R=${R}: fade.outer === radius (${f.outer})`)
+  ok(f.inner === Math.max(0, R - 200), `R=${R}: fade.inner === radius − band, clamped at 0 (${f.inner})`)
 }
-ok(deriveFade(1000).outer === 1000 + DEFAULT_FADE_BAND, `default band applies when none is given (${DEFAULT_FADE_BAND} m)`)
+ok(deriveFade(1000).inner === 1000 - DEFAULT_FADE_BAND, `default band applies when none is given (${DEFAULT_FADE_BAND} m)`)
+ok(deriveFade(100, 400).inner === 0, 'a band wider than the radius clamps at 0 rather than going negative')
 
 // ── D. A RADIUS MOVE CANNOT STRAND THE FADE ────────────────────────────────
 // The reason the whole arc exists: the radius is live-editable, and five stored
@@ -102,8 +106,8 @@ try {
   const reach = (st) => Math.round(Math.max(...st.clipPolygon.map(([x, z]) => Math.hypot(x, z))))
   ok(un.faceFade === null, 'no fadeBand → faceFade null (no dissolve; manifest.stencil stays null)')
   ok(reach(un) === R, `no fadeBand → clip reaches radius exactly: got ${reach(un)} m, want ${R} (a +50 scale-out here protects a feather that does not exist)`)
-  ok(au.faceFade.outer === R + 200, `fadeBand 200 → fade.outer ${au.faceFade.outer}`)
-  ok(reach(au) === R + 250, `fadeBand 200 → clip reaches fade.outer + 50 (${reach(au)} m)`)
+  ok(au.faceFade.outer === R, `fadeBand 200 → fade.outer ${au.faceFade.outer} (the rim)`)
+  ok(reach(au) === R + 50, `fadeBand 200 → clip reaches fade.outer + 50 (${reach(au)} m)`)
 } finally {
   rmSync(tmp, { recursive: true, force: true })
 }
@@ -116,45 +120,15 @@ ok(classifyFade({ radius: 892, fadeBand: 200 }).kind === 'generated', 'fadeBand 
 ok(classifyFade({ radius: 892, fadeBand: 134 }).kind === 'authored', 'fadeBand !== default → authored (the operator turned the knob)')
 let threw = false
 try { classifyFade({ radius: 892, fadeBand: -5 }, 'fixture') } catch { threw = true }
-ok(threw, 'a negative fadeBand throws — a feather cannot run inward')
+ok(threw, 'a negative fadeBand throws — it would invert the band (inner past outer)')
 
-// ── G. IF IT FADES, IT IS DRAWN OUT TO WHERE THE FADE ENDS ─────────────────
-// ⭐ THE RULE, in Jacob's words: "the edge should feather and the buildings
-// shouldn't" · "an outer band of dissolving ground with no buildings in it is what
-// we want." A population either FADES — and must then be drawn out to fade.outer —
-// or it does not, and is culled at membership. There is no third option, and the
-// two culls must therefore be genuinely different shapes.
-//
-// ⛔ WHY THIS IS THE CLASS AND NOT A LOOK NOTE: the inward fade used to hide the
-// polygon's hard cut from the inside. Moving it outward without moving the cull
-// leaves the feather running over empty space — it fails on EVERY town at once, and
-// it looks like "the fade stopped working" rather than "the cull is in the wrong
-// place." This pins the relationship, not the appearance.
-h('G. the fade-extent cull reaches the fade, and membership does not')
-{
-  const R = 400, band = 200
-  const ring = []
-  for (let i = 0; i < 256; i++) { const a = (i / 256) * 2 * Math.PI; ring.push([R * Math.cos(a), R * Math.sin(a)]) }
-  const fadeRing = deriveFadeBoundary(ring, [0, 0], R, band)
-  const inMembership = (x, z) => pointInRing(x, z, ring)
-  const inFadeExtent = (x, z) => pointInRing(x, z, fadeRing)
-
-  // A point in the feather band: outside membership, inside the fade extent.
-  const mid = R + band / 2
-  ok(inMembership(mid, 0) === false, `a point at R+${band / 2} is OUTSIDE membership (buildings stop here)`)
-  ok(inFadeExtent(mid, 0) === true, `…and INSIDE the fade extent (ground/streets/landscape still drawn)`)
-
-  // Past the fade, nothing is drawn by either.
-  const past = R + band + 10
-  ok(inFadeExtent(past, 0) === false, `a point past fade.outer is outside the fade extent too (${past} m)`)
-
-  // Inside the disc both agree — the extent is a superset, never a replacement.
-  ok(inMembership(R / 2, 0) && inFadeExtent(R / 2, 0), 'inside the disc both culls agree')
-
-  // The extent must actually reach fade.outer, not some other radius.
-  const reach = Math.round(Math.max(...fadeRing.map(([x, z]) => Math.hypot(x, z))))
-  ok(reach === R + band, `the fade extent reaches fade.outer exactly (${reach} m, want ${R + band})`)
-}
+// ⚠️ A SECTION G LIVED HERE and is deliberately gone. It pinned "if a population
+// fades it must be drawn out to fade.outer" — the precondition of the ADDITIVE band,
+// which was tried and reverted on 2026-09-20. With an inward fade nothing needs reach
+// past the rim, so the assertion is not merely unnecessary, it would be false.
+// ⭐ The measurement that killed additive is NOT lost — it moved to its own check,
+// where it keeps reporting even though the render no longer shows it:
+// ▶ node checks/claims-fade-has-something-to-dissolve.mjs
 
 console.log(fails === 0 ? '\n✅ all claims hold' : `\n❌ ${fails} claim(s) FAILED`)
 process.exit(fails === 0 ? 0 : 1)
