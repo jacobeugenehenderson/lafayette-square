@@ -2188,7 +2188,7 @@ export default function ExtentApp() {
 
               {/* Radius — the slab disc, auto-fit to the kept buildings; pull it out
                   for padding (or in to coarsely trim outer rings). */}
-              {(keptFit.radius > 0 || (committed && committedRadius > 0)) && (() => {
+              {(footprints?.buildings?.length > 0 || (committed && committedRadius > 0)) && (() => {
                 // ⛔⛔ THE SLIDER'S RANGE IS BOUNDED BY THE FETCH, NEVER BY THE KEPT SET.
                 // It used to be `base = keptFit.radius` — which `loopExcluded` feeds — so
                 // drawing or dragging an exclusion loop dropped distant buildings, collapsed
@@ -2214,8 +2214,6 @@ export default function ExtentApp() {
                     min={rMin} max={rMax} step={10}
                     value={radiusM}
                     onChange={e => { setRadiusTouched(true); setRadiusM(+e.target.value) }} />
-                  {keptFit.radius > 0 &&
-                    <button className="carto-btn-sm" onClick={() => { setRadiusM(keptFit.radius + 120); setRadiusTouched(false) }}>fit to buildings</button>}
                 </div>
                 )
               })()}
