@@ -42,6 +42,7 @@ import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { mapDir } from './config.js'
 import { jurisdictionForMap } from './intake-jurisdiction.mjs'
+import { licencesForArtifact } from './overture-licence.mjs'
 
 const REPO_ROOT = join(fileURLToPath(new URL('.', import.meta.url)), '..')
 
@@ -195,6 +196,12 @@ export const ACQUIRE = {
  *                    Data." You must SHIP THE TERMS. Crediting is not that, and
  *                    a surface that renders both as one "© X" line has quietly
  *                    substituted the easy obligation for the real one.
+ *   'none'         — ⭐ DECLARED-none. A public-domain dedication (CC0) asks for
+ *                    nothing, and a human established that. ⛔ This is NOT the
+ *                    same as an absent `requires`, which is UNDECLARED — nobody
+ *                    looked — and is a sentinel: it reads as "no obligation"
+ *                    while meaning "no answer". Added 2026-09-20 with the first
+ *                    aggregated source, whose contributors span all three.
  *
  * ⚠️ VERIFIED 2026-09-01, at the source, by reading the bytes — not from a
  * search summary, which got this wrong (it reported MSBF as ODbL, and so did
@@ -498,6 +505,54 @@ export const INTAKE_ROWS = [
     absent: { kind: ABSENT.HONEST_ZERO, note: 'no park clip' },
     acquisition: { kind: ACQUIRE.OPERATOR, note: 'traced in the Designer' },
     doc: 'cartograph/INTAKE.md',
+  },
+
+  // ── CONTENT (`INTAKE-CATALOGUE §3`) ───────────────────────────────────────
+  // ⭐ The first row of a second domain. This file's SCOPE note says the content
+  // column "drops in here as additional `domain` values without a schema
+  // change" — this is that, not an extension of the schema.
+  {
+    id: 'overture-places', domain: 'content', tier: 'elective',
+    label: 'External listings base',
+    path: 'raw/overture-places.json',
+    unlocks: 'a businesses-and-landmarks base for a town whose OSM POIs are thin',
+    // ⭐ ABSENT IS NOT A HOLE HERE. Without it the listings base is derived from
+    // OSM POIs, which is a real, town-neutral answer — excellent where OSM is
+    // richly mapped and thin where it is not. Which of the two a town wants is
+    // declared in its `listings.overrides.json` as `meta.baseSource`.
+    absent: { kind: ABSENT.FALLBACK, note: 'the OSM-POI base — good where OSM is richly mapped' },
+    acquisition: { kind: ACQUIRE.BUTTON, note: 'Overture Places via fetch-overture-places.js — ⛔ licence is PER RECORD' },
+
+    // ⛔⛔ NO `licence` FIELD, DELIBERATELY, AND THIS IS THE DOCTRINE ABOVE
+    // WORKING RATHER THAN AN OMISSION.
+    //
+    // Overture PLACES has NO THEME-LEVEL LICENCE. Read from the distribution's
+    // own bytes 2026-09-20: the places STAC collection declares
+    // `"license": "other"`, and the attribution page its `rel:license` points at
+    // gives Buildings, Divisions and Transportation each a "License for theme:"
+    // line and gives Places NONE — a per-contributing-dataset list instead
+    // (CDLA Permissive 2.0 · Apache 2.0 · CC0 1.0, depending on the record).
+    //
+    // ⇒ What a town owes depends on WHICH RECORDS THAT TOWN GOT, so there is no
+    // kit-global string that is true here. The `licence` doctrine at the top of
+    // this file covers exactly this ("MUST NOT get a guessed one") — the well is
+    // simply chosen per RECORD rather than per town, one notch finer.
+    //
+    // ⭐ But we are not helpless, and `owed` would UNDER-report: the artifact
+    // records `sources[].dataset` on every place precisely so the credit can be
+    // DERIVED. `licences` below is that derivation, and `bake-sources.js` merges
+    // its output into the same per-source map a fixed `licence` feeds — so
+    // `requires` stays intact per dataset and the credit-vs-ship-the-terms
+    // distinction is never flattened.
+    // ⛔ A dataset the derivation cannot read is reported as owed, BY NAME, and
+    // never inferred from the parent distribution. That inference is the MSBF
+    // error with a new hat.
+    licences: (scene) => {
+      const file = join(mapDir(scene), 'raw', 'overture-places.json')
+      if (!existsSync(file)) return { credits: [], owed: [] }
+      return licencesForArtifact(JSON.parse(readFileSync(file, 'utf8')))
+    },
+    doc: 'INTAKE-CATALOGUE.md',
   },
 ]
 

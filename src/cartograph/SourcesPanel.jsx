@@ -204,12 +204,22 @@ const GROUPS = [
     // at the top of the stack rather than the bottom. The trade sense of the
     // phrase is the right one: *local knowledge required*.
     rows: [
+      // ⛔ THIS ROW PROMISED OVERTURE PLACES BY NAME WITH NO PATH BEHIND IT until
+      // 2026-09-20 — the note read "free · what Łódź used", and Łódź had been
+      // excised (2026-09-19) along with the only route those records ever came
+      // by. A live operator surface naming a source the kit could not fetch,
+      // crediting a town that no longer exists. Both halves are real now:
+      // `fetch-overture-places.js` acquires it, and bake-content folds it in.
+      // ⭐ The row stays DOC rather than FETCH deliberately — the BASE is a
+      // button, but hours and descriptions are hand-work and always were, and
+      // calling the whole row a button would promise the part that is not.
       { name: 'Businesses & hours', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',
         sources: [
-          { name: 'Overture Places', note: 'free · what Łódź used' },
-          { name: 'OpenStreetMap POIs', note: 'free' },
+          { name: 'Overture Places', note: 'free · one command, any town · ⛔ licence is per record' },
+          { name: 'OpenStreetMap POIs', note: 'free · the default base' },
         ],
         steps: ['Free base; the corrections are the work.',
+                'Two bases: OSM POIs by default, or Overture Places where a town\'s OSM is thin — declared as meta.baseSource in listings.overrides.json.',
                 'The base gets you names and rough categories.',
                 'Real hours, descriptions and what a place is actually for come from visiting the websites one at a time.'] },
       { name: 'Menus', act: DOC, where: 'NEIGHBORHOOD-INPUTS.md',

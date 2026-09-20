@@ -300,30 +300,30 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
     into, and a mismatched pair is a separate refusal (`cartograph/bake-target.js`).
 - **Ground tri-budget — the `GROUND_REFINE` knob** (`bake-ground.js`, the GPU/mobile lever). The flat ground is lifted per-vertex by the terrain at runtime, so it must be subdivided enough to follow the relief. `GROUND_REFINE = "adaptive"` (default) subdivides **only where the terrain bends** — `GROUND_REFINE_TOL_M` (default **0.50 m**) is the max terrain-deviation a coarse triangle may keep before it's split. Lower `tol` = finer mesh + more tris; higher = coarser + fewer. The shipped value cuts the LS ground from **1.37M → ~548K tris** (−60%) with fidelity ≈ the original mesh. The split is **conforming (red-green)** — crack-free; an earlier non-conforming version left visible T-junction cracks along the contours at street level (fixed 2026-06-17, +~100K tris over the cracked 445K). CLI overrides (gated on argv, never `process.env`): `--refine=uniform` restores the legacy byte-identical mesh; `--refine-tol=`/`--refine-min-edge=`/`--refine-max-edge=` retune. ⚠️ It calibrates to the terrain exaggeration (`V_EXAG`); if you ever raise exaggeration, re-bake and re-check the slopes. ⚠️ **After any CLI `bake-ground.js`, run `bake-ground-ao.js` too** — the geometry bake rewrites `ground.json` without the AO `lightmap` block, so a standalone ground bake ships flat-lit (the `serve.js /bake` GUI chains them automatically; only manual CLI bakes hit this — see `BACKLOG.md`). The full diagnosis + per-material numbers live in `cartograph/_archive/handoffs/HANDOFF-ground-tri-cut-LANDED-2026-06-22.md`.
 - **Ground-contact effect knobs (2026-06-22) — where they live, for later tuning / panel promotion.** `bake-ground-ao.js` emits three ground textures and carries the *bake-time* shape constants (edit + re-bake to retune): **lamp pool** — `POOL_RADIUS_M` / `POOL_RING_POS` / `POOL_RING_SHARP` (lower = blurrier ring) / `POOL_SHADOW_FRAC`; **contact shadow** (tree + lamp bases) — `TREE_SHADOW_RADIUS_M` / `TREE_SHADOW_STR`, `LAMP_SHADOW_RADIUS_M` / `LAMP_SHADOW_STR`. The *live* (shader) knobs: **trunk-base ground blend** — `uTrunkBlend` (strength) / `uTrunkBlendTop` (metres up the trunk) in `treeAtlasMaterial.js` (`injectFoliageSway`); **contact-shadow strength** — `uShadowStr` (0.5) in `grassMaterial.js` + `BakedGround` FadeMesh; **pool warm colour** — `vec3(0.80,0.62,0.32)` in both ground shaders. Pool *intensity* + arch *uplight* values are live TOD channels (Lamps / Arch Lighting cards). ⚠️ These are bake-time today — a future arc promotes pool diameter/blur to panel controls (overlap build-up forces baking the shape; see `HANDOFF-channel-variant-cascade.md` neighbours).
+- ### ⭐ **A TOWN WHOSE OSM POIs ARE THIN — the external listings base** *(2026-09-20)*
+  The listings base is normally derived from OSM POIs, which is excellent where OSM is richly
+  mapped and thin where it is not — and a town does not tell you which it is until you have poured
+  it. When the OSM base comes back too thin, switch the base rather than hand-authoring a town:
+  1. **Acquire** — `node cartograph/fetch-overture-places.js --scene=<id>`. Reads the bbox out of
+     the town's own `geography.json`, so there is nothing to configure per town. No credentials, no
+     native dependencies, and it pulls only the parquet row groups that intersect the town — not
+     the theme. Writes `data/<scene>/raw/overture-places.json`.
+  2. **Declare** — put `{ "meta": { "baseSource": "overture" } }` in
+     `data/<scene>/content/listings.overrides.json`. ⛔ **The declaration lives in the DATA, never
+     in the code** — that is what protects the next town without anyone editing `bake-content.js`.
+  3. **Bake** — `node cartograph/bake-content.js --scene=<id>` as usual. The bake prints which
+     producer ran and why, so *"the external base was used"* and *"nothing was produced"* can never
+     look alike in the log.
+  - ⛔ **DO NOT `--force` A SCENE WITH AN EXTERNAL BASE.** `--force` regenerates the base from OSM
+    and **destroys** it; that is not hypothetical, it took one town's listings from 84 to 5 on
+    2026-07-20. The guard refuses by default for exactly this reason.
+  - ⛔ **THE LICENCE IS PER RECORD, not per source.** Overture Places has no theme-level licence —
+    a record may arrive under CDLA Permissive 2.0, Apache 2.0 or CC0 depending on which contributor
+    supplied it, so **what your town owes depends on which records your town got**. It is derived
+    from the artifact automatically and appears in the visitor credit; a contributor the kit cannot
+    licence is reported as **owed, by name**, and is not credited.
+    ▶ `node checks/claims-overture-licence-table-is-current.mjs` re-reads the terms from the source.
 - Server edits (`cartograph/serve.js`) require a `carto` restart — the browser + bake scripts auto-pick-up, but the long-lived server does not (`ARCHITECTURE.md`).
-
-## The check suite — `npm test`
-
-The repo's `claims-*` checks. One per bug-class, each stating a claim that can be **shown false**;
-a non-zero exit is a **finding**, not a broken runner. Wired 2026-09-13 — before that all 157
-existed and none ran, while 116 were cited by name in the docs as the corpus's own proof.
-
-| gesture | runs | contacts |
-|---|---|---|
-| `npm test` | the `safe` tier | **nothing** |
-| `npm run test:all` | `safe` + `local-effect` | nothing; ⛔ writes to disk, so not CI |
-| `npm run test:live` | the `live` tier | ⛔ **production.** Refuses without `CHECKS_LIVE=i-mean-it` |
-| `npm test -- --list` | — | prints what would run, runs nothing |
-| `npm run test:tiers` | — | regenerates `checks/TIERS.json` + `checks/README.md` |
-
-`npm test` runs in CI on both workflows. It takes ~8 min and writes nothing — run it twice and
-`git status` is unchanged.
-
-### ⛔ Why there are tiers at all, and why you must not flatten them
-
-**A blanket run over every check hits the production Supabase project.**
-`scratch/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
-teardown**, and has already left anonymous users on the live project that were never removed —
 - ### ⭐ **THE ASSESSOR BUTTON — giving a town its addresses** *(2026-09-20)*
   A town's **address spine** is what the property atlas is built on: the Society Pages list bare
   buildings **by address**, so a town without one opens nearly empty no matter how good its geometry
@@ -350,6 +350,29 @@ teardown**, and has already left anonymous users on the live project that were n
   - ⭐ **What you should see:** huron went from *"missing stl_parcels.json — skipping"* and **0 of
     3,678** buildings matched, to **3,576 (97%)**, and from ~98% of the town having no address to
     **3%**. Nothing about huron is in the code; the whole difference is one declaration.
+
+## The check suite — `npm test`
+
+The repo's `claims-*` checks. One per bug-class, each stating a claim that can be **shown false**;
+a non-zero exit is a **finding**, not a broken runner. Wired 2026-09-13 — before that all 157
+existed and none ran, while 116 were cited by name in the docs as the corpus's own proof.
+
+| gesture | runs | contacts |
+|---|---|---|
+| `npm test` | the `safe` tier | **nothing** |
+| `npm run test:all` | `safe` + `local-effect` | nothing; ⛔ writes to disk, so not CI |
+| `npm run test:live` | the `live` tier | ⛔ **production.** Refuses without `CHECKS_LIVE=i-mean-it` |
+| `npm test -- --list` | — | prints what would run, runs nothing |
+| `npm run test:tiers` | — | regenerates `checks/TIERS.json` + `checks/README.md` |
+
+`npm test` runs in CI on both workflows. It takes ~8 min and writes nothing — run it twice and
+`git status` is unchanged.
+
+### ⛔ Why there are tiers at all, and why you must not flatten them
+
+**A blanket run over every check hits the production Supabase project.**
+`scratch/claims-onboarding-guard.sh` performs an unconditional `POST /auth/v1/signup` with **no
+teardown**, and has already left anonymous users on the live project that were never removed —
 a recorded incident (`SECURITY.md`, the 2026-08-31 audit disclosure), not a hypothetical. Every
 invocation creates another.
 

@@ -291,9 +291,14 @@ export default function InfoModal() {
               {owed.length > 0 && (
                 /* Honest about what we cannot state. An input whose terms were
                    never recorded is shown as outstanding rather than quietly
-                   omitted or, far worse, given a guessed licence. */
+                   omitted or, far worse, given a guessed licence.
+                   ⛔ An AGGREGATED source can owe several debts from ONE row —
+                   Overture Places stamps a contributing dataset per record, and
+                   two of them are on nobody's attribution page. Naming the
+                   dataset is what stops those rendering as the same label twice,
+                   which reads as a display bug rather than as two real debts. */
                 <p className="text-on-surface-disabled pt-1">
-                  {owed.length} further input{owed.length === 1 ? '' : 's'} ({owed.map(o => o.label).join(', ')}) {owed.length === 1 ? 'is' : 'are'} pending a recorded licence and {owed.length === 1 ? 'is' : 'are'} not credited above.
+                  {owed.length} further input{owed.length === 1 ? '' : 's'} ({owed.map(o => o.dataset ? `${o.label} — ${o.dataset}` : o.label).join(', ')}) {owed.length === 1 ? 'is' : 'are'} pending a recorded licence and {owed.length === 1 ? 'is' : 'are'} not credited above.
                 </p>
               )}
             </div>

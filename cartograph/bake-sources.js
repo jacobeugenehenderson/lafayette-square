@@ -73,6 +73,43 @@ export function creditsForMap(scene) {
   const owed = []
 
   for (const row of filled) {
+    // ⭐ A DERIVED LICENCE — an AGGREGATED source, whose terms are a fact about
+    // the records this town actually got rather than about the source.
+    //
+    // Overture Places is the first: it has no theme-level licence at all, and a
+    // record may arrive under CDLA Permissive 2.0, Apache 2.0 or CC0 depending
+    // on which contributor supplied it. So the row supplies a FUNCTION instead
+    // of a constant, and it is read here rather than at module load because it
+    // reads that town's artifact off disk — the same "status is computed from
+    // disk, never stored" posture as the rest of this manifest.
+    //
+    // ⛔ IT MERGES INTO THE SAME `bySource` MAP AS A FIXED LICENCE, deliberately.
+    // A second credit path is how the two obligations get flattened into one
+    // "© X" line; there is one path, and `requires` rides on each entry.
+    if (!row.licence && typeof row.licences === 'function') {
+      const { credits: derived, owed: debts } = row.licences(scene)
+      for (const d of derived) {
+        const hit = bySource.get(d.source)
+        if (hit) { if (!hit.from.includes(row.id)) hit.from.push(row.id); continue }
+        bySource.set(d.source, {
+          source: d.source, sourceUrl: d.sourceUrl, credit: d.credit,
+          licence: d.name, licenceUrl: d.url, requires: d.requires,
+          // Apache 2.0 §4 wants the NOTICE retained as well as the licence text.
+          // Carried through rather than dropped — a surface that renders only
+          // `credit` has delivered half of what §4 asks for.
+          ...(d.notice ? { notice: d.notice } : {}),
+          ...(d.note ? { note: d.note } : {}),
+          from: [row.id],
+        })
+      }
+      // ⛔ A dataset whose terms this kit cannot state is a DEBT, by name, with
+      // how many of this town's records rest on it. Not a warning to be scrolled
+      // past — it rides into the artifact like any other owed row.
+      for (const debt of debts)
+        owed.push({ row: row.id, label: row.label, acquisition: row.acquisition?.note ?? null,
+                    dataset: debt.dataset, records: debt.records, reason: debt.reason })
+      continue
+    }
     if (!row.licence) {
       // ⭐ THREE-WAY, AND THE ROW ALREADY DECLARES WHICH. "No licence" is not
       // one condition. An input we DERIVED (`derive-ls-render-ledger.js`) or the
@@ -173,7 +210,13 @@ if (textOwed.length) console.log(`[sources]   licence text to ship: ${textOwed.j
 // thing that must not happen is it passing unremarked.
 if (owed.length) {
   console.warn(`[sources] ⚠️  ${owed.length} filled input${owed.length === 1 ? ' has' : 's have'} NO recorded licence — not credited, and still owed:`)
-  for (const o of owed) console.warn(`[sources]     ${o.row} (${o.label})${o.acquisition ? ` — ${o.acquisition}` : ''}`)
+  // ⛔ A DEBT FROM AN AGGREGATED SOURCE NAMES ITS DATASET, or several debts from
+  // one row print as the same line repeated and read as a display bug rather
+  // than as N distinct things nobody can licence. The fields are in the artifact
+  // either way; this is so they are on the screen too.
+  for (const o of owed) console.warn(`[sources]     ${o.row} (${o.label})` +
+    (o.dataset ? ` · dataset "${o.dataset}" on ${o.records} record${o.records === 1 ? '' : 's'} — ${o.reason}` : '') +
+    (!o.dataset && o.acquisition ? ` — ${o.acquisition}` : ''))
   console.warn('[sources]   Record each in intake-rows.mjs `licence` ONLY after reading the terms at the source.')
 }
 if (!credits.length) {

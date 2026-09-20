@@ -36,12 +36,12 @@ if (!looks.length) {
   process.exit(1)
 }
 
-const { creditsForScene } = await import(path.join(ROOT, 'cartograph/bake-sources.js'))
+const { creditsForMap } = await import(path.join(ROOT, 'cartograph/bake-sources.js'))
   .catch(async () => {
     // bake-sources.js runs its CLI at module scope; import it for the pure
     // function only by re-reading with the args it needs. If that ever stops
     // working, say so loudly rather than skipping the comparison.
-    console.error('⛔ could not import creditsForScene from cartograph/bake-sources.js')
+    console.error('⛔ could not import creditsForMap from cartograph/bake-sources.js')
     process.exit(1)
   })
 
@@ -61,7 +61,7 @@ for (const look of looks) {
     const hasSlab = fs.existsSync(path.join(ROOT, 'public/baked', look.id, 'scene.json'))
     if (!hasSlab) { console.log('  · no slab, no credit owed'); continue }
     let would = { credits: [] }
-    try { would = creditsForScene(look.scene) } catch { /* reported below */ }
+    try { would = creditsForMap(look.scene) } catch { /* reported below */ }
     if (would.credits.length) {
       fail(`has a baked slab and ${would.credits.length} creditable source${would.credits.length === 1 ? '' : 's'} (${would.credits.map(c => c.source).join(', ')}) but NO sources.json — its map ships with no attribution. Re-pour, or: node cartograph/bake-sources.js --look=${look.id} --scene=${look.scene}`)
     } else {
@@ -77,7 +77,7 @@ for (const look of looks) {
   // Re-derive from THIS scene's disk, right now.
   let expected
   try {
-    expected = creditsForScene(look.scene)
+    expected = creditsForMap(look.scene)
   } catch (e) {
     fail(`could not re-derive credits for scene '${look.scene}': ${e.message}`)
     continue
@@ -98,8 +98,15 @@ for (const look of looks) {
   // renders a credit that discharges nothing.
   for (const c of artifact.credits) {
     if (!c.licence || !c.licenceUrl) fail(`credits "${c.source}" with no licence name/URL — the notice names a source but not its terms`)
-    if (!['attribution', 'licence-text'].includes(c.requires)) {
-      fail(`"${c.source}" declares requires="${c.requires}" — must be 'attribution' (credit) or 'licence-text' (ship the terms); the two are different obligations and must not be flattened`)
+    // ⭐ THREE DECLARED VALUES, AND `null` IS NOT ONE OF THEM. 'attribution' and
+    // 'licence-text' are the two OBLIGATIONS and must never be flattened into
+    // each other. 'none' is the third DECLARED state — a public-domain
+    // dedication (CC0) genuinely asks for nothing, and saying so is different
+    // from having failed to say anything. ⛔ An absent/null `requires` is
+    // UNDECLARED, which is the sentinel defect: it reads as "nothing required"
+    // while actually meaning "nobody looked".
+    if (!['attribution', 'licence-text', 'none'].includes(c.requires)) {
+      fail(`"${c.source}" declares requires="${c.requires}" — must be 'attribution' (credit), 'licence-text' (ship the terms), or 'none' (a public-domain dedication requires nothing). The first two are different obligations and must not be flattened; null is UNDECLARED and is not an answer`)
     }
   }
 
@@ -136,7 +143,7 @@ const scenes = fs.readdirSync(sceneRoot, { withFileTypes: true })
 const bySceneSet = new Map()
 for (const sc of scenes) {
   let c
-  try { c = creditsForScene(sc).credits.map(x => x.source).sort() } catch { continue }
+  try { c = creditsForMap(sc).credits.map(x => x.source).sort() } catch { continue }
   const key = c.join(' + ') || '(none)'
   if (!bySceneSet.has(key)) bySceneSet.set(key, [])
   bySceneSet.get(key).push(sc)

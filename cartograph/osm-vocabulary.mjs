@@ -127,6 +127,19 @@ const VOCAB_PROSE = {
   noun: 'OSM feature',
   classNoun: 'unreadable class',
   unit: 'm²',
+  /**
+   * ⭐ IS THIS GAP MEASURED IN GROUND, OR JUST COUNTED? The first two customers
+   * are spatial: an unreadable land-use polygon is bad in proportion to the
+   * ground it covers, so the report leads with area and triages worst-area
+   * first. The third is not — an unlicensable place record has no footprint,
+   * and area-weighting it printed "0 m² ×482" next to a real problem, which
+   * reads as "nothing is wrong" at a glance.
+   * ⛔ Set `weighted: false` and the report counts instead of measuring. Do not
+   * pass a fake ring to satisfy the column; a zero that means "not applicable"
+   * is indistinguishable from a zero that means "none", which is the sentinel
+   * defect this whole module exists to prevent.
+   */
+  weighted: true,
   body: [
     '   These did NOT vote. They fell through to the honest fallback rather than',
     '   capturing what they overlap — but the kit could not read them, so this town\'s',
@@ -178,13 +191,16 @@ export function createVocabularyGate(stage, remedy, prose = {}) {
       if (!total) return null
       const rows = this.gaps
       const area = rows.reduce((s, g) => s + g.area, 0)
+      const size = P.weighted ? `, ${Math.round(area).toLocaleString()} ${P.unit}` : ''
       const lines = [
         `[vocabulary:${stage}] ⚠️  ${scene || '(no scene)'} — ${total} ${P.noun}(s) in ` +
-        `${rows.length} ${P.classNoun}(es), ${Math.round(area).toLocaleString()} ${P.unit}.`,
+        `${rows.length} ${P.classNoun}(es)${size}.`,
         ...P.body,
       ]
       for (const g of rows.slice(0, 12)) {
-        lines.push(`     ${Math.round(g.area).toLocaleString().padStart(12)} ${P.unit}  ×${String(g.count).padStart(3)}  ${g.signature}`)
+        lines.push(P.weighted
+          ? `     ${Math.round(g.area).toLocaleString().padStart(12)} ${P.unit}  ×${String(g.count).padStart(3)}  ${g.signature}`
+          : `     ×${String(g.count).padStart(6)} ${P.unit}  ${g.signature}`)
       }
       if (rows.length > 12) lines.push(`     … and ${rows.length - 12} more ${P.classNoun}(es).`)
       lines.push(`   ▶ ${remedy}`)
