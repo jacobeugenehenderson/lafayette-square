@@ -152,3 +152,47 @@ your 22 breakwaters.** They are a different structure and a bigger population. *
 3. The cross-section question is **answered either way, out loud.**
 4. Jacob has seen the lakefront **from the water and from the street.**
 5. `pier` is **asked about, not absorbed.**
+
+---
+
+> # ⭐⭐ THE GATE THIS BRIEF IS ACTUALLY JUDGED ON *(Jacob, 2026-09-20 — applied to every open brief)*
+>
+> ### ⛔ "DOES IT LOOK GOOD" IS NOT AN EYE-GATE. IT IS AN AUTHORING SESSION, AND IT IS NOT YOURS.
+> *"Until I am in the authoring moments of the camera, I'm just looking at elements. I think we spend
+> a lot of time worrying about the moment an operator sees the map for the first time being ugly or
+> random, and I think that's a silly concern."*
+>
+> ⭐ **A first pour being ugly is FINE AND EXPECTED.** *"Even grass with houses on it looks beautiful
+> and gets the project advancing."* ⇒ **Do not hedge against an aesthetic judgment. Do not tune.**
+> ▶ **THE GATE IS: is the element PRESENT and CORRECT?** Does it arrive · is it seated · does the
+> class exist · did the count change. Measurable, falsifiable, and none of it about composition.
+>
+> ⛔ **THE ONE EXCEPTION, AND IT IS THE REAL RISK:** where a WRONG element looks PLAUSIBLE — a
+> cornfield rendering as lawn, a pond rendering as nothing, buildings buried under terrain. ⭐ That
+> is not an aesthetic worry, it is *"the map is lying and nothing says so."* **Protect that. Ignore
+> the rest.**
+>
+> ### ⭐⭐ AND THE QUESTION THAT REPLACES IT — ASK IT EXPLICITLY, IN WRITING
+> *"When I decide that cornfields are a priority, have we paved the way for that or did we screw
+> ourselves? We have color pickers today, but 'color' is hardly what row crops are made of."*
+>
+> **MEASURED 2026-09-20 — what a land-use class can carry TODAY:**
+> ```
+> face group in the slab :  kind · id · color · renderOrder · polygonOffsetUnits
+> authorable per class   :  layerColors · luColors          ← COLOUR, and nothing else
+>                           materialPhysics · materialColors ← present, EMPTY, and PBR-shaped
+> ```
+> ⇒ ✅ **THE RENDER SIDE IS NOT FORECLOSED.** `BakedGround.jsx`'s `GRASS_FACES` selects a whole
+> shader by class id, so attaching a generator to a class is **purely additive.** The road is paved.
+> ⇒ ⛔ **THE AUTHORING SIDE HAS NO SHAPE FOR IT.** There is nowhere to put row bearing, wave
+> direction or stone grading, and `materialPhysics` is the WRONG SHAPE, not merely empty — a material
+> says *how a surface answers light*; a generator says *what structures exist and how they are laid out.*
+>
+> ### ⛔⛔ SO THIS BRIEF OWES ONE THING BEFORE IT BUILDS ANYTHING
+> ▶ **STATE THE PARAMETERS THIS FEATURE NEEDS AUTHORED** — name them, with units — **and say whether
+> today's model can hold them.** ⚠️ **THREE OPEN BRIEFS HIT THIS SAME WALL** (`BRIEF-field-shader`
+> rows/bearing/season · `BRIEF-water-shader` wave scale/turbidity/shoreline band ·
+> `BRIEF-boulder-revetment` stone grading/slope/overlap).
+> ⛔ **DO NOT INVENT A PARAMETER HOME. THREE BRIEFS EACH INVENTING ONE IS THE ACTUAL WAY WE SCREW
+> OURSELVES** — three incompatible authoring models and no panel that can hold them. ▶ **Propose the
+> shape, bring it to Boz, and it gets decided ONCE for all three.**
