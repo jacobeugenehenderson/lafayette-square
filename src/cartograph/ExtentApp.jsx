@@ -248,6 +248,23 @@ function circlePts(cx, cz, r, n = 96) {
   for (let i = 0; i <= n; i++) { const t = (i / n) * Math.PI * 2; out.push([cx + r * Math.cos(t), 4, cz + r * Math.sin(t)]) }
   return out
 }
+// ⭐ A FRESH POUR LANDS IN SURVEY. "The sequence demands that things bake in a specific
+// sequence" (Jacob, 2026-09-19, on Huron opening into Section).
+//
+// `tool` initialises from localStorage['cartograph-tool'] — ONE GLOBAL VALUE, not
+// per-scene. So a brand-new town, whose SHAPE nobody has ever looked at, opened in
+// Measure because that is what the operator happened to be doing on a DIFFERENT town.
+// Survey is SHAPE (chain step 4); Section/Measure is FILL (step 6). Landing in FILL on
+// an uninspected silhouette inverts the chain — and `ORIENTATION` is explicit that a
+// defect is almost never fixable at the step where you see it.
+//
+// ⛔ Deliberately only on the POUR path, not on every Designer entry: an operator
+// returning to a hood mid-Section work should land where they left off. The sequence
+// argument applies to a map that has just come into existence, not to every visit.
+function landInSurvey(store) {
+  try { store?.setTool?.('surveyor') } catch { /* a missing tool API must never fail a bake */ }
+}
+
 function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
   const hasPoly = corners?.length >= 2
   // Draw when there's a polygon OR just a circle (a reopened committed hood has
@@ -1755,6 +1772,7 @@ export default function ExtentApp() {
         if (authoredCam) { try { localStorage.setItem('cartograph-camera', JSON.stringify(authoredCam)) } catch { /* ignore */ } }
         setBakedSig(bakeSignature)
         saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
+        landInSurvey(store)
         setShot('designer')
         return
       }
@@ -1809,6 +1827,7 @@ export default function ExtentApp() {
       setCommittedRadius(Math.round(radiusM))   // §4: the baked circle, for re-scope detection
       setBakedSig(bakeSignature)
       saveNeighborhood(scene, { bakedSig: bakeSignature }).catch(() => {})
+      landInSurvey(useCartographStore.getState())
       setShot('designer')
     } catch (e) {
       if (committedThisRun) {
