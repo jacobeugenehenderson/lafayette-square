@@ -205,10 +205,16 @@ the forever zone (hood center). That draggable-centroid is R10 made a handle —
 / `ParkTitleHandle` dot pattern.
 
 **D4 — the WRITE half is CLOSED** (`center` 2026-07-23, the fade set with §5.1's split). ⛔ **Still open
-— the DISPLAY half:** `ExtentApp.jsx:1145` `if (committed) return {x:0,z:0}`, so a committed hood's disc
-*draws* at the origin however it is authored, and `CenterHandle` is gated `!committed` (`:1815`). The
-client never posts `center` (`api.js:212`), so this never reached disk — a render bug, not a destroyer.
-The server already accepts `center:[x,z]`; un-gating the handle is the work.
+— the DISPLAY half, and it is TWO gaps, not one** *(re-measured 2026-09-19; the four line numbers that
+stood here had all drifted — cite the symbol)*: the disc-centre memo in `ExtentApp.jsx` returns
+`{x:0,z:0}` when `committed`, so a committed hood's disc *draws* at the origin however it is authored,
+and `CenterHandle` is gated `!committed`.
+⛔⛔ **AND UN-GATING THE HANDLE IS NOT SUFFICIENT — this section said it was.** `rescopeScene` (`api.js`)
+builds its body as `{radius, exclusions}` plus an optional `polygon`, and **never adds `center`** — while
+rescope is *the only path a committed hood's Bake takes*. The server has been listening the whole time
+(`/rescope` destructures `center` and logs *"frame origin untouched"*). ⇒ un-gate alone and you get a
+handle that drags, appears to save, and is discarded on Bake — **a silent substitution, which is the one
+thing `CLAUDE.md` Layer 0 q2 forbids.** Both halves or neither. ▶ `ROADMAP A22`.
 
 > ⭐⭐ **LS IS THE ONLY SCENE WITH AN AUTHORED FADE SET — WHICH IS WHY NO OTHER SCENE COULD REVEAL D4.**
 > Every other v2 scene is the formula to the metre, so a gate that preserves LS's values *and* leaves
@@ -407,6 +413,12 @@ never the night before a demo).
   drop the trimmed data), always **from the frozen center** (§3.3 — grow/shrink OK, moving forbidden).
   This is the "forever safety zone can be extended if you outgrow it" made a real control, and it's
   append-safe (identity preserved: new area appends, retained ids unchanged; a shrink tombstones).
+  ⛔⛔ **UNBUILT — and it is routinely recalled as settled** *(2026-09-19)*. The *principle* is ruled and
+  measured (the tight re-fetch: 13,427 → 8,460 footprints, **zero renumbers**). **The gesture does not
+  exist** — there is no grow or shrink control in the Extent tool. ⇒ **a hard fetch today has no give:
+  the envelope an operator commits is the envelope they keep**, so under-fetching costs a full re-fetch
+  and re-pour while over-fetching only costs pour time. Until this lands, **err generous.**
+  ▶ `ROADMAP H8`.
 - **Duplicate a map for a new version.** Fork a scene in the Extent tool into a new version — e.g. to
   **add a neighborhood to an existing map**, or spin a v2 to author against without disturbing the
   live one. First-class version of the manual `lafayette-square → lafayette-square-staging` pattern we
