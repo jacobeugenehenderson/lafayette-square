@@ -38,9 +38,10 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MANIFEST = 'public/looks/index.json'
 const BAKED = 'public/baked'
 
-// ⛔ Not a skip list — a named status. These two are dead by ruling (2026-08-27) and are absent from
-//    the manifest on purpose; reporting them would be noise, and noise is how a check gets ignored.
-const CHILLERED = new Set(['centrum', 'ksi-y-m-yn'])
+// ⛔ NO CHILLERED FILTER. It held `centrum` + `ksi-y-m-yn`, excised 2026-09-19. This check's whole
+//    job is to report a town that is baked but undeclared, so a name-filter here is the one thing
+//    that could hide the defect it exists to find: any town added to it becomes permanently
+//    invisible to the check that is supposed to notice towns.
 // `default` is a shared fallback corpus, not a town. It is the trap that makes "has artifacts"
 // alone an insufficient test for townhood.
 const NOT_A_TOWN = new Set(['default'])
@@ -62,7 +63,7 @@ const declared = JSON.parse(readFileSync(mp, 'utf8')).looks.map(l => l.id)
 // "Measurable" means it carries the artifact the shape checks actually read. A bare directory is
 // not a town: `public/baked/` holds `default/`, which carries most artifacts and is not one.
 const measurable = readdirSync(join(ROOT, BAKED))
-  .filter(d => !NOT_A_TOWN.has(d) && !CHILLERED.has(d))
+  .filter(d => !NOT_A_TOWN.has(d))
   .filter(d => existsSync(join(ROOT, BAKED, d, 'shape.json')))
   .sort()
 

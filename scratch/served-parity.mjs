@@ -21,12 +21,20 @@ import { existsSync, readFileSync, statSync, readdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execSync } from 'node:child_process'
+import { declaredScenes } from '../checks/_scenes.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const R = (...p) => join(ROOT, ...p)
 const kb = (f) => existsSync(f) ? Math.round(statSync(f).size / 1024) + 'K' : '—'
 
-const SCENES = ['lafayette-square', 'hipointe-demun', 'altadena', 'ksi-y-m-yn', 'centrum']
+// ⛔ NOT A TYPED ROSTER. The towns are whatever `public/looks/index.json` declares — the same
+//    SSoT every check uses (`checks/_scenes.mjs`, `39aac128`: "45 checks carried a typed scene
+//    roster, which is a skip list nobody called one"). This file carried its own copy of that
+//    skip list until 2026-09-19, which is why two retired towns kept appearing in the worklist
+//    and why a town poured after the list was typed would never have appeared at all.
+// ⭐ DECLARED, not measurable: "declared but not poured" is precisely what this detector reports,
+//    so it must enumerate what the product CLAIMS, then measure each claim.
+const SCENES = declaredScenes()
 
 // The render-critical shared defaults: files at src/data/*.json that a consumer
 // can NAME-import, so an absent scene renders LS's version of them.
@@ -48,18 +56,25 @@ function nameImporters(basename) {
   } catch { return [] }
 }
 
+// ⛔ ABSENCE IS NOT AN ANSWER. Every return says whether the namespace was MEASURED. Until
+//    2026-09-19 a missing artifact returned the same shape as a real reading (`ns: '—'`), the
+//    caller looked '—' up in NS_STATUS, found nothing, added no worklist item, and printed
+//    "✅ same as the kit". A scene nobody had baked was certified identical to the kit — Layer 0
+//    question 2 committed inside the detector that is supposed to catch it.
 function namespaceOf(scene) {
   const f = R('public/baked', scene, 'buildings.json')
-  if (!existsSync(f)) return { ns: '—', n: 0 }
+  const rel = `public/baked/${scene}/buildings.json`
+  if (!existsSync(f)) return { ns: '—', n: 0, measured: false, why: `no ${rel} — never baked` }
   try {
     const o = JSON.parse(readFileSync(f, 'utf8'))
     const arr = Array.isArray(o) ? o : (o.buildings || Object.values(o))
     const ids = arr.map(x => x && x.id).filter(Boolean)
+    if (!ids.length) return { ns: '—', n: 0, measured: false, why: `${rel} carries no building ids` }
     const pre = {}
     for (const i of ids) { const p = String(i).replace(/\d.*$/, ''); pre[p] = (pre[p] || 0) + 1 }
-    const ns = Object.keys(pre).sort((a, b) => pre[b] - pre[a])[0] || '—'
-    return { ns, n: ids.length }
-  } catch { return { ns: '?', n: 0 } }
+    const ns = Object.keys(pre).sort((a, b) => pre[b] - pre[a])[0]
+    return { ns, n: ids.length, measured: true }
+  } catch (e) { return { ns: '?', n: 0, measured: false, why: `${rel} unreadable — ${e.message}` } }
 }
 
 // A stable namespace is one minted from an EXTERNAL key, not the fetch index.
@@ -103,9 +118,9 @@ const rows = []
 for (const s of SCENES) {
   const clean = R('cartograph/data', s, 'clean')
   const has = (a) => existsSync(join(clean, a))
-  const { ns, n } = namespaceOf(s)
+  const { ns, n, measured, why } = namespaceOf(s)
   const poured = has('ribbons.json')            // the pipeline emits ribbons; no ribbons = never poured
-  rows.push({ s, ns, n, poured,
+  rows.push({ s, ns, n, nsMeasured: measured, nsWhy: why, poured,
     skeleton: has('skeleton.json') ? kb(join(clean, 'skeleton.json')) : 'MISSING',
     ribbons:  has('ribbons.json')  ? kb(join(clean, 'ribbons.json'))  : 'MISSING',
     map:      has('map.json')      ? kb(join(clean, 'map.json'))      : 'MISSING',
@@ -136,12 +151,51 @@ for (const f of SHARED_DEFAULTS) {
 if (!bleedCount) console.log('  (none — every consumer reads a per-scene served path) ✅')
 
 // ── PART 3: the worklist ────────────────────────────────────────────────────
+//
+// ⛔⛔ THREE VERDICTS, NEVER TWO. A scene is SAME, or it has WORK, or IT COULD NOT BE MEASURED —
+//    and the third may never be folded into the first. Before 2026-09-19 this loop had two
+//    verdicts: it collected worklist items and, finding none, printed "✅ same as the kit". Every
+//    way of learning NOTHING produced that green:
+//      • no `public/baked/<scene>/buildings.json`  → ns '—' → not in NS_STATUS → no item → green
+//      • an unreadable buildings.json              → ns '?' → not in NS_STATUS → no item → green
+//      • a namespace nobody has graded             → not in NS_STATUS → no item → green
+//      • no slab at all                            → measured, PRINTED in part 1, never consulted
+//    Two retired towns sat at the bottom of this worklist reading "✅ same as the kit" with their
+//    namespace shown as '—' and their slab shown as 'no' three columns to the left.
+//
+// ⭐ WHY THIS OUTLIVES THOSE TWO TOWNS, AND IS THE REASON THE FIX CAME BEFORE THE DELETION: a town
+//    that has been poured but not yet baked presents to this detector EXACTLY as they did — no
+//    namespace, no slab. Deleting the rows would have removed the evidence and left the mechanism
+//    armed for the next town. The green was not about those towns; they were just the ones
+//    standing in front of it. `CLAUDE.md` Layer 0 q2: absence must fail loudly, and the one place
+//    a silent substitution must never happen is the detector itself.
 console.log('\n\nPART 3 — WORKLIST (what must change so every scene is the same)\n')
+let unmeasured = 0
 for (const r of rows) {
-  const items = []
+  const items = []   // measured, and it is not the same → WORK
+  const blind = []   // not measured → this scene's parity is UNKNOWN, which is not a pass
+
   if (!r.poured) items.push(`POUR through the one path → emit clean/${r.s}/ribbons.json (today: MISSING → not served)`)
-  const nsNote = NS_STATUS[r.ns]
-  if (nsNote) items.push(`identity ${r.ns} : ${nsNote}`)
+
+  if (!r.nsMeasured) {
+    blind.push(`identity NOT MEASURED — ${r.nsWhy}`)
+  } else if (NS_STATUS[r.ns]) {
+    items.push(`identity ${r.ns} : ${NS_STATUS[r.ns]}`)
+  } else {
+    // ⛔ An ungraded namespace is not a good namespace. A new ingest path mints a new prefix and
+    //    this table will not know it — the one case where staying quiet ships a wrong "same".
+    blind.push(`identity NOT GRADED — namespace "${r.ns}" (${r.n} ids) appears in no status table. Grade it in NS_STATUS.`)
+  }
+
+  if (r.slab !== 'yes') blind.push(`NO SLAB — public/baked/${r.s}/scene.json is absent; nothing served to the renderer was measured`)
+
+  if (blind.length) {
+    unmeasured++
+    console.log(`  ${r.s}: ⛔ NOT MEASURED — parity UNKNOWN. This is not a pass.`)
+    for (const b of blind) console.log(`     ⛔ ${b}`)
+    for (const it of items) console.log(`     • ${it}`)
+    continue
+  }
   if (!items.length) { console.log(`  ${r.s}: ✅ same as the kit`); continue }
   console.log(`  ${r.s}:`)
   for (const it of items) console.log(`     • ${it}`)
@@ -151,3 +205,13 @@ if (bleedCount) {
   console.log(`     (this closes the entire LS-bleed class at the root, not site-by-site)`)
 }
 console.log('')
+
+// ⛔ EXIT 2 = COULD NOT MEASURE, the corpus convention (`checks/_scenes.mjs`,
+//    `claims-onboarding-guard.sh`: "Exit 2 = could not run"). `EXTENT-DESIGN §2` names this script
+//    as the DONE gate for the whole kit, so a run that could not see some scenes must not leave a
+//    zero exit behind for a runner to read as "the kit is finished".
+if (unmeasured) {
+  console.log(`⛔ ${unmeasured} scene(s) COULD NOT BE MEASURED. Parity is unknown for them — not confirmed.`)
+  console.log(`   Bake them (public/baked/ is gitignored, so a fresh clone lands here) or retire them.\n`)
+  process.exit(2)
+}

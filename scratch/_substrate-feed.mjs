@@ -31,12 +31,18 @@
 import fs from 'fs'
 import crypto from 'crypto'
 
-export const CHILLERED = ['ksi-y-m-yn', 'centrum', 'altadena']
+// ⛔ NO CHILLERED LIST. `ksi-y-m-yn` and `centrum` were excised 2026-09-19; `altadena` never
+//    belonged — it is DECLARED in the look manifest and is "unpolished, not gotten to"
+//    (`ROADMAP` scope ruling), which is not the same thing as out of scope. While this list
+//    existed, `checks/claims-preclip-walk.mjs`, `slice2-walk-report.mjs`,
+//    `slice2-unclaimed-classes.mjs` and `median-block-ped-coverage.mjs` all printed a live town
+//    as "CHILLERED — no number is printed for it", i.e. a real map went unmeasured and said so in
+//    the voice of a ruling. A scene that cannot be measured must say WHY it could not; it may
+//    never cite a ruling it is not covered by.
 export const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
 export const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--${k}=`)); return a ? a.split('=')[1] : d }
 
 export async function loadScene(scene, ribbonsPathArg) {
-  if (CHILLERED.includes(scene)) return { chillered: true, scene }
   const o = console.log; console.log = () => {}
   const { resolveChainSegmentation } = await import('../src/lib/chainSegmentation.js')
   console.log = o
@@ -93,7 +99,7 @@ export async function loadScene(scene, ribbonsPathArg) {
   const outerRing = nb.boundary.map(([x, z]) => [cx + (x - cx), cz + (z - cz)])
 
   return {
-    chillered: false, scene, ribbonsPath, nbPath, designPath, isPour,
+    scene, ribbonsPath, nbPath, designPath, isPour,
     ribbons, nb, design, streets, bc, byId, ixByChain, segOrdAt, baseHW,
     widthAtSegOrd, widthAtChain, outerRing,
   }

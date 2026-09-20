@@ -40,9 +40,18 @@ This mirrors the one enforcement that already works (`sectionPass` closure), mov
 > **Measured live, per scene, by the offset/carve split it reports per tile:**
 > ▶ `node scratch/a07-producer-disclosure.mjs`
 >
-> The carved share ranges from a small minority of tiles (altadena) to a strong majority (ksi-y-m-yn),
-> with lafayette-square, lafayette-square-staging, hipointe-demun and centrum spread across that range —
-> **LS sits mid-range, not at either extreme.**
+> The carved share ranges from a small minority of tiles (altadena) upward, with lafayette-square,
+> lafayette-square-staging and hipointe-demun spread across that range — **LS sits mid-range, not at
+> either extreme.** ⛔ Re-derive with the command; never quote a figure from here.
+>
+> ⚠️ **THE TOP OF THE RANGE WENT WITH THE POLISH SCENES (excised 2026-09-19), AND THAT COSTS THIS
+> SECTION EVIDENCE, NOT DOCTRINE.** The widest spread ever measured — a small minority of tiles at one
+> end, roughly three quarters at the other — spanned six scenes, and the majority-carve end was
+> `ksi-y-m-yn`. The four surviving towns span a **narrower** range, so a reader running the command
+> today will see a weaker version of the very effect this section exists to teach. ⛔ Do not conclude
+> the spread is small: it was measured wide, on real data, and the observation that the split is a
+> property of *the town's block geometry* is what survives. The next non-US pour is where it becomes
+> re-measurable.
 >
 > ⛔⛔ **THAT SPREAD IS THE POINT.** The invariant's truth is a
 > property of *the town's block geometry*, not of the kit, so no single scene can tell you whether it

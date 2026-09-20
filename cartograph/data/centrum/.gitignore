@@ -1,6 +1,0 @@
-# This scene is RETIRED — see RETIRED.md. Ignore everything but the marker.
-# (Not a skip list: the root .gitignore names no town, and every retired town
-# carries this identical pair. Delete both files to bring the scene back.)
-*
-!.gitignore
-!RETIRED.md

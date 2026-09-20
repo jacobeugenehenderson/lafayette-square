@@ -18,14 +18,13 @@
 //
 // ⛔ Reads nothing but objects. ⛔ Repairs nothing. ⛔ No call site is added.
 import fs from 'fs'
-import { loadScene, banner, ARG, CHILLERED } from './_substrate-feed.mjs'
+import { loadScene, banner, ARG } from './_substrate-feed.mjs'
 
 const o = console.log; console.log = () => {}
 const { walkSubstrate, completeness } = await import('../src/lib/substrateWalk.js')
 console.log = o
 
 const SCENE = ARG('scene', 'lafayette-square')
-if (CHILLERED.includes(SCENE)) { o(`  ${SCENE}: CHILLERED (2026-08-13) — made for a pitch, pitch made. ⛔ No number is printed for it.`); process.exit(0) }
 const LIST = ARG('list', null)
 const S = await loadScene(SCENE, ARG('ribbons', null))
 banner(S, o)

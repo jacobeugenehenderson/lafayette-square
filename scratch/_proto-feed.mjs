@@ -18,8 +18,8 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 
 // ⛔ ONE OWNER — `checks/_scenes.mjs`. Re-exported here so the 27 forensics that import
 //    `ribbonsPath` from this feed keep working; the definition lives in exactly one file.
-export { ribbonsPath, CHILLERED, ribbonScenes as feedScenes } from '../checks/_scenes.mjs'
-import { ribbonsPath, CHILLERED } from '../checks/_scenes.mjs'
+export { ribbonsPath, ribbonScenes as feedScenes } from '../checks/_scenes.mjs'
+import { ribbonsPath } from '../checks/_scenes.mjs'
 
 export const lookFor = (scene) => {
   const idx = JSON.parse(fs.readFileSync('public/looks/index.json', 'utf8'))
@@ -28,22 +28,16 @@ export const lookFor = (scene) => {
   return (ls.find(l => l.id === scene) || ls[0]).id      // prefer the same-named Look
 }
 
-// ⛔⛔ CHILLERED SCENES — the scope ruling's own requirement, made mechanical.
-// `ROADMAP`'s scope ruling (Jacob 2026-08-13, re-affirmed 2026-09-08 "permanently defunct until
-// further notice"): centrum + ksi-y-m-yn are OUT, not deferred — "we made them for a pitch, we made
-// the pitch, it is over" — and **"never size a class on them; a check must report CHILLERED, not a
-// number."** Enforced HERE rather than per-probe, because seven copies of a rule is why the last
-// correction could not hold (see this file's own header).
-// ⛔ THIS IS NOT A SKIP LIST — the distinction is the whole point (`CLAUDE.md` Layer 0). A skip list
-// makes an unhandled case LOOK handled; this reports a NAMED STATUS, loudly, and the scene is still
-// reachable by asking for it by name (`{ chillered: true }`) exactly like `bare`. Nothing is hidden.
+// ⛔ THE CHILLERED GATE IS GONE (2026-09-19), because its two subjects are. It was defended as a
+//    named status rather than a skip list, and with real subjects that held. What it could not
+//    survive was being COPIED: the same two names were typed into six more files, and three of
+//    those copies had grown `altadena`, a live declared town, which then reported "CHILLERED — no
+//    number is printed for it" instead of being measured. ⭐ The lesson is the one `_scenes.mjs`
+//    already learned at 45 files' expense: a town leaves scope by leaving the look manifest, and
+//    a name typed into a source file is a skip list however loudly it announces itself.
 
 // Returns null and prints why — the caller must treat that as a FAILURE, not an empty result.
-export function feed(scene, { chillered = false } = {}) {
-  if (CHILLERED.has(scene) && !chillered) {
-    console.log(`⛔ ${scene}: CHILLERED — out of scope, not deferred (ROADMAP's scope ruling). Reporting a STATUS, not a number; this scene was NOT measured. Pass { chillered: true } if you deliberately want it.`)
-    return null
-  }
+export function feed(scene) {
   const rp = ribbonsPath(scene)
   if (!fs.existsSync(rp)) { console.log(`⛔ ${scene}: no ribbons at ${rp} — SKIPPED LOUDLY, this scene was NOT checked`); return null }
   const look = lookFor(scene)

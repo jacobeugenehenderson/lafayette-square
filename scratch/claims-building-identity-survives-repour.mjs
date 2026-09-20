@@ -44,10 +44,9 @@ import { fileURLToPath } from 'node:url'
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const SNAP_DIR = path.join(ROOT, 'scratch', '_snapshots')
 
-// Retired for currency, not truth: these two were poured for a pitch that has been made
-// (Jacob, 2026-08-13). ⛔ Never size a class on them — report CHILLERED, never a number,
-// so a future reader cannot mistake "out of scope" for "measured and fine".
-const CHILLERED = new Set(['ksi-y-m-yn', 'centrum'])
+// ⛔ The CHILLERED set here held `ksi-y-m-yn` + `centrum`, excised 2026-09-19 along with the
+//    towns. A scene that cannot be measured is reported by the artifact that is missing, not by
+//    a name typed into this file.
 
 const argv = process.argv.slice(2)
 const arg = (k, d = null) => { const i = argv.indexOf(k); return i >= 0 ? (argv[i + 1] ?? true) : d }
@@ -250,7 +249,6 @@ console.log(`\nBUILDING IDENTITY ACROSS A RE-POUR — ${MODE === 'snapshot' ? 't
 let worst = 0
 for (const scene of scenesFrom()) {
   console.log(`══ ${scene}`)
-  if (CHILLERED.has(scene)) { console.log('   ⛔ CHILLERED — not measured, and not a number. Skipping.\n'); continue }
   const rc = MODE === 'snapshot' ? snapshot(scene) : compare(scene)
   worst = Math.max(worst, rc)
   console.log('')

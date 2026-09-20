@@ -79,7 +79,9 @@ const lsAuthored = readJsonOrNull(join(PUBLIC_DIR, 'looks/lafayette-square/desig
 check('the 2026-07-14 regression cannot recur — LS authoring does not reach a foreign scene', () => {
   if (!lsAuthored) return 'no design.json.pre-reset to replay against; test is vacuous'
   if (!slotCount(lsAuthored.blockCustoms)) return 'the replay fixture carries no authoring; test is vacuous'
-  for (const target of ['altadena', 'ksi-y-m-yn', 'centrum']) {
+  // Target names only — `seedDesignForScene` is pure, so these need not be real towns. One that
+  // does not exist is deliberate: the stripping must be scene-generic, i.e. correct for town #2.
+  for (const target of ['altadena', 'hipointe-demun', 'a-town-nobody-has-poured-yet']) {
     const { design: d, stripped } = seedDesignForScene(lsAuthored, 'lafayette-square', target)
     if (slotCount(d.blockCustoms)) return `${target} still received ${slotCount(d.blockCustoms)} blockCustoms slots`
     if (!stripped.length) return `${target}: nothing reported stripped — the drop was silent`

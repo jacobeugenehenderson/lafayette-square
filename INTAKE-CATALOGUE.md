@@ -34,11 +34,17 @@
 
 ---
 
-> ### ⛔⛔ THE TWO POLISH SCENES ARE CHILLERED — read every Łódź severity below through this
-> **`centrum` and `ksi-y-m-yn` are out, not deferred** *(Jacob, 2026-08-13: "we made them for a pitch,
-> we made the pitch, it is over"; re-affirmed 2026-09-08: permanently defunct until further notice)*.
-> ⛔ **Never size a class on them; a check reports CHILLERED, not a number.** Home for the ruling —
-> and the only copy — is **`ROADMAP.md`'s scope ruling**; this is a pointer, not a restatement.
+> ### ⛔⛔ THE TWO POLISH SCENES ARE EXCISED — read every Łódź severity below through this
+> **`centrum` and `ksi-y-m-yn` are gone** *(Jacob, 2026-08-13: "we made them for a pitch, we made the
+> pitch, it is over"; escalated 2026-09-19 from chilled to EXCISED — out of the roster, the app and
+> the git, and deleted from disk)*. Home for the ruling — and the only copy — is **`ROADMAP.md`'s
+> scope ruling**; this is a pointer, not a restatement.
+>
+> ⛔ **There is no CHILLERED status left to report, and no list of these names anywhere in the code.**
+> A town leaves scope by leaving `public/looks/index.json`; `checks/_scenes.mjs` enumerates DECLARED ∩
+> MEASURABLE, so an absent town is excluded without being named. *(The old instruction — "a check
+> reports CHILLERED, not a number" — spawned seven hardcoded name lists, three of which had grown
+> `altadena`, a live town that then printed as unmeasurable by ruling. All seven are gone.)*
 >
 > ⭐⭐ **AND IT CHANGES WHAT SOME ROWS BELOW MEAN, WHICH IS WHY THIS BANNER IS HERE AND NOT JUST IN
 > `ROADMAP`.** Several sites are rated on a Łódź deployment being LIVE — *"HIGH — live and wrong on
@@ -47,7 +53,14 @@
 > the bleed hits town #3 exactly as it hit town #2 (`CLAUDE.md` Layer 0: the subject is the kit, and
 > LS-is-the-fallback is the systemic defect). ⇒ **re-read them as "what this does to the NEXT town",
 > never as "what is broken in production today".** ⛔ Do not downgrade a row on the strength of the
-> chill alone; the two claims are different and only one of them died.
+> excision alone; the two claims are different and only one of them died.
+>
+> ⭐⭐ **AND THE MEASUREMENTS BELOW DO NOT EXPIRE WITH THE SCENES.** Every Łódź count here — 3,982
+> OSM `addr:street`, 4,361 `building:levels`, the footprint-complexity table, the 65 landmarks — is a
+> measurement of **what OSM carries outside the United States**, which is the only such evidence this
+> catalogue has. It was measured from real data and it is still true of that data. ⛔ Do not sweep
+> these out as dead-town residue; they are the answer to *"what does the kit meet in town #2 if town
+> #2 is not American?"* and deleting them would leave that question unanswered and looking answered.
 
 ## 0. ⛔ THE HEADLINE FINDING — the LS-bleed is the kit's systemic defect
 
@@ -72,8 +85,10 @@ else's*.
 > `LafayettePark.jsx:803` (park title) · `StreetLights.jsx:74` (LS's 80 lamps) · `lampLightmap.js:23`
 > (their baked pools) · `LafayetteScene.jsx:106` (LS's per-building overrides). Jacob previewed Łódź
 > and found **the St. Louis Gateway Arch standing in it, over Lafayette Park's water**. Every gate was
-> correct; the identity beneath them was wrong. Fixed by registering `src/instances/centrum.js`
-> (`103d7224`). ⚠️ **`altadena` and `toy` are still unregistered and still carry this.**
+> correct; the identity beneath them was wrong. Registering an instance file for that scene fixed it
+> (`103d7224`) — which **proved the diagnosis** before the scene was excised and the file went with it
+> (2026-09-19). ⚠️ **`altadena` and `toy` are still unregistered and still carry this** — `ls
+> src/instances/` is the check, and it is the whole remaining population.
 | 6 | `cartograph/pipeline/hydrate-anchor-cards.js:28` | **LS's latitude (38.616°N) → every town's sky.** See §3.0 | HIGH — **live and wrong on Łódź today** |
 | 7 | `cartograph/bake-content.js:118` | *(FIXED `adc03f32`)* MSBF-only join → no OSM pour joined any geometry | — |
 | 8 | `InfoModal.jsx` / `LegalPage.jsx` | LS prose + **State of Missouri governing law** rendered on a Polish deployment | HIGH — legal, not cosmetic |

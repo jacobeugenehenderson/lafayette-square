@@ -23,14 +23,17 @@
  * usage: node checks/claims-preclip-walk.mjs [--scene=<name>] [--ribbons=<path>]
  */
 import fs from 'fs'
-import { loadScene, banner, ARG, CHILLERED, H } from '../scratch/_substrate-feed.mjs'
+import { loadScene, banner, ARG, H } from '../scratch/_substrate-feed.mjs'
 
 const o = console.log; console.log = () => {}
 const { walkSubstrate } = await import('../src/lib/substrateWalk.js')
 console.log = o
 
+// ⚠️ `ARG` reads `--scene=x` ONLY. A POSITIONAL name is silently ignored and this check then
+//    measures lafayette-square while printing that scene's name — `checks/_scenes.mjs` documents
+//    positional and `--scene=` as the same thing, so the two conventions disagree here. Not fixed
+//    in this pass; flagged so the next reader does not trust a positional invocation.
 const SCENE = ARG('scene', 'lafayette-square')
-if (CHILLERED.includes(SCENE)) { o(`  ${SCENE}: CHILLERED (2026-08-13). ⛔ No number is printed for it.`); process.exit(0) }
 
 const S = await loadScene(SCENE, ARG('ribbons', null))
 banner(S, o)

@@ -39,9 +39,11 @@ import fs from 'fs'
 import crypto from 'crypto'
 import { requireArtifact } from './_scenes.mjs'
 
-const CHILLERED = new Set(['ksi-y-m-yn', 'centrum'])
+// ⛔ This file is LS-only by construction (it reads `src/data/ribbons.json` below, the promoted LS
+//    bundle). It used to carry a CHILLERED set and test `SCENE` against it — with SCENE a literal
+//    two lines above, so the branch could never be taken. Dead on the day it was written, and it
+//    read as scene-awareness this check does not have.
 const SCENE = 'lafayette-square'
-if (CHILLERED.has(SCENE)) { console.log(`${SCENE}: CHILLERED — not measured.`); process.exit(0) }
 
 const ARG = (k, d) => { const a = process.argv.find(x => x.startsWith(`--${k}=`)); return a ? a.split('=')[1] : d }
 const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }

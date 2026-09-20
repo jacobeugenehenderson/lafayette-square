@@ -81,17 +81,25 @@ Jacob: *"They all need to be the same, built by the same kit."* Concretely, **do
 - **one served path** — every scene's geometry served from `clean/<scene>/`, nothing name-imported
   from the shared `src/data/*` root.
 
-**The gate is `scratch/served-parity.mjs`** (committed `17f5691e`) — the machine check that asserts
-every scene is built and served the same way. It doubles as the `BRIEF-ls-bleed-excision §6.4` class
-regression guard. Measured today:
+**The gate is `scratch/served-parity.mjs`** — the machine check that asserts every scene is built and
+served the same way. It doubles as the `BRIEF-ls-bleed-excision §6.4` class regression guard.
 
-| scene | ns | poured / served? | notes |
-|---|---|---|---|
-| **lafayette-square** | `bldg-` (1082) | ⛔ **NOT poured** — no `clean/ribbons.json` | render data lives at `src/data/*`, name-imported (§2.1 — count, don't quote) |
-| **hipointe-demun** | `msbf-` (1281) | ✅ served from `clean/` | namespace correct; **identity unstable** (fetch-index) |
-| altadena | `msbf-` (15397) | ✅ served | fetch-index |
-| ksi-y-m-yn | `osm-` (1640) | ✅ served | fetch-index; deferred (§0.5) |
-| centrum | `osm-` (2954) | ✅ served | fetch-index; deferred |
+⛔ **The per-scene table that stood here is gone: run the gate.** ▶ `node scratch/served-parity.mjs`.
+It enumerates the roster from `public/looks/index.json` via `checks/_scenes.mjs` — it carried its own
+typed roster until 2026-09-19, which is why two excised towns went on appearing in its worklist — so
+a transcribed table here would be a second roster and would rot the day a town is poured.
+
+⭐ **THREE VERDICTS, AND THE THIRD IS THE ONE THIS DOC DEPENDS ON** *(fixed 2026-09-19)*. A scene reads
+`✅ same as the kit`, or it carries WORK, or it is `⛔ NOT MEASURED`. It had only the first two: an
+absent `public/baked/<scene>/buildings.json`, an unreadable one, an ungraded namespace, or `slab: no`
+each produced no worklist item and therefore the green. ⛔ **Because this section names the script as
+the DONE gate, that made "nobody has baked this town" indistinguishable from "the kit is finished for
+this town."** A poured-but-unbaked town presents exactly that way, so it is armour for town #2, not
+bookkeeping. The run now exits 2 when any scene could not be measured.
+
+⚠️ **`lafayette-square` is still NOT poured** — no `clean/ribbons.json`; its render data lives at
+`src/data/*`, name-imported (§2.1 — count, don't quote). Verified 2026-09-19. ⛔ Do not tidy that row
+into looking settled; it is step 5 below and it is open.
 
 ### 2.1 ⭐ The root — LS is not a scene; it is the mold the kit was cast around
 
@@ -403,8 +411,6 @@ never the night before a demo).
 - **The full typed-intake UI** (§3.1's "get" buttons with typed accept-drops) — the north star for the
   Inputs tab. v1 makes the panel *state-aware* (blank/filled/sealed per scene) but need not build every
   typed uploader.
-- **ksi/centrum normalization** (official rings → centerlines) — deferred (§0.5); `EXTENT-EXCAVATION`
-  PART E Q2/Q5.
 
 ### 7.1 Backlog — Extent tool capabilities (Jacob, 2026-07-23)
 

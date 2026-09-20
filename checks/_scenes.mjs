@@ -10,11 +10,9 @@
  * for town #2?") answered "nothing", and q2 (a silent, plausible-looking pass) at the same time.
  *
  * ⭐ THE ROSTER IS DISCOVERED FROM THE ARTIFACT THE CHECK ACTUALLY NEEDS. Not from a list, and not
- *    from a bare directory listing either: `cartograph/data/` contains `clean/` and `raw/` (not
- *    towns) and `centrum/` + `ksi-y-m-yn/` (dead — `[[project-lodz-ksiezy-mlyn-portability-test]]`
- *    says never to size a class on them). Requiring the artifact excludes all four **without a skip
- *    list**, because a non-town has no `shape.json`, and it stays correct when the dead towns come
- *    back or new ones land.
+ *    from a bare directory listing either: `cartograph/data/` contains `clean/` and `raw/`, which
+ *    are not towns. Requiring the artifact excludes them **without a skip list**, because a
+ *    non-town has no `shape.json`, and it stays correct when new towns land or old ones go.
  *
  * ⛔ NOTHING IS SKIPPED SILENTLY. A scene the look manifest knows about that lacks the artifact is
  *    printed as NOT CHECKED — a real state, never folded into a pass. `claims-ring-partition.mjs`
@@ -44,7 +42,7 @@ const MANIFEST = 'public/looks/index.json'
 export function declaredScenes() {
   const p = join(ROOT, MANIFEST)
   // ⛔ No fallback. If the manifest is gone we do not know what the towns are, and guessing from a
-  //    directory listing would answer confidently with `clean`, `raw` and two dead towns.
+  //    directory listing would answer confidently with `clean` and `raw`.
   if (!existsSync(p)) throw new Error(`⛔ ${MANIFEST} is missing — the scene roster is unknowable. NOT CHECKED.`)
   return JSON.parse(readFileSync(p, 'utf8')).looks.map(l => l.id)
 }
@@ -96,7 +94,7 @@ export function scenes(need, opt = {}) {
 
   // ⛔ A TOWN MUST BE BOTH DECLARED AND MEASURABLE. The directory listing alone is not a roster:
   //    `public/baked/` carries a `default/` that is not a town but does carry most artifacts, and
-  //    `cartograph/data/` carries `clean/`, `raw/` and two dead towns. The manifest says what a
+  //    `cartograph/data/` carries `clean/` and `raw/`, which are not towns. The manifest says what a
   //    town IS; the artifact says whether it can be measured here. Neither alone is enough — and
   //    the artifact filter alone LOOKS enough, which is how `default` got counted as a town until
   //    a mutation test asked for an artifact it happened to have.
@@ -116,7 +114,7 @@ export function scenes(need, opt = {}) {
   for (const d of ['cartograph/data', 'public/looks', 'public/baked']) {
     if (existsSync(join(ROOT, d))) for (const e of readdirSync(join(ROOT, d))) candidates.add(e)
   }
-  const undeclared = [...candidates].filter(s => !declared.includes(s) && !CHILLERED.has(s) && has(s)).sort()
+  const undeclared = [...candidates].filter(s => !declared.includes(s) && has(s)).sort()
   if (undeclared.length && !quiet) {
     console.log(`   ⛔ HAS ${what} BUT IS NOT IN ${MANIFEST}: ${undeclared.join(', ')}`)
     console.log(`      NOT CHECKED, and it would not have been mentioned. Declare it or retire it.`)
@@ -151,16 +149,20 @@ export const ribbonsPath = (scene) => scene === 'lafayette-square'
   ? 'src/data/ribbons.json'
   : `cartograph/data/${scene}/clean/ribbons.json`
 
-// ⛔ NOT A SKIP LIST — a NAMED STATUS. These two towns are dead
-// (`[[project-lodz-ksiezy-mlyn-portability-test]]`: never size a class on them). A skip list makes
-// an unhandled case look handled; this reports them as out of scope, loudly, and they stay
-// reachable by naming one explicitly. They are also absent from the look manifest, so discovery
-// excludes them anyway — this is belt and braces, and the belt is the manifest.
-export const CHILLERED = new Set(['centrum', 'ksi-y-m-yn'])
-
+// ⛔ THERE IS NO CHILLERED SET ANY MORE, AND THERE MUST NOT BE ANOTHER (2026-09-19).
+//    `centrum` and `ksi-y-m-yn` were excised — out of the list, the app and the git — so the two
+//    names this file used to carry now name nothing. The set was defended as "a named status, not
+//    a skip list", and as long as it had real subjects that was true. What it actually did was
+//    make a hardcoded town list look legitimate, and the pattern spread: SIX more copies appeared
+//    across checks/ and scratch/, and THREE of them had quietly added `altadena` — a live,
+//    declared town — so a real map reported "CHILLERED, by ruling" and nobody measured it. That
+//    is the 39aac128 disease with a ruling for cover.
+// ⭐ A town that is out of scope leaves the look manifest. That is the whole mechanism: discovery
+//    below is DECLARED ∩ MEASURABLE, so an undeclared town is excluded without being named, and a
+//    town that is declared but unmeasurable is printed as NOT CHECKED. Nothing needs a name here.
 /** The towns whose ribbons can be measured. The roster for every ribbons-reading check. */
 export function ribbonScenes(argv = process.argv.slice(2)) {
-  return scenes('<scene>', { argv, has: (s) => !CHILLERED.has(s) && existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
+  return scenes('<scene>', { argv, has: (s) => existsSync(join(ROOT, ribbonsPath(s))), label: 'ribbons' })
 }
 
 // ── "I have nothing to measure" ──────────────────────────────────────────────────────────────

@@ -11,7 +11,6 @@
 // ⛔ The polygon rule NEVER reads pairId / anchor / innerSign / phase.role. It reads
 //    tile.runs' skelId + throughId (identity the POLYGON carries) and tile.ring geometry.
 // ⛔ No fallbacks. A missing artifact or a missing field prints as a named LOUD class.
-// ⛔ ksi-y-m-yn / centrum / altadena are CHILLERED — printed as such, never as a number.
 //
 //   node scratch/median-block-ped-coverage.mjs
 //
@@ -22,8 +21,12 @@ const o = console.log
 const H = (f) => { try { return 'sha256:' + crypto.createHash('sha256').update(fs.readFileSync(f)).digest('hex').slice(0, 10) } catch { return 'ABSENT' } }
 const R2 = (x) => (Math.round(x * 100) / 100)
 
+// ⚠️ SCENES is a typed roster and is the next thing to go (`checks/_scenes.mjs` is the SSoT).
+//    Left as-is here only because this probe reads artifacts it has not been taught to discover.
+//    ⛔ It no longer sits beside a CHILLERED list: that list named two towns excised 2026-09-19
+//    plus `altadena`, which is declared and measurable and was never out of scope. Printing a
+//    live town as "CHILLERED — no number reported" is a silent skip wearing a ruling's clothes.
 const SCENES = ['lafayette-square', 'hipointe-demun']
-const CHILLERED = ['ksi-y-m-yn', 'centrum', 'altadena']
 
 // ── Tag keys are LIFTED FROM SOURCE, never restated ─────────────────────────
 // derive.js:~1162 is the live sidewalk ingest. Parse the tag key+value out of it so
@@ -121,9 +124,6 @@ const d2seg = (q, a, b) => {
 const centroid = (ring) => { let x = 0, z = 0; for (const p of ring) { x += p[0]; z += p[1] } return [x / ring.length, z / ring.length] }
 
 // ═══════════════════════════════════════════════════════════════════════════
-o('═══ CHILLERED (⛔ made for a pitch; never sized on) ═══')
-for (const c of CHILLERED) o(`  ${c} ......... CHILLERED — not measured, no number reported.`)
-o('')
 o('═══ TAG PREDICATES — LIFTED FROM SOURCE, NOT RESTATED ═══')
 o(`  sidewalk ... f.tags?.${SW_KEY} === '${SW_VAL}'   ← parsed out of cartograph/derive.js  ${H('cartograph/derive.js')}`)
 o(`  crossing ... f.tags?.${CX_KEY} === '${CX_VAL}'   ← same key space; the value is EVIDENCED by the per-scene histogram below`)

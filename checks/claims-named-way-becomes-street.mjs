@@ -24,16 +24,15 @@ import { ribbonsPath, ribbonScenes } from './_scenes.mjs'
 // (driveways, alleys) and legitimately bounds a block. The canon's §2 list lumps it in because
 // that sentence is about UNNAMED ways, where the distinction does not arise.
 const NONVEHICULAR = ['pedestrian', 'footway', 'path', 'cycleway', 'steps']
-// ⛔ CHILLERED, not deferred (`ROADMAP` ordering constraint, Jacob 2026-08-13). A check must
-// report CHILLERED, never a number — sizing a class on them is how noise becomes a skip list.
-const CHILLERED = ['ksi-y-m-yn', 'centrum']
+// ⛔ The CHILLERED list that stood here (`ksi-y-m-yn`, `centrum`) went with the towns, 2026-09-19.
+//    `ribbonScenes()` enumerates DECLARED ∩ has-ribbons, so an out-of-scope town is excluded by
+//    leaving the look manifest — no name is written down anywhere.
 
 const scenes = ribbonScenes()
 const RIB = ribbonsPath
 
 let anyBound = false
 for (const scene of scenes) {
-  if (CHILLERED.includes(scene)) { console.log(`\n${scene}   ⛔ CHILLERED — not sized, by ruling`); continue }
   const path = RIB(scene)
   if (!fs.existsSync(path)) { console.log(`\n${scene}   ⛔ no ribbons at ${path} — SKIPPED LOUDLY`); continue }
   const rb = JSON.parse(fs.readFileSync(path, 'utf8'))

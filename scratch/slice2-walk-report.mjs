@@ -11,17 +11,13 @@
 //     [--ribbons=<path>]     the scene's promoted bundle (default) | a clean/map.json
 //     [--widths=segord|chain|both]   default both — segord is the product
 //
-// ⛔ ksi-y-m-yn · centrum · altadena are CHILLERED. This probe refuses them by
-//    name and prints CHILLERED rather than a number.
-//
-import { loadScene, banner, ARG, CHILLERED } from './_substrate-feed.mjs'
+import { loadScene, banner, ARG } from './_substrate-feed.mjs'
 
 const o = console.log; console.log = () => {}
 const { walkSubstrate, completeness } = await import('../src/lib/substrateWalk.js')
 console.log = o
 
 const SCENE = ARG('scene', 'lafayette-square')
-if (CHILLERED.includes(SCENE)) { o(`  ${SCENE}: CHILLERED (2026-08-13) — made for a pitch, pitch made. ⛔ No number is printed for it.`); process.exit(0) }
 const WIDTH_MODE = ARG('widths', 'both')
 
 // ⭐ The scene + the per-segOrd width feed live in ONE module, shared with
@@ -312,4 +308,3 @@ o(`  is a stencil. Perimeter faces are not produced here and are not faked.`)
 o(`  ⛔ A rim coupler would make the rim a side-chain, which RIBBONS §1's`)
 o(`     2026-08-12 retraction forbids: "it BOUNDS, it does not own."`)
 o(`  faces touching a __boundary__ half-edge: ${RUNS[PRIMARY]['a-to-b'].faces.filter(f => f.onRim).length}`)
-o(`\n  ⛔ CHILLERED, and a number is never printed for them: ksi-y-m-yn · centrum · altadena.`)

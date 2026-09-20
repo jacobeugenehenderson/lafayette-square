@@ -28,7 +28,8 @@
  *
  * usage: node checks/claims-node-pair-key-parity.mjs [scene ...]
  *        default scenes: lafayette-square hipointe-demun
- *        (ksi-y-m-yn / centrum / altadena are CHILLERED — do not size on them.)
+ *        (altadena is declared and measurable — size on it. It was listed here as CHILLERED
+ *        alongside two towns that have since been excised; it never shared their status.)
  */
 import { readFileSync } from 'fs'
 import { buildBlockGeometryV2 } from '../src/lib/buildBlockGeometryV2.js'

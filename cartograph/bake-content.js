@@ -45,6 +45,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync } from 
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
+import { requireExplicitScene } from './scene.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -771,7 +772,16 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   if (externalBase && externalBase !== 'osm' && !force) {
     console.log(`[bake-content] listings base is EXTERNAL ('${externalBase}') — this step can only derive an OSM base,`)
     console.log(`               so regenerating would DESTROY it. Skipping listings.json; roster/profile still bake.`)
-    console.log(`               Merge tool for this scene: scratch/merge-lodz-listings.mjs. Use --force to override.`)
+    // ⛔ THERE IS NO MERGE TOOL TO SEND YOU TO, AND SAYING SO IS THE POINT. This line used to
+    //    name `scratch/merge-lodz-listings.mjs`, which was hardcoded to one scene's content dir
+    //    and was deleted with that scene (2026-09-19). The guard above is generic — it reads
+    //    `meta.baseSource` out of the DATA — but the remedy never was. ⭐ So this is an unbuilt
+    //    thing that read as done: the next town with a non-OSM base is protected from the
+    //    destructive bake and then has nowhere to go. Folding an external base in as a
+    //    first-class bake-content source is OPEN WORK, not a missing file.
+    console.log(`               ⛔ NO MERGE TOOL EXISTS for an external base — it is unbuilt kit work,`)
+    console.log(`               not a path you are missing. Author content/listings.json directly, or`)
+    console.log(`               --force to regenerate from OSM and LOSE the external base.`)
     skipListings = true
   }
   const rosterOverrides = loadJsonOr(join(contentDir(scene), 'roster.overrides.json'), { patches: {} })
@@ -831,10 +841,11 @@ if (import.meta.url === `file://${process.argv[1]}`) {
     const i = args.indexOf(flag)
     return i >= 0 ? args[i + 1] : null
   }
-  const scene = get('--scene') || get('--look')
+  // ⛔ Was: `get('--scene') || get('--look')` — the look silently standing in for
+  // the scene, and the CARTOGRAPH_SCENE channel not read at all. One resolver now.
+  const scene = requireExplicitScene('bake-content')
   const force = args.includes('--force')
   const dryRun = args.includes('--dry-run')
-  if (!scene) { console.error('usage: node cartograph/bake-content.js --scene <scene> [--dry-run] [--force]'); process.exit(1) }
   try { bakeContent({ scene, force, dryRun }) }
   catch (e) { console.error(`[bake-content] ERROR: ${e.message}`); process.exit(1) }
 }

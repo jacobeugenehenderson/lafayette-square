@@ -125,7 +125,7 @@ harvest cut on the wrong axis. ▶ Re-rank the harvest by placed assets, and che
 *"We are going to consistently have thousands of trees to show, so tackling that fact head
 on is now the next unblocker."* ⛔ **Not an LS problem — a KIT constraint.** HiPointe already
 places **more** trees than LS.
-▶ `for t in lafayette-square hipointe-demun ksi-y-m-yn; do node -e "console.log('$t',require('./public/baked/'+'$t'+'/trees.json').instances.length)"; done`
+▶ `for d in public/baked/*/trees.json; do node -e "console.log('$d'.split('/')[2], require('./$d').instances.length)"; done`  *(discovers the roster; it named three towns by hand until 2026-09-19, one of which was excised and made the loop throw)*
 
 **The proposal (Jacob):** reduce *rendering complexity* with distance — "an extremely truncated
 colour/texture/alpha overwrite profile for the most distant trees" — so that **more** trees can
@@ -572,7 +572,6 @@ Surfaced auditing the GitHub-Pages payload (tracked `public/` ≈ 1.03 GB agains
 
 | scene | tracked | trees |
 |---|---|---|
-| centrum (2,954 buildings — the most in the repo) | **35 MB** | none baked yet |
 | altadena | 117 MB | none (terrain-heavy) |
 | lafayette-square | 147 MB | **126 MB — 85%** |
 | hipointe-demun | 307 MB | **269 MB — 88%** |
