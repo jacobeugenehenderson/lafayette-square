@@ -4,7 +4,7 @@
 status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
-evict-when: sites 6 · 8 · 12 · 17 · B2-boundary all closed (15/16/18/19 done) AND node checks/claims-writers-name-the-scene.mjs is green
+evict-when: sites 6 · 8 · 12 · 17 · B2-boundary all closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
 -->
 
 **Agent: FRESH.** ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` →
@@ -12,7 +12,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 
 > ### ✅ ACT 0 COMPLETE — 2026-09-20 (Kiln). Every site re-measured; the dead ones are gone from this file.
 > The pre-clean 409-line version is `cartograph/_archive/BRIEF-ls-bleed-excision-preAct0-2026-09-20.md`.
-> **18 of 24 sites are gone** — 13 measured dead, site 5 **ruled closed**, sites 15/16/18/19 **fixed 2026-09-20**. (24, not 22: the widened check found two new ones.) They are **deleted, not ticked** — the killing
+> **20 of 26 sites are gone** — 13 measured dead, site 5 **ruled closed**, sites 15/16/18/19/20/21 **fixed 2026-09-20**. (26, not 22: the widened check found four new ones — 18, 19, 20, 21.) They are **deleted, not ticked** — the killing
 > commits are in `§0` in one line each, and nowhere else. ⛔ **Do not re-open them.**
 
 ---
@@ -29,6 +29,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **5** `src/instance.js` unregistered look → LS identity | ⛔ **RULED CLOSED, NOT A DEFECT** — Jacob, 2026-09-20, **twice**: *"an alarm for a non-existent fire… if `?look` is unregistered that's basically tautological"* · *"When would/could this ever even happen? And who cares if it does?"* ⛔ **Do not re-open, and do not re-derive it from the general no-fallbacks doctrine** — the operator ruled this specific case. `ROADMAP A12` retired to match. |
 | **16** `bake-trees.js` bakes over LS · **18** `pack-impostor-ktx2` · **19** `17-fill-canopy-trees` | `8e90eeb7` — 16 guarded at the CLI entry; 18's `\|\| '--look=lafayette-square'` and 19's **dead refusal** (`\|\| 'lafayette-square'` above an `if (!SCENE)` that could never fire) both now exit 2. ⭐ **18 and 19 were found BY the widened check, not by reading** — which is the argument for §4. |
 | **15** `terrainExag` sized against LS | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
+| **20** `generate-procedural` · **21** `generate-salon` roster write | `58a91317` — `syncLookRoster('lafayette-square', …)` was hardcoded, so publishing a variant edited **LS's `design.json`** whichever Look you were in. Both now require `--look` and exit 2. ⛔ **Ruled by Jacob: "there is no reason for LS to be the fallback here EITHER."** |
 
 ⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
 agents, none of whom knew this brief existed.** The class is being closed incidentally and nobody was
@@ -175,6 +176,15 @@ not prose.
 ## 6. Rules
 
 - ⛔ **Confirm alignment with Jacob before writing code** (`CLAUDE.md §Standup before code`).
+- ⛔⛔ **DO NOT ROUTE AN LS-FALLBACK FINDING UP FOR A DECISION — IT IS ALREADY RULED.** Jacob,
+  2026-09-20: *"all LS fallbacks are stupid and annoying and counterlogical."* **Fix it and report.**
+  Two were re-asked in one day (sites 5 and 20/21) and both annoyed him, correctly.
+  ⭐ **The trap, and the test that avoids it:** Layer 0 q3 — *"am I calling the operator's AUTHORING
+  a defect?"* — is right in general and **does not reach a hardcoded literal.** An authoring gesture
+  lives in **DATA the operator edited**; a string typed into a `.js` file is a **developer's
+  default.** q3 protects `design.json`, `blockCustoms`, an exclusion loop he drew — his decisions in
+  his files. ▶ **Ask: could the operator have changed this WITHOUT editing code? If no, it is not
+  authoring.** What still warrants asking is LS as a genuinely authored reference *in data*.
 - ⛔ **A PREMISE IN THIS FILE IS A CLAIM, NOT A FACT.** Two were false and one would have deleted a
   live render component (`§0`). **Read the branch, not the string** — a path naming LS is not a
   bleed; a **fallback** to LS is.
