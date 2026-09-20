@@ -29,6 +29,13 @@
 // reviewer sees it in the diff, and this check prints every one of them. An exemption with no
 // reason fails. The check holds no names.
 //
+// ⭐ MUTATION-TESTED, AND A PASS HERE MEANS NOTHING WITHOUT IT (2026-09-20, M1/M2 — see M3 at the
+// exemption regex below). Both mutants are unguarded async writers dropped into cartograph/:
+//   M1  import { promises as fs } from 'node:fs'  +  fs.writeFile(…)
+//   M2  import fs from 'node:fs/promises'         +  fs.mkdir(…)
+// Pre-fix this check exited 0 and printed neither. It now exits 1 and names both. A read-only
+// control (`readFileSync` only) is correctly NOT flagged, so the catch is the write, not the import.
+//
 //   node checks/claims-writers-name-the-scene.mjs
 // Read-only. Exits 1 on an unguarded writer, or an exemption with no reason.
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
@@ -47,19 +54,38 @@ const src = Object.fromEntries(files.map(f => [f, readFileSync(join(dirAbs, f), 
 
 // ── Node's filesystem MUTATION surface. This is an external API, not a fact about this repo,
 //    so naming it here cannot go stale the way a list of our own files would.
-const FS_WRITES = ['writeFileSync', 'appendFileSync', 'mkdirSync', 'createWriteStream', 'cpSync',
+//
+// ⛔⛔ BOTH HALVES, AND THE ASYNC HALF IS WHY THIS CHECK ONCE PASSED OVER A DESTRUCTIVE WRITER.
+// This list held only the *Sync names. `arborist/bake-trees.js` writes with `fs.mkdir` /
+// `fs.writeFile` off `import { promises as fs }`, so it was invisible — a bake that overwrites
+// Lafayette Square's trees.json, sitting outside a check whose whole subject it is.
+// ⭐ AND THE TWO BLIND SPOTS WERE CORRELATED, WHICH IS WHY NEITHER EVER SURFACED: measured
+// repo-wide 2026-09-20, 186 writers are sync-only, 24 are async-only, and ZERO do both — every
+// async-only one is in arborist/, while cartograph/ is uniformly sync. So this check was
+// genuinely complete inside cartograph/ and would have gone GREEN the moment its directory was
+// widened, still not seeing the file that motivated widening it. Fixing the scope without
+// fixing this list would have been worse than leaving it alone, because today's scope note is
+// at least honest.
+const FS_WRITES_SYNC = ['writeFileSync', 'appendFileSync', 'mkdirSync', 'createWriteStream', 'cpSync',
   'copyFileSync', 'renameSync', 'rmSync', 'unlinkSync', 'rmdirSync', 'truncateSync', 'writevSync']
+const FS_WRITES_ASYNC = ['writeFile', 'appendFile', 'mkdir', 'cp', 'copyFile', 'rename', 'rm',
+  'unlink', 'rmdir', 'truncate']
+const FS_WRITES = [...FS_WRITES_SYNC, ...FS_WRITES_ASYNC]
 
 /** Every local identifier in `s` that resolves to one of Node's fs write calls. */
 function fsWriteBindings(s) {
   const out = new Set()
   const FS = String.raw`['"](?:node:)?fs(?:/promises)?['"]`
   for (const m of s.matchAll(new RegExp(String.raw`import\s+(?:\*\s+as\s+)?(\w+)\s+from\s+${FS}`, 'g')))
-    for (const p of FS_WRITES) out.add(`${m[1]}.${p}`)                       // fs.writeFileSync
+    for (const p of FS_WRITES) out.add(`${m[1]}.${p}`)                       // fs.writeFileSync, fs.writeFile
   for (const m of s.matchAll(new RegExp(String.raw`import\s*\{([^}]*)\}\s*from\s*${FS}`, 'gs')))
     for (const part of m[1].split(',')) {                                    // { writeFileSync as wfs }
       const [orig, alias] = part.split(/\s+as\s+/).map(x => x.trim())
       if (FS_WRITES.includes(orig)) out.add(alias || orig)
+      // ⛔ THE NAMESPACE CASE THIS LIST CANNOT EXPRESS: `import { promises as fs }` binds the
+      //    WHOLE async API under one local name. `FS_WRITES.includes('promises')` is false, so
+      //    the loop above skips it and every `fs.writeFile` in the file goes unseen.
+      if (orig === 'promises') for (const p of FS_WRITES_ASYNC) out.add(`${alias || orig}.${p}`)
     }
   return out
 }
