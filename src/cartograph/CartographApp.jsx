@@ -41,7 +41,7 @@ import WeatherPoller from '../components/WeatherPoller'
 import AtmosphereDirectiveDriver from '../components/AtmosphereDirectiveDriver'
 import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
-import { V_EXAG, reloadTerrain } from '../utils/terrainShader'
+import { sceneExag, reloadTerrain } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
 import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject, useHeroAuthoring } from '../stage/StageApp.jsx'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
@@ -1257,7 +1257,7 @@ export default function CartographApp() {
               <BakedGround
                 lookId={activeLookId}
                 bakeLastMs={bakeLastMs}
-                targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG}
+                targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()}
               />
             </R3FErrorBoundary>
           )}

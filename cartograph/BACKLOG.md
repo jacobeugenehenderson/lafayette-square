@@ -201,7 +201,7 @@ region count — ① blocks inside the mark vs drawn — and the endpoint-gap sc
 
 ## 🖥 GPU-perf gotchas (live)
 - **⚠️ Bake-ordering footgun:** a ground GEOMETRY re-bake (`bake-ground.js`) silently drops the AO `lightmap` → flat-lit slab. **Always run `bake-ground-ao.js` after** (the GUI `/bake` chains them; only manual CLI bakes hit this). Outstanding: make `bake-ground.js` preserve the lightmap or warn.
-- **tri-cut follow-ups** (tri-cut LANDED, fact in `OPERATIONS §Ground tri-budget`): (1) import the `V_EXAG` SSoT into `bake-ground.js` (hardcoded `1.5` would silently facet a future exaggeration bump); (2) expose `GROUND_REFINE_TOL_M` as an `INSTANCE.mobileQuality` tier → `mobile-profile`.
+- **tri-cut follow-ups** (tri-cut LANDED, fact in `OPERATIONS §Ground tri-budget`): (1) ✅ **MOOT 2026-09-20** — `bake-ground.js` never held a hardcoded `1.5` (grep it); it reads the shared sampler via `terrainLoad.js`, which now resolves the town's AUTHORED `terrainExag`, so bake and runtime cannot drift; (2) expose `GROUND_REFINE_TOL_M` as an `INSTANCE.mobileQuality` tier → `mobile-profile`.
 
 ## ⏸ LATER / PARKED
 - **⚠️ Sky-colour overrides are keyed by CLOCK HOUR (seasonal grid), not by TOD slot.** A sunset/dusk colour authored for one season won't track the slot in other seasons (the slot's clock time shifts with the season, the override doesn't follow). Future: **slot-keyed or per-season sky-colour authoring**. The Sky Builder is the current live tool. *(Known limitation surfaced 2026-06-28 while authoring the 7-slot TOD day — `bc9a74ea`/`986a4f8f`.)*

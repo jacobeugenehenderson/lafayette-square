@@ -24,7 +24,7 @@ import { makeGrassMaterial } from './grassMaterial'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
-import { terrainExag, patchTerrain, V_EXAG } from '../utils/terrainShader'
+import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
@@ -412,7 +412,7 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // Mounted unconditionally inside BakedGround so any consumer (Stage,
 // Preview, future apps) gets terrain displacement without depending on
 // StreetRibbons being mounted somewhere to drive it. `target` is a number;
-// callers pick it per view (V_EXAG for hero drama, 1 for street/planetarium,
+// callers pick it per view (the town's authored exag for hero, 1 for street/planetarium,
 // 0 for the flat top-down Browse map).
 //
 // The ease is TIME-BASED (delta-driven), not a fixed per-frame fraction: the
@@ -468,10 +468,12 @@ function resolveLookId(propLookId) {
  *                                       falls back to `scene.bakedAt` (baked
  *                                       into scene.json per couplers plan CC.7).
  * @param {number} [props.targetExag]  — terrain exaggeration target. Defaults
- *                                       to V_EXAG (~Hero/Browse drama). Pass 1
+ *                                       to the town's authored exag (Hero drama). Pass 1
  *                                       for street-level, 0 for flat top-down.
  */
-export default function BakedGround({ lookId, bakeLastMs, targetExag = V_EXAG } = {}) {
+// ⛔ Default is the TOWN's authored ceiling, resolved at call time — not a module constant
+// captured at import, which would pin every look to whatever loaded first (site 15).
+export default function BakedGround({ lookId, bakeLastMs, targetExag = sceneExag() } = {}) {
   const [data, setData] = useState(null)
   const resolvedLookId = resolveLookId(lookId)
 

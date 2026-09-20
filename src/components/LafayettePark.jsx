@@ -15,7 +15,8 @@ import useSkyState from '../hooks/useSkyState'
 import parkWaterData from '../data/lafayette-square/park_water.json'
 import ribbonsData from '../data/ribbons.json'
 import parkPolygon from '../../cartograph/data/lafayette-square/clean/park-polygon.json'
-import { getElevationRaw, V_EXAG } from '../utils/elevation'
+import { getElevationRaw } from '../utils/elevation'
+import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
@@ -298,11 +299,11 @@ function ParkStairs({ lookId, bakeLastMs }) {
       let descendToB, drop
       if (probe) {
         descendToB = probe.elevB < probe.elevA          // descend toward the lower end
-        // Bake the vertical exaggeration into the flight (constant V_EXAG, NOT
+        // Bake the vertical exaggeration into the flight (the town's authored ceiling, NOT
         // the live terrainExag — a group scale.y collapses the stairs to zero
         // in flat/top-down camera modes). The lift below still rides the live
         // exag terrain; only the stair's own rise is boosted to read at scale.
-        drop = Math.abs(probe.elevA - probe.elevB) * V_EXAG
+        drop = Math.abs(probe.elevA - probe.elevB) * sceneExag()
       } else {
         const dwA = nearestWaterDist(a, parkWaterData), dwB = nearestWaterDist(b, parkWaterData)
         descendToB = Math.min(dwA, dwB) < STAIR_DESCEND_WATER_THRESH
@@ -655,7 +656,7 @@ function PondGroup({ centroidRaw, children }) {
 // Rides the stair flight onto the (exaggerated) terrain like the pond — lift
 // only, NO group scale (a scale.y = terrainExag collapses the flight to zero
 // height in flat/top-down camera modes where exag→0). The flight's own rise is
-// pre-exaggerated in the geometry (buildStairGeometry drop × V_EXAG), so it
+// pre-exaggerated in the geometry (buildStairGeometry drop × the authored exag), so it
 // reads at scale without tracking the live exag. Bottom tread (y=0) lands on
 // the ground here.
 function StairLift({ centroidRaw, children }) {

@@ -203,6 +203,23 @@ The pool is **baked into the ground** (contour-correct), so its *shape* is a bak
 
 - **Alley end-cap dial** — a 3-segment toggle controlling how **all** alleys in the active Look terminate: `square` (flush) / `rounded` (rounded-rectangle pad) / `round` (true semicircle). Stored as `design.alleyCap`. Other path kinds use per-kind defaults and carry no operator surface.
 
+### Terrain ▸ vertical exaggeration
+
+- ⭐ **`terrainExag` — how tall this town's hills are drawn, per town, authored.** Stored as
+  `design.terrainExag`; baked into the slab's `scene.json`; the render lerps toward it for the Hero
+  shot (Browse draws flat at 0, Street/Planetarium at 1, so this dial is the **Hero ceiling**).
+- ⛔ **The kit default is 1 — the neutral value, meaning "draw the ground at the height it is."**
+  A town nobody has authored gets the truth, not another town's drama. **Lafayette Square authors
+  1.5** and that is LS's data, not a kit constant.
+- ⚠️ **Why it exists:** it was one hardcoded `V_EXAG = 1.5` for every town, chosen by looking at
+  LS. Relief across the disc, measured 2026-09-20: **LS 35.2 m · HPDM 43.1 m · altadena 1,480.3 m.**
+  One multiplier cannot serve a river bluff, a lake plain and the San Gabriels.
+- ▶ Read a town's value: `node -e "console.log(require('./public/looks/<look>/design.json').terrainExag ?? 1)"`
+- ⛔ **Re-bake the ground after changing it.** The adaptive refinement subdivides where the
+  heightfield *bends*, and how much it bends is a function of the exaggeration — so an unbaked
+  change leaves the mesh tessellated for the old value (over-dense, or faceted on the hills).
+- ⚠️ **No slider yet** — it is authored by editing `design.json`. A Stage control is unbuilt.
+
 ### Bake — committing the look to the slab
 
 - **Bake buttons** — Designer's **"Stage →"** = navigate to your last Stage shot immediately, bake async in the background (the slab refreshes when done). Stage's **"↻"** = bake in place, stay put. Both accept **⌥-click to force a full rebuild** (bypass the dirty-check). A small orange dot lights when authoring edits exist since the last bake (indicator only — never disables the action).

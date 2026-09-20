@@ -82,7 +82,7 @@ This is the load-bearing as-built of how Arborist trees actually render in produ
 > mesh path survived only because it reads `groundRaw` and falls back on `undefined` — **a value the
 > sentinel cannot counterfeit.** ⭐ That is the defence: fall back on something the sentinel can't fake.
 > **2. THE EXAG IS AN ANIMATED PER-SHOT UNIFORM, NOT A CONSTANT.** `targetExag = street ? 1 : browse ?
-> 0 : V_EXAG` — **Browse draws the ground FLAT.** A matrix-baked `raw × V_EXAG` is right in Hero and
+> 0 : sceneExag()` — **Browse draws the ground FLAT.** A matrix-baked `raw × exag` is right in Hero and
 > up to **52 m adrift in Browse**. ⇒ `treeGroundRaw()` returns RAW; `OVERHEAD_GROUND_LIFT` applies
 > `aGroundRaw * uExag / _instYScale` in the vertex shader — the identical lift the mesh path has
 > always used (`terrainShader.js:345`), which is why mesh trees ride the ground down and impostors did not.

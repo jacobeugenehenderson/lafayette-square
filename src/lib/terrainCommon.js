@@ -6,16 +6,30 @@
 // `makeElevationSampler(terrain)`. The math and constants live here once;
 // only the JSON loading step varies by environment.
 
-// V_EXAG multiplies the raw heightmap (in meters), which bake-terrain.js
-// normalizes to local-min = 0. For LS the source GeoTIFF spans ~35 m of
-// relief, so V_EXAG × 35 m is the max vertical climb a ground vertex sees.
-// 1.5 keeps Lafayette Park's raised yard band readable as a ~1–2 m bulge
-// without ballooning the neighborhood into multi-story hills (the V_EXAG=5
-// regime, sized for the prior offset-square EPQS bake that clipped most of
-// LS's actual range, no longer applies after the b24fce5 clip-to-stencil
-// pipeline). Tune up cautiously — every consumer (ground per-vertex,
-// buildings rigid, lamps instanced) multiplies by this same uniform.
-export const V_EXAG = 1.5
+// ── The vertical exaggeration is PER TOWN, AUTHORED, and it defaults to 1. ──
+//
+// It multiplies the raw heightmap (in metres), which bake-terrain.js normalizes to
+// local-min = 0, so `exag × relief` is the max vertical climb a ground vertex sees.
+//
+// ⛔⛔ THIS WAS `export const V_EXAG = 1.5` — ONE CONSTANT, EVERY TOWN, AND IT WAS SIZED
+// AGAINST ST. LOUIS. The comment that stood here said so in terms: "for LS the source
+// GeoTIFF spans ~35 m of relief… 1.5 keeps Lafayette Park's raised yard band readable."
+// ⭐ Measured 2026-09-20, relief across the disc: LS 35.2 m · HPDM 43.1 m · altadena
+// 1,480.3 m. One multiplier was serving a river bluff, a lake plain and the San Gabriels
+// — and the number had been chosen by looking at the first of them.
+// (BRIEF-ls-bleed-excision site 15; ruled by Jacob 2026-09-20.)
+//
+// ⭐⭐ THE DEFAULT OF 1 IS THE POINT, NOT A DETAIL. The kit default is the NEUTRAL value —
+// draw the ground at the height the ground actually is. LS's 1.5 is now LS's AUTHORED DATA
+// (`public/looks/lafayette-square/design.json#terrainExag`), which is where a decision made
+// by looking at one town belongs. A town nobody has authored gets truth, not St. Louis's
+// drama; `ORIENTATION` — the override IS the product.
+//
+// ⚠️ It is a CEILING, not the live value. The rendered exaggeration is a per-shot animated
+// uniform (`terrainShader.terrainExag`) that the view lerps toward: hero → this value,
+// planetarium → 1, browse → 0. Anything reading a constant instead of the uniform is the
+// bug `treeGroundRaw` documents at length in src/utils/elevation.js.
+export const DEFAULT_V_EXAG = 1
 
 // All spatial data is in compass frame (the natural output of the
 // GPS→meters projection). Cosmetic screen orientation lives on the
@@ -23,7 +37,15 @@ export const V_EXAG = 1.5
 // No rotation constants belong here — if a render path is reaching for
 // one, it shouldn't be.
 
-export function makeElevationSampler(terrain) {
+
+/**
+ * Build a sampler over one terrain heightfield.
+ * @param exag the town's authored vertical exaggeration; defaults to the kit-neutral 1.
+ *             ⛔ Pass the scene's value — a caller that omits it gets TRUTH, never another
+ *             town's drama. Every consumer (ground per-vertex, buildings rigid, lamps
+ *             instanced) multiplies by the same number, so it must be one town's number.
+ */
+export function makeElevationSampler(terrain, exag = DEFAULT_V_EXAG) {
   const { width, height, bounds, data } = terrain
   const spanX = bounds.maxX - bounds.minX
   const spanZ = bounds.maxZ - bounds.minZ
@@ -47,7 +69,7 @@ export function makeElevationSampler(terrain) {
   }
 
   function getElevation(x, z) {
-    return getElevationRaw(x, z) * V_EXAG
+    return getElevationRaw(x, z) * exag
   }
 
   function displaceGeometry(geometry) {
@@ -59,5 +81,5 @@ export function makeElevationSampler(terrain) {
     geometry.computeVertexNormals()
   }
 
-  return { getElevation, getElevationRaw, displaceGeometry, bounds, width, height }
+  return { getElevation, getElevationRaw, displaceGeometry, bounds, width, height, exag }
 }

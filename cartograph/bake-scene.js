@@ -91,6 +91,12 @@ export async function bakeScene({ look } = {}) {
     layerColors:     design.layerColors     || {},
     luColors:        design.luColors        || {},
     layerVis:        design.layerVis        || {},
+    // ⛔ THE TOWN'S VERTICAL EXAGGERATION — authored, and it MUST ship in the slab or the
+    // runtime falls back to the kit default and the operator's dial does nothing.
+    // `?? 1`, never `|| 1`: an authored 0 means FLAT and is a real choice a sentinel would eat.
+    // Was a hardcoded 1.5 in src/lib/terrainCommon.js, chosen against LS's 35 m of relief and
+    // applied to altadena's 1,480 m (BRIEF-ls-bleed-excision site 15, ruled 2026-09-20).
+    terrainExag:     design.terrainExag ?? 1,
     lampGlow:        design.lampGlow        || { grass: 0.06, trees: 0.40, pool: 1.0 },
     neon:            design.neon            || { values: { ...NEON_FLAT_DEFAULTS } },
     // SC.1 — sky / lighting / celestial. Sky pivoted (2026-05-20 ADR) to

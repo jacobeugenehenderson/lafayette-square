@@ -27,7 +27,7 @@ import WeatherEffects from './WeatherEffects'
 import UserDot from './UserDot'
 import CourierDots from './CourierDots'
 import useCamera from '../hooks/useCamera'
-import { V_EXAG } from '../utils/terrainShader'
+import { sceneExag } from '../utils/terrainShader'
 import useUserLocation from '../hooks/useUserLocation'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 import useSkyState from '../hooks/useSkyState'
@@ -336,10 +336,10 @@ const _toUp = new THREE.Vector3()
 const _lerpUp = new THREE.Vector3()
 
 // Terrain exaggeration is per-VIEW, not constant: Browse (top-down) flattens to
-// 0 so the overhead map reads clean, Hero gets the full V_EXAG drama, and
+// 0 so the overhead map reads clean, Hero gets the town's full authored drama, and
 // planetarium sits at 1. Production previously mounted BakedGround with no
-// targetExag → it defaulted to V_EXAG and was never keyed to the view, so once
-// the Hero pan eased terrainExag up to V_EXAG, returning to Browse left the
+// targetExag → it defaulted to the ceiling and was never keyed to the view, so once
+// the Hero pan eased terrainExag up to it, returning to Browse left the
 // terrain exaggerated → the top-down Y-fighting. Subscribe to viewMode here so
 // only BakedGround re-renders on a mode switch (its data effect + GroundMeshes
 // key off lookId/cacheBust, not targetExag → no refetch/remount). Mirrors the
@@ -347,7 +347,8 @@ const _lerpUp = new THREE.Vector3()
 // (2026-06-28 — Browse terrain Y-fight on return.)
 function ViewKeyedBakedGround({ lookId }) {
   const viewMode = useCamera(s => s.viewMode)
-  const targetExag = viewMode === 'browse' ? 0 : viewMode === 'planetarium' ? 1 : V_EXAG
+  // ⛔ The hero ceiling is the TOWN's authored value, not a constant (site 15).
+  const targetExag = viewMode === 'browse' ? 0 : viewMode === 'planetarium' ? 1 : sceneExag()
   return <BakedGround lookId={lookId} targetExag={targetExag} />
 }
 
@@ -716,8 +717,8 @@ function CameraRig() {
         const origin = state.planetariumOrigin || [0, 0]
         // Eye height is ABOVE the ground at the clicked point, not absolute
         // Y=eyeHeight — otherwise raised terrain buries the camera underground.
-        // getElevation already applies V_EXAG, matching the rendered ground
-        // (production keeps terrain at V_EXAG; it never drops to exag 1).
+        // getElevation already applies the town's authored exag, matching the
+        // rendered ground (production keeps terrain at the ceiling, never exag 1).
         // Guarded: a non-finite sample must NEVER reach the camera (a NaN Y
         // invalidates the view matrix → blank screen). Fall back to flat ground.
         let groundY = 0

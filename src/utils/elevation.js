@@ -1,19 +1,21 @@
-// Thin compatibility shim — the canonical home for V_EXAG, the bilinear
-// sampler, and displaceGeometry is `src/lib/terrainCommon.js`. Terrain
+// Thin compatibility shim — the canonical home for the bilinear sampler and
+// displaceGeometry is `src/lib/terrainCommon.js`; the town's exaggeration comes
+// from `terrainShader.sceneExag()` and is passed in below. Terrain
 // payload arrives via terrainShader.js's top-level-await of terrain.bin;
 // this module re-uses that already-decoded Float32Array so the binary
 // isn't parsed twice.
-import { currentTerrain, onTerrainReload } from './terrainShader.js'
-import { makeElevationSampler, V_EXAG } from '../lib/terrainCommon.js'
-
-export { V_EXAG }
+import { currentTerrain, onTerrainReload, sceneExag } from './terrainShader.js'
+import { makeElevationSampler } from '../lib/terrainCommon.js'
 
 // Terrain is now loaded per-lookId and can be re-pointed live (authoring Stage
 // switching installations), so the CPU sampler must rebuild on reload. Held in
 // a mutable ref behind stable wrapper functions — same names + signatures as
 // before, so every consumer is untouched; they just read the live heightfield.
-let sampler = makeElevationSampler(currentTerrain())
-onTerrainReload(() => { sampler = makeElevationSampler(currentTerrain()) })
+// ⛔ THE EXAG IS THE TOWN'S, NOT A CONSTANT, and it is re-read on every reload — the sampler
+// closes over it, so rebuilding is the only way it can change (site 15). terrainShader re-points
+// `sceneExag()` BEFORE firing these callbacks, so this reads the incoming look's value.
+let sampler = makeElevationSampler(currentTerrain(), sceneExag())
+onTerrainReload(() => { sampler = makeElevationSampler(currentTerrain(), sceneExag()) })
 
 export const getElevation    = (x, z) => sampler.getElevation(x, z)
 export const getElevationRaw = (x, z) => sampler.getElevationRaw(x, z)
@@ -41,16 +43,16 @@ export const displaceGeometry = (geometry) => sampler.displaceGeometry(geometry)
 //      below reports that as its own loud fact rather than letting it masquerade.
 //   3. the smooth terrain field — the honest fallback, and the one the mesh path has
 //      been quietly using all along.
-// ⛔ ALL THREE ARE RAW. Nothing here multiplies by V_EXAG; that is the carrier's job,
+// ⛔ ALL THREE ARE RAW. Nothing here multiplies by the exaggeration; that is the carrier's job,
 //    per frame, from the live uniform — see the note on the function itself.
 export function treeGroundRaw(inst) {
   // ⛔⛔ RAW, PRE-EXAG — AND THE EXAG IS NOT A CONSTANT (Jacob's eye, 2026-08-28, while
   // dragging the ground in Browse: "the trees aren't stuck to or near the ground at all
   // … rendered off the ground very high in the air").
   // The ground's vertical exaggeration is a LIVE, PER-SHOT, ANIMATED uniform:
-  //     targetExag = street ? 1 : browse ? 0 : V_EXAG        (PreviewApp.jsx:1140)
+  //     targetExag = street ? 1 : browse ? 0 : sceneExag()   (PreviewApp.jsx)
   // In BROWSE the ground is drawn FLAT. An earlier version of this returned
-  // `raw × V_EXAG` baked into the world matrix, which is right in Hero and wrong
+  // `raw × exag` baked into the world matrix, which is right in Hero and wrong
   // everywhere else — up to 52 m adrift in Browse, ~12 m in Street. A constant cannot
   // follow a tween.
   // ⭐ SO THE LIFT BELONGS IN THE SHADER, exactly where the mesh path has always put it

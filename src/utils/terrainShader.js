@@ -13,13 +13,14 @@
  * back the ground z-fighting. (ARCHITECTURE §8, z-fight fix 2026-06-17.)
  *
  * View-mode targets:
- *   hero:        V_EXAG       — dramatic telephoto terrain
+ *   hero:        sceneExag()  — the town's AUTHORED ceiling (default 1)
  *   browse:      0            — flat map
  *   planetarium: 1            — life-size street level
  *
- * V_EXAG itself lives in src/lib/terrainCommon.js (currently 1.5 — sized
- * for the b24fce5 clip-to-stencil bake whose raw values are normalized to
- * local-min = 0).
+ * ⛔ The ceiling is PER TOWN and authored (`design.json#terrainExag` → the slab's
+ * scene.json), resolved by `sceneExag()` below. It was a single `V_EXAG = 1.5`
+ * constant sized against St. Louis and applied to every town — site 15, ruled
+ * 2026-09-20. Raw values are normalized to local-min = 0 by bake-terrain.
  *
  * CPU/GPU reconcile (2026-06-29): the GPU `texture2D` sample is remapped
  * through the `_terrainUV` helper so it lands on the SAME grid index as the
@@ -32,7 +33,8 @@ import * as THREE from 'three'
 import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
-export { V_EXAG } from '../lib/terrainCommon.js'
+export { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
+import { DEFAULT_V_EXAG } from '../lib/terrainCommon.js'
 
 // ── Per-installation terrain, loaded by lookId ───────────────────
 //
@@ -60,6 +62,30 @@ function resolveLookId() {
   return INSTANCE.lookId
 }
 
+// ── THE TOWN'S AUTHORED VERTICAL EXAGGERATION — the CEILING the hero shot lerps toward.
+//
+// ⛔ It is read from the LOOK'S OWN SLAB (`baked/<look>/scene.json#terrainExag`), never from a
+// constant. It used to be `V_EXAG = 1.5` in terrainCommon — a number chosen by looking at
+// St. Louis's 35 m of relief and then applied to altadena's 1,480 m (site 15).
+// ⭐ Resolved HERE because this module already owns the per-look async fetch and already
+// re-points on reloadTerrain(), so the ceiling rides the channel the terrain already travels.
+// A React hook could not serve elevation.js, which is not a component.
+// ⚠️ ABSENT ⇒ 1, the kit-neutral value: a town nobody has authored draws its ground at the
+// height the ground actually is. ⛔ Absent must never mean "inherit the first town's drama".
+async function fetchSceneExag(lookId) {
+  try {
+    const r = await fetch(`${ASSET_BASE}baked/${lookId}/scene.json`)
+    if (!r.ok) throw new Error(`scene.json ${r.status}`)
+    const v = (await r.json())?.terrainExag
+    // ⛔ A SENTINEL IS NOT A VALUE: `?? `, never `||`. An authored 0 means FLAT and is a real
+    // choice; `||` would silently promote it to 1 and quietly un-flatten someone's map.
+    return typeof v === 'number' && isFinite(v) && v >= 0 ? v : DEFAULT_V_EXAG
+  } catch (e) {
+    console.warn(`[terrain] no scene.json terrainExag for look "${lookId}" — using the kit default ${DEFAULT_V_EXAG}`, e?.message || e)
+    return DEFAULT_V_EXAG
+  }
+}
+
 async function fetchTerrain(lookId) {
   const base = ASSET_BASE
   try {
@@ -78,6 +104,11 @@ async function fetchTerrain(lookId) {
 // correct (elevation.js builds its sampler from valid initial data).
 let _lookId = resolveLookId()
 let _terrain = await fetchTerrain(_lookId)
+// The active town's authored ceiling. `let` + a getter, because reloadTerrain() re-points it
+// and late readers (elevation.js's sampler rebuild) must see the fresh value, not a snapshot.
+let _sceneExag = await fetchSceneExag(_lookId)
+/** The ACTIVE look's authored vertical exaggeration (the hero ceiling). Re-points on reload. */
+export function sceneExag() { return _sceneExag }
 export let width  = _terrain.width
 export let height = _terrain.height
 export let bounds = _terrain.bounds
@@ -137,6 +168,9 @@ export function currentTerrain() { return { width, height, bounds, data } }
 export async function reloadTerrain(lookId, { force = false } = {}) {
   if (!lookId || (lookId === _lookId && !force)) return
   const t = await fetchTerrain(lookId)
+  // ⛔ BEFORE the callbacks: elevation.js rebuilds its CPU sampler in one of them and bakes the
+  // exag into the closure, so a stale ceiling here would be captured for the whole session.
+  _sceneExag = await fetchSceneExag(lookId)
   _lookId = lookId
   width = t.width; height = t.height; bounds = t.bounds; data = t.data
   spanX = bounds.maxX - bounds.minX

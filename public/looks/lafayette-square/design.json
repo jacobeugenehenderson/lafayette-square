@@ -88,6 +88,7 @@
   "cornerRadiusOverrides": {},
   "cornerCornerRadiusOverrides": {},
   "curbWidth": 0.381,
+  "terrainExag": 1.5,
   "parkTitlePos": [
     -22.48,
     -97.31

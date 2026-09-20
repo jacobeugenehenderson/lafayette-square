@@ -40,7 +40,7 @@ import { buildTileGround } from '../src/lib/tileGround.js'
 import { STREET_SMOOTH } from '../src/lib/smoothCenterline.js'  // the ONE smoothing knob — bake matches the live Survey render (WYSIWYG; SKELETON.md §3.5)
 import { buildPathRibbons } from '../src/lib/buildPathRibbons.js'
 import { buildParkPathRings, mergeRings } from '../src/lib/parkPaths.js'  // park-path partition + clip (shared with the 2D Designer + LafayettePark — one SSoT)
-import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler + one V_EXAG shared with the runtime
+import { loadSceneTerrain } from './terrainLoad.js'  // per-scene terrain SSoT (cartograph/data/<scene>/clean/terrain.*); one sampler, at the TOWN'S AUTHORED exag, shared with the runtime
 import { BAND_COLORS, CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { DEFAULT_LAYER_COLORS, DEFAULT_LU_COLORS, BAND_TO_LAYER } from '../src/cartograph/m3Colors.js'
 
@@ -50,7 +50,7 @@ const ROOT = join(__dirname, '..')
 // -- Adaptive ground-subdivision knobs (the mobile tri-budget lever) --------
 //
 // The flat (Y=0) baked ground is lifted per-vertex at runtime by the terrain
-// sampler (src/lib/terrainCommon.js makeElevationSampler, V_EXAG=1.5); a
+// sampler (src/lib/terrainCommon.js makeElevationSampler at the town's authored exag); a
 // triangle interior interpolates that lift LINEARLY, so a long edge only
 // introduces visible error where the terrain *curves* under it. The legacy
 // refine split EVERY face triangle whose edge exceeded one global 15 m target
@@ -95,10 +95,12 @@ const PATH_CONTOUR_REFINE_MAX_EDGE_M = 6;
 const GROUND_Y_EPS = 0.002;   // metres per renderOrder slot (~5 cm over ~26 groups)
 
 // Terrain sampler for the adaptive path -- built once from the SSoT
-// (src/lib/terrainCommon.js makeElevationSampler + V_EXAG), so the bake-time
-// deviation test uses the EXACT sampler and exaggeration the runtime vertex
-// shader applies. No hand-rolled copy → the mesh auto-recalibrates if V_EXAG
-// ever changes. `getElevation(x,z)` is raw × V_EXAG (world-space lift in m).
+// (src/lib/terrainCommon.js makeElevationSampler + the town's AUTHORED exag), so the
+// bake-time deviation test uses the EXACT sampler and exaggeration the runtime vertex
+// shader applies. No hand-rolled copy → the mesh auto-recalibrates when a town's
+// terrainExag changes. `getElevation(x,z)` is raw × that exag (world-space lift in m).
+// ⛔ Re-bake the ground after changing terrainExag: refinement subdivides where the
+// heightfield BENDS, and how much it bends is a function of the exaggeration.
 // false if the heightmap is absent.
 let _terrainSampler = null;
 function getTerrainSampler(scene) {

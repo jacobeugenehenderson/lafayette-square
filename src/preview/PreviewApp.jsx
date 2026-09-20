@@ -35,7 +35,7 @@ import useSkyState from '../hooks/useSkyState'
 import BakedGround from '../components/BakedGround.jsx'
 import { INSTANCE } from '../instance.js'
 import DawnTimeline from '../components/DawnTimeline'
-import { V_EXAG } from '../utils/terrainShader'
+import { sceneExag } from '../utils/terrainShader'
 import LafayetteScene from '../components/LafayetteScene'
 import CityModel from '../components/CityModel'
 import SlabBuildings from '../components/SlabBuildings'
@@ -1311,7 +1311,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
 
       <Suspense fallback={null}>
         <group visible={layers.ground}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : V_EXAG} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()} /></R3FErrorBoundary>
         </group>
         {/* Buildings (Phase 2 — collapsed to one toggle). LafayetteScene's
             live Building+Foundations stay unmounted always (`building: true`),
