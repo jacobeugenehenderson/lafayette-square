@@ -123,6 +123,32 @@ must(waterPairs.length + waterBare.length, 'the water vocabulary', 'cartograph/c
 // derive.js — barriers are consumed as lines.
 const barrierConsumed = /barrierLines\.push/.test(deriveSrc)
 
+// classify.js — the FACE classifier, a consumer entirely separate from OSM_TO_LU.
+// ⛔⛔ THIS WAS MISSING ON THE FIRST RUN AND THE CENSUS OVER-REPORTED BECAUSE OF IT.
+// `leisure=park` was printed as unclaimed and reported to Jacob as "Lafayette Park
+// does not vote on its own land use" — false: classify.js types that face `park`,
+// derive.js:1176 uses the OSM trace as the park-polygon fallback, and
+// bake-content.js files it under `parks`. The check's own output said "unclaimed
+// means claimed by none of THESE" and the limit was real; naming a limit does not
+// excuse reading past it. ⭐ A census is only as honest as its consumer list, so a
+// consumer added to the kit must be added here — that is the standing cost of this
+// instrument and it is cheaper than the wrong number.
+const classifySrc = R('cartograph/classify.js')
+const classifyBlock = must(
+  (classifySrc.match(/let type = null[\s\S]*?\n\s*if \(type\)/) || [])[0],
+  'the classify.js type block', 'cartograph/classify.js')
+const classifyPairs = [...classifyBlock.matchAll(/tags\.(\w+)\s*===\s*['"]([^'"]+)['"]/g)].map(m => [m[1], m[2]])
+// …plus the `[…].includes(tags.X)` form.
+const classifyIncludes = [...classifyBlock.matchAll(/\[([^\]]*)\]\.includes\(tags\.(\w+)\)/g)]
+  .flatMap(m => quoted(m[1]).map(v => [m[2], v]))
+// …plus bare-truthy tests (`tags.waterway`).
+const classifyBare = [...classifyBlock.matchAll(/tags\.(\w+)\s*\)/g)].map(m => m[1])
+must(classifyPairs.length + classifyIncludes.length, 'the classify.js vocabulary', 'cartograph/classify.js')
+
+// bake-content.js — the CONTENT categoriser, a third independent reader.
+const contentSrc = R('cartograph/bake-content.js')
+const contentPairs = [...contentSrc.matchAll(/(?:const\s+)?(\w+)\s*===\s*['"]([^'"]+)['"]\s*\)\s*return\s*\[/g)].map(m => [m[1], m[2]])
+
 // ── THE CONSUMERS, MODELLED ─────────────────────────────────────────────────
 // ⛔ This is the LIMIT of the claim and it is printed every run. "Unclaimed" means
 // none of THESE claims it — never "nothing in the repo reads it".
@@ -134,6 +160,8 @@ const MODELLED = [
   'LANDUSE — category:value in OSM_TO_LU (derive.js)',
   'WATER   — matches isWaterFeature (coastline.mjs)',
   'BARRIER — bucketed `barrier` (derive.js barrierLines)',
+  'FACE    — typed by the classify.js face classifier (park/parking/water/block)',
+  'CONTENT — categorised by bake-content.js',
 ]
 
 const claimsOf = (cat, tags) => {
@@ -151,6 +179,10 @@ const claimsOf = (cat, tags) => {
   }
   if (waterPairs.some(([k, v]) => tags[k] === v) || waterBare.some(k => tags[k])) c.push('WATER')
   if (cat === 'barrier' && barrierConsumed) c.push('BARRIER')
+  if (classifyPairs.some(([k, v]) => tags[k] === v) ||
+      classifyIncludes.some(([k, v]) => tags[k] === v) ||
+      classifyBare.some(k => tags[k])) c.push('FACE')
+  if (contentPairs.some(([k, v]) => tags[k] === v)) c.push('CONTENT')
   return c
 }
 
@@ -229,7 +261,8 @@ if (JSON_OUT) {
 console.log(`\nINTAKE CONSUMED — what each town fetched, and what nothing reads.`)
 console.log(`Vocabularies parsed live from source (never restated here):`)
 console.log(`   tagPriority ${tagPriority.length} · VEHICULAR_UNNAMED ${vehicularUnnamed.length} · OSM_TO_LU ${luKeys.length}` +
-            ` · path highways ${pathHighways.length} · water rules ${waterPairs.length + waterBare.length}`)
+            ` · path highways ${pathHighways.length} · water rules ${waterPairs.length + waterBare.length}` +
+            ` · classify.js ${classifyPairs.length + classifyIncludes.length} · bake-content ${contentPairs.length}`)
 console.log(`Consumers modelled — ⛔ "unclaimed" means none of THESE, not "nothing reads it":`)
 for (const m of MODELLED) console.log(`   ${m}`)
 
