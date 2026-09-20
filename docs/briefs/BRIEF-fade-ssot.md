@@ -47,7 +47,41 @@
 > buildings                                ⛔ NOT IN THE FADE SET AT ALL
 > ```
 >
-> ### ⭐⭐ WHY 3 AND 4 ARE ONE RULING, NOT TWO — read this before you doubt either
+> ### ⛔⛔ CORRECTION 2026-09-20, AFTER JACOB SAW IT ON SCREEN — **THE TABLE BELOW MEASURES THE WRONG ARTIFACT**
+> The table that follows measures `clean/map.json` — **the DATA**. ⛔ **The RENDERER never draws it.**
+> `MapLayers.jsx` culls **nine** populations at `pointInBoundary` before any geometry is built:
+> `:529` buildings · `:543` centerStripe · `:557` parkingLine · `:573` bikeLane · `:655` alley ·
+> `:679` the landscape categories · `:771`/`:786` parking lots · `:803` the layer loop.
+> **Every face is culled to the AUTHORED POLYGON.**
+>
+> ⇒ **There is nothing outside the polygon to fade into.** An additive feather from `radius` outward
+> runs over empty space, and what shows at the boundary is **the polygon's own hard cut**.
+> ⭐ **And this explains the old design, which this brief misread as a defect:** the inward fade worked
+> **because it feathered content that was actually drawn**, dissolving the polygon's hard edge from the
+> inside. **Deleting the inward band removed the only thing hiding that cut.**
+>
+> ### ⭐⭐ JACOB'S RULING ON SEEING IT — and it is the requirement, not a mechanism
+> *"I don't care; the edge should feather and the buildings shouldn't."*
+>
+> ⇒ **THE RULE, in its kit-shaped form:**
+> > **IF A POPULATION TAKES THE FADE, IT MUST BE DRAWN OUT TO WHERE THE FADE ENDS.**
+> > **IF A POPULATION DOES NOT TAKE THE FADE, IT IS CULLED AT MEMBERSHIP.**
+>
+> Buildings do not fade ⇒ they stay culled at the polygon, binary, exactly as `:529` does today.
+> ⭐ **Buildings are now the EXAMPLE of the rule, not the exception to it.** Everything that *does*
+> fade must be culled against the polygon **scaled out to `fade.outer`**.
+>
+> ⭐ **THE MECHANISM EXISTS — DO NOT INVENT ONE.** `stencilFromBoundary` (`CartographApp.jsx:783`)
+> already scales the boundary polygon outward to a target radius. ⛔ **Reuse it.** A second scaler will
+> drift from the first, which is the exact defect this whole brief is about.
+>
+> ⚠️ **AND THE NINE WERE ENUMERATED BY GREP, NOT BY READING EACH POPULATION.** Some may be line
+> materials that cannot fade at all — those belong on the **culled-at-membership** side by the rule
+> above. ⛔ **Read each one and sort it by whether it takes the fade. Do not take the list as the sort.**
+> **If the rule and the code disagree, the code is the fact.**
+
+> ### ⚠️ THE TABLE BELOW IS RETAINED FOR ITS REASONING ONLY — its conclusion is superseded above
+> ### ⭐⭐ (was) WHY 3 AND 4 ARE ONE RULING, NOT TWO
 > Additive is impossible **while buildings are in the set**, and trivially right once they are out.
 > **Buildings STOP at the rim; nothing else does.** Measured on disk 2026-09-20 (▶ re-derive):
 > ```
