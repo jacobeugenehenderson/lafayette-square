@@ -72,7 +72,45 @@ another session just authored is a design decision, not a fill-in-the-blank.
 ⛔ If you find yourself inventing `tree-sources.json`, stop — that is the parallel mechanism this
 section exists to prevent.
 
-## 4. ⛔⛔ THE FALLBACK THIS BRIEF KILLS FIRST — LS-BLEED #3, LIVE
+## 4. ⛔⛔ CORRECTED 2026-09-20 — **THE FALLBACK IS ALREADY DEAD. THIS SECTION QUOTED A COMMENT AS CODE.**
+
+> **Found by Sylva, who stopped before building rather than after.** The brief's lead deliverable
+> rested on `tree-bake-inputs.mjs:119-120` — *"absent → bake-trees falls back to LS's global map"* —
+> quoted below as live behaviour. ⛔ **It is a COMMENT describing behaviour that no longer exists.**
+>
+> `arborist/bake-trees.js:611-620`, verified at the bytes:
+> ```js
+> const sceneSpeciesMap = path.join(REPO_ROOT,'cartograph','data',scene,'tree-species-map.json')
+> const mapPath = speciesMapPath ? … : (existsSync(sceneSpeciesMap) ? sceneSpeciesMap : null)
+> if (!mapPath) console.warn(`… Refusing to route through LS's map.`)
+> ```
+> Killed by **Jacob's own commit `b12627c8` — "fix(kit): absence must degrade to nothing, never to
+> Lafayette Square"** (3 files, bake-trees among them), **2026-07-20.**
+> ⇒ **Baking huron today does NOT plant a St. Louis palette.** It bakes zero trees — no wells — and warns.
+>
+> ### ⭐⭐ SO DELIVERABLE #1 IS AN **EVICTION**, NOT A DELETION — and it is a SET, not one line
+> **Three rotted comments in the tree path, same cause, all measured by Sylva:**
+> | site | says | actually does |
+> |---|---|---|
+> | `tree-bake-inputs.mjs:119-120` | falls back to LS's global map | per-scene, else empty map + warn |
+> | `tree-bake-inputs.mjs:130-134` | absent shape → legacy paint mask | **THROWS** (`bake-trees.js:832`, `:841`); the legacy tester is deleted |
+> | `bake-trees.js:562` | defaults to LS's global map | defaults to THIS scene's, else null |
+>
+> ⛔ **A comment describing behaviour that no longer exists, read as code, is the THIRD instance of
+> that class in this project in one day.** It cost this brief its lead deliverable. **Evict all three
+> as a set.**
+>
+> ### ✅ AND THE OTHER FOUR WELLS ARE CLEAN — the audit §4 asked for, done
+> Wells are `existsSync`-filtered; an absent well is simply not unioned; **no well substitutes for
+> another**; zero wells → warn + zero trees (`bake-trees.js:621`). ⭐ **Report that as a finding** —
+> "the other four are clean" is worth having, not worth assuming.
+>
+> ### ⇒ THE REAL BUILD IS §3a's, AND IT IS SHARPER THAN "DELETE A FALLBACK"
+> Today an absent species map is a **`console.warn`** and the bake **proceeds** on the picker's own
+> choice. ⛔ **Under Jacob's ruling a WARN IS NOT A DECLARATION.** The work is the `treeCensus` key —
+> declared, three-state, loud. See §3a.
+
+## 4b. (superseded — retained only so the quote's provenance is legible) THE TEXT THIS BRIEF RELIED ON
 
 `cartograph/tree-bake-inputs.mjs:120`, verbatim from the source:
 
@@ -167,7 +205,20 @@ and the fade now derives from `radius + center + fadeBand`; **rebase before you 
 `pointInBoundary`, no boundary at all (measured by Quill 2026-09-20). ⇒ **They are governed ENTIRELY
 by the bake-time stencil.**
 
-⛔⛔ **AND THE STENCIL SHRANK TODAY.** `targetR` was `streetFade.outer + 50`; `streetFade` is deleted
+> ### ⛔⛔ CORRECTED — **TREES AND LAMPS ARE NOT GOVERNED BY THE STENCIL AT ALL.**
+> `grep -c stencil arborist/bake-trees.js` = **0**. Trees are **DROPPED AT BAKE TIME by
+> `makeMembership(boundaryPath)`** (`bake-trees.js:829-830`) against `neighborhood_boundary.json` —
+> the same membership test buildings use. Lamps identical: `cartograph/bake-lamps.js:57-58` says so
+> in terms, *"the SAME membership test buildings and trees use."*
+> ⇒ ⭐ **THE STENCIL MOVE BELOW DOES NOT TOUCH TREES OR LAMPS.** They are governed by MEMBERSHIP,
+> which today's fade work never altered. ⛔ **Do not spend a session measuring trees against
+> `targetR`.** *(The claim that they were "governed entirely by the stencil" came from the fade arc
+> and the coordinator relayed it twice without checking it. It is wrong for both populations.)*
+> ⚠️ **The one thing still worth checking, and it is one line:** `bake-trees.js:832` THROWS without
+> `shape.json`, and the fade work rewrote bake outputs today. `existsSync(public/baked/huron/shape.json)`
+> before you bake. That is a check, not a study.
+
+**The stencil numbers, retained because the record should show what moved:** `targetR` was `streetFade.outer + 50`; `streetFade` is deleted
 and the fade reverted inward, so `fade.outer === radius` and `targetR = radius + 50`:
 ```
                  stencil BEFORE → NOW        lost ring
