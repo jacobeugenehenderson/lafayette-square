@@ -29,6 +29,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
+import { carveWaterFromBoundary, WATER_TAGS } from './landBoundary.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1333,7 +1334,37 @@ export function deriveLayers(highways) {
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
     ))
     boundaryPolyXZ = boundaryData.boundary
-    const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
+
+    // ⭐⭐⭐ THE LAND STOPS AT THE WATER (Jacob, 2026-09-19: "water doesn't matter;
+    // it's the shoreline"). The disc says how much world we draw; the shoreline says
+    // where the land ends. Two different subtractions, and this is the second one.
+    // ⛔ It changes the boundary's SHAPE and nothing else — no new owner class, no
+    // water layer, no colour. Shore edges come out carrying `__boundary__` exactly
+    // like rim edges, because that is what they are: the edge of the drawing.
+    // ⛔ NO FALLBACK: if the carve cannot be done safely it is REFUSED and the pour
+    // keeps the plain disc, loudly. A neighborhood whose land quietly runs out over a
+    // lake is the failure this exists to prevent; a neighborhood that says it could
+    // not find its shoreline is merely unfinished.
+    if (boundaryData.center && boundaryData.radius) {
+      const waterFeats = []
+      for (const cat of Object.keys(osmData.ground || {}))
+        for (const f of osmData.ground[cat]) if (WATER_TAGS(f)) waterFeats.push(f)
+      const carve = carveWaterFromBoundary({
+        discPoly: boundaryPolyXZ, waterFeatures: waterFeats,
+        center: boundaryData.center, discR: boundaryData.radius,
+        buildings: osmData.buildings || [],
+      })
+      for (const line of carve.report) console.log(line)
+      if (carve.refusal) {
+        console.log(`    ⛔ SHORELINE NOT CARVED — the boundary is the plain disc.`)
+        console.log(`       ${carve.refusal}`)
+      } else if (carve.carved) {
+        boundaryPolyXZ = carve.boundary
+        console.log(`    ⭐ boundary carved to the shoreline: ${carve.boundary.length} points (was ${boundaryData.boundary.length})`)
+      }
+    }
+
+    const boundaryRing = boundaryPolyXZ.map(([x, z]) => ({ x, z }))
     if (boundaryRing.length > 2) {
       const first = boundaryRing[0], last = boundaryRing[boundaryRing.length - 1]
       if (first.x !== last.x || first.z !== last.z) boundaryRing.push({ x: first.x, z: first.z })
