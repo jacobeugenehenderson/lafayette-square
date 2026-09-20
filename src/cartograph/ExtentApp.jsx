@@ -1007,9 +1007,20 @@ export default function ExtentApp() {
   const [building, setBuilding] = useState(false)
   const [buildStage, setBuildStage] = useState(null)
   // A bake is minutes, not seconds, and every phase is ONE opaque await against the
-  // server — the client cannot see inside `/pour`. So the honest feedback is the
-  // phase we're in plus a running clock: a button that says "Baking…" for four
-  // minutes is indistinguishable from a button that has hung.
+  // server — the client cannot see inside `/pour`.
+  //
+  // ⛔ THE CLOCK WAS NOT THE ANSWER. "Elapsed time tells the user nothing" (Jacob,
+  // 2026-09-19) — 03:47 does not say what is happening, whether it is progressing, or
+  // how much is left. And the phase narration this comment claims to pair it with was
+  // SET IN SIX PLACES AND RENDERED NOWHERE: the button showed the clock alone. The
+  // stage now carries its position in the sequence, so the button names the phase and
+  // how many remain.
+  //
+  // ⚠️ Still honest about its limit: "Baking slab 3/3" is one await covering ~12 server
+  // steps, so it can sit for minutes without moving. Per-step progress needs the server
+  // to report which baker is running — a status endpoint the client polls. Not built;
+  // the elapsed timer stays in state, unrendered, because that is the thing which would
+  // distinguish slow from hung and it should be settled deliberately, not at 22:45.
   const [buildStartedAt, setBuildStartedAt] = useState(0)
   const [buildElapsed, setBuildElapsed] = useState(0)
   useEffect(() => {
@@ -1714,14 +1725,14 @@ export default function ExtentApp() {
       //    Applies edited radius + exclusions and opens the Designer — the single
       //    "apply my changes and show me" action (no separate Re-scope button).
       if (committed) {
-        setBuildStage('Re-applying extent…')
+        setBuildStage({ label: 'Re-applying extent', i: 1, n: 2 })
         await rescopeScene(scene, Math.round(radiusM), exclusionsLL,
           Array.isArray(polygonLL) && polygonLL.length >= 3
             ? { polygon: polygonLL, polygonSource: polygonSource || 'authored' }
             : {})
         const b = await fetchBoundary(scene).catch(() => null)
         if (b) useCartographStore.setState({ sceneBoundary: b })
-        setBuildStage('Baking slab…')
+        setBuildStage({ label: 'Baking slab', i: 2, n: 2 })
         const idx = await fetchLooks().catch(() => null)
         let lookId = idx?.looks?.find(l => l.scene === scene)?.id
         // A committed hood may still have NO Look of its own — poured before Looks
@@ -1749,7 +1760,7 @@ export default function ExtentApp() {
       }
       // ── Finalize the extent (was "Commit") — re-center to the polygon
       //    centroid, reproject + skeleton, write the boundary circle + metadata.
-      setBuildStage('Committing extent…')
+      setBuildStage({ label: 'Committing extent', i: 1, n: 3 })
       // Re-center to the KEPT-buildings centroid so the hood lands at the origin.
       const [lon, lat] = localToWgs84(geo, discCenter.x, discCenter.z)
       // The EXCLUSION loops (frame-independent lon/lat) ride along — the server
@@ -1781,14 +1792,14 @@ export default function ExtentApp() {
       } catch { /* ignore */ }
       // ── Build the slab (was "Pour") — pipeline (clipped to the boundary) →
       //    ribbons → ensure a Look for this scene → bake → open the Designer.
-      setBuildStage('Pouring map…')
+      setBuildStage({ label: 'Pouring map', i: 2, n: 3 })
       await pourScene(scene)
       const idx = await fetchLooks().catch(() => null)
       let lookId = idx?.looks?.find(l => l.scene === scene)?.id
       if (!lookId) { const r = await createLook({ name: scene, scene }); lookId = r.id }
       const store = useCartographStore.getState()
       if (store.setActiveLook && store.activeLookId !== lookId) store.setActiveLook(lookId)
-      setBuildStage('Baking slab…')
+      setBuildStage({ label: 'Baking slab', i: 3, n: 3 })
       await bakeLook(lookId, { force: true })
       const rb = await fetchRibbons(scene).catch(() => null)
       if (rb) useCartographStore.setState({ sceneRibbons: rb })
@@ -1803,7 +1814,7 @@ export default function ExtentApp() {
       if (committedThisRun) {
         // Roll the destructive commit back so the scene isn't left re-centered but
         // slab-less. Then reload the restored frame + clear the committed marker.
-        setBuildStage('Rolling back…')
+        setBuildStage({ label: 'Rolling back', i: 0, n: 0 })
         await rollbackExtent(scene).catch(() => {})
         const [g, b] = await Promise.all([fetchGeography(scene).catch(() => null), fetchBoundary(scene).catch(() => null)])
         useCartographStore.setState({ sceneGeography: g || null, sceneBoundary: b || null })
@@ -2333,7 +2344,11 @@ export default function ExtentApp() {
                   onClick={onBuild}
                   style={!building && !bakeDirty ? { opacity: 0.45, cursor: 'default' } : undefined}
                   title={bakeDirty ? 'Bake the neighborhood and open the Designer' : 'Already baked — change the boundary, radius, overrides or details to re-bake'}>
-                  {building ? `Baking…  ${mmss(buildElapsed)}` : (bakeDirty ? 'Bake' : 'Baked')}
+                  {building
+                    ? (buildStage?.n
+                        ? `${buildStage.label}…  ${buildStage.i}/${buildStage.n}`
+                        : `${buildStage?.label || 'Baking'}…`)
+                    : (bakeDirty ? 'Bake' : 'Baked')}
                 </button>
               </div>
             )}
