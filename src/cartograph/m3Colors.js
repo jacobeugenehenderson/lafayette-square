@@ -85,6 +85,20 @@ export const DEFAULT_LU_COLORS = {
   island:             '#7A7A6E',  // road-island concrete
   median:             '#6E8A4E',  // divided-road median — bare ground/grass (E2 constructed median)
   unknown:            '#888888',  // neutral fallback
+  // ⭐ ADDED 2026-09-20 with the vocabulary widening (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`).
+  // ⚠️ BEST GUESS, PENDING JACOB'S EYE ON HURON — same standing as `underived`
+  // below. Colour and plantability are two different judgments (his words): a
+  // class can be soft and ugly, and `beach`/`bare` are hard and are not grey.
+  park:               '#5E8A3A',  // public open space — walked, not played on
+  brownfield:         '#7A7248',  // post-industrial, weedy, patchy
+  agricultural:       '#A8A052',  // tilled/cropped ochre-green
+  orchard:            '#7A9A4A',  // planted rows, greener than a field
+  forest:             '#3E5E2E',  // deep canopy (matches the natural:wood overlay)
+  wetland:            '#6A8A72',  // marsh grey-green
+  beach:              '#C8B48A',  // sand
+  bare:               '#9A9086',  // rock / scree
+  cemetery:           '#8AA07A',  // mown, pale
+  railway:            '#6E6660',  // ballast
   // ⚠️ PLACEHOLDER, Jacob's call — see LAND_USE_COLORS in src/lib/ribbonsGeometry.js.
   underived:          '#6E8A5E',  // no land-use evidence — land, unverified
 }

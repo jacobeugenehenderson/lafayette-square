@@ -14,13 +14,13 @@ evict-when: RULING: Jacob's eye on huron's lakefront — does the revetment read
 > build that."*
 
 > ### ⛔⛔ BLOCKED — TWICE, AND BOTH BLOCKERS ARE UPSTREAM. DO NOT START HERE.
-> **This brief cannot begin until `BRIEF-lu-vocabulary.md` lands.** The geometry is the last third of
+> **This brief cannot begin until `cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md` lands.** The geometry is the last third of
 > the job and the first two thirds are somebody else's.
 
 ---
 
 ## 1. You are the dispatched agent. Name yourself — one word, yours.
-## 2. Agent: **FRESH.** ⚠️ Sibling briefs: `BRIEF-lu-vocabulary.md` (blocks you), `BRIEF-water-shader.md` (adjacent — the revetment is the water's edge; coordinate through Boz if both run).
+## 2. Agent: **FRESH.** ⚠️ Sibling briefs: `cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md` (blocks you), `BRIEF-water-shader.md` (adjacent — the revetment is the water's edge; coordinate through Boz if both run).
 
 ## 3. ⛔ WHAT IS ACTUALLY THERE — measured 2026-09-20, huron's raw
 
@@ -34,13 +34,18 @@ that no other town in the kit has. **It is also, right now, entirely invisible.*
 
 ## 4. ⛔⛔ THE TWO BLOCKERS, IN ORDER — NEITHER IS GEOMETRY
 
-### ① `man_made` IS FETCHED AND NEVER BUCKETED — the `railway` bug, third instance
-`fetch.js`'s `HEAVY_WAYS` **includes** `man_made`. `tagPriority` **does not.** ⇒ every `man_made`
-feature falls through to `ground.other[]` — **214 of huron's 246**, and **476 across the four towns.**
-`fetch.js:309` states the lesson in its own comment about railway: ***"the fetch was one and this is
-the other."***
-⛔ **So `breakwater`, `groyne` and `pier` are on disk and reach nothing.** Fixing that is
-`BRIEF-lu-vocabulary.md`'s second half, not yours.
+### ① ✅ `man_made` NOW BUCKETS — fixed 2026-09-20, and it was worse than "unbucketed"
+`man_made` was in `fetch.js`'s `HEAVY_WAYS` and not in `tagPriority`, so every feature fell to
+`ground.other[]` — the `railway` bug, third instance. ⭐ **And `ground.other[]` has ZERO consumers
+anywhere in the kit**, so those features were not merely mis-filed, they were **unreachable**.
+`man_made` is now APPENDED to `tagPriority` (never slotted — order decides the bucket), so a pour
+writes `ground.man_made` and `breakwater`, `groyne` and `pier` are addressable.
+⛔ **A RE-FETCH IS NOT NEEDED BUT A RE-POUR IS** — the tag was always carried on the feature; only
+the bucket is new. ▶ `node checks/claims-every-lu-tag-has-a-home.mjs` asserts HEAVY ⊆ tagPriority, so
+a fourth instance goes red by name.
+⚠️ **Their DESTINATION is still unbuilt** — declared `map-layer (STRUCTURE)` in `OSM_LU_DECLARED`,
+owned by `docs/briefs/BRIEF-lu-map-layers.md`. That was
+`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`'s second half, not yours.
 
 ### ② AND THEN THEY NEED A HOME THAT IS NOT A LAND USE
 ⚠️ **A breakwater is not a land-use FACE.** ⛔ Do not let anyone map it into `OSM_TO_LU` — it is a
@@ -101,7 +106,7 @@ control and no regression risk — ⭐ which also means **nothing will catch a m
 ## 8. Write/commit bounds
 **In bounds:** a bake-time placement step beside `bake-lamps.js` · an instanced renderer following
 `StreetLights.jsx` · its layer row in `Panel.jsx` · the new checks.
-⛔ **OUT:** `tagPriority`/`OSM_TO_LU` (**`BRIEF-lu-vocabulary.md`** — and it blocks you) · the water
+⛔ **OUT:** `tagPriority`/`OSM_TO_LU` (**`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`** — and it blocks you) · the water
 shader · `pier` (§6) · `man_made:bridge` (structural, `skeleton.js` territory).
 ⛔ **A re-pour and a re-bake are both required** to see anything. huron is safe for both; ⛔ **no
 other town is — and no other town needs it.**

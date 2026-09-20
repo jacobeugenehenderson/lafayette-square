@@ -343,10 +343,22 @@ out body;>;out skel qt;`
   // bucket, so inserting them mid-list would move co-tagged ways OUT of `barrier`,
   // `waterway`, `railway` and `surface` — a silent re-bucketing of existing towns for
   // no gain. Appended, no existing feature changes category.
+  // ⭐ `man_made` IS THE RAILWAY BUG, THIRD INSTANCE (2026-09-20). It has been in
+  // `HEAVY_WAYS` and `HEAVY_NODES` above — fetched, carried, tagged — and was in NO
+  // bucket, so every one of its features fell to `ground.other[]`, which has ZERO
+  // consumers anywhere in the kit. Measured across LS · huron · hipointe-demun ·
+  // altadena: 443 features, huron's whole waterfront among them (pier 183,
+  // breakwater 21, groyne, lighthouse). ⛔ It is a BUCKET, not a filter — the tag
+  // was always carried; a consumer reading `ground.man_made` got nothing and had no
+  // way to know why. `checks/claims-every-lu-tag-has-a-home.mjs` now asserts
+  // HEAVY ⊆ tagPriority so a fourth instance cannot happen quietly.
+  // ⛔ APPENDED, not slotted — order decides the bucket, and inserting mid-list
+  // would silently re-bucket existing towns' ways for no gain (the rule the four
+  // tags below were added under).
   const tagPriority = [
     'highway', 'landuse', 'leisure', 'natural',
     'amenity', 'barrier', 'waterway', 'railway', 'surface',
-    'shop', 'tourism', 'office', 'craft',
+    'shop', 'tourism', 'office', 'craft', 'man_made',
   ]
 
   const ground = {}

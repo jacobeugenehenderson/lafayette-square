@@ -3141,24 +3141,154 @@ export function deriveLayers(highways) {
   //      whichever LU category covers the most area of this face wins.
   //   2. Parcel majority vote (fallback when no OSM polygon hits the face).
   //   3. 'residential' default (when neither is available).
+  // ⭐⭐ WIDENED 2026-09-20 (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`, ruled by Jacob). This was a
+  // 32-entry table holding very nearly the vocabulary Lafayette Square happens to
+  // contain, and a tag it lacked NEVER BECAME AN LU POLYGON AT ALL — the face fell
+  // to the parcel vote, else to the bare `'residential'` default. So huron's corn
+  // arrived as somebody's lawn, confidently. Measured across LS · huron ·
+  // hipointe-demun · altadena at the widening: 111 distinct tags on disk with no
+  // home. ▶ re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
+  //
+  // ⛔⛔ EVERY LU-BEARING TAG IS NOW EITHER MAPPED HERE OR DECLARED IN
+  // `OSM_LU_DECLARED` BELOW, AND THE CHECK FAILS ON A TAG THAT IS NEITHER. That is
+  // the whole deliverable: "we looked and decided no" and "nobody has looked" are
+  // the same silence otherwise (`sources.js`'s UNDECLARED / DECLARED-NONE /
+  // DECLARED, arriving in a third domain).
   const OSM_TO_LU = {
+    // — residential / commercial / industrial —
+    'landuse:residential': 'residential',
     'landuse:retail': 'commercial', 'landuse:commercial': 'commercial',
-    'landuse:residential': 'residential', 'landuse:industrial': 'industrial',
-    'landuse:religious': 'institutional',
-    'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
-    'landuse:allotments': 'recreation', 'landuse:construction': 'vacant',
-    'leisure:garden': 'recreation', 'leisure:playground': 'recreation',
-    'leisure:swimming_pool': 'recreation', 'leisure:pitch': 'recreation',
-    'leisure:sports_centre': 'recreation',
-    'natural:wood': 'recreation', 'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
-    'amenity:school': 'institutional', 'amenity:place_of_worship': 'institutional',
-    'amenity:library': 'institutional', 'amenity:university': 'institutional',
-    'amenity:fire_station': 'institutional', 'amenity:crematorium': 'institutional',
     'amenity:fuel': 'commercial', 'amenity:cafe': 'commercial',
     'amenity:bar': 'commercial', 'amenity:restaurant': 'commercial',
     'amenity:fast_food': 'commercial', 'amenity:veterinary': 'commercial',
-    'amenity:charging_station': 'commercial', 'amenity:parking': 'parking',
-    'amenity:waste_disposal': 'industrial',
+    'amenity:charging_station': 'commercial', 'amenity:bank': 'commercial',
+    'amenity:car_wash': 'commercial', 'amenity:pub': 'commercial',
+    'amenity:cinema': 'commercial', 'amenity:theatre': 'commercial',
+    'amenity:events_venue': 'commercial', 'amenity:pharmacy': 'commercial',
+    'amenity:dentist': 'commercial', 'amenity:doctors': 'commercial',
+    'leisure:fitness_centre': 'commercial', 'leisure:bowling_alley': 'commercial',
+    'leisure:marina': 'commercial', 'leisure:hackerspace': 'commercial',
+    'amenity:dojo': 'commercial',
+    'landuse:industrial': 'industrial', 'amenity:waste_disposal': 'industrial',
+    'landuse:landfill': 'industrial', 'landuse:quarry': 'industrial',
+    // — institutional: schools, worship, government, care —
+    'landuse:religious': 'institutional', 'landuse:institutional': 'institutional',
+    'landuse:military': 'institutional',
+    'amenity:school': 'institutional', 'amenity:place_of_worship': 'institutional',
+    'amenity:library': 'institutional', 'amenity:university': 'institutional',
+    'amenity:fire_station': 'institutional', 'amenity:crematorium': 'institutional',
+    'amenity:college': 'institutional', 'amenity:hospital': 'institutional',
+    'amenity:clinic': 'institutional', 'amenity:social_facility': 'institutional',
+    'amenity:community_centre': 'institutional', 'amenity:townhall': 'institutional',
+    'amenity:courthouse': 'institutional', 'amenity:police': 'institutional',
+    'amenity:prison': 'institutional', 'amenity:post_office': 'institutional',
+    'amenity:kindergarten': 'institutional', 'amenity:childcare': 'institutional',
+    'amenity:public_building': 'institutional', 'amenity:funeral_hall': 'institutional',
+    'amenity:arts_centre': 'institutional',
+    // — recreation: managed green that is PLAYED on —
+    'landuse:grass': 'recreation', 'landuse:recreation_ground': 'recreation',
+    'landuse:allotments': 'recreation', 'landuse:greenery': 'recreation',
+    'leisure:garden': 'recreation', 'leisure:playground': 'recreation',
+    'leisure:swimming_pool': 'recreation', 'leisure:pitch': 'recreation',
+    'leisure:sports_centre': 'recreation', 'leisure:golf_course': 'recreation',
+    'leisure:track': 'recreation', 'leisure:stadium': 'recreation',
+    'leisure:sports_hall': 'recreation', 'leisure:horse_riding': 'recreation',
+    'leisure:disc_golf_course': 'recreation', 'leisure:schoolyard': 'recreation',
+    // ⚠️ `natural:wood` STAYS `recreation`, and that is a DELIBERATE non-change.
+    // Re-pointing it to `forest` is defensible on the merits — a wood is not a
+    // ballfield — but it is an EXISTING mapping, i.e. somebody's decision, and it
+    // reaches LS (19 features) and hipointe-demun (85), neither of which may be
+    // re-poured without Jacob. A commit that fills holes must not also restyle the
+    // mould town's woods. ▶ Jacob's call, not absorbed here.
+    'natural:wood': 'recreation',
+    'natural:scrub': 'recreation', 'natural:tree_row': 'recreation',
+    'natural:grass': 'recreation', 'natural:grassland': 'recreation',
+    'natural:shrubbery': 'recreation',
+    // — park: public open space, and NOT `recreation` (a different colour, a
+    //   different feel; a park is walked, a pitch is played). ⚠️ The class existed
+    //   in `LU_POLICY`, `PAINT_ORDER`, `TREELAWN_LU_VARIANTS` and the palettes and
+    //   had NO OSM producer at all — its only two sources were the divided-road
+    //   median and LS's authored park override. `leisure:park` is in ALL FOUR towns.
+    'leisure:park': 'park', 'leisure:nature_reserve': 'park', 'leisure:dog_park': 'park',
+    // — the worked and the wild —
+    'landuse:construction': 'vacant',
+    'landuse:brownfield': 'brownfield',     // its own class, ruled by Jacob 2026-09-20
+    'landuse:farmland': 'agricultural', 'landuse:meadow': 'agricultural',
+    'landuse:farmyard': 'agricultural', 'landuse:greenhouse_horticulture': 'agricultural',
+    'landuse:plant_nursery': 'agricultural',
+    'landuse:orchard': 'orchard',           // trees, in rows, by a farmer
+    'landuse:forest': 'forest',   // ⚠️ `natural:wood` deliberately NOT re-pointed here — see above
+    'natural:wetland': 'wetland', 'natural:mud': 'wetland',
+    'natural:beach': 'beach', 'natural:sand': 'beach',
+    'natural:bare_rock': 'bare', 'natural:scree': 'bare',
+    'landuse:cemetery': 'cemetery', 'amenity:grave_yard': 'cemetery',
+    'landuse:railway': 'railway',
+    // — hardscape lots —
+    'amenity:parking': 'parking', 'amenity:parking_space': 'parking',
+  }
+
+  /**
+   * ⭐⭐ DECLARED-NOT-A-LAND-USE — "we looked and decided no", by name, with the reason.
+   *
+   * ⛔ THE DISTINCTION IS THE WHOLE POINT and it is `sources.js`'s, reused rather than
+   * re-invented: an UNDECLARED tag and a DECLARED-NONE tag are the same silence today.
+   * A tag here contributes nothing to the land-use vote ON PURPOSE, and
+   * `claims-every-lu-tag-has-a-home.mjs` treats its absence from BOTH tables as a
+   * failure. Delete a row and the check goes red naming the tag and the town.
+   *
+   * ⭐ "IS THIS A LAND-USE FACE?" AND "SHOULD THIS BE ON THE MAP?" ARE TWO QUESTIONS
+   * (Jacob, 2026-09-20). A bench is not a land use and painting a whole block face the
+   * colour of *bench* is a real error — but a bench absolutely belongs on the map. So
+   * `map-layer` is NOT a synonym for `ignore`: it is a destination, and the work is
+   * `docs/briefs/BRIEF-lu-map-layers.md`. ⛔ Do not quietly promote one of these to
+   * `OSM_TO_LU` to make it visible; that paints the block.
+   */
+  const OSM_LU_DECLARED = {
+    // ── map-layer: a marker, an overlay or a line — never a block face ──
+    'amenity:shelter':          'map-layer: a structure you stand under, not land use',
+    'amenity:toilets':          'map-layer: a public toilet is local-map value; a marker',
+    'amenity:bicycle_parking':  'map-layer: street furniture',
+    'amenity:bench':            'map-layer: street furniture',
+    'amenity:fountain':         'map-layer: street furniture',
+    'leisure:outdoor_seating':  'map-layer: cafe seating, a sub-block patch',
+    'leisure:bleachers':        'map-layer: a structure beside a pitch',
+    'leisure:fitness_station':  'map-layer: street furniture',
+    'leisure:bandstand':        'map-layer: a structure in a park',
+    'leisure:batting_cage':     'map-layer: a structure beside a pitch',
+    'landuse:flowerbed':        'map-layer: a planting bed is a sub-block overlay, not a block',
+    'man_made:planter':         'map-layer: street furniture',
+    'man_made:courtyard':       'map-layer: a sub-block overlay',
+    'man_made:surveillance':    'map-layer: a point fixture',
+    'amenity:outdoor_seating':  'map-layer: the amenity-keyed twin of leisure:outdoor_seating',
+    'leisure:slipway':          'map-layer (STRUCTURE): a boat ramp — huron\'s waterfront',
+    'man_made:cutline':         'map-layer (LINE): a cleared strip through forest',
+    'natural:cliff':            'map-layer (LINE): arrives as an OPEN way — barrier-shaped, not a face',
+    'natural:ridge':            'map-layer (LINE): arrives as an OPEN way — barrier-shaped, not a face',
+    'man_made:embankment':      'map-layer (LINE): arrives as an OPEN way',
+    'man_made:pipeline':        'map-layer (LINE): arrives as an OPEN way',
+    'man_made:pier':            'map-layer (STRUCTURE): huron\'s waterfront — see BRIEF-boulder-revetment.md',
+    'man_made:breakwater':      'map-layer (STRUCTURE): huron\'s waterfront — see BRIEF-boulder-revetment.md',
+    'man_made:groyne':          'map-layer (STRUCTURE): huron\'s waterfront — see BRIEF-boulder-revetment.md',
+    'man_made:storage_tank':    'map-layer (STRUCTURE): an object on a lot, not the lot',
+    'man_made:silo':            'map-layer (STRUCTURE): an object on a lot, not the lot',
+    'man_made:tower':           'map-layer (STRUCTURE)',
+    'man_made:water_tower':     'map-layer (STRUCTURE)',
+    'man_made:lighthouse':      'map-layer (STRUCTURE)',
+    'man_made:gantry':          'map-layer (STRUCTURE)',
+    'man_made:reservoir_covered': 'map-layer (STRUCTURE)',
+    'man_made:ventilation_shaft': 'map-layer (STRUCTURE)',
+    'man_made:satellite_dish':  'map-layer (STRUCTURE)',
+    'man_made:chiller':         'map-layer (STRUCTURE)',
+    'man_made:works':           'map-layer (STRUCTURE): the plant, not the industrial land it sits on',
+    'man_made:wastewater_plant':'map-layer (STRUCTURE): the plant, not the industrial land it sits on',
+    'man_made:water_works':     'map-layer (STRUCTURE): the plant, not the industrial land it sits on',
+    // ── none: genuinely not a land use and not a thing to draw ──
+    'man_made:bridge':          'none: the SKELETON owns grade separation (layer/bridge/tunnel). A bridge is not a land use.',
+    'boundary:administrative':  'none: an administrative line, not a physical feature',
+    'boundary:census':          'none: a statistical line, not a physical feature',
+    'place:islet':              'none: land inside water; the water producer carries its holes',
+    'natural:water':            'none: water has its OWN producer (`layers.water`, the coast/relation path) and both renderers skip it here on purpose. ⚠️ Whether a small INLAND pond reaches that producer is NOT established — see cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md §6.',
+    'natural:reef':             'none: submerged; belongs to the water producer, not to land use',
   }
   // Collect every OSM polygon with an LU mapping, annotate with centroid + area.
   function ringArea(coords) {
@@ -3170,6 +3300,7 @@ export function deriveLayers(highways) {
     return Math.abs(a / 2)
   }
   const osmLUPolys = []
+  let declaredNotLU = 0
   // The SECOND customer of the ingest vocabulary gate. `OSM_TO_LU` is an
   // allow-list, so a tag it lacks was silently not-a-land-use — the same shape
   // as classify.js's `unknown` hijack, one stage down. One gate, one account per
@@ -3189,7 +3320,14 @@ export function deriveLayers(highways) {
       // on the strength of a shape we know is wrong.
       const unreadable = unreadableFace(f)
       if (unreadable) { luVocabGap.record(`${unreadable}:${cat}=${subtype}`, f.coords, f.tags); continue }
-      const lu = OSM_TO_LU[`${cat}:${subtype}`]
+      const tagKey = `${cat}:${subtype}`
+      // ⛔ A DECLARED tag is not a gap. "We looked and decided no" and "nobody has
+      // looked" are the same silence unless the decision is written down, so the
+      // gate reports only the UNDECLARED — and `claims-every-lu-tag-has-a-home.mjs`
+      // is what stops this branch from becoming a skip list, by failing on any tag
+      // that is in neither table.
+      if (OSM_LU_DECLARED[tagKey]) { declaredNotLU++; continue }
+      const lu = OSM_TO_LU[tagKey]
       if (!lu) { luVocabGap.record(`${cat}=${subtype}`, f.coords, f.tags); continue }
       if (!f.coords || f.coords.length < 3) continue
       let sx = 0, sz = 0
@@ -3201,7 +3339,8 @@ export function deriveLayers(highways) {
       })
     }
   }
-  console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}`)
+  console.log(`    OSM LU-annotated polygons: ${osmLUPolys.length}` +
+              (declaredNotLU ? `; ${declaredNotLU} feature(s) DECLARED not-a-land-use (${Object.keys(OSM_LU_DECLARED).length} tags declared — see OSM_LU_DECLARED)` : ''))
   const luGapReport = luVocabGap.report(SCENE)
   if (luGapReport) console.warn(luGapReport)
 

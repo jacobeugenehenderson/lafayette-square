@@ -122,10 +122,18 @@ const loadSceneStencil = (scene) => _loadSceneStencil(ROOT, scene)
 // land-use block it abuts — visually extending the parcel across its
 // frontage. Bare 'treelawn' is kept for chain dead-end caps + corner
 // pads where there's no single adjacent block to attribute.
+// ⭐ THE LU CLASS SET, and it is NOT a list to retype. `derive.js`'s `OSM_TO_LU`
+// values ∪ `parcel-landuse.mjs` ∪ the emergent faces (`median`, `island`) —
+// widened 2026-09-20 with `cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`. ⛔ A class missing here AND
+// from PAINT_ORDER below drops silently from the slab; that is how the divided
+// median vanished. `checks/claims-every-lu-tag-has-a-home.mjs` fails if a class
+// `OSM_TO_LU` can emit is absent from either.
 const TREELAWN_LU_VARIANTS = [
   'residential', 'commercial', 'vacant', 'vacant-commercial', 'parking',
   'institutional', 'recreation', 'industrial', 'park', 'island', 'unknown',
   'underived',
+  'brownfield', 'agricultural', 'orchard', 'forest', 'wetland', 'beach',
+  'bare', 'cemetery', 'railway',
 ]
 const PAINT_ORDER = [
   // Faces (land-use) at the bottom
@@ -147,6 +155,18 @@ const PAINT_ORDER = [
   // divided median vanished (see the [G4] note below). Any new LU class must
   // be added here AND to TREELAWN_LU_VARIANTS above.
   ['face', 'underived'],
+  // Widened 2026-09-20 (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`). Order inside the face band is
+  // paint order among faces, which never overlap, so it carries no meaning beyond
+  // determinism — the entries matter, the sequence does not.
+  ['face', 'brownfield'],
+  ['face', 'agricultural'],
+  ['face', 'orchard'],
+  ['face', 'forest'],
+  ['face', 'wetland'],
+  ['face', 'beach'],
+  ['face', 'bare'],
+  ['face', 'cemetery'],
+  ['face', 'railway'],
   // Sub-block overlays — sit on top of LU faces, under street ribbons.
   // Polygon overlays from map.json (parking_lot + leisure + natural).
   ['mat', 'parking_lot'],

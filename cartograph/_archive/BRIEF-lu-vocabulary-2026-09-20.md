@@ -1,9 +1,45 @@
 <!-- BRIEF-STATE
-status: OPEN
-dispatched: no
-written: 2026-09-20
-evict-when: node checks/claims-every-lu-tag-has-a-home.mjs
+status: LANDED 2026-09-20
+dispatched: yes (Lex)
+evict-when: ARCHIVED — its assertion is now a check: node checks/claims-every-lu-tag-has-a-home.mjs
 -->
+
+> # ✅ LANDED 2026-09-20 — ARCHIVED, and its death condition is a live check.
+>
+> **`node checks/claims-every-lu-tag-has-a-home.mjs` is what this brief became.** Every claim
+> below is superseded by it: the counts, the pile sort and the class list are all things the
+> check re-derives from source, so ⛔ **do not quote a number out of this file** — run the
+> command. Kept for the reasoning and for Jacob's rulings, not for its figures.
+>
+> **What landed:** `OSM_TO_LU` 32 → 97 mappings · a sibling `OSM_LU_DECLARED` (46 tags declared
+> not-a-land-use by name, with reasons) · `man_made` appended to `fetch.js`'s `tagPriority` ·
+> a third plantability state, `planted` · 10 new classes end-to-end through every home the
+> vocabulary has · the check, mutation-tested five ways.
+>
+> **Jacob's rulings, 2026-09-20 (the part worth keeping):**
+> 1. **`brownfield` is its own class**, not `vacant`.
+> 2. **A third plantability state, `planted`, with a species sub-selector** — because the binary
+>    answers *"may a tree stand here?"* and the new question is *"what grows here?"*
+> 3. **Pile ② is its own brief** → `docs/briefs/BRIEF-lu-map-layers.md`.
+> 4. ⛔ **No new helper app.** "The Landscaper" was considered and declined: the operator's
+>    per-class surface already exists (`CartographSurfaces.jsx`'s Land Use tab, `design.json`'s
+>    `luColors` / `blockLandUse` / `trees`), and the only genuine orphan was `lu-policy.json` —
+>    a format with a loader, a documented per-scene path, no UI and no scene that had ever
+>    written one.
+>
+> **⛔ WHAT DID NOT LAND, AND IT IS THE CEILING ON THE REST:** the vocabulary is fixed and the
+> **spatial join still loses the biggest features.** The OSM vote asks *"is the POLYGON's
+> centroid inside this FACE?"* (`derive.js`, `pointInRing(o.cx, o.cz, face.ring)`), so a field
+> larger than a block never lands: **24 of 52 of huron's agricultural polygons have their
+> centroid in NO face, including the two largest.** That is `BRIEF-land-use-derivation`'s open
+> item #2 — the containment direction — and it is where this work continues.
+>
+> **Also answered here, for the briefs that were blocked on it:** `natural:water` does **not**
+> need an LU class (it has its own producer; a second would be the bug) — but the pour's own
+> output shows that producer reaches **the coast and not inland ponds**, so an inland pond is
+> drawn by nothing. That is producer coverage, not vocabulary → `BRIEF-water-shader.md`.
+
+---
 
 # BRIEF — THE LAND-USE VOCABULARY IS LAFAYETTE SQUARE'S, AND TOWNS HAVE WORDS IT LACKS
 

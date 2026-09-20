@@ -32,6 +32,20 @@ export const LAND_USE_COLORS = {
   park:               '#5E8A3A',
   island:             '#5E8A3A',
   unknown:            '#666666',
+  // ⭐ ADDED 2026-09-20 with the vocabulary widening (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`).
+  // ⚠️ BEST GUESS, PENDING JACOB'S EYE ON HURON — same standing as `underived`
+  // below. Colour and plantability are two different judgments (his words): a
+  // class can be soft and ugly, and `beach`/`bare` are hard and are not grey.
+  brownfield:         '#7A7248',  // post-industrial, weedy, patchy
+  agricultural:       '#A8A052',  // tilled/cropped ochre-green
+  orchard:            '#7A9A4A',  // planted rows, greener than a field
+  forest:             '#3E5E2E',  // deep canopy (matches the natural:wood overlay)
+  wetland:            '#6A8A72',  // marsh grey-green
+  beach:              '#C8B48A',  // sand
+  bare:               '#9A9086',  // rock / scree
+  cemetery:           '#8AA07A',  // mown, pale
+  railway:            '#6E6660',  // ballast
+
   // ⚠️ PLACEHOLDER — Jacob's palette call, not mine (BRIEF-land-use-derivation
   // §6: "do not recolour the Look"). derive.js's `underived` class marks a face
   // nothing could classify. It must NOT inherit `unknown`'s grey: grey reads as

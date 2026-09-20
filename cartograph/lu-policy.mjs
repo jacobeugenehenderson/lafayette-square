@@ -26,6 +26,37 @@
  * Doctrine: "everything is a best guess, and everything is overridable"
  * (`NEIGHBORHOOD-INPUTS §0.0`); "always populate best-effort, then override"
  * (`SECTION §3.1`). Detector, not adjective (`POLYGON-FIRST §5`).
+ *
+ * ── THE THIRD STATE: `planted` (ruled by Jacob 2026-09-20) ──────────────────
+ *
+ * ⭐⭐ THE BINARY ANSWERS ONE QUESTION — "MAY A TREE STAND HERE?" — AND IT ALWAYS
+ * WILL. `forbidden-surface.mjs` is a MASK: it drops or nudges, it never places.
+ * `planted` answers a DIFFERENT question — "WHAT GROWS HERE?" — which is why it
+ * is not a third value on the old axis but a second axis that only some classes
+ * have, and why it carries a sub-selector rather than a flag.
+ *
+ *     soft    — green, and the census tree may stand. (a yard, a park)
+ *     hard    — the interior is forbidden to a tree. ⚠️ WIDENED 2026-09-20: this
+ *               no longer means "paved". `beach` and `bare` are hard and are not
+ *               hardscape — nothing grows on sand or scree. The COLOUR is a
+ *               separate judgment (`m3Colors`), and always was.
+ *     planted — green, and the planting is SPECIFIED rather than free. A cornfield
+ *               grows corn; an orchard grows fruit trees in rows; a marsh grows
+ *               reeds. The census tree does NOT stand here — not because the
+ *               ground is hostile but because the ground is already spoken for.
+ *
+ * ⛔⛔ AND THE GENERATOR DOES NOT EXIST YET, WHICH IS THE WHOLE REASON `planted`
+ * IS DECLARED BEFORE IT IS CONSUMED. Nothing in the kit decides what a surface
+ * should be planted WITH: the Arborist is a species FACTORY, `bake-trees.js`
+ * SUBSTITUTES against a municipal census, and this module SUBTRACTS. There is a
+ * filter where there should also be a generator.
+ * ⇒ so a `planted` class today yields NO foliage, and `report()` SAYS SO BY NAME
+ * every pour. ⛔ It must never quietly resolve to `soft` (trees in the corn) or
+ * to `hard` (a blanked block reading as a design choice) — both are the silent
+ * substitution this module exists to refuse. The face still PAINTS its own
+ * colour, so the land reads as worked ground rather than going bald.
+ * ⭐ `plantingOf(lu)` is the socket the generator will read. Its first customers
+ * are `BRIEF-field-shader.md` (crop rows) and `orchard`.
  */
 import { readFileSync, existsSync } from 'node:fs'
 import path from 'node:path'
@@ -73,19 +104,53 @@ export const LU_POLICY = {
   // and it stays hard.
   underived:           'soft',
 
-  // — hard: hardscape lot, interior forbidden (ratified with Jacob 2026-07-18) —
+  // Added 2026-09-20 with the vocabulary widening. A cemetery is lawn with
+  // specimen trees; a forest is the one class where a canopy fill is not a
+  // guess; brownfield is a ruled class of its own (Jacob, 2026-09-20) and an
+  // abandoned industrial lot is colonised by weeds and volunteer trees, which
+  // is what makes it read as abandoned rather than as a lot.
+  cemetery:            'soft',
+  forest:              'soft',
+  brownfield:          'soft',
+
+  // — hard: the interior is forbidden to a tree (ratified with Jacob 2026-07-18) —
+  // ⚠️ WIDENED 2026-09-20 — see the header. `hard` no longer implies PAVED: the
+  // two classes below it are bare natural ground, and nothing grows on them
+  // either. Their COLOUR says sand and rock; this axis says "no tree".
   commercial:          'hard',
   parking:             'hard',
   industrial:          'hard',
+  railway:             'hard',
+  beach:               'hard',
+  bare:                'hard',
   // NOTE: 'unknown' is the kit's OWN "derive.js could not classify this parcel"
   // bucket, ratified hard and eye-gated at LS (4 tiles). It is deliberately NOT
   // the same thing as a class name the kit has never seen — that defaults soft
   // (see resolveLuPolicy). Flagged in the report so the tension stays visible.
   unknown:             'hard',
+
+  // — planted: green, and the planting is SPECIFIED. See the header. —
+  // ⛔ NO GENERATOR CONSUMES `with` YET. That is declared, not hidden: `report()`
+  // names every planted class and the foliage it is still owed, every pour.
+  // ⭐ `with` is a ROSTER FILTER, not a new vocabulary — the species ids are the
+  // same ones `design.json#/trees` and the Arborist already speak.
+  agricultural:        { ground: 'planted', with: ['zea_mays'],       pattern: 'rows' },
+  orchard:             { ground: 'planted', with: ['malus_domestica'], pattern: 'grid' },
+  wetland:             { ground: 'planted', with: ['phragmites'],      pattern: 'scatter' },
 }
 
 /** What an unrecognized class resolves to. Soft + loud — never silent hardscape. */
 export const UNRECOGNIZED_DEFAULT = 'soft'
+
+/**
+ * A policy row is either a bare ground kind (`'soft'`) or an object carrying the
+ * planting spec (`{ ground: 'planted', with: [...], pattern }`). Both spellings
+ * are first-class so every row written before 2026-09-20 stays valid verbatim.
+ */
+export const GROUND_KINDS = ['soft', 'hard', 'planted']
+const groundOf = (row) => (typeof row === 'string' ? row : row?.ground)
+/** The ground kind of a raw `LU_POLICY` row, whichever spelling it uses. */
+export const groundKindOf = (row) => groundOf(row)
 
 /**
  * Per-scene override: optional `cartograph/data/<scene>/lu-policy.json`
@@ -100,9 +165,21 @@ function loadSceneOverride(scene) {
   try {
     const raw = JSON.parse(readFileSync(p, 'utf-8'))
     const out = {}
-    for (const [lu, kind] of Object.entries(raw)) {
-      if (kind === 'soft' || kind === 'hard') out[lu] = kind
-      else console.warn(`[lu-policy] ${scene}: ignoring "${lu}": "${kind}" — expected "soft" or "hard".`)
+    for (const [lu, row] of Object.entries(raw)) {
+      const g = groundOf(row)
+      // ⛔ A ROW WE CANNOT READ IS DROPPED AND NAMED, never coerced. Coercing it
+      // would make the operator's own file the silent substitution.
+      if (!GROUND_KINDS.includes(g)) {
+        console.warn(`[lu-policy] ${scene}: ignoring "${lu}" — expected ${GROUND_KINDS.map(k => `"${k}"`).join(' / ')}` +
+                     ` (or { ground, with, pattern }), got ${JSON.stringify(row)}.`)
+        continue
+      }
+      if (g === 'planted' && !(Array.isArray(row?.with) && row.with.length)) {
+        console.warn(`[lu-policy] ${scene}: "${lu}" is "planted" with no \`with\` list — that is a planting spec` +
+                     ` that specifies nothing. Ignored; declare the species or use "soft"/"hard".`)
+        continue
+      }
+      out[lu] = row
     }
     return out
   } catch (e) {
@@ -118,7 +195,7 @@ function loadSceneOverride(scene) {
  * @param {string[]} classesPresent every LU class actually present in the scene —
  *                                  pass the keys of `luByClass` so the report can
  *                                  name what this town brought that the kit lacks.
- * @returns {{ isPlantable, kindOf, unrecognized, overridden, report }}
+ * @returns {{ isPlantable, kindOf, plantingOf, unrecognized, overridden, awaitingPlanting, report }}
  */
 export function resolveLuPolicy(scene, classesPresent = []) {
   const override = loadSceneOverride(scene)
@@ -131,8 +208,20 @@ export function resolveLuPolicy(scene, classesPresent = []) {
   }
   unrecognized.sort(); overridden.sort()
 
-  const kindOf = (lu) => override[lu] || LU_POLICY[lu] || UNRECOGNIZED_DEFAULT
+  const rowOf = (lu) => override[lu] ?? LU_POLICY[lu] ?? UNRECOGNIZED_DEFAULT
+  const kindOf = (lu) => groundOf(rowOf(lu)) || UNRECOGNIZED_DEFAULT
+  // ⛔ `planted` IS NOT PLANTABLE, and that is the point rather than an oversight:
+  // the ground is already spoken for, so the census tree does not stand here. The
+  // foliage it is owed instead comes from `plantingOf`, which nothing reads yet —
+  // announced in `report()` rather than quietly resolved either way.
   const isPlantable = (lu) => kindOf(lu) === 'soft'
+  /** The planting spec for a `planted` class — `{ with, pattern }` — else null. */
+  const plantingOf = (lu) => {
+    const row = rowOf(lu)
+    if (groundOf(row) !== 'planted') return null
+    return { with: row.with || [], pattern: row.pattern || null }
+  }
+  const awaitingPlanting = [...new Set(classesPresent)].filter(lu => kindOf(lu) === 'planted').sort()
 
   /**
    * The bake-time announcement. An operator pouring town #7 learns their
@@ -146,7 +235,23 @@ export function resolveLuPolicy(scene, classesPresent = []) {
       const why = override[lu] ? 'scene override'
         : (lu in LU_POLICY) ? 'kit default'
         : `UNRECOGNIZED → defaulted ${UNRECOGNIZED_DEFAULT}`
-      lines.push(`   ${kind === 'soft' ? '🌱 soft' : '🧱 hard'}  ${lu.padEnd(20)} (${why})`)
+      const badge = kind === 'soft' ? '🌱 soft   ' : kind === 'hard' ? '🧱 hard   ' : '🌾 planted'
+      const spec = kind === 'planted'
+        ? `  → ${(plantingOf(lu).with || []).join(', ') || '(nothing declared)'}` +
+          `${plantingOf(lu).pattern ? ` in ${plantingOf(lu).pattern}` : ''}`
+        : ''
+      lines.push(`   ${badge}  ${lu.padEnd(20)} (${why})${spec}`)
+    }
+    // ⛔⛔ THE OWED FOLIAGE, NAMED EVERY POUR. `planted` means the census tree does
+    // not stand here and the specified planting does not exist yet, so these faces
+    // carry NO foliage at all. That is a real, open gap; printing it is the only
+    // thing standing between it and the silent substitution (`CLAUDE.md` Layer 0 q2).
+    if (awaitingPlanting.length) {
+      lines.push('')
+      lines.push(`   🌾 ${awaitingPlanting.length} class(es) declared PLANTED: ${awaitingPlanting.join(', ')}`)
+      lines.push(`   ⛔ NO PLANTING GENERATOR EXISTS — nothing in the kit reads \`plantingOf()\`, so these`)
+      lines.push(`      faces paint their own colour and grow NOTHING. They are not bald by accident and`)
+      lines.push(`      they are not planted; they are AWAITING a generator. (docs/briefs/BRIEF-field-shader.md)`)
     }
     if (unrecognized.length) {
       lines.push('')
@@ -159,7 +264,7 @@ export function resolveLuPolicy(scene, classesPresent = []) {
     return lines.join('\n')
   }
 
-  return { isPlantable, kindOf, unrecognized, overridden, report }
+  return { isPlantable, kindOf, plantingOf, unrecognized, overridden, awaitingPlanting, report }
 }
 
 /**

@@ -41,7 +41,7 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { CURB_WIDTH } from '../src/cartograph/streetProfiles.js'
 import { sectionOpen } from '../src/lib/tileGround.js'
-import { LU_POLICY, resolveLuPolicy } from './lu-policy.mjs'
+import { LU_POLICY, resolveLuPolicy, groundKindOf } from './lu-policy.mjs'
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -58,7 +58,11 @@ const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
  * VIEW of the policy, not the policy itself.
  */
 export const PLANTABLE_LU = new Set(
-  Object.entries(LU_POLICY).filter(([, kind]) => kind === 'soft').map(([lu]) => lu)
+  // ⛔ Read the row through `groundKindOf`, never `=== 'soft'` on the raw value: a
+  // `planted` row is an OBJECT (`{ ground, with, pattern }`), and comparing an
+  // object to a string excludes it for the wrong reason — right answer, reasoning
+  // that breaks the day a row spelling changes.
+  Object.entries(LU_POLICY).filter(([, row]) => groundKindOf(row) === 'soft').map(([lu]) => lu)
 )
 
 function pointInRing(px, pz, ring) {

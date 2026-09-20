@@ -121,6 +121,24 @@ const TABS = [
       { id: 'institutional',     label: 'Institutional', kind: 'lu' },
       { id: 'recreation',        label: 'Recreation',  kind: 'lu' },
       { id: 'industrial',        label: 'Industrial',  kind: 'lu' },
+      // ⭐ ADDED 2026-09-20 (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`). ⚠️ THIS IS A TENTH HOME for
+      // the LU class set and the list is STATIC — a town with no farmland still
+      // gets a Farmland row. ⛔ That is deliberate and it is the SAFE direction:
+      // Jacob ruled an empty layer should not appear (`BRIEF §4b`), but hiding is
+      // only safe once Intake carries per-LAYER presence, and whether it does is
+      // NOT established. A row for a thing the town lacks is noise; a row missing
+      // because nobody fetched it is the silent substitution. Noise, until Intake
+      // covers the other half.
+      { id: 'park',              label: 'Park',        kind: 'lu' },
+      { id: 'brownfield',        label: 'Brownfield',  kind: 'lu' },
+      { id: 'agricultural',      label: 'Farmland',    kind: 'lu' },
+      { id: 'orchard',           label: 'Orchard',     kind: 'lu' },
+      { id: 'forest',            label: 'Forest',      kind: 'lu' },
+      { id: 'wetland',           label: 'Wetland',     kind: 'lu' },
+      { id: 'beach',             label: 'Beach',       kind: 'lu' },
+      { id: 'bare',              label: 'Bare Ground', kind: 'lu' },
+      { id: 'cemetery',          label: 'Cemetery',    kind: 'lu' },
+      { id: 'railway',           label: 'Rail Corridor', kind: 'lu' },
       // No OSM land-use polygon and no assessor parcel covered the face —
       // derive.js could not classify it (`parcel-landuse.mjs`). A visible row
       // so the operator can find the gaps and paint over them deliberately.

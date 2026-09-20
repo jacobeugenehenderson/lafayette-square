@@ -25,18 +25,22 @@ evict-when: RULING: Jacob's eye on huron's farmland, near and far, against LS's 
 different scale, different physics, different failure modes. ⛔ Do not merge the work; coordinate
 through Boz if both are running.
 
-## 3. ⛔⛔ THE PREREQUISITE, AND IT IS HARD: **`farmland` IS NOT A THING YET**
+## 3. ✅ THE PREREQUISITE LANDED 2026-09-20 — **`agricultural` IS A CLASS NOW, AND SO IS `orchard`**
 
-`derive.js:3144` `OSM_TO_LU` has **no entry for `landuse:farmland`, `meadow`, `orchard` or
-`greenhouse_horticulture`.** A tag with no mapping **never becomes an LU polygon at all** — the face
-falls to the parcel vote, else to the **`'residential'` default.** ⇒ **huron's 53 agricultural
-features are currently invisible, presented as somebody's lawn.**
+`landuse:farmland · meadow · farmyard · greenhouse_horticulture · plant_nursery` → **`agricultural`**;
+`landuse:orchard` → **`orchard`** (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`). Measured
+on a re-poured huron: its face classes went **9 → 12**, with **`agricultural` 0 → 8 faces.**
+▶ Re-derive, never quote: `node checks/claims-every-lu-tag-has-a-home.mjs`.
 
-▶ **`BRIEF-lu-vocabulary.md` is that work and it BLOCKS this brief.** ⛔ **Do not start here.** There
-is nothing for a crop shader to attach to, and building one first would mean inventing your own
-classification — a second producer, which this project already has too many of.
-⭐ **What you CAN do before it lands:** §5's measurement, and the scale study in §4②. Both are
-independent of the class existing.
+> ### ⛔⛔ BUT READ THIS BEFORE YOU SIZE §5, BECAUSE IT IS THE CEILING ON YOUR AUDIENCE
+> **The vocabulary is fixed and the SPATIAL JOIN still loses the biggest fields.** The OSM vote asks
+> *"is the POLYGON's centroid inside this FACE?"* (`derive.js`, `pointInRing(o.cx, o.cz, face.ring)`),
+> so a field larger than a block never lands anywhere: **24 of huron's 52 agricultural polygons have
+> their centroid in NO face at all, including the two largest.** ⇒ ⭐ **the 8 faces you can see are
+> the SMALL fields.** Sizing the audience off them will undercount the treatment badly, and it is the
+> difference between §5's "2% — a luxury" and "30% — the town's whole look."
+> ▶ That is `BRIEF-land-use-derivation`'s **open item #2** (the containment direction), not this brief
+> and not the vocabulary one. ⛔ Do not fix it here; measure the polygons, not the faces.
 
 ## 4. THE MECHANISM EXISTS — `grassMaterial.js` IS THE TEMPLATE, NOT AN ANALOGY
 
@@ -88,9 +92,12 @@ treatment justified by one town is an instance patch.
 - **How many crop treatments?** One generic "cropland", or corn / soy / wheat distinctly? ⭐ OSM
   carries `crop=*` on some farmland — ▶ **measure how many of huron's 37 actually have it** before
   proposing a per-crop system that the data cannot feed.
-- ⭐⭐ **`orchard` is genuinely trees, planted in rows by a farmer.** It is not a crop shader and it is
-  not a park. It may belong to the ARBORIST — a placement pattern, not a surface — and that is a
-  different brief with a different owner. ⛔ **Do not absorb it. Ask.**
+- ✅ **`orchard` — ASKED AND RULED (Jacob, 2026-09-20).** It is a **placement pattern, not a surface**,
+  and it is not the Arborist's either: the Arborist is a species FACTORY. `orchard` is now its own LU
+  class carrying a **`planted`** policy row — `{ ground: 'planted', with: [...], pattern: 'grid' }` —
+  and ⛔ **nothing reads that spec yet.** There is a filter (`forbidden-surface.mjs`) where there
+  should also be a **generator**, and that generator is the unowned piece. ⛔ Still not yours to
+  absorb; it is now *named* rather than open. (`lu-policy.mjs`'s `plantingOf()` is the socket.)
 - **`meadow` vs `grassland` vs `grass`** — three tags, and it is not obvious they are three looks.
 - **Season.** Is the town's crop state authored, derived from the weather year, or fixed? ⛔ A
   seasonal field implies a seasonal tree canopy, and that is a much larger arc. **Do not open it.**
@@ -111,7 +118,7 @@ extension was not faithful.
 ## 8. Write/commit bounds
 **In bounds:** `grassMaterial.js` and a crop variant beside it · `BakedGround.jsx`'s face-kind tables
 · the new check.
-⛔ **OUT:** the LU vocabulary itself (`BRIEF-lu-vocabulary.md`, and it blocks you) · water
+⛔ **OUT:** the LU vocabulary itself (`cartograph/_archive/BRIEF-lu-vocabulary-2026-09-20.md`, and it blocks you) · water
 (`BRIEF-water-shader.md`) · the arborist's placement (`orchard`, see §6) · seasonality.
 ⛔ **LS's grass must come out UNCHANGED.** It is the control and the one surface an operator knows.
 ⛔ **SURFACE SCOPE DRIFT, DO NOT ABSORB IT.**
