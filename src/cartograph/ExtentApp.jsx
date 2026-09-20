@@ -29,6 +29,7 @@
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
+import { ZONE_PAD } from '../../cartograph/discSquare.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
@@ -375,24 +376,33 @@ function bboxAreaKm2(b) {
 }
 // Keep in sync with `MAX_FETCH_KM2` in cartograph/serve.js.
 const MAX_FETCH_KM2 = 200
-// How far past the neighborhood we pull, in METRES — a uniform ring of slack around
-// the boundary's outermost extent, whatever shape that boundary is.
+// The floor on the slack past the tint, in metres.
 //
-// Deliberately a distance, not a fraction. A percentage of a bbox pads the long axis
-// more than the short one (Księży Młyn at 100%: +910 m east-west but +795 m
-// north-south) and pads a RECTANGLE that has nothing to do with the boundary's
-// actual shape — which may be any number of corners, and is rarely square.
+// ⛔⛔ THE RATIONALE THAT STOOD HERE WAS WRONG, AND IT SURVIVED A DELIBERATE REVIEW.
+// It read: "deliberately a distance, not a fraction. A percentage of a bbox pads the
+// long axis more than the short one… and pads a RECTANGLE that has nothing to do with
+// the boundary's actual shape." That describes an INTERMEDIATE state. `padBbox` squares
+// about the centre one line later (`halfM = Math.max(hLatM, hLonM)`), so the object is
+// a SQUARE with the disc centred in it — and the long-axis argument is squared away
+// before it can apply. Worse, taking the max axis means the flat metre pad is not even
+// uniform in effect: the squaring dominates it. (Jacob, 2026-09-19: "your whole
+// rectangle reasoning was flawed; it's a square, with a centered circle.")
 //
-// Why it must be substantial: a gazetteer bbox ends exactly where the boundary
-// streets are, because those streets ARE the place's edge — Księży Młyn's NE corner
-// sits at lat 51.7614 against a place maxLat of 51.7615, on the line. The corner
-// resolver needs the junctions BEYOND them to close a ring at all, and the hood as
-// people describe it routinely exceeds the administrative area (the operator's own
-// ring was ~1.8x the official district). A kilometre of slack costs ~14 km² here:
-// 7% of the 200 km² cap, a fifth of what Altadena already fetches.
+// ⭐ The lesson is the one `EXCAVATION-DIARY §0.6` already names and I walked into
+// anyway, one commit after quoting it: "a code comment explaining WHY is evidence of a
+// past decision, not proof of a present constraint." I read this comment, judged its
+// argument sound, and left it — then said so as if the restraint were the discipline.
+// Checking the claim IS the discipline; declining to check is just deference.
 //
-// The real ceiling is not the cap — it's that `derive` processes the whole fetch
-// BEFORE clipping (`PIPELINE steps 0–1 (Extent + intake)`, still OPEN). Close that and this can grow.
+// So the pad is now a PERCENTAGE of the disc, per `EXTENT-DESIGN §3.3` — which is
+// exactly what that rule is about, since the operative relation is square-half-width
+// against circle-radius. This constant survives only as a FLOOR, because a gazetteer
+// bbox ends exactly where the boundary streets are (Księży Młyn's NE corner sits at
+// 51.7614 against a place maxLat of 51.7615, on the line) and the corner resolver needs
+// the junctions BEYOND them to close a ring at all.
+// ⚠️ The floor is a guess. `§0.4` says how to retire it: "a closing check — how much of
+// this did we end up using? — pares the bulk and turns the padding from a guessed
+// constant into a measured one." Not built.
 const FETCH_MARGIN_M = 1000
 
 // Shoelace area of a closed x/z ring, in hectares — the one number that tells an
@@ -423,18 +433,21 @@ function ringAreaHa(corners) {
 function padBbox(b, metres = FETCH_MARGIN_M) {
   const midLat = (b.minLat + b.maxLat) / 2
   const cosLat = Math.cos((midLat * Math.PI) / 180)
-  const dLat = metres / 111000
-  const dLon = metres / (111320 * cosLat)
-  const padded = {
-    minLat: b.minLat - dLat, maxLat: b.maxLat + dLat,
-    minLon: b.minLon - dLon, maxLon: b.maxLon + dLon,
-  }
-  // Square about the centre, in METRES — squaring in degrees would leave a lat/lon
-  // box that's square on paper and oblong on the ground everywhere but the equator.
-  const hLatM = ((padded.maxLat - padded.minLat) / 2) * 111000
-  const hLonM = ((padded.maxLon - padded.minLon) / 2) * 111320 * cosLat
-  const halfM = Math.max(hLatM, hLonM)
-  const midLon = (padded.minLon + padded.maxLon) / 2
+  // ⛔ NOT pad-the-sides-then-square. That was the first attempt and it does not reach
+  // the zone: the circumscribing radius is the DIAGONAL half-length, so padding each
+  // side by 25% of it and then taking the max half-AXIS lands at ~1.03x the radius
+  // where the zone wants 1.25x. Measured on Huron: 1.03 for the city ring, 0.96 for the
+  // ZIP box — i.e. the square did not even contain its own disc.
+  //
+  // The square is built DIRECTLY from the circle, which is what `§0.4` means by "the
+  // heavy pass squares because the disc is a circle and a circle cannot fit a rectangle
+  // narrower than its diameter", and what `cartograph/discSquare.mjs` does server-side.
+  // One derivation, both ends.
+  const hLat0 = ((b.maxLat - b.minLat) / 2) * 111000
+  const hLon0 = ((b.maxLon - b.minLon) / 2) * 111320 * cosLat
+  const circumM = Math.hypot(hLat0, hLon0)
+  const halfM = Math.max(circumM * (1 + ZONE_PAD), circumM + metres)
+  const midLon = (b.minLon + b.maxLon) / 2
   const halfLat = halfM / 111000
   const halfLon = halfM / (111320 * cosLat)
   return {
