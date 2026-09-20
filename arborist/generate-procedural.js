@@ -1,12 +1,10 @@
-// @scene-independent: NOT IN USE. Jacob, 2026-09-20: "we don't currently use procedural
-//   trees." Measured the same day — public/trees/index.json carries ZERO procedural entries,
-//   so nothing this generates reaches a pour. It is a parked tool, not a live writer.
-// ⚠️ IT IS NOT HARMLESS IF REVIVED. :1220 calls syncLookRoster('lafayette-square') with the
-//   Look HARDCODED, so publishing a variant writes into LS's design.json — the authoring SSoT
-//   — no matter which Look you were working in. ⛔ Reviving procedural means taking the Look
-//   from a flag FIRST; this exemption rests on the tool being parked and dies with that fact.
-//   ▶ Retirement candidate: 'currently' is Jacob's word, so it is parked, not dead — deleting
-//   1,200 lines is his call, not a sweep's (BRIEF-ls-bleed-excision).
+// @scene-independent: LOOK-KEYED, AND IT REFUSES ON THAT AXIS. Publishing writes variants into
+//   <look>/design.json, so the axis is --look; requireExplicitMap resolves the SCENE axis and
+//   would demand a value this tool never uses. `requireLookArg` (in main) exits 2 when --look
+//   is absent. ⛔ THAT REFUSAL REPLACED A HARDCODED `syncLookRoster('lafayette-square', …)`,
+//   which edited LS's authoring SSoT whichever Look you were in — ruled a Class C bleed by
+//   Jacob 2026-09-20 ("there is no reason for LS to be the fallback here EITHER"). If the
+//   refusal is ever removed this exemption is void and the bleed is back.
 /**
  * generate-procedural.js — v1 stopgap procedural tree generator.
  *
@@ -1171,9 +1169,37 @@ function parseCliFilter(argv) {
   return argv[i + 1]
 }
 
+
+// ⛔⛔ THE LOOK IS NAMED BY THE OPERATOR, NEVER DEFAULTED TO LAFAYETTE SQUARE.
+// This was `syncLookRoster('lafayette-square', …)` with the town typed into the source, so
+// publishing a variant wrote into LS's design.json — the authoring SSoT — whichever Look you
+// were actually working in. A Class C write: it does not show a wrong map, it edits a right one.
+// (BRIEF-ls-bleed-excision; Jacob 2026-09-20: "There is no reason for LS to be the fallback
+// here EITHER" · "all LS fallbacks are stupid and annoying and counterlogical.")
+//
+// ⭐ AND IT IS NOT PROTECTED BY "DON'T CALL THE OPERATOR'S AUTHORING A DEFECT". An authoring
+// gesture lives in DATA the operator edited; a hardcoded literal in a .js file is a DEVELOPER'S
+// DEFAULT. The test: could the operator have changed this without editing code? No ⇒ not
+// authoring ⇒ the standing no-fallback rule applies.
+function requireLookArg(argv, who) {
+  const i = argv.indexOf('--look')
+  const v = i !== -1 ? argv[i + 1] : null
+  if (v && !v.startsWith('--')) return v
+  console.error(`
+⛔ ${who} refuses to publish without an explicit Look.
+
+   Publishing adds the built variants to <look>/design.json — the AUTHORING SSoT.
+   Defaulting would edit another town's roster, most likely Lafayette Square's.
+
+     node arborist/${who}.js --look <id> [--species <id>]
+`)
+  process.exit(2)
+}
+
 async function main() {
   console.log('[generate-procedural] resurrecting pre-43c4aa3 ParkTrees algorithm')
 
+  const lookId = requireLookArg(process.argv, 'generate-procedural')
   const onlySpecies = parseCliFilter(process.argv)
   if (onlySpecies && !PRESETS[onlySpecies]) {
     console.error(`[generate-procedural] unknown --species ${onlySpecies}; valid: ${Object.keys(PRESETS).join(', ')}`)
@@ -1224,14 +1250,14 @@ async function main() {
     await patchManifestForFillTier(species)
   }
 
-  // Add published variants to the lafayette-square Look's roster.
+  // Add published variants to the ACTIVE Look's roster (see requireLookArg).
   const rosterSpecies = onlySpecies ? [onlySpecies] : Object.keys(PRESETS)
-  const added = await syncLookRoster('lafayette-square', rosterSpecies)
-  console.log(`\n[generate-procedural] roster: added ${added} variant(s) to lafayette-square/design.json`)
+  const added = await syncLookRoster(lookId, rosterSpecies)
+  console.log(`\n[generate-procedural] roster: added ${added} variant(s) to ${lookId}/design.json`)
 
   console.log('\n[generate-procedural] done. Next:')
-  console.log('  node arborist/bake-look.js  --look lafayette-square')
-  console.log('  node arborist/bake-trees.js --scene lafayette-square')
+  console.log(`  node arborist/bake-look.js  --look ${lookId}`)
+  console.log(`  node arborist/bake-trees.js --scene ${lookId}`)
 }
 
 // Only run the publish pipeline when invoked as a script. Importing the

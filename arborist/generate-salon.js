@@ -1,14 +1,11 @@
 #!/usr/bin/env node
-// @scene-independent: THE SALON PUBLISHES INTO LS BY DESIGN, and that decision is declared
-//   elsewhere in this directory rather than invented here: serve.js's publish route says
-//   "LS-only by design (the Salon publishes into LS's census)" and names the scene through
-//   treeBakeInputsForMap(DEFAULT_MAP) so the axis is explicit. :1941's
-//   syncLookRoster('lafayette-square') is the roster half of that same decision. LS is the
-//   reference Look the library is composed against; this is not a town being guessed.
-// ⚠️ syncLookRoster is DUPLICATED — :1831 here, :975 in generate-procedural.js, with :1800
-//   pointing at the original. Two copies of a function that hardcodes a town is how the
-//   second one drifts. ⛔ If the Salon ever publishes per-Look, both copies move together,
-//   and this exemption is void.
+// @scene-independent: LOOK-KEYED, AND IT REFUSES ON THAT AXIS. Publishing writes variants into
+//   <look>/design.json, so the axis is --look; requireExplicitMap resolves the SCENE axis and
+//   would demand a value this tool never uses. `requireLookArg` (in main) exits 2 when --look
+//   is absent. ⛔ THAT REFUSAL REPLACED A HARDCODED `syncLookRoster('lafayette-square', …)`,
+//   which edited LS's authoring SSoT whichever Look you were in — ruled a Class C bleed by
+//   Jacob 2026-09-20 ("there is no reason for LS to be the fallback here EITHER"). If the
+//   refusal is ever removed this exemption is void and the bleed is back.
 /**
  * generate-salon.js — Salon composition generator (Brief 1, baby Sequoia, 2026-05-21).
  *
@@ -1895,9 +1892,37 @@ function parseCliFilter(argv) {
   return argv[i + 1]
 }
 
+
+// ⛔⛔ THE LOOK IS NAMED BY THE OPERATOR, NEVER DEFAULTED TO LAFAYETTE SQUARE.
+// This was `syncLookRoster('lafayette-square', …)` with the town typed into the source, so
+// publishing a variant wrote into LS's design.json — the authoring SSoT — whichever Look you
+// were actually working in. A Class C write: it does not show a wrong map, it edits a right one.
+// (BRIEF-ls-bleed-excision; Jacob 2026-09-20: "There is no reason for LS to be the fallback
+// here EITHER" · "all LS fallbacks are stupid and annoying and counterlogical.")
+//
+// ⭐ AND IT IS NOT PROTECTED BY "DON'T CALL THE OPERATOR'S AUTHORING A DEFECT". An authoring
+// gesture lives in DATA the operator edited; a hardcoded literal in a .js file is a DEVELOPER'S
+// DEFAULT. The test: could the operator have changed this without editing code? No ⇒ not
+// authoring ⇒ the standing no-fallback rule applies.
+function requireLookArg(argv, who) {
+  const i = argv.indexOf('--look')
+  const v = i !== -1 ? argv[i + 1] : null
+  if (v && !v.startsWith('--')) return v
+  console.error(`
+⛔ ${who} refuses to publish without an explicit Look.
+
+   Publishing adds the built variants to <look>/design.json — the AUTHORING SSoT.
+   Defaulting would edit another town's roster, most likely Lafayette Square's.
+
+     node arborist/${who}.js --look <id> [--species <id>]
+`)
+  process.exit(2)
+}
+
 async function main() {
   console.log('[generate-salon] composition-based publish (Brief 1, Sequoia)')
 
+  const lookId = requireLookArg(process.argv, 'generate-salon')
   const onlySpecies = parseCliFilter(process.argv)
   const allSpecies = await listSalonSpecies()
   const speciesToBuild = onlySpecies
@@ -1940,20 +1965,20 @@ async function main() {
     await patchManifestForSalon(sp.speciesId, ready)
   }
 
-  // Add published variants to the lafayette-square Look's roster (same
-  // idempotent pattern as generate-procedural). Surfaced in Brief 1 as a
-  // Salon-side gap; addressed here as a Brief 1.5a side-fix because
-  // bark-knob acceptance testing requires the tree to actually appear in
-  // LS placements after Grove bake.
+  // Add published variants to the ACTIVE Look's roster (same idempotent pattern as
+  // generate-procedural; see requireLookArg for why the town is never defaulted).
+  // Surfaced in Brief 1 as a Salon-side gap; addressed here as a Brief 1.5a side-fix
+  // because bark-knob acceptance testing requires the tree to actually appear in that
+  // look's placements after Grove bake.
   const rosterSpecies = onlySpecies
     ? [onlySpecies]
     : speciesToBuild.map(s => s.speciesId)
-  const added = await syncLookRoster('lafayette-square', rosterSpecies)
-  console.log(`[generate-salon] roster: added ${added} variant(s) to lafayette-square/design.json`)
+  const added = await syncLookRoster(lookId, rosterSpecies)
+  console.log(`[generate-salon] roster: added ${added} variant(s) to ${lookId}/design.json`)
 
   console.log('\n[generate-salon] done. Next:')
-  console.log('  node arborist/bake-look.js  --look lafayette-square')
-  console.log('  node arborist/bake-trees.js --scene lafayette-square')
+  console.log(`  node arborist/bake-look.js  --look ${lookId}`)
+  console.log(`  node arborist/bake-trees.js --scene ${lookId}`)
 }
 
 const invokedAsScript = (() => {

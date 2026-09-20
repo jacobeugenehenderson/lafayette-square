@@ -39,6 +39,20 @@
 //   M4  an unguarded scene-keyed writer in arborist/  → FAILS   (the roster really is repo-wide)
 //   M5  an unguarded writer with no scene signal      → OUT OF DOMAIN, not a failure
 //
+// ⛔⛔ AND TWO FALSE RESULTS OF ITS OWN, BOTH FOUND BY OPENING THE FILE THE CHECK HAD JUST
+// JUDGED RATHER THAN BELIEVING THE VERDICT (2026-09-20). Neither was a mutation; both were live:
+//   F1  FALSE POSITIVE — it accused `arborist/selection.mjs`, a module with ZERO write calls.
+//       The import graph was static-only and arborist reaches it by `await import()`.
+//   F2  FALSE NEGATIVE, AND IT HID THE FILE THIS WIDENING EXISTS FOR. Fixing F1 put
+//       bake-trees.js into `importedBy`, and the main-guard test then called it imported-only
+//       and DROPPED IT FROM THE GATE. The test matched two spellings; bake-trees:1359 writes
+//       the guard the other way round. ⭐ THE CHECK WAS ONE COMMIT FROM GOING GREEN ON THE ONE
+//       DESTRUCTIVE WRITER IT WAS BUILT TO CATCH, in a way that would have looked like success.
+// ⭐⭐ WHAT GENERALISED IT — the reusable half: TEST FOR THE SHAPE, NOT THE SPELLING. A module
+// that reaches for BOTH `process.argv[1]` and its own `import.meta.url`, in any order, through
+// any wrapper, is deciding whether it was run. That rewrite also surfaced two more writers the
+// narrow test had been hiding all along, which is how you know it generalised instead of patched.
+//
 // ⚠️ THE ROSTER IS TRACKED FILES, SO A BRAND-NEW WRITER IS INVISIBLE UNTIL IT IS `git add`ed.
 // Found while mutation-testing: M4 and M5 were ignored entirely until `git add --intent-to-add`,
 // because `git ls-files` does not list untracked paths. Correct for a gate that runs on committed
