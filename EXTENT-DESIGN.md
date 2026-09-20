@@ -430,8 +430,13 @@ never the night before a demo).
    the option emitted the LISTING id (`lmk-*`) where the resolver keys on the SLAB id, so every landmark
    hero framed `FALLBACK_HERO_SUBJECT` **in every town including LS**. ⛔ **So "this step is only
    decoupling" is itself too broad a claim: it is true of the three RIBBONS imports, measured; the other
-   artifacts have to be measured one at a time.** Five of the eight are scene-gated (ribbons ×3, lamps ×2);
-   `LafayettePark`'s two are UNMEASURED.
+   artifacts have to be measured one at a time.** ✅ **ALL SEVEN REMAINING ARE NOW MEASURED SCENE-GATED**
+   (2026-09-20): ribbons ×3 and lamps ×2 as recorded, and `LafayettePark`'s two resolved — **every
+   consumer of that file is LS-gated**, so its `ribbons`/`park-feature-elev` imports are inert ballast
+   on a non-LS look, not a Class B read. Read the gates: `LafayettePark.jsx:885` and its `ParkTitle`
+   export `:871` both `return null` unless `INSTANCE.lookId === 'lafayette-square'`, and the one
+   ungated export (`ParkTitleMesh`) is mounted behind `isLS &&` at `MapLayers.jsx:1028`.
+   ⇒ **Step 4 is decoupling and bundle weight across the board; no bleed remains in it.**
    ⛔ **Was: *"closes the bleed class at the root."* MEASURED FALSE 2026-09-19** — the three
    authoring-app ribbons imports are scene-gated and a non-LS scene gets EMPTY (§2.1 has the gates).
    The live bleed was `measureModel.js`, excised at `08d61ce1`. ⇒ **this step buys decoupling and
