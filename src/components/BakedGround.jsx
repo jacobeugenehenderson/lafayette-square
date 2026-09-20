@@ -110,19 +110,29 @@ function isGroupVisible(group, layerVis) {
   return layerVis[layerId] !== false
 }
 
-// The radial-fade band for a group. ⭐ THERE IS ONE BAND, for every kind.
+// A slab whose manifest still carries `streetFade` was baked under the INWARD,
+// two-schedule model and must be read by that model's rules. ⛔ Detected by the
+// field, not by a version number, because the field IS the schema.
+const isLegacyStencil = (stencil) => !!stencil?.streetFade
+
+// The radial-fade band for a group. ⭐ THERE IS ONE BAND, for every kind — on a slab
+// baked since 2026-09-20.
 //
-// ⛔ This read `group.kind === 'face' ? stencil.fade : stencil.streetFade` — faces
-// on the inner band, ribbons on a wider one so streets trailed past the dissolved
-// blocks. That line WAS the two-schedule regime, in the runtime: proof the split was
-// shipped behaviour rather than stale data. Collapsed deliberately 2026-09-20 —
-// "the street fade should be SSoT, 0 reason to add more and more layers where we
-// have a hard and fast rule" — and the trailing look is gone WITH it, on purpose.
-// A scene that still carries a `streetFade` in an old baked manifest is ignored
-// here; re-bake to drop it.
+// ⛔⛔ AND A LEGACY SLAB IS NOT READ BY THE NEW RULES. This is the trap that failed
+// the first eye gate. The line here used to be `group.kind === 'face' ? stencil.fade
+// : stencil.streetFade` — faces on the inner band, ribbons on a wider one that
+// TRAILED PAST the rim and was the only thing softening the edge. Collapsing both
+// onto `stencil.fade` is right for a new bake; applied to an OLD manifest, whose
+// `fade` runs INWARD and reaches alpha 0 exactly AT the radius, it makes every
+// population die at the rim in lockstep — a crisp circle, harder than before the
+// change. ⭐ A v1 artifact gets v1 rules. That is schema compatibility, not a
+// fallback: the alternative is silently rendering an artifact under a model it was
+// not written for, which is how this shipped looking plausible and wrong.
 function fadeForGroup(group, stencil) {
   if (!stencil) return null
-  const band = stencil.fade
+  const band = isLegacyStencil(stencil)
+    ? (group.kind === 'face' ? stencil.fade : stencil.streetFade)   // v1: two bands, inward
+    : stencil.fade                                                   // v2: one band, additive
   if (!band) return null
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }
@@ -130,6 +140,20 @@ function fadeForGroup(group, stencil) {
 function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   const layerVis = scene?.layerVis
   const stencil = manifest.stencil || null
+  // ⛔ LOUD, not silent. A stale slab renders its OWN model correctly (above) but it
+  // does NOT show the scene's authored fade, so the operator is looking at a picture
+  // that cannot reflect the current record. Silence here is the defect — the whole
+  // point of the fade arc is that a plausible-looking success is the worst outcome.
+  useEffect(() => {
+    if (!isLegacyStencil(stencil)) return
+    console.error(
+      `[BakedGround] ⛔ STALE SLAB for '${scene?.id ?? scene?.name ?? 'scene'}': this bake predates the ` +
+      `2026-09-20 fade ruling (its manifest still carries streetFade ` +
+      `${stencil.streetFade.inner}/${stencil.streetFade.outer} and an INWARD fade ` +
+      `${stencil.fade.inner}/${stencil.fade.outer}). It is being rendered under the OLD two-band ` +
+      `model so it looks the way it was baked — it is NOT showing the scene's current fadeBand. ` +
+      `▶ re-bake this look to pick up the additive fade. ▶ node checks/claims-no-slab-outlives-its-schema.mjs`)
+  }, [stencil, scene])
   // Cache-bust the lightmap URL with the same `?t=` token used for ground.json /
   // ground.bin. useLoader caches THREE.TextureLoader results by URL across
   // mounts, so without this query param a re-bake leaves the OLD AO texture
