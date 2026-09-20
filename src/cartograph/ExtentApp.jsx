@@ -304,16 +304,17 @@ function ExtentHintRing({ corners }) {
     return sh
   }, [corners])
   if (!shape) return null
-  const rim = corners.map(c => [c.x, 3, c.z])
-  rim.push([corners[0].x, 3, corners[0].z])
   return (
     <group>
       <mesh position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={6}>
         <shapeGeometry args={[shape]} />
-        <meshBasicMaterial color="#b39ddb" transparent opacity={0.15} depthWrite={false} />
+        <meshBasicMaterial color="#a855f7" transparent opacity={0.34} depthWrite={false} />
       </mesh>
-      <Line points={rim} color="#b39ddb" lineWidth={1.6} dashed dashSize={26} gapSize={18}
-        transparent opacity={0.8} />
+      {/* ⛔ NO RIM. A stroked edge reads as an authored boundary no matter what colour it
+          is — and a thick one hides the map underneath, which is the one thing a hint
+          must never do. The tint alone carries it: you can see where the published line
+          runs AND see straight through it. (Jacob, 2026-09-19: "a color instead of a
+          line", then "the thick edge makes it hard to see what's going on".) */}
     </group>
   )
 }
@@ -2188,9 +2189,23 @@ export default function ExtentApp() {
               {/* Radius — the slab disc, auto-fit to the kept buildings; pull it out
                   for padding (or in to coarsely trim outer rings). */}
               {(keptFit.radius > 0 || (committed && committedRadius > 0)) && (() => {
-                const base = keptFit.radius || committedRadius
-                const rMin = Math.max(150, Math.round(base * 0.3))
-                const rMax = Math.max(base * 2.5, 1500)
+                // ⛔⛔ THE SLIDER'S RANGE IS BOUNDED BY THE FETCH, NEVER BY THE KEPT SET.
+                // It used to be `base = keptFit.radius` — which `loopExcluded` feeds — so
+                // drawing or dragging an exclusion loop dropped distant buildings, collapsed
+                // keptFit, collapsed rMax, and an <input type=range> whose value exceeds its
+                // max CLAMPS: the operator moved a loop and watched the radius fall with it.
+                // (Jacob, 2026-09-19: "they're different things and shouldn't even be aware
+                // of each other.") The disc is what we DRAW; membership is what is IN. The
+                // only real ceiling on the disc is the envelope we actually fetched.
+                const halfW = geo?.bbox
+                  ? Math.min(
+                      ((geo.bbox.maxLon - geo.bbox.minLon) / 2) * geo.lonToMeters,
+                      ((geo.bbox.maxLat - geo.bbox.minLat) / 2) * geo.latToMeters)
+                  : 0
+                const rMin = 150
+                // Never below the value already held, so a hydrated or authored radius can
+                // never be silently clamped by a range that moved beneath it.
+                const rMax = Math.max(halfW || 1500, radiusM, 1500)
                 return (
                 <div className="carto-row carto-row--wrap" style={{ marginTop: 10 }}>
                   <span className="carto-label" style={{ cursor: 'default' }}>Radius</span>
