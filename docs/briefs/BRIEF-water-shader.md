@@ -146,6 +146,65 @@ whether water needs an LU class or is correctly drawn by another path. ⛔ **Est
 you wire anything** — if water is drawn by its own path today, attaching to LU would be a second
 producer, and this project already has too many.
 
+## 6c. ⛔⛔ THIRD CORRECTION — `bake-ground` SKIPS WATER ENTIRELY, BY DESIGN, FOR AN LS REASON
+
+`cartograph/bake-ground.js:825-826`, verbatim:
+```js
+// natural subtypes — water is owned by park_water.json, skip it here.
+const NATURAL_KEYS = new Set(['wood', 'scrub', 'tree_row'])
+```
+And `:788` says what owns it: `src/data/<scene>/park_water.json`.
+⇒ ⭐⭐ **WATER IS MODELLED AS A PARK FEATURE, NOT AS TERRAIN.** LS's water IS a park pond, so that was
+true for LS and is false for a town whose water is a Great Lake. **huron has no `park_water.json` and
+therefore no water in the Slab and no path to get it there.**
+
+**MEASURED on the completed huron slab, 2026-09-20:** `ground.json` carries **34 groups** — 11 face,
+23 mat, including the new `agricultural` and `cemetery` — and ⛔ **no `water` group of any kind.**
+
+⇒ **THIS IS THE THIRD LAYER OF ONE GAP**, and none of the three is a shader problem:
+| # | layer | finding |
+|---|---|---|
+| ① | LU vocabulary | `natural:water` needs NO LU class — it has a producer, a second would be the bug ✅ correct |
+| ② | producer coverage | reaches the COAST, not inland ponds — **40 bodies on huron, drawn by nothing** |
+| ③ | **the ground bake** | **skips water outright**, because an LS-shaped file owns it |
+⛔ **§3–§5 of this brief assume water arrives and wants a better material. For huron it never arrives.**
+
+## 6d. ⭐⭐ WATER IS A DATUM, NOT A DRAPED SURFACE — and this corrects the coordinator, not the code
+
+> **Jacob, 2026-09-20, correcting this seat mid-diagnosis: *"But it makes sense that water would be at 0."***
+
+He is right, and the measurement proves it more neatly than the argument: **huron's `terrain.json`
+records `baseElev = 173.24 m`, and Lake Erie's surface is ~173.5 m.** `bake-terrain` normalizes to
+local-min = 0 — ⭐ **and on a lakeshore town the local minimum IS THE LAKE.**
+
+⇒ **Water at y = 0 is not an object awaiting a lift. It is the datum everything else is measured from.**
+| population | how it meets the ground | |
+|---|---|---|
+| buildings | **seated** per building — `centroidY` sampled at the footprint | ✓ |
+| paths · stripes · curbs | **draped** per vertex | ✓ |
+| **water** | ⛔ **NEITHER. A LEVEL SURFACE at one elevation, everywhere.** | **Lake Erie does not follow the ground; the ground rises out of it.** |
+
+⛔ **The coordinator was about to write "water must be seated like the buildings." That would have
+been wrong and it would have produced a lake that undulates.** Recorded because the next reader will
+have the same instinct — everything else on the surface needed lifting that day, and water did not.
+
+### ⭐⭐⭐ AND IT HANDS §5 ITS SHORELINE FOR FREE — BUT NOT ITS DEPTH
+**THE WATERLINE IS WHERE THE TERRAIN CROSSES y = 0.** Not a polygon to fetch, not a ring to walk —
+a contour of a field we already bake. ⇒ §5's *"can a signed distance-to-shore be produced"* has a
+better answer than the 1,899-point ring: **the shore is a level-set of the heightfield**, and it is
+correct even where the OSM ring is clipped by the fetch envelope. ⭐ **That also disposes of §5's
+worst trap — "a beach in the middle of Lake Erie" — because the envelope edge is not a zero crossing.**
+
+⚠️ **BUT DEPTH IS STILL NOT AVAILABLE, AND NOW WE KNOW WHY.** Measured: only **16.3%** of huron's
+2,064,969 terrain samples lie within 0.5 m of zero, against a lake that is **35.5% of the disc.**
+⇒ **The USGS DEM CLAMPS the water body rather than sounding it. There is no bathymetry in the source.**
+⭐ So the honest split, and it should shape the whole build:
+- **shoreline falloff — AVAILABLE AND FREE.** Build it.
+- **true depth-driven subsurface scattering — NOT AVAILABLE.** Any depth ramp would be **fabricated
+  from distance-from-shore**, which is a LOOK, not a measurement. ⛔ **Fabricate it if Jacob wants the
+  effect — but say in the code that it is fabricated.** A plausible depth that is not depth is this
+  project's signature defect.
+
 ## 7. ⛔ Can the instrument SEE the change?
 
 ⚠️⚠️ **MOSTLY NOT, AND SAY SO RATHER THAN FAKING IT.** This is a LOOK. There is no assertion that
