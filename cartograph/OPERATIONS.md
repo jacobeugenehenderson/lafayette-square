@@ -185,6 +185,7 @@ The pool is **baked into the ground** (contour-correct), so its *shape* is a bak
 
 - **Arch placement** (non-TOD) — the Gateway Arch's **Distance**, **Scale**, **Rotation**, **Y-offset**, and **Foot-fade** (where the legs dissolve into the ground). *(The arch **uplights** moved to the Light Sources card 2026-06-30.)*
 - **Horizon** (non-TOD) — the horizon disc: **Radius**, **Fade-inner**, **Fade-outer** (how the ground plane dissolves into the far sky).
+- ⭐ **The Hero subject picker offers THIS town's own landmarks** *(2026-09-19)*. Survey ▸ Hero lists: the **Neighborhood Centroid** (always — the answer for any installation with no set-piece), the **Gateway Arch** only if this Look installed an `arch` channel, a **backdrop** only if this Look has a baked landscape, and **this installation's own listings**. ⛔ It used to list **Lafayette Square's 87 businesses in every town** — Square One Brewery, in Huron. ⚠️ **A town with no content of its own offers no landmarks**, which is correct: the centroid is the answer, never another town's building. *(A town whose listings exist but aren't reachable yet needs a manifest entry — `src/data/loadInstanceData.js`.)*
 
 ### Camera / Shots
 

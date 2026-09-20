@@ -365,6 +365,13 @@
       ]
     },
     {
+      "file": "checks/claims-hero-subject-resolves-in-its-own-slab.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-leaf-pack-cells-agree.mjs",
       "tier": "safe",
       "why": [

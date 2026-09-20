@@ -423,6 +423,15 @@ never the night before a demo).
    (§2, already built). These make conforming *provable*, not hopeful.
 4. **Retire the `src/data/*` name-imports** → per-scene served path (§2.1 — ⛔ count them under a
    STATED RULE, don't quote a figure). Each import is independent — land smallest first.
+   ⏳ **IN PROGRESS 2026-09-19 — 1 of 8 static imports retired** (`SurveyorPanel`'s `landmarks`, via the
+   `loadInstanceData` seam). ▶ count the rest: `node checks/claims-hero-subject-resolves-in-its-own-slab.mjs`
+   gates the one that landed. ⭐⭐ **AND THE SWEEP FOUND A LIVE BLEED THE RIBBONS MEASUREMENT DID NOT
+   PREDICT** — the retired import was feeding **LS's 87 businesses into every town's Hero picker**, and
+   the option emitted the LISTING id (`lmk-*`) where the resolver keys on the SLAB id, so every landmark
+   hero framed `FALLBACK_HERO_SUBJECT` **in every town including LS**. ⛔ **So "this step is only
+   decoupling" is itself too broad a claim: it is true of the three RIBBONS imports, measured; the other
+   artifacts have to be measured one at a time.** Five of the eight are scene-gated (ribbons ×3, lamps ×2);
+   `LafayettePark`'s two are UNMEASURED.
    ⛔ **Was: *"closes the bleed class at the root."* MEASURED FALSE 2026-09-19** — the three
    authoring-app ribbons imports are scene-gated and a non-LS scene gets EMPTY (§2.1 has the gates).
    The live bleed was `measureModel.js`, excised at `08d61ce1`. ⇒ **this step buys decoupling and

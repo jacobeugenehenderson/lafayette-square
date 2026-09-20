@@ -69,7 +69,26 @@ const MANIFESTS = {
     // loadInstanceData returns null and consumers guard (empty events, no facade
     // photo, streets stat 0). Park/labels/lamps are LS-guarded off for non-LS looks.
   },
+
+  // Installations #3/#4 — `landmarks` only, because that is all that has been
+  // verified. Each town's listings carry a `building_id` that resolves in ITS OWN
+  // slab (checked against public/baked/<scene>/buildings.json: huron 36/36,
+  // altadena 23/23). ⛔ Do not add `buildings`/`menus` here on the assumption the
+  // files are equivalent — roster.json exists for both and its consumers were not
+  // measured. Add an entry when you have checked the thing that reads it.
+  huron: {
+    landmarks: () => import('../../cartograph/data/huron/content/listings.json'),
+  },
+  altadena: {
+    landmarks: () => import('../../cartograph/data/altadena/content/listings.json'),
+  },
 }
+
+// ⚠️ MANIFESTS IS A HARDCODED PER-LOOK REGISTRY, so town #5 needs a CODE EDIT
+// before its own content is reachable — the same shape as A12's instance
+// registry. Not fixed here: the failure is loud and correct (a missing entry
+// warns and resolves to null, and consumers offer nothing rather than another
+// town's data), so it is a portability limit, not a bleed. Filed, not patched.
 
 // Different installations wrap their content differently (LS: `{landmarks}` / flat
 // menus; HPDM §5.1.1: `{meta,listings}` / `{meta,menus}`). Unwrap to the reader's
