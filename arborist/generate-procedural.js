@@ -1,3 +1,12 @@
+// @scene-independent: NOT IN USE. Jacob, 2026-09-20: "we don't currently use procedural
+//   trees." Measured the same day — public/trees/index.json carries ZERO procedural entries,
+//   so nothing this generates reaches a pour. It is a parked tool, not a live writer.
+// ⚠️ IT IS NOT HARMLESS IF REVIVED. :1220 calls syncLookRoster('lafayette-square') with the
+//   Look HARDCODED, so publishing a variant writes into LS's design.json — the authoring SSoT
+//   — no matter which Look you were working in. ⛔ Reviving procedural means taking the Look
+//   from a flag FIRST; this exemption rests on the tool being parked and dies with that fact.
+//   ▶ Retirement candidate: 'currently' is Jacob's word, so it is parked, not dead — deleting
+//   1,200 lines is his call, not a sweep's (BRIEF-ls-bleed-excision).
 /**
  * generate-procedural.js — v1 stopgap procedural tree generator.
  *

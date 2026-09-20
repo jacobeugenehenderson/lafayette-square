@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+// @scene-independent: THE ARBORIST DEV SERVER. It must BOOT without a scene — it serves the
+//   species library (public/trees/, global by design: species do not change because the town
+//   does) and resolves the neighbourhood PER REQUEST from the Look being operated on.
+//   Requiring a scene at startup would make it unstartable, the same reasoning
+//   cartograph/serve.js carries for itself.
+// ⚠️ THIS EXEMPTION COVERS THE BOOT, NOT EVERY ROUTE. Two known LS defaults live inside and
+//   are NOT excused by it — they are tracked as BRIEF-ls-bleed-excision site 17
+//   (:1107, a routing write falling back to LS when ?look= is absent) and the /inventory read
+//   that is hardcoded to LS's census. An exemption is a statement about the entry point; it
+//   must never become cover for what the file does once running.
 /**
  * Arborist backend.
  *

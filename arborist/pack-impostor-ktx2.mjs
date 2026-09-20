@@ -1,3 +1,9 @@
+// @scene-independent: LOOK-KEYED, AND IT NOW REFUSES ON THAT AXIS. Everything it writes is
+//   public/baked/<look>/ — the impostor textures and trees-atlas.json — so requireExplicitMap,
+//   which resolves the SCENE axis, is the wrong guard and would demand a value this tool has
+//   no use for. It enforces naming on the axis it has: --look is required and its absence
+//   exits 2 (see below). ⛔ That refusal REPLACED a `|| '--look=lafayette-square'` default
+//   that silently repacked LS's slab, so if it is ever removed this exemption is void.
 /**
  * pack-impostor-ktx2.mjs — the KTX2/Basis fold-in at slab-packing that three code
  * comments have promised for months (OverheadBaker.jsx:70, HeroImpostorBaker.jsx:60,
@@ -41,7 +47,25 @@ import path from 'node:path'
 const ROOT = path.join(import.meta.dirname, '..')
 const args = process.argv.slice(2)
 const CHECK = args.includes('--check')
-const look = (args.find(a => a.startsWith('--look=')) || '--look=lafayette-square').split('=')[1]
+// ⛔⛔ NO DEFAULT LOOK. This was `|| '--look=lafayette-square'`, so a run that forgot the flag
+// silently repacked LAFAYETTE SQUARE's impostor atlas and rewrote its trees-atlas.json — the
+// operator's own town, under whatever name they thought they had typed. A writer may not choose
+// the town for you (`CLAUDE.md` Layer 0 q2 — no fallbacks; BRIEF-ls-bleed-excision, Class C).
+// ⚠️ Look-keyed, not scene-keyed: everything here is `public/baked/<look>/`, so the flag is
+// --look and `requireExplicitMap` (which resolves the SCENE axis) is the wrong guard.
+const lookArg = args.find(a => a.startsWith('--look='))
+if (!lookArg) {
+  console.error(`⛔ pack-impostor-ktx2 refuses to run without an explicit Look.
+
+   It REWRITES public/baked/<look>/trees-atlas.json and its impostor textures, so
+   defaulting would silently repack another Look's slab — most likely Lafayette Square's.
+
+     node arborist/pack-impostor-ktx2.mjs --look=<id> [--check]
+`)
+  process.exit(2)
+}
+const look = lookArg.split('=')[1]
+if (!look) { console.error('⛔ pack-impostor-ktx2: --look= was given with no value.'); process.exit(2) }
 
 const LOOK_DIR = path.join(ROOT, 'public/baked', look)
 const ATLAS = path.join(LOOK_DIR, 'trees-atlas.json')

@@ -43,7 +43,7 @@ import { promises as fs } from 'node:fs'
 import { readFileSync, existsSync } from 'node:fs'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
 import { makeMembership } from '../cartograph/neighborhood-membership.mjs'
-import { DEFAULT_MAP } from '../cartograph/config.js'
+import { DEFAULT_MAP, requireExplicitMap } from '../cartograph/config.js'
 import { resolveSpecies } from './vocabulary.mjs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -1359,6 +1359,18 @@ export async function bakeTrees({
 const isDirect = process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 if (isDirect) {
   const args = parseArgs()
+  // ⛔⛔ NAME THE TOWN. `bakeTrees` defaults `scene = DEFAULT_MAP`, and `outPath` defaults to
+  // `public/baked/<scene>/trees.json` — so `node arborist/bake-trees.js` with no --scene did not
+  // merely bake the wrong town, it OVERWROTE LAFAYETTE SQUARE'S trees.json. And it overwrote it
+  // with garbage: `resolved` below is `{}` when args.scene is absent, so the bake ran with no
+  // census, no species map, no allow-zone and no boundary, and the empty-census branch WARNS AND
+  // PROCEEDS rather than throwing (BRIEF-ls-bleed-excision site 16, Class C).
+  // ⭐ The guard is here at the CLI and NOT inside `bakeTrees`, because the exported function has
+  // legitimate programmatic callers that name the scene themselves (serve.js's Salon publish and
+  // variant re-bake both pass it explicitly through `treeBakeInputsForMap`).
+  // ⚠️ This is `cartograph/scene.js`'s resolver, reached across the directory line: ONE resolver
+  // for the whole repo, reading --scene= and CARTOGRAPH_SCENE both. Do not add a second.
+  requireExplicitMap('bake-trees.js (writes public/baked/<scene>/trees.json)')
   // ⭐ The CLI resolves its scene inputs through the SAME resolver the Cartograph
   // pour and the Grove's Bake→Slab use — census wells, species routing, the
   // forbidden map, the frozen shape (the allow-zone) and the boundary. It used to

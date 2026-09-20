@@ -25,13 +25,23 @@ import { existsSync, readFileSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeZoneTester } from '../cartograph/forbidden-surface.mjs'
+import { requireExplicitMap } from '../cartograph/scene.js'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const REPO = path.resolve(__dirname, '..')
-const SCENE = process.env.CARTOGRAPH_SCENE || 'lafayette-square'
-if (!SCENE) {
-  console.error('Set CARTOGRAPH_SCENE to a poured scene.'); process.exit(1)
-}
+// ⛔⛔ THE REFUSAL BELOW USED TO BE DEAD CODE, AND THAT IS THE WHOLE DEFECT.
+// It read `const SCENE = process.env.CARTOGRAPH_SCENE || 'lafayette-square'` and then
+// `if (!SCENE) { …exit(1) }` — but SCENE could never be empty, because the line above had just
+// defaulted it. So the guard could not fire, and a run with no CARTOGRAPH_SCENE wrote
+// `cartograph/data/lafayette-square/clean/derived_trees.json`: LS's census, silently replaced
+// with another town's canopy fill. ⭐ A refusal sitting directly above the write it was meant to
+// prevent, passing every reading because the code LOOKS guarded.
+// (BRIEF-ls-bleed-excision, Class C — `CLAUDE.md` Layer 0 q2: the fallback is the defect, and a
+// guard that cannot fire is worse than none, because it stops anyone looking.)
+// ⭐ ONE RESOLVER, not a hand-rolled second one. requireExplicitMap reads BOTH channels
+//   (--scene= and CARTOGRAPH_SCENE) and prints the corrected command, so this script refuses
+//   exactly the way every cartograph writer does instead of inventing its own dialect.
+const SCENE = requireExplicitMap('17-fill-canopy-trees.mjs (writes data/<scene>/clean/derived_trees.json)')
 const dir = path.join(REPO, 'cartograph', 'data', SCENE)
 
 // ── Tunables (the density dials) ────────────────────────────────────────────

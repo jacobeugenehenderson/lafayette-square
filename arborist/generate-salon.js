@@ -1,4 +1,14 @@
 #!/usr/bin/env node
+// @scene-independent: THE SALON PUBLISHES INTO LS BY DESIGN, and that decision is declared
+//   elsewhere in this directory rather than invented here: serve.js's publish route says
+//   "LS-only by design (the Salon publishes into LS's census)" and names the scene through
+//   treeBakeInputsForMap(DEFAULT_MAP) so the axis is explicit. :1941's
+//   syncLookRoster('lafayette-square') is the roster half of that same decision. LS is the
+//   reference Look the library is composed against; this is not a town being guessed.
+// ⚠️ syncLookRoster is DUPLICATED — :1831 here, :975 in generate-procedural.js, with :1800
+//   pointing at the original. Two copies of a function that hardcodes a town is how the
+//   second one drifts. ⛔ If the Salon ever publishes per-Look, both copies move together,
+//   and this exemption is void.
 /**
  * generate-salon.js — Salon composition generator (Brief 1, baby Sequoia, 2026-05-21).
  *

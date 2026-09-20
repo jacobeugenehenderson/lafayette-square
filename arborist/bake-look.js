@@ -1,3 +1,9 @@
+// @scene-independent: LOOK-KEYED, AND IT ALREADY REFUSES. Everything it writes is
+//   public/baked/<look>/ — the atlas PNGs and trees-atlas.json — and it touches no
+//   data/<scene>/ path, so requireExplicitMap (which resolves the SCENE axis) is the wrong
+//   guard. It enforces its own naming on the axis it actually has: :1541 exits 2 when --look
+//   is absent, printing the usage. Verified 2026-09-20; if that refusal is ever removed this
+//   exemption is void, because then it WOULD default someone's Look.
 /**
  * bake-look.js — per-Look tree atlas pipeline.
  *
