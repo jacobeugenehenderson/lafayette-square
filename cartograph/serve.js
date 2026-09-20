@@ -552,13 +552,56 @@ function countJson(p) {
 // named neighborhood) ALSO returns that polygon as the best-guess extent (§0.0):
 // Altadena / Provincetown / LS do the lifting, and the operator overrides by
 // naming streets. Nominatim etiquette: a descriptive UA + spaced requests.
+// Split an operator's seed into anchors. '+' always splits. A comma splits only
+// where it is unambiguous: every comma-separated part must look like a whole anchor
+// on its own — a postal code, or a name short enough to have no internal qualifier.
+// ⛔ "Huron, Erie County, Ohio" must NOT become three anchors; "44839, 44870" must.
+function splitAnchors(q) {
+  const byPlus = q.split('+').map(t => t.trim()).filter(Boolean)
+  const out = []
+  for (const part of byPlus) {
+    const pieces = part.split(',').map(t => t.trim()).filter(Boolean)
+    const allStandalone = pieces.length > 1 && pieces.every(t => /^[A-Za-z]?\d{4,6}$/.test(t) || /^[\p{L}\d .'\-–]{2,28}$/u.test(t))
+    const anyPostal = pieces.some(t => /^[A-Za-z]?\d{4,6}$/.test(t))
+    // A list of postcodes is unambiguous. A list of bare words is not — "Huron, Ohio"
+    // is one place, not two — so only split on comma when a postal code is involved.
+    if (allStandalone && anyPostal) out.push(...pieces)
+    else out.push(part)
+  }
+  return out
+}
+
+// The largest outer ring of a Polygon/MultiPolygon, or null.
+function outerRing(g) {
+  if (!g) return null
+  if (g.type === 'Polygon') return g.coordinates[0]
+  if (g.type === 'MultiPolygon') return g.coordinates.map(pp => pp[0]).sort((A, B) => B.length - A.length)[0]
+  return null
+}
+
 async function geocodePlace(q) {
-  const anchors = String(q || '').split('+').map(s => s.trim()).filter(Boolean)
+  // ⭐ COMMA IS THE RULED SEPARATOR — `EXCAVATION-DIARY §0.3`, "The seed — place name
+  // OR comma-separated postal codes… Union them, pad, square, fetch light." The code
+  // shipped '+' and the operator reached for commas, because the spec says commas.
+  // Both are accepted: '+' keeps every existing query working, and a comma inside a
+  // single anchor ("Huron, Erie County, Ohio") still has to survive — so a comma only
+  // splits when BOTH sides look like standalone anchors (a bare postcode, or a short
+  // name with no internal comma). Anything ambiguous stays one anchor.
+  const anchors = splitAnchors(String(q || ''))
   if (!anchors.length) throw new Error('empty search')
   const UA = 'cartograph/1.0 (neighborhood pour; jacob@jacobhenderson.studio)'
   const out = []
   let minLat = Infinity, maxLat = -Infinity, minLon = Infinity, maxLon = -Infinity
   let official = null
+  // ⭐ THE TINT — the coverage the operator actually asked for, one shape per anchor,
+  // unioned by the client and drawn as a wash. `§0.3`: "Union them, pad, square, fetch
+  // light." It is what the padded square is built around, and what the disc radius
+  // first circumscribes, so the square centres the circle by construction.
+  // ⛔ Distinct from `official`: coverage is ALWAYS returned and is never adoptable;
+  // official is the single-anchor administrative ring you can promote to a boundary.
+  // A postcode gives no polygon (Nominatim returns a Point), so its coverage is its
+  // BOX — honest about being coarse rather than inventing a shape.
+  const coverage = []
   for (let i = 0; i < anchors.length; i++) {
     const a = anchors[i]
     if (i > 0) await new Promise(r => setTimeout(r, 500))
@@ -581,6 +624,11 @@ async function geocodePlace(q) {
     minLat = Math.min(minLat, s); maxLat = Math.max(maxLat, n)
     minLon = Math.min(minLon, w); maxLon = Math.max(maxLon, e)
     out.push({ q: a, ok: true, displayName: r.display_name, cls: r.class, kind: r.type })
+    // Coverage for THIS anchor: its real outline when it has one, else its box.
+    const cov = outerRing(r.geojson)
+    coverage.push(cov && cov.length >= 3
+      ? { shape: 'ring', ring: cov, q: a, cls: r.class, kind: r.type }
+      : { shape: 'box', ring: [[w, s], [e, s], [e, n], [w, n]], q: a, cls: r.class, kind: r.type })
     // Official boundary — only for a SINGLE anchor (a composite has no one clean
     // polygon). Take the largest outer ring of a Polygon/MultiPolygon boundary.
     //
@@ -604,10 +652,7 @@ async function geocodePlace(q) {
     const PLACE_KINDS = new Set(['neighbourhood', 'neighborhood', 'suburb', 'quarter', 'borough', 'city_district', 'town', 'village', 'city', 'hamlet'])
     const ringable = r.class === 'boundary' || (r.class === 'place' && PLACE_KINDS.has(r.type))
     if (anchors.length === 1 && ringable && r.geojson) {
-      const g = r.geojson
-      let ring = null
-      if (g.type === 'Polygon') ring = g.coordinates[0]
-      else if (g.type === 'MultiPolygon') ring = g.coordinates.map(pp => pp[0]).sort((A, B) => B.length - A.length)[0]
+      const ring = outerRing(r.geojson)
       if (ring && ring.length >= 3) {
         let Ar = 0, cx = 0, cy = 0
         for (let k = 0; k < ring.length; k++) {
@@ -623,7 +668,7 @@ async function geocodePlace(q) {
     }
   }
   if (!isFinite(minLat)) throw new Error('no anchor matched')
-  return { bbox: { minLat, maxLat, minLon, maxLon }, anchors: out, official }
+  return { bbox: { minLat, maxLat, minLon, maxLon }, anchors: out, official, coverage }
 }
 
 // One street's geometry (its chains, corridor-aware) for the Extent dropdown

@@ -293,23 +293,27 @@ function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
 // shape `CLAUDE.md` Layer 0 q2 forbids: it looks like a suggestion and behaves like a
 // ruling, and it is invisible on any town whose operator was standing there to correct
 // it. It reaches membership only via an explicit "Adopt as boundary".
-function ExtentHintRing({ corners }) {
-  const shape = useMemo(() => {
-    if (!corners || corners.length < 3) return null
+function ExtentHintRing({ shapes }) {
+  const geoms = useMemo(() => {
+    if (!shapes?.length) return null
     // The plane is rotated -90° about X, so local (x, y) lands at world (x, 0, -y).
-    const sh = new THREE.Shape()
-    sh.moveTo(corners[0].x, -corners[0].z)
-    for (let i = 1; i < corners.length; i++) sh.lineTo(corners[i].x, -corners[i].z)
-    sh.closePath()
-    return sh
-  }, [corners])
-  if (!shape) return null
+    return shapes.filter(r => r?.length >= 3).map(corners => {
+      const sh = new THREE.Shape()
+      sh.moveTo(corners[0].x, -corners[0].z)
+      for (let i = 1; i < corners.length; i++) sh.lineTo(corners[i].x, -corners[i].z)
+      sh.closePath()
+      return sh
+    })
+  }, [shapes])
+  if (!geoms?.length) return null
   return (
     <group>
-      <mesh position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={6}>
-        <shapeGeometry args={[shape]} />
-        <meshBasicMaterial color="#a855f7" transparent opacity={0.34} depthWrite={false} />
-      </mesh>
+      {geoms.map((sh, i) => (
+        <mesh key={i} position={[0, 2, 0]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={6}>
+          <shapeGeometry args={[sh]} />
+          <meshBasicMaterial color="#a855f7" transparent opacity={0.34} depthWrite={false} />
+        </mesh>
+      ))}
       {/* ⛔ NO RIM. A stroked edge reads as an authored boundary no matter what colour it
           is — and a thick one hides the map underneath, which is the one thing a hint
           must never do. The tint alone carries it: you can see where the published line
@@ -1025,6 +1029,13 @@ export default function ExtentApp() {
   // The gazetteer's ring, held ADVISORY — drawn, never consulted. Adopting it
   // copies it into `polygonLL`; until then it decides nothing.
   const [hintRing, setHintRing] = useState(null)
+  // ⭐ THE TINT — the coverage the operator asked for, one shape per anchor
+  // (`§0.3`: "Union them, pad, square, fetch light"). A named place contributes its
+  // real outline; a postcode contributes its BOX, because Nominatim returns a Point
+  // for a postcode and inventing a shape would be worse than showing a coarse one.
+  // ⛔ Never adoptable and never consulted — it is what you asked for, not what you
+  // decided. The disc first circumscribes it; the envelope squares around it.
+  const [coverage, setCoverage] = useState(null)
   // ⭐ THE SEARCHED PLACE owns the fetch envelope (procedure step 1→2: "the operator
   // types a name… the system pulls a generous bounding box"). The frustum is only
   // the fallback for a place the gazetteer doesn't know. Holds Nominatim's bbox and,
@@ -1216,6 +1227,37 @@ export default function ExtentApp() {
     })
   }, [polygonLL, geo])
 
+  // The TINT in the live frame — every anchor's shape, projected. Drawn, never read.
+  const coverageXZ = useMemo(() => {
+    if (!Array.isArray(coverage) || !coverage.length || !geo) return null
+    return coverage
+      .map(c => (c.ring || []).map(([lon, lat]) => { const [x, z] = wgs84ToLocal(geo, lon, lat); return { x: r2(x), z: r2(z) } }))
+      .filter(r => r.length >= 3)
+  }, [coverage, geo])
+
+  // ⭐ THE DISC THAT CIRCUMSCRIBES THE TINT — Jacob's flow, 2026-09-19: "the radius is
+  // initially set to the boundary of the tint." Centre and radius both come from the
+  // coverage, so the disc starts as exactly what was asked for, and the padded square
+  // built around it CENTRES it — which is the defect this whole arc began with
+  // ("the square doesn't center the circle").
+  // ⛔ Not from the buildings (that coupling was pulled out in b6ce0c89/f1192ffe) and
+  // not from a fraction of the envelope (that was the inversion reverted in b063871f).
+  const coverageFit = useMemo(() => {
+    if (!coverageXZ?.length) return null
+    let x0 = Infinity, x1 = -Infinity, z0 = Infinity, z1 = -Infinity
+    for (const ring of coverageXZ) for (const p of ring) {
+      if (p.x < x0) x0 = p.x; if (p.x > x1) x1 = p.x
+      if (p.z < z0) z0 = p.z; if (p.z > z1) z1 = p.z
+    }
+    if (!isFinite(x0)) return null
+    const cx = (x0 + x1) / 2, cz = (z0 + z1) / 2
+    let r = 0
+    for (const ring of coverageXZ) for (const p of ring) {
+      const d = Math.hypot(p.x - cx, p.z - cz); if (d > r) r = d
+    }
+    return { x: cx, z: cz, radius: Math.round(r) }
+  }, [coverageXZ])
+
   // The advisory ring in the live frame. Separate memo, separate mark, separate
   // meaning — it is never fed to `excludedIds`, which is the whole point.
   const hintRingXZ = useMemo(() => {
@@ -1346,6 +1388,7 @@ export default function ExtentApp() {
         // The hint is persisted too — it is operator-visible, so it must survive a
         // reload like everything else on this canvas. It stays inert across the trip.
         if (Array.isArray(nb.hintRing) && nb.hintRing.length >= 3) setHintRing(nb.hintRing)
+        if (Array.isArray(nb.coverage) && nb.coverage.length) setCoverage(nb.coverage)
         setBakedSig(nb.bakedSig || null)
         // Restore the searched place so the pre-fetch envelope keeps its padding and
         // the panel keeps naming what matched — across a reopen AND across an HMR
@@ -1410,6 +1453,7 @@ export default function ExtentApp() {
       // (adopting writes it into `polygon`, after which both exist and mean different
       // things: what was published, and what the operator decided).
       if (Array.isArray(hintRing) && hintRing.length >= 3) draft.hintRing = hintRing
+      if (Array.isArray(coverage) && coverage.length) draft.coverage = coverage
       // The place record stays SMALL — the ring rides in `hintRing`, so storing it
       // twice would put 815 points in the file for nothing.
       if (placeEnvelope?.bbox && placeEnvelope.scene === scene) {
@@ -1418,7 +1462,7 @@ export default function ExtentApp() {
       saveNeighborhood(scene, draft).catch(() => {})
     }, 500)
     return () => clearTimeout(t)
-  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing])
+  }, [sides, radiusM, name, blurb, exclusionsLL, scene, polygonLL, polygonSource, placeEnvelope, centerLL, hintRing, coverage])
 
   // Dropdown hover-preview — highlight a candidate street before selecting it.
   const previewTimer = useRef(null)
@@ -1447,7 +1491,7 @@ export default function ExtentApp() {
   const openScene = (id) => {
     setStoreScene(id)
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
-    setPolygonLL(null); setPolygonSource(null); setHintRing(null)
+    setPolygonLL(null); setPolygonSource(null); setHintRing(null); setCoverage(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setSceneLocal(id)
   }
@@ -1467,7 +1511,7 @@ export default function ExtentApp() {
     setSceneLocal(null)
     useCartographStore.setState({ sceneGeography: null, sceneBoundary: null, sceneRibbons: null })
     setLocated(false); setExclusionsLL([]); setPenActive(false); setSelAnchor(null); setAnchors(null)
-    setPolygonLL(null); setPolygonSource(null); setHintRing(null)
+    setPolygonLL(null); setPolygonSource(null); setHintRing(null); setCoverage(null)
     setCommitted(false); setSides([]); setStreetCorners(null); setRadiusTouched(false)
     setName(''); setBlurb(''); setRadiusM(0); setQuery(''); setFetchSources(null); setCurating(false)
   }
@@ -1533,6 +1577,7 @@ export default function ExtentApp() {
       setHintRing(Array.isArray(r.official?.ring) && r.official.ring.length >= 3
         ? r.official.ring.map(([lon, lat]) => ({ lon, lat }))
         : null)
+      setCoverage(Array.isArray(r.coverage) && r.coverage.length ? r.coverage : null)
       // ⛔ Do NOT clear hintRing here — it was just set, two lines up. The polygon is
       // cleared because a fresh search starts an unauthored hood; the hint is the
       // search's whole product.
@@ -1776,9 +1821,16 @@ export default function ExtentApp() {
   // or operator-set): a scene-reopen can transiently reset radiusTouched, which
   // used to let this overwrite the restored value on reload. "fit to streets"
   // re-seeds the default explicitly (below), so it no longer needs this effect.
+  // ⭐ Seed the disc from the TINT — what the operator asked for — not from the kept
+  // buildings. `keptFit` takes `loopExcluded` as an input, so seeding from it made the
+  // ground plane a function of the exclusion pen; that was the third copy of one
+  // coupling (b6ce0c89, f1192ffe, and this). The tint is fixed at search time and
+  // moves for nothing.
   useEffect(() => {
-    if (keptFit.radius && !radiusTouched && !(radiusM > 0)) setRadiusM(keptFit.radius + 120)
-  }, [keptFit, radiusTouched, radiusM])
+    if (radiusM > 0 || radiusTouched) return
+    if (coverageFit?.radius > 0) setRadiusM(coverageFit.radius)
+    else if (keptFit.radius) setRadiusM(keptFit.radius + 120)   // no tint (a reopened pre-tint scene)
+  }, [coverageFit, keptFit, radiusTouched, radiusM])
 
   // Has this hood been hydrated yet? Streets exist → we're past setup (search/fetch),
   // so those setup-time controls collapse and the boundary work takes the panel.
@@ -1830,7 +1882,8 @@ export default function ExtentApp() {
           {/* While picking, the LIVE resolved ring wins — the operator watches the
               boundary close as each street lands. Its corners are real junctions, so
               they're worth dotting; a gazetteer polygon's hundreds aren't. */}
-          {located && hintRingXZ && !polygonXZ && <ExtentHintRing corners={hintRingXZ} />}
+          {located && !polygonXZ && (coverageXZ?.length || hintRingXZ) && (
+            <ExtentHintRing shapes={coverageXZ?.length ? coverageXZ : [hintRingXZ]} />)}
           {located && (radiusM > 0 || polygonXZ || streetCorners?.corners?.length) && (
             <ExtentBoundary
               corners={(pickingSides && streetCorners?.corners?.length ? streetCorners.corners : polygonXZ) || undefined}
