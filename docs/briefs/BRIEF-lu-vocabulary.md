@@ -129,16 +129,37 @@ LS's too, one layer above the data vocabulary this brief is about.
 > *Jacob: "does this mean they should be dynamic to the installation and what is made available in
 > every distinct map? Or is it just a long list and we only display what we have?"*
 
-⛔ **THIS IS HIS QUESTION AND IT IS NOT RULED. Do not decide it.** ⭐ The coordinator's read, offered
-as a read: **neither, purely.** The shape this repo keeps arriving at is
-**STATIC KIT VOCABULARY · DERIVED PER-TOWN PRESENCE · ABSENCE SHOWN, NOT HIDDEN** —
-- the **vocabulary** stays kit-wide and static, or towns cannot be compared and no check can assert
-  anything across them;
-- **presence** is derived from what is on that town's disk;
-- ⛔⛔ **and hiding an empty row is the trap.** If a layer vanishes because the town has none, the
-  operator cannot tell *"this town has no benches"* from *"we never fetched benches"* — which is the
-  silent substitution this whole brief is about, committed in the UI. **Show the row, and show which
-  of the three states it is in.**
+### ✅ RULED 2026-09-20 BY JACOB — **AN EMPTY LAYER DOES NOT APPEAR.**
+> *"For a community with no toilets (say) what will happen to the toggle? Can ineligible things not
+> even appear? The list is already long, we don't want to also make it confusing."*
+
+⭐⭐ **AND THE SURFACES THAT SETTLE IT ALREADY EXIST AND ARE ALREADY DISTINGUISHED.**
+`src/cartograph/SourcesPanel.jsx:9-11`, verbatim:
+> *"Intake answers **'what does THIS town still need'**, Sources answers **'what goes into a town at
+> all, and where do I go.'**"*
+
+| surface | its question | an empty layer |
+|---|---|---|
+| **Designer layer panel** (`Panel.jsx`) | *what am I looking at right now* | ⛔ **DOES NOT APPEAR** |
+| **Intake panel** (Extent tool) | *what does THIS town still need* | ⭐ **the three states live HERE** |
+| **Sources panel** (Stage toolbar) | *what goes into a town at all* | the kit-wide vocabulary |
+
+⛔ **THE COORDINATOR'S EARLIER READ — "show the row, never hide it" — WAS AN OVER-APPLICATION AND IS
+WITHDRAWN.** "Absence must be loud" governs MEASUREMENT surfaces: a census, a bake report, a check.
+**The layer panel is a WORKING CONTROL, not a census.** A row for a thing the town does not have is
+noise there, and a list nobody can scan is its own kind of silence. ⭐ The distinction is not lost —
+it is RELOCATED to the panel that exists to carry it. One fact, one home; two copies disagree.
+
+> ### ⚠️⚠️ THE ONE BOUNDARY, AND IT IS A PRECONDITION, NOT A CAVEAT
+> **HIDE ON "THIS TOWN HAS NONE". NEVER HIDE ON "WE HAVE NOT LOOKED."**
+> If a layer is absent because nobody fetched it and the toggle silently vanishes, the gap is
+> invisible in BOTH places — and that is precisely the silent substitution this entire brief is
+> about, committed in the UI.
+> ⇒ ⛔ **THE PANEL MAY HIDE FREELY ONLY BECAUSE INTAKE CARRIES THE OTHER HALF. IF INTAKE DOES NOT YET
+> COVER LAYERS, HIDING IS UNSAFE AND THE INTAKE WORK COMES FIRST.**
+> ⭐ Establish that before the first toggle is hidden — today Intake carries the big intake ROWS, and
+> whether it reaches per-LAYER presence is **not established**. Measure it; do not assume it.
+
 ⚠️ A 37 → 80 row panel is a real usability problem and his *"just a long list"* worry is fair — but
 that is **presentation** (collapse empty sections by default), not truth. ⛔ Solve it by collapsing,
 never by hiding.
