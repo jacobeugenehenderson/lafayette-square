@@ -29,6 +29,7 @@ import { defaultMeasure, defaultSideMeasure, measureFromSeed, CURB_WIDTH } from 
 // its fallback for pre-D2 artifacts.
 import { extractFaces, BOUNDARY_EDGE_SKEL, detectTileCaps, chainEndpointKeys, mintProtopolygon } from '../src/lib/tileGround.js'
 import { classifyParcelLandUse, loadCountyCodeTable, parcelLandUseReport, UNDERIVED } from './parcel-landuse.mjs'
+import { coastArcs } from './coastline.mjs'
 
 const { Clipper, ClipperOffset, Paths, IntPoint, PolyTree,
         ClipType, PolyType, PolyFillType, JoinType, EndType } = clipperLib
@@ -1328,11 +1329,14 @@ export function deriveLayers(highways) {
   // block-face freeze far below, which clips the face-streets to it + injects
   // it as closing edges so the perimeter block faces CLOSE (Brief F edge-of-map).
   let boundaryPolyXZ = null
+  let boundaryCenter = null, boundaryRadius = 0
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
     ))
     boundaryPolyXZ = boundaryData.boundary
+    boundaryCenter = boundaryData.center || null
+    boundaryRadius = boundaryData.radius || 0
     const boundaryRing = boundaryData.boundary.map(([x, z]) => ({ x, z }))
     if (boundaryRing.length > 2) {
       const first = boundaryRing[0], last = boundaryRing[boundaryRing.length - 1]
@@ -5116,12 +5120,26 @@ export function deriveLayers(highways) {
     // ⭐ THE CIRCLE STENCILS ① (Jacob, 2026-09-06). The whole grid is built, then cut square
     // at the perimeter — "there should be no tips; the streets clip at the perimeter edge."
     // ⛔ The boundary is NOT passed as a chain; it is the CLIP. See mintProtopolygon's header.
-    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ })
+    // ⭐⭐ THE COAST IS — and that is the difference between a render knob and ground truth.
+    // It is stroked into ① as ink so it CLOSES faces (the water field on one side, the land-use
+    // polygons and the coast-facing dead-ends on the other). The circle still stamps last.
+    const _coast = coastArcs({ ground: osmData.ground || {}, center: boundaryCenter, discR: boundaryRadius })
+    for (const line of _coast.report) console.log(line)
+    const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.arcs })
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
       labels: MP.labels,
       owners: MP.owners,
+      // ⭐⭐ THE WATER AND THE REMAINDER TRAVEL WITH ①, for the same reason `blocks` does: the
+      // bake reads this artifact and never re-mints. The water is a POSITIVE OBJECT to be
+      // shaded ("360 degrees of circle filled with map"); the remainder is the land no street
+      // bounds — waterfront and fringe — which carries land use but is NOT a block and must
+      // never reach ②.
+      waterRings: MP.waterRings ? MP.waterRings.map(r => r.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6])) : null,
+      remainder: MP.remainder ? MP.remainder.map(r => r.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6])) : null,
+      remainderLabels: MP.remainderLabels || null,
+      remainderHoles: MP.remainderHoles ? MP.remainderHoles.map(hs => hs.map(h => h.map(p => [Math.round(p[0]*1e6)/1e6, Math.round(p[1]*1e6)/1e6]))) : null,
       // ⭐⭐ `blocks` = boundary − stroked roads (the substrate ruling), frozen WITH ① because the
       // bake reads ① from this artifact and never re-mints. Without it the consumer falls back to
       // ①'s holes, which LOSE every block the circle cuts — 36 on LS, 30 of them at the rim.

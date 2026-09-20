@@ -415,7 +415,7 @@ function buildCurbRings({ ring, facts, authoredHW, capAtVertex, curved, stamp = 
 // ⭐ THE OWNER CARRIES IDENTITY ONLY — {skelId, side, segOrd, gradeSeparated}.
 // Authored values resolve downstream off that identity, so ① is look-agnostic:
 // one scene's ① serves every Look.
-export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null }) {
+export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary = null, coast = [] }) {
   const owners = [], rings = [], labels = []
   // ⭐ segOrd is TOPOLOGY — the count of intersection vertices at or before this
   // one — so it is computed unconditionally here. ⚠️ The live path used to gate
@@ -563,8 +563,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // margin, is STILL the circle deciding block geometry" is about THE CIRCLE — radius,
   // `streetFade` and aesthetic padding, all live-editable, none of them facts about the town. It
   // is NOT a rule that only a chain may close a block. A SHORELINE is absolute (`ROADMAP H-4`),
-  // so it is INK: stroked in like a chain, it closes land-use faces and coast-facing dead ends,
-  // and the water field falls out of `frame − ink` on the other side. See `RIBBONS §1`.
+  // so it IS ink: stroked in like a chain (`WATER_EDGE_SKEL`), it closes land-use faces and
+  // coast-facing dead ends, and the water field falls out of `frame − ink` on the other side.
+  // See `RIBBONS §1`.
   // ⛔ Read as "nothing but a chain may close a face", this header sent an agent to carve the disc
   // up front and write the result beside the radius — inverting which one is the SSoT. The radius
   // is sacrosanct and the circle stamps last; a coast is neither of those things.
@@ -633,13 +634,43 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
     for (const rg of R.rings) for (const p of rg) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
     for (const p of bRing) { if (p[0]<fx0)fx0=p[0]; if (p[0]>fx1)fx1=p[0]; if (p[1]<fz0)fz0=p[1]; if (p[1]>fz1)fz1=p[1] }
     const M = 50
-    const grown = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
+    const rect = [[fx0-M,fz0-M],[fx1+M,fz0-M],[fx1+M,fz1+M],[fx0-M,fz1+M]]
+    // ⭐⭐⭐ bb − (WATER ∪ INK), IN ONE MOVE. Jacob, 2026-09-20: "bb <> land/water chop <>
+    // water is discrete object, land is joined to the protopoly in a combine/exclude move."
+    // ⇒ The water and the street ink are COMBINED and EXCLUDED from the bb together. The land
+    // faces fall out bounded by the coast wherever the water was, so the strip between the last
+    // street and the shore is a face by construction — it is land, it has a land use, and it
+    // belongs in the map.
+    //
+    // ⛔⛔ IT IS ONE BOOLEAN ON PURPOSE, AND THE TWO-STAGE VERSION IS WHY THIS TOOK SO LONG.
+    // Chopping first (`rect − water`) and feeding the result back as the subject LOOKS right and
+    // silently is not: Clipper returns the chop as a FLAT LIST of contours — the 4-point rect as
+    // the outer and the 1,175-point coast as a HOLE — and re-adding those as separate subject
+    // paths loses the hole's orientation, so the frame refills into the plain rectangle. Measured:
+    // the "land" frame reported 2 pieces and the dropped exterior came back as a 4-POINT,
+    // 341.87 km² rectangle covering 100% of the disc. Every measurement taken against that frame
+    // was measuring the un-chopped rect.
+    // ⭐ One difference cannot lose a hole, because nothing is ever re-entered as a subject.
+    const clipRings = [...R.rings], clipLabels = [...R.labels]
+    if (Array.isArray(coast) && coast.length) {
+      const wIdx = owners.push({ skelId: WATER_EDGE_SKEL, side: 'right', segOrd: 0,
+                                 gradeSeparated: false, srcIdx: -1, water: true }) - 1
+      for (const r of coast) {
+        if (!Array.isArray(r) || r.length < 3) continue
+        clipRings.push(r.map(p => [p[0], p[1]]))
+        clipLabels.push(r.map(() => wIdx))
+      }
+      console.log(`    [①] land = bb − (water ∪ ink): ${coast.length} water ring(s) combined with ${R.rings.length} ink ring(s) and excluded in one move.`)
+    }
+    const grown = rect
+
     // ⭐⭐⭐ `asTree` — A BLOCK IS A COMPOUND FACE, and the boolean already knows which ring
     // is a hole of which. Read as a flat list, `frame − ink` hands back the exterior as the
     // frame ring PLUS one hole per connected ink component, and every one of those holes was
     // being carried out as a block. See `booleanLabelled`'s header for the measurement.
-    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], R.rings, R.labels, true, true)
+    const D = booleanLabelled(clipperLib.ClipType.ctDifference, [grown], [grown.map(() => bIdx)], clipRings, clipLabels, true, true)
     let blocks = null, blockLabels = null, blockHoles = null, blockHoleLabels = null
+    let outRemainder = null, outRemainderLabels = null, outRemainderHoles = null
     if (!D.refused && D.faces?.length) {
       blocks = []; blockLabels = []; blockHoles = []; blockHoleLabels = []
       // ⛔⛔ THE COMPONENT THAT TOUCHES THE FRAME IS THE EXTERIOR, NOT A BLOCK. `frame − ink`
@@ -657,7 +688,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
       // measured 97.3% and slipped through. A corner of the subtraction rectangle is by
       // construction outside every street and inside exactly one output component: the exterior.
       // That is a containment test, so it has no tuning and no town where it degrades.
-      let dropped = 0, unlabelledHoles = 0
+      let unlabelledHoles = 0
       const corner = [fx0 - M + 1e-3, fz0 - M + 1e-3]
       const FT = 1e-3
       const touchesFrame = (p) => Math.abs(p[0] - (fx0 - M)) < FT || Math.abs(p[0] - (fx1 + M)) < FT
@@ -672,6 +703,9 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         return inside
       }
       let degenerate = 0
+      let keptOnEdge = 0
+      const remainder = [], remainderLabels = [], remainderHoles = []
+      outRemainder = remainder; outRemainderLabels = remainderLabels; outRemainderHoles = remainderHoles
       for (const f of D.faces) {
         const rg = D.rings[f.outer], lb = D.labels?.[f.outer]
         // ⛔ NOT SILENT. A face the boolean returned but that carries fewer than 3 vertices or no
@@ -685,7 +719,45 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         // the corner test is the containment one, the frame test catches a component resting on
         // an edge without enclosing a corner. Under `asTree` the exterior is ONE face and its
         // holes leave with it, which is what removed the ghost block.
-        if (holdsCorner(rg) || rg.some(touchesFrame)) { dropped++; continue }
+        // ⭐⭐⭐ RESTING ON THE RECTANGLE IS NO LONGER ENOUGH TO DROP A FACE — only HOLDING A
+        // CORNER is. (Jacob, 2026-09-20: "in a map, why would the area between a street and a
+        // coastline... not exist? Yes it's a face, yes, it's LU.")
+        // ⛔ THE REASON THIS RULE EXISTS IS THAT THE RECTANGLE IS ARTIFICIAL — we invented it, so
+        // the region beyond the outermost streets is not a face of anything. That reason is about
+        // THE RECTANGLE. It does not reach a strip bounded by a COAST, which is real ground: the
+        // land between the last street and the water is land, it has a land use, and it belongs
+        // in the map. Dropping it deleted a real face for an artificial reason.
+        // ⭐ `holdsCorner` is the containment test and still removes the true exterior, which by
+        // construction encloses a corner of the subtraction rectangle. A coastal strip touches an
+        // EDGE (the data simply stops there) and holds no corner — and a face running off the
+        // edge is exactly what the stamp is for: "a block runs PAST the rim and is cut afterwards."
+        // ⭐⭐⭐ THE RULE IS ELABORATED, NOT REMOVED (Jacob, 2026-09-20: "I think 'the rule' is
+        // not helping. Perhaps we elaborate the rule?"). It used to map {touches the frame} →
+        // DISCARD, which collapsed two different things into one verdict:
+        //   · the ARTIFICIAL rectangle margin — correctly not a face of the map; and
+        //   · REAL LAND that simply has no street around it — the fringe, and on a coastal town
+        //     the whole waterfront strip between the last street and the shore.
+        // ⛔ Discarding the second is why a shoreline could never close a land-use polygon: the
+        // region a coast-facing dead end points into had already ceased to exist. Invisible on
+        // LS, whose disc sits inside the street mesh; on Huron it discarded every waterfront
+        // face (~812 of 881 sample points 40 m inshore were in no face at all).
+        //
+        // ⇒ It now maps {holds a frame corner} → THE REMAINDER: still a face, still land, still
+        // carrying land use — but NOT A BLOCK.
+        // ⛔⛔ AND "NOT A BLOCK" IS THE WHOLE REASON THE OLD RULE EXISTED, SO IT IS KEPT EXACTLY.
+        // ② offsets inside every block and runs BEFORE the stamp; handing it a frame-sized
+        // region is what produced a frame-sized curb ring and turned Survey solid blue (Jacob:
+        // "basically just wrecked survey interface"). The remainder therefore leaves by its own
+        // door — `remainder`, never `blocks` — so nothing offsets a curb from it. It has NO
+        // FRONTAGE, which is also just true: no street bounds it.
+        // ⭐ The stamp cuts it to the disc like anything else, so on a town whose disc sits
+        // inside its street mesh the remainder simply lands empty and nothing changes.
+        if (holdsCorner(rg)) {
+          remainder.push(rg); remainderLabels.push(lb || null)
+          remainderHoles.push((f.holes || []).map(hi => D.rings[hi]).filter(h => h?.length >= 3))
+          continue
+        }
+        if (rg.some(touchesFrame)) keptOnEdge++
         // ⛔⛔ A HOLE IS WOUND OPPOSITE ITS OUTER AND MUST STAY THAT WAY. The outer is converted
         // below to the winding the consumer expects (blocks wound as ①'s holes, offset inward by
         // a POSITIVE depth); a hole of that face has to carry the opposite sign or the compound
@@ -706,7 +778,8 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
         blockHoles.push(hs); blockHoleLabels.push(hls)
       }
       const withHoles = blockHoles.filter(h => h.length).length
-      if (dropped) console.log(`    [①] dropped ${dropped} face(s) resting on the clip frame — the EXTERIOR, not a block.`)
+      if (remainder.length) console.log(`    [①] ${remainder.length} REMAINDER face(s) — land with no street around it (fringe, waterfront). Land use YES, block NO, no curb offset from them.`)
+      if (keptOnEdge) console.log(`    [①] kept ${keptOnEdge} face(s) touching the frame EDGE without a corner — real land the rectangle merely truncates; the stamp cuts them.`)
       if (degenerate) console.warn(`    ⛔ [①] ${degenerate} face(s) came back degenerate (<3 vertices or no identity) and are NOT blocks — reported, not hidden.`)
       console.log(`    [①] ${blocks.length} block face(s); ${withHoles} carry hole(s) (a compound face — outer + its holes, carried together)`)
       if (unlabelledHoles) console.warn(`    ⛔ [①] ${unlabelledHoles} hole(s) came back with NO identity — those faces would be offset as if SOLID. NOT trustworthy.`)
@@ -716,7 +789,14 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
 
     return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length,
              crossings: R.crossings, stencilled: false, boundaryOwner: bIdx, blocks, blockLabels,
-             blockHoles, blockHoleLabels, boundaryRing: bRing, nodes }
+             blockHoles, blockHoleLabels, boundaryRing: bRing,
+             // ⭐ The remainder travels BESIDE blocks, never inside it — see the drop rule above.
+             remainder: outRemainder, remainderLabels: outRemainderLabels, remainderHoles: outRemainderHoles,
+             // ⭐ Carried so the painter can SHADE the water. ⛔ Not a hole and not a gap —
+             // "360 degrees of circle filled with map"; a blank here would be the absence the
+             // rim doctrine forbids.
+             waterRings: (Array.isArray(coast) && coast.length) ? coast.map(r => r.map(p => [p[0], p[1]])) : null,
+             nodes }
   }
   return { rings: R.rings, labels: R.labels, owners, refused: R.refused, chainRings: rings.length, crossings: R.crossings, stencilled: false, nodes }
 }
@@ -1911,6 +1991,22 @@ export function extractFaces(streets) {
 // resolves to NO street: sentinel streetIdx -1 → edgeDepth returns 0 → land-use
 // floods to the boundary, no curb/sidewalk on the map edge. Shared with derive.js.
 export const BOUNDARY_EDGE_SKEL = '__boundary__'
+// ⭐⭐⭐ THE COAST IS INK, AND THAT IS WHAT MAKES IT UNLIKE THE RIM (Jacob, 2026-09-20:
+// "we see the difference between land and water, and the geometry creates the water field
+// and on the other side (land-ward side) closes the rest of the LU polygons, especially
+// the dead-ends").
+// ⛔ `__boundary__` is the DISC — a render knob (radius, streetFade, aesthetic padding, all
+// live-editable), which is exactly why `RIBBONS §1` forbids it from deciding block geometry.
+// A SHORELINE IS GROUND TRUTH. `ROADMAP H-4`: "this should be EASIER than a man-made
+// feature, because a shoreline is absolute and permanent(ish) where a curb is authored and
+// negotiable." A block that runs to the water genuinely ends there.
+// ⇒ So the coast is STROKED INTO ① like any chain, and `frame − ink` then yields the WATER
+// FIELD on one side and closed land faces on the other — including, at last, a closed face
+// for a dead-end that runs at the water, which a graph walk can never close on its own
+// (`PREBAKE §4.0`: all 50 LS dead-end tips are zero-width slits).
+// ⛔ IT IS STILL NOT A STREET: no coupler, no baseMeasure, no band, no ADA, no cap. It closes
+// faces and is drawn as the edge between land and water; nothing offsets a curb from it.
+export const WATER_EDGE_SKEL = '__water__'
 
 // ⭐ THE CAP BULB'S CENTRE. A round dead-end's bulb is a symmetric circle on the
 // road's REAL centerline, which is the chain displaced toward the wider side by
@@ -1950,7 +2046,7 @@ export function tilesFromFrozen(frozen, streets) {
     if (!Array.isArray(ring) || !Array.isArray(fe) || ring.length !== fe.length || ring.length < 3) return null
     const edges = []
     for (const e of fe) {
-      if (e?.skelId === BOUNDARY_EDGE_SKEL) {
+      if (e?.skelId === BOUNDARY_EDGE_SKEL || e?.skelId === WATER_EDGE_SKEL) {
         // Map edge: no street → sentinel idx, zero depth (edgeDepth handles
         // measures[-1] === undefined → 0). LU floods to the boundary.
         const forward = e.side === 'right'
@@ -2088,7 +2184,7 @@ export function detectTileCaps(ring, edges, endpointKeys, skelIdOfEdge = (e) => 
   for (let i = 0; i < n; i++) {
     const inc = edges[(i - 1 + n) % n], out = edges[i]
     const sk = skelIdOfEdge(inc)
-    if (sk == null || sk === BOUNDARY_EDGE_SKEL) continue
+    if (sk == null || sk === BOUNDARY_EDGE_SKEL || sk === WATER_EDGE_SKEL) continue
     if (sk !== skelIdOfEdge(out) || inc.side === out.side) continue   // not a same-chain turn-around
     const ends = endpointKeys?.get(sk)
     if (!ends) continue
@@ -6626,7 +6722,13 @@ export function buildTileGround(ribbons, opts = {}) {
              blockHoles: frozenProto.blockHoles || null, blockHoleLabels: frozenProto.blockHoleLabels || null,
              // ⭐ the corner nodes, frozen — so ② never reaches for a chain to key the authored R
              nodes: frozenProto.nodes || null,
-             boundaryRing: frozenProto.boundaryRing || null }
+             boundaryRing: frozenProto.boundaryRing || null,
+             // ⛔ CARRIED, NOT RE-DERIVED. A frozen scene that dropped these would lose its
+             // waterfront silently — every other field present, the pour looking complete.
+             waterRings: frozenProto.waterRings || null,
+             remainder: frozenProto.remainder || null,
+             remainderLabels: frozenProto.remainderLabels || null,
+             remainderHoles: frozenProto.remainderHoles || null }
       protoSource = 'frozen'
     } else {
       const why = !frozenProto ? 'this scene carries no frozen protopolygon — it has not been poured since ① landed'
