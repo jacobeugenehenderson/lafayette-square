@@ -32,9 +32,15 @@
 // ⛔ AND NO NUMBER LIVES IN THIS HEADER. One did, for about an hour: "591 of
 // 1,496 highway ways". It was wrong twice over by the time anyone re-ran it —
 // stale (the census gained two consumers) and measured with a LOOSER predicate
-// (it counted every footway as drawn, where a `footway=crossing` is not). The
-// real figure was 682. A hardcoded count inside the instrument built to stop
-// hardcoded counts is the joke writing itself. ▶ Run it; the number is the output.
+// (it counted every footway as drawn, where a `footway=crossing` is not). A
+// hardcoded count inside the instrument built to stop hardcoded counts is the
+// joke writing itself. ▶ Run it; the number is the output.
+// ⛔⛔ AND DO NOT SUBTRACT THE TWO RETIRED FIGURES. The corrected one was reached
+// with a TIGHTER predicate than the one that produced 591, so it is not "591 plus
+// the ones we missed" — they do not sit on the same scale and their difference
+// measures nothing. Both appear above only as the thing that was STRUCK, never as
+// a claim. ⭐ Anyone sizing a population off this check — `A19`'s class-vs-name
+// ruling is the live one — takes TODAY'S RUN, not either retired figure.
 //
 // ⛔⛔ THE LISTS ARE PARSED OUT OF SOURCE, NEVER RESTATED HERE. A second copy is
 // how a census starts lying: it would keep reporting the vocabulary we had on the
