@@ -15,6 +15,12 @@ evict-when: ARCHIVED — its assertion is now a check: node checks/claims-every-
 > not-a-land-use by name, with reasons) · `man_made` appended to `fetch.js`'s `tagPriority` ·
 > a third plantability state, `planted` · 10 new classes end-to-end through every home the
 > vocabulary has · the check, mutation-tested five ways.
+> ⭐ **Measured on a re-poured huron: 9 → 11 face classes** (`agricultural` 0→8 · `cemetery` 0→1 ·
+> `park` 8→10 · `recreation` 18→13 · `underived` 154→152). ⚠️ **11, not 12** — an earlier figure of 12
+> included a `forest` face that came from re-pointing `natural:wood` recreation → forest, and that
+> re-point was **backed out before commit**: it is an existing mapping reaching LS (19) and HPDM (85),
+> and a hole-filling commit must not also restyle the mould town's woods. ⇒ the change is **purely
+> additive**: 32 → 97 mappings, none removed, none re-pointed. ▶ `natural:wood` is Jacob's call.
 >
 > **Jacob's rulings, 2026-09-20 (the part worth keeping):**
 > 1. **`brownfield` is its own class**, not `vacant`.
@@ -26,6 +32,25 @@ evict-when: ARCHIVED — its assertion is now a check: node checks/claims-every-
 >    `luColors` / `blockLandUse` / `trees`), and the only genuine orphan was `lu-policy.json` —
 >    a format with a loader, a documented per-scene path, no UI and no scene that had ever
 >    written one.
+>
+> **§5's question — HOW MANY HOMES DOES THE VOCABULARY HAVE? — answered, and deliberately NOT
+> frozen as a number here.** The check enumerates and ENFORCES **six**: `lu-policy.mjs`
+> (plantability) · `m3Colors.js` + `ribbonsGeometry.js` (two palettes) · `bake-ground.js`
+> `PAINT_ORDER` + `TREELAWN_LU_VARIANTS` · `CartographSurfaces.jsx` (the Designer row). The wider
+> set — every file that names an LU class string at all — is a grep, and a grep is the honest form
+> because the list goes stale the day someone adds a consumer:
+> ```
+> grep -rln -E "'(institutional|recreation|vacant|underived|median|island|agricultural|brownfield)'|vacant-commercial" \
+>   src cartograph checks | grep -v node_modules | grep -v _archive | grep -vE '\.(md|json)$'
+> ```
+> ⭐ **The sixth home was found only because a class reached the SLAB with no operator row** — the
+> Designer's Land Use tab is a static list, so a new class painted correctly and could not be
+> recoloured or hidden. That is the right way to find a missing home: not by grepping for one, but
+> by watching a class travel and seeing where it stops being controllable.
+> ⛔ **THE VOCABULARY WAS NOT CONSOLIDATED, AND THE RESTRAINT WAS DELIBERATE.** §5 said *"measure it,
+> report it, and propose — do not silently refactor it into one."* Six enforced homes is the
+> measurement; a single owner is a proposal, not this commit. ⚠️ **Whoever picks that up: the check
+> is what makes consolidation safe, because it fails when a class stops reaching one of them.**
 >
 > **⛔ WHAT DID NOT LAND, AND IT IS THE CEILING ON THE REST:** the vocabulary is fixed and the
 > **spatial join still loses the biggest features.** The OSM vote asks *"is the POLYGON's
