@@ -26,6 +26,11 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { wgs84ToLocal, sceneRawDir, SCENE } from './config.js'
 import { writeIfChanged } from './io.js'
+import { requireExplicitScene } from './scene.js'
+
+// ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
+// silently overwrite Lafayette Square's build with another town's run (scene.js).
+requireExplicitScene('reproject-raw')
 
 let reprojected = 0
 // Recursively re-derive x/z from lon/lat wherever a coordinate carries both.

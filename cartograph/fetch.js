@@ -18,6 +18,11 @@ import { writeFileSync, mkdirSync, readFileSync, rmSync, statSync } from 'fs'
 import { join } from 'path'
 import { execSync } from 'child_process'
 import { BBOX, RAW_DIR, wgs84ToLocal, overpassBbox } from './config.js'
+import { requireExplicitScene } from './scene.js'
+
+// ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
+// silently overwrite Lafayette Square's build with another town's run (scene.js).
+requireExplicitScene('fetch')
 
 const OVERPASS_URL = 'https://overpass-api.de/api/interpreter'
 const TIMEOUT = 120

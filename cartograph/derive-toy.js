@@ -21,6 +21,11 @@
  * detected and spliced — same convention as real derive.
  */
 
+// ⛔ DECLARED NON-SCENE-KEYED WRITER — checks/claims-writers-name-the-scene.mjs reads this
+// marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
+// A writer is guilty until this line says otherwise, with a reason.
+// @scene-independent: FIXED FIXTURE PATH. Writes src/data/toy/toy-ribbons.json — the hand-authored toy fixture, which is one specific file, not a per-scene artifact. There is
+//     no scene to name.
 import { readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'

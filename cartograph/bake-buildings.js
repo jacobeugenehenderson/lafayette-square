@@ -26,6 +26,7 @@ import * as THREE from 'three'
 import { FOUNDATION_BELOW_GRADE_M, periodPedestalFor } from '../src/lib/foundationGeometry.js'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
+import { SCENE, requireExplicitScene } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { createMembershipFilter } from './membership.mjs'
 
@@ -643,7 +644,7 @@ const DEFAULT_PALETTE = [
   '#f5deb3', '#696969', '#b22222', '#808080',
 ]
 
-export async function bakeBuildings({ look, scene = 'lafayette-square' } = {}) {
+export async function bakeBuildings({ look, scene } = {}) {
   assertBakeTarget('bake-buildings', look, scene)
   const outDir   = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -1106,11 +1107,11 @@ export async function bakeBuildings({ look, scene = 'lafayette-square' } = {}) {
 }
 
 async function main() {
-  let look = null, scene = 'lafayette-square'
+  const scene = requireExplicitScene('bake-buildings')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  let look = null
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
   await bakeBuildings({ look, scene })
 }

@@ -1,4 +1,13 @@
 #!/usr/bin/env node
+
+// ⛔ DECLARED NON-SCENE-KEYED WRITER — checks/claims-writers-name-the-scene.mjs reads this
+// marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
+// A writer is guilty until this line says otherwise, with a reason.
+// @scene-independent: THE DEV SERVER. It must BOOT without a scene and derives the scene
+//     PER REQUEST from the look being operated on — then passes it explicitly to every step
+//     it spawns (--scene= or CARTOGRAPH_SCENE on all 14 invocations). Requiring a scene at
+//     startup would make the server unstartable. Its spawn sites are the reason the guard
+//     works at all; do not guard serve.js itself.
 import { createServer } from 'http'
 import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync, statSync } from 'fs'
 import { join, extname, dirname } from 'path'

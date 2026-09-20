@@ -13,7 +13,11 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR } from './config.js'
+import { RAW_DIR, requireExplicitScene } from './scene.js'
+
+// ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
+// silently overwrite Lafayette Square's build with another town's run (scene.js).
+requireExplicitScene('seed-centerlines')
 
 const SRC_DATA = join(import.meta.dirname, '..', 'src', 'data')
 const OUT = join(RAW_DIR, 'centerlines.json')

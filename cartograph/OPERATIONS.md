@@ -263,7 +263,26 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
 
 - The two-step build: `node skeleton.js` → `node pipeline.js` → `node promote-ribbons.js` → `node bake-ground.js` (the pipeline does **not** re-run the extractor — `[[feedback_skeleton_pipeline_two_step]]`).
 - The bake is incremental (dirty-skipped); `?force=1` on the URL (or ⌥-click a bake button) forces a full rebuild.
-- **The bake-target guard:** an unflagged bake targets `lafayette-square`.
+- ### ⛔ **NAME THE TOWN. An unflagged write no longer runs at all.**
+  Every script in `cartograph/` that writes an artifact refuses to start until you have named the
+  scene. It used to default to `lafayette-square` — so forgetting the flag silently rebuilt LS over
+  whatever you thought you were building, which cost a full day on 2026-07-31 and read the whole
+  time as "the fix isn't working" rather than "the wrong town is being built."
+  - **Two spellings, ONE resolver.** `--scene=<id>` on the command, or `CARTOGRAPH_SCENE=<id>` in
+    the environment. Both are read in exactly one place (`cartograph/scene.js`), so they cannot
+    disagree — which they did until 2026-09-19, when eight of ten bakers parsed the flag themselves
+    and ignored the variable, and an env-named bake quietly rebuilt LS while passing every guard.
+    ⛔ Note the `=`: `--scene toy` is not the flag, and you will get the refusal, not a guess.
+  - **You will not get a wrong map, you will get an exit.** A writer with no scene prints what it
+    refused and why, and exits 2. That is the whole design: an unnamed scene is a question, and the
+    kit's rule is that a question is never answered with a plausible-looking default.
+  - **Some writers legitimately have no scene to name** — one that is look-keyed, or writes a
+    single fixed path. Each says so in its own source, with a reason, and
+    `node checks/claims-writers-name-the-scene.mjs` prints every one of them and fails on any
+    writer that neither guards nor explains itself. ⛔ Don't keep a list here — run the check; add
+    a bake step and it is classified on the next run, with no list to update.
+  - ⚠️ Naming the scene is **not** the same as naming the look. `--look=` picks the slab you write
+    into, and a mismatched pair is a separate refusal (`cartograph/bake-target.js`).
 - **Ground tri-budget — the `GROUND_REFINE` knob** (`bake-ground.js`, the GPU/mobile lever). The flat ground is lifted per-vertex by the terrain at runtime, so it must be subdivided enough to follow the relief. `GROUND_REFINE = "adaptive"` (default) subdivides **only where the terrain bends** — `GROUND_REFINE_TOL_M` (default **0.50 m**) is the max terrain-deviation a coarse triangle may keep before it's split. Lower `tol` = finer mesh + more tris; higher = coarser + fewer. The shipped value cuts the LS ground from **1.37M → ~548K tris** (−60%) with fidelity ≈ the original mesh. The split is **conforming (red-green)** — crack-free; an earlier non-conforming version left visible T-junction cracks along the contours at street level (fixed 2026-06-17, +~100K tris over the cracked 445K). CLI overrides (gated on argv, never `process.env`): `--refine=uniform` restores the legacy byte-identical mesh; `--refine-tol=`/`--refine-min-edge=`/`--refine-max-edge=` retune. ⚠️ It calibrates to the terrain exaggeration (`V_EXAG`); if you ever raise exaggeration, re-bake and re-check the slopes. ⚠️ **After any CLI `bake-ground.js`, run `bake-ground-ao.js` too** — the geometry bake rewrites `ground.json` without the AO `lightmap` block, so a standalone ground bake ships flat-lit (the `serve.js /bake` GUI chains them automatically; only manual CLI bakes hit this — see `BACKLOG.md`). The full diagnosis + per-material numbers live in `cartograph/_archive/handoffs/HANDOFF-ground-tri-cut-LANDED-2026-06-22.md`.
 - **Ground-contact effect knobs (2026-06-22) — where they live, for later tuning / panel promotion.** `bake-ground-ao.js` emits three ground textures and carries the *bake-time* shape constants (edit + re-bake to retune): **lamp pool** — `POOL_RADIUS_M` / `POOL_RING_POS` / `POOL_RING_SHARP` (lower = blurrier ring) / `POOL_SHADOW_FRAC`; **contact shadow** (tree + lamp bases) — `TREE_SHADOW_RADIUS_M` / `TREE_SHADOW_STR`, `LAMP_SHADOW_RADIUS_M` / `LAMP_SHADOW_STR`. The *live* (shader) knobs: **trunk-base ground blend** — `uTrunkBlend` (strength) / `uTrunkBlendTop` (metres up the trunk) in `treeAtlasMaterial.js` (`injectFoliageSway`); **contact-shadow strength** — `uShadowStr` (0.5) in `grassMaterial.js` + `BakedGround` FadeMesh; **pool warm colour** — `vec3(0.80,0.62,0.32)` in both ground shaders. Pool *intensity* + arch *uplight* values are live TOD channels (Lamps / Arch Lighting cards). ⚠️ These are bake-time today — a future arc promotes pool diameter/blur to panel controls (overlap build-up forces baking the shape; see `HANDOFF-channel-variant-cascade.md` neighbours).
 - Server edits (`cartograph/serve.js`) require a `carto` restart — the browser + bake scripts auto-pick-up, but the long-lived server does not (`ARCHITECTURE.md`).

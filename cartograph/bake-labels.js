@@ -28,6 +28,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { makeMembership } from './neighborhood-membership.mjs'
+import { requireExplicitScene } from './scene.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -121,7 +122,10 @@ function computeLabels(ribbons, keepPoint) {
 
 function main() {
   const args = parseArgs()
-  const scene = args.scene || process.env.CARTOGRAPH_SCENE || 'lafayette-square'
+  // ⛔ Was: `args.scene || process.env.CARTOGRAPH_SCENE || 'lafayette-square'` — a
+  // literal-LS fallback in a writer. One resolver now (scene.js), which reads the
+  // --scene= flag AND CARTOGRAPH_SCENE, and refuses when neither names a scene.
+  const scene = requireExplicitScene('bake-labels')
   const look = args.look || scene   // read from data/<scene>; write to baked/<look>
   // Poured scenes carry clean/ribbons.json; the legacy LS default scene keeps its
   // ribbons at src/data/ribbons.json (predates the per-scene convention).

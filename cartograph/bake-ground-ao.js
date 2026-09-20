@@ -22,6 +22,7 @@ import * as THREE from 'three'
 import { MeshBVH, acceleratedRaycast } from 'three-mesh-bvh'
 import { PNG } from 'pngjs'
 import { loadBuildings } from './bake-buildings.js'
+import { requireExplicitScene } from './scene.js'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -166,7 +167,7 @@ function makeRng(seed) {
 // ── Bake ────────────────────────────────────────────────────────────
 
 export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
-                                     rays = RAYS_PER_TEXEL, scene = 'lafayette-square' } = {}) {
+                                     rays = RAYS_PER_TEXEL, scene } = {}) {
   assertBakeTarget('bake-ground-ao', look, scene)
   const isDefaultScene = scene === 'lafayette-square'
   const lookDir = join(ROOT, 'public', 'baked', look)
@@ -500,11 +501,11 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
 
 // CLI
 async function main() {
-  let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL, scene = 'lafayette-square'
+  const scene = requireExplicitScene('bake-ground-ao')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  let look = null, size = LIGHTMAP_SIZE, rays = RAYS_PER_TEXEL
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/))) look = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
     else if ((m = arg.match(/^--size=(\d+)$/))) size = parseInt(m[1], 10)
     else if ((m = arg.match(/^--rays=(\d+)$/))) rays = parseInt(m[1], 10)
   }

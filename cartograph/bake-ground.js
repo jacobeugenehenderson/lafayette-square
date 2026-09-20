@@ -33,6 +33,7 @@ import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
+import { requireExplicitScene } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
 import { loadSceneStencil as _loadSceneStencil } from './sceneStencil.js'
 import { buildTileGround } from '../src/lib/tileGround.js'
@@ -716,7 +717,7 @@ function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}
   return { positions, indices }
 }
 
-export async function bakeGround({ look, scene = 'lafayette-square', refine: refineOpts = {}, proto: protoFlag = true } = {}) {
+export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: protoFlag = true } = {}) {
   // Adaptive ground-subdivision policy, resolved from opts.* over the module
   // defaults. GATED ON opts.* (NEVER process.env). refineOpts = {} keeps the
   // adaptive default; pass { mode: 'uniform' } to restore the legacy mesh, or
@@ -1072,12 +1073,16 @@ export async function bakeGround({ look, scene = 'lafayette-square', refine: ref
 
 // CLI
 async function main() {
-  let look = null, scene = 'lafayette-square', proto = true   // ⭐ ① is the producer by default; --legacy opts out
+  // ⛔ The scene comes from the ONE resolver (scene.js), which reads BOTH --scene=
+  // and CARTOGRAPH_SCENE. This loop used to parse --scene itself over a
+  // 'lafayette-square' seed, so the env channel was silently ignored and an
+  // env-named bake rebuilt LS. See scene.js's header.
+  const scene = requireExplicitScene('bake-ground')
+  let look = null, proto = true   // ⭐ ① is the producer by default; --legacy opts out
   const refine = {}
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))         look  = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/)))   scene = m[1]
     // Adaptive ground-subdivision overrides (gated on argv/opts, never env):
     // ⭐⭐⭐ ① IS THE PRODUCER BY DEFAULT (Jacob, 2026-09-06: "make --proto the default and
     // rebake"). `--proto` is kept as an accepted no-op so existing invocations and docs still

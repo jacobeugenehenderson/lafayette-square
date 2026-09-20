@@ -23,6 +23,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
+import { SCENE, requireExplicitScene } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 
@@ -34,7 +35,7 @@ function readAB(p) {
   return u8.buffer.slice(u8.byteOffset, u8.byteOffset + u8.byteLength)
 }
 
-export async function bakeTreeAnchors({ look, scene = 'lafayette-square' } = {}) {
+export async function bakeTreeAnchors({ look, scene } = {}) {
   assertBakeTarget('bake-tree-anchors', look, scene)
   const outDir = join(ROOT, 'public', 'baked', look)
   const groundJsonPath = join(outDir, 'ground.json')
@@ -77,11 +78,11 @@ export async function bakeTreeAnchors({ look, scene = 'lafayette-square' } = {})
 }
 
 async function main() {
-  let look = null, scene = 'lafayette-square'
+  const scene = requireExplicitScene('bake-tree-anchors')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  let look = null
   for (const a of process.argv.slice(2)) {
     let m
     if ((m = a.match(/^--look=(.+)$/)))       look  = m[1]
-    else if ((m = a.match(/^--scene=(.+)$/)))  scene = m[1]
   }
   await bakeTreeAnchors({ look, scene })
 }

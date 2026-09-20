@@ -41,6 +41,7 @@ import { writeFileSync, mkdirSync, readFileSync, existsSync } from 'node:fs'
 import { join, dirname } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { intakeStatusForScene, STATUS, ACQUIRE, KIND } from './intake-rows.mjs'
+import { requireExplicitScene } from './scene.js'
 import { assertBakeTarget } from './bake-target.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
@@ -119,14 +120,15 @@ if (isMain) main()
 function main() {
 const args = parseArgs()
 const look = args.look
-const scene = args.scene
 
 // ⛔ Neither may default. `--look` defaulting writes over another town's slab
 // (the palimpsest mode, BRIEF-ls-bleed-excision site 14); `--scene` defaulting
 // credits Lafayette Square's sources under this town's name, which is the exact
-// lie this artifact exists to prevent.
-if (!look || !scene) {
-  console.error('[sources] ⛔ both --look and --scene are required. Refusing to guess: a defaulted look bakes over another town, a defaulted scene credits another town\'s sources.')
+// lie this artifact exists to prevent. The scene comes from the ONE resolver,
+// which reads --scene= AND CARTOGRAPH_SCENE and refuses when neither names one.
+const scene = requireExplicitScene('bake-sources')
+if (!look) {
+  console.error('[sources] ⛔ --look is required. Refusing to guess: a defaulted look bakes over another town.')
   process.exit(1)
 }
 

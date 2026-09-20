@@ -19,8 +19,12 @@
 
 import { readFileSync, writeFileSync, existsSync } from 'fs'
 import { join } from 'path'
-import { RAW_DIR, CARTOGRAPH_DIR } from './config.js'
+import { RAW_DIR, CARTOGRAPH_DIR, requireExplicitScene } from './scene.js'
 import { STANDARDS } from './standards.js'
+
+// ⛔ This WRITES into data/<scene>/. Refuse an unnamed scene — defaulting would
+// silently overwrite Lafayette Square's build with another town's run (scene.js).
+requireExplicitScene('survey')
 
 const PROJECT_DIR = join(CARTOGRAPH_DIR, '..')
 const DEFAULT_HW = 5.0

@@ -23,6 +23,13 @@
  * *full* authored product" and memory `slab-carries-full-authored-product`.
  */
 
+// ⛔ DECLARED NON-SCENE-KEYED WRITER — checks/claims-writers-name-the-scene.mjs reads this
+// marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
+// A writer is guilty until this line says otherwise, with a reason.
+// @scene-independent: LOOK-KEYED. Reads public/looks/<look>/design.json and writes
+//     public/baked/<look>/scene.json. Touches no data/<scene>/ path, so an explicit scene
+//     would be a refusal the operator cannot act on. --scene is accepted for CLI uniformity
+//     and says out loud that it is ignored.
 import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
@@ -206,14 +213,20 @@ export async function bakeScene({ look } = {}) {
 }
 
 async function main() {
-  let look = null, _scene = 'lafayette-square'
+  // ⛔ bake-scene is LOOK-KEYED: it reads public/looks/<look>/design.json and
+  // nothing scene-derived, so it takes NO scene guard — a refusal the operator
+  // cannot act on is noise. But an accepted flag that does nothing is a small
+  // silent substitution, and it is how the next reader concludes --scene is
+  // honoured here. So it is accepted (serve.js passes it for CLI uniformity)
+  // and its being ignored is SAID OUT LOUD, once, when it is actually passed.
+  let look = null
   for (const arg of process.argv.slice(2)) {
     let m
-    if ((m = arg.match(/^--look=(.+)$/)))      look   = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) _scene = m[1]
+    if ((m = arg.match(/^--look=(.+)$/))) look = m[1]
+    else if (/^--scene=/.test(arg)) {
+      console.log(`[bake-scene] note: ${arg} ignored — this bake is look-keyed (reads looks/<look>/design.json only).`)
+    }
   }
-  // bake-scene reads design.json only (per-Look); --scene is accepted for
-  // CLI uniformity but doesn't change the inputs today.
   await bakeScene({ look })
 }
 

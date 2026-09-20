@@ -28,7 +28,7 @@ teardown** — every invocation leaves another anonymous user behind. That is a 
 | check | why | what it reaches |
 |---|---|---|
 | `scratch/claims-a-rename-cannot-repaint.mjs` | unreadable | imports arborist/generate-salon.js, which can: writeFile, runs `node` — not a known-local command |
-| `scratch/claims-attribution-is-per-town.mjs` | unreadable | imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: child_process with a non-literal command — cannot be read |
+| `scratch/claims-attribution-is-per-town.mjs` | unreadable | imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read |
 | `scratch/claims-band-reaches-lu.mjs` | unreadable | writeFileSync · mkdirSync · computed import() with no readable target — runs arbitrary modules · computed import() with no readable target — runs arbitrary modules |
 | `scratch/claims-cary-anon-exposure.mjs` | outbound | calls fetch() · child_process with a non-literal command — cannot be read · references a hosted-service credential |
 | `scratch/claims-clip-extent-floor.mjs` | unreadable | child_process with a non-literal command — cannot be read |
@@ -68,7 +68,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 126. This is `npm test`.
+## safe — 127. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -197,4 +197,5 @@ Writes into the repo or a scratch dir.
 | `checks/claims-twilio-webhook-guard.mjs` | does sms-webhook actually reject a forged POST? |
 | `checks/claims-uturn-outer-edge-walk.mjs` | THE CHECK: walk the OUTER EDGE (the asphalt polygon `iA`) of every tile that |
 | `checks/claims-verify-taxon.mjs` | taxon.mjs — asserts vocabulary.mjs `verifyTaxon`. |
+| `checks/claims-writers-name-the-scene.mjs` | scene.mjs — DOES EVERY WRITER MAKE THE OPERATOR NAME THE TOWN? |
 | `checks/claims-zero-separation-offset.mjs` | READ-ONLY. Three questions, none of which has been measured: |

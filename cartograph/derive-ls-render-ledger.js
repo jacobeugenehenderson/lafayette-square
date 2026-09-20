@@ -22,6 +22,13 @@
  * `zoning`/`year_built` read content-ish but the bake bakes them, so they are
  * render inputs by the byte-identity gate.
  */
+
+// ⛔ DECLARED NON-SCENE-KEYED WRITER — checks/claims-writers-name-the-scene.mjs reads this
+// marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
+// A writer is guilty until this line says otherwise, with a reason.
+// @scene-independent: LAFAYETTE SQUARE BY DEFINITION. This derives the LS render ledger
+//     specifically (it is in the filename) and writes the single path data/lafayette-square/buildings.json. Not a per-scene writer; it is an LS-only artifact that will
+//     retire with the bake-buildings LS hardwire.
 import { readFileSync, writeFileSync, mkdirSync } from 'fs'
 import { join, dirname } from 'path'
 

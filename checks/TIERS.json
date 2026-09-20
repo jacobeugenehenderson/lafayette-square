@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 159,
+  "total": 160,
   "counts": {
-    "safe": 126,
+    "safe": 127,
     "local-effect": 5,
     "live": 28
   },
@@ -883,6 +883,13 @@
       ]
     },
     {
+      "file": "checks/claims-writers-name-the-scene.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-zero-separation-offset.mjs",
       "tier": "safe",
       "why": [
@@ -902,7 +909,7 @@
       "tier": "live",
       "reasonClass": "unreadable",
       "why": [
-        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: child_process with a non-literal command — cannot be read"
+        "imports cartograph/bake-sources.js, which can: writeFileSync, mkdirSync, imports cartograph/intake-rows.mjs, which can: writeFileSync, mkdirSync, imports cartograph/config.js, which can: imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {

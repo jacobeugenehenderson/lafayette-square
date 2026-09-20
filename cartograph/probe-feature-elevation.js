@@ -16,6 +16,12 @@
  *
  * Run:  node cartograph/probe-feature-elevation.js
  */
+
+// ⛔ DECLARED NON-SCENE-KEYED WRITER — checks/claims-writers-name-the-scene.mjs reads this
+// marker and will FAIL if it is absent from a writer that is reachable as a CLI entry point.
+// A writer is guilty until this line says otherwise, with a reason.
+// @scene-independent: FIXED SIDECAR PATH. Writes src/data/park-feature-elev.json, one
+//     prototype sidecar, not a per-scene artifact.
 import { readFileSync, writeFileSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'

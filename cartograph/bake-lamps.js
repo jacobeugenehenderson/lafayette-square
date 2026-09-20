@@ -13,6 +13,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { writeIfChanged } from './io.js'
 import { assertBakeTarget } from './bake-target.js'
+import { SCENE, requireExplicitScene } from './scene.js'
 import { loadSceneTerrain } from './terrainLoad.js'
 import { makeGroundSampler } from './groundSampler.js'
 import { makeMembership } from './neighborhood-membership.mjs'
@@ -158,7 +159,7 @@ function loadLampsForScene(scene) {
   return []
 }
 
-export async function bakeLamps({ look, scene = 'lafayette-square' } = {}) {
+export async function bakeLamps({ look, scene } = {}) {
   assertBakeTarget('bake-lamps', look, scene)
   const outDir  = join(ROOT, 'public', 'baked', look)
   if (!existsSync(outDir)) mkdirSync(outDir, { recursive: true })
@@ -177,11 +178,11 @@ export async function bakeLamps({ look, scene = 'lafayette-square' } = {}) {
 }
 
 async function main() {
-  let look = null, scene = 'lafayette-square'
+  const scene = requireExplicitScene('bake-lamps')   // one resolver: --scene= OR CARTOGRAPH_SCENE
+  let look = null
   for (const arg of process.argv.slice(2)) {
     let m
     if ((m = arg.match(/^--look=(.+)$/)))      look  = m[1]
-    else if ((m = arg.match(/^--scene=(.+)$/))) scene = m[1]
   }
   await bakeLamps({ look, scene })
 }
