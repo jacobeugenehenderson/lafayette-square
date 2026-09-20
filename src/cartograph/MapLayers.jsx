@@ -618,46 +618,18 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   // here to avoid rendering both (visible double outline at compass-frame).
   const landscapeByKind = useMemo(() => {
     const groups = {}  // kind → [geo,...]
-    // ⭐ `water` and `remainder` are the pour's own faces, not OSM overlays. They are drawn
-    // here because they are landscape in exactly the same sense — flat ground fills grouped by
-    // kind — and drawing them anywhere else would mean a second painter for the same job.
-    // ⛔ The `natural=water` SKIP below stays: that is OSM's water, which `park_water.json`
-    // already owns on LS. THIS water comes from the coast chop and is a different object.
-    for (const cat of ['leisure', 'natural', 'water', 'remainder']) {
+    // ⛔ `water` and `remainder` are NOT here. They are the pour's own GROUND and draw in
+    // every view, Survey included — see `groundByKind` below. The `natural=water` skip on the
+    // next line is OSM's water, which `park_water.json` already owns on LS; a different object.
+    for (const cat of ['leisure', 'natural']) {
       for (const item of (mapData.layers?.[cat] || [])) {
         if (cat === 'natural' && item.use === 'water') continue
         const ring = item.ring
         if (!ring || ring.length < 3) continue
-        // ⛔⛔ THE CENTROID TEST IS WRONG FOR THESE TWO AND IT WOULD DELETE THEM SILENTLY.
-        // It is a cheap stand-in for "is this overlay in the hood", fine for a small OSM
-        // polygon. The remainder wraps the whole town and the water fills a third of the disc,
-        // so BOTH have centroids far outside the boundary — they would vanish entirely while
-        // every small overlay kept working, which is the failure that looks like success.
-        // ⭐ They are bounded by construction (the coast and the bb), and the stamp cuts them.
-        const exempt = cat === 'water' || cat === 'remainder'
-        if (exempt) {
-          // ⛔ These two are bb-sized by construction — the remainder's outer ring IS the
-          // rectangle. Cut them to the disc HERE, at render, so a live radius change re-cuts
-          // them (R15) instead of leaving the artifact's frozen radius showing.
-          const cut = B.clipRingToBoundary?.(ring)
-          if (!cut) continue
-          // ⛔ The holes are cut to the disc as well. The lake is a hole that STRADDLES the
-          // rim, so uncut it subtracts more area than the clipped outer even has.
-          const cutHoles = (item.holes || []).map(h => B.clipRingToBoundary?.(h)).filter(Boolean)
-          const g2 = triangulateRing(cut, cutHoles.length ? { holes: cutHoles } : undefined)
-          if (!g2) continue
-          if (!groups[item.use]) groups[item.use] = []
-          groups[item.use].push(g2)
-          continue
-        }
-        {
-          let sx = 0, sz = 0
-          for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
-          if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
-        }
-        // ⭐ A compound face: the remainder's holes are the water it wraps. Triangulating the
-        // outer alone would paint the lake twice, land under water.
-        const g = triangulateRing(ring, item.holes?.length ? { holes: item.holes } : undefined)
+        let sx = 0, sz = 0
+        for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
+        if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+        const g = triangulateRing(ring)
         if (!g) continue
         if (!groups[item.use]) groups[item.use] = []
         groups[item.use].push(g)
@@ -665,6 +637,43 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     }
     const merged = {}
     for (const kind of Object.keys(groups)) merged[kind] = mergeGeos(groups[kind])
+    return merged
+  }, [mapData, B])
+
+  // ── The pour's own GROUND: water + remainder ──────────────────────────
+  // ⭐⭐⭐ THESE ARE GROUND, NOT OVERLAY, AND THEY DRAW IN EVERY VIEW INCLUDING SURVEY.
+  // `landscapeByKind` is gated on `!surveyActive` and `SURVEY_HIDE` carries 'water', both
+  // correct for OSM decoration — Survey hides stripes, buildings, lamps and trees so the
+  // operator can see curbs. ⛔ But the water and the unparcelled land are the FLOOR of the
+  // composition, not decoration on it: hidden, a coastal hood floats over nothing and Survey
+  // shows a lake as a hole. "360 degrees of circle filled with map" is not a Designer-only
+  // claim.
+  // ⛔ Cut to the disc HERE, at render, never at pour — the radius is live-editable with no
+  // re-pour (`EXTENT-DESIGN §3.3` R15), so a disc baked into map.json would go stale the moment
+  // the operator drags the radius.
+  // ⛔ AND NO CENTROID TEST. `landscapeByKind` keeps an overlay only if its centroid is inside
+  // the boundary — fine for a small OSM polygon, fatal here: the remainder wraps the whole town
+  // and the water fills a third of the disc, so BOTH centroids fall outside and both would
+  // vanish entirely while every small overlay kept working.
+  const groundByKind = useMemo(() => {
+    const groups = {}
+    for (const cat of ['water', 'remainder']) {
+      for (const item of (mapData.layers?.[cat] || [])) {
+        const ring = item.ring
+        if (!ring || ring.length < 3) continue
+        const cut = B.clipRingToBoundary?.(ring)
+        if (!cut) continue
+        // ⛔ Holes are cut too: the lake is a hole that STRADDLES the rim, so uncut it
+        // subtracts more area than the clipped outer has (measured at −40.20 km²).
+        const holes = (item.holes || []).map(h => B.clipRingToBoundary?.(h)).filter(Boolean)
+        const g = triangulateRing(cut, holes.length ? { holes } : undefined)
+        if (!g) continue
+        if (!groups[cat]) groups[cat] = []
+        groups[cat].push(g)
+      }
+    }
+    const merged = {}
+    for (const k of Object.keys(groups)) merged[k] = mergeGeos(groups[k])
     return merged
   }, [mapData, B])
 
@@ -843,6 +852,18 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
 
       {/* Landscape overlays (leisure + natural subtypes) — per-vertex
           displacement (see parking_lot note above). */}
+      {Object.entries(groundByKind).map(([kind, geo]) => {
+        // ⭐ `hideIn`, not `hide`. The operator's own layer toggle still turns these off; what
+        // is bypassed is only the SURVEY blanket (`SURVEY_HIDE` carries 'water'), which exists
+        // to strip decoration and must not strip the floor. ⛔ Reading `hide` here would let
+        // Survey suppress the ground; ignoring both would take the toggle away from the
+        // operator, and the override is the product.
+        if (!geo || hideIn[kind]) return null
+        const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
+        const mat = makeFlatMat(col, PRI.landscape, { fade })
+        return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />
+      })}
+
       {!surveyActive && Object.entries(landscapeByKind).map(([kind, geo]) => {
         if (!geo || hide[kind]) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
