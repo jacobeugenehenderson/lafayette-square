@@ -74,18 +74,74 @@ leisure:nature_reserve   15
 natural:beach            14   ← huron is on Lake Erie
 ```
 
-⛔⛔ **DO NOT MAP ALL 80. THAT IS THE TRAP IN THIS BRIEF.** Many are **not land-use faces at all** —
-`amenity:bench` (23), `amenity:bicycle_parking` (29), `leisure:bleachers` (14), `amenity:toilets` (38)
-are street furniture and point features. ⭐ **Mapping them would invent land use where there is none,
-which is the same error as erasing it.**
-▶ **SORT the 80 into three piles, and the third pile is the important one:**
-  ① **a real LU face that needs a class** — farmland, brownfield, water, park, wetland, beach…
-  ② **NOT a land-use face — declared IGNORED, by name, with the reason.**
-  ③ **cannot tell without looking** — bring it to Jacob.
-⭐ **The declared-ignored pile is what makes this honest and what makes the check possible.** "We
-looked and decided no" is a different fact from "nobody has looked", and today they are the same
-silence. That distinction is `sources.js`'s UNDECLARED / DECLARED-NONE / DECLARED, arriving in a third
-domain — ⛔ reuse the idea, do not re-invent the mechanism.
+### ⛔ MAP ALL 80 — **INTO THE RIGHT TABLE.** *(Jacob, 2026-09-20, correcting this brief)*
+
+> *"Why not? I don't know why we wouldn't just provide the completest picture we can; if all of that
+> is available why not have the option to show it? (Toilets in particular; beach? that's great stuff
+> for a local map)"*
+
+⛔ **AN EARLIER DRAFT OF THIS BRIEF SAID "DO NOT MAP ALL 80" AND THAT WAS WRONG.** It collapsed two
+different questions into one:
+- **"Is this a land-use FACE?"** — a bench is not. ⛔ Painting a whole block face the colour of
+  *bench* is a real error and it is the one to avoid.
+- **"Should this be ON THE MAP?"** — ⭐ **a bench absolutely should.**
+
+⇒ **THE ANSWER IS NOT "DON'T MAP IT", IT IS "DON'T MAP IT AS THE WRONG KIND OF THING."** Three piles,
+and ⭐ **the third should be nearly EMPTY:**
+
+| pile | destination | examples |
+|---|---|---|
+| **① LU FACE** | `OSM_TO_LU` + a colour (`m3Colors`) + a plantability (`lu-policy`) + optionally a **surface treatment** (§4a) | farmland · brownfield · beach · wetland · **park** · grassland · sand · scree |
+| **② MAP LAYER** | a `layerVis` layer + a marker — ⭐ **`FURNITURE_DEFS` in `Panel.jsx` ALREADY EXISTS for exactly this** | toilets · benches · bicycle parking · bleachers · shelters · outdoor seating |
+| **③ genuinely nothing** | declared IGNORED, by name, with the reason | ⭐ if this pile is large, the sort is wrong |
+
+⭐ **`natural:beach` is pile ① on a Lake Erie town, not furniture** — 14 features on huron, a real
+surface, currently invisible. ⭐ **`amenity:toilets` (38) is pile ② and is genuinely useful** — a
+public toilet on a neighborhood map is the local-map value the Society Pages exist for.
+⚠️ Declared-IGNORED remains the distinction that makes the check possible: *"we looked and decided
+no"* and *"nobody has looked"* are the same silence today. That is `sources.js`'s
+UNDECLARED / DECLARED-NONE / DECLARED arriving in a third domain — ⛔ reuse the idea, do not re-invent
+the mechanism.
+
+## 4a. ⭐⭐ NEW CLASSES UNLOCK FOLIAGE — the mechanism already exists
+
+*Jacob: "Will we be able to fill a field with Corn? Just realizing we should add more foliage if
+that's possible."*
+
+`src/components/BakedGround.jsx:71`:
+```js
+const GRASS_FACES = new Set(['park', 'residential', 'recreation'])   // the noise-based grass shader
+```
+⭐ **A per-face-kind SURFACE TREATMENT, keyed off the LU class.** ⇒ a `farmland` class can take a
+**crop-row variant** exactly the way `park` takes grass. ⚠️ **Another three-entry table holding
+precisely the three faces LS has** — the same shape as everything else in this brief.
+⇒ **Every new LU class is an opportunity for a surface treatment**: crop rows, wetland reeds, beach
+sand, scree. ⛔ **Do not build the shaders in this brief** — establish that the hook is per-class and
+say what each new class WANTS. The foliage is its own arc and it is Jacob's to scope.
+
+## 4b. ⚠️ THE TOGGLE LIST IS HARD-WIRED — and Jacob has asked the right question about it
+
+`src/cartograph/Panel.jsx:422-429` builds the Designer's layer panel from **six static arrays**:
+`STREETS_DEFS · BLOCKS_DEFS · PATHS_DEFS · LAND_COVER_DEFS · FURNITURE_DEFS · LABELS_DEFS`.
+⇒ **A town with farmland gets no toggle for it even after the LU class exists.** The UI vocabulary is
+LS's too, one layer above the data vocabulary this brief is about.
+
+> *Jacob: "does this mean they should be dynamic to the installation and what is made available in
+> every distinct map? Or is it just a long list and we only display what we have?"*
+
+⛔ **THIS IS HIS QUESTION AND IT IS NOT RULED. Do not decide it.** ⭐ The coordinator's read, offered
+as a read: **neither, purely.** The shape this repo keeps arriving at is
+**STATIC KIT VOCABULARY · DERIVED PER-TOWN PRESENCE · ABSENCE SHOWN, NOT HIDDEN** —
+- the **vocabulary** stays kit-wide and static, or towns cannot be compared and no check can assert
+  anything across them;
+- **presence** is derived from what is on that town's disk;
+- ⛔⛔ **and hiding an empty row is the trap.** If a layer vanishes because the town has none, the
+  operator cannot tell *"this town has no benches"* from *"we never fetched benches"* — which is the
+  silent substitution this whole brief is about, committed in the UI. **Show the row, and show which
+  of the three states it is in.**
+⚠️ A 37 → 80 row panel is a real usability problem and his *"just a long list"* worry is fair — but
+that is **presentation** (collapse empty sections by default), not truth. ⛔ Solve it by collapsing,
+never by hiding.
 
 ## 5. ⛔ THE SCOPE: "NEW TABLES", PLURAL — THE CLASS SET IS NAMED IN AT LEAST NINE PLACES
 
