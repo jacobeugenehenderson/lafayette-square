@@ -14,6 +14,15 @@
  *    are not towns. Requiring the artifact excludes them **without a skip list**, because a
  *    non-town has no `shape.json`, and it stays correct when new towns land or old ones go.
  *
+ * ⭐⭐ TESTED BY A SCENE ACTUALLY DISAPPEARING (2026-09-19), AND NOTHING WENT RED. `centrum` and
+ *    `ksi-y-m-yn` were excised — removed from the manifest, the tree and the disk — and the full
+ *    suite produced **no failure attributable to their absence**: no check went looking for a town
+ *    that had gone. That is the strongest available evidence that the typed-roster class this file
+ *    was written to close is genuinely closed, and it is worth recording precisely because a
+ *    negative result leaves no red behind to point at. ⚠️ The limit, stated: no baseline suite was
+ *    run at the pre-excision commit, so this is attribution (the diff could not reach the failing
+ *    checks), not a before/after count.
+ *
  * ⛔ NOTHING IS SKIPPED SILENTLY. A scene the look manifest knows about that lacks the artifact is
  *    printed as NOT CHECKED — a real state, never folded into a pass. `claims-ring-partition.mjs`
  *    states the rule this serves: reporting "a perfectly measurable scene as NOT CHECKED [is] a
