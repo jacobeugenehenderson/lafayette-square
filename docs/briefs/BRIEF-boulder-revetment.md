@@ -32,6 +32,37 @@ man_made:groyne            1        barrier=wall            10
 ⭐ **That is a serious working waterfront, not a decorative edge** — and it is the one thing huron has
 that no other town in the kit has. **It is also, right now, entirely invisible.**
 
+> ## ⭐⭐ ADDED 2026-09-20 — TWO THINGS THAT CHANGE THIS BRIEF'S PRIORITY AND ITS FIRST STEP
+>
+> ### ⚠️ ① THE CODE FIX IS LANDED BUT HURON HAS NOT FELT IT — RE-FETCH FIRST
+> `man_made` is in `tagPriority` now, but **bucketing happens AT FETCH TIME.** Measured just now:
+> huron's `raw/osm.json` still carries **246 features in `other[]` and an EMPTY `man_made` bucket.**
+> ▶ **Your first step is a re-fetch, not a code change:** `node cartograph/fetch.js --scene=huron`
+> ✅ Safe — huron has no authored `design.json` and its `raw/osm.json` is git-tracked; it has been
+> re-fetched twice today. ⛔ **Confirm `ground.man_made` is non-empty before going further**, or you
+> will build against features that are still unreachable.
+>
+> ### ⭐⭐ ② THE REVETMENT IS THE SHORE EDGE THE ELEVATION DATA CANNOT SEE
+> *Jacob: "when you walk out Francesca's back door when you get to the big rock wall it's a drop from
+> her yard to the water."* **15–20 ft**, held by the wall.
+>
+> **MEASURED — huron's terrain, acquired and baked today (USGS 3DEP `n42w083`, 5 m grid, ~10 m
+> source), all 2,064,969 samples:**
+> ```
+> waterline samples with a >1 m rise adjacent :  0
+> steepest single-step rise from water        :  0.0 m
+> ```
+> ⇒ ⛔ **A near-vertical 15–20 ft bank is SMEARED INTO A GENTLE RAMP by the sampling. The real shore
+> edge is absent from the heightfield and NO RE-BAKE RECOVERS IT.**
+>
+> ⇒ ⭐⭐ **THE REVETMENT IS NOT DECORATION. IT IS THE ONLY THING THAT CAN PUT THE SHORE EDGE BACK.**
+> Building it restores a 15–20 ft feature the elevation source physically cannot carry. ⭐ It also
+> explains Jacob's earlier ruling — *"over water the horizon should barely fade; water is usually a
+> pretty hard line"* — **because here the water meets a WALL, not a beach.**
+> ⚠️ **And it corrects `BRIEF-water-shader` §6d:** the waterline as *"where terrain crosses y = 0"*
+> is right about **WHERE** the shore is and says nothing about **WHAT IT LOOKS LIKE** — the crossing
+> it finds is the smeared ramp, not the wall.
+
 ## 4. ⛔⛔ THE TWO BLOCKERS, IN ORDER — NEITHER IS GEOMETRY
 
 ### ① ✅ `man_made` NOW BUCKETS — fixed 2026-09-20, and it was worse than "unbucketed"
