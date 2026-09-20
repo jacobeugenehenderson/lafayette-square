@@ -236,6 +236,7 @@ if (unreachable.length) {
 
   const cites = new Map() // path as written → Set of memory files citing it
   const owed  = new Map() // same, but the memory says the file is NOT WRITTEN YET
+  const gone  = new Map() // same, but the memory says the subject was RETIRED ON PURPOSE
 
   // ⭐ A citation can name a doc that does not exist because NOBODY HAS WRITTEN IT YET.
   //    That is an ASPIRATION, not rot — `CLAUDE.md`: "neither evict nor correct; surface it
@@ -245,10 +246,23 @@ if (unreachable.length) {
   //    cries wolf is ignored inside a week. So the memory must SAY SO on the line.
   const ASPIRATION = /\bSTILL UNWRITTEN\b|\bnot yet written\b|\bdoes not exist yet\b|\bwrite\s+\*{0,2}`/i
 
+  // ⭐ AND A THIRD CAUSE THIS CHECK HAD NO WORD FOR: RETIREMENT.
+  // `CLAUDE.md` names three — ROT (evict), REGRESSION (fix the code), ASPIRATION
+  // (surface as work). A fourth showed up on 2026-09-19 when two towns were excised
+  // by ruling: a path that WAS correct, whose subject was deliberately removed, and
+  // whose record is kept ON PURPOSE. Scored as rot it demands eviction of the very
+  // evidence the deletion was supposed to preserve — the Łódź file is the only
+  // end-to-end record of a non-US pour working, and the land-use defect it found
+  // outlived the town. Scored as aspiration it would read as owed work. Neither.
+  // ⛔ Requires an explicit marker, same discipline as ASPIRATION: the memory must
+  // SAY SO on the line, or a broad pattern would launder ordinary rot.
+  const RETIRED = /\bEXCISED\b|\bno longer exists?\b|\bdeliberately (?:removed|deleted)\b/i
+
   for (const f of files.concat('MEMORY.md')) {
     const body = readFileSync(join(DIR, f), 'utf8')
     for (const line of body.split('\n')) {
     const planned = ASPIRATION.test(line)
+    const retired = RETIRED.test(line)
     const raw = new Set()
     for (const m of line.matchAll(/`([^`\n]+)`/g)) for (const t of m[1].split(/\s+/)) raw.add(t)
     for (const m of line.matchAll(/\]\(([^)\s]+)\)/g)) raw.add(m[1])
@@ -259,7 +273,7 @@ if (unreachable.length) {
       if (/[{}*|()?<>…\\]/.test(t)) continue                     // globs, braces, regex, ellipsis
       if (/^https?:|^www\.|\.(com|org|gov|io|pl)\//.test(t)) continue
       if (!TOP.has(t.split('/')[0])) continue                    // ⭐ the repo decides
-      const bucket = planned ? owed : cites
+      const bucket = planned ? owed : (retired ? gone : cites)
       if (!bucket.has(t)) bucket.set(t, new Set())
       bucket.get(t).add(f)
     }
@@ -268,6 +282,16 @@ if (unreachable.length) {
   // Named as owed anywhere ⇒ owed everywhere. One honest "not written yet" outranks
   // a bare mention elsewhere; the alternative is failing on a doc we KNOW is unbuilt.
   for (const k of owed.keys()) cites.delete(k)
+  // ⛔⛔ RETIREMENT EXEMPTS ONLY WHAT IS ACTUALLY DEAD. The first cut of this bucketed
+  // every path on a line matching RETIRED, which exempted 7 LIVE paths whose line merely
+  // contained the words "no longer exists" in prose about something else. That is a check
+  // laundering ordinary rot — the exact failure the ASPIRATION comment above warns about,
+  // committed while quoting it. A live path must keep resolving no matter what its
+  // sentence says; only a path that is BOTH marked retired AND absent is exempt.
+  for (const k of [...gone.keys()]) {
+    if (existsSync(join(REPO, k))) { gone.delete(k); continue }   // marked, but alive — still a real citation
+    cites.delete(k); owed.delete(k)
+  }
 
   // A citation naming a FILE (an extension) or a DIRECTORY (a trailing slash) is
   // an exact claim and must resolve. One without either — `scripts/15`,
@@ -319,6 +343,18 @@ if (unreachable.length) {
     for (const [pth, srcs] of [...owed].sort()) {
       console.log(`     ${pth}`)
       console.log(`        owed per: ${[...srcs].join(', ')}`)
+    }
+    console.log()
+  }
+
+  // Reported, never failed — and never "corrected". The path is dead because someone
+  // decided it should be; the record is the point.
+  if (gone.size) {
+    console.log(`⭐ ${gone.size} citation(s) name a subject RETIRED ON PURPOSE, not rotted —`)
+    console.log(`   the memory says so on the line. ⛔ Do not repoint or delete these:`)
+    for (const [pth, srcs] of [...gone].sort()) {
+      console.log(`     ${pth}`)
+      console.log(`        retired per: ${[...srcs].join(', ')}`)
     }
     console.log()
   }
