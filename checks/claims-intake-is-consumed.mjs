@@ -6,16 +6,35 @@
 // unless it's well and truly unrelated or vestigial or something."
 //
 // ⛔ IT WAS NOT ANSWERABLE BY READING ANYTHING. The kit decides what an OSM
-// feature becomes in FOUR separate enumerated lists across THREE files, and no
-// two of them are near each other:
+// feature becomes in enumerated lists scattered across four files, and no two of
+// them are near each other:
 //   fetch.js      tagPriority          — which bucket a feature lands in
 //   skeleton.js   VEHICULAR_UNNAMED    — which UNNAMED way still becomes a street
 //   derive.js     the path filters     — which highway value becomes a drawn path
 //   derive.js     OSM_TO_LU            — which polygon votes on land use
+//   classify.js   the type block       — which polygon becomes a typed FACE
 //   coastline.mjs isWaterFeature       — which polygon can be a coast
 // A feature named by none of them is fetched, stored, and drawn nowhere — and
-// nothing anywhere prints that fact. Measured on huron the day this was written:
-// 591 of 1,496 highway ways (40%) reach no consumer at all.
+// nothing anywhere prints that fact.
+//
+// ⛔⛔ BUT THEY ARE NOT SEPARATE GATES, AND READING THEM THAT WAY SENDS YOU TO
+// PATCH PLACES THAT ARE NOT BROKEN. (Struck 2026-09-20, agent Boz's correction;
+// the reason is preserved because the symptom will otherwise be re-derived as
+// three causes by the next reader.) The skeleton SORTS every way it will not make
+// a street into `paths[]` — and `derive.js` has NEVER READ THAT ARRAY. Measured,
+// not inferred: `git log -S'skeleton.paths' -- cartograph/derive.js` is empty
+// across the whole history, and derive contains no `.paths` read at all. Footways
+// draw because derive independently re-filters the RAW OSM through a shorter list
+// of its own. ⇒ ONE absence with one mechanism — the gap between the skeleton's
+// sort and derive's shorter re-filter — wearing several symptoms. Same shape as
+// A4's dead miter clamp and A19's name gate.
+//
+// ⛔ AND NO NUMBER LIVES IN THIS HEADER. One did, for about an hour: "591 of
+// 1,496 highway ways". It was wrong twice over by the time anyone re-ran it —
+// stale (the census gained two consumers) and measured with a LOOSER predicate
+// (it counted every footway as drawn, where a `footway=crossing` is not). The
+// real figure was 682. A hardcoded count inside the instrument built to stop
+// hardcoded counts is the joke writing itself. ▶ Run it; the number is the output.
 //
 // ⛔⛔ THE LISTS ARE PARSED OUT OF SOURCE, NEVER RESTATED HERE. A second copy is
 // how a census starts lying: it would keep reporting the vocabulary we had on the
