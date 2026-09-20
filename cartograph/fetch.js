@@ -185,9 +185,22 @@ function main() {
   // the operator's "there are no highways or natural features in the boundary list":
   // waterway and railway are now acquired, so they CAN become boundary-eligible.
   const LIGHT_WAYS = ['highway', 'waterway', 'railway', 'boundary']
-  const HEAVY_WAYS = ['landuse', 'leisure', 'natural', 'amenity', 'barrier', 'surface', 'man_made']
+  //
+  // ⭐⭐ `shop` / `tourism` / `office` / `craft` added 2026-09-20 — the SAME SHAPE as
+  // railway, one layer up. `bake-content.js#classifyPoi` has always read `tags.shop`,
+  // `tags.tourism` and `tags.office` (its `shopping`, `hospitality`, `services/financial`
+  // and `services/health` rows are written against them) and they were in NEITHER tag
+  // set, so those rows were unreachable in every town ever poured. Huron's 36 listings
+  // were the whole of its amenity+leisure pull. ⛔ `craft` has NO classifier row — it is
+  // acquired here so the data exists, and reaches `shopping/retail` only via `shop`;
+  // a craft-only feature is carried, named, and classified by nothing. Said aloud.
+  //
+  // ⛔ NODES MATTER MORE THAN WAYS HERE. A small business is usually a single OSM
+  // node, not a footprint — `HEAVY_NODES` carried only natural/amenity/man_made, so a
+  // shop node was invisible twice over.
+  const HEAVY_WAYS = ['landuse', 'leisure', 'natural', 'amenity', 'barrier', 'surface', 'man_made', 'shop', 'tourism', 'office', 'craft']
   const LIGHT_NODES = ['highway']
-  const HEAVY_NODES = ['natural', 'amenity', 'man_made']
+  const HEAVY_NODES = ['natural', 'amenity', 'man_made', 'shop', 'tourism', 'office', 'craft']
   const ways = pass === 'heavy' ? HEAVY_WAYS : pass === 'light' ? LIGHT_WAYS : [...LIGHT_WAYS, ...HEAVY_WAYS]
   const nodeTags = pass === 'heavy' ? HEAVY_NODES : pass === 'light' ? LIGHT_NODES : [...LIGHT_NODES, ...HEAVY_NODES]
 
@@ -311,9 +324,14 @@ out body;>;out skel qt;`
   // `EXCAVATION-DIARY §0.7` item 4 called this two fixes; the fetch was one and this is
   // the other. ⛔ It is a BUCKET, not a filter: the tag was always carried either way,
   // but a consumer reading `ground.railway` got nothing and had no way to know why.
+  // ⛔ The four new tags are APPENDED, not slotted next to `amenity`. Order decides the
+  // bucket, so inserting them mid-list would move co-tagged ways OUT of `barrier`,
+  // `waterway`, `railway` and `surface` — a silent re-bucketing of existing towns for
+  // no gain. Appended, no existing feature changes category.
   const tagPriority = [
     'highway', 'landuse', 'leisure', 'natural',
     'amenity', 'barrier', 'waterway', 'railway', 'surface',
+    'shop', 'tourism', 'office', 'craft',
   ]
 
   const ground = {}

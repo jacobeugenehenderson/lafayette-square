@@ -11116,10 +11116,12 @@
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "The Cedar Point Center at BGSU Firelands"
+    "The Cedar Point Center at BGSU Firelands",
+    "RISE"
    ],
    "listing_ids": [
-    "huro-lst-0004"
+    "huro-lst-0004",
+    "huro-lst-0030"
    ],
    "historic_district": null,
    "contributing": null,
@@ -12245,7 +12247,7 @@
     "Shell"
    ],
    "listing_ids": [
-    "huro-lst-0033"
+    "huro-lst-0034"
    ],
    "historic_district": null,
    "contributing": null,
@@ -28521,7 +28523,7 @@
     "Hy-Miler"
    ],
    "listing_ids": [
-    "huro-lst-0034"
+    "huro-lst-0035"
    ],
    "historic_district": null,
    "contributing": null,
@@ -38393,7 +38395,7 @@
     "Main Street Tavern"
    ],
    "listing_ids": [
-    "huro-lst-0032"
+    "huro-lst-0033"
    ],
    "historic_district": null,
    "contributing": null,
@@ -62285,7 +62287,7 @@
     "The Rusty Oar"
    ],
    "listing_ids": [
-    "huro-lst-0031"
+    "huro-lst-0032"
    ],
    "historic_district": null,
    "contributing": null,
@@ -71137,7 +71139,7 @@
     "Hy-Miler Laser Wash"
    ],
    "listing_ids": [
-    "huro-lst-0035"
+    "huro-lst-0036"
    ],
    "historic_district": null,
    "contributing": null,
@@ -102896,7 +102898,7 @@
     "Foundation Hall"
    ],
    "listing_ids": [
-    "huro-lst-0030",
+    "huro-lst-0031",
     "huro-lst-0003"
    ],
    "historic_district": null,
@@ -111711,7 +111713,7 @@
     "Goodwill"
    ],
    "listing_ids": [
-    "huro-lst-0036"
+    "huro-lst-0037"
    ],
    "historic_district": null,
    "contributing": null,
