@@ -44,6 +44,51 @@
  * idiom for "name what this town brought that the kit lacks", one stage down.
  */
 
+/**
+ * ⭐⭐⭐ CAN THE KIT READ THIS FEATURE AS A FACE? Returns null when yes, otherwise a
+ * short reason that becomes part of the gap signature.
+ *
+ * ⛔ THE SECOND SHAPE OF THIS MODULE'S DEFECT, AND IT ARRIVED WITH RELATIONS
+ * (2026-09-19). Until then every ground feature was a single closed way, so a
+ * consumer could take `f.coords` as "the face" and be right. Multipolygon intake
+ * broke both halves of that assumption at once:
+ *
+ *   · a feature can carry HOLES — an island in a lake, a courtyard in a block.
+ *     `f.coords` alone is then the OUTER ring, and using it as the face FILLS the
+ *     hole. Measured on Huron: 12 relations carry inner rings, including a water
+ *     relation with 7 islands and five `landuse=grass` relations.
+ *   · a feature can be CLIPPED — a big ring whose members close outside the fetch
+ *     envelope (`fetch.js` scopes relation members deliberately). Lake Erie arrives
+ *     as 1,329 vertices that do not close. Treated as a polygon it is not a lake
+ *     with a ragged edge; it is a nonsense region whose interior is whatever the
+ *     shoelace happens to say.
+ *
+ * ⭐ THE GRADIENT ARGUMENT AT THE TOP OF THIS FILE APPLIES UNCHANGED, which is why
+ * this belongs here and not in a caller: multipolygons are what a RICHLY MAPPED town
+ * has. Lafayette Square has no relations at all — its fetch predates them — so a
+ * one-town check would see nothing and clear the kit. Huron has 28.
+ *
+ * ⛔ Callers must `record()` the reason and SKIP. Do not repair the ring, do not
+ * drop it quietly, and do not let it vote — all three are the sentinel-as-value
+ * defect this module exists to prevent.
+ */
+export function unreadableFace(f) {
+  if (!f || !Array.isArray(f.coords) || f.coords.length < 3) return 'degenerate'
+  // ⛔ `isClosed` is the producer's OWN declaration, not something re-derived from
+  // the coordinates here. A consumer that re-decides closure by comparing endpoints
+  // has taken over the producer's job and will disagree with it at the rounding.
+  // ⛔ `clipped` IS TESTED ON ITS OWN, BEFORE `isClosed`, and that ordering is
+  // load-bearing. `snap.js` RE-DERIVES closure after snapping, so a clipped ring
+  // whose two loose ends happen to land on the same grid point comes out of the
+  // snapper declaring `isClosed: true` while still being a fragment of a much
+  // larger body. Keying only off closure would let exactly that through — and it
+  // is the biggest ring in the town.
+  if (f.clipped) return 'clipped'
+  if (f.isClosed === false) return 'open'
+  if (Array.isArray(f.holes) && f.holes.length) return 'compound'
+  return null
+}
+
 /** Shoelace area of a ring of {x,z} or [x,z]. Sign-agnostic. */
 function ringArea(ring) {
   if (!Array.isArray(ring) || ring.length < 3) return 0

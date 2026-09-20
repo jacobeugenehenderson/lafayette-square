@@ -14,7 +14,7 @@
 
 // ── Point-in-polygon (ray casting) ───────────────────────────────────
 
-import { createVocabularyGate } from './osm-vocabulary.mjs'
+import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 
 function pointInPolygon(px, pz, ring) {
   let inside = false
@@ -58,7 +58,16 @@ export function classify(faces, snapped, scene = null) {
   for (const cat of ['landuse', 'leisure', 'natural', 'amenity']) {
     const feats = snapped.ground[cat] || []
     for (const f of feats) {
-      if (!f.isClosed || f.coords.length < 4) continue
+      // ⛔ A FACE THE KIT CANNOT READ DOES NOT VOTE — the same rule as an unreadable
+      // TAG below, applied to unreadable GEOMETRY. `!f.isClosed` used to `continue`
+      // here silently; with relations in the intake that silence now covers a clipped
+      // Lake Erie and a grass polygon with an island in it, so the skip is recorded.
+      const unreadable = unreadableFace(f)
+      if (unreadable) {
+        vocabGap.record(`${unreadable}:${cat}=${f.tags?.[cat] ?? '(missing)'}`, f.coords, f.tags)
+        continue
+      }
+      if (f.coords.length < 4) continue
       const ring = f.coords.map(c => ({ x: c.x, z: c.z }))
 
       // Determine overlay type from tags.

@@ -49,7 +49,15 @@ export function snapAll(osm) {
         const isClosed = coords.length >= 3 &&
           coords[0].x === coords[coords.length - 1].x &&
           coords[0].z === coords[coords.length - 1].z
-        return { ...f, coords, isClosed }
+        // ⛔ HOLES ARE SNAPPED WITH THEIR OUTER RING. They ride through on the spread
+        // whether or not this line exists, which is the trap: an unsnapped inner ring
+        // against a snapped outer is two rings on two different grids, and the
+        // sub-grid disagreement lands exactly on the shared edges where a containment
+        // test decides whether a point is in the hole or in the face.
+        const holes = Array.isArray(f.holes)
+          ? f.holes.map(snapCoords).filter(h => h.length >= 3)
+          : undefined
+        return { ...f, coords, isClosed, ...(holes ? { holes } : {}) }
       })
       .filter(Boolean)
   }

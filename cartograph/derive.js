@@ -18,7 +18,7 @@ import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import clipperLib from 'clipper-lib'
 import { STANDARDS, getStreetSpec, crossSection } from './standards.js'
-import { createVocabularyGate } from './osm-vocabulary.mjs'
+import { createVocabularyGate, unreadableFace } from './osm-vocabulary.mjs'
 import { RAW_DIR, CLEAN_DIR, CARTOGRAPH_DIR, SCENE, DEFAULT_SCENE, wgs84ToLocal } from './config.js'
 import { nodeEdges } from './node.js'
 import { polygonize } from './polygonize.js'
@@ -3178,6 +3178,12 @@ export function deriveLayers(highways) {
     for (const f of (osmData.ground?.[cat] || [])) {
       const subtype = f.tags?.[key]
       if (!subtype) continue
+      // ⛔ GEOMETRY THE KIT CANNOT READ DOES NOT VOTE EITHER. A clipped lake or a
+      // holed polygon would otherwise contribute its OUTER ring's whole area to the
+      // land-use vote — the biggest polygons in the town casting the loudest vote
+      // on the strength of a shape we know is wrong.
+      const unreadable = unreadableFace(f)
+      if (unreadable) { luVocabGap.record(`${unreadable}:${cat}=${subtype}`, f.coords, f.tags); continue }
       const lu = OSM_TO_LU[`${cat}:${subtype}`]
       if (!lu) { luVocabGap.record(`${cat}=${subtype}`, f.coords, f.tags); continue }
       if (!f.coords || f.coords.length < 3) continue
@@ -5194,10 +5200,27 @@ export function deriveLayers(highways) {
   const _natural = osmData.ground?.natural || []
   const _barrier = osmData.ground?.barrier || []
 
+  // ⛔⛔ THESE FOUR LOOPS RENDER, so an unreadable ring here is not a bad vote — it is
+  // a wrong shape drawn on the map. They took `f.coords` as the face and gated only on
+  // vertex count, which was correct while every ground feature was a single closed way
+  // and is wrong now that relations are in the intake. One gate, one account, reported
+  // with the land-use gap above rather than as a second half-report.
+  const ovVocabGap = createVocabularyGate('osm-overlay',
+    'These features are DRAWN, not merely voted on. A clipped ring has no trustworthy ' +
+    'interior and a compound one has holes no consumer here can express, so they are ' +
+    'skipped rather than drawn wrong. Teaching the overlays to carry holes is the fix.')
+  const overlayReadable = (f) => {
+    const why = unreadableFace(f)
+    if (!why) return true
+    const cat = f.tags?.amenity ? 'amenity' : f.tags?.leisure ? 'leisure' : f.tags?.natural ? 'natural' : 'feature'
+    ovVocabGap.record(`${why}:${cat}=${f.tags?.[cat] ?? '(missing)'}`, f.coords, f.tags)
+    return false
+  }
+
   const parkingLots = []
   const institutionOverlays = []
   for (const f of _amenity) {
-    if (!f.coords || f.coords.length < 3) continue
+    if (!overlayReadable(f)) continue
     const ring = f.coords.map(c => ({ x: c.x, z: c.z }))
     if (f.tags?.amenity === 'parking') {
       parkingLots.push({ ring, surface: f.tags.surface || 'asphalt', access: f.tags.access || null })
@@ -5207,15 +5230,17 @@ export function deriveLayers(highways) {
   }
   const leisureOverlays = []
   for (const f of _leisure) {
-    if (!f.coords || f.coords.length < 3) continue
+    if (!overlayReadable(f)) continue
     if (f.tags?.leisure === 'park') continue  // Lafayette Park rendered separately
     leisureOverlays.push({ ring: f.coords.map(c => ({ x: c.x, z: c.z })), use: f.tags?.leisure })
   }
   const naturalOverlays = []
   for (const f of _natural) {
-    if (!f.coords || f.coords.length < 3) continue
+    if (!overlayReadable(f)) continue
     naturalOverlays.push({ ring: f.coords.map(c => ({ x: c.x, z: c.z })), use: f.tags?.natural })
   }
+  const ovGapReport = ovVocabGap.report(SCENE)
+  if (ovGapReport) console.log(ovGapReport)
   // Barriers are linear. Emit as polylines (coords, not ring) keyed by kind.
   const barrierLines = []
   for (const f of _barrier) {
