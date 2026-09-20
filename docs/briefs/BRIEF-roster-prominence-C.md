@@ -1,6 +1,6 @@
 <!-- BRIEF-STATE
 status: OPEN
-dispatched: no
+dispatched: 2026-09-20 (Thane)
 written: 2026-09-20
 evict-when: RULING: its gate (A landed, B landed or ruled out) is now MET — both landed 2026-09-20. It leaves the roster when Jacob dispatches it and a ranked list has been seen on two towns.
 -->
@@ -9,13 +9,13 @@ evict-when: RULING: its gate (A landed, B landed or ruled out) is now MET — bo
 
 *Written 2026-09-20 by the coordinator seat.*
 
-> ## ⛔⛔ PARKED. DO NOT START THIS.
-> **C ranks on signals that A and B produce. Ranking huron today means sorting the gaps** — 663 OSM
-> names, 51 addresses across 3,678 buildings, 0% parcel match, every zoning falling to `residential`.
-> ⭐ **A rank computed on absent data is not a weak rank; it is a confident wrong one**, and it would
-> be believed because it comes with numbers.
-> ▶ **Gate: brief A landed (nodes + assessor + zoning), and B landed or ruled out for this town.**
-> **If you are reading this and that has not happened, stop and tell Jacob.**
+> ## ✅ GATE MET, DISPATCHED 2026-09-20. The scorer is built; what remains is Jacob's eye.
+> The park was real and it held: A landed (`3,576/3,678` parcel-matched, addresses 98%→3% missing)
+> and B landed (the Overture base), so the rank is computed on data rather than on gaps.
+> ▶ **Built:** `cartograph/prominence.mjs` · `checks/claims-prominence-recovers-ls-landmarks.mjs` ·
+> operator knobs in `cartograph/OPERATIONS.md` "THE WORK QUEUE".
+> ⏳ **Owed before it leaves the roster:** the `§4.1` signal-list addition needs Jacob's yes (§8), and
+> the panel's progress semantic is proposed, not built (§8 — out of bounds by design).
 
 ---
 

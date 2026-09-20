@@ -49,6 +49,7 @@ import { requireExplicitMap } from './scene.js'
 import { readSources, undeclaredMessage, PARCEL_FIELDS } from './sources.js'
 import { classifyZoning } from '../src/tokens/categories.js'
 import { createVocabularyGate } from './osm-vocabulary.mjs'
+import { rankRoster } from './prominence.mjs'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const ROOT = join(__dirname, '..')
@@ -81,6 +82,16 @@ function ringCentroid(pts) {
 }
 
 const dist2 = (ax, az, bx, bz) => (ax - bx) ** 2 + (az - bz) ** 2
+
+// Footprint area in m² (the frame is metric). Shoelace, sign-free.
+function ringArea(pts) {
+  let a = 0
+  for (let i = 0; i < pts.length; i++) {
+    const [x1, z1] = pts[i], [x2, z2] = pts[(i + 1) % pts.length]
+    a += x1 * z2 - x2 * z1
+  }
+  return Math.abs(a) / 2
+}
 
 // ──────────────────────────────────────────────────────────────────────────
 // Loaders
@@ -127,7 +138,18 @@ function loadBuildingGeom(scene, bakedIds) {
     // with 0 addresses, 0 zoning and 0 parcel matches, which emptied the
     // property atlas (`useListings` filters bare buildings on `address`) and
     // left roster/listings mutually incoherent (roster said 5, listings 84).
-    const id = b.msbfId != null ? `msbf-${b.msbfId}` : (b.osmId != null ? `osm-${b.osmId}` : null)
+    //
+    // ⭐ THE THIRD SOURCE. `bake-buildings.js` has TWO producers — the map.json
+    // adapter (`adaptMapBuildings`, msbf-*/osm-*) and the curated-project default
+    // that reads `src/data/buildings.json` and keeps its own `bldg-*` ids. This
+    // loader knew only the adapter's two, so the curated pour joined ZERO geometry
+    // and bake-content could not read it at all — which is why the ONE town with
+    // hand-curated ground truth was the one town outside the harness. The id is
+    // still whatever the baker stamped; we are reading the third stamp, not minting
+    // a fourth. (`clean/map.json` carries it as `projectId`.)
+    const id = b.msbfId != null ? `msbf-${b.msbfId}`
+      : (b.osmId != null ? `osm-${b.osmId}`
+      : (b.projectId != null ? b.projectId : null))
     if (!id) continue
     if (!bakedIds.has(id)) continue
     const ring = (b.ring || []).map(p => [Array.isArray(p) ? p[0] : p.x, Array.isArray(p) ? p[1] : p.z])
@@ -292,6 +314,15 @@ function loadOsmPois(scene) {
     seen.add(key)
     out.push({ osmId: f.osmId, name, tags, cx, cz, ring: coords.length > 2 ? coords : null })
   }
+  // ⛔⛔ AN ABSENT `pois` ARRAY IS A FETCH VINTAGE, NOT A TOWN WITHOUT POINT FEATURES,
+  // and the two are indistinguishable downstream unless somebody says so HERE.
+  // `fetch.js` threw every tagged NODE's tags away at ingest until brief A landed
+  // (2026-09-20). A town fetched before that carries `ground` + `buildings` and NO
+  // `pois` key at all — so every business mapped as a node is invisible, the listings
+  // base is thin, and the prominence rank is computed on a well with a hole in it.
+  // ⭐ It looks EXACTLY like a quiet town. Reported, never inferred.
+  const nodeTagsPresent = Array.isArray(j.pois)
+
   const ground = j.ground || {}
   for (const cls of Object.keys(ground)) if (Array.isArray(ground[cls])) for (const f of ground[cls]) consume(f)
   // ⭐ Point features. `consume` keys its dedupe on `osmId|name`, and an OSM node and an
@@ -302,7 +333,7 @@ function loadOsmPois(scene) {
   // Named building footprints carry the campus halls / dorms / apartments /
   // churches the ground POIs miss — the bulk of the named directory.
   if (Array.isArray(j.buildings)) for (const f of j.buildings) consume(f)
-  return out
+  return { pois: out, nodeTagsPresent }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -610,6 +641,41 @@ function joinPointToBuilding(x, z, buildingGrid, maxD = 25) {
 }
 
 // ──────────────────────────────────────────────────────────────────────────
+// PROMINENCE — the cheap OSM signal well, gathered per building.
+//
+// ⭐ WIDER THAN THE LISTINGS JOIN, DELIBERATELY. `buildBaseListings` keeps only
+// what `classifyPoi` recognises as a business; prominence keeps EVERY named
+// feature, because a church tagged `historic`+`wikidata` and nothing else is not
+// a listing and is obviously one of the most prominent buildings in a town.
+// Same `pois` array, same `joinPointToBuilding` — one join implementation, two
+// readings of it (`feedback_no_parallel_pipeline_for_scenes`).
+//
+// ⛔ A FEATURE LARGER THAN THE BUILDING IS NOT HOSTED BY IT. A park or a campus
+// ring has a centroid, and that centroid lands on whatever building happens to sit
+// in the middle — which would credit the park's `wikidata` to a random house and
+// rank it first in the town. That is the confident-wrong class, so containment is
+// not enough: the host must be at least as big as its guest.
+function gatherOsmProminence(pois, buildingGrid, buildingGeom) {
+  const out = new Map()   // building id → { tags, poi_count }
+  let oversized = 0
+  for (const poi of pois) {
+    const id = joinPointToBuilding(poi.cx, poi.cz, buildingGrid, 25)
+    if (!id) continue
+    if (poi.ring) {
+      const g = buildingGeom.get(id)
+      if (g && ringArea(poi.ring) > ringArea(g.ring) * 1.2) { oversized++; continue }
+    }
+    let e = out.get(id)
+    if (!e) { e = { tags: {}, poi_count: 0 }; out.set(id, e) }
+    e.poi_count++
+    // Union of tags across everything the building hosts. First writer wins so
+    // the result does not depend on iteration order.
+    for (const [k, v] of Object.entries(poi.tags || {})) if (!(k in e.tags)) e.tags[k] = v
+  }
+  return { byBuilding: out, oversized }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
 // Layer 2 — base listings from OSM POIs
 // ──────────────────────────────────────────────────────────────────────────
 
@@ -904,7 +970,7 @@ function assignDisplayIds(listings, prefix) {
 // Layer 1 — roster (one record per baked building)
 // ──────────────────────────────────────────────────────────────────────────
 
-function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides) {
+function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides, osmProminence) {
   // group listings by building
   const listingsByBuilding = new Map()
   for (const l of listings) {
@@ -914,6 +980,7 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
   }
   const rosterPatches = (rosterOverrides && rosterOverrides.patches) || {}
   const out = []
+  const bundles = new Map()   // id → the prominence signal bundle (see prominence.mjs)
   const stat = { parcel_matched: 0, nr_attributed: 0, historic_flagged: 0, in_district: 0, with_listings: 0 }
 
   for (const [id, meta] of bakedBuildings) {
@@ -1009,10 +1076,34 @@ function buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrI
       architecture: Object.keys(architecture).length ? architecture : null,
       historic_status,
     }
+    // ⭐ HAND-PROMOTION, and it is a FIELD ON THE RECORD rather than a corner of
+    // `prominence`, precisely so the town's own `roster.overrides.json` can patch it
+    // without clobbering the score and its breakdown. Set it and the building sorts
+    // above every scored one (`prominence.mjs`, rankRoster). `{ by: 'resident' }` is
+    // the seam `§4.3` asks for and it needs no change here — ⛔ that path is not
+    // built in this brief.
+    rec.promoted = null
+
     if (rosterPatches[id]) Object.assign(rec, rosterPatches[id])
+
+    const op = osmProminence.get(id) || { tags: {}, poi_count: 0 }
+    bundles.set(id, {
+      tags: op.tags,
+      poi_count: op.poi_count,
+      footprint_area: geom ? ringArea(geom.ring) : null,
+      stories,
+      appraised_value: par ? par.appraised_value : null,
+      building_sqft: par ? par.building_sqft : null,
+      units: par ? par.units : null,
+      vacant: rec.vacant,
+    })
     out.push(rec)
   }
-  return { roster: out, stat }
+
+  // ⛔ RANK AFTER THE OVERRIDES, never before — a promotion patched in above has to
+  // be visible to the sort, or hand-promotion is a field nobody reads.
+  const { ctx } = rankRoster(out, bundles)
+  return { roster: out, stat, prominenceCtx: ctx }
 }
 
 // ──────────────────────────────────────────────────────────────────────────
@@ -1034,7 +1125,7 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const { parcels, absentByField, declared: parcelsDeclared } = loadParcels(scene)
   const luMap = loadLandUseCodes(scene)
   const nrIndex = buildNrIndex(loadNrInventory(scene))
-  const pois = loadOsmPois(scene)
+  const { pois, nodeTagsPresent } = loadOsmPois(scene)
   console.log(`  loaded: baked=${bakedIds.size} geom=${buildingGeom.size} parcels=${parcels.length} lu=${luMap.size} nr=${nrIndex.size} pois=${pois.length}`)
 
   // frame-alignment sanity: how many building centroids fall inside a parcel?
@@ -1143,8 +1234,93 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   if (report.add_dropped.length) for (const d of report.add_dropped) console.log(`    ⚠️ dropped add: ${d.name} (${d.id}) — ${d.reason} → check the Extent`)
 
   // Layer 1 — roster
-  const { roster, stat } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides)
+  const osmProm = gatherOsmProminence(pois, buildingGrid, buildingGeom)
+  const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides, osmProm.byBuilding)
   console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · in-district ${stat.in_district} · with-listings ${stat.with_listings}`)
+
+  // ── ⭐ THE PROMINENCE CENSUS — `§4.3`'s work queue, and the operator's dial. ──
+  //
+  // ⛔ THIS IS A SORT, NOT A FILTER. Every one of the buildings above carries a rank
+  // in 1..N and nothing is hidden; the top-10 below is a WINDOW onto the order, not a
+  // cut in it. ⭐ The census's job is to say how much evidence the order rests
+  // on, because a ranking always produces a plausible ordered list and therefore
+  // cannot fail visibly (`BRIEF-roster-prominence-C §7`).
+  {
+    const ranked = [...roster].sort((a, b) => a.prominence.rank - b.prominence.rank)
+    // ⛔ "HAS A SCORE" IS NOT A USEFUL NUMBER and the first version of this census
+    // printed it: footprint area is a percentile, so all but the smallest buildings
+    // score above zero and the line read 3,668/3,678 — technically true, and it told
+    // the operator nothing. ⭐ What they need is how far down the list the order rests
+    // on somebody having NOTICED the building, versus on its size alone.
+    const SIZE_ONLY = new Set(['footprint_area', 'stories'])
+    const hasEvidence = b => Object.keys(b.prominence.signals).some(k => !SIZE_ONLY.has(k))
+    const evidence = ranked.filter(hasEvidence).length
+    const promoted = ranked.filter(b => b.promoted).length
+    const wells = Object.entries(prominenceCtx.wells).filter(([, v]) => !v).map(([k]) => k)
+    console.log(`  prominence: ${evidence}/${roster.length} buildings are NOTICED by some source · ${promoted} hand-promoted`)
+    if (wells.length) {
+      // ⛔ A well no building in this town supplies is DROPPED for all of them, which
+      // leaves the sort unchanged — but the operator is told, because a rank computed
+      // on fewer signals is a weaker guess and only they can decide if that is enough.
+      console.log(`    ⚠️ NO WELL in this town for: ${wells.join(', ')} — dropped for every building (rank-neutral), not zero-filled`)
+    }
+    if (osmProm.oversized) console.log(`    ${osmProm.oversized} OSM feature(s) larger than their nearest building → not credited to it`)
+
+    // ⛔⛔ THE FETCH VINTAGE, AND IT IS THE REASON TWO TOWNS' NUMBERS MAY NOT BE
+    // COMPARED. A town fetched before the node-tag intake landed has no `pois` array,
+    // so every business mapped as an OSM NODE is invisible to this score — and the
+    // resulting "N buildings are noticed" reads as a fact about the town when it is a
+    // fact about the file. ⭐ On LS, only 38 of its 63 hand-curated landmark buildings
+    // carry ANY named OSM feature, and its fetch is one of these. ⛔ The magnitude a
+    // re-fetch would recover is NOT established — nobody has re-fetched and re-scored.
+    if (!nodeTagsPresent) {
+      console.log(`    ⛔ THIS TOWN'S raw/osm.json PREDATES THE NODE-TAG INTAKE — it has no 'pois' array.`)
+      console.log(`       Every business mapped as an OSM node is invisible to the rank above, so the`)
+      console.log(`       "noticed" count is a FLOOR SET BY THE FETCH, not a fact about this town.`)
+      console.log(`       ⛔ Do not compare it against a town fetched after 2026-09-20. ▶ Re-fetch to lift it.`)
+    }
+
+    // ⛔⛔ THE SCORE'S SIGNAL WELL IS OSM, AND THE LISTINGS BASE MAY NOT BE.
+    //
+    // `gatherOsmProminence` reads `raw/osm.json` and nothing else. A town declares an
+    // external base PRECISELY BECAUSE ITS OSM IS THIN — so on exactly that town the
+    // rank goes on being computed from the thin well, produces a perfectly plausible
+    // ordered list, and nothing says so. ⭐ That is `CLAUDE.md` Layer 0's signature
+    // shape — blind worst where the operator most needs it — and a ranking cannot fail
+    // visibly, so silence here is the defect.
+    //
+    // ⛔ THE FIX IS A SECOND PRODUCER, NOT A WEIGHT. Huron's Overture artifact carries
+    // 373 websites / 414 phones / 340 socials against its OSM's 37 / 21 / 18, plus a
+    // per-record `confidence` OSM has no equivalent of. ⛔ How far the rank would MOVE
+    // is NOT established — nobody has scored it both ways. Until someone does, this
+    // prints, so the gap is a known one rather than a discovered one.
+    if (producer !== 'osm') {
+      console.log(`    ⛔ THIS TOWN'S LISTINGS BASE IS '${producer}', BUT THE PROMINENCE SCORE IS COMPUTED FROM OSM.`)
+      console.log(`       You declared an external base because the OSM well was thin — and the rank above is`)
+      console.log(`       read out of that same thin well. Treat this order as a FLOOR, not a verdict.`)
+      console.log(`       ▶ The missing piece is an external-base signal producer (BRIEF C §6 / brief B), unbuilt.`)
+    }
+    console.log(`    top 10 by rank:`)
+    for (const b of ranked.slice(0, 10)) {
+      const sig = Object.entries(b.prominence.signals).sort((x, y) => y[1] - x[1]).map(([k, v]) => `${k} ${v}`).join(' · ')
+      // ⛔ `rec.name` is the hosted LISTING's name and is null for anything `classifyPoi`
+      // does not call a business — which includes the wikidata-bearing landmarks at the very
+      // top of this list, so the census printed them as bare ids. The OSM name is read for
+      // the LINE ONLY; writing it into `rec.name` would quietly redefine what that field means.
+      const osmName = (osmProm.byBuilding.get(b.id) || {}).tags?.name
+      console.log(`      ${String(b.prominence.rank).padStart(3)}. ${String(b.prominence.score).padStart(6)}  ${(b.name || osmName || b.address || b.id)}`)
+      console.log(`           ${sig || '(no signal — ranked by tie-break only)'}`)
+    }
+    // ⭐⭐ WHERE THE EVIDENCE RUNS OUT — the one number that says how far this order
+    // can be trusted. Below it the buildings are sorted by FOOTPRINT AREA and nothing
+    // else, which is a real ordering but not a prominence one. ⛔ It is not a cut:
+    // those buildings keep their ranks and the operator can work past it. It is the
+    // honest statement that the guess has stopped being a guess about prominence.
+    let lastEvidence = 0
+    for (const b of ranked) if (hasEvidence(b)) lastEvidence = b.prominence.rank
+    console.log(`    evidence runs out at rank ${lastEvidence} of ${roster.length}` +
+      ` — below that the order is footprint area alone, and it is still reachable`)
+  }
 
   // ⛔⛔ THE UNCLASSIFIED CENSUS — the number the old `|| 'residential'` existed to hide.
   // Every one of these was previously emitted as a confident "residential" building, so
@@ -1180,7 +1356,10 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
     meta: { scene, schema: 'NEIGHBORHOOD-INPUTS §5.1.1', layer: 'Layer 1 — building ledger (one record per slab building)',
       generated: now, generator: 'bake-content.js', visible_buildings: roster.length,
       parcel_matched: stat.parcel_matched, nr_attributed: stat.nr_attributed, in_historic_district: stat.in_district,
-      buildings_with_listings: stat.with_listings, join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour)' },
+      buildings_with_listings: stat.with_listings, join_key: 'id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)',
+      prominence: { scorer: 'prominence.mjs', rank: '1..N over EVERY building — a sort, never a filter',
+        promoted_wins: 'records with .promoted set sort above every scored building',
+        wells_absent: Object.entries(prominenceCtx.wells).filter(([, v]) => !v).map(([k]) => k) } },
     buildings: roster,
   }
   const listingsOut = {

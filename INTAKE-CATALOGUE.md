@@ -315,24 +315,41 @@ trigger a single button · rank buildings so the operator can choose how much to
 
 ### 4.1 The cheap-signal inventory — measured, already on disk, currently discarded
 
-Every count below is from **Księży Młyn's own already-fetched `raw/osm.json`** (10,602 buildings in the
-wide fetch). None of it costs anything to acquire — it was paid for when `fetch.js` ran. The only cost
-is reading tags the pipeline currently throws away.
+None of it costs anything to acquire — it was paid for when `fetch.js` ran. The only cost is reading
+tags the pipeline currently throws away.
 
-| Signal | Count | Use |
-|---|---|---|
-| `wikidata` | **65** | ⭐ the strongest cheap prominence signal in existence — someone catalogued this building |
-| `wikipedia` | **58** | an article exists about it |
-| `name` | **503** | named ≫ unnamed, universally and language-independently |
-| `tourism` | 35 | |
-| `historic` | 32 | |
-| `heritage` | 8 | |
-| `building:levels` | **4,361** | height/prominence, free |
-| `amenity` · `shop` | 238 · 111 | business presence |
-| `addr:street` · `housenumber` · `postcode` | **3,982 · 3,973 · 1,905** | ⭐ **the address well** — see §3.2's correction |
+> ### ⛔ THE COUNTS THAT USED TO BE HERE ARE GONE ON PURPOSE — RUN THE COMMAND *(2026-09-20)*
+> This table carried **Księży Młyn's** figures, and that town was excised on 2026-09-19. Nine numbers
+> for a town that is not on disk read as authority and cannot be re-derived by anyone, which is the
+> exact failure `CLAUDE.md`'s prune rule names. ⭐ **A count in prose is stale the moment it is
+> written.** Per town, live:
+> ```
+> node -e "const j=require('./cartograph/data/'+process.argv[1]+'/raw/osm.json'),c={};for(const f of [...Object.values(j.ground||{}).flat(),...(j.pois||[]),...(j.buildings||[])])for(const k of Object.keys(f.tags||{}))c[k]=(c[k]||0)+1;for(const k of ['wikidata','wikipedia','heritage','historic','tourism','name','website','phone','opening_hours','brand','amenity','shop','office','craft','building:levels','addr:housenumber'])console.log(String(c[k]||0).padStart(6),k)" <scene>
+> ```
+> ⚠️ **Read it against that town's fetch vintage**: a `raw/osm.json` from before the node-tag intake
+> (2026-09-20) has no `pois` array, so every node-mapped business is missing from the count. The
+> prominence census in `bake-content.js` says which towns those are, per pour.
 
-**Sixty-five confirmed landmarks in Łódź that nobody had to research.** They are sitting in a file on
-disk right now, unread.
+| Signal | Use |
+|---|---|
+| `wikidata` | ⭐ the strongest cheap prominence signal in existence — someone catalogued this building |
+| `wikipedia` | an article exists about it |
+| `name` | named ≫ unnamed, universally and language-independently |
+| `tourism` · `historic` · `heritage` | designation |
+| **`website` · `phone` · `opening_hours`** | ⭐⭐ **going concern — see below** *(added 2026-09-20, Jacob)* |
+| `brand` | a chain, therefore a live business |
+| `building:levels` | height/prominence, free |
+| `amenity` · `shop` · `office` · `craft` | business presence |
+| `addr:street` · `housenumber` · `postcode` | ⭐ **the address well** — see §3.2's correction |
+
+> ### ⭐⭐ WHY `website` / `phone` / `opening_hours` EARN A ROW — AND IT IS NOT "MORE TAGS IS BETTER"
+> **A `wikidata` hit says somebody CATALOGUED this building. An `opening_hours` says somebody is OPEN
+> ON TUESDAY.** Those are different questions, and this table only had the first one.
+> ⇒ The second is the one Jacob actually asked for at the start of this arc — ***"we need to know where
+> the viable businesses (restaurants, etc) are."*** A neighborhood's catalogued landmarks and its
+> living commerce are not the same set, and a rank built only on designation finds the church and
+> misses the block everyone actually walks to. **These three are the cheapest going-concern proxy that
+> exists, and they were free the whole time.**
 
 **Four more that cost nothing beyond compute:**
 - **Footprint area** — from `clean/map.json`.
@@ -379,11 +396,23 @@ become buttons instead. **Write the doc only for what a button cannot do.**
 there is no honest way to pick 60.
 
 **The model.** Score every building from the §4.1 signals → rank → the operator works down the list and
-stops wherever they choose. Effects:
+stops wherever they choose.
+
+> ### ✅ **BUILT 2026-09-20** — `cartograph/prominence.mjs`, stamped by `bake-content.js`.
+> The knobs, the override and what the census lines mean: **`cartograph/OPERATIONS.md`, "THE WORK
+> QUEUE"**. ⛔ Don't re-describe the scorer here; the weights and their rationale are in the module
+> and they move.
+>
+> ⭐ **The dial exists and it reads: "evidence runs out at rank K."** Huron: **153 of 3,678** buildings
+> are noticed by any source; the rest are ordered by footprint area alone. A demo pour takes the top
+> 20, a real install works down until it stops paying — and now it can see where paying stops.
+>
+> ⏳ **STILL UNBUILT, and it is a decision, not rot: the panel's progress semantic.** Not *"3% of
+> 1,640"* (reads as failure) but *"your top 50 are complete"* (reads as done). The rank is what makes
+> that sentence sayable, and nothing says it yet — the panel surface is unscoped
+> (`BRIEF-roster-prominence-C §8`). ⛔ Do not delete this bullet as though it described the code.
 
 - **Partial completion becomes graceful.** "The top 40 are done, and they are the 40 that matter" — rather than an arbitrary scatter.
-- **The panel's progress semantic stops being demoralising.** Not *"3% of 1,640"* (reads as failure) but *"your top 50 are complete"* (reads as done).
-- **The operator gets a dial they lack today: how much town do you want?** A demo pour takes the top 20; a real install works down until it stops paying.
 
 **Vocabulary — use the existing word.** `useListings` already loads `'landmarks'`, and bare buildings
 are the synthetic residue. So this is not a new concept: it is **deciding which buildings get promoted
@@ -395,6 +424,25 @@ from bare building to landmark, and in what order.** Do not introduce "importanc
 1. **The rank is a GUESS and every guess is overridable** (`NEIGHBORHOOD-INPUTS §0.0/§1.1`). A beloved corner bar scores near zero on every cheap signal — no Wikidata, no tags, small footprint. **The rank orders the work queue; it must never gate what can be filled.**
 2. ⭐ **This is where "connect your neighborhood" earns its keep.** Residents know the ranking the data cannot see. Let them promote a building and you have captured a prominence signal **no dataset carries** — the single strongest argument for routing rows to the CLAIMED kind (§3.4) deliberately rather than by default.
 
+   ⭐ **THE SEAM IS BUILT, THE PATH IS NOT.** A roster record carries `promoted: { by, note }` and
+   sorts above every scored building; `by: 'resident'` needs no change to the scorer. ⛔ The resident
+   path itself is unbuilt — this is a seam, not a feature.
+
+> ### ⭐⭐ MEASURED 2026-09-20 — and constraint ① is not a caution, it is 43% of LS.
+> ▶ `node checks/claims-prominence-recovers-ls-landmarks.mjs` — LS scored **blind**, then asked how
+> many of its 87 hand-curated landmarks the rank recovers. ⛔ **Numbers live in the check, not here.**
+> The shape of the answer: the rank beats chance by roughly an order of magnitude and still misses
+> **over a third of the landmark buildings at top-63**, most of them carrying no signal beyond a
+> parcel record. Park Avenue Coffee. Rhone Rum Bar. Polite Society. **The beloved corner bar was not
+> a rhetorical example.**
+>
+> ⚠️⚠️ **AND THE CEILING IS A PROPERTY OF THE FETCH, NOT OF THE TOWN.** A town fetched before the
+> node-tag intake landed (2026-09-20) has **no `pois` array at all**, so every business mapped as an
+> OSM *node* is invisible to the score — and LS is one of them. ⛔ **So a "buildings noticed" count is
+> not comparable across towns of different fetch vintage**, which is the two-numbers-different-
+> predicates trap operating at the scale of whole towns. ⭐ **Don't carry that fact in prose — the bake
+> prints it, per town, beside the number it qualifies** (`bake-content.js`, the prominence census).
+> ⛔ How much a re-fetch would recover is **not established**; nobody has re-fetched and re-scored.
 ## 5. ⭐ BUILDING FABRIC — the best source is REGIONAL, and we discard real data
 
 *(Jacob, 2026-07-20 late: "the Księży Młyn neighborhood has more fulsome building scans." Verified —

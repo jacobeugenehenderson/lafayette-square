@@ -350,6 +350,42 @@ The per-platform **inclusion manifest** — *which channels ship to desktop vs. 
   - ⭐ **What you should see:** huron went from *"missing stl_parcels.json — skipping"* and **0 of
     3,678** buildings matched, to **3,576 (97%)**, and from ~98% of the town having no address to
     **3%**. Nothing about huron is in the code; the whole difference is one declaration.
+- ### ⭐ **THE WORK QUEUE — which buildings to fill first, and how far down to go** *(2026-09-20)*
+  Content hand-work is the one genuinely **unbounded** cost in a town: you cannot do 3,678 buildings
+  and there is no honest way to pick 60. The bake now ranks every building from the free signals, so
+  you work down the list and **stop wherever you choose** — and the top 40 being done means *the 40
+  that matter* are done, rather than an arbitrary scatter.
+  - **Where it is.** `node cartograph/bake-content.js --scene=<id>` stamps `prominence`
+    `{ score, rank, signals, unknown }` on every roster record and prints the top 10 with its
+    reasons. ⛔ **Never a bare number** — the breakdown names every signal that earned a point, so a
+    rank you disagree with can be argued with.
+  - ⛔ **IT IS A SORT, NEVER A FILTER.** Every building gets a rank in 1..N. There is no threshold,
+    no top-N cut and no score that suppresses a card: rank 900 is as fillable as rank 1. The number
+    orders a queue and that is the whole of its authority.
+  - ⭐⭐ **THE ONE LINE TO READ: "evidence runs out at rank K."** Above K, buildings are ordered by
+    somebody having *noticed* them — a Wikidata entry, a website, opening hours, a name. Below it the
+    order is **footprint area and nothing else**, which is a real ordering but not a prominence one.
+    Huron: **153 of 3,678** buildings are noticed by any source. That is the honest size of the
+    signal, and it is the dial `§4.3` says the operator lacked: *how much town do you want?*
+  - ⭐ **OVERRULE IT — that is the point, not a workaround.** The rank is a guess and residents know
+    the ranking the data cannot see. Patch the town's `content/roster.overrides.json`:
+    ```json
+    { "patches": { "msbf-1234": { "promoted": { "by": "operator", "note": "the corner bar everyone means" } } } }
+    ```
+    A promoted building sorts **above every scored one**. ⛔ The score never overrules the person who
+    knows — and on LS, where humans picked 87 landmarks over years, **27 of the 63 landmark buildings
+    score below rank 63**, most of them with no signal but a parcel record. Park Avenue Coffee, Rhone
+    Rum Bar, Polite Society, Baileys' Chocolate Bar. That population is the argument for the
+    resident-promotion path, not a bug list.
+  - ⛔ **A WELL THIS TOWN LACKS IS DROPPED, NOT SCORED ZERO.** Huron has no valuation, sqft, units or
+    storey data, so those signals are removed for **every** building — uniform, and therefore
+    rank-neutral, because a sort does not move under a constant. A building whose *parcel* simply did
+    not match is different: it is listed in `prominence.unknown`, because "we did not join this" and
+    "this is the cheapest building in town" must never rank alike.
+  - ▶ **`node checks/claims-prominence-recovers-ls-landmarks.mjs`** — scores LS blind and reports how
+    many of its 87 hand-curated landmarks the rank recovers, with the misses named. ⛔ The hit rate is
+    **reported, never asserted**: tuning the weights until LS comes back clean is overfitting to the
+    mould the kit was cast around. What is asserted is that the score beats random selection by 4×.
 
 ## The check suite — `npm test`
 
