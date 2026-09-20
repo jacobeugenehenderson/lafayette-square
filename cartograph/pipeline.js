@@ -147,21 +147,21 @@ async function main() {
   // junction PAST the boundary streets so corners still close, and so R15's live edits
   // (change the radius, move the disc centroid, hide/reveal) need NO re-pour "because
   // the frozen square holds every point in the zone". The clip cut at
-  // `max(streetFade.outer, radius) + 30`, INSIDE that zone on every kit-built scene
+  // `max(fade.outer, radius) + 30`, INSIDE that zone on every kit-built scene
   // (Altadena by 642–850 m) — so growing the radius revealed nothing, the data having
   // already been destroyed. The forever zone was not forever.
   // ⭐ And the VERB was wrong: EXTENT says the disc HIDES what is outside it. This was
   // the one step in the chain that DELETED instead. The disc hides; the bb holds.
   //
   // ⭐ ROOT of why it had to invent an extent: the boundary record carries NO bb field
-  // (`radius`, `fade`, `streetFade`, `boundary`, `polygon`, `exclusions` — no forever
-  // zone). With nothing principled to clip to it reached for `streetFade` — A RENDER
+  // (`radius`, `fadeBand`, `boundary`, `polygon`, `exclusions` — no forever
+  // zone). With nothing principled to clip to it reached for the fade band — A RENDER
   // KNOB deciding what exists. Jacob: "the edge gets faded but AFTER it's drawn."
   // Measured live on all three kit scenes, `fadeOuter` dominating `radius`: it alone
   // decided the fate of 43 / 80 / 28 chains. ▶ `node checks/claims-rim-census.mjs`
   //
   // ⛔ WHAT THIS DOES NOT DO: it does not bound the DRAWING — nothing here ever did.
-  // The disc still hides and `streetFade` still fades. Per Jacob the whole bb is built
+  // The disc still hides and the fade still fades. Per Jacob the whole bb is built
   // and only the stamped circle is shown. A bake-time crop is a SEPARATE, still-unbuilt
   // concern: chop at the BAKE, never at the chain. This block fused "what is the
   // neighborhood" with "what do we ship"; they are two questions and it owned neither.

@@ -110,12 +110,19 @@ function isGroupVisible(group, layerVis) {
   return layerVis[layerId] !== false
 }
 
-// Pick the radial-fade band for a group based on its kind. Faces dissolve
-// on the inner band; ribbon materials use the wider band so streets trail
-// past the dissolved blocks (the "soft neighborhood edge" aesthetic).
+// The radial-fade band for a group. ⭐ THERE IS ONE BAND, for every kind.
+//
+// ⛔ This read `group.kind === 'face' ? stencil.fade : stencil.streetFade` — faces
+// on the inner band, ribbons on a wider one so streets trailed past the dissolved
+// blocks. That line WAS the two-schedule regime, in the runtime: proof the split was
+// shipped behaviour rather than stale data. Collapsed deliberately 2026-09-20 —
+// "the street fade should be SSoT, 0 reason to add more and more layers where we
+// have a hard and fast rule" — and the trailing look is gone WITH it, on purpose.
+// A scene that still carries a `streetFade` in an old baked manifest is ignored
+// here; re-bake to drop it.
 function fadeForGroup(group, stencil) {
   if (!stencil) return null
-  const band = group.kind === 'face' ? stencil.fade : stencil.streetFade
+  const band = stencil.fade
   if (!band) return null
   return { center: stencil.center, inner: band.inner, outer: band.outer }
 }

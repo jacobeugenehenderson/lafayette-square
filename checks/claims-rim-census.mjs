@@ -14,6 +14,7 @@
 import fs from 'fs'
 import path from 'path'
 import { ribbonScenes } from './_scenes.mjs'
+import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const ROOT = path.resolve(new URL('..', import.meta.url).pathname)
 const R = p => fs.readFileSync(path.join(ROOT, p), 'utf8')
@@ -139,9 +140,10 @@ for (const scene of TARGETS) {
 
   const nb = J(nbP)
   const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
-  const fadeOuter = Number.isFinite(nb.streetFade?.outer) ? nb.streetFade.outer : null
+  // fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
+  const fadeOuter = Number.isFinite(nb.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer : null
   const discR = Number.isFinite(nb.radius) ? nb.radius : null
-  if (fadeOuter === null && discR === null) { o(`⛔ ${scene}: boundary carries neither streetFade.outer nor radius — the pipeline exits(1) here. SKIPPED LOUDLY.`); continue }
+  if (fadeOuter === null && discR === null) { o(`⛔ ${scene}: boundary carries neither fadeBand nor radius — the pipeline exits(1) here. SKIPPED LOUDLY.`); continue }
   const keepR = Math.max(fadeOuter ?? 0, discR ?? 0) + KEEP_MARGIN
 
   const sk = J(skP)
@@ -190,7 +192,7 @@ for (const scene of TARGETS) {
   let fateDiff = 0, lenDiff = 0
   for (let i = 0; i < C.length; i++) { if (C[i].cls !== Cd[i].cls) fateDiff++; lenDiff += Math.abs((C[i].kept || 0) - (Cd[i].kept || 0)) }
   o(`\n【3】 THE FADE COUPLING — is the render knob deciding content extent, or is it latent?`)
-  o(`     streetFade.outer ${fadeOuter}  ·  radius ${discR}  ·  keepR ${f1(keepR)} m`)
+  o(`     fade.outer ${fadeOuter}  ·  radius ${discR}  ·  keepR ${f1(keepR)} m`)
   o(`     DOMINATES: ${dom}   (fade+${KEEP_MARGIN} = ${f1(kFade)} m vs disc+${KEEP_MARGIN} = ${f1(kDisc)} m; margin ${f1(Math.abs(kFade - kDisc))} m)`)
   o(`     ⇒ ${dom === 'fadeOuter' ? 'LIVE — a shader knob decides what is drawn at all' : 'LATENT — the disc floors it'}`)
   o(`     chains whose FATE changes between the two radii  ${fateDiff}`)

@@ -30,6 +30,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { ZONE_PAD, squareAroundDisc, minimumEnclosingCircle } from '../../cartograph/discSquare.mjs'
+import { deriveFade, DEFAULT_FADE_BAND } from '../../cartograph/boundaryRecords.mjs'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, Text, Line } from '@react-three/drei'
 import useCartographStore from './stores/useCartographStore.js'
@@ -265,7 +266,13 @@ function landInSurvey(store) {
   try { store?.setTool?.('surveyor') } catch { /* a missing tool API must never fail a bake */ }
 }
 
-function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
+// ⭐ THE FADE INDICATOR (Jacob, 2026-09-20: "maybe even an indicator in the extent
+// tool as to where the fade starts and stops"). The fade is ADDITIVE, so it STARTS at
+// the radius — the yellow circle already marks `fade.inner` and needs no second ring —
+// and STOPS at `radius + fadeBand`. The dashed amber ring is that stop, and the gap
+// between the two IS the feather. Drawing it here makes the one knob legible at the
+// moment it is turned, which is most of why it drifted into four stored copies.
+function ExtentBoundary({ corners, centroid, radiusM, fadeBand = DEFAULT_FADE_BAND, showVertices = true }) {
   const hasPoly = corners?.length >= 2
   // Draw when there's a polygon OR just a circle (a reopened committed hood has
   // no live corners but should still show its circle so radius re-scope isn't blind).
@@ -279,6 +286,13 @@ function ExtentBoundary({ corners, centroid, radiusM, showVertices = true }) {
       {hasPoly && <Line points={poly} color="#38e1ff" lineWidth={3} dashed={false} />}
       {centroid && radiusM > 0 && (
         <Line points={circlePts(centroid.x, centroid.z, radiusM)} color="#ffd23f" lineWidth={2} />
+      )}
+      {/* Where the fade STOPS. Everything that fades is drawn out to here; buildings
+          stop at the solid circle above. The band between the two is the feather. */}
+      {centroid && radiusM > 0 && fadeBand > 0 && (
+        <Line
+          points={circlePts(centroid.x, centroid.z, deriveFade(radiusM, fadeBand).outer)}
+          color="#ffd23f" lineWidth={1} dashed dashSize={18} gapSize={14} transparent opacity={0.55} />
       )}
       {showVertices && hasPoly && corners.map((c, i) => (
         <mesh key={i} position={[c.x, 4.5, c.z]} rotation={[-Math.PI / 2, 0, 0]} renderOrder={40}>
@@ -910,6 +924,9 @@ export default function ExtentApp() {
   const setShot = useCartographStore(s => s.setShot)
   const mapGeography = useCartographStore(s => s.mapGeography)
   const sceneBoundary = useCartographStore(s => s.sceneBoundary)
+  // The one fade knob, for the indicator ring. A scene that has not authored one yet
+  // shows the default band — the same value a pour would give it.
+  const fadeBandM = Number.isFinite(sceneBoundary?.fadeBand) ? sceneBoundary.fadeBand : DEFAULT_FADE_BAND
   const geo = useMemo(() => extentGeo(mapGeography), [mapGeography])
   // Persist Extent's own working scene (incl. the blank workspace, null → '') so a
   // cold restart reappears here — never on the LS default.
@@ -1934,7 +1951,7 @@ export default function ExtentApp() {
           {located && (radiusM > 0 || polygonXZ || streetCorners?.corners?.length) && (
             <ExtentBoundary
               corners={(pickingSides && streetCorners?.corners?.length ? streetCorners.corners : polygonXZ) || undefined}
-              centroid={boundaryCentroid} radiusM={radiusM}
+              centroid={boundaryCentroid} radiusM={radiusM} fadeBand={fadeBandM}
               showVertices={pickingSides && !!streetCorners?.closed} />
           )}
           <MapControls

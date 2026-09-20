@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
+import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
 import useCartographStore from './stores/useCartographStore.js'
 
 // ── Active-installation geography + silhouette ──────────────────────────────
@@ -12,8 +13,9 @@ import useCartographStore from './stores/useCartographStore.js'
 // bundle; null until the store has loaded it.
 function makeGeo(g, nb) {
   if (!g || !nb) return null
-  const fadeInner = nb.fade?.inner ?? Math.max(0, (nb.radius || 0) - (nb.innerFadeOffset ?? 134))
-  const fadeOuter = nb.fade?.outer ?? (nb.radius || 0)
+  // ⛔ Derived, never read off the artifact — a FOURTH copy of the fade formula
+  // lived here, with its own `?? 134` that matched neither of the other two.
+  const { inner: fadeInner, outer: fadeOuter } = deriveFade(nb.radius || 0, nb.fadeBand)
   const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
   return {
     center: { lat: g.lat, lon: g.lon },

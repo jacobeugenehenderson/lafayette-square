@@ -28,6 +28,7 @@
 import { readFileSync, existsSync } from 'fs'
 import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
+import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const scene = process.argv[2] || 'lafayette-square'
@@ -42,8 +43,9 @@ for (const need of ['neighborhood_boundary.json', 'clean/map.json', 'clean/skele
 const nb = JSON.parse(readFileSync(join(D, 'neighborhood_boundary.json'), 'utf8'))
 const cx = nb.center?.[0] ?? 0, cz = nb.center?.[1] ?? 0
 const R = nb.radius
+// fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
 const keepR = Math.max(
-  Number.isFinite(nb.streetFade?.outer) ? nb.streetFade.outer : 0,
+  Number.isFinite(nb.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer : 0,
   Number.isFinite(nb.radius) ? nb.radius : 0,
 ) + 30
 

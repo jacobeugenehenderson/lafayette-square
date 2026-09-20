@@ -12,7 +12,7 @@ import useTimeOfDay from '../hooks/useTimeOfDay'
 import _lsMapData from '../../cartograph/data/lafayette-square/clean/map.json'
 import _lsRibbonsData from '../data/ribbons.json'
 import _lsParkWaterData from '../data/lafayette-square/park_water.json'
-import { pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius, makeBoundary } from './boundary.js'
+import { pointInBoundary, pointInFadeExtent, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius, makeBoundary } from './boundary.js'
 import { fetchMap } from './api.js'
 import useCartographStore from './stores/useCartographStore.js'
 import StreetLabels from '../components/StreetLabels.jsx'
@@ -93,7 +93,10 @@ const FADE_OUTER = _FO
 
 // Centerlines are stopped here — a bit into the feather band (FADE_INNER→
 // FADE_OUTER) so the bare debug centerlines don't trail past the visibly
-// faded map edge. LineBasicMaterial can't take the radial-fade shader the
+// faded map edge. ⚠️ The band is ADDITIVE since 2026-09-20, so FADE_INNER is now
+// the rim itself and this lands at radius+52 rather than inside the disc. The
+// formula still means what it says — 52 m into a 200 m feather — but the number it
+// produces moved outward with the band. LineBasicMaterial can't take the radial-fade shader the
 // ground/aerial use (see the barrier-line note below), so we clip tighter
 // instead of fading. Nudge this one value by eye.
 const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
@@ -103,7 +106,7 @@ const CENTERLINE_CLIP_R = FADE_INNER + 52   // ≈810m
 // scene==='lafayette-square' the component uses this object → every clip/fade
 // resolves to exactly the pre-unification singleton (byte-identical).
 const _LS_BUNDLE = {
-  pointInBoundary, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius,
+  pointInBoundary, pointInFadeExtent, boundaryPolygon, clipPolylineToBoundary, clipPolylineToRadius,
   center: _BC, fadeInner: FADE_INNER, fadeOuter: FADE_OUTER,
 }
 // Safe empties for a poured scene whose map/ribbons haven't fetched yet.
@@ -482,6 +485,9 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     [isLS, sceneBoundaryRaw],
   )
   const pointInBoundary = B.pointInBoundary
+  // ⭐ The cull for everything that FADES — the polygon scaled out to fade.outer.
+  // ⛔ NOT for buildings: they are binary at the authored polygon.
+  const pointInFadeExtent = B.pointInFadeExtent
   const boundaryPolygon = B.boundaryPolygon
   const clipPolylineToBoundary = B.clipPolylineToBoundary
   const clipPolylineToRadius = B.clipPolylineToRadius
@@ -537,7 +543,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     for (const s of (mapData.layers?.centerStripe || [])) {
       if (s.coords?.length >= 2) {
         const mid = s.coords[Math.floor(s.coords.length / 2)]
-        if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
+        if (!pointInFadeExtent(mid.x ?? mid[0], mid.z ?? mid[1])) continue
         const geo = stripeRibbonGeo(s.coords, 0.1)
         if (geo) geos.push(geo)
       }
@@ -551,7 +557,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     for (const pl of (mapData.layers?.parkingLine || [])) {
       if (!pl.coords || pl.coords.length < 2 || !pl.offset) continue
       const mid = pl.coords[Math.floor(pl.coords.length / 2)]
-      if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
+      if (!pointInFadeExtent(mid.x ?? mid[0], mid.z ?? mid[1])) continue
       for (const side of [-1, 1]) {
         const pts = offsetLine(pl.coords, pl.offset, side)
         const geo = stripeRibbonGeo(pts, 0.08)
@@ -567,7 +573,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
     for (const bl of (mapData.layers?.bikeLane || [])) {
       if (!bl.coords || bl.coords.length < 2 || !bl.offset) continue
       const mid = bl.coords[Math.floor(bl.coords.length / 2)]
-      if (!pointInBoundary(mid.x ?? mid[0], mid.z ?? mid[1])) continue
+      if (!pointInFadeExtent(mid.x ?? mid[0], mid.z ?? mid[1])) continue
       for (const side of [-1, 1]) {
         const pts = offsetLine(bl.coords, bl.offset, side)
         const geo = stripeRibbonGeo(pts, 0.25)
@@ -673,7 +679,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         if (!ring || ring.length < 3) continue
         let sx = 0, sz = 0
         for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
-        if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+        if (!pointInFadeExtent(sx / ring.length, sz / ring.length)) continue
         const g = triangulateRing(ring)
         if (!g) continue
         if (!groups[item.use]) groups[item.use] = []
@@ -717,7 +723,10 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       for (const item of (mapData.layers?.[cat] || [])) {
         const ring = item.ring
         if (!ring || ring.length < 3) continue
-        const cut = B.clipRingToBoundary?.(ring)
+        // ⭐ Clipped to the FADE EXTENT, not the authored polygon: water takes the
+        // fade, so it must be drawn out to where the fade ends. Clipping it at the
+        // rim would leave a hard water edge sitting inside the feather.
+        const cut = B.clipRingToBoundary?.(ring, B.fadeBoundary)
         if (!cut) continue
         // ⛔ Holes are cut too: the lake is a hole that STRADDLES the rim, so uncut it
         // subtracts more area than the clipped outer has (measured at −40.20 km²).
@@ -765,7 +774,7 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
       if (!ring || ring.length < 3) continue
       let sx = 0, sz = 0
       for (const p of ring) { sx += (p.x ?? p[0]); sz += (p.z ?? p[1]) }
-      if (!pointInBoundary(sx / ring.length, sz / ring.length)) continue
+      if (!pointInFadeExtent(sx / ring.length, sz / ring.length)) continue
       const g = triangulateRing(ring)
       if (g) geos.push(g)
     }
@@ -809,7 +818,17 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
   const color = (id) => layerColors[id] || DEFAULT_LAYER_COLORS[id]
   const mats = useMemo(() => ({
     ground: makeFlatMat(color('ground'), PRI.ground, { fade }),
-    building: makeFlatMat(color('building'), PRI.building, { fade }),
+    // ⛔⛔ BUILDINGS TAKE NO FADE. "There is no such thing as a ghosted building"
+    // (Jacob, 2026-09-20). Membership is BINARY and always was — :526 tests the
+    // centroid against the AUTHORED POLYGON and `continue`s. But this line then
+    // handed the survivor a radial fade, so TWO DIFFERENT SHAPES decided one
+    // building's fate: the polygon said in-or-out, the circle then made it
+    // translucent. A building that passed membership now renders at full alpha.
+    // ⭐ This is also what makes the ADDITIVE band coherent: buildings stop at the
+    // rim (measured — huron's furthest vertex is R+3), so an outward feather has
+    // nothing to fade them into and would leave a hard building edge. Removing them
+    // from the fade and moving the fade outward are one ruling, not two.
+    building: makeFlatMat(color('building'), PRI.building),
     stripe: makeLineMat(color('stripe')),
     edgeline: makeLineMat(color('edgeline'), 0.7),
     bikelane: makeLineMat(color('bikelane')),

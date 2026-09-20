@@ -40,6 +40,7 @@
 import fs from 'fs'
 import path from 'path'
 import { fileURLToPath } from 'url'
+import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const HERE = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(HERE, '..')
@@ -65,7 +66,8 @@ const stencil = (() => {
   try {
     const b = rd(`cartograph/data/${SCENE}/neighborhood_boundary.json`)
     hood = b.boundary
-    const tR = b.streetFade.outer + 50, sc = tR / b.radius, cx = b.center[0], cz = b.center[1]
+    // fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
+    const tR = deriveFade(b.radius, b.fadeBand).outer + 50, sc = tR / b.radius, cx = b.center[0], cz = b.center[1]
     return b.boundary.map(([x, z]) => [cx + (x - cx) * sc, cz + (z - cz) * sc])
   } catch { return null }
 })()

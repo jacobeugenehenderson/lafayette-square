@@ -20,7 +20,7 @@
  * (feedback_installations_are_independent; multi-instance routing 2026-07-02.)
  *
  * Clipping bbox = axis-aligned bbox of the scene boundary's scaled polygon
- * (streetFade.outer + 50), rounded outward to whole meters.
+ * (fade.outer + 50), rounded outward to whole meters.
  *
  * Per-installation raw input:
  *   cartograph/data/<scene>/raw/elevation.tif
@@ -37,6 +37,7 @@ import { join } from 'path'
 import { fromFile } from 'geotiff'
 import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
+import { deriveFade } from './boundaryRecords.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -73,9 +74,14 @@ const M_PER_SAMPLE     = 5   // see prior commit comment in this file
 // negative float; treat anything below -1000 m as missing.
 const NODATA_THRESHOLD = -1000
 
+// ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
+// are the other two). sceneStencil.js's header claimed it was the only bake-side
+// one; that was false and is now corrected there. All three apply the same rule via
+// `deriveFade`, but they remain three call sites — collapsing them is open work.
 function deriveStencilBbox(boundary) {
-  const { boundary: poly, center, radius, streetFade } = boundary
-  const targetR = (streetFade?.outer ?? radius) + STENCIL_BUFFER_M
+  const { boundary: poly, center, radius, fadeBand } = boundary
+  const fade = Number.isFinite(fadeBand) ? deriveFade(radius, fadeBand) : null
+  const targetR = fade ? fade.outer + STENCIL_BUFFER_M : radius
   const scale = targetR / radius
   const [cx, cz] = center
   let mnx = Infinity, mxx = -Infinity, mnz = Infinity, mxz = -Infinity

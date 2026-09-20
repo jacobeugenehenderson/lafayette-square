@@ -998,10 +998,12 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // bbox smaller than the ground mis-maps every texel rather than cropping.
   //
   // FLOORED at the disc radius (same defect cured in pipeline.js, b54cbaae):
-  // streetFade is a LOOK band and nothing stops a scene authoring one narrower than
-  // its own disc, on which the bare `streetFade.outer` under-sizes the bake. Every
-  // scene today is radius+160 except LS (1000 vs 892, authored), so no scene reveals
-  // it — a kit defect by construction.
+  // the fade is a LOOK band and nothing stops a scene authoring one narrower than
+  // its own disc, on which the bare `fade.outer` under-sizes the bake.
+  // ⭐ Since 2026-09-20 the band is ADDITIVE — `fade.outer = radius + fadeBand` — so
+  // it can no longer fall below the radius unless `fadeBand` is negative, which
+  // `classifyFade` now rejects outright. The floor stays as a belt-and-braces guard,
+  // not because a live path can trip it.
   //
   // ⛔ NO FALLBACK. This read `?? 1000` — presented as "the prior hardcoded default",
   // it was DEAD: loadSceneStencil coerces an absent radius to 1 (`sceneStencil.js:35`
@@ -1009,11 +1011,11 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // baked a 51 m bbox — silently, and looking like a successful bake. That 1 is the
   // absent signal here; a real hood is never 1 m. ⚠️ The coercion itself is the
   // deeper defect and it lives one layer up, in sceneStencil.js.
-  const _fadeOuter = Number.isFinite(stencil.streetFade?.outer) ? stencil.streetFade.outer : null
+  const _fadeOuter = Number.isFinite(stencil.faceFade?.outer) ? stencil.faceFade.outer : null
   const _discR = Number.isFinite(stencil.radius) && stencil.radius > 1 ? stencil.radius : null
   if (_fadeOuter === null && _discR === null) {
     console.error(`
-⛔ scene '${scene}' has no authored extent (no streetFade.outer, no radius > 1)
+⛔ scene '${scene}' has no authored extent (no fade.outer, no radius > 1)
    in cartograph/data/${scene}/neighborhood_boundary.json.
 
    The bake bbox anchors the AO texel→world map and BakedGround's UV2. Baking
@@ -1030,13 +1032,21 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
 
   // manifest.stencil = null when the scene didn't author a soft-circle
   // fade (toy). BakedGround already handles null → skip radial fade shader.
-  // When fade IS authored (LS), emit the full block so the runtime can
-  // patch the shader uniforms without a side import.
-  const manifestStencil = stencil.faceFade && stencil.streetFade ? {
+  // When fade IS authored, emit the full block so the runtime can patch the
+  // shader uniforms without a side import.
+  //
+  // ⛔⛔ THIS PREDICATE WAS `stencil.faceFade && stencil.streetFade`. Deleting
+  // `streetFade` (2026-09-20) would have driven it NULL FOR EVERY TOWN — and null
+  // here does not mean "wrong band", it means BakedGround.jsx:117 returns early and
+  // the radial fade shader is NEVER APPLIED. Every baked town would have lost its
+  // feather entirely, INVISIBLY until the next re-bake: the deletion would have
+  // shipped looking correct and degraded the Slab later. ⭐ That is CLAUDE.md Layer 0
+  // question 2 exactly — a deletion converted into a plausible-looking success.
+  // Found while holding at the §7 gate; it is why the gate was worth holding.
+  const manifestStencil = stencil.faceFade ? {
     center: stencil.center,
     radius: stencil.radius,
     fade: stencil.faceFade,
-    streetFade: stencil.streetFade,
   } : null
 
   const manifest = {

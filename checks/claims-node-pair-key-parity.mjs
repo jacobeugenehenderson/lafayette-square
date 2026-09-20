@@ -43,6 +43,7 @@ import { resolveChainSegmentation } from '../src/lib/chainSegmentation.js'
 import { feCustomKey, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
 import { ribbonScenes } from './_scenes.mjs'
 import { ROOT as MAPS_ROOT } from './_scenes.mjs'
+import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 // ⛔ WAS AN ABSOLUTE PATH TO ONE LAPTOP. This check could only ever run on Jacob's machine — not
 //    in CI, not for a second developer. Same shape as the town-portability defect: it works only
@@ -94,7 +95,8 @@ export function loadScene(scene, source) {
   let design = {}
   try { design = JSON.parse(rd(`public/looks/${scene}/design.json`)) } catch {}
   if (!design.blockCustoms) console.log(`  ⚠️  ${scene}: design.json has NO blockCustoms — this run is measuring an UNAUTHORED scene.`)
-  const targetR = (nb?.streetFade?.outer ?? nb.radius) + 50
+  // fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
+  const targetR = Number.isFinite(nb?.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer + 50 : nb.radius
   const sc0 = targetR / nb.radius
   const [cx, cz] = nb.center
   const stencil = nb.boundary.map(([x, z]) => [cx + (x - cx) * sc0, cz + (z - cz) * sc0])

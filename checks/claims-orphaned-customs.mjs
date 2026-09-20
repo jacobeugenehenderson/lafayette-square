@@ -46,6 +46,7 @@
 // Read-only. No pour, no bake.
 import fs from 'fs'
 import { feCustomKey, makeCapFe, CAP_SEGORD, isCapSegOrd } from '../src/lib/feCustomKey.js'
+import { deriveFade } from '../cartograph/boundaryRecords.mjs'
 
 const scene = process.argv[2] || 'lafayette-square'
 const ribbons = JSON.parse(fs.readFileSync('src/data/ribbons.json', 'utf8'))
@@ -53,7 +54,8 @@ const design = JSON.parse(fs.readFileSync(`public/looks/${scene}/design.json`, '
 const bc = design.blockCustoms || {}
 
 const nb = JSON.parse(fs.readFileSync(`cartograph/data/${scene}/neighborhood_boundary.json`, 'utf8'))
-const sc0 = ((nb?.streetFade?.outer ?? nb.radius) + 50) / nb.radius
+// fade.outer is DERIVED (radius + fadeBand) since 2026-09-20; streetFade is gone.
+const sc0 = (Number.isFinite(nb.fadeBand) ? deriveFade(nb.radius, nb.fadeBand).outer + 50 : nb.radius) / nb.radius
 const [cx, cz] = nb.center
 const stencil = nb.boundary.map(([x, z]) => [cx + (x - cx) * sc0, cz + (z - cz) * sc0])
 

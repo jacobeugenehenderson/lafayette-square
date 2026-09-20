@@ -1738,8 +1738,13 @@ createServer(async (req, res) => {
           membership = priorRecs.membership
           console.log(`[commit-extent] ${scene}: preserved existing inclusion polygon (${membership.polygon.length} pts) — none supplied`)
         }
+        // ⭐ The band is a WIDTH, so it rides through a rescope untouched and `fade`
+        // re-derives at the new radius. This used to announce "preserved AUTHORED
+        // fade set" over `fade`/`streetFade` — stored copies that kept pointing at
+        // the OLD circle after a radius change. Preserving THOSE was the bug;
+        // carrying the knob is the fix.
         if (disc.fadeOrigin === 'authored') {
-          console.log(`[commit-extent] ${scene}: preserved AUTHORED fade set (innerFadeOffset ${disc.fade.innerFadeOffset}, streetFade ${disc.fade.streetFade.inner}/${disc.fade.streetFade.outer})`)
+          console.log(`[commit-extent] ${scene}: carried the authored fadeBand (${disc.fade.fadeBand} m); fade derives from radius`)
         }
         const boundary = composeBoundary({
           disc, membership, exclusions: excl.length ? excl : null,
@@ -1885,8 +1890,13 @@ createServer(async (req, res) => {
           radius, center: discCenter, prior: priorRecs.disc,
           where: `${scene}/neighborhood_boundary.json`,
         })
+        // ⭐ The band is a WIDTH, so it rides through a rescope untouched and `fade`
+        // re-derives at the new radius. This used to announce "preserved AUTHORED
+        // fade set" over `fade`/`streetFade` — stored copies that kept pointing at
+        // the OLD circle after a radius change. Preserving THOSE was the bug;
+        // carrying the knob is the fix.
         if (disc.fadeOrigin === 'authored') {
-          console.log(`[rescope] ${scene}: preserved AUTHORED fade set (innerFadeOffset ${disc.fade.innerFadeOffset}, streetFade ${disc.fade.streetFade.inner}/${disc.fade.streetFade.outer})`)
+          console.log(`[rescope] ${scene}: carried the authored fadeBand (${disc.fade.fadeBand} m); fade derives from radius`)
         }
         let membership = priorRecs.membership   // preserved unless a gesture says otherwise
         let excl = priorRecs.exclusions

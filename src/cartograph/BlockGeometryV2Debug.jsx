@@ -38,25 +38,22 @@ import useCartographStore from './stores/useCartographStore.js'
 import {
   BOUNDARY_CENTER_XZ,
   FADE_INNER, FADE_OUTER,
-  STREET_FADE_INNER, STREET_FADE_OUTER,
   makeBoundary,
 } from './boundary.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
 
-// Single source of truth for the soft-circle silhouette in Designer's
-// V2 live render. Mirrors BakedGround.fadeForGroup: face-kind layers
-// (block fill) use the inner band; ribbon-kind layers (asphalt /
-// sidewalk / treelawn / curb / corner pads/plugs) use the wider street
-// band so streets trail past the dissolved blocks.
+// Single source of truth for the soft-circle silhouette in Designer's V2 live
+// render. Mirrors BakedGround.fadeForGroup — which is now ONE band for every kind.
+//
+// ⛔ BAND_FADE is gone. Ribbon-kind layers used the wider `streetFade` so streets
+// trailed past the dissolved blocks; that second schedule was deleted 2026-09-20
+// and both kinds now read the same band. `bandFade` survives as a NAME in the
+// descriptor below because useSurfaceMaterial's signature takes two — it is handed
+// the same object as `faceFade`, deliberately, not by oversight.
 const FACE_FADE = {
   center: { x: BOUNDARY_CENTER_XZ[0], z: BOUNDARY_CENTER_XZ[1] },
   inner:  FADE_INNER,
   outer:  FADE_OUTER,
-}
-const BAND_FADE = {
-  center: { x: BOUNDARY_CENTER_XZ[0], z: BOUNDARY_CENTER_XZ[1] },
-  inner:  STREET_FADE_INNER,
-  outer:  STREET_FADE_OUTER,
 }
 
 // Match StreetRibbons' BAND_PRIORITY for the bands V2 renders. Residential
@@ -270,13 +267,12 @@ export default function BlockGeometryV2Debug({
   const { faceFade, bandFade } = useMemo(() => {
     if (!useBoundary) return { faceFade: null, bandFade: null }
     // LS keeps the module constants verbatim — byte-identical to before.
-    if (isLS || !sceneBoundaryRaw) return { faceFade: FACE_FADE, bandFade: BAND_FADE }
+    if (isLS || !sceneBoundaryRaw) return { faceFade: FACE_FADE, bandFade: FACE_FADE }
     const B = makeBoundary(sceneBoundaryRaw)
     const center = { x: B.center[0], z: B.center[1] }
-    return {
-      faceFade: { center, inner: B.fadeInner,       outer: B.fadeOuter },
-      bandFade: { center, inner: B.streetFadeInner, outer: B.streetFadeOuter },
-    }
+    // ⭐ One band, handed to both slots. See the BAND_FADE note above.
+    const one = { center, inner: B.fadeInner, outer: B.fadeOuter }
+    return { faceFade: one, bandFade: one }
   }, [useBoundary, isLS, sceneBoundaryRaw])
   const makeMaterial = useSurfaceMaterial(flat)
   // Read corner-authoring + palette state directly from the store. Keeps

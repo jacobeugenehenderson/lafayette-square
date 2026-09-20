@@ -3,11 +3,11 @@
  *
  * The artifact welds three jobs, and the weld is what destroys authored values:
  *
- *   ① DISC       — `version` `center` `radius` `boundary[256]` + the fade set
- *                  (`innerFadeOffset` `fade` `streetFade`). "How much world do we
- *                  draw." The two feather bands are a downstream contract
- *                  (`SLAB-CONTRACT §2.1`) and `streetFade.outer` sets the content
- *                  clip radius (`pipeline.js` keepR).
+ *   ① DISC       — `version` `center` `radius` `boundary[256]` + `fadeBand`, the
+ *                  ONE fade knob. "How much world do we draw." The feather is a
+ *                  downstream contract (`SLAB-CONTRACT §2.1`) and `fade.outer`
+ *                  sets the content clip radius (`pipeline.js` keepR) — both
+ *                  DERIVED from `radius` + `fadeBand`, never stored.
  *   ② MEMBERSHIP — `polygon` `polygonSource`. "What is IN the neighborhood."
  *   ③ EXCLUSIONS — `exclusions[]`. The subtractive margin corrections.
  *
@@ -31,25 +31,77 @@
  * byte-for-byte — `node checks/claims-boundary-record-split.mjs` proves it.
  *
  * ⭐ AUTHORED vs GENERATED is DERIVED, never stamped. A fade set is "generated" iff
- * it equals `generatedFade(radius)` exactly; otherwise it is the operator's. That
+ * its `fadeBand` equals `DEFAULT_FADE_BAND`; otherwise it is the operator's. That
  * needs no new field, no migration, and cannot go stale — it measures the artifact
  * against the one live formula rather than restating a verdict (CLAUDE.md §PRUNE).
  */
 
-/** The three fade fields, as a set. All present or all absent — never partial. */
-export const FADE_FIELDS = ['innerFadeOffset', 'fade', 'streetFade']
+/**
+ * The fade set, as a set. ⭐ It is now ONE field: `fadeBand`.
+ *
+ * `innerFadeOffset`, `fade` and `streetFade` were removed 2026-09-20 — the first
+ * was renamed by the additive ruling, the other two were stored copies of numbers
+ * derivable from `radius` (`fade.outer === radius` held EXACTLY in all five
+ * fade-carrying scenes on disk, which is what a redundant copy looks like).
+ */
+export const FADE_FIELDS = ['fadeBand']
 
 /**
- * THE ONE FADE FORMULA. Previously inline in `serve.js:makeCircleBoundary`; it
- * lives here now so the check can measure a scene against it instead of copying
- * the numbers into a second place that then drifts.
+ * The default feather width in metres — the value every Extent-poured town already
+ * carried. LS carried 134 (an unauthored 2019 migration default) until the band was
+ * ruled kit-wide at 200 on 2026-09-20; its look changed on purpose.
  */
-export function generatedFade(R) {
-  return {
-    innerFadeOffset: 200,
-    fade: { inner: Math.max(0, R - 200), outer: R },
-    streetFade: { inner: Math.max(0, R - 140), outer: R + 160 },
+export const DEFAULT_FADE_BAND = 200
+
+/**
+ * ⭐ THE ONE FADE FORMULA, and now it is the only one. ADDITIVE: the feather starts
+ * AT the rim and lives OUTSIDE it.
+ *
+ * ⛔ It used to run INWARD (`fade.inner = R - 200`), which put the dissolve inside
+ * the disc. Additive was impossible while BUILDINGS were in the fade — buildings
+ * stop at the rim, so an additive band has nothing to fade them into and you get a
+ * hard building edge. Taking buildings out of the fade (binary membership, decided
+ * by the authored polygon alone) is what makes this coherent; the two rulings are
+ * one argument and neither works without the other.
+ *
+ * Every other population has data for kilometres past the rim, so the outward band
+ * has something to dissolve.
+ */
+export function deriveFade(radius, fadeBand = DEFAULT_FADE_BAND) {
+  const band = Number.isFinite(fadeBand) ? fadeBand : DEFAULT_FADE_BAND
+  return { inner: radius, outer: radius + band }
+}
+
+/**
+ * The membership polygon scaled out to `fade.outer` — the cull for every population
+ * that FADES.
+ *
+ * ⭐ THE RULE (Jacob, 2026-09-20): "the edge should feather and the buildings
+ * shouldn't" — a population either takes the fade, and must then be DRAWN OUT to
+ * where the fade ends, or it does not, and is culled at membership. The inward fade
+ * used to hide the polygon's hard cut from the inside; moving the fade outward
+ * without moving this cull leaves the feather running over empty space.
+ *
+ * ⛔ Lives here, in the pure module, so the browser bundle and the node checks share
+ * ONE scaler. Same operation the stencil uses — never a second one.
+ */
+export function deriveFadeBoundary(boundary, center, radius, fadeBand) {
+  if (!boundary?.length || !radius) return boundary || []
+  const scale = deriveFade(radius, fadeBand).outer / radius
+  const cx = center?.[0] ?? 0, cz = center?.[1] ?? 0
+  return boundary.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
+}
+
+/** Even-odd point-in-polygon on the XZ plane. */
+export function pointInRing(x, z, poly) {
+  if (!poly?.length) return true
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1]
+    const xj = poly[j][0], zj = poly[j][1]
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside
   }
+  return inside
 }
 
 /** The 256-gon render ring. Always derived from radius + center — never authored. */
@@ -63,13 +115,9 @@ export function makeRing(R, cx, cz) {
   return ring
 }
 
-const isBand = (b) => b && typeof b === 'object' && Number.isFinite(b.inner) && Number.isFinite(b.outer)
-const sameBand = (a, b) => a.inner === b.inner && a.outer === b.outer
-
-/** Deep-equal over the three fade fields only. */
+/** Equal over the fade set — which is one knob. */
 export function sameFade(a, b) {
-  return a.innerFadeOffset === b.innerFadeOffset &&
-    sameBand(a.fade, b.fade) && sameBand(a.streetFade, b.streetFade)
+  return a.fadeBand === b.fadeBand
 }
 
 /**
@@ -94,19 +142,10 @@ export function classifyFade(nb, where = 'boundary') {
       `The fade set is all-present or all-absent; a partial set cannot be completed ` +
       `without inventing the operator's intent (EXTENT-DESIGN §5.1).`)
   }
-  if (!Number.isFinite(nb.innerFadeOffset)) throw new Error(`${where}: innerFadeOffset is not a finite number`)
-  for (const f of ['fade', 'streetFade']) {
-    if (!isBand(nb[f])) throw new Error(`${where}: ${f} must be { inner, outer } with finite numbers`)
-  }
-  if (!Number.isFinite(nb.radius)) {
-    throw new Error(`${where}: radius is missing — a fade set cannot be classified authored-vs-generated without it`)
-  }
-  const fade = {
-    innerFadeOffset: nb.innerFadeOffset,
-    fade: { inner: nb.fade.inner, outer: nb.fade.outer },
-    streetFade: { inner: nb.streetFade.inner, outer: nb.streetFade.outer },
-  }
-  return { kind: sameFade(fade, generatedFade(nb.radius)) ? 'generated' : 'authored', fade }
+  if (!Number.isFinite(nb.fadeBand)) throw new Error(`${where}: fadeBand is not a finite number`)
+  if (nb.fadeBand < 0) throw new Error(`${where}: fadeBand is negative (${nb.fadeBand}) — a feather cannot run inward`)
+  const fade = { fadeBand: nb.fadeBand }
+  return { kind: nb.fadeBand === DEFAULT_FADE_BAND ? 'generated' : 'authored', fade }
 }
 
 /**
@@ -178,19 +217,23 @@ export function composeBoundary({ disc, membership, exclusions, carry, keyOrder 
  * Build the DISC record for a commit / rescope.
  *
  * `radius` and `center` are the operator's gesture and always apply; the ring is
- * always re-derived. The FADE SET is the part that used to be destroyed:
+ * always re-derived. `fadeBand` rides through untouched.
  *
- *   - no prior disc, or a prior whose fade was GENERATED → generate from the new
- *     radius. Byte-identical to the old behaviour for every scene but LS.
- *   - prior fade AUTHORED, radius unchanged → PRESERVE it verbatim. This is the fix.
- *   - prior fade AUTHORED, radius CHANGED → ⛔ THROW. The bands are absolute metres
- *     and `fade.outer` is the silhouette edge; holding them at a new radius leaves
- *     the feather finishing inside the disc, and scaling them invents an intent the
- *     operator never expressed. Neither is knowable, so neither is guessed — the
- *     kit says which four values are in conflict and stops (CLAUDE.md Layer 0, q2).
- *   - prior fade ABSENT → treated as no prior. `toy`'s absence is legal to READ but
- *     nothing carries it through a commit today, and inventing that carry would be
- *     a behaviour change this window does not have.
+ *   - prior carries a fadeBand → CARRY IT, whatever the radius does.
+ *   - no prior, or prior fade ABSENT → the default band.
+ *
+ * ⭐ A RADIUS CHANGE IS NO LONGER A CONFLICT, and that is the whole point of the
+ * 2026-09-20 ruling. This function used to THROW when an authored fade met a
+ * changed radius, because the stored bands were absolute metres that could neither
+ * be held (feather finishes inside the disc) nor scaled (invents intent). ⛔ That
+ * dilemma was manufactured by storing derived numbers. `fadeBand` is a WIDTH, not a
+ * position: it is radius-independent, so it survives any rescope and `fade` simply
+ * re-derives at the new radius. The throw is gone because the conflict is gone.
+ *
+ * ⛔ Note what "preserve" now means. The old code preserved `fade`/`streetFade` —
+ * stored copies that kept pointing at the OLD circle after a rescope. Preserving
+ * THOSE was the bug. Preserving `fadeBand` is correct: it is the operator's knob
+ * and nothing else.
  */
 export function makeDiscRecord({ radius, center = [0, 0], prior = null, where = 'boundary' }) {
   if (!Number.isFinite(radius) || radius <= 0) throw new Error(`${where}: need a positive radius`)
@@ -199,23 +242,11 @@ export function makeDiscRecord({ radius, center = [0, 0], prior = null, where = 
   const cx = r2(center?.[0] || 0), cz = r2(center?.[1] || 0)
 
   let fade, fadeOrigin
-  if (prior && prior.fadeOrigin === 'authored') {
-    if (prior.radius !== R) {
-      const g = generatedFade(R)
-      throw new Error(
-        `${where}: this scene has an AUTHORED fade set and the radius is changing ` +
-        `(${prior.radius} → ${R}). Authored: innerFadeOffset ${prior.fade.innerFadeOffset}, ` +
-        `fade ${prior.fade.fade.inner}/${prior.fade.fade.outer}, ` +
-        `streetFade ${prior.fade.streetFade.inner}/${prior.fade.streetFade.outer}. ` +
-        `Generated at the new radius would be ${g.innerFadeOffset}, ` +
-        `${g.fade.inner}/${g.fade.outer}, ${g.streetFade.inner}/${g.streetFade.outer}. ` +
-        `The bands are absolute metres, so they can neither be held nor scaled without ` +
-        `guessing — re-author the fade set for the new radius, or keep the radius.`)
-    }
-    fade = prior.fade
-    fadeOrigin = 'authored'
+  if (prior && prior.fade && Number.isFinite(prior.fade.fadeBand)) {
+    fade = { fadeBand: prior.fade.fadeBand }
+    fadeOrigin = prior.fadeOrigin
   } else {
-    fade = generatedFade(R)
+    fade = { fadeBand: DEFAULT_FADE_BAND }
     fadeOrigin = 'generated'
   }
 

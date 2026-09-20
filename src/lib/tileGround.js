@@ -584,7 +584,7 @@ export function mintProtopolygon({ streets, gradeSep = [], eps = 0.005, boundary
   // ⭐⭐⭐ AND THE DISTINCTION THAT DAY TURNED ON, BECAUSE THIS HEADER DID NOT MAKE IT:
   // **THE DISC IS A RENDER KNOB. GROUND TRUTH IS NOT.** `RIBBONS §1`'s "a disc, or a disc plus a
   // margin, is STILL the circle deciding block geometry" is about THE CIRCLE — radius,
-  // `streetFade` and aesthetic padding, all live-editable, none of them facts about the town. It
+  // `fadeBand` and aesthetic padding, all live-editable, none of them facts about the town. It
   // is NOT a rule that only a chain may close a block. A SHORELINE is absolute (`ROADMAP H-4`),
   // so it IS ink: stroked in like a chain (`WATER_EDGE_SKEL`), it closes land-use faces and
   // coast-facing dead ends, and the water field falls out of `frame − ink` on the other side.
@@ -2054,7 +2054,7 @@ export const BOUNDARY_EDGE_SKEL = '__boundary__'
 // "we see the difference between land and water, and the geometry creates the water field
 // and on the other side (land-ward side) closes the rest of the LU polygons, especially
 // the dead-ends").
-// ⛔ `__boundary__` is the DISC — a render knob (radius, streetFade, aesthetic padding, all
+// ⛔ `__boundary__` is the DISC — a render knob (radius, fadeBand, aesthetic padding, all
 // live-editable), which is exactly why `RIBBONS §1` forbids it from deciding block geometry.
 // A SHORELINE IS GROUND TRUTH. `ROADMAP H-4`: "this should be EASIER than a man-made
 // feature, because a shoreline is absolute and permanent(ish) where a curb is authored and

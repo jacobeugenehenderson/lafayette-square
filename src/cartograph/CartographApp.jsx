@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
 import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
+import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
 
 // Map geometry (rendered in every shot)
 import MapLayers from './MapLayers.jsx'
@@ -772,20 +773,27 @@ function useLoadData() {
 const TOY_STENCIL = [[-180, -180], [180, -180], [180, 180], [-180, 180]]
 
 // LS stencil = the neighborhood boundary polygon, scaled outward to the
-// streetFade.outer + buffer band. Mirrors bake-ground.js's STENCIL_POLYGON
-// derivation so V2's blockRounded comes out the same shape Designer-side
-// as bake-side. Without this, V2's `blockRounded = stencil − asphaltRounded`
-// is empty, which kills cornerSidewalkPads (clipped against blockRounded
-// and lands at zero rings) and any other stencil-bound clip.
-// Build a Designer stencil from any neighborhood_boundary.json (the boundary
-// polygon scaled outward to streetFade.outer + buffer). Shared by every
-// center+radius scene so a new neighborhood is a one-line registry add.
+// fade.outer + buffer band. Mirrors the bake-side derivation in sceneStencil.js
+// so V2's blockRounded comes out the same shape Designer-side as bake-side.
+// Without this, V2's `blockRounded = stencil − asphaltRounded` is empty, which
+// kills cornerSidewalkPads (clipped against blockRounded and lands at zero rings)
+// and any other stencil-bound clip. ⚠️ It is a MASK for block fill — it is not the
+// clip for barriers (clipPolylineToBoundary) or centerlines (clipPolylineToRadius).
+// Shared by every center+radius scene so a new neighborhood is a one-line add.
+//
+// ⛔ THE UNAUTHORED-FADE BRANCH: no fadeBand ⇒ targetR = radius, NO +50. Ruled by
+// Jacob 2026-09-20. This read `(nb?.streetFade?.outer ?? radius) + 50`, which gave
+// a town with no authored fade a 50 m scale-out protecting a feather that does not
+// exist — and disagreed with the bake side's `: radius` by exactly that 50 m.
+// ⚠️ Reachable ONLY at the poured-scene call site below: a town between its pour and
+// its fade. NOT a toy branch — toy is handed a literal box and never arrives here.
 function stencilFromBoundary(nb) {
   const poly = nb?.boundary
   const center = nb?.center
   const radius = nb?.radius
   if (!poly?.length || !center || !radius) return null
-  const targetR = (nb?.streetFade?.outer ?? radius) + 50
+  const fade = Number.isFinite(nb?.fadeBand) ? deriveFade(radius, nb.fadeBand) : null
+  const targetR = fade ? fade.outer + 50 : radius
   const scale = targetR / radius
   const cx = center[0], cz = center[1]
   return poly.map(([x, z]) => [cx + (x - cx) * scale, cz + (z - cz) * scale])
