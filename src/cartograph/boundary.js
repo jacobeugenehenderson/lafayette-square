@@ -75,7 +75,13 @@ export function clipPolylineToRadius(points, centerXZ, R) {
 
 // Build the full clip/fade bundle for one neighborhood_boundary.json.
 export function makeBoundary(nb) {
-  const boundary = nb?.boundary || []
+  // ⭐ `landBoundary` is the disc WITH THE WATER CARVED OUT, written by the pour when
+  // this town has a shoreline (`cartograph/landBoundary.mjs`). It is the edge of the
+  // DRAWING, so it drives the clip, the fade and every containment test here — which
+  // is the whole reason it is read at this one line instead of at each call site.
+  // ⛔ `boundary` stays the operator's authored disc and is the fallback for every
+  // landlocked town, which is all of them but Huron today.
+  const boundary = nb?.landBoundary?.length ? nb.landBoundary : (nb?.boundary || [])
   const center = nb?.center || [0, 0]
   const radius = nb?.radius || 0
   const v1Inner = Math.max(0, radius - (nb?.innerFadeOffset ?? 134))
