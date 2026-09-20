@@ -9,7 +9,7 @@
   "parcel_matched": 3576,
   "nr_attributed": 0,
   "in_historic_district": 0,
-  "buildings_with_listings": 58,
+  "buildings_with_listings": 177,
   "join_key": "id == slab building id (msbf-* on a US pour, osm-* on an OSM pour, the project id on a curated one)",
   "prominence": {
    "scorer": "prominence.mjs",
@@ -1832,12 +1832,16 @@
   },
   {
    "id": "msbf-61",
-   "name": null,
+   "name": "CrystalMic Premium Audio",
    "address": "415 CENTER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "CrystalMic Premium Audio"
+   ],
+   "listing_ids": [
+    "huro-lst-0030"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -1853,8 +1857,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -1875,12 +1879,16 @@
   },
   {
    "id": "msbf-62",
-   "name": null,
+   "name": "Rippin Lips Lake Erie Charters",
    "address": "910 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Rippin Lips Lake Erie Charters"
+   ],
+   "listing_ids": [
+    "huro-lst-0157"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -1896,8 +1904,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -4499,12 +4507,16 @@
   },
   {
    "id": "msbf-147",
-   "name": null,
+   "name": "Mariotti J C DC",
    "address": "801 RYE BEACH HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mariotti J C DC"
+   ],
+   "listing_ids": [
+    "huro-lst-0039"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -4520,12 +4532,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -4585,12 +4597,16 @@
   },
   {
    "id": "msbf-151",
-   "name": null,
+   "name": "Sawmill Creek Resort",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Sawmill Creek Resort"
+   ],
+   "listing_ids": [
+    "huro-lst-0023"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -4606,13 +4622,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -5274,12 +5290,16 @@
   },
   {
    "id": "msbf-175",
-   "name": null,
+   "name": "FlowGuard Gutter Covers by FlexxPoint",
    "address": "912 UNIVERSITY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "FlowGuard Gutter Covers by FlexxPoint"
+   ],
+   "listing_ids": [
+    "huro-lst-0048"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -5295,12 +5315,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "industrial",
-   "subcategory": "warehouses",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
-   "use": "industrial",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -5446,12 +5466,16 @@
   },
   {
    "id": "msbf-185",
-   "name": null,
+   "name": "Lakeside Custom Construction LLC",
    "address": "537 WASHINGTON HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lakeside Custom Construction LLC"
+   ],
+   "listing_ids": [
+    "huro-lst-0064"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -5467,9 +5491,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -6265,15 +6289,15 @@
   },
   {
    "id": "msbf-209",
-   "name": "Huron Public Library",
+   "name": "The Huron Historical Society",
    "address": "CENTER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Huron Public Library"
+    "The Huron Historical Society"
    ],
    "listing_ids": [
-    "huro-lst-0008"
+    "huro-lst-0212"
    ],
    "historic_district": null,
    "contributing": null,
@@ -6290,11 +6314,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "library",
+   "category": "arts",
+   "subcategory": "galleries",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "civic",
+   "use_subtype": "cultural",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
@@ -7131,12 +7155,16 @@
   },
   {
    "id": "msbf-241",
-   "name": null,
+   "name": "Sawmill Creek Huron",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Sawmill Creek Huron"
+   ],
+   "listing_ids": [
+    "huro-lst-0002"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -7152,13 +7180,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -7346,12 +7374,16 @@
   },
   {
    "id": "msbf-252",
-   "name": null,
+   "name": "Pier Pub",
    "address": "38 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Pier Pub"
+   ],
+   "listing_ids": [
+    "huro-lst-0188"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -7367,12 +7399,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -7432,12 +7464,16 @@
   },
   {
    "id": "msbf-254",
-   "name": null,
+   "name": "Holiday Harbor Marina",
    "address": "944 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Holiday Harbor Marina"
+   ],
+   "listing_ids": [
+    "huro-lst-0106"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -7453,8 +7489,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -7518,12 +7554,20 @@
   },
   {
    "id": "msbf-256",
-   "name": null,
+   "name": "Review Phim Hay",
    "address": "519 MAIN ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Review Phim Hay",
+    "Mudbrook Mercantile",
+    "Hello Gorgeous Beauty Bar"
+   ],
+   "listing_ids": [
+    "huro-lst-0049",
+    "huro-lst-0026",
+    "huro-lst-0204"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -7539,12 +7583,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -8207,12 +8251,16 @@
   },
   {
    "id": "msbf-279",
-   "name": null,
+   "name": "West Bank Marina",
    "address": "400 HURON ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "West Bank Marina"
+   ],
+   "listing_ids": [
+    "huro-lst-0175"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -8228,12 +8276,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -8379,12 +8427,18 @@
   },
   {
    "id": "msbf-283",
-   "name": null,
+   "name": "Lakefront Spa & Tanning - Huron",
    "address": "445 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lakefront Spa & Tanning - Huron",
+    "Cameo Pizza Huron by the Lake"
+   ],
+   "listing_ids": [
+    "huro-lst-0141",
+    "huro-lst-0109"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -8400,9 +8454,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -8422,12 +8476,16 @@
   },
   {
    "id": "msbf-285",
-   "name": null,
+   "name": "B.Keith Cooper Auctioneer",
    "address": "314 WILBOR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "B.Keith Cooper Auctioneer"
+   ],
+   "listing_ids": [
+    "huro-lst-0248"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -8443,9 +8501,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "shopping",
+   "subcategory": "retail",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -9153,12 +9211,16 @@
   },
   {
    "id": "msbf-306",
-   "name": null,
+   "name": "Feddersens",
    "address": "SAWMILL PARKWAY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Feddersens"
+   ],
+   "listing_ids": [
+    "huro-lst-0260"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -9174,12 +9236,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "unnamed",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
-   "use": "vacant",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -9712,17 +9774,39 @@
   },
   {
    "id": "msbf-326",
-   "name": "Huron Market",
+   "name": "Stephanie Vineyard",
    "address": "525 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Huron Market",
-    "Jo Wok"
+    "Stephanie Vineyard",
+    "Ravi'n Hair & Body",
+    "Huron Health Club",
+    "All About Dance Productions",
+    "Flavorfuel",
+    "Hq Barbecue",
+    "Lakeshore Golf Studio",
+    "Erie Supply House",
+    "The Tea Bubble",
+    "Diva Lashes By Maggie",
+    "Trabel’s Bagels",
+    "NAPA AUTO PARTS",
+    "Huron Market"
    ],
    "listing_ids": [
-    "huro-lst-0065",
-    "huro-lst-0066"
+    "huro-lst-0122",
+    "huro-lst-0142",
+    "huro-lst-0032",
+    "huro-lst-0149",
+    "huro-lst-0264",
+    "huro-lst-0256",
+    "huro-lst-0061",
+    "huro-lst-0003",
+    "huro-lst-0015",
+    "huro-lst-0043",
+    "huro-lst-0241",
+    "huro-lst-0018",
+    "huro-lst-0249"
    ],
    "historic_district": null,
    "contributing": null,
@@ -9739,8 +9823,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "grocery",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -10667,16 +10751,12 @@
   },
   {
    "id": "msbf-357",
-   "name": "Shelter 2",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "Shelter 2"
-   ],
-   "listing_ids": [
-    "huro-lst-0016"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -10692,13 +10772,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "parks",
-   "subcategory": "pavilions",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "osm",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -11189,12 +11269,20 @@
   },
   {
    "id": "msbf-372",
-   "name": null,
+   "name": "Blimpie",
    "address": "805 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Blimpie",
+    "Blue Rhino Propane Exchange",
+    "Shell"
+   ],
+   "listing_ids": [
+    "huro-lst-0168",
+    "huro-lst-0211",
+    "huro-lst-0126"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -11210,12 +11298,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -11705,12 +11793,16 @@
   },
   {
    "id": "msbf-390",
-   "name": null,
+   "name": "Sand Bar",
    "address": "54 MCKINLEY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Sand Bar"
+   ],
+   "listing_ids": [
+    "huro-lst-0198"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -11726,12 +11818,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -12479,15 +12571,15 @@
   },
   {
    "id": "msbf-421",
-   "name": "McCormick Middle School",
+   "name": "McCormick Junior High School",
    "address": "325 OHIO HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "McCormick Middle School"
+    "McCormick Junior High School"
    ],
    "listing_ids": [
-    "huro-lst-0019"
+    "huro-lst-0283"
    ],
    "historic_district": null,
    "contributing": null,
@@ -14077,17 +14169,15 @@
   },
   {
    "id": "msbf-476",
-   "name": "The Cedar Point Center at BGSU Firelands",
+   "name": "Cedar Point Center",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "The Cedar Point Center at BGSU Firelands",
-    "RISE"
+    "Cedar Point Center"
    ],
    "listing_ids": [
-    "huro-lst-0004",
-    "huro-lst-0030"
+    "huro-lst-0226"
    ],
    "historic_district": null,
    "contributing": null,
@@ -14105,10 +14195,10 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "university",
+   "subcategory": "schools",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "campus",
+   "use_subtype": "school",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -15507,15 +15597,15 @@
   },
   {
    "id": "msbf-533",
-   "name": "Shell",
+   "name": "Hy-Miler",
    "address": "2026 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Shell"
+    "Hy-Miler"
    ],
    "listing_ids": [
-    "huro-lst-0034"
+    "huro-lst-0173"
    ],
    "historic_district": null,
    "contributing": null,
@@ -15772,12 +15862,16 @@
   },
   {
    "id": "msbf-546",
-   "name": null,
+   "name": "Lucy's Stitches",
    "address": "320 OHIO HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lucy's Stitches"
+   ],
+   "listing_ids": [
+    "huro-lst-0272"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -15793,9 +15887,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -15823,7 +15917,7 @@
     "Huron High School"
    ],
    "listing_ids": [
-    "huro-lst-0001"
+    "huro-lst-0276"
    ],
    "historic_district": null,
    "contributing": null,
@@ -17454,12 +17548,16 @@
   },
   {
    "id": "msbf-602",
-   "name": null,
+   "name": "Mariner Village Beach",
    "address": "501 MARINER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mariner Village Beach"
+   ],
+   "listing_ids": [
+    "huro-lst-0078"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -17475,7 +17573,7 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "parks",
    "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
@@ -20337,12 +20435,20 @@
   },
   {
    "id": "msbf-702",
-   "name": null,
+   "name": "CUSH Cafe",
    "address": "125 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "CUSH Cafe",
+    "Riverview Lanes and Cafe",
+    "Riverview Cafe Huron, Ohio"
+   ],
+   "listing_ids": [
+    "huro-lst-0193",
+    "huro-lst-0237",
+    "huro-lst-0196"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -20358,12 +20464,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -21674,15 +21780,17 @@
   },
   {
    "id": "msbf-748",
-   "name": "DQ Grill & Chill",
+   "name": "Dairy Queen Grill & Chill",
    "address": "CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "DQ Grill & Chill"
+    "Dairy Queen Grill & Chill",
+    "Dairy Queen"
    ],
    "listing_ids": [
-    "huro-lst-0006"
+    "huro-lst-0139",
+    "huro-lst-0042"
    ],
    "historic_district": null,
    "contributing": null,
@@ -21812,15 +21920,15 @@
   },
   {
    "id": "msbf-752",
-   "name": "Marina Office",
+   "name": "Huron Boat Basin",
    "address": "WATER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Marina Office"
+    "Huron Boat Basin"
    ],
    "listing_ids": [
-    "huro-lst-0007"
+    "huro-lst-0203"
    ],
    "historic_district": null,
    "contributing": null,
@@ -21837,12 +21945,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "civic",
-   "use_confidence": "high",
+   "use_subtype": null,
+   "use_confidence": "medium",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -22204,12 +22312,18 @@
   },
   {
    "id": "msbf-762",
-   "name": null,
+   "name": "Lake Erie",
    "address": "735 CHESTNUT HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lake Erie",
+    "Conceptan/07"
+   ],
+   "listing_ids": [
+    "huro-lst-0067",
+    "huro-lst-0222"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -22225,7 +22339,7 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "parks",
    "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
@@ -22376,12 +22490,16 @@
   },
   {
    "id": "msbf-766",
-   "name": null,
+   "name": "Peace By Piece Pastries",
    "address": "306 GUMWOOD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Peace By Piece Pastries"
+   ],
+   "listing_ids": [
+    "huro-lst-0161"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -22397,9 +22515,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "dining",
+   "subcategory": "restaurants",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -23494,12 +23612,16 @@
   },
   {
    "id": "msbf-803",
-   "name": null,
+   "name": "Eisenhour Church Furnishings",
    "address": "1137 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Eisenhour Church Furnishings"
+   ],
+   "listing_ids": [
+    "huro-lst-0071"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -23515,9 +23637,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -23580,12 +23702,16 @@
   },
   {
    "id": "msbf-806",
-   "name": null,
+   "name": "Usgs Lake Erie Biological Station",
    "address": "380 HURON ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Usgs Lake Erie Biological Station"
+   ],
+   "listing_ids": [
+    "huro-lst-0121"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -23601,12 +23727,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -23666,12 +23792,18 @@
   },
   {
    "id": "msbf-808",
-   "name": null,
+   "name": "United States Postal Service",
    "address": "MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "United States Postal Service",
+    "Huron Post Office"
+   ],
+   "listing_ids": [
+    "huro-lst-0104",
+    "huro-lst-0085"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -23687,12 +23819,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
-   "use": "institutional",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -24314,12 +24446,18 @@
   },
   {
    "id": "msbf-836",
-   "name": null,
+   "name": "Huron Lake Front Market",
    "address": "312 PARK HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Lake Front Market",
+    "Lake Front Park and Beach"
+   ],
+   "listing_ids": [
+    "huro-lst-0045",
+    "huro-lst-0178"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -24335,8 +24473,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "lofts",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "multi_family",
@@ -26812,15 +26950,15 @@
   },
   {
    "id": "msbf-930",
-   "name": "Mulligan's Pub",
+   "name": "Mulligan's Pub - Huron, OH",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Mulligan's Pub"
+    "Mulligan's Pub - Huron, OH"
    ],
    "listing_ids": [
-    "huro-lst-0068"
+    "huro-lst-0137"
    ],
    "historic_district": null,
    "contributing": null,
@@ -27076,15 +27214,15 @@
   },
   {
    "id": "msbf-937",
-   "name": "United Methodist Church",
+   "name": "Huron United Methodist Church",
    "address": "338 WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "United Methodist Church"
+    "Huron United Methodist Church"
    ],
    "listing_ids": [
-    "huro-lst-0010"
+    "huro-lst-0150"
    ],
    "historic_district": null,
    "contributing": null,
@@ -27254,12 +27392,16 @@
   },
   {
    "id": "msbf-941",
-   "name": null,
+   "name": "Huron Rotary Club",
    "address": "416 OHIO HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Rotary Club"
+   ],
+   "listing_ids": [
+    "huro-lst-0253"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -27275,12 +27417,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "residential",
-   "use_subtype": "single_family",
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -28029,12 +28171,20 @@
   },
   {
    "id": "msbf-968",
-   "name": null,
+   "name": "Freedom Boat Club Lake Erie - Huron",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Freedom Boat Club Lake Erie - Huron",
+    "North Coast Boating",
+    "Huron Lagoons Marina"
+   ],
+   "listing_ids": [
+    "huro-lst-0144",
+    "huro-lst-0243",
+    "huro-lst-0102"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -28050,13 +28200,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "arts",
+   "subcategory": "venues",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use": "institutional",
+   "use_subtype": "cultural",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -30828,12 +30978,22 @@
   },
   {
    "id": "msbf-1061",
-   "name": null,
+   "name": "Edward Jones",
    "address": "2012 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Edward Jones",
+    "Knucklehead Saloon",
+    "John Heilman, Dc",
+    "John Paul Heilman"
+   ],
+   "listing_ids": [
+    "huro-lst-0105",
+    "huro-lst-0160",
+    "huro-lst-0197",
+    "huro-lst-0107"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -30849,12 +31009,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -30879,7 +31039,7 @@
     "McDonald's"
    ],
    "listing_ids": [
-    "huro-lst-0011"
+    "huro-lst-0057"
    ],
    "historic_district": null,
    "contributing": null,
@@ -31784,16 +31944,12 @@
   },
   {
    "id": "msbf-1089",
-   "name": "McBride Auditorium",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "McBride Auditorium"
-   ],
-   "listing_ids": [
-    "huro-lst-0063"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -31809,13 +31965,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "arts",
-   "subcategory": "venues",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "cultural",
-   "use_confidence": "high",
-   "use_source": "osm",
+   "use": "unknown",
+   "use_subtype": null,
+   "use_confidence": "low",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -32654,12 +32810,16 @@
   },
   {
    "id": "msbf-1116",
-   "name": null,
+   "name": "First Acres Homestead",
    "address": "1305 RYE BEACH RD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "First Acres Homestead"
+   ],
+   "listing_ids": [
+    "huro-lst-0281"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -32675,9 +32835,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "shopping",
+   "subcategory": "grocery",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -33299,12 +33459,16 @@
   },
   {
    "id": "msbf-1136",
-   "name": null,
+   "name": "Huron Memorial Stadium",
    "address": "710 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Memorial Stadium"
+   ],
+   "listing_ids": [
+    "huro-lst-0210"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -33320,12 +33484,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "arts",
+   "subcategory": "venues",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use_subtype": "cultural",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -34677,15 +34841,15 @@
   },
   {
    "id": "msbf-1179",
-   "name": "Pied Piper",
+   "name": "Pied Piper Drive In",
    "address": "502 HURON ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Pied Piper"
+    "Pied Piper Drive In"
    ],
    "listing_ids": [
-    "huro-lst-0045"
+    "huro-lst-0189"
    ],
    "historic_district": null,
    "contributing": null,
@@ -34898,12 +35062,16 @@
   },
   {
    "id": "msbf-1186",
-   "name": null,
+   "name": "Elw Enterprises",
    "address": "1018 BRITTANY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Elw Enterprises"
+   ],
+   "listing_ids": [
+    "huro-lst-0163"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -34919,12 +35087,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -36146,16 +36314,12 @@
   },
   {
    "id": "msbf-1220",
-   "name": "Hy-Miler",
+   "name": null,
    "address": "2026 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [
-    "Hy-Miler"
-   ],
-   "listing_ids": [
-    "huro-lst-0035"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -36171,12 +36335,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "grocery",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "high",
+   "use_confidence": "medium",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -37056,16 +37220,12 @@
   },
   {
    "id": "msbf-1249",
-   "name": "Closed (Temp): Lemmy's Restaurant",
+   "name": null,
    "address": "2027 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [
-    "Closed (Temp): Lemmy's Restaurant"
-   ],
-   "listing_ids": [
-    "huro-lst-0015"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -37081,12 +37241,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "high",
+   "use_confidence": "medium",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -39814,12 +39974,16 @@
   },
   {
    "id": "msbf-1330",
-   "name": null,
+   "name": "RB's Services",
    "address": "913 SALEM HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "RB's Services"
+   ],
+   "listing_ids": [
+    "huro-lst-0165"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -39835,9 +39999,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -42362,7 +42526,7 @@
     "Subway"
    ],
    "listing_ids": [
-    "huro-lst-0012"
+    "huro-lst-0034"
    ],
    "historic_district": null,
    "contributing": null,
@@ -43396,12 +43560,16 @@
   },
   {
    "id": "msbf-1448",
-   "name": null,
+   "name": "Old Homestead On The Lake Association",
    "address": "509 ONEIDA HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Old Homestead On The Lake Association"
+   ],
+   "listing_ids": [
+    "huro-lst-0096"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -43417,12 +43585,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "residential",
-   "use_subtype": "single_family",
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -43611,12 +43779,16 @@
   },
   {
    "id": "msbf-1454",
-   "name": null,
+   "name": "Abbey Rose Foundation",
    "address": "211 OHIO HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Abbey Rose Foundation"
+   ],
+   "listing_ids": [
+    "huro-lst-0081"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -43632,12 +43804,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "residential",
-   "use_subtype": "single_family",
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -45075,12 +45247,16 @@
   },
   {
    "id": "msbf-1499",
-   "name": null,
+   "name": "Old Homestead One Beach House Rental",
    "address": "211 MIAMI PL HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Old Homestead One Beach House Rental"
+   ],
+   "listing_ids": [
+    "huro-lst-0052"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -45096,8 +45272,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -48301,12 +48477,16 @@
   },
   {
    "id": "msbf-1607",
-   "name": null,
+   "name": "Huron Podiatry",
    "address": "2320 UNIVERSITY DR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Podiatry"
+   ],
+   "listing_ids": [
+    "huro-lst-0117"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -48322,12 +48502,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -48645,15 +48825,19 @@
   },
   {
    "id": "msbf-1625",
-   "name": "Main Street Tavern",
+   "name": "Joe's Complete Auto Repair",
    "address": "604 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Main Street Tavern"
+    "Joe's Complete Auto Repair",
+    "Main Street Tavern",
+    "Vermillion"
    ],
    "listing_ids": [
-    "huro-lst-0033"
+    "huro-lst-0230",
+    "huro-lst-0244",
+    "huro-lst-0011"
    ],
    "historic_district": null,
    "contributing": null,
@@ -48670,8 +48854,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "services",
+   "subcategory": "automotive",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -50028,15 +50212,15 @@
   },
   {
    "id": "msbf-1673",
-   "name": "Berardi's",
+   "name": "Berardi's Restaurant",
    "address": "218 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Berardi's"
+    "Berardi's Restaurant"
    ],
    "listing_ids": [
-    "huro-lst-0041"
+    "huro-lst-0252"
    ],
    "historic_district": null,
    "contributing": null,
@@ -50077,15 +50261,15 @@
   },
   {
    "id": "msbf-1674",
-   "name": "Comfort Inn",
+   "name": "Comfort Inn River's Edge",
    "address": "120 MAIN ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Comfort Inn"
+    "Comfort Inn River's Edge"
    ],
    "listing_ids": [
-    "huro-lst-0023"
+    "huro-lst-0103"
    ],
    "historic_district": null,
    "contributing": null,
@@ -51851,12 +52035,16 @@
   },
   {
    "id": "msbf-1721",
-   "name": null,
+   "name": "Medicare Insurance Advisors Huron",
    "address": "101 FOREST HILLS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Medicare Insurance Advisors Huron"
+   ],
+   "listing_ids": [
+    "huro-lst-0091"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -51872,8 +52060,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -53364,7 +53552,7 @@
     "Jim's Pizza Box"
    ],
    "listing_ids": [
-    "huro-lst-0051"
+    "huro-lst-0250"
    ],
    "historic_district": null,
    "contributing": null,
@@ -54265,12 +54453,16 @@
   },
   {
    "id": "msbf-1801",
-   "name": null,
+   "name": "Knights of Columbus",
    "address": "224 WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Knights of Columbus"
+   ],
+   "listing_ids": [
+    "huro-lst-0225"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -54286,12 +54478,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "unknown",
-   "use_subtype": null,
-   "use_confidence": "low",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -54480,12 +54672,18 @@
   },
   {
    "id": "msbf-1806",
-   "name": null,
+   "name": "Annie's Closet & Tea Room",
    "address": "511 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Annie's Closet & Tea Room",
+    "The Easy Speakin Barbershop (Nicolas Babka)"
+   ],
+   "listing_ids": [
+    "huro-lst-0010",
+    "huro-lst-0200"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -54501,12 +54699,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "cafes",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -54652,12 +54850,16 @@
   },
   {
    "id": "msbf-1810",
-   "name": null,
+   "name": "Dollar General",
    "address": "1107 CLEVELAND RD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Dollar General"
+   ],
+   "listing_ids": [
+    "huro-lst-0279"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -54673,9 +54875,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "shopping",
+   "subcategory": "retail",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -54953,12 +55155,16 @@
   },
   {
    "id": "msbf-1820",
-   "name": null,
+   "name": "Label Aid Inc",
    "address": "608 RYE BEACH HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Label Aid Inc"
+   ],
+   "listing_ids": [
+    "huro-lst-0027"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -54974,12 +55180,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -55254,12 +55460,16 @@
   },
   {
    "id": "msbf-1834",
-   "name": null,
+   "name": "Lakefront E-Bike Rentals",
    "address": "CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lakefront E-Bike Rentals"
+   ],
+   "listing_ids": [
+    "huro-lst-0115"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -55275,8 +55485,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -55512,12 +55722,16 @@
   },
   {
    "id": "msbf-1840",
-   "name": null,
+   "name": "All Builds Construction & Remodeling",
    "address": "204 FOREST HILLS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "All Builds Construction & Remodeling"
+   ],
+   "listing_ids": [
+    "huro-lst-0051"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -55533,9 +55747,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -56029,16 +56243,12 @@
   },
   {
    "id": "msbf-1853",
-   "name": "Arby's",
+   "name": null,
    "address": "609 RYE BEACH HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [
-    "Arby's"
-   ],
-   "listing_ids": [
-    "huro-lst-0026"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -56054,12 +56264,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "commercial",
+   "subcategory": "storefronts",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "high",
+   "use_confidence": "medium",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -56082,15 +56292,15 @@
   },
   {
    "id": "msbf-1856",
-   "name": "Bennetts Designs",
+   "name": "Bennett's Novelties",
    "address": "2408 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Bennetts Designs"
+    "Bennett's Novelties"
    ],
    "listing_ids": [
-    "huro-lst-0002"
+    "huro-lst-0093"
    ],
    "historic_district": null,
    "contributing": null,
@@ -56107,8 +56317,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
@@ -57037,15 +57247,15 @@
   },
   {
    "id": "msbf-1887",
-   "name": "First Federal Saving and Load",
+   "name": "First Federal Savings Of Lorain",
    "address": "107 LIBERTY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "First Federal Saving and Load"
+    "First Federal Savings Of Lorain"
    ],
    "listing_ids": [
-    "huro-lst-0024"
+    "huro-lst-0180"
    ],
    "historic_district": null,
    "contributing": null,
@@ -57063,7 +57273,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "services",
-   "subcategory": "financial",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -58375,12 +58585,16 @@
   },
   {
    "id": "msbf-1932",
-   "name": null,
+   "name": "Rpm Automotive Repair",
    "address": "808 WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Rpm Automotive Repair"
+   ],
+   "listing_ids": [
+    "huro-lst-0007"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -58396,12 +58610,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "automotive",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -60096,12 +60310,18 @@
   },
   {
    "id": "msbf-1986",
-   "name": null,
+   "name": "Tan Pro Usa",
    "address": "902 TAYLOR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Tan Pro Usa",
+    "Custom Marine Inc."
+   ],
+   "listing_ids": [
+    "huro-lst-0171",
+    "huro-lst-0170"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -60117,12 +60337,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "unnamed",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
-   "use": "vacant",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -60484,12 +60704,16 @@
   },
   {
    "id": "msbf-2005",
-   "name": null,
+   "name": "Huron Ace Hardware",
    "address": "402 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Ace Hardware"
+   ],
+   "listing_ids": [
+    "huro-lst-0242"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -60505,12 +60729,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -61475,15 +61699,21 @@
   },
   {
    "id": "msbf-2034",
-   "name": "Safelite AutoGlass",
+   "name": "Stride Mobility",
    "address": "2401 SAWMILL PARKWAY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Safelite AutoGlass"
+    "Stride Mobility",
+    "North Coast Propeller Repair",
+    "Breckenridge Kitchen Equipment",
+    "All American Roof Pros"
    ],
    "listing_ids": [
-    "huro-lst-0038"
+    "huro-lst-0044",
+    "huro-lst-0133",
+    "huro-lst-0186",
+    "huro-lst-0191"
    ],
    "historic_district": null,
    "contributing": null,
@@ -61500,8 +61730,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "services",
-   "subcategory": "automotive",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -61525,12 +61755,16 @@
   },
   {
    "id": "msbf-2035",
-   "name": null,
+   "name": "The Buster Brown Shoe House",
    "address": "23 RYE BEACH HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "The Buster Brown Shoe House"
+   ],
+   "listing_ids": [
+    "huro-lst-0129"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -61546,8 +61780,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -61912,12 +62146,16 @@
   },
   {
    "id": "msbf-2049",
-   "name": null,
+   "name": "Fixed Performance",
    "address": "827 SUPERIOR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Fixed Performance"
+   ],
+   "listing_ids": [
+    "huro-lst-0022"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -61933,9 +62171,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -64536,12 +64774,22 @@
   },
   {
    "id": "msbf-2133",
-   "name": null,
+   "name": "Shell",
    "address": "508 BERLIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Shell",
+    "HY-MILER #2235",
+    "Blue Rhino Propane Exchange",
+    "Mobil"
+   ],
+   "listing_ids": [
+    "huro-lst-0013",
+    "huro-lst-0257",
+    "huro-lst-0004",
+    "huro-lst-0114"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -64557,8 +64805,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -65313,16 +65561,12 @@
   },
   {
    "id": "msbf-2152",
-   "name": "The James H. McBride Arboretum Visitors Center",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "The James H. McBride Arboretum Visitors Center"
-   ],
-   "listing_ids": [
-    "huro-lst-0022"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -65338,13 +65582,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "parks",
-   "subcategory": "pavilions",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "osm",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -65792,12 +66036,18 @@
   },
   {
    "id": "msbf-2167",
-   "name": null,
+   "name": "Enzo's Detailing",
    "address": "908 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Enzo's Detailing",
+    "Vip Car Wash"
+   ],
+   "listing_ids": [
+    "huro-lst-0245",
+    "huro-lst-0086"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -65813,12 +66063,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "automotive",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -67170,12 +67420,16 @@
   },
   {
    "id": "msbf-2226",
-   "name": null,
+   "name": "Gordon Lumber Co",
    "address": "902 TAYLOR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Gordon Lumber Co"
+   ],
+   "listing_ids": [
+    "huro-lst-0154"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -67191,12 +67445,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -67299,12 +67553,18 @@
   },
   {
    "id": "msbf-2232",
-   "name": null,
+   "name": "Huron Airport",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Airport",
+    "Bores Cycle Salvage & Service"
+   ],
+   "listing_ids": [
+    "huro-lst-0087",
+    "huro-lst-0123"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -67320,13 +67580,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -68245,12 +68505,28 @@
   },
   {
    "id": "msbf-2267",
-   "name": null,
+   "name": "Greater Sandusky Partnership",
    "address": "202 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Greater Sandusky Partnership",
+    "Jason Smith - Simply Better Realty - Real Estate and Vacation Rentals",
+    "Huron Professional Building",
+    "Chris Pisano",
+    "On Lake Erie",
+    "Sebastian Dental Llc",
+    "Angie Masterson-Simply Better Realty"
+   ],
+   "listing_ids": [
+    "huro-lst-0136",
+    "huro-lst-0208",
+    "huro-lst-0098",
+    "huro-lst-0037",
+    "huro-lst-0094",
+    "huro-lst-0224",
+    "huro-lst-0205"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -68266,12 +68542,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -68632,15 +68908,17 @@
   },
   {
    "id": "msbf-2282",
-   "name": "First Baptist Church",
+   "name": "Salvation Army",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "First Baptist Church"
+    "Salvation Army",
+    "Huron Helping Hands Food Pantry"
    ],
    "listing_ids": [
-    "huro-lst-0055"
+    "huro-lst-0119",
+    "huro-lst-0062"
    ],
    "historic_district": null,
    "contributing": null,
@@ -68658,10 +68936,10 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "churches",
+   "subcategory": "organizations",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "church",
+   "use_subtype": "civic",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -68982,12 +69260,26 @@
   },
   {
    "id": "msbf-2290",
-   "name": null,
+   "name": "Vega Bar And Grill Llc.",
    "address": "346 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Vega Bar And Grill Llc.",
+    "Angles Hair Design",
+    "Pabodie Design Studios",
+    "I-5's Bar & Grill",
+    "I Fives",
+    "Matrix Proven Pos"
+   ],
+   "listing_ids": [
+    "huro-lst-0235",
+    "huro-lst-0174",
+    "huro-lst-0265",
+    "huro-lst-0080",
+    "huro-lst-0152",
+    "huro-lst-0202"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -69003,12 +69295,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -69886,12 +70178,16 @@
   },
   {
    "id": "msbf-2311",
-   "name": null,
+   "name": "n2y",
    "address": "909 UNIVERSITY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "n2y"
+   ],
+   "listing_ids": [
+    "huro-lst-0089"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -69907,12 +70203,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -70660,12 +70956,16 @@
   },
   {
    "id": "msbf-2345",
-   "name": null,
+   "name": "Carmeuse Huron Operation",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Carmeuse Huron Operation"
+   ],
+   "listing_ids": [
+    "huro-lst-0038"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -70681,13 +70981,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -72681,12 +72981,16 @@
   },
   {
    "id": "msbf-2423",
-   "name": null,
+   "name": "Breakwater Cottages",
    "address": "TIFFIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Breakwater Cottages"
+   ],
+   "listing_ids": [
+    "huro-lst-0229"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -72702,8 +73006,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "historic",
+   "subcategory": "landmarks",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -73971,12 +74275,16 @@
   },
   {
    "id": "msbf-2466",
-   "name": null,
+   "name": "Z Shoppe On Main",
    "address": "346 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Z Shoppe On Main"
+   ],
+   "listing_ids": [
+    "huro-lst-0056"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -73992,12 +74300,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -75478,15 +75786,15 @@
   },
   {
    "id": "msbf-2512",
-   "name": "Firelands Café",
+   "name": "Bowling Green State University, Firelands College",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "Firelands Café"
+    "Bowling Green State University, Firelands College"
    ],
    "listing_ids": [
-    "huro-lst-0062"
+    "huro-lst-0195"
    ],
    "historic_district": null,
    "contributing": null,
@@ -75503,11 +75811,11 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "cafes",
+   "category": "community",
+   "subcategory": "schools",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
+   "use": "institutional",
+   "use_subtype": "school",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -75615,12 +75923,18 @@
   },
   {
    "id": "msbf-2521",
-   "name": null,
+   "name": "Huron Sports Academy",
    "address": "CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Sports Academy",
+    "Shawnee Elementary"
+   ],
+   "listing_ids": [
+    "huro-lst-0021",
+    "huro-lst-0132"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -75637,11 +75951,11 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "organizations",
+   "subcategory": "schools",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use_subtype": "school",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -75875,15 +76189,15 @@
   },
   {
    "id": "msbf-2528",
-   "name": "Al's Firelands Barbershop",
+   "name": "Simply Better Realty Lighthouse Real Estate Team",
    "address": "502 HURON ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Al's Firelands Barbershop"
+    "Simply Better Realty Lighthouse Real Estate Team"
    ],
    "listing_ids": [
-    "huro-lst-0044"
+    "huro-lst-0263"
    ],
    "historic_district": null,
    "contributing": null,
@@ -75901,7 +76215,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "services",
-   "subcategory": "beauty",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -77258,12 +77572,20 @@
   },
   {
    "id": "msbf-2572",
-   "name": null,
+   "name": "Lucky Stone Gifts And Promotions",
    "address": "617 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lucky Stone Gifts And Promotions",
+    "Emmie.Styled",
+    "Corner Cuts"
+   ],
+   "listing_ids": [
+    "huro-lst-0172",
+    "huro-lst-0277",
+    "huro-lst-0134"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -77279,12 +77601,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "industrial",
-   "subcategory": "warehouses",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
-   "use": "industrial",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -78935,15 +79257,19 @@
   },
   {
    "id": "msbf-2626",
-   "name": "The Rusty Oar",
+   "name": "Harbor House Bar and Grill",
    "address": "132 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "The Rusty Oar"
+    "Harbor House Bar and Grill",
+    "3 Amigo's 132, Llp",
+    "Old Plat"
    ],
    "listing_ids": [
-    "huro-lst-0032"
+    "huro-lst-0166",
+    "huro-lst-0232",
+    "huro-lst-0047"
    ],
    "historic_district": null,
    "contributing": null,
@@ -78961,7 +79287,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "dining",
-   "subcategory": "bars",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -79113,12 +79439,16 @@
   },
   {
    "id": "msbf-2630",
-   "name": null,
+   "name": "Mindology Counseling, Llc.",
    "address": "520 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mindology Counseling, Llc."
+   ],
+   "listing_ids": [
+    "huro-lst-0143"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -79134,8 +79464,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -79242,12 +79572,16 @@
   },
   {
    "id": "msbf-2633",
-   "name": null,
+   "name": "Siegel Family Farm",
    "address": "750 CHESTNUT HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Siegel Family Farm"
+   ],
+   "listing_ids": [
+    "huro-lst-0118"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -79263,12 +79597,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -80060,12 +80394,18 @@
   },
   {
    "id": "msbf-2666",
-   "name": null,
+   "name": "Huron Butterfly Garden",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Butterfly Garden",
+    "Woodlands Elementary School"
+   ],
+   "listing_ids": [
+    "huro-lst-0209",
+    "huro-lst-0041"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -80087,7 +80427,7 @@
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "none",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -80878,15 +81218,17 @@
   },
   {
    "id": "msbf-2695",
-   "name": "Motel 6",
+   "name": "Microtel Inn Suites Huron",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
+    "Microtel Inn Suites Huron",
     "Motel 6"
    ],
    "listing_ids": [
-    "huro-lst-0028"
+    "huro-lst-0201",
+    "huro-lst-0016"
    ],
    "historic_district": null,
    "contributing": null,
@@ -83251,16 +83593,12 @@
   },
   {
    "id": "msbf-2786",
-   "name": "Zion Evangelical Lutheran Church",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "Zion Evangelical Lutheran Church"
-   ],
-   "listing_ids": [
-    "huro-lst-0057"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -83276,13 +83614,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "churches",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "church",
-   "use_confidence": "high",
-   "use_source": "osm",
+   "use": "unknown",
+   "use_subtype": null,
+   "use_confidence": "low",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -83300,12 +83638,16 @@
   },
   {
    "id": "msbf-2787",
-   "name": null,
+   "name": "Just Hookin",
    "address": "1240 MARINA HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Just Hookin"
+   ],
+   "listing_ids": [
+    "huro-lst-0070"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -83321,8 +83663,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -83644,12 +83986,16 @@
   },
   {
    "id": "msbf-2800",
-   "name": null,
+   "name": "Chaska Beach, Huron",
    "address": "828 LAKEWAY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Chaska Beach, Huron"
+   ],
+   "listing_ids": [
+    "huro-lst-0031"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -83665,8 +84011,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -84376,12 +84722,16 @@
   },
   {
    "id": "msbf-2819",
-   "name": null,
+   "name": "Blue Ribbon Catering",
    "address": "1023 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Blue Ribbon Catering"
+   ],
+   "listing_ids": [
+    "huro-lst-0181"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -84397,12 +84747,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -85064,12 +85414,16 @@
   },
   {
    "id": "msbf-2838",
-   "name": null,
+   "name": "Mesenburg Creative Catering",
    "address": "WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mesenburg Creative Catering"
+   ],
+   "listing_ids": [
+    "huro-lst-0092"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -85085,12 +85439,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -85798,12 +86152,26 @@
   },
   {
    "id": "msbf-2862",
-   "name": null,
+   "name": "Ruhe Haus",
    "address": "105 WALL ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Ruhe Haus",
+    "Village Gallery & Framer",
+    "Center For Assessment And Psychological Services, Inc.",
+    "Integrative Massotherapy",
+    "Subconscious Sarah",
+    "Huron Massotherapy"
+   ],
+   "listing_ids": [
+    "huro-lst-0267",
+    "huro-lst-0069",
+    "huro-lst-0113",
+    "huro-lst-0155",
+    "huro-lst-0216",
+    "huro-lst-0068"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -85819,12 +86187,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -87433,15 +87801,17 @@
   },
   {
    "id": "msbf-2921",
-   "name": "Foster Funeral Home",
+   "name": "Foster Funeral Home & Crematory",
    "address": "410 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Foster Funeral Home"
+    "Foster Funeral Home & Crematory",
+    "Lulu’s Health Care Clinic"
    ],
    "listing_ids": [
-    "huro-lst-0009"
+    "huro-lst-0158",
+    "huro-lst-0217"
    ],
    "historic_district": null,
    "contributing": null,
@@ -87458,8 +87828,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "shopping",
-   "subcategory": "retail",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -87569,12 +87939,16 @@
   },
   {
    "id": "msbf-2924",
-   "name": null,
+   "name": "Central Basin Bait Tackle and Carryout",
    "address": "910 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Central Basin Bait Tackle and Carryout"
+   ],
+   "listing_ids": [
+    "huro-lst-0088"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -87590,12 +87964,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -87827,12 +88201,18 @@
   },
   {
    "id": "msbf-2930",
-   "name": null,
+   "name": "Huron Health Care Center",
    "address": "1920 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Health Care Center",
+    "Admiral's Pointe Nursing and Rehabilitation"
+   ],
+   "listing_ids": [
+    "huro-lst-0179",
+    "huro-lst-0231"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -87848,12 +88228,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -88904,12 +89284,16 @@
   },
   {
    "id": "msbf-2968",
-   "name": null,
+   "name": "Voegirl's Vacation Rentals #2",
    "address": "1135 BY THE SHORES HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Voegirl's Vacation Rentals #2"
+   ],
+   "listing_ids": [
+    "huro-lst-0213"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -88925,8 +89309,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -90151,15 +90535,15 @@
   },
   {
    "id": "msbf-3009",
-   "name": "Hy-Miler Laser Wash",
+   "name": "Blue Rhino Propane Exchange",
    "address": "2026 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Hy-Miler Laser Wash"
+    "Blue Rhino Propane Exchange"
    ],
    "listing_ids": [
-    "huro-lst-0036"
+    "huro-lst-0005"
    ],
    "historic_district": null,
    "contributing": null,
@@ -90177,7 +90561,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "services",
-   "subcategory": "automotive",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -94633,12 +95017,16 @@
   },
   {
    "id": "msbf-3154",
-   "name": null,
+   "name": "Lakehouse Apartments",
    "address": "1325 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lakehouse Apartments"
+   ],
+   "listing_ids": [
+    "huro-lst-0221"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -94654,8 +95042,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "historic",
+   "subcategory": "landmarks",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -96183,16 +96571,12 @@
   },
   {
    "id": "msbf-3206",
-   "name": "Oklahoma Park",
+   "name": null,
    "address": "WILBOR HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [
-    "Oklahoma Park"
-   ],
-   "listing_ids": [
-    "huro-lst-0018"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -96208,8 +96592,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "parks",
-   "subcategory": "parks",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
    "use": "institutional",
    "use_subtype": null,
@@ -97004,12 +97388,16 @@
   },
   {
    "id": "msbf-3226",
-   "name": null,
+   "name": "Credit Union",
    "address": "2402 UNIVERSITY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Credit Union"
+   ],
+   "listing_ids": [
+    "huro-lst-0194"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -97025,12 +97413,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -99111,15 +99499,17 @@
   },
   {
    "id": "msbf-3299",
-   "name": "Huron City Hall",
+   "name": "City of Huron - Government",
    "address": "413 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Huron City Hall"
+    "City of Huron - Government",
+    "Huron Fire Division"
    ],
    "listing_ids": [
-    "huro-lst-0042"
+    "huro-lst-0065",
+    "huro-lst-0035"
    ],
    "historic_district": null,
    "contributing": null,
@@ -99850,12 +100240,16 @@
   },
   {
    "id": "msbf-3328",
-   "name": null,
+   "name": "Lake Erie",
    "address": "308 CANTERBURY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lake Erie"
+   ],
+   "listing_ids": [
+    "huro-lst-0112"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -99871,8 +100265,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -99944,7 +100338,7 @@
     "Wendy's"
    ],
    "listing_ids": [
-    "huro-lst-0027"
+    "huro-lst-0108"
    ],
    "historic_district": null,
    "contributing": null,
@@ -100290,12 +100684,18 @@
   },
   {
    "id": "msbf-3344",
-   "name": null,
+   "name": "NOMS Family Practice - Huron",
    "address": "810 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "NOMS Family Practice - Huron",
+    "Christopher Emery"
+   ],
+   "listing_ids": [
+    "huro-lst-0270",
+    "huro-lst-0028"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -100311,12 +100711,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -102828,12 +103228,16 @@
   },
   {
    "id": "msbf-3423",
-   "name": null,
+   "name": "Firwood Collectibles",
    "address": "304 FIRWOOD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Firwood Collectibles"
+   ],
+   "listing_ids": [
+    "huro-lst-0130"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -102849,9 +103253,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "shopping",
+   "subcategory": "retail",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -103301,12 +103705,16 @@
   },
   {
    "id": "msbf-3441",
-   "name": null,
+   "name": "Angles Hair Design",
    "address": "107 BOGART HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Angles Hair Design"
+   ],
+   "listing_ids": [
+    "huro-lst-0076"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -103322,12 +103730,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -105969,15 +106377,17 @@
   },
   {
    "id": "msbf-3531",
-   "name": "Civitas Bank",
+   "name": "Civista Bank",
    "address": "CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Civitas Bank"
+    "Civista Bank",
+    "Semper CrossFit"
    ],
    "listing_ids": [
-    "huro-lst-0050"
+    "huro-lst-0151",
+    "huro-lst-0046"
    ],
    "historic_district": null,
    "contributing": null,
@@ -105995,7 +106405,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "services",
-   "subcategory": "financial",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -106707,12 +107117,16 @@
   },
   {
    "id": "msbf-3553",
-   "name": null,
+   "name": "Routh at Rye",
    "address": "21 ATWOOD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Routh at Rye"
+   ],
+   "listing_ids": [
+    "huro-lst-0233"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -106728,9 +107142,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -107825,12 +108239,16 @@
   },
   {
    "id": "msbf-3592",
-   "name": null,
+   "name": "Huron Yacht Club",
    "address": "MILL HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Yacht Club"
+   ],
+   "listing_ids": [
+    "huro-lst-0020"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -107846,12 +108264,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -108859,12 +109277,20 @@
   },
   {
    "id": "msbf-3626",
-   "name": null,
+   "name": "Huntington Bank ATM",
    "address": "357 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huntington Bank ATM",
+    "The Firelands",
+    "Colonial Villa"
+   ],
+   "listing_ids": [
+    "huro-lst-0083",
+    "huro-lst-0284",
+    "huro-lst-0274"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -108880,12 +109306,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -110623,12 +111049,18 @@
   },
   {
    "id": "msbf-3684",
-   "name": null,
+   "name": "the Vikings Den - Huron, Ohio",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "the Vikings Den - Huron, Ohio",
+    "Laguna Yacht Club"
+   ],
+   "listing_ids": [
+    "huro-lst-0266",
+    "huro-lst-0079"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -110644,13 +111076,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -111094,12 +111526,16 @@
   },
   {
    "id": "msbf-3695",
-   "name": null,
+   "name": "The Michael Lake House",
    "address": "1910 LAKEWOOD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "The Michael Lake House"
+   ],
+   "listing_ids": [
+    "huro-lst-0271"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -111115,8 +111551,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -111223,12 +111659,16 @@
   },
   {
    "id": "msbf-3698",
-   "name": null,
+   "name": "Global Traditional Flavors",
    "address": "RYE BEACH HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Global Traditional Flavors"
+   ],
+   "listing_ids": [
+    "huro-lst-0054"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -111244,12 +111684,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -112643,12 +113083,18 @@
   },
   {
    "id": "msbf-3750",
-   "name": null,
+   "name": "Lake Erie Massotherapy",
    "address": "521 MARINER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lake Erie Massotherapy",
+    "Mariner Village Yacht Club"
+   ],
+   "listing_ids": [
+    "huro-lst-0001",
+    "huro-lst-0135"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -112664,7 +113110,7 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "parks",
    "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
@@ -113503,12 +113949,16 @@
   },
   {
    "id": "msbf-3778",
-   "name": null,
+   "name": "Huron Outdoor Yamaha & Honda",
    "address": "1803 SAWMILL PARKWAY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Outdoor Yamaha & Honda"
+   ],
+   "listing_ids": [
+    "huro-lst-0159"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -113524,12 +113974,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -113683,7 +114133,7 @@
     "Long John Silver's"
    ],
    "listing_ids": [
-    "huro-lst-0029"
+    "huro-lst-0185"
    ],
    "historic_district": null,
    "contributing": null,
@@ -113776,7 +114226,7 @@
     "Quality Inn Huron"
    ],
    "listing_ids": [
-    "huro-lst-0013"
+    "huro-lst-0075"
    ],
    "historic_district": null,
    "contributing": null,
@@ -113990,12 +114440,16 @@
   },
   {
    "id": "msbf-3800",
-   "name": null,
+   "name": "Huron Parks & Recreation Department",
    "address": "110 WALL HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Parks & Recreation Department"
+   ],
+   "listing_ids": [
+    "huro-lst-0228"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -114011,8 +114465,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "institutional",
    "use_subtype": null,
@@ -114084,7 +114538,7 @@
     "KeyBank"
    ],
    "listing_ids": [
-    "huro-lst-0067"
+    "huro-lst-0125"
    ],
    "historic_district": null,
    "contributing": null,
@@ -114102,7 +114556,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "services",
-   "subcategory": "financial",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -114557,15 +115011,17 @@
   },
   {
    "id": "msbf-3820",
-   "name": "Artino Ford",
+   "name": "Chad at Valley Ford & Truck Center",
    "address": "55 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Artino Ford"
+    "Chad at Valley Ford & Truck Center",
+    "Valley Ford of Huron, Inc. Parts"
    ],
    "listing_ids": [
-    "huro-lst-0025"
+    "huro-lst-0259",
+    "huro-lst-0145"
    ],
    "historic_district": null,
    "contributing": null,
@@ -114582,8 +115038,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "services",
-   "subcategory": "automotive",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -115340,17 +115796,15 @@
   },
   {
    "id": "msbf-3846",
-   "name": "First Presbyterian Church",
+   "name": "Little Wonders Presbyterian Preschool",
    "address": "225 WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "First Presbyterian Church",
-    "Little Wonders Preschool"
+    "Little Wonders Presbyterian Preschool"
    ],
    "listing_ids": [
-    "huro-lst-0021",
-    "huro-lst-0058"
+    "huro-lst-0101"
    ],
    "historic_district": null,
    "contributing": null,
@@ -115368,10 +115822,10 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "churches",
+   "subcategory": "schools",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "church",
+   "use_subtype": "school",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
@@ -115391,17 +115845,19 @@
   },
   {
    "id": "msbf-3847",
-   "name": "Domino's",
+   "name": "Mickey Mart",
    "address": "502 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Domino's",
-    "Mickey Mart"
+    "Mickey Mart",
+    "Dunkin'",
+    "Domino's"
    ],
    "listing_ids": [
-    "huro-lst-0048",
-    "huro-lst-0049"
+    "huro-lst-0234",
+    "huro-lst-0040",
+    "huro-lst-0223"
    ],
    "historic_district": null,
    "contributing": null,
@@ -115418,8 +115874,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "restaurants",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -115533,12 +115989,16 @@
   },
   {
    "id": "msbf-3851",
-   "name": null,
+   "name": "Sandpiper Cove Apartments",
    "address": "535 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Sandpiper Cove Apartments"
+   ],
+   "listing_ids": [
+    "huro-lst-0077"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -115554,8 +116014,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "historic",
+   "subcategory": "landmarks",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -117125,12 +117585,16 @@
   },
   {
    "id": "msbf-3907",
-   "name": null,
+   "name": "Austin Miniatures",
    "address": "523 WILDER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Austin Miniatures"
+   ],
+   "listing_ids": [
+    "huro-lst-0036"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -117146,9 +117610,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "shopping",
+   "subcategory": "retail",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -118460,12 +118924,16 @@
   },
   {
    "id": "msbf-3955",
-   "name": null,
+   "name": "Holiday Harbor Marina",
    "address": "946 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Holiday Harbor Marina"
+   ],
+   "listing_ids": [
+    "huro-lst-0095"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -118481,8 +118949,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -120180,12 +120648,18 @@
   },
   {
    "id": "msbf-4016",
-   "name": null,
+   "name": "Mobil",
    "address": "805 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mobil",
+    "HY-MILER #2234"
+   ],
+   "listing_ids": [
+    "huro-lst-0060",
+    "huro-lst-0282"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -120201,12 +120675,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "automotive",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -120782,15 +121256,17 @@
   },
   {
    "id": "msbf-4037",
-   "name": "Huron Pizza",
+   "name": "Huron Pizza House - Huron, OH",
    "address": "812 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Huron Pizza"
+    "Huron Pizza House - Huron, OH",
+    "Hph Pizza Llc"
    ],
    "listing_ids": [
-    "huro-lst-0052"
+    "huro-lst-0014",
+    "huro-lst-0100"
    ],
    "historic_district": null,
    "contributing": null,
@@ -127028,12 +127504,16 @@
   },
   {
    "id": "msbf-4243",
-   "name": null,
+   "name": "Wray Property Management",
    "address": "508 WILDER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Wray Property Management"
+   ],
+   "listing_ids": [
+    "huro-lst-0199"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -127049,9 +127529,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -127286,12 +127766,18 @@
   },
   {
    "id": "msbf-4250",
-   "name": null,
+   "name": "Lisa's Paws Pet Sitting",
    "address": "1602 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lisa's Paws Pet Sitting",
+    "Ohio's Best Powerwashing"
+   ],
+   "listing_ids": [
+    "huro-lst-0240",
+    "huro-lst-0269"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -127307,9 +127793,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -127716,12 +128202,16 @@
   },
   {
    "id": "msbf-4269",
-   "name": null,
+   "name": "Huron Family Dental Center",
    "address": "730 CLEVELAND RD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Huron Family Dental Center"
+   ],
+   "listing_ids": [
+    "huro-lst-0012"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -127737,12 +128227,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -129092,12 +129582,16 @@
   },
   {
    "id": "msbf-4306",
-   "name": null,
+   "name": "Rye Beach Rd/W",
    "address": "907 GLENVIEW HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Rye Beach Rd/W"
+   ],
+   "listing_ids": [
+    "huro-lst-0019"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -129113,8 +129607,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -129436,15 +129930,15 @@
   },
   {
    "id": "msbf-4315",
-   "name": "Costa Azul",
+   "name": "Costa Azul Mexican Restaurant",
    "address": "2109 CLEVELAND RD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Costa Azul"
+    "Costa Azul Mexican Restaurant"
    ],
    "listing_ids": [
-    "huro-lst-0014"
+    "huro-lst-0184"
    ],
    "historic_district": null,
    "contributing": null,
@@ -129485,16 +129979,12 @@
   },
   {
    "id": "msbf-4316",
-   "name": "George Mylander Hall",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "George Mylander Hall"
-   ],
-   "listing_ids": [
-    "huro-lst-0005"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -129510,13 +130000,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "university",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
-   "use": "institutional",
-   "use_subtype": "campus",
-   "use_confidence": "high",
-   "use_source": "osm",
+   "use": "unknown",
+   "use_subtype": null,
+   "use_confidence": "low",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -129672,7 +130162,7 @@
     "Christ Episcopal Church"
    ],
    "listing_ids": [
-    "huro-lst-0054"
+    "huro-lst-0236"
    ],
    "historic_district": null,
    "contributing": null,
@@ -130408,20 +130898,10 @@
    "municipality": null,
    "jurisdiction": null,
    "all_names": [
-    "BGSU Firelands Library",
-    "BGSU Firelands Bookstore",
-    "Student Accounts",
-    "Financial Aid",
-    "Budget & Operation",
-    "Foundation Hall"
+    "BGSU Firelands Library"
    ],
    "listing_ids": [
-    "huro-lst-0031",
-    "huro-lst-0059",
-    "huro-lst-0060",
-    "huro-lst-0061",
-    "huro-lst-0064",
-    "huro-lst-0003"
+    "huro-lst-0280"
    ],
    "historic_district": null,
    "contributing": null,
@@ -130439,10 +130919,10 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "library",
+   "subcategory": "schools",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "civic",
+   "use_subtype": "school",
    "use_confidence": "high",
    "use_source": "osm",
    "in_historic_district": null,
@@ -131240,12 +131720,16 @@
   },
   {
    "id": "msbf-4377",
-   "name": null,
+   "name": "June Aesthetics- Huron",
    "address": "364 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "June Aesthetics- Huron"
+   ],
+   "listing_ids": [
+    "huro-lst-0153"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -131261,12 +131745,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -131842,12 +132326,18 @@
   },
   {
    "id": "msbf-4393",
-   "name": null,
+   "name": "Alicia Wolph Roshong - Attorney At Law",
    "address": "27 MIDDLE HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Alicia Wolph Roshong - Attorney At Law",
+    "Wolph Title Inc"
+   ],
+   "listing_ids": [
+    "huro-lst-0099",
+    "huro-lst-0073"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -131863,9 +132353,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -131971,12 +132461,16 @@
   },
   {
    "id": "msbf-4400",
-   "name": null,
+   "name": "Beachwood Villa Homeowners Condo Owners",
    "address": "1505 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Beachwood Villa Homeowners Condo Owners"
+   ],
+   "listing_ids": [
+    "huro-lst-0207"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -131992,8 +132486,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "historic",
+   "subcategory": "landmarks",
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
@@ -132229,12 +132723,26 @@
   },
   {
    "id": "msbf-4410",
-   "name": null,
+   "name": "Everway",
    "address": "511 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Everway",
+    "Crawford Insurance Group",
+    "Upside Down Art Studio LLC",
+    "BJF Construction LLC.",
+    "Market on Main",
+    "Beagle Bay Knot Works"
+   ],
+   "listing_ids": [
+    "huro-lst-0111",
+    "huro-lst-0084",
+    "huro-lst-0146",
+    "huro-lst-0033",
+    "huro-lst-0082",
+    "huro-lst-0059"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -132250,12 +132758,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -132791,17 +133299,17 @@
   },
   {
    "id": "msbf-4435",
-   "name": "Saint Peter School",
+   "name": "St. Peter's Youth Group",
    "address": "429 HURON HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Saint Peter School",
-    "Saint Peter Catholic Church"
+    "St. Peter's Youth Group",
+    "St. Peter Catholic School"
    ],
    "listing_ids": [
-    "huro-lst-0053",
-    "huro-lst-0056"
+    "huro-lst-0127",
+    "huro-lst-0176"
    ],
    "historic_district": null,
    "contributing": null,
@@ -132819,10 +133327,10 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "community",
-   "subcategory": "schools",
+   "subcategory": "organizations",
    "mixed_use": false,
    "use": "institutional",
-   "use_subtype": "school",
+   "use_subtype": "civic",
    "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
@@ -132886,12 +133394,16 @@
   },
   {
    "id": "msbf-4437",
-   "name": null,
+   "name": "Firelands Animal Hospital Inc",
    "address": "914 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Firelands Animal Hospital Inc"
+   ],
+   "listing_ids": [
+    "huro-lst-0246"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -132907,12 +133419,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -134692,12 +135204,18 @@
   },
   {
    "id": "msbf-4505",
-   "name": null,
+   "name": "Old Fish House",
    "address": "30 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Old Fish House",
+    "The Old Fish House (Huron, Ohio)"
+   ],
+   "listing_ids": [
+    "huro-lst-0006",
+    "huro-lst-0183"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -134713,12 +135231,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -134735,12 +135253,16 @@
   },
   {
    "id": "msbf-4507",
-   "name": null,
+   "name": "Captain Montague's Bed & Breakfast",
    "address": "229 CENTER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Captain Montague's Bed & Breakfast"
+   ],
+   "listing_ids": [
+    "huro-lst-0156"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -134756,12 +135278,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "hospitality",
+   "subcategory": "bed-and-breakfast",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -135424,15 +135946,15 @@
   },
   {
    "id": "msbf-4531",
-   "name": "Shell",
+   "name": "bp",
    "address": "502 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Shell"
+    "bp"
    ],
    "listing_ids": [
-    "huro-lst-0047"
+    "huro-lst-0182"
    ],
    "historic_district": null,
    "contributing": null,
@@ -136076,12 +136598,20 @@
   },
   {
    "id": "msbf-4552",
-   "name": null,
+   "name": "Sly Bail Bonds",
    "address": "617 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Sly Bail Bonds",
+    "RS Cycle and Service",
+    "Huron Cement Products Co."
+   ],
+   "listing_ids": [
+    "huro-lst-0215",
+    "huro-lst-0009",
+    "huro-lst-0190"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -136097,12 +136627,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "industrial",
-   "subcategory": "warehouses",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
-   "use": "industrial",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -136377,16 +136907,12 @@
   },
   {
    "id": "msbf-4559",
-   "name": "shelter 3",
+   "name": null,
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [
-    "shelter 3"
-   ],
-   "listing_ids": [
-    "huro-lst-0017"
-   ],
+   "all_names": [],
+   "listing_ids": [],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -136402,13 +136928,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "parks",
-   "subcategory": "pavilions",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "unknown",
    "use_subtype": null,
    "use_confidence": "low",
-   "use_source": "osm",
+   "use_source": "none",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -138577,15 +139103,15 @@
   },
   {
    "id": "msbf-4633",
-   "name": "Donut Shop",
+   "name": "Donut Shop - Huron, OH",
    "address": "501 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Donut Shop"
+    "Donut Shop - Huron, OH"
    ],
    "listing_ids": [
-    "huro-lst-0046"
+    "huro-lst-0162"
    ],
    "historic_district": null,
    "contributing": null,
@@ -138603,7 +139129,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "dining",
-   "subcategory": "cafes",
+   "subcategory": "restaurants",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -139014,12 +139540,16 @@
   },
   {
    "id": "msbf-4652",
-   "name": null,
+   "name": "Lakefront Park",
    "address": "PARK HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lakefront Park"
+   ],
+   "listing_ids": [
+    "huro-lst-0227"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -139035,8 +139565,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "community",
-   "subcategory": "organizations",
+   "category": "parks",
+   "subcategory": "parks",
    "mixed_use": false,
    "use": "institutional",
    "use_subtype": null,
@@ -140176,12 +140706,16 @@
   },
   {
    "id": "msbf-4687",
-   "name": null,
+   "name": "Myers Brothers Custom Butchering",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Myers Brothers Custom Butchering"
+   ],
+   "listing_ids": [
+    "huro-lst-0074"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -140197,13 +140731,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -140650,12 +141184,30 @@
   },
   {
    "id": "msbf-4711",
-   "name": null,
+   "name": "Firelands Physician Group - Huron",
    "address": "310 WILLIAMS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Firelands Physician Group - Huron",
+    "Kristen Valenty Realtor",
+    "Brad Barbisch-The Holden Agency Real Estate",
+    "Family Eye Care Centers",
+    "Clarity Counseling & Wellness",
+    "Touch Of My Own Llc/harmonic Egg Huron",
+    "Firelands Laboratory Community Collection Center - Huron",
+    "Huron Recovery Specialists"
+   ],
+   "listing_ids": [
+    "huro-lst-0072",
+    "huro-lst-0255",
+    "huro-lst-0148",
+    "huro-lst-0066",
+    "huro-lst-0273",
+    "huro-lst-0140",
+    "huro-lst-0025",
+    "huro-lst-0164"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -140671,12 +141223,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -141596,15 +142148,15 @@
   },
   {
    "id": "msbf-4741",
-   "name": "Goodwill",
+   "name": "Goodwill Store",
    "address": "310 LAKE ERIE HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Goodwill"
+    "Goodwill Store"
    ],
    "listing_ids": [
-    "huro-lst-0037"
+    "huro-lst-0120"
    ],
    "historic_district": null,
    "contributing": null,
@@ -142164,12 +142716,16 @@
   },
   {
    "id": "msbf-4768",
-   "name": null,
+   "name": "South Shore Marine",
    "address": "SAWMILL PARKWAY HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "South Shore Marine"
+   ],
+   "listing_ids": [
+    "huro-lst-0097"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -142185,12 +142741,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": null,
    "architecture": null,
@@ -142250,12 +142806,16 @@
   },
   {
    "id": "msbf-4770",
-   "name": null,
+   "name": "CLE Transportation Company and DS Express Carriers",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "CLE Transportation Company and DS Express Carriers"
+   ],
+   "listing_ids": [
+    "huro-lst-0116"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -142271,13 +142831,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -143626,12 +144186,16 @@
   },
   {
    "id": "msbf-4813",
-   "name": null,
+   "name": "Gathering Grounds Coffee House - Huron, OH",
    "address": "404 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Gathering Grounds Coffee House - Huron, OH"
+   ],
+   "listing_ids": [
+    "huro-lst-0187"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -143647,12 +144211,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "dining",
+   "subcategory": "cafes",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -144186,17 +144750,31 @@
   },
   {
    "id": "msbf-4830",
-   "name": "Cornell's",
+   "name": "Discount Drug Mart",
    "address": "CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Cornell's",
-    "Discount Drugmart"
+    "Discount Drug Mart",
+    "Marcellas Pizza Huron",
+    "Oliver's Hair Salon",
+    "Huron Nails & Spa",
+    "H&R Block",
+    "Huron Iga",
+    "Wink's Pizza",
+    "Bruno's Pizzeria",
+    "Cornell's Foods"
    ],
    "listing_ids": [
-    "huro-lst-0039",
-    "huro-lst-0043"
+    "huro-lst-0177",
+    "huro-lst-0124",
+    "huro-lst-0219",
+    "huro-lst-0262",
+    "huro-lst-0254",
+    "huro-lst-0029",
+    "huro-lst-0268",
+    "huro-lst-0214",
+    "huro-lst-0050"
    ],
    "historic_district": null,
    "contributing": null,
@@ -144214,7 +144792,7 @@
    "wall_material": "brick_red",
    "roof_material": "flat",
    "category": "shopping",
-   "subcategory": "grocery",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -144668,12 +145246,16 @@
   },
   {
    "id": "msbf-4843",
-   "name": null,
+   "name": "Lambs Landing Cottage",
    "address": "539 WILDER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Lambs Landing Cottage"
+   ],
+   "listing_ids": [
+    "huro-lst-0053"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -144689,8 +145271,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "hospitality",
+   "subcategory": "hotels",
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -145012,12 +145594,16 @@
   },
   {
    "id": "msbf-4852",
-   "name": null,
+   "name": "The Miller's Table at Sawmill Creek Resort",
    "address": null,
    "municipality": null,
    "jurisdiction": null,
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "The Miller's Table at Sawmill Creek Resort"
+   ],
+   "listing_ids": [
+    "huro-lst-0024"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -145033,13 +145619,13 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
-   "subcategory": null,
+   "category": "dining",
+   "subcategory": "restaurants",
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
-   "use_source": "none",
+   "use_confidence": "high",
+   "use_source": "osm",
    "in_historic_district": null,
    "architecture": null,
    "historic_status": null,
@@ -145485,15 +146071,15 @@
   },
   {
    "id": "msbf-4870",
-   "name": "Lighthouse Nutrition",
+   "name": "The Barre Collective - Huron ",
    "address": "524 MAIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Lighthouse Nutrition"
+    "The Barre Collective - Huron "
    ],
    "listing_ids": [
-    "huro-lst-0069"
+    "huro-lst-0206"
    ],
    "historic_district": null,
    "contributing": null,
@@ -145510,12 +146096,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "dining",
-   "subcategory": "cafes",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "high",
+   "use_confidence": "medium",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -146138,12 +146724,16 @@
   },
   {
    "id": "msbf-4889",
-   "name": null,
+   "name": "Chaska Beach Lake Erie",
    "address": "805 CRESCENT HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Chaska Beach Lake Erie"
+   ],
+   "listing_ids": [
+    "huro-lst-0008"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -146159,8 +146749,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -146441,12 +147031,16 @@
   },
   {
    "id": "msbf-4898",
-   "name": null,
+   "name": "Pam Johnston Photography",
    "address": "914 SALEM HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Pam Johnston Photography"
+   ],
+   "listing_ids": [
+    "huro-lst-0169"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -146462,9 +147056,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -147087,15 +147681,15 @@
   },
   {
    "id": "msbf-4915",
-   "name": "Montessori School",
+   "name": "Firelands Montessori Academy",
    "address": "325 OHIO HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Montessori School"
+    "Firelands Montessori Academy"
    ],
    "listing_ids": [
-    "huro-lst-0020"
+    "huro-lst-0131"
    ],
    "historic_district": null,
    "contributing": null,
@@ -147437,12 +148031,16 @@
   },
   {
    "id": "msbf-4923",
-   "name": null,
+   "name": "Christina's Creations",
    "address": "302 WEXFORD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Christina's Creations"
+   ],
+   "listing_ids": [
+    "huro-lst-0251"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -147458,9 +148056,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "dining",
+   "subcategory": "restaurants",
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -147953,12 +148551,16 @@
   },
   {
    "id": "msbf-4942",
-   "name": null,
+   "name": "Gull Harbor Sailing",
    "address": "45 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Gull Harbor Sailing"
+   ],
+   "listing_ids": [
+    "huro-lst-0192"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -147974,8 +148576,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -150447,12 +151049,16 @@
   },
   {
    "id": "msbf-5035",
-   "name": null,
+   "name": "Shimer Construction",
    "address": "210 ATWOOD HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Shimer Construction"
+   ],
+   "listing_ids": [
+    "huro-lst-0147"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -150468,9 +151074,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -150490,12 +151096,16 @@
   },
   {
    "id": "msbf-5036",
-   "name": null,
+   "name": "Humanetics ATD Manufacturing",
    "address": "900 DENTON HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Humanetics ATD Manufacturing"
+   ],
+   "listing_ids": [
+    "huro-lst-0128"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -150511,12 +151121,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "services",
    "subcategory": null,
    "mixed_use": false,
-   "use": "unknown",
+   "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "low",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -150963,12 +151573,18 @@
   },
   {
    "id": "msbf-5056",
-   "name": null,
+   "name": "River Monster Tours",
    "address": "400 HURON ST HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "River Monster Tours",
+    "Old Mill Harbor"
+   ],
+   "listing_ids": [
+    "huro-lst-0017",
+    "huro-lst-0138"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -150984,12 +151600,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -151565,12 +152181,16 @@
   },
   {
    "id": "msbf-5073",
-   "name": null,
+   "name": "U-Haul Neighborhood Dealer",
    "address": "2118 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "U-Haul Neighborhood Dealer"
+   ],
+   "listing_ids": [
+    "huro-lst-0285"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -151586,12 +152206,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -151608,12 +152228,16 @@
   },
   {
    "id": "msbf-5078",
-   "name": null,
+   "name": "Beachwood Cove Beach",
    "address": "1011 HARBORVIEW HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Beachwood Cove Beach"
+   ],
+   "listing_ids": [
+    "huro-lst-0167"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -151629,8 +152253,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "parks",
+   "subcategory": null,
    "mixed_use": false,
    "use": "residential",
    "use_subtype": "single_family",
@@ -151780,12 +152404,16 @@
   },
   {
    "id": "msbf-5083",
-   "name": null,
+   "name": "Custom Concrete &Design LLC",
    "address": "543 BERLIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Custom Concrete &Design LLC"
+   ],
+   "listing_ids": [
+    "huro-lst-0247"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -151801,9 +152429,9 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
-   "mixed_use": false,
+   "category": "services",
+   "subcategory": null,
+   "mixed_use": true,
    "use": "residential",
    "use_subtype": "single_family",
    "use_confidence": "medium",
@@ -151866,12 +152494,18 @@
   },
   {
    "id": "msbf-5085",
-   "name": null,
+   "name": "Edward Jones - Financial Advisor: Ryan M Reffner, AAMS®",
    "address": "421 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Edward Jones - Financial Advisor: Ryan M Reffner, AAMS®",
+    "Dr. Eric Martin"
+   ],
+   "listing_ids": [
+    "huro-lst-0090",
+    "huro-lst-0058"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -151887,8 +152521,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": null,
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -153672,12 +154306,18 @@
   },
   {
    "id": "msbf-5139",
-   "name": null,
+   "name": "Redbox",
    "address": "2202 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Redbox",
+    "Western Union"
+   ],
+   "listing_ids": [
+    "huro-lst-0258",
+    "huro-lst-0055"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -153693,12 +154333,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -153715,12 +154355,16 @@
   },
   {
    "id": "msbf-5140",
-   "name": null,
+   "name": "Mariner Village Condominiums",
    "address": "720 MARINER HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Mariner Village Condominiums"
+   ],
+   "listing_ids": [
+    "huro-lst-0275"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -153736,12 +154380,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": null,
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -154145,12 +154789,16 @@
   },
   {
    "id": "msbf-5157",
-   "name": null,
+   "name": "Dollar Tree",
    "address": "525 CLEVELAND HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Dollar Tree"
+   ],
+   "listing_ids": [
+    "huro-lst-0238"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -154166,12 +154814,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "shopping",
+   "subcategory": "retail",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
-   "use_confidence": "medium",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -154188,12 +154836,16 @@
   },
   {
    "id": "msbf-5158",
-   "name": null,
+   "name": "Dr. Mark A. Myers, Dds",
    "address": "107 BOGART HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Dr. Mark A. Myers, Dds"
+   ],
+   "listing_ids": [
+    "huro-lst-0110"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -154209,12 +154861,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "commercial",
-   "use_subtype": null,
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -155179,12 +155831,16 @@
   },
   {
    "id": "msbf-5186",
-   "name": null,
+   "name": "Bikini Bottom Watersports Rentals",
    "address": "422 HURON HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Bikini Bottom Watersports Rentals"
+   ],
+   "listing_ids": [
+    "huro-lst-0063"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -155200,8 +155856,8 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "commercial",
-   "subcategory": "storefronts",
+   "category": "parks",
+   "subcategory": "recreation",
    "mixed_use": false,
    "use": "commercial",
    "use_subtype": null,
@@ -155609,12 +156265,16 @@
   },
   {
    "id": "msbf-5198",
-   "name": null,
+   "name": "Chapter 50",
    "address": "1819 BOOS HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Chapter 50"
+   ],
+   "listing_ids": [
+    "huro-lst-0278"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -155630,12 +156290,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "community",
+   "subcategory": "organizations",
    "mixed_use": false,
-   "use": "residential",
-   "use_subtype": "single_family",
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "civic",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -156729,12 +157389,16 @@
   },
   {
    "id": "msbf-5231",
-   "name": null,
+   "name": "Reiki and Counseling Center",
    "address": "813 SENECA HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Reiki and Counseling Center"
+   ],
+   "listing_ids": [
+    "huro-lst-0261"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -156750,12 +157414,12 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": "residential",
-   "subcategory": "houses",
+   "category": "services",
+   "subcategory": "health",
    "mixed_use": false,
-   "use": "residential",
-   "use_subtype": "single_family",
-   "use_confidence": "medium",
+   "use": "institutional",
+   "use_subtype": "medical",
+   "use_confidence": "high",
    "use_source": "land_use_code",
    "in_historic_district": false,
    "architecture": null,
@@ -156858,15 +157522,17 @@
   },
   {
    "id": "msbf-5234",
-   "name": "Marconi's",
+   "name": "Marconi's Italian Restaurant - Huron, OH",
    "address": "BERLIN HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
    "all_names": [
-    "Marconi's"
+    "Marconi's Italian Restaurant - Huron, OH",
+    "Goodwill Industries International, Inc."
    ],
    "listing_ids": [
-    "huro-lst-0040"
+    "huro-lst-0239",
+    "huro-lst-0218"
    ],
    "historic_district": null,
    "contributing": null,
@@ -157381,12 +158047,16 @@
   },
   {
    "id": "msbf-5260",
-   "name": null,
+   "name": "Two Rivers Waterfront Homes in Huron",
    "address": "1131 SHELTERED BROOK HURON 44839",
    "municipality": null,
    "jurisdiction": "county",
-   "all_names": [],
-   "listing_ids": [],
+   "all_names": [
+    "Two Rivers Waterfront Homes in Huron"
+   ],
+   "listing_ids": [
+    "huro-lst-0220"
+   ],
    "historic_district": null,
    "contributing": null,
    "style": null,
@@ -157402,7 +158072,7 @@
    "stories": null,
    "wall_material": "brick_red",
    "roof_material": "flat",
-   "category": null,
+   "category": "parks",
    "subcategory": null,
    "mixed_use": false,
    "use": "unknown",

@@ -1,0 +1,9 @@
+{
+  "_comment": "huron's listings base. Declared 2026-09-20 by Jacob: OSM carried 69 listings against Overture's 285, and huron's commercial fabric was 270 assessor-classified storefronts with no name on any of them. Flip the base, see what connects.",
+  "meta": {
+    "baseSource": "overture"
+  },
+  "adds": [],
+  "patches": {},
+  "drops": []
+}
