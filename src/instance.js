@@ -22,17 +22,45 @@
  */
 import lafayetteSquare from './instances/lafayette-square.js'
 import hipointeDemun from './instances/hipointe-demun.js'
+// ⛔ The look→map table, statically. It is the authoring index, bundled at BUILD
+// time — which is the right currency here: the player ships with slabs baked at
+// build time, so a Look the build never saw has no slab to render either. A fetch
+// cannot serve this: INSTANCE must resolve SYNCHRONOUSLY (consumers read it at
+// module load, e.g. `const CENTER_LAT = INSTANCE.geography.lat`).
+import looksIndex from '../public/looks/index.json' with { type: 'json' }
 
+// ⭐⭐ THESE ARE KEYED BY THE **MAP**, NOT BY THE LOOK. (Jacob, 2026-09-19: "Looks
+// are always superficial 'looks' … for now it is only cosmetic things.")
+//
+// A map can carry MANY Looks — seasonal, sponsor — and every one of them is the
+// same town: same geography, same legal jurisdiction, same tax rate, same phone
+// number. Keying this registry by LOOK meant a winter Lafayette Square needed a
+// second file repeating all of it, to drift from the first.
+//
+// ⛔ AND THAT DUPLICATION WOULD HAVE HIDDEN THE BUG BELOW, because a winter LS
+// Look with no module falls back to LS and looks PERFECT — right answer, wrong
+// reason. A winter Huron Look renders St. Louis. The failure is invisible on
+// exactly the case anyone would test first.
+//
+// ⭐ There is deliberately no per-LOOK module to go with this one: a Look is
+// cosmetic, and cosmetics already travel through `design.json` → the slab
+// (`project_slab_is_the_instance_identity`). A look module would have nothing to
+// hold. What lives HERE is the fixed truth the slab does not carry.
 const INSTANCES = {
   'lafayette-square': lafayetteSquare,
   'hipointe-demun': hipointeDemun,
 }
 
+// ⛔ The PLAYER's default look, and it is NOT `looksIndex.default`. That is the
+// authoring 0-state (`kit-default`) — an empty Look bound to no map with nothing
+// baked; defaulting a visitor to it would render nothing. This is a deployment
+// fact: Lafayette Square is installation #1 and owns the bare domain.
 const DEFAULT_LOOK = 'lafayette-square'
+const DEFAULT_MAP  = 'lafayette-square'
 
-// Resolve the active installation from `?look=`. Guarded so non-browser importers
-// (node scripts, tests) fall back to the default rather than throw on `window`.
-function resolveLookId() {
+// Read `?look=`. Guarded so non-browser importers (node scripts, tests) fall back
+// rather than throw on `window`.
+function readLookParam() {
   try {
     return new URLSearchParams(window.location.search).get('look') || DEFAULT_LOOK
   } catch {
@@ -40,27 +68,62 @@ function resolveLookId() {
   }
 }
 
+/**
+ * THE MAP A LOOK IS A LOOK OF — the one client-side home for this rule.
+ *
+ * The server already has it (`cartograph/tree-bake-inputs.mjs#sceneForLook`); the
+ * client had it copied inline in `Grove.jsx` as `l.scene || l.id`. Arborist and
+ * Meteorologist both send look-keyed packets (`?look=`, `/looks/<id>/trees`) and
+ * resolve the map at the far end, so they should import THIS rather than keep
+ * their own copy.
+ *
+ * ⛔ `entry.scene` is the map id. A Look with no entry is not "probably its own
+ * map" — it is a Look we cannot place, and null says so.
+ */
+export function mapForLook(lookId) {
+  const entry = (looksIndex.looks || []).find(l => l.id === lookId)
+  if (!entry) return null
+  return entry.scene || null
+}
+
 // ⭐ An UNKNOWN look must announce itself, not quietly become Lafayette Square.
 //
 // This was a bare `INSTANCES[resolveLookId()] || INSTANCES[DEFAULT_LOOK]`, so
 // `?look=provincetown` — a real poured slab with no instance file — rendered
 // that town's geometry wearing LS's name, geography, park label, tax rate and
-// legal jurisdiction, with NO warning anywhere. That is exactly what happened
-// before `instances/ksi-y-m-yn.js` was written; its header records it.
+// legal jurisdiction, with NO warning anywhere.
 //
 // We still fall back (a blank screen would be worse), but loudly, and the
-// fallback is now legible in the console instead of invisible. No behaviour
-// change for a registered look. (`docs/briefs/BRIEF-ls-bleed-excision.md` site 5.)
+// fallback is legible in the console instead of invisible.
+// ⚠️ ROADMAP A12 asks for MORE than loud — "an unregistered look must fail
+// loudly, not draw the mould." A refusal need not be a blank screen (an explicit
+// "this installation is not configured" state would satisfy both), but that is a
+// product decision and is NOT taken here. Flagged, not decided.
+//
+// ⭐ WHAT DID CHANGE: `lookId` is now the look that was ASKED FOR, not the
+// fallback town's own id. The slab pointer and the town identity are two
+// different questions and this used to answer both with "lafayette-square".
 function resolveInstance() {
-  const id = resolveLookId()
-  const hit = INSTANCES[id]
-  if (hit) return hit
-  console.error(
-    `[instance] Unknown installation "${id}" — no src/instances/${id}.js is registered. ` +
-    `Falling back to "${DEFAULT_LOOK}", so THIS PAGE IS NOW WEARING ANOTHER TOWN'S ` +
-    `identity, geography and legal jurisdiction. Register the installation before ` +
-    `shipping it.`)
-  return INSTANCES[DEFAULT_LOOK]
+  const lookId = readLookParam()
+  const mapId = mapForLook(lookId)
+  if (!mapId) {
+    console.error(
+      `[instance] Look "${lookId}" is not in public/looks/index.json, so there is no ` +
+      `map to resolve its identity from. Falling back to "${DEFAULT_MAP}" — THIS PAGE ` +
+      `IS NOW WEARING ANOTHER TOWN'S identity, geography and legal jurisdiction.`)
+    return { ...INSTANCES[DEFAULT_MAP], lookId, mapId: DEFAULT_MAP, identityResolved: false }
+  }
+  const town = INSTANCES[mapId]
+  if (!town) {
+    console.error(
+      `[instance] No installation module for map "${mapId}" (look "${lookId}") — ` +
+      `src/instances/${mapId}.js is not registered. Falling back to "${DEFAULT_MAP}", so ` +
+      `THIS PAGE IS NOW WEARING ANOTHER TOWN'S identity, geography and legal ` +
+      `jurisdiction. Register the map before shipping it.`)
+    return { ...INSTANCES[DEFAULT_MAP], lookId, mapId, identityResolved: false }
+  }
+  // ⛔ `lookId` last: it OVERRIDES the module's own literal, which names the map.
+  return { ...town, lookId, mapId, identityResolved: true }
 }
 
 export const INSTANCE = resolveInstance()
@@ -92,11 +155,11 @@ const PUBLIC_CONTACT_FIELDS = [
   const missing = PUBLIC_CONTACT_FIELDS.filter(([, read]) => !read(INSTANCE)).map(([k]) => k)
   if (missing.length) {
     console.error(
-      `[instance] "${INSTANCE.id || 'unknown'}" has no ${missing.join(', ')}. ` +
+      `[instance] "${INSTANCE.mapId || 'unknown'}" has no ${missing.join(', ')}. ` +
       `These are PUBLIC — they render on the legal page, which every installation ` +
       `shows and which no module flag gates. Unset, the page shows a labelled gap ` +
       `instead of a contact; before this check it rendered a dead "mailto:null" ` +
-      `link with nothing said. Set them in src/instances/${INSTANCE.id || '<look>'}.js ` +
+      `link with nothing said. Set them in src/instances/${INSTANCE.mapId || '<map>'}.js ` +
       `before this town is shown to anyone.`)
   }
 }
