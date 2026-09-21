@@ -127,3 +127,62 @@ the whole weather system.
 
 ⚠️ **Do not start this before the glint's eye gate passes.** The whole thing rests on the octave
 table being right.
+
+## ⭐⭐ AND THE WAVES THEMSELVES — what "big, visible, graphic" actually requires
+
+> **Jacob, 2026-09-20:** *"I think we'd want to engage fluid systems and even have some kind of
+> noise generator for the froth on the front of the crests…? The waves are big, visible, graphic
+> IRL."* · and *"Adding clouds, rain and color grading will **sell** it."*
+
+### ⛔ THE BLOCKER IS GEOMETRY, AND IT IS ONE NUMBER
+    node -e 'const g=require("./public/baked/huron/ground.json");const w=g.groups.find(x=>/water/.test(x.id||""));console.log(w.vertexCount, w.indexCount/3)'
+
+**657 triangles over ~14 km² — roughly 145 m per triangle edge.** Everything on the water today is
+normal perturbation on a FLAT SHEET; there is physically nowhere to put a crest. Representing a
+4 m wave as geometry across that area would take **~2 million triangles.**
+⭐ **The answer is the one already shipped for shadows (3dcb5dd3): a CAMERA-FOLLOWING GRID** —
+dense near the viewer, coarse away, detail spent where the eye is. ⛔ Do not tessellate 14 km².
+Same doctrine, same reason, and the precedent is now in the tree.
+
+### ⛔ NOT A FLUID SIM — A SPECTRUM. And the spectrum IS the weather hookup.
+Navier-Stokes / SPH solves the wrong problem: open water is not simulated fluid, it is a **wave
+spectrum** (Phillips / JONSWAP), whose parameters are **wind speed, wind direction and fetch** —
+precisely the three signals the section above already identified. ⭐ So the weather binding is not
+bolted on afterward; **it is the wave model's own input.** That is the strongest argument for doing
+the waves at all.
+
+### ⭐ WHY REAL WAVES LOOK GRAPHIC — the cheapest high-value term in the whole arc
+Sharp crests with broad troughs cannot come from vertical displacement; that gives rolling sine
+hills. The sharpness is **HORIZONTAL displacement** — water moving toward the crest and piling it
+up (Gerstner). Same wave count, one extra term, and the silhouette changes completely.
+⇒ **Do this before anything else in the wave arc.**
+
+### ⭐ FROTH IS DERIVED, NOT PAINTED — noise is the modulator, not the source
+Where the horizontal displacement folds the surface onto itself, **the Jacobian of that
+displacement goes negative — and that happens on the CREST FRONT**, which is exactly where Jacob
+put it by eye. So the foam mask falls out of the wave field:
+· Jacobian < threshold ⇒ foam · noise breaks up its edge · a decay term makes foam PERSIST and
+dissipate in the wake, and the trailing streak behind a crest is most of what sells it.
+⛔ Noise-only froth sparkles in the troughs too and never reads right. *(Same error class as the
+painted glint in ②: a real signal existed and was approximated with noise.)*
+
+### ⭐ LAKE ERIE IS THE EASY CASE, and it is why the description is accurate
+Erie is shallow (~19 m mean) and fetch-limited, so its waves are **steeper and shorter-period than
+ocean swell** — famously choppy whitecaps rather than long rollers. Short wavelengths need less
+grid to resolve. ⇒ huron is asking for the CHEAPER thing, and the steepness is the whole look.
+
+### ⛔ THE PRESENTATION LAYER IS ALREADY BUILT — water is the missing surface, not a new stack
+`weather/RainParticles.jsx` · `weather/SnowParticles.jsx` · `weather/LightningDriver.jsx` ·
+`atmosphere-materials.js` (clouds) · `GRADE_FIELDS` (`skyLightChannels.js:382`) · and a whole
+Meteorologist app for authoring Conditions. ⭐ **Clouds, rain and grading already ship.** What they
+lack is a surface that integrates the weather over a whole area and shows it at every scale.
+⇒ The water is not another feature alongside them; **it is the thing that makes the ones we
+already have legible.**
+
+### Staging — each stage is visible on its own and gateable
+① camera-following displaced water grid *(unblocks everything; nothing visible until it lands)*
+② Gerstner sum off a wind spectrum *(the graphic silhouette — the big visible win)*
+③ Jacobian foam + decay *(the crest fronts)*
+④ bind ①–③ to windSpeedMs / windDirDeg / gust front / fetch *(the tracker payoff)*
+⛔ Not before the glint's eye gate. ⭐ And ② is where a sceptical operator is convinced, so do not
+let ① run long without showing something.
