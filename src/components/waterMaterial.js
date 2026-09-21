@@ -488,7 +488,27 @@ ${GLITTER_GLSL}
        // before glint existed, so the pre-glint surface is still reachable
        // EXACTLY and the control stays falsifiable. Not a branch — the same
        // arithmetic.
-       vec3 vWaterN = normalize(vec3(-wSlope.x * uGlint, 1.0, -wSlope.y * uGlint));`
+       vec3 vWaterN = normalize(vec3(-wSlope.x * uGlint, 1.0, -wSlope.y * uGlint));
+
+       // ⛔⛔ FRESNEL IS A PARTITION, NOT AN ADDITION — and getting that wrong is
+       // why the lake read TOO BLUE at noon. The reflected sky was being ADDED on
+       // top of the water's own full body colour, so the surface returned more
+       // light than arrived at it: a blue-teal body PLUS a blue sky. ⭐ What
+       // physically happens is a SPLIT — the fraction F reflects off the surface
+       // and the remaining (1 − F) is what enters the water and scatters back. So
+       // the body colour is dimmed by exactly what the reflection takes.
+       // ⭐⭐ And this is most of why a real lake is not the colour of its own
+       // water: across most of a lake you are looking at a GRAZING angle, F is
+       // near 1, and almost nothing of the body reaches you. The authored teal
+       // (#1a4a5a and the deep→shallow ramp) is a POND's colour, seen from above
+       // at a steep angle where F is small — on a Great Lake it should mostly get
+       // out of the sky's way, and now it does.
+       // ⛔ Same control clause as the reflection: at uGlint 0 nothing is taken
+       // away, because nothing is being added either.
+       {
+         vec3 wVc = normalize(cameraPosition - vWaterWorld);
+         diffuseColor.rgb *= 1.0 - waterFresnel(vWaterN, wVc) * min(uGlint, 1.0);
+       }`
     )
 
     // ⭐⭐ HAND THE WAVE NORMAL TO THE PBR PATH THAT WAS ALREADY THERE. This is
