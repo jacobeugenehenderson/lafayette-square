@@ -20,6 +20,7 @@ import { sceneExag } from '../utils/terrainShader'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { makeGrassMaterial } from './grassMaterial.js'
+import { makeWaterMaterial, ringExtentDiag } from './waterMaterial.js'
 import { getLampLightmap } from './lampLightmap.js'
 import { terrainExag, patchTerrain } from '../utils/terrainShader'
 import useCartographStore from '../cartograph/stores/useCartographStore.js'
@@ -345,7 +346,6 @@ function ParkWater({ lookId, bakeLastMs }) {
   const resolvedLookId = resolveLookId(lookId)
   const scene = useSceneJson(resolvedLookId, bakeLastMs)
   const waterHidden = scene?.layerVis?.water === false
-  const waterShaderRef = useRef()
 
   // Build water + island + bank geometries from polygon data
   const { lakeWaterGeo, grottoWaterGeo, islandGeo, lakeBankGeo, grottoBankGeo,
@@ -469,139 +469,36 @@ function ParkWater({ lookId, bakeLastMs }) {
     return s / pts.length
   }, [])
 
-  // Animated water material with ripple shader
-  const waterMat = useMemo(() => {
-    const mat = new THREE.MeshStandardMaterial({
-      color: '#1a4a5a',
-      transparent: true,
-      opacity: 0.78,
-      depthWrite: false,
-      roughness: 0.15,
-      metalness: 0.35,
-      side: THREE.DoubleSide,
-    })
-    mat.onBeforeCompile = (shader) => {
-      shader.uniforms.uTime = { value: 0 }
-      shader.uniforms.uSunAltitude = { value: 0.5 }
-      waterShaderRef.current = shader
-
-      // Vertex: pass world position to fragment
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <common>',
-        `#include <common>
-         varying vec3 vWaterWorld;`
-      )
-      shader.vertexShader = shader.vertexShader.replace(
-        '#include <begin_vertex>',
-        `#include <begin_vertex>
-         vWaterWorld = (modelMatrix * vec4(position, 1.0)).xyz;`
-      )
-
-      // Fragment: animated ripples + refraction distortion + depth darkening
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <common>',
-        `#include <common>
-         uniform float uTime;
-         uniform float uSunAltitude;
-         varying vec3 vWaterWorld;
-
-         // Hash + noise for water
-         float wHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
-         float wNoise(vec2 p) {
-           vec2 i = floor(p), f = fract(p);
-           f = f * f * (3.0 - 2.0 * f);
-           return mix(
-             mix(wHash(i), wHash(i + vec2(1,0)), f.x),
-             mix(wHash(i + vec2(0,1)), wHash(i + vec2(1,1)), f.x), f.y);
-         }
-         float wFBM(vec2 p) {
-           float v = 0.0, a = 0.5;
-           for (int i = 0; i < 5; i++) { v += a * wNoise(p); p *= 2.03; a *= 0.49; }
-           return v;
-         }`
-      )
-      shader.fragmentShader = shader.fragmentShader.replace(
-        '#include <color_fragment>',
-        `#include <color_fragment>
-         vec2 wp = vWaterWorld.xz;
-
-         // ── Animated ripple layers ──
-         // Slow large ripples (wind-driven waves)
-         float r1 = wFBM(wp * 0.12 + uTime * vec2(0.08, 0.05));
-         // Medium ripples (cross-wave interference)
-         float r2 = wFBM(wp * 0.3 + uTime * vec2(-0.12, 0.09));
-         // Fine surface texture (capillary ripples)
-         float r3 = wNoise(wp * 1.2 + uTime * vec2(0.2, -0.15));
-         // Slow circular ripple pattern (like a disturbance)
-         float dist = length(wp - vec2(25.0, 60.0));
-         float circular = sin(dist * 0.4 - uTime * 1.5) * 0.5 + 0.5;
-         circular *= smoothstep(50.0, 10.0, dist);
-
-         // Combine ripple layers
-         float ripple = r1 * 0.4 + r2 * 0.35 + r3 * 0.15 + circular * 0.1;
-
-         // ── Water color with fake refraction ──
-         // Distort UV by ripple for refraction effect
-         vec2 refractOffset = vec2(
-           wNoise(wp * 0.25 + uTime * 0.06) - 0.5,
-           wNoise(wp * 0.25 + uTime * 0.06 + 100.0) - 0.5
-         ) * 0.08;
-         float refractedNoise = wFBM((wp + refractOffset) * 0.15);
-
-         // Base water colors — deep and shallow tones
-         vec3 wDeep    = vec3(0.06, 0.18, 0.25);  // dark teal depths
-         vec3 wMid     = vec3(0.10, 0.28, 0.32);  // mid-water
-         vec3 wShallow = vec3(0.14, 0.38, 0.38);  // lighter edges
-         vec3 wHighlight = vec3(0.35, 0.55, 0.58); // ripple peaks / sun glints
-
-         // Mix based on ripple + refraction
-         vec3 waterCol = mix(wDeep, wMid, smoothstep(0.3, 0.55, ripple));
-         waterCol = mix(waterCol, wShallow, smoothstep(0.5, 0.7, refractedNoise));
-
-         // Specular-like highlights on ripple crests
-         float highlight = smoothstep(0.62, 0.78, ripple) * smoothstep(0.5, 0.7, r1);
-         waterCol = mix(waterCol, wHighlight, highlight * 0.6);
-
-         // Subtle caustic pattern on the surface
-         float caustic1 = wNoise(wp * 0.8 + uTime * vec2(0.15, 0.1));
-         float caustic2 = wNoise(wp * 0.8 + uTime * vec2(-0.1, 0.15) + 50.0);
-         float caustic = smoothstep(0.4, 0.6, caustic1) * smoothstep(0.4, 0.6, caustic2);
-         waterCol += vec3(0.04, 0.07, 0.06) * caustic;
-
-         // ── Time-of-day ──
-         float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
-         float brightness = mix(0.45, 1.0, dayBright);
-         // Night: darker, more blue/indigo
-         vec3 nightWater = vec3(0.05, 0.08, 0.16);
-         waterCol = mix(nightWater, waterCol, dayBright) * brightness;
-
-         // Moon/street light reflection at night
-         float nightGlint = (1.0 - dayBright) * highlight * 0.4;
-         waterCol += vec3(0.15, 0.18, 0.25) * nightGlint;
-
-         // sRGB → linear
-         diffuseColor.rgb = pow(waterCol, vec3(2.2));
-
-         // Vary alpha slightly with ripple (thinner at highlights)
-         diffuseColor.a = mix(0.72, 0.88, smoothstep(0.3, 0.6, ripple));`
-      )
-    }
-    // Unique cache key so the ripple shader doesn't collapse onto a
-    // sibling material's compiled program (see pathMat note above).
-    // No patchTerrain: PondGroup lifts the whole lake rigidly by lake
-    // centroid raw × uExag, preserving the Y separation with the bank
-    // and island that per-vertex displacement was destroying.
-    mat.customProgramCacheKey = () => 'park-water-ripple-v1'
-    return mat
-  }, [])
+  // Animated water material — LIFTED to `waterMaterial.js` (the kit module) on
+  // 2026-09-20 so a town whose water is a Great Lake can reach the same shader.
+  // ⛔ THIS POND IS THE CONTROL and it must not move, so all three inputs are
+  // pinned to what the welded version did, exactly:
+  //  · extentDiag — the LAKE's own bbox diagonal, measured from park_water.json
+  //    rather than typed. It is the extent the frequency constants were tuned
+  //    at, so `uWaveK` comes out 1 and every frequency keeps its tuned value.
+  //    ⭐ The GROTTO shares this material, as it always has — one instance, one
+  //    scale. Deriving a second scale for it would be a change, not a lift.
+  //  · disturbance — LS's AUTHORED point ripple. (25, 60) is 1 m off the lake's
+  //    bbox centre and its falloff reaches 50 m, which puts the grotto (90 m
+  //    away) outside it: the grotto has never carried this term and still does
+  //    not. ⭐ These numbers stay HERE, at the LS call site, because they are
+  //    this pond's authoring — not constants the kit should be carrying.
+  //  · glint 0 — the flat normal this surface has always had. The wave normal
+  //    (sun/moon reflection) is new, and whether the one surface an operator
+  //    already knows by eye should change is the operator's call, not mine.
+  //    ▶ Flip this to ~0.35 to give the pond the same water huron's lake has.
+  const { material: waterMat, uniforms: waterUniforms } = useMemo(
+    () => makeWaterMaterial({
+      extentDiag: ringExtentDiag(parkWaterData.lake.outer),
+      disturbance: { center: [25, 60], inner: 50, outer: 10 },
+      glint: 0,
+    }), [])
 
   // Animate water
   useFrame((_, delta) => {
-    if (waterShaderRef.current) {
-      waterShaderRef.current.uniforms.uTime.value += delta
-      const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
-      waterShaderRef.current.uniforms.uSunAltitude.value = sunAltitude
-    }
+    waterUniforms.uTime.value += delta
+    const { sunAltitude } = useTimeOfDay.getState().getLightingPhase()
+    waterUniforms.uSunAltitude.value = sunAltitude
   })
 
   // Simple island grass material. No patchTerrain — PondGroup wraps the

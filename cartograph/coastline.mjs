@@ -136,9 +136,15 @@ function clipToRect(arc, R) {
 }
 
 /**
- * @returns {{ rings: number[][][], arcs: number[][][], report: string[] }}
+ * @returns {{ rings: number[][][], arcs: number[][][], meta: object[], report: string[] }}
  *          `rings` — CLOSED water rings (shoreline + bb), combined with the ink and excluded from
  *          the bb by ①: the lake, as a discrete polygon.
+ *          `meta`  — ⭐⭐ PARALLEL TO `rings`, pushed in the same statement: `{subtype, name}` off
+ *          the feature's own tags. OSM refines `natural=water` with a `water=*` SUBTYPE and a
+ *          pond is not a lake is not a settling basin — measured on huron, 18 of its bodies are
+ *          `water=pond` against 2 `water=lake`. ⛔ A subtype discarded at bake time is
+ *          unrecoverable without re-pouring every town, so it travels even though nothing
+ *          consumes it yet. Cheap now, expensive forever later.
  *          `arcs` — the OPEN shoreline polylines those rings were closed from, for ① to expand at
  *          ε as two-sided ink. ⛔ Same coast, two objects; a caller that takes one and not the
  *          other gets a lake with no landward edge, or a landward edge with no lake.
@@ -147,8 +153,9 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   const report = []
   const rings = []
   const arcs = []
+  const meta = []
   let interior = 0, held = 0, far = 0
-  if (!Array.isArray(center) || !(discR > 0) || !bb) return { rings, arcs, report }
+  if (!Array.isArray(center) || !(discR > 0) || !bb) return { rings, arcs, meta, report }
   const R = bb
 
   for (const cat of Object.keys(ground)) for (const f of ground[cat]) {
@@ -176,6 +183,10 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
     const water = cands.filter(r => !pointInRing(center, r))
     if (water.length !== 1) { report.push(`    ⛔ coast "${name}": the disc centre does not separate the two sides — not applied`); continue }
     rings.push(water[0])
+    // ⛔ SAME STATEMENT SITE AS THE RING IT DESCRIBES. The alignment is local and visible
+    // here; recovering it later by index across a freeze boundary is the positional coupling
+    // this project has already lost twice.
+    meta.push({ subtype: f.tags?.water || null, name: f.tags?.name || null })
     // ⭐ The ARC, not the ring — the open polyline ① expands at ε. Its two ends sit ON the bb
     // edge, so the ink it becomes is cut by the frame rather than stopping in mid-air.
     arcs.push(inside)
@@ -184,7 +195,7 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
 
   if (interior) report.push(`    ⚠️ ${interior} water bod${interior === 1 ? 'y lies' : 'ies lie'} wholly inside the disc — a pond is not a coast, not applied`)
   if (held) report.push(`    ⚠️ ${held} closed water bod${held === 1 ? 'y crosses' : 'ies cross'} the rim but ${held === 1 ? 'is' : 'are'} held WHOLE by the fetch — not an edge of the land, not applied`)
-  if (!rings.length) { report.push(`    (no coastline — ① is the street network alone, as always)`); return { rings, arcs, report } }
+  if (!rings.length) { report.push(`    (no coastline — ① is the street network alone, as always)`); return { rings, arcs, meta, report } }
 
   // ⛔ VERIFY THE SIDE. Buildings are on land; any inside a water ring means it is inverted.
   let wet = 0
@@ -195,8 +206,8 @@ export function coastRings({ ground = {}, buildings = [], center, discR, bb }) {
   }
   if (wet) {
     report.push(`    ⛔ ${wet} building footprint(s) fall INSIDE the water — the land/water sides are inverted. No coast applied.`)
-    return { rings: [], arcs: [], report }
+    return { rings: [], arcs: [], meta: [], report }
   }
   report.push(`    ✅ ${rings.length} water ring(s) + ${arcs.length} shoreline arc(s) to expand as ink; ${buildings.length} footprint(s) checked, none in the water`)
-  return { rings, arcs, report }
+  return { rings, arcs, meta, report }
 }

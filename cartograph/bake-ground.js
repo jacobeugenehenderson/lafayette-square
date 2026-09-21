@@ -137,6 +137,14 @@ const TREELAWN_LU_VARIANTS = [
   'brownfield', 'agricultural', 'orchard', 'forest', 'wetland', 'beach',
   'bare', 'cemetery', 'railway',
 ]
+// OSM's `water=*` refinement of `natural=water`. ⭐ A pond is not a lake is not
+// a settling basin; they are carried separately so a town can shade them
+// differently without a re-pour. ⛔ NOT a skip list — every value here is drawn;
+// the list exists because PAINT_ORDER is an allow-list.
+const WATER_SUBTYPES = [
+  'lake', 'pond', 'basin', 'reservoir', 'river', 'stream', 'canal', 'ditch',
+  'lagoon', 'oxbow', 'moat', 'harbour', 'wastewater', 'fishpond', 'salt_pool',
+]
 const PAINT_ORDER = [
   // Faces (land-use) at the bottom
   ['face', 'residential'],
@@ -213,6 +221,28 @@ const PAINT_ORDER = [
   ['mat', 'edgeline'],
   ['mat', 'bikelane'],
   ['mat', 'stripe'],
+  // ⭐⭐ WATER, APPENDED LAST — and the slot is deliberate on both counts.
+  // · APPENDED, never inserted: renderOrder is positional, so slotting water in
+  //   at the bottom (where a "floor" belongs) would renumber every group after
+  //   it and shift the whole slab's coplanar Y ladder. Nothing is worth that.
+  // · LAST IS ALSO CORRECT: water is the one TRANSPARENT ground group, and a
+  //   transparent surface must draw after the opaque ones. It costs nothing in
+  //   overlap terms because the water face does not overlap any land face —
+  //   ① carves `bb − (WATER ∪ INK)` from the SAME rings emitted here
+  //   (`tileGround.js`: `waterRings: coast.map(...)`), so the land ends exactly
+  //   where the water begins. Coincident edges, never coplanar overlap.
+  // ⚠️ Its baked Y is `renderOrder × GROUND_Y_EPS` ≈ 9 cm above the datum. Water
+  // is a LEVEL SURFACE at one elevation, not a draped one (the lake does not
+  // follow the ground; the ground rises out of it), so the runtime must not
+  // patchTerrain it — see BakedGround's WaterMesh.
+  ['mat', 'water'],
+  // ⭐ The `water=*` SUBTYPES. ⛔ PAINT_ORDER IS AN ALLOW-LIST — a key absent
+  // from it drops SILENTLY (that is how the divided median vanished), so a
+  // subtype with no slot here would delete a whole lake. Vocabulary measured
+  // across the towns on disk (pond 71 · basin 19 · reservoir 5 · river 3 ·
+  // lake 3 · stream 5) plus the OSM values adjacent to them. The unconsumed-key
+  // report below is the backstop when OSM produces one nobody listed.
+  ...WATER_SUBTYPES.map(w => ['mat', `water:${w}`]),
 ]
 
 // Polyline-buffered groups (key in PAINT_ORDER → half-width meters). Mirrors
@@ -824,10 +854,27 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   for (const item of (mapLayers.leisure || [])) {
     if (LEISURE_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
   }
-  // natural subtypes — water is owned by park_water.json, skip it here.
+  // natural subtypes — `natural=water` is NOT here on purpose: it has its own
+  // producer (`layers.water`, the coast/relation path, injected just below) and
+  // a second producer for one feature class is the bug, not the fix.
   const NATURAL_KEYS = new Set(['wood', 'scrub', 'tree_row'])
   for (const item of (mapLayers.natural || [])) {
     if (NATURAL_KEYS.has(item.use) && item.ring) pushMat(item.use, ringFromOSM(item.ring))
+  }
+  // ⭐⭐ THE WATER FACE. `derive.js` emits `layers.water` and until 2026-09-20 this
+  // bake never read it — the lake was acquired, classified, derived, and then
+  // dropped on the floor. In 3D huron's Lake Erie was a HOLE IN THE LAND: ①
+  // carves `bb − (WATER ∪ INK)` so the land stops at the shore, and nothing
+  // filled what it left. (The Designer DID draw it, off `map.json` directly,
+  // which is why "the lake is drawn" was believed of the slab as well.)
+  // ⛔ This does NOT reach an inland pond. `coastline.mjs` applies only water
+  // that runs on past the fetch — measured on huron, 40 bodies lie wholly inside
+  // the disc and 15 more are held whole, and none of them reach `layers.water`
+  // at all. That is a PRODUCER question and it is not fixed here; the pour
+  // prints those two counts every run.
+  for (const item of (mapLayers.water || [])) {
+    if (!item.ring) continue
+    pushMat(item.subtype ? `water:${item.subtype}` : 'water', ringFromOSM(item.ring))
   }
   // Barriers — fence/wall/retaining_wall/hedge as buffered polylines.
   for (const item of (mapLayers.barrier || [])) {
@@ -864,6 +911,26 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // so nothing leaks past the silhouette. No-op when stencil.clipPolygon
   // is null (toy / unmigrated scenes).
   if (stencil.clipPolygon) clipAllToStencil(byMaterial, byFaceUse, stencil.clipPolygon)
+
+  // ⛔⛔ THE SILENT DROP, MADE LOUD. PAINT_ORDER is an ALLOW-LIST: anything
+  // collected into byMaterial/byFaceUse under a key no entry consumes is
+  // discarded here with no error, no warning and a slab that renders perfectly —
+  // just missing a population. That is exactly how the divided median vanished,
+  // and it is the kit's signature failure shape: it looks like success.
+  // ⭐ A vocabulary this bake does not own can widen at any time (OSM adds a
+  // `water=*` value, `derive.js` emits a new LU class), so the guard is
+  // GENERAL — it reads the two collections and PAINT_ORDER, and never restates
+  // either. Nothing to keep in sync.
+  {
+    const consumed = new Set(PAINT_ORDER.map(([kind, key]) => kind + ':' + key))
+    const orphans = []
+    for (const [key, items] of byFaceUse) if (items?.length && !consumed.has('face:' + key)) orphans.push(`face:${key} (${items.length})`)
+    for (const [key, items] of byMaterial) if (items?.length && !consumed.has('mat:' + key)) orphans.push(`mat:${key} (${items.length})`)
+    if (orphans.length) {
+      console.warn(`    ⛔ [BAKE] ${orphans.length} populated group key(s) have NO PAINT_ORDER slot and are being DROPPED from the slab: ${orphans.join(', ')}`)
+      console.warn(`       ▶ They were collected, so the data is real — add each to PAINT_ORDER (and TREELAWN_LU_VARIANTS / WATER_SUBTYPES where it applies). The slab will otherwise render correctly and silently without them.`)
+    }
+  }
 
   // Build groups in paint order. Each group = one merged BufferGeometry.
   const groups = []
@@ -1075,15 +1142,15 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // stamps this key into its own block; BakedGround refuses a lightmap whose key
   // does not match. ⛔ WHY: this function REBUILDS the manifest from scratch, so
   // every ground re-bake used to ERASE the `lightmap` reference bake-ground-ao had
-  // patched in. Measured 2026-09-20: FIVE of seven baked towns had an AO PNG on
-  // disk and no manifest pointing at it — rendering with no ambient occlusion and
-  // saying nothing. Worse, the staleness gate read GREEN in exactly that state,
+  // patched in. Measured 2026-09-20: BOTH lafayette-square and huron had an AO PNG
+  // on disk and no manifest pointing at it — every town was rendering with no AO
+  // and saying nothing. Worse, the staleness gate read GREEN in exactly that state,
   // because bake-ground-ao deliberately writes the manifest FIRST so ground.json
   // ends up newer than the PNG (see its own comment) — so "ground.json is newer"
   // means both "AO is current" and "AO was just destroyed". An mtime cannot tell
   // those apart. A key can.
-  // ⭐ Same shape as tree-anchors' `placementKey`, the one derived-artifact guard
-  // in this repo that failed correctly and loudly.
+  // ⭐ Same shape as tree-anchors' `placementKey`, which is the one derived-artifact
+  // guard in this repo that failed correctly and loudly tonight.
   let _gk = 2166136261 >>> 0
   const _gkEat = (str) => { for (let i = 0; i < str.length; i++) { _gk ^= str.charCodeAt(i); _gk = Math.imul(_gk, 16777619) >>> 0 } }
   _gkEat(`${bx0.toFixed(2)},${bz0.toFixed(2)},${bx1.toFixed(2)},${bz1.toFixed(2)}`)

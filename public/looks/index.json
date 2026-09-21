@@ -51,7 +51,8 @@
       "name": "huron",
       "scene": "huron",
       "createdAt": 1789875167347,
-      "bakedAt": 1789912497622
+      "bakedAt": 1789940483862,
+      "updatedAt": 1789951694539
     }
   ]
 }

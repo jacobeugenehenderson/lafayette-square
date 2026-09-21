@@ -42,6 +42,7 @@ import PlanetariumOverlay from './PlanetariumOverlay'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
+import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
 import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
@@ -56,7 +57,9 @@ function resolveLookId(propLookId) {
 const LATITUDE = INSTANCE.geography.lat
 const LONGITUDE = INSTANCE.geography.lon
 
-const LIGHT_RADIUS = 600       // directional light stays close for shadow quality
+// ⭐ LIGHT_RADIUS + celestialToPosition now live in `celestialLights.js` — the
+// pure module the sky rig and `checks/claims-the-key-light-is-a-real-body.mjs`
+// share, so the check sweeps the SAME derivation the scene renders from.
 const SUN_VISUAL_RADIUS = 50000 // visual orb — far enough to eliminate parallax
 const MOON_RADIUS = 50000
 export const SKY_RADIUS = 55000
@@ -66,7 +69,6 @@ const _sunLP = new THREE.Vector3()
 const _sunVP = new THREE.Vector3()
 const _moonP = new THREE.Vector3()
 const _secP = new THREE.Vector3()
-const _nightLP = new THREE.Vector3()
 const _sunD = new THREE.Vector3()
 // The KEY light's world direction — normalize(primary.lightPosition), i.e. the
 // very position the <directionalLight> consumes. Sun by day, moon-blended at
@@ -78,14 +80,6 @@ const _moonD = new THREE.Vector3()
 const _camFwd = new THREE.Vector3()
 const _lc1 = new THREE.Color()
 const _lc2 = new THREE.Color()
-
-function celestialToPosition(azimuth, altitude, radius, out, minY = null) {
-  out.x = radius * Math.cos(altitude) * Math.sin(azimuth)
-  out.y = radius * Math.sin(altitude)
-  out.z = -radius * Math.cos(altitude) * Math.cos(azimuth)
-  if (minY !== null) out.y = Math.max(out.y, minY)
-  return out
-}
 
 function lerpColor(color1, color2, t) {
   _lc1.set(color1)
@@ -108,7 +102,14 @@ const _lightUp = new THREE.Vector3()
 const _lightRight = new THREE.Vector3()
 const _WORLD_UP = new THREE.Vector3(0, 1, 0)
 
-function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, orbColor, orbSize, intensityMulRef }) {
+// ⭐ `visualPosition` / `showOrb` / `orbColor` / `orbSize` were REMOVED 2026-09-20.
+// They were computed in all four time-of-day branches and consumed by nothing —
+// PrimaryOrb renders a light, and the visible sun and moon are drawn by
+// GradientSky and <Moon> from their own real positions. Dead props that look like
+// a feature are worse than no props: BRIEF-two-bodies-two-lights called the
+// twilight `visualPosition: blendedLP` "the orb IS the lie", and the orb it
+// described has not existed here for some time.
+function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const lightRef = useRef()
 
   // Disable automatic shadow updates — we'll trigger manually.
@@ -300,6 +301,18 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
         shadow-mapSize-height={SHADOW_MAP_SIZE}
       />
     </group>
+  )
+}
+
+// The body that is not currently the key: a real light at a real position, with
+// no shadow map. See the mount site for why it casts nothing and carries no knob.
+function CounterBodyLight({ lightPosition, color, intensity }) {
+  return (
+    <directionalLight
+      position={lightPosition.toArray()}
+      intensity={intensity}
+      color={color}
+    />
   )
 }
 
@@ -1300,36 +1313,33 @@ function CelestialBodies({
       visible: moonAlt > -0.05,  // Show slightly below horizon so it rises/sets behind buildings
     }
 
-    // Compute moon light position for night/twilight blending
-    // Atmospheric extinction: moon is dimmer near the horizon (real phenomenon)
-    // Also fixes specular hotspots on the arch — worst at grazing angles
-    // Smooth single ramp: 0 when moon is below -0.05, full at 0.25 altitude
+    // Atmospheric extinction: the moon is dimmer near the horizon (a real
+    // phenomenon) and it also fixes specular hotspots on the arch at grazing
+    // angles. Kept here because the stylistic fill below still rides it.
     const moonAltFade = Math.max(0, Math.min(1, (moonAlt + 0.05) / 0.30))
-    const moonBrightness = (0.15 + moonIllum.fraction * 0.35) * moonAltFade
-    // Always compute moon light position from actual moon coordinates.
-    // When moon is below horizon, use its last direction but keep light low.
-    // This prevents a snap when the moon sets.
-    const moonLightAlt = Math.max(-0.05, moonAlt) // clamp slightly below horizon
-    celestialToPosition(moonPos.azimuth + Math.PI, moonLightAlt, LIGHT_RADIUS, _nightLP)
+
+    // ⭐⭐ THE TWO BODIES, EACH AT ITS OWN REAL POSITION. `bodyLights` returns the
+    // sun and the moon as lights and hands back whichever is BRIGHTER as the key
+    // (it casts; one shadow map, never two) and the other as the counter.
+    // ⛔ WHAT WAS HERE: `_sunLP.clone().lerp(_nightLP, nightBlend)` — the key
+    // light's POSITION averaged between the two bodies. Real at each end, a
+    // phantom across the whole twilight handover, and everything in the scene
+    // lit from it. Measured across 5 towns × 3 days: up to 74.4° off the nearest
+    // real body. ⭐ Two real lights is a DELETION, and the second glint path on
+    // the water falls out of it for nothing.
+    const bodies = bodyLights({
+      sunAlt, sunAz: sunPos.azimuth,
+      moonAlt, moonAz: moonPos.azimuth,
+      moonIllumFraction: moonIllum.fraction,
+    })
+    primary = { lightPosition: bodies.key.position, color: bodies.key.color, intensity: bodies.key.intensity }
+    const counter = { lightPosition: bodies.counter.position, color: bodies.counter.color, intensity: bodies.counter.intensity }
 
     if (isNight) {
       // Smooth blend over sunAlt -0.12 to -0.25 — no hard boundary
       const nightBlend = Math.max(0, Math.min(1, (-0.12 - sunAlt) / 0.13))
-      const blendedLP = _sunLP.clone().lerp(_nightLP, nightBlend)
-
-      // Twilight-end values (what twilight produces at t=0 / sunAlt=-0.12)
-      const twiIntensity = 0.4
       const twiSecIntensity = 0.2
 
-      primary = {
-        lightPosition: blendedLP,
-        visualPosition: blendedLP,
-        color: lerpColor('#ff6644', '#9ab8e0', nightBlend),
-        intensity: twiIntensity + (moonBrightness - twiIntensity) * nightBlend,
-        showOrb: nightBlend < 0.3,
-        orbColor: '#e8e8f0',
-        orbSize: 12,
-      }
       secondary = {
         position: _secP.set(-150, 100, -150).lerp(new THREE.Vector3(-_sunLP.x * 0.5, 80, -_sunLP.z * 0.5), 1 - nightBlend),
         color: lerpColor('#8877aa', '#4466aa', nightBlend),
@@ -1345,15 +1355,6 @@ function CelestialBodies({
       }
     } else if (isTwilight) {
       const t = (sunAlt + 0.12) / 0.17
-      primary = {
-        lightPosition: _sunLP,
-        visualPosition: _sunVP,
-        color: lerpColor('#ff6644', '#ffaa66', t),
-        intensity: 0.4 + t * 0.3,
-        showOrb: true,
-        orbColor: lerpColor('#ff4422', '#ffaa55', t),
-        orbSize: (25 - t * 5) * (SUN_VISUAL_RADIUS / LIGHT_RADIUS),
-      }
       secondary = {
         position: _secP.set(-_sunLP.x * 0.5, 80, -_sunLP.z * 0.5),
         color: '#8877aa',
@@ -1366,15 +1367,6 @@ function CelestialBodies({
       ambient = { color: lerpColor('#443355', '#887766', t), intensity: 0.35 + t * 0.1 }
     } else if (isGoldenHour) {
       const t = (sunAlt - 0.05) / 0.25
-      primary = {
-        lightPosition: _sunLP,
-        visualPosition: _sunVP,
-        color: lerpColor('#ffaa55', '#fff8e8', t),
-        intensity: 0.7 + t * 1.5,
-        showOrb: true,
-        orbColor: lerpColor('#ffcc66', '#ffffaa', t),
-        orbSize: (20 - t * 2) * (SUN_VISUAL_RADIUS / LIGHT_RADIUS),
-      }
       secondary = {
         position: _secP.set(-_sunLP.x * 0.5, 60, -_sunLP.z * 0.5),
         color: '#aabbdd',
@@ -1386,15 +1378,6 @@ function CelestialBodies({
       }
       ambient = { color: lerpColor('#998877', '#ccddee', t), intensity: 0.45 - t * 0.1 }
     } else {
-      primary = {
-        lightPosition: _sunLP,
-        visualPosition: _sunVP,
-        color: '#fffefa',
-        intensity: 2.2,
-        showOrb: true,
-        orbColor: '#ffffee',
-        orbSize: 18 * (SUN_VISUAL_RADIUS / LIGHT_RADIUS),
-      }
       secondary = {
         position: _secP.set(-_sunLP.x * 0.4, 50, -_sunLP.z * 0.4),
         color: '#aaccff',
@@ -1420,14 +1403,19 @@ function CelestialBodies({
     // Transitions over sunAlt range 0.05 to -0.15 (no hard boundary)
     const nightFactor = Math.max(0, Math.min(1, (0.05 - sunAlt) / 0.20))
 
-    // The key light's direction, taken off the object the light itself is built from
-    // (every branch above sets primary.lightPosition; at night it is already the
-    // sun→moon blend). Published so a consumer that cannot join the real light rig —
-    // the tree impostor cards, which are MeshBasic by design — can still light from
-    // the scene's actual key instead of a scalar dimmer.
+    // The key light's direction, taken off the object the light itself is built
+    // from. ⭐⭐ UPDATED 2026-09-20 AND THE CHANGE IS THE POINT: this used to read
+    // a position that was a sun→moon LERP, so a card lit from it lit from a
+    // phantom through the whole twilight handover. It is now the BRIGHTER REAL
+    // BODY's direction — sun by day, moon by night, and never a point between.
+    // Published so a consumer that cannot join the real light rig — the tree
+    // impostor cards, which are MeshBasic by design — can still light from the
+    // scene's actual key instead of a scalar dimmer. ⛔ ONE derivation of one
+    // physical fact: read it, never recompute it. (A consumer that IS in the rig,
+    // like the water material, should take the light itself and not this.)
     _keyD.copy(primary.lightPosition).normalize()
 
-    return { primary, secondary, sky, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow,
+    return { primary, counter, secondary, sky, ambient, isNight, nightFactor, moon, sunAlt, sunDir: _sunD, moonGlow,
       _celestial: { sunDirection: _sunD.clone(), sunElevation: sunAlt, moonDirection: _moonD.clone(),
         moonPhase: moonIllum.phase, moonIllumination: moonIllum.fraction, moonAltitude: moonAlt,
         keyDirection: _keyD.clone(), keyColor: primary.color, nightFactor } }
@@ -1447,6 +1435,12 @@ function CelestialBodies({
     ...lighting.primary,
     intensity: lighting.primary.intensity * (1 - cc * 0.6),
   }), [lighting.primary, cc])
+  // Cloud cover dims both bodies the same way — a cloud does not know which one
+  // the renderer is calling the key.
+  const counterWeathered = useMemo(() => ({
+    ...lighting.counter,
+    intensity: lighting.counter.intensity * (1 - cc * 0.6),
+  }), [lighting.counter, cc])
 
   // Refs + useFrame to drive Sky&Light lighting-unit multipliers per
   // frame (intensity values otherwise only update on re-render).
@@ -1506,6 +1500,19 @@ function CelestialBodies({
         intensity={hemiBase}
       />}
       {debugLevel < 1 && <PrimaryOrb {...primaryWeathered} intensityMulRef={dirSunMulRef} />}
+      {/* ⭐⭐ THE COUNTER BODY — the one that is NOT currently the key. This is the
+          whole "two glints" feature and it is four lines: three's PBR evaluates a
+          specular lobe per light, and waterMaterial already hands it a wave
+          normal, so a low sun and a risen moon lay TWO paths on the lake, on
+          their two real azimuths, with no shader change at all.
+          ⛔ IT DOES NOT CAST. One shadow map, never two — and the casting light
+          keeps PrimaryOrb's camera-fitted frustum (3dcb5dd3) precisely because a
+          second caster without that treatment silently gets LS's old ±900 box.
+          ⚠️ It carries NO operator channel. `dirSun`/`dirMoon` are authored per
+          town against the two slots that exist today, and quietly repointing one
+          would rewrite what an operator already tuned. Giving the counter its own
+          knob is a third authoring model — that shape is Boz's to decide once. */}
+      {debugLevel < 1 && <CounterBodyLight {...counterWeathered} />}
       {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={dirMoonMulRef} />}
       {debugLevel < 2 && <directionalLight
         ref={floorDirRef}

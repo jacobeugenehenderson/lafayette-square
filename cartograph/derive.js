@@ -1370,6 +1370,8 @@ export function deriveLayers(highways) {
   let boundaryPolyXZ = null
   let boundaryCenter = null, boundaryRadius = 0
   let protoWaterRings = null
+  // Parallel to protoWaterRings: `{subtype, name}` per water ring, off the feature's own tags.
+  let protoWaterMeta = null
   try {
     const boundaryData = JSON.parse(readFileSync(
       join(CARTOGRAPH_DIR, 'data', SCENE, 'neighborhood_boundary.json'), 'utf-8'
@@ -5319,6 +5321,7 @@ export function deriveLayers(highways) {
     for (const line of _coast.report) console.log(line)
     const MP = mintProtopolygon({ streets: pStreets, gradeSep: pGradeSep, boundary: boundaryPolyXZ, coast: _coast.rings, coastArcs: _coast.arcs, bb: _bb })
     protoWaterRings = MP.waterRings || null
+    protoWaterMeta = _coast.meta || null
     ribbonsLayer.protopolygon = {
       eps: 0.005,
       rings: MP.rings.map(r => r.map(p => [Math.round(p[0] * 1e6) / 1e6, Math.round(p[1] * 1e6) / 1e6])),
@@ -5514,8 +5517,30 @@ export function deriveLayers(highways) {
   // authoring slot. Measured on Huron: 0 of 204 block faces touch a `__water__` edge, so no
   // editable surface abuts the coast and the Wall is not crossed to draw them.
   // ⭐ The water face carries its HOLES (islands), so it is drawn as a compound face.
-  const waterFeats = (protoWaterRings || []).map(r => ({ ring: r.map(([x, z]) => ({ x, z })), use: 'water' }))
-  if (waterFeats.length) console.log(`  [LAND/WATER] ${waterFeats.length} water face(s) emitted as a layer`)
+  // ⭐⭐ THE `water=*` SUBTYPE TRAVELS WITH THE RING. OSM refines `natural=water` into lake ·
+  // pond · basin · reservoir · river, and nothing downstream consumes that yet — but a subtype
+  // dropped at pour time cannot be recovered without re-pouring every town, and a pond wants a
+  // different surface from a Great Lake. It is carried for the town that asks.
+  // ⛔ ALIGNMENT IS ASSERTED, NOT ASSUMED. `MP.waterRings` is `coast.map(copy)` — 1:1 with the
+  // rings `coastRings` returned, in order — so the meta indexes match by construction. If that
+  // ever stops being true the subtypes would silently attach to the WRONG bodies, which is the
+  // plausible-looking success this kit must never ship. So: fail loudly instead.
+  if (protoWaterMeta && protoWaterRings && protoWaterMeta.length !== protoWaterRings.length) {
+    throw new Error(`[LAND/WATER] ⛔ water ring/meta misalignment: ${protoWaterRings.length} ring(s) ` +
+      `but ${protoWaterMeta.length} meta entr(ies). The \`water=*\` subtype would attach to the wrong ` +
+      `body. ▶ coastRings() pushes ring and meta in the same statement — something between it and ` +
+      `mintProtopolygon's waterRings is now reordering or filtering.`)
+  }
+  const waterFeats = (protoWaterRings || []).map((r, i) => ({
+    ring: r.map(([x, z]) => ({ x, z })),
+    use: 'water',
+    subtype: protoWaterMeta?.[i]?.subtype || null,
+    name: protoWaterMeta?.[i]?.name || null,
+  }))
+  if (waterFeats.length) {
+    const tally = waterFeats.map(f => f.subtype || 'water').join(', ')
+    console.log(`  [LAND/WATER] ${waterFeats.length} water face(s) emitted as a layer — subtype(s): ${tally}`)
+  }
 
   const layers = {
     pavement:       pavementFeats,                                     // streets from standards (independent)

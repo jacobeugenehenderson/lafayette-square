@@ -21,9 +21,11 @@ import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
+import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind } from './waterMaterial'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
+import useSkyState from '../hooks/useSkyState'
 import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
@@ -89,6 +91,14 @@ function isGrassGroup(group) {
 const GRAVEL_MATERIALS = new Set(['park_path'])
 function isGravelGroup(group) {
   return group.kind !== 'face' && GRAVEL_MATERIALS.has(group.id)
+}
+
+// Water bodies — 'water', or 'water:<subtype>' where OSM refined `natural=water`
+// (lake · pond · basin · reservoir · …). ⛔ The id rule lives in waterMaterial.js
+// so the bake, this runtime and `checks/claims-every-water-body-reaches-the-kit-
+// material.mjs` all ask the SAME function what water is.
+function isWaterGroup(group) {
+  return group.kind !== 'face' && isWaterGroupId(group.id)
 }
 
 // Resolve a group's effective layer-visibility from scene.json. Material
@@ -273,6 +283,8 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
       {meshes.filter(({ group }) => isGroupVisible(group, layerVis)).map(({ group, geometry }) => {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
+        if (isWaterGroup(group))
+          return <WaterMesh key={key} group={group} geometry={geometry} />
         if (isGravelGroup(group))
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}
@@ -432,6 +444,62 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
     if (shaderRef.current) {
       shaderRef.current.uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
     }
+  })
+  return (
+    <mesh
+      geometry={geometry}
+      material={material}
+      renderOrder={group.renderOrder}
+      receiveShadow
+    />
+  )
+}
+
+// Water bodies — the kit water material (`waterMaterial.js`), lifted out of
+// LafayettePark so a town whose water is a Great Lake can reach the same shader.
+//
+// ⛔⛔ NO patchTerrain, AND THAT IS THE POINT, NOT AN OVERSIGHT. Every other
+// ground group drapes per-vertex over the DEM. Water does not: it is a LEVEL
+// SURFACE at ONE elevation. Lake Erie does not follow the ground — the ground
+// rises out of it. Measured 2026-09-20: huron's `terrain.json` records
+// baseElev 173.24 m and Lake Erie's surface is ~173.5 m, because `bake-terrain`
+// normalizes to local-min = 0 and ON A LAKESHORE TOWN THE LOCAL MINIMUM IS THE
+// LAKE. ⇒ y = 0 is the datum everything else is measured from, and draping this
+// would produce a lake that undulates.
+// ⭐ Which also hands the shoreline over for free: the waterline is wherever the
+// terrain crosses y = 0 — a level-set of a field already baked, correct even
+// where the OSM ring was clipped by the fetch envelope (an envelope edge is not
+// a zero crossing).
+//
+// ⭐ The wave frequencies come from THIS BODY'S OWN EXTENT, read off the baked
+// geometry's bounding box. Not a constant, not a scene lookup — the surface's
+// own size. Hardcoding it back is the silent-plastic regression and
+// `checks/claims-water-scales-with-its-body.mjs` fails on it.
+function WaterMesh({ group, geometry }) {
+  const { material, uniforms } = useMemo(() => {
+    geometry.computeBoundingBox()
+    const bb = geometry.boundingBox
+    const extentDiag = Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z)
+    // ⛔ No `disturbance`: the point ripple models something dropped in a pond.
+    // On a body kilometres across it is one sine wave crossing the map.
+    return makeWaterMaterial({ extentDiag })
+  }, [geometry])
+  useFrame((_, delta) => {
+    uniforms.uTime.value += delta
+    uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
+    // ⭐⭐ THE LAKE READS THE TOWN'S REAL WEATHER. `windSpeedMs` / `windDirDeg`
+    // are polled from open-meteo for this town's own coordinates
+    // (`useWeather.js` → `useSkyState`), and Cox & Munk 1954 turns wind speed
+    // into the water's slope variance — which IS the width of the glitter.
+    // ⇒ a windy afternoon in Huron is a choppier, broader-sparkling lake, and a
+    // calm one is closer to a mirror. Not authored, not tuned: tracked.
+    const sky = useSkyState.getState()
+    uniforms.uSlopeScale.value = slopeScaleForWind(sky.windSpeedMs)
+    // `windDirDeg` is meteorological — degrees the wind blows FROM — so the wave
+    // trains travel toward the opposite bearing. Compass bearing → world XZ with
+    // −Z as north, the same convention celestialToPosition uses.
+    const travelRad = (sky.windDirDeg + 180) * Math.PI / 180
+    uniforms.uWindDir.value.set(Math.sin(travelRad), -Math.cos(travelRad))
   })
   return (
     <mesh
