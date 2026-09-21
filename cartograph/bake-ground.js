@@ -813,14 +813,27 @@ function _pathToRing(path) {
 // because the thing beneath it has to survive to be seen through. `water` is the
 // case that exists today (genuinely transparent; Fathom's kit material depends on
 // it) and it keeps its own slot above the plane.
-function flattenPaintStack(entries, { exclude = new Set() } = {}) {
+// ⛔⛔ TWO DIFFERENT EXCLUSIONS, AND CONFLATING THEM WAS A REAL BUG (2026-09-21).
+// · `keepOwnSlot` — do not press this layer INTO the plane; it keeps a Y of its own.
+// · `doesNotCut`  — do not let this layer CUT what is beneath it.
+// They are NOT the same question. A TRANSPARENT layer needs both: water must keep
+// its slot AND must not carve a hole in the ground you are meant to see through it.
+// An OPAQUE layer that merely wants its own slot still MUST cut — a stripe hides
+// the tarmac under it completely.
+// ⚠️ The first cut of this function had one `exclude` set and `continue`d before
+// the accumulator step, so excluding `stripe` silently stopped it cutting asphalt
+// — and asphalt then kept ~386 m² of tarmac underneath the paint. The instrument
+// that caught it was logging signed AREA and the accumulator's area, not path
+// counts: a count says the layer EXISTS, only the area says the union KEPT it.
+function flattenPaintStack(entries, { keepOwnSlot = new Set(), doesNotCut = new Set() } = {}) {
   const acc = new _Paths()                      // union of everything ABOVE
   const out = new Map()                          // key → flattened items
   // TOP DOWN: the topmost layer keeps all of itself; each lower one loses whatever
   // is already covered.
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i]
-    if (exclude.has(e.groupKey)) { out.set(e.groupKey, e.items); continue }
+    const keepsSlot = keepOwnSlot.has(e.groupKey)
+    const cuts = !doesNotCut.has(e.groupKey)
 
     const mine = new _Paths()
     for (const it of e.items) {
@@ -833,7 +846,7 @@ function flattenPaintStack(entries, { exclude = new Set() } = {}) {
     if (!mine.length) { out.set(e.groupKey, []); continue }
 
     let visible = e.items
-    if (acc.length) {
+    if (acc.length && !keepsSlot) {
       const c = new _Clipper()
       c.AddPaths(mine, _PolyType.ptSubject, true)
       c.AddPaths(acc, _PolyType.ptClip, true)
@@ -856,11 +869,20 @@ function flattenPaintStack(entries, { exclude = new Set() } = {}) {
       }
     }
     if (process.env.FLATTEN_DEBUG) {
-      console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}  acc ${acc.length}`)
+      // ⭐ AREA, not just path count. A path count says a layer EXISTS; only the
+      // signed area says whether the union actually kept it. Opposite winding
+      // under pftNonZero cancels — the paths survive and the REGION does not.
+      const areaOf = (paths) => { let a = 0; for (const q of paths) a += _Clipper.Area(q); return a / (CLIP_SCALE * CLIP_SCALE) }
+      const mineA = areaOf(mine), accA = areaOf(acc)
+      const cw = mine.filter(q => !_Clipper.Orientation(q)).length
+      console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}`
+        + `  ownArea ${mineA.toFixed(0).padStart(9)} m²  (${cw}/${mine.length} CW)  accBefore ${accA.toFixed(0).padStart(10)} m²`)
     }
     out.set(e.groupKey, visible)
 
-    // union this layer into the accumulator for the layers below
+    // union this layer into the accumulator for the layers below — unless it is
+    // transparent, in which case what is beneath it must survive to be seen.
+    if (!cuts) continue
     const u = new _Clipper()
     u.AddPaths(acc, _PolyType.ptSubject, true)
     u.AddPaths(mine, _PolyType.ptClip, true)
@@ -1160,29 +1182,38 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
   // at the 2D→3D crossing — and not upstream in derive.
   // ⛔ `water` is excluded: it TINTS rather than replaces, so what is under it must
   // survive to be seen through. It keeps its own slot above the plane.
-  const FLATTEN_EXCLUDE = new Set()
+  const KEEP_OWN_SLOT = new Set()
+  const DOES_NOT_CUT = new Set()
   const stackEntries = []
   for (const [kind, key] of PAINT_ORDER) {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
     const its = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
     if (!its || its.length === 0) continue
     const groupKey = kind + ':' + key
-    // ⛔ EXCLUDED FROM THE PLANE — each for a measured reason, not a hunch:
-    // · water — TINTS rather than replaces; what is under it must survive.
-    // · stripe — MEASURED at 10 cm resolution AFTER flattening: ~386 m² of stripe
-    //   still overlaps asphalt in a 500 m window. The flatten did not cut it out
-    //   (thin sub-metre quads; cause not established), and collapsing an UNCUT
-    //   overlay onto y=0 would make road markings z-fight with the tarmac — a new
-    //   defect traded for the old one. It keeps a real slot until the cause is found.
-    //   ⚠️ Its separation is 2 mm against asphalt's 4.3 mm median chord error, so it
-    //   is NOT safe either; it is merely less wrong than coplanar. Open.
-    if (kind !== 'face' && (key === 'water' || key.startsWith('water:') || key === 'stripe')) FLATTEN_EXCLUDE.add(groupKey)
+    // ⛔ WATER IS THE ONLY LAYER THAT DOES BOTH: it keeps its own slot AND does not
+    // cut, because it TINTS rather than replaces — the ground beneath it has to
+    // survive to be seen through it. Everything else, `stripe` included, cuts.
+    const isWater = kind !== 'face' && (key === 'water' || key.startsWith('water:'))
+    if (isWater) { KEEP_OWN_SLOT.add(groupKey); DOES_NOT_CUT.add(groupKey) }
+
+    // ⚠️ `stripe` CUTS but KEEPS ITS SLOT — the one layer using both settings, and
+    // it is a guard against an UNEXPLAINED residual, not a design choice.
+    // Measured at 10 cm in a 500 m window, after the flatten: stripe ∩ asphalt is
+    // 194 m², 39% of stripe's own area. Cutting halved it (386 → 194 m²) and did
+    // not finish it. ⛔ CAUSE NOT ESTABLISHED — candidates are clipper's mixed
+    // winding in the accumulator (29 of 392 stripe rings are CW) and holes that
+    // touch the asphalt boundary rather than sitting inside it, but neither is
+    // measured. ⇒ Until it is, a coplanar stripe would z-fight the tarmac on that
+    // 194 m². Keeping its slot makes the residual harmless instead of visible.
+    // ⭐ Remove this the day the residual measures zero — not before, and not on
+    // the grounds that it "should" be zero.
+    if (kind !== 'face' && key === 'stripe') KEEP_OWN_SLOT.add(groupKey)
     stackEntries.push({ groupKey, kind, key, items: its })
   }
   const _t0 = Date.now()
-  const flattened = flattenPaintStack(stackEntries, { exclude: FLATTEN_EXCLUDE })
+  const flattened = flattenPaintStack(stackEntries, { keepOwnSlot: KEEP_OWN_SLOT, doesNotCut: DOES_NOT_CUT })
   console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
-    + `(${FLATTEN_EXCLUDE.size} excluded) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
+    + `(${KEEP_OWN_SLOT.size} keeping their own slot, ${DOES_NOT_CUT.size} not cutting) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
 
   for (const [kind, key] of PAINT_ORDER) {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
@@ -1287,7 +1318,7 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // chord-error table). The ladder is not tuned away — it is no longer needed.
     // ⚠️ An EXCLUDED layer (water — it tints rather than replaces) still overlaps
     // what is beneath it and keeps a real slot above the plane.
-    const onGroundPlane = !FLATTEN_EXCLUDE.has(kind + ':' + key)
+    const onGroundPlane = !KEEP_OWN_SLOT.has(kind + ':' + key)
     const yLift = (onGroundPlane ? 0 : renderOrder) * GROUND_Y_EPS
     const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift })
     if (indices.length === 0) continue
