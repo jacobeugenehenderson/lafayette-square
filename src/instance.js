@@ -22,6 +22,7 @@
  */
 import lafayetteSquare from './instances/lafayette-square.js'
 import hipointeDemun from './instances/hipointe-demun.js'
+import huron from './instances/huron.js'
 // ⛔ The look→map table, statically. It is the authoring index, bundled at BUILD
 // time — which is the right currency here: the player ships with slabs baked at
 // build time, so a Look the build never saw has no slab to render either. A fetch
@@ -49,6 +50,7 @@ import looksIndex from '../public/looks/index.json' with { type: 'json' }
 const INSTANCES = {
   'lafayette-square': lafayetteSquare,
   'hipointe-demun': hipointeDemun,
+  huron,
 }
 
 // ⛔ The PLAYER's default look, and it is NOT `looksIndex.default`. That is the
