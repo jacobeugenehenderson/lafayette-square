@@ -25,6 +25,19 @@ const useSkyState = create((set, get) => ({
   keyColor: new THREE.Color('#fffefa'),
   nightFactor: 0,
   horizonColor: new THREE.Color('#1a1525'),  // sky color at h=0, pushed from GradientSky
+  // ⭐ The operator's AUTHORED sky, as GradientSky resolved it this frame. Pushed
+  // rather than re-resolved so every consumer reflects the same sky the dome is
+  // drawing — the water reads these into `skyDomeColor()` and gets the town's own
+  // grade for free. ⛔ Read, never recompute: re-resolving the grid elsewhere
+  // drifts at TOD boundaries, which is the class that `keyDirection` records.
+  skyBands: {
+    horizon: new THREE.Color('#1a1525'),
+    low:     new THREE.Color('#1a1525'),
+    mid:     new THREE.Color('#2a3550'),
+    high:    new THREE.Color('#3a5580'),
+    glow:    new THREE.Color('#ffd9a0'),
+    turbidity: 0,
+  },
 
   // ── Weather (smoothly interpolated toward targets) ──
   cloudCover: 0,

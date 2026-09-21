@@ -58,6 +58,7 @@
  *   flat normal the material had before. That is how LS's pond stays the control.
  */
 import * as THREE from 'three'
+import { SKY_GRADIENT_GLSL, FRESNEL_GLSL } from './skyGradient.js'
 
 // ⭐ THE CALIBRATION ANCHOR, AND IT IS THE ONLY MEASURED POINT ON THE CURVE.
 // The lifted frequency constants (`wp*0.12`, `*0.3`, `*1.2`, refraction `*0.25`
@@ -272,6 +273,16 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
     uWindDir:       { value: new THREE.Vector2(0.88, 0.47) },
     uSlopeScale:    { value: slopeScaleForWind(DEFAULT_WIND_MPS) },
     uMaxRoughness:  { value: maxRoughnessForWind(DEFAULT_WIND_MPS) },
+    // ⭐ THE SKY THE DOME IS ACTUALLY DRAWING, pushed by GradientSky onto
+    // useSkyState and read straight through. The lake reflects the operator's
+    // authored grade with no second control and nothing to keep in sync.
+    uBandHorizon:   { value: new THREE.Color('#1a1525') },
+    uBandLow:       { value: new THREE.Color('#1a1525') },
+    uBandMid:       { value: new THREE.Color('#2a3550') },
+    uBandHigh:      { value: new THREE.Color('#3a5580') },
+    uSkyGlow:       { value: new THREE.Color('#ffd9a0') },
+    uTurbidity:     { value: 0 },
+    uSunDir:        { value: new THREE.Vector3(0, 1, 0) },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -313,6 +324,13 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
        uniform float uSunAltitude;
        uniform float uWaveK;
        uniform float uGlint;
+       uniform vec3  uBandHorizon;
+       uniform vec3  uBandLow;
+       uniform vec3  uBandMid;
+       uniform vec3  uBandHigh;
+       uniform vec3  uSkyGlow;
+       uniform float uTurbidity;
+       uniform vec3  uSunDir;
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uMaxRoughness;
@@ -324,6 +342,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
 
        const float SWELL_STEEP = ${SWELL_STEEP.toFixed(4)};
        const float SPEC_AA_K   = ${SPEC_AA_K.toFixed(4)};
+
+${SKY_GRADIENT_GLSL}
+${FRESNEL_GLSL}
 
        // Hash + noise for water
        float wHash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -505,6 +526,41 @@ ${GLITTER_GLSL}
        }`
     )
 
+    // ⭐⭐ THE BROAD LAYER — THE SKY, REFLECTED. Jacob named this twice, from two
+    // directions, without reading a line of the shader: "an attenuated version of
+    // this spread rather democratically across the entire body", then "shimmer
+    // with no localized hotspots". It is the sky in the water.
+    // ⛔ WHY IT GOES ON `totalEmissiveRadiance`: three has exactly one seat for
+    // indirect specular — an environment map — and this project has never had one
+    // (no envMap, no scene.environment, no PMREM). Rather than stand up a PMREM
+    // capture and keep it in sync at every TOD boundary, the water evaluates the
+    // dome's OWN colour function along its reflected view vector. The emissive
+    // slot is where that radiance lands; it is added to outgoingLight after the
+    // lights, which is exactly where a reflection belongs.
+    // ⭐ FRESNEL IS WHAT MAKES IT READ AS WATER: grazing angles reflect ~everything
+    // and steep angles almost nothing, so the far half of a lake becomes sky and
+    // the near half stays water — one dot product, no authoring.
+    // ⚠️ The bands are consumed with the same sRGB→linear convention the material
+    // applies to its own palette. If the lake and the dome ever disagree in TINT
+    // rather than in brightness, this is the line to look at first.
+    // ⛔ THE CONTROL CLAUSE: scaled by uGlint, so `glint: 0` is still EXACTLY the
+    // pre-glint surface. LS's pond does not silently acquire a sky.
+    shader.fragmentShader = shader.fragmentShader.replace(
+      '#include <emissivemap_fragment>',
+      `#include <emissivemap_fragment>
+       {
+         vec3 wV = normalize(cameraPosition - vWaterWorld);
+         vec3 wR = reflect(-wV, vWaterN);
+         // A reflected ray that points into the water reflects the horizon, not
+         // the ground: the sky dome has nothing below h = 0 to give back.
+         wR.y = abs(wR.y);
+         vec3 wSky = skyDomeColor(wR, uBandHorizon, uBandLow, uBandMid, uBandHigh,
+                                  uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
+         float wF = waterFresnel(vWaterN, wV);
+         totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * min(uGlint, 1.0);
+       }`
+    )
+
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <normal_fragment_begin>',
       `#include <normal_fragment_begin>
@@ -517,7 +573,7 @@ ${GLITTER_GLSL}
   // material's compiled program. ⭐ ONE key for every water body in the kit is
   // correct: the per-feature differences (wave scale, glint, disturbance) are
   // all UNIFORMS, so the code is identical and sharing the program is the point.
-  mat.customProgramCacheKey = () => 'kit-water-v1'
+  mat.customProgramCacheKey = () => 'kit-water-v2-sky'
 
   return { material: mat, uniforms }
 }

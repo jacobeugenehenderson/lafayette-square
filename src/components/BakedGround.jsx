@@ -514,6 +514,20 @@ function WaterMesh({ group, geometry }) {
     // −Z as north, the same convention celestialToPosition uses.
     const travelRad = (sky.windDirDeg + 180) * Math.PI / 180
     uniforms.uWindDir.value.set(Math.sin(travelRad), -Math.cos(travelRad))
+    // ⭐⭐ THE SKY THE DOME IS DRAWING, read not re-derived. GradientSky resolves
+    // the operator's authored sky grid once per frame and publishes the four
+    // bands here; the lake reflects exactly those, so a town graded warm has warm
+    // water and the sky knob reaches the water with no second control.
+    // ⛔ Re-resolving the grid here would drift from the dome at every TOD
+    // boundary — the same class the `keyDirection` note records.
+    const b = sky.skyBands
+    uniforms.uBandHorizon.value.copy(b.horizon)
+    uniforms.uBandLow.value.copy(b.low)
+    uniforms.uBandMid.value.copy(b.mid)
+    uniforms.uBandHigh.value.copy(b.high)
+    uniforms.uSkyGlow.value.copy(b.glow)
+    uniforms.uTurbidity.value = b.turbidity
+    uniforms.uSunDir.value.copy(sky.sunDirection)
   })
   return (
     <mesh

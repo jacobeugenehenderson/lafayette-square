@@ -43,6 +43,7 @@ import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
+import { SKY_GRADIENT_GLSL } from './skyGradient.js'
 import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
@@ -651,13 +652,26 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         u.moonVisible.value = moonGlow.altitude > 0 ? 1.0 : 0.0
       }
       // Push horizon color to shared state for portal background matching
-      useSkyState.getState().horizonColor.copy(u.bandHorizon.value)
-
       // Weather uniforms from useSkyState
       const sky = useSkyState.getState()
       u.uCloudCover.value = sky.cloudCover
       u.uStorminess.value = sky.storminess
       u.uTurbidity.value = sky.turbidity
+
+      // ⭐ PUBLISH WHAT WAS RESOLVED. `horizonColor` has been pushed here for
+      // years; the other three bands, the glow colour and turbidity now go with
+      // it so the WATER can reflect THIS sky instead of re-resolving the
+      // operator's grid and drifting from the dome at TOD boundaries.
+      // ⛔ After the weather uniforms, deliberately: turbidity is written just
+      // above, and publishing the pre-weather value would hand the lake a
+      // different sky from the one overhead.
+      sky.horizonColor.copy(u.bandHorizon.value)
+      sky.skyBands.horizon.copy(u.bandHorizon.value)
+      sky.skyBands.low.copy(u.bandLow.value)
+      sky.skyBands.mid.copy(u.bandMid.value)
+      sky.skyBands.high.copy(u.bandHigh.value)
+      sky.skyBands.glow.copy(u.sunGlowColor.value)
+      sky.skyBands.turbidity = u.uTurbidity.value
       u.uSunsetPotential.value = sky.sunsetPotential
       u.uBeautyBias.value = sky.beautyBias
 
@@ -747,6 +761,8 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
                    mix(mix(mwHash(i+vec3(0,0,1)), mwHash(i+vec3(1,0,1)), f.x),
                        mix(mwHash(i+vec3(0,1,1)), mwHash(i+vec3(1,1,1)), f.x), f.y), f.z);
       }
+      ${SKY_GRADIENT_GLSL}
+
       float mwFbm(vec3 p){
         float a = 0.5, s = 0.0;
         for(int i = 0; i < 4; i++){ s += a * mwNoise(p); p *= 2.02; a *= 0.5; }
@@ -767,45 +783,31 @@ function GradientSky({ sunAltitude, sunDirection, moonGlow, skyChannel, constell
         // baseline laid on top were removed 2026-05-20: physics-overlay
         // fought the painter (suppressed authored noon colors to ~30%
         // strength via luma-gated composition). Painter is source of truth.
-        float hn = pow(max(0.0, h), 0.65 * (1.0 + uTurbidity * 0.4));
-        float t1 = smoothstep(0.0,  0.12, hn);  // horizon → low
-        float t2 = smoothstep(0.10, 0.32, hn);  // low → mid
-        float t3 = smoothstep(0.30, 0.65, hn);  // mid → high (zenith)
-        vec3 juice = mix(bandHorizon, bandLow, t1);
-        juice = mix(juice, bandMid, t2);
-        juice = mix(juice, bandHigh, t3);
+        // ⭐⭐ THE BANDS + THE BROAD GLOW NOW LIVE IN skyGradient.js, so the
+        // WATER can evaluate the very same sky along its reflected view vector
+        // instead of a copy that drifts (or a hand-placed lamp faking it — see
+        // the floorDir excision, 2026-09-20). ⛔ This dome is still the only
+        // consumer that draws the sun's DISC: the tight core stays here,
+        // deliberately, because a reflected disc is a localized hotspot and the
+        // lake must not have one.
+        vec3 finalColor = skyDomeColor(dir, bandHorizon, bandLow, bandMid, bandHigh,
+                                       uTurbidity, sunDir, sunAlt, sunGlowColor);
 
-        vec3 finalColor = juice;
-
-        // ── Directional sun glow ──
         float sunDot = dot(dir, sunDir);
-
-        // Tight bright core (visible sun disc on the sky dome)
-        // Use exp() instead of pow() to avoid pow(0,large) GPU driver bugs
+        // Tight bright core (the visible sun disc on the dome).
+        // exp() rather than pow() to dodge pow(0,large) driver bugs.
         float coreGlow = sunDot > 0.0 ? exp(256.0 * log(sunDot)) : 0.0;
-
-        // Medium halo around sun
-        float haloGlow = sunDot > 0.0 ? exp(16.0 * log(sunDot)) : 0.0;
-
-        // Wide atmospheric scatter near horizon in sun's direction
-        float horizonProximity = 1.0 - abs(h);
-        float wideScatter = pow(max(0.0, sunDot), 3.0) * horizonProximity * horizonProximity;
-
-        // Scale glow by sun altitude: strongest at sunrise/sunset, subtle at noon
-        float twilightBoost = smoothstep(-0.15, 0.05, sunAlt) * (1.0 - smoothstep(0.05, 0.35, sunAlt));
-
-        float glowIntensity = coreGlow * 1.5
-                            + haloGlow * (0.25 + twilightBoost * 0.4)
-                            + wideScatter * (0.15 + twilightBoost * 0.35);
-
         float sunVis = smoothstep(-0.12, 0.0, sunAlt);
-        glowIntensity *= sunVis;
+        finalColor += sunGlowColor * (coreGlow * 1.5 * sunVis);
 
-        finalColor += sunGlowColor * glowIntensity;
-
-        // Warm the horizon on the sun's side
-        float horizonWarm = pow(max(0.0, sunDot), 2.0) * (1.0 - abs(h)) * sunVis * 0.12;
-        finalColor += vec3(0.15, 0.08, 0.02) * horizonWarm;
+        // ⛔ NOT DUPLICATES — the same helpers skyDomeColor uses. The moon's
+        // horizon wash and the sunset boost below both read these, so they are
+        // asked for here rather than recomputed. (They were plain locals until
+        // the lift; removing them without noticing these two downstream readers
+        // is what turned the dome black, caught by VALIDATE_STATUS false.)
+        float horizonProximity = skyHorizonProximity(h);
+        float haloGlow = skyHaloGlow(sunDot);
+        float wideScatter = skyWideScatter(sunDot, h);
 
         // ── Moon glow ──
         float moonDot = dot(dir, moonDir);
