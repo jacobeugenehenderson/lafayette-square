@@ -577,6 +577,27 @@ out body;>;out skel qt;`
     for (const [cat, c] of Object.entries(byCat).sort((a, b) => b[1].n - a[1].n)) {
       console.log(`    ${cat}: ${c.n} (${c.named} named)`)
     }
+    // ⭐⭐ NAME THE CENSUS-BEARING NODE KINDS. The bucket above is keyed on
+    // `category`, so every `highway=*` node — lamps, crossings, signals — lands in
+    // one line reading `highway: 500 (0 named)`. ⛔ A town's ENTIRE STREET-LAMP
+    // CENSUS is invisible at intake that way, and it is the only place anyone would
+    // look to learn it arrived. Measured 2026-09-21: huron acquired 30
+    // `highway=street_lamp` nodes and nothing anywhere said the word "lamp" —
+    // meanwhile `bake-lamps.js` read a different file, found nothing, and baked
+    // ZERO, advising the operator to go acquire a census they already had.
+    // ⛔ This prints what was ACQUIRED. It does not make anything render, and a
+    // count here is NOT a promise that the bake consumes it (ROADMAP H-17).
+    const hw = {}
+    for (const f of pois) { const k = f.tags?.highway; if (k) hw[k] = (hw[k] || 0) + 1 }
+    const hwKinds = Object.entries(hw).sort((a, b) => b[1] - a[1])
+    if (hwKinds.length) {
+      console.log(`    highway node kinds: ${hwKinds.map(([k, n]) => `${k}=${n}`).join(' · ')}`)
+      if (!hw.street_lamp) {
+        console.log(`    ⚠️  street_lamp: 0 — this town has NO OSM lamp census. That is normal:`)
+        console.log(`       lamp mapping is sparse outside cities with a municipal import. Lamps`)
+        console.log(`       will bake to zero, and that is the honest output, not a defect.`)
+      }
+    }
   }
 
   // Write output
