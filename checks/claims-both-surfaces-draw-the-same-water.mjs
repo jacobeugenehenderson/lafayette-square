@@ -61,14 +61,20 @@ for (const [name, path] of [['runtime', RUNTIME]]) {
   ok.push(`${name} surface mounts <WaterSurface> (${path})`)
 }
 
-// ⛔ And the divergence, named rather than asserted away: while the Designer still
-// paints water flat, say so on every run so nobody rediscovers it by losing a day.
+// ⛔ AND THE RULE THAT ACTUALLY MATTERS: IN A SHOT, ONLY ONE SURFACE MAY DRAW
+// WATER. `MapLayers` runs in both modes; every non-Designer shot also mounts
+// <BakedGround/>, which draws the slab's water through the shared component. If
+// MapLayers draws its own water there too, they STACK — and both being
+// transparent with depthWrite:false, the result is not "the top one wins", it is
+// two meshes blending into something neither of them is. That is what made the
+// lake read as a flat swatch for an evening, and then vanish entirely when the
+// swatch was swapped for a second copy of the real material.
 const designer = strip(DESIGNER)
-if (/kind === 'water'/.test(designer) && /<WaterSurface\b/.test(designer)) {
-  ok.push('the Designer hands water to the shared component')
+if (/kind === 'water' && inShot\) return null/.test(designer)) {
+  ok.push('in a shot the slab owns the water — the Designer stands down (its swatch is correct in Designer mode)')
 } else {
-  console.log('  ⚠️  OWED: the Designer still paints water with a flat swatch — a water change ' +
-              'will NOT be visible in the Stage. Judge water in Preview (BakedGround) until this lands.')
+  fail.push(`⛔ ${DESIGNER} does not stand down for water in a shot. Two water meshes will stack: both transparent, both ` +
+            `depthWrite:false, and what draws is neither of them. Gate it on \`inShot\`.`)
 }
 
 for (const line of ok) console.log(`  ✅ ${line}`)
@@ -77,4 +83,4 @@ if (fail.length) {
   console.error(`\n⛔ ${fail.length} failure(s) — the two surfaces do not draw the same water.`)
   process.exit(1)
 }
-console.log(`\n✅ the runtime draws water with the shared component. (Designer hand-off: OWED, see above.)`)
+console.log(`\n✅ one surface draws the water in a shot, with the shared component.`)

@@ -963,20 +963,23 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // Survey suppress the ground; ignoring both would take the toggle away from the
         // operator, and the override is the product.
         if (!geo || hideIn[kind]) return null
-        // ⛔⛔ OWED, NOT DONE — THE DESIGNER STILL PAINTS WATER FLAT, AND THAT IS A
-        // KNOWN DIVERGENCE, not an oversight. `BakedGround` paints the same lake
-        // with the kit water shader (`WaterSurface.jsx`); this paints a colour
-        // swatch. So a water change is INVISIBLE in the Stage, which is where the
-        // operator judges — an evening was lost to exactly that, 2026-09-20.
-        // ⚠️ The hand-off was attempted and REVERTED: mounting <WaterSurface>
-        // here made the lake vanish entirely in Stage rather than improve. Both
-        // surfaces were confirmed to mount it (localStorage probe: BakedGround
-        // 35 groups incl. water:lake · MapLayers groundByKind=water), so the
-        // component reaches the tree and something about THIS surface's render
-        // path — order, fade, depth, or lighting — stops it drawing. Not yet
-        // diagnosed. ⛔ A swatch is worse than the real thing but far better than
-        // no lake, so the swatch stays until the cause is known.
-        // ▶ `docs/agents/AGENT-VALIDATION-SURFACES.md` §Two renderers.
+        // ⛔⛔ IN A SHOT, THE SLAB OWNS THE WATER — DO NOT DRAW IT TWICE.
+        // `inShot` is `!inDesigner`, and every non-Designer shot mounts
+        // <BakedGround/>, which draws the slab's water group through the kit
+        // material (`WaterSurface.jsx`). This surface was ALSO drawing it, as a
+        // flat colour swatch, stacked on top — so in the Stage the operator saw
+        // the SWATCH and never the shader, and an evening went into tuning a
+        // material that was covered up.
+        // ⭐ AND IT EXPLAINS THE FAILED HAND-OFF: mounting <WaterSurface> here
+        // did not replace the swatch, it added a SECOND transparent,
+        // depthWrite:false water mesh at nearly the same Y as the slab's. Two of
+        // them blending against each other is why the lake vanished rather than
+        // improved. The bug was never the material — it was drawing water twice.
+        // ⇒ In a shot: the slab draws it. In the DESIGNER (no BakedGround, plan
+        // view, flat authoring surface): this swatch is right, and the fill is
+        // what the operator wants there — the floor of the composition, not a
+        // simulation.
+        if (kind === 'water' && inShot) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />

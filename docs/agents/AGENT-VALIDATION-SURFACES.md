@@ -51,15 +51,18 @@ with the change.**
    enough: the per-frame uniform driving is half the material, and that is exactly
    the half that diverged. `WaterSurface.jsx` is the pattern.
 3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
-   ⚠️ **AND WATER IS NOT ACTUALLY UNIFIED YET.** The hand-off was attempted on
-   2026-09-20 and REVERTED: mounting the shared component in `MapLayers` made the
-   lake vanish in Stage rather than improve. Both surfaces were probed and DO
-   mount it, so the component reaches the tree — something about the Designer's
-   own render path (order, fade, depth, or lighting) stops it drawing, and the
-   cause is **not established**. ⛔ The swatch stays until it is: no lake is worse
-   than a flat lake. ▶ **Until then, judge water in PREVIEW, not Stage.**
-   **A new shared population needs its own line in that check**, or it is one grep
-   away from the same evening.
+   ⚠️ **AND THE SHARPER RULE, LEARNED THE EXPENSIVE WAY: in a SHOT, only ONE
+   surface may draw a given object.** `MapLayers` runs in both modes; every
+   non-Designer shot ALSO mounts `<BakedGround/>`. Both were drawing water — the
+   Designer's flat swatch stacked on the slab's real material — so the operator
+   saw the swatch and an evening went into tuning a shader that was covered up.
+   ⛔ And when the swatch was replaced by a second copy of the REAL material it
+   got worse, not better: two transparent `depthWrite:false` meshes at nearly the
+   same Y blend into something that is neither, and the lake vanished. **Two
+   renderers is not "one wins" — it is neither.**
+   ⭐ `MapLayers` now stands down for water when `inShot`. Its swatch is still
+   right in DESIGNER mode, where there is no slab and the operator wants a flat
+   floor to author against, not a simulation.
 
 ⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
 Preview mounts the production components; Stage mounts the Designer's. Sending an
