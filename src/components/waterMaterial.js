@@ -335,6 +335,20 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
   })
 
   mat.onBeforeCompile = (shader) => {
+    // ⛔⛔ IDEMPOTENT, AND THIS IS THE BUG THAT MADE THE LAKE VANISH. three may
+    // call onBeforeCompile more than once against a fragmentShader that has
+    // ALREADY been patched — and every patch below is a string `.replace()` whose
+    // replacement RE-EMITS the `#include` it matched. So a second pass matched
+    // that same include and appended the whole block again:
+    //     ERROR: 0:2212: 'wH' : redefinition
+    //     Fragment shader is not compiled.  VALIDATE_STATUS false
+    // ⇒ The material existed, the mesh was in the tree, the geometry was right —
+    // and NOTHING DREW, because the program never linked. That is the "no water
+    // layer, all skydome" Jacob reported, and it is why no camera angle and no
+    // shader tuning could ever have fixed it.
+    // ⭐ A material that patches by string replacement MUST be idempotent. The
+    // marker is a function only this file emits.
+    if (shader.fragmentShader.includes('wGlitterSlope')) return
     Object.assign(shader.uniforms, uniforms)
 
     // Vertex: pass world position to fragment
@@ -782,36 +796,21 @@ ${GLITTER_GLSL}
          totalEmissiveRadiance += pow(wSkyF, vec3(2.2)) * wF * wGl * wFleck * SKY_FLECK_GAIN;
 
          // ── LAYER 3: THE BODY. "Those much more pronounced 'radioactive but
-         // romantically so' ripples can follow the light sources." Same clip,
-         // tighter window and far more gain — and it FOLLOWS THE BODY, because
-         // the half-vector only reaches vertical near the body's own azimuth.
+         // romantically so' ripples can follow the light sources." (Jacob.)
+         // GLITTER IS THE TAIL OF THE SLOPE DISTRIBUTION: a facet reflects the
+         // body into your eye only if its normal sits on the HALF-VECTOR between
+         // the body and you, and almost none do. So the correct picture is a
+         // SPARSE scatter of very bright points — spreading that energy smoothly
+         // makes a radioactive sheet, removing the spread leaves nothing, and the
+         // THRESHOLD is the structure between those two. It is the physics, not a
+         // workaround, which is what Jacob was telling me both times he asked.
+         // ⭐ AND THE FALLOFF COMES FREE: away from the body's azimuth the
+         // half-vector tilts further from vertical than any wave slope reaches, so
+         // the sparkle count falls to zero by itself. The path, undrawn.
          vec3 wH = normalize(uKeyDir + wV);
          float wAlign = dot(vWaterN, wH);
          float wSparkle = smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, wAlign);
          totalEmissiveRadiance += uKeyColor * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
-
-         // THE GLINT, AND IT IS A THRESHOLD ON PURPOSE — Jacob asked for this
-         // twice ("clipping the effect alpha so only the highest highlights
-         // show") and I kept hearing it as a workaround. It is not. It is the
-         // physics, and it is why the surface kept coming out either radioactive
-         // or absent with nothing in between.
-         // GLITTER IS THE TAIL OF THE SLOPE DISTRIBUTION. A wave facet reflects
-         // the sun into your eye only if its normal sits on the HALF-VECTOR
-         // between the sun and you. Almost none do — that is the whole point —
-         // so the correct picture is a SPARSE scatter of very bright points, not
-         // a wash. Spreading that same energy smoothly over every pixel is what
-         // made it a radioactive sheet; removing the spread left nothing,
-         // because a smooth lobe over a 7 km surface IS nothing per pixel.
-         // The threshold keeps the few facets that actually align and discards
-         // the rest, which is what a clip does and what water does.
-         // AND THE FALLOFF COMES FREE: away from the body's azimuth the
-         // half-vector tilts further from vertical than any wave slope can
-         // reach, so the sparkle count drops to zero on its own. Dense toward
-         // the body, absent away from it — the path, without a path being drawn.
-         vec3 wH = normalize(uKeyDir + wV);
-         float wAlign = dot(vWaterN, wH);
-         float wSparkle = smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, wAlign);
-         totalEmissiveRadiance += uKeyColor * (wSparkle * GLINT_GAIN * uKeyUp * wF * min(uGlint, 1.0));
        }`
     )
 

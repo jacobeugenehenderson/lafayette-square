@@ -977,6 +977,11 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // ⇒ Cause NOT established. Until it is, this swatch is the only water the
         // Cartograph has, and a flat lake beats no lake.
         // ▶ `docs/agents/AGENT-VALIDATION-SURFACES.md` §Two renderers.
+        // ⛔ IN A SHOT THE SLAB OWNS THE WATER. Reverted twice before because the
+        // lake vanished — but the cause was never this gate: the kit water SHADER
+        // DID NOT COMPILE (a duplicated block, 'wH' : redefinition), so the mesh
+        // drew nothing and removing the swatch left bare sky. Fixed; gate restored.
+        if (kind === 'water' && inShot) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />

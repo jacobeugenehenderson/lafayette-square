@@ -244,6 +244,65 @@ if (!/wpWorld \* uWaveK/.test(shPond.fragmentShader)) {
   }
 }
 
+// ── THE EMITTED SHADER MUST COMPILE — NO DECLARATION TWICE ───────────────────
+// ⛔⛔ THE BUG THIS EXISTS FOR, AND IT COST AN ENTIRE EVENING. A rewrite left the
+// OLD glitter block in the source below the new one, so the emitted fragment
+// shader declared `wH`, `wAlign` and `wSparkle` twice:
+//     ERROR: 0:2212: 'wH' : redefinition
+//     Fragment shader is not compiled.  VALIDATE_STATUS false
+// ⭐ The material existed. The mesh was in the tree. The geometry was right. The
+// program NEVER LINKED, so nothing drew — and "no water, all skydome" was read as
+// a missing mesh, a wrong renderer, a camera angle and a Fresnel limit, in that
+// order, across four rounds. ⛔ NONE of those could ever have been fixed, because
+// the shader was not running.
+// ⚠️ AND THE GATE THAT SHOULD HAVE CAUGHT IT: every verification I ran said
+// "module LOADS ✓" and "term present ✓". A term being PRESENT says nothing about
+// it being present ONCE. Uniqueness is the property that matters for a string-
+// patched shader, and nothing was asserting it.
+{
+  const sh = emit(LAKE)
+  const dupes = []
+  // Every local this material declares in the fragment main(). A GLSL redefinition
+  // is a hard compile error, so one duplicate kills the whole surface.
+  // ⚠️ SCOPED BY INDENTATION, deliberately. A first version counted EVERY
+  // declaration and cried wolf on `q`, `hx`, `hz` — which are declared once per
+  // octave inside their own `{ }` blocks, where GLSL allows it. Only the
+  // material's own main-body locals (7- and 9-space indents, the two levels this
+  // file emits into main()) can actually collide.
+  const names = [...sh.fragmentShader.matchAll(/^( {7}| {9})(?:vec[234]|float|int) (\w+) =/gm)].map(m => m[2])
+  for (const decl of names) {
+    const n = names.filter(x => x === decl).length
+    if (n > 1 && !dupes.includes(decl)) dupes.push(`${decl} ×${n}`)
+  }
+  // ⛔⛔ HONEST LABEL: I COULD NOT MAKE THIS ONE FAIL ON DEMAND. Duplicating the
+  // `wH` declaration in the source did not trip it, so by this project's own rule
+  // — a check is not a check until it has been SEEN TO FAIL — this assertion is
+  // NOT YET TRUSTWORTHY. It is kept because the bug it targets cost an evening and
+  // a partial guard beats none, but ⚠️ DO NOT READ ITS GREEN AS EVIDENCE. The
+  // reliable guard against this bug is the one below it (idempotence), which IS
+  // mutation-tested, plus the browser console: a redefinition prints
+  // `VALIDATE_STATUS false` and names the line.
+  if (dupes.length) {
+    fail.push(`⛔ the emitted fragment shader declares the same name more than once: ${dupes.join(', ')}. ` +
+              `GLSL treats that as a redefinition ERROR — the program will not link and the water will draw NOTHING, ` +
+              `silently, looking exactly like a missing mesh.`)
+  } else {
+    ok.push('every declaration in the emitted shader is unique (⚠️ assertion not mutation-proven — see note)')
+  }
+  // And the patching must be idempotent: three may call onBeforeCompile against an
+  // already-patched shader, and every patch here re-emits the #include it matched.
+  const { material } = makeWaterMaterial({ extentDiag: LAKE })
+  const twice = { uniforms: {}, vertexShader: sh.vertexShader, fragmentShader: sh.fragmentShader }
+  material.onBeforeCompile(twice)
+  const wh = (twice.fragmentShader.match(/vec3 wH = normalize/g) || []).length
+  if (wh > 1) {
+    fail.push(`⛔ onBeforeCompile is NOT idempotent — a second call re-patched an already-patched shader ` +
+              `(${wh} copies of the glitter block). Same redefinition failure, arriving nondeterministically.`)
+  } else {
+    ok.push('onBeforeCompile is idempotent — a second pass cannot double-patch')
+  }
+}
+
 for (const line of ok) console.log(`  ✅ ${line}`)
 if (fail.length) {
   console.error('\n' + fail.join('\n'))
