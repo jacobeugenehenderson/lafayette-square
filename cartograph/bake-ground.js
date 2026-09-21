@@ -41,6 +41,7 @@ import { fileURLToPath } from 'url'
 import * as THREE from 'three'
 import { clipAllToStencil, LAND_USE_COLORS } from '../src/lib/ribbonsGeometry.js'
 import { writeIfChanged } from './io.js'
+import clipperLib from 'clipper-lib'
 import { assertBakeTarget } from './bake-target.js'
 import { requireExplicitMap } from './scene.js'
 import { differenceRings } from '../src/lib/buildBlockGeometryV2.js'
@@ -747,6 +748,82 @@ function triangulateAndRefine(outer, holes, refine, yLift = 0) {
 // Y per vertex = `yLift` (the group's coplanar separation, renderOrder × EPS);
 // the terrain-aware lift adds on top at runtime in the vertex shader (patchTerrain
 // perVertex via texture sampling at each vertex's world XZ).
+// ── Subtract overlays out of the face beneath them ──────────────────────────
+// ⛔⛔ WHY THIS EXISTS. A `wood` or `pitch` overlay is finely tessellated (~8.5 m
+// edges) and hugs the DEM; the land-use face UNDER it is coarse (22–33 m) and cuts
+// a chord. They were separated by 30 mm — but the face's own terrain-chord error at
+// that span is 17–29 mm median and 473–730 mm at p95, so the coarse face BULGES UP
+// THROUGH the fine overlay and the boundary tears. Measured overlaps that make it
+// unavoidable: wood ∩ agricultural 100%, pitch ∩ institutional 50%, ∩ agricultural 49%.
+//
+// ⭐ The fix is not a bigger gap and not a finer face — it is to stop them
+// overlapping. The ground under a wood IS wood; the face should not extend beneath
+// it. Subtracting costs NO triangles (the face gets smaller) and nothing to tune.
+// ⛔ The alternative — equalising tessellation so every layer bends alike — was
+// measured and rejected: huron at GROUND_REFINE_TOL_M 0.10 bakes 6,688,604 tris /
+// 119.5 MB against 1,593,373 / 29.6 MB, i.e. 4.2x the geometry, and 0.10 m is still
+// 3x looser than the 30 mm it must beat. See docs/briefs/BRIEF-subtract-the-overlays.md.
+//
+// ⚠️ Visually identical, and that was checked before building: the only
+// `transparent` on a ground material is the radial rim FADE, applied to every group
+// alike (BakedGround.jsx). No overlay is semi-transparent to reveal what is under
+// it, so wood OVER agricultural and wood REPLACING it render the same.
+const { Clipper: _Clipper, Paths: _Paths, Path: _Path, IntPoint: _IntPoint,
+        ClipType: _ClipType, PolyType: _PolyType, PolyFillType: _PolyFillType,
+        PolyTree: _PolyTree } = clipperLib
+const CLIP_SCALE = 1000            // integer clipper units per metre → 1 mm precision
+
+function _ringToPath(ring) {
+  const p = new _Path()
+  for (const [x, z] of ring) p.push(new _IntPoint(Math.round(x * CLIP_SCALE), Math.round(z * CLIP_SCALE)))
+  return p
+}
+function _pathToRing(path) {
+  const out = []
+  for (const pt of path) out.push([pt.X / CLIP_SCALE, pt.Y / CLIP_SCALE])
+  return out
+}
+
+/** faceItems: rings or {outer,holes}. overlayRings: bare rings to cut out. */
+function subtractOverlaysFromFace(faceItems, overlayRings) {
+  if (!overlayRings.length || !faceItems?.length) return faceItems
+  const clip = new _Paths()
+  for (const r of overlayRings) if (r && r.length >= 3) clip.push(_ringToPath(r))
+  if (!clip.length) return faceItems
+
+  const out = []
+  for (const it of faceItems) {
+    const outer = Array.isArray(it) ? it : it?.outer
+    const holes = Array.isArray(it) ? [] : (it?.holes || [])
+    if (!outer || outer.length < 3) continue
+    const subj = new _Paths()
+    subj.push(_ringToPath(outer))
+    for (const h of holes) if (h && h.length >= 3) subj.push(_ringToPath(h))
+    const c = new _Clipper()
+    c.AddPaths(subj, _PolyType.ptSubject, true)
+    c.AddPaths(clip, _PolyType.ptClip, true)
+    const tree = new _PolyTree()
+    // ⛔ EvenOdd on the subject so the face's EXISTING holes stay holes.
+    if (!c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
+      out.push(it)   // clipper refused — keep the original rather than drop ground
+      continue
+    }
+    // PolyTree: children of the tree are OUTERS, their children are HOLES, and a
+    // hole's children are outers again (an island inside a cut-out).
+    const walk = (node) => {
+      for (const child of node.Childs()) {
+        const ring = _pathToRing(child.m_polygon)
+        if (ring.length >= 3) {
+          out.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
+        }
+        for (const h of child.Childs()) walk(h)
+      }
+    }
+    walk(tree)
+  }
+  return out
+}
+
 function itemsToBuffers(items, { maxEdge = null, refine = null, yLift = 0 } = {}) {
   // Normalize to {outer, holes} so the rest of the function is uniform.
   const polys = []
@@ -989,8 +1066,38 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
     // itemsToBuffers normalizes both — holes are honored at triangulation
     // time so the lawn ribbon underneath a clipped face fill stays visible.
-    const items = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
+    let items = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
     if (!items || items.length === 0) continue
+
+    // ⭐⭐ CUT THE OVERLAYS OUT OF THE FACE. After this the face and the overlay do
+    // not overlap, so the coarse face can no longer bulge up through the fine
+    // overlay — the tearing at every wood / pitch / garden boundary. See
+    // subtractOverlaysFromFace() above for the measurements and the rejected
+    // alternative. ⛔ Faces only: an overlay cut from another overlay would change
+    // what the operator authored, and overlays DO legitimately overlap each other
+    // (parking_lot ∩ garden 12%), so they keep their own ascending slots.
+    if (kind === 'face') {
+      const cutters = []
+      for (const ok of LANDSCAPE_OVERLAY_KEYS) {
+        if (bakeLayerVis[groupLayerId('mat', ok)] === false) continue   // hidden → not drawn → don't cut
+        for (const r of (byMaterial.get(ok) || [])) {
+          const ring = Array.isArray(r) ? r : r?.outer
+          if (ring && ring.length >= 3) cutters.push(ring)
+        }
+      }
+      if (cutters.length) {
+        const before = items.length
+        items = subtractOverlaysFromFace(items, cutters)
+        if (!items.length) {
+          // ⛔ LOUD: the overlays swallowed the whole class. Possible and legal
+          // (a park entirely covered by pitches), but it silently deletes ground,
+          // so it must be said rather than discovered later as a hole in the map.
+          console.warn(`  ⚠️ [bake-ground] face:${key} — ${before} polygon(s) FULLY consumed by `
+            + `${cutters.length} overlay ring(s); this class now contributes no ground.`)
+          continue
+        }
+      }
+    }
     // Tiering: large soft land-use FILLS (faces) take the adaptive policy --
     // that is where the budget lives and where coarse triangles are least
     // visible. Landscape overlays keep the legacy fine uniform spacing
