@@ -5,6 +5,8 @@ status: OPEN
 dispatched: Act 0 landed 2026-09-20 (Kiln)
 written: 2026-07-20
 evict-when: sites 6 · 8 · 12 · 17 · B2-boundary all closed (15/16/18-21 done) AND node checks/claims-writers-name-the-scene.mjs is green
+  AND CLASS D (§1) HAS A DETECTOR — ⛔ the seven LS-sized constants were all found by accident, by people doing other work;
+  a class whose only discovery method is luck is not closed however many instances are ticked. The check is the deliverable, not the count.
 -->
 
 **Agent: FRESH.** ⛔ **Route first** (`CLAUDE.md`): `ORIENTATION.md` → `README.md §⭐ START HERE` →
@@ -28,7 +30,7 @@ the topic canon for the domain you're in. `INTAKE-CATALOGUE.md §0` (repo root) 
 | **B4** `SurveyorPanel` landmarks | retired 2026-09-19 via the `loadInstanceData` seam |
 | **5** `src/instance.js` unregistered look → LS identity | ⛔ **RULED CLOSED, NOT A DEFECT** — Jacob, 2026-09-20, **twice**: *"an alarm for a non-existent fire… if `?look` is unregistered that's basically tautological"* · *"When would/could this ever even happen? And who cares if it does?"* ⛔ **Do not re-open, and do not re-derive it from the general no-fallbacks doctrine** — the operator ruled this specific case. `ROADMAP A12` retired to match. |
 | **16** `bake-trees.js` bakes over LS · **18** `pack-impostor-ktx2` · **19** `17-fill-canopy-trees` | `8e90eeb7` — 16 guarded at the CLI entry; 18's `\|\| '--look=lafayette-square'` and 19's **dead refusal** (`\|\| 'lafayette-square'` above an `if (!SCENE)` that could never fire) both now exit 2. ⭐ **18 and 19 were found BY the widened check, not by reading** — which is the argument for §4. |
-| **15** `terrainExag` sized against LS | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
+| **15** `terrainExag` sized against LS ⭐ *(instance #2 of CLASS D — §1)* | `9378acfb` — now per-town authored in `design.json`, **kit default 1**; LS authors 1.5 and is byte-identical. ⚠️ **Every other town's terrain got shorter — intended, and it is the eye gate.** ⭐ The brief's stated "hard part" (a scene-blind module singleton in `elevation.js`) was already false: the sampler is rebuilt per look on terrain reload. |
 | **20** `generate-procedural` · **21** `generate-salon` roster write | `58a91317` — `syncLookRoster('lafayette-square', …)` was hardcoded, so publishing a variant edited **LS's `design.json`** whichever Look you were in. Both now require `--look` and exit 2. ⛔ **Ruled by Jacob: "there is no reason for LS to be the fallback here EITHER."** |
 
 ⭐ **The argument for Act 0, kept because it recurs:** those thirteen dead ones were closed by **six different
@@ -71,6 +73,45 @@ scene's name."*
   module and consulted in **every** scene, even when the town has its own.
 - **C — the BUILD direction.** The operator's action is silently redirected **onto** LS. Worse than
   A/B: those show a wrong map, **C overwrites a right one.**
+- ### ⭐⭐⭐ **D — LS-SIZED CAPACITY. A CONSTANT WHOSE VALUE HAPPENED TO BE CORRECT FOR TOWN #1.**
+  ⛔ **This class was named after SEVEN instances were found and fixed in ONE DAY (2026-09-20), all in
+  the render path, none of them found by looking for this class.** It is not absence and it is not a
+  substitution: nothing is missing, nothing stands in. **A number was chosen by looking at one town,
+  and it is simply wrong everywhere else** — so no grep for a fallback, a scene name or a `||` will
+  find it, which is why the original sweep of this brief has none of them.
+
+  | # | the constant | what it was, and what it meant on town #2 |
+  |---|---|---|
+  | 1 | the sun's **shadow frustum** | `±900` = LS's 892 m radius + 8. On a 3,539 m town **~73% of the map could not receive a shadow at any quality.** |
+  | 2 | **`V_EXAG = 1.5`** | sized against LS's ~35 m of relief, applied to altadena's **1,480 m** (site 15, already in §0) |
+  | 3 | the **PCSS penumbra radius** | a large authored value compensating for a coarse map that only existed at LS's frustum size |
+  | 4 | the penumbra's **UNIT — texels, not metres** | ⭐⭐ **the sharpest one, because the number was never edited.** It held still only while the frustum was fixed at one 0.4395 m/texel. The moment the frustum became the town's, **the same authored number meant a different real softness in every town** — huron's 23 became an **83 m smear** across 20 m buildings. |
+  | 5 | the **ground-layer epsilon** | 2 mm between layers: invisible on a small flat town, and on contoured ground **arithmetically unavailable at any value** (chord error to 1.6 m) |
+  | 6 | the **AO / FX map size** | a fixed 1024² over any span — 6.55 m/texel on huron, so a 4.5 m tree-shadow disc landed on **0.69 of a texel** and 18,616 splats smeared into grey |
+  | 7 | **`hasHero`** | true for `lafayette-square` only — and it gated the **playback driver**, so ⛔ **no poured town had a hero camera driver at all.** |
+
+  ### ⭐⭐ THE TELL IS ALWAYS THE SAME, AND IT IS WHAT MAKES THIS A CLASS RATHER THAN SEVEN BUGS
+  > **A constant with no unit, or a unit that is only stable because something ELSE is also fixed.**
+
+  ▶ **The three questions to ask of any literal in the render path, in this order:**
+  1. **What is this in?** Metres, texels, a fraction of *what*? ⛔ A number whose unit you cannot say
+     out loud is the defect — #4 is the whole argument, and it is the one that survives a code review
+     because nobody edits it.
+  2. **What did the person who chose it have on screen?** If the answer is "one town", it is data
+     about that town, not a kit constant. ⭐ **The fix is never a better constant** — it is to derive
+     it from the scene (#1, #3, #6), or to make it **the town's authored value with a NEUTRAL kit
+     default** (#2: default `1`, meaning *draw the ground at the height it is*; LS's 1.5 becomes LS's
+     data, and **the neutral default is the point, not a detail**).
+  3. **Does a FLAG name a capability or an object?** #7 read as *"does this town have a hero OBJECT"*
+     and gated *"may this town move its camera"*. ⛔ A flag whose name and whose single consumer
+     disagree is this class wearing a boolean.
+
+  ⛔ **AND THE SIGNATURE, WHICH IS WHY NO AGGREGATE FINDS IT:** every one of the seven is **invisible
+  on Lafayette Square and severe on a large or contoured town.** LS is the scene you would reach for
+  to prove the kit travels, and it is the one scene that cannot witness any of them. ⚠️ **NOT
+  MEASURED: how many more of these exist.** Seven were found in a day of render work that was not
+  looking for them; that says nothing about the size of the population, and a count here would be
+  invented. ▶ The honest next move is §4's move — **a check, not a sweep.**
 
 ## 2. What "fixed" means
 

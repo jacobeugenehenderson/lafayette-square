@@ -25,6 +25,15 @@ to have already seen this street has delivered nothing to town #2.
    the specific street, it is not a fix — it is an instance patch wearing a method's clothes.
    ⛔ A **skip list**, an enumerated exception table, a per-street override, "I measured it on LS
    and it's better" — each fails this and each has shipped here before.
+   ### ⭐⭐ AND ITS QUIETEST FORM: **A CONSTANT WHOSE VALUE HAPPENED TO BE CORRECT FOR TOWN #1.** No
+   fallback, no scene name, no `||`, **so no grep finds it** — and nobody edits it, so no review sees
+   it. **Seven in one day** (2026-09-20), all in the render path, not one found by looking: the shadow
+   frustum (`±900` = LS's 892 m radius) · `V_EXAG` · the PCSS radius · the penumbra's **UNIT** ·
+   the ground epsilon · the AO map size · `hasHero`, which gated the playback **DRIVER**, so no poured
+   town had a hero camera at all. ⭐ **THE TELL: a constant with no unit, or a unit that is only stable
+   because something ELSE is also fixed.** ⛔ The fix is never a better constant — derive it from the
+   scene, or make it the town's **authored** value with a **neutral** default. All seven: invisible on
+   LS, severe on a big or contoured town. ▶ `docs/briefs/BRIEF-ls-bleed-excision.md §1` Class D.
 2. **"What happens when this is WRONG on a town nobody has inspected?"** The only acceptable
    answer is *it fails loudly*. ⛔ **NO FALLBACKS.** A fallback converts a failure into a
    plausible-looking success, and a plausible-looking success in a kit is the worst outcome there
@@ -198,11 +207,10 @@ is the one unforgivable error). Active docs carry **LIVE doctrine + open state o
 - ⛔ **No net-new document** without retiring one, or without Jacob asking for it. If your instinct is to
   capture today in a new file, that instinct is the disease — put it in the commit message, or in a check.
 
-*(Coordinator depth: `docs/agents/BOZ.md §4`. ⚠️ That file has now been cut twice — 275→115 on 2026-08-06, then
-re-founded 2026-09-13 as a charter. The dated receipts are in `cartograph/_archive/BOZ-full-2026-09-13.md`;
-the older sweep is `BOZ-full-2026-08-06.md`. ⛔ **Don't write its line count here again** — this sentence
-claimed "115" while the file was 203, which is the expired-receipt failure this document warns about two
-sections up. `wc -l docs/agents/BOZ.md` is the answer.)*
+*(Coordinator depth: `docs/agents/BOZ.md §4`; cut twice and re-founded 2026-09-13 as a charter, dated receipts in
+`cartograph/_archive/BOZ-full-{2026-09-13,2026-08-06}.md`. ⛔ **Don't write its line count here again** — this
+sentence once claimed a figure the file had long since passed, which is this document's own expired-receipt
+failure, two sections up. ▶ `wc -l docs/agents/BOZ.md`.)*
 
 ## ⛔⛔ MEASURE BEFORE WRITING · ASK BEFORE BUILDING · STOP NARRATING *(Jacob, 2026-08-11)*
 > **"WRITING WRONG SHIT DOWN IS WHY YOU ARE FAILING."** ⛔ **Never write the EXPLANATION of a number — only the number.** One day's measurements were sound and **the prose laid on top of them was every single error**: five claims went onto the board as fact and were measured FALSE within the hour. **If the mechanism has not been measured, write "cause not established" and stop.**
