@@ -43,7 +43,7 @@ const cases = [
   { name: 'overhead   windy (8 m/s)',     viewPitchDeg: 55, wind: 8 },
   { name: 'grazing    (eye level at the shore)', viewPitchDeg: 6, wind: 0 },
 ]
-const FLECK_LO = 1.5, FLECK_HI = 2.6, FLECK_GAIN = 2.2, SKY_BASE = 0.9
+const FLECK_LO = 1.25, FLECK_HI = 2.15, FLECK_GAIN = 2.2, SKY_BASE = 0.9
 
 for (const c of cases) {
   const wind = Math.max(WIND_FLOOR_MPS, c.wind)

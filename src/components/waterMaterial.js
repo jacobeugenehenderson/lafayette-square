@@ -406,14 +406,16 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        // The clip. 1.0 would keep only facets brighter than the mean sky; above
        // 1 keeps fewer and brighter. This is the DUTY CYCLE knob in disguise —
        // raise it for sparser, sharper water; lower it toward the old wash.
-       // The tail of the slope distribution, in units of its own RMS: facets
-       // steeper than ~1.5 sigma start to catch, ~2.6 sigma are full flecks.
+       // The tail of the slope distribution, in units of its own RMS. ⭐ Opened
+       // up slightly on 2026-09-21 at Jacob's request — 1.5/2.6 → 1.25/2.15, and
+       // the body-glint window from 9.5° to 12.0° — so more of the tail survives
+       // the clip. Measured duty cycle 1.2% → 5.4% (checks/water-layer-budget.mjs).
        // That is a few percent of the surface — the duty cycle that reads as
        // sparkle rather than as noise.
-       const float FLECK_SIGMA_LO = 1.5;
-       const float FLECK_SIGMA_HI = 2.6;
+       const float FLECK_SIGMA_LO = 1.25;
+       const float FLECK_SIGMA_HI = 2.15;
        const float SKY_FLECK_GAIN = 2.2;
-       const float GLINT_COS_WIDE  = 0.98629;
+       const float GLINT_COS_WIDE  = 0.97815;
        const float GLINT_COS_TIGHT = 0.99905;
        const float GLINT_GAIN = 6.0;
        const float SWELL_STEEP = ${SWELL_STEEP.toFixed(4)};
@@ -810,7 +812,15 @@ ${GLITTER_GLSL}
          vec3 wH = normalize(uKeyDir + wV);
          float wAlign = dot(vWaterN, wH);
          float wSparkle = smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, wAlign);
-         totalEmissiveRadiance += uKeyColor * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
+         // ⭐ WHITE, BY REQUEST (Jacob) — AND IT IS ALSO THE HONEST COLOUR. A
+         // specular highlight of a source this bright clips to white long before
+         // the eye reads its hue; a warm sun still lays a WARM PATH, because the
+         // path's warmth comes from the broad reflected SKY around the glints,
+         // not from the glints themselves.
+         // ⛔ The key's LUMINANCE is kept, so the moon still glints far dimmer
+         // than the sun. It is the hue that is dropped, not the brightness.
+         float wKeyLum = dot(uKeyColor, vec3(0.2126, 0.7152, 0.0722));
+         totalEmissiveRadiance += vec3(wKeyLum) * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
        }`
     )
 
