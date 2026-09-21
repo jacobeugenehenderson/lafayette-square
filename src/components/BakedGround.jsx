@@ -21,7 +21,7 @@ import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
-import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind } from './waterMaterial'
+import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind, maxRoughnessForWind } from './waterMaterial'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -495,6 +495,7 @@ function WaterMesh({ group, geometry }) {
     // calm one is closer to a mirror. Not authored, not tuned: tracked.
     const sky = useSkyState.getState()
     uniforms.uSlopeScale.value = slopeScaleForWind(sky.windSpeedMs)
+    uniforms.uMaxRoughness.value = maxRoughnessForWind(sky.windSpeedMs)
     // `windDirDeg` is meteorological — degrees the wind blows FROM — so the wave
     // trains travel toward the opposite bearing. Compass bearing → world XZ with
     // −Z as north, the same convention celestialToPosition uses.

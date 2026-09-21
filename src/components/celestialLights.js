@@ -116,6 +116,11 @@ export function bodyLights({ sunAlt, sunAz, moonAlt, moonAz, moonIllumFraction }
   const sunPos = celestialToPosition(sunAz + Math.PI, sunAlt, LIGHT_RADIUS, new THREE.Vector3(), SUN_LIGHT_MIN_Y)
   const moonPos = celestialToPosition(moonAz + Math.PI, Math.max(MOON_LIGHT_MIN_ALT, moonAlt), LIGHT_RADIUS, new THREE.Vector3())
 
+  // ⭐ `body` travels with the light so the consumer can hand it the OPERATOR
+  // CHANNEL THAT BELONGS TO IT — `dirSun` follows the sun whether or not the sun
+  // happens to be the key right now, and `dirMoon` follows the moon. Keying the
+  // channels to key/counter instead would make a knob mean a different light at
+  // different hours, which is the unit confusion this project keeps paying for.
   const sun = { body: 'sun', position: sunPos, intensity: sunIntensity(sunAlt), color: sunColor(sunAlt) }
   const moon = { body: 'moon', position: moonPos, intensity: moonIntensity(moonAlt, moonIllumFraction, sunAlt), color: '#9ab8e0' }
 

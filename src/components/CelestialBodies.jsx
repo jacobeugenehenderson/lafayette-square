@@ -60,6 +60,12 @@ const LONGITUDE = INSTANCE.geography.lon
 // ⭐ LIGHT_RADIUS + celestialToPosition now live in `celestialLights.js` — the
 // pure module the sky rig and `checks/claims-the-key-light-is-a-real-body.mjs`
 // share, so the check sweeps the SAME derivation the scene renders from.
+// ⭐ SAME ENERGY, DIFFERENT DISTRIBUTION. A directional light delivers
+// intensity × max(0, N·L), which averaged over all surface orientations is 1/4;
+// a hemisphere delivers ≈ intensity × 1 to an up-facing surface. So a hemisphere
+// standing in for a directional carries 1/4 of its number to deliver the same
+// light. ⛔ Derived, not dialled — the only number the fill swap introduces.
+const HEMI_FOR_DIRECTIONAL = 0.25
 const SUN_VISUAL_RADIUS = 50000 // visual orb — far enough to eliminate parallax
 const MOON_RADIUS = 50000
 export const SKY_RADIUS = 55000
@@ -306,17 +312,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
 
 // The body that is not currently the key: a real light at a real position, with
 // no shadow map. See the mount site for why it casts nothing and carries no knob.
-function CounterBodyLight({ lightPosition, color, intensity }) {
-  return (
-    <directionalLight
-      position={lightPosition.toArray()}
-      intensity={intensity}
-      color={color}
-    />
-  )
-}
-
-function SecondaryOrb({ position, color, intensity, intensityMulRef }) {
+function CounterBodyLight({ lightPosition, color, intensity, intensityMulRef }) {
   const ref = useRef()
   useFrame(() => {
     if (ref.current) ref.current.intensity = intensity * (intensityMulRef?.current ?? 1)
@@ -324,9 +320,36 @@ function SecondaryOrb({ position, color, intensity, intensityMulRef }) {
   return (
     <directionalLight
       ref={ref}
-      position={position.toArray()}
+      position={lightPosition.toArray()}
       intensity={intensity}
       color={color}
+    />
+  )
+}
+
+// The stylistic FILL — the cool bounce opposite the key. ⛔ IT IS NOT A BODY, so
+// like the night-fill floor it is a HEMISPHERE and not a directional: it has a
+// job (lift the shadow side) and no business laying a reflection on water.
+// ⭐⭐ THE RULE THIS COMPLETES, AND IT IS WORTH STATING ONCE: ONLY THE SUN AND THE
+// MOON HAVE A SPECULAR LOBE. Every other light in this rig is irradiance-only.
+// That is what makes a bright path on the water evidence of a real body instead
+// of set dressing — and it is asserted by
+// `checks/claims-the-key-light-is-a-real-body.mjs`.
+// ⚠️ Its position used to swing to the ANTI-SUN, which on water would have been
+// worse than the static lamp: a reflection sliding the WRONG WAY as the sun
+// moved. The `position` prop is kept in the signature because callers still
+// compute it and it still documents the intent; it no longer reaches a light.
+function SecondaryOrb({ color, intensity, intensityMulRef }) {
+  const ref = useRef()
+  useFrame(() => {
+    if (ref.current) ref.current.intensity = intensity * HEMI_FOR_DIRECTIONAL * (intensityMulRef?.current ?? 1)
+  })
+  return (
+    <hemisphereLight
+      ref={ref}
+      color={color}
+      groundColor="#2a2a33"
+      intensity={intensity * HEMI_FOR_DIRECTIONAL}
     />
   )
 }
@@ -1332,8 +1355,8 @@ function CelestialBodies({
       moonAlt, moonAz: moonPos.azimuth,
       moonIllumFraction: moonIllum.fraction,
     })
-    primary = { lightPosition: bodies.key.position, color: bodies.key.color, intensity: bodies.key.intensity }
-    const counter = { lightPosition: bodies.counter.position, color: bodies.counter.color, intensity: bodies.counter.intensity }
+    primary = { body: bodies.key.body, lightPosition: bodies.key.position, color: bodies.key.color, intensity: bodies.key.intensity }
+    const counter = { body: bodies.counter.body, lightPosition: bodies.counter.position, color: bodies.counter.color, intensity: bodies.counter.intensity }
 
     if (isNight) {
       // Smooth blend over sunAlt -0.12 to -0.25 — no hard boundary
@@ -1447,12 +1470,12 @@ function CelestialBodies({
   // PrimaryOrb / SecondaryOrb handle their own multipliers internally.
   const ambientRef = useRef()
   const hemiRef = useRef()
-  // Refs for the 3 night-fill floors (white · warm · fill-directional) so the
+  // Refs for the 3 night-fill floors (white · warm · hemisphere) so the
   // operator's Ambient knob (ambientMulRef) reaches them too — they used to be
   // hardcoded floors that ignored every knob (Jacob 2026-06-27, the un-zeroable night).
   const floorWhiteRef = useRef()
   const floorWarmRef  = useRef()
-  const floorDirRef   = useRef()
+  const floorFillRef   = useRef()
   const ambientBase = (lighting.ambient?.intensity || 0.5) * (1 + cc * 0.4)
   // Hemi is the SKY-COLOR fill lever (Jacob 2026-06-29: "desaturated surfaces
   // hit with soft saturated light from the sky colors"). Strengthened from the
@@ -1468,7 +1491,7 @@ function CelestialBodies({
     const aMul = ambientMulRef.current
     if (floorWhiteRef.current) floorWhiteRef.current.intensity = 0.45 * aMul
     if (floorWarmRef.current)  floorWarmRef.current.intensity  = 0.15 * lighting.nightFactor * aMul
-    if (floorDirRef.current)   floorDirRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * aMul
+    if (floorFillRef.current)   floorFillRef.current.intensity   = (0.12 - lighting.nightFactor * 0.06) * HEMI_FOR_DIRECTIONAL * aMul
   })
 
   if (debugLevel >= 3) return null
@@ -1499,7 +1522,21 @@ function CelestialBodies({
         groundColor={lighting.sky?.bottom || '#665544'}
         intensity={hemiBase}
       />}
-      {debugLevel < 1 && <PrimaryOrb {...primaryWeathered} intensityMulRef={dirSunMulRef} />}
+      {/* ⭐⭐ THE CHANNEL FOLLOWS THE BODY, NOT THE SLOT (Jacob, 2026-09-20: "I
+          don't think we should have lights that don't have operator facing
+          knobs"). `dirSun` scales the SUN wherever it is in the rig and `dirMoon`
+          scales the MOON — so every light in this scene has exactly one operator
+          channel and no light is unreachable.
+          ⭐ It also makes the AUTHORED CURVES MEAN WHAT THEY ALWAYS LOOKED LIKE
+          THEY MEANT. huron authors dirSun {noon 1.5 … dusk 0} and dirMoon {dawn 0,
+          sunset 0, dusk 1, night 2} — that IS "sun down at dusk, moon up at
+          night", written against a rig that had only one body light and a fill
+          standing in for the other. The curves now drive the bodies they name.
+          ⚠️ NIGHT WILL LOOK DIFFERENT and that is the point of the change, not a
+          side effect: dirMoon's night value now lands on the real moon instead of
+          on a fill. Eye-gate night before trusting it. */}
+      {debugLevel < 1 && <PrimaryOrb {...primaryWeathered}
+        intensityMulRef={lighting.primary.body === 'moon' ? dirMoonMulRef : dirSunMulRef} />}
       {/* ⭐⭐ THE COUNTER BODY — the one that is NOT currently the key. This is the
           whole "two glints" feature and it is four lines: three's PBR evaluates a
           specular lobe per light, and waterMaterial already hands it a wave
@@ -1512,13 +1549,41 @@ function CelestialBodies({
           town against the two slots that exist today, and quietly repointing one
           would rewrite what an operator already tuned. Giving the counter its own
           knob is a third authoring model — that shape is Boz's to decide once. */}
-      {debugLevel < 1 && <CounterBodyLight {...counterWeathered} />}
-      {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={dirMoonMulRef} />}
-      {debugLevel < 2 && <directionalLight
-        ref={floorDirRef}
-        position={[0, 100, -400]}
-        intensity={0.12 - lighting.nightFactor * 0.06}
+      {debugLevel < 1 && <CounterBodyLight {...counterWeathered}
+        intensityMulRef={lighting.counter.body === 'moon' ? dirMoonMulRef : dirSunMulRef} />}
+      {/* The stylistic fill rides AMBIENT with the other irradiance-only floors —
+          it stopped being a body-shaped light when it became a hemisphere, and
+          `dirMoon` now belongs to the actual moon. */}
+      {debugLevel < 1 && <SecondaryOrb {...lighting.secondary} intensityMulRef={ambientMulRef} />}
+      {/* ⭐⭐ THE NIGHT-FILL FLOOR — A HEMISPHERE, NOT A DIRECTIONAL, AND THE KIND
+          OF LIGHT IS THE WHOLE POINT. This shipped as
+          `<directionalLight position={[0, 100, -400]}>`: a fill light nailed due
+          north at a fixed elevation, in every town, for all time.
+          ⛔ ON LAND IT WAS A HARMLESS FILL. ON WATER IT WAS A LIE. A directional
+          light has a specular lobe, so the lake reflected it — and because it
+          never moved, the reflection never moved either. That is the hotspot that
+          sat in the middle of the water at every hour: not the sun, not the moon,
+          a studio lamp parked where no celestial body can ever be (huron's lake is
+          NORTH; at 41°N the sun and moon are always SOUTH). Jacob found it by
+          scrubbing the timeline and watching the reflection refuse to travel:
+          "when I move the camera, the parallax is great. It's when I scrub the
+          timeline: the hotspot should move L <> R (E <> W)."
+          ⭐ THE FIX IS THE LIGHT TYPE. In three, `hemisphereLight` and
+          `ambientLight` contribute IRRADIANCE ONLY — they have no specular lobe
+          at all — so the fill arrives exactly as before and the phantom
+          reflection becomes impossible rather than merely dim. Nothing is
+          subtracted from the towns; the same light is delivered by something that
+          cannot be mistaken for a body.
+          ⚠️ THE ONE REAL DIFFERENCE, NAMED: a hemisphere has no azimuth, so
+          surfaces no longer get the slight north-side modelling the old vector
+          gave them. The intensity is scaled by HEMI_FOR_DIRECTIONAL so the energy
+          delivered is the same; the distribution is flatter. ▶ Eye-gate night in
+          two towns before trusting it. */}
+      {debugLevel < 2 && <hemisphereLight
+        ref={floorFillRef}
         color={lerpColor('#ffeedd', '#5577aa', lighting.nightFactor)}
+        groundColor={lerpColor('#6b5a4a', '#22304a', lighting.nightFactor)}
+        intensity={(0.12 - lighting.nightFactor * 0.06) * HEMI_FOR_DIRECTIONAL}
       />}
     </>
   )

@@ -200,6 +200,91 @@ else if (sunVis / LIGHT_RADIUS < 10) {
   ok.push(`SUN_VISUAL_RADIUS is ${(sunVis / LIGHT_RADIUS).toFixed(0)}× the light radius — far enough to kill parallax`)
 }
 
+// ── ONLY THE SUN AND THE MOON MAY HAVE A SPECULAR LOBE ──────────────────────
+// ⭐⭐ THE GAP THIS CLOSES, AND IT IS THE ONE THAT ACTUALLY BIT. Everything above
+// asserts the KEY light is a real body — and a phantom walked straight past it,
+// because it was never the key. `floorDir`, a `<directionalLight>` nailed at
+// `[0, 100, -400]`, was pure fill on land and a LIE on water: a directional light
+// has a specular lobe, so the lake reflected it, and because it never moved the
+// reflection never moved. Every "sun path" screenshot taken before 2026-09-20 was
+// that lamp. ⛔ Worse was the stylistic fill, which swung to the ANTI-SUN — a
+// reflection that would slide the WRONG WAY as the sun crossed the sky.
+//
+// ⭐ THE INVARIANT, and it is what makes a bright path on water EVIDENCE: in
+// three, `hemisphereLight` and `ambientLight` are irradiance-only — no lobe. So
+// every fill is one of those, and every `<directionalLight>` must take its
+// position from the body-light contract (`lightPosition`, which comes from
+// `bodyLights`). A directional light positioned any other way is a fake body.
+// ⛔ NOT AN ALLOW-LIST OF KNOWN-GOOD LIGHTS — that would be an exception table,
+// and the next fill someone adds would be exempt by omission. The rule is on the
+// SHAPE of the mount, so a new phantom fails on arrival.
+{
+  const mounts = [...cbCode.matchAll(/<directionalLight\b([\s\S]*?)\/>/g)].map(m => m[1])
+  if (!mounts.length) {
+    fail.push(`⛔ found no <directionalLight> mounts in ${CB} — the guard is blind; fix the parse before trusting a PASS.`)
+  } else {
+    const phantoms = mounts.filter(a => !/position=\{lightPosition\.toArray\(\)\}/.test(a))
+    if (phantoms.length) {
+      for (const a of phantoms) {
+        const pos = (a.match(/position=\{([^}]*)\}/) || [, '(no position prop)'])[1]
+        fail.push(`⛔ ${CB}: a <directionalLight> is positioned from \`${pos.trim()}\` rather than from the ` +
+                  `body-light contract. A directional light HAS A SPECULAR LOBE, so water will reflect it and ` +
+                  `an operator will read that reflection as the sun. Fills belong on hemisphereLight/ambientLight, ` +
+                  `which are irradiance-only.`)
+      }
+    } else {
+      ok.push(`all ${mounts.length} directional light(s) take their position from a real body — every other light in the rig is irradiance-only, so a reflection on water can only be the sun or the moon`)
+    }
+  }
+}
+
+// ── EVERY LIGHT HAS AN OPERATOR CHANNEL ─────────────────────────────────────
+// ⭐⭐ JACOB'S RULE, 2026-09-20: "I don't think we should have lights that don't
+// have operator facing knobs." ⛔ A light nobody can reach is a light nobody can
+// turn down when it is wrong — and this rig has just been through two of them:
+// the night-fill floor that laid a fake sun path on every lake, and the fill that
+// swung to the anti-sun. Both were unreachable, so the only remedy was a code
+// change. ⭐ A knob would have let an operator kill either one the evening they
+// noticed it.
+// ⛔ AND THE CHANNEL FOLLOWS THE BODY, NOT THE SLOT: `dirSun` scales the sun
+// whether or not it is the key right now. A knob whose meaning depends on the
+// hour is the unit confusion this project keeps paying for.
+{
+  // ⛔ RAW MOUNTS ARE HALF THE POPULATION. A first version of this check scanned
+  // only `<directionalLight>`/`<hemisphereLight>`/`<ambientLight>` and PASSED
+  // when the channel was deleted from `<CounterBodyLight>`'s call site — because
+  // the raw light inside that component still *accepted* an `intensityMulRef`.
+  // It asserted the component COULD take a channel, not that it WAS GIVEN one.
+  // ⭐ So: find every component in this file that renders a light, and require
+  // every mount of it to hand one in.
+  const lightComponents = [...cbCode.matchAll(/function\s+(\w+)\s*\([\s\S]*?\n\}/g)]
+    .filter(m => /<(ambientLight|hemisphereLight|directionalLight)\b/.test(m[0]))
+    .map(m => m[1])
+  const componentMounts = lightComponents.flatMap(name =>
+    [...cbCode.matchAll(new RegExp(`<${name}\\b([\\s\\S]*?)\\/>`, 'g'))].map(m => [, name, m[1]]))
+  const mounts = [...cbCode.matchAll(/<(ambientLight|hemisphereLight|directionalLight)\b([\s\S]*?)\/>/g), ...componentMounts]
+  if (!lightComponents.length || mounts.length < 4) {
+    fail.push(`⛔ parsed ${mounts.length} light mount(s) and ${lightComponents.length} light-bearing component(s) in ${CB} — the guard is blind; fix the parse before trusting a PASS.`)
+  } else {
+    const unreachable = []
+    for (const [, kind, attrs] of mounts) {
+      if (/intensityMulRef=/.test(attrs)) continue          // the channel is handed in directly
+      const refName = (attrs.match(/ref=\{(\w+)\}/) || [])[1]
+      // else the mount must be driven somewhere by a channel ref (…MulRef) or the
+      // Ambient alias the night floors share.
+      const driven = refName && new RegExp(`${refName}\\.current\\.intensity\\s*=[^\\n]*(MulRef|aMul)`).test(cbCode)
+      if (!driven) unreachable.push(`<${kind}${refName ? ` ref={${refName}}` : ''}>`)
+    }
+    if (unreachable.length) {
+      fail.push(`⛔ ${CB}: ${unreachable.length} light(s) have NO operator channel — ${unreachable.join(', ')}. ` +
+                `A light nobody can reach can only be fixed by a code change, which is how a fake sun path ` +
+                `survived on every lake in every town.`)
+    } else {
+      ok.push(`all ${mounts.length} light mounts (incl. ${lightComponents.join(', ')}) carry an operator channel (dirSun follows the sun, dirMoon the moon, the irradiance-only fills ride Ambient/Hemi)`)
+    }
+  }
+}
+
 for (const line of ok) console.log(`  ✅ ${line}`)
 if (fail.length) {
   console.error('\n' + fail.join('\n'))

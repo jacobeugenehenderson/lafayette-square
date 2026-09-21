@@ -188,6 +188,21 @@ function unitFieldRmsSlope() {
 const UNIT_RMS_SLOPE = unitFieldRmsSlope()
 
 /**
+ * The widest the specular lobe may ever be filtered to.
+ *
+ * ⭐ A pixel-averaged highlight converges to the wave-slope distribution and
+ * STOPS there — it cannot be broader than the thing it is averaging. For a GGX
+ * lobe the microfacet parameter alpha ≈ √2·sigma, and three's `roughnessFactor`
+ * is perceptual roughness r with alpha = r², hence the square root. ⛔ This is
+ * the ceiling on antialiasing only; it never makes a surface rougher, and at
+ * glint 0 the normal is constant so nothing here fires at all.
+ */
+export function maxRoughnessForWind(windMps) {
+  const sigma = Math.sqrt(coxMunkSlopeVariance(windMps))
+  return Math.min(1, Math.sqrt(Math.SQRT2 * sigma))
+}
+
+/**
  * The amplitude the glitter stack must be driven at so its slope variance equals
  * the real ocean's at this wind speed. ⭐ Exported so the check can assert the
  * surface actually lands on Cox–Munk rather than near it.
@@ -253,6 +268,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
     // with no weather attached is still water and not glass.
     uWindDir:       { value: new THREE.Vector2(0.88, 0.47) },
     uSlopeScale:    { value: slopeScaleForWind(DEFAULT_WIND_MPS) },
+    uMaxRoughness:  { value: maxRoughnessForWind(DEFAULT_WIND_MPS) },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -296,6 +312,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
        uniform float uGlint;
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
+       uniform float uMaxRoughness;
        uniform float uDisturbAmp;
        uniform vec2  uDisturbCenter;
        uniform float uDisturbInner;
@@ -468,7 +485,20 @@ ${GLITTER_GLSL}
        {
          vec3 wdx = dFdx(vWaterN), wdy = dFdy(vWaterN);
          float wVar = dot(wdx, wdx) + dot(wdy, wdy);
-         roughnessFactor = min(1.0, sqrt(roughnessFactor * roughnessFactor + SPEC_AA_K * wVar));
+         // ⛔⛔ THE CEILING IS NOT 1.0, AND CLAMPING TO 1.0 IS WHY THE HORIZON WENT
+         // DEAD. At the far end of a 7 km lake one pixel spans hundreds of metres
+         // of wave field, so neighbouring pixels' normals are completely
+         // uncorrelated and wVar is enormous — this saturated roughness to 1.0,
+         // which is a nearly LAMBERTIAN surface. ⇒ the sun's reflection spread to
+         // nothing at exactly the distance where a sunrise path should be
+         // brightest, and jittered in and out as the sampling shifted.
+         // ⭐ THE PHYSICAL CEILING: averaging over a pixel converges to the FULL
+         // WAVE-SLOPE DISTRIBUTION and cannot go past it — a filtered lobe is
+         // never wider than the distribution it filters. That width is Cox &
+         // Munk's sigma, the same number driving uSlopeScale, so the ceiling is
+         // derived from the wind rather than picked. Far water becomes a coherent
+         // glossy shimmer band, which is what a real lake does at the horizon.
+         roughnessFactor = min(uMaxRoughness, sqrt(roughnessFactor * roughnessFactor + SPEC_AA_K * wVar));
        }`
     )
 
