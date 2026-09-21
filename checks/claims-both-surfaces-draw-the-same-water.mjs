@@ -61,19 +61,25 @@ for (const [name, path] of [['runtime', RUNTIME]]) {
   ok.push(`${name} surface mounts <WaterSurface> (${path})`)
 }
 
-// ⚠️ THE DESIGNER'S SWATCH IS STILL THERE, AND GATING IT IS NOT THE FIX. Tried
-// twice; both times the lake went to bare sky, because the slab's water mesh does
-// not appear in the Cartograph even though `GroundMeshes` demonstrably renders
-// there. ⛔ And it is NOT "drawing but faint": from overhead the reflection layers
-// are ~2% but the BODY is 98%, so a faint lake still reads as a DARK SURFACE —
-// what is on screen is SKY. Cause not established.
+// ⛔ IN A SHOT, ONLY ONE SURFACE MAY DRAW THE WATER. `MapLayers` runs in both
+// modes; a shot also mounts <BakedGround/>, which draws the slab's water group
+// through the shared component. If MapLayers draws its own there too, its OPAQUE
+// swatch simply covers the shader and the operator judges the swatch.
+//
+// ⚠️ THIS ASSERTION WAS INVERTED FOR SEVERAL HOURS AND THE STORY IS THE POINT.
+// The gate was applied, the lake went to bare sky, and I reverted — twice —
+// writing "do not re-apply without a cause" into this file as doctrine. The
+// cause was never the gate: the kit water SHADER DID NOT COMPILE (a duplicated
+// block, `'wH' : redefinition`), so the mesh drew nothing and taking the swatch
+// away left an empty lake. ⭐ A check that encodes a wrong diagnosis is worse
+// than no check — it would have stopped the next person applying the right fix.
+// Corrected once the shader linked and the water appeared.
 const designer = strip(DESIGNER)
 if (/kind === 'water' && inShot\) return null/.test(designer)) {
-  fail.push(`⛔ ${DESIGNER} gates water on inShot. That has been tried twice and the Cartograph's lake went to bare ` +
-            `sky both times — the slab's water mesh does not appear there. Do not re-apply without a cause.`)
+  ok.push('in a shot the slab owns the water — the Designer stands down (its swatch is right in Designer mode)')
 } else {
-  console.log('  ⚠️  OWED: the Cartograph paints water with a flat swatch because the slab\'s water mesh does not ' +
-              'draw there. Cause NOT established. A water change is therefore not visible in the Cartograph.')
+  fail.push(`⛔ ${DESIGNER} does not stand down for water in a shot. Its opaque swatch covers the slab's water and ` +
+            `the operator ends up judging a flat colour instead of the shader.`)
 }
 
 for (const line of ok) console.log(`  ✅ ${line}`)
@@ -82,4 +88,4 @@ if (fail.length) {
   console.error(`\n⛔ ${fail.length} failure(s) — the two surfaces do not draw the same water.`)
   process.exit(1)
 }
-console.log(`\n✅ the runtime draws water with the shared component; the Cartograph's swatch is OWED work.`)
+console.log(`\n✅ one surface draws the water in a shot, with the shared component.`)

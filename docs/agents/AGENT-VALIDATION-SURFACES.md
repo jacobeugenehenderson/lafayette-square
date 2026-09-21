@@ -63,11 +63,20 @@ with the change.**
    ▶ For this rig: causation — a slab-only re-bake showing up in Stage proves Stage
    consumes the slab. Network — a shot fetches `baked/<look>/ground.colormap.png`,
    which is loaded *inside* `GroundMeshes`.
-   ⛔ **STILL UNSOLVED, and do not "fix" it by gating the Designer's swatch:** the
-   slab's water mesh does not appear in the Cartograph even though `GroundMeshes`
-   renders there. Gating the swatch was tried twice and the lake went to bare sky
-   both times. It is not the 2% Fresnel story either — a faint lake still reads as
-   a dark surface, and what is on screen is SKY.
+   ✅ **RESOLVED, and the resolution is the biggest lesson of the night.** The
+   slab's water appeared to be missing in the Cartograph, and four explanations
+   were built on that — a wrong renderer, a stacking bug, a dispatch that never
+   ran, a 2% Fresnel cap. **All four were diagnoses of a shader that was not
+   running.** The kit water fragment shader had a duplicated block
+   (`'wH' : redefinition`), so the program never linked and the material drew
+   NOTHING — which looks exactly like a missing mesh and is silent in every
+   JS-side check.
+   ⛔ **WHEN A SURFACE DRAWS NOTHING, READ THE BROWSER CONSOLE BEFORE YOU REASON
+   ABOUT RENDERERS, CAMERAS OR PHYSICS.** A non-linking program names its own
+   failing line; six rounds of inference did not. And note what the JS checks said
+   throughout: *"module LOADS ✓"*, *"term present ✓"*. **A module loading says
+   nothing about its GLSL linking, and a term being present says nothing about it
+   being present ONCE.**
 
 ⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
 Preview mounts the production components; Stage mounts the Designer's. Sending an
