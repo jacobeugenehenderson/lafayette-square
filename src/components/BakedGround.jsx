@@ -228,6 +228,19 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
     if (poolmap) {
       poolmap.colorSpace = THREE.NoColorSpace
       poolmap.flipY = false
+      // ⭐ NO MIPMAPS — measured, not assumed. This map is sized to ~1.6 m/texel
+      // (bake-ground-ao derives it from the town span), and at hero/browse
+      // distances a screen pixel covers ~0.22 m of ground: the texture is
+      // MAGNIFIED, so the mip chain is never sampled and is pure memory. On huron
+      // it went 4096² = 64 MB → 85 MB with mips, and the FX map alone was 60% of
+      // the ground bundle.
+      // ⚠️ THE ONE CASE IT COSTS: framing the ENTIRE town at once puts a pixel at
+      // ~2.4 m against a 1.64 m texel — mild minification, where mips would have
+      // helped. LinearFilter keeps that a soft blur rather than sparkle. If a
+      // whole-town shot ever shimmers on the ground, this is the line.
+      poolmap.generateMipmaps = false
+      poolmap.minFilter = THREE.LinearFilter
+      poolmap.magFilter = THREE.LinearFilter
       poolmap.needsUpdate = true
       // Share the FX map (G shadow / R pool) so the tree trunk blend can take
       // the combined effective ground colour, matching grassMaterial.
