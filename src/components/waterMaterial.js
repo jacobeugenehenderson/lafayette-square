@@ -371,6 +371,16 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        // count as a glint. Sized off the wave-slope distribution itself: at Cox &
        // Munk's ~9.6 deg RMS, facets beyond ~10 deg off the half-vector are the
        // rare tail, which is exactly what should sparkle.
+       // The broad wash is deliberately a MINORITY of the reflection — most of
+       // it is meant to arrive as flecks, which is what makes water read as a
+       // surface rather than a painted plane.
+       const float SKY_BASE = 0.45;
+       // The clip. 1.0 would keep only facets brighter than the mean sky; above
+       // 1 keeps fewer and brighter. This is the DUTY CYCLE knob in disguise —
+       // raise it for sparser, sharper water; lower it toward the old wash.
+       const float SKY_CLIP = 1.06;
+       const float SKY_CLIP_SOFT = 0.05;
+       const float SKY_FLECK_GAIN = 1.8;
        const float GLINT_COS_WIDE  = 0.98629;
        const float GLINT_COS_TIGHT = 0.99905;
        const float GLINT_GAIN = 6.0;
@@ -696,7 +706,40 @@ ${GLITTER_GLSL}
          // three's own specular already evaluates from it. One flat evaluation,
          // no fifth power of noise.
          float wF = waterFresnel(wFlatN, wV);
-         totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * min(uGlint, 1.0);
+         float wGl = min(uGlint, 1.0);
+
+         // ── LAYER 1: the broad wash. The mean surface reflecting the mean sky.
+         // Kept LOW — on its own this is the flat, dead sheet.
+         totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * wGl * SKY_BASE;
+
+         // ── LAYER 2: THE SKY, CLIPPED. Jacob's design, and it is the piece I
+         // had missing: "if we're reflecting the sky we can just clip that, no?"
+         // ⭐ THE DIFFERENCE BETWEEN NOISE AND SPARKLE IS DUTY CYCLE. Per-facet
+         // sky reflection with no clip lights ~half the pixels — that is the
+         // salt-and-pepper. Smoothing it away lit none — that is the dead sheet.
+         // Clipping keeps the few facets that catch a BRIGHTER patch of sky than
+         // the mean and discards the rest, so a few percent of pixels sparkle.
+         // Same energy, sparse instead of spread.
+         // ⭐ And it needs no sun: on a grey day, or with the body behind the
+         // camera, the water still has life, because the sky is always up there
+         // and some facets always tilt toward its bright part.
+         vec3 wRfacet = reflect(-wV, vWaterN);
+         wRfacet.y = abs(wRfacet.y);
+         vec3 wSkyF = skyDomeColor(wRfacet, uBandHorizon, uBandLow, uBandMid, uBandHigh,
+                                   uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
+         vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
+         float wExcess = dot(wSkyF, LUMA) - dot(wSky, LUMA) * SKY_CLIP;
+         float wFleck = smoothstep(0.0, SKY_CLIP_SOFT, wExcess);
+         totalEmissiveRadiance += pow(wSkyF, vec3(2.2)) * wF * wGl * wFleck * SKY_FLECK_GAIN;
+
+         // ── LAYER 3: THE BODY. "Those much more pronounced 'radioactive but
+         // romantically so' ripples can follow the light sources." Same clip,
+         // tighter window and far more gain — and it FOLLOWS THE BODY, because
+         // the half-vector only reaches vertical near the body's own azimuth.
+         vec3 wH = normalize(uKeyDir + wV);
+         float wAlign = dot(vWaterN, wH);
+         float wSparkle = smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, wAlign);
+         totalEmissiveRadiance += uKeyColor * (wSparkle * GLINT_GAIN * uKeyUp * wF * wGl);
 
          // THE GLINT, AND IT IS A THRESHOLD ON PURPOSE — Jacob asked for this
          // twice ("clipping the effect alpha so only the highest highlights
