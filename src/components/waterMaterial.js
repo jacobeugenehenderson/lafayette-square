@@ -133,6 +133,14 @@ const SWELL_STEEP = 0.14
 // as a STREAK instead of a field of fireflies.
 const SPEC_AA_K = 0.65
 
+// Gust cells — how big a patch of ruffled water is, and how much rougher/calmer
+// a patch runs than the mean. 420 m is the scale a lake reads as mottled rather
+// than as noise; the 0.45-1.55 span keeps the MEAN at 1.0 so Cox & Munk still
+// holds across the body while any given patch departs from it.
+const GUST_CELL_M = 420
+const GUST_MIN = 0.45
+const GUST_MAX = 1.55
+
 // ⚠️ Only used when nothing drives the wind — a light breeze, so a body with no
 // weather feed attached is still WATER and not a mirror. The live value comes
 // from the weather.
@@ -250,7 +258,7 @@ export function waveKForExtent(extentDiag) {
  *   `slopeScaleForWind(useSkyState.windSpeedMs)` and `uWindDir` from
  *   `windDirDeg`, and the lake gets choppy when the town is actually windy.
  */
-export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } = {}) {
+export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, bodyColors = null } = {}) {
   // ⛔ LOUD, NOT SILENT. An absent extent is the one input whose default would
   // be invisible: the surface would render, perfectly plausibly, at a pond's
   // frequencies on whatever body it was given. A plausible-looking success is
@@ -272,7 +280,15 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
     // with no weather attached is still water and not glass.
     uWindDir:       { value: new THREE.Vector2(0.88, 0.47) },
     uSlopeScale:    { value: slopeScaleForWind(DEFAULT_WIND_MPS) },
+    // Gust cells drift downwind at roughly the wind itself, not at a wave's
+    // phase speed — they are weather crossing the water, not a wave train.
+    uGustDriftMps:  { value: DEFAULT_WIND_MPS },
     uMaxRoughness:  { value: maxRoughnessForWind(DEFAULT_WIND_MPS) },
+    // The water's own body, deep to shallow. Default: turbid lake, desaturated —
+    // the colour of water that is not carrying the sky. LS's pond overrides.
+    uBodyDeep:      { value: new THREE.Color(...(bodyColors?.deep    ?? [0.055, 0.085, 0.080])) },
+    uBodyMid:       { value: new THREE.Color(...(bodyColors?.mid     ?? [0.085, 0.120, 0.110])) },
+    uBodyShallow:   { value: new THREE.Color(...(bodyColors?.shallow ?? [0.120, 0.160, 0.140])) },
     // ⭐ THE SKY THE DOME IS ACTUALLY DRAWING, pushed by GradientSky onto
     // useSkyState and read straight through. The lake reflects the operator's
     // authored grade with no second control and nothing to keep in sync.
@@ -324,6 +340,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
        uniform float uSunAltitude;
        uniform float uWaveK;
        uniform float uGlint;
+       uniform vec3  uBodyDeep;
+       uniform vec3  uBodyMid;
+       uniform vec3  uBodyShallow;
        uniform vec3  uBandHorizon;
        uniform vec3  uBandLow;
        uniform vec3  uBandMid;
@@ -333,6 +352,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1 } 
        uniform vec3  uSunDir;
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
+       uniform float uGustDriftMps;
        uniform float uMaxRoughness;
        uniform float uDisturbAmp;
        uniform vec2  uDisturbCenter;
@@ -371,7 +391,20 @@ ${FRESNEL_GLSL}
 ${GLITTER_GLSL}
          // ⭐ ONE multiply turns an arbitrary noise field into a surface with the
          // REAL OCEAN'S slope variance at this wind speed (Cox & Munk 1954).
-         return s * uSlopeScale;
+         // THE WIND IS NOT UNIFORM, AND NEITHER IS THE WATER. Jacob: "it needs
+         // falloff, it's just too uniform and directionless."
+         // A real lake is mottled because the wind stress on it is mottled —
+         // gust cells ruffle patches of surface while slicks stay glassy between
+         // them, at a few hundred metres across, drifting downwind. That patchy
+         // roughness is most of what makes water read as a LIVING surface rather
+         // than a material swatch: it varies the glitter density, the sharpness
+         // of the reflection, and the apparent colour, all at once, because all
+         // three follow the local slope variance.
+         // Derived, not authored: one low-frequency noise cell advected at the
+         // same wind that sets the variance. No data needed and nothing to tune
+         // per town — a windier town gets faster, stronger patches for free.
+         float gust = wNoise((pw - uWindDir * uGustDriftMps * uTime) * ${(1 / GUST_CELL_M).toFixed(6)});
+         return s * uSlopeScale * mix(${GUST_MIN.toFixed(2)}, ${GUST_MAX.toFixed(2)}, gust);
        }
 
        // The SWELL — the body's own long wave. Its WAVELENGTH is the one thing
@@ -424,26 +457,60 @@ ${GLITTER_GLSL}
        // no bathymetry anywhere in the pipeline. ⇒ Any depth-looking ramp here is
        // FABRICATED FROM NOISE. Said out loud because a plausible depth that is
        // not depth is this project's signature defect.
-       vec3 wDeep    = vec3(0.06, 0.18, 0.25);  // dark teal depths
-       vec3 wMid     = vec3(0.10, 0.28, 0.32);  // mid-water
-       vec3 wShallow = vec3(0.14, 0.38, 0.38);  // lighter edges
+       // THE BODY COLOUR IS THE CALLER'S, AND THE KIT DEFAULT IS NOT A POND.
+       // Jacob, on a noon overhead: "this blue is too romantically blue; it's not
+       // the Caribbean." He is looking at the one term Fresnel does NOT hide:
+       // from overhead the view is steep, F is small, and almost everything
+       // reaching the eye is the water's own body — so the authored pond teal
+       // shows at nearly full strength across a Great Lake. A correct POND
+       // palette being asked to be a lake.
+       // A real lake's body is turbid and DESATURATED; it is the SKY, not the
+       // water, that carries the colour, and that arrives through the reflection
+       // above. So the kit default is a muted green-grey and the LS pond passes
+       // its own palette, exactly as it passes its own disturbance.
+       // Per-town water colour is genuinely per-town and there is NO DATA for it
+       // (no turbidity anywhere in the pipeline), so it is a CALLER PARAMETER
+       // with a sane default, never a new operator knob.
+       vec3 wDeep    = uBodyDeep;
+       vec3 wMid     = uBodyMid;
+       vec3 wShallow = uBodyShallow;
        vec3 wHighlight = vec3(0.35, 0.55, 0.58); // ripple peaks / sun glints
 
        // Mix based on ripple + refraction
        vec3 waterCol = mix(wDeep, wMid, smoothstep(0.3, 0.55, ripple));
        waterCol = mix(waterCol, wShallow, smoothstep(0.5, 0.7, refractedNoise));
 
-       // Specular-like highlights on ripple crests. ⭐ PAINTED, not reflected —
-       // kept because it is half the pond's character, but it is albedo. The
-       // real reflection is the normal below.
+       // ⛔⛔ THE PAINTED HIGHLIGHT — AND IT IS THE "LAKE OF FIRE". Jacob, on a
+       // sunset shot where the whole surface glittered orange edge to edge:
+       // "this would be pretty emanating from the literal sun's reflection but
+       // this looks like a lake of fire." Then, at noon: "this blue is too
+       // romantically blue; it's not the Caribbean."
+       // ⭐ ONE CAUSE, BOTH COMPLAINTS. This term is a hard smoothstep threshold
+       // on NOISE, mixed into ALBEDO — so it fires on roughly half the surface,
+       // EVERYWHERE, at equal strength, and takes whatever colour the light is.
+       // ⛔ ALBEDO CANNOT CONCENTRATE TOWARD THE SUN. A real glitter path is
+       // concentrated because only facets tilted the right way reflect the body,
+       // and those get exponentially rarer away from the specular point; a
+       // painted threshold has no idea where the sun is. That is exactly the
+       // "dead, directionless" quality, and no amount of tuning fixes a term
+       // that is structurally incapable of having a direction.
+       // ⭐ It was worth keeping while there was no real specular — it WAS the
+       // pond's character. There is a real one now (the wave normal into the PBR
+       // lobe, plus the reflected sky), so the stand-in is only competing with
+       // the thing it was standing in for. It fades out as glint comes up, and
+       // at glint 0 the pond keeps it exactly: still the control.
+       float paint = 1.0 - min(uGlint, 1.0);
        float highlight = smoothstep(0.62, 0.78, ripple) * smoothstep(0.5, 0.7, r1);
-       waterCol = mix(waterCol, wHighlight, highlight * 0.6);
+       waterCol = mix(waterCol, wHighlight, highlight * 0.6 * paint);
 
        // Subtle caustic pattern on the surface
        float caustic1 = wNoise(wp * 0.8 + uTime * vec2(0.15, 0.1));
        float caustic2 = wNoise(wp * 0.8 + uTime * vec2(-0.1, 0.15) + 50.0);
+       // Same species as the highlight above: a noise threshold painted into
+       // albedo. On a pond bed it reads as light through water; across ten
+       // kilometres of lake it is more uniform speckle with nowhere to come from.
        float caustic = smoothstep(0.4, 0.6, caustic1) * smoothstep(0.4, 0.6, caustic2);
-       waterCol += vec3(0.04, 0.07, 0.06) * caustic;
+       waterCol += vec3(0.04, 0.07, 0.06) * caustic * paint;
 
        // ── Time-of-day ──
        float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
@@ -453,7 +520,7 @@ ${GLITTER_GLSL}
        waterCol = mix(nightWater, waterCol, dayBright) * brightness;
 
        // Moon/street light reflection at night
-       float nightGlint = (1.0 - dayBright) * highlight * 0.4;
+       float nightGlint = (1.0 - dayBright) * highlight * 0.4 * paint;
        waterCol += vec3(0.15, 0.18, 0.25) * nightGlint;
 
        // sRGB → linear
@@ -507,7 +574,9 @@ ${GLITTER_GLSL}
        // away, because nothing is being added either.
        {
          vec3 wVc = normalize(cameraPosition - vWaterWorld);
-         diffuseColor.rgb *= 1.0 - waterFresnel(vWaterN, wVc) * min(uGlint, 1.0);
+         // Same flat normal as the reflection it partitions against — a
+         // per-pixel F here would speckle the BODY in the opposite phase.
+         diffuseColor.rgb *= 1.0 - waterFresnel(vec3(0.0, 1.0, 0.0), wVc) * min(uGlint, 1.0);
        }`
     )
 
@@ -586,11 +655,11 @@ ${GLITTER_GLSL}
          // approximation rather than a smoothing hack — and it is exactly why the
          // sun's disc had to stay out of this function: the sky is low-frequency,
          // the sun is not.
-         vec3 wRflat = reflect(-wV, vec3(0.0, 1.0, 0.0));
-         // A little of the wave normal survives, scaled DOWN by how rough the
-         // surface already filtered itself to be — so near water keeps some life
-         // and distant water, where a pixel spans hundreds of metres, does not.
-         vec3 wR = normalize(mix(wRflat, reflect(-wV, vWaterN), 0.25 * (1.0 - roughnessFactor)));
+         // PROVED BY PROBE, not reasoned: zeroing this whole term made the
+         // saturated blue AND every speck of the salt-and-pepper vanish at once.
+         // The body colour and the painted highlight were never the cause.
+         vec3 wFlatN = vec3(0.0, 1.0, 0.0);
+         vec3 wR = reflect(-wV, wFlatN);
          // A ray that still points into the water reflects the horizon: the dome
          // has nothing below h = 0 to give back.
          wR.y = abs(wR.y);
@@ -602,7 +671,17 @@ ${GLITTER_GLSL}
          // tone-mapped, so the sky must be decoded on the way in. Checked rather
          // than assumed: a missing decode reads washed-out, a doubled one reads
          // electric.
-         float wF = waterFresnel(vWaterN, wV);
+         // THE FRESNEL TERM WAS THE SPECKLE, AND THIS IS THE LINE THAT DID IT.
+         // Schlick goes as (1 − N·V)^5 — a FIFTH POWER — so feeding it a
+         // per-pixel WAVE normal made F swing from near 0 to near 1 between
+         // neighbouring pixels, and each bright pixel showed the full sky. That
+         // is the salt-and-pepper, and it is why the lake read as saturated: the
+         // speckle's bright half was pure sky at full strength.
+         // Fresnel belongs to the MEAN surface, exactly like the reflection
+         // direction above — the wave normal's job is the glitter lobe, which
+         // three's own specular already evaluates from it. One flat evaluation,
+         // no fifth power of noise.
+         float wF = waterFresnel(wFlatN, wV);
          totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * min(uGlint, 1.0);
        }`
     )

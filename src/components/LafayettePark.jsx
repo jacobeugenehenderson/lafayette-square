@@ -492,6 +492,11 @@ function ParkWater({ lookId, bakeLastMs }) {
       extentDiag: ringExtentDiag(parkWaterData.lake.outer),
       disturbance: { center: [25, 60], inner: 50, outer: 10 },
       glint: 0,
+      //  · bodyColors — THIS POND'S OWN TEAL, the exact triple the shader used to
+      //    hardcode. The kit's default is a turbid lake now (a Great Lake is not
+      //    the Caribbean), so the pond carries its palette the same way it
+      //    carries its disturbance: authoring at the authored site.
+      bodyColors: { deep: [0.06, 0.18, 0.25], mid: [0.10, 0.28, 0.32], shallow: [0.14, 0.38, 0.38] },
     }), [])
 
   // Animate water

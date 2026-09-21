@@ -117,7 +117,7 @@ const glitterOf = (sh) => {
   // octave 0 and silently reports one octave where there are three. (It did, on
   // the first run; the guard said it was blind instead of passing, which is the
   // only acceptable behaviour for a parse that misses.)
-  const m = sh.fragmentShader.match(/vec2 wGlitterSlope\(vec2 pw\)[\s\S]*?return s \* uSlopeScale;\s*\n\s*\}/)
+  const m = sh.fragmentShader.match(/vec2 wGlitterSlope\(vec2 pw\)[\s\S]*?\n       \}/)
   if (!m) throw new Error('⛔ could not find wGlitterSlope in the emitted shader — the guard is blind; fix the parse before trusting a PASS')
   return m[0]
 }

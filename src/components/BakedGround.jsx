@@ -509,6 +509,7 @@ function WaterMesh({ group, geometry }) {
     const sky = useSkyState.getState()
     uniforms.uSlopeScale.value = slopeScaleForWind(sky.windSpeedMs)
     uniforms.uMaxRoughness.value = maxRoughnessForWind(sky.windSpeedMs)
+    uniforms.uGustDriftMps.value = Math.max(0.5, sky.windSpeedMs || 0)
     // `windDirDeg` is meteorological — degrees the wind blows FROM — so the wave
     // trains travel toward the opposite bearing. Compass bearing → world XZ with
     // −Z as north, the same convention celestialToPosition uses.
