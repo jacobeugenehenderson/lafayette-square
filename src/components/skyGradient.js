@@ -1,4 +1,13 @@
 /**
+ * ⛔⛔ BEFORE YOU EDIT THE GLSL IN THIS FILE — `docs/agents/AGENT-VALIDATION-SURFACES.md §0`.
+ * A program that does not LINK is invisible, silent, and identical to a missing mesh: the
+ * material exists, the mesh is in the tree, nothing throws, and the object is not there.
+ * It is silent in every JS-side check — "module LOADS ✓" and "term present ✓" were both
+ * reported throughout six rounds of wrong diagnosis on this very file (2026-09-20).
+ * ▶ LOAD THE MODULE AND READ THE BROWSER CONSOLE. A green parse proves nothing, and a term
+ *   being PRESENT says nothing about it being present ONCE.
+ */
+/**
  * skyGradient — THE SKY'S COLOUR, AS ONE FUNCTION, FOR EVERYTHING THAT REFLECTS IT.
  *
  * ⭐⭐ WHY THIS FILE EXISTS. The dome's colour was written once, inside
