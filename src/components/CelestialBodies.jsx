@@ -44,7 +44,7 @@ import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
 import { bodyLights, celestialToPosition, LIGHT_RADIUS } from './celestialLights.js'
 import { SKY_GRADIENT_GLSL } from './skyGradient.js'
-import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
+import { onSceneStencil, getSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
@@ -147,12 +147,24 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     const light = lightRef.current
     if (!light) return
     if (!stencil) {
-      if (light.castShadow) {
-        light.castShadow = false
-        console.error('[CelestialBodies] no scene stencil — sun shadows OFF. ' +
-          'ground.json#stencil is the source; nothing has published it yet.')
-      }
-      return
+      // ⛔ SHADOWS OFF UNTIL THE SCENE'S SIZE IS KNOWN — no fallback, by design.
+      light.castShadow = false
+      // ⚠️ BUT DO NOT CRY WOLF ON STARTUP. `stencil` is null for the first frames
+      // of EVERY normal load, until BakedGround fetches ground.json and publishes
+      // it — so logging here immediately made an error-level line appear on every
+      // healthy boot. A parity auditor read that line against a live
+      // `castShadow === true` and reported the two as contradictory; they were not,
+      // they were from different moments. An alarm that fires when nothing is wrong
+      // costs more than no alarm: the next reader discounts it.
+      // ⇒ Only shout if it is STILL missing after the bundle has had time to land.
+      const t = setTimeout(() => {
+        if (!getSceneStencil()) {
+          console.error('[CelestialBodies] no scene stencil after 5s — sun shadows are OFF. '
+            + 'ground.json#stencil is the source and nothing has published it; BakedGround '
+            + 'may not be mounted in this view, or its slab fetch failed.')
+        }
+      }, 5000)
+      return () => clearTimeout(t)
     }
     const half = shadowHalfExtent(stencil)
     if (half == null) return
