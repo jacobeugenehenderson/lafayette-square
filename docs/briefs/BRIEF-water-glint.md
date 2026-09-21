@@ -87,3 +87,43 @@ the whole point. ⛔ Not a still: the operator must see it move.
 ## Registers
 `FEATURES` — "sun and moon lay a moving path on the water" is a capability worth naming.
 `OPERATIONS` — the `glint` knob and what `0` means.
+
+---
+
+# ⭐⭐ DOWNSTREAM — THE WATER IS WHERE THE WEATHER BECOMES VISIBLE
+
+> **Jacob, 2026-09-20, on seeing the glint land:** *"I have just realized what to do. This is
+> **way** beyond tonight but the WATER and the WAVES are what get connected to the weather system."*
+
+⛔ **Recorded here, not opened.** This is the direction, not a ticket. It lives in this brief
+rather than a new file because it is the same surface and the same table.
+
+**⭐ It is far closer than it sounds: every input already exists, and the glint work built the
+thing that consumes them.** Fathom's octave table carries a **`steepness`** per octave and a
+**drift direction** — today both are constants. They are the two dials wind drives.
+
+| what the weather already computes | where | what it should drive on the water |
+|---|---|---|
+| `windSpeedMs` | `weather-payload.js:87` | ⭐ **octave `steepness`** — glassy calm → chop. The single highest-value link: steepness is what the specular lobe catches, so wind would visibly change the GLITTER, not just the geometry. |
+| `windDirDeg` | `weather-payload.js:97` | the drift vector, currently fixed per octave |
+| gust front, with **propagation delay** across the scene | `wind-field.js:15` | ⭐⭐ **cat's paws** — the dark patches that race across a lake ahead of a gust. Already modelled for trees, travelling at a real speed with a real delay. On water it is the most legible weather cue there is, and it is nearly free. |
+| `wind.gustsScale` / `gustEnvelope` | `almanac-eval.js:272-273` | the envelope on the above |
+
+### ⛔ The one thing that is NOT already there: FETCH
+Wave height is a function of wind speed **and fetch** — the distance of open water the wind has
+crossed. A sheltered lee shore stays glassy in the same wind that raises chop a kilometre out,
+and that contrast is most of what makes real water read as real.
+⭐ **The signal for it is the same one the shoreline needs:** `coastline.mjs` `arcs` (§6e) — fetch
+is the distance from a point to the upwind shore along `windDirDeg`. ⇒ **the arcs work is now
+load-bearing for two features, not one**, which strengthens the case for the slab schema bump
+that §6e costed and left for Jacob.
+
+### Why this is the right place for weather to show
+Trees move in wind; that is legible but local. Water integrates wind over an entire surface, so a
+change in conditions is visible **everywhere at once, at every scale** — swell, chop, glitter, and
+the gust front crossing. ⛔ And it is the one surface where the operator can SEE the difference
+between two conditions without being told which is which, which makes it the natural eye-gate for
+the whole weather system.
+
+⚠️ **Do not start this before the glint's eye gate passes.** The whole thing rests on the octave
+table being right.
