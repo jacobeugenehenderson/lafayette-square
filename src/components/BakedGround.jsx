@@ -529,6 +529,15 @@ function WaterMesh({ group, geometry }) {
     uniforms.uSkyGlow.value.copy(b.glow)
     uniforms.uTurbidity.value = b.turbidity
     uniforms.uSunDir.value.copy(sky.sunDirection)
+    // The BRIGHTER BODY, for the analytic glitter. keyDirection is published by
+    // CelestialBodies for exactly this: a consumer that needs the VECTOR rather
+    // than the light. (I argued earlier that water should not read it because it
+    // sits in the light rig — true for the PBR lobe, wrong for an analytic term
+    // that needs a half-vector. Reversed deliberately.)
+    uniforms.uKeyDir.value.copy(sky.keyDirection)
+    uniforms.uKeyColor.value.copy(sky.keyColor)
+    // No glitter from a body below the horizon.
+    uniforms.uKeyUp.value = Math.max(0, Math.min(1, sky.keyDirection.y * 6))
   })
   return (
     <mesh

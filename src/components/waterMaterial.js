@@ -299,6 +299,10 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     uSkyGlow:       { value: new THREE.Color('#ffd9a0') },
     uTurbidity:     { value: 0 },
     uSunDir:        { value: new THREE.Vector3(0, 1, 0) },
+    // The BRIGHTER BODY's direction and colour — sun by day, moon by night.
+    uKeyDir:        { value: new THREE.Vector3(0, 1, 0) },
+    uKeyColor:      { value: new THREE.Color('#fffefa') },
+    uKeyUp:         { value: 0 },
     // uDisturbAmp 0 removes the term entirely (the multiply below), so one
     // compiled program serves both cases and the cache key stays single.
     uDisturbAmp:    { value: disturbance ? 1 : 0 },
@@ -350,6 +354,9 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec3  uSkyGlow;
        uniform float uTurbidity;
        uniform vec3  uSunDir;
+       uniform vec3  uKeyDir;
+       uniform vec3  uKeyColor;
+       uniform float uKeyUp;
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
@@ -360,6 +367,13 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform float uDisturbOuter;
        varying vec3 vWaterWorld;
 
+       // cos(9.5 deg) and cos(2.5 deg) — the window of facet alignments that
+       // count as a glint. Sized off the wave-slope distribution itself: at Cox &
+       // Munk's ~9.6 deg RMS, facets beyond ~10 deg off the half-vector are the
+       // rare tail, which is exactly what should sparkle.
+       const float GLINT_COS_WIDE  = 0.98629;
+       const float GLINT_COS_TIGHT = 0.99905;
+       const float GLINT_GAIN = 6.0;
        const float SWELL_STEEP = ${SWELL_STEEP.toFixed(4)};
        const float SPEC_AA_K   = ${SPEC_AA_K.toFixed(4)};
 
@@ -683,6 +697,29 @@ ${GLITTER_GLSL}
          // no fifth power of noise.
          float wF = waterFresnel(wFlatN, wV);
          totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * min(uGlint, 1.0);
+
+         // THE GLINT, AND IT IS A THRESHOLD ON PURPOSE — Jacob asked for this
+         // twice ("clipping the effect alpha so only the highest highlights
+         // show") and I kept hearing it as a workaround. It is not. It is the
+         // physics, and it is why the surface kept coming out either radioactive
+         // or absent with nothing in between.
+         // GLITTER IS THE TAIL OF THE SLOPE DISTRIBUTION. A wave facet reflects
+         // the sun into your eye only if its normal sits on the HALF-VECTOR
+         // between the sun and you. Almost none do — that is the whole point —
+         // so the correct picture is a SPARSE scatter of very bright points, not
+         // a wash. Spreading that same energy smoothly over every pixel is what
+         // made it a radioactive sheet; removing the spread left nothing,
+         // because a smooth lobe over a 7 km surface IS nothing per pixel.
+         // The threshold keeps the few facets that actually align and discards
+         // the rest, which is what a clip does and what water does.
+         // AND THE FALLOFF COMES FREE: away from the body's azimuth the
+         // half-vector tilts further from vertical than any wave slope can
+         // reach, so the sparkle count drops to zero on its own. Dense toward
+         // the body, absent away from it — the path, without a path being drawn.
+         vec3 wH = normalize(uKeyDir + wV);
+         float wAlign = dot(vWaterN, wH);
+         float wSparkle = smoothstep(GLINT_COS_WIDE, GLINT_COS_TIGHT, wAlign);
+         totalEmissiveRadiance += uKeyColor * (wSparkle * GLINT_GAIN * uKeyUp * wF * min(uGlint, 1.0));
        }`
     )
 
