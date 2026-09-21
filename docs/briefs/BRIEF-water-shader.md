@@ -239,6 +239,44 @@ worst trap — "a beach in the middle of Lake Erie" — because the envelope edg
   effect — but say in the code that it is fabricated.** A plausible depth that is not depth is this
   project's signature defect.
 
+## 6e. ⛔⛔ WATER IS SIXTEEN TAGS AND FOUR KINDS OF THING — **ANTICIPATE THEM, DO NOT BUILD THEM**
+
+> *Jacob, 2026-09-20: "there are numerous water types and we should anticipate them all."*
+
+**Measured across huron · lafayette-square · hipointe-demun · altadena** (▶ re-derive, do not quote):
+```
+waterway=stream   200    natural=water    157    water=pond      71    waterway=drain  32
+natural=wetland    26    waterway=ditch    20    water=basin     19    waterway=canal   9
+waterway=dam        8    water=stream       5    water=reservoir  5    waterway=river   5
+waterway=weir       5    water=river        3    water=lake       3    waterway=flowline 2
+```
+⇒ **SIXTEEN TAGS. ONE PRODUCER** (`natural=water`, §6①). And they are **four different kinds of
+thing**, which is the part that matters for anything you design:
+
+| kind | tags | count | why it is different |
+|---|---|---|---|
+| **POLYGON body** | `natural=water` + a `water=*` subtype | 157 | ⭐ the subtype is **thrown away today** — a pond is not a lake is not a settling basin, and **71 of huron's are ponds** |
+| ⭐⭐ **LINEAR waterway** | stream · river · canal · ditch · drain · flowline | **268** | **the LARGEST population, and not a polygon at all.** A ribbon with a direction and a width, nearer to a street than to a lake |
+| **STRUCTURE** | dam · weir | 13 | built objects in water, like the revetment — geometry, not surface |
+| **WETLAND** | `natural=wetland` | 26 | neither water nor land; a material question of its own |
+
+### ⛔ WHAT THIS DOES AND DOES NOT CHANGE FOR THIS BRIEF
+⭐ **It does NOT expand your build.** Glint on huron's lake is still the job, and the lake is a
+polygon body that is already drawn. ▶ **Ship that.**
+⛔⛔ **BUT DO NOT DESIGN AS THOUGH WATER IS ONE THING.** A lake shader that assumes a large flat
+polygon will be wrong for a stream, and **the next town is a river town** — 200 streams are already
+on disk in the four towns we have. ⭐ **A flowing ribbon wants direction and speed; a lake wants
+wind fetch and a horizon.** They are different shaders, not one shader with a parameter.
+▶ **So: name the four kinds in whatever you write, say which one you built for, and leave the
+attachment point keyed by kind** — the way `GRASS_FACES` keys a treatment by class id.
+⚠️ **And per the authoring-model gate at the end of this brief: state the parameters a LINEAR water
+would need** (direction, speed, width) **even though you are not building it.** That is what stops
+the river town discovering the model cannot hold it.
+
+⚠️ **THE SUBTYPE IS THE CHEAPEST WIN HERE AND IT IS NOT YOURS.** `water=pond|lake|reservoir|basin`
+already rides on the 157 polygons we DO draw and is discarded before it reaches anything.
+⛔ Surface it; do not wire it. It belongs with the LU/vocabulary work, not with a shader.
+
 ## 7. ⛔ Can the instrument SEE the change?
 
 ⚠️⚠️ **MOSTLY NOT, AND SAY SO RATHER THAN FAKING IT.** This is a LOOK. There is no assertion that
