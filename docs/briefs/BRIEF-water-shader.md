@@ -21,6 +21,40 @@ evict-when: RULING: Jacob's eye on huron's lake, at three times of day, against 
 
 ---
 
+> # ⭐⭐ REORDERED 2026-09-20 — **GLINT FIRST.** The payoff Jacob named is not what this brief led with.
+>
+> *"Water will be a bigger immediate payoff; **sun and moon reflecting will be very romantic and
+> visibly so.**"*
+>
+> ⛔ **THE BRIEF AS WRITTEN LED WITH SHORELINE FALLOFF AND DEPTH/SSS, AND HAD NO GLINT IN IT AT ALL.**
+> That is backwards for value. **Work in this order:**
+>
+> | # | step | why here |
+> |---|---|---|
+> | **①** | **Lift the shader out of `LafayettePark.jsx`** into a kit material | nothing else is reachable until huron can get it |
+> | **②** | **Scale-aware frequencies** | at 40 km² the pond constants read as flat plastic — ⛔ silently |
+> | **③** | ⭐⭐ **SUN + MOON GLINT** | **the payoff, and the cheapest thing in the brief** |
+> | **④** | Shoreline falloff | free — the waterline is the terrain's y=0 crossing (§6d) |
+> | **⑤** | Depth / subsurface | ⛔ only if a signal exists; the DEM has no bathymetry (§6d) |
+>
+> ### ⭐⭐ AND ③ IS CHEAPER THAN IT SOUNDS — MEASURED, NOT ASSUMED
+> · The pond material is **already `roughness: 0.15, metalness: 0.35`** — **a reflective surface
+>   already.** (`LafayettePark.jsx:472-479`)
+> · It **already carries `uSunAltitude`** and a full day→night ramp with a separate `nightWater`
+>   indigo. **The sun is already in the shader.**
+> · ⭐⭐ **AND THE MOON ALREADY DRIVES A REAL LIGHT.** `CelestialBodies.jsx:71`: *"the very position
+>   the `<directionalLight>` consumes. **Sun by day, moon-blended**"*. ⇒ **A standard material in
+>   this scene is ALREADY LIT by the correct celestial body at the correct position.**
+>
+> ⇒ ⛔ **SO THE FIRST QUESTION OF ③ IS NOT "HOW DO WE ADD GLINT" — IT IS "WHAT IS SUPPRESSING IT?"**
+> ▶ **MEASURE THAT BEFORE WRITING ANY SHADER CODE.** The fragment shader assembles `waterCol` from
+> ramps and caustics and assigns it; a material that computes its own colour can easily be throwing
+> the specular contribution away. ⭐ **If the answer is "the override discards it", the fix is small
+> and the romance arrives almost free.** If the answer is "there is no specular path at all", say so
+> — that is a different and larger job and Jacob should hear which before it is promised.
+> ⚠️ **Do not add a second light or a hand-rolled sun vector.** The scene already has the right one,
+> and a parallel light is the shape this project has spent a day excising.
+
 ## 1. You are the dispatched agent. Name yourself — one word, yours.
 
 ## 2. Agent: **FRESH**
