@@ -590,10 +590,15 @@ function readCamInit() {
 }
 
 // ── Controls ────────────────────────────────────────────────────────────────
-function Controls({ controlsRef }) {
-  // ⭐ The playback flag, read from the same store channel StageApp's hero
-  // driver animates on. ⛔ Not a local `shot` test — see the block below.
-  const heroPlaying = useCartographStore(st => !!st.heroMotion?.preview)
+function Controls({ controlsRef, heroPlaying = false }) {
+  // ⛔⛔ THE PLAY FLAG IS A PROP, NOT A STORE READ — and the first cut of this fix
+  // read the store and was therefore INERT. In the Cartograph `heroMotion.preview`
+  // is NOT persisted state: CartographApp composes it per render at :1134 —
+  //     const heroMotion = { ...storeMotion, preview: previewPlaying, speed: … }
+  // — from a LOCAL useState (`previewPlaying`, :1132). The store's heroMotion
+  // carries only { period, easing }, so `st.heroMotion?.preview` is always
+  // undefined and the gate never closed. Caught because huron's design.json shows
+  // heroMotion as {"period":1360,"easing":"sine"} — no `preview` key to read.
   const shot = useCartographStore(s => s.shot)
   const tool = useCartographStore(s => s.tool)
   const markerActive = useCartographStore(s => s.markerActive)
@@ -890,7 +895,6 @@ const MAP_REGISTRY = {
     stencil: LS_STENCIL,
     useBoundary: true,
     hasAerial: true,
-    hasHero: true,
     StageEnvironment: ({ hiddenLayers, lookId, bakeLastMs }) => {
       // Stage live-wire for every authored channel — drag a slider, see it
       // retint instantly. Production omits these overrides and reads
@@ -943,7 +947,6 @@ const MAP_REGISTRY = {
     stencil: TOY_STENCIL,
     useBoundary: false,
     hasAerial: false,
-    hasHero: false,
     StageEnvironment: () => <>
       <R3FErrorBoundary name="ToyTerrain"><ToyTerrain /></R3FErrorBoundary>
       <R3FErrorBoundary name="ToyBuildings"><ToyBuildings /></R3FErrorBoundary>
@@ -995,7 +998,6 @@ function genericSceneConfig(sceneBoundary) {
     // the active installation's own boundary.
     useBoundary: true,
     hasAerial: true,                                // AerialTiles reads the active installation's geography
-    hasHero: false,
     // Generic poured-installation 3D — ONLY slab-driven consumers, read BY
     // lookId, with NO LS props (no LafayettePark / LafayetteScene content
     // bundle / GatewayArch). BakedGround mounts separately for every scene.
@@ -1482,8 +1484,24 @@ export default function CartographApp() {
 
           {!inDesigner && <LampGlowPump />}
           {!inDesigner && <NeonPump />}
-          <Controls controlsRef={controlsRef} />
-          {shot === 'hero' && sceneCfg.hasHero && (
+          <Controls controlsRef={controlsRef} heroPlaying={previewPlaying} />
+          {/* ⛔⛔ `sceneCfg.hasHero` GATED THIS AND WAS TRUE FOR LAFAYETTE SQUARE
+              ONLY — removed 2026-09-21. HeroPreview is not a decoration, it IS the
+              playback driver: the useFrame at StageApp.jsx:1176 that interpolates
+              the keyframes and writes the camera. Unmounted, the Play button
+              toggled a flag nothing read.
+              ⇒ Jacob, on huron: "I programmed new keyframes into the camera but
+              they don't playback when I push play" … "the LS values are the
+              defaults, and they are useless, but they don't drive the camera
+              either." Correct on both counts — there was no driver in the scene.
+              ⭐ The flag had exactly ONE consumer (this line) and read as "does this
+              town have a hero OBJECT". It does not gate an object; LS's hero is the
+              Arch, and HeroPreview already ships FALLBACK_HERO_SUBJECT for a town
+              that has none. A town with no landmark still needs a camera path —
+              Jacob, earlier the same night: "the hero object … that is barely a
+              thing". ⛔ Conflating "has a landmark" with "may move its camera" is
+              the LS-gated-capability shape, seventh of the night. */}
+          {shot === 'hero' && (
             <HeroPreview keyframes={keyframes} motion={heroMotion}
               subject={resolveHeroSubject(heroSubject, { buildings: _allBuildings, archValues: useCartographStore.getState().arch?.values })} />
           )}
