@@ -43,7 +43,7 @@ import WeatherEffects from '../components/WeatherEffects'
 import Terrain from '../components/Terrain'
 import { sceneExag, reloadTerrain } from '../utils/terrainShader'
 import R3FErrorBoundary from '../components/R3FErrorBoundary'
-import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject, useHeroAuthoring } from '../stage/StageApp.jsx'
+import { SHOTS, computeBrowseAltitude, HeroPreview, resolveHeroSubject } from '../stage/StageApp.jsx'
 import { cameraPush, publishCameraState } from '../stage/cameraBridge.js'
 import { PostProcessing, StageFog, StageShadows } from '../components/PostProcessing.jsx'
 import { createCameraTween } from '../preview/cameraTween.js'
@@ -578,10 +578,31 @@ function Controls({ controlsRef }) {
   const markerActive = useCartographStore(s => s.markerActive)
   const spaceDown = useCartographStore(s => s.spaceDown)
   const hoverTarget = useCartographStore(s => s.hoverTarget)
-  // Hero runtime/authoring: in the Hero shot the orbit controls are LOCKED
-  // (the bounce plays as it ships) until the operator clicks a keyframe to
-  // author it — then free orbit unlocks to reposition. Street stays free.
-  const heroAuthoring = useHeroAuthoring()
+  // Hero runtime/authoring. `heroAuthoring` is set by StageApp's keyframe-edit
+  // flow (StageApp.jsx:796/:842, Escape cancels at :870).
+  //
+  // ⛔⛔ IT USED TO BE THE ONLY WAY TO UNLOCK ORBIT IN HERO, AND THAT FORBADE THE
+  // OPERATOR'S ACTUAL WORKFLOW (Jacob, 2026-09-20): *"there's a camera section but
+  // you memorize keyframes arrived at using the controls."* You fly first, THEN
+  // memorize. Gating orbit behind "click a keyframe to author it" hands the camera
+  // over only AFTER you have committed to a frame you could not go and find.
+  //
+  // ⭐ The standalone /stage page never had this problem — `StageCamera` mounts
+  // OrbitControls with no gate at all. Cartograph now hosts the Stage shot
+  // (`1452bdfe`) and mounts its OWN controls here, so the hosted surface silently
+  // lost a capability the standalone one kept. Two surfaces, one name, different
+  // camera rules, and nobody declared the divergence.
+  //
+  // ⇒ Hero orbit is now ALWAYS enabled in this app. ⚠️ It is safe because the hero
+  // flight writes camera position/target DIRECTLY every frame while it plays, so
+  // playback still wins — the lock was belt-and-braces over a camera the flight
+  // already owns. And this is the AUTHORING surface, not the reader's: the shipped
+  // bounce is `Scene.jsx`'s, whose own controls stay correctly disabled while a
+  // framed shot is held.
+  //
+  // ⛔ `useHeroAuthoring()` was read HERE and nowhere else in this app, so the
+  // subscription is gone with the gate rather than left dangling. StageApp still
+  // owns the flag for its own keyframe-edit UI; this app simply no longer asks.
 
   const inDesigner = shot === 'designer'
   // Designer: no rotate, pan enabled unless hovering an editable target.
@@ -618,7 +639,7 @@ function Controls({ controlsRef }) {
   // Hero: locked during runtime playback, free only while authoring a
   // keyframe. Street: always free (no keyframes to lock to).
   return (
-    <OrbitControlsShot controlsRef={controlsRef} enabled={shot !== 'hero' || heroAuthoring} />
+    <OrbitControlsShot controlsRef={controlsRef} enabled />
   )
 }
 
