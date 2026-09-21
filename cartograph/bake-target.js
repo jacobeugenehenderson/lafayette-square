@@ -9,10 +9,15 @@
  * operator is told the bake worked. That is `CLAUDE.md` Layer 0 question 2 exactly: a
  * failure wearing a success's clothes, in the one place it must never happen.
  *
- * ⭐ THE PHANTOM IS NOT HYPOTHETICAL — IT IS SITTING IN THE REPO. `public/baked/default/`
- * exists because every baker defaulted to `look = 'default'`, which came from misreading
- * `public/looks/index.json`'s opening `"default": "lafayette-square"` — a pointer naming
- * WHICH look is default — as a look literally NAMED "default". `SLAB-CONTRACT.md §376`:
+ * ⭐ THE PHANTOM WAS NOT HYPOTHETICAL — IT SAT IN THE REPO FOR SEVEN WEEKS.
+ * `public/baked/default/` (15 MB, dated 2026-07-31) existed because every baker defaulted
+ * to `look = 'default'`, which came from misreading `public/looks/index.json`'s opening
+ * `"default": <id>` — a pointer naming WHICH look is default — as a look literally NAMED
+ * "default". ⛔ REMOVED 2026-09-20, by which time it had no index entry, no
+ * `public/looks/default/`, and no reader anywhere; the only references left in the tree
+ * were comments like this one describing it. This guard is why it could not come back.
+ * *(The pointer's value is now `"kit-default"`, not the `"lafayette-square"` this note
+ * used to quote — don't read the old value as current.)* `SLAB-CONTRACT.md §376`:
  * the file was *"LS's census under a fossil name,"* and *"'cross-look' was that fossil
  * rationalized after the fact."* A filename became a doctrine; the doctrine was then
  * cited as a design decision. That is why the fix is a required argument and a loud
@@ -43,8 +48,8 @@ export function assertBakeTarget(tool, look, scene) {
   if (!look || typeof look !== 'string') {
     throw new Error(
       `[${tool}] no --look given. Refusing to guess: the old default was 'default', ` +
-      `which is not a look — it wrote the phantom public/baked/default/ that nothing ` +
-      `reads. Pass --look=<id> (e.g. --look=lafayette-square).`
+      `which is not a look — it wrote a phantom public/baked/default/ that nothing read ` +
+      `(15 MB, removed 2026-09-20). Pass --look=<id> (e.g. --look=lafayette-square).`
     )
   }
 
