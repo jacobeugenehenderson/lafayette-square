@@ -234,9 +234,52 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > 23.05 km², interiors only, shared edges excluded: **ZERO cells covered by two
 > different LU interiors. 0.000 km².** They had been stacked on eleven separate
 > 2 mm slots for no reason, and it tore every land-use boundary apart.
-> ⇒ **All `kind === 'face'` groups now bake to slot 0 — one plane.** Ribbons
-> (asphalt, curb, sidewalk, stripe…) keep ascending slots: a road genuinely *does*
-> sit on a parcel.
+> ⇒ **All `kind === 'face'` groups bake to slot 0 — one plane.**
+>
+> ### ⭐⭐ AND THE RULE WENT FURTHER THE SAME NIGHT: **PRESS THE WHOLE STACK DOWN AT THE 2D→3D CROSSING** (`4c630ebc`)
+> Faces-only was the measured half. The rest of the ground — asphalt, curb, sidewalk,
+> every treelawn — genuinely *does* overlap, so the zeroth rule could not simply be
+> widened to it. ⛔ **And it must not be widened on reasoning: a first attempt did
+> exactly that and the generalised check caught it inside minutes** — the measurement
+> behind it had compared faces-to-faces and ribbons-to-ribbons and **never
+> faces-to-ribbons**, while a treelawn overlaps its own parent parcel 84% of the time
+> on LS. ▶ **A key joins the shared plane only on a measurement that compares it
+> against EVERYTHING already on the plane.**
+>
+> Jacob's relocation is what resolved it: *"In Stage it's a flattened 2D representation
+> which is baked into the 3D ready one. This is where we should take advantage of the
+> flatness and just paint order everything and then on the way out press it all down."*
+> ⇒ The **Designer is a 2D paint stack and the overlap there is AUTHORING**, so the fix
+> may not move upstream into `derive` — that would bake a painting decision into
+> authored data and take the override away from the operator. **The bake is the last
+> moment flatness exists.** `flattenPaintStack` walks `PAINT_ORDER` top-down, clips each
+> layer against the union of everything above it, and emits only what is visible.
+> ⇒ **33 of 35 layers on one plane at y=0; `GROUND_Y_EPS` has no work left to do for
+> them.** Paint order stops being a render concern and becomes a bake-time flattening
+> order — the only place it was ever meaningful — and the Designer and the slab agree
+> again, because the slab is the Designer's stack RESOLVED rather than a separately
+> edited model.
+> ⛔ **Two held out, and the two exclusions are DIFFERENT QUESTIONS** — conflating them
+> was a real bug: `keepOwnSlot` (do not press this INTO the plane) and `doesNotCut` (do
+> not let this CUT what is beneath). A transparent layer needs both; an opaque layer
+> that merely wants its own slot **must still cut**. `water` takes both (it tints rather
+> than replaces). `stripe` cuts and keeps its slot — cutting halved its overlap with
+> asphalt (386 → 194 m²) and did not finish it, and ⛔ **the cause of that residual is
+> NOT ESTABLISHED** (candidates: mixed winding in the accumulator, 29 of 392 rings CW;
+> holes touching the asphalt boundary rather than sitting inside it — **neither
+> measured**). The slot is a guard against an unexplained residual, not a design choice.
+> ⚠️ The pairwise "cut overlays out of faces" (`d793e4d4`) is **deleted, not kept** —
+> the flatten supersedes it and does the whole stack. Two places deciding one thing is
+> how they drift.
+> ⭐ The instrument that found the exclusion bug logged **signed AREA** and the
+> accumulator's area, not path counts: a count says a layer EXISTS; only the area says
+> the union KEPT it.
+>
+> ⚠️ **And the check became the unreliable instrument at the edge, which its own header
+> predicted:** at ~3 m cells it cannot resolve a 15 cm stripe and reported impossible
+> figures (109%, 154% — anything over 100% is the tell that the denominator undercounts,
+> because the second group's cells were already claimed). Three residual pairs at 2–5%
+> remain **unresolved and are not claimed to be sampling artefacts**.
 >
 > ### ⛔⛔ AND THE HARD LIMIT NOBODY HAD WRITTEN DOWN: **ON CONTOURED GROUND, MILLIMETRE SEPARATION IS ARITHMETICALLY UNAVAILABLE.**
 > The micro-Y is baked into geometry; the runtime then displaces every vertex by the
@@ -273,7 +316,7 @@ Below this, four mechanisms keep **genuinely overlapping** coplanar surfaces fro
 | Mechanism | Handles | Works | Failure mode |
 |---|---|---|---|
 | **Geometric Y separation** (water 0.35m above ground, paths 0.4m, trees on top) | surfaces genuinely at different heights | all distances (with log-depth on) | visible gap if too aggressive |
-| **`polygonOffset` per renderOrder** (`polygonOffsetUnits: -renderOrder`) | coplanar surfaces at y=0 (face fill + bands + stripes) | within reason | precision-relative; **structurally INERT under this Canvas — see below** |
+| **`polygonOffset` per renderOrder** (`polygonOffsetUnits: -renderOrder`) | coplanar surfaces at y=0 ⚠️ *(no longer the baked ground — that is flattened at bake, above)* | within reason | precision-relative; **structurally INERT under this Canvas — see below** |
 | **Tiny Y-lift (0.01m)** (`block 0.01 → asphalt 0.04 → paths 0.05`) | **Designer ortho view only** | top-down ortho | fragile; never for Stage/Preview |
 | **`renderOrder` + transparent** | transparent overlays with known monotonic order | forces draw order | wrong if surfaces aren't genuinely in front |
 
@@ -294,7 +337,7 @@ Below this, four mechanisms keep **genuinely overlapping** coplanar surfaces fro
 > that one is not). ⭐ A flat claim, stated twice, resting on a pointer that resolves to nothing — which is how it went
 > four months without anyone checking the branch. *(Found by the agent dispatched on `BRIEF-designer-depth-regime`.)*
 
-**Decision rule for a new ground layer:** ⛔ **FIRST — does it OVERLAP anything? If not, give it NO separation and put it on the same plane as its peers** (zeroth rule above; this is what land-use does). Then: real physical height difference → Geometric Y (≥1cm) · genuinely overlapping coplanar overlay → `polygonOffset` per its renderOrder slot ⚠️ *(inert under log-depth — see the corollary above)* · Designer-only authoring overlay → tiny Y-lift OR transparent+renderOrder · "always on top" overlay → `renderOrder` + `depthTest:false`. ⛔ **And on terrain, never size a separation in millimetres — compare it against the chord error for the layer's triangle span in the table above.** Custom shaders need a unique `customProgramCacheKey` before any `patchTerrain` wrapper, or three's program cache silently collapses them onto another material's compiled shader. Per-pond rigid lift (`<PondGroup>`), not per-park and not per-vertex, for stacked bank/water/island.
+**Decision rule for a new ground layer:** ⛔ **FIRST — is it a BAKED ground layer? Then it is not a render-time layering question at all: give it a slot in `PAINT_ORDER` and the bake-time flatten resolves it** (the zeroth rule above; this is what the whole painted ground does). Hold it out of the plane only with a measured reason, and note that `keepOwnSlot` and `doesNotCut` are separate answers. **Everything below applies to a layer the flatten does not own** — a Designer overlay, a transparent mesh, an authoring aid. Then: real physical height difference → Geometric Y (≥1cm) · genuinely overlapping coplanar overlay → `polygonOffset` per its renderOrder slot ⚠️ *(inert under log-depth — see the corollary above)* · Designer-only authoring overlay → tiny Y-lift OR transparent+renderOrder · "always on top" overlay → `renderOrder` + `depthTest:false`. ⛔ **And on terrain, never size a separation in millimetres — compare it against the chord error for the layer's triangle span in the table above.** Custom shaders need a unique `customProgramCacheKey` before any `patchTerrain` wrapper, or three's program cache silently collapses them onto another material's compiled shader. Per-pond rigid lift (`<PondGroup>`), not per-park and not per-vertex, for stacked bank/water/island.
 
 ### Ground conformance — one DRAWN surface, everything sits on it (2026-06-29)
 "Nothing sits on the ground" had two roots, both now cured; together they are the **conformance doctrine** that supersedes the bare "coverage parity" rule below.
@@ -309,7 +352,47 @@ Below this, four mechanisms keep **genuinely overlapping** coplanar surfaces fro
 - **Surface treatment — desaturate + value-lift (2026-06-30, ⚠️ prototype).** The authored `layerColors` palette runs value ~40–178 with saturated lots, so under dim TOD light the dark layers (ground 40, asphalt 74) crush to black while sidewalk (178) blows white — and saturated albedo fights the "lit by the sky's colour" goal. `BakedGround.jsx` `FadeMesh` now runs `treatAlbedo()` on the baked `group.color`: pull chroma toward gray + compress lightness UP off black (HSL, `SRGBColorSpace`), so every layer reads as a gentle value step that the sky-coloured fill then colours. ⚠️ **Currently three hardcoded constants (`SAT 0.30 / FLOOR 0.22 / CEIL 0.72`), flagged to become a "Surface" look KNOB** (per `feedback-no-hardcoded-ramps-use-knobs`) — applies to `FadeMesh` only so far (grass/gravel shaders still carry their own chroma). `scratch/LOOK-PANEL-TAXONOMY.md` Phase B.
 
 ### Terrain doctrine — one dial, corner-mean anchor
-Every ground-anchored consumer multiplies by the same `uExag` uniform (driven from `terrainExag.value`, lerped toward the town's authored `terrainExag`). **That authored value is the single dial per town** — changing it rescales that scene coherently (ground, foundations, buildings, lamps, trees, paths, water). **Anchor rule:** the rigid-lift "centroid Y" is the **mean of `getElevationRaw` at every footprint vertex**, never a single sample at `building.position` (sampling at position diverges by the heightfield's convexity — ~0.5m of baked-in over-exposure on LS's concave hill). Both building walls (`patchTerrainAtCentroidRaw`) and foundations (per-vertex `aCentroidY`) use it. **Instance-scale:** `patchTerrainInstanced` divides the lift by instance Y-scale so the world result is `sample × uExag` meters regardless of scale (else lamps/trees over-lift). **Coverage parity:** anything ground-anchored must patch (`patchTerrain` perVertex for ground; `patchTerrainAtCentroidRaw` for walls; `aCentroidY` for foundations; **`patchTerrainInstancedBaked` for lamps/trees** — baked per-object anchor, see "Ground conformance" above, which superseded the old live `patchTerrainInstanced`; `BILLBOARD_VS_INC` for billboards) — and disable frustum culling on GPU-displaced meshes (the CPU bounding sphere is computed from un-displaced Y=0 positions, so the mesh culls while still on-screen — "buildings pop out as I pan"). **Triangulation density:** `bake-ground.js`'s `triangulateAndRefine(outer,holes,refine)` subdivides face/landscape polygons so per-vertex terrain sampling doesn't linearly-interpolate across a curving heightfield (the "foundations too tall / paths in midair on flat blocks" artifact; ribbons skip — their authored density already matches). Two properties to know: **(1) adaptive** — the default (`GROUND_REFINE="adaptive"`, `OPERATIONS.md §Ground tri-budget`) splits a triangle only where the heightfield bends past `GROUND_REFINE_TOL_M` (0.50 m), not on a uniform `maxEdge` grid — the tri-budget lever (1.37M→~0.5M tris). **(2) conforming (red-green)** — the split is crack-free: a criterion-selected triangle goes 1-to-4 (red); any neighbour whose shared edge it bisected conforms via a 1-to-2 green closure, or is promoted to red if ≥2 of its edges are bisected (iterated to a fixpoint). ⚠️ **A per-triangle split *without* this conformity leaves T-junctions** at every adaptive refined/coarse boundary — up-to-`tol` vertical cracks along the contours, invisible overhead but glaring at street level (the bug that shipped 2026-06-17, fixed same day). Per-polygon triangulation is independent, so the conforming guarantee is *within* a polygon; cross-polygon (group-boundary) conformity is not yet handled. ⚠️ **A ground geometry re-bake rewrites `ground.json` without the AO `lightmap` block — always re-bake AO after** (`BACKLOG.md` GPU-perf thread).
+Every ground-anchored consumer multiplies by the same `uExag` uniform (driven from `terrainExag.value`, lerped toward the town's authored `terrainExag`). **That authored value is the single dial per town** — changing it rescales that scene coherently (ground, foundations, buildings, lamps, trees, paths, water). **Anchor rule:** the rigid-lift "centroid Y" is the **mean of `getElevationRaw` at every footprint vertex**, never a single sample at `building.position` (sampling at position diverges by the heightfield's convexity — ~0.5m of baked-in over-exposure on LS's concave hill). Both building walls (`patchTerrainAtCentroidRaw`) and foundations (per-vertex `aCentroidY`) use it. **Instance-scale:** `patchTerrainInstanced` divides the lift by instance Y-scale so the world result is `sample × uExag` meters regardless of scale (else lamps/trees over-lift). **Coverage parity:** anything ground-anchored must patch (`patchTerrain` perVertex for ground; `patchTerrainAtCentroidRaw` for walls; `aCentroidY` for foundations; **`patchTerrainInstancedBaked` for lamps/trees** — baked per-object anchor, see "Ground conformance" above, which superseded the old live `patchTerrainInstanced`; `BILLBOARD_VS_INC` for billboards) — and disable frustum culling on GPU-displaced meshes (the CPU bounding sphere is computed from un-displaced Y=0 positions, so the mesh culls while still on-screen — "buildings pop out as I pan"). **Triangulation density:** `bake-ground.js`'s `triangulateAndRefine(outer,holes,refine)` subdivides face/landscape polygons so per-vertex terrain sampling doesn't linearly-interpolate across a curving heightfield (the "foundations too tall / paths in midair on flat blocks" artifact; ribbons skip — their authored density already matches). Two properties to know: **(1) adaptive** — the default (`GROUND_REFINE="adaptive"`, `OPERATIONS.md §Ground tri-budget`) splits a triangle only where the heightfield bends past `GROUND_REFINE_TOL_M` (0.50 m), not on a uniform `maxEdge` grid — the tri-budget lever (1.37M→~0.5M tris). **(2) conforming (red-green)** — the split is crack-free: a criterion-selected triangle goes 1-to-4 (red); any neighbour whose shared edge it bisected conforms via a 1-to-2 green closure, or is promoted to red if ≥2 of its edges are bisected (iterated to a fixpoint). ⚠️ **A per-triangle split *without* this conformity leaves T-junctions** at every adaptive refined/coarse boundary — up-to-`tol` vertical cracks along the contours, invisible overhead but glaring at street level (the bug that shipped 2026-06-17, fixed same day). Per-polygon triangulation is independent, so the conforming guarantee is *within* a polygon; cross-polygon (group-boundary) conformity is not yet handled. ⚠️ **Always re-bake AO after a ground geometry re-bake** — but ⛔ **the failure mode changed 2026-09-20**: the ground bake used to rewrite `ground.json` *without* the AO `lightmap` block, silently, and five of seven baked towns were rendering flat-lit with an AO PNG sitting unreferenced on disk. It now carries an existing block forward and stamps a `groundKey` (FNV-1a over bbox + group layout); the AO pass stamps the key it baked against; `BakedGround` **refuses a mismatch by name** and prints the command. ⭐ The old mtime gate could not have caught it — the AO pass writes the manifest *before* the PNG, so "ground.json newer than the PNG" meant both "current" and "just destroyed". ▶ `node checks/claims-the-ao-belongs-to-its-ground.mjs` (`BACKLOG.md` GPU-perf thread).
+
+### Cast shadows — the frustum is the town's, and BOTH its position and its SIZE must be quantised (2026-09-20/21)
+
+Four decisions, each of which was a defect first.
+
+1. **A vertex-displaced caster needs a `customDepthMaterial`.** three substitutes its own
+   `MeshDepthMaterial` for the shadow pass, and that material has never heard of `aCentroidY` or
+   `uExag` — so every building went into the shadow map **dropped back onto the baseline**, up to
+   20 m below where it is drawn, and an occluder buried in the terrain shadows nothing. ⛔ **This
+   was never a regression: the shadow pass has never been correct for any in-shader-displaced
+   caster.** It is worst on the hilliest town and mildest on flat LS. ⭐ A `position` prop is
+   **not** an offender — that rides `modelMatrix`, which the depth pass honours; only in-shader
+   displacement is invisible to it. ▶ `checks/claims-displaced-casters-have-a-depth-material.mjs`
+   ⚠️ **File-level**, so a second casting mesh in an already-passing file slips through.
+2. **The frustum comes from `ground.json#stencil`, never from a constant.** It was `±900` —
+   Lafayette Square's 892 m radius plus 8 m — so on a 3,539 m town **~73% of the map could not
+   receive a shadow at any quality.** The light itself does not move (`LIGHT_RADIUS` also places
+   the visible sun and moon orbs), so the ortho shadow camera takes a **negative near** instead.
+   ⛔ **No fallback:** an unknown scene size means casting stops and logs why.
+3. **Sizing the box to the whole disc is correct and ruinous** — 7.4 km over 4096 is 1.806 m/texel,
+   stair-stepping a fifth of a building wide. The box follows the camera's ground focus and covers
+   what is in shot, clamped to the town (0.03–0.2 m/texel at working heights). **Bias and normalBias
+   derive from metres-per-texel** rather than being literals tuned at LS's density — `normalBias`
+   0.15 is 0.30 of a texel at LS and 0.08 on huron, which is the sawtooth comb along every edge.
+4. ### ⭐⭐ **TEXEL-SNAPPING THE POSITION IS ONLY HALF THE JOB — THE SIZE MUST BE QUANTISED TOO.**
+   Snapping the focus stops shadows crawling while the box **slides**; it does nothing while the box
+   **resizes**. `texel = 2·half / SHADOW_MAP_SIZE`, so a `half` taken straight off camera distance
+   changes the snapping grid's **pitch** every frame, and **every shadow edge in the scene jumps to a
+   new grid at the same instant** — which reads as a whole-frame flash, not as judder. `half` now
+   rounds **up to a power of two** (80 m → 64 · 300 → 256 · 1200 → 1024), so the texel size changes
+   only when the shot roughly doubles: a single cut instead of a continuous shimmer. ⚠️ **With
+   hysteresis** — grow as soon as the shot needs it, shrink only once the shot is well inside the
+   smaller bucket (0.45×) — or a camera parked on a boundary flaps between two sizes every frame and
+   the flash comes back worse.
+   ⭐ **What let the flash be told apart from the frame rate:** the parity probe measured the camera
+   as smooth and **monotone** (per-frame step 0.1215/0.1268/0.1547 m, ±5%, ground delta exactly 0)
+   *at 8.5 FPS*. Something was changing between frames that was not the camera.
+   ⛔ **The frame rate itself is UNEXPLAINED and is not this** — see `ROADMAP` H-9.
+
+*(The operator-facing half — the Penumbra (m) unit and its migration — is `OPERATIONS.md §Light & Shadow`.)*
 
 ### Render environments — the 5-env topology (often confused)
 | Environment | Scene root | Neon | Live vs baked |
