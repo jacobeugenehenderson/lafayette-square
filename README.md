@@ -85,9 +85,10 @@ that renders.
 `Ctrl-C` kills all four. Escape hatches if you want to run one in isolation:
 
 ```bash
-npm run dev:web         # vite only
-npm run dev:cartograph  # cartograph backend only
-npm run dev:arborist    # arborist backend only
+npm run dev:web            # vite only
+npm run dev:cartograph     # cartograph backend only
+npm run dev:arborist       # arborist backend only
+npm run dev:meteorologist  # meteorologist backend only
 ```
 
 The dev server reads environment variables from `.env` (gitignored):
