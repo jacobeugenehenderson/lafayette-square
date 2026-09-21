@@ -2,7 +2,6 @@ import { useMemo, useState, useEffect } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { ParkTitleMesh } from '../components/LafayettePark.jsx'
-import WaterSurface from '../components/WaterSurface.jsx'
 import useTimeOfDay from '../hooks/useTimeOfDay'
 // ── LS-DEFAULT data (the mold the kit was cast around). These stay static
 // imports because LS's render data lives at the shared default paths; a POURED
@@ -964,18 +963,20 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // Survey suppress the ground; ignoring both would take the toggle away from the
         // operator, and the override is the product.
         if (!geo || hideIn[kind]) return null
-        // ⛔⛔ WATER USES THE KIT MATERIAL, THE SAME COMPONENT THE RUNTIME MOUNTS.
-        // It used to be painted here with `makeFlatMat` — a flat colour swatch —
-        // while BakedGround painted the same lake with the kit water shader. Two
-        // renderers of one object, silently disagreeing: every change to the
-        // water was INVISIBLE in the Stage, which is where the operator judges
-        // it. An evening went into tuning a material that was not on screen.
-        // ⭐ `WaterSurface` is a COMPONENT rather than a material because the
-        // per-frame uniform driving (sky bands, wind, key body, time) is half the
-        // material — and it was exactly the half that diverged.
-        if (kind === 'water') {
-          return <WaterSurface key={`gnd-${kind}`} geometry={geo} renderOrder={PRI.landscape - 1} />
-        }
+        // ⛔⛔ OWED, NOT DONE — THE DESIGNER STILL PAINTS WATER FLAT, AND THAT IS A
+        // KNOWN DIVERGENCE, not an oversight. `BakedGround` paints the same lake
+        // with the kit water shader (`WaterSurface.jsx`); this paints a colour
+        // swatch. So a water change is INVISIBLE in the Stage, which is where the
+        // operator judges — an evening was lost to exactly that, 2026-09-20.
+        // ⚠️ The hand-off was attempted and REVERTED: mounting <WaterSurface>
+        // here made the lake vanish entirely in Stage rather than improve. Both
+        // surfaces were confirmed to mount it (localStorage probe: BakedGround
+        // 35 groups incl. water:lake · MapLayers groundByKind=water), so the
+        // component reaches the tree and something about THIS surface's render
+        // path — order, fade, depth, or lighting — stops it drawing. Not yet
+        // diagnosed. ⛔ A swatch is worse than the real thing but far better than
+        // no lake, so the swatch stays until the cause is known.
+        // ▶ `docs/agents/AGENT-VALIDATION-SURFACES.md` §Two renderers.
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />

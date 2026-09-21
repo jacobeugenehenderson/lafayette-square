@@ -51,6 +51,13 @@ with the change.**
    enough: the per-frame uniform driving is half the material, and that is exactly
    the half that diverged. `WaterSurface.jsx` is the pattern.
 3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
+   ⚠️ **AND WATER IS NOT ACTUALLY UNIFIED YET.** The hand-off was attempted on
+   2026-09-20 and REVERTED: mounting the shared component in `MapLayers` made the
+   lake vanish in Stage rather than improve. Both surfaces were probed and DO
+   mount it, so the component reaches the tree — something about the Designer's
+   own render path (order, fade, depth, or lighting) stops it drawing, and the
+   cause is **not established**. ⛔ The swatch stays until it is: no lake is worse
+   than a flat lake. ▶ **Until then, judge water in PREVIEW, not Stage.**
    **A new shared population needs its own line in that check**, or it is one grep
    away from the same evening.
 
