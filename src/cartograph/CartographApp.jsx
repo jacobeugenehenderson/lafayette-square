@@ -591,6 +591,9 @@ function readCamInit() {
 
 // ── Controls ────────────────────────────────────────────────────────────────
 function Controls({ controlsRef }) {
+  // ⭐ The playback flag, read from the same store channel StageApp's hero
+  // driver animates on. ⛔ Not a local `shot` test — see the block below.
+  const heroPlaying = useCartographStore(st => !!st.heroMotion?.preview)
   const shot = useCartographStore(s => s.shot)
   const tool = useCartographStore(s => s.tool)
   const markerActive = useCartographStore(s => s.markerActive)
@@ -654,10 +657,24 @@ function Controls({ controlsRef }) {
       <BrowseControls controlsRef={controlsRef} />
     )
   }
-  // Hero: locked during runtime playback, free only while authoring a
-  // keyframe. Street: always free (no keyframes to lock to).
+  // ⛔⛔ LOCKED WHILE PLAYBACK IS DRIVING, FREE OTHERWISE — and the gate is
+  // PLAYING vs NOT, never SHOT vs SHOT.
+  // History, because both halves were got wrong in one day (2026-09-20/21):
+  // · Originally `enabled={shot !== 'hero' || heroAuthoring}` — orbit was locked
+  //   in Hero unless the operator clicked a keyframe to author it. That forbade
+  //   the actual workflow: Jacob flies to a pose FIRST and memorises it second
+  //   ("you memorize keyframes arrived at using the controls"). Fixed in ea04dd0c
+  //   by enabling always.
+  // · ⛔ But the lock had a SECOND job that comment stated and I removed with it:
+  //   "the bounce plays as it ships". OrbitControls with makeDefault writes the
+  //   camera every frame, so with it always enabled the hero playback had nothing
+  //   left to move — Jacob: "I programmed new keyframes into the camera but they
+  //   don't playback when I push play."
+  // ⇒ Both are satisfied by gating on the PLAYBACK flag (`heroMotion.preview`,
+  //   the same one StageApp's driver reads at :1176). Fly freely whenever it is
+  //   not playing; hand the camera over while it is.
   return (
-    <OrbitControlsShot controlsRef={controlsRef} enabled />
+    <OrbitControlsShot controlsRef={controlsRef} enabled={!heroPlaying} />
   )
 }
 
@@ -699,6 +716,26 @@ function BrowseControls({ controlsRef }) {
 // `enabled` locks them for the Hero runtime preview (see Controls).
 function OrbitControlsShot({ controlsRef, enabled = true }) {
   const localRef = useRef(null)
+  // ⛔ RE-AIM ON HANDOVER. While playback drives, these controls are disabled and
+  // their `target` stands still — but the CAMERA has flown somewhere else. Enable
+  // them again and the first drag would orbit around a point from before the take,
+  // and OrbitControls.update() would haul the camera back to satisfy it: a snap,
+  // right after the shot the operator was watching.
+  // ⇒ On every false→true transition, move `target` to the point the camera is
+  // actually looking at, at the distance it was already holding. The controls then
+  // pick up exactly where playback left off.
+  const wasEnabled = useRef(enabled)
+  useEffect(() => {
+    const c = localRef.current
+    if (c && enabled && !wasEnabled.current) {
+      const dist = c.target.distanceTo(c.object.position) || 1
+      const fwd = new THREE.Vector3()
+      c.object.getWorldDirection(fwd)
+      c.target.copy(c.object.position).addScaledVector(fwd, dist)
+      c.update()
+    }
+    wasEnabled.current = enabled
+  }, [enabled])
   // ⭐ ONE BUTTON AND TWO MODIFIERS — the DCC scheme, so a pen or a trackpad can
   // do all three moves. Alt already panned; Control now dollies, which is the
   // one that was missing: dolly lived on the MIDDLE button and the wheel, and a
