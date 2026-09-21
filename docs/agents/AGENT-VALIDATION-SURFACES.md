@@ -51,18 +51,23 @@ with the change.**
    enough: the per-frame uniform driving is half the material, and that is exactly
    the half that diverged. `WaterSurface.jsx` is the pattern.
 3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
-   ⚠️ **AND THE MEASUREMENT TRAP THAT COST TWO REVERTS, 2026-09-20.** A counter on
-   `BakedGround` reported it rendering **zero** times in the Cartograph — true, and
-   the wrong moment: **the Cartograph opens in DESIGNER**, where not mounting it is
-   correct. The shot is reached by clicking into it. "Fresh load + wait" is the one
-   method that cannot see the thing being tested for.
-   ▶ **Verify by CAUSATION or by NETWORK, not by a counter on load.** Causation: a
-   slab-only change (a re-bake that touches `ground.*` and not `map.json`) showing
-   up in Stage proves Stage consumes the slab. Network: in a shot the page fetches
-   `baked/<look>/ground.poolmap.png`, which is loaded *inside* `GroundMeshes`.
-   ⭐ Three of us hit this shape four times in one evening — a careful measurement
-   aimed at the wrong moment. **Ask what state the instrument is reading before you
-   trust what it says.**
+   ⚠️ **AND THE MEASUREMENT TRAPS, 2026-09-20 — four of them in one evening, all
+   the same shape: an instrument reporting NOTHING HAPPENED, aimed wrongly.**
+   A stale Preview · a leftover `localStorage` probe read as live · a render counter
+   on a FRESH LOAD (the Cartograph opens in DESIGNER, so 0 renders is correct there)
+   · and a counter that read 0 in the very frame the NETWORK proved the component
+   was rendering, because HMR had swapped the module while the instance persisted.
+   ⭐ **A "nothing happened" reading is the one you must never accept without a
+   second, DIFFERENTLY SHAPED measurement.** Network and causation are differently
+   shaped; another counter is not.
+   ▶ For this rig: causation — a slab-only re-bake showing up in Stage proves Stage
+   consumes the slab. Network — a shot fetches `baked/<look>/ground.colormap.png`,
+   which is loaded *inside* `GroundMeshes`.
+   ⛔ **STILL UNSOLVED, and do not "fix" it by gating the Designer's swatch:** the
+   slab's water mesh does not appear in the Cartograph even though `GroundMeshes`
+   renders there. Gating the swatch was tried twice and the lake went to bare sky
+   both times. It is not the 2% Fresnel story either — a faint lake still reads as
+   a dark surface, and what is on screen is SKY.
 
 ⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
 Preview mounts the production components; Stage mounts the Designer's. Sending an

@@ -963,21 +963,20 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // Survey suppress the ground; ignoring both would take the toggle away from the
         // operator, and the override is the product.
         if (!geo || hideIn[kind]) return null
-        // ⛔⛔ IN A SHOT, THE SLAB OWNS THE WATER — DO NOT DRAW IT TWICE.
-        // `inShot` is `!inDesigner`, and a shot mounts <BakedGround/>, which draws
-        // the slab's water group through the kit material (`WaterSurface.jsx`).
-        // This surface was ALSO drawing it as a flat colour swatch, stacked on
-        // top, so in the Stage the operator saw the SWATCH and never the shader.
-        // ⚠️ AND WHEN THIS GATE LANDS THE LAKE LOOKS FAINTER, WHICH IS NOT A BUG
-        // AND FOOLED ME ONCE: the opaque swatch is gone and what remains is water
-        // that, at an overhead pitch, is ~2% reflective. Measured — run
-        // `node checks/water-layer-budget.mjs`: Fresnel 0.0202 at 55°, so the
-        // reflection layers contribute ~2% and the BODY carries the picture.
-        // ⛔ I read that faintness as "the gate deleted the lake", reverted, and
-        // was wrong. It is Fresnel. ▶ Judge water at a LOW camera angle.
-        // ⭐ `hideIn`, not `hide`, is what the block below reads — SHOT_SKIP does
-        // NOT reach this ground water, which is why an explicit gate is needed.
-        if (kind === 'water' && inShot) return null
+        // ⛔⛔ DO NOT GATE THIS ON `inShot`. TRIED TWICE, AND BOTH TIMES THE LAKE
+        // WENT TO BARE SKY. The reasoning is sound — a shot mounts <BakedGround/>,
+        // which draws the slab's `water:lake` group through the kit material, and
+        // `GroundMeshes` demonstrably renders in a Hero shot (network: it fetches
+        // `ground.colormap.png`, which is loaded inside it). But the slab's WATER
+        // mesh does not appear.
+        // ⛔ AND IT IS NOT THE 2% FRESNEL EXPLANATION, which is what talked me into
+        // re-applying the gate the second time. From overhead the reflection layers
+        // are ~2% but the BODY is 98% (`node checks/water-layer-budget.mjs`), so a
+        // drawing-but-faint lake would still read as a DARK SURFACE. What is on
+        // screen is SKY. Nothing is drawn there at all.
+        // ⇒ Cause NOT established. Until it is, this swatch is the only water the
+        // Cartograph has, and a flat lake beats no lake.
+        // ▶ `docs/agents/AGENT-VALIDATION-SURFACES.md` §Two renderers.
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />
