@@ -188,8 +188,9 @@ if (!/wpWorld \* uWaveK/.test(shPond.fragmentShader)) {
 // REQUIREMENT, not a taste: Jacob, 2026-09-20 — "we should have *some* level of
 // glint across the whole body, at least at the height of the sun."
 // ⭐ The width of the glitter region IS the slope variance, so a matte body is a
-// variance that is too low. Measured before the fix: 0.00818, BELOW Cox & Munk's
-// zero-wind intercept — glassier than dead calm. ⇒ assert the field lands on
+// variance that is too low. Measured before the fix: 0.00818 — by Cox & Munk a
+// surface under ~1 m/s of wind (RMS slope 5.2°), i.e. permanently near-calm in
+// every town whatever the weather was doing. ⇒ assert the field lands on
 // Cox–Munk, by SAMPLING it, not by trusting the normalisation that produced it.
 {
   const fract = (x) => x - Math.floor(x)

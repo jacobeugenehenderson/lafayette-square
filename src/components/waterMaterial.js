@@ -34,9 +34,11 @@
  * `glint` — a MULTIPLE OF THE PHYSICALLY CORRECT WAVE SLOPE, so 1 is the real
  *   ocean at the town's real wind speed and is the default. ⛔ It used to be an
  *   arbitrary amplitude defaulting to 0.35, which put the surface at a slope
- *   variance of 0.00818 — below Cox & Munk's zero-wind intercept, i.e. glassier
- *   than dead calm, which is why the lake was matte at noon. The knob is the same
- *   knob; what it scales is now a measured quantity.
+ *   variance of 0.00818, which by Cox & Munk is a surface under about 1 m/s of
+ *   wind — RMS slope 5.2° against 9.6° for an ordinary 5 m/s breeze. Near-calm
+ *   water, permanently, in every town, whatever the weather was doing. That is
+ *   why the lake was matte at noon: too few facets at the right angle. The knob
+ *   is the same knob; what it scales is now a measured quantity.
  *   ⭐⭐ THIS IS THE SUN AND MOON ON THE WATER, and the measurement that produced
  *   it is worth keeping:
  *   the lifted shader's specular path was never broken. Every `<lights_*>` chunk
@@ -148,9 +150,10 @@ const DEFAULT_WIND_MPS = 5
 // at noon), and a LOW sun narrows the same lobe into the elongated path. One
 // distribution, two sun elevations. ⛔ So a matte lake at noon is not a taste
 // failure, it is the variance being too low — which is exactly what it was:
-// MEASURED at glint 0.35, our field had variance 0.00818 (RMS slope 5.2°), below
-// Cox–Munk's zero-wind intercept and equivalent to about 1 m/s. Glassy. A real
-// 5 m/s breeze is 0.0286 — three and a half times more.
+// MEASURED at glint 0.35, our field had variance 0.00818 — RMS slope 5.2°, which
+// the relation puts at about 1 m/s of wind. Not impossibly glassy (the zero-wind
+// intercept is 0.003, RMS 3.1°, and we were above it) but near-calm, fixed, in
+// every town and every weather. A real 5 m/s breeze is 0.0286 — 3.5× more.
 export function coxMunkSlopeVariance(windMps) {
   return 0.003 + 0.00512 * Math.max(0, windMps || 0)
 }

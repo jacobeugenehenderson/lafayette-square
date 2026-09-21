@@ -466,10 +466,23 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // normalizes to local-min = 0 and ON A LAKESHORE TOWN THE LOCAL MINIMUM IS THE
 // LAKE. ⇒ y = 0 is the datum everything else is measured from, and draping this
 // would produce a lake that undulates.
-// ⭐ Which also hands the shoreline over for free: the waterline is wherever the
-// terrain crosses y = 0 — a level-set of a field already baked, correct even
-// where the OSM ring was clipped by the fetch envelope (an envelope edge is not
-// a zero crossing).
+// ⚠️ THE DATUM IS y = 0; THE BAKED SURFACE IS NOT, AND THE 68 mm IS DELIBERATE.
+// Every ground group is separated by baked geometry rather than polygonOffset
+// (inert under log depth), at renderOrder × GROUND_Y_EPS — water is slot 34 of
+// 35, so the lake sits 0.068 m above the datum. It is the coplanar resolver, not
+// a lift, and nothing here reads an absolute Y. ⛔ Recorded because the doctrine
+// says "water is a level surface at y = 0" and the artifact says 0.068: anything
+// that later compares water against the terrain's zero crossing must use the
+// group's own baked Y, not the number in the sentence.
+//
+// ⛔ AND THE SHORELINE IS **NOT** FREE — the brief said it was and the DEM says
+// otherwise. Measured on huron, 2,064,969 samples split by the water ring:
+// under the water the DEM reads 0.00–3.31 m (median 0.55); on land it never
+// drops below 1.14 m. The two populations OVERLAP and the land never reaches
+// zero, so the y=0 level set is a patch somewhere inside the lake, not the
+// shore. ▶ The real signal is `coastline.mjs`'s ARCS (the true shoreline,
+// separate from the bb closure), which needs a per-vertex attribute and so a
+// slab schema bump — unruled, not built.
 //
 // ⭐ The wave frequencies come from THIS BODY'S OWN EXTENT, read off the baked
 // geometry's bounding box. Not a constant, not a scene lookup — the surface's
