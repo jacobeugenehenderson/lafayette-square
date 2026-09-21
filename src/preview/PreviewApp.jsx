@@ -1247,6 +1247,20 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
   // Baked layer visibility — the park title honors scene.json.layerVis, same as
   // every other layer (re-bake propagates the panel toggle to the slab).
   const scene = useSceneJson(lookId)
+  // ⛔⛔ CACHE-BUST TOKEN — WITHOUT THIS PREVIEW SHOWS A STALE BAKE, SILENTLY.
+  // Every baked consumer builds its URL as `…/<file>` + (bakeLastMs ? '?t=…' : ''),
+  // so an ABSENT token means an unchanging URL and the browser's HTTP cache serves
+  // the PREVIOUS bake for ground.json / ground.bin / trees / lamps. Preview passed
+  // none — Stage did — which is why the two disagreed and why an operator eye-gate
+  // taken in Preview could be judging geometry several bakes old. Measured
+  // 2026-09-20: a 10× ground re-bake was invisible in Preview and visible in Stage.
+  // ⭐ `scene.bakedAt` is the right token and it is already in hand: useSceneJson
+  // fetches with `cache: 'no-store'` in dev, so it is never itself stale, and it
+  // changes exactly when a bake happens — no more, no less.
+  // ⛔ NO FALLBACK to Date.now(): that would re-fetch every mount and defeat the
+  // cache entirely. An absent bakedAt means an unbaked look, and the un-busted URL
+  // is then correct — there is nothing newer to miss.
+  const bakeLastMs = scene?.bakedAt ?? null
   // ?dofDebug=1 paints the DoF CoC zones (green = sharp, red = full blur) — the
   // shared dofDriver reads window.__dofDebug. (Formerly set by PreviewPostFx's
   // DofDriver; that fork is retired, so Preview sets it here.)
@@ -1259,7 +1273,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
       <SkyStateTicker />
       <ForceDaytimeOnMount />
       <GpuMonitorTicker />
-      <ExposureTicker lookId={lookId} />
+      <ExposureTicker lookId={lookId} bakeLastMs={bakeLastMs} />
 
       {/* Atmosphere driver chain — same as production. Without these,
           useAtmosphere.tweenedDirective is never populated and <Atmosphere>
@@ -1279,16 +1293,16 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
 
       {/* Channel-driven soft shadows (size/samples from scene.shadow) —
           matches Stage + production. Canvas already runs shadows="soft". */}
-      <StageShadows lookId={lookId} />
+      <StageShadows lookId={lookId} bakeLastMs={bakeLastMs} />
       {/* Atmospheric fog (FogExp2 from scene.mist) — Stage mounts this; it
           was previously absent from Preview entirely. Always mounted now;
           the toggle nulls scene.fog via `enabled` (fog is a scene property,
           not a drawn layer) so there's no mount churn (Vernier Phase 1b). */}
-      <StageFog lookId={lookId} enabled={layers.fog} />
+      <StageFog lookId={lookId} bakeLastMs={bakeLastMs} enabled={layers.fog} />
       {/* Lamp-glow uniforms (grass pools / tree emissive / pool radial) from
           scene.lampGlow — the same driver production now mounts. Without it
           the uniforms stay at dead defaults and lamp pools never appear. */}
-      <LampGlowDriver lookId={lookId} />
+      <LampGlowDriver lookId={lookId} bakeLastMs={bakeLastMs} />
 
       {/* Celestial + clouds visibility-gated, both always mounted. When
           celestial is off, the always-mounted BasicLights takes over via its
@@ -1298,7 +1312,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
           BasicLights is a Preview-only inspection fallback (no production
           analog) — held resident-but-hidden, never drawn in the all-on path. */}
       <group visible={layers.celestial}>
-        <R3FErrorBoundary name="CelestialBodies"><CelestialBodies /></R3FErrorBoundary>
+        <R3FErrorBoundary name="CelestialBodies"><CelestialBodies lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
       </group>
       <group visible={!layers.celestial}>
         <BasicLights />
@@ -1311,7 +1325,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
 
       <Suspense fallback={null}>
         <group visible={layers.ground}>
-          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="BakedGround"><BakedGround lookId={lookId} bakeLastMs={bakeLastMs} targetExag={shot === 'street' ? 1 : shot === 'browse' ? 0 : sceneExag()} /></R3FErrorBoundary>
         </group>
         {/* Buildings (Phase 2 — collapsed to one toggle). LafayetteScene's
             live Building+Foundations stay unmounted always (`building: true`),
@@ -1341,13 +1355,13 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
             mounted, baked assets resident). Each toggle is a clean per-frame
             draws/tris on-off with no dispose/re-upload (Vernier Phase 1b). */}
         <group visible={layers.trees}>
-          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} /></R3FErrorBoundary>
+          <R3FErrorBoundary name="InstancedTrees"><InstancedTrees lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         </group>
         <group visible={layers.park}>
           <R3FErrorBoundary name="LafayettePark"><LafayettePark /></R3FErrorBoundary>
         </group>
         <group visible={layers.lights}>
-          <R3FErrorBoundary name="StreetLights"><BakedLamps /></R3FErrorBoundary>
+          <R3FErrorBoundary name="StreetLights"><BakedLamps lookId={lookId} bakeLastMs={bakeLastMs} /></R3FErrorBoundary>
         </group>
         <group visible={layers.arch}>
           <R3FErrorBoundary name="GatewayArch"><GatewayArch /></R3FErrorBoundary>
@@ -1363,7 +1377,7 @@ function CanvasContents({ layers, shot, setShot, tier, pyramidDegree }) {
           vestigial for post-FX (DownsamplePyramid renders a fixed ladder,
           ignoring degree) — kept until the v0.2 measurement regime re-homes the
           per-platform inclusion here. */}
-      <PostProcessing lookId={lookId} inspect={{ toggles: layers }} />
+      <PostProcessing lookId={lookId} bakeLastMs={bakeLastMs} inspect={{ toggles: layers }} />
     </>
   )
 }

@@ -349,7 +349,16 @@ function ViewKeyedBakedGround({ lookId }) {
   const viewMode = useCamera(s => s.viewMode)
   // ⛔ The hero ceiling is the TOWN's authored value, not a constant (site 15).
   const targetExag = viewMode === 'browse' ? 0 : viewMode === 'planetarium' ? 1 : sceneExag()
-  return <BakedGround lookId={lookId} targetExag={targetExag} />
+  // ⛔ CACHE-BUST — production shipped WITHOUT one. BakedGround gates its `?t=` on
+  // this prop, so an absent token leaves ground.json / ground.bin on an unchanging
+  // URL and a visitor's browser serves the PREVIOUS bake after a deploy. Silent:
+  // the page renders, nothing errors, the map is simply old. `useSceneJson`'s own
+  // header says production relies on "the bakedAt cacheBust busting the URL on each
+  // bake" — this is the caller that never passed it. Found 2026-09-20 by
+  // checks/claims-baked-consumers-get-a-cache-bust.mjs, written after the same gap
+  // in Preview made an operator eye-gate report the opposite of the truth.
+  const scene = useSceneJson(lookId)
+  return <BakedGround lookId={lookId} bakeLastMs={scene?.bakedAt ?? null} targetExag={targetExag} />
 }
 
 function CameraRig() {
