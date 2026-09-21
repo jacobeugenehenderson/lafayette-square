@@ -1,0 +1,367 @@
+{
+ "view": "preview",
+ "href": "/preview?scene=lafayette-square",
+ "scene": "lafayette-square",
+ "bakedScenesTouched": [
+  "lafayette-square"
+ ],
+ "takenAt": "2026-09-21T05:27:40.000Z",
+ "live": {
+  "f0": 2541,
+  "f1": 2684,
+  "advancing": true,
+  "visibility": "visible"
+ },
+ "cam": {
+  "type": "PerspectiveCamera",
+  "near": 1,
+  "far": 60000,
+  "fov": 22,
+  "zoom": 1
+ },
+ "gl": {
+  "dpr": 1.5,
+  "shadows": true,
+  "shadowType": 2,
+  "toneMapping": 0,
+  "exposure": 0.865,
+  "colorSpace": "srgb",
+  "logDepth": true
+ },
+ "fog": "FogExp2@0.00025",
+ "sunIntensity": 1.989,
+ "lights": [
+  {
+   "owner": "CelestialBodies",
+   "type": "AmbientLight",
+   "intensity": 0.639,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies",
+   "type": "AmbientLight",
+   "intensity": 0.938,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies",
+   "type": "AmbientLight",
+   "intensity": 0,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies",
+   "type": "HemisphereLight",
+   "intensity": 0.688,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies>PrimaryOrb",
+   "type": "DirectionalLight",
+   "intensity": 1.989,
+   "visible": true,
+   "castShadow": true,
+   "shadow": {
+    "map": 4096,
+    "near": -2613.21,
+    "far": 2613.21,
+    "halfExtent": 1013.21
+   }
+  },
+  {
+   "owner": "CelestialBodies>CounterBodyLight",
+   "type": "DirectionalLight",
+   "intensity": 0,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies>SecondaryOrb",
+   "type": "HemisphereLight",
+   "intensity": 0.089,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "CelestialBodies",
+   "type": "HemisphereLight",
+   "intensity": 0.043,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "BasicLights",
+   "type": "HemisphereLight",
+   "intensity": 0.6,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "BasicLights",
+   "type": "AmbientLight",
+   "intensity": 0.15,
+   "visible": true,
+   "castShadow": false,
+   "shadow": null
+  },
+  {
+   "owner": "BasicLights",
+   "type": "DirectionalLight",
+   "intensity": 2.2,
+   "visible": true,
+   "castShadow": true,
+   "shadow": {
+    "map": 2048,
+    "near": 1,
+    "far": 1800,
+    "halfExtent": 900
+   }
+  }
+ ],
+ "populations": {
+  "(unowned)": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "": {
+   "objs": 10,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "Terrain": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 284258,
+   "lights": 0
+  },
+  "CelestialBodies>GradientSky": {
+   "objs": 3,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 10238,
+   "lights": 0
+  },
+  "CelestialBodies": {
+   "objs": 5,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 5
+  },
+  "CelestialBodies>PrimaryOrb": {
+   "objs": 2,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 1
+  },
+  "CelestialBodies>CounterBodyLight": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 1
+  },
+  "CelestialBodies>SecondaryOrb": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 1
+  },
+  "BasicLights": {
+   "objs": 3,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 3
+  },
+  "CloudDome": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 3968,
+   "lights": 0
+  },
+  "BakedGround>GroundMeshes": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "BakedGround>GroundMeshes>GrassMesh": {
+   "objs": 6,
+   "meshes": 6,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 91380,
+   "lights": 0
+  },
+  "BakedGround>GroundMeshes>FadeMesh": {
+   "objs": 29,
+   "meshes": 29,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 163983,
+   "lights": 0
+  },
+  "LafayetteScene": {
+   "objs": 2,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "LafayetteScene>ClickCatcher": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 2,
+   "lights": 0
+  },
+  "LafayetteScene>SceneNeon>NeonBands": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 8384,
+   "lights": 0
+  },
+  "SlabBuildings": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "SlabBuildings>GroupMesh": {
+   "objs": 9,
+   "meshes": 9,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 33696,
+   "lights": 0
+  },
+  "InstancedTrees>ParkPopulation": {
+   "objs": 2,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "InstancedTrees>ParkPopulation>HeroImpostorSpecies": {
+   "objs": 162,
+   "meshes": 0,
+   "instanced": 162,
+   "instances": 15327,
+   "tris": 12261600,
+   "lights": 0
+  },
+  "InstancedTrees>ParkPopulation>OverheadSpecies": {
+   "objs": 27,
+   "meshes": 0,
+   "instanced": 27,
+   "instances": 15327,
+   "tris": 24032736,
+   "lights": 0
+  },
+  "LafayettePark": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "LafayettePark>ParkWater": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  },
+  "LafayettePark>ParkWater>PondGroup": {
+   "objs": 7,
+   "meshes": 5,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 262,
+   "lights": 0
+  },
+  "LafayettePark>PerimeterFence": {
+   "objs": 189,
+   "meshes": 184,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 2208,
+   "lights": 0
+  },
+  "BakedLamps>StreetLights": {
+   "objs": 4,
+   "meshes": 0,
+   "instanced": 3,
+   "instances": 1749,
+   "tris": 2557038,
+   "lights": 0
+  },
+  "GatewayArch>GroundDisc": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 128,
+   "lights": 0
+  },
+  "GatewayArch": {
+   "objs": 1,
+   "meshes": 1,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 720,
+   "lights": 0
+  },
+  "PostProcessing>RenderPipeline": {
+   "objs": 1,
+   "meshes": 0,
+   "instanced": 0,
+   "instances": 0,
+   "tris": 0,
+   "lights": 0
+  }
+ }
+}
