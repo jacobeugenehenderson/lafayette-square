@@ -159,6 +159,13 @@ And when you look up, it's a *real* sky. The sun and moon sit in their **true po
 
 *(Under the hood this is the `planetarium` camera mode; the UI calls it street view. Three camera modes total — Hero, Browse, and this. A free-roaming walk-around is a planned future evolution.)*
 
+**And the sun and the moon each light the town from where they actually are.** Not one averaged light standing in for both: two, each at its own real position for the date, time and latitude, each with its own brightness — the moon's scaled by its phase and how high it has risen, so a thin crescent low in the sky lays almost nothing and a full moon overhead is unmistakable. They hand over at dusk without ever pointing at a spot where neither of them is. A moon that is up in the afternoon is still up in the picture, faintly, because it is really there.
+
+### Water
+**A town with water gets water, not a blue plane.** The surface carries wind waves, drifting at the speed real waves of that size travel, and the wave sizes are the same on a farm pond and on a Great Lake — because that is how water works: a big body buys you bigger swell on top, it does not delete the ripples. How choppy it is comes from **the town's live wind**, polled with the rest of the weather, through the relationship Cox and Munk measured off the real ocean in 1954. A windy afternoon is a rougher, broader-sparkling lake; a calm one goes closer to a mirror.
+
+⭐ **And because the sun and moon are real lights, their reflection is a real reflection** — the bright glitter path that runs toward you across the water, wide near the horizon and tightening toward the body, which swings around as the hours pass and appears for the moon at night at the moon's own bearing. ⚠️ **You have to be facing it**: a reflection sits between you and the body, so a camera pointed away from the sun will not have one, the same as standing on a real shore.
+
 ### Place cards
 Click any building to open its card. **Claimed places** show photos, hours (with a live open/closed indicator), contact info, a menu where applicable, reviews with a fleur-de-lis rating, and upcoming events. **Unclaimed buildings** still open — LS auto-synthesizes a read-only card from the building's own record (year built, stories, architectural style, zoning, historic status, square footage), so every structure in the neighborhood is discoverable and described. Townies can leave reviews (with optional photos); guardians edit their card inline.
 
