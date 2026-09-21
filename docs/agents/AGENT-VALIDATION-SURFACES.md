@@ -51,18 +51,21 @@ with the change.**
    enough: the per-frame uniform driving is half the material, and that is exactly
    the half that diverged. `WaterSurface.jsx` is the pattern.
 3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
-   ⚠️ **AND THE SHARPER RULE, LEARNED THE EXPENSIVE WAY: in a SHOT, only ONE
-   surface may draw a given object.** `MapLayers` runs in both modes; every
-   non-Designer shot ALSO mounts `<BakedGround/>`. Both were drawing water — the
-   Designer's flat swatch stacked on the slab's real material — so the operator
-   saw the swatch and an evening went into tuning a shader that was covered up.
-   ⛔ And when the swatch was replaced by a second copy of the REAL material it
-   got worse, not better: two transparent `depthWrite:false` meshes at nearly the
-   same Y blend into something that is neither, and the lake vanished. **Two
-   renderers is not "one wins" — it is neither.**
-   ⭐ `MapLayers` now stands down for water when `inShot`. Its swatch is still
-   right in DESIGNER mode, where there is no slab and the operator wants a flat
-   floor to author against, not a simulation.
+   ⚠️ **AND THE FACT THAT OVERTURNS THE OBVIOUS READING — MEASURED, 2026-09-20:**
+   **`BakedGround`'s per-group dispatch NEVER RUNS IN THE CARTOGRAPH.** Probed live
+   in a Stage Hero shot: its branch did not execute once. So on that surface
+   `MapLayers` is the ONLY thing drawing water, and the tempting fix — "the slab
+   owns water in a shot, so stand down here" — **deletes the lake.** It did.
+   ⛔ **The two surfaces are not two painters of one mesh.** They are two different
+   consumers, and which one is live depends on the surface. So the question is
+   never *who wins*, it is **who is even running here** — and the only way to know
+   is to probe the dispatch, not to read the mount site.
+   ⚠️ Water is still **OWED**: the Cartograph paints a swatch, the runtime paints
+   the shader. Handing the Cartograph the shared component was tried twice and the
+   lake vanished both times; the stacking theory is dead, so the remaining suspect
+   is that surface's own patches (`makeFlatMat` → `injectRadialFade`, and per
+   `MapLayers.jsx:526` also `TERRAIN_DISPLACE`) which the kit material does not
+   carry. **Until it lands, judge water in PREVIEW.**
 
 ⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
 Preview mounts the production components; Stage mounts the Designer's. Sending an

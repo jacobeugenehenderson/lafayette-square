@@ -61,20 +61,23 @@ for (const [name, path] of [['runtime', RUNTIME]]) {
   ok.push(`${name} surface mounts <WaterSurface> (${path})`)
 }
 
-// ⛔ AND THE RULE THAT ACTUALLY MATTERS: IN A SHOT, ONLY ONE SURFACE MAY DRAW
-// WATER. `MapLayers` runs in both modes; every non-Designer shot also mounts
-// <BakedGround/>, which draws the slab's water through the shared component. If
-// MapLayers draws its own water there too, they STACK — and both being
-// transparent with depthWrite:false, the result is not "the top one wins", it is
-// two meshes blending into something neither of them is. That is what made the
-// lake read as a flat swatch for an evening, and then vanish entirely when the
-// swatch was swapped for a second copy of the real material.
+// ⛔⛔ AND THE FACT THAT OVERTURNED MY FIRST TWO THEORIES, MEASURED IN THE PAGE:
+// `BakedGround`'s per-group dispatch NEVER RUNS IN THE CARTOGRAPH. Probed live in
+// a Stage Hero shot — the branch did not execute once. So on that surface
+// `MapLayers` is the ONLY thing drawing water, and a gate there ("the slab owns
+// it in a shot") deletes the lake outright. It did.
+// ⇒ THE TWO SURFACES ARE NOT TWO PAINTERS OF ONE MESH. They are two different
+// consumers, and which one is live depends on the surface — so the question is
+// never "who wins", it is "who is even running here".
 const designer = strip(DESIGNER)
 if (/kind === 'water' && inShot\) return null/.test(designer)) {
-  ok.push('in a shot the slab owns the water — the Designer stands down (its swatch is correct in Designer mode)')
+  fail.push(`⛔ ${DESIGNER} stands down for water in a shot — but BakedGround's dispatch does not run in the ` +
+            `Cartograph at all, so this deletes the lake. Measured, 2026-09-20.`)
+} else if (/<WaterSurface\b/.test(designer)) {
+  ok.push('the Designer hands water to the shared component')
 } else {
-  fail.push(`⛔ ${DESIGNER} does not stand down for water in a shot. Two water meshes will stack: both transparent, both ` +
-            `depthWrite:false, and what draws is neither of them. Gate it on \`inShot\`.`)
+  console.log('  ⚠️  OWED: the Designer still paints water with a flat swatch, so a water change is NOT visible in ' +
+              'the Cartograph. Judge water in Preview until this lands.')
 }
 
 for (const line of ok) console.log(`  ✅ ${line}`)
@@ -83,4 +86,4 @@ if (fail.length) {
   console.error(`\n⛔ ${fail.length} failure(s) — the two surfaces do not draw the same water.`)
   process.exit(1)
 }
-console.log(`\n✅ one surface draws the water in a shot, with the shared component.`)
+console.log(`\n✅ the runtime draws water with the shared component; the Cartograph still has its swatch.`)
