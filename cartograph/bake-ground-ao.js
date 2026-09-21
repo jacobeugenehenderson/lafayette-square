@@ -485,6 +485,11 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
     size,
     rays,
     floor: 0.35,
+    // ⭐ The ground this AO was baked AGAINST. BakedGround refuses the lightmap if
+    // this stops matching manifest.groundKey — which is what a ground re-bake
+    // without a re-run of this pass produces. ⛔ An absent key means a PNG baked
+    // before 2026-09-20; the consumer says so rather than trusting it silently.
+    groundKey: manifest.groundKey ?? null,
   }
   writeIfChanged(manifestPath, JSON.stringify(manifest, null, 2))
 

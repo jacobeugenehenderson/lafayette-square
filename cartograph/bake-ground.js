@@ -1071,16 +1071,43 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     fade: stencil.faceFade,
   } : null
 
+  // ⭐⭐ groundKey — FNV-1a over the geometry the AO is baked AGAINST. The AO pass
+  // stamps this key into its own block; BakedGround refuses a lightmap whose key
+  // does not match. ⛔ WHY: this function REBUILDS the manifest from scratch, so
+  // every ground re-bake used to ERASE the `lightmap` reference bake-ground-ao had
+  // patched in. Measured 2026-09-20: FIVE of seven baked towns had an AO PNG on
+  // disk and no manifest pointing at it — rendering with no ambient occlusion and
+  // saying nothing. Worse, the staleness gate read GREEN in exactly that state,
+  // because bake-ground-ao deliberately writes the manifest FIRST so ground.json
+  // ends up newer than the PNG (see its own comment) — so "ground.json is newer"
+  // means both "AO is current" and "AO was just destroyed". An mtime cannot tell
+  // those apart. A key can.
+  // ⭐ Same shape as tree-anchors' `placementKey`, the one derived-artifact guard
+  // in this repo that failed correctly and loudly.
+  let _gk = 2166136261 >>> 0
+  const _gkEat = (str) => { for (let i = 0; i < str.length; i++) { _gk ^= str.charCodeAt(i); _gk = Math.imul(_gk, 16777619) >>> 0 } }
+  _gkEat(`${bx0.toFixed(2)},${bz0.toFixed(2)},${bx1.toFixed(2)},${bz1.toFixed(2)}`)
+  for (const g of groups) _gkEat(`${g.id}|${g.kind}|${g.vertexCount}|${g.indexCount}|${g.vertexByteOffset}`)
+  const groundKey = _gk.toString(16).padStart(8, '0')
+
+  // ⛔ CARRY THE LIGHTMAP REFERENCE FORWARD, don't drop it. Dropping it loses the
+  // AO silently; carrying a STALE one is now safe because the key exposes it at
+  // load with a message naming the fix. Losing the pointer was the actual defect.
+  let priorLightmap = null
+  try { priorLightmap = JSON.parse(readFileSync(join(outDir, 'ground.json'), 'utf-8')).lightmap || null } catch { priorLightmap = null }
+
   const manifest = {
     version: 1,
     look,
     bbox: { min: [bx0, 0, bz0], max: [bx1, 0, bz1] },
     stencil: manifestStencil,
+    groundKey,
     bin: 'ground.bin',
     positionFormat: 'float32',
     indexFormat: 'uint32',
     componentsPerVertex: 3,   // x, y, z
     groups,
+    ...(priorLightmap ? { lightmap: priorLightmap } : {}),
   }
 
   // Content-aware writes so ground-ao (which depends on ground.json mtime)

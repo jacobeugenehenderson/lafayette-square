@@ -1203,23 +1203,62 @@ export function deriveLayers(highways) {
   // old hardcoded path) landed LS's lamps ~7 km outside the poured frame. A
   // poured scene with no lamp file gets honest zero (no cross-installation
   // ghosts) rather than LS's lamps.
-  let streetlamps = []
+  // ⭐⭐ LAMPS COME FROM THE PULL EVERY TOWN ALREADY HAS. `fetch.js`'s LIGHT_NODES
+  // is ['highway'], so `node["highway"]` has ALWAYS returned `highway=street_lamp`
+  // — huron's pull carries 30 of them. They were discarded twice over: node tags
+  // were dropped on the floor at ingest (fixed 2026-09-20), and this reader only
+  // ever looked at `osm_street_lamps.json`, a file NOTHING IN THE PIPELINE WRITES.
+  // It exists once, hand-exported from Overpass years ago, for LS. ⇒ every poured
+  // town got an honest zero forever, and the honesty hid that the data was already
+  // on disk. ⛔ The absent thing was never the lamps; it was the reader.
+  //
+  // Two DECLARED sources, merged and deduped, provenance printed:
+  //   ① `pois` — the live pull. Works for any town fetched after the ingest fix.
+  //   ② the per-scene `osm_street_lamps.json` — LS's hand export (641 elements).
+  //      ⛔ NOT a cross-installation fallback: DEFAULT_MAP reads ITS OWN file and a
+  //      poured scene reads ITS OWN. No town ever inherits LS's lamps. It retires
+  //      itself the day LS is re-fetched.
+  // ⛔ Positions are RE-PROJECTED from lon/lat, never taken from the poi's cached
+  // x/z: that was computed at fetch time and the extent may have moved since.
+  const streetlamps = []
+  const _lampSeen = new Set()
+  const _addLamp = (lon, lat, type) => {
+    const [x, z] = wgs84ToLocal(lon, lat)
+    const rx = Math.round(x * 100) / 100, rz = Math.round(z * 100) / 100
+    const k = `${rx},${rz}`
+    if (_lampSeen.has(k)) return false
+    _lampSeen.add(k)
+    streetlamps.push({ x: rx, z: rz, type: type || 'street' })
+    return true
+  }
+
+  let nFromPois = 0
+  for (const poi of osmData.pois || []) {
+    if (poi?.tags?.highway !== 'street_lamp') continue
+    const c = poi.coords?.[0]
+    if (!(Number.isFinite(c?.lon) && Number.isFinite(c?.lat))) continue
+    if (_addLamp(c.lon, c.lat, poi.tags.lamp_type)) nFromPois++
+  }
+
   const lampSourcePath = SCENE === DEFAULT_MAP
     ? join(CARTOGRAPH_DIR, '..', 'scripts', 'raw', 'osm_street_lamps.json')
     : join(RAW_DIR, 'osm_street_lamps.json')
-  try {
+  let nFromFile = 0, lampFileNote = 'absent'
+  if (existsSync(lampSourcePath)) {
+    // ⛔ Only the ABSENT case is silent. A file that exists and will not parse is a
+    // real failure and must not read the same as "this town has no lamps."
     const lampRaw = JSON.parse(readFileSync(lampSourcePath, 'utf-8'))
-    const nodes = (lampRaw.elements || []).filter(e => e.type === 'node' && e.lat && e.lon)
-    for (const n of nodes) {
-      const [x, z] = wgs84ToLocal(n.lon, n.lat)
-      streetlamps.push({
-        x: Math.round(x * 100) / 100,
-        z: Math.round(z * 100) / 100,
-        type: n.tags?.lamp_type || 'street',
-      })
+    for (const n of (lampRaw.elements || [])) {
+      if (n.type !== 'node' || !Number.isFinite(n.lat) || !Number.isFinite(n.lon)) continue
+      if (_addLamp(n.lon, n.lat, n.tags?.lamp_type)) nFromFile++
     }
-    console.log(`    ${streetlamps.length} streetlamps loaded`)
-  } catch { console.log('    No streetlamp data') }
+    lampFileNote = `${nFromFile} new`
+  }
+  console.log(`    ${streetlamps.length} streetlamps — ${nFromPois} from the pull, ${lampFileNote} from ${lampSourcePath.split('/').slice(-3).join('/')}`)
+  if (!streetlamps.length) {
+    console.log('    ⛔ ZERO lamps. If this town should have them, the pull predates the '
+      + 'tagged-node ingest fix (2026-09-20) — re-fetch. `node["highway"]` already asks for them.')
+  }
 
   // ── Filter street types ──────────────────────────────────────
   console.log('  [2/8] Filtering street types...')

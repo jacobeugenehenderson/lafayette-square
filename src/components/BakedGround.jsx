@@ -163,7 +163,37 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   // mounts, so without this query param a re-bake leaves the OLD AO texture
   // painted on the new geometry — the operator sees stale shadows that look
   // like the edit "didn't take" even though ground.bin is fresh.
-  const lightmapUrl = manifest.lightmap
+  // ⛔⛔ THE AO MUST PROVE IT BELONGS TO THIS GROUND. A ground re-bake that does not
+  // re-run bake-ground-ao leaves an AO baked against DIFFERENT geometry — contact
+  // shadows under buildings that have moved, ambient darkening on the wrong faces.
+  // The manifest reference alone cannot show this: the file resolves, the texture
+  // loads, and the map looks plausible. `groundKey` is FNV-1a over the geometry the
+  // AO was baked against (bake-ground.js), stamped into the lightmap block by the
+  // AO pass, and compared here.
+  // ⛔ AN MTIME CANNOT DO THIS JOB, which is why it was never caught: the AO pass
+  // deliberately writes the manifest BEFORE the PNG so ground.json is the newer
+  // file, so "ground.json newer than the PNG" means BOTH "AO is current" AND "a
+  // ground re-bake just invalidated the AO". The gate reads green in the broken
+  // state. (Measured 2026-09-20: LS and huron both had an AO PNG on disk and no
+  // manifest pointing at it — every town silently rendering with none.)
+  // ⛔ Absent key ⇒ a PNG baked before this; USE IT rather than throwing away good
+  // AO, but SAY SO. Silence is what let the last one stand.
+  const lmKey = manifest.lightmap?.groundKey
+  const lmOk = !manifest.lightmap || !manifest.groundKey || lmKey == null || lmKey === manifest.groundKey
+  useEffect(() => {
+    if (!manifest.lightmap) return
+    if (!lmOk) {
+      console.error(`[BakedGround] ⛔ ground.lightmap.png was baked against DIFFERENT ground `
+        + `(groundKey ${lmKey} ≠ ${manifest.groundKey} for this ground.json) on "${manifest.look}". `
+        + `Its contact shadows belong to geometry that has since changed. AO DISCARDED — the ground `
+        + `renders unoccluded. ▶ node cartograph/bake-ground-ao.js --scene=${manifest.look} --look=${manifest.look}`)
+    } else if (manifest.groundKey && lmKey == null) {
+      console.warn(`[BakedGround] ground.lightmap.png has no groundKey (baked before 2026-09-20) on `
+        + `"${manifest.look}" — cannot prove it matches this ground. Using it; re-bake to get the key.`)
+    }
+  }, [lmOk, lmKey, manifest.groundKey, manifest.look, manifest.lightmap])
+
+  const lightmapUrl = (manifest.lightmap && lmOk)
     ? ASSET_BASE + 'baked/' + manifest.look + '/' + manifest.lightmap.image + (bakeLastMs ? '?t=' + bakeLastMs : '')
     : null
   const lightmap = lightmapUrl ? useLoader(THREE.TextureLoader, lightmapUrl) : null
