@@ -1051,7 +1051,47 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // slots — a road genuinely DOES sit on a parcel. They remain subject to the same
     // chord error, just less of it; if face-vs-ribbon fighting survives this, it needs
     // a different answer than a bigger gap.
-    const yLift = (kind === 'face' ? 0 : renderOrder) * GROUND_Y_EPS
+    // ⭐⭐ THE GROUND TILING IS ONE PLANE — parcels AND roadway together.
+    // Measured on huron at 0.25 m resolution (fine enough to resolve a 2 m
+    // sidewalk; an 8 m grid fattens thin ribbons and invents overlap that is not
+    // there — the first pass did exactly that and had to be thrown away):
+    //     asphalt ∩ sidewalk  ZERO      asphalt ∩ curb  ZERO
+    //     sidewalk ∩ curb     3 cells of 20,404 = 0.0%
+    //     treelawn:* ∩ sidewalk 0.2–0.9% (hairline, shared edges)
+    // ⇒ the street cross-section TILES the roadway exactly as the LU faces tile
+    // the parcels. None of them were ever stacked on each other, so none of them
+    // may be separated — see the ZEROTH RULE in ARCHITECTURE §8.
+    //
+    // ⛔ WHAT STAYS SEPARATED, because it genuinely DOES sit on something (same
+    // measurement): stripe ∩ asphalt 91% · stripe ∩ treelawn:island 100% ·
+    // wood ∩ agricultural 100% · pitch ∩ institutional 50% / ∩ agricultural 49%.
+    // Those are LANDSCAPE_OVERLAY_KEYS plus stripe — real overlays, real slots.
+    //
+    // ⚠️ CONSERVATIVE BY DESIGN: only keys MEASURED as part of the tiling join the
+    // plane. `alley`, `park_path`, `highway` and `water` are structurally roadway
+    // or datum surfaces and probably belong here too, but huron's window carried
+    // too few of them to measure, and putting an overlapping layer on the shared
+    // plane is a z-fight. ⛔ Do not add a key here on structural reasoning alone —
+    // measure it, the way these were.
+    // ⛔⛔ FACES ONLY — AND THIS WAS WRONG ONCE, IN THE SAME HOUR.
+    // I extended the plane to asphalt/curb/sidewalk/treelawn on a 0.25 m
+    // measurement that compared faces-to-faces and ribbons-to-ribbons and NEVER
+    // faces-to-ribbons. `checks/claims-coplanar-groups-do-not-overlap.mjs` then
+    // measured what I had not:
+    //     lafayette-square  vacant-commercial ∩ treelawn:vacant-commercial  84%
+    //     lafayette-square  vacant-commercial ∩ curb                        17%
+    //     huron             island ∩ treelawn:island                        14%
+    //     huron             island ∩ curb                                   11%
+    // ⇒ A TREELAWN OVERLAPS ITS OWN PARENT PARCEL, and the curb/sidewalk bands
+    // overlap the faces they run along — the roadway is NOT subtracted from the
+    // parcel fill. They are genuinely stacked and must keep their own slots.
+    // ⭐ The verified partition is the FACES, and only the faces: 0 of 219,065
+    // cells on huron, 0 of 249,606 on LS, interiors only.
+    // ⛔ Do not widen this set from structural reasoning. Widen it only from a
+    // measurement that compares the candidate against EVERYTHING already on the
+    // plane — which is precisely the step I skipped.
+    const onGroundPlane = kind === 'face'
+    const yLift = (onGroundPlane ? 0 : renderOrder) * GROUND_Y_EPS
     const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift })
     if (indices.length === 0) continue
 
