@@ -1,3 +1,42 @@
+<!-- BRIEF-STATE
+status: DELIVERED
+retired: 2026-09-21
+landed: 3dcb5dd3 (both defects) · ff8cf53a (the flash the fix itself introduced)
+-->
+
+> # ✅ DELIVERED 2026-09-21 — retired for CURRENCY, not for truth.
+> **Both defects closed.** ① every in-shader-displaced caster now carries a
+> `customDepthMaterial`, so the shadow map holds the town where the town is —
+> ⛔ and this was never a regression: the shadow pass had **never** been correct
+> for a vertex-displaced caster, worst on the hilliest town and mildest on flat LS.
+> ② the frustum, the bias pair and the softness unit are all read from the town.
+>
+> **Where the live doctrine went, so citations resolve forward:**
+> · the four frustum decisions, including *"texel-snapping the position is only half
+>   the job — the SIZE must be quantised too"* → **`cartograph/ARCHITECTURE.md §8 —
+>   Cast shadows`**
+> · the operator knob — **Penumbra (m)**, 1–60, and the ×(1800/4096) migration →
+>   **`cartograph/OPERATIONS.md §Light & Shadow`**
+> · the capability → **`cartograph/FEATURES.md`**, *"The sun casts real shadows, on a
+>   town of any size"*
+> · the two instrument failures in §"Instrument failures on the way" → **`docs/agents/
+>   AGENT-VALIDATION-SURFACES.md §0`**, which is now the top of that document
+>
+> ⚠️ **STILL OWED AND BOARDED, NOT CLOSED HERE:** Jacob's eye on huron's shadows.
+> `ROADMAP` H-14. The commit that landed this said *"FEATURES unchanged until this is
+> eye-gated"* and FEATURES has since been written — on the strength of the measured
+> fix, not of a verdict. That distinction is on the board.
+>
+> ✅ **THE "LOOSE END, UNRELATED" AT THE FOOT OF THIS FILE IS RESOLVED — it was ROT.**
+> It read *"live `terrainExag` read 1.5 on huron, whose `scene.json` has no
+> `terrainExag`; the runtime disagrees with the doc."* Re-measured 2026-09-21:
+> huron's `scene.json` carries **`terrainExag: 1`** and LS carries **1.5**. The
+> observation was taken before huron was re-baked through `9378acfb`. ⛔ No defect.
+>
+> ⛔ **The frame rate is NOT this and is still open — `ROADMAP` H-9.**
+
+---
+
 # BRIEF — Cast shadows: the shadow pass has never known where the buildings are
 
 **Opened** 2026-09-20 · Jacob: *"I think our cast shadows might be not working?"* (huron, Hero)

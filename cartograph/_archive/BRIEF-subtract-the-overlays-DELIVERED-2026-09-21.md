@@ -1,3 +1,34 @@
+<!-- BRIEF-STATE
+status: DELIVERED-AND-SUPERSEDED
+retired: 2026-09-21
+landed: d793e4d4 (eye-gated by Jacob: "That did it and it looks great") · superseded by 4c630ebc
+-->
+
+> # ✅ DELIVERED 2026-09-21 — and then SUPERSEDED the same night, which is the more useful half.
+> The pairwise subtraction landed and was eye-gated — *"That did it and it looks
+> great"* — face ∩ overlay went to **zero above 1%** on huron and the slab got
+> **smaller** (1,593,373 → 1,420,545 tris, 29.6 → 26.5 MB), because the face gives up
+> area it was never visibly painting.
+>
+> ⭐ **Then Jacob relocated the fix and it generalised past this brief:** *"In Stage
+> it's a flattened 2D representation which is baked into the 3D ready one. This is
+> where we should take advantage of the flatness and just paint order everything and
+> then on the way out press it all down."* ⇒ `flattenPaintStack` walks the whole paint
+> order top-down rather than one pair, and **the pairwise cut this brief specified was
+> DELETED, not kept beside it** — two places deciding one thing is how they drift.
+>
+> **Where the live doctrine went:** **`cartograph/ARCHITECTURE.md §8`** (the flatten,
+> the `keepOwnSlot`/`doesNotCut` split, and ⭐ this brief's own hard-won rule — *a key
+> joins the shared plane only on a measurement comparing it against EVERYTHING already
+> on the plane*) · **`cartograph/OPERATIONS.md §Bake`** (what it changes for the
+> operator: toggling a layer off is now subtractive on re-bake).
+>
+> ⚠️ **The one thing this brief got wrong is worth keeping:** it said `stripe` "can be
+> subtracted … if the measurement supports it." It cut, and **194 m² survived**.
+> ⛔ Cause not established — `ROADMAP` H-10.
+
+---
+
 # BRIEF — Subtract the overlays so the whole painted ground is one partition
 
 **Opened** 2026-09-20 (23:30) · **Owner** Boz, pushing on tonight

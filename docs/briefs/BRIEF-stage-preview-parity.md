@@ -1,3 +1,25 @@
+<!-- BRIEF-STATE
+status: OPEN
+dispatched: 2026-09-21 — the runtime census landed (eb4e7f04); the RULING and the remediation have not
+written: 2026-09-21
+evict-when: node checks/claims-stage-preview-parity.mjs
+-->
+
+> ⚠️ **PROGRESS, NOT CLOSURE (2026-09-21).** `eb4e7f04` walked both live R3F fiber trees and
+> attributed every `Object3D` to its owning component — **measured at runtime, not grepped**, which
+> this brief demanded because Stage mounts its content through `sceneCfg.StageEnvironment` rather
+> than literal JSX. `checks/claims-stage-preview-parity.mjs` exists, carries its own browser probe,
+> refuses a census from a non-rendering tab or one older than the apps it describes, is
+> mutation-tested four ways, and **exits 1 today on 8 divergences.**
+> ⛔ **What is NOT done is the half this brief says is the point:** which differences are
+> **INTENDED** (Stage is an authoring surface and legitimately shows authoring aids) is
+> **Jacob's ruling and it has not been made** — so no register has been reached, and ⛔ parity must
+> not be "fixed" by deleting a capability from one view.
+> ⚠️ One seeded premise was **measured false** and is corrected rather than left standing: the
+> 30,000:1 depth-range gap is the **Designer** camera, not the shot — in a Hero shot both views run
+> `PerspectiveCamera 1..60000 fov22`. ⚠️ And one reading is explicitly **not established**:
+> `toneMapping` read 4 then 0 in Preview.
+
 # BRIEF — How far is Stage from Preview, and what does staging actually ship?
 
 **Opened** 2026-09-21 (00:20) · **Owner** unassigned — a specialist audit, dispatched by Jacob

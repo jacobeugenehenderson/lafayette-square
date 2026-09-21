@@ -113,7 +113,7 @@ const _WORLD_UP = new THREE.Vector3(0, 1, 0)
 // They were computed in all four time-of-day branches and consumed by nothing —
 // PrimaryOrb renders a light, and the visible sun and moon are drawn by
 // GradientSky and <Moon> from their own real positions. Dead props that look like
-// a feature are worse than no props: BRIEF-two-bodies-two-lights called the
+// a feature are worse than no props: BRIEF-two-bodies-two-lights (retired 2026-09-21 to cartograph/_archive/) called the
 // twilight `visualPosition: blendedLP` "the orb IS the lie", and the orb it
 // described has not existed here for some time.
 function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {

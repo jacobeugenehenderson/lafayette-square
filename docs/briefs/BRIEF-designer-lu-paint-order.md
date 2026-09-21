@@ -2,8 +2,24 @@
 status: OPEN
 dispatched: no
 written: 2026-09-20
-evict-when: node checks/claims-coplanar-ground-has-a-painters-order.mjs
+evict-when: node checks/claims-coplanar-ground-has-a-painters-order.mjs — ⛔ SEE THE WARNING BELOW: this condition CANNOT FIRE today
 -->
+
+> ## ⛔⛔ THIS BRIEF'S OWN EVICTION CONDITION IS BLIND TO THE DEFECT (verified 2026-09-21)
+> `node checks/claims-coplanar-ground-has-a-painters-order.mjs` **exits 0 right now**, while
+> `BlockGeometryV2Debug.jsx:1191` still builds **every** land-use face at `PRI.residential` —
+> twelve distinct materials on one slot, confirmed at the line today. The check asserts three
+> fixed slots and one per-kind band over the `landscapeByKind` family and **does not see the LU
+> face materials at all**.
+> ⇒ **A green here is not evidence.** Widening the check IS the deliverable (this brief already
+> says so in its own body); until it is widened, running the condition proves nothing and would
+> retire a brief whose defect is untouched.
+> ⚠️ Recorded rather than silently re-worded, because *"the brief was evicted, the check was
+> green"* is exactly how a live defect leaves the board. Mutation-test the widened check by
+> pointing two classes at one slot.
+> ⭐ The bake side already solved this and is the reference, **not** the patient:
+> `bake-ground.js`'s `PAINT_ORDER` ships 34 distinct slots and is now also the bake-time
+> flatten's ordering (`ARCHITECTURE §8`). ⛔ Do not write a second list.
 
 # BRIEF — TWELVE LAND-USE FACES SHARE ONE PAINT SLOT IN THE DESIGNER
 

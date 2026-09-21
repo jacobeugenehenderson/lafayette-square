@@ -762,7 +762,7 @@ function triangulateAndRefine(outer, holes, refine, yLift = 0) {
 // ⛔ The alternative — equalising tessellation so every layer bends alike — was
 // measured and rejected: huron at GROUND_REFINE_TOL_M 0.10 bakes 6,688,604 tris /
 // 119.5 MB against 1,593,373 / 29.6 MB, i.e. 4.2x the geometry, and 0.10 m is still
-// 3x looser than the 30 mm it must beat. See docs/briefs/BRIEF-subtract-the-overlays.md.
+// 3x looser than the 30 mm it must beat. See cartograph/_archive/BRIEF-subtract-the-overlays-DELIVERED-2026-09-21.md (retired; the live doctrine is ARCHITECTURE §8).
 //
 // ⚠️ Visually identical, and that was checked before building: the only
 // `transparent` on a ground material is the radial rim FADE, applied to every group

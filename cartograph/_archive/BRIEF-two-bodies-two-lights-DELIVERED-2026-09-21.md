@@ -1,3 +1,35 @@
+<!-- BRIEF-STATE
+status: DELIVERED
+retired: 2026-09-21
+landed: d360d749 (celestialLights.js — the lerp deleted) · 5e655ecc (only the sun and moon may cast a reflection)
+-->
+
+> # ✅ DELIVERED 2026-09-21 — retired for CURRENCY, not for truth.
+> **The sun→moon position lerp is deleted.** Two directional lights at two real body
+> positions; the brighter one casts; the drawn orb no longer inherits a phantom
+> azimuth at 83× too close. The check this brief called its deliverable exists and was
+> **written red first**, as instructed — `checks/claims-the-key-light-is-a-real-body.mjs`.
+>
+> ⭐ **AND IT WENT FURTHER THAN THE BRIEF ASKED, on Jacob's ruling** *"I don't think we
+> should have lights that don't have operator facing knobs."* The remaining fills were
+> the real culprits: a `floorDir` directional nailed due north in every town for all
+> time, which a shiny surface reflected as a hotspot that never moved — **every "sun
+> path" screenshot before that night was that lamp.** Both fills became hemispheres
+> (irradiance-only, no specular lobe), which makes the invariant assertable:
+> ⇒ **ONLY THE SUN AND THE MOON HAVE A SPECULAR LOBE, so a bright path on water is
+> EVIDENCE OF A REAL BODY rather than set dressing.** Every light now carries exactly
+> one operator channel.
+>
+> **Where the register went:** **`ls/FEATURES.md`** — *"the sun and moon each light the
+> town from where they actually are."*
+>
+> ⚠️ **THE EYE GATE IS OWED, NOT MET — `ROADMAP` H-15.** This brief's gate is the
+> crossover hour on huron's lake, two paths on two real azimuths, moving — ⛔ not a
+> still. And `5e655ecc` declares its own: **night will look different**, because
+> `dirMoon`'s night value now lands on the real moon. Eye-gate night in two towns.
+
+---
+
 # BRIEF — The sun and the moon must trace their REAL paths. Today one fake light traces neither.
 
 **Opened** 2026-09-20 · **Owner** Fathom (holds the water; this is upstream of its glint)
