@@ -169,9 +169,26 @@ function ShotCamera({ shot, setShot }) {
   // instead of the legacy static center, avoiding a snap when the per-frame
   // animation below takes over. Browse up comes from the authored heading
   // (cosmetic screen orientation) — same scene.browseHeading production reads.
+  // ⭐⭐ RANDOMISED ENTRY POINT ON THE PATH. `clock.elapsedTime` starts at 0 on
+  // every load, so every visitor entered the autoplay Hero at the SAME frame of
+  // the SAME path and saw the same opening shot forever. Jacob, 2026-09-21:
+  // "when we enter the Preview (autoplay Hero environment) the camera is supposed
+  // to pick up at randomized locations on the path so the user sees different
+  // things from visit to visit."
+  // ⇒ Offset the clock by a random fraction of ONE FULL PERIOD, chosen once per
+  // mount. The motion is periodic, so any offset lands somewhere legitimate on the
+  // authored path — no new poses are invented and nothing outside the operator's
+  // keyframes can be shown.
+  // ⛔ Seeded at MOUNT, not per frame: re-rolling every frame would scrub the path
+  // at random instead of playing it.
+  const heroPhase = useRef(null)
+  if (heroPhase.current === null) heroPhase.current = Math.random() * (heroMotion?.period || 720)
+
   function poseFor(shotKey, aspect) {
     if (shotKey === 'hero') {
-      const { fov } = heroKeyframeAnim(0, heroKeyframes, heroMotion, _heroPos)
+      // ⛔ SAME PHASE AS THE ANIMATION, or the camera is placed at the path's
+      // start and then JUMPS to the random offset on the first frame.
+      const { fov } = heroKeyframeAnim(heroPhase.current, heroKeyframes, heroMotion, _heroPos)
       return { pos: [_heroPos.x, _heroPos.y, _heroPos.z], target: heroSubject, fov, up: [0, 1, 0] }
     }
     const pose = resolveShotPose(shotKey, aspect)
@@ -254,7 +271,7 @@ function ShotCamera({ shot, setShot }) {
   useFrame(({ clock }) => {
     if (tween.isActive()) { tween.tick(performance.now()); return }
     if (shot !== 'hero') return
-    const { fov } = heroKeyframeAnim(clock.elapsedTime, heroKeyframes, heroMotion, _heroPos, _heroTgt, heroSubject)
+    const { fov } = heroKeyframeAnim(clock.elapsedTime + heroPhase.current, heroKeyframes, heroMotion, _heroPos, _heroTgt, heroSubject)
     camera.position.copy(_heroPos)
     if (Math.abs(camera.fov - fov) > 0.1) { camera.fov = fov; camera.updateProjectionMatrix() }
     const ctl = controlsRef.current
