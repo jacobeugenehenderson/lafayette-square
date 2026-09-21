@@ -225,7 +225,27 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       ? (camera.top - camera.bottom) * 0.5 / (camera.zoom || 1)
       : dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
     // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
-    const half = Math.min(townHalf, Math.max(60, seen * 1.6))
+    const rawHalf = Math.min(townHalf, Math.max(60, seen * 1.6))
+
+    // ⛔⛔ QUANTISE THE SIZE, NOT JUST THE POSITION — OR EVERY SHADOW EDGE FLASHES.
+    // Texel-snapping the focus stops shadows CRAWLING as the box slides. It does
+    // nothing if the box also RESIZES, because texel = 2*half/SHADOW_MAP_SIZE: the
+    // moment `half` changes, the snapping grid changes pitch and EVERY shadow edge
+    // in the scene jumps to a new grid at once. The first cut of this took `half`
+    // straight from camera distance and re-fitted on any 5% drift, so flying the
+    // hero path resized it continuously. Jacob, 2026-09-21: "the flash/flicker is
+    // unpleasant." ⭐ Distinct from the frame rate — the parity probe measured the
+    // camera as smooth and monotone (±5% per-frame step) at 8.5 FPS, so the flash
+    // is not judder; it is the shadow grid changing pitch under a moving camera.
+    // ⇒ Round UP to a power of two: the texel size then only changes when the shot
+    // doubles, which is rare, and is a cut rather than a shimmer when it happens.
+    // ⚠️ WITH HYSTERESIS, or a camera hovering on a boundary flaps between two
+    // buckets every frame and the flash comes back worse. Grow as soon as the shot
+    // needs it; shrink only when it has dropped well inside the smaller bucket.
+    const pow2 = (v) => Math.pow(2, Math.ceil(Math.log2(Math.max(1, v))))
+    let half = fitHalfRef.current
+    if (half == null || rawHalf > half) half = Math.min(townHalf, pow2(rawHalf))
+    else if (rawHalf < half * 0.45) half = Math.min(townHalf, pow2(rawHalf))
 
     // Light basis, for texel snapping.
     // ⛔ Take the direction from the CELESTIAL position prop, never from
@@ -247,8 +267,8 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       .addScaledVector(_lightUp, b)
       .addScaledVector(_lightDir, c0)
 
-    const halfChanged = fitHalfRef.current == null ||
-      Math.abs(half - fitHalfRef.current) > fitHalfRef.current * 0.05
+    // The bucket either changed or it did not; there is no 5% drift any more.
+    const halfChanged = fitHalfRef.current !== half
     const moved = _focus.distanceToSquared(_prevFocus) > (texel * texel)
     if (!halfChanged && !moved) return
 
