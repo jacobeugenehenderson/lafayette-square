@@ -34,7 +34,7 @@ evict-when: RULING: Jacob's eye on huron's lake, at three times of day, against 
 > | **①** | **Lift the shader out of `LafayettePark.jsx`** into a kit material | nothing else is reachable until huron can get it |
 > | **②** | **Scale-aware frequencies** | at 40 km² the pond constants read as flat plastic — ⛔ silently |
 > | **③** | ⭐⭐ **SUN + MOON GLINT** | **the payoff, and the cheapest thing in the brief** |
-> | **④** | Shoreline falloff | free — the waterline is the terrain's y=0 crossing (§6d) |
+> | **④** | Shoreline falloff | ⛔ **NOT FREE — premise measured FALSE 2026-09-20, see §6e.** Real path costed there. |
 > | **⑤** | Depth / subsurface | ⛔ only if a signal exists; the DEM has no bathymetry (§6d) |
 >
 > ### ⭐⭐ AND ③ IS CHEAPER THAN IT SOUNDS — MEASURED, NOT ASSUMED
@@ -217,6 +217,47 @@ local-min = 0 — ⭐ **and on a lakeshore town the local minimum IS THE LAKE.**
 | buildings | **seated** per building — `centroidY` sampled at the footprint | ✓ |
 | paths · stripes · curbs | **draped** per vertex | ✓ |
 | **water** | ⛔ **NEITHER. A LEVEL SURFACE at one elevation, everywhere.** | **Lake Erie does not follow the ground; the ground rises out of it.** |
+
+## 6e. ⛔⛔ THE y=0 LEVEL SET IS NOT THE SHORELINE — §6d IS TRUE, THE INFERENCE FROM IT WAS NOT
+
+> **Measured by Fathom, 2026-09-20, per-sample on huron's DEM** — 2,064,969 samples, every 3rd on
+> both axes, split by the water ring:
+>
+> |  | n | min | p5 | p50 | p95 | max |
+> |---|---|---|---|---|---|---|
+> | **under water** | 86,008 | 0.00 | 0.03 | 0.55 | 1.20 | **3.31** |
+> | **on land** | 143,433 | **1.14** | 1.24 | 9.21 | 15.43 | 23.60 |
+
+⭐ **The two populations OVERLAP and the land never reaches zero.** `bake-terrain` does normalize
+local-min to 0 and the local min IS in the lake — §6d is correct about the **datum**. But the
+clamped lake bed is a **noisy shelf spanning 0–3.3 m**, not a flat zero: ONE sample sets the datum
+and the rest of the lake sits above it, interleaved with the low land.
+⇒ A band built on the y=0 crossing paints **in open water**, near wherever the single deepest
+sample fell, and paints **nothing at the actual shore**.
+
+⭐ **AND IT CONFIRMS ⑤ HARDER THAN THIS BRIEF DID.** Under the water the DEM goes **UP** — median
+0.55 m, max 3.31 m. There is no bathymetry; the DEM clamps the body and then wanders.
+⛔ **Any depth ramp is fabricated**, and the shader must say so at the ramp.
+
+### ▶ THE REAL PATH — a signal that already exists, and its cost
+`cartograph/coastline.mjs:139-148` returns **`arcs` SEPARATELY from `rings`**: the arc is the TRUE
+shoreline polyline; the ring is that arc plus its closure along the bb edge.
+⇒ **distance-to-ARC is a correct signed shore distance, and it is BLIND to the fetch envelope**,
+because the envelope closure is not in `arcs`. ⭐ That disposes of §5's "beach in the middle of
+Lake Erie" using an object the producer already builds. (The stencil disc rim is a second false
+edge and is likewise not an arc.)
+⛔ **ITS COST, AND WHY FATHOM STOPPED RATHER THAN BUILD IT:** consuming it needs a **per-vertex
+attribute** on the water group, and the slab's `.bin` is `[all positions][all indices]` with no
+attribute slot. **That is a slab SCHEMA change for a look feature** — not a call to make inside a
+water brief (`claims-no-slab-outlives-its-schema` exists for this reason).
+▶ **Bounded next dispatch:** persist the arcs · add the attribute · bump the schema. **Jacob's call.**
+
+### The cause, ruled
+**ASPIRATION, not rot** — and the excision is surgical. ⛔ **§6d stays; it is Jacob's own correction
+and it is true.** What died is the ⑤-adjacent claim that the shoreline came FREE with it — an intent
+never verified against the raster, derived from `baseElev 173.24` vs Lake Erie's ~173.5 m, which is a
+correct fact about the **datum** and not about the **level set**.
+**The shoreline is still wanted. What is dead is the free way of getting it.**
 
 ⛔ **The coordinator was about to write "water must be seated like the buildings." That would have
 been wrong and it would have produced a lake that undulates.** Recorded because the next reader will
