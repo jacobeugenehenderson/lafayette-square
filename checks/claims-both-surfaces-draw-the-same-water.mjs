@@ -61,23 +61,23 @@ for (const [name, path] of [['runtime', RUNTIME]]) {
   ok.push(`${name} surface mounts <WaterSurface> (${path})`)
 }
 
-// ⛔⛔ AND THE FACT THAT OVERTURNED MY FIRST TWO THEORIES, MEASURED IN THE PAGE:
-// `BakedGround`'s per-group dispatch NEVER RUNS IN THE CARTOGRAPH. Probed live in
-// a Stage Hero shot — the branch did not execute once. So on that surface
-// `MapLayers` is the ONLY thing drawing water, and a gate there ("the slab owns
-// it in a shot") deletes the lake outright. It did.
-// ⇒ THE TWO SURFACES ARE NOT TWO PAINTERS OF ONE MESH. They are two different
-// consumers, and which one is live depends on the surface — so the question is
-// never "who wins", it is "who is even running here".
+// ⛔ IN A SHOT, ONLY ONE SURFACE MAY DRAW THE WATER. `MapLayers` runs in both
+// modes; a shot also mounts <BakedGround/>, which draws the slab's water through
+// the shared component. If MapLayers draws its own there too they STACK — both
+// transparent, both depthWrite:false — and the opaque swatch simply hides the
+// shader underneath.
+// ⚠️ THE MEASUREMENT TRAP, recorded because it cost two reverts: a counter on a
+// FRESH LOAD reports BakedGround rendering ZERO times, which looks like "it never
+// runs here". It is true and it is the wrong moment — the Cartograph opens in
+// DESIGNER, where not mounting it is correct. The shot is reached by clicking in.
+// ▶ Verify by NETWORK instead: in a Hero shot the page fetches
+// `baked/<look>/ground.poolmap.png`, which is loaded inside GroundMeshes.
 const designer = strip(DESIGNER)
 if (/kind === 'water' && inShot\) return null/.test(designer)) {
-  fail.push(`⛔ ${DESIGNER} stands down for water in a shot — but BakedGround's dispatch does not run in the ` +
-            `Cartograph at all, so this deletes the lake. Measured, 2026-09-20.`)
-} else if (/<WaterSurface\b/.test(designer)) {
-  ok.push('the Designer hands water to the shared component')
+  ok.push('in a shot the slab owns the water — the Designer stands down (its swatch is correct in Designer mode)')
 } else {
-  console.log('  ⚠️  OWED: the Designer still paints water with a flat swatch, so a water change is NOT visible in ' +
-              'the Cartograph. Judge water in Preview until this lands.')
+  fail.push(`⛔ ${DESIGNER} does not stand down for water in a shot. Its opaque swatch will cover the slab's water and ` +
+            `the operator will judge the swatch — which is exactly what happened on 2026-09-20.`)
 }
 
 for (const line of ok) console.log(`  ✅ ${line}`)
@@ -86,4 +86,4 @@ if (fail.length) {
   console.error(`\n⛔ ${fail.length} failure(s) — the two surfaces do not draw the same water.`)
   process.exit(1)
 }
-console.log(`\n✅ the runtime draws water with the shared component; the Cartograph still has its swatch.`)
+console.log(`\n✅ one surface draws the water in a shot, with the shared component.`)

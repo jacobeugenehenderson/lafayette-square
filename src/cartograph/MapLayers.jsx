@@ -963,21 +963,21 @@ export default function MapLayers({ hiddenLayers, inShot = false, surveyActive =
         // Survey suppress the ground; ignoring both would take the toggle away from the
         // operator, and the override is the product.
         if (!geo || hideIn[kind]) return null
-        // ⛔⛔ THIS IS THE ONLY WATER IN THE CARTOGRAPH — MEASURED, after a gate
-        // here removed the lake entirely. `BakedGround`'s mesh dispatch NEVER RUNS
-        // in the Cartograph (probed live: its per-group branch did not execute in
-        // a Stage Hero shot), so nothing else draws the lake on this surface. The
-        // slab's water group exists and is correct; it simply is not consumed here.
-        // ⇒ Do not gate this on `inShot` "because the slab owns it in a shot" —
-        // that was my reading and the lake vanished.
-        // ⚠️ OWED, AND NOW WITH A CLEAN QUESTION: this still paints a flat swatch
-        // while the runtime paints the kit water shader, so a water change is
-        // INVISIBLE here. Handing it to <WaterSurface> was tried and the lake
-        // vanished then too — and the stacking theory is now dead, so the cause is
-        // something about THIS surface's own render path (its materials go through
-        // `makeFlatMat` → `injectRadialFade`, and per the note at :526 also
-        // TERRAIN_DISPLACE; the kit material has neither).
-        // ▶ Until then: JUDGE WATER IN PREVIEW. `docs/agents/AGENT-VALIDATION-SURFACES.md`.
+        // ⛔⛔ IN A SHOT, THE SLAB OWNS THE WATER — DO NOT DRAW IT TWICE.
+        // `inShot` is `!inDesigner`, and a shot mounts <BakedGround/>, which draws
+        // the slab's water group through the kit material (`WaterSurface.jsx`).
+        // This surface was ALSO drawing it as a flat colour swatch, stacked on
+        // top, so in the Stage the operator saw the SWATCH and never the shader.
+        // ⚠️ AND WHEN THIS GATE LANDS THE LAKE LOOKS FAINTER, WHICH IS NOT A BUG
+        // AND FOOLED ME ONCE: the opaque swatch is gone and what remains is water
+        // that, at an overhead pitch, is ~2% reflective. Measured — run
+        // `node checks/water-layer-budget.mjs`: Fresnel 0.0202 at 55°, so the
+        // reflection layers contribute ~2% and the BODY carries the picture.
+        // ⛔ I read that faintness as "the gate deleted the lake", reverted, and
+        // was wrong. It is Fresnel. ▶ Judge water at a LOW camera angle.
+        // ⭐ `hideIn`, not `hide`, is what the block below reads — SHOT_SKIP does
+        // NOT reach this ground water, which is why an explicit gate is needed.
+        if (kind === 'water' && inShot) return null
         const col = layerColors[kind] || DEFAULT_LAYER_COLORS[kind] || '#888'
         const mat = makeFlatMat(col, PRI.landscape, { fade, depthWrite: false })
         return <mesh key={`gnd-${kind}`} geometry={geo} material={mat} renderOrder={PRI.landscape - 1} receiveShadow />

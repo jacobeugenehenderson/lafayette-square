@@ -51,21 +51,18 @@ with the change.**
    enough: the per-frame uniform driving is half the material, and that is exactly
    the half that diverged. `WaterSurface.jsx` is the pattern.
 3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
-   ⚠️ **AND THE FACT THAT OVERTURNS THE OBVIOUS READING — MEASURED, 2026-09-20:**
-   **`BakedGround`'s per-group dispatch NEVER RUNS IN THE CARTOGRAPH.** Probed live
-   in a Stage Hero shot: its branch did not execute once. So on that surface
-   `MapLayers` is the ONLY thing drawing water, and the tempting fix — "the slab
-   owns water in a shot, so stand down here" — **deletes the lake.** It did.
-   ⛔ **The two surfaces are not two painters of one mesh.** They are two different
-   consumers, and which one is live depends on the surface. So the question is
-   never *who wins*, it is **who is even running here** — and the only way to know
-   is to probe the dispatch, not to read the mount site.
-   ⚠️ Water is still **OWED**: the Cartograph paints a swatch, the runtime paints
-   the shader. Handing the Cartograph the shared component was tried twice and the
-   lake vanished both times; the stacking theory is dead, so the remaining suspect
-   is that surface's own patches (`makeFlatMat` → `injectRadialFade`, and per
-   `MapLayers.jsx:526` also `TERRAIN_DISPLACE`) which the kit material does not
-   carry. **Until it lands, judge water in PREVIEW.**
+   ⚠️ **AND THE MEASUREMENT TRAP THAT COST TWO REVERTS, 2026-09-20.** A counter on
+   `BakedGround` reported it rendering **zero** times in the Cartograph — true, and
+   the wrong moment: **the Cartograph opens in DESIGNER**, where not mounting it is
+   correct. The shot is reached by clicking into it. "Fresh load + wait" is the one
+   method that cannot see the thing being tested for.
+   ▶ **Verify by CAUSATION or by NETWORK, not by a counter on load.** Causation: a
+   slab-only change (a re-bake that touches `ground.*` and not `map.json`) showing
+   up in Stage proves Stage consumes the slab. Network: in a shot the page fetches
+   `baked/<look>/ground.poolmap.png`, which is loaded *inside* `GroundMeshes`.
+   ⭐ Three of us hit this shape four times in one evening — a careful measurement
+   aimed at the wrong moment. **Ask what state the instrument is reading before you
+   trust what it says.**
 
 ⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
 Preview mounts the production components; Stage mounts the Designer's. Sending an
