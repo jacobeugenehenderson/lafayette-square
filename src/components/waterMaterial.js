@@ -283,6 +283,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
     // Gust cells drift downwind at roughly the wind itself, not at a wave's
     // phase speed — they are weather crossing the water, not a wave train.
     uGustDriftMps:  { value: DEFAULT_WIND_MPS },
+    uSlopeRms:      { value: Math.sqrt(coxMunkSlopeVariance(DEFAULT_WIND_MPS)) },
     uMaxRoughness:  { value: maxRoughnessForWind(DEFAULT_WIND_MPS) },
     // The water's own body, deep to shallow. Default: turbid lake, desaturated —
     // the colour of water that is not carrying the sky. LS's pond overrides.
@@ -360,6 +361,7 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        uniform vec2  uWindDir;
        uniform float uSlopeScale;
        uniform float uGustDriftMps;
+       uniform float uSlopeRms;
        uniform float uMaxRoughness;
        uniform float uDisturbAmp;
        uniform vec2  uDisturbCenter;
@@ -374,13 +376,17 @@ export function makeWaterMaterial({ extentDiag, disturbance = null, glint = 1, b
        // The broad wash is deliberately a MINORITY of the reflection — most of
        // it is meant to arrive as flecks, which is what makes water read as a
        // surface rather than a painted plane.
-       const float SKY_BASE = 0.45;
+       const float SKY_BASE = 0.9;
        // The clip. 1.0 would keep only facets brighter than the mean sky; above
        // 1 keeps fewer and brighter. This is the DUTY CYCLE knob in disguise —
        // raise it for sparser, sharper water; lower it toward the old wash.
-       const float SKY_CLIP = 1.06;
-       const float SKY_CLIP_SOFT = 0.05;
-       const float SKY_FLECK_GAIN = 1.8;
+       // The tail of the slope distribution, in units of its own RMS: facets
+       // steeper than ~1.5 sigma start to catch, ~2.6 sigma are full flecks.
+       // That is a few percent of the surface — the duty cycle that reads as
+       // sparkle rather than as noise.
+       const float FLECK_SIGMA_LO = 1.5;
+       const float FLECK_SIGMA_HI = 2.6;
+       const float SKY_FLECK_GAIN = 2.2;
        const float GLINT_COS_WIDE  = 0.98629;
        const float GLINT_COS_TIGHT = 0.99905;
        const float GLINT_GAIN = 6.0;
@@ -727,9 +733,20 @@ ${GLITTER_GLSL}
          wRfacet.y = abs(wRfacet.y);
          vec3 wSkyF = skyDomeColor(wRfacet, uBandHorizon, uBandLow, uBandMid, uBandHigh,
                                    uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
-         vec3 LUMA = vec3(0.2126, 0.7152, 0.0722);
-         float wExcess = dot(wSkyF, LUMA) - dot(wSky, LUMA) * SKY_CLIP;
-         float wFleck = smoothstep(0.0, SKY_CLIP_SOFT, wExcess);
+         // ⛔ THE CLIP IS ON THE WAVE FIELD, NOT ON A SKY COMPARISON — and that
+         // correction is why the lake went FLAT AND DEAD. The first version
+         // clipped on "does this facet see brighter sky than the mean", which has
+         // teeth only where the sky gradient is steep, i.e. at grazing angles.
+         // From overhead every reflected ray points near the zenith, the facet and
+         // the mean sample the same smooth patch, the excess is never positive,
+         // and NOTHING fires. A clip whose threshold depends on the viewing angle
+         // is not a clip, it is an accident.
+         // ⭐ Clip on the SLOPE instead: the steepest facets are the rare ones,
+         // they are rare by the same distribution everywhere, and that is true at
+         // any camera angle, under any sky, on any town. Normalised by the wind's
+         // own RMS slope so "steep" means the same thing in a calm and a gale.
+         float wFleck = smoothstep(FLECK_SIGMA_LO, FLECK_SIGMA_HI,
+                                   length(wSlope * uGlint) / max(uSlopeRms, 1e-4));
          totalEmissiveRadiance += pow(wSkyF, vec3(2.2)) * wF * wGl * wFleck * SKY_FLECK_GAIN;
 
          // ── LAYER 3: THE BODY. "Those much more pronounced 'radioactive but
