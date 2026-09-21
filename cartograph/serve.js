@@ -2437,7 +2437,14 @@ createServer(async (req, res) => {
           skipped.push(`trees (no census on disk for scene '${bakeScene}' — honest zero)`)
         } else {
           const flags = [
-            `--scene ${treeInputs.scene}`,
+            // ⛔ `--scene=`, NOT `--scene `. cartograph/scene.js parses the EQUALS form only.
+            // ⭐ The space form does not error — it goes UNPARSED and falls through to
+            // DEFAULT_MAP, 'lafayette-square'. So this line worked on exactly one town,
+            // by accident, and every other town hit requireExplicitMap()'s refusal:
+            // huron's Publish-to-Staging died code=2 here, 2026-09-21. The guard is why
+            // that was loud instead of huron's census overwriting LS's.
+            // ▶ node checks/claims-scene-flag-is-the-equals-form.mjs
+            `--scene=${treeInputs.scene}`,
             treeInputs.placements && `--placements ${treeInputs.placements.join(',')}`,
             treeInputs.speciesMapPath && `--species-map ${treeInputs.speciesMapPath}`,
             treeInputs.forbiddenMapPath && `--forbidden-map ${treeInputs.forbiddenMapPath}`,

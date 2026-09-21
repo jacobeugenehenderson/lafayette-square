@@ -1978,7 +1978,7 @@ async function main() {
 
   console.log('\n[generate-salon] done. Next:')
   console.log(`  node arborist/bake-look.js  --look ${lookId}`)
-  console.log(`  node arborist/bake-trees.js --scene ${lookId}`)
+  console.log(`  node arborist/bake-trees.js --scene=${lookId}`)
 }
 
 const invokedAsScript = (() => {

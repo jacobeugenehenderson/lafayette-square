@@ -1257,7 +1257,7 @@ async function main() {
 
   console.log('\n[generate-procedural] done. Next:')
   console.log(`  node arborist/bake-look.js  --look ${lookId}`)
-  console.log(`  node arborist/bake-trees.js --scene ${lookId}`)
+  console.log(`  node arborist/bake-trees.js --scene=${lookId}`)
 }
 
 // Only run the publish pipeline when invoked as a script. Importing the

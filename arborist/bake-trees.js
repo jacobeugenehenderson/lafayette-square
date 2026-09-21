@@ -7,7 +7,8 @@
  *   <scene>/tree-species-map.json — species-id → preferred library subset
  *   public/baked/<heroLook>/scene.json       — hero pan (heroTier classifier)
  *   public/baked/<heroLook>/trees-atlas.json — canopyByVariant dims (bake-look)
- *   --scene <name>               — NEIGHBOURHOOD whose census is baked (def 'lafayette-square')
+ *   --scene=<name>               — NEIGHBOURHOOD whose census is baked. ⛔ EQUALS form ONLY;
+ *                                  `--scene <name>` goes unparsed and hits the refusal.
  *   --styles realistic[,winter…] — active style set (defaults 'realistic')
  *   --lod lod0|lod1|lod2         — LOD to ship (defaults 'lod2')
  *   --heroLook <name>            — Look whose hero pan drives heroTier (def 'lafayette-square')
