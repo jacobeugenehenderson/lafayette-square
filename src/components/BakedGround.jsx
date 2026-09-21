@@ -18,7 +18,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
-import { useLoader, useFrame } from '@react-three/fiber'
+import { useLoader, useFrame, useThree } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
 import { isWaterGroupId } from './waterMaterial'
@@ -151,6 +151,26 @@ function fadeForGroup(group, stencil) {
 function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   const layerVis = scene?.layerVis
   const stencil = manifest.stencil || null
+  // ⭐⭐ ANISOTROPY, DERIVED FROM THE GPU — NOT A CONSTANT.
+  // The ground is the one surface in this scene that is ALWAYS viewed at a
+  // grazing angle: the hero camera is low and moving. At anisotropy 1 (three's
+  // default, which every ground texture ran at until now) trilinear filtering
+  // picks its mip from the WORST-case axis, so a moving camera walks the mip
+  // level up and down and the painted markings CRAWL. That is texture-interior
+  // aliasing — `antialias: true` is MSAA and does nothing about it, which is why
+  // the shimmer survived a canvas that has AA switched on.
+  // ⛔ Worse where there are fewer pixels per metre of ground: Preview's
+  // PhoneFrame is 440×956 logical × 0.65, so a screen pixel there covers ~1.77×
+  // the ground a desktop pixel does at the same camera. Same GPU, same canvas
+  // config — only the pixel count differs, which is why it reads as a
+  // "phone-only" defect and is not one.
+  // ⛔ NO FALLBACK CONSTANT: a GPU without the extension reports 1 and we ask
+  // for 1. The repo already does this ten other places (impostors, the Milky Way
+  // panorama, the park at LafayettePark.jsx); the ground never got it.
+  const gl = useThree((s) => s.gl)
+  const groundAniso = useMemo(
+    () => Math.min(8, gl?.capabilities?.getMaxAnisotropy?.() ?? 1),
+    [gl])
   // Publish the disc so size-dependent consumers stop hardcoding one town's
   // radius. The sun's shadow frustum is the one that mattered: it shipped ±900,
   // i.e. Lafayette Square's 892 m radius, and clipped every larger town.
@@ -213,9 +233,10 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
     if (lightmap) {
       lightmap.colorSpace = THREE.NoColorSpace
       lightmap.flipY = false
+      lightmap.anisotropy = groundAniso
       lightmap.needsUpdate = true
     }
-  }, [lightmap])
+  }, [lightmap, groundAniso])
 
   // Lamp light-pool map — baked additive ring profile, sampled by the
   // ground shaders (grass + FadeMesh) at world-XZ × the TOD Pool value.
@@ -238,6 +259,12 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
       // ~2.4 m against a 1.64 m texel — mild minification, where mips would have
       // helped. LinearFilter keeps that a soft blur rather than sparkle. If a
       // whole-town shot ever shimmers on the ground, this is the line.
+      // ⚠️ AND THEREFORE NO ANISOTROPY EITHER — anisotropic filtering samples the
+      // mip chain, so killing mips kills it here. Deliberate, and it costs nothing
+      // I can measure: this map is AO + tree shade, a SMOOTH low-frequency field
+      // with no edges to crawl. The crawl lives in `colormap`, which keeps both.
+      // ⛔ If the ground ever shimmers in a way that tracks the tree shade rather
+      // than the painted marks, this trade is the first thing to undo.
       poolmap.generateMipmaps = false
       poolmap.minFilter = THREE.LinearFilter
       poolmap.magFilter = THREE.LinearFilter
@@ -262,11 +289,15 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
     if (colormap) {
       colormap.colorSpace = THREE.SRGBColorSpace
       colormap.flipY = false
+      // ⭐ THE ONE THAT CARRIES THE CRAWL. This is the per-Look albedo raster —
+      // centrelines, stripes, crosswalks, curb edges: high-frequency, high-contrast
+      // marks on a plane seen almost edge-on. It is the texture the shimmer is in.
+      colormap.anisotropy = groundAniso
       colormap.needsUpdate = true
       setGroundColorMap(colormap, colorMeta.min, colorMeta.span)
     }
     return () => setGroundColorMap(null)
-  }, [colormap])
+  }, [colormap, groundAniso])
 
   const meshes = useMemo(() => {
     const bbox = manifest.bbox
