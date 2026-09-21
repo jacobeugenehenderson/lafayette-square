@@ -11,13 +11,53 @@ This is a one-page index: **if your work touches X, validate it via Y, here's th
 | The work touches… | Validation surface | Production path | Don't… |
 |---|---|---|---|
 | **Geometry / bake pipeline / derivers** (buildBlockGeometryV2, bake-ground, bake-buildings, bake-lamps) | **Toy** in Designer (or Stage) | `node cartograph/bake-ground.js` → renders in Toy designer | …build scratch JS / SVG simulators that bypass the production path |
-| **Shader / material / visibility at scale** | **Cartograph Stage on LS scene** at Browse/Hero/Street | mount in Stage; scrub the camera | …declare it ready from toy (toy's small scale + close camera hides sub-pixel & z-fight failure modes) |
+| **Shader / material / visibility at scale** | **Cartograph Stage** at Browse/Hero/Street | mount in Stage; scrub the camera | …assume Stage draws your material at all — **read §Two renderers first** |
 | **Tree atlas / specimen authoring** | **Salon (`SpecimenViewport`)** | author + preview live in Salon | …change `treeAtlasMaterial.js` without firing in `SpecimenViewport.jsx` first |
 | **Production parity / runtime-mount drift** | **Cartograph Preview** | Preview mounts the same components as production LS | …fork a Preview component from its production sibling |
 | **Per-block measure / ribbon authoring** | **Designer + MeasureOverlay** on toy or LS | drag handles → `blockCustoms` writes | …add new fill/material UX without first checking if the existing handles already author it |
 | **Instance-coord-shifted runtime state** (pedestal lifts, period material tags, hour gating) | **LS Stage**, not toy | mount in Cartograph Stage on LS | …declare a swap "verified in toy" if it reads a coord-shifted field |
 
 ---
+
+## ⛔⛔ TWO RENDERERS, ONE MAP — CHECK WHICH ONE DRAWS YOUR THING
+
+**The kit renders the same map twice, from two different sources, on purpose:**
+
+| | reads | mounts |
+|---|---|---|
+| **RUNTIME** (app, Preview) | the baked slab — `public/baked/<look>/ground.*` | `BakedGround.jsx` |
+| **DESIGNER / STAGE** | `cartograph/data/<scene>/clean/map.json`, live | `MapLayers.jsx` |
+
+⭐ That is a feature: the Designer shows edits before a bake, and the runtime shows
+what actually ships. ⛔ **But it means a population can be drawn by DIFFERENT CODE
+on the two surfaces, and nothing says so.** A material you change in `src/components/`
+may simply not be on screen in the Stage.
+
+### ⚠️ THE INSTANCE, 2026-09-20 — an evening, and it is the cheapest possible lesson
+`MapLayers.jsx` painted the lake with `makeFlatMat` — a flat colour swatch — while
+`BakedGround` painted the same lake with the kit water shader. Nothing errored.
+**Every change to the water was invisible in the Stage, which is where the operator
+judges.** Four rounds of tuning went into a material that was not on screen, and the
+measurements quoted to Jacob were true about code that was not running in his window.
+⭐ The tell, in hindsight, was "I hard refreshed and nothing's changed" — ⛔ **when a
+change does not appear, ask WHICH RENDERER is drawing it before you ask what is wrong
+with the change.**
+
+### ▶ THE RULE
+1. **Before validating a material, grep the other surface for the thing you are
+   changing.** `grep -n "<YourThing\|makeFlatMat" src/cartograph/MapLayers.jsx`.
+2. **Where both surfaces draw the same object, they mount the SAME COMPONENT** —
+   not two materials that happen to agree. ⛔ A shared material FACTORY is not
+   enough: the per-frame uniform driving is half the material, and that is exactly
+   the half that diverged. `WaterSurface.jsx` is the pattern.
+3. ▶ `node checks/claims-both-surfaces-draw-the-same-water.mjs` holds it for water.
+   **A new shared population needs its own line in that check**, or it is one grep
+   away from the same evening.
+
+⚠️ And the corollary for eye-gating: **Preview and Stage are not interchangeable.**
+Preview mounts the production components; Stage mounts the Designer's. Sending an
+operator to the "wrong" one to judge a look is not a preference — it can be a
+different picture.
 
 ## ⭐ Live vs baked — which surface shows what (READ FIRST; the recurring confusion)
 

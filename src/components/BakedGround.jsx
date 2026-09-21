@@ -21,7 +21,8 @@ import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
-import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind, maxRoughnessForWind, coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
+import { isWaterGroupId } from './waterMaterial'
+import WaterSurface from './WaterSurface.jsx'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -284,7 +285,7 @@ function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
         const fade = fadeForGroup(group, stencil)
         const key = group.kind + ':' + group.id
         if (isWaterGroup(group))
-          return <WaterMesh key={key} group={group} geometry={geometry} />
+          return <WaterSurface key={key} geometry={geometry} renderOrder={group.renderOrder} />
         if (isGravelGroup(group))
           return <GravelMesh key={key} group={group} geometry={geometry} lightmap={lightmap}
             tintHex={scene?.layerColors?.[group.id]}
@@ -488,73 +489,8 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // geometry's bounding box. Not a constant, not a scene lookup — the surface's
 // own size. Hardcoding it back is the silent-plastic regression and
 // `checks/claims-water-scales-with-its-body.mjs` fails on it.
-function WaterMesh({ group, geometry }) {
-  const { material, uniforms } = useMemo(() => {
-    geometry.computeBoundingBox()
-    const bb = geometry.boundingBox
-    const extentDiag = Math.hypot(bb.max.x - bb.min.x, bb.max.z - bb.min.z)
-    // ⛔ No `disturbance`: the point ripple models something dropped in a pond.
-    // On a body kilometres across it is one sine wave crossing the map.
-    return makeWaterMaterial({ extentDiag })
-  }, [geometry])
-  useFrame((_, delta) => {
-    uniforms.uTime.value += delta
-    uniforms.uSunAltitude.value = useTimeOfDay.getState().getLightingPhase().sunAltitude
-    // ⭐⭐ THE LAKE READS THE TOWN'S REAL WEATHER. `windSpeedMs` / `windDirDeg`
-    // are polled from open-meteo for this town's own coordinates
-    // (`useWeather.js` → `useSkyState`), and Cox & Munk 1954 turns wind speed
-    // into the water's slope variance — which IS the width of the glitter.
-    // ⇒ a windy afternoon in Huron is a choppier, broader-sparkling lake, and a
-    // calm one is closer to a mirror. Not authored, not tuned: tracked.
-    const sky = useSkyState.getState()
-    // ⛔ FLOORED. `windSpeedMs` is 0 until the weather poller writes it, and the
-    // poller does not run in the Stage — so the authoring surface was reading
-    // DEAD CALM and rendering a mirror. Every wave term downstream reads this,
-    // which is why the whole surface went flat at once. See WIND_FLOOR_MPS.
-    const windMps = Math.max(WIND_FLOOR_MPS, sky.windSpeedMs || 0)
-    uniforms.uSlopeScale.value = slopeScaleForWind(windMps)
-    uniforms.uMaxRoughness.value = maxRoughnessForWind(windMps)
-    uniforms.uGustDriftMps.value = windMps
-    uniforms.uSlopeRms.value = Math.sqrt(coxMunkSlopeVariance(windMps))
-    // `windDirDeg` is meteorological — degrees the wind blows FROM — so the wave
-    // trains travel toward the opposite bearing. Compass bearing → world XZ with
-    // −Z as north, the same convention celestialToPosition uses.
-    const travelRad = (sky.windDirDeg + 180) * Math.PI / 180
-    uniforms.uWindDir.value.set(Math.sin(travelRad), -Math.cos(travelRad))
-    // ⭐⭐ THE SKY THE DOME IS DRAWING, read not re-derived. GradientSky resolves
-    // the operator's authored sky grid once per frame and publishes the four
-    // bands here; the lake reflects exactly those, so a town graded warm has warm
-    // water and the sky knob reaches the water with no second control.
-    // ⛔ Re-resolving the grid here would drift from the dome at every TOD
-    // boundary — the same class the `keyDirection` note records.
-    const b = sky.skyBands
-    uniforms.uBandHorizon.value.copy(b.horizon)
-    uniforms.uBandLow.value.copy(b.low)
-    uniforms.uBandMid.value.copy(b.mid)
-    uniforms.uBandHigh.value.copy(b.high)
-    uniforms.uSkyGlow.value.copy(b.glow)
-    uniforms.uTurbidity.value = b.turbidity
-    uniforms.uSunDir.value.copy(sky.sunDirection)
-    // The BRIGHTER BODY, for the analytic glitter. keyDirection is published by
-    // CelestialBodies for exactly this: a consumer that needs the VECTOR rather
-    // than the light. (I argued earlier that water should not read it because it
-    // sits in the light rig — true for the PBR lobe, wrong for an analytic term
-    // that needs a half-vector. Reversed deliberately.)
-    uniforms.uKeyDir.value.copy(sky.keyDirection)
-    uniforms.uKeyColor.value.copy(sky.keyColor)
-    // No glitter from a body below the horizon.
-    uniforms.uKeyUp.value = Math.max(0, Math.min(1, sky.keyDirection.y * 6))
-  })
-  return (
-    <mesh
-      geometry={geometry}
-      material={material}
-      renderOrder={group.renderOrder}
-      receiveShadow
-    />
-  )
-}
-
+// The water mesh lives in `WaterSurface` and is shared with the DESIGNER — read
+// that file for why it is a component and not just a material factory.
 // Drive the shared terrain exaggeration uniform toward `target`.
 // Mounted unconditionally inside BakedGround so any consumer (Stage,
 // Preview, future apps) gets terrain displacement without depending on
