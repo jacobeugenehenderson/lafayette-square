@@ -784,6 +784,99 @@ function _pathToRing(path) {
   return out
 }
 
+// ── PRESS THE PAINT STACK DOWN ──────────────────────────────────────────────
+// ⭐⭐ THE ARCHITECTURE, in Jacob's words (2026-09-21): "In Stage it's a flattened
+// 2D representation which is baked into the 3D ready one. This is where we should
+// take advantage of the flatness and just paint order everything and then on the
+// way out press it all down."
+//
+// ⇒ The DESIGNER is 2D. Overlapping layers and paint order are CORRECT there — it
+// is a paint stack, and the overlap is authoring, not error. ⛔ So this must NOT be
+// pushed upstream into derive: that would bake a painting decision into the
+// authored data and take the override away from the operator.
+// ⇒ THE BAKE IS THE 2D→3D CROSSING, and it is the last moment flatness exists.
+// Spend it: walk PAINT_ORDER from the TOP down, clip every layer against the union
+// of everything above it, and emit only what is actually visible.
+//
+// WHAT THIS BUYS, and it is the whole ground rather than one pair:
+// · every ground layer becomes DISJOINT — faces, treelawns, sidewalk, curb,
+//   asphalt, stripe, all of it. One partition.
+// · therefore ONE PLANE for the entire ground. `GROUND_Y_EPS` stops being needed:
+//   no ladder, nothing to tune, and nothing to lose to the terrain-chord error that
+//   made every millimetre separation unwinnable (ARCHITECTURE §8 ZEROTH RULE).
+// · paint order stops being a RENDER concern and becomes purely a BAKE-TIME
+//   flattening order — the only place it was ever meaningful.
+// · the Designer and the slab agree again, because the slab is now the Designer's
+//   paint stack RESOLVED rather than a separately-edited model.
+//
+// ⛔ EXCLUSIONS — a layer that TINTS rather than REPLACES must not be flattened in,
+// because the thing beneath it has to survive to be seen through. `water` is the
+// case that exists today (genuinely transparent; Fathom's kit material depends on
+// it) and it keeps its own slot above the plane.
+function flattenPaintStack(entries, { exclude = new Set() } = {}) {
+  const acc = new _Paths()                      // union of everything ABOVE
+  const out = new Map()                          // key → flattened items
+  // TOP DOWN: the topmost layer keeps all of itself; each lower one loses whatever
+  // is already covered.
+  for (let i = entries.length - 1; i >= 0; i--) {
+    const e = entries[i]
+    if (exclude.has(e.groupKey)) { out.set(e.groupKey, e.items); continue }
+
+    const mine = new _Paths()
+    for (const it of e.items) {
+      const outer = Array.isArray(it) ? it : it?.outer
+      const holes = Array.isArray(it) ? [] : (it?.holes || [])
+      if (!outer || outer.length < 3) continue
+      mine.push(_ringToPath(outer))
+      for (const h of holes) if (h && h.length >= 3) mine.push(_ringToPath(h))
+    }
+    if (!mine.length) { out.set(e.groupKey, []); continue }
+
+    let visible = e.items
+    if (acc.length) {
+      const c = new _Clipper()
+      c.AddPaths(mine, _PolyType.ptSubject, true)
+      c.AddPaths(acc, _PolyType.ptClip, true)
+      const tree = new _PolyTree()
+      if (c.Execute(_ClipType.ctDifference, tree, _PolyFillType.pftEvenOdd, _PolyFillType.pftNonZero)) {
+        visible = []
+        const walk = (node) => {
+          for (const child of node.Childs()) {
+            const ring = _pathToRing(child.m_polygon)
+            if (ring.length >= 3) visible.push({ outer: ring, holes: child.Childs().map(h => _pathToRing(h.m_polygon)).filter(r => r.length >= 3) })
+            for (const h of child.Childs()) walk(h)
+          }
+        }
+        walk(tree)
+      }
+      else {
+        // ⛔ LOUD. A silent refusal here means the layer is NOT clipped and the
+        // overlap survives — which looks exactly like the flatten "not working".
+        console.warn(`  ⚠️ [flatten] ${e.groupKey}: difference REFUSED (acc ${acc.length} paths) — layer kept whole`)
+      }
+    }
+    if (process.env.FLATTEN_DEBUG) {
+      console.log(`    [flatten] ${String(i).padStart(2)} ${e.groupKey.padEnd(26)} in ${String(e.items.length).padStart(5)} → out ${String(visible.length).padStart(5)}  acc ${acc.length}`)
+    }
+    out.set(e.groupKey, visible)
+
+    // union this layer into the accumulator for the layers below
+    const u = new _Clipper()
+    u.AddPaths(acc, _PolyType.ptSubject, true)
+    u.AddPaths(mine, _PolyType.ptClip, true)
+    const merged = new _Paths()
+    if (u.Execute(_ClipType.ctUnion, merged, _PolyFillType.pftNonZero, _PolyFillType.pftNonZero)) {
+      acc.length = 0
+      for (const q of merged) acc.push(q)
+    } else {
+      // ⛔ LOUD. If the union refuses, every layer BELOW this one goes unclipped —
+      // the flatten silently degrades to doing nothing at all.
+      console.warn(`  ⚠️ [flatten] ${e.groupKey}: UNION refused — layers below will not be clipped against it`)
+    }
+  }
+  return out
+}
+
 /** faceItems: rings or {outer,holes}. overlayRings: bare rings to cut out. */
 function subtractOverlaysFromFace(faceItems, overlayRings) {
   if (!overlayRings.length || !faceItems?.length) return faceItems
@@ -1061,43 +1154,48 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     return BAND_TO_LAYER[bare] || bare
   }
   let renderOrder = 0
+  // ⭐⭐ PRESS THE STACK DOWN BEFORE ANY GEOMETRY IS BUILT. Collect every visible
+  // layer's rings in PAINT_ORDER, flatten them into a partition (top-down clip),
+  // and build from the RESULT. See flattenPaintStack() for why this belongs here —
+  // at the 2D→3D crossing — and not upstream in derive.
+  // ⛔ `water` is excluded: it TINTS rather than replaces, so what is under it must
+  // survive to be seen through. It keeps its own slot above the plane.
+  const FLATTEN_EXCLUDE = new Set()
+  const stackEntries = []
+  for (const [kind, key] of PAINT_ORDER) {
+    if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
+    const its = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
+    if (!its || its.length === 0) continue
+    const groupKey = kind + ':' + key
+    // ⛔ EXCLUDED FROM THE PLANE — each for a measured reason, not a hunch:
+    // · water — TINTS rather than replaces; what is under it must survive.
+    // · stripe — MEASURED at 10 cm resolution AFTER flattening: ~386 m² of stripe
+    //   still overlaps asphalt in a 500 m window. The flatten did not cut it out
+    //   (thin sub-metre quads; cause not established), and collapsing an UNCUT
+    //   overlay onto y=0 would make road markings z-fight with the tarmac — a new
+    //   defect traded for the old one. It keeps a real slot until the cause is found.
+    //   ⚠️ Its separation is 2 mm against asphalt's 4.3 mm median chord error, so it
+    //   is NOT safe either; it is merely less wrong than coplanar. Open.
+    if (kind !== 'face' && (key === 'water' || key.startsWith('water:') || key === 'stripe')) FLATTEN_EXCLUDE.add(groupKey)
+    stackEntries.push({ groupKey, kind, key, items: its })
+  }
+  const _t0 = Date.now()
+  const flattened = flattenPaintStack(stackEntries, { exclude: FLATTEN_EXCLUDE })
+  console.log(`  [bake-ground] paint stack pressed down: ${stackEntries.length} layers `
+    + `(${FLATTEN_EXCLUDE.size} excluded) in ${((Date.now() - _t0) / 1000).toFixed(1)}s`)
+
   for (const [kind, key] of PAINT_ORDER) {
     if (bakeLayerVis[groupLayerId(kind, key)] === false) continue
     // Faces are {outer, holes} entries (post-clip); ribbons are bare rings.
     // itemsToBuffers normalizes both — holes are honored at triangulation
     // time so the lawn ribbon underneath a clipped face fill stays visible.
-    let items = kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key)
+    let items = flattened.get(kind + ':' + key) ?? (kind === 'face' ? byFaceUse.get(key) : byMaterial.get(key))
     if (!items || items.length === 0) continue
 
-    // ⭐⭐ CUT THE OVERLAYS OUT OF THE FACE. After this the face and the overlay do
-    // not overlap, so the coarse face can no longer bulge up through the fine
-    // overlay — the tearing at every wood / pitch / garden boundary. See
-    // subtractOverlaysFromFace() above for the measurements and the rejected
-    // alternative. ⛔ Faces only: an overlay cut from another overlay would change
-    // what the operator authored, and overlays DO legitimately overlap each other
-    // (parking_lot ∩ garden 12%), so they keep their own ascending slots.
-    if (kind === 'face') {
-      const cutters = []
-      for (const ok of LANDSCAPE_OVERLAY_KEYS) {
-        if (bakeLayerVis[groupLayerId('mat', ok)] === false) continue   // hidden → not drawn → don't cut
-        for (const r of (byMaterial.get(ok) || [])) {
-          const ring = Array.isArray(r) ? r : r?.outer
-          if (ring && ring.length >= 3) cutters.push(ring)
-        }
-      }
-      if (cutters.length) {
-        const before = items.length
-        items = subtractOverlaysFromFace(items, cutters)
-        if (!items.length) {
-          // ⛔ LOUD: the overlays swallowed the whole class. Possible and legal
-          // (a park entirely covered by pitches), but it silently deletes ground,
-          // so it must be said rather than discovered later as a hole in the map.
-          console.warn(`  ⚠️ [bake-ground] face:${key} — ${before} polygon(s) FULLY consumed by `
-            + `${cutters.length} overlay ring(s); this class now contributes no ground.`)
-          continue
-        }
-      }
-    }
+    // ⛔ The pairwise "cut overlays out of faces" that lived here is GONE — the
+    // paint-stack flatten above supersedes it and does the whole stack, not one
+    // pair. Two places deciding the same thing is how they drift.
+
     // Tiering: large soft land-use FILLS (faces) take the adaptive policy --
     // that is where the budget lives and where coarse triangles are least
     // visible. Landscape overlays keep the legacy fine uniform spacing
@@ -1180,24 +1278,16 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // too few of them to measure, and putting an overlapping layer on the shared
     // plane is a z-fight. ⛔ Do not add a key here on structural reasoning alone —
     // measure it, the way these were.
-    // ⛔⛔ FACES ONLY — AND THIS WAS WRONG ONCE, IN THE SAME HOUR.
-    // I extended the plane to asphalt/curb/sidewalk/treelawn on a 0.25 m
-    // measurement that compared faces-to-faces and ribbons-to-ribbons and NEVER
-    // faces-to-ribbons. `checks/claims-coplanar-groups-do-not-overlap.mjs` then
-    // measured what I had not:
-    //     lafayette-square  vacant-commercial ∩ treelawn:vacant-commercial  84%
-    //     lafayette-square  vacant-commercial ∩ curb                        17%
-    //     huron             island ∩ treelawn:island                        14%
-    //     huron             island ∩ curb                                   11%
-    // ⇒ A TREELAWN OVERLAPS ITS OWN PARENT PARCEL, and the curb/sidewalk bands
-    // overlap the faces they run along — the roadway is NOT subtracted from the
-    // parcel fill. They are genuinely stacked and must keep their own slots.
-    // ⭐ The verified partition is the FACES, and only the faces: 0 of 219,065
-    // cells on huron, 0 of 249,606 on LS, interiors only.
-    // ⛔ Do not widen this set from structural reasoning. Widen it only from a
-    // measurement that compares the candidate against EVERYTHING already on the
-    // plane — which is precisely the step I skipped.
-    const onGroundPlane = kind === 'face'
+    // ⭐⭐ ONE PLANE FOR THE WHOLE FLATTENED GROUND. Every layer that went through
+    // flattenPaintStack is now DISJOINT from every other, so there is nothing to
+    // separate and `GROUND_Y_EPS` has no work to do. ⛔ That matters because no
+    // epsilon could ever have worked: the runtime DEM displacement is interpolated
+    // per-triangle, so differently-tessellated layers disagree about the ground by
+    // up to 1.6 m against a 2 mm gap (ARCHITECTURE §8 ZEROTH RULE, with the
+    // chord-error table). The ladder is not tuned away — it is no longer needed.
+    // ⚠️ An EXCLUDED layer (water — it tints rather than replaces) still overlaps
+    // what is beneath it and keeps a real slot above the plane.
+    const onGroundPlane = !FLATTEN_EXCLUDE.has(kind + ':' + key)
     const yLift = (onGroundPlane ? 0 : renderOrder) * GROUND_Y_EPS
     const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift })
     if (indices.length === 0) continue
