@@ -644,8 +644,8 @@ ${GLITTER_GLSL}
 
     // ⭐⭐ HAND THE WAVE NORMAL TO THE PBR PATH THAT WAS ALREADY THERE. This is
     // the entire glint feature. `normal` is view-space in three's chunks, so the
-    // world-space wave normal is rotated by viewMatrix; `faceDirection` carries
-    // the DoubleSide flip the chunk would have applied to vNormal.
+    // world-space wave normal is rotated by viewMatrix. ⛔ The DoubleSide flip is
+    // deliberately NOT applied — see the note at the line itself.
     // ⭐⭐ THE LOBE'S WIDTH COMES FROM THE SLOPE VARIANCE, which is what makes
     // this a PATH and not a field of fireflies. Sub-metre waves fall far below a
     // pixel footprint on a 7 km lake; a mirror-sharp lobe sampled once per pixel
@@ -818,7 +818,19 @@ ${GLITTER_GLSL}
     shader.fragmentShader = shader.fragmentShader.replace(
       '#include <normal_fragment_begin>',
       `#include <normal_fragment_begin>
-       normal = normalize((viewMatrix * vec4(vWaterN, 0.0)).xyz) * faceDirection;
+       // ⛔ NO faceDirection. WATER HAS ONE UP, AND IT IS UP. three flips the
+       // shading normal for back faces so a DoubleSide surface looks right from
+       // either side — correct for a leaf or a sheet, wrong for a water plane,
+       // whose normal is the physical surface normal and does not depend on which
+       // way its triangles happen to be wound.
+       // ⚠️ KEPT ON PRINCIPLE, NOT ON EVIDENCE — and the evidence that prompted it
+       // was MEASURED FALSE within the minute. I changed this believing the slab's
+       // water ring was wound back-facing (a FrontSide probe had painted only a
+       // sliver). Counting the triangles in the artifact: 656 of 657 face UP. So
+       // faceDirection was +1 the whole time and this line changes nothing today.
+       // It stays because it is right for any future winding, and the false story
+       // is recorded here rather than left to be rediscovered.
+       normal = normalize((viewMatrix * vec4(vWaterN, 0.0)).xyz);
        nonPerturbedNormal = normal;`
     )
   }
