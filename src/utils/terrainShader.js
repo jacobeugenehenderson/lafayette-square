@@ -135,6 +135,12 @@ export const terrainTexture = makeTerrainTexture(_terrain)
 // ── Shared exaggeration uniform (mutate .value, all materials follow) ──
 
 export const terrainExag = { value: 0 }
+// window.__terrainExag — console handle on the shared exaggeration uniform.
+// Same convention as window.__bldgXray / window.__treeAlphaTest. Setting
+// .value = 0 flattens every patched material at once, which is the A/B for
+// "does the terrain displacement disagree with the shadow map?" — the shadow
+// pass uses three's own MeshDepthMaterial and carries NONE of these patches.
+if (typeof window !== 'undefined') window.__terrainExag = terrainExag
 
 // ── Shared uniform objects ───────────────────────────────────────
 // The wrapper objects here are Object.assign'd into every patched shader by

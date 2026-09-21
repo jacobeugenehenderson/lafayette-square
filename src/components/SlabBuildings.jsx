@@ -546,6 +546,52 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
     return mat
   }, [tex, isRoof, isWall, isFoundation, texStrength, texScale, group.kind, group.id])
 
+  // ── customDepthMaterial — THE SHADOW PASS MUST REPEAT THE VERTEX LIFT ──────
+  // ⛔⛔ A building's height off the ground is the ATTRIBUTE `aCentroidY` (the
+  // foundation riser), added to `transformed.y` in the render material above.
+  // The shadow pass does NOT use that material: three substitutes its own
+  // MeshDepthMaterial, which knows nothing about aCentroidY or uExag. Without
+  // this, every building is rendered into the shadow map DROPPED BACK ONTO THE
+  // BASELINE — measured on huron 2026-09-20: aCentroidY spans 1.41–13.40 m, so
+  // at uExag 1.5 the shadow copies sat 2.11–20.10 m BELOW the drawn buildings,
+  // which are only ~22 m tall. An occluder buried in the terrain cannot shadow
+  // the ground above it, so every receiver read "lit" and the town had no cast
+  // shadows at all. The map LOOKED populated — it was populated with buildings
+  // in the wrong place (depth histogram: blobs at 0.0 and 0.5, nothing at the
+  // ground's 0.25).
+  //
+  // ⭐ Two things must match the render material, and one must NOT:
+  //   ✓ the aCentroidY × uExag lift — or the shadow is in the wrong place
+  //   ✓ the `vCovered` discard — geometry hidden behind the CityModel LOD2 is
+  //     discarded when drawn, so it must be discarded here too or it casts a
+  //     PHANTOM shadow the operator can see but whose caster is invisible
+  //   ✗ the camera x-ray dissolve (uDissolveDist) is a VIEWING aid keyed to the
+  //     camera, not the sun. Walls dissolving so you can see in must keep
+  //     throwing their shadow, or the lighting changes as you fly.
+  const depthMaterial = useMemo(() => {
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+    dm.onBeforeCompile = (shader) => {
+      shader.uniforms.uExag = terrainExag
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', `#include <common>
+         attribute float aCentroidY;
+         attribute float aCovered;
+         uniform float uExag;
+         varying float vCoveredD;`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>
+         vCoveredD = aCovered;
+         transformed.y += aCentroidY * uExag;`)
+      shader.fragmentShader = shader.fragmentShader
+        .replace('#include <common>', `#include <common>
+         varying float vCoveredD;`)
+        .replace('#include <clipping_planes_fragment>', `#include <clipping_planes_fragment>
+         if (vCoveredD > 0.5) discard;`)
+    }
+    // Distinct key so this program never collapses onto the plain depth program.
+    dm.customProgramCacheKey = () => 'slab-bldg-depth-centroidlift-v1'
+    return dm
+  }, [])
+
   // Resolve a raycast hit to a building id via the aBuildingId attribute.
   // A DISCARDED fragment still raycasts, so an extrusion hidden behind a city
   // LOD2 solid would otherwise intercept clicks aimed at that solid. Both would
@@ -564,6 +610,7 @@ function GroupMesh({ group, geometry, texId, scene, registerShader, interactive 
     <mesh
       geometry={geometry}
       material={material}
+      customDepthMaterial={depthMaterial}
       renderOrder={group.renderOrder}
       castShadow
       receiveShadow

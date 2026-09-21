@@ -1046,7 +1046,7 @@
   },
   "shadow": {
     "values": {
-      "size": 52,
+      "size": 22.85,
       "samples": 16
     }
   },
@@ -1440,7 +1440,7 @@
         "transitionOut": 0,
         "values": {
           "noon": {
-            "size": 57,
+            "size": 25.05,
             "samples": 17
           }
         }

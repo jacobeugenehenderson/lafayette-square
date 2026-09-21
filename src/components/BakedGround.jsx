@@ -28,6 +28,7 @@ import { terrainExag, patchTerrain, sceneExag } from '../utils/terrainShader'
 import { applyWeatherToShader } from '../lib/weather-uniforms.js'
 import { lampGlow as _lampGlow } from '../preview/lampGlowState'
 import { setGroundColorMap, setGroundFxMap } from './groundColorState'
+import { setSceneStencil } from './sceneStencilState'
 import { useSceneJson } from '../lib/useSceneJson.js'
 import { INSTANCE } from '../instance.js'
 import { ASSET_BASE } from '../lib/bakedUrl.js'
@@ -139,6 +140,10 @@ function fadeForGroup(group, stencil) {
 function GroundMeshes({ manifest, bin, scene, bakeLastMs }) {
   const layerVis = scene?.layerVis
   const stencil = manifest.stencil || null
+  // Publish the disc so size-dependent consumers stop hardcoding one town's
+  // radius. The sun's shadow frustum is the one that mattered: it shipped ±900,
+  // i.e. Lafayette Square's 892 m radius, and clipped every larger town.
+  useEffect(() => { setSceneStencil(stencil) }, [stencil])
   // ⛔ LOUD, not silent. A stale slab renders its OWN model correctly (above) but it
   // does NOT show the scene's authored fade, so the operator is looking at a picture
   // that cannot reflect the current record. Silence here is the defect — the whole

@@ -509,6 +509,26 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
     return mat
   }, [])
 
+  // ⛔ The shadow pass uses three's OWN MeshDepthMaterial, which carries none
+  // of the lift above — so without this the foundation is recorded in the
+  // shadow map UN-lifted, i.e. buried, and cannot shadow anything. Same defect
+  // as SlabBuildings (huron, 2026-09-20); gated by
+  // checks/claims-displaced-casters-have-a-depth-material.mjs.
+  const foundationDepthMat = useMemo(() => {
+    const dm = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking })
+    dm.onBeforeCompile = (shader) => {
+      shader.uniforms.uExag = terrainExag
+      shader.vertexShader = shader.vertexShader
+        .replace('#include <common>', `#include <common>
+         attribute float aCentroidY;
+         uniform float uExag;`)
+        .replace('#include <begin_vertex>', `#include <begin_vertex>
+         transformed.y += aCentroidY * uExag;`)
+    }
+    dm.customProgramCacheKey = () => 'foundation-terrain-depth-v1'
+    return dm
+  }, [])
+
   // Static apply on scene load — foundation physics/color come from
   // scene.json via props (couplers plan §1). Replaces the prior per-frame
   // cartograph-store read; Stage operator now sees foundation updates on
@@ -529,7 +549,7 @@ function Foundations({ buildings: buildingsProp, materialPhysics, materialColors
   if (!geometry) return null
 
   return (
-    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow material={foundationMat} frustumCulled={false} />
+    <mesh ref={meshRef} geometry={geometry} receiveShadow castShadow material={foundationMat} customDepthMaterial={foundationDepthMat} frustumCulled={false} />
   )
 }
 

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas, useThree, useFrame } from '@react-three/fiber'
+import { installShadowMaskDebug } from '../utils/shadowMaskDebug.js'
+installShadowMaskDebug()  // ?shadowmask=1 — must run before any material compiles
 import { MapControls, OrbitControls, PerspectiveCamera } from '@react-three/drei'
 import * as THREE from 'three'
 import { deriveFade } from '../../cartograph/boundaryRecords.mjs'
@@ -103,6 +105,22 @@ useTimeOfDay.getState().setHour(12)
 // intermediary needed. LampGlow + Neon still pump because their
 // consumers (NeonBands + grass/lamp shaders) read from module-scoped
 // uniforms — different surface, intentionally unchanged.
+
+// window.__r3f — live R3F state (scene, gl, camera) for console forensics.
+// Same convention as window.__bldgXray / window.__treeAlphaTest. READ-ONLY
+// handle; the scene graph is the only reliable place to answer "is this light
+// actually configured the way the source says." Added 2026-09-20 after three
+// DOM-scanning probes failed: R3F v8 puts `__r3f` on THREE objects, never on
+// DOM elements, so there is no way in from the page without a handle.
+function SceneHandle() {
+  const st = useThree()
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    window.__r3f = st
+    return () => { if (window.__r3f === st) delete window.__r3f }
+  }, [st])
+  return null
+}
 
 function NeonPump() {
   useFrame(() => {
@@ -1222,6 +1240,7 @@ export default function CartographApp() {
               - Any non-Designer shot (any scene) → <BakedGround/>. Same
                 component Preview mounts, same per-Look slab Publish
                 ships. ↻ / Stage→ refresh via cache-bust on bakeLastMs. ── */}
+          <SceneHandle />
           {inDesigner && <ambientLight intensity={1} />}
 
           {/* Designer-mode backdrop. LS uses aerial tiles (gated lower);

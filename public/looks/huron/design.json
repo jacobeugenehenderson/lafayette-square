@@ -382,7 +382,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "size": 23,
+        "size": 10.11,
         "samples": 11
       }
     }
@@ -764,7 +764,7 @@
         "transitionOut": 0,
         "values": {
           "noon": {
-            "size": 57,
+            "size": 25.05,
             "samples": 17
           }
         }

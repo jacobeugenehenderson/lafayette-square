@@ -409,14 +409,22 @@ export const SMAA_FIELDS = [
 export const SMAA_FLAT_DEFAULTS = { value: 1 }
 export const SMAA_FIELD_KEYS = ['value']
 
-// Shadow (Post card) — SoftShadows parameters. Promoted from envState.
-// Size is the kernel radius; samples is the per-pixel sample count.
-// Defaults match the legacy envState.shadowSize / shadowSamples.
+// Shadow (Post card) — SoftShadows parameters.
+// ⭐⭐ `size` IS PENUMBRA IN METRES — a real-world width, not a kernel radius.
+// It was texels until 2026-09-20, and drei's PCSS still consumes texels
+// (softShadows.js: offset = texelSize * 2 * PENUMBRA_FILTER_SIZE), so
+// StageShadows converts metres → texels using the ACTIVE SCENE's metres-per-
+// texel. ⛔ The old unit only held still because the shadow frustum was
+// hardcoded to ±900 for every town: one fixed 0.4395 m/texel. The moment the
+// frustum was derived per town, the same authored number meant a different
+// real-world softness in each — huron's 23 became an 83 m smear across a town
+// whose buildings are 20 m wide, which reads as "no edges at all".
+// Stored values were migrated ×(1800/4096) so every town kept its authored look.
 export const SHADOW_FIELDS = [
-  { key: 'size',    label: 'Size',    min: 10, max: 100, step: 1 },
-  { key: 'samples', label: 'Samples', min: 4,  max: 32,  step: 1 },
+  { key: 'size',    label: 'Penumbra (m)', min: 1, max: 60, step: 0.5 },
+  { key: 'samples', label: 'Samples',      min: 4, max: 32, step: 1 },
 ]
-export const SHADOW_FLAT_DEFAULTS = { size: 52, samples: 16 }
+export const SHADOW_FLAT_DEFAULTS = { size: 22.85, samples: 16 }
 export const SHADOW_FIELD_KEYS = SHADOW_FIELDS.map(f => f.key)
 
 // Canopy Light (Surfaces → Trees) — how the tree IMPOSTOR CARDS answer to the

@@ -1,5 +1,5 @@
-import { useRef, useMemo, useEffect, Suspense } from 'react'
-import { useFrame } from '@react-three/fiber'
+import { useRef, useMemo, useEffect, useState, Suspense } from 'react'
+import { useFrame, useThree } from '@react-three/fiber'
 import { useTexture } from '@react-three/drei'
 import * as THREE from 'three'
 import SunCalc from 'suncalc'
@@ -42,6 +42,7 @@ import PlanetariumOverlay from './PlanetariumOverlay'
 import R3FErrorBoundary from './R3FErrorBoundary'
 import { bvToRGB } from '../lib/starColor'
 import { INSTANCE } from '../instance.js'
+import { onSceneStencil, shadowHalfExtent, shadowMetresPerTexel, SHADOW_MAP_SIZE } from './sceneStencilState'
 
 // Look id resolution — same shape as BakedGround / useSceneJson callers.
 // Production passes no `lookId`; Stage threads the operator's active Look.
@@ -96,6 +97,16 @@ function lerpColor(color1, color2, t) {
 // Shadow map baking: only re-render when sun moves meaningfully.
 // Avoids drawing 1,729 buildings into a 4K shadow map 60x/sec.
 const _prevShadowPos = new THREE.Vector3()
+// Camera-fitted shadow frustum scratch (module scope — no per-frame GC).
+// ⛔ `_camFwd` above is already owned by the lighting code; this pass needs its
+// own so a refit can never stomp a value mid-frame.
+const _shadowFwd = new THREE.Vector3()
+const _focus = new THREE.Vector3()
+const _prevFocus = new THREE.Vector3(Infinity, Infinity, Infinity)
+const _lightDir = new THREE.Vector3()
+const _lightUp = new THREE.Vector3()
+const _lightRight = new THREE.Vector3()
+const _WORLD_UP = new THREE.Vector3(0, 1, 0)
 
 function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, orbColor, orbSize, intensityMulRef }) {
   const lightRef = useRef()
@@ -106,6 +117,139 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
   // useEffect can fire before LafayetteScene's 1,729 meshes commit,
   // leaving the shadow map empty and buildings fully lit by the
   // directional light until the next manual shadow update.
+  // ── Shadow frustum, sized from the ACTIVE SCENE's disc ───────────────────
+  // ⛔⛔ This used to be four hardcoded literals: ±900 with far 2400. ±900 is
+  // LAFAYETTE SQUARE'S RADIUS (892 m) PLUS 8 m OF SLACK. huron's disc is
+  // 3,539 m — 3.97× wider — so ~73% of the town fell outside the box, and
+  // outside it three returns "lit" unconditionally. `CanaryScene.jsx` says it
+  // in as many words: "sized for LS-scale ground … 1800 m frustum".
+  //
+  // ⭐ THE LIGHT DOES NOT MOVE. LIGHT_RADIUS also scales the visible sun/moon
+  // orbs, so pushing the light out to clear a big town would change the look.
+  // An ORTHOGRAPHIC shadow camera accepts a NEGATIVE near, so the depth slab
+  // is simply made deep enough to contain the whole scene from where the light
+  // already is — geometry "behind" the light at a low sun is still captured.
+  //
+  // ⛔ NO FALLBACK. No stencil = we do not know how big this scene is, so the
+  // sun stops casting and says why. A silently wrong shadow box is exactly the
+  // failure this whole bug was.
+  const [stencil, setStencil] = useState(null)
+  useEffect(() => onSceneStencil(setStencil), [])
+  useEffect(() => {
+    const light = lightRef.current
+    if (!light) return
+    if (!stencil) {
+      if (light.castShadow) {
+        light.castShadow = false
+        console.error('[CelestialBodies] no scene stencil — sun shadows OFF. ' +
+          'ground.json#stencil is the source; nothing has published it yet.')
+      }
+      return
+    }
+    const half = shadowHalfExtent(stencil)
+    if (half == null) return
+    const depth = half + LIGHT_RADIUS + 1000
+    const c = light.shadow.camera
+    c.left = -half; c.right = half; c.top = half; c.bottom = -half
+    c.near = -depth; c.far = depth
+    c.updateProjectionMatrix()
+
+    // ── Bias, in TEXELS and METRES — not in the literals LS was tuned with ──
+    // ⛔ These shipped as `normalBias 0.15` / `bias -0.0001`, fixed numbers.
+    // normalBias offsets the shadow sample along the surface normal in WORLD
+    // units; it has to clear roughly one shadow texel or the surface shadows
+    // itself in a sawtooth along the texel grid. 0.15 m is 0.30 of a texel at
+    // LS's 0.495 m/texel — about right — but only 0.08 of a texel on huron's
+    // 1.806 m, which is the jagged comb along every building edge.
+    // `bias` is in NDC depth, so its WORLD meaning scales with the frustum
+    // depth too; express it as a fixed metre offset and convert.
+    const mPerTexel = shadowMetresPerTexel(stencil)
+    light.shadow.normalBias = 1.0 * mPerTexel          // one texel
+    light.shadow.bias = -(0.5 / (2 * depth))           // 0.5 m, in NDC depth
+
+    light.castShadow = true
+    light.shadow.needsUpdate = true
+    townHalfRef.current = half
+  }, [stencil])
+
+  // ── CAMERA-FITTED FRUSTUM — spend the texels where the operator is looking ─
+  // ⛔ Sizing the box to the whole disc is correct but ruinous: huron's 7.4 km
+  // over 4096² is 1.806 m/texel, so every shadow edge stair-steps in ~1.8 m
+  // blocks — a fifth of a building. The operator never sees 7.4 km at once.
+  // ⭐ So the box tracks the camera's ground focus and covers only what is in
+  // shot, clamped to the town. Texel density stops depending on the TOWN and
+  // starts depending on the SHOT, which is the only thing that can be right on
+  // a map of any size.
+  // ⛔ TEXEL SNAPPING IS NOT OPTIONAL. A frustum that slides continuously makes
+  // every shadow edge crawl and shimmer as the camera moves, which looks worse
+  // than the blocks it replaces. The focus is quantised to whole texels along
+  // the light's own axes so the sampling grid is stationary in world space.
+  const camera = useThree(s => s.camera)
+  const townHalfRef = useRef(null)
+  const fitHalfRef = useRef(null)
+  useFrame(() => {
+    const light = lightRef.current
+    const townHalf = townHalfRef.current
+    if (!light || !light.castShadow || townHalf == null) return
+
+    // Ground point the camera is looking at (ray → y=0), else straight below.
+    camera.getWorldDirection(_shadowFwd)
+    const t = Math.abs(_shadowFwd.y) > 1e-4 ? -camera.position.y / _shadowFwd.y : -1
+    if (t > 0) _focus.copy(camera.position).addScaledVector(_shadowFwd, t)
+    else _focus.set(camera.position.x, 0, camera.position.z)
+
+    // How much ground is in shot. Perspective: grows with distance. Ortho: the
+    // camera's own half-height IS the answer, and it is exact.
+    const dist = camera.position.distanceTo(_focus)
+    const seen = camera.isOrthographicCamera
+      ? (camera.top - camera.bottom) * 0.5 / (camera.zoom || 1)
+      : dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
+    // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
+    const half = Math.min(townHalf, Math.max(60, seen * 1.6))
+
+    // Light basis, for texel snapping.
+    // ⛔ Take the direction from the CELESTIAL position prop, never from
+    // light.position — this pass MOVES light.position to re-centre the shadow
+    // box, and React rewrites it from the prop on every TOD tick. Reading the
+    // mutated value would make the sun's direction depend on where the camera
+    // happened to be looking last frame.
+    _lightDir.copy(lightPosition).normalize()
+    _lightRight.crossVectors(_WORLD_UP, _lightDir)
+    if (_lightRight.lengthSq() < 1e-6) _lightRight.set(1, 0, 0)
+    _lightRight.normalize()
+    _lightUp.crossVectors(_lightDir, _lightRight).normalize()
+    const texel = (2 * half) / SHADOW_MAP_SIZE
+    const snap = (v) => Math.round(v / texel) * texel
+    const a = snap(_focus.dot(_lightRight))
+    const b = snap(_focus.dot(_lightUp))
+    const c0 = _focus.dot(_lightDir)
+    _focus.copy(_lightRight).multiplyScalar(a)
+      .addScaledVector(_lightUp, b)
+      .addScaledVector(_lightDir, c0)
+
+    const halfChanged = fitHalfRef.current == null ||
+      Math.abs(half - fitHalfRef.current) > fitHalfRef.current * 0.05
+    const moved = _focus.distanceToSquared(_prevFocus) > (texel * texel)
+    if (!halfChanged && !moved) return
+
+    fitHalfRef.current = half
+    _prevFocus.copy(_focus)
+
+    const cam = light.shadow.camera
+    cam.left = -half; cam.right = half; cam.top = half; cam.bottom = -half
+    const depth = townHalf + LIGHT_RADIUS + 1000
+    cam.near = -depth; cam.far = depth
+    cam.updateProjectionMatrix()
+    // The light is directional: only its DIRECTION matters for shading, so the
+    // shadow box may be re-centred on the focus without touching the look.
+    light.target.position.copy(_focus)
+    light.target.updateMatrixWorld()
+    light.position.copy(_focus).addScaledVector(_lightDir, LIGHT_RADIUS)
+    light.shadow.normalBias = 1.0 * texel
+    light.shadow.bias = -(0.5 / (2 * depth))
+    light.shadow.needsUpdate = true
+  })
+
   const _framesSinceMountRef = useRef(0)
   useEffect(() => {
     _framesSinceMountRef.current = 0
@@ -152,15 +296,8 @@ function PrimaryOrb({ lightPosition, visualPosition, color, intensity, showOrb, 
         intensity={intensity}
         color={color}
         castShadow
-        shadow-mapSize-width={4096}
-        shadow-mapSize-height={4096}
-        shadow-camera-far={2400}
-        shadow-camera-left={-900}
-        shadow-camera-right={900}
-        shadow-camera-top={900}
-        shadow-camera-bottom={-900}
-        shadow-bias={-0.0001}
-        shadow-normalBias={0.15}
+        shadow-mapSize-width={SHADOW_MAP_SIZE}
+        shadow-mapSize-height={SHADOW_MAP_SIZE}
       />
     </group>
   )

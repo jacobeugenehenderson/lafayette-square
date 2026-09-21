@@ -27,9 +27,10 @@
  * `resolveGroupAtMinute` resolver.
  */
 
-import { useRef, useEffect } from 'react'
+import { useRef, useEffect, useState } from 'react'
 import { useThree, useFrame } from '@react-three/fiber'
 import { SoftShadows } from '@react-three/drei'
+import { onSceneStencil, shadowMetresPerTexel } from './sceneStencilState'
 import * as THREE from 'three'
 
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -189,6 +190,7 @@ export function PostProcessing({
 // useFrame snapshot) rather than ref mutation. Stage retints by passing
 // shadowOverride; production reads scene.shadow.
 
+let _penumbraWarned = false
 export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   const sceneJson = useSceneJson(resolveLookId(lookId), bakeLastMs)
   const channel = shadowOverride ?? sceneJson?.shadow ?? SHADOW_DEFAULT_CHANNEL
@@ -196,7 +198,44 @@ export function StageShadows({ lookId, bakeLastMs, shadowOverride }) {
   const slotMins = getTodSlotMinutes(tod.currentTime)
   const minute = tod.getMinuteOfDay()
   const resolved = resolveGroupAtMinute(channel, minute, slotMins, SHADOW_FIELD_KEYS, SHADOW_FLAT_DEFAULTS)
-  return <SoftShadows size={resolved.size} samples={resolved.samples} focus={0.35} />
+
+  // ⭐⭐ `resolved.size` IS METRES OF PENUMBRA. drei's PCSS wants TEXELS:
+  // `offset = texelSize * 2 * PENUMBRA_FILTER_SIZE` (softShadows.js), where
+  // texelSize = 1/shadowMapWidth. So a fixed `size` is a fixed number of
+  // TEXELS, and a texel's real-world width depends on the shadow frustum —
+  // which is now derived per town. Without this conversion huron's authored
+  // softness became an 83 m smear (46 texels × 1.81 m) across a town whose
+  // buildings are ~20 m wide: shadows with no edges at all.
+  // ⛔ NO FALLBACK: unknown scene size = we cannot convert, so PCSS is not
+  // mounted and three's standard PCF-soft filter stands. Correct, just not
+  // contact-hardening — and it says so, rather than inventing a radius.
+  const [stencil, setStencil] = useState(null)
+  useEffect(() => onSceneStencil(setStencil), [])
+  const mPerTexel = shadowMetresPerTexel(stencil)
+  if (mPerTexel == null) return null
+
+  // ⛔⛔ THE FILTER RADIUS AND THE SAMPLE COUNT ARE ONE DECISION, NOT TWO.
+  // drei's PCSS takes `samples` points off a Vogel disk of `2 × size` texels,
+  // rotated per fragment (softShadows.js:116). Spread a fixed sample budget
+  // over a huge radius and the penumbra stops being soft and becomes NOISE.
+  // Once the shadow frustum follows the camera, a texel can be 0.03 m — so a
+  // world-constant 10 m penumbra is a 345-TEXEL radius sampled 11 times.
+  // ⭐ Cap the radius at what the sample budget can actually carry. The
+  // authored metres govern whenever they are achievable; this only bites when
+  // they are not, and it says so rather than quietly rendering mush.
+  const wanted = resolved.size / mPerTexel
+  const budget = Math.max(8, resolved.samples * 1.5)
+  const sizeTexels = Math.max(0.5, Math.min(wanted, budget))
+  if (wanted > budget * 1.05 && !_penumbraWarned) {
+    _penumbraWarned = true
+    console.warn(`[StageShadows] penumbra ${resolved.size} m = ${wanted.toFixed(0)} texels at ` +
+      `${mPerTexel.toFixed(3)} m/texel, but ${resolved.samples} samples only carry ~${budget.toFixed(0)}. ` +
+      `Clamped. Lower the Penumbra (m) knob or raise Samples. ` +
+      `⭐ The sun's real penumbra is ~0.0093 × blocker distance — a 10 m wall throws ~0.09 m, ` +
+      `so a large value here is compensating for a coarse map that no longer exists.`)
+  }
+
+  return <SoftShadows size={sizeTexels} samples={resolved.samples} focus={0.35} />
 }
 
 // ── Atmospheric fog (blends ground into sky at horizon) ─────────────────────
