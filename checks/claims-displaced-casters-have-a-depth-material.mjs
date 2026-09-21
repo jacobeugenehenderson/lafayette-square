@@ -20,6 +20,21 @@
  *
  * The fix is `mesh.customDepthMaterial` carrying the SAME displacement.
  *
+ * ⚠️ KNOWN LIMIT — FILE-LEVEL, NOT MESH-LEVEL. A file passes if it mentions
+ * customDepthMaterial ANYWHERE. LafayetteScene has TWO casting meshes and only
+ * one needed the fix, so it passes on a file that was hand-verified, not on one
+ * the checker actually proved. ⛔ A second casting mesh added to a passing file
+ * would slip through. Tightening this means resolving material→mesh statically,
+ * which is not reliable in JSX; the honest upgrade is a RUNTIME assertion that
+ * walks the live scene for `mesh.castShadow && material.onBeforeCompile &&
+ * !mesh.customDepthMaterial`. Until then this catches the class, not every case.
+ *
+ * ⭐ NOTE the OTHER way to lift a caster, which is CORRECT and must not be
+ * flagged: `<mesh position={[x, y, z]}>`. An object transform goes through
+ * modelMatrix, which the depth pass DOES honour. Only displacement done inside
+ * the vertex shader is invisible to it. LafayetteScene's buildings lift that
+ * way and were never broken; its merged foundation lifts in the shader and was.
+ *
  * READS THE SOURCE — never a copied list. Run: node checks/claims-displaced-casters-have-a-depth-material.mjs
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
