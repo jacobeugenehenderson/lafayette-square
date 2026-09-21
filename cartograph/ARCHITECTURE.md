@@ -225,7 +225,50 @@ See **§8 "Data flow & the bake chain"** below for the canonical pipeline diagra
 > The canonical home for the render/bake engineering decisions — migrated out of FEATURES (2026-06-14) so FEATURES stays the pure pitch. Operator-facing knobs are in `OPERATIONS.md`; the plain-language doctrine is in `/ORIENTATION.md`. (§7 above already carries several of these as conventions — sky-gain, grade-sep, the logdepth corollary, gating, `writeIfChanged`; this section holds the ones that needed a full home.)
 
 ### Layering / coplanar stacking / depth precision
-Four mechanisms keep coplanar surfaces from fighting; picking the wrong one is the most common "the X is missing in Stage / the Y looks weird at distance" bug.
+
+> ## ⛔⛔ ZEROTH RULE, AND IT OUTRANKS EVERY MECHANISM BELOW (2026-09-20)
+> ## **DO THE SURFACES ACTUALLY OVERLAP? IF NOT, DO NOT SEPARATE THEM.**
+> A separation between surfaces that never overlap buys nothing and **causes** the
+> fighting it was meant to prevent. Measured on huron: the eleven land-use `face`
+> groups are a **PARTITION** — strict point-in-triangle sampling, 362,298 cells over
+> 23.05 km², interiors only, shared edges excluded: **ZERO cells covered by two
+> different LU interiors. 0.000 km².** They had been stacked on eleven separate
+> 2 mm slots for no reason, and it tore every land-use boundary apart.
+> ⇒ **All `kind === 'face'` groups now bake to slot 0 — one plane.** Ribbons
+> (asphalt, curb, sidewalk, stripe…) keep ascending slots: a road genuinely *does*
+> sit on a parcel.
+>
+> ### ⛔⛔ AND THE HARD LIMIT NOBODY HAD WRITTEN DOWN: **ON CONTOURED GROUND, MILLIMETRE SEPARATION IS ARITHMETICALLY UNAVAILABLE.**
+> The micro-Y is baked into geometry; the runtime then displaces every vertex by the
+> DEM. Two layers with **different tessellation interpolate that displacement
+> differently across a triangle** — a 64 m face triangle chords over ground a 3.5 m
+> sidewalk triangle follows. Measured against huron's DEM at exag 1.5 (median / p95):
+>
+> | triangle span | 3.5 m | 11.5 m | 24 m | 64 m |
+> |---|---|---|---|---|
+> | height error | 0.0 / 13 mm | 4.3 / 129 mm | 17 / 473 mm | **71 / 1574 mm** |
+>
+> Against a **2 mm** separation. ⇒ layers nominally 2 mm apart sit up to **1.6 m**
+> apart in whichever direction the terrain curves, and **which one wins flips wherever
+> that sign flips** — torn, lacy edges an operator reads as "axis fighting".
+> ⭐ **The two constants are incompatible by construction:** the adaptive refiner is
+> allowed to miss the ground by `GROUND_REFINE_TOL_M = 0.50 m` — **250× the separation
+> it must preserve**. Tightening tol below 2 mm means subdividing every fill to
+> centimetres (altadena already hit 23.6M tris at a far looser setting); widening
+> `GROUND_Y_EPS` above tol puts water 34 m above its shore. **Neither is available.**
+> ⛔ A 10× A/B (2 mm → 20 mm) changed nothing, exactly as the numbers predict. **Do not
+> reach for a bigger epsilon; there is no value that works.**
+>
+> ⚠️ **Scale note:** this is invisible on a small flat town and severe on a large
+> contoured one — the error grows with triangle span, and triangle span grows with the
+> town. Lafayette Square never showed it; huron tore.
+>
+> ▶ *Jacob had said this from the start — "I initially made the ground layers in a single
+> plane on purpose", and "I wish we could literally stamp them into a single plane
+> instead of fucking around with mms here and there on contoured ground which always
+> makes that fail." The measurements above are that statement, confirmed.*
+
+Below this, four mechanisms keep **genuinely overlapping** coplanar surfaces from fighting; picking the wrong one is the most common "the X is missing in Stage / the Y looks weird at distance" bug.
 
 | Mechanism | Handles | Works | Failure mode |
 |---|---|---|---|
@@ -251,7 +294,7 @@ Four mechanisms keep coplanar surfaces from fighting; picking the wrong one is t
 > that one is not). ⭐ A flat claim, stated twice, resting on a pointer that resolves to nothing — which is how it went
 > four months without anyone checking the branch. *(Found by the agent dispatched on `BRIEF-designer-depth-regime`.)*
 
-**Decision rule for a new ground layer:** real physical height difference → Geometric Y (≥1cm) · coplanar overlay → `polygonOffset` per its renderOrder slot · Designer-only authoring overlay → tiny Y-lift OR transparent+renderOrder · "always on top" overlay → `renderOrder` + `depthTest:false`. Custom shaders need a unique `customProgramCacheKey` before any `patchTerrain` wrapper, or three's program cache silently collapses them onto another material's compiled shader. Per-pond rigid lift (`<PondGroup>`), not per-park and not per-vertex, for stacked bank/water/island.
+**Decision rule for a new ground layer:** ⛔ **FIRST — does it OVERLAP anything? If not, give it NO separation and put it on the same plane as its peers** (zeroth rule above; this is what land-use does). Then: real physical height difference → Geometric Y (≥1cm) · genuinely overlapping coplanar overlay → `polygonOffset` per its renderOrder slot ⚠️ *(inert under log-depth — see the corollary above)* · Designer-only authoring overlay → tiny Y-lift OR transparent+renderOrder · "always on top" overlay → `renderOrder` + `depthTest:false`. ⛔ **And on terrain, never size a separation in millimetres — compare it against the chord error for the layer's triangle span in the table above.** Custom shaders need a unique `customProgramCacheKey` before any `patchTerrain` wrapper, or three's program cache silently collapses them onto another material's compiled shader. Per-pond rigid lift (`<PondGroup>`), not per-park and not per-vertex, for stacked bank/water/island.
 
 ### Ground conformance — one DRAWN surface, everything sits on it (2026-06-29)
 "Nothing sits on the ground" had two roots, both now cured; together they are the **conformance doctrine** that supersedes the bare "coverage parity" rule below.

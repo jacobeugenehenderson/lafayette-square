@@ -284,7 +284,25 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
 
   const LAMP_SHADOW_RADIUS_M = 2.5  // lamp-base contact-shadow reach (m)
   const LAMP_SHADOW_STR      = 0.6  // per-lamp shadow contribution
-  const FX_SIZE = 1024
+  // ⛔⛔ FX_SIZE WAS 1024, A CONSTANT — AND IT IS A DENSITY, NOT A COUNT.
+  // This map carries the baked TREE SHADOW (channel G), splatted as discs of
+  // TREE_SHADOW_RADIUS_M = 4.5 m. What matters is how many TEXELS that radius
+  // covers, which depends on the town's span:
+  //     lafayette-square  1024² over 1,640 m = 1.60 m/texel → 2.8 texels radius ✅
+  //     huron             1024² over 6,706 m = 6.55 m/texel → 0.69 texels ⛔ SUB-TEXEL
+  // At sub-texel each of huron's 18,616 trees darkens ONE pixel, bilinear
+  // filtering smears it, and they merge into amorphous grey masses across the
+  // ground — which reads to an operator as layers fighting, not as tree shade.
+  // ⭐ The comment at the CONTACT term below states "this map is 1024² over
+  // 1639 m = 1.60 m PER TEXEL" as though it were a property of the map. 1,639 m
+  // is Lafayette Square's span; that arithmetic holds only at LS's size.
+  // ⇒ Hold the DENSITY that is known to work and let the count follow the town.
+  // ⛔ Resolved BELOW, where the pW/pH span exists — not here. A first cut read
+  // pW at this line, 76 lines before it is declared; `node --check` reported
+  // "parses" because parsing does not resolve identifiers. Same trap as the
+  // HEMI_FOR_DIRECTIONAL blackout the same evening.
+  const FX_TARGET_M_PER_TEXEL = 1.6   // LS's proven density; 4.5 m radius ≈ 2.8 texels
+  const FX_SIZE_MAX = 4096            // 4096² × 2 Float32 accumulators ≈ 134 MB
   try {
     // Contact-shadow sources are per-installation. The Look's own lamps.json /
     // the scene's own tree placements — NEVER LS's when this is a poured
@@ -331,6 +349,19 @@ export async function bakeGroundAO({ look, size = LIGHTMAP_SIZE,
       const margin = Math.max(POOL_RADIUS_M, TREE_SHADOW_RADIUS_M)
       minX -= margin; maxX += margin; minZ -= margin; maxZ += margin
       const pW = maxX - minX, pH = maxZ - minZ
+      // Size the FX map to hold FX_TARGET_M_PER_TEXEL across THIS town's span.
+      const _fxSpan = Math.max(pW, pH)
+      const _fxWant = Math.ceil(_fxSpan / FX_TARGET_M_PER_TEXEL)
+      const FX_SIZE = Math.min(FX_SIZE_MAX, 1 << Math.ceil(Math.log2(Math.max(1024, _fxWant))))
+      const _fxMpt = _fxSpan / FX_SIZE
+      console.log(`  [bake-ao] FX map ${FX_SIZE}² over ${Math.round(_fxSpan)} m = ${_fxMpt.toFixed(2)} m/texel `
+        + `(tree-shadow radius ${TREE_SHADOW_RADIUS_M} m = ${(TREE_SHADOW_RADIUS_M / _fxMpt).toFixed(1)} texels)`)
+      // ⛔ LOUD when the clamp bites — a town too wide to reach the target at
+      // FX_SIZE_MAX will smear its tree shade. Never let a silent clamp pass for a choice.
+      if (_fxWant > FX_SIZE_MAX) {
+        console.warn(`  ⚠️ [bake-ao] FX map CLAMPED at ${FX_SIZE_MAX}² — wanted ${_fxWant}² for `
+          + `${FX_TARGET_M_PER_TEXEL} m/texel. Tree shade will be coarser than LS's.`)
+      }
       const accR = new Float32Array(FX_SIZE * FX_SIZE)  // pool light
       const accG = new Float32Array(FX_SIZE * FX_SIZE)  // contact shadow
       const splat = (cx, cz, reach, fn) => {

@@ -15,8 +15,17 @@
  * (`terrainShader` patchTerrain: `transformed.y += sampledLift`), so any baked Y
  * survives the displacement.
  *
- * Coplanar stacking: each group gets a tiny geometric **Y = renderOrder × EPS**
- * separation (`GROUND_Y_EPS`) — the ONLY mechanism that works under the
+ * Coplanar stacking: ⛔ **NOT EVERY GROUP.** The land-use `face` groups are a
+ * PARTITION (measured: zero overlapping interiors across 23 km²) and all bake to
+ * SLOT 0 — one plane — because separating surfaces that never overlap caused the
+ * fighting it was meant to prevent. ⛔ And on contoured ground a millimetre
+ * separation is arithmetically unavailable at any value: the DEM displacement is
+ * interpolated per-triangle, so differently-tessellated layers disagree about the
+ * ground by up to 1.6 m against a 2 mm gap. Full canon + the measurements:
+ * ARCHITECTURE §8 "Layering / coplanar stacking", ZEROTH RULE.
+ * RIBBON/overlay groups — which genuinely DO overlap — get a tiny geometric
+ * **Y = renderOrder × EPS** separation (`GROUND_Y_EPS`) — the only mechanism that
+ * works among them under the
  * production `logarithmicDepthBuffer` canvas, where `polygonOffset` is
  * structurally INERT (the `<logdepthbuf_fragment>` writes `gl_FragDepth`, which
  * bypasses `GL_POLYGON_OFFSET_FILL`). This reproduces the live Designer's proven
@@ -1013,7 +1022,37 @@ export async function bakeGround({ look, scene, refine: refineOpts = {}, proto: 
     // yLift = this group's coplanar Y separation (the resolver under log-depth).
     // `renderOrder` here is the slot this group is about to take (renderOrder++
     // below), ascending with PAINT_ORDER, so Y agrees with paint order.
-    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift: renderOrder * GROUND_Y_EPS })
+    // ⭐⭐ THE LU FACES ARE ONE PLANE. Every `kind === 'face'` group shares slot 0
+    // — no Y separation between them — because they are a PARTITION and never
+    // overlap. Measured on huron 2026-09-20 by strict point-in-triangle sampling
+    // (362,298 cells over 23.05 km², interiors only, shared edges excluded):
+    // ZERO cells covered by two different LU interiors. 0.000 km².
+    // ⇒ The ladder was separating surfaces that were never on top of each other.
+    //
+    // ⛔ WHY A BIGGER EPSILON COULD NEVER HAVE WORKED. The micro-Y is baked into
+    // geometry, and the runtime then displaces every vertex by the DEM. Two layers
+    // with different tessellation interpolate that displacement differently ACROSS
+    // A TRIANGLE: a 64 m face triangle chords over ground a 3.5 m sidewalk triangle
+    // follows. Measured sag vs huron's DEM at exag 1.5 — median / p95:
+    //   3.5 m span 0.0 / 13 mm · 11.5 m 4.3 / 129 mm · 24 m 17 / 473 mm · 64 m 71 / 1574 mm
+    // ⇒ layers nominally 2 mm apart sit up to 1.6 m apart in whichever direction the
+    // terrain curves, and WHICH ONE WINS FLIPS WHEREVER THAT SIGN FLIPS — the torn,
+    // lacy LU edges an operator reads as "axis fighting". A 10× A/B (2 → 20 mm)
+    // changed nothing, exactly as the numbers predict.
+    // ⭐ And the two constants are arithmetically incompatible: the adaptive refiner
+    // is allowed to miss the ground by GROUND_REFINE_TOL_M = 0.50 m — 250× the
+    // separation it must preserve. Tightening tol below 2 mm means subdividing every
+    // fill to centimetres (altadena already hit 23.6M tris at a far looser setting);
+    // widening EPS above tol puts water 34 m above its shore. NEITHER IS AVAILABLE.
+    // ⛔ Do not reintroduce a per-face Y "to be safe": it cannot help, and it brings
+    // the fighting back.
+    //
+    // ⚠️ Ribbon/overlay groups (asphalt, curb, sidewalk, stripe…) KEEP their ascending
+    // slots — a road genuinely DOES sit on a parcel. They remain subject to the same
+    // chord error, just less of it; if face-vs-ribbon fighting survives this, it needs
+    // a different answer than a bigger gap.
+    const yLift = (kind === 'face' ? 0 : renderOrder) * GROUND_Y_EPS
+    const { positions, indices } = itemsToBuffers(items, { refine: refinePolicy, yLift })
     if (indices.length === 0) continue
 
     // Color resolution: per-Look design.json wins, then the canonical
