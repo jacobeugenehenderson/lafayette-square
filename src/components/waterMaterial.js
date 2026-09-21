@@ -550,12 +550,38 @@ ${GLITTER_GLSL}
       `#include <emissivemap_fragment>
        {
          vec3 wV = normalize(cameraPosition - vWaterWorld);
-         vec3 wR = reflect(-wV, vWaterN);
-         // A reflected ray that points into the water reflects the horizon, not
-         // the ground: the sky dome has nothing below h = 0 to give back.
+
+         // ⛔⛔ THE SKY IS SAMPLED OFF THE **FLAT** SURFACE, NOT THE WAVE NORMAL,
+         // AND THAT IS THE WHOLE FIX. Sampling the perturbed mirror direction
+         // made every pixel pick a DIFFERENT PART OF THE DOME: at a grazing view
+         // a few degrees of wave tilt swings the reflected ray through a huge arc
+         // of sky, so neighbouring pixels landed on the pale horizon and the deep
+         // zenith alternately. That is what produced the electric-blue
+         // salt-and-pepper at noon, and why the water went NAVY under a peach
+         // sunset — half its samples were coming from the zenith behind the
+         // viewer instead of the warm sky it was facing.
+         // ⭐ REAL WATER AVERAGES MILLIONS OF FACETS PER PIXEL; we sample one. The
+         // mean of that distribution against a LOW-FREQUENCY environment is just
+         // the flat mirror direction, so taking it directly is the honest
+         // approximation rather than a smoothing hack — and it is exactly why the
+         // sun's disc had to stay out of this function: the sky is low-frequency,
+         // the sun is not.
+         vec3 wRflat = reflect(-wV, vec3(0.0, 1.0, 0.0));
+         // A little of the wave normal survives, scaled DOWN by how rough the
+         // surface already filtered itself to be — so near water keeps some life
+         // and distant water, where a pixel spans hundreds of metres, does not.
+         vec3 wR = normalize(mix(wRflat, reflect(-wV, vWaterN), 0.25 * (1.0 - roughnessFactor)));
+         // A ray that still points into the water reflects the horizon: the dome
+         // has nothing below h = 0 to give back.
          wR.y = abs(wR.y);
          vec3 wSky = skyDomeColor(wR, uBandHorizon, uBandLow, uBandMid, uBandHigh,
                                   uTurbidity, uSunDir, uSunAltitude, uSkyGlow);
+         // ⚠️ The bands arrive as the operator authored them — hex/255, i.e. sRGB
+         // DISPLAY values (skyGrid.js), and the dome writes them straight to
+         // gl_FragColor with no encode. This material is lit in linear and IS
+         // tone-mapped, so the sky must be decoded on the way in. Checked rather
+         // than assumed: a missing decode reads washed-out, a doubled one reads
+         // electric.
          float wF = waterFresnel(vWaterN, wV);
          totalEmissiveRadiance += pow(wSky, vec3(2.2)) * wF * min(uGlint, 1.0);
        }`
