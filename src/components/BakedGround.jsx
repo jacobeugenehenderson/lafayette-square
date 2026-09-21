@@ -21,7 +21,7 @@ import * as THREE from 'three'
 import { useLoader, useFrame } from '@react-three/fiber'
 import { BAND_TO_LAYER } from '../cartograph/m3Colors'
 import { makeGrassMaterial } from './grassMaterial'
-import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind, maxRoughnessForWind, coxMunkSlopeVariance } from './waterMaterial'
+import { makeWaterMaterial, isWaterGroupId, slopeScaleForWind, maxRoughnessForWind, coxMunkSlopeVariance, WIND_FLOOR_MPS } from './waterMaterial'
 import { makeGravelPathMaterial } from './gravelPathMaterial'
 import { getLampLightmap } from './lampLightmap'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -507,10 +507,15 @@ function WaterMesh({ group, geometry }) {
     // ⇒ a windy afternoon in Huron is a choppier, broader-sparkling lake, and a
     // calm one is closer to a mirror. Not authored, not tuned: tracked.
     const sky = useSkyState.getState()
-    uniforms.uSlopeScale.value = slopeScaleForWind(sky.windSpeedMs)
-    uniforms.uMaxRoughness.value = maxRoughnessForWind(sky.windSpeedMs)
-    uniforms.uGustDriftMps.value = Math.max(0.5, sky.windSpeedMs || 0)
-    uniforms.uSlopeRms.value = Math.sqrt(coxMunkSlopeVariance(sky.windSpeedMs))
+    // ⛔ FLOORED. `windSpeedMs` is 0 until the weather poller writes it, and the
+    // poller does not run in the Stage — so the authoring surface was reading
+    // DEAD CALM and rendering a mirror. Every wave term downstream reads this,
+    // which is why the whole surface went flat at once. See WIND_FLOOR_MPS.
+    const windMps = Math.max(WIND_FLOOR_MPS, sky.windSpeedMs || 0)
+    uniforms.uSlopeScale.value = slopeScaleForWind(windMps)
+    uniforms.uMaxRoughness.value = maxRoughnessForWind(windMps)
+    uniforms.uGustDriftMps.value = windMps
+    uniforms.uSlopeRms.value = Math.sqrt(coxMunkSlopeVariance(windMps))
     // `windDirDeg` is meteorological — degrees the wind blows FROM — so the wave
     // trains travel toward the opposite bearing. Compass bearing → world XZ with
     // −Z as north, the same convention celestialToPosition uses.

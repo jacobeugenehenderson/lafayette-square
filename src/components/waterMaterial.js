@@ -141,9 +141,21 @@ const GUST_CELL_M = 420
 const GUST_MIN = 0.45
 const GUST_MAX = 1.55
 
-// ⚠️ Only used when nothing drives the wind — a light breeze, so a body with no
-// weather feed attached is still WATER and not a mirror. The live value comes
-// from the weather.
+// ⛔⛔ THE WIND FLOOR, AND IT IS THE FIX FOR A REAL REGRESSION. Measured in the
+// Stage: `useSkyState.windSpeedMs` is ZERO there — the weather poller runs in the
+// app, not in the authoring surface — and I had made the ENTIRE wave amplitude a
+// function of it. Cox & Munk at 0 m/s is sigma² = 0.003, RMS slope 3.1°: a
+// near-mirror. So the lake went flat, and with it went the waves, the Fresnel
+// split, the flecks and the glint, because every one of them reads the slope.
+// ⭐ THE DOCTRINE ERROR WAS MINE: I made a LOOK-CRITICAL quantity depend on live
+// data that does not exist on every surface, with no floor — so a town or a tool
+// without a weather feed silently renders glass. A missing feed and a dead calm
+// are indistinguishable from inside the shader, and of the two readings the one
+// that is almost never true in the world is "the water is a mirror".
+// ⇒ Floor it. `windSpeedMs` defaults to 0 and is only ever written by the poller,
+// so 0 means NO DATA far more often than it means calm; a light breeze is the
+// honest reading of an absent one, and real water is essentially never glassy.
+export const WIND_FLOOR_MPS = 3.5
 const DEFAULT_WIND_MPS = 5
 
 // ⭐⭐⭐ COX & MUNK 1954 — HOW ROUGH THE WATER IS, MEASURED FROM THE REAL OCEAN.
