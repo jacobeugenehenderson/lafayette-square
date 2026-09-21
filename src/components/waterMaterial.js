@@ -466,6 +466,9 @@ ${GLITTER_GLSL}
        // body two orders of magnitude larger. ⛔ Hardcoding k back to 1 is the
        // silent-plastic regression — checks/claims-water-scales-with-its-body.mjs
        vec2 wp = wpWorld * uWaveK;
+       // Computed up here because the BODY's crest shading reads it too — the
+       // waves have to be visible from straight above, where no reflection is.
+       vec2 wSlopePre = wGlitterSlope(wpWorld);
 
        // ── Animated ripple layers ──
        // Slow large ripples (wind-driven waves)
@@ -541,9 +544,26 @@ ${GLITTER_GLSL}
        // lobe, plus the reflected sky), so the stand-in is only competing with
        // the thing it was standing in for. It fades out as glint comes up, and
        // at glint 0 the pond keeps it exactly: still the control.
-       float paint = 1.0 - min(uGlint, 1.0);
-       float highlight = smoothstep(0.62, 0.78, ripple) * smoothstep(0.5, 0.7, r1);
-       waterCol = mix(waterCol, wHighlight, highlight * 0.6 * paint);
+       // ⛔⛔ THE CREST SHADING, AND KILLING IT IS WHAT FLATTENED THE LAKE.
+       // MEASURED, not argued — the water material evaluated in Node at the
+       // camera pitch of Jacob's screenshot (55° above the surface):
+       //     Fresnel 0.0202 → the sky wash contributes 1.8% of the sky
+       //     flecks 0.0009 of the sky — one tenth of one percent
+       //     THE BODY IS 98% OF THE OUTPUT
+       // ⇒ From above, water is ~2% reflective. That is correct physics, and it
+       // means EVERYTHING I built — wash, flecks, glint — is multiplied by 0.02
+       // and cannot be seen from overhead. The body carries the picture, and I
+       // had just removed the only thing giving the body any texture.
+       // ⭐ A lake seen from above shows its waves as SHADING ON THE WATER, not
+       // as reflections: crests catch more light than troughs. So the crest term
+       // comes back — but driven by the REAL SLOPE FIELD rather than the old
+       // noise threshold, and it GROWS WITH THE WAVES instead of vanishing with
+       // them. That inversion was the bug: paint = 1 - glint faded the surface's
+       // only visible structure out at exactly the setting that adds waves.
+       // ⚠️ Broad, not the rare tail — this is shading, not glitter. The sparse
+       // clipped flecks are a separate layer and they live in the reflection.
+       float wCrest = smoothstep(0.6, 1.8, length(wSlopePre) / max(uSlopeRms, 1e-4));
+       waterCol = mix(waterCol, wHighlight, wCrest * 0.42 * min(uGlint, 1.0));
 
        // Subtle caustic pattern on the surface
        float caustic1 = wNoise(wp * 0.8 + uTime * vec2(0.15, 0.1));
@@ -552,7 +572,7 @@ ${GLITTER_GLSL}
        // albedo. On a pond bed it reads as light through water; across ten
        // kilometres of lake it is more uniform speckle with nowhere to come from.
        float caustic = smoothstep(0.4, 0.6, caustic1) * smoothstep(0.4, 0.6, caustic2);
-       waterCol += vec3(0.04, 0.07, 0.06) * caustic * paint;
+       waterCol += vec3(0.04, 0.07, 0.06) * caustic;
 
        // ── Time-of-day ──
        float dayBright = smoothstep(-0.12, 0.3, uSunAltitude);
@@ -562,7 +582,7 @@ ${GLITTER_GLSL}
        waterCol = mix(nightWater, waterCol, dayBright) * brightness;
 
        // Moon/street light reflection at night
-       float nightGlint = (1.0 - dayBright) * highlight * 0.4 * paint;
+       float nightGlint = (1.0 - dayBright) * wCrest * 0.4;
        waterCol += vec3(0.15, 0.18, 0.25) * nightGlint;
 
        // sRGB → linear
@@ -592,7 +612,7 @@ ${GLITTER_GLSL}
        float wE = 0.5;
        float wSx = wSwellH(wp + vec2(wE, 0.0)) - wSwellH(wp - vec2(wE, 0.0));
        float wSz = wSwellH(wp + vec2(0.0, wE)) - wSwellH(wp - vec2(0.0, wE));
-       vec2 wSlope = wGlitterSlope(wpWorld) + vec2(wSx, wSz) * (SWELL_STEEP / (2.0 * wE));
+       vec2 wSlope = wSlopePre + vec2(wSx, wSz) * (SWELL_STEEP / (2.0 * wE));
        // uGlint == 0 ⇒ exactly vec3(0,1,0): the flat normal this surface had
        // before glint existed, so the pre-glint surface is still reachable
        // EXACTLY and the control stays falsifiable. Not a branch — the same
