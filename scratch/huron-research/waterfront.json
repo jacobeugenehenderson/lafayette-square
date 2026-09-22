@@ -1,0 +1,154 @@
+{
+  "huro-lst-0157": {
+    "_match_name": "Rippin Lips Lake Erie Charters",
+    "_source": "https://tatteredwingswaterandfowl.com/lake-erie-walleye-fishing/ · https://tatteredwingswaterandfowl.com/contact-us/ · https://tatteredwingswaterandfowl.com/guest-info-2/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH — stated on the operator's own site. ⭐ THE SUSPECTED URL IS CORRECT, NOT WRONG: the waterfowl domain is the right domain. The Contact page is headed verbatim 'Tattered Wings Waterfowl | Rippin Lips Lake Erie Charters', and Guest Info says 'RIppin Lips Lake Erie Charters offers ample opportunity...'. One operator (Capt. Aric Rothlisberger) runs a waterfowl-guide business and the charter under one site. Do not flag this URL as bad.",
+    "_seasonal": "NOT STATED. The site names no months, no open/close dates and no season for the charter. It does sell duck hunts ('this fall') and a spring Arkansas snow-goose season, but those are the OTHER business line on the same site and say nothing about walleye charter availability. Field deliberately left as a null finding rather than guessed.",
+    "_no_hours_reason": "This business has no opening hours and cannot have them. Trips are by reservation only, and the site states: 'Meeting location and time will be determined closer to reservation date.' A weekday open/close grid is the wrong shape for it — see NOVEL #3.",
+    "_trip_structure": "'7 hour fishing trips are dock to dock' · '$650 For Up to 4 People' · '50% non-refundable deposit required at time of booking' · remaining balance due 2 days prior · full refund on cancellation 30+ days prior.",
+    "_weather_dependency": "'Cancellations due to inclement weather will be solely at the discretion of the Captain... The Captain's decision to cancel will be made the morning of the charter.' See NOVEL #4.",
+    "description": "A guided Lake Erie walleye and perch fishing charter run by Captain Aric Rothlisberger, operating alongside the same owner's Tattered Wings waterfowl guide service. Trips troll, jig or cast for walleye and perch in Ohio's western basin.",
+    "amenities": ["Fishing gear provided", "Guided charter", "Coolers permitted (no glass)"],
+    "phone": "(419) 835-4215"
+  },
+
+  "huro-lst-0095": {
+    "_match_name": "Holiday Harbor Marina",
+    "_source": "https://www.huronlagoons.com/holiday-harbor/ · https://www.huronlagoons.com/holiday-harbor/contact/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH — stated on the marina's own site. ⛔ BUT SEE `_hours_caveat`: the `hours` block below is ONE OF FOUR month-banded schedules and is only correct for part of the year.",
+    "_seasonal": "The store runs FOUR different weekly schedules across the year, quoted verbatim from the Contact page: (a) 'Store Hours In Season May - October / 7 days a week 8:00 am to 5:00 PM / Closed Easter Sunday.' (b) 'November - March / Monday - Friday 8:00 AM to 5:00 PM / Closed Thanksgiving Day & Friday. Closed over the Holidays at end of year. December 20th-January 5th' (c) 'April / Monday - Saturday 8:00 am to 5:00 PM / Sunday 9:00 AM to 4:00 PM'. Separately, the marina page states 'Memorial Day to Labor Day pool hours: 9 AM to sunset' — a holiday-anchored range closing at a SOLAR event, not a clock time.",
+    "_hours_caveat": "⛔ The `hours` below are the MAY–OCTOBER in-season band only, chosen because the fetch date (2026-09-22) falls inside it. They are WRONG for November–April. Our model cannot express the other three bands. Do not treat this as the annual schedule. See NOVEL #1.",
+    "hours": {
+      "monday":    { "open": "08:00", "close": "17:00" },
+      "tuesday":   { "open": "08:00", "close": "17:00" },
+      "wednesday": { "open": "08:00", "close": "17:00" },
+      "thursday":  { "open": "08:00", "close": "17:00" },
+      "friday":    { "open": "08:00", "close": "17:00" },
+      "saturday":  { "open": "08:00", "close": "17:00" },
+      "sunday":    { "open": "08:00", "close": "17:00" }
+    },
+    "description": "A family-owned full-service marina on the Huron River about one mile from Lake Erie, offering seasonal dockage, boat service and winter storage. It is the sister facility to Huron Lagoons Marina and holds Gold status in the Ohio Clean Marina Program.",
+    "amenities": [
+      "Drive-up docks",
+      "Jet ski docks",
+      "Fixed and floating docks",
+      "Dockside parking",
+      "Heated pool",
+      "Free Wi-Fi",
+      "Ships store",
+      "Boat service and repair (boats up to 20 tons)",
+      "Winter boat storage",
+      "Shrink wrapping",
+      "Ohio Clean Marina - Gold"
+    ],
+    "phone": "(419) 433-2140"
+  },
+
+  "huro-lst-0243": {
+    "_match_name": "North Coast Boating",
+    "_source": "http://www.northcoastboating.com/ · http://www.northcoastboating.com/index_files/Page441.htm (Contact Us)",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH for identity and phone — the operator's own site. ⚠️ The site is stale: it carries '© 2014 North Coast Boating' and no content appears to have been updated since. Facts here may be twelve years old; treat the phone number as needing a callback to confirm.",
+    "_url_note": "The URL in our data is GOOD but fragile. https:// fails TLS ('unable to verify the first certificate') and http:// returns 403 Forbidden to some user-agents while returning 200 to others. An automated link-checker will likely mark this listing dead when it is not. Worth a separate flag from a genuinely bad URL.",
+    "_identity_correction": "⛔ A third-party aggregator (slipstreamboating.com) describes North Coast Boating as a 'boat club' offering 'exclusive memberships and access to luxury boats'. The operator's own site says nothing of the kind — it is a boating INSTRUCTION business and vessel delivery service. The aggregator description is wrong and must not be used.",
+    "_seasonal": "NOT STATED. No season, months or dates anywhere on the site.",
+    "_no_hours_reason": "No hours published anywhere on the site. Instruction is scheduled per student: 'we'll work with you at your schedule'.",
+    "_address": "100 Laguna Drive C-32, Huron, Ohio — i.e. a suite inside the Huron Lagoons Marina property (100 Laguna Dr). Two of our listings therefore share one street address.",
+    "description": "A boating instruction business staffed by Coast Guard-licensed instructors, offering free beginner seminars, on-the-water handling training, and advanced navigation and licensing courses. It also provides vessel delivery services across the Great Lakes, Eastern Canada and the East Coast.",
+    "amenities": [
+      "Free beginner boating seminars",
+      "On-the-water training",
+      "Coast Guard-licensed instructors",
+      "Group instruction",
+      "Vessel delivery service"
+    ],
+    "phone": "(216) 272-3964"
+  },
+
+  "huro-lst-0102": {
+    "_match_name": "Huron Lagoons Marina",
+    "_source": "https://www.huronlagoons.com/ · https://www.huronlagoons.com/contact/ · https://www.huronlagoons.com/amenities/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH — stated on the marina's own site. ⛔ BUT SEE `_hours_caveat`: the `hours` block is one of SIX month-banded schedules.",
+    "_seasonal": "The office runs SIX different weekly schedules across the year, quoted verbatim from the Contact page: 'January, February & March / Monday–Friday: 8 AM to 5 PM' · 'April & May / Monday–Saturday: 8 AM to 5 PM / Sunday: 10 AM to 3 PM' · 'June-August / Monday–Thursday: 8:00 AM to 5 PM / Friday–Saturday: 8:00 AM to 6 PM / Sunday: 10 AM to 3 PM' · 'September & October / Monday - Saturday 8:00 AM to 5:00 PM / Sunday 10:00 AM to 3:00 PM' · 'November / Monday–Friday: 8 AM to 5 PM / Closed Thanksgiving Day and Black Friday' · 'December / Monday–Friday: 8 AM to 5 PM / Closed between holidays. December 19th at noon-January 5th.' Note the December entry closes at NOON on a specific date — a mid-day closure on a named calendar date.",
+    "_hours_caveat": "⛔ The `hours` below are the SEPTEMBER & OCTOBER band only, chosen because the fetch date (2026-09-22) falls inside it. They are wrong for the other ten months. Our model cannot express the other five bands. See NOVEL #1.",
+    "_onsite_restaurant_hours": "The on-site Viking's Den restaurant keeps its OWN schedule, distinct from the marina's: 'Summer Seasonal Hours: Tuesday - Thursday 11 am to 8 pm / Friday 11 am to 10 pm / Saturday 8 am to 10 pm / Sunday 8 am to 8 pm / Closed Mondays except holidays'. Phone (419) 433-7649. Not merged into `hours` — a venue-inside-a-venue with its own hours is NOVEL #6.",
+    "hours": {
+      "monday":    { "open": "08:00", "close": "17:00" },
+      "tuesday":   { "open": "08:00", "close": "17:00" },
+      "wednesday": { "open": "08:00", "close": "17:00" },
+      "thursday":  { "open": "08:00", "close": "17:00" },
+      "friday":    { "open": "08:00", "close": "17:00" },
+      "saturday":  { "open": "08:00", "close": "17:00" },
+      "sunday":    { "open": "10:00", "close": "15:00" }
+    },
+    "description": "Huron's largest full-service marina, family-owned for over 60 years and located on the Huron River in Erie County about one mile inland from Lake Erie. It offers yearly and guest dockage, boat sales and service, winter storage, a ships store with a fuel dock, and a waterfront restaurant.",
+    "amenities": [
+      "Guest docking",
+      "Yearly dockage",
+      "Fuel dock",
+      "Pump-out facilities",
+      "Launching ramp",
+      "Live bait",
+      "Ships store",
+      "50-amp and 30-amp shore power",
+      "Handicap accessibility",
+      "Heated swimming pool",
+      "Pool house with restrooms and showers",
+      "Playground",
+      "Basketball court",
+      "Picnic area",
+      "Free Wi-Fi",
+      "Viking's Den waterfront restaurant",
+      "Free docking while dining",
+      "Boat sales",
+      "Boat service and repair",
+      "Indoor and outdoor winter boat storage"
+    ],
+    "phone": "(419) 433-3200"
+  },
+
+  "huro-lst-0220": {
+    "_match_name": "Two Rivers Waterfront Homes",
+    "_source": "http://www.joanneberardi/ (the URL in our data)",
+    "_fetched": "2026-09-22",
+    "_notfound": "⛔ THE URL IN OUR DATA IS GENUINELY BAD AND CANNOT BE REPAIRED SAFELY. 'www.joanneberardi' has no TLD; DNS returns NXDOMAIN and curl returns 000. There is nothing to fetch. ⛔ I did NOT adopt a guessed repair. A live site https://www.joanneberardi.com/ does exist, but it is the site of Joanne Berardi, a Sandusky-area REALTOR selling homes — it is not self-evidently the web presence of a lodging business called 'Two Rivers Waterfront Homes', and adopting it would mean asserting an identity the sources do not establish. Search also surfaces two OTHER distinct 'Two Rivers' entities in Huron — tworiversestates.com (a for-sale new-build condo development, not lodging) and a 'Two Rivers Waterfront Homes in Huron' Facebook page — so the listing name is ambiguous between at least three candidates. RECOMMENDED ACTION: flag the listing for human identity resolution; do not auto-repair the URL. No hours, description or amenities recorded, because none could be attributed to this listing with confidence."
+  },
+
+  "huro-lst-0213": {
+    "_match_name": "Voegirl's Vacation Rentals #2",
+    "_source": "https://www.vrbo.com/1217028",
+    "_fetched": "2026-09-22",
+    "_notfound": "NOT VERIFIED — could not retrieve. VRBO returned HTTP 429 (Too Many Requests) on every attempt, via both the fetch tool and direct request. Nothing was read, so nothing is recorded. ⚠️ Separately, a web search for 'Voegirl' + Huron Ohio returns no matching property under that name on any platform, so even the listing NAME is unconfirmed — 'Voegirl's Vacation Rentals #2' reads like an internal or owner-side label rather than a public business name. ⛔ Aggregator caveat applies regardless: this listing's only cited source is VRBO, a third-party rental platform, not the operator's own site. A VRBO listing can be delisted, retitled or reassigned to a different owner without the URL changing, so anything scraped from it is a weaker fact than a business's own page.",
+    "_recommended_action": "Retry later with backoff. If it resolves, still mark any resulting facts as aggregator-sourced."
+  },
+
+  "huro-lst-0052": {
+    "_match_name": "Old Homestead One Beach House",
+    "_source": "https://www.vrbo.com/2736245?unitId=3307095",
+    "_fetched": "2026-09-22",
+    "_notfound": "⛔ IDENTITY MISMATCH — page retrieved, but it does not confirm this listing. The VRBO page loads, but the string 'Old Homestead' appears NOWHERE on it. The listing is titled 'Have it all: Cedar Point, Lake Erie Private Association Beach + Fishing', an entire home in Huron, OH. Because the name does not match, I am NOT promoting the page's content into product fields — doing so would attach one property's facts to another property's card. The retrieved content is preserved in `_observed` below for a human to adjudicate, deliberately NOT as `description`/`amenities`.",
+    "_observed": {
+      "title": "Have it all: Cedar Point, Lake Erie Private Association Beach + Fishing",
+      "property_type": "Entire home",
+      "city": "Huron, OH",
+      "amenities_listed": ["Kitchen", "Washer", "Dryer", "Free WiFi", "Air conditioning", "Outdoor Space"],
+      "checkin_checkout": "not shown on the page",
+      "minimum_stay": "not shown on the page"
+    },
+    "_confidence": "LOW — aggregator source AND a name mismatch. Two independent reasons to distrust. ⛔ The source is VRBO, a third-party rental platform, not the operator's own site. The `unitId=3307095` parameter means this URL points at ONE UNIT within a multi-unit property, which is a plausible explanation for the name mismatch ('Old Homestead One' may be the unit's name while the platform shows a marketing title) — but plausible is not verified, and I am not recording it as fact.",
+    "_seasonal": "NOT STATED. No season or availability window shown.",
+    "_recommended_action": "Human to confirm whether unit 3307095 is 'Old Homestead One Beach House'. If confirmed, the `_observed` block can be promoted."
+  },
+
+  "huro-lst-0103": {
+    "_match_name": "Comfort Inn River's Edge",
+    "_source": "https://www.choicehotels.com/ohio/huron/comfort-inn- (the truncated URL in our data)",
+    "_fetched": "2026-09-22",
+    "_notfound": "URL IN OUR DATA IS GENUINELY BAD — confirmed. The stored URL is truncated after 'comfort-inn-' and returns 000 (no response). It is not a working link. ⭐ THE CORRECT URL WAS IDENTIFIED, WITH EVIDENCE: https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017 — the truncated string is a clean prefix of it, and the page title returned by search is 'Hotel in Huron, OH | Comfort Inn® Official Site | Comfort Inn River's Edge', matching the listing name exactly. This is a high-confidence URL REPAIR and should be written back to the listing. ⛔ HOWEVER, NO FACTS ARE RECORDED FROM IT: choicehotels.com blocked every retrieval attempt (repeated 60s timeouts via the fetch tool, connection refused via direct request), so I never actually read the page. Hours, check-in/check-out, address, phone and amenities are all therefore absent by design. Search-result snippets offered an address and phone, but they disagreed with each other on the street number (132 vs 140 N Main St) and came from aggregators, so nothing is asserted.",
+    "_recommended_action": "① Write back the repaired URL (high confidence). ② Re-attempt fact collection from that page separately; choicehotels.com needs a client it does not block.",
+    "_seasonal": "Not applicable / unknown — a hotel is the one category here likely to be year-round, but that is an assumption and is not recorded as fact."
+  }
+}
