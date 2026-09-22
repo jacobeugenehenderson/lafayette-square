@@ -1,0 +1,1996 @@
+{
+  "_slice": "photos for Huron SERVICES + SHOPPING listings (category services|shopping|absent, photos empty, website set)",
+  "_agent": "trade-photos",
+  "_fetched": "2026-09-22",
+  "_method": "direct curl of the held website; img/@src + @alt, og:image, CSS background-image, and raw image URLs in embedded JSON. Subject evidence = caption, non-empty alt, descriptive filename, or owning block heading. Town identity confirmed on-page (the string Huron, ZIP 44839, or a 419 number) before any image was recorded.",
+  "huro-lst-0033": {
+    "_match_name": "BJF Construction LLC.",
+    "_source": "https://bjfconstruction.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Page states Huron, ZIP 44839 and (419) 366-9576. This is the Huron business.",
+    "photos": [
+      {
+        "url": "https://bjfconstruction.com/roofing-progress.jpeg",
+        "what": "Roofing work in progress (operator alt text)",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/roofing-complete.jpeg",
+        "what": "Completed roof replacement",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/deck-framing.jpeg",
+        "what": "Deck construction / framing",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/deck-before.jpeg",
+        "what": "Deck before replacement",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/deck-after.jpeg",
+        "what": "New composite deck installed",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/deck-build.jpeg",
+        "what": "Multi-level deck construction",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/kitchen-flooring.jpeg",
+        "what": "Kitchen remodel with new flooring",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/sink-install.jpeg",
+        "what": "New sink and cabinet installation",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      },
+      {
+        "url": "https://bjfconstruction.com/flooring-install.jpeg",
+        "what": "Flooring installation in progress",
+        "credit": "BJF Construction LLC",
+        "credit_url": "https://bjfconstruction.com/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "Every image carries a written, descriptive alt. Verified 200 image/jpeg, 224 KB on roofing-progress.jpeg. Self-hosted at the site root (no /images/ prefix - that path soft-404s to the home page, HTTP 200 text/html).",
+    "phone": "+14193669576",
+    "description": "not established beyond the held record"
+  },
+  "huro-lst-0044": {
+    "_match_name": "Stride Mobility",
+    "_source": "https://www.stridemobility.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Page states Huron, 44839 and (419) 616-6017.",
+    "photos": [
+      {
+        "url": "https://www.stridemobility.net/wp-content/uploads/2026/07/Arial-Building-2026-1920x1080.jpg",
+        "what": "Aerial view of the Stride Mobility building (filename 'Arial-Building-2026'; hero background of the site)",
+        "credit": "Stride Mobility",
+        "credit_url": "https://www.stridemobility.net/"
+      },
+      {
+        "url": "https://www.stridemobility.net/wp-content/uploads/2026/07/Showroom-Scooters-2026-1024x684.jpg",
+        "what": "Scooters on the showroom floor",
+        "credit": "Stride Mobility",
+        "credit_url": "https://www.stridemobility.net/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.stridemobility.net/wp-content/uploads/2024/11/POWER-WHEELCHAIR_Go-Chair_PinkLifestyle_Glenmaura_5-17_4_edit-1024x683.jpg",
+        "what": "Power wheelchair lifestyle shot",
+        "why": "Filename names a manufacturer product line (Pride Mobility 'Go-Chair') plus 'Lifestyle' - supplier marketing art rehosted on the operator's own CDN. Same for the Rogue2, Little-Wave-Clik, StarLock, Revo2 and Tranquil2 files in the same 2024/11 upload batch."
+      }
+    ],
+    "_note": "Eight category tiles in /uploads/2024/11/ are all named after wheelchair/scooter MODEL names - one supplier drop. The two 2026/07 uploads are the only images of this premises.",
+    "phone": "+14196166017"
+  },
+  "huro-lst-0092": {
+    "_match_name": "Mesenburg Creative Catering",
+    "_source": "http://www.mesenburg.com/ and http://www.mesenburg.com/gallery",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Catering | Mesenburg Creative Catering | Huron'; page carries 44839 and 419-433-2954.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_245411f22f734edeace698f4c73cadc2~mv2.jpg",
+        "what": "Gallery image, filename SNP_5446.jpg - camera-native, from the caterer's own shoot",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_d9bb34647f6a418c9728167ef7dd086b~mv2.jpg",
+        "what": "Gallery image, SNP_5486.jpg",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_16143cbc1d6240cdb611025830ddeb52~mv2.jpg",
+        "what": "Gallery image, SNP_5494.jpg",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_8cf03168575547cdba15cba37adc5f28~mv2.jpg",
+        "what": "Gallery image, SNP_5607.jpg",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_480a605f415146068ae0efccd406fc96~mv2.jpg",
+        "what": "Gallery image, SNP_5441.jpg",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_98d82e0f2e694d2ca9dd044cc82fece7~mv2.jpg",
+        "what": "Gallery image, SNP_9805.jpg",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_b8d80e8d7a4c46c784942e914127f011~mv2.jpg",
+        "what": "The site's og:image - the header photo Mesenburg chose to represent itself",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_2d6fa928b6f04c5fac9b340bf4080c70~mv2.jpg",
+        "what": "Gallery image, 'marketing 22-104_edited.jpg' - frame 104 of the operator's 2022 marketing shoot",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_98acca108b8a40ad8afa4ee83f3d5c39~mv2.jpg",
+        "what": "Gallery image, 'marketing 22-100_edited.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/gallery"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_ca74fb07007d4a848c63c197722a2df7~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-125.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_191ced90939f43ff9958dea3936c1cc0~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-118.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_5ccc452f15924318a97d8413b0174b9f~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-38.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_45632b32a0a24e81a50967bad9ab0375~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-72.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_e6c05b5f93d440f0864782fb99fdb013~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-56.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_21e784d7e4004ae6a4e3358fe9dcacd9~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-103.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/a1a100_c0af83c7b8f64fd18af7cb85bfce8ba7~mv2.jpg",
+        "what": "Home-page strip, 'marketing 22-90.jpg'",
+        "credit": "Mesenburg Creative Catering",
+        "credit_url": "http://www.mesenburg.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/c2111b_a17546f2c08b4ec5987dc56058d302a0~mv2.jpg",
+        "what": "Filename 'Smoked Wings.jpg'",
+        "why": "Wix media prefix c2111b, NOT the site owner's a1a100 account - a second uploading account. Filename reads like genuine food, not theme art, so this is an ambiguous case: possibly a partner/photographer upload, possibly template decoration."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/c2111b_4a2a735d319944f8b13db09fe1dab506~mv2.jpeg",
+        "what": "Filename IMG_5508.jpeg",
+        "why": "Same foreign c2111b account."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/c2111b_6e7d17f5f4094d12b26f7b51422bfaa2~mv2.jpg",
+        "what": "Filename 'spoon_edited_edited.jpg'",
+        "why": "Same foreign c2111b account; reads as decoration."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/c2111b_2cb8e2089a6f4fec9920847fa3b54662~mv2.jpg",
+        "what": "unknown",
+        "why": "Foreign account and filename is literally '_edited.jpg' - zero subject evidence."
+      }
+    ],
+    "_note": "ZERO alt text on the entire gallery - every alt is empty. The subject evidence is the filename recovered from the Wix warmup JSON ('fileName' field), which survives even though the rendered alt does not. URLs above are the bare media ids with the /v1/fill/... transform tail stripped, i.e. the full-resolution originals.",
+    "phone": "+14194332954"
+  },
+  "huro-lst-0133": {
+    "_match_name": "North Coast Propeller Repair",
+    "_source": "http://www.northcoastproptech.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Page states Huron, 44839, 419 433 9550.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "THE IMAGE LAYER IS DEAD. The HTML is live (HTTP 200, 38 KB) and carries 21 <img> tags with good descriptive alt text ('Propeller Repair and Truing', 'PROPSCAN Services - Authorized Facility', 'Come see us at the Catawba Island Boat Show', 'Used Propellers'), but EVERY image URL 404s - the slider, the content blocks, the category tiles, the social icons and the site's own logo (/uploads/settings/1688675478.jpg -> 404, /uploads/content/*.jpg -> 404, /images/ICONweb.jpg -> 404). Nothing to record; the operator is almost certainly unaware their site renders text-only.",
+    "phone": "+14194339550"
+  },
+  "huro-lst-0186": {
+    "_match_name": "Breckenridge Kitchen Equipment",
+    "_source": "http://www.breckenridgekitchen.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Breckenridge Kitchen Equipment & Design | Huron, Ohio'; carries 44839 and 419-433-5915.",
+    "photos": [
+      {
+        "url": "https://2a500e52.delivery.rocketcdn.me/wp-content/uploads/2021/11/1-Hugos-Cedar-Point-scaled.jpg",
+        "what": "A Breckenridge kitchen installation at Hugo's, Cedar Point (named project, filename confesses the subject)",
+        "credit": "Breckenridge Kitchen Equipment & Design",
+        "credit_url": "https://www.breckenridgekitchen.com/"
+      },
+      {
+        "url": "https://2a500e52.delivery.rocketcdn.me/wp-content/uploads/2021/09/EHOVE-1386-scaled.jpg",
+        "what": "Breckenridge installation at EHOVE Career Center (named project)",
+        "credit": "Breckenridge Kitchen Equipment & Design",
+        "credit_url": "https://www.breckenridgekitchen.com/"
+      },
+      {
+        "url": "https://2a500e52.delivery.rocketcdn.me/wp-content/uploads/2024/01/Marathon-1-scaled.jpg",
+        "what": "Breckenridge installation, Marathon project (named project)",
+        "credit": "Breckenridge Kitchen Equipment & Design",
+        "credit_url": "https://www.breckenridgekitchen.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://2a500e52.delivery.rocketcdn.me/wp-content/uploads/2021/09/AdobeStock_319131476-scaled.jpeg",
+        "what": "Section background, a generic commercial kitchen",
+        "why": "Filename is a literal Adobe Stock asset id. Licensed stock, not this business."
+      }
+    ],
+    "_note": "Project photos carry NO alt text at all - the filename is the only subject evidence, and here it is a strong one (a project name). The logo file is 'breckenridge-logo-with-Wasserstrom-final.png', which reads as a Wasserstrom affiliation; unverified.",
+    "phone": "+14194335915"
+  },
+  "huro-lst-0217": {
+    "_match_name": "Lulu’s Health Care Clinic",
+    "_source": "https://www.lulushealthcareclinic.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Page carries Huron, 44839 and 419 numbers.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/1a111e25-7f4d-4b69-8a06-e4d1484d5923/Lulu%27s+Health+Care+Clinic.JPG?format=1500w",
+        "what": "The clinic's own header image, filename is the business name; also served as og:image and twitter:image",
+        "credit": "Lulu's Health Care Clinic",
+        "credit_url": "https://www.lulushealthcareclinic.org/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/4694cbe7-1310-4c94-ad0b-d11a1a3ed1b5/IMG_5902.jpeg",
+        "what": "Clinic photo (camera-native IMG_ filename, uploaded to the clinic's own Squarespace account). Subject not labelled by the operator.",
+        "credit": "Lulu's Health Care Clinic",
+        "credit_url": "https://www.lulushealthcareclinic.org/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/cd0beb75-601f-43fc-9f49-0d4c98f2836b/IMG_5904.jpeg",
+        "what": "Clinic photo, same camera roll as IMG_5902. Subject not labelled by the operator.",
+        "credit": "Lulu's Health Care Clinic",
+        "credit_url": "https://www.lulushealthcareclinic.org/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/1749830820653-KXVRLYKIO2XNIVEW6E2D/unsplash-image-I0ItPtIsVEE.jpg",
+        "what": "Decorative section image",
+        "why": "Filename 'unsplash-image-*' - Unsplash stock on the operator's own CDN. Two more of these (rVG5r3_OkU0, 6W1voPFLfrc)."
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/b98e8edb-867f-41e7-9551-39ea528aacfc/Screenshot+2026-06-16+at+1.20.29%E2%80%AFPM.png",
+        "what": "unknown",
+        "why": "A screenshot, not a photograph. Zero subject evidence."
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/684c47f399c11f0082933c68/999b7749-17ae-4d28-ad07-7751b2a81d64/Ocean-Sunset-1-imgg-gi3-45uxkh52.png",
+        "what": "Ocean sunset decoration",
+        "why": "Filename has a stock-library hash tail ('imgg-gi3-45uxkh52'); not this premises."
+      }
+    ],
+    "_note": "No image on the site has non-empty alt text except the header. IMG_5902/5904 recorded on filename + own-account evidence only; subject unlabelled."
+  },
+  "huro-lst-0249": {
+    "_match_name": "Huron Market",
+    "_source": "http://huronmarket.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'HURON MARKET | Huron, Ohio'; carries 44839 and (419) 433-2499.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/69a5f3118659f024d9e90934/f14afdc7-3902-43b5-b2fa-1a210e9387f3/Deli_Case",
+        "what": "The deli case (alt: 'Deli'; filename 'Deli_Case')",
+        "credit": "Huron Market",
+        "credit_url": "http://huronmarket.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/69a5f3118659f024d9e90934/d7acfc2d-029f-4514-9f04-72ebd6193451/Grab_N_Go",
+        "what": "The grab-and-go case (alt: 'Grab N')",
+        "credit": "Huron Market",
+        "credit_url": "http://huronmarket.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/69a5f3118659f024d9e90934/537063d5-c513-46a3-ad02-1ffda97b2280/Beer_Cave",
+        "what": "The beer cave (alt: 'Beer Cave')",
+        "credit": "Huron Market",
+        "credit_url": "http://huronmarket.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/69a5f3118659f024d9e90934/66afafc8-8469-40d6-8000-5bdbfd89d03b/20260305_124449.jpg",
+        "what": "Store interior/exterior, phone-camera original shot 2026-03-05 12:44:49",
+        "credit": "Huron Market",
+        "credit_url": "http://huronmarket.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/69a5f3118659f024d9e90934/e2f35da6-5414-440a-aed4-b2952e9710e3/20260305_124530.jpg",
+        "what": "Store, same camera session 41 seconds after the frame above",
+        "credit": "Huron Market",
+        "credit_url": "http://huronmarket.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "http://static1.squarespace.com/static/69a5f3118659f024d9e90934/t/69c965f0827a933afe9a99fb/1774806512757/ChatGPT+Image+Jan+9%2C+2026%2C+02_03_02+PM.png",
+        "what": "The site's og:image / social card",
+        "why": "Filename is 'ChatGPT Image Jan 9, 2026, 02_03_02 PM.png' - an AI-generated image, not a photograph of the store. Never put this on a card."
+      }
+    ],
+    "_note": "Three images use the filename itself as the caption slug (Deli_Case, Grab_N_Go, Beer_Cave) and carry matching alt - the strongest subject evidence in this slice.",
+    "phone": "+14194332499"
+  },
+  "huro-lst-0050": {
+    "_match_name": "Cornell's Foods",
+    "_source": "http://www.cornellshuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Site is cornellshuron.com and resolves; title 'Cornell Foods'. The only 'Huron' on the page is in the domain/URL - no address, no phone in the served HTML.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The site runs on the grocerywebsite.com white-label platform. Every image is platform promo artwork served from s3.grocerywebsite.com ('Geometric Glider' weekly-ad templates, 'Now Hiring', 'Our Family Back to School', department tiles) plus the Cornell's logo. Not one photograph of the store, its staff or its counters. Also note an unrendered template token left in the HTML: <img src=\"[$vHeaderFilePath]\" alt=\"[$vRetailerName]\">.",
+    "_available_logo": "https://s3.grocerywebsite.com/production/header_images/4302/original/Cornells_Logo.jpg"
+  },
+  "huro-lst-0084": {
+    "_match_name": "Crawford Insurance Group",
+    "_source": "http://www.crawfordinsurellc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'The Crawford Insurance Group LLC'; page carries HURON, 44839, 419-616-0019.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "146 KB page, Yahoo/Aabaco-built. The only <img> elements are six lh3.googleusercontent.com avatars - Google review-author profile pictures pulled into a testimonial widget. No photograph of the office, the agents or the premises anywhere on the page.",
+    "phone": "+14196160019"
+  },
+  "huro-lst-0158": {
+    "_match_name": "Foster Funeral Home & Crematory",
+    "_source": "http://fosterfh.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Foster Funeral Home and Crematory | Huron OH'; carries 44839 and 419-433-5225.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Built on CFS (funeralhomewebsites). EVERY image on the home page sits under a path literally named /stockimages/ - s3.amazonaws.com/CFSV2/stockimages/*-floral-04.jpg, *-people-06.jpg, *-veteran-02.jpg, *-cemetery-09.jpg - and the five rotating headers are cloudfront /stockimages/ too. Only the logo (CFSV2/siteimages/fuy/414441-fuy-logo-ks.png) belongs to this business. No photograph of the Main Street building.",
+    "phone": "+14194335225"
+  },
+  "huro-lst-0191": {
+    "_match_name": "All American Roof Pros",
+    "_source": "https://allamericanroofpros.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Page carries Huron and 44839 in a service-area list and 419-989-4480. Title is 'Roofing Company Serving Northern Ohio' - a regional contractor, Huron is one of many towns named.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://allamericanroofpros.com/wp-content/uploads/realiable-roofer-819x1024.webp",
+        "what": "Aerial view of a new shingle roof",
+        "why": "The operator's OWN alt text places it in MANSFIELD, Ohio - 'An aerial view of a new shingle roof installed by a reliable roofer in Mansfield, Ohio.' Correct photo, wrong town for this card."
+      }
+    ],
+    "_no_photos_reason": "Home page imagery is: supplier logos (Owens Corning, Akzo Nobel, Wincore, Tilcor, MRV Siding Supply), Google review-author avatars from lh3.googleusercontent.com, one file named Screenshot-2025-05-16-143151.png, and the one job photo above which alt-texts itself to Mansfield. Nothing tied to Huron.",
+    "phone": "+14199894480"
+  },
+  "huro-lst-0231": {
+    "_match_name": "Admiral's Pointe Nursing and Rehabilitation",
+    "_source": "http://www.admirals-pointe.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Huron, Ohio long term care facility Admiral's Pointe'; carries 44839, 419.433.4990.",
+    "photos": [
+      {
+        "url": "http://www.admirals-pointe.net/docs/slides/1/outdoor.jpg",
+        "what": "The facility outdoors (hero slide 'outdoor'). Verified 200 image/jpeg, 253 KB.",
+        "credit": "Admiral's Pointe Nursing and Rehabilitation",
+        "credit_url": "http://www.admirals-pointe.net/"
+      },
+      {
+        "url": "http://www.admirals-pointe.net/docs/slides/1/dining-room.jpg",
+        "what": "The dining room. Verified 200 image/jpeg, 339 KB.",
+        "credit": "Admiral's Pointe Nursing and Rehabilitation",
+        "credit_url": "http://www.admirals-pointe.net/"
+      },
+      {
+        "url": "http://www.admirals-pointe.net/docs/slides/1/indoor.jpg",
+        "what": "Interior common area",
+        "credit": "Admiral's Pointe Nursing and Rehabilitation",
+        "credit_url": "http://www.admirals-pointe.net/"
+      },
+      {
+        "url": "http://www.admirals-pointe.net/docs/slides/1/private-room.jpg",
+        "what": "A private resident room",
+        "credit": "Admiral's Pointe Nursing and Rehabilitation",
+        "credit_url": "http://www.admirals-pointe.net/"
+      },
+      {
+        "url": "http://www.admirals-pointe.net/docs/slides/1/therapy.jpg",
+        "what": "The therapy room",
+        "credit": "Admiral's Pointe Nursing and Rehabilitation",
+        "credit_url": "http://www.admirals-pointe.net/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "The five hero images are CSS background-image only - no <img> tag and therefore no alt anywhere. The filename IS the caption here, and it is a clean one. An img-tag-only scraper would have found nothing on this site.",
+    "phone": "+14194334990"
+  },
+  "huro-lst-0027": {
+    "_match_name": "Label Aid Inc",
+    "_source": "https://www.labelaidinc.com/company",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "The alt text on the photo itself states the address: 608 Rye Beach Road, Huron, OH 44839 - matching our record exactly.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/605384d5a651b116c7bca853/693c17cc-8a8e-4181-bbb9-de3be6d53fe1/Building.png",
+        "what": "The front entrance of the Label Aid plant, a modern building with an all-glass wall, 608 Rye Beach Road (operator's own alt text, verbatim). 1920x1227.",
+        "credit": "Label Aid Inc",
+        "credit_url": "https://www.labelaidinc.com/company"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/605384d5a651b116c7bca853/1619748010492-FPVMWWNEJ4XMDX054M2F/Yippea-Hero.jpg",
+        "what": "Hero image on /expertise, filename 'Yippea-Hero'",
+        "why": "Reads as a client brand's product hero (Yippea), not Label Aid's premises. No alt text."
+      }
+    ],
+    "_note": "THE HOME PAGE HAS NO IMAGES AT ALL in served HTML, and ?format=json-pretty returns an empty items array. Everything is on the interior pages - a site whose front door is image-free is not an image-free site. Best alt text found anywhere in this slice: it states the street address."
+  },
+  "huro-lst-0048": {
+    "_match_name": "FlowGuard Gutter Covers by FlexxPoint",
+    "_source": "https://flowguardguttercovers.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Shopify store, FlexxPoint Gutter Covers LLC, carries 419-433-3022. Manufacturer/e-commerce; the Huron address is the works.",
+    "photos": [
+      {
+        "url": "https://flowguardguttercovers.com/cdn/shop/files/01_14418973-38ef-486f-9643-743bcbcb3e6a.jpg?width=1500",
+        "what": "FlowGuard 5-inch residential aluminium gutter guards, white (operator alt)",
+        "credit": "FlexxPoint Gutter Covers LLC",
+        "credit_url": "https://flowguardguttercovers.com/"
+      },
+      {
+        "url": "https://flowguardguttercovers.com/cdn/shop/files/01_3acf4557-4736-482c-8671-50ab256cc9f1.jpg?width=1500",
+        "what": "FlowGuard 5-inch high-clearance aluminium gutter guards, white",
+        "credit": "FlexxPoint Gutter Covers LLC",
+        "credit_url": "https://flowguardguttercovers.com/"
+      },
+      {
+        "url": "https://flowguardguttercovers.com/cdn/shop/files/COMW-102-B00FUAUH9Y01.png?width=1500",
+        "what": "FlowGuard 6-inch commercial aluminium gutter guards, white",
+        "credit": "FlexxPoint Gutter Covers LLC",
+        "credit_url": "https://flowguardguttercovers.com/"
+      },
+      {
+        "url": "https://flowguardguttercovers.com/cdn/shop/files/SUW-102-B0CW3P9P1M01.png?width=1500",
+        "what": "FlowGuard 5/6-inch slip-under aluminium gutter guards, white",
+        "credit": "FlexxPoint Gutter Covers LLC",
+        "credit_url": "https://flowguardguttercovers.com/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "These are product shots of the company's OWN manufactured product with full descriptive alt - not a photograph of the Huron premises. There is no premises photo on the site.",
+    "phone": "+14194333022",
+    "_name_finding": "The trading entity on the site is 'FlexxPoint Gutter Covers LLC'; 'FlowGuard' is the product line. Our listing name conflates the two, which is in fact how the operator brands the storefront."
+  },
+  "huro-lst-0215": {
+    "_match_name": "Sly Bail Bonds",
+    "_source": "http://www.slybailbonds.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title names five states; Huron appears in an office list. This is a multi-state chain of bail offices, of which 607 Main St is one.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.slybailbonds.com/wp-content/uploads/2023/12/SlyBailBonds-Ohio-Bailbondsman2023-scaled.jpg",
+        "what": "The company's 2023 Christmas party group photo (operator alt: 'Ohio bail bondsman sly bail bonds christmas party 2023'). Also the site og:image.",
+        "why": "Real and company-owned, but it is a staff party for the whole Ohio operation - nothing to do with the Huron office. Would read as a Huron storefront on a card and is not one."
+      }
+    ],
+    "_no_photos_reason": "Exactly two images on the whole home page: the party photo above, and a cloudfront 'Chamber Certified' badge. No office, no signage, nothing per-location.",
+    "phone": "+14195442245"
+  },
+  "huro-lst-0116": {
+    "_match_name": "CLE Transportation Company and DS Express Carriers",
+    "_source": "http://cletransportation.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Carries 419-433-6200, a Huron exchange, matching our record's area. Huron itself is not spelled on the home page.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Every image on the home page is a third-party logo: thirteen CUSTOMER logos (Cardinal Health, Dura Line, FFR Merchandising, FlavorSeal, Hadrian, Marsh, Three D Metals, Tradex, ALPCO, ASC, GTS, Schlessman) and two trade-association badges (American Trucking Associations, Ohio Trucking Association), plus decorative quote-mark graphics. Not one photograph - no truck, no terminal, no driver.",
+    "phone": "+14194336200"
+  },
+  "huro-lst-0128": {
+    "_match_name": "Humanetics ATD Manufacturing",
+    "_source": "http://www.humaneticsatd.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "GLOBAL CORPORATE SITE. The home page does not mention Huron, 44839 or any 419 number at all - the Denton Drive plant is one facility of a multinational.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Corporate marketing site (Drupal). Imagery is product/segment teasers with generic alt ('Three crash test dummies with hooks attached to head', 'wire frame car', 'medical room') and acquired-brand banners (fibercore, hitec, optek). None of it is the Huron plant, and the page carries no Huron identity marker, so nothing here can be attributed to this address."
+  },
+  "huro-lst-0263": {
+    "_match_name": "Simply Better Realty Lighthouse Real Estate Team",
+    "_source": "https://www.simplybetterrealty.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "https://www.simplybetterrealty.com/ returns HTTP 403 Forbidden to a browser-UA curl (75 KB Forbidden page, no redirect). Not fetchable this pass.",
+    "_url_finding": "403, not a 404 - the site exists but blocks non-browser clients. Same brand also appears on our records huro-lst-0208 and huro-lst-0205 via per-agent subdomains."
+  },
+  "huro-lst-0190": {
+    "_match_name": "Huron Cement Products Co.",
+    "_source": "http://www.huroncement.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Nothing to scrape.",
+    "_url_finding": "http://www.huroncement.com/ answers HTTP 409 Conflict with a 16-byte body and no redirect. That is a live host serving a parking/error response, not a website. The held URL reaches no content."
+  },
+  "huro-lst-0089": {
+    "_match_name": "n2y",
+    "_source": "https://www.n2y.com -> https://www.everway.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "n2y.com now redirects to everway.com, whose title reads 'Everway: Formerly n2y And Texthelp'. The site is global-corporate: customer logos (KPMG, Coca-Cola EuroPacific Partners, Cincinnati Public Schools, Lumen), and stock-style office/classroom imagery ('A classroom of young students using laptops', 'Two team members chatting in an open office space'). No Huron marker on the page, so nothing is attributable to 909 University Dr S.",
+    "_name_finding": "RENAME CONFIRMED BY REDIRECT: n2y merged into Everway (also absorbing Texthelp). NOTE THE DUPLICATE - our record huro-lst-0111 is already named 'Everway' with website Everway.com. huro-lst-0089 (n2y) and huro-lst-0111 (Everway) are the SAME company under its old and new names; 0111 carries no address, 0089 carries 909 University Dr S."
+  },
+  "huro-lst-0111": {
+    "_match_name": "Everway",
+    "_source": "http://www.Everway.com/ -> https://www.everway.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same site as huro-lst-0089; see that record. Global corporate imagery only, no Huron identity marker.",
+    "_name_finding": "Duplicate of huro-lst-0089 (n2y) - same company, new name. This record has no address; 0089 has 909 University Dr S."
+  },
+  "huro-lst-0265": {
+    "_match_name": "Pabodie Design Studios",
+    "_source": "http://www.pabodie.com/ -> https://pabodie.art/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "NO Huron, no 44839 and no 419 number anywhere on the home page. The site is a Shopify print shop with no address block. Identity to 358 Main St is NOT confirmed by the page.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://pabodie.art/cdn/shop/files/U6MJYP73UZ-945176-artroll-1.jpg?width=1500",
+        "what": "A watercolour painting of tall green bamboo against a misty lake (operator alt, verbatim)",
+        "why": "This is the ARTWORK for sale, not a photograph of a business. Every image on the site is a product render of a print. A card showing it would show a picture of a picture."
+      },
+      {
+        "url": "https://pabodie.art/cdn/shop/files/Pabodie_Portrait300.png?width=600",
+        "what": "The Pabodie Art logo/portrait mark",
+        "why": "Logo, not a photograph; and the site does not tie itself to Huron."
+      }
+    ],
+    "_no_photos_reason": "Nothing that shows a place. All imagery is fine-art print product photography with unusually good alt text; there is no storefront, studio or street view, and the page never names Huron.",
+    "_url_finding": "pabodie.com 301s to pabodie.art - a different registrable domain. It is a rename/rebrand (same proprietor name 'Pabodie'), not a resold domain, but our held URL is stale and the landed site trades as 'Pabodie Art', not 'Pabodie Design Studios'."
+  },
+  "huro-lst-0066": {
+    "_match_name": "Family Eye Care Centers",
+    "_source": "https://www.familyeyecarecenters-huron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Eye Doctors in Huron | Family Eye Care Centers - Huron'; carries 44839 and (419) 433-2630. The image filenames are literally Huron, Huron2, Huron3, Huron4.",
+    "photos": [
+      {
+        "url": "https://app.patientengage.ai/storage/13685/conversions/Huron-responsive.webp",
+        "what": "Outside Family Eye Care Center - the 310 Williams St exterior (operator alt, verbatim)",
+        "credit": "Family Eye Care Centers - Huron",
+        "credit_url": "https://www.familyeyecarecenters-huron.com/"
+      },
+      {
+        "url": "https://app.patientengage.ai/storage/13686/conversions/Huron2-responsive.webp",
+        "what": "Showroom inside Family Eye Care Center - the frame showroom",
+        "credit": "Family Eye Care Centers - Huron",
+        "credit_url": "https://www.familyeyecarecenters-huron.com/"
+      },
+      {
+        "url": "https://app.patientengage.ai/storage/13687/conversions/Huron3-responsive.webp",
+        "what": "Exam room inside Family Eye Care Center",
+        "credit": "Family Eye Care Centers - Huron",
+        "credit_url": "https://www.familyeyecarecenters-huron.com/"
+      },
+      {
+        "url": "https://app.patientengage.ai/storage/13688/conversions/Huron4-responsive.webp",
+        "what": "Exam room inside Family Eye Care Center (second view)",
+        "credit": "Family Eye Care Centers - Huron",
+        "credit_url": "https://www.familyeyecarecenters-huron.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://app.patientengage.ai/storage/9093/conversions/4785_9a07b230-c959-480e-9fa2-1c68f88f1475-responsive.webp",
+        "what": "alt 'Hero Shot'",
+        "why": "Platform slot name, not a subject. Cannot tell whether it is this practice or vendor art."
+      },
+      {
+        "url": "https://app.patientengage.ai/storage/9094/conversions/4785_9a07b252-f7b7-4821-a240-957a88a3bde5-responsive.webp",
+        "what": "alt 'Old Square'",
+        "why": "Same - a layout slot label."
+      }
+    ],
+    "_staff_portraits": "Named headshots are present (alt 'Jakob Zigulis', 'Heather Demos') on cdn.patientengage.cloud. Not recorded as premises photos; usable only with the individuals' say-so.",
+    "_note": "BEST RESULT IN THE SLICE. Four premises photos, each with a written alt that says what room it is, and the filenames name the town. This is what the other 100 records would look like if operators labelled their images.",
+    "phone": "+14194332630"
+  },
+  "huro-lst-0247": {
+    "_match_name": "Custom Concrete &Design LLC",
+    "_source": "http://www.custom-concrete-design.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and (419) 433-5578.",
+    "photos": [
+      {
+        "url": "https://irp.cdn-website.com/3ef90504/dms3rep/multi/opt/394475196_760760096061454_7222768637916837893_n-67243540-1920w.jpg",
+        "what": "A large house with a concrete driveway in front of it (alt text as published)",
+        "credit": "Custom Concrete & Design LLC",
+        "credit_url": "http://www.custom-concrete-design.com/"
+      },
+      {
+        "url": "https://irp.cdn-website.com/3ef90504/dms3rep/multi/opt/294524796_2281633665318364_3454549248600277283_n-2c98c1f0-1920w.jpg",
+        "what": "A house with a large patio in front of it (alt text as published)",
+        "credit": "Custom Concrete & Design LLC",
+        "credit_url": "http://www.custom-concrete-design.com/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "TWO THINGS ABOUT THIS ONE. (1) The filenames are raw FACEBOOK CDN names - the bare <photoid>_<albumid>_<hash>_n form, not the FB_IMG_ form we have been looking for. These are the operator's own Facebook job photos re-uploaded to a Duda site. (2) The alt text is machine-written, not operator-written: Duda auto-generates captions, and they read exactly like a vision model's output ('A house with a large patio in front of it'). Alt-as-subject-evidence has a failure mode here - the sentence is descriptive but nobody at the business wrote it, so it can be wrong and nobody would know.",
+    "phone": "+14194335578"
+  },
+  "huro-lst-0113": {
+    "_match_name": "Center For Assessment And Psychological Services, Inc.",
+    "_source": "http://behpsychservices.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Center For Assessment and Psychological Services, Inc. of Huron, Ohio'; carries 44839 and (419) 602-3149.",
+    "photos": [
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/cf773fe8-6e87-4540-beea-204f2b8f9a8c/4ae863bb967ce9265955b530200db044.jpg",
+        "what": "Large lakeside rock with 'Huron Centennial Park' written on it (operator alt, verbatim) - a photograph OF HURON, though of the park rather than the practice",
+        "credit": "Center For Assessment and Psychological Services, Inc.",
+        "credit_url": "http://behpsychservices.com"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/cf773fe8-6e87-4540-beea-204f2b8f9a8c/IMG_2083.jpeg",
+        "what": "unknown",
+        "why": "Camera-native filename on the practice's own GoDaddy site id, so provenance is good - but no alt, no caption, no heading. Zero subject evidence, so not recorded."
+      },
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/cf773fe8-6e87-4540-beea-204f2b8f9a8c/pexels-vie-studio-6168329.jpeg",
+        "what": "The site og:image / social card",
+        "why": "Filename 'pexels-vie-studio-6168329' - Pexels stock by the contributor 'Vie Studio', rehosted on the practice's own CDN. Adds Pexels to the stock-filename list alongside Unsplash and AdobeStock."
+      }
+    ],
+    "_note": "GODADDY HAS A MACHINE-READABLE STOCK MARKER: img1.wsimg.com/isteam/ip/<site-uuid>/... is an OPERATOR upload; img1.wsimg.com/isteam/stock/<id> is GoDaddy's licensed stock library. The path itself says which. See huro-lst-0099, 0110 and 0165, whose entire imagery is /isteam/stock/.",
+    "phone": "+14196023149"
+  },
+  "huro-lst-0099": {
+    "_match_name": "Alicia Wolph Roshong - Attorney At Law",
+    "_source": "http://findlayfostorialaw.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Alicia Wolph Roshong Esq.'; carries (419) 433-2525, which matches the Middle Ave office. But the DOMAIN is findlayfostorialaw.com - Findlay and Fostoria, two other Ohio towns.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Every single image is GoDaddy licensed stock, and the URL says so: img1.wsimg.com/isteam/stock/11716, /8066, /4023, og:image /11719. The alt attributes are the auto-numbers 'image760', 'image761', 'image762' - a generator's placeholder, not a human describing anything. Nothing here is a photograph of this practice.",
+    "phone": "+14194332525"
+  },
+  "huro-lst-0110": {
+    "_match_name": "Dr. Mark A. Myers, Dds",
+    "_source": "http://markmyersdds.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Mark A. Myers, DDS'; carries Huron, 44839 and (419) 433-2751.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "GoDaddy site. The only non-stock image is the practice logo (isteam/ip/2f85d521-.../DDS (3).png). All three content images and the og:image are img1.wsimg.com/isteam/stock/* - GoDaddy's licensed library - and carry no alt at all. No photograph of the Bogart Rd office.",
+    "_available_logo": "https://img1.wsimg.com/isteam/ip/2f85d521-7f54-4a90-80f5-a41823fa417b/DDS%20(3).png",
+    "phone": "+14194332751"
+  },
+  "huro-lst-0165": {
+    "_match_name": "RB's Services",
+    "_source": "http://www.RB-Services.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Carries Huron and 44839.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "GoDaddy site whose only own asset is the logo 'Logo RB Vert 2025.png'; the og:image is img1.wsimg.com/isteam/stock/VgAN2m, i.e. GoDaddy stock. The one other image is a Better Business Bureau Toledo seal. No premises photo.",
+    "_available_logo": "https://img1.wsimg.com/isteam/ip/77cb92c9-6a2c-4988-a9cd-ab01aa6dd542/Logo%20RB%20Vert%202025.png",
+    "_name_finding": "The site brands itself 'R.B.'s Services Ltd.' (with periods and 'Ltd.'), not 'RB's Services'."
+  },
+  "huro-lst-0073": {
+    "_match_name": "Wolph Title Inc",
+    "_source": "http://wolphtitle.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Wolph Title, Inc.'; carries Huron, 44839 and (419) 435-0462.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/57d0a5b7-8e8d-4b21-9360-ff73342cad82/eb010a21-f333-4db7-bc3b-fbfb3265d9c7.jpg",
+        "what": "unknown",
+        "why": "On the company's OWN GoDaddy site id (/isteam/ip/, not /isteam/stock/), so provenance is good - but the filename is a bare UUID, there is no alt attribute and no caption. Zero subject evidence. Two more identical cases on the same page."
+      }
+    ],
+    "_no_photos_reason": "Three own-account images, all UUID-named and all with no alt whatsoever. Nothing on the page says what any of them shows, so none can be recorded.",
+    "phone": "+14194350462"
+  },
+  "huro-lst-0051": {
+    "_match_name": "All Builds Construction & Remodeling",
+    "_source": "http://allbuildsconstructionoh.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Remodeling Services... | Norwalk, Huron & Sandusky, OH'; carries 44839 and (419) 921-4528, matching our record.",
+    "photos": [
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/dl1.jpg",
+        "what": "Remodelling work by All Builds - one of the six job photos the site publishes as its og:image set. Subject not labelled by the operator.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      },
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/dl2.jpg",
+        "what": "Remodelling work by All Builds, second frame. Subject not labelled.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      },
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/feat.jpg",
+        "what": "Featured remodelling job photo. Subject not labelled.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      },
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/feat1.jpg",
+        "what": "Featured remodelling job photo. Subject not labelled.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      },
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/feat2.jpg",
+        "what": "Featured remodelling job photo. Subject not labelled.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      },
+      {
+        "url": "http://allbuildsconstructionoh.com/files/2022/12/feat4.jpg",
+        "what": "Featured remodelling job photo. Subject not labelled.",
+        "credit": "All Builds Construction & Remodeling",
+        "credit_url": "http://allbuildsconstructionoh.com/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "No alt on any image and the filenames are template slot names (dl1, feat, feat2). Recorded on the strength of self-hosting plus the operator publishing all six as og:image, i.e. as the pictures that represent the business - but no per-image subject is established. WEAKER EVIDENCE THAN huro-lst-0033, which is the same trade with full alt text.",
+    "phone": "+14199214528"
+  },
+  "huro-lst-0208": {
+    "_match_name": "Jason Smith - Simply Better Realty - Real Estate and Vacation Rentals",
+    "_source": "http://JasonSmithListings.com/ (frameset) -> https://ohio.simplybetterrealty.com/jason-smith/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "The framed page carries HURON, 44839 and 419.433.1010, matching 202 Cleveland Rd W.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://u.realgeeks.media/simplybetterrealty1/Jason_Smith_Gemini_Generated_Image.png",
+        "what": "The agent's portrait",
+        "why": "FILENAME SAYS 'Gemini_Generated_Image' - an AI-generated portrait, not a photograph of the person. Third AI-generated image found in this slice."
+      }
+    ],
+    "_no_photos_reason": "Everything else on the page is MLS listing photography from property-images.realgeeks.com (alt text gives the addresses, all on KELLEYS ISLAND) plus platform icons. Nothing shows the Huron office.",
+    "_url_finding": "JasonSmithListings.com is 583 bytes of HTML 4.01 <frameset> wrapping ohio.simplybetterrealty.com/jason-smith/. Any fetch-and-measure pass reads it as an empty site. The frame target is a live, rich page.",
+    "phone": "+14194331010"
+  },
+  "huro-lst-0030": {
+    "_match_name": "CrystalMic Premium Audio",
+    "_source": "http://crystalmic.myshopify.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "NO Huron, no 44839, no 419 number, no address anywhere on the store. Identity to 415 Center St is NOT confirmed.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://crystalmic.myshopify.com/cdn/shop/files/ChatGPTImageJul26_2026_05_52_55PM.png",
+        "what": "'CrystalMic Wireless Earbuds Pro' product image",
+        "why": "Filename is 'ChatGPTImageJul26_2026_05_52_55PM' - AI-generated product art. Three more of these on the home page."
+      },
+      {
+        "url": "https://crystalmic.myshopify.com/cdn/shop/files/image_42665c30-234d-4ee7-bd29-c05e2ef27ab9.jpg",
+        "what": "Product image",
+        "why": "ALT TEXT IS 'alishop:c4323ea7fbbe' - a dropshipping importer's internal token (AliExpress-to-Shopify), which means the image came in with a supplier product feed and is not the seller's own."
+      }
+    ],
+    "_no_photos_reason": "A dropship storefront on an unclaimed myshopify.com subdomain. Every image is either AI-generated or supplier-feed art, and the site never names Huron. Nothing here belongs on a Huron card."
+  },
+  "huro-lst-0045": {
+    "_match_name": "Huron Lake Front Market",
+    "_source": "https://greatersandusky.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Wrong site - see _url_finding.",
+    "_url_finding": "WRONG ENTITY. greatersandusky.com is 'The Greater Sandusky Partnership', a regional chamber/economic-development body in Sandusky (419-625-6421). It is not a farmers' market and it is not in Huron. Its imagery is regional branding (GSP brandmark, a regional map, a Lake Erie lighthouse, a sunset). Nothing on it can be attributed to 310 Park St."
+  },
+  "huro-lst-0012": {
+    "_match_name": "Huron Family Dental Center",
+    "_source": "http://huronhs.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Wrong site - see _url_finding.",
+    "_url_finding": "WRONG ENTITY, AND A DANGEROUS ONE BECAUSE THE DOMAIN LOOKS RIGHT. huronhs.com resolves to HURON CITY SCHOOLS - 'Huron City Schools | PreK-12 Public Schools in Huron, Ohio', 419-433-1234, a ParentSquare district site. 'huronhs' is Huron High School, not Huron Health/Dental. The page is full of Huron content (the stadium, the superintendent, 'Let's Talk Huron at Gathering Grounds'), so every town-identity test PASSES and the photos would still be the wrong business. Liveness is not identity, and neither is the right town."
+  },
+  "huro-lst-0088": {
+    "_match_name": "Central Basin Bait Tackle and Carryout",
+    "_source": "http://www.tatteredwingswaterandfowl.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "NOT CONFIRMED. The site is 'Tattered Wings Water and Fowl', a guided waterfowl-and-fishing outfitter, phone (419) 835-4215 - a Curtice/Millbury exchange, not Huron. No Huron, no 44839, no 910 Main St anywhere on the page.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Only four images on the home page, all logo artwork ('rippinlips_005FINAL-03.png' is a logo design file). No photographs at all.",
+    "_url_finding": "The held URL points at a different trading name in a different town. It may be an affiliated venture of the same owner, but the page gives no evidence for that. ALSO: one image on the page is hotlinked from 'box2513.temp.domains/~aofbpvmy/gobblercompany/wp-content/...' - a cPanel temporary-domain staging install of a THIRD brand ('gobblercompany'). A live page serving an image out of somebody's staging sandbox."
+  },
+  "huro-lst-0163": {
+    "_match_name": "Elw Enterprises",
+    "_source": "http://elwent.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "elwent.com is now a HugeDomains sales page - 'Elwent.com is for sale'. The domain lapsed and was picked up by a reseller. HTTP 200, 43 KB, fifteen images, every one of them HugeDomains chrome."
+  },
+  "huro-lst-0261": {
+    "_match_name": "Reiki and Counseling Center",
+    "_source": "http://centerforhealth.smithdocs.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "The host answers with an APACHE DIRECTORY INDEX - title 'Index of /', 1.4 KB, one folder icon. There is no index page; the web root is empty and listable. HTTP 200 throughout."
+  },
+  "huro-lst-0002": {
+    "_match_name": "Sawmill Creek Huron",
+    "_source": "http://sawmillcreek.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "sawmillcreek.com IS A PARKED DOMAIN. It serves 114 bytes - <script>window.onload=function(){window.location.href=\"/lander\"}</script> - and /lander is a GoDaddy parking page (window.LANDER_SYSTEM=\"CP\", _trfd ap:\"parking\"). Because the hop is a JavaScript onload assignment and not an HTTP redirect, curl reports HTTP 200 at the original URL and follows nothing: a link-checker sees a healthy site. Same pattern on huro-lst-0148 (debcsellsohio.com)."
+  },
+  "huro-lst-0148": {
+    "_match_name": "Brad Barbisch-The Holden Agency Real Estate",
+    "_source": "http://www.debcsellsohio.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "Parked domain, same JS-onload lander pattern as sawmillcreek.com: 114 bytes, HTTP 200, redirect to /lander which is a GoDaddy parking page (LANDER_SYSTEM=\"PW\"). SEPARATELY, the name does not match - 'debcsells' reads as a different agent's personal domain, not Brad Barbisch's."
+  },
+  "huro-lst-0154": {
+    "_match_name": "Gordon Lumber Co",
+    "_source": "http://www.gordonlumber.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "HTTP 404 with a 107-byte PLAIN TEXT body: 'The deployment could not be found on Vercel. DEPLOYMENT_NOT_FOUND cle1::qns6j-...'. The site was hosted on Vercel and the deployment was deleted. Note the content-type is text/plain, so an HTML-shaped scraper gets nothing and no error."
+  },
+  "huro-lst-0174": {
+    "_match_name": "Angles Hair Design",
+    "_source": "http://angleshairdesign.placeweb.site",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "THE WHOLE HOSTING SUFFIX IS GONE. *.placeweb.site now serves a Sedo domain-parking page ('placeweb.site - placeweb Resources and Information', 3 KB, one sedoparking.com preloader gif). This takes out every tenant at once - see huro-lst-0123 (borescycle.placeweb.site), identical. Worth grepping the whole listings file for .placeweb.site before trusting any of them."
+  },
+  "huro-lst-0123": {
+    "_match_name": "Bores Cycle Salvage & Service",
+    "_source": "http://borescycle.placeweb.site",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No site.",
+    "_url_finding": "Same as huro-lst-0174: the placeweb.site microsite host has lapsed to a Sedo parking page. 3 KB, no tenant content."
+  },
+  "huro-lst-0140": {
+    "_match_name": "Touch Of My Own Llc/harmonic Egg Huron",
+    "_source": "http://touchofmyown.com/harmonicegghuron.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Neither half of the held URL reaches content.",
+    "_url_finding": "The website field is two domains concatenated - 'touchofmyown.com/harmonicegghuron.com'. Split and tested: touchofmyown.com is NXDOMAIN (the domain no longer exists). harmonicegghuron.com resolves and answers HTTP 200, but the page is Wix's 'ConnectYourDomain Error' - the domain was pointed at Wix and the connection was never completed. A live 200 with 2.5 KB of platform error text."
+  },
+  "huro-lst-0164": {
+    "_match_name": "Huron Recovery Specialists",
+    "_source": "https://www.hurondocs.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "hurondocs.com and www.hurondocs.com both return DNS SERVFAIL - not NXDOMAIN. The domain is registered but its nameserver delegation is broken, so it resolves for nobody. Distinct from huro-lst-0140's NXDOMAIN and from an HTTP error; a checker that only records 'fetch failed' loses the distinction."
+  },
+  "huro-lst-0079": {
+    "_match_name": "Laguna Yacht Club",
+    "_source": "http://www.lagunayachtclub.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "NXDOMAIN on both lagunayachtclub.com and www.lagunayachtclub.com. The domain does not exist."
+  },
+  "huro-lst-0130": {
+    "_match_name": "Firwood Collectibles",
+    "_source": "http://stores.ebay.com/firwoodcollectibles",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Store gone.",
+    "_url_finding": "The legacy stores.ebay.com URL 301s to https://www.ebay.com/str/firwoodcollectibles, which returns HTTP 410 GONE. eBay is telling us explicitly that the store was deleted, not merely moved. A 410 is a rarity worth honouring - it is a definitive answer, unlike a 404."
+  },
+  "huro-lst-0216": {
+    "_match_name": "Subconscious Sarah",
+    "_source": "https://subconscioussarah.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Blocked.",
+    "_url_finding": "HTTP 403 Forbidden. The 403 body is 75,193 bytes - BYTE-IDENTICAL IN LENGTH to the 403 served for huro-lst-0263 (simplybetterrealty.com) and huro-lst-0071 (eisenhourchurch.com). Three unrelated Huron businesses behind the same WAF, all refusing non-browser clients with the same page. Not researchable by fetch this pass."
+  },
+  "huro-lst-0071": {
+    "_match_name": "Eisenhour Church Furnishings",
+    "_source": "http://eisenhourchurch.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Blocked - HTTP 403, same 75,193-byte WAF page as huro-lst-0216 and huro-lst-0263."
+  },
+  "huro-lst-0240": {
+    "_match_name": "Lisa's Paws Pet Sitting",
+    "_source": "http://lisa-paw-pet-sitting.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "The page heading is exactly 'Lisa's Paws Pet Sitting' and it carries 419-202-6020. IT NEVER SAYS HURON - no town, no ZIP, no street. Name and area code only.",
+    "photos": [
+      {
+        "url": "https://lisa-paw-pet-sitting.com/assets/images/card.jpg",
+        "what": "The site's own card image (200, image/jpeg, 130 KB) - the picture Lisa uses to represent the business",
+        "credit": "Lisa's Paws Pet Sitting",
+        "credit_url": "http://lisa-paw-pet-sitting.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://lisa-paw-pet-sitting.com/assets/images/gallery01/503d1bcd.jpg",
+        "what": "One of ~10 images in the block headed 'Gallery' on a pet-sitting site",
+        "why": "Every alt on this site is literally 'Untitled' or 'Test', and the filenames are 8-hex-digit hashes. The only subject evidence is the <h2>Gallery</h2> above them. Verified live (200, 88 KB). Recorded here rather than as a photo because nothing states what any individual frame shows."
+      }
+    ],
+    "_note": "THE IMAGES ARE INVISIBLE TO A NAIVE SCRAPE: every <img src> is an inline base64 SVG colour placeholder and the real file is in data-src. An img/@src pass sees ten data: URIs with alt 'Untitled' and concludes the site has no pictures. It has about a dozen.",
+    "phone": "+14192026020"
+  },
+  "huro-lst-0273": {
+    "_match_name": "Clarity Counseling & Wellness",
+    "_source": "http://myclaritycounseling.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and (419) 921-8347.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://myclaritycounseling.com/wp-content/uploads/2020/04/cropped-image0-2.jpeg",
+        "what": "The site's header/hero background, alt 'Clarity Counseling & Wellness'",
+        "why": "'image0' is what iOS names a shared photo, so this is plausibly the practice's own picture - but the alt is just the business name, not a description, and nothing says what it shows."
+      },
+      {
+        "url": "https://myclaritycounseling.com/wp-content/uploads/2020/04/image-about-1.jpg",
+        "what": "Background of the About section",
+        "why": "Filenames image-about-1 / image-services-1 / image-contact-1, all uploaded the same day, no alt at all - the naming pattern of WordPress THEME DEMO content, not operator photographs."
+      }
+    ],
+    "_no_photos_reason": "Five images total, all backgrounds, none with descriptive alt. The three section backgrounds are theme-slot names; the header may be the operator's own but its subject is unstated.",
+    "phone": "+14199218347"
+  },
+  "huro-lst-0043": {
+    "_match_name": "Diva Lashes By Maggie",
+    "_source": "https://linktr.ee/diva.salon",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "Linktree profile 'Diva Salon'. The page carries no town, no ZIP and no phone - Linktree pages rarely do.",
+    "photos": [
+      {
+        "url": "https://ugc.production.linktr.ee/2fef480b-eb21-43e5-97cf-ec3f08b5937a_IMG-6154.jpeg",
+        "what": "The Diva Salon profile picture at full size (alt: 'Diva Salon'). Camera-native IMG-6154 filename, uploaded to the salon's own Linktree.",
+        "credit": "Diva Salon (Diva Lashes by Maggie)",
+        "credit_url": "https://linktr.ee/diva.salon"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://ugc.production.linktr.ee/dba515bc-3cb2-470b-bbbd-837d6654b9b1_81lk10kQbvL.-CR0-0-1290-1290-.-US500-SCLZZZZZZZ-.jpeg",
+        "what": "A link thumbnail",
+        "why": "Filename '81lk10kQbvL...-SCLZZZZZZZ-' is an AMAZON product-image identifier, saved and re-uploaded. A supplier's product shot, not the salon's."
+      }
+    ],
+    "_note": "Strip the '?io=true&size=avatar-v3_0' query from a ugc.production.linktr.ee URL to get the original upload; the tail preserves the camera filename, the same trick as the Wix /v1/fill/ tail.",
+    "_no_photos_reason": "Beyond the profile picture there is nothing: a Linktree is a list of links, so this record's ceiling is one avatar."
+  },
+  "huro-lst-0153": {
+    "_match_name": "June Aesthetics- Huron",
+    "_source": "http://Linktr.ee/juneaesthetics",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "The Linktree page does mention huron/ohio in its link text, unusually for the platform.",
+    "photos": [
+      {
+        "url": "https://ugc.production.linktr.ee/1fc0288d-4538-4701-b994-fd4381aad3c1_IMG_1470.jpeg",
+        "what": "The June Aesthetics profile picture at full size (alt: 'June Aesthetics'), camera-native IMG_1470",
+        "credit": "June Aesthetics",
+        "credit_url": "https://linktr.ee/juneaesthetics"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "One avatar is the whole of it - Linktree carries no gallery."
+  },
+  "huro-lst-0036": {
+    "_match_name": "Austin Miniatures",
+    "_source": "https://austinminiatures.gumroad.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "Gumroad storefront. No town, no ZIP, no phone, no address - Gumroad does not publish them. Identity to 523 Wilder Ave is NOT confirmed by the page.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://public-files.gumroad.com/gnhocl029z2dxxp7mtheqfsd1hnn",
+        "what": "The shop's cover image, 1024x536, og:image:alt 'Austin Miniatures'",
+        "why": "The only image on the page, and its alt is just the shop name. It is a storefront banner, and there is no evidence of what it depicts or that it was photographed rather than rendered."
+      }
+    ],
+    "_no_photos_reason": "A Gumroad shop front page is one banner and nothing else - no product gallery in the served HTML."
+  },
+  "huro-lst-0022": {
+    "_match_name": "Fixed Performance",
+    "_source": "http://www.fixedperformance.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and 419-433-8219.",
+    "photos": [
+      {
+        "url": "https://www.fixedperformance.com/wp-content/uploads/2021/04/banner.jpg",
+        "what": "The site's hero banner image. Self-hosted, but the subject is not stated anywhere on the page.",
+        "credit": "Fixed Performance",
+        "credit_url": "http://www.fixedperformance.com"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The home page has exactly one <img> - the logo - and four CSS backgrounds, of which three are UI chrome (back.png, arrow-right.png, a cropped overlay). Only banner.jpg is a photograph, and nothing labels it.",
+    "phone": "+14194338219"
+  },
+  "huro-lst-0169": {
+    "_match_name": "Pam Johnston Photography",
+    "_source": "http://pamjohnstonphotography.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Pam Johnston Photography | Capturing Love in Huron, Ohio'. No phone or ZIP on the page.",
+    "photos": [
+      {
+        "url": "https://static.showit.co/800/iBRnZOuTTu-WJpaWrjhR5A/183666/pam-johnston-camera.jpg",
+        "what": "Pam Johnston with her camera - the only image on the site whose filename names its subject",
+        "credit": "Pam Johnston Photography",
+        "credit_url": "http://pamjohnstonphotography.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.showit.co/1600/0L8UJfzCQmqqCpv3DBoNIg/183666/11.png",
+        "what": "A portfolio image",
+        "why": "On her own Showit account folder (/183666/) so provenance is fine, but the filename is '11.png', there is no alt anywhere on the site, and this is a WEDDING PHOTOGRAPHER - the pictures are of her clients, whose likeness rights are a separate question from hers."
+      }
+    ],
+    "_note": "SHOWIT HAS THE SAME MACHINE-READABLE SPLIT AS GODADDY: static.showit.co/<size>/<hash>/183666/... is Pam's own account; static.showit.co/<size>/<hash>/shared/... is platform decoration (gold_splatters_16.png, rip04.png). The path segment after the hash is the account id or the literal word 'shared'. Every alt on the site is empty.",
+    "_no_photos_reason": "Zero alt text sitewide; the portfolio is numbered files of other people's weddings. Only the self-portrait is safely attributable and describable."
+  },
+  "huro-lst-0141": {
+    "_match_name": "Lakefront Spa & Tanning - Huron",
+    "_source": "http://www.lakefronttanning.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and 419-433-8644.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/c17f20_57c7e0aa3e4f46bcb969bd8486110c3a~mv2.jpg",
+        "what": "Salon photo, filename IMG_4027.JPG - camera-native, uploaded to the operator's own Wix account (prefix c17f20). Subject unlabelled.",
+        "credit": "Lakefront Spa & Tanning",
+        "credit_url": "http://www.lakefronttanning.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/11062b_f22c9fe1c3af43e2a509493158ec93a0~mv2_d_4621_3072_s_4_2.jpg",
+        "what": "alt 'Sunset'",
+        "why": "WIX MEDIA PREFIX 11062b IS WIX'S OWN STOCK/DEMO LIBRARY ACCOUNT - it appears on unrelated sites across the web. Theme decoration, not this salon."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/2465a22a212e41cd96a05e3e3fe5adc4.jpg",
+        "what": "alt 'Palm Trees Beach View'",
+        "why": "Bare-hash Wix media id with no account prefix at all, and a generic stock title. Wix library art."
+      }
+    ],
+    "_note": "THE PREFIX RULE, SHARPENED: on this site c17f20 is the operator and 11062b is Wix's stock account. 11062b also turns up on huro-lst-0181 (Blue Ribbon Catering). A foreign prefix is not automatically decoration - it is a question - but 11062b specifically is Wix stock.",
+    "phone": "+14194338644"
+  },
+  "huro-lst-0181": {
+    "_match_name": "Blue Ribbon Catering",
+    "_source": "http://blueribboncaters.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron and 44839, but the phone is 419-668-4000, a NORWALK exchange. Our record puts it at 1023 Main St, Huron.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/11062b_68655597a5594a5c91b1cc86616d5cb2~mv2.jpeg",
+        "what": "alt 'Buffet Table Display'",
+        "why": "Wix prefix 11062b = Wix's own stock library (same account as the 'Sunset' on huro-lst-0141). A convincing catering photo that is not this caterer's."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/703164_a36a510fb0df466d8af5f7111c018a94~mv2.jpg",
+        "what": "alt/filename '34449104766_e436575f6a_z (1).jpg'",
+        "why": "THAT IS A FLICKR FILENAME - <photo-id>_<secret>_z.jpg is exactly how Flickr names a downloaded medium-640 image. Somebody saved a Flickr photo and re-uploaded it to the operator's own Wix account. New tell for the stock-on-own-CDN class."
+      }
+    ],
+    "_no_photos_reason": "The operator's own account prefix is 703164, but its files are the logo bar, a bare-hash JPEG and a re-uploaded Flickr image. The best-looking food photo on the page is Wix stock. Nothing safely this business.",
+    "phone": "+14196684000"
+  },
+  "huro-lst-0037": {
+    "_match_name": "Chris Pisano",
+    "_source": "https://www.pisanoteamohio.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and 419.216.2933.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/61fd4c4a7184e91daa6bf0f3/9e708958-3737-4a1f-b54c-b17f8edf3440/chris_banner.png",
+        "what": "The Chris Pisano banner image - filename names the subject",
+        "credit": "Pisano Team",
+        "credit_url": "https://www.pisanoteamohio.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/61fd4c4a7184e91daa6bf0f3/bd0672f9-c8b9-4f3d-ba14-538018b0c390/4Z9A0787.jpg",
+        "what": "unknown",
+        "why": "'4Z9A0787' is a Canon camera-native filename, so it is a real photograph from a real shoot on the team's own account - but there is no alt and no caption, so the subject is unestablished."
+      }
+    ],
+    "_note": "The 'UHM Block Logo Stacked' image is a lender partner's logo (Union Home Mortgage), not this business.",
+    "phone": "+14192162933"
+  },
+  "huro-lst-0122": {
+    "_match_name": "Stephanie Vineyard",
+    "_source": "https://app.squareup.com/book/L7ABWGSGGYKY1/stephanie-vineyard-huron-oh",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Stephanie Vineyard | Book Appointments | Huron, OH'; carries 44839 and (419) 515-2402.",
+    "photos": [
+      {
+        "url": "https://seller-brand-assets-f.squarecdn.com/MLZNT0Y2G854T/dd8539ea68e1358a959bc1625966e542.jpeg",
+        "what": "The Square seller's own brand/banner image for this booking page - served as the page og:image",
+        "credit": "Stephanie Vineyard",
+        "credit_url": "https://app.squareup.com/book/L7ABWGSGGYKY1/stephanie-vineyard-huron-oh"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://square-web-production-f.squarecdn.com/files/e37bcad916b2c9ce298e8d8f8c36a7e97b4a6752/original.jpeg",
+        "what": "unknown",
+        "why": "A Square platform file with no alt, no caption and a hash filename. Could be the seller's, could be platform art."
+      }
+    ],
+    "_note": "SQUARE BOOKING PAGES HAVE A NAMED BRAND-ASSET BUCKET: seller-brand-assets-f.squarecdn.com/<seller-id>/... is the seller's own upload, square-web-production-f / appointments-production-f are platform buckets. Another machine-readable own-vs-platform split, like GoDaddy's /isteam/stock/ and Showit's /shared/.",
+    "phone": "+14195152402"
+  },
+  "huro-lst-0172": {
+    "_match_name": "Lucky Stone Gifts And Promotions",
+    "_source": "https://www.luckystoneuniforms.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'LUCKY STONE UNIFORMS - HOME'; carries Huron and (419) 616-6008.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "A uniform-distributor storefront on a syndicated catalogue platform. Every image is either a social-network icon from /DistSite/Styles/8/images/social/ or a catalogue thumbnail served through a query-string handler (/we/we.dll/Pic?UN=1003045&F=C&T=801&...) - supplier catalogue art with no stable URL and no subject label. No premises photo.",
+    "_name_finding": "Our listing says 'Lucky Stone Gifts And Promotions'; the site trades as 'LUCKY STONE UNIFORMS'.",
+    "phone": "+14196166008"
+  },
+  "huro-lst-0200": {
+    "_match_name": "The Easy Speakin Barbershop (Nicolas Babka)",
+    "_source": "http://nicbabkaesb.booksy.com/a/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Page title 'The Easy Speakin Barbershop (Nicolas Babka) - Huron'; carries 44839. The image filename slugs themselves contain 'the-easy-speakin-barber'.",
+    "photos": [
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/biz_photo/b9a4da057fc0452db8f8524e8d4568-the-easy-speakin-barber-biz-photo-e264363f3bc84dfc954e78136de439-booksy.jpeg",
+        "what": "The shop's own business photo - Booksy's /biz_photo/ slot, the picture the barber chose to represent the place",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/inspiration/9a49bf7ba39c49bf8a003aeb8e5d78-the-easy-speakin-barbershop-ni-inspiration-c963b2accbe94c5f9f081a762fc771-booksy.jpeg",
+        "what": "Work example 1 - a haircut by this barber",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/inspiration/8c410d5cf6f54318922dd5b85b34c4-the-easy-speakin-barbershop-ni-inspiration-a8c190eb06c045b5bac9a5071a8eef-booksy.jpeg",
+        "what": "Work example 2",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/inspiration/54dfbaccc5204247b3b3a5e9b2d398-the-easy-speakin-barbershop-ni-inspiration-3119cc67298149d3a7113a6eff9a13-booksy.jpeg",
+        "what": "Work example 3",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/inspiration/5808d5901ea74466818df207444237-the-easy-speakin-barbershop-ni-inspiration-a250f15d1aac4094af1855d476daa4-booksy.jpeg",
+        "what": "Work example 4",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/inspiration/c17b0eadad9b4f8a9e46845c173b1d-the-easy-speakin-barbershop-ni-inspiration-21f84a2a0b764d2896c65eed7c792e-booksy.jpeg",
+        "what": "Work example 5",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/service_photos/e382686a7249449e8c2b9728ad7d68dc.jpeg",
+        "what": "Men's Haircut portfolio photo",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/service_photos/650e680c55804cab98604846d10e4622.jpeg",
+        "what": "Men's Haircut portfolio photo",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/service_photos/ec58f44caa124dc89d6b9eb50479c0a5.jpeg",
+        "what": "Men's Haircut portfolio photo",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/service_photos/5539a76727a742419d40251430f29cfb.jpeg",
+        "what": "Kids Cut portfolio photo",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      },
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/service_photos/e19c2fab17384809b79c4945d751c369.jpeg",
+        "what": "Kids Cut portfolio photo",
+        "credit": "The Easy Speakin Barbershop (Nicolas Babka)",
+        "credit_url": "http://nicbabkaesb.booksy.com/a/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://d2zdpiztbgorvt.cloudfront.net/region1/us/1428313/review_photos/a95173328d944c60b410d4c9626b4fd4.jpeg",
+        "what": "alt 'Clients review photo 1'",
+        "why": "Uploaded by a CUSTOMER with a review, not by the business. Different rights holder."
+      }
+    ],
+    "_note": "BOOKSY IS THE BEST-STRUCTURED SOURCE IN THIS SLICE AND THE RULE IS MACHINE-READABLE: the CDN path segment names the subject class - /biz_photo/ (the premises), /inspiration/ (the operator's portfolio), /service_photos/ (per-service, and the alt names the service), /review_photos/ (customer-owned, different rights). The filename slug also carries the business name, so a wrong-entity mix-up is self-detecting. Strip the '?size=' query for the original. Drop the size parameter and all eleven above are full resolution.",
+    "_note2": "Second-biggest photo haul in the slice after the Booksy structure made it cheap. Rank 2920 - the prominence order buried it.",
+    "hours": {},
+    "description": "not established beyond the held record"
+  },
+  "huro-lst-0134": {
+    "_match_name": "Corner Cuts",
+    "_source": "https://cornercuts.glossgenius.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Corner Cuts | Hair Salon in Huron, OH'; carries 44839 and (419) 433-1400.",
+    "photos": [
+      {
+        "url": "https://static.glossgenius.com/public/salon/39c56bc3f8460778cb23d28b0fdf5a748f40fa3f/website_cover_image/b97a3e14c1087cf631d940a6473bb9d4.jpeg",
+        "what": "The salon's own website cover image - GlossGenius's /salon/<id>/website_cover_image/ slot, uploaded by Corner Cuts. Also the page og:image and hero background.",
+        "credit": "Corner Cuts",
+        "credit_url": "https://cornercuts.glossgenius.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.glossgenius.com/public/stockimage/10/image/scissors.jpg",
+        "what": "A pair of scissors",
+        "why": "⭐ THE SHARPEST TRAP IN THIS WHOLE SLICE. The path says /public/stockimage/10/image/scissors.jpg - platform stock, shared by every GlossGenius salon in the country - and yet the ALT TEXT READS \"Women's Haircut at Corner Cuts in Huron, OH\". The platform writes a personalised alt onto a generic stock photo. Anything scoring subject evidence by alt text alone scores this MAXIMUM: it names the service, the business AND the town. It is a stock picture of scissors."
+      },
+      {
+        "url": "https://static.glossgenius.com/public/user/0cdd2089f9c50d7bb219668bb79de187711a6b8e/avatar/837135b1fe1fce29ec6ef8295e3185c9.jpeg",
+        "what": "A stylist's profile avatar",
+        "why": "An individual's portrait, uploaded under /public/user/<id>/avatar/ - the person's, not the salon's."
+      }
+    ],
+    "_note": "GLOSSGENIUS SPLIT: /public/salon/<salon-id>/... = the salon's own uploads · /public/stockimage/<n>/image/<noun>.jpg = platform stock (scissors, iron, hairdryer, nail, nail_polish, tinting_brush all present here) · /public/user/<user-id>/avatar/ = a practitioner's own portrait. The path is trustworthy; the alt is not.",
+    "phone": "+14194331400"
+  },
+  "huro-lst-0277": {
+    "_match_name": "Emmie.Styled",
+    "_source": "https://cornercuts.glossgenius.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "This record and huro-lst-0134 hold the SAME URL. The GlossGenius site belongs to Corner Cuts; Emmie.Styled is a stylist working there, and the only Emmie-specific imagery would be a /public/user/<id>/avatar/ portrait, which is an individual's likeness rather than a business photo.",
+    "_name_finding": "huro-lst-0277 (Emmie.Styled) and huro-lst-0134 (Corner Cuts) share one booking site at 613 Main St - a per-practitioner listing inside a salon, not two businesses with two premises."
+  },
+  "huro-lst-0170": {
+    "_match_name": "Custom Marine Inc.",
+    "_source": "http://custommarine.biz/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Custom Marine, Inc. - Craftmanship & Innovation'; carries Huron, 44839 and (419) 621-1188.",
+    "photos": [
+      {
+        "url": "https://custommarine.biz/wp-content/uploads/2020/02/cusmarrev2-001.jpg",
+        "what": "The single image on the Custom Marine site, alt 'Custom Marine, Inc.' - a self-hosted company image. Subject beyond the company name is not stated.",
+        "credit": "Custom Marine, Inc.",
+        "credit_url": "http://custommarine.biz/"
+      }
+    ],
+    "_photos_rights_unclear": [],
+    "_note": "A 26 KB one-image site. NOTE THE URL: the held record has 'www.custommarine.biz', which does not resolve; the bare custommarine.biz does (208.109.35.208). A www prefix is not free.",
+    "_url_finding": "www.custommarine.biz fails to connect; custommarine.biz works. The held URL is broken by one subdomain.",
+    "phone": "+14196211188"
+  },
+  "huro-lst-0009": {
+    "_match_name": "RS Cycle and Service",
+    "_source": "http://rscycleandservice.com/ and /about/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Carries Huron, 44839 and 419.577.9447.",
+    "photos": [
+      {
+        "url": "https://www.rscycleandservice.com/wp-content/uploads/2025/10/553321397_1351698026733026_6303057900867150836_n.jpg",
+        "what": "The About page's main image, 2048x1536, and the page og:image - the shop's own Facebook photo re-uploaded (bare Facebook CDN filename). Subject not labelled.",
+        "credit": "RS Cycle & Service",
+        "credit_url": "https://www.rscycleandservice.com/about/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.rscycleandservice.com/wp-content/uploads/2024/10/iStock-1447372324.jpg",
+        "what": "Section background on the About page",
+        "why": "Filename 'iStock-<id>' - Getty/iStock licensed stock on the operator's own CDN. Adds iStock to the confessing-filename list."
+      },
+      {
+        "url": "https://www.rscycleandservice.com/wp-content/uploads/2025/06/11081BugRelease22ozRGB2021_700x700__43954.1729449678.1280.1280-300x300.webp",
+        "what": "The 'Cleaners' shop category tile",
+        "why": "That filename is a supplier catalogue asset (product code + BigCommerce-style id.timestamp.size.size). A manufacturer's product shot, not the shop's."
+      }
+    ],
+    "_note": "The home page's shop category tiles (alt Grips, Wheels, Seats, Tires, Sissy Bar Pads, Pegs) are a MIXTURE - most are camera-GUID uploads by the owner, at least one is supplier catalogue art. Recorded none of them: the alt names a product CATEGORY, not what the photograph shows.",
+    "phone": "+14195779447"
+  },
+  "huro-lst-0017": {
+    "_match_name": "River Monster Tours",
+    "_source": "http://RiverMonsterTours.com/ , /about-us/ , /tour/knock-off-nessie/",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Huron River Boat Cruise | River Monster Tours'; carries Huron, 44839 on the tour page and (419) 357-0579.",
+    "photos": [
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/river-monster-boat-public-pics-006.jpg",
+        "what": "The River Monster tour boat - the one file on the site whose name states its subject ('river-monster-boat-public-pics')",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/06/hero-home2.jpg",
+        "what": "Home page hero image",
+        "credit": "River Monster Tours",
+        "credit_url": "http://rivermonstertours.com/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/06/hero-about-us3.jpg",
+        "what": "About Us page hero image",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/about-us/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/river-bird-2.jpg",
+        "what": "A bird on the Huron River, from the 2-hour river tour page",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/monsterjustified-011.jpg",
+        "what": "Tour gallery image (justified-grid slot 011 on the Knock-Off Nessie tour page). Subject not labelled.",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/monsterjustified-012.jpg",
+        "what": "Tour gallery image. Subject not labelled.",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/monsterjustified-013.jpg",
+        "what": "Tour gallery image. Subject not labelled.",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/justified-011.jpg",
+        "what": "Tour gallery image. Subject not labelled.",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      },
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/justified-012.jpg",
+        "what": "Tour gallery image. Subject not labelled.",
+        "credit": "River Monster Tours",
+        "credit_url": "https://rivermonstertours.com/tour/knock-off-nessie/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://rivermonstertours.com/wp-content/uploads/2024/05/River-Tour-Hero1-Picsart.jpg",
+        "what": "The 2-hour River Tour hero and og:image",
+        "why": "Filename ends '-Picsart' - composited or heavily retouched in the Picsart app. Almost certainly built from the operator's own material, but it is an edit, not a photograph, and may contain added elements (this is a business whose brand is a lake monster)."
+      }
+    ],
+    "_note": "THE HOME PAGE ALONE WOULD HAVE SCORED ZERO. Its only non-avatar image is hero-home2.jpg; the gallery lives on /tour/<name>/ pages, and the images are lazy-loaded so <img src> is a 1x1 base64 gif - they only appear in the embedded JSON. Everything above came from the tour and about pages. Sitewide alt text is empty; twelve Google-review avatars are the only things with alt.",
+    "phone": "+14193570579"
+  },
+  "huro-lst-0194": {
+    "_match_name": "Credit Union",
+    "_source": "http://www.eriecommunityfcu.org",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Erie Community FCU'; carries (419) 626-4283, a Sandusky number. Our record places a branch at 2402 University Dr E, Huron; the site does not name Huron on the home page.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/6197fbbefb71075c47c30ca7/8c7f496e-25d3-44d8-b80f-28ff58ce21f9/ErieComm.jpg",
+        "what": "alt 'Erie Community FCU' - the credit union's own header image",
+        "why": "On the credit union's own Squarespace account and named for it, but the alt is just the name and nothing says which branch or what the picture shows."
+      }
+    ],
+    "_no_photos_reason": "The rest of the home page is AdobeStock_*.jpeg files (their filenames confess) carrying alt text about rate offers, plus app-store badges. There is no photograph of the Huron branch.",
+    "_name_finding": "Our listing name is the generic word 'Credit Union'. The institution is ERIE COMMUNITY FEDERAL CREDIT UNION. Note also a stale logo left on the page with alt 'Teamsters Local 697 Credit Union' - the institution's former name, still in the markup."
+  },
+  "huro-lst-0155": {
+    "_match_name": "Integrative Massotherapy",
+    "_source": "https://www.vagaro.com/integrativemassotherapyllc",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Integrative Massotherapy, LLC - Huron OH | Vagaro'; carries 44839 and 419-602-7109.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Vagaro serves its booking pages client-side. The 246 KB of HTML contains only Vagaro's own chrome - the Vagaro logo twice, four country-flag SVGs and a HIPAA badge. Unlike Booksy and GlossGenius, Vagaro publishes no image data channel in the served markup, so the business's gallery (if any) is not reachable by fetch. THIS IS THE ONE PLATFORM IN THE SLICE WHERE 'JS-only, therefore empty' HELD.",
+    "phone": "+14196027109"
+  },
+  "huro-lst-0267": {
+    "_match_name": "Ruhe Haus",
+    "_source": "https://www.ruhehausllc.com/ and /s/appointments",
+    "_fetched": "2026-09-22",
+    "_confidence": "low",
+    "_identity_check": "NOT CONFIRMED. Neither page mentions Huron, 44839, Wall Street or any 419 number. Only the name matches.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://24c60efa08637154dd80.cdn6.editmysite.com/uploads/b/24c60efa08637154dd80460ab17e55e951cf8fc545b614cf1dd23541db9bdc59/2025-10-26_19-55-27_1761522961.jpg",
+        "what": "unknown",
+        "why": "One of only four uploads on the whole Square Online site. Timestamp filename (2025-10-26_19-55-27), no alt, no caption, and the page it sits on is a reviews page. Zero subject evidence."
+      }
+    ],
+    "_no_photos_reason": "Square Online site with four uploaded files in total: two timestamp-named images, one named 'stars' (a review-star graphic) and one with an unprintable name. No gallery, no premises photo, and the site never states the town.",
+    "_note": "Square Online DOES publish its page model in the HTML (the Bennett's lesson holds - the uploads above were only visible in the embedded JSON, escaped as \\/uploads\\/b\\/...). There simply is not much there."
+  },
+  "huro-lst-0003": {
+    "_match_name": "Erie Supply House",
+    "_source": "http://www.eriesupplyhouse.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "NXDOMAIN on both eriesupplyhouse.com and www.eriesupplyhouse.com. The domain does not exist. This is a rank-24 listing on Cleveland Rd W."
+  },
+  "huro-lst-0124": {
+    "_match_name": "Marcellas Pizza Huron",
+    "_source": "http://Marcellashuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "marcellashuron.com is NXDOMAIN. (This record has no category set, which is why it fell into this slice rather than the food one - it is a pizza shop.)"
+  },
+  "huro-lst-0147": {
+    "_match_name": "Shimer Construction",
+    "_source": "http://www.shimerconstruction.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "shimerconstruction.com is NXDOMAIN."
+  },
+  "huro-lst-0199": {
+    "_match_name": "Wray Property Management",
+    "_source": "http://wraypropertymanagementllc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "wraypropertymanagementllc.com is NXDOMAIN."
+  },
+  "huro-lst-0222": {
+    "_match_name": "Conceptan/07",
+    "_source": "https://www.conceptan.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Unreachable.",
+    "_url_finding": "conceptan.com and www.conceptan.com both fail to resolve or connect (curl exit code 000, no HTTP status) across repeated attempts over http and https."
+  },
+  "huro-lst-0205": {
+    "_match_name": "Angie Masterson-Simply Better Realty",
+    "_source": "http://Angie.Ohio.simplybetterrealty.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No page.",
+    "_url_finding": "74-byte Apache 404: '<h1>Not Found</h1><p>The requested URL / was not found on this server.</p>'. The per-agent subdomain pattern is real - huro-lst-0208's frame target is ohio.simplybetterrealty.com/jason-smith/, a PATH not a subdomain - so the held URL has the shape wrong. An /angie-masterson/ path on ohio.simplybetterrealty.com was not tested this pass."
+  },
+  "huro-lst-0145": {
+    "_match_name": "Valley Ford of Huron, Inc. Parts",
+    "_source": "https://www.valleyfordofhuroninc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Blocked - Cloudflare interstitial, 'Attention Required! | Cloudflare', 4.5 KB. Not researchable by fetch this pass. Same for huro-lst-0259 (valleysuperstore.com), the same dealer group."
+  },
+  "huro-lst-0259": {
+    "_match_name": "Chad at Valley Ford & Truck Center",
+    "_source": "http://www.valleysuperstore.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Blocked - Cloudflare interstitial, 4.5 KB. Same dealer group as huro-lst-0145.",
+    "_name_finding": "This record names an individual salesperson ('Chad at Valley Ford & Truck Center') at the same 55 Cleveland Rd E address as huro-lst-0145. Two records, one dealership."
+  },
+  "huro-lst-0255": {
+    "_match_name": "Kristen Valenty Realtor",
+    "_source": "https://kristenvalenty.theholdenagencyre.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Blocked - Cloudflare 'Just a moment...' JS challenge, 5.7 KB. Not researchable by fetch this pass."
+  },
+  "huro-lst-0058": {
+    "_match_name": "Dr. Eric Martin",
+    "_source": "http://www.peceyes.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "_identity_check": "Title 'Knowledgeable Eye Doctors in Amherst & Huron'; carries Huron, 44839 and 419-433-3937. A two-office practice; 421 Berlin Rd is the Huron one.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://irp.cdn-website.com/2add5795/dms3rep/multi/opt/PECEricMartin-HP-Services-image01-e1fa93c0-1920w.jpg",
+        "what": "A services-section image",
+        "why": "The filename is a Duda TEMPLATE SLOT NAME - <site>-HP-Services-image01 - which tells you where on the page it sits and nothing about what it shows. Four of these, none with alt text."
+      }
+    ],
+    "_no_photos_reason": "Every image is either the practice logo, a dry-eye-clinic promo graphic, or one of four slot-named services images with no alt. Nothing identifies either office.",
+    "_name_finding": "The practice brands itself PEC (the filenames read 'PECEricMartin'); our listing carries only the doctor's name.",
+    "phone": "+14194333937"
+  },
+  "huro-lst-0049": {
+    "_match_name": "Review Phim Hay",
+    "_source": "http://Hellogorgeousbeautybarllc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Not re-researched - this URL is Hello Gorgeous Beauty Bar, already covered with 4 photos under huro-lst-0204 in prominent-photos.json. Do not double-record.",
+    "_name_finding": "The listing NAME is 'Review Phim Hay' (Vietnamese for 'good film reviews') while the held website is Hellogorgeousbeautybarllc.com at 521 Main St - the same premises as huro-lst-0204, Hello Gorgeous Beauty Bar. The record's name field has been overwritten by unrelated content at some point; the URL is the trustworthy field here."
+  },
+  "huro-lst-0151": {
+    "_match_name": "Civista Bank",
+    "_source": "http://www.citizensbankco.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "See _url_finding. Nothing was fetched from this URL and nothing should be.",
+    "_url_finding": "⛔⛔ THE MOST DANGEROUS URL IN THIS SLICE. http://www.citizensbankco.com answers HTTP 301 Moved Permanently with Location: https://joker123.co.uk/ - an offshore ONLINE GAMBLING brand. The landing host then answers 520/522 (16-byte Cloudflare error), so a naive checker records 'site down' and moves on, never seeing where it pointed. This is the riverviewlanes.com pattern again, and this time it is on a BANK record: 'Citizens Bank Co.' was Civista Bank's former name, the old domain lapsed, and it has been resold. ⛔ Do not publish this URL on any card. Civista's live domain is not established by this pass; it was not tested."
+  },
+  "huro-lst-0285": {
+    "_match_name": "U-Haul Neighborhood Dealer",
+    "_source": "https://www.uhaul.com/Locations/Truck-Rentals-near-Huron-OH-44839/048773/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "See _url_finding - the page is not about Huron.",
+    "_url_finding": "⛔ A NEW SHAPE OF WRONG-ENTITY, AND A NASTY ONE. The held URL follows redirects to https://www.uhaul.com/Locations/Danville-IL-61832/Results/ - title 'U-Haul Locations in Danville, IL 61832'. HTTP 200, 248 KB of real, healthy content, ZERO occurrences of 'Huron'. The dealer id 048773 is dead, and rather than 404 the chain drops you on an arbitrary other town's results page. This defeats BOTH standard tests: liveness passes (200, big page) and the soft-404 md5 test passes (it is not the home page). The only check that catches it is 'does the landed page name our town' - HURONCOUNT=0 - plus reading %{url_effective}."
+  },
+  "huro-lst-0238": {
+    "_match_name": "Dollar Tree",
+    "_source": "https://locations.dollartree.com/oh/huron/593-cleveland-rd",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Dollar Tree Store at 593 Cleveland Rd in Huron, OH'; 11 occurrences of Huron. This IS the Huron store's page.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://dyn.mktgcdn.com/p/uSIoo_xaBcR5L8MrLuEUrm-UDiTQ5tbT1Neb5MQzuJI/width=1920,height=1280",
+        "what": "Published on the Huron store page under alt=\"Dollar Tree Store Photo\", 1800x1200, itemprop=\"image\"",
+        "why": "⛔ IT IS NOT THIS STORE. MEASURED: the identical CDN id uSIoo_xaBcR5L8MrLuEUrm-UDiTQ5tbT1Neb5MQzuJI is served on the Huron page AND on /oh/sandusky/1420-sycamore-line AND on /oh/sandusky/716-crossings-rd. One brand photograph, published on every store page, captioned as if it were that store's photo and marked up as the location's schema.org image. Every subject-evidence test passes: descriptive alt, itemprop=image, sits under the store heading, on the right store's page. It is still a generic picture."
+      }
+    ],
+    "_no_photos_reason": "The one store photo on the page is a chain-wide brand image (proven above). The rest is amenity icons ('Frozen/Refrigerated Foods', 'Accepts EBT', 'Greeting Cards: Expressions from Hallmark') and a hiring banner, all also shared across stores.",
+    "_note": "⭐ THE CHEAP CHECK THIS HANDS TOWN #2: on any Yext-backed chain locator (dyn.mktgcdn.com), fetch a SECOND store's page in another town and diff the image ids. Shared id = brand art, unique id = a real location photo. Two fetches, no judgement required."
+  },
+  "huro-lst-0105": {
+    "_match_name": "Edward Jones",
+    "_source": "http://www.edwardjones.com/melissa-danicki -> https://www.edwardjones.com/us-en/financial-advisor/melissa-danicki",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Melissa A Danicki, Financial Advisor | Edward Jones'; 12 occurrences of Huron.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://edwardjoneslive.pc.cdn.bitgravity.com/assets/fa-pictures/600x900/1668022.jpg",
+        "what": "Melissa Danicki's own advisor portrait, alt 'Melissa Danicki, Financial Advisor located in Huron, OH'. Confirmed real, not the placeholder.",
+        "why": "A named individual's portrait. Real and correctly attributed, but it is a person's likeness on a corporate CDN, not a photograph of the 2012 Cleveland Rd W office."
+      }
+    ],
+    "_no_photos_reason": "The only other imagery is 'default-background.png' and two copies of 'fa-pictures/default/photo.jpg' - the grey placeholder. No premises photo.",
+    "_note": "⭐ EDWARD JONES SHIPS ITS OWN PLACEHOLDER TEST: every advisor <img> carries data-default-img=\"...fa-pictures/default/photo.jpg\" alongside src. If src equals data-default-img the portrait is missing; if it differs, it is a real photo. The page states the discriminator - no heuristic needed. Same on huro-lst-0090."
+  },
+  "huro-lst-0090": {
+    "_match_name": "Edward Jones - Financial Advisor: Ryan M Reffner, AAMS®",
+    "_source": "https://www.edwardjones.com/us-en/financial-advisor/ryan-reffner",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://edwardjoneslive.pc.cdn.bitgravity.com/assets/fa-pictures/600x900/982486.jpg",
+        "what": "Ryan Reffner's advisor portrait, alt 'Ryan Reffner, Financial Advisor located in Huron, OH'. Real, not the placeholder.",
+        "why": "An individual's likeness, not a premises photo. Same treatment as huro-lst-0105."
+      }
+    ],
+    "_no_photos_reason": "No photograph of the 421 Berlin Rd office; only advisor and team-member portraits."
+  },
+  "huro-lst-0242": {
+    "_match_name": "Huron Ace Hardware",
+    "_source": "https://www.acehardware.com/store-details/17674",
+    "_fetched": "2026-09-22",
+    "_confidence": "high",
+    "_identity_check": "Title 'Huron Ace Hardware in Huron | Hardware Store in Huron, OH 44839'. Correct store page.",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The store-details page carries no store photograph at all. Every image is national merchandising art on cdn-tp3.mozu.com with brand alt text - 'EGO Lawn Mower', 'Benjamin Moore at Ace', 'Craftsman Tool Storage', 'Ball Mason Jars', 'KeyStart Programmed Keys'. 370 KB and not one picture of the building at 402 Cleveland Rd E. Note the images are in data-src (class=\"lazy\"), so an src-only scrape sees zero."
+  },
+  "huro-lst-0104": {
+    "_match_name": "United States Postal Service",
+    "_source": "https://tools.usps.com/locations/details/1367709",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "USPS's location-details tool is client-rendered: the 133 KB served page is the generic usps.com shell (its only images are the five 'go-now.png' navigation cards) and mentions Huron once. No location content and no photograph in the markup. NOTE: the SITE ROOT tools.usps.com/ returns 403 while the deep link returns 200 - the reverse of the usual pattern."
+  },
+  "huro-lst-0085": {
+    "_match_name": "Huron Post Office",
+    "_source": "https://www.usps.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The held URL is the USPS CORPORATE HOME PAGE - not a location page at all. There is nothing per-location to find. Duplicate of huro-lst-0104, which at least holds the Huron facility id 1367709."
+  },
+  "huro-lst-0182": {
+    "_match_name": "bp",
+    "_source": "https://map.bp.com/en-US/US/gas-station/huron/bp/62494404505024483900100000000000",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Dead link.",
+    "_url_finding": "HTTP 404, 906 bytes, 'The page you were looking for doesn't exist (404)'. An honest 404 - the site root returns 200/53 KB, so this is not a soft 404. The station id is stale."
+  },
+  "huro-lst-0038": {
+    "_match_name": "Carmeuse Huron Operation",
+    "_source": "http://carmeusena.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Nothing reachable.",
+    "_url_finding": "carmeusena.com (the old North America domain) redirects to https://www.carmeuse.com/language_selection_page?destination=/node/27 - a LANGUAGE PICKER, 10 KB, zero occurrences of Huron, and byte-identical to what the site root serves. A redirect that lands on an interstitial rather than content: the destination query string (/node/27) is the only trace of what was asked for."
+  },
+  "huro-lst-0018": {
+    "_match_name": "NAPA AUTO PARTS",
+    "_source": "https://www.napaonline.com/en/oh/huron/store/802182",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "HTTP 403, Cloudflare 'Attention Required!'. Blocked to non-browser clients at the edge; the store page was never served."
+  },
+  "huro-lst-0254": {
+    "_match_name": "H&R Block",
+    "_source": "https://www.hrblock.com/tax-office-near-me/ohio/huron/33854",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "HTTP 403 'Access Denied', 428 bytes. Edge-blocked."
+  },
+  "huro-lst-0125": {
+    "_match_name": "KeyBank",
+    "_source": "https://www.key.com/locations/OH/Huron/BRCH01010406/601-Cleveland-Rd-W",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Connection refused/reset at both the branch URL and the site root (curl exit 000, no HTTP status). Not researchable by fetch."
+  },
+  "huro-lst-0258": {
+    "_match_name": "Redbox",
+    "_source": "https://www.redbox.com/locations/ohio/huron/44839/77536",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No connection at the location URL or the site root (curl exit 000). Redbox as a business wound down in 2024; the kiosk at 2202 Cleveland Rd W is very unlikely to exist. Existence not established here, only that the site does not answer."
+  },
+  "huro-lst-0055": {
+    "_match_name": "Western Union",
+    "_source": "http://locations.westernunion.com/us/oh/huron/4d1cd8eda94df39846d71e23576689f9",
+    "_fetched": "2026-09-22",
+    "_confidence": "medium",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Redirects to location.westernunion.com (singular) and serves 2.7 MB of HTML containing ONE occurrence of 'Huron', no <img> elements outside chrome and no og:image. An agent-location page for a counter inside another business; there is nothing to photograph and nothing published."
+  },
+  "huro-lst-0083": {
+    "_match_name": "Huntington Bank ATM",
+    "_source": "https://www.huntington.com/Community/branch-info?locationId=23796",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "HTTP 403 'Access Denied', 406 bytes. Edge-blocked."
+  },
+  "huro-lst-0284": {
+    "_match_name": "The Firelands",
+    "_source": "https://www.huntington.com/Community/branch-info?locationId=23796",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same blocked URL as huro-lst-0083.",
+    "_name_finding": "huro-lst-0284 ('The Firelands') and huro-lst-0083 ('Huntington Bank ATM') hold the SAME Huntington locationId=23796 at the same 357 Main St address. Two records, one banking location; 'The Firelands' is almost certainly the building's name, not a business."
+  },
+  "huro-lst-0072": {
+    "_match_name": "Firelands Physician Group - Huron",
+    "_source": "https://www.firelands.com/app/locations/profile.aspx?id=22",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "HTTP 403 'Access Denied', 414 bytes, and the firelands.com root is 403 too. The whole host refuses non-browser clients."
+  },
+  "huro-lst-0025": {
+    "_match_name": "Firelands Laboratory Community Collection Center - Huron",
+    "_source": "https://www.firelands.com/medical-care/lab-services/",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same host as huro-lst-0072: firelands.com returns 403 to non-browser clients throughout. Also note the held URL is a SERVICE page, not a location page - it would not carry a photo of the Williams St collection centre even if it served."
+  },
+  "huro-lst-0180": {
+    "_match_name": "First Federal Savings Of Lorain",
+    "_source": "http://www.firstfedlorain.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "No connection (curl exit 000, no HTTP status) over http or https."
+  },
+  "huro-lst-0114": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2235-200322552",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "HTTP 403 'Access Denied', 447 bytes. exxon.com edge-blocks non-browser clients. Applies equally to huro-lst-0257, 0060 and 0282, which hold the same two station URLs.",
+    "_name_finding": "FOUR RECORDS, TWO STATIONS. 508 Berlin Rd: huro-lst-0114 ('Mobil') and huro-lst-0257 ('HY-MILER #2235') hold the SAME exxon.com URL, and huro-lst-0013 ('Shell') is at the same address. 805 Main St: huro-lst-0060 ('Mobil') and huro-lst-0282 ('HY-MILER #2234') hold the same URL, with huro-lst-0126 ('Shell') at that address too. Hy-Miler is the local operator brand; Mobil is the fuel brand."
+  },
+  "huro-lst-0257": {
+    "_match_name": "HY-MILER #2235",
+    "_source": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2235-200322552",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same URL and same HTTP 403 as huro-lst-0114."
+  },
+  "huro-lst-0060": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2234-200322563",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "exxon.com returns HTTP 403 to non-browser clients. Same URL as huro-lst-0282."
+  },
+  "huro-lst-0282": {
+    "_match_name": "HY-MILER #2234",
+    "_source": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2234-200322563",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same URL and same HTTP 403 as huro-lst-0060."
+  },
+  "huro-lst-0005": {
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The held URL is the brand's generic PROPANE FINDER page - the utm_content id in our record is a tracking parameter, not a location path. The served page contains ZERO occurrences of 'Huron' and is a national marketing page. There is no per-location page to find. Identical for huro-lst-0004 and huro-lst-0211.",
+    "_note": "Blue Rhino is a tank-cage outside somebody else's shop. Three records (0005 at 2026 Cleveland Rd W, 0004 at 508 Berlin Rd, 0211 at 805 Main St) all point at the same finder page, and all three addresses are gas stations that already have their own records."
+  },
+  "huro-lst-0004": {
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same generic propane-finder page as huro-lst-0005; no Huron content, no per-location page."
+  },
+  "huro-lst-0211": {
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Same generic propane-finder page as huro-lst-0005; no Huron content, no per-location page."
+  },
+  "huro-lst-0013": {
+    "_match_name": "Shell",
+    "_source": "http://www.shell.us",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The held URL is the Shell CORPORATE HOME PAGE - no station path, no id, nothing per-location. Not fetched in detail because there is nothing location-specific to fetch. Same for huro-lst-0126 (shell.com)."
+  },
+  "huro-lst-0126": {
+    "_match_name": "Shell",
+    "_source": "https://www.shell.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Shell's global corporate home page. No per-location content exists at this URL."
+  },
+  "huro-lst-0279": {
+    "_match_name": "Dollar General",
+    "_source": "https://www.dollargeneral.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "The held URL is the chain home page, with no store id or path. No per-location content to fetch."
+  },
+  "huro-lst-0233": {
+    "_match_name": "Routh at Rye",
+    "_source": "https://abnb.me/LvOjz8t8ueb",
+    "_fetched": "2026-09-22",
+    "_confidence": "n/a",
+    "photos": [],
+    "_photos_rights_unclear": [],
+    "_no_photos_reason": "Not attempted. The held URL is an Airbnb short link; Airbnb listing imagery is the platform's and the host's under Airbnb's terms, is served behind bot protection, and rotates with the listing. Out of scope for a URL-and-provenance pass.",
+    "_note": "A short-link domain (abnb.me) also means our record carries no stable identifier - if the listing moves, the record has nothing to re-find it with."
+  }
+}

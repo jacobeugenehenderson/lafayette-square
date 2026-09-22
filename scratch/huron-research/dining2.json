@@ -1,694 +1,696 @@
 {
- "huro-lst-0166": {
-  "_match_name": "Harbor House Bar and Grill",
-  "_source": "http://harborhousebar.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours, phone, address, amenities and the descriptive line are all from the operator's own site. Site styles the name \"Harbor House Bar & Grill\" (ampersand) and pairs it with \"Riverside Banquet Center\"; listing name kept verbatim. Not established: whether the posted hours are seasonal.",
-  "hours": {
-   "monday": {
-    "open": "12:00",
-    "close": "21:00"
-   },
-   "tuesday": {
-    "open": "12:00",
-    "close": "21:00"
-   },
-   "wednesday": {
-    "open": "12:00",
-    "close": "21:00"
-   },
-   "thursday": {
-    "open": "12:00",
-    "close": "21:00"
-   },
-   "friday": {
-    "open": "12:00",
-    "close": "22:00"
-   },
-   "saturday": {
-    "open": "12:00",
-    "close": "22:00"
-   },
-   "sunday": {
-    "open": "12:00",
-    "close": "20:00"
-   }
+  "huro-lst-0166": {
+    "_match_name": "Harbor House Bar and Grill",
+    "_source": "http://harborhousebar.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone, address, amenities and the descriptive line are all from the operator's own site. Site styles the name \"Harbor House Bar & Grill\" (ampersand) and pairs it with \"Riverside Banquet Center\"; listing name kept verbatim. Not established: whether the posted hours are seasonal.",
+    "hours": {
+      "monday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "12:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "12:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "20:00"
+      }
+    },
+    "description": "A family restaurant on the Huron River with a dog-friendly patio at the water. American menu built around burgers and the perch basket, with a banquet center attached.",
+    "amenities": [
+      "waterfront seating",
+      "dog-friendly patio",
+      "outdoor seating",
+      "kids menu",
+      "live music (occasional)",
+      "banquet center"
+    ],
+    "phone": "+14196166088",
+    "menu": {
+      "url": "http://harborhousebar.com/food-menu"
+    }
   },
-  "description": "A family restaurant on the Huron River with a dog-friendly patio at the water. American menu built around burgers and the perch basket, with a banquet center attached.",
-  "amenities": [
-   "waterfront seating",
-   "dog-friendly patio",
-   "outdoor seating",
-   "kids menu",
-   "live music (occasional)",
-   "banquet center"
-  ],
-  "phone": "+14196166088",
-  "menu": {
-   "url": "http://harborhousebar.com/food-menu"
+  "huro-lst-0187": {
+    "_match_name": "Gathering Grounds Coffee House - Huron, OH",
+    "_source": "http://www.gatheringgroundscoffeehouse.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, address and phone from the operator's own site. Drive-thru and Wi-Fi stated on the site. Not established: seasonal variation, or whether the kitchen closes before the room.",
+    "hours": {
+      "monday": {
+        "open": "06:30",
+        "close": "19:00"
+      },
+      "tuesday": {
+        "open": "06:30",
+        "close": "19:00"
+      },
+      "wednesday": {
+        "open": "06:30",
+        "close": "19:00"
+      },
+      "thursday": {
+        "open": "06:30",
+        "close": "19:00"
+      },
+      "friday": {
+        "open": "06:30",
+        "close": "17:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "17:00"
+      },
+      "sunday": {
+        "open": "07:00",
+        "close": "14:00"
+      }
+    },
+    "description": "A Lake Erie coffee house in the heart of Huron, open at 6:30 with a drive-thru. Built for sitting a while: free Wi-Fi, room to read, and company.",
+    "amenities": [
+      "drive-thru",
+      "free Wi-Fi",
+      "indoor seating"
+    ],
+    "phone": "+14196160002",
+    "menu": {
+      "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
+    }
+  },
+  "huro-lst-0014": {
+    "_match_name": "Huron Pizza House - Huron, OH",
+    "_source": "http://www.pizzahousehuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description, phone, address, menu URL and the amenities from the operator's own site. HOURS DELIBERATELY OMITTED: the site says only \"Open Daily 4pm\" and posts no closing time, so no close can be written without inventing one.",
+    "description": "A family Italian kitchen on South Main, open daily at 4pm. Pizza, spaghetti and carry-out, with gluten-free crust and delivery.",
+    "amenities": [
+      "dine-in",
+      "carry-out",
+      "delivery",
+      "gluten-free crust"
+    ],
+    "phone": "+14194335751",
+    "menu": {
+      "url": "https://www.pizzahousehuron.com/menu/"
+    }
+  },
+  "huro-lst-0006": {
+    "_match_name": "Old Fish House",
+    "_source": "https://oldnorthmaineats.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours quoted verbatim from the operator's own site: \"Monday thru Thursday 4 p.m. / Friday 3 p.m. to 11 p.m. / Saturday and Sunday 11 a.m. to 11 p.m.\" MON-THU ARE DELIBERATELY ABSENT from the hours object: the site publishes an OPENING time (4 p.m.) and no closing time for those days, and no close was invented. Mon-Thu should be read as 'open from 4 p.m., close not published', NOT as closed. Phone/address from the listing, not re-verified on site. NOTE: the old domain oldfishhousehuron.com is EXPIRED and now 301s to expireddomains.com.",
+    "hours": {
+      "friday": {
+        "open": "15:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Home of the fresh-squeezed, hand-shaken lemonade, now serving perch sandwiches. A dog-friendly spot at the foot of Main Street.",
+    "amenities": [
+      "dog-friendly"
+    ],
+    "phone": "+14196024664",
+    "menu": {
+      "url": "https://oldnorthmaineats.com/old-fish-house/"
+    }
+  },
+  "huro-lst-0183": {
+    "_match_name": "The Old Fish House (Huron, Ohio)",
+    "_source": "https://oldnorthmaineats.com/old-fish-house/",
+    "_fetched": "2026-09-22",
+    "_confidence": "DUPLICATE OF huro-lst-0006 - same business, same address (30 Main St), same phone (+14196024664), same building_id msbf-4505. Merge, do not ship both. Same hours caveat: Mon-Thu publish an opening time (4 p.m.) and no close, so those days are omitted rather than guessed.",
+    "_duplicate_of": "huro-lst-0006",
+    "hours": {
+      "friday": {
+        "open": "15:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Home of the fresh-squeezed, hand-shaken lemonade, now serving perch sandwiches. A dog-friendly spot at the foot of Main Street.",
+    "amenities": [
+      "dog-friendly"
+    ],
+    "phone": "+14196024664",
+    "menu": {
+      "url": "https://oldnorthmaineats.com/old-fish-house/"
+    }
+  },
+  "huro-lst-0184": {
+    "_match_name": "Costa Azul Mexican Restaurant",
+    "_source": "https://www.costaazulhuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours and the descriptive line from the Huron location's own site (costaazulhuron.com). The site notes EXTENDED SUMMER HOURS without stating them, so the posted hours are the off-season set. The address stamped in the listing (2109 Cleveland Rd W) was NOT re-confirmed on the site page read. NOTE: the URL in the listing, costaazulmexican.com, now 301s to guffeyswashington.com - an unrelated business; that URL is dead for this entity.",
+    "hours": {
+      "monday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "22:00"
+      }
+    },
+    "description": "A family-run Mexican kitchen and patio on Cleveland Road, open year-round. Longer hours in summer.",
+    "amenities": [
+      "patio",
+      "takeout",
+      "open year-round"
+    ],
+    "phone": "+14194336017",
+    "menu": {
+      "url": "https://www.costaazulhuron.com/"
+    },
+    "website": "https://costaazulhuron.com",
+    "_url_correction": "⛔ REPLACED 2026-09-22. The held URL CostaAzulMexican.com 200s and redirects to https://jalanamavi.com/, an Indonesian gambling site — 497 KB with zero occurrences of 'Huron' or 'Costa Azul'. The domain lapsed and was re-registered. Replacement verified live: HTTP 200, <title>Costa Azul Mexican Restaurant</title>, names Huron and Sandusky. ⚠️ It carries Google AdSense markup, so it may be a thin operator page rather than a full site — recorded rather than smoothed over. It is unambiguously the right entity and unambiguously better than a gambling link."
+  },
+  "huro-lst-0250": {
+    "_match_name": "Jim's Pizza Box",
+    "_source": "https://www.jimspizzabox.com/huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, address and phone from the operator's own Huron location page. Three locations (Huron, Milan, Vermilion) - a small local group, not a franchise brand. Not established: dine-in vs carryout-only at the Huron store; the page advertises online ordering only. NOTE: the URL in the listing, jimspizzabox.com/Huron-OH, is a 404; the live path is /huron.",
+    "hours": {
+      "tuesday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "20:00"
+      }
+    },
+    "description": "A family-owned pizza shop making pies for the Cedar Point area since 1978. Closed Mondays; order online.",
+    "amenities": [
+      "online ordering"
+    ],
+    "phone": "+14194334463",
+    "menu": {
+      "url": "https://www.jimspizzabox.com/menus"
+    }
+  },
+  "huro-lst-0109": {
+    "_match_name": "Cameo Pizza Huron by the Lake",
+    "_source": "https://www.cameopizza.com/cameo-pizza-huron/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and the 'Port Huron Plaza' detail are from the brand's own Huron location page, so they are location-specific rather than brand boilerplate. Cameo is an 11-location northern-Ohio group headquartered in Sandusky; ownership model (franchise vs corporate) NOT established. The listing's URL points at the FoodTec ordering portal, which serves no hours or description.",
+    "hours": {
+      "monday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "16:00",
+        "close": "21:30"
+      },
+      "saturday": {
+        "open": "16:00",
+        "close": "21:30"
+      },
+      "sunday": {
+        "open": "16:00",
+        "close": "21:00"
+      }
+    },
+    "description": "A long-standing pizza carry-out in Port Huron Plaza. Open from 4pm daily for delivery and pickup.",
+    "amenities": [
+      "carry-out",
+      "delivery",
+      "online ordering"
+    ],
+    "phone": "+14194330811",
+    "menu": {
+      "url": "https://www.cameopizza.com/menu/"
+    }
+  },
+  "huro-lst-0015": {
+    "_match_name": "The Tea Bubble",
+    "_source": "http://the-tea-bubble.square.site/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone and the menu's contents are from the operator's own Square site. HOURS OMITTED: the Square storefront publishes none. Not established: whether there is seating or it is pickup-only - the site offers pickup and call-in ordering.",
+    "description": "Bubble tea, matcha and fruit teas on Cleveland Road. Paninis and breakfast alongside; call ahead or order for pickup.",
+    "amenities": [
+      "pickup",
+      "call-in ordering",
+      "online ordering"
+    ],
+    "phone": "+15676239160",
+    "menu": {
+      "url": "http://the-tea-bubble.square.site/"
+    }
+  },
+  "huro-lst-0251": {
+    "_match_name": "Christina's Creations",
+    "_source": "http://www.christinascreationsbakery.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "From the baker's own site. HOURS OMITTED BY DESIGN: this is a by-order home bakery at a residential address (302 Wexford Dr), not a walk-in storefront, so there are no opening hours to publish. Delivery carries a $25 fee per the site. The site styles the name 'Christina's Creations Bakery'; listing name kept verbatim.",
+    "description": "A from-scratch home bakery taking orders for custom cakes, cupcakes and cookies. By order only - pickup or delivery, no storefront.",
+    "amenities": [
+      "by-order only",
+      "custom cakes",
+      "pickup",
+      "delivery (fee)"
+    ],
+    "phone": "+14193661563"
+  },
+  "huro-lst-0244": {
+    "_match_name": "Main Street Tavern",
+    "_source": "https://americasbestrestaurants.com/rests/ohio/main-street-tavern",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description and phone from the tavern's America's Best Restaurants profile, which quotes the tavern's own copy. HOURS NOT ESTABLISHED FROM A FIRST-PARTY SOURCE and therefore omitted: the operator's own domain, mainsthuron.com, serves an EXPIRED TLS CERTIFICATE and could not be read. Third-party aggregators list Tue closed and a kitchen closing an hour before the bar, but that was not confirmed at source.",
+    "description": "Twelve taps that never pour the same brew twice. Huron's hidden gem, with a kitchen behind the bar.",
+    "amenities": [
+      "rotating craft taps",
+      "full kitchen"
+    ],
+    "phone": "+14196160025"
+  },
+  "huro-lst-0188": {
+    "_match_name": "Pier Pub",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description from the City of Huron's own visitor site. HOURS NOT ESTABLISHED: the pub has no website of its own and no first-party hours page was found; third-party aggregators show a split week (closed Mon and Wed) that was not confirmed at source, so nothing was written. PHONE CONFLICT: visithuronohio gives 419-616-0063; the listing carries +15673308043. Neither was confirmed against a page the business controls, so no phone is written here.",
+    "description": "A cozy pub steps from the Huron pier. Perch sandwiches and walleye fingers, waterfront seating indoors or out.",
+    "amenities": [
+      "waterfront seating",
+      "outdoor seating"
+    ]
+  },
+  "huro-lst-0162": {
+    "_match_name": "Donut Shop - Huron, OH",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description and phone from the City of Huron's visitor site. HOURS NOT ESTABLISHED (no first-party page; a morning-only window is widely reported but unconfirmed). NOTE: the website on the listing, mesenburg.com, belongs to Mesenburg Creative Catering at 503 Main St - a NEIGHBOURING but DIFFERENT business. Treat the URL as wrong-entity until the relationship is confirmed.",
+    "description": "The town's morning stop for freshly baked donuts, made with love and care.",
+    "phone": "+14194337117"
+  },
+  "huro-lst-0189": {
+    "_match_name": "Pied Piper Drive In",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description and phone from the City of Huron's visitor site. HOURS NOT ESTABLISHED; the drive-in's only web presence is a Facebook page, which could not be read. NOTE: the website on the listing, piedpiper.com, is a WRONG-ENTITY URL - it is not this drive-in. The 1952 founding date is widely repeated but was not confirmed on a first-party page, so it is left out of the description.",
+    "description": "A nostalgic drive-in for burgers, chicken tenders and soft-serve.",
+    "amenities": [
+      "drive-in",
+      "ice cream"
+    ],
+    "phone": "+14194332601"
+  },
+  "huro-lst-0241": {
+    "_match_name": "Trabel’s Bagels",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description, phone and the unit-level address (525 Cleveland Rd W Unit C) from the City of Huron's visitor site. The bakery's own domain, trabelsbagels.com, renders a single word ('Home') with no content - a live but EMPTY site, which is worse than a dead one because it looks reachable. HOURS NOT ESTABLISHED at source.",
+    "description": "Bagels hand-rolled, kettle-boiled and baked fresh each morning. Chef Mike Trabel's neighborhood bakery.",
+    "amenities": [
+      "bakery"
+    ],
+    "phone": "+14192856722"
+  },
+  "huro-lst-0024": {
+    "_match_name": "The Miller's Table at Sawmill Creek Resort",
+    "_source": "https://www.sixflags.com/sawmillcreekresort/dining",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description from the resort's own dining page and the City of Huron visitor site. HOURS NOT WRITEABLE: the resort publishes only the words 'Open Daily' plus the disclaimer 'Hours subject to change at the discretion of the business' - an explicit refusal to publish times. Reservations by phone or online per the resort page.",
+    "description": "The resort's dining room, with a seasonal menu built on Ohio ingredients. Wine, cocktails and craft beer; reservations taken.",
+    "amenities": [
+      "reservations",
+      "full bar",
+      "seasonal menu"
+    ],
+    "phone": "+14194336124"
+  },
+  "huro-lst-0137": {
+    "_match_name": "Mulligan's Pub - Huron, OH",
+    "_source": "https://www.sixflags.com/sawmillcreekresort/dining",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description from the resort's own dining page plus the City of Huron visitor site. HOURS OMITTED: the resort lists this venue as 'Open Seasonally' and publishes no times or season dates at all. PHONE CONFLICT: visithuronohio gives 419-433-3789, the listing carries +14194332030; neither confirmed on the resort's page, so the listing's value is left untouched here. The listing's website, golfsawmillcreek.com, was not read.",
+    "description": "The pub at the Sawmill Creek golf clubhouse. A back deck over the water and a snack shack for the course; open seasonally.",
+    "amenities": [
+      "outdoor deck",
+      "waterfront views",
+      "sports viewing",
+      "seasonal"
+    ]
+  },
+  "huro-lst-0010": {
+    "_match_name": "Annie's Closet & Tea Room",
+    "_source": "http://annieshuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ CLOSURE NOTICE, YEAR NOT ESTABLISHED. The operator's own site carries 'We are closing our doors' and says it is closing permanently at the end of February, accepting no new reservations except existing bookings and gift certificates. The site gives NO YEAR, and the /hours page is a 404, so it cannot be determined whether this closure is already past. ⛔ DO NOT SHIP THIS LISTING AS OPEN without a human check. Phone on the site (216-544-4298) differs from any phone in the listing (which has none).",
+    "description": "A tea room and boutique on Main Street for luxury and children's tea parties. The operator's site announces the doors are closing at the end of February.",
+    "amenities": [
+      "tea service",
+      "party packages",
+      "boutique",
+      "by reservation"
+    ]
+  },
+  "huro-lst-0080": {
+    "_match_name": "I-5's Bar & Grill",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ STATUS IN DOUBT AND NO FACTS WRITTEN. The bar's own domain i5sbar.com NO LONGER RESOLVES (DNS NXDOMAIN), it is ABSENT from the City of Huron's visitor food-and-drink page which lists 23 other Huron eateries, and 356 N Main Street currently appears in a commercial real-estate listing as a turn-key restaurant/bar. None of that proves closure and none of it was confirmed at source. No hours, no description and no phone are asserted. ⛔ Needs a human call before it ships. See also huro-lst-0152 and huro-lst-0235, which are the same address.",
+    "_status_flag": "possibly closed - unverified"
+  },
+  "huro-lst-0152": {
+    "_match_name": "I Fives",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "DUPLICATE of huro-lst-0080 - same address (356 Main St), same building (msbf-2290), same website (i5sbar.com, now dead). 'I Fives' is a transliteration of the same name. Same closure doubt applies. Merge or drop; do not ship as a second restaurant.",
+    "_duplicate_of": "huro-lst-0080",
+    "_status_flag": "possibly closed - unverified"
+  },
+  "huro-lst-0235": {
+    "_match_name": "Vega Bar And Grill Llc.",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT A SEPARATE PLACE. Same address and same building as huro-lst-0080 / huro-lst-0152 (356 Main St, msbf-2290). The trailing 'Llc.' marks this as a LEGAL-ENTITY record - the operating company behind the bar, or a prior/incoming one - not a trading name any visitor would recognise. No trading presence found under this name in Huron. Merge into the address's live record or drop.",
+    "_duplicate_of": "huro-lst-0080"
+  },
+  "huro-lst-0232": {
+    "_match_name": "3 Amigo's 132, Llp",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT A SEPARATE PLACE. Address 132 Main St and building msbf-2626 are the SAME as huro-lst-0166 Harbor House Bar and Grill, which is the live tenant per the City of Huron's visitor site. The '132, Llp' suffix marks this as a LEGAL-ENTITY record for that address, not a trading restaurant; no '3 Amigo's' trades in Huron. Merge into Harbor House or drop.",
+    "_duplicate_of": "huro-lst-0166"
+  },
+  "huro-lst-0047": {
+    "_match_name": "Old Plat",
+    "_source": "https://www.visithuronohio.com/food-and-drink",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT A LIVE RESTAURANT. Same address and building as huro-lst-0166 Harbor House Bar and Grill (132 Main St, msbf-2626), which is the live tenant per the City of Huron's visitor site. '132 Main St' has held at least three successive names in the record - Brass Pelican (closed), Old Plat, Harbor House. Separately, 'Old Plat' is the name of a HISTORIC NEIGHBOURHOOD of Huron (the historical society's own term), so this record may be a place-name/business-name collision rather than an eatery at all. Drop or merge; do not ship as dining.",
+    "_duplicate_of": "huro-lst-0166"
+  },
+  "huro-lst-0260": {
+    "_match_name": "Feddersens",
+    "_source": "https://www.feddersens.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ MISCATEGORISED - NOT A PLACE TO EAT. feddersens.com is Feddersen's Bakery & Dough, a WHOLESALE frozen pizza-dough supplier selling to trade accounts, with training and customisation for larger accounts. There is no retail counter, no menu and no published hours, and the site names no Huron address. Overture classified it 'bakery'. Do not ship it as dining.",
+    "_status_flag": "wholesale/B2B, not a consumer eatery"
+  },
+  "huro-lst-0160": {
+    "_match_name": "Knucklehead Saloon",
+    "_source": "https://www.visithuronohio.com/nightlife",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description and phone from the City of Huron's own nightlife page. HOURS NOT ESTABLISHED: the saloon has no website and its only presence is Facebook, which could not be read; third-party sources report a 10am-2:30am bar day that was not confirmed at source, and a 2:30am close crosses midnight, which the hours shape cannot express anyway. The live-music season (summer weekends) is stated on the town page.",
+    "description": "A motorcycle bar famous for its 5 Fire Balls. Live music every weekend in summer.",
+    "amenities": [
+      "live music (summer weekends)",
+      "bar food"
+    ],
+    "phone": "+14194336944"
+  },
+  "huro-lst-0193": {
+    "_match_name": "CUSH Cafe",
+    "_source": "https://www.visithuronohio.com/nightlife",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT A STANDALONE RESTAURANT AND STATUS IN DOUBT. 125 Main St is Riverview Lanes, an 18-lane bowling centre with a full-service bar and a grill counter; the City of Huron's nightlife page lists the LANES, not a cafe, and gives the phone as 419-433-4258 (the listing carries 419-602-1768). Riverview Lanes was reported TEMPORARILY CLOSED from October 2025; reopening not established. The website on the listing, riverviewlanes.com, now 301s to abutotomacau.com, an unrelated gambling site - do not scrape it. No hours or description asserted.",
+    "_status_flag": "counter inside Riverview Lanes; venue possibly closed - unverified"
+  },
+  "huro-lst-0196": {
+    "_match_name": "Riverview Cafe Huron, Ohio",
+    "_source": "https://www.visithuronohio.com/nightlife",
+    "_fetched": "2026-09-22",
+    "_confidence": "DUPLICATE of huro-lst-0193 - the same grill counter inside Riverview Lanes at 125 Main St (same building msbf-702). This record carries NO address, NO phone and NO website at all. Merge or drop. Same closure doubt and same resold-domain warning as huro-lst-0193.",
+    "_duplicate_of": "huro-lst-0193"
+  },
+  "huro-lst-0264": {
+    "_match_name": "Flavorfuel",
+    "_source": "https://templetonlist.com/locations/flavorfuel-smoothie-bar-caf%C3%A9",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ WEAK SOURCE - no first-party page reachable. The domain on the listing, flavorfuel.menu, DOES NOT RESOLVE (NXDOMAIN on both the apex and www), and the business's only live presence is Instagram @flavorfuelhuron, which could not be read. The description below is from a third-party directory entry, not from the operator. HOURS NOT ESTABLISHED. The trading name is styled 'FlavorFuel' and the fuller sign name appears as 'FlavorFuel Smoothie Bar & Café'; listing name kept verbatim.",
+    "description": "A smoothie bar and cafe built around real food. Smoothie bowls, paninis and sandwiches on Cleveland Road.",
+    "amenities": [
+      "smoothies",
+      "sandwiches",
+      "takeout"
+    ],
+    "phone": "+14196165281"
+  },
+  "huro-lst-0256": {
+    "_match_name": "Hq Barbecue",
+    "_source": "https://www.huron.net/advertisingmarketing/name/hq-barbeque/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The Huron Chamber of Commerce page for this business returned HTTP 522 on three attempts across the session, and the business has no website of its own. Nothing is asserted here beyond the address already in the listing. NOTE the spelling split: the listing says 'Hq Barbecue', the chamber and the storefront say 'HQ Barbeque' - the listing name is kept verbatim. Next run: retry huron.net, which was down, not gone.",
+    "_status_flag": "unresearched - source unreachable"
+  },
+  "huro-lst-0161": {
+    "_match_name": "Peace By Piece Pastries",
+    "_source": "https://www.facebook.com/Piebakercakemaker",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The only web presence is a Facebook page (and Instagram @peacebypiecepastries); neither could be read by fetch. The address on the listing (306 Gumwood Rd) is RESIDENTIAL, and Overture's own confidence for this record is 0.14 - the lowest in the dining slice by a wide margin. Likely a by-order home baker like huro-lst-0251 rather than a shop with hours, but that is NOT established. Nothing asserted.",
+    "_status_flag": "unresearched - social-only presence"
+  },
+  "huro-lst-0100": {
+    "_match_name": "Hph Pizza Llc",
+    "_source": "http://www.pizzahousehuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT A SEPARATE PLACE. 'HPH' = Huron Pizza House; same address (812 Main St) and same building (msbf-4037) as huro-lst-0014, and the 'Llc' suffix marks this as the operating company's legal-entity record, not a trading name. Merge into huro-lst-0014 or drop.",
+    "_duplicate_of": "huro-lst-0014"
+  },
+  "huro-lst-0034": {
+    "_match_name": "Subway",
+    "_source": "https://restaurants.subway.com/united-states/oh/huron/2117-cleveland-rd-w",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet, but the hours below are from the brand's own STORE page for this address, so they are location-specific, not brand boilerplate. The page states this is a standalone store, not a counter inside another business.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "09:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Sandwich counter on Cleveland Road with a drive-thru, open early for breakfast.",
+    "amenities": [
+      "drive-thru",
+      "mobile ordering",
+      "delivery",
+      "catering",
+      "breakfast"
+    ],
+    "phone": "+14194337491"
+  },
+  "huro-lst-0185": {
+    "_match_name": "Long John Silver's",
+    "_source": "https://www.ljsilvers.com/locations/oh/huron/2018-cleveland-road-w/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet; hours and phone from the brand's own location page for this address. No A&W co-brand at this store. Drive-thru and dine-in NOT established - the page advertises only delivery and pickup.",
+    "hours": {
+      "monday": {
+        "open": "10:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "10:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "10:00",
+        "close": "22:00"
+      }
+    },
+    "description": "Fried fish and hushpuppies on Cleveland Road, for pickup or delivery.",
+    "amenities": [
+      "pickup",
+      "delivery"
+    ],
+    "phone": "+14196160112"
+  },
+  "huro-lst-0108": {
+    "_match_name": "Wendy's",
+    "_source": "https://locations.wendys.com/united-states/oh/huron/600-rye-beach-road",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet; hours and phone from the brand's own location page for this address. Dining room and drive-thru run the same 6:30-22:00 window every day per that page. The page's breakfast cut-off is SELF-CONTRADICTORY (one field says breakfast ends 10:30 AM, another says 6:30 AM), so no breakfast window is written.",
+    "hours": {
+      "monday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "06:30",
+        "close": "22:00"
+      }
+    },
+    "description": "Burgers and frosties at Rye Beach Road. Dining room and drive-thru both open 6:30am daily.",
+    "amenities": [
+      "drive-thru",
+      "mobile ordering",
+      "Wi-Fi",
+      "kids' meals",
+      "breakfast"
+    ],
+    "phone": "+14194332849"
+  },
+  "huro-lst-0223": {
+    "_match_name": "Domino's",
+    "_source": "https://pizza.dominos.com/ohio/huron/500-main-street",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet. Address, phone and services confirmed on the brand's own store page for 500 Main Street. HOURS OMITTED: that store page publishes NO hours at all - third-party aggregators disagree with each other by a full hour on the close, so nothing was written.",
+    "description": "Pizza delivery and carryout at 500 Main Street.",
+    "amenities": [
+      "delivery",
+      "carryout"
+    ],
+    "phone": "+14194335494"
+  },
+  "huro-lst-0168": {
+    "_match_name": "Blimpie",
+    "_source": "https://www.gasbuddy.com/station/15774",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ HOST-VENUE RECORD, STATUS UNVERIFIED. 805 S Main St is a Mobil / Hy-Miler #2234 FUEL STATION, and the phone carried on this listing, (419) 433-6597, is the gas station's number - so 'Blimpie' here is a franchise counter inside the forecourt shop, not a restaurant with a door of its own. Its hours, if it is still operating, are the STATION'S hours, and whether the counter still exists was NOT established. The website on the listing is blimpie.com, the brand's national page, which says nothing about Huron. Do not ship without a human check.",
+    "_status_flag": "counter inside a fuel station; existence unverified"
+  },
+  "huro-lst-0057": {
+    "_match_name": "McDonald's",
+    "_source": "https://www.mcdonalds.com/us/en-us/location/oh/huron/2118-cleveland-rd-w/6106.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The brand's own location page for this address TIMED OUT twice (60s) and no hours or amenities could be read. Nothing asserted beyond what the listing already holds. Next run: retry, the page exists.",
+    "_status_flag": "unresearched - source timed out"
+  },
+  "huro-lst-0040": {
+    "_match_name": "Dunkin'",
+    "_source": "https://www.dunkindonuts.com/locations/us/oh/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ EXISTENCE IN DOUBT AND THE URL IS WRONG-ENTITY. The website on this record is sonicdrivein.com - a DIFFERENT BRAND entirely. Dunkin's own Ohio locations index could not be read to confirm or deny a Huron store. Dunkin' is ABSENT from the City of Huron's visitor food-and-drink page, which lists 23 eateries including the independent Donut Shop one door away at 501 Main St; separately, a yellow-pages entry files the Donut Shop's own phone (419-433-7117) under the name 'Dunkin', which is how a brand name contaminates an independent's record. This may be a phantom. ⛔ Do not ship without a human check.",
+    "_status_flag": "possibly does not exist; website is a different brand"
   }
- },
- "huro-lst-0187": {
-  "_match_name": "Gathering Grounds Coffee House - Huron, OH",
-  "_source": "http://www.gatheringgroundscoffeehouse.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours, address and phone from the operator's own site. Drive-thru and Wi-Fi stated on the site. Not established: seasonal variation, or whether the kitchen closes before the room.",
-  "hours": {
-   "monday": {
-    "open": "06:30",
-    "close": "19:00"
-   },
-   "tuesday": {
-    "open": "06:30",
-    "close": "19:00"
-   },
-   "wednesday": {
-    "open": "06:30",
-    "close": "19:00"
-   },
-   "thursday": {
-    "open": "06:30",
-    "close": "19:00"
-   },
-   "friday": {
-    "open": "06:30",
-    "close": "17:00"
-   },
-   "saturday": {
-    "open": "07:00",
-    "close": "17:00"
-   },
-   "sunday": {
-    "open": "07:00",
-    "close": "14:00"
-   }
-  },
-  "description": "A Lake Erie coffee house in the heart of Huron, open at 6:30 with a drive-thru. Built for sitting a while: free Wi-Fi, room to read, and company.",
-  "amenities": [
-   "drive-thru",
-   "free Wi-Fi",
-   "indoor seating"
-  ],
-  "phone": "+14196160002",
-  "menu": {
-   "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
-  }
- },
- "huro-lst-0014": {
-  "_match_name": "Huron Pizza House - Huron, OH",
-  "_source": "http://www.pizzahousehuron.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description, phone, address, menu URL and the amenities from the operator's own site. HOURS DELIBERATELY OMITTED: the site says only \"Open Daily 4pm\" and posts no closing time, so no close can be written without inventing one.",
-  "description": "A family Italian kitchen on South Main, open daily at 4pm. Pizza, spaghetti and carry-out, with gluten-free crust and delivery.",
-  "amenities": [
-   "dine-in",
-   "carry-out",
-   "delivery",
-   "gluten-free crust"
-  ],
-  "phone": "+14194335751",
-  "menu": {
-   "url": "https://www.pizzahousehuron.com/menu/"
-  }
- },
- "huro-lst-0006": {
-  "_match_name": "Old Fish House",
-  "_source": "https://oldnorthmaineats.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours quoted verbatim from the operator's own site: \"Monday thru Thursday 4 p.m. / Friday 3 p.m. to 11 p.m. / Saturday and Sunday 11 a.m. to 11 p.m.\" MON-THU ARE DELIBERATELY ABSENT from the hours object: the site publishes an OPENING time (4 p.m.) and no closing time for those days, and no close was invented. Mon-Thu should be read as 'open from 4 p.m., close not published', NOT as closed. Phone/address from the listing, not re-verified on site. NOTE: the old domain oldfishhousehuron.com is EXPIRED and now 301s to expireddomains.com.",
-  "hours": {
-   "friday": {
-    "open": "15:00",
-    "close": "23:00"
-   },
-   "saturday": {
-    "open": "11:00",
-    "close": "23:00"
-   },
-   "sunday": {
-    "open": "11:00",
-    "close": "23:00"
-   }
-  },
-  "description": "Home of the fresh-squeezed, hand-shaken lemonade, now serving perch sandwiches. A dog-friendly spot at the foot of Main Street.",
-  "amenities": [
-   "dog-friendly"
-  ],
-  "phone": "+14196024664",
-  "menu": {
-   "url": "https://oldnorthmaineats.com/old-fish-house/"
-  }
- },
- "huro-lst-0183": {
-  "_match_name": "The Old Fish House (Huron, Ohio)",
-  "_source": "https://oldnorthmaineats.com/old-fish-house/",
-  "_fetched": "2026-09-22",
-  "_confidence": "DUPLICATE OF huro-lst-0006 - same business, same address (30 Main St), same phone (+14196024664), same building_id msbf-4505. Merge, do not ship both. Same hours caveat: Mon-Thu publish an opening time (4 p.m.) and no close, so those days are omitted rather than guessed.",
-  "_duplicate_of": "huro-lst-0006",
-  "hours": {
-   "friday": {
-    "open": "15:00",
-    "close": "23:00"
-   },
-   "saturday": {
-    "open": "11:00",
-    "close": "23:00"
-   },
-   "sunday": {
-    "open": "11:00",
-    "close": "23:00"
-   }
-  },
-  "description": "Home of the fresh-squeezed, hand-shaken lemonade, now serving perch sandwiches. A dog-friendly spot at the foot of Main Street.",
-  "amenities": [
-   "dog-friendly"
-  ],
-  "phone": "+14196024664",
-  "menu": {
-   "url": "https://oldnorthmaineats.com/old-fish-house/"
-  }
- },
- "huro-lst-0184": {
-  "_match_name": "Costa Azul Mexican Restaurant",
-  "_source": "https://www.costaazulhuron.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours and the descriptive line from the Huron location's own site (costaazulhuron.com). The site notes EXTENDED SUMMER HOURS without stating them, so the posted hours are the off-season set. The address stamped in the listing (2109 Cleveland Rd W) was NOT re-confirmed on the site page read. NOTE: the URL in the listing, costaazulmexican.com, now 301s to guffeyswashington.com - an unrelated business; that URL is dead for this entity.",
-  "hours": {
-   "monday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "tuesday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "wednesday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "thursday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "friday": {
-    "open": "11:00",
-    "close": "23:00"
-   },
-   "saturday": {
-    "open": "11:00",
-    "close": "23:00"
-   },
-   "sunday": {
-    "open": "11:00",
-    "close": "22:00"
-   }
-  },
-  "description": "A family-run Mexican kitchen and patio on Cleveland Road, open year-round. Longer hours in summer.",
-  "amenities": [
-   "patio",
-   "takeout",
-   "open year-round"
-  ],
-  "phone": "+14194336017",
-  "menu": {
-   "url": "https://www.costaazulhuron.com/"
-  }
- },
- "huro-lst-0250": {
-  "_match_name": "Jim's Pizza Box",
-  "_source": "https://www.jimspizzabox.com/huron",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours, address and phone from the operator's own Huron location page. Three locations (Huron, Milan, Vermilion) - a small local group, not a franchise brand. Not established: dine-in vs carryout-only at the Huron store; the page advertises online ordering only. NOTE: the URL in the listing, jimspizzabox.com/Huron-OH, is a 404; the live path is /huron.",
-  "hours": {
-   "tuesday": {
-    "open": "11:00",
-    "close": "21:00"
-   },
-   "wednesday": {
-    "open": "11:00",
-    "close": "21:00"
-   },
-   "thursday": {
-    "open": "11:00",
-    "close": "21:00"
-   },
-   "friday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "saturday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "sunday": {
-    "open": "11:00",
-    "close": "20:00"
-   }
-  },
-  "description": "A family-owned pizza shop making pies for the Cedar Point area since 1978. Closed Mondays; order online.",
-  "amenities": [
-   "online ordering"
-  ],
-  "phone": "+14194334463",
-  "menu": {
-   "url": "https://www.jimspizzabox.com/menus"
-  }
- },
- "huro-lst-0109": {
-  "_match_name": "Cameo Pizza Huron by the Lake",
-  "_source": "https://www.cameopizza.com/cameo-pizza-huron/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Hours, phone and the 'Port Huron Plaza' detail are from the brand's own Huron location page, so they are location-specific rather than brand boilerplate. Cameo is an 11-location northern-Ohio group headquartered in Sandusky; ownership model (franchise vs corporate) NOT established. The listing's URL points at the FoodTec ordering portal, which serves no hours or description.",
-  "hours": {
-   "monday": {
-    "open": "16:00",
-    "close": "21:00"
-   },
-   "tuesday": {
-    "open": "16:00",
-    "close": "21:00"
-   },
-   "wednesday": {
-    "open": "16:00",
-    "close": "21:00"
-   },
-   "thursday": {
-    "open": "16:00",
-    "close": "21:00"
-   },
-   "friday": {
-    "open": "16:00",
-    "close": "21:30"
-   },
-   "saturday": {
-    "open": "16:00",
-    "close": "21:30"
-   },
-   "sunday": {
-    "open": "16:00",
-    "close": "21:00"
-   }
-  },
-  "description": "A long-standing pizza carry-out in Port Huron Plaza. Open from 4pm daily for delivery and pickup.",
-  "amenities": [
-   "carry-out",
-   "delivery",
-   "online ordering"
-  ],
-  "phone": "+14194330811",
-  "menu": {
-   "url": "https://www.cameopizza.com/menu/"
-  }
- },
- "huro-lst-0015": {
-  "_match_name": "The Tea Bubble",
-  "_source": "http://the-tea-bubble.square.site/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Address, phone and the menu's contents are from the operator's own Square site. HOURS OMITTED: the Square storefront publishes none. Not established: whether there is seating or it is pickup-only - the site offers pickup and call-in ordering.",
-  "description": "Bubble tea, matcha and fruit teas on Cleveland Road. Paninis and breakfast alongside; call ahead or order for pickup.",
-  "amenities": [
-   "pickup",
-   "call-in ordering",
-   "online ordering"
-  ],
-  "phone": "+15676239160",
-  "menu": {
-   "url": "http://the-tea-bubble.square.site/"
-  }
- },
- "huro-lst-0251": {
-  "_match_name": "Christina's Creations",
-  "_source": "http://www.christinascreationsbakery.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "From the baker's own site. HOURS OMITTED BY DESIGN: this is a by-order home bakery at a residential address (302 Wexford Dr), not a walk-in storefront, so there are no opening hours to publish. Delivery carries a $25 fee per the site. The site styles the name 'Christina's Creations Bakery'; listing name kept verbatim.",
-  "description": "A from-scratch home bakery taking orders for custom cakes, cupcakes and cookies. By order only - pickup or delivery, no storefront.",
-  "amenities": [
-   "by-order only",
-   "custom cakes",
-   "pickup",
-   "delivery (fee)"
-  ],
-  "phone": "+14193661563"
- },
- "huro-lst-0244": {
-  "_match_name": "Main Street Tavern",
-  "_source": "https://americasbestrestaurants.com/rests/ohio/main-street-tavern",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description and phone from the tavern's America's Best Restaurants profile, which quotes the tavern's own copy. HOURS NOT ESTABLISHED FROM A FIRST-PARTY SOURCE and therefore omitted: the operator's own domain, mainsthuron.com, serves an EXPIRED TLS CERTIFICATE and could not be read. Third-party aggregators list Tue closed and a kitchen closing an hour before the bar, but that was not confirmed at source.",
-  "description": "Twelve taps that never pour the same brew twice. Huron's hidden gem, with a kitchen behind the bar.",
-  "amenities": [
-   "rotating craft taps",
-   "full kitchen"
-  ],
-  "phone": "+14196160025"
- },
- "huro-lst-0188": {
-  "_match_name": "Pier Pub",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description from the City of Huron's own visitor site. HOURS NOT ESTABLISHED: the pub has no website of its own and no first-party hours page was found; third-party aggregators show a split week (closed Mon and Wed) that was not confirmed at source, so nothing was written. PHONE CONFLICT: visithuronohio gives 419-616-0063; the listing carries +15673308043. Neither was confirmed against a page the business controls, so no phone is written here.",
-  "description": "A cozy pub steps from the Huron pier. Perch sandwiches and walleye fingers, waterfront seating indoors or out.",
-  "amenities": [
-   "waterfront seating",
-   "outdoor seating"
-  ]
- },
- "huro-lst-0162": {
-  "_match_name": "Donut Shop - Huron, OH",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description and phone from the City of Huron's visitor site. HOURS NOT ESTABLISHED (no first-party page; a morning-only window is widely reported but unconfirmed). NOTE: the website on the listing, mesenburg.com, belongs to Mesenburg Creative Catering at 503 Main St - a NEIGHBOURING but DIFFERENT business. Treat the URL as wrong-entity until the relationship is confirmed.",
-  "description": "The town's morning stop for freshly baked donuts, made with love and care.",
-  "phone": "+14194337117"
- },
- "huro-lst-0189": {
-  "_match_name": "Pied Piper Drive In",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description and phone from the City of Huron's visitor site. HOURS NOT ESTABLISHED; the drive-in's only web presence is a Facebook page, which could not be read. NOTE: the website on the listing, piedpiper.com, is a WRONG-ENTITY URL - it is not this drive-in. The 1952 founding date is widely repeated but was not confirmed on a first-party page, so it is left out of the description.",
-  "description": "A nostalgic drive-in for burgers, chicken tenders and soft-serve.",
-  "amenities": [
-   "drive-in",
-   "ice cream"
-  ],
-  "phone": "+14194332601"
- },
- "huro-lst-0241": {
-  "_match_name": "Trabel’s Bagels",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description, phone and the unit-level address (525 Cleveland Rd W Unit C) from the City of Huron's visitor site. The bakery's own domain, trabelsbagels.com, renders a single word ('Home') with no content - a live but EMPTY site, which is worse than a dead one because it looks reachable. HOURS NOT ESTABLISHED at source.",
-  "description": "Bagels hand-rolled, kettle-boiled and baked fresh each morning. Chef Mike Trabel's neighborhood bakery.",
-  "amenities": [
-   "bakery"
-  ],
-  "phone": "+14192856722"
- },
- "huro-lst-0024": {
-  "_match_name": "The Miller's Table at Sawmill Creek Resort",
-  "_source": "https://www.sixflags.com/sawmillcreekresort/dining",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description from the resort's own dining page and the City of Huron visitor site. HOURS NOT WRITEABLE: the resort publishes only the words 'Open Daily' plus the disclaimer 'Hours subject to change at the discretion of the business' - an explicit refusal to publish times. Reservations by phone or online per the resort page.",
-  "description": "The resort's dining room, with a seasonal menu built on Ohio ingredients. Wine, cocktails and craft beer; reservations taken.",
-  "amenities": [
-   "reservations",
-   "full bar",
-   "seasonal menu"
-  ],
-  "phone": "+14194336124"
- },
- "huro-lst-0137": {
-  "_match_name": "Mulligan's Pub - Huron, OH",
-  "_source": "https://www.sixflags.com/sawmillcreekresort/dining",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description from the resort's own dining page plus the City of Huron visitor site. HOURS OMITTED: the resort lists this venue as 'Open Seasonally' and publishes no times or season dates at all. PHONE CONFLICT: visithuronohio gives 419-433-3789, the listing carries +14194332030; neither confirmed on the resort's page, so the listing's value is left untouched here. The listing's website, golfsawmillcreek.com, was not read.",
-  "description": "The pub at the Sawmill Creek golf clubhouse. A back deck over the water and a snack shack for the course; open seasonally.",
-  "amenities": [
-   "outdoor deck",
-   "waterfront views",
-   "sports viewing",
-   "seasonal"
-  ]
- },
- "huro-lst-0010": {
-  "_match_name": "Annie's Closet & Tea Room",
-  "_source": "http://annieshuron.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ CLOSURE NOTICE, YEAR NOT ESTABLISHED. The operator's own site carries 'We are closing our doors' and says it is closing permanently at the end of February, accepting no new reservations except existing bookings and gift certificates. The site gives NO YEAR, and the /hours page is a 404, so it cannot be determined whether this closure is already past. ⛔ DO NOT SHIP THIS LISTING AS OPEN without a human check. Phone on the site (216-544-4298) differs from any phone in the listing (which has none).",
-  "description": "A tea room and boutique on Main Street for luxury and children's tea parties. The operator's site announces the doors are closing at the end of February.",
-  "amenities": [
-   "tea service",
-   "party packages",
-   "boutique",
-   "by reservation"
-  ]
- },
- "huro-lst-0080": {
-  "_match_name": "I-5's Bar & Grill",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ STATUS IN DOUBT AND NO FACTS WRITTEN. The bar's own domain i5sbar.com NO LONGER RESOLVES (DNS NXDOMAIN), it is ABSENT from the City of Huron's visitor food-and-drink page which lists 23 other Huron eateries, and 356 N Main Street currently appears in a commercial real-estate listing as a turn-key restaurant/bar. None of that proves closure and none of it was confirmed at source. No hours, no description and no phone are asserted. ⛔ Needs a human call before it ships. See also huro-lst-0152 and huro-lst-0235, which are the same address.",
-  "_status_flag": "possibly closed - unverified"
- },
- "huro-lst-0152": {
-  "_match_name": "I Fives",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "DUPLICATE of huro-lst-0080 - same address (356 Main St), same building (msbf-2290), same website (i5sbar.com, now dead). 'I Fives' is a transliteration of the same name. Same closure doubt applies. Merge or drop; do not ship as a second restaurant.",
-  "_duplicate_of": "huro-lst-0080",
-  "_status_flag": "possibly closed - unverified"
- },
- "huro-lst-0235": {
-  "_match_name": "Vega Bar And Grill Llc.",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "NOT A SEPARATE PLACE. Same address and same building as huro-lst-0080 / huro-lst-0152 (356 Main St, msbf-2290). The trailing 'Llc.' marks this as a LEGAL-ENTITY record - the operating company behind the bar, or a prior/incoming one - not a trading name any visitor would recognise. No trading presence found under this name in Huron. Merge into the address's live record or drop.",
-  "_duplicate_of": "huro-lst-0080"
- },
- "huro-lst-0232": {
-  "_match_name": "3 Amigo's 132, Llp",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "NOT A SEPARATE PLACE. Address 132 Main St and building msbf-2626 are the SAME as huro-lst-0166 Harbor House Bar and Grill, which is the live tenant per the City of Huron's visitor site. The '132, Llp' suffix marks this as a LEGAL-ENTITY record for that address, not a trading restaurant; no '3 Amigo's' trades in Huron. Merge into Harbor House or drop.",
-  "_duplicate_of": "huro-lst-0166"
- },
- "huro-lst-0047": {
-  "_match_name": "Old Plat",
-  "_source": "https://www.visithuronohio.com/food-and-drink",
-  "_fetched": "2026-09-22",
-  "_confidence": "NOT A LIVE RESTAURANT. Same address and building as huro-lst-0166 Harbor House Bar and Grill (132 Main St, msbf-2626), which is the live tenant per the City of Huron's visitor site. '132 Main St' has held at least three successive names in the record - Brass Pelican (closed), Old Plat, Harbor House. Separately, 'Old Plat' is the name of a HISTORIC NEIGHBOURHOOD of Huron (the historical society's own term), so this record may be a place-name/business-name collision rather than an eatery at all. Drop or merge; do not ship as dining.",
-  "_duplicate_of": "huro-lst-0166"
- },
- "huro-lst-0260": {
-  "_match_name": "Feddersens",
-  "_source": "https://www.feddersens.com",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ MISCATEGORISED - NOT A PLACE TO EAT. feddersens.com is Feddersen's Bakery & Dough, a WHOLESALE frozen pizza-dough supplier selling to trade accounts, with training and customisation for larger accounts. There is no retail counter, no menu and no published hours, and the site names no Huron address. Overture classified it 'bakery'. Do not ship it as dining.",
-  "_status_flag": "wholesale/B2B, not a consumer eatery"
- },
- "huro-lst-0160": {
-  "_match_name": "Knucklehead Saloon",
-  "_source": "https://www.visithuronohio.com/nightlife",
-  "_fetched": "2026-09-22",
-  "_confidence": "Description and phone from the City of Huron's own nightlife page. HOURS NOT ESTABLISHED: the saloon has no website and its only presence is Facebook, which could not be read; third-party sources report a 10am-2:30am bar day that was not confirmed at source, and a 2:30am close crosses midnight, which the hours shape cannot express anyway. The live-music season (summer weekends) is stated on the town page.",
-  "description": "A motorcycle bar famous for its 5 Fire Balls. Live music every weekend in summer.",
-  "amenities": [
-   "live music (summer weekends)",
-   "bar food"
-  ],
-  "phone": "+14194336944"
- },
- "huro-lst-0193": {
-  "_match_name": "CUSH Cafe",
-  "_source": "https://www.visithuronohio.com/nightlife",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ NOT A STANDALONE RESTAURANT AND STATUS IN DOUBT. 125 Main St is Riverview Lanes, an 18-lane bowling centre with a full-service bar and a grill counter; the City of Huron's nightlife page lists the LANES, not a cafe, and gives the phone as 419-433-4258 (the listing carries 419-602-1768). Riverview Lanes was reported TEMPORARILY CLOSED from October 2025; reopening not established. The website on the listing, riverviewlanes.com, now 301s to abutotomacau.com, an unrelated gambling site - do not scrape it. No hours or description asserted.",
-  "_status_flag": "counter inside Riverview Lanes; venue possibly closed - unverified"
- },
- "huro-lst-0196": {
-  "_match_name": "Riverview Cafe Huron, Ohio",
-  "_source": "https://www.visithuronohio.com/nightlife",
-  "_fetched": "2026-09-22",
-  "_confidence": "DUPLICATE of huro-lst-0193 - the same grill counter inside Riverview Lanes at 125 Main St (same building msbf-702). This record carries NO address, NO phone and NO website at all. Merge or drop. Same closure doubt and same resold-domain warning as huro-lst-0193.",
-  "_duplicate_of": "huro-lst-0193"
- },
- "huro-lst-0264": {
-  "_match_name": "Flavorfuel",
-  "_source": "https://templetonlist.com/locations/flavorfuel-smoothie-bar-caf%C3%A9",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ WEAK SOURCE - no first-party page reachable. The domain on the listing, flavorfuel.menu, DOES NOT RESOLVE (NXDOMAIN on both the apex and www), and the business's only live presence is Instagram @flavorfuelhuron, which could not be read. The description below is from a third-party directory entry, not from the operator. HOURS NOT ESTABLISHED. The trading name is styled 'FlavorFuel' and the fuller sign name appears as 'FlavorFuel Smoothie Bar & Café'; listing name kept verbatim.",
-  "description": "A smoothie bar and cafe built around real food. Smoothie bowls, paninis and sandwiches on Cleveland Road.",
-  "amenities": [
-   "smoothies",
-   "sandwiches",
-   "takeout"
-  ],
-  "phone": "+14196165281"
- },
- "huro-lst-0256": {
-  "_match_name": "Hq Barbecue",
-  "_source": "https://www.huron.net/advertisingmarketing/name/hq-barbeque/",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The Huron Chamber of Commerce page for this business returned HTTP 522 on three attempts across the session, and the business has no website of its own. Nothing is asserted here beyond the address already in the listing. NOTE the spelling split: the listing says 'Hq Barbecue', the chamber and the storefront say 'HQ Barbeque' - the listing name is kept verbatim. Next run: retry huron.net, which was down, not gone.",
-  "_status_flag": "unresearched - source unreachable"
- },
- "huro-lst-0161": {
-  "_match_name": "Peace By Piece Pastries",
-  "_source": "https://www.facebook.com/Piebakercakemaker",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The only web presence is a Facebook page (and Instagram @peacebypiecepastries); neither could be read by fetch. The address on the listing (306 Gumwood Rd) is RESIDENTIAL, and Overture's own confidence for this record is 0.14 - the lowest in the dining slice by a wide margin. Likely a by-order home baker like huro-lst-0251 rather than a shop with hours, but that is NOT established. Nothing asserted.",
-  "_status_flag": "unresearched - social-only presence"
- },
- "huro-lst-0100": {
-  "_match_name": "Hph Pizza Llc",
-  "_source": "http://www.pizzahousehuron.com/",
-  "_fetched": "2026-09-22",
-  "_confidence": "NOT A SEPARATE PLACE. 'HPH' = Huron Pizza House; same address (812 Main St) and same building (msbf-4037) as huro-lst-0014, and the 'Llc' suffix marks this as the operating company's legal-entity record, not a trading name. Merge into huro-lst-0014 or drop.",
-  "_duplicate_of": "huro-lst-0014"
- },
- "huro-lst-0034": {
-  "_match_name": "Subway",
-  "_source": "https://restaurants.subway.com/united-states/oh/huron/2117-cleveland-rd-w",
-  "_fetched": "2026-09-22",
-  "_confidence": "Chain outlet, but the hours below are from the brand's own STORE page for this address, so they are location-specific, not brand boilerplate. The page states this is a standalone store, not a counter inside another business.",
-  "hours": {
-   "monday": {
-    "open": "08:00",
-    "close": "22:00"
-   },
-   "tuesday": {
-    "open": "08:00",
-    "close": "22:00"
-   },
-   "wednesday": {
-    "open": "08:00",
-    "close": "22:00"
-   },
-   "thursday": {
-    "open": "08:00",
-    "close": "22:00"
-   },
-   "friday": {
-    "open": "09:00",
-    "close": "23:00"
-   },
-   "saturday": {
-    "open": "09:00",
-    "close": "23:00"
-   },
-   "sunday": {
-    "open": "09:00",
-    "close": "23:00"
-   }
-  },
-  "description": "Sandwich counter on Cleveland Road with a drive-thru, open early for breakfast.",
-  "amenities": [
-   "drive-thru",
-   "mobile ordering",
-   "delivery",
-   "catering",
-   "breakfast"
-  ],
-  "phone": "+14194337491"
- },
- "huro-lst-0185": {
-  "_match_name": "Long John Silver's",
-  "_source": "https://www.ljsilvers.com/locations/oh/huron/2018-cleveland-road-w/",
-  "_fetched": "2026-09-22",
-  "_confidence": "Chain outlet; hours and phone from the brand's own location page for this address. No A&W co-brand at this store. Drive-thru and dine-in NOT established - the page advertises only delivery and pickup.",
-  "hours": {
-   "monday": {
-    "open": "10:00",
-    "close": "22:00"
-   },
-   "tuesday": {
-    "open": "10:00",
-    "close": "22:00"
-   },
-   "wednesday": {
-    "open": "10:00",
-    "close": "22:00"
-   },
-   "thursday": {
-    "open": "10:00",
-    "close": "22:00"
-   },
-   "friday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "saturday": {
-    "open": "11:00",
-    "close": "22:00"
-   },
-   "sunday": {
-    "open": "10:00",
-    "close": "22:00"
-   }
-  },
-  "description": "Fried fish and hushpuppies on Cleveland Road, for pickup or delivery.",
-  "amenities": [
-   "pickup",
-   "delivery"
-  ],
-  "phone": "+14196160112"
- },
- "huro-lst-0108": {
-  "_match_name": "Wendy's",
-  "_source": "https://locations.wendys.com/united-states/oh/huron/600-rye-beach-road",
-  "_fetched": "2026-09-22",
-  "_confidence": "Chain outlet; hours and phone from the brand's own location page for this address. Dining room and drive-thru run the same 6:30-22:00 window every day per that page. The page's breakfast cut-off is SELF-CONTRADICTORY (one field says breakfast ends 10:30 AM, another says 6:30 AM), so no breakfast window is written.",
-  "hours": {
-   "monday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "tuesday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "wednesday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "thursday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "friday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "saturday": {
-    "open": "06:30",
-    "close": "22:00"
-   },
-   "sunday": {
-    "open": "06:30",
-    "close": "22:00"
-   }
-  },
-  "description": "Burgers and frosties at Rye Beach Road. Dining room and drive-thru both open 6:30am daily.",
-  "amenities": [
-   "drive-thru",
-   "mobile ordering",
-   "Wi-Fi",
-   "kids' meals",
-   "breakfast"
-  ],
-  "phone": "+14194332849"
- },
- "huro-lst-0223": {
-  "_match_name": "Domino's",
-  "_source": "https://pizza.dominos.com/ohio/huron/500-main-street",
-  "_fetched": "2026-09-22",
-  "_confidence": "Chain outlet. Address, phone and services confirmed on the brand's own store page for 500 Main Street. HOURS OMITTED: that store page publishes NO hours at all - third-party aggregators disagree with each other by a full hour on the close, so nothing was written.",
-  "description": "Pizza delivery and carryout at 500 Main Street.",
-  "amenities": [
-   "delivery",
-   "carryout"
-  ],
-  "phone": "+14194335494"
- },
- "huro-lst-0168": {
-  "_match_name": "Blimpie",
-  "_source": "https://www.gasbuddy.com/station/15774",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ HOST-VENUE RECORD, STATUS UNVERIFIED. 805 S Main St is a Mobil / Hy-Miler #2234 FUEL STATION, and the phone carried on this listing, (419) 433-6597, is the gas station's number - so 'Blimpie' here is a franchise counter inside the forecourt shop, not a restaurant with a door of its own. Its hours, if it is still operating, are the STATION'S hours, and whether the counter still exists was NOT established. The website on the listing is blimpie.com, the brand's national page, which says nothing about Huron. Do not ship without a human check.",
-  "_status_flag": "counter inside a fuel station; existence unverified"
- },
- "huro-lst-0057": {
-  "_match_name": "McDonald's",
-  "_source": "https://www.mcdonalds.com/us/en-us/location/oh/huron/2118-cleveland-rd-w/6106.html",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ NOT RESEARCHED TO SOURCE. The brand's own location page for this address TIMED OUT twice (60s) and no hours or amenities could be read. Nothing asserted beyond what the listing already holds. Next run: retry, the page exists.",
-  "_status_flag": "unresearched - source timed out"
- },
- "huro-lst-0040": {
-  "_match_name": "Dunkin'",
-  "_source": "https://www.dunkindonuts.com/locations/us/oh/",
-  "_fetched": "2026-09-22",
-  "_confidence": "⛔ EXISTENCE IN DOUBT AND THE URL IS WRONG-ENTITY. The website on this record is sonicdrivein.com - a DIFFERENT BRAND entirely. Dunkin's own Ohio locations index could not be read to confirm or deny a Huron store. Dunkin' is ABSENT from the City of Huron's visitor food-and-drink page, which lists 23 eateries including the independent Donut Shop one door away at 501 Main St; separately, a yellow-pages entry files the Donut Shop's own phone (419-433-7117) under the name 'Dunkin', which is how a brand name contaminates an independent's record. This may be a phantom. ⛔ Do not ship without a human check.",
-  "_status_flag": "possibly does not exist; website is a different brand"
- }
 }

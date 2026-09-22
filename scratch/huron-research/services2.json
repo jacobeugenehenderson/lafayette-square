@@ -848,7 +848,9 @@
         "closed": true
       }
     },
-    "phone": "+14194330328"
+    "phone": "+14194330328",
+    "website": "https://www.civista.bank/locations/huron-branch",
+    "_url_correction": "⛔ REPLACED 2026-09-22. The held URL http://www.citizensbankco.com 301s to https://joker123.co.uk/, an offshore gambling brand, which then answers 520 with a 16-byte body — so a status-only checker logs 'site down' and never sees where it pointed. Civista absorbed Citizens Banking Company years ago. Replacement verified live: HTTP 200, 292 KB, 'Huron' 16 times, zero gambling terms."
   },
   "huro-lst-0153": {
     "_confidence": "Confirmed 'June Aesthetics- Huron' is one location of a multi-site business (Tiffin, Catawba, Huron, Vermilion each have separate Linktree booking links) — per the task's own warning, no sibling-location hours were imported. The Huron JaneApp page gave address, phone, staff and services but explicitly did NOT list stated business hours (it said to call or check the booking page for availability), so hours are not established. Address given (364 Main Street) differs from the held record's listed address (364 Main St) — matches.",

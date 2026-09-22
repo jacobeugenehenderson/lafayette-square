@@ -4491,6 +4491,8 @@
         "Leagues"
       ],
       "phone": "+14194334258",
+      "website": null,
+      "_url_correction": "⛔ WEBSITE REMOVED 2026-09-22, not replaced — there is nothing to replace it with. riverviewlanes.com 301s every path to abutotomacau.com, an offshore gambling site; the domain lapsed and was re-registered, and no first-party source for the lanes survives. ⭐ A null website is the honest state: the card simply shows no link, which is true. Leaving the old one would have published a casino link on a bowling alley's card. ⚠️ The lanes are also reported temporarily closed — that is a separate, unresolved question for the Host.",
       "_beat": "community",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0237"
@@ -4523,6 +4525,13 @@
       "_beat": "dining2+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0162"
+    },
+    "ovt-b6dd7cf6-6b7d-4a3a-adb8-3ad8484a16b9": {
+      "website": null,
+      "_match_name": "CUSH Cafe",
+      "_tier": "HOLD-URL-ONLY",
+      "_beat": "overnight",
+      "_url_correction": "⛔ WEBSITE REMOVED 2026-09-22. CUSH Cafe is a counter inside Riverview Lanes at 125 Main St and shares its dead domain — riverviewlanes.com now 301s to the gambling site abutotomacau.com. Nothing of either business remains there. ⚠️ Trading status is separately in doubt; this fixes the LINK, not the listing."
     },
     "ovt-b26ea53c-49ea-444e-9376-0779f226018d": {
       "_match_name": "Gathering Grounds Coffee House - Huron, OH",
@@ -4638,6 +4647,8 @@
       "menu": {
         "url": "https://www.costaazulhuron.com/"
       },
+      "website": "https://costaazulhuron.com",
+      "_url_correction": "⛔ REPLACED 2026-09-22. The held URL CostaAzulMexican.com 200s and redirects to https://jalanamavi.com/, an Indonesian gambling site — 497 KB with zero occurrences of 'Huron' or 'Costa Azul'. The domain lapsed and was re-registered. Replacement verified live: HTTP 200, <title>Costa Azul Mexican Restaurant</title>, names Huron and Sandusky. ⚠️ It carries Google AdSense markup, so it may be a thin operator page rather than a full site — recorded rather than smoothed over. It is unambiguously the right entity and unambiguously better than a gambling link.",
       "_beat": "dining2",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0184"
@@ -5699,6 +5710,8 @@
         }
       },
       "phone": "+14194330328",
+      "website": "https://www.civista.bank/locations/huron-branch",
+      "_url_correction": "⛔ REPLACED 2026-09-22. The held URL http://www.citizensbankco.com 301s to https://joker123.co.uk/, an offshore gambling brand, which then answers 520 with a 16-byte body — so a status-only checker logs 'site down' and never sees where it pointed. Civista absorbed Citizens Banking Company years ago. Replacement verified live: HTTP 200, 292 KB, 'Huron' 16 times, zero gambling terms.",
       "_beat": "services2",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0151"

@@ -1,0 +1,857 @@
+{
+  "huro-lst-0015": {
+    "_match_name": "The Tea Bubble",
+    "_fetched": "2026-09-22",
+    "_source": "https://the-tea-bubble.square.site/ (Square Online; images on 153474424.cdn6.editmysite.com)",
+    "_confidence": "HIGH on identity - the page prints \"511 Cleveland Rd W Ste A, Huron, OH 44839-2718\" and 567-623-9160. HIGH on subject - every image carries a non-empty alt that is the menu item name, written by the operator in the Square item editor.",
+    "_photo_method": "Square Online menu-item images. The listed URL is the full-resolution original; the page requests it with a ?width= query. Verified 200, image/jpeg, 1.47 MB on the first one.",
+    "photos": [
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/EXXHHAVHR5JQQU4RTFOKBH7G.jpeg",
+        "what": "Deluxe Bubble Waffle (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/JH563ECIOZNOHBSVNG6RSHUU.jpeg",
+        "what": "Mango Smoothie (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/INLY4ZPI3Z3CGVWHYR7PHRW5.jpeg",
+        "what": "Dragon Berry Dream (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/UJHVTNUPRLAERJUKP7J3MHPR.jpeg",
+        "what": "Spring Rolls (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/HPNJFTZ6JCMDOCYEHSYHIKCJ.jpeg",
+        "what": "Acai Bowl (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/ONOGEHXWE7ZCQ2R7MMP5SMHP.jpeg",
+        "what": "Salad (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/2RXRE5VCR55RRPB2CK5WZPP2.jpeg",
+        "what": "Cinnamon Roll Latte (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/ORM7AZ45AMYM65K7BRCW63RG.jpeg",
+        "what": "Pork Melt (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/HS5DWOGOTZNWVE7I7IL35KJP.jpeg",
+        "what": "Matcha Sunrise (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      },
+      {
+        "url": "https://153474424.cdn6.editmysite.com/uploads/1/5/3/4/153474424/6Q7GCLJVD7CSDGNWFHBLAIGQ.jpeg",
+        "what": "Greek Yogurt Bowl (operator alt text)",
+        "credit": "The Tea Bubble",
+        "credit_url": "https://the-tea-bubble.square.site/"
+      }
+    ],
+    "_photos_note": "At least 22 further item photographs on the same page, same pattern, same CDN path - all alt-labelled. Listed ten; the rest are recoverable by re-running the same extraction.",
+    "phone": "+15676239160",
+    "address_note": "511 Cleveland Rd W Ste A, Huron, OH 44839-2718 (printed on the page)"
+  },
+  "huro-lst-0166": {
+    "_match_name": "Harbor House Bar and Grill",
+    "_fetched": "2026-09-22",
+    "_source": "https://harborhousebar.com/ (SpotHopper-built; images on static.spotapps.co)",
+    "_confidence": "HIGH on identity - title \"Must-Try American Restaurant in Huron, OH | Harbor House\", body \"located on the Huron river\", phone (419)-616-6088. HIGH on subject - each food image has a written caption-style alt.",
+    "photos": [
+      {
+        "url": "https://static.spotapps.co/spots/fc/e07bc001684bf582bf4723c80e39a0/full",
+        "what": "Fried fish and pierogies",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/65/d84c81562c43fda73165c73ec755b0/full",
+        "what": "Fish tacos",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/f2/2fc0ca185c4bcbba1cbfa615aee7e4/full",
+        "what": "Sesame crusted ahi tuna salad",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/d8/63f0b452444af28a47663455df2d02/full",
+        "what": "A glass of beer",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/6d/1d2960274240a89bb5e67ec23f4042/full",
+        "what": "BBQ Pulled Pork Nachos",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/48/bcf7a98c7c472eb8e42f057aa7c3af/full",
+        "what": "Fried walleye fish sandwich and swirl fries",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      },
+      {
+        "url": "https://static.spotapps.co/spots/97/1a6aafa92d44aba7fe80bcc6d21a69/full",
+        "what": "Harbor Sunset cocktail",
+        "credit": "Harbor House Bar & Grill",
+        "credit_url": "https://harborhousebar.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.spotapps.co/spots/23/5541804fef4538a67c2b9f3dddd150/:original",
+        "what": "not established",
+        "why": "alt is \"slideshow photo number 1\" - a position, not a subject. Zero subject evidence; refused per the scoring rule. Two more identical (numbers 2 and 3)."
+      }
+    ],
+    "phone": "+14196166088",
+    "_note": "Images sit on static.spotapps.co, the CDN of SpotHopper, the restaurant's web vendor. First-party in substance, third-party in domain - worth stating in any licence request."
+  },
+  "huro-lst-0187": {
+    "_match_name": "Gathering Grounds Coffee House - Huron, OH",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.gatheringgroundscoffeehouse.com/ (Squarespace; images.squarespace-cdn.com)",
+    "_confidence": "HIGH on identity - \"404 Main Street, Huron, OH, 44839\", 4196160002, \"on the shores of Lake Erie in the heart of Huron, OH\". Subject evidence is the FILENAME only; Squarespace copies the filename into alt, so a descriptive filename is the operator naming the picture and an opaque one is not.",
+    "_photo_method": "Append ?format=2500w to a squarespace-cdn URL for the full-resolution original (verified 200, image/webp).",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000182985-I1QQEPO7X5S3MQ6KJLUQ/avocado+toasts.jpg",
+        "what": "Avocado toasts (filename)",
+        "credit": "Gathering Grounds Coffee House",
+        "credit_url": "https://www.gatheringgroundscoffeehouse.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000187385-L5EHHSR7OP665977B4PE/parfait.jpg",
+        "what": "A parfait (filename)",
+        "credit": "Gathering Grounds Coffee House",
+        "credit_url": "https://www.gatheringgroundscoffeehouse.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000188477-0W2FHRPO6QIRQCNLF5M3/toasts.jpg",
+        "what": "Toasts (filename)",
+        "credit": "Gathering Grounds Coffee House",
+        "credit_url": "https://www.gatheringgroundscoffeehouse.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000191440-F3804IKR5OJGSW178VQN/wrap.jpg",
+        "what": "A wrap (filename)",
+        "credit": "Gathering Grounds Coffee House",
+        "credit_url": "https://www.gatheringgroundscoffeehouse.com/"
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000186175-2RYK608MSFWOYQV9CNN8/frozen+hc+and+gg.jpg",
+        "what": "Frozen drinks - \"frozen hc and gg\" (filename; hc/gg not expanded on the page)",
+        "credit": "Gathering Grounds Coffee House",
+        "credit_url": "https://www.gatheringgroundscoffeehouse.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1722000181569-C11EFUQ63TZOYDMSPA2O/489A7977.JPG",
+        "what": "not established",
+        "why": "Canon camera serial filename, alt repeats it. An original capture (good rights signal) with ZERO subject evidence - refused as a card image."
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/5b8aabc02487fdbcfa446ccd/1620396743078-EJTP14ZWQZT4GJMP7A1N/high_res.jpeg",
+        "what": "not established",
+        "why": "Filename is an export setting, not a subject. Also the og:image. Same for high_res2.jpeg and \"high_res - 2021-05-07T094358.882.jpg\"."
+      }
+    ],
+    "phone": "+14196160002",
+    "address_note": "404 Main Street, Huron, OH 44839"
+  },
+  "huro-lst-0251": {
+    "_match_name": "Christina's Creations",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.christinascreationsbakery.com/ (Wix; static.wixstatic.com, account prefix e5e530_)",
+    "_confidence": "HIGH on both. Title \"Cakes | Christina's Creations Bakery | Huron\"; body \"a made-to-order home bakery in Huron, Ohio\"; (419) 366-1563. THE BEST ALT TEXT IN THE FOOD SLICE - the operator wrote a full sentence describing each picture.",
+    "_photo_method": "Strip the /v1/fill/... transform tail from a wixstatic URL to get the original (verified 200, 634 KB on the taco cake).",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_d9973798247143368c450e9d07968aaf~mv2.jpg",
+        "what": "\"This is a fun picture of a cake that looks like a taco.\" (operator alt). Filename PXL_20220505_003704282 - a Pixel phone original.",
+        "credit": "Christina's Creations Bakery",
+        "credit_url": "https://www.christinascreationsbakery.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_1ccdae1d511c4c1baff70f506e9f181f~mv2.jpg",
+        "what": "\"This is a picture of our M & M drop cookies.\" (operator alt)",
+        "credit": "Christina's Creations Bakery",
+        "credit_url": "https://www.christinascreationsbakery.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_0c87896422644e95b6f9425b883da165~mv2.jpg",
+        "what": "\"This is our Oreo flavored cupcake. Just one of the many cupcakes we make.\" (operator alt)",
+        "credit": "Christina's Creations Bakery",
+        "credit_url": "https://www.christinascreationsbakery.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_638b5e14f3d3451090e497bf6f4df0d5~mv2.jpg",
+        "what": "\"This is a photo of one of our wedding cake designs. It is a one layer cake, with vanilla frosting, and decorative pink flowers on top, also, made out of frosting.\" (operator alt)",
+        "credit": "Christina's Creations Bakery",
+        "credit_url": "https://www.christinascreationsbakery.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_08b68f7de4704e1181ae3938f4000393~mv2.jpg",
+        "what": "\"This is a photo of our teacher appreciation cookies... an apple with an A+ on it, next to a cookie that looks like a chalk board with the words Thank You on it.\" (operator alt). Filename PXL_20220422_012438205 - a Pixel phone original.",
+        "credit": "Christina's Creations Bakery",
+        "credit_url": "https://www.christinascreationsbakery.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/e5e530_c5f5d6f8783c43e2969752338ea6a229~mv2.jpg",
+        "what": "not established",
+        "why": "One of eight square 480px gallery tiles under the e5e530_ account prefix with alt=\"\" and an opaque filename. Operator-owned almost certainly; subject unknown, so refused as a card image."
+      }
+    ],
+    "phone": "+14193661563"
+  },
+  "huro-lst-0239": {
+    "_match_name": "Marconi's Italian Restaurant - Huron, OH",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.italianhuronohio.com/ and /viewmarconis (Wix; account prefix 3c960d_)",
+    "_confidence": "HIGH on identity (domain is italianhuronohio.com, logo file marconis-newlogowhite.png). MEDIUM on subject - alt text is the filename, and the filenames ARE descriptive, which is the only subject evidence offered.",
+    "_photo_method": "Strip the /v1/fill/... tail for the original. The tail preserves the original filename, which here is the only subject label.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_2dca161b83a744fa8d2bffdd68459f7d~mv2.jpg",
+        "what": "\"wallofmarcs.jpg\" - a wall of Marconi memorabilia/photographs (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_797e596184834a5c89da1c982ea42520~mv2.jpg",
+        "what": "\"outdoor-seating.jpg\" - the outdoor seating area (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_81766fade6124fdc8887521c60ff05c2~mv2.jpg",
+        "what": "\"banquet-table.jpg\" - a laid banquet table (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_146a5c1286ff437f9053bdb25ce28c81~mv2.jpg",
+        "what": "\"fountain.jpg\" - a fountain on the property (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_71043335ac094779b71c0ccdcfa8192d~mv2.jpg",
+        "what": "\"tea-cocktail.jpg\" - a cocktail (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_c957343973164f3096e99ecafed7fede~mv2.jpg",
+        "what": "\"winetwocups.jpg\" - wine poured into two glasses (filename)",
+        "credit": "Marconi's Italian Restaurant",
+        "credit_url": "https://www.italianhuronohio.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_1a72008d62af40849da4a00cec5c3d44~mv2.jpg",
+        "what": "not established - the og:image / home hero",
+        "why": "No alt, no descriptive filename. It is the page hero so it is probably the dining room, but \"probably\" is not subject evidence."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/3c960d_2b783e1441854fbeb7ca0036b930fd98~mv2.jpeg",
+        "what": "not established",
+        "why": "Filename \"2720146736224037601.heic\" - a phone export id. Original capture, no subject."
+      }
+    ],
+    "menu": {
+      "url": "https://www.italianhuronohio.com/viewmarconis"
+    },
+    "_pages_seen": "home, /viewmarconis, /ourstory, /banquethall, /marconishq (Wix pageUriSEO list)"
+  },
+  "huro-lst-0266": {
+    "_match_name": "the Vikings Den - Huron, Ohio",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.huronlagoons.com/restaurant/ (WordPress)",
+    "_confidence": "HIGH on identity - page title \"Vikings Den Resaurant | Huron Lagoons Marina - Huron, OH\" [sic, the operator's typo], phone 419-616-3336 on the page. LOW-MEDIUM on subject - the three photographs carry NO alt text; the only subject evidence is the heading of the block they sit in (\"Restaurant - Viking's Den Waterfront Dinning\" [sic]) and the IMG_ filename, which says original camera capture but not what of.",
+    "photos": [
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/05/IMG_4295.jpeg",
+        "what": "Not established beyond: an original camera photograph published on the Viking's Den restaurant page, uploaded 2026-05. Verified 200, 426 KB.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/restaurant/"
+      },
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/05/IMG_4294.jpeg",
+        "what": "Not established beyond: an original camera photograph published on the Viking's Den restaurant page, uploaded 2026-05.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/restaurant/"
+      },
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/05/IMG_4293.jpeg",
+        "what": "Not established beyond: an original camera photograph published on the Viking's Den restaurant page, uploaded 2026-05.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/restaurant/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2025/05/294667098_420531096767053_537602326776010615_n-300x300.jpg",
+        "what": "not established",
+        "why": "The filename is a Facebook CDN id (the 15-15-15 digit triple plus _n). Re-uploaded from Facebook - photographer unknown. Also only 300x300."
+      }
+    ],
+    "phone": "+14196163336",
+    "_note": "The Viking's Den is the restaurant inside Huron Lagoons Marina (huro-lst-0102), which the waterfront beat already holds. Same operator, same site."
+  },
+  "huro-lst-0010": {
+    "_match_name": "Annie's Closet & Tea Room",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.annieshuron.com/ , /about , /packages (Wix; operator account prefix d0a6d8_)",
+    "_confidence": "HIGH on identity (annieshuron.com, \"Follow Annie's Huron on Facebook\"). Photos below are all under the d0a6d8_ prefix AND carry written alt text.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_0f0a1b3407814d3eb4d8e368933789d6~mv2.jpg",
+        "what": "\"Our Family\" (operator alt); filename FamilyPhoto_edited.jpg",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/about"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_a80e478ea19e47d9ac78eae8d22f460e~mv2.jpg",
+        "what": "\"My Inspiration\" (operator alt); filename Annie_Curzydlo_photo_edited.jpg - a portrait of Annie Curzydlo, the namesake",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/about"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_d3249d696aa44007ab8690a95d2bc9ed~mv2.jpg",
+        "what": "\"Our rescue dogs\" (operator alt); filename IMG_7604_edited.jpg - an original camera capture",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/about"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_50f0be20f13647919f877d0f7c00487f~mv2.jpg",
+        "what": "\"Elegant Tea Party Tablescape\" (operator alt)",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/packages"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_a732953c0c97486e82fa6818dbda12f3~mv2.png",
+        "what": "\"Tea Party Photo Props\" (operator alt)",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/packages"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_e066fc9caff8477aaa21d59b4324947e~mv2.jpg",
+        "what": "\"TeaPartyWhitePhoto.jpg\" (filename) - a tea party setting",
+        "credit": "Annie's Closet & Tea Room",
+        "credit_url": "https://www.annieshuron.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/f1fb3cd0eb5b4dcb89da5cf784e15f3e.jpg",
+        "what": "alt=\"Pregnant Woman\"",
+        "why": "NO ACCOUNT PREFIX on the wixstatic media id. A prefix-less id is the Wix stock library, not an operator upload. Stock, on the operator's own page, on a first-party-looking CDN."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/d0a6d8_d59102bb8a9b4abfae87ea56c7850227~mv2.webp",
+        "what": "filename Hero_1400x1080_Jardin_Gset_1.webp",
+        "why": "Supplier product photography. It sits next to Tea-Forte-Logo.png with alt \"Signature Pyramid Infusers\" - Tea Forte is the tea brand Annie's sells. The operator re-hosted the brand's marketing image."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/845cd7_741441f11637406e82f9bdd283bb4df7~mv2_d_3340_3047_s_4_2.jpg",
+        "what": "not established",
+        "why": "Account prefix 845cd7_, NOT this site's d0a6d8_. A different Wix account uploaded it - template or third-party asset."
+      }
+    ]
+  },
+  "huro-lst-0183": {
+    "_match_name": "The Old Fish House (Huron, Ohio)",
+    "_fetched": "2026-09-22",
+    "_source": "https://oldnorthmaineats.com/ and /old-fish-house/ (WordPress.com)",
+    "_confidence": "HIGH on identity - site subtitle is literally \"Huron, Ohio\" and the only content page is Old Fish House. Two images, one with a descriptive filename.",
+    "photos": [
+      {
+        "url": "https://oldnorthmaineats.com/wp-content/uploads/2021/05/fish-house-collage-skipper.jpg",
+        "what": "\"fish-house-collage-skipper.jpg\" (filename) - a collage of the Old Fish House featuring Skipper, the dog the page asks visitors not to feed",
+        "credit": "Old North Main Eats",
+        "credit_url": "https://oldnorthmaineats.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://oldnorthmaineats.com/wp-content/uploads/2025/05/image0-1.jpeg",
+        "what": "not established",
+        "why": "Filename image0-1.jpeg is an iMessage/phone export default. No alt. It sits under the \"Old Fish House Specials\" heading so it is plausibly the specials board, but plausibly is not evidence."
+      }
+    ],
+    "_name_finding": "The site trades as \"Old North Main Eats\" and presents \"Old Fish House\" as the venue on it. Our listing huro-lst-0183 is named \"The Old Fish House (Huron, Ohio)\" and huro-lst-0006 \"Old Fish House\" - two listings, one place. 0006's own domain is now expired (see that record).",
+    "amenities": [
+      "Dog friendly"
+    ],
+    "description": "Old Fish House, on Old North Main in Huron, Ohio. The page states it is dog friendly and asks visitors not to feed Skipper."
+  },
+  "huro-lst-0014": {
+    "_match_name": "Huron Pizza House - Huron, OH",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.pizzahousehuron.com/ (WordPress, All in One SEO)",
+    "_confidence": "HIGH on identity - \"812 S Main Street Huron, OH 44839\", 419-433-5751, \"Open Daily 4pm\". LOW on the food images: generic filenames and generic alts, all uploaded in one batch (2022/07) - the signature of a web designer dropping in purchased stock.",
+    "photos": [
+      {
+        "url": "https://www.pizzahousehuron.com/wp-content/uploads/2022/07/location_quick-link.png",
+        "what": "\"Colorfully painted fish direct customers to the store\" (operator alt) - the painted fish are a Huron street feature, so this one is place-specific",
+        "credit": "Huron Pizza House",
+        "credit_url": "https://www.pizzahousehuron.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.pizzahousehuron.com/wp-content/uploads/2022/07/pepperoni-pizza.jpg",
+        "what": "alt \"A delicious pizza\"",
+        "why": "Generic filename + generic alt + single 2022/07 upload batch. Reads as licensed stock food photography served first-party. Not established either way; refused as evidence of this kitchen."
+      },
+      {
+        "url": "https://www.pizzahousehuron.com/wp-content/uploads/2022/07/spaghetti.jpg",
+        "what": "alt \"A closeup of spaghetti on a plate with parmesan cheese\"",
+        "why": "Same batch, same pattern."
+      },
+      {
+        "url": "https://www.pizzahousehuron.com/wp-content/uploads/2022/07/cold-cuts.jpg",
+        "what": "alt \"Cold cuts\"",
+        "why": "Same batch, same pattern."
+      },
+      {
+        "url": "https://www.pizzahousehuron.com/wp-content/uploads/2022/07/employment_quick-link.png",
+        "what": "alt \"A woman receiving a pizza order at her door\"",
+        "why": "A stock delivery scene used as a nav tile."
+      }
+    ],
+    "phone": "+14194335751",
+    "address_note": "812 S Main Street, Huron, OH 44839",
+    "hours": {
+      "note": "Page states \"Open Daily 4pm\" only; closing times not established."
+    }
+  },
+  "huro-lst-0241": {
+    "_match_name": "Trabel’s Bagels",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.trabelsbagels.com/ (Square Online) + /sitemap.xml + a product page",
+    "_confidence": "MEDIUM. The served home page is one word of text (\"Home\") - genuinely client-rendered - but the sitemap lists ~100 product URLs and the product pages DO carry image paths in the served JSON, so \"JS-only therefore empty\" is false here too. Identity: the domain and the Square account are the only evidence on the served bytes; no Huron address appears in the HTML.",
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.trabelsbagels.com/uploads/b/243bc8a0-6939-11ed-ae4b-493faa2b43d6/392D1E44-827A-4967-A23F-9BAA1C3F3234.jpeg",
+        "what": "not established",
+        "why": "GUID filename = an iOS photo export (original capture, good rights signal). No alt, no caption, no heading - zero subject evidence."
+      },
+      {
+        "url": "https://www.trabelsbagels.com/uploads/b/243bc8a0-6939-11ed-ae4b-493faa2b43d6/image0%20(3)_NzY5Mz.jpeg",
+        "what": "illustrates the \"Bagel Board\" product",
+        "why": "Subject comes only from the product page heading it sits under. Filename \"image0 (3)\" is an export default."
+      }
+    ],
+    "_no_photos_reason": "Fetched the home page, sitemap.xml and /product/bagel-board/40. No image on this site carries alt text, a caption or a descriptive filename. Product pages are the only place subject can be inferred, and only from the product name. ~100 product URLs unscraped - a product-image sweep is the remaining job and would yield item photos with item names.",
+    "_url_finding": "No occurrence of \"Huron\" anywhere in the served HTML of the home page. Identity is inferred from the domain alone. Worth confirming against the listing address before use."
+  },
+  "huro-lst-0250": {
+    "_match_name": "Jim's Pizza Box",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.jimspizzabox.com/ and /huron (Duda; irp.cdn-website.com)",
+    "_confidence": "HIGH on identity - /huron prints \"819 Main St, Huron, OH 44839\", (419) 433-4463, \"Since 1978... family-owned pizza restaurant located in Huron, OH\". ZERO photographs on the site.",
+    "photos": [],
+    "_no_photos_reason": "Fetched the held URL, the site root and the Huron location page. The site serves exactly two images and both are the logo (light and dark variants). There is no photograph of the restaurant, the food or the building anywhere on it. The alt text on both logos is machine-written (\"A logo for jim 's pizza box with a picture of a pizza box\") - Duda's auto-alt, not the operator.",
+    "_url_finding": "THE HELD URL IS A 404. https://www.jimspizzabox.com/Huron-OH returns HTTP 404 (and the 404 page still contains the word \"Huron\" 10 times from the nav, so a naive \"does the body say Huron\" test PASSES on it). The working page is https://www.jimspizzabox.com/huron - lower case, no state suffix.",
+    "phone": "+14194334463",
+    "address_note": "819 Main St, Huron, OH 44839",
+    "hours": {
+      "monday": "Closed",
+      "note": "Tue-Thu 11:00-21:00; remaining days on the page, not transcribed here."
+    },
+    "description": "Since 1978, Jim's Pizza Box has served the North Coast from Huron, with further locations in Milan and Vermilion."
+  },
+  "huro-lst-0193": {
+    "_match_name": "CUSH Cafe",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.riverviewlanes.com",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "DOMAIN NOW REDIRECTS TO AN OFFSHORE GAMBLING SITE. riverviewlanes.com returns HTTP 301 to https://abutotomacau.com/ (which then times out). Nothing of CUSH Cafe or Riverview Lanes remains at this domain.",
+    "_no_photos_reason": "Nowhere left to look at the held URL. CUSH Cafe is the cafe inside Riverview Lanes (see huro-lst-0237 Riverview Lanes and Cafe / huro-lst-0196 Riverview Cafe, held by the overnight and dining2 beats). A live address for this operator is not established."
+  },
+  "huro-lst-0184": {
+    "_match_name": "Costa Azul Mexican Restaurant",
+    "_fetched": "2026-09-22",
+    "_source": "http://Www.CostaAzulMexican.com/",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "DOMAIN NOW SERVES AN INDONESIAN GAMBLING SITE. CostaAzulMexican.com resolves and 200s, redirecting to https://jalanamavi.com/ - \"AMAVI5D - Jalur Resmi Situs Toto 4D Terpercaya\". 497 KB, zero occurrences of \"Huron\", zero of \"Costa Azul\".",
+    "_no_photos_reason": "Held URL is dead as an identity. No photograph taken and none should be taken from it."
+  },
+  "huro-lst-0156": {
+    "_match_name": "Captain Montague's Bed & Breakfast",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.captainmontagues.com/",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "DOMAIN NOW SERVES INDONESIAN SEO SPAM. captainmontagues.com returns 200 with the title \"CaptainMontagues\" - a WordPress 7.1.1 blog whose posts are Indonesian-language promotional articles (\"BENTO11 Mengembangkan Konsep Platform Digital...\", author \"admin\", dated 2026-09-04). Zero occurrences of \"Huron\". The B&B title survives; the content does not.",
+    "_no_photos_reason": "THE MOST DANGEROUS ONE IN THIS SLICE: the site still calls itself CaptainMontagues, so a name-match identity test PASSES and only a body test for the town catches it. No image on it belongs to the Huron B&B. Captain Montague's Bed & Breakfast at 229 Center St would need a different source entirely."
+  },
+  "huro-lst-0137": {
+    "_match_name": "Mulligan's Pub - Huron, OH",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.golfsawmillcreek.com",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "NOT THE PUB AND NOT THE RESORT. golfsawmillcreek.com describes itself as \"North Coast Golf Guide - an INDEPENDENT guide to golf along Ohio's North Coast\". Its prose and its image alt text are AI-generated (the hero alt reads \"Links-style golf fairway curving toward Lake Erie at golden hour\"). It is a third-party content site about the area, not Mulligan's Pub and not Sawmill Creek Resort.",
+    "_no_photos_reason": "Its two images are AI-prompt-captioned scenery on its own domain. Mulligan's Pub is at Sawmill Creek Resort (huro-lst-0023); the resort's live pages are under sixflags.com/sawmillcreekresort - see huro-lst-0024."
+  },
+  "huro-lst-0244": {
+    "_match_name": "Main Street Tavern",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.mainsthuron.com",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "AI-GENERATED FILLER SITE. mainsthuron.com returns 200 and is an \"aerospace excellence / aircraft manufacturing\" company page with invented testimonials (Arthur Pendelton, Marcus Sterling). Its three image alt texts are RAW MIDJOURNEY PROMPTS, negative flags and all: \"...photorealistic aerospace facility engineering real environment sky clouds planes flying --no woman\". Every link is an on-page anchor. The word \"Huron\" appears 21 times in the served bytes - ALL of them inside the domain name string.",
+    "_no_photos_reason": "No image on this domain has anything to do with Main Street Tavern. A \"does the body say Huron\" check passes on it, because the domain name is in the body."
+  },
+  "huro-lst-0198": {
+    "_match_name": "Sand Bar",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.thesandbar.com",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "WRONG TOWN, WRONG STATE. thesandbar.com is \"The Sandbar in Lawrence, Home of the Indoor Hurricane\", 17 East 8th Street, Lawrence, KS 66044, 785.842.0111.",
+    "_no_photos_reason": "Same class as the oliverssalon.com case. Nothing taken."
+  },
+  "huro-lst-0006": {
+    "_match_name": "Old Fish House",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.oldfishhousehuron.com",
+    "_confidence": "NO PHOTO TAKEN - the held URL is not this business.",
+    "photos": [],
+    "_url_finding": "DOMAIN EXPIRED. oldfishhousehuron.com redirects to expireddomains.com/domain/oldfishhousehuron.com - a domain-broker listing page, not a restaurant.",
+    "_no_photos_reason": "The live page for this business is https://oldnorthmaineats.com/old-fish-house/ - recorded under huro-lst-0183, which is the same place under a second listing."
+  },
+  "huro-lst-0214": {
+    "_match_name": "Bruno's Pizzeria",
+    "_fetched": "2026-09-22",
+    "_source": "https://mybrunospizza.com/ (GoDaddy Website Builder)",
+    "_confidence": "IDENTITY IN DOUBT. The site IS Bruno's Pizzeria and is real, but its entire navigation is \"Home | Willard | Marblehead | Order Online\" - TWO locations, neither of them Huron. Zero occurrences of \"Huron\", \"OH\" or \"44839\" in the served page.",
+    "photos": [],
+    "_url_finding": "RIGHT BRAND, NO HURON LOCATION ON THE SITE. Either the Huron store closed, or it never was one of Bruno's own, or the site is behind. Not established. Do not put Willard or Marblehead imagery on a Huron card.",
+    "_no_photos_reason": "Only the home page renders content (the interior is a hiring form). No photographs served at all, and no Huron page to take them from."
+  },
+  "huro-lst-0260": {
+    "_match_name": "Feddersens",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.feddersens.com/",
+    "_confidence": "IDENTITY MISMATCH OF KIND, NOT NAME. feddersens.com (7 KB, one page) is \"Feddersen's Bakery & Dough\" selling FROZEN PIZZA DOUGH WHOLESALE to other operators - \"Why use Feddersen's Pizza Dough?\", 4 oz dough balls, on-site training for your staff. It is a B2B supplier page. No address, no phone, no \"Huron\".",
+    "photos": [],
+    "_no_photos_reason": "The page carries no images at all beyond layout. Nothing to take.",
+    "_name_finding": "Our listing has this in the dining category. On the evidence of its own website it is a wholesale dough manufacturer, not a place to eat. Worth a category review; not resolved here."
+  },
+  "huro-lst-0109": {
+    "_match_name": "Cameo Pizza Huron by the Lake",
+    "_fetched": "2026-09-22",
+    "_source": "https://cameohuron.foodtecsolutions.com/ordering/home",
+    "_confidence": "Live and almost certainly correct (the subdomain is literally \"cameohuron\"), but it is an ORDERING APPLICATION, not a website.",
+    "photos": [],
+    "_no_photos_reason": "3.2 KB of shell HTML titled \"Web Ordering\". No images, no address, no hours in the served bytes. FoodTec renders the menu from an authenticated API; unlike Square/Shopify/Wix there is no embedded data channel in the document. A photo for Cameo Pizza Huron by the Lake needs a different source."
+  },
+  "huro-lst-0053": {
+    "_match_name": "Lambs Landing Cottage",
+    "_fetched": "2026-09-22",
+    "_source": "https://lambslanding.com/",
+    "_confidence": "Live, built on Homestead/mywebsitebuilder, fully client-rendered with no embedded content in the served document.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://storage.googleapis.com/wzsitethumbnails/site-48884311/800x500.jpg",
+        "what": "A SCREENSHOT OF THE WEBSITE ITSELF",
+        "why": "This is the page's og:image and the ONLY image URL in the served bytes. It is the site builder's auto-generated 800x500 thumbnail of the page, stored under wzsitethumbnails. An og:image scraper would file a picture of a web page as a picture of a cottage."
+      }
+    ],
+    "_no_photos_reason": "Home page fetched; no <img>, no JSON image channel, no Huron/OH/44839 string. The content is loaded by the builder's viewer.js at runtime."
+  },
+  "huro-lst-0161": {
+    "_match_name": "Peace By Piece Pastries",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.facebook.com/Piebakercakemaker (held URL; not fetched)",
+    "photos": [],
+    "_no_photos_reason": "The only URL we hold is a Facebook page. Facebook serves a login wall to an unauthenticated fetch and its images are on fbcdn URLs that expire and are licensed to the uploader under Meta terms. No independent domain found for Peace By Piece Pastries.",
+    "_confidence": "not established"
+  },
+  "huro-lst-0268": {
+    "_match_name": "Wink's Pizza",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.winkspizza.com",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.winkspizza.com has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0264": {
+    "_match_name": "Flavorfuel",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.flavorfuel.menu",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.flavorfuel.menu has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0189": {
+    "_match_name": "Pied Piper Drive In",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.piedpiper.com",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.piedpiper.com has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0080": {
+    "_match_name": "I-5's Bar & Grill",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.i5sbar.com",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.i5sbar.com has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0152": {
+    "_match_name": "I Fives",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.i5sbar.com/",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.i5sbar.com/ has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0202": {
+    "_match_name": "Matrix Proven Pos",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.matrixprovenpos.com",
+    "_confidence": "DEAD AT THE DNS LAYER.",
+    "photos": [],
+    "_url_finding": "DOMAIN DOES NOT RESOLVE. curl: (6) Could not resolve host - www.matrixprovenpos.com has no DNS record at all (tried both www and apex, IPv4). This is not a 404 and not a block; the name is gone.",
+    "_no_photos_reason": "Nothing to fetch. A new source is needed for this business."
+  },
+  "huro-lst-0024": {
+    "_match_name": "The Miller's Table at Sawmill Creek Resort",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.sixflags.com/sawmillcreekresort/dining (Next.js; images on cdn.sanity.io)",
+    "_confidence": "Identity correct - this is Sawmill Creek Resort, Huron. Images are corporate-owned (Six Flags Entertainment, formerly Cedar Fair) and several are generic lifestyle shots rather than the property; alt text distinguishes them.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/5f9610d19e68119e66c4589a3256a2be0949558e-1356x1036.jpg",
+        "what": "alt \"Harvest dining area with seats and chairs\" - the resort's Harvest restaurant",
+        "why": "Owned by Six Flags Entertainment; no licence stated. Place-specific, so worth asking for."
+      },
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/713a3cfcc59816b143f9af568ac55a4054ac9290-1356x1036.jpg",
+        "what": "alt \"Outdoor seating by the water\" - lakeside seating at the resort",
+        "why": "Same; the most town-specific image on the page."
+      },
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/aa65bec7d4eb35c1545fc61ef45794202cde9eb0-1800x1200.jpg",
+        "what": "alt \"Family Sitting at a table with drinks\" - the dining page hero / og:image",
+        "why": "Corporate lifestyle photography; could be any resort. Generic, per the corrected finding that chain imagery is the least town-specific in the directory."
+      }
+    ],
+    "_no_photos_reason": "Nothing recorded as usable. Three further images on the page (\"Couple toasting with red wine\", \"Friends toasting with drinks\", \"Starbucks Cup\") are interchangeable corporate stock. The Miller's Table itself is NOT named anywhere in the dining page's alt text.",
+    "_photo_method": "The page serves /_next/image?url=<encoded sanity URL>. Decode the url= parameter and drop its w/h/q query to get the original on cdn.sanity.io."
+  },
+  "huro-lst-0023": {
+    "_match_name": "Sawmill Creek Resort",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.sixflags.com/sawmillcreekresort/dining (Next.js; images on cdn.sanity.io)",
+    "_confidence": "Identity correct - this is Sawmill Creek Resort, Huron. Images are corporate-owned (Six Flags Entertainment, formerly Cedar Fair) and several are generic lifestyle shots rather than the property; alt text distinguishes them.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/5f9610d19e68119e66c4589a3256a2be0949558e-1356x1036.jpg",
+        "what": "alt \"Harvest dining area with seats and chairs\" - the resort's Harvest restaurant",
+        "why": "Owned by Six Flags Entertainment; no licence stated. Place-specific, so worth asking for."
+      },
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/713a3cfcc59816b143f9af568ac55a4054ac9290-1356x1036.jpg",
+        "what": "alt \"Outdoor seating by the water\" - lakeside seating at the resort",
+        "why": "Same; the most town-specific image on the page."
+      },
+      {
+        "url": "https://cdn.sanity.io/images/bsnrdz4t/production/aa65bec7d4eb35c1545fc61ef45794202cde9eb0-1800x1200.jpg",
+        "what": "alt \"Family Sitting at a table with drinks\" - the dining page hero / og:image",
+        "why": "Corporate lifestyle photography; could be any resort. Generic, per the corrected finding that chain imagery is the least town-specific in the directory."
+      }
+    ],
+    "_no_photos_reason": "Nothing recorded as usable. Three further images on the page (\"Couple toasting with red wine\", \"Friends toasting with drinks\", \"Starbucks Cup\") are interchangeable corporate stock. The Miller's Table itself is NOT named anywhere in the dining page's alt text. Same page serves both the resort listing and The Miller's Table listing.",
+    "_photo_method": "The page serves /_next/image?url=<encoded sanity URL>. Decode the url= parameter and drop its w/h/q query to get the original on cdn.sanity.io."
+  },
+  "huro-lst-0162": {
+    "_match_name": "Donut Shop - Huron, OH",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.mesenburg.com/ (Wix)",
+    "_confidence": "NO PHOTO RECORDED, DELIBERATELY. The prominent-photos beat already flagged this URL: mesenburg.com is Mesenburg Creative Catering of Huron and the served page contains zero occurrences of \"donut\". I fetched it and confirm that, and add one thing: the site serves 41 wixstatic media ids under TWO account prefixes, a1a100_ (23) and a896d9_ (18), and its Wix page list includes \"Our Venue\", \"Gallery\", \"Menus\", \"Reservations\" and \"weddingquote\" - a catering-and-venue business.",
+    "photos": [],
+    "_url_finding": "Right town, unestablished business (carried forward from prominent-photos.json). Whether the Donut Shop at 501 Main St and Mesenburg Creative Catering share an operator is still not established.",
+    "_no_photos_reason": "Refused on identity, not on availability. There ARE usable images here (alt text of the form \"marketing 22-72.jpg\" - a photographer's shoot sequence, so first-party but with no subject in it). Putting a catering venue gallery on a donut shop card is exactly the quiet failure the brief warns about."
+  },
+  "huro-lst-0223": {
+    "_match_name": "Domino's",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.dominos.com/en/?utm_source=google&utm_medium=loclist&utm_campaign=localmaps",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0057": {
+    "_match_name": "McDonald's",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.mcdonalds.com/us/en-us/location/oh/huron/2118-cleveland-rd-w/6106.html?cid=RF%3AYXT%3ARoN%3A%3AClicks%3Fcid%3DRF%3AYXT%3AFB%3A%3AClicks",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0108": {
+    "_match_name": "Wendy's",
+    "_fetched": "2026-09-22",
+    "_source": "https://locations.wendys.com/united-states/oh/huron/600-rye-beach-road",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0034": {
+    "_match_name": "Subway",
+    "_fetched": "2026-09-22",
+    "_source": "https://restaurants.subway.com/united-states/oh/huron/2117-cleveland-rd-w",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0139": {
+    "_match_name": "Dairy Queen Grill & Chill",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/2462/?utm_source=organic&utm_campaign=yext%2F&y_source=1_ODk5NzEzOS00ODMtbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0042": {
+    "_match_name": "Dairy Queen",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/2462/?utm_source=organic&utm_campaign=yext%2F&y_source=1_ODk5NzEzOS01NTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0185": {
+    "_match_name": "Long John Silver's",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.ljsilvers.com/?y_source=1_MjAxNTE0NTAzMy01NTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0168": {
+    "_match_name": "Blimpie",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.blimpie.com",
+    "photos": [],
+    "_no_photos_reason": "National-brand location page. Per the corrected finding in prominent-photos-NOVEL.md #4, chain brand imagery is the LEAST town-specific in the directory and a Huron card loses nothing by lacking it. Not fetched; not worth a fetch.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0040": {
+    "_match_name": "Dunkin'",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.sonicdrivein.com",
+    "photos": [],
+    "_confidence": "NO PHOTO TAKEN.",
+    "_url_finding": "OUR LISTING FOR \"Dunkin'\" HOLDS SONIC DRIVE-IN'S WEBSITE. The website field on huro-lst-0040 is https://www.sonicdrivein.com - a different chain entirely. Wrong-entity at the level of the held field, not the remote page.",
+    "_no_photos_reason": "Not fetched. Fix the URL first."
+  },
+  "huro-lst-0103": {
+    "_match_name": "Comfort Inn River's Edge",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017?pmf=yext&mc=llyxyxpx",
+    "photos": [],
+    "_no_photos_reason": "Already researched by the prominent-photos beat: choicehotels.com and motel6.com both refuse automated fetches, and the corrected finding is that chain lodging galleries are branded room stock a Huron card does not need. See prominent-photos.json for the full record, including the Quality Inn / Rodeway Inn and Motel 6 / Microtel brand questions.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0075": {
+    "_match_name": "Quality Inn Huron",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405?pmf=yext&mc=llyxyxpx",
+    "photos": [],
+    "_no_photos_reason": "Already researched by the prominent-photos beat: choicehotels.com and motel6.com both refuse automated fetches, and the corrected finding is that chain lodging galleries are branded room stock a Huron card does not need. See prominent-photos.json for the full record, including the Quality Inn / Rodeway Inn and Motel 6 / Microtel brand questions.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0016": {
+    "_match_name": "Motel 6",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.motel6.com/",
+    "photos": [],
+    "_no_photos_reason": "Already researched by the prominent-photos beat: choicehotels.com and motel6.com both refuse automated fetches, and the corrected finding is that chain lodging galleries are branded room stock a Huron card does not need. See prominent-photos.json for the full record, including the Quality Inn / Rodeway Inn and Motel 6 / Microtel brand questions.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0201": {
+    "_match_name": "Microtel Inn Suites Huron",
+    "_fetched": "2026-09-22",
+    "_source": "https://motel-6-sandusky-huron.booked.net",
+    "photos": [],
+    "_no_photos_reason": "Already researched by the prominent-photos beat: choicehotels.com and motel6.com both refuse automated fetches, and the corrected finding is that chain lodging galleries are branded room stock a Huron card does not need. See prominent-photos.json for the full record, including the Quality Inn / Rodeway Inn and Motel 6 / Microtel brand questions.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0052": {
+    "_match_name": "Old Homestead One Beach House Rental",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.vrbo.com/2736245?unitId=3307095",
+    "photos": [],
+    "_no_photos_reason": "OTA listing page (VRBO/Airbnb). Images are licensed to the platform or the owner under platform terms, the pages are bot-walled, and the property has no independent domain in our data. Not fetched. The waterfront beat holds the non-photo fields for some of these.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0213": {
+    "_match_name": "Voegirl's Vacation Rentals #2",
+    "_fetched": "2026-09-22",
+    "_source": "http://www.vrbo.com/1217028",
+    "photos": [],
+    "_no_photos_reason": "OTA listing page (VRBO/Airbnb). Images are licensed to the platform or the owner under platform terms, the pages are bot-walled, and the property has no independent domain in our data. Not fetched. The waterfront beat holds the non-photo fields for some of these.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0129": {
+    "_match_name": "The Buster Brown Shoe House",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.vrbo.com/306905ha?preferlocale=true&uni_id=377469&vgdc=HAUS",
+    "photos": [],
+    "_no_photos_reason": "OTA listing page (VRBO/Airbnb). Images are licensed to the platform or the owner under platform terms, the pages are bot-walled, and the property has no independent domain in our data. Not fetched. The waterfront beat holds the non-photo fields for some of these.",
+    "_confidence": "Not pursued - see reason."
+  },
+  "huro-lst-0271": {
+    "_match_name": "The Michael Lake House",
+    "_fetched": "2026-09-22",
+    "_source": "https://www.airbnb.com/rooms/5557714",
+    "photos": [],
+    "_no_photos_reason": "OTA listing page (VRBO/Airbnb). Images are licensed to the platform or the owner under platform terms, the pages are bot-walled, and the property has no independent domain in our data. Not fetched. The waterfront beat holds the non-photo fields for some of these.",
+    "_confidence": "Not pursued - see reason."
+  }
+}

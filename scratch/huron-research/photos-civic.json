@@ -1,0 +1,768 @@
+{
+  "_README": {
+    "_scope": "PHOTOS for Huron's CIVIC/RECREATION slice: listings.json records with category community|parks|historic|arts, no photos, a website set. 46 records, built fresh from cartograph/data/huron/content/listings.json and sorted by prominence_rank.",
+    "_already_done_elsewhere": "Christ Episcopal Church (0236), BGSU Firelands (0195/0280), Cedar Point Center (0226), Huron Historical Society (0212) and Upside Down Art Studio (0146) were photographed by earlier passes (civic-deep.json, prominent-photos.json) and are not revisited here.",
+    "_method": "Direct curl of each website (WebSearch not used). For every candidate image: subject evidence scored from caption, alt text, descriptive filename, CDN path and the heading of the block it sits in. Images whose subject could not be established from the page were DOWNLOADED TO A SCRATCH DIR AND LOOKED AT before being recorded; nothing is rehosted and no image is recorded on filename alone.",
+    "_identity_gate": "Every site was checked for a Huron, Ohio (44839) / Erie County address, phone or town name BEFORE any image was taken. Four sites failed that gate outright and are recorded with _url_finding and zero photos.",
+    "_licences": "No open licence was found on any of these 46. The Commons/NRHP route that served Christ Episcopal Church produced nothing new here (see _no_photos_reason on the city records). Municipal photographs are recorded with the City of Huron as credit and NO licence claimed - a city publication is not a federal work."
+  },
+  "huro-lst-0065": {
+    "_match_name": "City of Huron - Government",
+    "_source": "https://www.cityofhuron.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity certain - the site is the municipal site for Huron, Ohio and carries 417 Main Street, the listing's address. The clock-tower photograph was opened and looked at: it shows the black steel HURON clock tower with a white church steeple behind it. Rights: the City of Huron publishes it; NO licence is stated and a municipal work is not a federal work, so no licence is claimed here.",
+    "_cdn_note": "The page markup uses root-relative paths under <base href=\"https://www.cityofhuron.org/\">; that host 302s to files.cityofhuron.org, which serves the original at full resolution. The files.cityofhuron.org URL is the one recorded. The same file is also reachable at cms2.revize.com/revize/cityofhuron/... (the Revize CMS origin).",
+    "photos": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Home%20Page/Clock%20tower%20web.jpg",
+        "what": "The Huron town clock - a black steel open-frame tower with a white clock face lettered HURON, a white church steeple rising behind it, ornamental grasses at the base. Verified by opening the file.",
+        "credit": "City of Huron, Ohio",
+        "credit_url": "https://www.cityofhuron.org/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://files.cityofhuron.org/Images/Home%20Page/Light%20Welcome.jpg",
+        "what": "Homepage welcome-block image, alt text \"Light Welcome\". 300x399 portrait. Subject evidence is the alt text and the homepage welcome heading only - NOT opened, so the subject is not independently confirmed.",
+        "credit": "City of Huron, Ohio",
+        "credit_url": "https://www.cityofhuron.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_no_photos_reason": "Searched beyond the city site: Wikimedia Commons Category:Buildings in Huron, Ohio was established by the earlier civic-deep pass to hold no image of Huron City Hall, the post office or the fire station, and nothing new was found. The city site's remaining homepage images are all UI furniture (_assets_/images/*.png icons, social-network tiles, scrollMenu icons).",
+    "_url_finding": "The listing's website is http://www.cityofhuron.org/ which 301s to https. Live and correct."
+  },
+  "huro-lst-0035": {
+    "_match_name": "Huron Fire Division",
+    "_source": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH. Both station photographs were opened and looked at. Station 1: a long tan-brick single-storey station with three bay doors, two yellow engines lettered HURON FIRE parked on the apron, US flag on a pole, City of Huron Fire Division seal on the wall. Station 2: a red-brick station with a white cupola and hose tower, two yellow Huron Fire engines on the apron. Subject is unambiguous. Rights: City of Huron publication, no licence stated.",
+    "photos": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Safety%20Services/Fire/Station_1_21.jpg",
+        "what": "Huron Fire Division Station 1 - tan brick station with three apparatus bays, two yellow HURON FIRE engines parked outside, flagpole and departmental seal. 3000x2250. Verified by opening the file.",
+        "credit": "City of Huron, Ohio - Fire Division",
+        "credit_url": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Safety%20Services/Fire/Station_2_21.jpg",
+        "what": "Huron Fire Division Station 2 - red brick station with a white cupola and antenna mast, two yellow Huron Fire engines on the apron under a clear sky. 3000x2250. Verified by opening the file.",
+        "credit": "City of Huron, Ohio - Fire Division",
+        "credit_url": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Safety%20Services/Fire/Fire%203.jpg",
+        "what": "Fire Division page banner, 1600x441 letterbox crop, alt text \"Fire 3\". Subject evidence is the page it heads (Safety Services / Fire) and its CDN path; NOT opened, so the exact subject is not confirmed.",
+        "credit": "City of Huron, Ohio - Fire Division",
+        "credit_url": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Safety%20Services/Fire/Fire%20200x200%201.jpg",
+        "what": "One of three 200x200 thumbnails on the Fire page, alt \"Fire 200x200 1\" (also ...2 and ...3).",
+        "why": "Alt text and filename carry ZERO subject evidence - they describe the crop size, not the picture. Refused on the alt-text rule rather than on rights."
+      }
+    ],
+    "_url_finding": "⛔ The listing's website http://www.cityofhuron.org/government/departments/fire-department is a 404 - the city site returns its styled not-found page with HTTP 404 (36 kB, so a size check would not catch it). The fire division lives at /government/safety_services/fire/index.php. The stored URL is WRONG, not merely stale: the department was never under /departments/."
+  },
+  "huro-lst-0203": {
+    "_match_name": "Huron Boat Basin",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/huron_boat_basin/marina.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH for the Lyman photograph, which was opened: classic wooden Lyman runabouts moored in a row in front of the boat basin's white clapboard building with its cupola, trees and lawn behind. That is the Huron Boat Basin. The sailboat image is small (177x276) and was not opened.",
+    "photos": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Departments/Parks%20Recreation/Huron%20Boat%20Basin/Marina/LYMANS_WEB.jpg",
+        "what": "Wooden Lyman boats moored bow-in at the Huron Boat Basin, the white cupola-topped basin building and lawn behind them, spectators on the bank. Verified by opening the file. Filename LYMANS_WEB - Lyman Boat Works was Huron's own builder, and the town holds a Lyman rendezvous.",
+        "credit": "City of Huron, Ohio - Parks & Recreation",
+        "credit_url": "https://www.cityofhuron.org/government/departments/parks_recreation/huron_boat_basin/marina.php",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Departments/Parks%20Recreation/Huron%20Boat%20Basin/Marina/SAILBOATS_WEB.jpg",
+        "what": "Sailboats at the marina, per filename and the marina page it sits on. 177x276. NOT opened; subject evidence is filename plus page heading.",
+        "credit": "City of Huron, Ohio - Parks & Recreation",
+        "credit_url": "https://www.cityofhuron.org/government/departments/parks_recreation/huron_boat_basin/marina.php",
+        "licence": "not stated"
+      }
+    ],
+    "_url_finding": "⛔ The listing's website .../parks-and-recreation/about-us is a 404. The live path is /government/departments/parks_recreation/huron_boat_basin/marina.php (underscores, .php). The whole /parks-and-recreation/ hyphenated branch in this directory is dead - see 0228 and 0178."
+  },
+  "huro-lst-0228": {
+    "_match_name": "Huron Parks & Recreation Department",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Page reached and read. It carries no photograph of the department or its parks - only Material Symbols UI glyphs (nature, anchor, celebration) whose alt attribute is the image PATH repeated, and one flyer.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Departments/Parks%20Recreation/Community%20Events/Nickel%20Plate%20Beach%20Parking%20Pass.jpg",
+        "what": "A Nickel Plate Beach parking-pass flyer/graphic.",
+        "why": "It is a document graphic, not a photograph of a place; recording it would put a parking-pass notice on a park card."
+      }
+    ],
+    "_no_photos_reason": "The Parks & Recreation index page carries no photography. Its four section tiles use Google Material Symbols PNGs whose alt text is the image path verbatim (alt=\"Site%20Setup/nature_30dp_FFFFFF_FILL0_wght400_GRAD0_opsz24.png?t=...\") - an operator pasted the src into the alt box. The marina sub-page DOES have photographs; they are recorded under 0203.",
+    "_url_finding": "⛔ Listing website /government/departments/parks-and-recreation is a 404. Live path is /government/departments/parks_recreation/index.php."
+  },
+  "huro-lst-0178": {
+    "_match_name": "Lake Front Park and Beach",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/beach_safety.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "The city's beach page was found and read. Its only two images are screenshots, refused.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://files.cityofhuron.org/Images/Government/Departments/Parks%20Recreation/Parks/Beach%20Safety/Screen_Shot_2020-05-29_at_12.22.19_PM%20-%20Copy%20-%20Copy.jpg",
+        "what": "Unknown - the only two images on the city's Beach Safety page.",
+        "why": "Filenames are macOS screenshot exports dated 2020-05-29, twice duplicated (\"- Copy - Copy\"), and the alt text repeats the filename. A screenshot of something is not a photograph of the beach, and there is no subject evidence at all. Refused."
+      }
+    ],
+    "_no_photos_reason": "Looked at: the city site's parks branch (/government/departments/parks_recreation/, its parks/beach_safety.php sub-page and the homepage), and the Commons category established as empty by the earlier civic-deep pass. The City of Huron publishes NO photograph of its lakefront park or beach on its own site - the beach page carries only two 2020 screenshots. This is the loudest gap in the slice: the town's signature waterfront asset has no municipal photograph online.",
+    "_url_finding": "Listing website is the bare http://cityofhuron.org, which resolves. It is the city homepage, not a park page - the card would link a park to the city's front door."
+  },
+  "huro-lst-0227": {
+    "_match_name": "Lakefront Park",
+    "_source": "https://www.cityofhuron.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Same premises as 0178 and the same empty result.",
+    "photos": [],
+    "_no_photos_reason": "Identical to huro-lst-0178 - see that record. No municipal photograph of the lakefront park exists on cityofhuron.org.",
+    "_name_finding": "⛔ huro-lst-0227 \"Lakefront Park\" (address \"Park Street\") and huro-lst-0178 \"Lake Front Park and Beach\" (address \"310 Park St\") carry the same phone (+14194338487, Parks & Rec) and the same website. They are almost certainly ONE place entered twice under two spellings of its name. Not resolved here; flagged for a human."
+  },
+  "huro-lst-0276": {
+    "_match_name": "Huron High School",
+    "_source": "https://huronk12.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "CERTAIN. The building photograph was opened: a low brown-brick school with HURON HIGH SCHOOL in aluminium letters across the facade, lawn and mature trees. Alt text on the district site says \"Huron High School\". Published by Huron City Schools on its ParentSquare-hosted site, image served from s3.amazonaws.com/scschoolfiles/7972/. No licence stated.",
+    "photos": [
+      {
+        "url": "https://s3.amazonaws.com/scschoolfiles/7972/HHS_1786569994.png",
+        "what": "Huron High School from the lawn - low brown brick block with HURON HIGH SCHOOL in raised letters, trimmed shrubs and mature trees. Verified by opening the file.",
+        "credit": "Huron City Schools",
+        "credit_url": "https://huronk12.org/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://s3.amazonaws.com/scschoolfiles/7972/Central%20Office_1786569994.png",
+        "what": "The HHS / Central Offices entrance at 710 Cleveland Rd W - red awning lettered \"710 Cleveland Rd W - HHS and Central Offices\" with the red H district mark, brick wall and a tall mullioned window above. Verified by opening the file; the sign reads the listing's own address.",
+        "credit": "Huron City Schools",
+        "credit_url": "https://huronk12.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_url_finding": "The listing's http://www.huronhs.com/ 301s to https://huronk12.org/. The old huronhs.com domain still forwards, so the stored URL works, but the district's live domain is huronk12.org."
+  },
+  "huro-lst-0283": {
+    "_match_name": "McCormick Junior High School",
+    "_source": "https://huronk12.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "CERTAIN as to subject - the building photograph was opened and shows a white stone PWA-Moderne school with a stepped central tower, a flagpole and an Ohio historical marker on the verge. District alt text reads \"McCormick Middle School\".",
+    "photos": [
+      {
+        "url": "https://s3.amazonaws.com/scschoolfiles/7972/McCormick_1786569994.png",
+        "what": "McCormick school building - two-storey white stone Art Deco / PWA Moderne facade with a stepped central entrance tower and carved lettering, flagpole to the left, a dark historical marker standing on the grass verge in front. Verified by opening the file.",
+        "credit": "Huron City Schools",
+        "credit_url": "https://huronk12.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_name_finding": "The listing says \"McCormick Junior High School\"; the district's own alt text and navigation say \"McCormick Middle School\". Same building, same address. Recorded, not resolved.",
+    "_url_finding": "⛔ The listing's website http://www.huron-city.k12.oh.us is DEAD - it resolves but returns HTTP 404 with a 315-byte body. The district is at huronk12.org. A pure link check that only tests DNS would pass this.",
+    "_history": "The historical marker standing in front of the building in the district's own photograph is visible but not legible at this resolution; its text is not established here. The Huron Historical Society publishes a marker index and is the place to resolve it."
+  },
+  "huro-lst-0041": {
+    "_match_name": "Woodlands Elementary School",
+    "_source": "https://huronk12.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "CERTAIN. The photograph was opened: a single-storey brick elementary school under a deep flat canopy, WOODLANDS ELEMENTARY in red letters on a sign board over the entrance walk.",
+    "photos": [
+      {
+        "url": "https://s3.amazonaws.com/scschoolfiles/7972/Woodlands_1786569994.png",
+        "what": "Woodlands Elementary School entrance - long low brick building with a flat concrete canopy over the walk, WOODLANDS ELEMENTARY on a red-lettered sign board, glass doors at the end. Verified by opening the file.",
+        "credit": "Huron City Schools",
+        "credit_url": "https://huronk12.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_url_finding": "The listing stores a bare hostname, \"huronhs.com\", with no scheme. It 301s to https://huronk12.org/. Worth normalising."
+  },
+  "huro-lst-0132": {
+    "_match_name": "Shawnee Elementary",
+    "_source": "https://huronk12.org/ and https://huronsa.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "No photograph recorded because the existence of the school is in question - see _name_finding. I did not want to put a building photograph on a card whose subject may not exist.",
+    "photos": [],
+    "_no_photos_reason": "Huron City Schools' own site lists exactly four buildings, each with a photograph: Woodlands Elementary, McCormick Middle, Huron High School and the District Offices. There is NO Shawnee Elementary among them, and no page, photo or mention of Shawnee anywhere on huronk12.org.",
+    "_name_finding": "⛔⛔ Shawnee Elementary's listed address, 712 Cleveland Rd E, is the address huronsa.org publishes for HURON SPORTS ACADEMY (huro-lst-0021), a tuition-free K-6 charter school - \"712 Cleveland Road E. Huron, OH 44839, (419) 387-5534\", quoted from its own contact block. Two directory records therefore occupy one building: a district school the district no longer lists, and the charter school now in it. The listing's website (huronhs.com/CentralOffice.aspx) also 404s into the district's new site. Existence not established; recorded as a question, not an answer.",
+    "_url_finding": "http://www.huronhs.com/CentralOffice.aspx redirects to huronk12.org's homepage, not to a central-office page - the old ASP.NET path is gone."
+  },
+  "huro-lst-0021": {
+    "_match_name": "Huron Sports Academy",
+    "_source": "https://huronsa.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CERTAIN - the site's contact block reads \"712 Cleveland Road E. Huron, OH 44839, (419) 387-5534\", matching the listing's address and phone character for character. It is a tuition-free K-6 charter school operated by ACCEL Schools, not a sports club. Every usable photograph on the site is of identifiable young children, so none is recorded as a photo; see _photos_rights_unclear.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://huronsa.org/wp-content/uploads/sites/86/2025/10/Huron26-69-DSC_5263-Edit_CG.jpg",
+        "what": "Three small children, faces clear and in focus, sitting together on a red playground structure. Alt text on the site: \"Smiling students on the school playground\" - genuine descriptive alt, and the only non-empty alt on the page.",
+        "why": "Subject evidence is excellent; RIGHTS are the problem. Identifiable minors, photographed for the school's own admissions marketing. The school's consent to publish on its own homepage is not consent to appear on a third-party neighbourhood directory card. Held for a human decision."
+      },
+      {
+        "url": "https://huronsa.org/wp-content/uploads/sites/86/2024/03/Huron_Primary_FB_OG.png",
+        "what": "The site's og:image social card.",
+        "why": "A logo card, not a photograph of the place."
+      }
+    ],
+    "_no_photos_reason": "The site publishes no exterior photograph of the school building at 712 Cleveland Rd E. Its imagery is a logo, two untitled classroom PNGs, five blog thumbnails (award graphics, a 'Back to School Ready' flat-lay, a Parent Portal graphic) and three award badges - all with EMPTY alt attributes except the playground shot. The ACCEL Schools footer logo is a chain mark.",
+    "_name_finding": "The name reads like a sports facility and the category is `community`; it is a K-6 charter school whose 'Blitz Model' combines Ohio state standards with daily physical conditioning. A card that calls it a sports academy without saying 'school' would mislead."
+  },
+  "huro-lst-0150": {
+    "_match_name": "Huron United Methodist Church",
+    "_source": "https://huronumc.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH. The banner was opened: a red-brick church with a white steeple set back behind a black iron fence and brick piers, with a #BeUMC banner lettered \"Huron United Methodist Church\" hung on the fence. The steeple matches the one standing behind the town clock in the City of Huron's own photograph, which independently places it on Williams Street in the centre of town.",
+    "photos": [
+      {
+        "url": "https://huronumc.org/hp_wordpress/wp-content/uploads/2023/06/home-page-banner-scaledjpg-1900x646-1.png",
+        "what": "Huron United Methodist Church from Williams Street - red brick sanctuary with a white spire, black iron fence on brick piers along the pavement, a red #BeUMC banner naming the church, bare trees and a clear winter sky. 1900x646 letterbox. Verified by opening the file.",
+        "credit": "Huron United Methodist Church",
+        "credit_url": "https://huronumc.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://huronumc.org/hp_wordpress/wp-content/uploads/2023/06/lighthousel-2.png",
+        "what": "A lighthouse graphic carrying alt=\"Gallery\".",
+        "why": "Alt text says only \"Gallery\" and the filename is misspelt; no subject evidence that this is the Huron light rather than clip art. Refused on the alt-text rule."
+      }
+    ],
+    "_no_photos_reason": "The banner above is the site's only photograph. Everything else on huronumc.org is the church logo, a divider rule and the lighthouse graphic.",
+    "_extra_note": "Hours, service times and amenities for this listing were already recorded by the earlier community.json pass; not repeated here."
+  },
+  "huro-lst-0176": {
+    "_match_name": "St. Peter Catholic School",
+    "_source": "https://www.huronstpeterschool.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH. The parish/school share an identity: the church exterior below was opened and shows a distinctive mid-century A-frame church with a folded gold-clad gable, a tall stained-glass panel, stone base and a white cross-topped spire. The same file is published on both huronstpeterschool.org and the parish site stpetershuron.org, under the crest \"St. Peter Catholic Church & School\".",
+    "_cdn_note": "Duda CDN. The published srcs carry a size tail (-1152w); replacing it with -1920w serves the larger original, which is what is recorded.",
+    "photos": [
+      {
+        "url": "https://irp.cdn-website.com/13bc5d04/dms3rep/multi/opt/341542070_786684215894580_802121083038449428_n-1920w.jpg",
+        "what": "St. Peter Catholic Church, Huron - a mid-century A-frame church, gold vertical cladding on the folded gable, a full-height stained-glass panel above dark glass entrance doors, rough stone base, white spire with a cross behind. Verified by opening the file. ⚠️ The photograph carries a burned-in signature, bottom right: \"Kerrie Lee Visuals\".",
+        "credit": "Kerrie Lee Visuals (signature burned into the image); published by St. Peter Catholic Church & School, Huron",
+        "credit_url": "https://www.huronstpeterschool.org/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://irp.cdn-website.com/dc443f9a/dms3rep/multi/opt/StPeterSchool_SNI_OG-1920w.jpg",
+        "what": "The school's og:image social card: the navy \"St. Peter Catholic Church & School\" crest on the left, and on the right a wildcat mascot in a gym with a crowd of small pupils in grey Wildcats t-shirts. Verified by opening the file. Filename StPeterSchool_SNI_OG is the strongest filename evidence in the slice.",
+        "credit": "St. Peter Catholic School, Huron",
+        "credit_url": "https://www.huronstpeterschool.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://irp.cdn-website.com/13bc5d04/dms3rep/multi/opt/school-1920w.jpg",
+        "what": "Four schoolgirls in navy uniform sitting cross-legged on the grass with clipboards and notebooks, drawing outdoors; a white picket fence and Huron Street traffic behind them. Faces clear and in focus. Filename is literally \"school\". Verified by opening the file.",
+        "why": "Identifiable minors. The school's consent to publish on its own site is not consent to appear on a third-party directory card. Held for a human."
+      },
+      {
+        "url": "https://irp.cdn-website.com/dc443f9a/dms3rep/multi/opt/DSC_9719-cf9b07e1-1920w.jpg",
+        "what": "Unopened. Camera-default filename (DSC_9719) with a Duda hash appended, empty alt.",
+        "why": "Zero subject evidence in markup or filename - a raw camera number is not a description. Refused under the alt-text rule rather than opened and guessed at."
+      },
+      {
+        "url": "https://irt-cdn.multiscreensite.com/ce0bb35f932b47bb809d0e37905542ba/dms3rep/multi/site_background_education-2087x1173.jpg",
+        "what": "The page's CSS background.",
+        "why": "Filename site_background_education on the multiscreensite SHARED template CDN, not the site's own bucket - a Duda stock template background, not a photograph of this school."
+      }
+    ],
+    "_name_finding": "The listing's address for the school is 429 Huron St; the parish/youth-group record (0127) is 430 Main St. They are one campus with two street frontages. Not resolved here."
+  },
+  "huro-lst-0127": {
+    "_match_name": "St. Peter's Youth Group",
+    "_source": "https://www.stpetershuron.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The parish site was reached, but only via www - see _url_finding. It is the parish of St. Peter, Huron, and its imagery is the same church exterior recorded under 0176. Nothing on the site is specific to a YOUTH GROUP; no youth-group photograph exists.",
+    "photos": [
+      {
+        "url": "https://irp.cdn-website.com/13bc5d04/dms3rep/multi/opt/341542070_786684215894580_802121083038449428_n-1920w.jpg",
+        "what": "St. Peter Catholic Church exterior - the A-frame church with gold folded gable, stained glass and white spire. Verified by opening the file. Signature burned in bottom right: \"Kerrie Lee Visuals\". This is the parish premises the youth group meets in; it is NOT a photograph of the youth group.",
+        "credit": "Kerrie Lee Visuals (burned-in signature); published by St. Peter Catholic Church, Huron",
+        "credit_url": "https://www.stpetershuron.org/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://irp.cdn-website.com/13bc5d04/dms3rep/multi/opt/StPeterChurch_SNI_OG-1920w.jpg",
+        "what": "The parish og:image social card: navy \"St. Peter Catholic Church & School\" crest beside the same A-frame church exterior. Verified by opening the file; the Kerrie Lee Visuals signature is visible in this crop too.",
+        "credit": "St. Peter Catholic Church, Huron",
+        "credit_url": "https://www.stpetershuron.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_no_photos_reason": "No photograph of the youth group itself is published. The parish homepage carries the church exterior, the school photograph and two logos, nothing more.",
+    "_url_finding": "⛔ The listing's website https://stpetershuron.org/ - the APEX, no www - fails outright: curl returns no response at all (exit 000), not a 404, on both http and https, although DNS resolves to three A records. https://www.stpetershuron.org/ serves the site normally. The stored URL is broken for anything that does not silently try www. The page <title> is the unedited Duda default, \"Site Home\"."
+  },
+  "huro-lst-0101": {
+    "_match_name": "Little Wonders Presbyterian Preschool",
+    "_source": "https://firstpresbychurchhuron.org/little-wonders-preschool/",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOTHING RECORDED - the page could not be read. This is a wall, not an absence; the site is alive.",
+    "photos": [],
+    "_no_photos_reason": "⛔ Both the preschool page and the parent church homepage return HTTP 403 with a Cloudflare bot-challenge interstitial (<title>Just a moment...</title>, 5.7 kB, noindex/nofollow, a content-security-policy meta and the challenge script). Retried with a full desktop Chrome user-agent and Accept header; same 403. The site is HEALTHY for a human browser and unreadable to any automated pass. Nothing about this listing - photos, hours or description - can be established without a real browser. Flagged rather than reported as empty.",
+    "_url_finding": "The stored URL is correct and the path exists; the block is at the edge, not in the path."
+  },
+  "huro-lst-0207": {
+    "_match_name": "Beachwood Villa Homeowners Condo Owners",
+    "_source": "http://bvcoa.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH for the aerial - it was opened and shows the association's own premises unmistakably. The site is a hand-built HOA page with empty alt on every image, so EVERY candidate here was opened and looked at; none is recorded on filename alone.",
+    "photos": [
+      {
+        "url": "http://bvcoa.com/images/IMG_0897.JPG",
+        "what": "Beachwood Villa from an upper floor - the white balconied condominium block on the left, a fenced kidney-shaped pool with blue loungers and furled umbrellas, lawn running down to a rip-rap revetment, a private sand beach, a small marina of moored powerboats behind a stone breakwater, and Lake Erie to the horizon. Verified by opening the file.",
+        "credit": "Beachwood Villa Condominium Owners Association",
+        "credit_url": "http://bvcoa.com/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "http://bvcoa.com/images/SlussCreditSized.jpg",
+        "what": "Interior of a Beachwood Villa unit - a bright corner living room with wraparound windows over Lake Erie, wicker dining set, ceiling fan, sofa and plants. Verified by opening the file. ⚠️ A credit line is BURNED INTO THE IMAGE, bottom left: \"Compliments of Sluss Realty\", and the filename says SlussCredit.",
+        "why": "Third-party estate agent's marketing photograph, reused by the HOA with an in-pixel credit. Reuse rights on a directory card are not established, and the credit is only discoverable by opening the picture - nothing in the markup says Sluss Realty."
+      },
+      {
+        "url": "http://bvcoa.com/images/IMG_2649.JPG",
+        "what": "Cedar Point across the bay at mid-afternoon - the roller-coaster skyline, the Power Tower and the Ferris wheel seen low across open water from the Huron shore. Verified by opening the file.",
+        "why": "Subject and rights are fine; the problem is FIT. It is the view FROM the listing, not the listing. On a condo-association card it would read as a photograph of Cedar Point."
+      },
+      {
+        "url": "http://bvcoa.com/images/Lighthouse.jpg",
+        "what": "The Huron Harbor pierhead light - the white steel tower at the end of the west pier, silhouetted against a sunset with crepuscular rays, calm water in the foreground. Verified by opening the file.",
+        "why": "Same fit problem: a genuine Huron landmark photograph published on the HOA's site, but not a photograph of Beachwood Villa. ⭐ Worth passing to whoever handles Huron's landmark imagery - this is a good shot of the pier light and it is not on any city page."
+      }
+    ],
+    "_name_finding": "Listing name \"Beachwood Villa Homeowners Condo Owners\" is garbled; the site and the site's logo file say \"BVCOA\" / Beachwood Villa Condominium Owners Association."
+  },
+  "huro-lst-0096": {
+    "_match_name": "Old Homestead On The Lake Association",
+    "_source": "http://www.oldhomesteadone.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity confirmed - the page title and header read \"Old Homestead One - Huron, Ohio\" and it prints its own coordinates, 41.39N -82.54W, which is Huron. Images are unlabelled on a Freeway-built site, so the two content images were opened.",
+    "photos": [
+      {
+        "url": "http://www.oldhomesteadone.com/index_html_files/4.jpg",
+        "what": "The association's Lake Erie shoreline at sunset - low dune grass and vine in the foreground, a sand beach, the lake flat to the horizon under a pink and orange sky, with the white Huron pierhead light standing on the point at left. Verified by opening the file.",
+        "credit": "Old Homestead One Association, Huron, Ohio",
+        "credit_url": "http://www.oldhomesteadone.com/",
+        "licence": "not stated"
+      }
+    ],
+    "_no_photos_reason": "Every other image on the site is navigation furniture - the site is built in Freeway and renders its menu as paired PNG button images (Home, Local Weather, Webcams, Local Links, Regulations, Members' Entrance, NOTICES), each present twice for the rollover state. Those alt attributes are the only non-empty ones on the page, and they name menu items, not pictures.",
+    "_extra_note": "The site's nav includes a Members' Entrance; the association is members-only, already a reported class."
+  },
+  "huro-lst-0278": {
+    "_match_name": "Chapter 50",
+    "_source": "https://chapters.eaa.org/eaa50",
+    "_fetched": "2026-09-22",
+    "_confidence": "CERTAIN. The hangar photograph was opened and the building's own painted sign reads \"EAA CHAPTER 50: WELCOME / Hinde Field Elev. 609\". The page header reads \"EAA Chapter 50, Hinde Field, Huron, OH (88D)\". 88D is Hinde Airport, Huron.",
+    "photos": [
+      {
+        "url": "https://chapters.eaa.org/-/media/be1c4df60ecf45bd8b6b92685a1f3a78.ashx",
+        "what": "The chapter's hangar at Hinde Field - a white metal gable-end hangar with a red roofline, its end wall painted \"EAA CHAPTER 50: WELCOME / Hinde Field Elev. 609\", three conifers and a flowering shrub on the grass apron, concrete taxiway apron to the right. Verified by opening the file.",
+        "credit": "EAA Chapter 50, Huron, Ohio",
+        "credit_url": "https://chapters.eaa.org/eaa50",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://chapters.eaa.org/-/media/6fa20e54377b4554a677ac856885011f.ashx",
+        "what": "A gold 'EAA CHAPTERS GOLD 2025' award medallion graphic. Verified by opening the file.",
+        "why": "A badge, not a photograph of the place. Recording it would put an award seal on the card."
+      }
+    ],
+    "_url_finding": "The listing's http://eaachapter50.com/ 301s to https://chapters.eaa.org/eaa50 and works. ⚠️ Every image on that page carries alt=\"EAA\" or a bare URL as its alt - the national template supplies the alt and it is identical for the hangar, the medallion and the footer banner. Subject evidence had to come from opening the files.",
+    "_name_finding": "The directory name is just \"Chapter 50\", which says nothing. The organisation is EAA (Experimental Aircraft Association) Chapter 50 at Hinde Field, 1819 Boos Rd."
+  },
+  "huro-lst-0225": {
+    "_match_name": "Knights of Columbus",
+    "_source": "https://kofchuron.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity confirmed - the page reads \"Welcome to the Huron, Ohio Knights of Columbus, St. Edward Council 5023\". No photograph exists on it.",
+    "photos": [],
+    "_no_photos_reason": "The council's site carries no photography of the council, its hall or its members. Its largest image was opened and is the NATIONAL Knights of Columbus brand banner - the wordmark and the emblem of the Order on a grey ground - not local content. Everything else is navigation buttons rendered as paired PNGs (Home, Who We Are, About, Calendar, News, Contact, each twice for the rollover), an iOS message-icon set, a Member Signin button and a 1.6 kB spacer. Also tried /who-we-are.html, which 404s into a 411 kB styled error page.",
+    "_url_finding": "http://www.kochuron.org/ 301s to https://kofchuron.org/ - note the letters transpose, kochuron vs kofchuron. Both work today; the stored one is the redirect."
+  },
+  "huro-lst-0102": {
+    "_match_name": "Huron Lagoons Marina",
+    "_source": "https://www.huronlagoons.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGHEST in the slice. Identity certain (the site names Huron 367 times and prints 100 Laguna Dr., the listing's address). The aerial and the D-slip photograph were both opened. The aerial is the single most valuable image found in this slice - it shows the whole river mouth.",
+    "photos": [
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/01/marinas.jpg",
+        "what": "Drone aerial over the Huron River mouth from the south - the lagoons and their finger docks packed with boats, the marina's white-roofed sheds and hardstand bottom left, the town beyond, the river running out to the long west pier and the breakwater, Lake Erie across the top, lily pads in the foreground water. Verified by opening the file. 1500px class original.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2020/04/hlm-shots-at-d-slip-800x500-1.jpg",
+        "what": "The marina's D-slip picnic area on a bright summer day - two timber shade pavilions with shingled hip roofs, a white golf cart on the gravel drive, a SPEED LIMIT 5 sign, boats on trailers and a cruiser's bow at right, mature trees behind. Verified by opening the file. Filename hlm-shots-at-d-slip is unusually explicit.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/01/hlm-pool-300-.jpeg",
+        "what": "The marina's swimming pool, per the filename hlm-pool. 3.2 MB original, published only as a 300x300 crop. NOT opened; subject evidence is the filename prefix hlm- (Huron Lagoons Marina) plus the amenities block it sits in.",
+        "credit": "Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2026/01/485370208_9888192731211648_499240387644468871_n-300x225.jpg",
+        "what": "Unknown. A Facebook-export filename with an empty alt.",
+        "why": "Zero subject evidence: FB photo-id filename, no alt, no caption. Refused."
+      }
+    ],
+    "_cdn_note": "WordPress/Avada. Every content image on this site has an ABSENT alt attribute (not an empty one) - the images are placed through Fusion Builder image elements whose alt box was never filled. The only two non-empty alts on the page are \"Vikings Den Restaurant\" and \"erie-lake-map\". Subject had to come from filenames plus opening the files.",
+    "_note": "The Vikings Den Restaurant image on this page belongs to a dining listing, not to this slice; flagged for whoever holds FOOD."
+  },
+  "huro-lst-0095": {
+    "_match_name": "Holiday Harbor Marina",
+    "_source": "https://www.huronlagoons.com/holiday-harbor/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH. Holiday Harbor is a Huron Lagoons sister marina and has its own page on the same site. The rainbow photograph was opened; its filename Rainbow_HHM carries the marina's initials and the picture matches - a marina hardstand and docks.",
+    "photos": [
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2020/03/Rainbow_HHM.jpg",
+        "what": "A full double rainbow arching over Holiday Harbor Marina after a storm - gravel launch ramp and hardstand in the foreground, a red-and-white runabout on a trailer, ranks of white powerboats in the slips left and right, a dark treeline and heavy grey sky. Verified by opening the file.",
+        "credit": "Holiday Harbor Marina / Huron Lagoons Marina",
+        "credit_url": "https://www.huronlagoons.com/holiday-harbor/",
+        "licence": "not stated"
+      },
+      {
+        "url": "https://www.huronlagoons.com/wp-content/uploads/2020/04/Marina_2012.jpg",
+        "what": "Marina view, per filename Marina_2012, on Holiday Harbor's own page. 1200px class, letterbox. NOT opened; subject evidence is the filename plus the page it heads.",
+        "credit": "Holiday Harbor Marina",
+        "credit_url": "https://www.huronlagoons.com/holiday-harbor/",
+        "licence": "not stated"
+      }
+    ],
+    "_name_finding": "The listing's address, 944 Main St, matches the \"944 South Main St.\" printed on this page. The page also carries a Laguna Yacht Club logo; Laguna Yacht Club is a separate body sharing the premises and is not in this slice."
+  },
+  "huro-lst-0192": {
+    "_match_name": "Gull Harbor Sailing",
+    "_source": "https://www.gullharborsailing.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CERTAIN - the page's JSON-LD carries \"Gull Harbor Sailing, 47 Cleveland Rd E, Huron, OH, 44839\" and its own text says the basin is on the west bank of the Huron River. The banner was opened and shows a real marina. ⚠️ Most of the site's other images are UNREPLACED SQUARESPACE TEMPLATE DEMO CONTENT - see _photos_rights_unclear.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/550ad83ce4b0714e2a51ed6d/1426777475475-OSCMTWRT7BG6ZR7O5F5B/10358931_10204817190970218_5316895113666223667_o.jpg",
+        "what": "Gull Harbor's basin at sunset - two rows of sailboats and small cruisers moored bow-to along finger docks, masts against a pink and gold cirrus sky, the whole scene mirrored in dead-flat water, low treeline across the far bank. Verified by opening the file. It is the banner of the homepage block headed \"Gull Harbor Sailing - Sharing passion for boating, Lake Erie, family and friendships\".",
+        "credit": "Gull Harbor Sailing, Huron, Ohio",
+        "credit_url": "https://www.gullharborsailing.com/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/550ad83ce4b0714e2a51ed6d/1426783862207-C0HR7TXZZ56VGXLITW0Y/6999613744_d33c3828ed_o.jpg",
+        "what": "Unknown subject. Its alt text is literally \"Photo Credit: ms.akr\".",
+        "why": "⛔ NOT GULL HARBOR. The filename 6999613744_d33c3828ed_o.jpg is a Flickr original-size export and the alt names a Flickr user (ms.akr) - this is Squarespace TEMPLATE DEMO content the operator never replaced, sitting on the site's own CDN path. The companion files designed_by_expanded_gallery2.jpg and ventotene.jpg are the same template's demo images (Ventotene is an island off Italy). Recording any of them would put a stranger's holiday photograph on a Huron marina card."
+      }
+    ],
+    "_url_finding": "The listing's address is 43 Cleveland Rd E; the site's own structured data says 47 Cleveland Rd E. A four-number discrepancy, recorded not resolved.",
+    "_history": "The site says the founders \"purchased a run-down marina on the southern end of the Huron River\" and that Gull Harbor was then incorporated; the year is cut off in the fetched text and is NOT established here."
+  },
+  "huro-lst-0063": {
+    "_match_name": "Bikini Bottom Watersports Rentals",
+    "_source": "https://bikinibottomws.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The site is alive and is genuinely this business, but it publishes NO photograph of its own premises or its own boats, and its address contradicts the listing. Nothing recorded.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/4c7c0fda-7bf3-42d3-b9e7-42321501f492/sunset%20switch.jpg",
+        "what": "A Sea-Doo Switch pontoon under way at sunset with a family aboard, spray off the stern. It is the site's og:image. Verified by opening the file.",
+        "why": "⛔ MANUFACTURER STOCK, and the giveaway is the LANDSCAPE, not the filename: the background is a forested RIDGE LINE of hills. Lake Erie at Huron has no hills on any shore. The companion files on the same page confess in the filename - 2022-Sea-Doo-Switch-Feature-7721910.jpg and sea-doo-spark.jpeg are BRP's own product marketing images, served from the operator's GoDaddy CDN (img1.wsimg.com) under the operator's own site id."
+      },
+      {
+        "url": "https://img1.wsimg.com/isteam/ip/4c7c0fda-7bf3-42d3-b9e7-42321501f492/konnorciullo-VC05_C10M2a.png",
+        "what": "The business's logo/brand mark; alt \"Bikini Bottom Watersports Rental\".",
+        "why": "A logo, not a photograph of the place."
+      }
+    ],
+    "_no_photos_reason": "Every image on the site is either the logo or a Sea-Doo factory product shot. There is no photograph of the rental dock, the office or a boat in Huron water.",
+    "_url_finding": "⚠️ IDENTITY IS FINE BUT THE TOWN IS NOT. The site's own structured data and contact block both read \"101 Shelby St, SANDUSKY, Ohio 44870\" and the phone 419-699-3585 matches the listing's +14196993585 exactly. The listing places it at 410 Huron St, Huron. Same business, different town - either a second location or a bad geocode. Not resolved here."
+  },
+  "huro-lst-0243": {
+    "_match_name": "North Coast Boating",
+    "_source": "http://www.northcoastboating.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Site reached and read in full. It is a boating-instruction service (free beginner seminars, on-the-water docking and handling training). It states NO address, NO town and NO phone anywhere on the homepage - the identity gate cannot be passed.",
+    "photos": [],
+    "_no_photos_reason": "The site is a Microsoft FrontPage / Publisher export: every image is an anonymous slice named index_files/imageNNN.png or .jpg with no alt, and the only two non-empty alts on the page are \"Text Box: \" (empty text-box label) and \"BOATING IS FUN! We can show you how...\", which is a caption for a word-art banner, not a photograph. Zero subject evidence on every candidate; all refused. /about 404s.",
+    "_url_finding": "⚠️ Identity NOT confirmed. The page never names Huron, Ohio, Erie County or 44839, and the only geography on it is a keyword list of all five Great Lakes. The listing places it at 100 Laguna Dr - the Huron Lagoons Marina address, shared with huro-lst-0144 (Freedom Boat Club) and huro-lst-0102. Plausible that it operates out of the marina, but the site does not say so and I will not record images on that assumption."
+  },
+  "huro-lst-0020": {
+    "_match_name": "Huron Yacht Club",
+    "_source": "https://www.huronyachtcluboh.com/website/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity certain (the site prints 350 Huron Street, the listing's address, and names Huron 105 times). There is simply nothing to photograph from.",
+    "photos": [],
+    "_no_photos_reason": "⛔ The club's public site contains exactly THREE images and all three are the same file: /website/hyc-logo.png, the club burgee. Its og:image and twitter:image are also the burgee (hyc-burgee.png). There is no photograph of the clubhouse, the docks or the river anywhere on the public pages. /website/about.html 404s. The site is largely behind a members area, which is the reason - a private club publishes its photographs where members log in.",
+    "_extra_note": "Clubhouse dining hours and the club's history were already recorded by the community.json pass; not repeated."
+  },
+  "huro-lst-0138": {
+    "_match_name": "Old Mill Harbor",
+    "_source": "https://oldmillharbor.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity certain (400 Huron St., matching the listing). No usable photograph.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://oldmillharbor.com/wp-content/uploads/2026/08/Storage-Flyer-Boat-Backing-In-Cartoon-7.png",
+        "what": "A winter-storage promotional flyer built around a CARTOON of a boat backing into a shed. 1414px wide. Also present as -6 and as Winter-Prep-2.png.",
+        "why": "Illustration, not photography - the filename says Cartoon. It would put a seasonal advert on the card."
+      }
+    ],
+    "_no_photos_reason": "The marina's WordPress site carries only its logo (OMH-Logo-13.png, twice in the header and once as a 150px favicon-ish crop) and three seasonal flyer graphics, all with empty alt. No photograph of the harbour, the slips or the repair shop exists on the site.",
+    "_extra_note": "Services and address were recorded by the earlier community.json pass. That pass noted the site publishes no hours and no season dates; that is still true."
+  },
+  "huro-lst-0131": {
+    "_match_name": "Firelands Montessori Academy",
+    "_source": "https://www.firelandsmontessori.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CERTAIN - the footer reads \"329 Ohio Street, Huron, OH 44839\" and \"419-433-6181\", matching the listing exactly. Both classroom photographs were opened. They are real classroom photography, not stock: the crockery, the light and the framing are all domestic-scale.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/63c30687f382076f49ef6e74/70fd2ffd-e71c-4179-9dfc-7ff7c68b27ff/325357948_702403311505671_625584544275768597_n.jpg",
+        "what": "Overhead view of a child's hands working a Montessori sand tray - a wooden-framed tray of fine sand on a maple table, a blue card with a dotted cursive shape held down by one hand while the other traces with a white stylus. NO FACE IS VISIBLE, only sleeves and hands. Verified by opening the file.",
+        "credit": "Firelands Montessori Academy, Huron",
+        "credit_url": "https://www.firelandsmontessori.org/",
+        "licence": "not stated"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/63c30687f382076f49ef6e74/cee2fe1b-8564-45a8-ba13-f558a4d1153a/332135766_5168645986571845_8737876802394127267_n.jpg",
+        "what": "A boy leaning over a green art tray at a wooden table, painting a leaf-and-web line drawing with a brush; a tray of watercolour pans and a green water pot beside him. Verified by opening the file. Face is turned down and away but he is recognisable from the side.",
+        "why": "Identifiable minor, and the child's own school published it for its own audience. Held for a human, on the same ground as St. Peter School and Huron Sports Academy."
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/624b503c899bfc701cfc5e29/1649102944778-OSVGKW50AK879PJ97KPB/boot%402x.jpg",
+        "what": "Small illustrations - a boot, a wand, numerals, a spaceship, plus 2507249.jpg.",
+        "why": "These sit under a DIFFERENT Squarespace site id (624b503c...) from the school's own content (63c30687...): they are the theme's supplied artwork, not the school's pictures. The @2x filenames confirm it."
+      }
+    ],
+    "_cdn_note": "⭐ A useful tell on Squarespace: the content/v1/<site-id>/ segment distinguishes the operator's OWN uploads from template artwork served under the theme's id. Two ids on one page means two owners. Strip the ?format=NNNw query for the original.",
+    "_no_photos_reason": "No exterior photograph of 329 Ohio Street is published.",
+    "history": "The site claims \"a rich history of providing an excellent Authentic Montessori Education in Northwest Ohio for over 40 years.\" No founding year is given; nothing further established."
+  },
+  "huro-lst-0157": {
+    "_match_name": "Rippin Lips Lake Erie Charters",
+    "_source": "https://tatteredwingswaterandfowl.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CONFIRMED despite the surprising domain: the site's own page carries \"Rippin' Lips Charters operates off the banks of Ohio in the Great Lake Erie... Ohio's western basin\" and the contact block gives \"(419) 835-4215\", which is the listing's phone character for character. Rippin' Lips is run under the Tattered Wings Waterfowl brand (Captain Aric Rothlisberger). This is NOT a wrong-entity URL - it is a parent-brand URL, and the phone proves it.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://box2513.temp.domains/~aofbpvmy/gobblercompany/wp-content/uploads/2022/03/ezgif.com-gif-maker-1.png",
+        "what": "Unknown graphic, empty alt.",
+        "why": "⛔ Hotlinked from a HOSTING PROVIDER'S TEMPORARY DOMAIN (box2513.temp.domains) under a cPanel user directory (~aofbpvmy) belonging to a different project entirely (\"gobblercompany\"). It is not on this operator's site, it belongs to another brand, and it dies the day that trial account lapses."
+      }
+    ],
+    "_no_photos_reason": "The brand's homepage carries only marks, no photographs: rippinlips_005FINAL-03.png was opened and is the CHARTER LOGO - a cartoon walleye with a crankbait in its jaw under blue script lettering \"Rippin' Lips / LAKE ERIE CHARTERS\" (the -FINAL-03 suffix is the designer's version number). The other candidate, image-38.png, is a 604px web graphic with empty alt and no subject evidence. No photograph of the boat, the dock or a day's catch appears on the homepage.",
+    "_name_finding": "The listing writes \"Rippin Lips\"; the business writes \"Rippin' Lips\" with the apostrophe, and trades under Tattered Wings Waterfowl. Its business spans Arkansas and Ohio."
+  },
+  "huro-lst-0221": {
+    "_match_name": "Lakehouse Apartments",
+    "_source": "https://lakehouse-apartments-oh.hub.biz/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The URL resolves and its content is about the right place - \"Lakehouse Apartments, 1325 Cleveland Rd W, Huron, OH 44839 - Erie County, (419) 433-5441\" - but it is a THIRD-PARTY AGGREGATOR page, not the operator's own site, and it holds no photograph of the building.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://hubbiz.net/images/business_logo.png",
+        "what": "A generic placeholder card served with a different alt text each time it appears: \"Unfurnished Apartments in Huron, OH\", \"Lakehouse Apartments in Huron, OH\", \"West Rentals in Huron, OH\", \"Villa on the Lake in Huron, OH\", \"North Bay Management in Huron, OH\", \"Bardshar Apartments in Huron, OH\".",
+        "why": "⛔⛔ THE ALT TEXT LIES. One single file, hubbiz.net/images/business_logo.png, is served as six different businesses' pictures - the aggregator writes a per-business alt onto a shared placeholder. An alt-text-driven harvester takes this as six distinct building photographs. It is the sharpest counter-example to the alt-text rule found in this slice, and the defence is that the URL is identical across all six."
+      }
+    ],
+    "_no_photos_reason": "The page's only other images are the hubbiz site logo, a loading spinner, a QR code, and a static Mapbox tile of the location (maps.hubbiz.net/.../-82.573384,41.407568,16/700x400.webp) - a map, not a photograph.",
+    "_url_finding": "⚠️ The listing's stored website is an AGGREGATOR profile, not the property's own site. The address the aggregator prints (1325 Cleveland Rd W) differs from the listing's (1375 Cleveland Rd W); the aggregator's own related list shows a separate \"West Rentals\" at 1373 Cleveland Rd W, so the block holds several addresses in the 1300s and the fifty-metre difference matters. Not resolved."
+  },
+  "huro-lst-0062": {
+    "_match_name": "Huron Helping Hands Food Pantry",
+    "_source": "http://huronhelpinghands.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Identity confirmed - the page prints \"607 S. Main St, Huron\", matching the listing. The site is tiny (6.9 kB) and carries no photography at all.",
+    "photos": [],
+    "_no_photos_reason": "Every image on the pantry's site is a PARTNER OR SPONSOR LOGO, correctly alt-texted as such: Second Harvest Food Bank of North Central Ohio (the pantry's supplier), Firelands Vending, Humane Society of Erie County, Gordon Food Service, Cornell, Vine & Olive. There is no photograph of the pantry, its premises or its volunteers. ⭐ Note the inversion worth carrying: the alt text here is EXCELLENT - every logo is named precisely - and it is excellent precisely because none of them is a photograph of the place. Good alt text is not evidence that a usable image exists.",
+    "_extra_note": "The pantry also lists 4702 Milan Rd, which is Second Harvest's Sandusky address, not its own."
+  },
+  "huro-lst-0081": {
+    "_match_name": "Abbey Rose Foundation",
+    "_source": "https://www.abbeyrosekudrin.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The site is alive and is the right organisation by name, but it never states a street address or a town, so the identity gate is passed on NAME ONLY. It is a memorial foundation: its resources are SIDS prevention, OhioHealth and the Mothers' Milk Bank, and its event is a 5K Color Run/Walk and Kids Fun Run.",
+    "photos": [],
+    "_no_photos_reason": "The 428 kB page contains exactly ONE uploaded image - arf_logo-1.png, the foundation's wordmark, repeated four times (header, mobile header, footer, and once more) with empty or absent alt. Everything else is the Colibri WordPress theme's decorative SVG/PNG shapes: circles.png, 10degree-stripes.png, rounded-squares-blue.png, waves.png and so on, all under wp-content/themes/colibri-wp/resources/images/header-shapes/. ⭐ That path is the tell - a theme's own resources directory is never the operator's photography.",
+    "_url_finding": "Site live; no address published, so the listing's 211 Ohio St could not be confirmed from it."
+  },
+  "huro-lst-0136": {
+    "_match_name": "Greater Sandusky Partnership",
+    "_source": "https://greatersandusky.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Organisation identity is certain; PREMISES identity is not. The site's contact block reads \"604 W Washington St, Suite 1, SANDUSKY, OH 44870\" while the listing places it at 202 Cleveland Rd W, Huron. Nothing on the site depicts a Huron office.",
+    "photos": [],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://greatersandusky.com/wp-content/uploads/2024/10/Lighthouse-on-Lake-Erie-min-1024x767.jpg",
+        "what": "A lighthouse on Lake Erie, per the filename. Also GSP-sunset-1000px. Both empty alt.",
+        "why": "Regional scene-setting imagery for a two-county economic partnership (Erie and Ottawa counties). The filename does not say WHICH lighthouse, and there are several on this shore - the Huron pier light, Marblehead, Cedar Point. Zero evidence it is Huron's. Refused under the alt-text rule."
+      }
+    ],
+    "_no_photos_reason": "The partnership's site is brandmark, region map, award graphics and generic regional photography with empty alt throughout. No photograph of any office.",
+    "_url_finding": "⚠️ The listing's address is in Huron; the organisation's published address is in Sandusky. A Huron presence is not established."
+  },
+  "huro-lst-0119": {
+    "_match_name": "Salvation Army",
+    "_source": "https://centralusa.salvationarmy.org/indiana (as stored) -> https://www.salvationarmyusa.org/usa-central-territory/indiana/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded. The stored URL is for the wrong STATE.",
+    "photos": [],
+    "_no_photos_reason": "Not searched for images - the URL fails the identity gate before that question arises.",
+    "_url_finding": "⛔ WRONG-ENTITY URL, and it resolves cleanly, so no link check catches it. The listing is the Salvation Army at 820 Cleveland Rd E, Huron, Erie County, OHIO. The stored website is the Central Territory's INDIANA divisional page, which 301s to salvationarmyusa.org/usa-central-territory/indiana/ and returns a healthy 495 kB page with no mention of Huron, Ohio or Erie County. Every liveness check passes it. ⭐ This is the same failure as All About Dance, one level up the hierarchy: a real national organisation's page for the wrong DIVISION. Huron would fall under the Ohio side of the Central Territory, not Indiana."
+  },
+  "huro-lst-0149": {
+    "_match_name": "All About Dance Productions",
+    "_source": "https://www.allaboutdancenevada.com (as stored) -> https://allaboutdancenevada.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded. Confirmed wrong entity, exactly as briefed.",
+    "photos": [],
+    "_no_photos_reason": "No image taken from a site that is not this business.",
+    "_url_finding": "⛔ CONFIRMED WRONG ENTITY. The page <title> is \"All About Dance – Minden, Nevada\", the address block reads 2556 Precision Dr, and the site is a healthy WordPress/Jetpack site (102 kB, 200 OK, valid TLS, an og:image, app-store badges). It mentions Huron, Ohio and 44839 exactly ZERO times. The listing's own phone, +15672670647, is an OHIO area code (567), which contradicts the site independently of the town name. Its only content image - ALL-ABOUT-DANCE-Banner-2.webp on i0.wp.com - is the Nevada studio's banner. ⭐ THE SHAPE OF THE TRAP: the site is MORE healthy than most of the correct ones in this slice. Everything a liveness check measures - status, TLS, size, og tags, recency - scores it better than the Knights of Columbus page that IS right."
+  },
+  "huro-lst-0069": {
+    "_match_name": "Village Gallery & Framer",
+    "_source": "https://www.villagegallery.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY NOT CONFIRMED - and on the evidence, probably a different business. Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "No image taken: the identity gate was not passed. Had it been, the Shopify CDN there is rich - collection tiles with real alt text (thomas kinkade, Michael Godard, Fabian Perez, Steve Barton, Robert Finale) and a hero, Morning-Glow-by-Robert-Finale.jpg, whose filename names the artwork. That is what a passed gate would have yielded, and it is why the gate matters.",
+    "_url_finding": "⛔ The site is a Shopify print gallery that names no town, no state and no phone on its homepage, and /pages/contact-us 404s into the shop's 404 handler. Two independent signals point AWAY from Ohio: (1) Shopify's embedded __st object reports offset:-25200, i.e. UTC-7 - Mountain or Pacific; Huron, Ohio runs UTC-4/-5. (2) The stock is Thomas Kinkade, Michael Godard and Fabian Perez limited editions with an auction-bidding widget, which is a Las Vegas-style print gallery, not a small-town frame shop. The listing is a frame shop at 105 Wall Street, Huron, phone +14194333875. ⭐ A NEW DETECTION SIGNAL, and a cheap one: the page's own JS carries the shop's UTC OFFSET. Compare it to the town's. It needs no address, no phone and no prose."
+  },
+  "huro-lst-0070": {
+    "_match_name": "Just Hookin",
+    "_source": "https://justhookinerie.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Site is alive and is genuinely 'Just Hookin llc' - but in CONNEAUT, Ohio, 150 km east along the lake. Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "No image taken; the business is not in this town.",
+    "_url_finding": "⛔ WRONG TOWN, AND THE DIRECTORY AGREES WITH THE SITE, WHICH IS THE INTERESTING PART. The site reads \"Just Hookin llc, 26 Naylor Dr, Conneaut, OH, USA, (878) 201-2905\" and titles itself \"Just Hookin - Fishing Charter - Conneaut, Ohio\". The LISTING's own phone is +18782012905 - the Conneaut number, digit for digit. So the URL is not mismatched to the record; the RECORD is a Conneaut business filed at a Huron address (1299 marina Dr). ⭐ The defect is upstream in the directory, not in the link - and a URL-vs-listing consistency check would report this one as PASSING. The town check is the only thing that catches it.",
+    "_extra_note": "The site states \"Hours Today: By Appointment\" - the by-appointment state, already a reported class."
+  },
+  "huro-lst-0237": {
+    "_match_name": "Riverview Lanes and Cafe",
+    "_source": "http://www.riverviewlanes.com/ (stored) and https://www.riverviewlanes.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded, and this one should be escalated rather than filed.",
+    "photos": [],
+    "_no_photos_reason": "No page to take images from - see _url_finding.",
+    "_url_finding": "⛔⛔ THE DOMAIN IS GONE AND WHAT ANSWERS IN ITS PLACE IS NOT A DEAD PAGE. Behaviour today, measured twice: the stored URL http://www.riverviewlanes.com/ returns HTTP 522 with a 16-byte body (Cloudflare 'connection timed out'). But https://www.riverviewlanes.com/ - the SAME host over TLS - returns HTTP 200 after redirecting to **https://abutotomacau.com/**, an unrelated foreign gambling site. DNS still resolves to Cloudflare (104.21.27.73, 172.67.169.12). ⛔ Do not put this URL on a card. A checker that follows redirects and tests for 200 marks this GREEN and links a family bowling alley to a casino. A checker that does not follow redirects sees 522 and calls it merely down. Neither describes what happened. ⭐ The rule this needs: compare the FINAL hostname after redirects against the stored one, and fail loudly when the registrable domain changes.",
+    "_name_finding": "The business may well still be trading at 125 Main St - a lapsed domain says nothing about the lanes. Nothing about its current state is established here."
+  },
+  "huro-lst-0077": {
+    "_match_name": "Sandpiper Cove Apartments",
+    "_source": "http://www.ohiocoupons.com/fsmhuronrentals.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "There is no content at the URL at all.",
+    "_url_finding": "⛔ A PARKED-DOMAIN LANDER THAT RETURNS HTTP 200. The whole body is 114 bytes: `<!DOCTYPE html><html><head><script>window.onload=function(){window.location.href=\"/lander\"}</script></head></html>`. Status 200, no error, no redirect header - the bounce to the parking page happens in window.onload, so it is invisible to curl, to a status check and to a redirect-chain check alike. ⭐ The tell that generalises: a 200 response whose body is under ~1 kB and contains no <body> element is not a page. ⚠️ Also note the shape of the stored URL itself - a coupon-aggregator's static .html file was never the apartments' own site even when it worked."
+  },
+  "huro-lst-0046": {
+    "_match_name": "Semper CrossFit",
+    "_source": "http://www.sempercrossfit.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "Nothing to fetch.",
+    "_url_finding": "⛔ THE DOMAIN NO LONGER EXISTS. `dig sempercrossfit.com` returns NO A record at all - NXDOMAIN, not a parked page, not a 404. curl exits 000 on http and https alike, with and without www. This is the honest end state and it is the one an operator can act on: the gym's web presence is gone, and the listing at 250 Cleveland Rd E needs a new source or a closure decision."
+  },
+  "huro-lst-0253": {
+    "_match_name": "Huron Rotary Club",
+    "_source": "http://www.huronrotary.org",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "Nothing to fetch.",
+    "_url_finding": "⛔ NXDOMAIN, same as Semper CrossFit - `dig huronrotary.org` returns nothing, curl exits 000 on both schemes. ⭐ Worth a note for whoever re-sources this: Rotary clubs are usually reachable through Rotary International's club directory and through a club Facebook page even when the vanity domain lapses, so this is a recoverable listing rather than a dead one. Not pursued here."
+  },
+  "huro-lst-0135": {
+    "_match_name": "Mariner Village Yacht Club",
+    "_source": "http://sawmillcreekresort.com -> https://www.sixflags.com/sawmillcreekresort",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded. The URL now lands on a corporate resort page that is not this club.",
+    "photos": [],
+    "_no_photos_reason": "Not one image on the destination page depicts the Mariner Village Yacht Club. The page's alt text is genuinely good - \"Sawmill Creek Resort lobby\", \"Meeting Room at Sawmill Creek Resort\", \"Putting Green\", \"Friends having drinks under a gazebo\", \"Three women sitting at a pool with drinks\" - and that is exactly how it is possible to be certain NONE of them is the yacht club. ⚠️ One of them is alt-texted \"People smiling while riding Millennium Force\", which is a roller coaster at Cedar Point, a sister property - the resort page already borrows a neighbour's imagery.",
+    "_url_finding": "⛔ THE BRAND MOVED UNDER THE URL. sawmillcreekresort.com 301s to sixflags.com/sawmillcreekresort, a Six Flags corporate page whose own description reads \"a lakeside resort in SANDUSKY, Ohio\". The listing is a yacht club at 609 Mariner Vlg, Huron. Mariner Village is the residential community beside the resort; the club is not the resort, and after the acquisition the resort's own page does not mention it. ⭐ The class: an acquisition rewrites a URL's subject without breaking it. Status 200, valid TLS, big healthy page - and the destination is now a corporate parent three levels above the listing."
+  },
+  "huro-lst-0078": {
+    "_match_name": "Mariner Village Beach",
+    "_source": "http://www.sawmillcreekresort.com/amenities/beach -> https://www.sixflags.com/sawmillcreekresort",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded, same destination and same reason as 0135.",
+    "photos": [],
+    "_no_photos_reason": "See huro-lst-0135. No beach photograph is served on the destination page, and nothing there is Mariner Village.",
+    "_url_finding": "⛔ WORSE THAN 0135, AND SILENTLY SO: the stored DEEP LINK /amenities/beach does not 404 - the redirect swallows the path and drops the visitor on the resort's front page. A checker that tests the stored URL gets 200 and never learns that the specific page it asked for is gone. ⭐ The rule: after following redirects, compare the final PATH as well as the host; a deep link that lands on a site root has lost its subject."
+  },
+  "huro-lst-0220": {
+    "_match_name": "Two Rivers Waterfront Homes in Huron",
+    "_source": "http://www.joanneberardi/ (as stored)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded.",
+    "photos": [],
+    "_no_photos_reason": "There is no host to fetch from.",
+    "_url_finding": "⛔ THE STORED URL IS NOT A VALID URL. The host is \"www.joanneberardi\" - there is NO TLD. `dig joanneberardi` returns nothing and curl exits 000. This never worked; it is not rot, it is a malformed value that reached the store. ⭐ It is the cheapest check in this whole slice and nothing is running it: assert that a website host has at least one dot and a known public suffix, at INTAKE. ⚠️ Related: a FOOD-slice listing, Berardi's, shares this surname - berardi appears in both. Whether joanneberardi was meant to be joanneberardi.com or something else is not established."
+  },
+  "huro-lst-0121": {
+    "_match_name": "Usgs Lake Erie Biological Station",
+    "_source": "https://www.usgs.gov/newsroom/article.asp (as stored)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded, and this is the slice's most painful empty-handed result - see _no_photos_reason.",
+    "photos": [],
+    "_no_photos_reason": "⭐⭐ THE ONE PLACE IN THIS SLICE WHERE A REAL LICENCE WAS AVAILABLE, AND IT COULD NOT BE REACHED. USGS is a federal agency: its photographs are works of the United States Government and are public domain, which is a stronger position than anything else in these 46 records, all of which came back 'licence not stated'. But: (1) the STORED URL, https://www.usgs.gov/newsroom/article.asp, is a dead generic newsroom stub - a classic-ASP path, no query string, no article id - and returns HTTP 404 with usgs.gov's 78 kB styled error page. It does not identify the station and it never will. (2) Every attempt to find the real page was blocked at the edge: /centers/great-lakes-science-center returns HTTP 403 with a 919-byte body, and the science-explorer search endpoint also 403s. usgs.gov is refusing automated fetches from this session outright. ⛔ So the absence here is MINE, not the agency's - this listing is recoverable and should be re-run from a real browser. The Lake Erie Biological Station is a field station of the USGS Great Lakes Science Center at 380 Huron St. Its photographs, once found, are the only ones in this slice that can be recorded with a positive licence.",
+    "_url_finding": "⛔ Stored URL is a 404 stub with no article identifier."
+  },
+  "huro-lst-0144": {
+    "_match_name": "Freedom Boat Club Lake Erie - Huron",
+    "_source": "http://discover.freedomboatclub.com/lake-erie (as stored)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded - the site could not be read.",
+    "photos": [],
+    "_no_photos_reason": "⛔ Blocked, not absent. The stored URL discover.freedomboatclub.com/lake-erie returns HTTP 302 with an EMPTY body and curl then exits 000 following it. The canonical franchise location page, freedomboatclub.com/locations/lake-erie-huron-oh/, returns HTTP 403 with a 4.6 kB body - an edge bot block, the same shape as the Cloudflare wall on Little Wonders Preschool (0101). Neither photographs nor hours can be established without a real browser. Re-run this one from a browser session.",
+    "_url_finding": "The stored host, discover.freedomboatclub.com, is a marketing subdomain that no longer serves the location page. Note the listing sits at 100 Laguna Dr - the Huron Lagoons Marina address it shares with huro-lst-0102 and huro-lst-0243."
+  },
+  "huro-lst-0061": {
+    "_match_name": "Lakeshore Golf Studio",
+    "_source": "https://my.pga.com/coach/codymartin/schedule",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing recorded; identity NOT confirmed.",
+    "photos": [],
+    "_no_photos_reason": "⛔ The one genuine 'JS-only, therefore empty' in this slice, and I checked rather than assumed. my.pga.com is a React single-page app: the served HTML is 1,866 bytes - a <div id=\"root\"></div>, a Raygun snippet, a Google Tag Manager snippet and two bundle tags. There is no server-rendered content, no JSON-LD, no embedded state object, and the ONLY og:image is PGA of America's corporate logo on Contentful (images.ctfassets.net/.../PGAA_Logo_RGB__1_.jpg). ⭐ The brief is right that Square, Shopify, Wix and Squarespace all publish a data channel - this one does not. I probed three plausible API hosts: api.my.pga.com/coach/codymartin (no response), my.pga.com/api/coach/codymartin (returns the same 1,866-byte SPA shell, i.e. the SPA's catch-all route, NOT an API), and api.pga.com/v1/coaches/codymartin (403). Without the bundle's real endpoint there is nothing to read.",
+    "_url_finding": "⚠️ IDENTITY UNCONFIRMED IN BOTH DIRECTIONS. The page says nothing - not Huron, not Ohio, not a phone. And structurally the stored URL is a COACH's personal schedule page (coach/codymartin), not a page about the venue 'Lakeshore Golf Studio' at 515 Cleveland Rd W. Even if the coach teaches there, a coaching-profile URL is not the studio's page and will follow the coach, not the address."
+  }
+}

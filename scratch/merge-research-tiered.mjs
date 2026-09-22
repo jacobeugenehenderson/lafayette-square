@@ -234,6 +234,23 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
   const base = byId.get(id)
   if (tier === 'HOLD' || n === 0) {
     if (tier === 'HOLD') worklist.HOLD.push({ id, name: base.name, beat, why })
+    // ⛔⛔ A URL CORRECTION IS A SUBTRACTION AND MUST OUTRANK THE HOLD. Holding a record
+    // means we ship the BASE unchanged — and when the base is what is dangerous, holding
+    // protects the danger. CUSH Cafe is HELD (a counter inside a bowling alley, trading
+    // status in doubt) and its base `website` is riverviewlanes.com, which now 301s to an
+    // offshore gambling site. The hold blocked the fix and kept the casino link.
+    // ⭐ The distinction that makes this safe: removing or correcting a LINK asserts
+    // nothing about whether the place exists, so it does not smuggle held research onto a
+    // doubtful card. Only `website`, only when a beat explicitly recorded the correction.
+    if (rec._url_correction && 'website' in rec) {
+      const cands0 = ovt.filter(p => norm(p.name) === norm(base.name))
+      const c0 = cands0.length > 1 ? cands0.filter(p => norm(p.address) === norm(base.address)) : cands0
+      for (const c of c0) ov.patches[`ovt-${c.id}`] = {
+        website: rec.website, _match_name: base.name, _tier: 'HOLD-URL-ONLY', _beat: beat,
+        _url_correction: rec._url_correction,
+      }
+      if (c0.length) { keys += c0.length; console.log(`  ⛔ ${base.name}: HELD, but its URL correction still applied — ${rec.website === null ? 'link removed' : rec.website}`) }
+    }
     continue
   }
   if (tier === 'CAVEATED') worklist.CAVEATED.push({ id, name: base.name, beat, fields: shippingFields(rec).join(', '), why })

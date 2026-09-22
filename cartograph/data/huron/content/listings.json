@@ -6,7 +6,7 @@
   "generated": "2026-07-07",
   "generator": "bake-content.js",
   "count": 285,
-  "enriched": 202,
+  "enriched": 203,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -1818,7 +1818,7 @@
    "subcategory": null,
    "address": "410 Cleveland Rd E",
    "phone": "+14194330328",
-   "website": "http://www.citizensbankco.com",
+   "website": "https://www.civista.bank/locations/huron-branch",
    "logo": null,
    "hours": {
     "friday": {
@@ -5173,7 +5173,7 @@
    "subcategory": "restaurants",
    "address": "125 Main St",
    "phone": "(419) 602-1768",
-   "website": "http://www.riverviewlanes.com",
+   "website": null,
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
@@ -5189,6 +5189,7 @@
    "osm_type": null,
    "overture_category": "burger_restaurant",
    "overture_confidence": 0.9199122190475464,
+   "enriched": true,
    "prominence_rank": 26
   },
   {
@@ -5199,7 +5200,7 @@
    "subcategory": "recreation",
    "address": "125 Main St",
    "phone": "+14194334258",
-   "website": "http://www.riverviewlanes.com/",
+   "website": null,
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
@@ -9862,7 +9863,7 @@
    "subcategory": "restaurants",
    "address": "2109 Cleveland Rd W",
    "phone": "+14194336017",
-   "website": "http://Www.CostaAzulMexican.com/",
+   "website": "https://costaazulhuron.com",
    "logo": null,
    "hours": {
     "monday": {
