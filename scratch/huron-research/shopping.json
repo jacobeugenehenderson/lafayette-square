@@ -1,0 +1,790 @@
+{
+  "_comment": "SHOPPING / ARTS / HISTORIC slice, Huron OH. Keys are listings.json ids. _-prefixed keys are provenance. NOTE: huro-lst-0242, -0050, -0249, -0172, -0059 fall in this slice but were already researched in scratch/huron-research/retail.json and are deliberately NOT repeated here.",
+  "huro-lst-0212": {
+    "_match_name": "The Huron Historical Society",
+    "_source": "http://www.thehuronhistoricalsociety.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, address, phone and mission statement are quoted from the society's own site. The society occupies the LOWER LEVEL OF THE HURON PUBLIC LIBRARY at 333 Williams St, so its two-hour Wednesday window is not the building's hours. No sourced history of the building itself was found; not established.",
+    "hours": {
+      "wednesday": {
+        "open": "15:00",
+        "close": "17:00"
+      }
+    },
+    "description": "Two hours a week in the library basement, the town keeps its own history. The society acquires, preserves and exhibits Huron's documents and photographs.",
+    "history": "Huron has been part of Erie County since 1838; before that it lay in Huron County. (Huron Historical Society.) The society's own founding date and the history of 333 Williams St are not established.",
+    "amenities": [
+      "local archive",
+      "photograph collection",
+      "exhibits"
+    ],
+    "phone": "+14194335009"
+  },
+  "huro-lst-0088": {
+    "_match_name": "Central Basin Bait Tackle and Carryout",
+    "_source": "https://www.visithuronohio.com/shop ; https://www.bbb.org/us/oh/huron/profile/fishing-bait/central-basin-bait-tackle-carryout-0422-211020779",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description and address confirmed by the town's own visitor-bureau shop page and by BBB. BBB gives a founding date of 2023-05-01. HOURS NOT ESTABLISHED - a search result quoted Mon-Thu 05:00-18:00 but I could not confirm it against a first-party page, so hours are omitted. The website on the listing (tatteredwingswaterandfowl.com) is a DIFFERENT business (a guided waterfowl/walleye charter) - wrong-entity URL.",
+    "description": "A Main Street bait shop and carryout for anglers heading out on Lake Erie.",
+    "amenities": [
+      "live bait",
+      "lures",
+      "rods and reels",
+      "snacks",
+      "beer",
+      "ice"
+    ],
+    "phone": "+14196020750",
+    "_url_finding": "WRONG ENTITY, RETURNS 200. Held URL tatteredwingswaterandfowl.com is a guided waterfowl/walleye charter (Capt. Aric Rothlisberger, Arkansas and Ohio), not a bait shop. No correct URL found."
+  },
+  "huro-lst-0097": {
+    "_match_name": "South Shore Marine",
+    "_source": "https://www.southshoremarine.com/contact",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and address quoted from the dealership's own contact page. SALES and SERVICE keep DIFFERENT Saturday hours (sales to 16:00, service to 14:00); the hours below are the SALES desk. The site also publishes named holiday closures (Labor Day; Thanksgiving 11/26-11/28; Christmas-New Year 12/24-1/3) which this schema cannot hold. 'Over three decades' serving Northern Ohio boaters comes from a search snippet, not a first-party page - founding year not established. The listing's website field points at the dealer's YouTube channel, not its site.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "16:00"
+      }
+    },
+    "description": "A Sawmill Parkway boatyard that will service any hull, bought here or not. It sells Regal, Pursuit, Grady-White and Back Cove.",
+    "amenities": [
+      "new boats",
+      "brokerage and pre-owned",
+      "service department",
+      "financing",
+      "marine insurance"
+    ],
+    "phone": "+14197808516",
+    "_url_finding": "WRONG PAGE KIND. Held URL is the dealer's YouTube channel. Correct site: https://www.southshoremarine.com/ (hours at /contact)."
+  },
+  "huro-lst-0044": {
+    "_match_name": "Stride Mobility",
+    "_source": "http://www.stridemobility.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description, phone and address quoted from the company's own site. The site publishes NO hours, so hours are omitted.",
+    "description": "Wheelchairs, scooters and lift chairs, fitted by a certified therapist. A mobility dealer out on Sawmill Parkway.",
+    "amenities": [
+      "power and manual wheelchairs",
+      "seating and positioning",
+      "pediatric equipment",
+      "scooters",
+      "lift chairs",
+      "certified therapist fittings",
+      "mobile service team"
+    ],
+    "phone": "+14196166017"
+  },
+  "huro-lst-0074": {
+    "_match_name": "Myers Brothers Custom Butchering",
+    "_source": "https://www.yelp.com/biz/myers-brothers-custom-butchering-huron ; https://local.yahoo.com/info-15718532-myers-brothers-custom-butchering-huron/",
+    "_fetched": "2026-09-22",
+    "_confidence": "No first-party website exists for this business. Address, phone and the meat/poultry/game processing service are consistent across several directories. HOURS OMITTED: directories disagree on the weekday open (07:00 vs 08:00). The line that the shop was started by the late Albert Myers and carried on by his sons comes from a directory snippet and is NOT first-party - treated as not established and left out of the description.",
+    "description": "A Bogart Road custom butcher doing meat, poultry and game processing.",
+    "amenities": [
+      "custom butchering",
+      "game processing",
+      "poultry processing"
+    ],
+    "phone": "+14194332425"
+  },
+  "huro-lst-0123": {
+    "_match_name": "Bores Cycle Salvage & Service",
+    "_source": "https://www.yelp.com/biz/bores-cycle-salvage-and-service-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address and phone confirmed across directories. The listing's website (borescycle.placeweb.site) is a directory-generated placeholder, not a real site. HOURS OMITTED - directories disagree badly (one gives 09:00-18:00 daily, another Tue-Thu 10:00-14:00 only). 'Over 200 motorcycles on the premises' is a directory blurb, not first-party; left out.",
+    "description": "An indoor motorcycle salvage yard and repair shop out on Boos Road.",
+    "amenities": [
+      "used motorcycle parts",
+      "motorcycle service",
+      "salvage"
+    ],
+    "phone": "+14194330332",
+    "_url_finding": "PLACEHOLDER. Held URL borescycle.placeweb.site is a directory-generated stub, not the business's site."
+  },
+  "huro-lst-0154": {
+    "_match_name": "Gordon Lumber Co",
+    "_source": "https://www.gordonlumber.com/ (about/locations pages returned 404 at time of fetch)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address and phone confirmed across directories. The company's own site would not serve its about or Huron-location pages (404). Founding (Washington Gordon, a single sawmill in Oak Harbor, Ohio, 1868) comes from search snippets of the company's own about page and should be re-verified before it ships. HOURS NOT ESTABLISHED.",
+    "description": "A lumber yard on Taylor Avenue that has outlasted most of the town. It supplies builders and contractors with lumber, windows and doors.",
+    "history": "Gordon Lumber traces to 1868, when Washington Gordon started with a single sawmill in Oak Harbor, Ohio. (Company about page, reached only via search snippet - re-verify.)",
+    "amenities": [
+      "lumber",
+      "building materials",
+      "windows and doors",
+      "contractor sales"
+    ],
+    "phone": "+14194332442",
+    "_url_finding": "PARTIAL. Held URL gordonlumber.com is correct, but both /about-us and /locations/huron returned 404 at time of fetch, so nothing first-party could be read."
+  },
+  "huro-lst-0210": {
+    "_match_name": "Huron Memorial Stadium",
+    "_source": "https://ohiostadiums.com/stadium.php?id=1705 ; https://www.muccifarms.com/media/press-releases/mucci-farms-sponsors-huron-memorial-stadium/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Opening year 1972, ~4,700 seats and the ProGrass artificial surface come from OhioStadiums; the 2020 naming-rights deal comes from the sponsor's own press release. No hours - a school stadium opens for events, not on a weekly schedule. Whether the naming-rights name is still current in 2026 (the deal ran 8 years from 2020) is NOT established.",
+    "description": "The Tigers play here, on turf, under lights, since 1972. A 4,700-seat stadium with a track, off Jim Campbell Boulevard.",
+    "history": "The stadium opened in 1972 and seats about 4,700. In 2020 Mucci Farms and the Huron Athletic Booster Club financed a new turf field under an eight-year naming-rights agreement, making it \"Mucci Field at Huron Memorial Stadium.\"",
+    "amenities": [
+      "artificial turf field",
+      "running track",
+      "bleacher seating"
+    ]
+  },
+  "huro-lst-0026": {
+    "_match_name": "Mudbrook Mercantile",
+    "_source": "https://www.facebook.com/people/Mudbrook-Mercantile/100070196230663/ (via search snippet; page itself not retrievable)",
+    "_fetched": "2026-09-22",
+    "_confidence": "No website. Business type (upscale furniture consignment in a historic Main Street storefront) comes from a Facebook snippet, not a retrieved first-party page. HOURS NOT ESTABLISHED. The 519 Main St address was NOT independently confirmed. Treat as low confidence.",
+    "description": "An upscale furniture-consignment shop in a historic Main Street storefront.",
+    "amenities": [
+      "consignment furniture",
+      "home decor"
+    ],
+    "phone": "+14194330981"
+  },
+  "huro-lst-0056": {
+    "_match_name": "Z Shoppe On Main",
+    "_source": "https://www.facebook.com/zshoppeonmain ; https://www.yellowpages.com/huron-oh/mip/z-shoppe-on-main-543008457",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone and the merchandise mix come from directory and Facebook snippets; the shop has no website. HOURS NOT ESTABLISHED.",
+    "description": "Victorian, boho and upcycled, all in one Main Street room. A resale shop of home decor, jewelry and clothing.",
+    "amenities": [
+      "home decor",
+      "jewelry",
+      "clothing",
+      "hand-crafted goods",
+      "upcycled goods"
+    ],
+    "phone": "+14196517037"
+  },
+  "huro-lst-0130": {
+    "_match_name": "Firwood Collectibles",
+    "_source": "https://www.facebook.com/VintageFirwoodCollectibles/ ; listing website http://stores.ebay.com/firwoodcollectibles",
+    "_fetched": "2026-09-22",
+    "_confidence": "This is a vintage/collectibles seller operating from a RESIDENTIAL address (304 Firwood Rd) with an eBay storefront and a Facebook page - there is no evidence of a shop the public can walk into. HOURS NOT ESTABLISHED and probably do not exist. The eBay store URL on the listing uses the retired stores.ebay.com form and may no longer resolve.",
+    "description": "A vintage-collectibles seller trading online out of Firwood Road.",
+    "amenities": [
+      "vintage collectibles",
+      "online storefront"
+    ],
+    "phone": "+14196022177",
+    "_url_finding": "RETIRED URL FORM. Held URL uses stores.ebay.com/, which eBay retired. Live presence is the Facebook page VintageFirwoodCollectibles."
+  },
+  "huro-lst-0229": {
+    "_match_name": "Breakwater Cottages",
+    "_source": "https://www.thehuronhistoricalsociety.org/explore/?c=landmarks-attractions&t=east-side-beaches",
+    "_fetched": "2026-09-22",
+    "_confidence": "The history is quoted from the Huron Historical Society's own East Side Beaches page and is solid. What the record NOW names is a PRIVATE COTTAGE SUBDIVISION off Nickel Plate Drive - privately owned homes, not a business and not a public site. No hours, no phone, no premises the public can enter. It is categorised 'historic/landmarks' by Overture; the history is real but the place is residential.",
+    "_category_wrong": "Listed as historic/landmark. It is a private residential cottage subdivision. Ship only if private residential streets are wanted.",
+    "description": "Cottages on the shore where Huron used to go camping. Breakwater Camp rented cabins on railroad land here until 1947.",
+    "history": "Breakwater Camp and Beach, managed by Dick Detro, rented cottages on railroad land beside the east pier while the east-side beaches were a popular swimming and camping destination in the 1930s and 1940s. The camp closed in 1947 when the Wheeling and Lake Erie Railroad asked that the cabins be moved off company property to make room for an expansion. (Huron Historical Society.)",
+    "amenities": []
+  },
+  "huro-lst-0207": {
+    "_match_name": "Beachwood Villa Homeowners Condo Owners",
+    "_source": "http://bvcoa.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Description quoted from the condo association's own site. This is a PRIVATE RESIDENTIAL CONDOMINIUM ASSOCIATION, not a landmark and not open to the public - the site states the marina is 'reserved exclusively for residents, their family members, and guests.' No history published; not established. No hours - an HOA has none.",
+    "_category_wrong": "Listed as historic/landmark. It is a private condominium association with no public access.",
+    "description": "A private lakefront condo community with its own 58-slip marina. Residents only, east of town on Route 6.",
+    "amenities": [
+      "private 58-slip marina",
+      "pool",
+      "private beach",
+      "exercise room",
+      "tennis and pickleball court"
+    ],
+    "phone": "+14194335931"
+  },
+  "huro-lst-0077": {
+    "_match_name": "Sandpiper Cove Apartments",
+    "_source": "https://www.apartments.com/sandpiper-cove-apartments-huron-oh/2t54l5b/ ; https://www.w-trealty.com/properties/sandpiper-cove/",
+    "_fetched": "2026-09-22",
+    "_confidence": "A private lakefront APARTMENT COMPLEX (one- and two-bedroom units, 535-551 Cleveland Rd W), leased through an office in SANDUSKY at 1130 Cleveland Road - so the listing's address is the property, not the office. No history established. No public hours. The website on the listing (ohiocoupons.com/fsmhuronrentals.html) is a coupon-directory page, not the property's own site.",
+    "_category_wrong": "Listed as historic/landmark. It is a private apartment complex.",
+    "description": "A lakefront apartment complex on Cleveland Road West, across from Huron Market.",
+    "amenities": [
+      "lake views",
+      "swimming pool",
+      "laundry center",
+      "picnic area",
+      "off-street parking"
+    ],
+    "phone": "+15679984401",
+    "_url_finding": "NOT FIRST PARTY. Held URL is an ohiocoupons.com directory page. Property is managed by W-T Realty; https://www.w-trealty.com/properties/sandpiper-cove/"
+  },
+  "huro-lst-0221": {
+    "_match_name": "Lakehouse Apartments",
+    "_source": "https://www.apartmentratings.com/oh/huron/lakehouse-apartments_419433544144839/ ; https://www.yellowpages.com/huron-oh/mip/lakehouse-apartments-7226975",
+    "_fetched": "2026-09-22",
+    "_confidence": "A private APARTMENT COMPLEX on Cleveland Road West. Directories disagree on the street number (1325 / 1373 / 1375). No history found - build date and origin NOT established. No public hours. The listing's website is a hub.biz directory page, not a first-party site.",
+    "_category_wrong": "Listed as historic/landmark. It is a private apartment complex.",
+    "description": "An apartment complex on Cleveland Road West, west of town toward the lake.",
+    "amenities": [],
+    "phone": "+14194335441",
+    "_url_finding": "NOT FIRST PARTY. Held URL is a hub.biz directory page. No first-party site found."
+  },
+  "huro-lst-0274": {
+    "_match_name": "Colonial Villa",
+    "_source": "https://www.yellowpages.com/huron-oh/mip/colonial-villa-458603361",
+    "_fetched": "2026-09-22",
+    "_confidence": "Very thin. Directories list it at 371 Main St with (419) 433-2567 and class it a resort or lodging. NO first-party page found, no hours, no history, nothing about the building. Cause of the 'historic' category is the Overture tag, not evidence. ALSO: this is lodging, so it may belong to the overnight researcher's beat - check for a duplicate before merging.",
+    "_category_wrong": "Listed as historic/landmark; directories class it as lodging/resort. Overlaps the overnight beat.",
+    "description": "A lodging property at the Main Street end of town. Nothing further is established.",
+    "amenities": [],
+    "phone": "+14194332567"
+  },
+  "huro-lst-0036": {
+    "_match_name": "Austin Miniatures",
+    "_source": "https://www.austinminiatures.com/ ; https://austinminiatures.gumroad.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "A family-run maker of wargaming miniatures and terrain operating from a RESIDENTIAL address (523 Wilder Ave) and selling online - its own storefront at austinminiatures.com plus digital 3D-printable files on Gumroad. No walk-in shop and NO HOURS; the about_us page 404'd, so the product description comes from search snippets of the company's own site. No phone published.",
+    "description": "Toy soldiers cast in Huron and shipped worldwide. A family-run maker of 28mm and 54mm wargaming miniatures and foam terrain.",
+    "amenities": [
+      "cast miniatures",
+      "foam terrain",
+      "digital 3D-printable files",
+      "online only"
+    ],
+    "_url_finding": "INCOMPLETE. Held URL is the Gumroad storefront (digital files only). The main store is https://www.austinminiatures.com/ - its /about_us path 404s."
+  },
+  "huro-lst-0145": {
+    "_match_name": "Valley Ford of Huron, Inc. Parts",
+    "_source": "https://www.valleyfordofhuroninc.com/contact-us/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours below are the PARTS counter, taken from the dealership's own contact page, because this record names the parts department specifically. Sales keeps different hours (Mon/Thu to 19:00, Fri to 17:00, Sat to 16:00). NOTE: huro-lst-0259 'Chad at Valley Ford & Truck Center' is the SAME BUILDING (55 Cleveland Rd E) - one real place, two listings.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "14:00"
+      }
+    },
+    "description": "The parts counter at Huron's Ford dealership on Cleveland Road East.",
+    "amenities": [
+      "genuine Ford parts",
+      "aftermarket parts",
+      "service department",
+      "new and used sales"
+    ],
+    "phone": "+14192162647"
+  },
+  "huro-lst-0259": {
+    "_match_name": "Chad at Valley Ford & Truck Center",
+    "_source": "https://www.valleyfordofhuroninc.com/contact-us/",
+    "_fetched": "2026-09-22",
+    "_confidence": "THIS IS NOT A SEPARATE BUSINESS. The record names an individual SALESPERSON at Valley Ford of Huron, 55 Cleveland Rd E - the same premises as huro-lst-0145. Hours below are the dealership's SALES hours from its own contact page. Recommend merging into the dealership record rather than shipping a person as a place.",
+    "_duplicate_of": "huro-lst-0145",
+    "hours": {
+      "monday": {
+        "open": "09:00",
+        "close": "19:00"
+      },
+      "tuesday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "09:00",
+        "close": "19:00"
+      },
+      "friday": {
+        "open": "09:00",
+        "close": "17:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "16:00"
+      }
+    },
+    "description": "Huron's Ford dealership, on Cleveland Road East since before the bypass. New and used sales with its own service and parts departments.",
+    "amenities": [
+      "new Ford sales",
+      "used vehicles",
+      "service department",
+      "parts counter",
+      "financing"
+    ],
+    "phone": "+14194334404",
+    "_url_finding": "WRONG SITE FOR THIS STORE. Held URL valleysuperstore.com is the multi-brand Valley Automotive group. This store's own site is https://www.valleyfordofhuroninc.com/"
+  },
+  "huro-lst-0159": {
+    "_match_name": "Huron Outdoor Yamaha & Honda",
+    "_source": "https://www.huronoutdoorshop.com/ ; hours from https://www.yelp.com/biz/huron-outdoor-yamaha-and-honda-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "The business's own site (huronoutdoorshop.com, not on the listing) confirms the address, phone and that outdoor power equipment AND Sawmill Mini Storage run from the same premises, but publishes NO hours. The hours below are from a directory and include an unusual WEDNESDAY CLOSURE - flag for confirmation by phone before shipping.",
+    "hours": {
+      "monday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "tuesday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "friday": {
+        "open": "09:00",
+        "close": "18:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "14:00"
+      }
+    },
+    "description": "Mowers out front, boat storage out back, and closed Wednesdays. An outdoor power-equipment dealer sharing its site with Sawmill Mini Storage.",
+    "amenities": [
+      "Honda and Yamaha equipment",
+      "Toro and Husqvarna service",
+      "pickup and delivery",
+      "boat and bulk storage on site"
+    ],
+    "phone": "+14194336979",
+    "_url_finding": "MISSING. Listing holds no URL. The business's own site is https://www.huronoutdoorshop.com/ (trades as Huron Outdoor Shop / Sawmill Mini Storage)."
+  },
+  "huro-lst-0144": {
+    "_match_name": "Freedom Boat Club Lake Erie - Huron",
+    "_source": "https://www.freedomboatclub.com/franchises/red-bird-boats-llc/huron-lagoons",
+    "_fetched": "2026-09-22",
+    "_confidence": "A MEMBERSHIP boat club operating a fleet out of HURON LAGOONS MARINA at 100 Laguna Dr - it is a tenant of the marina, not a venue of its own, and it is not open to the public. Its Lake Erie franchise also covers Catawba Island and Rocky River, so the listing's phone (+1 216 744 0700) is a franchise number, not a Huron desk. NO HOURS published; access is by reservation. Its listings category (arts/venues, Overture 'amusement_park') is wrong.",
+    "_category_wrong": "Listed as arts/venue with Overture category amusement_park. It is a members-only boat club at a marina.",
+    "description": "A members-only fleet tied up at Huron Lagoons Marina. Boats are reserved rather than rented, and training comes with the membership.",
+    "amenities": [
+      "members-only",
+      "reservation-based boating",
+      "training included",
+      "reciprocal club access"
+    ],
+    "phone": "+12167440700"
+  },
+  "huro-lst-0248": {
+    "_match_name": "B.Keith Cooper Auctioneer",
+    "_source": "https://www.auctionzip.com/OH-Auctioneers/12703.html ; https://www.bbb.org/us/oh/huron/profile/auctioneer/b-keith-cooper-auctioneer-0422-90202243",
+    "_fetched": "2026-09-22",
+    "_confidence": "A sole-proprietor auctioneer, business start date 2002-01-01 per BBB, operating from 314 Wilbor Ave. NO HOURS - the trade has no weekly schedule; it works auction dates. The family background (father ran an auction house in Garrison, Kentucky) is from the auctioneer's own AuctionZip profile bio.",
+    "description": "A Huron auctioneer who has been calling estate and furniture sales since 2002.",
+    "amenities": [
+      "estate auctions",
+      "furniture and antiques",
+      "by auction date"
+    ],
+    "phone": "+14196771056"
+  },
+  "huro-lst-0120": {
+    "_match_name": "Goodwill Store",
+    "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone and hours quoted from the regional Goodwill's own stores page. This is the REAL Huron store. It also takes donations, attended, during store hours. NOTE: huro-lst-0218 'Goodwill Industries International, Inc.' carries the SAME PHONE and a nearby address (422 Cleveland Rd E) - almost certainly the same operation recorded twice under the national body's name.",
+    "hours": {
+      "monday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "tuesday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "saturday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "17:00"
+      }
+    },
+    "description": "Huron's thrift store, open until eight and taking donations at the door. Run by the regional Goodwill, which funds job training across four counties.",
+    "history": "Run by Goodwill Industries of Erie, Huron, Ottawa & Sandusky Counties, which operates seven stores across four counties and funds job training for people with disabilities and other barriers to employment.",
+    "amenities": [
+      "thrift retail",
+      "attended donation center",
+      "open until 8pm Mon-Sat"
+    ],
+    "phone": "+14194337542"
+  },
+  "huro-lst-0218": {
+    "_match_name": "Goodwill Industries International, Inc.",
+    "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
+    "_fetched": "2026-09-22",
+    "_confidence": "PROBABLE DUPLICATE of huro-lst-0120 - same phone (419-433-7542), and the regional Goodwill lists only ONE Huron store, at 310 Lake Erie Pkwy. The name on this record is the NATIONAL body (Goodwill Industries International, Rockville MD), which has no Huron premises; the listing's website goodwill.org is the national site. Recommend merging into huro-lst-0120. Hours below are the Huron store's, on the assumption it is the same place.",
+    "_duplicate_of": "huro-lst-0120",
+    "hours": {
+      "monday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "tuesday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "saturday": {
+        "open": "10:00",
+        "close": "20:00"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "17:00"
+      }
+    },
+    "description": "Huron's Goodwill thrift store on Lake Erie Parkway. Run by the regional Goodwill serving Erie, Huron, Ottawa and Sandusky counties.",
+    "amenities": [
+      "thrift retail",
+      "attended donation center"
+    ],
+    "phone": "+14194337542",
+    "_url_finding": "WRONG ENTITY, RETURNS 200. Held URL goodwill.org is the NATIONAL body in Maryland. The operator of this store is Goodwill of Erie, Huron, Ottawa & Sandusky Counties: https://www.goodwillsandusky.org/"
+  },
+  "huro-lst-0029": {
+    "_match_name": "Huron Iga",
+    "_source": "https://cornellshuron.com/ ; https://www.yelp.com/biz/huron-iga-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "DUPLICATE. Same address (408 Cleveland Rd E) and same phone as huro-lst-0050 'Cornell's Foods', which was already researched in retail.json. One grocery store, two listings: it is an IGA-banner store trading as Cornell's Foods, so both names are real names for one place. Recommend merging and keeping Cornell's Foods as the display name. No separate content written here.",
+    "_duplicate_of": "huro-lst-0050",
+    "description": "The IGA banner over Cornell's Foods on Cleveland Road East. One grocery store under two names.",
+    "phone": "+14194337733"
+  },
+  "huro-lst-0003": {
+    "_match_name": "Erie Supply House",
+    "_source": "none found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED, AND PROBABLY DEFUNCT. The website on the listing (eriesupplyhouse.com) no longer resolves in DNS. No directory, review site, chamber page or news item mentions a business of this name in Huron. Overture's own confidence for the category is 0.28. I found no evidence this business currently exists at 515 Cleveland Rd W. Recommend withholding from the pour until someone confirms it on the ground.",
+    "_flag": "dead-domain; existence unconfirmed",
+    "phone": "+14196160068",
+    "_url_finding": "DEAD. Held URL eriesupplyhouse.com does not resolve in DNS. No replacement found and no evidence the business still exists."
+  },
+  "huro-lst-0011": {
+    "_match_name": "Vermillion",
+    "_source": "none found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT A BUSINESS RECORD. The record has no address, no phone and no website, and 'Vermillion' is the (misspelled) name of VERMILION, the neighbouring lakeshore town about eight miles east. This looks like a place-name that was ingested as a convenience store. Nothing to research. Recommend dropping.",
+    "_flag": "not a real listing - neighbouring town name ingested as a business",
+    "_url_finding": "N/A - record holds no URL and is not a business (see NOVEL)."
+  },
+  "huro-lst-0033": {
+    "_match_name": "BJF Construction LLC.",
+    "_source": "https://bjfconstruction.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Confirmed from the contractor's own site. It is a ROOFING AND REMODELLING CONTRACTOR, not a shop - Overture filed it as a home_improvement_store at confidence 0.07, and the record has no address because the business has no storefront. Its site states hours as \"Always Open - We Work Around Your Schedule\", which is a marketing line, not a schedule, so hours are omitted.",
+    "_category_wrong": "Listed as shopping/retail. It is a contractor with no premises.",
+    "description": "Roofs, decks, floors and full remodels, across Erie County. A Huron contractor with no storefront.",
+    "amenities": [
+      "roofing",
+      "decks and ramps",
+      "flooring",
+      "plumbing",
+      "kitchen remodels"
+    ],
+    "phone": "+14193669576"
+  },
+  "huro-lst-0018": {
+    "_match_name": "NAPA AUTO PARTS",
+    "_source": "https://www.napaonline.com/stores/oh/huron/525-cleveland-rd-w",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and address from NAPA's own store page (the URL on the listing, .../en/oh/huron/store/802182, 502'd; the /stores/... form is the live one). The store trades locally as HURON AUTO PARTS under the NAPA banner - an independently owned jobber store, not a corporate outlet. Closed Sundays.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "14:00"
+      }
+    },
+    "description": "Huron Auto Parts, the town's NAPA store, closed Sundays. Parts, tools and curbside pickup on Cleveland Road West.",
+    "amenities": [
+      "car and truck parts",
+      "tools and equipment",
+      "online order pickup",
+      "curbside pickup"
+    ],
+    "phone": "+14194336350",
+    "_url_finding": "BROKEN PATH. Held URL napaonline.com/en/oh/huron/store/802182 returns 502. Correct: https://www.napaonline.com/stores/oh/huron/525-cleveland-rd-w"
+  },
+  "huro-lst-0177": {
+    "_match_name": "Discount Drug Mart",
+    "_source": "https://ddmphoto.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24 (403 to fetch; hours via https://pharmacyfinder.rxlocal.com/pharmacyFinder/oh/huron/discount-drug-mart-inc-24 and Yelp)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Store #24. The chain's own store page refused the fetch, so the hours below are from pharmacy directories that agree with each other. STORE hours are below; the PHARMACY counter inside keeps different and shorter hours (Mon-Fri 09:00-21:00, Sat 09:00-18:00, Sun 10:00-18:00) which this schema cannot hold. Regional Ohio chain, not a national one.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "21:00"
+      }
+    },
+    "description": "An Ohio-grown drugstore on Cleveland Road East with a pharmacy counter inside.",
+    "amenities": [
+      "pharmacy",
+      "household goods",
+      "groceries",
+      "greeting cards"
+    ],
+    "phone": "+14194334565"
+  },
+  "huro-lst-0238": {
+    "_match_name": "Dollar Tree",
+    "_source": "https://locations.dollartree.com/oh/huron/593-cleveland-rd",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet. Hours and phone from the chain's own store locator page (the page itself truncated on fetch; values taken from its search summary and cross-checked against two directories, which agree).",
+    "hours": {
+      "monday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "21:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "20:00"
+      }
+    },
+    "description": "A Dollar Tree on Cleveland Road, open to nine most nights.",
+    "amenities": [
+      "discount variety"
+    ],
+    "phone": "+15672650025"
+  },
+  "huro-lst-0279": {
+    "_match_name": "Dollar General",
+    "_source": "https://www.dollargeneral.com/store-directory/oh/huron/14867 (401 to fetch; hours cross-checked across directories)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Chain outlet, store #14867. The chain's own page refused the fetch; the 08:00-22:00 daily hours are consistent across several directories. Address on the listing (2202 Cleveland Rd W) matches.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "08:00",
+        "close": "22:00"
+      }
+    },
+    "description": "A Dollar General out on Cleveland Road West, open eight to ten daily.",
+    "amenities": [
+      "discount variety",
+      "groceries"
+    ],
+    "phone": "+15676239210"
+  },
+  "huro-lst-0234": {
+    "_match_name": "Mickey Mart",
+    "_source": "https://www.mickeythemoose.com (corporate site; no store page for Huron) ; hours via https://www.yelp.com/biz/mickey-mart-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Huron Mickey Mart #35, a gas station and convenience store. The chain's own site (Milan, Ohio corporate office) has a store locator but served no Huron page to the fetch, so the hours below are from directories and should be re-checked. The chain is a small Ohio one, not national.",
+    "hours": {
+      "monday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "05:00",
+        "close": "24:00"
+      },
+      "saturday": {
+        "open": "05:00",
+        "close": "24:00"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "23:00"
+      }
+    },
+    "description": "The Main Street gas station, open from five in the morning. Fuel, coffee and a convenience counter.",
+    "amenities": [
+      "fuel",
+      "convenience store",
+      "hot food"
+    ],
+    "phone": "+14194337323",
+    "_url_finding": "RIGHT CHAIN, NO STORE PAGE. Held URL mickeythemoose.com is the correct corporate site (Milan, OH) but serves no page for the Huron store, so it carries no hours."
+  },
+  "huro-lst-0069": {
+    "_match_name": "Village Gallery & Framer",
+    "_source": "https://www.superpages.com/huron-oh/bpp/village-gallery-framer-10953065 ; https://www.facebook.com/Villageframer/",
+    "_fetched": "2026-09-22",
+    "_confidence": "WRONG-ENTITY URL ON THE LISTING: villagegallery.com is a gallery in LAGUNA BEACH, CALIFORNIA, not this business. The Huron shop at 105 Wall St does full-service custom framing - shadowboxes, needlework, canvas and conservation framing, all done on premises - and directories credit it with 39 years in business (year of founding therefore roughly 1980s; NOT established precisely). HOURS NOT ESTABLISHED - no source publishes them.",
+    "_flag": "listing website points at an unrelated business in another state",
+    "description": "Forty years of framing in one room on Wall Street. Conservation work, shadowboxes and needlework, all done on the premises.",
+    "amenities": [
+      "custom picture framing",
+      "conservation framing",
+      "shadowboxes",
+      "needlework framing",
+      "canvas stretching"
+    ],
+    "phone": "+14194333875",
+    "_url_finding": "WRONG ENTITY, RETURNS 200. Held URL villagegallery.com loads fine and is a real gallery-and-framer - in LAGUNA BEACH, CALIFORNIA. Wrong state. No correct URL found; the Huron shop appears to have none."
+  },
+  "huro-lst-0281": {
+    "_match_name": "First Acres Homestead",
+    "_source": "https://www.facebook.com/p/First-Acres-Homestead-61563407061326/ (page not retrievable; existence confirmed via a local Facebook group post offering its eggs)",
+    "_fetched": "2026-09-22",
+    "_confidence": "VERY THIN. A small homestead farm on Rye Beach Road selling eggs locally. No website, no phone, no published hours - a farm gate stand of this kind typically sells when it has stock, which this schema cannot express. Beyond eggs, what it sells is NOT established. Recommend confirming on the ground before shipping.",
+    "description": "A small Rye Beach Road homestead selling eggs to neighbours.",
+    "amenities": [
+      "eggs"
+    ]
+  }
+}

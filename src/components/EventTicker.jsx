@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
+import { isOpenAt, openSlotAt } from '../lib/openNow.js'
 import { getEvents } from '../lib/api'
 import useListings from '../hooks/useListings'
 import useEvents, { isActiveEvent } from '../hooks/useEvents'
@@ -74,16 +75,11 @@ const MENU_DISPLAY = {
  * One entry per listing. Manual events override all; schedules override taglines.
  */
 const _DAYS_FULL = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-function _isOpenNow(hours, now) {
-  if (!hours) return false
-  const day = _DAYS_FULL[now.getDay()]
-  const slot = hours[day]
-  if (!slot || !slot.open || !slot.close) return false
-  const mins = now.getHours() * 60 + now.getMinutes()
-  const [oh, om] = slot.open.split(':').map(Number)
-  const [ch, cm] = slot.close.split(':').map(Number)
-  return mins >= oh * 60 + om && mins < ch * 60 + cm
-}
+// ⛔ ONE HOME FOR THIS PREDICATE — `src/lib/openNow.js`. This file used to carry
+// its own copy, byte-identical to two others, and all three read `mins >= open &&
+// mins < close`, which is FALSE at every minute of the day when a place closes
+// after midnight. `PlaceCard` had the only correct version. See that module.
+const _isOpenNow = isOpenAt
 const TAGLINE_MAX = 80
 function _firstSentence(text) {
   if (!text) return null
@@ -164,10 +160,15 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
   allListings.forEach(listing => {
     if (entries.has(listing.id)) return // already has a schedule entry
     if (!listing.hours || TICKER_EXCLUDED.has(listing.category)) return
-    if (!_isOpenNow(listing.hours, now)) return
+    // ⛔ ONE RESOLUTION FOR BOTH THE TEST AND THE LABEL. This used to ask
+    // `_isOpenNow` and then reach for `hours[today]` separately — fine while no window
+    // could wrap, fatal once one can: at 01:00 the slot holding a bar open belongs to
+    // YESTERDAY, so today's may not exist and `undefined.close` would take the ticker
+    // (and with it the search bar) down.
+    const slot = openSlotAt(listing.hours, now)
+    if (!slot) return
     const tagline = listing.tagline || _firstSentence(listing.description)
     if (!tagline) return
-    const slot = listing.hours[_DAYS_FULL[now.getDay()]]
     const [eh, em] = slot.close.split(':').map(Number)
     const endSuffix = eh >= 12 ? 'pm' : 'am'
     const endHr = eh === 0 ? 12 : eh > 12 ? eh - 12 : eh

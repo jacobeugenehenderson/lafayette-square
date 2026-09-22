@@ -1,0 +1,1104 @@
+{
+  "huro-lst-0257": {
+    "_match_name": "HY-MILER #2235",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party ExxonMobil station page for this exact site (508 Berlin Road, 419-433-6204). Hours read verbatim off that page: 6:00 am - 11:00 pm all seven days. NOT 24 hours. Whether the PUMPS run past 23:00 on pay-at-pump is not established - the page gives one hours block and does not distinguish pump from store.",
+    "hours": {
+      "monday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Mobil station and convenience store on Berlin Road, open from 6am to 11pm daily.",
+    "amenities": [
+      "Convenience store",
+      "Mobil fuel",
+      "Exxon Mobil Rewards+",
+      "Walmart+ accepted"
+    ],
+    "phone": "+14194336204"
+  },
+  "huro-lst-0114": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552",
+    "_fetched": "2026-09-22",
+    "_confidence": "SAME PHYSICAL SITE as huro-lst-0257 (508 Berlin Road, phone 419-433-6204); this record's own website field points at that same ExxonMobil page. Hours verbatim from it. Treat 0114 and 0257 as one place - see overnight-NOVEL.md. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Mobil station and convenience store on Berlin Road, open from 6am to 11pm daily.",
+    "amenities": [
+      "Convenience store",
+      "Mobil fuel",
+      "Exxon Mobil Rewards+",
+      "Walmart+ accepted"
+    ],
+    "phone": "+14194336204"
+  },
+  "huro-lst-0282": {
+    "_match_name": "HY-MILER #2234",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party ExxonMobil station page for this exact site (805 S. Main Street, 419-433-6597). Hours verbatim: Mon-Sat 6:00 am - 11:00 pm, Sun 6:00 am - 10:00 pm. NOT 24 hours. Car wash operating hours separate from store hours: not established.",
+    "hours": {
+      "monday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "22:00"
+      }
+    },
+    "description": "Mobil station on South Main with a convenience store, car wash and diesel.",
+    "amenities": [
+      "Convenience store",
+      "Car wash",
+      "Diesel",
+      "Synergy Diesel Efficient",
+      "Exxon Mobil Rewards+",
+      "Walmart+ accepted"
+    ],
+    "phone": "+14194336597"
+  },
+  "huro-lst-0060": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563",
+    "_fetched": "2026-09-22",
+    "_confidence": "SAME PHYSICAL SITE as huro-lst-0282 (805 S. Main Street, 419-433-6597); this record's own website field points at that same ExxonMobil page. Hours verbatim from it. Treat 0060 and 0282 as one place. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "06:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "22:00"
+      }
+    },
+    "description": "Mobil station on South Main with a convenience store, car wash and diesel.",
+    "amenities": [
+      "Convenience store",
+      "Car wash",
+      "Diesel",
+      "Exxon Mobil Rewards+",
+      "Walmart+ accepted"
+    ],
+    "phone": "+14194336597"
+  },
+  "huro-lst-0249": {
+    "_match_name": "Huron Market",
+    "_source": "https://www.huronmarket.com/contact-us/",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party operator page. Store hours verbatim Mon-Sat 7a-10p, Sun 8a-9p. The same page gives SEPARATE, narrower liquor-sales hours (Mon-Sat 9a-10p, Sun 9a-9p) which our shape cannot hold - see overnight-NOVEL.md. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "08:00",
+        "close": "21:00"
+      }
+    },
+    "description": "Independent grocery on Cleveland Road West with a deli, bakery, butcher and full beer, wine and liquor aisle.",
+    "amenities": [
+      "Deli",
+      "Bakery",
+      "Fresh meat",
+      "Produce",
+      "Grab-and-go",
+      "Beer, wine and spirits",
+      "Ohio liquor agency"
+    ],
+    "phone": "+14194332499"
+  },
+  "huro-lst-0103": {
+    "_match_name": "Comfort Inn River's Edge",
+    "_source": "https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017",
+    "_fetched": "2026-09-22",
+    "_confidence": "24-HOUR FRONT DESK is attested consistently across the property's Tripadvisor, Hotels.com and Yelp amenity facts; the Choice Hotels official page (the listing's own website field) timed out repeatedly on fetch and could not be read directly, so this is corroborated-secondary, not first-party. The 00:00-23:59 slots represent the STAFFED FRONT DESK, not check-in: check-in is 15:00 and check-out 11:00 (see overnight-NOVEL.md). Breakfast 6:00-10:00 daily is a separate sub-service our shape cannot hold.",
+    "hours": {
+      "monday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "tuesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "wednesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "thursday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "friday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "00:00",
+        "close": "23:59"
+      }
+    },
+    "description": "Riverside Comfort Inn off Main Street with a 24-hour front desk, indoor pool and free hot breakfast.",
+    "amenities": [
+      "24-hour front desk",
+      "Indoor heated pool",
+      "Free hot breakfast",
+      "Free WiFi",
+      "Free parking",
+      "Fitness center",
+      "Business center",
+      "Meeting room",
+      "Riverside picnic area"
+    ],
+    "phone": "+14194338000"
+  },
+  "huro-lst-0075": {
+    "_match_name": "Quality Inn Huron",
+    "_source": "https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405",
+    "_fetched": "2026-09-22",
+    "_confidence": "24-HOUR FRONT DESK attested by Booking.com property facts and the Choice Hotels listing summary; the Choice page itself timed out on fetch, so corroborated-secondary not first-party. ⚠ BRAND MAY HAVE CHANGED: choicehotels.com/ohio/huron/quality-inn-hotels/oh405 and .../rodeway-inn-hotels/oh405 are the same property code and hotelplanner titles it 'Rodeway Inn Huron'. Whether the sign on the building today reads Quality Inn or Rodeway Inn is NOT ESTABLISHED. Slots are the staffed front desk; check-in 15:00.",
+    "hours": {
+      "monday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "tuesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "wednesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "thursday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "friday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "00:00",
+        "close": "23:59"
+      }
+    },
+    "description": "Highway-side inn on Cleveland Road West with a 24-hour front desk, indoor pool and free breakfast.",
+    "amenities": [
+      "24-hour front desk",
+      "Indoor pool",
+      "Free breakfast",
+      "Free WiFi",
+      "Free parking",
+      "Business area",
+      "Meeting room"
+    ],
+    "phone": "+14194335359"
+  },
+  "huro-lst-0016": {
+    "_match_name": "Motel 6",
+    "_source": "https://www.motel6.com/us/ohio/huron/",
+    "_fetched": "2026-09-22",
+    "_confidence": "24-HOUR FRONT DESK attested by Tripadvisor, Expedia and Hotels.com property facts for Motel 6 Huron, OH - Sandusky at 601 Rye Beach Rd; motel6.com timed out on fetch, so corroborated-secondary. This is the CURRENT operator of 601 Rye Beach Rd - the Microtel record (huro-lst-0201) is the same building under a retired brand. Phone: the listing carries +14194066904; secondary sources give 419-433-7829. Which is live is NOT ESTABLISHED, so the listing's own number is kept.",
+    "hours": {
+      "monday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "tuesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "wednesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "thursday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "friday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "00:00",
+        "close": "23:59"
+      }
+    },
+    "description": "Budget motel on Rye Beach Road with a 24-hour front desk, indoor pool and hot tub.",
+    "amenities": [
+      "24-hour front desk",
+      "Indoor pool",
+      "Hot tub",
+      "Free WiFi",
+      "Free parking",
+      "Pet friendly",
+      "Laundry facilities",
+      "Vending"
+    ],
+    "phone": "+14194066904"
+  },
+  "huro-lst-0234": {
+    "_match_name": "Mickey Mart",
+    "_source": "https://www.yelp.com/biz/mickey-mart-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours are from aggregated listings (Yelp/Yahoo Local/Loc8NearMe) for this exact address, NOT from the operator. mickeythemoose.com has no reachable store-locator page for Huron (404 on /pages/locations), so the LOCATION's own hours are unconfirmed. Fri/Sat close at 00:00 is recorded as 23:59 to stay inside the shape - see overnight-NOVEL.md. NOT 24 hours. This is the SAME SITE as huro-lst-0182 'bp'.",
+    "hours": {
+      "monday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "05:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "05:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Mickey Mart convenience store and bp fuel stop on Main Street, open from 5am.",
+    "amenities": [
+      "Convenience store",
+      "bp fuel",
+      "Coffee",
+      "Grab-and-go"
+    ],
+    "phone": "+14194337323"
+  },
+  "huro-lst-0057": {
+    "_match_name": "McDonald's",
+    "_source": "https://www.mcdonalds.com/us/en-us/location/oh/huron/2118-cleveland-rd-w/6106.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "McDonald's own location page for store 6106 (fetch of the page timed out; hours read from the same page via search-result extraction). Lobby 5:00-23:00 daily, drive-thru 5:30-23:00 daily. NOT 24 hours. Two different windows for one place - see overnight-NOVEL.md; the lobby window is recorded.",
+    "hours": {
+      "monday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "05:00",
+        "close": "23:00"
+      }
+    },
+    "description": "McDonald's on Cleveland Road West, open from 5am to 11pm with a drive-thru.",
+    "amenities": [
+      "Drive-thru",
+      "Mobile order",
+      "McCafe",
+      "Free WiFi",
+      "Breakfast"
+    ],
+    "phone": "+14194337555"
+  },
+  "huro-lst-0108": {
+    "_match_name": "Wendy's",
+    "_source": "https://locations.wendys.com/united-states/oh/huron/600-rye-beach-road",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party Wendy's location page, read directly. Dining room and drive-thru both 6:30 am - 10:00 pm every day. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "06:30",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "06:30",
+        "close": "22:00"
+      }
+    },
+    "description": "Wendy's on Rye Beach Road, open 6:30am to 10pm with a drive-thru.",
+    "amenities": [
+      "Drive-thru",
+      "Breakfast",
+      "Mobile ordering",
+      "Mobile payment",
+      "Free WiFi",
+      "Kids' meals"
+    ],
+    "phone": "+14194332849"
+  },
+  "huro-lst-0034": {
+    "_match_name": "Subway",
+    "_source": "https://restaurants.subway.com/united-states/oh/huron/2117-cleveland-rd-w",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party Subway location page, read directly. Mon-Thu 8:00-22:00, Fri-Sun 9:00-23:00. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "09:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Subway on Cleveland Road West with a drive-thru, open until 11pm Friday through Sunday.",
+    "amenities": [
+      "Drive-thru",
+      "Breakfast",
+      "Catering",
+      "Mobile ordering",
+      "Delivery"
+    ],
+    "phone": "+14194337491"
+  },
+  "huro-lst-0223": {
+    "_match_name": "Domino's",
+    "_source": "https://pizza.dominos.com/ohio/huron/500-main-street",
+    "_fetched": "2026-09-22",
+    "_confidence": "Domino's own store page for 500 Main Street (read via search-result extraction of that page). Sun-Thu 10:30-23:00, Fri-Sat 10:30-00:00. Midnight close recorded as 23:59 - see overnight-NOVEL.md. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "10:30",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "10:30",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "10:30",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "10:30",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "10:30",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "10:30",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "10:30",
+        "close": "23:00"
+      }
+    },
+    "description": "Domino's on Main Street, delivering and carrying out until midnight on Friday and Saturday.",
+    "amenities": [
+      "Delivery",
+      "Carryout",
+      "Online ordering"
+    ],
+    "phone": "+14194335494"
+  },
+  "huro-lst-0160": {
+    "_match_name": "Knucklehead Saloon",
+    "_source": "https://www.yelp.com/biz/knucklehead-saloon-huron-2",
+    "_fetched": "2026-09-22",
+    "_confidence": "⭐ THE LATEST-CLOSING PLACE FOUND IN HURON: 2:30 am, the Ohio last-call limit. The 02:30 close is consistently attested across Yelp, Yahoo Local and Apple Maps for this address. ⛔ THE OPENING TIMES ARE NOT RELIABLE: the aggregate reads 'Sat-Wed and Sun 10:00 am, Fri 7:00 am', which is internally inconsistent and a 7am Friday open at a saloon is not credible. 10:00 is recorded for all seven days as the conservative, most-attested opening; ⛔ per-day openings are NOT ESTABLISHED and want a phone call. The venue has no website. ⛔⛔ THE CLOSE IS AFTER MIDNIGHT AND THE {open,close} SHAPE CANNOT EXPRESS IT - close < open. See overnight-NOVEL.md before consuming this record; a naive comparator will get it backwards.",
+    "_past_midnight": true,
+    "hours": {
+      "monday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "tuesday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "friday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "saturday": {
+        "open": "10:00",
+        "close": "02:30"
+      },
+      "sunday": {
+        "open": "10:00",
+        "close": "02:30"
+      }
+    },
+    "description": "Biker-friendly saloon on Cleveland Road West serving until 2:30am, with live music most summer weekends.",
+    "amenities": [
+      "Full bar",
+      "Bar and grill menu",
+      "Live music",
+      "Pool table",
+      "Happy hour 2-7pm"
+    ],
+    "phone": "+14194336944"
+  },
+  "huro-lst-0244": {
+    "_match_name": "Main Street Tavern",
+    "_source": "https://local.yahoo.com/info-136744931-main-street-tavern-huron/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⚠ SOURCES CONFLICT ON THE CLOSING TIME. Yahoo Local / Yelp / Restaurantji agree on Mon 11-23, Tue CLOSED, Wed-Thu 11-23, Fri-Sat 11-24, Sun 11-23. Untappd instead shows a 2:00 am close Tue-Fri. The majority set is recorded because it is the one that cannot send anyone to a shut door; ⛔ the later close is NOT ESTABLISHED. mainsthuron.com could not be read (expired TLS certificate). Tuesday omitted as closed. Midnight closes recorded as 23:59.",
+    "hours": {
+      "monday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Cozy neighbourhood tavern at the top of Main Street with an American bar menu.",
+    "amenities": [
+      "Full bar",
+      "American menu",
+      "Takeout"
+    ],
+    "phone": "+14196160025"
+  },
+  "huro-lst-0166": {
+    "_match_name": "Harbor House Bar and Grill",
+    "_source": "http://harborhousebar.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "First-party site, read directly. ⚠ THE OPERATOR PUBLISHES NO CLOSING TIME FOR THE BAR: the page says 'open 12:00pm-Close daily' and gives only KITCHEN closes (Mon-Thu 21:00, Fri-Sat 22:00, Sun 20:00). The recorded closes are the KITCHEN's - the bar itself stays open later by an amount the operator does not state. Under-reported on purpose; ⛔ do not extend it. See overnight-NOVEL.md ('Close' as a time).",
+    "hours": {
+      "monday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "12:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "12:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "12:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "20:00"
+      }
+    },
+    "description": "Family-friendly bar and grill on the Huron River with a dog-friendly patio.",
+    "amenities": [
+      "Full bar",
+      "American menu",
+      "Riverfront patio",
+      "Dog friendly",
+      "Kids menu",
+      "Banquet center",
+      "Catering"
+    ],
+    "phone": "+14196166088"
+  },
+  "huro-lst-0177": {
+    "_match_name": "Discount Drug Mart",
+    "_source": "https://www.yelp.com/biz/discount-drug-mart-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Store hours Mon-Sat 8:00-22:00, Sun 9:00-21:00 from aggregated listings for store #24 at this address; the chain's own store page (ddmphoto.discount-drugmart.com/.../discount-drug-mart-huron-24) returned 403 and could not be read, so this is NOT first-party. ⚠ THE PHARMACY COUNTER KEEPS ITS OWN, NARROWER HOURS (Mon-Fri 9-21, Sat 9-18, Sun 10-18) which our shape cannot hold - see overnight-NOVEL.md. The recorded hours are the STORE's. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "21:00"
+      }
+    },
+    "description": "Ohio drugstore chain on Cleveland Road East, open to 10pm with a pharmacy counter.",
+    "amenities": [
+      "Pharmacy",
+      "Drive-thru pharmacy",
+      "Groceries",
+      "Photo",
+      "Beer and wine"
+    ],
+    "phone": "+14194334565"
+  },
+  "huro-lst-0032": {
+    "_match_name": "Huron Health Club",
+    "_source": "https://www.facebook.com/huronhealthclub/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⭐ GENUINELY 24-HOUR, and the operator says so itself: the business's own page is titled 'Huron Health Club 24/7 Gym, Train, Sauna'. ⚠ BUT THIS IS 24/7 MEMBER ACCESS (fob/keycard), NOT a staffed 24-hour counter - a non-member cannot walk in at 3am. Staffed/desk hours are NOT ESTABLISHED. See overnight-NOVEL.md: 'member access' is a distinct openness our shape cannot label. The Facebook page could not be fetched directly; the 24/7 claim is read from the page's own title as indexed.",
+    "hours": {
+      "monday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "tuesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "wednesday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "thursday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "friday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "00:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "00:00",
+        "close": "23:59"
+      }
+    },
+    "description": "Independent 24/7 gym on Cleveland Road West with free weights, training and a sauna.",
+    "amenities": [
+      "24/7 member access",
+      "Free weights",
+      "Cardio",
+      "Personal training",
+      "Sauna"
+    ],
+    "phone": "+14196021052"
+  },
+  "huro-lst-0188": {
+    "_match_name": "Pier Pub",
+    "_source": "https://www.yelp.com/biz/the-pier-pub-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Aggregated listing hours (Yelp, April 2026) - the pub has no website of its own, so NOT first-party. Closed Monday and Wednesday; those days omitted. ⚠ Sources disagree slightly on the closing times; the Yelp set is the most recently updated. NOT open late.",
+    "hours": {
+      "tuesday": {
+        "open": "11:30",
+        "close": "20:30"
+      },
+      "thursday": {
+        "open": "11:30",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "11:30",
+        "close": "21:30"
+      },
+      "saturday": {
+        "open": "11:30",
+        "close": "21:30"
+      },
+      "sunday": {
+        "open": "09:30",
+        "close": "19:30"
+      }
+    },
+    "description": "Family-run waterfront pub by the Huron pier, known for its perch sandwich and walleye fingers.",
+    "amenities": [
+      "Full bar",
+      "Waterfront patio",
+      "Seafood",
+      "Indoor and outdoor dining"
+    ],
+    "phone": "+15673308043"
+  },
+  "huro-lst-0198": {
+    "_match_name": "Sand Bar",
+    "_source": "https://www.yelp.com/biz/sand-bar-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "Aggregated listing hours (Yelp, June 2026). ⛔ THE LISTING'S website FIELD IS THE WRONG ENTITY: thesandbar.com resolves to The Sandbar in Lawrence, Kansas - see overnight-NOVEL.md. ⚠ SEASONAL: a fall/winter schedule is separately reported (bar to 22:00 Sun-Thu, 24:00 Fri-Sat); which season is in force today is NOT ESTABLISHED, so the shorter winter close is used Sun-Thu to avoid sending anyone to a shut door. Midnight recorded as 23:59.",
+    "hours": {
+      "monday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "22:00"
+      }
+    },
+    "description": "Landlocked beach bar on McKinley Street doing pizza and pub food until late.",
+    "amenities": [
+      "Full bar",
+      "Pizza",
+      "Pub food",
+      "Patio"
+    ],
+    "phone": "+14194332144"
+  },
+  "huro-lst-0006": {
+    "_match_name": "Old Fish House",
+    "_source": "https://oldnorthmaineats.com/old-fish-house/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⚠ PARTIAL BY DESIGN. The operator publishes 'Monday thru Thursday 4 p.m.' with NO closing time, and 'Friday 3 p.m. to 11 p.m., Saturday and Sunday 11 a.m. to 11 p.m.'. Only the three days with a stated close are recorded; ⛔ Mon-Thu are OMITTED rather than guessed, even though the place is open then - an opening time with no close is a shape our record cannot hold. See overnight-NOVEL.md. huro-lst-0183 is the SAME PLACE.",
+    "hours": {
+      "friday": {
+        "open": "15:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Waterfront cocktail bar and local hangout at the foot of Main Street, open to 11pm.",
+    "amenities": [
+      "Cocktail bar",
+      "Waterfront",
+      "Dog friendly"
+    ],
+    "phone": "+14196024664"
+  },
+  "huro-lst-0183": {
+    "_match_name": "The Old Fish House (Huron, Ohio)",
+    "_source": "https://oldnorthmaineats.com/old-fish-house/",
+    "_fetched": "2026-09-22",
+    "_confidence": "SAME PHYSICAL PLACE as huro-lst-0006 'Old Fish House' (30 Main St, 419-602-4664). Same partial-hours caveat: Mon-Thu have a published 4pm open and no published close, so they are omitted rather than guessed.",
+    "hours": {
+      "friday": {
+        "open": "15:00",
+        "close": "23:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "23:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "23:00"
+      }
+    },
+    "description": "Waterfront cocktail bar and local hangout at the foot of Main Street, open to 11pm.",
+    "amenities": [
+      "Cocktail bar",
+      "Waterfront",
+      "Dog friendly"
+    ],
+    "phone": "+14196024664"
+  },
+  "huro-lst-0182": {
+    "_match_name": "bp",
+    "_source": "https://www.yelp.com/biz/mickey-mart-huron",
+    "_fetched": "2026-09-22",
+    "_confidence": "SAME PHYSICAL SITE as huro-lst-0234 'Mickey Mart' (502 Main St, 419-433-7323) - Mickey Mart is the store, bp is the fuel brand on the forecourt. ⛔ THE LISTING'S website FIELD IS DEAD: the map.bp.com station URL returns 404. Hours are the store's, from aggregated listings, NOT first-party. NOT 24 hours.",
+    "hours": {
+      "monday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "tuesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "wednesday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "thursday": {
+        "open": "05:00",
+        "close": "23:00"
+      },
+      "friday": {
+        "open": "05:00",
+        "close": "23:59"
+      },
+      "saturday": {
+        "open": "05:00",
+        "close": "23:59"
+      },
+      "sunday": {
+        "open": "06:00",
+        "close": "23:00"
+      }
+    },
+    "description": "bp fuel and the Mickey Mart convenience store on Main Street, open from 5am.",
+    "amenities": [
+      "bp fuel",
+      "Convenience store",
+      "Coffee"
+    ],
+    "phone": "+14194337323"
+  },
+  "huro-lst-0013": {
+    "_match_name": "Shell",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Same address AND same phone as huro-lst-0114 'Mobil' / huro-lst-0257 'HY-MILER #2235' (508 Berlin Rd, 419-433-6204), which is a MOBIL-branded Hy-Miler per ExxonMobil's own station page. This record's brand is wrong or historical. ⛔ Hours withheld: attaching the Mobil site's hours to a Shell record would ship a station that does not exist under that sign."
+  },
+  "huro-lst-0126": {
+    "_match_name": "Shell",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Same address as huro-lst-0060 'Mobil' / huro-lst-0282 'HY-MILER #2234' (805 Main St), which ExxonMobil's own station page confirms is MOBIL-branded, phone 419-433-6597. This record carries a different phone (419-433-2140) and only the brand homepage shell.com as a website, so whether it is a stale brand record for the same forecourt or a separate site is NOT ESTABLISHED. ⛔ Hours withheld."
+  },
+  "huro-lst-0173": {
+    "_match_name": "Hy-Miler",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Its website hy-miler.com is DEAD (302 to a DNS Made Easy 'lost redirect' placeholder). Shell's own locator does list a station at 2026 Cleveland Rd W but publishes no hours for it, and Yelp carries BOTH an active 'Hy-Miler' and a 'Shell Hy-Miler - CLOSED' at this address. ⛔ Whether this site is trading, and on what hours, is NOT ESTABLISHED. Do not publish hours until someone calls 419-433-7848 or looks at the sign."
+  },
+  "huro-lst-0201": {
+    "_match_name": "Microtel Inn Suites Huron",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "601 Rye Beach Rd is operated today as MOTEL 6 (huro-lst-0016). Yelp lists 'Microtel Inn & Suites-Huron' at this exact address as CLOSED, and this record's own website field is a motel-6 booking domain. ⛔ Retired brand, same building - hours withheld; this record should be merged into huro-lst-0016 or dropped."
+  },
+  "huro-lst-0011": {
+    "_match_name": "Vermillion",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT A PLACE WE CAN LOCATE. The record has no address, no phone and no website. 'Vermilion' (one L) is the neighbouring CITY, 8 miles east in Erie County; 'Vermillion' with two Ls is a common misspelling of it. ⛔ Nothing researched, nothing published - this looks like a geocoding or intake artifact, not a Huron business."
+  },
+  "huro-lst-0237": {
+    "_match_name": "Riverview Lanes and Cafe",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ Its website riverviewlanes.com now 301-redirects to abutotomacau.com, an unrelated third-party domain - the operator's domain has LAPSED AND BEEN RE-REGISTERED. Listings also report the lanes temporarily closed as of late 2025, and the hours that circulate give only OPENING times with no closes. ⛔ Hours withheld; trading status NOT ESTABLISHED."
+  },
+  "huro-lst-0137": {
+    "_match_name": "Mulligan's Pub - Huron, OH",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Sources disagree materially (one set closes at 20:00, another at 21:00) and the listing's website is the Sawmill Creek golf resort homepage, not the pub's own page. Closes well before the overnight window either way. ⛔ Hours withheld as unresolved."
+  },
+  "huro-lst-0088": {
+    "_match_name": "Central Basin Bait Tackle and Carryout",
+    "_source": "https://www.facebook.com/p/Central-Basin-Bait-Tackle-and-Carryout-100093554371075/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⭐ EARLIEST OPENING FOUND IN HURON: 5:00 am, which matters for the dawn end of the ticker. Mon-Fri 5:00-18:00 from the business's own Facebook listing as indexed (the page itself could not be fetched). ⛔ SATURDAY AND SUNDAY ARE NOT ESTABLISHED and are omitted - a bait shop almost certainly opens early at a weekend, but 'almost certainly' is not a source. ⛔ The listing's website field (tatteredwingswaterandfowl.com) is a DIFFERENT BUSINESS - see overnight-NOVEL.md.",
+    "hours": {
+      "monday": {
+        "open": "05:00",
+        "close": "18:00"
+      },
+      "tuesday": {
+        "open": "05:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "05:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "05:00",
+        "close": "18:00"
+      },
+      "friday": {
+        "open": "05:00",
+        "close": "18:00"
+      }
+    },
+    "description": "Bait, tackle and carryout on Main Street, open at 5am for anglers heading out on Lake Erie.",
+    "amenities": [
+      "Live bait",
+      "Tackle",
+      "Rods and reels",
+      "Beer",
+      "Ice",
+      "Snacks"
+    ],
+    "phone": "+14196020750"
+  },
+  "huro-lst-0162": {
+    "_match_name": "Donut Shop - Huron, OH",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ SOURCES IRRECONCILABLE: one set says 7:00-21:00 daily, another says the shop opens 6:00 and sells out and shuts by noon. Those are not variants of one schedule, they are two different businesses' worth of hours. mesenburg.com is a bakery-group site with no Huron page. ⛔ Hours withheld - this one needs a phone call. Cash only is separately attested."
+  },
+  "huro-lst-0193": {
+    "_match_name": "CUSH Cafe",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Located inside Riverview Lanes at 125 Main St and sharing its dead domain - riverviewlanes.com now 301-redirects to abutotomacau.com, an unrelated re-registered domain. The lanes are reported temporarily closed. ⛔ Hours and trading status NOT ESTABLISHED."
+  },
+  "huro-lst-0196": {
+    "_match_name": "Riverview Cafe Huron, Ohio",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Third record for 125 Main St (with huro-lst-0237 and huro-lst-0193) and the thinnest: no address, no phone, no website. ⛔ Nothing published."
+  },
+  "huro-lst-0080": {
+    "_match_name": "I-5's Bar & Grill",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "⚠ LIKELY DEFUNCT OR REBRANDED. 356 Main St carries THREE records (this, huro-lst-0235 'Vega Bar And Grill Llc.', and the Yelp entity 'Thee Fishermen's Wharf Bar & Grill' which Yelp marks CLOSED). Circulating hours for 'I-5's' run to 2:00 am Fri-Sun, which would make this an overnight place IF it is trading. ⛔ WHO OCCUPIES 356 MAIN STREET TODAY IS NOT ESTABLISHED, so no hours are published. Worth an operator eye - a 2am bar is the scarcest thing on this beat."
+  },
+  "huro-lst-0235": {
+    "_match_name": "Vega Bar And Grill Llc.",
+    "_source": null,
+    "_fetched": "2026-09-22",
+    "_confidence": "Same address as huro-lst-0080 (356 Main St). No website, no independent hours anywhere; searches for the name return only the I-5's / Thee Wharf entity. ⛔ Nothing established."
+  }
+}

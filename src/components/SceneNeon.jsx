@@ -22,6 +22,7 @@
  * LafayetteScene⟷SceneNeon circular import resolves safely at runtime.
  */
 import { useMemo, useState, useEffect, useReducer } from 'react'
+import { isOpenAt } from '../lib/openNow.js'
 import { buildings as _allBuildings } from '../data/buildings'
 import useListings from '../hooks/useListings'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -37,17 +38,11 @@ import { getFoundationHeight, roofTopRingFor } from './LafayetteScene.jsx'
 // line used to claim "AND it's dark enough to see" and nothing in this file or
 // NeonBands has ever read sun elevation. Believed on sight, it sends the next
 // reader hunting for a gate that does not exist.
-const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-function _isWithinHours(hours, time) {
-  if (!hours) return false // no hours set → neon off
-  const day = _DAYS[time.getDay()]
-  const slot = hours[day]
-  if (!slot || !slot.open || !slot.close) return false // closed that day
-  const mins = time.getHours() * 60 + time.getMinutes()
-  const [oh, om] = slot.open.split(':').map(Number)
-  const [ch, cm] = slot.close.split(':').map(Number)
-  return mins >= oh * 60 + om && mins < ch * 60 + cm
-}
+// ⛔ ONE HOME FOR THIS PREDICATE — `src/lib/openNow.js`. This file used to carry
+// its own copy, byte-identical to two others, and all three read `mins >= open &&
+// mins < close`, which is FALSE at every minute of the day when a place closes
+// after midnight. `PlaceCard` had the only correct version. See that module.
+const _isWithinHours = isOpenAt
 
 // The WHICH-tubes gate, unified across the slab and live paths. Stage's
 // `forceNeonOn` master overrides everything; otherwise authored hours are the

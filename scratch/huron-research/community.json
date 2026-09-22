@@ -1,0 +1,304 @@
+{
+  "huro-lst-0228": {
+    "_match_name": "Huron Parks & Recreation Department",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Office hours and director phone are from the city's own department page. NOT sure the office is at 110 Wall St as the listing says: the department page gives 417 Main Street (the municipal building) as its address, while a city news page and the parks contact list give 110 Wall St / (419) 433-8487 for the Parks & Municipal Grounds Coordinator. Both numbers are the city's; address conflict not resolved.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "16:00"
+      }
+    },
+    "description": "The city department that runs Huron's parks, beaches and boat basin. It programs youth and adult recreation, sports and art camps, Safety Town, shelter reservations and the summer entertainment season at the amphitheater.",
+    "amenities": [
+      "Online program registration",
+      "Shelter reservations",
+      "Nickel Plate Beach parking passes",
+      "Youth and adult recreation programs"
+    ],
+    "phone": "+14194334848"
+  },
+  "huro-lst-0203": {
+    "_match_name": "Huron Boat Basin",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/huron_boat_basin/marina.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Slip count, hookups and amenities are quoted from the city marina page. Office hours are NOT published on that page, so no hours are recorded. The amphitheater's entertainment season (Memorial Day through Labor Day) is on the parks page but is a programming season, not marina hours.",
+    "description": "The city's municipal marina and amphitheater on the Huron River, a short walk from Main Street. More than 120 slips including 50 transient, on a floating dock system with water and 30-amp electric.",
+    "amenities": [
+      "120+ slips",
+      "50 transient slips",
+      "Floating docks",
+      "30-amp electric",
+      "Water at slip",
+      "Restrooms",
+      "Showers",
+      "Outdoor amphitheater",
+      "Docking assistance",
+      "VHF Channel 09",
+      "Ohio Clean Marina certified",
+      "Live webcam"
+    ],
+    "phone": "+14194334848"
+  },
+  "huro-lst-0178": {
+    "_match_name": "Lake Front Park and Beach",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address and amenity list are quoted from the city parks page. NO hours are published for this park. Duplicate risk: listing huro-lst-0227 'Lakefront Park' appears to be the same place.",
+    "description": "A city park on Lake Erie at the foot of Park Street, with a public beach, playground and gazebo.",
+    "amenities": [
+      "Public beach",
+      "Playground",
+      "Gazebo",
+      "Picnic tables",
+      "Grills",
+      "Restrooms",
+      "Wheelchair accessible"
+    ],
+    "phone": "+14194338487"
+  },
+  "huro-lst-0227": {
+    "_match_name": "Lakefront Park",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "The city operates one lakefront park, 'Lake Front Park' at 310 Park St. This listing and huro-lst-0178 ('Lake Front Park and Beach', same address) are almost certainly the SAME place under two spellings. No hours are published. Recorded here so neither record ships blank; flagged for de-duplication.",
+    "description": "A city park on Lake Erie at the foot of Park Street, with a public beach, playground and gazebo.",
+    "amenities": [
+      "Public beach",
+      "Playground",
+      "Gazebo",
+      "Picnic tables",
+      "Grills",
+      "Restrooms",
+      "Wheelchair accessible"
+    ],
+    "phone": "+14194338487"
+  },
+  "huro-lst-0280": {
+    "_match_name": "BGSU Firelands Library",
+    "_source": "https://www.bgsu.edu/firelands/library/about.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours are quoted from the library's own About page, which states two sets: Fall/Spring (M-F 8-5) and Summer (M-Th 8-5, Fri 8-2). The Fall/Spring set is recorded because today is in the fall term; the page itself adds 'Hours may vary'. PHONE CONFLICT, unresolved: the listing has +14194335560, the library page's header gives 419-372-0739 and the About page gives 419-372-2531. I did not change the phone.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "17:00"
+      }
+    },
+    "description": "The academic library of BGSU Firelands, on the second floor of Foundation Hall. Research databases, interlibrary loan and an Ask Us reference service that answers outside opening hours.",
+    "amenities": [
+      "Research databases",
+      "Interlibrary loan",
+      "Ask Us reference service",
+      "Second floor, Foundation Hall"
+    ]
+  },
+  "huro-lst-0237": {
+    "_match_name": "Riverview Lanes and Cafe",
+    "_source": "https://www.riverviewlanes.com/ (DEAD — see _confidence)",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO first-party source survives. riverviewlanes.com now 301-redirects every path (/, /home.htm) to abutotomacau.com, an unrelated offshore gambling site — the domain has been lost to a squatter and MUST NOT SHIP. Facility facts (18 lanes, full-service bar, Riverview Cafe, 125 Main St, 419-433-4258) come from aggregator listings only. A Facebook post dated 2025-10-13 is reported as announcing a temporary closure; I could NOT read the post itself, so the current operating state is not established. NO hours recorded: the only figures I found were opening times with no closing times.",
+    "description": "An 18-lane bowling center on Main Street with a full-service bar and the Riverview Cafe. Operating status not established — reported temporarily closed since October 2025.",
+    "amenities": [
+      "18 lanes",
+      "Full-service bar",
+      "Cafe",
+      "Leagues"
+    ],
+    "phone": "+14194334258"
+  },
+  "huro-lst-0150": {
+    "_match_name": "Huron United Methodist Church",
+    "_source": "https://www.huronumc.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Worship and program times are quoted from the church's own site. These are SERVICE INSTANTS, not opening hours, so no `hours` object is recorded. Office hours are not published.",
+    "description": "A United Methodist congregation on Williams Street with three weekend worship services. Saturdays at 5 in Fellowship Hall, Sundays at 8 with a praise band and 10 with the pipe organ.",
+    "amenities": [
+      "Saturday 5:00 PM relaxed worship",
+      "Sunday 8:00 AM praise band service",
+      "Sunday 9:00 AM coffee hour",
+      "Sunday 10:00 AM organ service",
+      "Weekday 4:30 PM daily devotions (livestreamed)",
+      "Wednesday 5:30 PM LIFT classes and supper",
+      "Facebook and YouTube livestream"
+    ],
+    "phone": "+14194333984"
+  },
+  "huro-lst-0127": {
+    "_match_name": "St. Peter's Youth Group",
+    "_source": "https://www.stpetershuron.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Confirmed the youth ministry exists and what it runs, from the parish's own site. Its MEETING TIMES are not published on the public pages (the parish points to the bulletin), so no hours. The address and phone are the parish's, at 430 Main Street — this listing is a PROGRAM of St. Peter Catholic Church, not a separate premises.",
+    "description": "The youth ministry of St. Peter Catholic Church on Main Street, with separate junior high and high school groups.",
+    "amenities": [
+      "Junior high youth group",
+      "High school youth group",
+      "NET retreat",
+      "Catholic Youth Summer Camp",
+      "Damascus Retreat",
+      "Beulah Beach"
+    ],
+    "phone": "+14194335725",
+    "_what_is_it": "Not a venue: a parish youth program sharing St. Peter Catholic Church's address. Sourced from the parish site's youth pages. High confidence."
+  },
+  "huro-lst-0176": {
+    "_match_name": "St. Peter Catholic School",
+    "_source": "http://www.huronstpeterschool.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Grades and accreditation are quoted from the school's own site. The site does not publish school-day or office hours anywhere I could read, so no hours. NOTE the source record files this under subcategory 'churches' / overture 'catholic_church' — it is a SCHOOL, at 429 Huron St, distinct from the parish church at 430 Main St.",
+    "description": "A Catholic parish school serving preschool through eighth grade, fully accredited through the Ohio Catholic Schools Accreditation Association.",
+    "amenities": [
+      "Preschool",
+      "Kindergarten",
+      "Grades 1-8",
+      "Diocese of Toledo",
+      "Friday 8:30 AM all-school Mass"
+    ],
+    "phone": "+14194334640"
+  },
+  "huro-lst-0020": {
+    "_match_name": "Huron Yacht Club",
+    "_source": "https://www.huronyachtcluboh.com/website/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours recorded are the CLUBHOUSE DINING hours quoted from the club's own site, and they apply only in the club's May-through-December season; the club is closed Mondays. These are NOT the hours of the club as an organisation and NOT dock access hours. The site says the bar stays open later than the kitchen without giving a time, and Sunday's kitchen closes at 4 PM while the club stays open to 6 PM — I recorded the club's 12-6, not the kitchen's. The club is private; membership is required for full use, though the site says the restaurant and bar welcome members and their guests.",
+    "hours": {
+      "tuesday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "saturday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "sunday": {
+        "open": "12:00",
+        "close": "18:00"
+      }
+    },
+    "description": "A private boating and social club at the mouth of the Huron River, founded in 1955. Members get fuel, transient slips and a clubhouse restaurant, and the season runs from Opening Day in May to New Year's Eve.",
+    "amenities": [
+      "Members only",
+      "Clubhouse restaurant and bar",
+      "Fuel dock (gas and diesel)",
+      "Transient slips",
+      "Berths via the Huron Boat Basin",
+      "Direct Lake Erie access",
+      "Inter-Lake Yachting Association member",
+      "Seasonal: May through December"
+    ],
+    "phone": "+14194333113"
+  },
+  "huro-lst-0081": {
+    "_match_name": "Abbey Rose Foundation",
+    "_source": "http://www.abbeyrosekudrin.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Mission, founding and programs are from the foundation's own site. It publishes NO address, NO phone and NO office hours — only a contact form — so the 211 Ohio St address and phone on the listing are unverified and no hours are recorded. This is a volunteer foundation, likely with no public premises.",
+    "description": "A foundation that supports families grieving the loss of a child, founded in memory of Abbey Rose Kudrin by her parents.",
+    "amenities": [
+      "Books sent to grieving families",
+      "Hearts Open Wide (H.O.W.) program",
+      "Holiday Remembrance Ceremony",
+      "5K Color Run/Walk and Kids Fun Run",
+      "Babysitter training course",
+      "SIDS prevention resources",
+      "Breast milk banking partnership"
+    ]
+  },
+  "huro-lst-0253": {
+    "_match_name": "Huron Rotary Club",
+    "_source": "https://www.facebook.com/huronrotaryclub/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The listing's website huronrotary.org DOES NOT RESOLVE (DNS NXDOMAIN) — dead, must not ship. The club's live presence is its Facebook page, which I could not read in full (Facebook served only the page title). The meeting pattern below came from a search engine's reading of that page and is NOT first-party-confirmed: reportedly first Tuesday of the month at Gathering Grounds, and 2nd and 4th Tuesdays at Mesenburg Plaza Banquet Hall at 5 PM. Because the club meets at venues it does not own and I could not confirm the schedule, NO hours are recorded. Contact reportedly huronrotaryclub@gmail.com.",
+    "description": "A Rotary service club for Huron. It has no premises of its own and meets at local venues; the listing's Cleveland Road West address is not a clubhouse."
+  },
+  "huro-lst-0225": {
+    "_match_name": "Knights of Columbus",
+    "_source": "https://www.stpetershuron.org/knights-of-columbus",
+    "_fetched": "2026-09-22",
+    "_confidence": "The listing's website kochuron.org IS DEAD — connection times out on both http and https, and the domain does not serve. THE COUNCIL'S REAL SITE IS kofchuron.org (one letter different: kOFc), which was also refusing connections when I tried it, so I could not read it either. What is confirmed, from the parish's own page: this is St. Edward Council #5023, attached to St. Peter Catholic Church. Meeting schedule and a hall address are NOT established; the council's published address is a PO Box (P.O. Box 441), not a premises. No hours.",
+    "description": "St. Edward Council #5023 of the Knights of Columbus, a Catholic fraternal order serving St. Peter parish. Known locally for Lenten fish fries and Sunday breakfast buffets that fund Catholic school scholarships.",
+    "amenities": [
+      "Lenten fish fries",
+      "Sunday breakfast buffets",
+      "Catholic school scholarships"
+    ],
+    "phone": "+14194335725"
+  },
+  "huro-lst-0136": {
+    "_match_name": "Greater Sandusky Partnership",
+    "_source": "https://www.greatersandusky.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Mission and phone are from the organisation's own site, which gives its address as 604 W Washington St, Sandusky — NOT the 202 Cleveland Rd W, Huron address on this listing. Whether the Huron address is a satellite office was not established. No office hours are published anywhere on the site.",
+    "description": "The regional chamber of commerce for the Greater Sandusky Bay region, which includes Huron. It runs business advocacy, networking, job listings and a young professionals group, and organises Huron's lakefront markets through its Destination Huron program.",
+    "amenities": [
+      "Member directory",
+      "Networking events",
+      "Job listings",
+      "Young professionals group",
+      "Destination Huron program"
+    ],
+    "phone": "+14196256421"
+  },
+  "huro-lst-0045": {
+    "_match_name": "Huron Lake Front Market",
+    "_source": "https://business.greatersandusky.com/events/Details/huron-lake-front-market-1679740?sourceTypeId=Hub",
+    "_fetched": "2026-09-22",
+    "_confidence": "This is NOT A BUSINESS WITH PREMISES — it is a recurring open-air market held in Lake Front Park, which is itself a separate listing (huro-lst-0178 / huro-lst-0227). Confirmed: Saturdays, 9:00 AM to 3:00 PM, at 310 Park St, run by the Greater Sandusky Partnership. I could only confirm one 2026 instance by date (June 6); the full season's dates are NOT established, and huronlakefrontmarket.com DOES NOT RESOLVE (DNS NXDOMAIN). ⛔ Do not confuse with the HURON FARMERS MARKET, a different GSP event in the same park: 2nd and 4th Tuesdays, 4-7 PM, June through August. No `hours` object is recorded because the market runs on specific dates, not a weekly week.",
+    "description": "An open-air artisan market held on summer Saturdays in Lake Front Park, with food trucks, live music and kids' activities.",
+    "amenities": [
+      "Artisan vendors",
+      "Food trucks",
+      "Live music",
+      "Kids' activities",
+      "Lakeside setting",
+      "Seasonal (summer Saturdays, 9 AM - 3 PM)"
+    ],
+    "phone": "+14196256421",
+    "_what_is_it": "A seasonal event series, not a venue. Sourced to the organiser's own event listing. High confidence it is an event; the season's date list is not established."
+  }
+}

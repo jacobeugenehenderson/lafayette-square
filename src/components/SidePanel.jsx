@@ -1,4 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react'
+import { isOpenAt } from '../lib/openNow.js'
 import { useGlassSearch, SearchDropdown } from './GlassSearch'
 import SunCalc from 'suncalc'
 import useTimeOfDay from '../hooks/useTimeOfDay'
@@ -172,18 +173,11 @@ function formatTimeShort(date) {
 }
 
 
-// ── Hours check (mirrors LafayetteScene._isWithinHours) ─────────────
-const _DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
-function _isWithinHours(hours, time) {
-  if (!hours) return false
-  const day = _DAYS[time.getDay()]
-  const slot = hours[day]
-  if (!slot || !slot.open || !slot.close) return false
-  const mins = time.getHours() * 60 + time.getMinutes()
-  const [oh, om] = slot.open.split(':').map(Number)
-  const [ch, cm] = slot.close.split(':').map(Number)
-  return mins >= oh * 60 + om && mins < ch * 60 + cm
-}
+// ⛔ ONE HOME FOR THIS PREDICATE — `src/lib/openNow.js`. This file used to carry
+// its own copy, byte-identical to two others, and all three read `mins >= open &&
+// mins < close`, which is FALSE at every minute of the day when a place closes
+// after midnight. `PlaceCard` had the only correct version. See that module.
+const _isWithinHours = isOpenAt
 
 // Buildings with hours — computed lazily
 let _buildingsWithHours = []

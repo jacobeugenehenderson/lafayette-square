@@ -1,0 +1,38 @@
+{
+  "huro-lst-0219": {
+    "_match_name": "Oliver's Hair Salon",
+    "_source": "https://placesradar.com/oliver-s-hair-salon-416-cleveland-rd-e-huron-oh and https://www.yellowpages.com/huron-oh/mip/olivers-hair-salon-5195555 (aggregators, cross-checked); held URL oliverssalon.com is WRONG",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours come from aggregator listings (PlacesRadar/YellowPages-style), not first-party; moderately confident but not confirmed against an owner-maintained source. Address/phone confirmed via Facebook page name and multiple aggregators matching 416 Cleveland Rd E, (419) 433-8062.",
+    "hours": {
+      "sunday": {"open": "11:00", "close": "14:00"},
+      "monday": {"open": "10:00", "close": "19:00"},
+      "tuesday": {"open": "10:00", "close": "19:00"},
+      "wednesday": {"open": "10:00", "close": "19:00"},
+      "thursday": {"open": "10:00", "close": "19:00"},
+      "friday": {"open": "09:00", "close": "19:00"},
+      "saturday": {"open": "09:00", "close": "17:00"}
+    },
+    "description": "Walk-in hair salon in Huron, Ohio offering cuts, colors, perms and waxing for men, women and children.",
+    "phone": "+14194338062",
+    "_url_finding": "The held URL http://oliverssalon.com is a DIFFERENT business: Oliver's Hair Salon at 7590 W 119th St, Overland Park, KS 66213 (phone 913-338-2266). It has no connection to the Huron, OH location. The Huron salon (run by Ron Oliver) appears to have no website; its presence is on Facebook (facebook.com/olivers.hair.1) and aggregator listings only."
+  },
+  "huro-lst-0262": {
+    "_match_name": "Huron Nails & Spa",
+    "_source": "https://www.fresha.com/lvp/huron-nails-spa-cleveland-road-east-huron-P2KJ3G — a booking-platform listing page, not confirmed first-party (Fresha states this business is not an active Fresha partner, so the listing may be aggregator-populated rather than owner-maintained)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address and phone match the held record. Hours are from a Fresha listing page that is not confirmed to be owner-maintained (Fresha itself flags the business as not partnered/booking-enabled on the platform) — treat as aggregator-grade, not first-party. No independent first-party source (no website) found to cross-check hours.",
+    "hours": {
+      "monday": {"open": "10:00", "close": "18:00"},
+      "tuesday": {"open": "10:00", "close": "18:00"},
+      "wednesday": {"open": "10:00", "close": "18:00"},
+      "thursday": {"open": "10:00", "close": "18:00"},
+      "friday": {"open": "10:00", "close": "18:00"},
+      "saturday": {"open": "09:00", "close": "16:00"},
+      "sunday": {"closed": true}
+    },
+    "description": "Nail salon in Huron, Ohio offering acrylic and gel nails, manicures, pedicures, nail art, dip powder, and men's mani/pedi services.",
+    "amenities": ["acrylic nails", "gel nails", "pedicure", "manicure", "nail art", "dip powder"],
+    "phone": "+14195157267"
+  }
+}

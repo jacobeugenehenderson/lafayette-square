@@ -1,0 +1,953 @@
+{
+  "huro-lst-0242": {
+    "_match_name": "Huron Ace Hardware",
+    "_source": "https://www.acehardware.com/store-details/17674",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and department list are from the Ace co-op's own store-detail page for store 17674, which is the closest thing to first-party this store now has (see _url_finding). Confident on address/phone/departments. LESS confident on hours: several aggregators repeat the same grid, and the store's own site is gone, so there is no second independent first-party witness.",
+    "_url_finding": "The URL we hold (https://www.huronacehardware.com) is DEAD AS AN IDENTITY: it returns HTTP 301 to https://allisondrennan.com/, an unrelated site. Verified 2026-09-22 with curl -I. The domain still resolves and still returns 200 at the end of the redirect chain, so a liveness check passes while identity fails. Replace with the Ace store-detail URL.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "sunday": {
+        "open": "11:00",
+        "close": "17:00"
+      }
+    },
+    "phone": "+14194334797",
+    "website": "https://www.acehardware.com/store-details/17674",
+    "description": "Huron's hardware store on Cleveland Road East, open seven days a week. Paint, plumbing, electrical, hand and power tools, lawn and garden, housewares and automotive under one roof.",
+    "amenities": [
+      "Hardware",
+      "Housewares",
+      "Plumbing",
+      "Lawn and Garden",
+      "Electrical",
+      "Paint and Sundries",
+      "Cleaning Supplies",
+      "Automotive",
+      "Hand and Power Tools"
+    ]
+  },
+  "huro-lst-0050": {
+    "_match_name": "Cornell's Foods",
+    "_source": "https://cornellshuron.com/StoreLocator/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Store hours, deli hours, lunch hours and phone are printed verbatim on the store's own site (store 1545). Note the site brands itself 'Cornell Foods' in prose while the domain and the listing say \"Cornell's\". WebFetch gets 403 from this host; curl with a browser UA succeeds.",
+    "_department_hours": "The site publishes THREE nested schedules for one address: store 7:00am-9:00pm daily; DELI 7am-7pm daily; LUNCH SERVED IN DELI 11am-2pm Monday-Friday. Only the outermost is expressed in `hours` below - the other two have nowhere to live. See retail-NOVEL.md #1.",
+    "_duplicate": "huro-lst-0029 \"Huron Iga\" is the SAME REAL PLACE - identical address (408 Cleveland Rd E) and identical phone (+14194337733). Cornell's is an IGA member store (cornells.iga.com). Two listings, one storefront; they should be merged, not both poured.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "21:00"
+      },
+      "sunday": {
+        "open": "07:00",
+        "close": "21:00"
+      }
+    },
+    "phone": "+14194337733",
+    "description": "Huron's independent IGA grocery, open 7 to 9 every day of the year's week. The deli closes at 7pm and serves a hot lunch 11 to 2 on weekdays.",
+    "amenities": [
+      "Deli",
+      "Lunch counter (weekdays 11am-2pm)",
+      "Groceries",
+      "Open daily"
+    ]
+  },
+  "huro-lst-0249": {
+    "_match_name": "Huron Market",
+    "_source": "https://www.huronmarket.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Both schedules, phone and address are printed in the site footer verbatim: \"STORE HOURS MON-SAT 7a-10p SUN 8a-9p LIQUOR SALES HOURS MON-SAT 9a-10p SUN 9a-9p\". High confidence.",
+    "_department_hours": "A SECOND, LEGALLY DISTINCT schedule under the same roof: liquor sales run 9a-10p Mon-Sat and 9a-9p Sun - i.e. the store opens two hours before it may sell spirits. This is an Ohio state-license constraint, not a staffing choice, and it is the fact a visitor most needs. Only the store schedule is in `hours`. See retail-NOVEL.md #1.",
+    "_address_note": "Listing address 525 Cleveland Rd W matches the site footer exactly.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "22:00"
+      },
+      "sunday": {
+        "open": "08:00",
+        "close": "21:00"
+      }
+    },
+    "phone": "+14194332499",
+    "description": "A neighborhood market with an in-house butcher, bakery and deli, and one of Erie County's biggest beer selections.",
+    "amenities": [
+      "Full deli",
+      "In-house bakery",
+      "In-house butcher (Choice beef cut daily)",
+      "Grab-and-go",
+      "Beer Cave",
+      "Wine and spirits",
+      "DoorDash delivery",
+      "Lunch menu"
+    ]
+  },
+  "huro-lst-0134": {
+    "_match_name": "Corner Cuts",
+    "_source": "https://cornercuts.glossgenius.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours are printed on the salon's own booking site under \"HOURS AND LOCATION\". Confident. NOT confident on the street number - see _address_finding.",
+    "_address_finding": "The salon's own site gives \"615 Main Street, Huron, OH, 44839\"; our listing says \"613 Main St\". One of the two is wrong and I could not establish which from a first-party source. Not corrected here.",
+    "_venue_in_venue": "huro-lst-0277 \"Emmie.Styled\" carries the SAME address, SAME phone and the SAME URL as this record. Consistent with a chair renter working inside Corner Cuts - legitimately two businesses at one door, NOT a duplicate to be merged. Corner Cuts' own site lists a Team page. I could not confirm from a first-party page that Emmie is on that team, so this is a reading, not a fact.",
+    "_service_menu": "The site publishes a priced service menu that is not a food menu and has no schema home: Women's Haircut $35+/30min, Men's Cut $25/30min, Kids Cut $20/30min, Bang Trim $15/10min, plus ~30 more (balayage, vivid color, weft extension install and move-up, gel-x, manicure, pedicure, eyebrow wax, kids perm, 'Princess Party'). Each carries a price floor AND a duration. See retail-NOVEL.md #2.",
+    "hours": {
+      "tuesday": {
+        "open": "09:30",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "09:30",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "09:30",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "09:30",
+        "close": "16:00"
+      },
+      "saturday": {
+        "open": "09:30",
+        "close": "14:30"
+      }
+    },
+    "phone": "+14194331400",
+    "description": "A Main Street hair salon doing cuts, color, extensions and nails, closed Mondays and Sundays.",
+    "amenities": [
+      "Online booking",
+      "Hair color and balayage",
+      "Hair extensions (weft)",
+      "Manicures and pedicures",
+      "Kids' cuts",
+      "Eyebrow waxing"
+    ]
+  },
+  "huro-lst-0066": {
+    "_match_name": "Family Eye Care Centers",
+    "_source": "https://www.familyeyecarecenters-huron.com/contact-us/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, address and phone are on the practice's own contact page, printed as a seven-row grid. High confidence. Note the /hours-location path linked in the site's own nav returns a 404 - the hours live on /contact-us/.",
+    "_appointment_state": "SATURDAY IS PRINTED AS \"By Appointment.\" - not an open/close pair, not closed, a THIRD state sitting in the same grid as the other six days. Omitted from `hours` below because the schema cannot say it, which means we would ship 'closed Saturday' and be wrong. See retail-NOVEL.md #3.",
+    "_multi_site": "One practice, three towns (Sandusky, Huron, Clyde). Only the Huron office's hours are recorded. Operating entity is \"AEG Ohio Professional, P.C.\", part of AEG Vision - locally-named, corporately owned.",
+    "hours": {
+      "monday": {
+        "open": "08:30",
+        "close": "16:30"
+      },
+      "tuesday": {
+        "open": "09:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "08:30",
+        "close": "16:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "16:00"
+      }
+    },
+    "phone": "+14194332630",
+    "description": "An optometry office on Williams Street that has served Ohio's North Coast for more than 50 years. Closed Fridays; Saturdays by appointment.",
+    "amenities": [
+      "Comprehensive eye exams",
+      "Dry eye treatment",
+      "Myopia management for children",
+      "Contact lens fitting",
+      "Eyeglasses and designer frames",
+      "Online contact lens ordering",
+      "Saturday by appointment"
+    ]
+  },
+  "huro-lst-0172": {
+    "_match_name": "Lucky Stone Gifts And Promotions",
+    "_source": "https://www.luckystoneuniforms.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and the business description are stated twice on the shop's own home page (\"Our open store hours are Tuesday through Friday 10 am to 5 pm\" and \"STORE HOURS: Tuesday through Friday, 10 am to 5 pm\"). High confidence on hours/phone. NOT confident the listing NAME matches what the business calls itself - see _name_finding.",
+    "_name_finding": "We hold the name \"Lucky Stone Gifts And Promotions\"; the site brands itself \"LUCKY STONE UNIFORMS\" and describes a public-safety uniform dealership, not a gift shop. Possibly a rename, possibly two trading names of one firm, possibly successive tenants. Not established from any first-party page. The site says only \"our downtown Huron store\" and never prints the street address, so I cannot confirm 607 Main St from first-party sources either.",
+    "_wholesale_channel": "The shop runs per-department online 'portal stores' for agencies it supplies - a B2B storefront layered on a retail address, with no schema home.",
+    "hours": {
+      "tuesday": {
+        "open": "10:00",
+        "close": "17:00"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "17:00"
+      },
+      "friday": {
+        "open": "10:00",
+        "close": "17:00"
+      }
+    },
+    "phone": "+14196166008",
+    "description": "A locally owned public-safety uniform dealer supplying police, fire, EMS and medical agencies across north-central Ohio.",
+    "amenities": [
+      "Public-safety uniforms",
+      "Duty gear",
+      "Department portal stores",
+      "Promotional products"
+    ]
+  },
+  "huro-lst-0200": {
+    "_match_name": "The Easy Speakin Barbershop (Nicolas Babka)",
+    "_source": "https://nicbabkaesb.booksy.com/a/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, service menu and prices are rendered in the Booksy page's static HTML. HOURS ARE NOT: Booksy renders availability client-side from a booking calendar, so no weekly grid exists to read. `hours` deliberately omitted - cause established, not guessed.",
+    "_no_own_domain": "This business's only web presence is a booking-platform profile (Booksy). There is no independent domain. See retail-NOVEL.md #4.",
+    "_service_menu": "Men's Haircut $30/20min, Men's Haircut with Beard $40/30min, Kids Cut $25/20min, Hair Design $10+/10min, Hot Towel Shave $35+/30min, Deep Pore Cleansing Facial $40/35min, Scalp Massage $10/10min, Beard Trim $15/15min.",
+    "phone": "+14197440537",
+    "description": "A one-chair Main Street barbershop doing fades, beard work and hot-towel shaves, by appointment.",
+    "amenities": [
+      "Online booking",
+      "Hot towel shave",
+      "Beard trim",
+      "Kids' cuts",
+      "Scalp massage",
+      "Deep pore cleansing facial"
+    ]
+  },
+  "huro-lst-0009": {
+    "_match_name": "RS Cycle and Service",
+    "_source": "https://rscycleandservice.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, owner name and the service description are on the shop's own site. NO HOURS ARE PUBLISHED ANYWHERE ON IT - `hours` omitted, not inferred.",
+    "_seasonal_service": "Off-season storage is one of three headline services. That is a service with a SEASON, not a schedule - see retail-NOVEL.md #5.",
+    "_owner": "Ryan Spaulding, Owner (stated on site).",
+    "phone": "+14195779447",
+    "description": "A Main Street powersports shop servicing motorcycles, ATVs and UTVs, with off-season storage and a parts store.",
+    "amenities": [
+      "Motorcycle service and repair",
+      "ATV service",
+      "UTV service",
+      "Off-season storage",
+      "Parts and accessories store",
+      "Online parts ordering"
+    ]
+  },
+  "huro-lst-0059": {
+    "_match_name": "Beagle Bay Knot Works",
+    "_source": "https://www.beaglebayknotworks.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address (507 Main St Huron OH 44839) and the product description are on the shop's own Shopify site. NO HOURS and NO PHONE are published on it - both omitted. The phone we hold (+13304650890) is a 330 area code, i.e. NOT local to Huron (419/567); unverified, left unchanged.",
+    "_contact": "beaglebayknots@aol.com is given for wholesale inquiries. The /contact page returns 404 while being linked from the nav.",
+    "description": "A Main Street \"boat\"-ique of hand-tied nautical bracelets, knotwork decor and marlin-spike supplies.",
+    "amenities": [
+      "Hand-tied nautical bracelets",
+      "Home and boat decor",
+      "Cotton cordage, fids and books",
+      "Online shop",
+      "Wholesale"
+    ]
+  },
+  "huro-lst-0204": {
+    "_match_name": "Hello Gorgeous Beauty Bar",
+    "_source": "http://www.hellogorgeousbeautybarllc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, opening year and service list are on the salon's own site. NO SALON-LEVEL HOURS EXIST - see _per_stylist_hours. `hours` omitted deliberately.",
+    "_per_stylist_hours": "The site states, verbatim: \"Please note our team is in charge of their own schedules please reach out to the team member you wish to book your service with!\" There is no house schedule to record. See retail-NOVEL.md #6.",
+    "_address_finding": "The salon's own site says \"521 Main Street, Huron OH 44839\"; our listing says 519 Main St.",
+    "_duplicate": "huro-lst-0049 is named \"Review Phim Hay\" (Vietnamese for 'watch good films' - SEO/junk text), sits at 521 Main St, and carries the SAME website http://Hellogorgeousbeautybarllc.com/. It is this same salon under a garbage name, with a different phone (+14197066395). One real place, two listings, one of them with a fabricated name. See retail-NOVEL.md #7.",
+    "description": "A Main Street salon open since 2018 doing hair, lashes, facials, waxing, nails and spray tanning.",
+    "amenities": [
+      "Eyelash extensions",
+      "Hair",
+      "HydraFacial",
+      "Waxing",
+      "Nails",
+      "Makeup and weddings",
+      "Spray tanning",
+      "Gift cards"
+    ]
+  },
+  "huro-lst-0247": {
+    "_match_name": "Custom Concrete &Design LLC",
+    "_source": "https://www.custom-concrete-design.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and service area are printed on the contractor's own site. Confident on those. The site never states the 543 Berlin Rd address - it is a dispatch business, not a storefront, so the address we hold is unverified from first-party.",
+    "_service_area_not_storefront": "The site gives \"Service Area: Northern Ohio\" where a shop would give an address. The hours below are DISPATCH/PHONE hours, not door hours - nobody is meant to walk in. See retail-NOVEL.md #8.",
+    "_credential": "Site claims \"a trusted member of the Better Business Bureau\" and \"over 50 years\". Neither independently verified.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "18:00"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "18:00"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "18:00"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "18:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "14:00"
+      }
+    },
+    "phone": "+14194335578",
+    "description": "A Berlin Road concrete contractor doing stamped patios, pool decks, driveways and fire pits across northern Ohio.",
+    "amenities": [
+      "Residential driveways",
+      "Patios and front porches",
+      "Stamped concrete",
+      "Pool decks",
+      "Fire pits",
+      "Commercial work",
+      "By appointment"
+    ]
+  },
+  "huro-lst-0092": {
+    "_match_name": "Mesenburg Creative Catering",
+    "_source": "https://www.mesenburg.com/contact",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, phone and address printed on the caterer's own contact page under \"Opening Hours\". Confident. NOT confident what those hours MEAN - see _hours_semantics.",
+    "_hours_semantics": "Mon-Fri 8am-8pm, Sat 9am-7pm, Sun 9am-8pm on an OFF-PREMISE CATERER with a rented hall. These are almost certainly office/booking hours, not a door anyone walks through, and on a Sunday the crew is at an event. The site does not say which. Recorded as given, flagged as ambiguous.",
+    "_venue": "Two businesses in one record: the catering company AND \"Mesenburg's Plaza Place\" / Mesenburg Hall, a wedding venue at the same address. Hall rental is described as all-inclusive.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "20:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "20:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "20:00"
+      },
+      "saturday": {
+        "open": "09:00",
+        "close": "19:00"
+      },
+      "sunday": {
+        "open": "09:00",
+        "close": "20:00"
+      }
+    },
+    "phone": "+14194332954",
+    "description": "Off-premise caterer since 1984, and the Plaza Place wedding hall on Main Street.",
+    "amenities": [
+      "Wedding catering",
+      "Off-premise catering",
+      "Mesenburg Hall / Plaza Place venue",
+      "All-inclusive hall rental",
+      "Menu tastings",
+      "Venue tours by appointment"
+    ]
+  },
+  "huro-lst-0158": {
+    "_match_name": "Foster Funeral Home & Crematory",
+    "_source": "https://www.fosterfh.com/contact-us",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, fax, toll-free and the founding year are on the home's own site. NO WEEKLY HOURS ARE PUBLISHED - `hours` omitted deliberately, see _always_available.",
+    "_always_available": "The site states, verbatim: \"You are welcome to call us at 1-419-433-5225 any time of the day, any day of the week, for immediate assistance. Or, visit our funeral home in person at your convenience.\" That is 24/7 ON-CALL availability, which is not the same fact as a building being open 24/7, and the schema can express neither. See retail-NOVEL.md #13.",
+    "_alt_contacts": "Toll free 1-877-433-5225; fax 1-419-433-3394.",
+    "_broken_path": "The site's own nav links /location, which 404s.",
+    "phone": "+14194335225",
+    "description": "A small family-owned funeral home and crematory on Main Street, serving Huron since 1925, answering the phone at any hour.",
+    "amenities": [
+      "Cremation",
+      "Traditional burial services",
+      "Pre-arrangement planning",
+      "Veterans' services, headstones and burial flags",
+      "Out-of-state shipping",
+      "Grief support resources",
+      "Facility tours",
+      "24/7 phone"
+    ]
+  },
+  "huro-lst-0181": {
+    "_match_name": "Blue Ribbon Catering",
+    "_source": "https://www.blueribboncaters.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone and email are in the caterer's own site footer and match the listing. NO HOURS are published - omitted, not inferred.",
+    "_two_menus": "The site offers BOTH an \"Online Menu\" and a \"PDF Menu\" - the same content in two formats, which will drift. Our `menu_url` holds one URL and cannot say which is authoritative.",
+    "_email": "blueribboncaters@gmail.com",
+    "phone": "+14196684000",
+    "description": "A Main Street caterer doing weddings, corporate events and holiday gatherings, charcuterie tables included.",
+    "amenities": [
+      "Wedding catering",
+      "Corporate events",
+      "Charcuterie tables",
+      "Event staffing",
+      "Tastings",
+      "Online and PDF menus"
+    ]
+  },
+  "huro-lst-0051": {
+    "_match_name": "All Builds Construction & Remodeling",
+    "_source": "https://allbuildsconstructionoh.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Phone and the service description are on the contractor's own site and the phone matches the listing. NO HOURS published. The site never states the 203 Forest Hills Dr address - it is a dispatch business (see _service_area), so the address we hold is unverified from first-party.",
+    "_service_area_not_storefront": "Site names its service area as \"Norwalk, Huron or Sandusky, OH\" and offers a \"free on-site estimate\". No premises the public visits. Same class as huro-lst-0247. See retail-NOVEL.md #8.",
+    "phone": "+14199214528",
+    "description": "A remodeling contractor serving Huron, Norwalk and Sandusky, from bathroom refits to taking a house back to the studs.",
+    "amenities": [
+      "Full home remodeling",
+      "Kitchen remodeling",
+      "Bathroom remodeling",
+      "Home additions",
+      "Commercial remodeling",
+      "Free on-site estimates"
+    ]
+  },
+  "huro-lst-0027": {
+    "_match_name": "Label Aid Inc",
+    "_source": "https://www.labelaidinc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Company description, founding year (1984) and ownership are on the firm's own site. NO HOURS and no address on the pages read - omitted. This is a B2B manufacturer with a \"Request a Quote\" front door, not a shop.",
+    "_credential": "Self-described \"family-founded, woman-owned\". Woman-owned is a certifiable status (WBENC / state WBE) with a public registry - checkable, unlike an amenity. See retail-NOVEL.md #9.",
+    "_b2b": "No retail function at all. Whether a listing like this should carry hours, or be marked as non-public premises, is an open question for the schema.",
+    "phone": "+14194332888",
+    "description": "A family-founded, woman-owned label printer on Rye Beach Road, making labels for craft beer, spirits, wine, food and industry since 1984.",
+    "amenities": [
+      "Custom label printing",
+      "Craft beer and spirits labels",
+      "Food and dairy labels",
+      "Industrial and barcode labels",
+      "Foil stamping",
+      "Quote requests"
+    ]
+  },
+  "huro-lst-0141": {
+    "_match_name": "Lakefront Spa & Tanning - Huron",
+    "_source": "http://www.lakefronttanning.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Services and the two-location fact are on the business's own home page. NO HOURS were found - the site has no contact page (/contact 404s) and the home page prints none. `hours` omitted.",
+    "_wrong_page_within_own_site": "The path /about on this domain returns a page titled \"About | Pilates Elements\" - a DIFFERENT business's page served from this business's domain. Cause not established (shared Wix account, template leftover, or a sold domain). Flagged, not explained. See retail-NOVEL.md #10.",
+    "_multi_site": "\"Two locations to get your bronze on - Huron & Vermilion, OH.\" The site does not separate their hours or details; this record is the Huron one by address only.",
+    "_membership": "Sells EFT monthly membership plans with member-only pricing - a pricing tier, not an amenity, and it changes what a visit costs.",
+    "_email": "lakefronttanning@gmail.com",
+    "phone": "+14194338644",
+    "description": "A tanning and wellness studio on Cleveland Road West: UV and red-light beds, spray tans, infrared halotherapy sauna and teeth whitening.",
+    "amenities": [
+      "UV hybrid tanning beds",
+      "Medical-grade red light therapy",
+      "Custom spray tanning",
+      "Halotherapy infrared sauna",
+      "WELLFIT booth",
+      "Teeth whitening",
+      "Massage chairs",
+      "Retail lotions",
+      "Memberships",
+      "No appointment needed for UV"
+    ]
+  },
+  "huro-lst-0191": {
+    "_match_name": "All American Roof Pros",
+    "_source": "https://allamericanroofpros.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Services and service-area list are on the company's own site. NO HOURS published. The site's headline phone is 419.989.4480 (Mansfield exchange); our listing holds 4194843326. Neither is contradicted, so the listing phone is left unchanged and the site phone is recorded here instead of replacing it.",
+    "_service_area_not_storefront": "Huron appears on this company's SERVICE AREA list (22 Ohio cities, Mansfield first), not as an office. The 2401 Sawmill Pkwy address we hold is a multi-tenant light-industrial park shared with three other listings. Whether the company has a real Huron presence or only a service-area landing page is NOT ESTABLISHED. See retail-NOVEL.md #14.",
+    "_site_phone": "419.989.4480",
+    "description": "A northern Ohio roofing contractor covering Huron, doing roofs, gutters, siding and windows with insurance-claim assistance.",
+    "amenities": [
+      "Roof repair and installation",
+      "Roof inspections",
+      "Storm damage",
+      "Commercial roofing",
+      "Gutters",
+      "Siding",
+      "Windows",
+      "Insurance claims assistance",
+      "Financing",
+      "Free estimates"
+    ]
+  },
+  "huro-lst-0231": {
+    "_match_name": "Admiral's Pointe Nursing and Rehabilitation",
+    "_source": "http://www.admirals-pointe.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, fax, services and the CMS rating claim are on the facility's own site and the phone matches the listing. NO VISITING HOURS OR OFFICE HOURS published - `hours` omitted. Skilled nursing is described as 24/7, which is a staffing fact, not a door-open fact.",
+    "_credential": "\"Admiral's Pointe Nursing and Rehabilitation is a CMS 5-star rated facility... among the top 10% in the state of Ohio\". ⭐ This is a GOVERNMENT-ISSUED, PUBLICLY PUBLISHED, NUMERICALLY GRADED credential (Centers for Medicare & Medicaid Services Five-Star Quality Rating). Unlike every other credential found on this beat it is machine-verifiable for EVERY nursing home in the US from CMS open data. Self-reported here; NOT independently verified by me. See retail-NOVEL.md #9.",
+    "_successive_or_colocated": "huro-lst-0179 \"Huron Health Care Center\" carries the SAME address (1920 Cleveland Rd W) with no phone and no website. Almost certainly this facility under a former name, but NOT ESTABLISHED - it could also be a co-located clinic. Do not blind-merge.",
+    "_fax": "419.433.5400",
+    "phone": "+14194334990",
+    "description": "A CMS five-star skilled nursing and rehabilitation facility on Cleveland Road West.",
+    "amenities": [
+      "24/7 skilled nursing",
+      "Physical therapy",
+      "Occupational therapy",
+      "Speech therapy",
+      "Respite care",
+      "Hospice care",
+      "Tours by appointment"
+    ]
+  },
+  "huro-lst-0217": {
+    "_match_name": "Lulu’s Health Care Clinic",
+    "_source": "https://www.lulushealthcareclinic.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Services, address, both phones and the fax are on the clinic's own site. NO HOURS published anywhere on it - `hours` omitted. Note the listing NAME carries a CURLY apostrophe (U+2019) in \"Lulu’s\"; copied exactly.",
+    "_per_practitioner_contact": "The site gives TWO named practitioner phone lines rather than one clinic line: \"Phone (Lauren Binks): 419-357-8273\" and \"Phone (Sonnie Lang): 440-522-0448\". We hold the first. Same shape as the per-stylist scheduling at Hello Gorgeous - the practitioner, not the premises, is the unit of contact. See retail-NOVEL.md #6.",
+    "_hybrid_premises": "\"We offer in home and office visits in Huron and Erie counties.\" A place that is BOTH a storefront and a dispatch service - the `premises` field proposed in retail-NOVEL.md #8 needs to allow both at once, not pick one.",
+    "_same_address": "410 Main St is shared with huro-lst-0158 Foster Funeral Home & Crematory. Two unrelated businesses, one street number - not a duplicate.",
+    "_alt_phone": "440-522-0448 (Sonnie Lang). Fax 419-504-6441.",
+    "_broken_path": "The site's own nav links /contact-us, which 404s; the address block is in the 404 page's footer.",
+    "phone": "+14193578273",
+    "description": "A family primary-care clinic on Main Street doing same-day sick visits, physicals and well-child care, in the office or at your home.",
+    "amenities": [
+      "Primary care, birth through adulthood",
+      "Same-day sick visits",
+      "Well-child visits and immunizations",
+      "School and sports physicals",
+      "Chronic disease management",
+      "Preventive screenings",
+      "Home visits",
+      "Patient portal"
+    ]
+  },
+  "huro-lst-0113": {
+    "_match_name": "Center For Assessment And Psychological Services, Inc.",
+    "_source": "https://behpsychservices.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The practice's own site confirms the name and that it is \"of Huron, Ohio\", and lists its service lines. NO HOURS and no address on the home page - `hours` omitted.",
+    "_service_menu_nonfood": "Service lines are structured as a menu with no prices: Psychological Testing, Clinical Services, Wellness, Peak Performance, Educational Support, Biofeedback. Same shape as retail-NOVEL.md #2 with the price field empty - healthcare does not publish prices, which is itself a class the schema should tolerate.",
+    "_suite_building": "105 Wall St sits beside 103 Wall St, which holds three more listings (Ruhe Haus, Integrative Massotherapy, Huron Massotherapy). A professional-suite cluster, not a data error.",
+    "phone": "+14196023149",
+    "description": "A Wall Street behavioural health practice doing psychological testing, therapy and biofeedback for all ages, 20 years in.",
+    "amenities": [
+      "Psychological testing",
+      "Clinical therapy",
+      "Biofeedback",
+      "Educational support",
+      "Peak performance work",
+      "Wellness services",
+      "All ages"
+    ]
+  },
+  "huro-lst-0017": {
+    "_match_name": "River Monster Tours",
+    "_source": "https://rivermonstertours.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Phone, email and the tour description are on the operator's own site and the phone matches the listing. NO WEEKLY HOURS - a tour operator sells departures, not opening hours. `hours` omitted.",
+    "_seasonal_and_stale": "⭐ The site's own banner reads: \"Taking bookings now, opening May 22. Be sure to check out the Grand Opening of the Old Mill Harbor!\" Read 2026-09-22 - four months after that date. This is BOTH a seasonal operation AND a stale banner still presented as current. A scrape run in March and a scrape run in September both read the same sentence and it means something different each time. See retail-NOVEL.md #5.",
+    "_departures_not_hours": "Tours are sold as booked departures. The right shape is the civic beat's `events: [{day, time, label}]`, or a season window - not an open/close pair.",
+    "_email": "rivermonstertours@gmail.com",
+    "phone": "+14193570579",
+    "description": "The exclusive tour boat on the Huron River, running river and harbor cruises and private parties.",
+    "amenities": [
+      "River tours",
+      "Harbor tours",
+      "Private parties",
+      "Online booking",
+      "Wildlife and migratory bird viewing",
+      "Ten minutes from Cedar Point"
+    ]
+  },
+  "huro-lst-0169": {
+    "_match_name": "Pam Johnston Photography",
+    "_source": "https://pamjohnstonphotography.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The photographer's own site confirms the business, the genres and that she works \"in Huron, Sandusky & beyond\". NO HOURS, NO ADDRESS and NO PHONE are published - the front door is an \"Inquire\" form. All omitted rather than guessed.",
+    "_home_based_dispatch": "914 Salem Dr is a residential street and the site publishes no address at all. A sole-proprietor service run from home, working on location. ⛔ Placing a map pin on this record points at somebody's house. See retail-NOVEL.md #8 and #15.",
+    "_inquiry_only": "No phone, no email, no hours - contact is a web form only. A fourth distinct reason a business has no hours, alongside by-appointment, platform-hosted, per-practitioner and on-call.",
+    "description": "A North Coast portrait photographer in Huron shooting weddings, seniors and families on location.",
+    "amenities": [
+      "Wedding photography",
+      "Senior portraits",
+      "Family portraits",
+      "On-location sessions",
+      "Inquiry form booking"
+    ]
+  },
+  "huro-lst-0240": {
+    "_match_name": "Lisa's Paws Pet Sitting",
+    "_source": "https://lisa-paw-pet-sitting.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ LOW - DO NOT POUR WITHOUT A RULING. The site is genuinely \"Lisa's Paws Pet Sitting\" and states hours \"7 AM - 7 PM (7 days a week)\", but it also states \"📍 Locations: Duck Key, Grassy Key, and Marathon\" - those are in the FLORIDA KEYS, not Huron, Ohio. Hours deliberately NOT recorded: they are this business's hours, and I cannot establish that this business is the one at 1602 Cleveland Rd W.",
+    "_url_finding": "The held URL returns HTTP 200 on a real, active pet-sitting business with a matching NAME and a NON-MATCHING GEOGRAPHY. Whether this is (a) the same sole proprietor who moved or snowbirds, (b) a name collision, or (c) a listing that scraped the wrong site, is NOT ESTABLISHED. ⭐ This is the exact hazard the Huron brief warns about (Erie County OH vs NY) reappearing inside a single record: name matches, place does not.",
+    "_no_fields_proposed": "No hours, no phone, no description proposed. A record that cannot be resolved should stay empty and loud rather than plausible."
+  },
+  "huro-lst-0012": {
+    "_match_name": "Huron Family Dental Center",
+    "_source": "http://huronhs.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing about this dental practice was established. The only finding is the URL defect below.",
+    "_url_finding": "⛔ The URL we hold (http://huronhs.com) redirects to https://huronk12.org/ - HURON CITY SCHOOLS, the PreK-12 public school district. HTTP 200 on a completely unrelated organisation. A dental practice's website field is pointing at the school district. No dental content anywhere on it.",
+    "_no_fields_proposed": "No hours, description or amenities - no first-party source for this practice was found. Needs a fresh URL before it can be researched."
+  },
+  "huro-lst-0084": {
+    "_match_name": "Crawford Insurance Group",
+    "_source": "http://www.crawfordinsurellc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, fax and two named agent emails are on the agency's own site and the phone matches the listing. NO HOURS published - the site says only \"Call Us or Stop in Now!!!\". `hours` omitted.",
+    "_named_agents": "Two agent emails rather than one office address: Christine@Crawfordinsurellc.com and Randy@Crawfordinsurellc.com. Per-practitioner contact again (retail-NOVEL.md #6).",
+    "_fax": "419-616-0020",
+    "phone": "+14196160019",
+    "description": "An independent insurance agency on Main Street writing cover for local businesses and families.",
+    "amenities": [
+      "Business insurance",
+      "Family and personal insurance",
+      "Quotes",
+      "Claims assistance",
+      "Walk-ins"
+    ]
+  },
+  "huro-lst-0133": {
+    "_match_name": "North Coast Propeller Repair",
+    "_source": "http://www.northcoastproptech.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address (2401 Sawmill Pkwy Ste 1), phone and the full service list are on the shop's own site; phone matches the listing. NO HOURS published - `hours` omitted.",
+    "_credential": "\"PROPSCAN Services - Authorized Facility\" - a manufacturer-granted authorisation with an issuer that publishes its own authorised-facility list, so it is independently checkable. See retail-NOVEL.md #9.",
+    "_offsite_event": "The site advertises \"Catawba Island Boat Show, April 24th-25th\" - a dated, recurring, OFF-SITE appearance with no schema home, and read in September it is a stale banner. See retail-NOVEL.md #5.",
+    "_suite": "Ste 1 of 2401 Sawmill Pkwy, a multi-tenant park shared with at least three other listings (Breckenridge Kitchen Equipment Ste 7, All American Roof Pros, Stride Mobility nearby).",
+    "phone": "+14194339550",
+    "description": "A propeller shop on Sawmill Parkway truing, repairing and re-pitching boat props for the whole North Coast.",
+    "amenities": [
+      "Propeller repair and truing",
+      "PROPSCAN authorized facility",
+      "Propeller diagnostics",
+      "Dockside services",
+      "New and used propellers",
+      "Inboard shafts and couplings",
+      "Shaft seals"
+    ]
+  },
+  "huro-lst-0058": {
+    "_match_name": "Dr. Eric Martin",
+    "_source": "https://www.peceyes.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "HIGH on hours/address/phone: the practice's own home page prints a per-office block - \"Huron Office ... 421 Berlin Rd ... Phone/Text: 419-433-3937 ... Hours of Operation Monday 8:00 am - 5:00 pm, Tuesday 8:00 am - 6:00 pm, Wednesday 8:00 am - 5:00 pm, Thursday 8:00 am - 5:00 pm, Friday Appointment Only, Saturday Appointment Only, Sunday Closed\". Phone matches the listing exactly. NOT confident the listing NAME is right - see _name_finding.",
+    "_name_finding": "We hold \"Dr. Eric Martin\", a PRACTITIONER name. The business at 421 Berlin Rd is \"Professional Eye Care\" (peceyes.com), which has offices in Huron and Amherst plus an Oasis Eye Clinic. Dr. Martin is not named anywhere on the pages I read. Whether he still practices here is NOT ESTABLISHED. Same class as huro-lst-0172: the listing name is not the trading name.",
+    "_appointment_state": "⛔ FRIDAY AND SATURDAY ARE BOTH \"Appointment Only\" - the third state again (retail-NOVEL.md #3), and here it is TWO of the seven days. Omitting them ships \"closed Friday and Saturday\", which is wrong on a practice that sees patients on both.",
+    "_wrong_office_trap": "⭐ The site renders the AMHERST office block immediately before the Huron one, with an IDENTICAL Mon-Thu grid. A scraper taking the first \"Hours of Operation\" on the page gets Amherst's. They diverge only in the address/phone lines. See retail-NOVEL.md #16.",
+    "_email": "huron@peceyes.com",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "18:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "17:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "17:00"
+      }
+    },
+    "phone": "+14194333937",
+    "description": "Professional Eye Care's Huron office on Berlin Road, doing eye exams, dry eye therapy and specialty contacts. Fridays and Saturdays by appointment.",
+    "amenities": [
+      "Adult and senior eye exams",
+      "Children's eye exams",
+      "Contact lens exams and fittings",
+      "Diabetic eye exams",
+      "Dry eye therapy",
+      "Myopia control",
+      "Macular degeneration management",
+      "Emergency eye care",
+      "Optos optomap imaging",
+      "Frames and sunglasses",
+      "Friday and Saturday by appointment"
+    ]
+  },
+  "huro-lst-0110": {
+    "_match_name": "Dr. Mark A. Myers, Dds",
+    "_source": "https://markmyersdds.com/huron-office-location",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address (107 Bogart Road, matches listing) and phone (419) 433-2751 (matches listing) are on the practice's own Huron office page. HOURS NOT RECORDED - see _relative_hours. `hours` deliberately omitted.",
+    "_relative_hours": "⭐⭐ The hours widget renders exactly one string: \"Hours — Open today 08:00 am – 05:00 pm\". NOT a weekly grid: a RELATIVE, CLIENT-EVALUATED statement about the day of the scrape. Read on a Monday it says one thing; read on a Saturday it says another; and BOTH look like a fact about the business. Recording it would bake the scrape date into the data with nothing marking it. I have no idea whether Tuesday is 8-5. See retail-NOVEL.md #17 - this is the sharpest instrument trap on the beat.",
+    "_platform": "\"Powered by 6AM Digital\" on a GoDaddy-style site builder; the same hours widget ships on very large numbers of US small-business sites.",
+    "phone": "+14194332751",
+    "description": "A family dentist on Bogart Road doing general, cosmetic and pediatric dentistry, with emergency care.",
+    "amenities": [
+      "General dentistry",
+      "Cosmetic dentistry",
+      "Pediatric dentistry",
+      "Digital X-rays",
+      "Emergency dental care",
+      "Online appointment requests",
+      "New patient forms"
+    ]
+  },
+  "huro-lst-0165": {
+    "_match_name": "RB's Services",
+    "_source": "https://rb-services.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Service list, service area and awards are on the firm's own site. NO HOURS, NO ADDRESS and NO PHONE published - the front door is a \"Free Quote\" form. All omitted.",
+    "_local_award_credential": "⭐ \"1st place in the 'Best Carpet Cleaner' category of the 2023, 2024 & 2025 Firelands Best of the Best Awards\" and \"1st place in 'Best Cleaning Service' 2024 & 2025\", plus \"A+ Rating with the Better Business Bureau\". A LOCAL NEWSPAPER READERS'-CHOICE AWARD, dated by year and repeated annually. ⭐ Almost every US town has exactly one of these (\"Best of <region>\"), which makes it a town-agnostic credential source with a built-in date. See retail-NOVEL.md #9.",
+    "_service_area_not_storefront": "\"servicing Erie County, Ohio and the surrounding areas\". 913 Salem Dr is residential and is not on the site. Dispatch, not storefront - and note huro-lst-0169 Pam Johnston Photography is at 914 Salem Dr, directly opposite: two home-run businesses facing each other. See retail-NOVEL.md #8.",
+    "_insured": "\"fully insured\" - self-asserted.",
+    "phone": "+14196561132",
+    "description": "A family-owned Erie County cleaning company doing carpet, tile, floors and janitorial work, three years running the Firelands Best carpet cleaner.",
+    "amenities": [
+      "Carpet cleaning",
+      "Upholstery cleaning",
+      "Tile and grout cleaning",
+      "LVT and LVP cleaning",
+      "Floor strip and wax",
+      "Janitorial services",
+      "Condo, apartment and marina common areas",
+      "Free quotes",
+      "Fully insured"
+    ]
+  },
+  "huro-lst-0186": {
+    "_match_name": "Breckenridge Kitchen Equipment",
+    "_source": "https://breckenridgekitchen.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Company history (founded Sandusky 1935), services and the Huron location are on the firm's own site. NO HOURS published - a B2B design-build firm with a Contact page as its front door. `hours` omitted.",
+    "_b2b_no_public_premises": "Sells to \"architects, engineers, owners, and developers\" and works \"throughout the country\" - Suite 7 of the Sawmill Parkway park is an office/warehouse, not somewhere the public goes. Same premises question as Label Aid. See retail-NOVEL.md #8.",
+    "_suite": "2401 Sawmill Pkwy Ste 7; the same park holds North Coast Propeller Repair (Ste 1) and two more listings.",
+    "phone": "+14194335915",
+    "description": "Food-service kitchen designers and equippers, founded in 1935, fitting out commercial kitchens, serveries and banquet halls nationwide from Huron.",
+    "amenities": [
+      "Commercial kitchen design and engineering",
+      "Equipment supply",
+      "Installation and assembly",
+      "Warehousing and delivery",
+      "Bid management",
+      "Serveries and banquet facilities"
+    ]
+  },
+  "huro-lst-0048": {
+    "_match_name": "FlowGuard Gutter Covers by FlexxPoint",
+    "_source": "https://flowguardguttercovers.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Products and the manufacturer identity (FlexxPoint Gutter Covers LLC) are on the company's own e-commerce site. NO HOURS, no address on the pages read. `hours` omitted.",
+    "_manufacturer_not_shop": "An e-commerce manufacturer selling to DIY homeowners and contractors, with a \"Find a Contractor\" directory of its own installers. 912 University Dr S is a manufacturing address, not a showroom.",
+    "_reseller_network": "⭐ The site runs a \"Find a Contractor\" locator - i.e. THIS business is itself a directory publisher for businesses in other towns. A source of leads for town #2, not just a record.",
+    "phone": "+14194333022",
+    "description": "A Huron manufacturer of aluminium gutter guards, sold direct to homeowners and through a contractor network.",
+    "amenities": [
+      "Residential gutter guards",
+      "Commercial gutter guards",
+      "Slip-under-shingle guards",
+      "Direct online ordering",
+      "Contractor locator",
+      "DIY installation"
+    ]
+  },
+  "huro-lst-0022": {
+    "_match_name": "Fixed Performance",
+    "_source": "https://www.fixedperformance.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Services and phone are on the firm's own site; the site phone is 419-433-8219 and the LISTING holds +14194330282 - the two DISAGREE. Not reconciled; listing left unchanged and the site phone recorded separately. NO HOURS published.",
+    "_phone_conflict": "site 419-433-8219 vs listing 419-433-0282. Neither is contradicted by a second first-party source.",
+    "_b2b_consultancy": "A car-dealership fixed-operations consultancy serving dealer groups nationwide, delivered onsite and over Zoom. 827 Superior Dr is residential/office. ⛔ This is a place on the map only in the sense that somebody's business is registered there. See retail-NOVEL.md #8 and #15.",
+    "_email": "info@fixedperformance.com",
+    "description": "A consultancy that audits and coaches car dealerships' service and body-shop operations, onsite or remote.",
+    "amenities": [
+      "Fixed operations consulting",
+      "Remote and onsite coaching",
+      "Warranty reimbursement",
+      "Warranty compliance audits",
+      "Service advisor training",
+      "Speaking engagements"
+    ]
+  },
+  "huro-lst-0174": {
+    "_match_name": "Angles Hair Design",
+    "_source": "http://angleshairdesign.placeweb.site",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing about this salon was established. Two defects found, both below. No hours, description or amenities proposed.",
+    "_url_finding": "⛔⛔ The held URL returns HTTP 200 after redirecting to `ww16.angleshairdesign.placeweb.site/?sub1=<uuid>` and serving a DOMAIN-PARKING page: \"placeweb.site - placeweb Resources and Information.\" No salon content at all. ⭐⭐ THE IMPORTANT PART: the parked page KEEPS THE BUSINESS'S OWN SUBDOMAIN IN THE HOSTNAME, so a same-host redirect check PASSES it, and a name-match check passes too because the business name is in the hostname. This defeats BOTH of the cheap checks I proposed in retail-NOVEL.md #10. See #10a.",
+    "_duplicate_relocation": "⭐ huro-lst-0076 is ALSO named \"Angles Hair Design\" with the SAME phone (+14194335757) at a DIFFERENT address (816 Williams St vs 358 Main St). Same name + same phone + different address = almost certainly one salon captured before and after a move. ⛔ A dedupe keyed on (address + phone) - the obvious rule - MISSES this entirely, because the addresses differ. See retail-NOVEL.md #7a.",
+    "_no_fields_proposed": "Needs a working first-party source before it can be researched."
+  },
+  "huro-lst-0155": {
+    "_match_name": "Integrative Massotherapy",
+    "_source": "https://www.vagaro.com/integrativemassotherapyllc",
+    "_fetched": "2026-09-22",
+    "_confidence": "The URL is live and is genuinely this business's Vagaro profile (page title: \"Integrative Massotherapy, LLC - Huron OH | Vagaro\"). NOTHING ELSE could be read - see _platform_shell. No hours, no services, no phone proposed.",
+    "_platform_shell": "⭐ The fetched HTML contains ONLY Vagaro's own site chrome - nav, marketing copy, Vagaro's corporate phone numbers and a 2025 copyright. The business's services, staff and hours are rendered client-side. ⛔ A naive extractor here would harvest VAGARO'S SALES PHONE ((925) 718-0971) as the massage therapist's number. That is the instrument-defect version of retail-NOVEL.md #4.",
+    "_suite_cluster": "103 Wall St carries THREE listings: this one, huro-lst-0068 \"Huron Massotherapy\" (no phone, no site) and huro-lst-0267 \"Ruhe Haus\". Whether these are three tenants, or one practice under successive names, is NOT ESTABLISHED. Ruhe Haus has its own domain and is appointment-only. Do not blind-merge.",
+    "_no_fields_proposed": "Requires the Vagaro API or a rendered fetch."
+  },
+  "huro-lst-0194": {
+    "_match_name": "Credit Union",
+    "_source": "https://www.eriecommunityfcu.org/contact-us",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NO HOURS PROPOSED, deliberately. The credit union's own Locations & Hours page lists ONE office: 1109 E. Strub Road, SANDUSKY. The Huron address we hold (2402 University Dr E) does not appear on it at all. Whether the Huron branch closed, became a shared-branching point, or was never theirs is NOT ESTABLISHED.",
+    "_wrong_branch_trap": "⭐ The site DOES publish a clean weekly grid (Mon-Fri 9-5, Sat 9-12). It belongs to Sandusky. Copying it onto this record would have produced a confident, well-formed, WRONG opening time for a Huron address - the exact plausible-looking success the project treats as the worst outcome. See retail-NOVEL.md #16.",
+    "_generic_name": "The listing name is literally \"Credit Union\" - a category, not a name. Same failure class as retail-NOVEL.md #7.",
+    "_holiday_schedule": "⭐⭐ The same page publishes a \"2026 Holiday Schedule\" as a dated table - 11+ specific closure DATES (New Year's Day Thu Jan 1, MLK Mon Jan 19, Presidents Day Mon Feb 16, Memorial Day Mon May 25, Juneteenth Fri Jun 19, Independence Day Sat Jul 4, Labor Day Mon Sep 7, Columbus Day Mon Oct 12, Veterans Day Wed Nov 11, Thanksgiving Thu Nov 26, ...). The schema has no room for dated exceptions. See retail-NOVEL.md #18.",
+    "_org_phone": "(419) 626-4283 is the Sandusky main office, not a Huron number. NOT proposed as this record's phone.",
+    "_no_fields_proposed": "Needs a ruling on whether this branch exists before anything is poured."
+  },
+  "huro-lst-0072": {
+    "_match_name": "Firelands Physician Group - Huron",
+    "_source": "https://www.firelands.com/app/locations/profile.aspx?id=22",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established. The health system's site returns HTTP 403 (Akamai edge: \"Access Denied ... Reference #18.921c2117\") to this client. The site is LIVE for a human browser; it is refusing the crawler.",
+    "_bot_blocked": "⭐ A distinct failure class from a dead URL: the data exists, is first-party, and is withheld from automated clients. ⛔ Recording this as \"no hours published\" would be FALSE - the absence is an artifact of our user agent, not of the source. Hospital systems, banks and government sites behind Akamai/Cloudflare bot management will do this in every town. See retail-NOVEL.md #19.",
+    "_tracking_param": "The held URL carries a Yext attribution parameter (&y_source=1_MTkxMjMy...). The listing's URL came from a Yext-syndicated directory feed, not from the clinic - worth knowing about the provenance of every URL in this file.",
+    "_no_fields_proposed": "Retry with a browser-class client."
+  },
+  "huro-lst-0261": {
+    "_match_name": "Reiki and Counseling Center",
+    "_source": "http://centerforhealth.smithdocs.net/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ The held URL returns HTTP 200 serving an EMPTY WEBROOT DIRECTORY LISTING: \"Index of / ... cgi-bin ... Proudly Served by LiteSpeed Web Server\". The site was deleted; the server still answers. ⭐ A 200 + a body + no error word anywhere - passes a status check, passes a body-length check, passes a 'contains an error string' check. See retail-NOVEL.md #10b.",
+    "_no_fields_proposed": "No first-party source exists."
+  },
+  "huro-lst-0170": {
+    "_match_name": "Custom Marine Inc.",
+    "_source": "http://www.custommarine.biz/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ TLS CERTIFICATE NAME MISMATCH: DNS resolves and the server answers, but the certificate does not cover www.custommarine.biz (curl error 60: \"no alternative certificate subject name matches target host name\"). ⭐ The important part: a browser shows a warning a human can click through, and a scraper run with certificate verification DISABLED would read whatever that server serves and treat it as this business. Verification-off is the fallback here, and it is the dangerous one. See retail-NOVEL.md #10c.",
+    "_same_address": "902 Taylor Ave is shared with huro-lst-0154 Gordon Lumber Co (whose own URL is also broken - Vercel DEPLOYMENT_NOT_FOUND) and huro-lst-0171 Tan Pro Usa. Three listings, one industrial address.",
+    "_no_fields_proposed": "Needs a working URL."
+  },
+  "huro-lst-0190": {
+    "_match_name": "Huron Cement Products Co.",
+    "_source": "http://www.huroncement.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ TWO different failures depending on the request: over HTTP, Cloudflare returns 409 \"error code: 1001\" (DNS resolution error at the edge); over HTTPS, the TLS handshake fails outright (sslv3 alert handshake failure). ⭐ REACHABILITY DEPENDS ON THE CLIENT AND THE SCHEME. The same URL is 'up' or 'down' according to who asks - so a single-probe health check gives an answer that is not a property of the site. See retail-NOVEL.md #10c.",
+    "_no_fields_proposed": "Needs a working URL or a different source."
+  },
+  "huro-lst-0164": {
+    "_match_name": "Huron Recovery Specialists",
+    "_source": "https://www.hurondocs.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ NXDOMAIN - hurondocs.com does not resolve. The clean failure case: loud, unambiguous, correctly caught by any check.",
+    "_area_code": "The listing phone 15672454576 is area code 567, which DOES serve northwest Ohio (overlay on 419) - plausible, unlike the 330 on Beagle Bay.",
+    "_no_fields_proposed": "No first-party source."
+  },
+  "huro-lst-0199": {
+    "_match_name": "Wray Property Management",
+    "_source": "http://wraypropertymanagementllc.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ NXDOMAIN - does not resolve.",
+    "_no_fields_proposed": "No first-party source."
+  },
+  "huro-lst-0147": {
+    "_match_name": "Shimer Construction",
+    "_source": "http://www.shimerconstruction.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ NXDOMAIN - does not resolve.",
+    "_no_fields_proposed": "No first-party source."
+  },
+  "huro-lst-0140": {
+    "_match_name": "Touch Of My Own Llc/harmonic Egg Huron",
+    "_source": "http://touchofmyown.com/harmonicegghuron.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ NXDOMAIN - touchofmyown.com does not resolve. ⭐ Note the held URL is also MALFORMED: it is a domain with a SECOND domain glued on as a path (\"touchofmyown.com/harmonicegghuron.com\"). Two business identities mashed into one URL field, matching the mashed-together listing NAME. A cheap syntactic check - does the path look like a hostname? - catches this without any network call. See retail-NOVEL.md #10d.",
+    "_no_fields_proposed": "No first-party source."
+  },
+  "huro-lst-0079": {
+    "_match_name": "Laguna Yacht Club",
+    "_source": "http://www.lagunayachtclub.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ NXDOMAIN - does not resolve. A private club is also likely to have no public hours even when its site works; see retail-NOVEL.md #20.",
+    "_no_fields_proposed": "No first-party source."
+  },
+  "huro-lst-0093": {
+    "_match_name": "Bennett's Novelties",
+    "_source": "https://www.bennettsdesigns.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established beyond the site being live. The domain resolves and returns HTTP 200, but the served HTML contains ONLY the title \"Home | Bennett's Designs LLC\" - the entire page is client-rendered. No hours, address, phone or services readable.",
+    "_name_mismatch": "Listing name \"Bennett's Novelties\"; the site's title is \"Bennett's Designs LLC\". Overture categorises it as sign_making. Rename or two trading names - NOT ESTABLISHED.",
+    "_js_only": "Same structural blindness as the Vagaro case: live, first-party, and empty to a non-rendering fetch. See retail-NOVEL.md #19.",
+    "_no_fields_proposed": "Needs a rendered fetch."
+  },
+  "huro-lst-0222": {
+    "_match_name": "Conceptan/07",
+    "_source": "https://www.conceptan.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Nothing established.",
+    "_url_finding": "⛔ www.conceptan.com does not resolve; the apex conceptan.com returns no headers either. ⭐ Worth noting separately from plain NXDOMAIN: a check must try BOTH the apex and the www host before declaring a domain dead, because small-business DNS frequently configures only one.",
+    "_no_fields_proposed": "No first-party source."
+  }
+}
