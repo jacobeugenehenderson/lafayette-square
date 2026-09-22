@@ -1,0 +1,101 @@
+{
+  "huro-lst-0257": {
+    "_match_name": "HY-MILER #2235",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552 (first-party, Exxon/Mobil station locator; original held URL www.exxon.com/en/find-station/... 301-redirects here)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hy-Miler #2235 is the convenience-store name for the Mobil-branded station at 508 Berlin Rd; hours shown are for the fuel-brand locator entry at this exact address, which applies to the site as a whole (Hy-Miler c-store + Mobil pumps, one operation).",
+    "hours": {
+      "monday": {"open":"06:00","close":"23:00"},
+      "tuesday": {"open":"06:00","close":"23:00"},
+      "wednesday": {"open":"06:00","close":"23:00"},
+      "thursday": {"open":"06:00","close":"23:00"},
+      "friday": {"open":"06:00","close":"23:00"},
+      "saturday": {"open":"06:00","close":"23:00"},
+      "sunday": {"open":"06:00","close":"23:00"}
+    },
+    "description": "Hy-Miler convenience store and Mobil fuel station at 508 Berlin Road. Accepts Exxon Mobil Rewards+ and Walmart+ payment programs.",
+    "amenities": ["convenience store"],
+    "phone": "+14194336204"
+  },
+  "huro-lst-0114": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552 (first-party, Exxon/Mobil station locator; original held URL 301-redirects here)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Same physical site/listing as huro-lst-0257 (Hy-Miler #2235), just under the Mobil brand name — one station, two listing ids.",
+    "hours": {
+      "monday": {"open":"06:00","close":"23:00"},
+      "tuesday": {"open":"06:00","close":"23:00"},
+      "wednesday": {"open":"06:00","close":"23:00"},
+      "thursday": {"open":"06:00","close":"23:00"},
+      "friday": {"open":"06:00","close":"23:00"},
+      "saturday": {"open":"06:00","close":"23:00"},
+      "sunday": {"open":"06:00","close":"23:00"}
+    },
+    "description": "Mobil-branded fuel station at 508 Berlin Road, operated as the Hy-Miler #2235 convenience store site.",
+    "amenities": ["convenience store"],
+    "phone": "+14194336204"
+  },
+  "huro-lst-0004": {
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder — a generic nationwide locator tool, NOT a page for this location (aggregator/brand page, not first-party for this site)",
+    "_fetched": "2026-09-22",
+    "_confidence": "The locator returned no address-specific page; Blue Rhino cages are self-serve exchange racks hosted outside a retail store and carry no independent posted hours of their own — access follows the host store's (Hy-Miler #2235 / Mobil, 508 Berlin Rd) hours, 06:00-23:00 daily per that station's own page, but this was not separately confirmed for the propane cage itself.",
+    "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 508 Berlin Rd.",
+    "phone": "+14194336204",
+    "_no_fields_proposed": "No location-specific hours exist to fetch; bluerhino.com/propane-finder is a national locator with no page for this address. Host-station hours (06:00-23:00 daily) are a reasonable proxy but not confirmed as the cage's own access hours, so 'hours' is omitted rather than assumed."
+  },
+  "huro-lst-0282": {
+    "_match_name": "HY-MILER #2234",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563 (first-party, Exxon/Mobil station locator; original held URL www.exxon.com/en/find-station/... 301-redirects here)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hy-Miler #2234 is the convenience-store name for the Mobil-branded station at 805 S. Main St; one physical site with two listing ids (this one and huro-lst-0060/Mobil).",
+    "hours": {
+      "monday": {"open":"06:00","close":"23:00"},
+      "tuesday": {"open":"06:00","close":"23:00"},
+      "wednesday": {"open":"06:00","close":"23:00"},
+      "thursday": {"open":"06:00","close":"23:00"},
+      "friday": {"open":"06:00","close":"23:00"},
+      "saturday": {"open":"06:00","close":"23:00"},
+      "sunday": {"open":"06:00","close":"22:00"}
+    },
+    "description": "Hy-Miler convenience store and Mobil fuel station with car wash at 805 S. Main Street.",
+    "amenities": ["convenience store", "car wash"],
+    "phone": "+14194336597"
+  },
+  "huro-lst-0060": {
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563 (first-party, Exxon/Mobil station locator; original held URL 301-redirects here)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Same physical site/listing as huro-lst-0282 (Hy-Miler #2234) under the Mobil brand name.",
+    "hours": {
+      "monday": {"open":"06:00","close":"23:00"},
+      "tuesday": {"open":"06:00","close":"23:00"},
+      "wednesday": {"open":"06:00","close":"23:00"},
+      "thursday": {"open":"06:00","close":"23:00"},
+      "friday": {"open":"06:00","close":"23:00"},
+      "saturday": {"open":"06:00","close":"23:00"},
+      "sunday": {"open":"06:00","close":"22:00"}
+    },
+    "description": "Mobil-branded fuel station with car wash at 805 S. Main Street, operated as the Hy-Miler #2234 convenience store site.",
+    "amenities": ["convenience store", "car wash"],
+    "phone": "+14194336597"
+  },
+  "huro-lst-0211": {
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder — a generic nationwide locator tool, NOT a page for this location",
+    "_fetched": "2026-09-22",
+    "_confidence": "Same as huro-lst-0004: no address-specific page exists. Host station is Hy-Miler #2234/Mobil at 805 S. Main St, itself open Mon-Sat 06:00-23:00, Sun 06:00-22:00 per that station's own locator page, but that has not been confirmed as the propane cage's own access window.",
+    "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 805 S. Main Street.",
+    "phone": "+14194336597",
+    "_no_fields_proposed": "No location-specific hours exist to fetch; bluerhino.com/propane-finder is a national locator with no page for this address."
+  },
+  "huro-lst-0126": {
+    "_match_name": "Shell",
+    "_source": "Aggregators only: Yelp \"Shell Gasoline\" (yelp.com/biz/shell-gasoline-huron-2), auto-usa.org/shell-2907, Yellow Pages shell listing — all echoing the same stale record; no first-party Shell page resolves for 805 Main St",
+    "_fetched": "2026-09-22",
+    "_confidence": "STRONG evidence this is a stale/duplicate record, not a real, separate operating station. The held phone +14194332140 belongs to Holiday Harbor Marina at 944 Main St (confirmed via web search), not to any gas station. Meanwhile the actual, currently-operating station at 805 S. Main St is the Mobil/Hy-Miler #2234 site (huro-lst-0282/huro-lst-0060), phone 419-433-6597. Yelp separately shows a \"SHELL HY-MILER - CLOSED\" listing (for the 2026 Cleveland Rd W site, not this address), indicating Shell-Hy-Miler co-branding has since been dropped in this town generally. No evidence 805 Main St hosts an independently operating Shell station today.",
+    "_url_finding": "Held URL https://www.shell.com is Shell's global homepage, not a station page, and gives no location evidence either way.",
+    "description": "Likely a stale directory duplicate for the Mobil/Hy-Miler #2234 station at this address, not a separately operating Shell station; the phone number on file belongs to an unrelated marina.",
+    "_no_fields_proposed": "No hours proposed: the held phone number is wrong (traces to Holiday Harbor Marina, 944 Main St), no first-party Shell page exists for 805 Main St, and the likeliest explanation is this listing duplicates the Mobil/Hy-Miler #2234 station rather than describing an independent business."
+  }
+}

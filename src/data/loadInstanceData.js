@@ -131,7 +131,15 @@ function normalizeEnvelope(name, raw) {
   // neighbours listings.json/roster.json wear. ⛔ Unwrapped HERE so `useEvents`
   // keeps one shape to reason about — a store that accepts two is a store that
   // silently accepts a third.
-  if (name === 'seedEvents') return Array.isArray(raw) ? raw : (raw.events ?? [])
+  if (name === 'seedEvents') {
+    // ⛔ AND THE PROVENANCE IS STRIPPED HERE, because `content/events.json` promises in
+    // its own `_schema` that an `_`-prefixed key never ships — and a doc that overstates
+    // the code is a bug lying in the open. Research notes (`_status`, `_source`,
+    // `_confidence`) belong in the repo where a human reads them, not in the bundle.
+    // ⭐ Mirrors `bake-content.js#stripMeta`, which does the same for listings.
+    const list = Array.isArray(raw) ? raw : (raw.events ?? [])
+    return list.map(e => Object.fromEntries(Object.entries(e).filter(([k]) => !k.startsWith('_'))))
+  }
   return raw
 }
 

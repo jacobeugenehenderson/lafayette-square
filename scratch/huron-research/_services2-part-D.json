@@ -34,5 +34,42 @@
     "description": "Nail salon in Huron, Ohio offering acrylic and gel nails, manicures, pedicures, nail art, dip powder, and men's mani/pedi services.",
     "amenities": ["acrylic nails", "gel nails", "pedicure", "manicure", "nail art", "dip powder"],
     "phone": "+14195157267"
+  },
+  "huro-lst-0122": {
+    "_match_name": "Stephanie Vineyard",
+    "_source": "https://app.squareup.com/book/L7ABWGSGGYKY1/stephanie-vineyard-huron-oh (Square Appointments booking page, first-party in the sense the stylist controls it, but it is a booking calendar, not a published weekly schedule)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Confirmed this is a solo hairstylist (person's own name as the business name) booking via Square Appointments at 509 Cleveland Rd W Suite A. The booking flow redirects through app.squareup.com/appointments/... and exposes only next-available appointment slots, not a stated weekly open/close schedule, so hours are NOT established. No independent website or social page found to cross-check.",
+    "description": "Stephanie Vineyard is a solo hairstylist operating out of 509 Cleveland Rd W, Suite A, in Huron, Ohio, booking clients via Square Appointments.",
+    "phone": "+14195152402",
+    "_no_fields_proposed": "Hours: the only source is a Square Appointments booking calendar, which surfaces next-available slots rather than a stated weekly schedule. Converting available booking slots into hours would be inventing a schedule from demand rather than reading a posted one, so hours are omitted rather than guessed."
+  },
+  "huro-lst-0142": {
+    "_match_name": "Ravi'n Hair & Body",
+    "_source": "https://reviews.birdeye.com/ravin-hair-body-168112939250342 (aggregator; Birdeye states the business profile is UNCLAIMED by the owner)",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address (507 Cleveland Rd W, Huron, OH 44839) matches the held record. Hours are from an unclaimed Birdeye aggregator profile, not confirmed by the owner — treat as low-to-moderate confidence. A separate 2023-era note (via search snippet, not directly verified) suggested the business may have relocated to 509 Cleveland Rd W Suite A at one point; could not confirm this is still the case, and the Birdeye/Yelp listings still show 507 Cleveland Rd W as current, so the held address was kept as-is.",
+    "hours": {
+      "monday": {"open": "12:00", "close": "20:00"},
+      "tuesday": {"open": "12:00", "close": "20:00"},
+      "wednesday": {"closed": true},
+      "thursday": {"open": "10:00", "close": "17:00"},
+      "friday": {"open": "10:00", "close": "17:00"},
+      "saturday": {"open": "10:00", "close": "14:00"},
+      "sunday": {"closed": true}
+    },
+    "description": "Hair salon in Huron, Ohio offering haircut services.",
+    "phone": "+14194338224"
+  },
+  "huro-lst-0043": {
+    "_match_name": "Diva Lashes By Maggie",
+    "_source": "https://linktr.ee/diva.salon (Linktree hub, owner-maintained) leading to https://www.divalashesbymaggie.net (the business's own site, also referred to as \"Diva Lashes By Maggie & SPA\")",
+    "_fetched": "2026-09-22",
+    "_confidence": "Confirmed the Linktree is a hub, not the destination; followed it to divalashesbymaggie.net, the business's real first-party website, which also offers lash training/education, a skincare shop, and a model-application form. Could not retrieve stated hours of operation from the site content available to the fetch tool (the homepage did not surface a posted schedule, and a guessed /contact path 404'd). Address/phone taken from the held record; not independently re-verified against the site in this pass.",
+    "description": "Lash and spa studio in Huron, Ohio (\"Diva Lashes By Maggie & SPA\") offering lash services, skincare, and spa treatments, plus lash-training education and a skincare product shop.",
+    "amenities": ["lash services", "skincare", "spa treatments", "lash training/education"],
+    "phone": "+14192397895",
+    "_url_finding": "The held URL is a Linktree (linktr.ee/diva.salon), a link hub rather than the business's own site. It leads to the real first-party site at divalashesbymaggie.net, plus separate Square booking, Square gift-card, Google review, and Amazon storefront links.",
+    "_no_fields_proposed": "Hours: the business's own website did not surface a posted weekly schedule in the content retrievable by the fetch tool, and no independent aggregator with a stated schedule was found in this pass. Hours are genuinely not established from available sources."
   }
 }

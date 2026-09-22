@@ -300,5 +300,118 @@
     ],
     "phone": "+14196256421",
     "_what_is_it": "A seasonal event series, not a venue. Sourced to the organiser's own event listing. High confidence it is an event; the season's date list is not established."
+  },
+  "huro-lst-0283": {
+    "_match_name": "McCormick Junior High School",
+    "_source": "https://mjh.huronk12.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours recorded are the OFFICE hours (7:00 AM - 3:30 PM), quoted from the school's own site; the separate bell schedule is 7:25 AM - 2:40 PM. Both are term-time only. TWO CORRECTIONS to the source record: the school is now named MCCORMICK MIDDLE SCHOOL, and it serves grades 6-8, not high school as the subcategory says. The listing's website huronhs.com 307-redirects to huronk12.org.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "15:30"
+      }
+    },
+    "description": "Huron City Schools' middle school for grades 6 through 8, on Ohio Street.",
+    "amenities": [
+      "Grades 6-8",
+      "Office open 7:00 AM - 3:30 PM",
+      "School day 7:25 AM - 2:40 PM"
+    ],
+    "phone": "+14194331234"
+  },
+  "huro-lst-0041": {
+    "_match_name": "Woodlands Elementary School",
+    "_source": "https://wes.huronk12.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Office hours (7:00 AM - 3:30 PM) and school day (7:45 AM - 2:40 PM) are quoted from the school's own site; recorded hours are the OFFICE hours. Term-time only. The site says nothing about a butterfly garden, so I could not confirm that huro-lst-0209 'Huron Butterfly Garden' (same 1810 Maple Ave address) is on this campus.",
+    "hours": {
+      "monday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "tuesday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "15:30"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "15:30"
+      }
+    },
+    "description": "Huron City Schools' elementary school, serving kindergarten through fifth grade on Maple Avenue.",
+    "amenities": [
+      "Grades K-5",
+      "Office open 7:00 AM - 3:30 PM",
+      "School day 7:45 AM - 2:40 PM"
+    ],
+    "phone": "+14194331234"
+  },
+  "huro-lst-0131": {
+    "_match_name": "Firelands Montessori Academy",
+    "_source": "http://www.firelandsmontessori.org/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Ages, address, phone extension and email are from the academy's own site. It publishes NO school hours and NO tuition, so no hours are recorded.",
+    "description": "An independent Montessori school on Ohio Street taking children from 18 months through age 12.",
+    "amenities": [
+      "Toddler House (18-36 months)",
+      "Children's House (ages 3-6)",
+      "Elementary (ages 6-12)",
+      "Prepared Montessori classrooms"
+    ],
+    "phone": "+14194336181"
+  },
+  "huro-lst-0101": {
+    "_match_name": "Little Wonders Presbyterian Preschool",
+    "_source": "https://firstpresbychurchhuron.org/little-wonders-preschool/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Ages, ratio, cap and the school-year definition are quoted from the preschool's own page. It publishes NO class times, so no hours. Its YEAR is defined by reference to a third party: 'the day after Labor Day through the Wednesday before Memorial Day, following the Huron City School calendar'.",
+    "description": "A preschool for three- to five-year-olds at First Presbyterian Church, capped at 20 children with a one-to-ten staff ratio.",
+    "amenities": [
+      "Ages 3-5",
+      "1:10 staff-to-child ratio",
+      "20 children maximum",
+      "Ohio Step Up To Quality program",
+      "Term runs day after Labor Day to the Wednesday before Memorial Day"
+    ],
+    "phone": "+14194334348"
+  },
+  "huro-lst-0146": {
+    "_match_name": "Upside Down Art Studio LLC",
+    "_source": "http://www.upsidedownartstudio.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Class types and private-group pricing are quoted from the studio's own site. It publishes NO open-studio hours and NO phone number — sessions are booked individually, so there are no opening hours to record.",
+    "description": "A small instructor-led art studio on Main Street running youth, adult and parent-and-child painting, watercolor and clay sessions.",
+    "amenities": [
+      "Youth studios (ages 7-13)",
+      "Adult studios",
+      "Child and adult partner sessions (ages 3+)",
+      "Private group sessions for homeschools, scouts, birthdays and team building",
+      "Booking by session, no walk-in hours"
+    ]
   }
 }
