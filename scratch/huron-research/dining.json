@@ -1,6 +1,6 @@
 {
   "huro-lst-0266": {
-    "_match_name": "Viking's Den (Vikings Den) at Huron Lagoons Marina",
+    "_match_name": "the Vikings Den - Huron, Ohio",
     "_source": "http://www.huronlagoons.com/restaurant/",
     "_source_secondary": "https://local.yahoo.com/info-15717506-viking-s-den-huron",
     "_fetched": "2026-09-21",
@@ -37,7 +37,8 @@
       "Waterfront dining"
     ],
     "_amenities_basis": "Both stated plainly on huronlagoons.com/restaurant/. Yahoo Local additionally lists 'Family friendly' and 'Wifi' — NOT recorded here because they are aggregator-supplied, not operator-stated.",
-    "_menu_notfound": "The operator's page has a heading reading 'MENU' but publishes NO menu content, no linked menu file, and no menu page. The site's own page-sitemap.xml (https://www.huronlagoons.com/page-sitemap.xml) has no menu URL. The only PDF on the restaurant page is a bird-watching list. Nothing transcribable."
+    "_menu_notfound": "The operator's page has a heading reading 'MENU' but publishes NO menu content, no linked menu file, and no menu page. The site's own page-sitemap.xml (https://www.huronlagoons.com/page-sitemap.xml) has no menu URL. The only PDF on the restaurant page is a bird-watching list. Nothing transcribable.",
+    "_name_normalised": "⛔ `_match_name` was \"Viking's Den (Vikings Den) at Huron Lagoons Marina\" and is now the listing's name verbatim. Same place, confirmed by ADDRESS: the research took 100 Laguna Dr from the marina's own restaurant page and the listing carries 100 Laguna Dr. The researcher wrote the venue's name as it reads on the marina site; the listing carries Overture's rendering. ⭐ It was left disagreeing for a day: the first merge counted it among '5 name mismatches' and moved on, which is a firing detector read as a statistic. ▶ checks/claims-research-is-keyed-to-the-place-it-describes.mjs"
   },
   "huro-lst-0268": {
     "_match_name": "Wink's Pizza",
@@ -749,7 +750,7 @@
     "_specials_note": "The home page carries a dated daily-specials block ('Today's Specials — September 19th, 2026') with soup, lunch, dinner, dessert, beer and wine lines and their own prices. It is dated, perishable and NOT part of the standing menu, so it is not recorded as menu data. See dining-NOVEL.md §'Dated daily specials'."
   },
   "huro-lst-0239": {
-    "_match_name": "Marconis Italian Restaurant",
+    "_match_name": "Marconi's Italian Restaurant - Huron, OH",
     "_source": "https://www.italianhuronohio.com/",
     "_fetched": "2026-09-21",
     "_confidence": "Hours, address and the dinner-specials prices are printed as HTML text on the restaurant's OWN home page and are transcribed verbatim. ⚠️ The specials block is labelled 'Dinner Specials' and is rotating content, not the standing menu — prices may change without the page being re-dated (the page carries no date at all).",
@@ -834,7 +835,8 @@
       ]
     },
     "_menu_note": "⛔ THE STANDING MENU IS NOT MACHINE-READABLE — it is published only as PDFs. Recorded here as locations, NOT transcribed: Dinner Menu (also linked as 'Our Menu') https://www.italianhuronohio.com/_files/ugd/b90d50_87dee955c6314d9db842a2d5787b44db.pdf · Wine List https://www.italianhuronohio.com/_files/ugd/3c960d_dffca0b120344531880ce37529302a8a.pdf · Family Menu https://www.italianhuronohio.com/_files/ugd/3c960d_9b50e102872f4be0a028519c6069d790.pdf · Special Events Menu https://www.italianhuronohio.com/_files/ugd/3c960d_ae6a0013c9014ecd97854aade1ea150a.pdf · Catering Menu https://www.italianhuronohio.com/_files/ugd/3c960d_b5499cd95f4744f7971c0d8a62e3ee54.pdf. The `menu` object above contains ONLY the five rotating dinner specials that are published as HTML on the home page.",
-    "_nav_note": "The site nav has a 'Weekly Specials' entry, implying a weekly cadence for the specials block above."
+    "_nav_note": "The site nav has a 'Weekly Specials' entry, implying a weekly cadence for the specials block above.",
+    "_name_normalised": "⛔ `_match_name` was \"Marconis Italian Restaurant\" and is now the listing's name verbatim. Same place, confirmed by ADDRESS AND PHONE: 424 Berlin Rd and 419-433-4341 both taken from the operator's own site and both matching the listing exactly. The researcher dropped the apostrophe and the ', OH' suffix. ⭐ It was left disagreeing for a day: the first merge counted it among '5 name mismatches' and moved on, which is a firing detector read as a statistic. ▶ checks/claims-research-is-keyed-to-the-place-it-describes.mjs"
   },
   "huro-lst-0198": {
     "_match_name": "Sand Bar",

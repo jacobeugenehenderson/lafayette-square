@@ -8,7 +8,11 @@ const norm = s => (s || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
 // outranked by the thinner first record.
 const DEEP = new Set(['berardis', 'civic-deep', 'prominent-photos'])
 const BEATS = ['civic', 'dining', 'waterfront', 'retail', 'shopping', 'overnight', 'dining2', 'services2', 'community', 'berardis', 'civic-deep', 'prominent-photos']
-const SHIPPING = new Set(['hours', 'description', 'amenities', 'phone', 'menu', 'menu_url', 'history', 'website', 'reservation_url'])
+// ⭐ THE FIELDS A RESEARCH RECORD MAY SHIP, listed once. Anything else a beat invents is
+// dropped LOUDLY at merge — see the allowlist note below.
+const SHIPPING = new Set(['hours', 'description', 'amenities', 'phone', 'menu', 'menu_url', 'history',
+  'website', 'reservation_url', 'photos', 'logo', 'email', 'social', 'awards', 'order_url',
+  'gift_card_url', 'gift_card_balance_url', 'employment_url', 'tags'])
 
 // A place whose EXISTENCE or IDENTITY is in doubt. ⛔ Merging hours onto one of these is
 // the worst of the three tiers: it makes a listing that may not exist look researched.
@@ -226,9 +230,20 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
   }
   const payload = { ...rec, _beat: beat, _tier: tier, _display_id_at_research: id, _match_name: base.name }
   if (payload.menu) payload.menu = menuToCents(payload.menu)
-  // Strip nested provenance from every SHIPPING field; the top-level `_` keys stay in
-  // the overrides file (that is where a human reads them) and `stripMeta` drops those.
-  for (const k of Object.keys(payload)) if (!k.startsWith('_')) payload[k] = stripDeep(payload[k])
+  // ⛔⛔ AN ALLOWLIST, NOT "ANYTHING WITHOUT AN UNDERSCORE". A deep pass shipped a field
+  // literally named `⛔_WARNING` — it begins with the glyph, not the underscore, so a
+  // denylist waved a paragraph of agent commentary straight into the slab. ⭐ A denylist
+  // lets every NEW shape through silently, which is the whole failure mode this kit is
+  // built against; an allowlist fails the other way, and a field we forgot to list is a
+  // missing feature rather than leaked prose.
+  const ship = {}
+  for (const k of Object.keys(payload)) {
+    if (k.startsWith('_')) { ship[k] = payload[k]; continue }   // provenance: kept HERE, stripped by stripMeta before the slab
+    if (!SHIPPING.has(k)) { console.log(`  ⚠️  ${base.name}: dropped unknown field ${JSON.stringify(k)} — not in the shipping allowlist`); continue }
+    ship[k] = stripDeep(payload[k])
+  }
+  Object.keys(payload).forEach(k => delete payload[k])
+  Object.assign(payload, ship)
   for (const c of cands) { ov.patches[`ovt-${c.id}`] = payload; keys++ }
   merged++
 }

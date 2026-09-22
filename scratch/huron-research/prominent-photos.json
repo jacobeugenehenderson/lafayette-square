@@ -306,5 +306,110 @@
     ],
     "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
     "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level."
+  },
+  "huro-lst-0120": {
+    "_match_name": "Goodwill Store",
+    "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
+    "_fetched": "2026-09-22",
+    "_confidence": "BEST PHOTO ON THIS BEAT. The regional operator publishes one storefront photograph per store, and the Huron one sits inside the row that reads \"Huron Goodwill / 310 Lake Erie Parkway / Huron, OH 44839 / 419-433-7542\" - the exact address and phone on our listing. It is also the page's og:image, declared 2174x1761. Operator-published, address-anchored, full resolution.",
+    "photos": [
+      {
+        "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store.jpg",
+        "what": "Exterior of the Huron Goodwill store at 310 Lake Erie Parkway. 2174x1761, uploaded June 2025 by the operator.",
+        "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+        "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+      },
+      {
+        "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store-300x300.jpg",
+        "what": "Same photograph, 300x300 square crop as used in the store list - useful as a card thumbnail",
+        "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+        "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+      }
+    ],
+    "_hours_reconfirmed": "The same row reads MON-SAT 10am-8pm, SUN Noon-5pm, which matches the hours already held. No change proposed.",
+    "_url_finding": "Held website https://www.goodwillsandusky.org/ is correct for this record."
+  },
+  "huro-lst-0218": {
+    "_match_name": "Goodwill Industries International, Inc.",
+    "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Carried forward from the shopping beat: this is a PROBABLE DUPLICATE of huro-lst-0120 under the national body's name. The regional operator lists exactly ONE Huron store, at 310 Lake Erie Parkway. No second Huron storefront photo exists, because there is no second store.",
+    "_duplicate_of": "huro-lst-0120",
+    "photos": [],
+    "_no_photos_reason": "Deliberately empty. If this record is kept rather than merged, the only honest image is huro-lst-0120's storefront photo - and using it here would put the same building on two cards. The fix is the merge, not a photo. Looked at: goodwillsandusky.org stores page (one Huron store only) and goodwill.org (the national body, no Huron premises)."
+  },
+  "huro-lst-0234": {
+    "_match_name": "Mickey Mart",
+    "_source": "https://www.mickeythemoose.com/ · /pages/store-locator · /pages/about-us",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO PHOTOGRAPH OF THIS STORE IS PUBLISHED BY THE CHAIN. Everything on mickeythemoose.com is brand and merchandise artwork - Shopify product images, home-page banner graphics and a screenshot. The store locator at /pages/store-locator serves HTTP 200 but contains zero occurrences of \"Huron\" in the returned HTML: the locations are loaded client-side, so no per-store page and no per-store photo is reachable.",
+    "photos": [],
+    "_no_photos_reason": "Looked at the chain home page, /pages/store-locator (200 but no Huron in the markup), /pages/about-us and /pages/contact. /pages/locations is a 404. The chain publishes no storefront photography at all.",
+    "_photos_rights_unclear": [
+      {
+        "url": "https://mickeythemoose.com/cdn/shop/files/Mickey_s_-_Full_Color_-_Black_Text.png",
+        "what": "The Mickey Mart logo (the moose wordmark) - artwork, not a photograph",
+        "why": "A brand mark, not an image of 502 Main St. Usable as a logo if the card has a logo slot; it is not a photo and must never fill a photo slot."
+      },
+      {
+        "url": "https://mickeythemoose.com/cdn/shop/files/Homepage_FINAL_12.png",
+        "what": "Chain home-page banner artwork",
+        "why": "Chain marketing artwork, not this location - the exact trap this beat was told to flag"
+      }
+    ]
+  },
+  "huro-lst-0177": {
+    "_match_name": "Discount Drug Mart",
+    "_source": "https://www.discount-drugmart.com/ and https://www.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO PHOTOGRAPH OF STORE #24 IS PUBLISHED. Worse, the store URL is a SOFT 404: the per-store path returns HTTP 200 and 82,426 bytes that are BYTE-IDENTICAL to the corporate home page (same md5), and contain zero occurrences of \"Huron\". Anything scraped from that URL is corporate homepage content mis-filed as this store. See prominent-photos-NOVEL.md #3.",
+    "photos": [],
+    "_no_photos_reason": "Looked at discount-drugmart.com and the Huron store path. The only images the chain serves are UPC product thumbnails on cdn.discount-drugmart.com and social-network icons. No storefront photography of any store, let alone #24.",
+    "_url_finding": "SOFT 404 AT HTTP 200. https://www.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24 returns the corporate home page byte for byte. The held website http://discount-drugmart.com/ is the right company but carries nothing specific to this store."
+  },
+  "huro-lst-0103": {
+    "_match_name": "Comfort Inn River's Edge",
+    "_source": "attempted https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO USABLE IMAGE OBTAINED. The property's own page is on choicehotels.com, which refuses automated fetches: HTTP/2 stream reset on curl, timeout on HTTP/1.1 and on WebFetch, all with an empty (truncated) output file so nothing stale was read. The property has no independent website. Every image of this hotel that IS reachable sits on an OTA (Tripadvisor, Expedia, Hotels.com, Booking) and is licensed to that OTA, not to us.",
+    "photos": [],
+    "_no_photos_reason": "choicehotels.com/ohio/huron/comfort-inn-hotels/oh017 blocked (three fetch methods). No independent property domain found. A person with a browser can open that page and read the gallery straight off it - that is the whole remaining job for all three Choice/G6 properties. See prominent-photos-NOVEL.md #4.",
+    "_photos_rights_unclear": [
+      {
+        "url": "not established",
+        "what": "The property gallery on choicehotels.com (oh017) and the OTA galleries",
+        "why": "Choice Hotels gallery images are the brand's, under its terms; OTA images are the OTA's or a contributing guest's. Neither can be used without a stated licence, and a Comfort Inn brand render is not necessarily 132 Main St."
+      }
+    ]
+  },
+  "huro-lst-0075": {
+    "_match_name": "Quality Inn Huron",
+    "_source": "attempted https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO USABLE IMAGE OBTAINED - same block as huro-lst-0103. AND THERE IS A REASON NOT TO TRUST A CHAIN IMAGE HERE EVEN IF ONE WERE OBTAINED: the overnight beat established that property code oh405 also resolves under choicehotels.com/ohio/huron/rodeway-inn-hotels/, i.e. the BRAND ON THIS BUILDING IS IN DOUBT. A Quality Inn-branded gallery image could be showing signage the building no longer carries.",
+    "photos": [],
+    "_no_photos_reason": "choicehotels.com blocked on curl HTTP/2, curl HTTP/1.1 and WebFetch; empty output each time. No independent property domain. Needs a person with a browser, who should also settle the Quality Inn / Rodeway Inn question by looking at the sign in the photo.",
+    "_photos_rights_unclear": [
+      {
+        "url": "not established",
+        "what": "Choice Hotels gallery for oh405 and OTA galleries",
+        "why": "Brand-licensed or OTA-licensed; and the brand shown may be the retired one - a photo that settles a question the wrong way is worse than none"
+      }
+    ]
+  },
+  "huro-lst-0016": {
+    "_match_name": "Motel 6",
+    "_source": "attempted https://www.motel6.com/en/motels.oh.huron.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO USABLE IMAGE OBTAINED. motel6.com resets the HTTP/2 stream on fetch. THIS IS THE SHARPEST CASE OF THE BRAND-STOCK TRAP IN THE DIRECTORY: 601 Rye Beach Rd carries TWO listings, this one and huro-lst-0201 Microtel Inn Suites, because the building changed brand. A generic Motel 6 exterior would therefore be doubly wrong - not this property, and possibly not even this property's current sign.",
+    "photos": [],
+    "_no_photos_reason": "motel6.com blocked (HTTP/2 stream reset, empty output). No independent property domain. Any image used here must be confirmed to show 601 Rye Beach Rd, Huron, specifically - a person on site or a browser session is the only way.",
+    "_photos_rights_unclear": [
+      {
+        "url": "not established",
+        "what": "Any Motel 6 brand exterior image",
+        "why": "A chain stock exterior is not the Huron property. Flagged exactly as the brief requires, with the extra reason that this building has traded under at least two brands."
+      }
+    ]
   }
 }

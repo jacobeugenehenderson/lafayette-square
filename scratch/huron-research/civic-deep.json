@@ -104,5 +104,200 @@
   ],
   "history": null,
   "_history_note": "NOT ESTABLISHED. No founding, construction or naming date is published for this building by BGSU or anyone else I could reach."
+ },
+ "huro-lst-0280": {
+  "_match_name": "BGSU Firelands Library",
+  "_source": "https://www.bgsu.edu/firelands/library.html ; https://www.bgsu.edu/firelands/library/about.html",
+  "_fetched": "2026-09-22",
+  "_confidence": "Photo is the library's own, on its own landing page. ⛔ HISTORY: NOT ESTABLISHED. The library's About page publishes no founding date, no date it moved into Foundation Hall, and no origin story for either named collection. I did not find another source. The `history` field stays null rather than get an invented sentence.",
+  "photos": [
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/library/1D2-1462.jpg",
+    "what": "The library's own photograph on its landing page — the only image on that page, so it is the library's chosen self-portrait. Verified HTTP 200, image/jpeg, 8.96 MB (large; likely wants resizing).",
+    "credit": "Bowling Green State University (BGSU Firelands Library)",
+    "credit_url": "https://www.bgsu.edu/firelands/library.html",
+    "license": "NOT STATED — institution's own published image of itself. BGSU publishes no reuse terms."
+   }
+  ],
+  "history": null,
+  "_history_note": "NOT ESTABLISHED — see _confidence. Note that the two named special collections (Great Lakes, Holocaust) are a strong history lead, but their origins are nowhere published on bgsu.edu that I could reach.",
+  "_extra_schedules": {
+   "_note": "The two-set fall/spring vs summer split was already recorded by two earlier beats and I confirmed it unchanged today. Nothing new; `hours` in the listing is already the fall/spring set and is correct for today's date.",
+   "summer semesters": "Mon-Thu 08:00-17:00, Fri 08:00-14:00, Sat-Sun closed",
+   "ask us reference service": "Answers outside opening hours. ⚠️ NO published schedule of its own — the About page lists none. Earlier copy calling it an out-of-hours service is as far as the source goes."
+  },
+  "_phone_conflict": "Unresolved and now cited three times: listing has +14194335560 (the campus switchboard), the library landing page gives 419-372-0739, the About page gives 419-372-2531. I did not change it."
+ },
+ "huro-lst-0195": {
+  "_match_name": "Bowling Green State University, Firelands College",
+  "⛔_WARNING": "THIS RECORD'S LIVE LISTING IS CONTAMINATED. In cartograph/data/huron/content/listings.json, huro-lst-0195 currently carries the LIBRARY's description, hours, amenities and website (firelands.bgsu.edu/library.html) — content that belongs to huro-lst-0280. scratch/huron-research/civic.json compounds it by keying huro-lst-0195 with _match_name 'BGSU Firelands Library'. Everything below is the COLLEGE's own material and should replace the library content, not merge with it.",
+  "_source": "https://www.bgsu.edu/firelands/about.html ; https://www.bgsu.edu/firelands/McBride-Arboretum.html ; https://www.bgsu.edu/firelands/event-hosting.html",
+  "_fetched": "2026-09-22",
+  "_confidence": "History is from BGSU's own pages. The 1968 founding is stated on the About page; the land-scale, the first dean and the arboretum's 1983 establishment are stated on the university's McBride Arboretum page. ⚠️ The About page URL is /firelands/about.html — /firelands/about-us.html is a 404.",
+  "photos": [
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/BGSU_Firelands_019_%284411192361%29.jpg",
+    "what": "Campus pond (Commons categorises it under 'Ponds in Ohio'). ⚠️ Grounds, not a building.",
+    "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_019_(4411192361).jpg",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "date": "2008-09-08"
+   },
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/8/80/BGSU_Firelands_2_080_%284411849086%29.jpg",
+    "what": "Campus garden with an outdoor bench (Commons: 'Gardens in Ohio', 'Outdoor benches in Ohio') — most likely the McBride Arboretum. ⚠️ Grounds, not a building.",
+    "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_080_(4411849086).jpg",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "date": "2008-09-07"
+   },
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/2/23/BGSU_Firelands_2_011_%284410406311%29.jpg",
+    "what": "Canada geese and a mute swan on the campus water (Commons: 'Branta canadensis with other species', 'Cygnus olor with other species'). ⚠️ Wildlife, not a building.",
+    "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_011_(4410406311).jpg",
+    "license": "CC BY-SA 2.0",
+    "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+    "date": "2008-09-07"
+   },
+   {
+    "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/BGSU_Firelands_wordmark.svg",
+    "what": "The official BGSU Firelands wordmark, SVG. A logo, not a photo — usable as a `logo`, not as a card image.",
+    "credit": "Bowling Green State University, BGSU Office of Marketing and Communications",
+    "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_wordmark.svg",
+    "license": "Public domain",
+    "date": "2016-08-26"
+   }
+  ],
+  "_photos_caveat": "⛔ THE OPEN-LICENCE SET FOR THIS COLLEGE CONTAINS NO BUILDING. All eight CC BY-SA photos in Commons' 'Bowling Green State University Firelands' category are one photographer's 2008 walk of the GROUNDS — pond, geese, berries, a bench. Nothing shows Foundation Hall, the Cedar Point Center or any structure. The category name reads like a building set and is not one. For a building portrait, BGSU's own site is the only source: see _photos_rights_unclear.",
+  "_photos_rights_unclear": [
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/admissions/cedar-point-center.jpg",
+    "what": "BGSU's own photo of the Cedar Point Center — the best building image of this campus I found.",
+    "why": "No licence stated by BGSU. Filed in full under huro-lst-0226."
+   },
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/Firelands-Drone-Video-Sequence.mp4",
+    "what": "BGSU's own aerial drone VIDEO of the campus, on the event-hosting page.",
+    "why": "Video, not a photo, and no licence stated. Noted because a drone sequence is the obvious source of a campus establishing shot if BGSU grants permission."
+   },
+   {
+    "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/banner/welcome-to-fall-semester-BGEE9469.jpg",
+    "what": "Current banner image on the BGSU Firelands home page; subject not identified in the markup.",
+    "why": "No licence, and I could not establish what it depicts — so I will not claim it shows the campus."
+   }
+  ],
+  "history": "BGSU Firelands was established in 1968 as Bowling Green State University's regional campus, about 60 miles north-east of the main Bowling Green campus, and it remains the university's sole regional campus. Its first dean was Dr. James H. McBride. When the campus was being developed in the late 1960s, McBride and his wife Margaret saw that the college held over 250 acres while only about a third was needed for buildings, and argued that the remainder \"should be beautified for the edification, enjoyment, and education of all who would come.\" That became the James H. McBride Arboretum, established in 1983 as a partnership between BGSU and Erie Metroparks and named for him; it now holds over 200 species of flowers, trees and shrubs, with restored prairie plots, walking paths around Parker Lake and trails along Sawmill Creek.",
+  "_history_sources": "Sentence 1 from the About page; sentences 2-4 from BGSU's McBride Arboretum page, with the McBride quotation reproduced as that page gives it.",
+  "description": "Bowling Green State University's regional campus, on a 250-acre site at One University Drive. One of BGSU's seven undergraduate colleges and its only campus outside Bowling Green, it teaches applied sciences, humanities, natural and social sciences, and College Credit Plus, and hosts outside events in its meeting spaces, auditoriums and the McBride Arboretum.",
+  "amenities": [
+   "Applied sciences, humanities, natural and social sciences programs",
+   "College Credit Plus",
+   "Firelands Online",
+   "Teaching and Learning Center and Writing Lab",
+   "BGSU Firelands Library (Foundation Hall)",
+   "Cedar Point Center",
+   "James H. McBride Arboretum",
+   "Event hosting: meeting spaces, auditoriums, outdoor venues"
+  ],
+  "_website_correction": "The listing's website is https://www.firelands.bgsu.edu/library.html — the LIBRARY's page, and it 301-redirects to https://www.bgsu.edu/firelands/library.html. The college's own home page is https://www.bgsu.edu/firelands.html. Part of the contamination flagged above."
+ },
+ "huro-lst-0146": {
+  "_match_name": "Upside Down Art Studio LLC",
+  "_source": "http://www.upsidedownartstudio.com/ (Wix-hosted; assets on static.wixstatic.com)",
+  "_fetched": "2026-09-22",
+  "_confidence": "Photos are the studio's own, served from its own Wix site. ⛔ HOURS: still none, and the 2026-09-22 beat's reasoning holds — sessions are booked individually, so there are no premises hours to record. HISTORY: not established; the site publishes no founding date.",
+  "photos": [
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_ac2e289eb8964c7bb6a49dd4004acf38~mv2.jpg",
+    "what": "The studio's full-width banner image on its own home page (served on the page at 980x450; this URL is the untransformed original).",
+    "credit": "Upside Down Art Studio LLC",
+    "credit_url": "http://www.upsidedownartstudio.com/",
+    "license": "NOT STATED — business's own published image of itself."
+   },
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+    "what": "The studio's 'youth studio' category image (source filename: youth studio.jpg).",
+    "credit": "Upside Down Art Studio LLC",
+    "credit_url": "http://www.upsidedownartstudio.com/",
+    "license": "NOT STATED — business's own published image of itself."
+   },
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+    "what": "The studio's 'adult studio' category image (source filename: adult studio.jpg).",
+    "credit": "Upside Down Art Studio LLC",
+    "credit_url": "http://www.upsidedownartstudio.com/",
+    "license": "NOT STATED — business's own published image of itself."
+   },
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+    "what": "Category image, source filename 20250222_163919.jpg — an in-studio photograph dated Feb 2025. Subject not labelled beyond its placement.",
+    "credit": "Upside Down Art Studio LLC",
+    "credit_url": "http://www.upsidedownartstudio.com/",
+    "license": "NOT STATED — business's own published image of itself."
+   },
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+    "what": "Category image, source filename 20251004_145702.jpg — an in-studio photograph, filename-dated October 2025, so roughly a year old.",
+    "credit": "Upside Down Art Studio LLC",
+    "credit_url": "http://www.upsidedownartstudio.com/",
+    "license": "NOT STATED — business's own published image of itself."
+   }
+  ],
+  "_photos_rights_unclear": [
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_384041744fd84bad98029438a14277ef~mv2.jpg",
+    "what": "Source filename Screenshot_20241006_125606_Facebook.jpg — a SCREENSHOT of a Facebook post, used as a category image.",
+    "why": "A screenshot of a social post is not a photograph the studio necessarily owns, and it will carry Facebook chrome. Do not use as a card image."
+   },
+   {
+    "url": "https://static.wixstatic.com/media/6ef22a_dd04578ae19141ee92093a3a2712fb11~mv2.jpg",
+    "what": "Source filename Screenshot_20240607_100825_Canva.jpg — a screenshot of a Canva design.",
+    "why": "Same reason: a screenshot of a design tool, not a photograph of the premises."
+   }
+  ],
+  "history": null,
+  "_photo_url_note": "⭐ Wix serves every image through a transform path (/v1/fill/w_198,h_241,...). The URLs above have that path STRIPPED, which returns the full-resolution original. The page markup only ever exposes the thumbnail URL; harvesting it verbatim would have captured ~200px images."
+ },
+ "huro-lst-0104": {
+  "_match_name": "United States Postal Service",
+  "_source": "cartograph/data/huron/content/listings.json (building_id) ; https://tools.usps.com/locations/details/1367709 ; Wikimedia Commons category sweep of Huron, Ohio",
+  "_fetched": "2026-09-22",
+  "_confidence": "⛔ NO PHOTO FOUND, and this is a confirmed absence, not an unsearched gap — see _photos_searched. Hours were already established by an earlier beat and I did not disturb them.",
+  "_duplicate_ruling": "✅ YES, huro-lst-0104 and huro-lst-0085 ARE ONE PLACE, and the data already proves it without any judgement call: both records carry the SAME building_id, msbf-808. They also carry identical hours. 0104 is addressed 378 Main St, 0085 is addressed 'Mill Street' — the two street frontages of one corner building at Main and Mill. ⚠️ They differ on PHONE: 0104 has +18002758777 (the USPS national number) and 0085 has +14194335630 (the local office). The local number is the useful one. Recommendation: keep ONE record, prefer the name 'Huron Post Office', the 378 Main St address and the local phone.",
+  "photos": [],
+  "_photos_searched": "Wikimedia Commons: searched namespace 6 for 'Huron Ohio post office' (returns only Huron COUNTY census maps and a Plymouth post office — the wrong-Huron trap firing exactly as warned) and walked Category:Huron, Ohio -> Structures -> Buildings in Huron, Ohio, whose entire membership is: Christ Episcopal Church, Huron Harbor Light, Huron School, Huron-Urban Renewal, and one 'Everyday pics' file. No post office, no city hall, no fire station. USPS's own locator page (tools.usps.com/locations/details/1367709) renders its data in JavaScript and returns only template placeholder text to a fetch, so no first-party image or hours could be read from it.",
+  "history": null,
+  "_history_note": "NOT ESTABLISHED. The Huron Historical Society's marker index covers twelve markers (Old Woman Creek, the Huron Playhouse, Christ Episcopal Church, the lighthouses, the Lake Shore Electric Railway, Cedar Point Roadway and others) — none is the post office."
+ },
+ "huro-lst-0085": {
+  "_match_name": "Huron Post Office",
+  "_source": "cartograph/data/huron/content/listings.json (building_id) ; https://tools.usps.com/locations/details/1367709 ; Wikimedia Commons category sweep of Huron, Ohio",
+  "_fetched": "2026-09-22",
+  "_confidence": "⛔ NO PHOTO FOUND, and this is a confirmed absence, not an unsearched gap — see _photos_searched. Hours were already established by an earlier beat and I did not disturb them.",
+  "_duplicate_ruling": "✅ YES, huro-lst-0104 and huro-lst-0085 ARE ONE PLACE, and the data already proves it without any judgement call: both records carry the SAME building_id, msbf-808. They also carry identical hours. 0104 is addressed 378 Main St, 0085 is addressed 'Mill Street' — the two street frontages of one corner building at Main and Mill. ⚠️ They differ on PHONE: 0104 has +18002758777 (the USPS national number) and 0085 has +14194335630 (the local office). The local number is the useful one. Recommendation: keep ONE record, prefer the name 'Huron Post Office', the 378 Main St address and the local phone.",
+  "photos": [],
+  "_photos_searched": "Wikimedia Commons: searched namespace 6 for 'Huron Ohio post office' (returns only Huron COUNTY census maps and a Plymouth post office — the wrong-Huron trap firing exactly as warned) and walked Category:Huron, Ohio -> Structures -> Buildings in Huron, Ohio, whose entire membership is: Christ Episcopal Church, Huron Harbor Light, Huron School, Huron-Urban Renewal, and one 'Everyday pics' file. No post office, no city hall, no fire station. USPS's own locator page (tools.usps.com/locations/details/1367709) renders its data in JavaScript and returns only template placeholder text to a fetch, so no first-party image or hours could be read from it.",
+  "history": null,
+  "_history_note": "NOT ESTABLISHED. The Huron Historical Society's marker index covers twelve markers (Old Woman Creek, the Huron Playhouse, Christ Episcopal Church, the lighthouses, the Lake Shore Electric Railway, Cedar Point Roadway and others) — none is the post office."
+ },
+ "huro-lst-0065": {
+  "_match_name": "City of Huron - Government",
+  "_source": "https://www.cityofhuron.org/ (home, departments index, city manager's office, contact us)",
+  "_fetched": "2026-09-22",
+  "_confidence": "⛔ HOURS: CONFIRMED ABSENT, second independent check. The 2026-09-22 community beat found no city hall hours on the contact page, the departments index or the city manager's page. I re-checked the city manager's office page directly and enumerated every link on the city's home page: there is no 'hours' page, and no page in the government tree publishes when 417 Main Street is open to the public. This is a real gap in the city's own publishing, not a search failure. ⛔ PHOTO: none found — see _photos_searched.",
+  "photos": [],
+  "_photos_searched": "Same Commons walk as the post office: Category:Buildings in Huron, Ohio holds no municipal building. The city's own site uses only interface graphics (logo, icons, decorative 'shape' PNGs under /_assets_/images/) — there is no photograph of the municipal building anywhere on cityofhuron.org that I could find, including on the home-page slider.",
+  "_photos_rights_unclear": [
+   {
+    "url": "https://commons.wikimedia.org/wiki/File:Huron-Urban_Renewal.jpg",
+    "what": "A Commons file filed under BOTH 'Buildings in Huron, Ohio' and 'Historical markers in Huron, Ohio' — so it is probably a marker about Huron's urban renewal, which is the closest thing to a civic-government image in the open set.",
+    "why": "I did not retrieve its licence or description, so I can state neither. It is a lead, not a photo I am proposing."
+   }
+  ],
+  "history": null,
+  "_history_note": "NOT ESTABLISHED for the municipal building or the city government. cityofhuron.org publishes no history page of any kind — the only history on the entire city site is the FIRE DIVISION's, at /government/safety_services/fire/history.php (see huro-lst-0035). The Huron Historical Society is linked from the city's footer but publishes nothing on city hall."
  }
 }

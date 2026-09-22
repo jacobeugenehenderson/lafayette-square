@@ -4282,42 +4282,58 @@
    "phone": null,
    "website": "https://www.firelands.bgsu.edu/library.html",
    "logo": null,
-   "hours": {
-    "monday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "tuesday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "wednesday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "thursday": {
-     "open": "08:00",
-     "close": "17:00"
-    },
-    "friday": {
-     "open": "08:00",
-     "close": "17:00"
-    }
-   },
+   "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/d/d0/BGSU_Firelands_019_%284411192361%29.jpg",
+     "what": "Campus pond (Commons categorises it under 'Ponds in Ohio'). ⚠️ Grounds, not a building.",
+     "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_019_(4411192361).jpg",
+     "license": "CC BY-SA 2.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+     "date": "2008-09-08"
+    },
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/8/80/BGSU_Firelands_2_080_%284411849086%29.jpg",
+     "what": "Campus garden with an outdoor bench (Commons: 'Gardens in Ohio', 'Outdoor benches in Ohio') — most likely the McBride Arboretum. ⚠️ Grounds, not a building.",
+     "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_080_(4411849086).jpg",
+     "license": "CC BY-SA 2.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+     "date": "2008-09-07"
+    },
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/2/23/BGSU_Firelands_2_011_%284410406311%29.jpg",
+     "what": "Canada geese and a mute swan on the campus water (Commons: 'Branta canadensis with other species', 'Cygnus olor with other species'). ⚠️ Wildlife, not a building.",
+     "credit": "Matt Dempsey, Lorain, Ohio, via Wikimedia Commons",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_2_011_(4410406311).jpg",
+     "license": "CC BY-SA 2.0",
+     "license_url": "https://creativecommons.org/licenses/by-sa/2.0",
+     "date": "2008-09-07"
+    },
+    {
+     "url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/BGSU_Firelands_wordmark.svg",
+     "what": "The official BGSU Firelands wordmark, SVG. A logo, not a photo — usable as a `logo`, not as a card image.",
+     "credit": "Bowling Green State University, BGSU Office of Marketing and Communications",
+     "credit_url": "https://commons.wikimedia.org/wiki/File:BGSU_Firelands_wordmark.svg",
+     "license": "Public domain",
+     "date": "2016-08-26"
+    }
+   ],
    "amenities": [
-    "Print collection",
-    "eBooks and electronic journals",
-    "Research databases",
-    "Streaming video",
-    "OhioLINK and SearchOhio borrowing",
-    "Interlibrary loan",
-    "Special collections: Great Lakes and Holocaust"
+    "Applied sciences, humanities, natural and social sciences programs",
+    "College Credit Plus",
+    "Firelands Online",
+    "Teaching and Learning Center and Writing Lab",
+    "BGSU Firelands Library (Foundation Hall)",
+    "Cedar Point Center",
+    "James H. McBride Arboretum",
+    "Event hosting: meeting spaces, auditoriums, outdoor venues"
    ],
    "tags": [],
-   "description": "The campus library of BGSU Firelands, on the second floor of Foundation Hall at One University Drive. Alongside its physical books it provides \"access to eBooks, databases, electronic journals, and streaming video,\" borrowing through OhioLINK and SearchOhio, and interlibrary loan.",
-   "history": null,
+   "description": "Bowling Green State University's regional campus, on a 250-acre site at One University Drive. One of BGSU's seven undergraduate colleges and its only campus outside Bowling Green, it teaches applied sciences, humanities, natural and social sciences, and College Credit Plus, and hosts outside events in its meeting spaces, auditoriums and the McBride Arboretum.",
+   "history": "BGSU Firelands was established in 1968 as Bowling Green State University's regional campus, about 60 miles north-east of the main Bowling Green campus, and it remains the university's sole regional campus. Its first dean was Dr. James H. McBride. When the campus was being developed in the late 1960s, McBride and his wife Margaret saw that the college held over 250 acres while only about a third was needed for buildings, and argued that the remainder \"should be beautified for the edification, enjoyment, and education of all who would come.\" That became the James H. McBride Arboretum, established in 1983 as a partnership between BGSU and Erie Metroparks and named for him; it now holds over 200 species of flowers, trees and shrubs, with restored prairie plots, walking paths around Parker Lake and trails along Sawmill Creek.",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
@@ -4361,15 +4377,26 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://www.bgsu.edu/content/dam/bgsu_firelands/library/1D2-1462.jpg",
+     "what": "The library's own photograph on its landing page — the only image on that page, so it is the library's chosen self-portrait. Verified HTTP 200, image/jpeg, 8.96 MB (large; likely wants resizing).",
+     "credit": "Bowling Green State University (BGSU Firelands Library)",
+     "credit_url": "https://www.bgsu.edu/firelands/library.html",
+     "license": "NOT STATED — institution's own published image of itself. BGSU publishes no reuse terms."
+    }
+   ],
    "amenities": [
+    "Print collection",
+    "eBooks and electronic journals",
     "Research databases",
+    "Streaming video",
+    "OhioLINK and SearchOhio borrowing",
     "Interlibrary loan",
-    "Ask Us reference service",
-    "Second floor, Foundation Hall"
+    "Special collections: Great Lakes and Holocaust"
    ],
    "tags": [],
-   "description": "The academic library of BGSU Firelands, on the second floor of Foundation Hall. Research databases, interlibrary loan and an Ask Us reference service that answers outside opening hours.",
+   "description": "The campus library of BGSU Firelands, on the second floor of Foundation Hall at One University Drive. Alongside its physical books it provides \"access to eBooks, databases, electronic journals, and streaming video,\" borrowing through OhioLINK and SearchOhio, and interlibrary loan.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7657,7 +7684,43 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_ac2e289eb8964c7bb6a49dd4004acf38~mv2.jpg",
+     "what": "The studio's full-width banner image on its own home page (served on the page at 980x450; this URL is the untransformed original).",
+     "credit": "Upside Down Art Studio LLC",
+     "credit_url": "http://www.upsidedownartstudio.com/",
+     "license": "NOT STATED — business's own published image of itself."
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+     "what": "The studio's 'youth studio' category image (source filename: youth studio.jpg).",
+     "credit": "Upside Down Art Studio LLC",
+     "credit_url": "http://www.upsidedownartstudio.com/",
+     "license": "NOT STATED — business's own published image of itself."
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+     "what": "The studio's 'adult studio' category image (source filename: adult studio.jpg).",
+     "credit": "Upside Down Art Studio LLC",
+     "credit_url": "http://www.upsidedownartstudio.com/",
+     "license": "NOT STATED — business's own published image of itself."
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+     "what": "Category image, source filename 20250222_163919.jpg — an in-studio photograph dated Feb 2025. Subject not labelled beyond its placement.",
+     "credit": "Upside Down Art Studio LLC",
+     "credit_url": "http://www.upsidedownartstudio.com/",
+     "license": "NOT STATED — business's own published image of itself."
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+     "what": "Category image, source filename 20251004_145702.jpg — an in-studio photograph, filename-dated October 2025, so roughly a year old.",
+     "credit": "Upside Down Art Studio LLC",
+     "credit_url": "http://www.upsidedownartstudio.com/",
+     "license": "NOT STATED — business's own published image of itself."
+    }
+   ],
    "amenities": [
     "Youth studios (ages 7-13)",
     "Adult studios",
