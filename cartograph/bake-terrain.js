@@ -43,6 +43,7 @@ import { fromFile } from 'geotiff'
 import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
+import { coastRings, isWaterFeature } from './coastline.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -57,6 +58,7 @@ const MAP_DIR     = join(CARTOGRAPH_DIR, 'data', SCENE)
 const GEO_PATH      = join(MAP_DIR, 'geography.json')
 const BOUNDARY_PATH = join(MAP_DIR, 'neighborhood_boundary.json')
 const TIF_PATH      = join(MAP_DIR, 'raw', 'elevation.tif')
+const OSM_PATH      = join(MAP_DIR, 'raw', 'osm.json')
 const CLEAN_DIR     = join(MAP_DIR, 'clean')
 const OUT_JSON      = join(CLEAN_DIR, 'terrain.json')
 const OUT_BIN       = join(CLEAN_DIR, 'terrain.bin')
@@ -78,6 +80,112 @@ const M_PER_SAMPLE     = 5   // see prior commit comment in this file
 // USGS 3DEP no-data sentinel. The 1/3 arc-second product uses a large
 // negative float; treat anything below -1000 m as missing.
 const NODATA_THRESHOLD = -1000
+
+function wgs84ToLocal(lon, lat) {
+  return [(lon - _geo.lon) * _geo.lonToMeters, (_geo.lat - lat) * _geo.latToMeters]
+}
+
+// ⭐⭐⭐ THE DATUM IS THE WATER, WHEN THERE IS WATER. (2026-09-21)
+//
+// This file used to normalize to `min(raw)` and `BakedGround.jsx` reasoned that
+// "on a lakeshore town the local minimum IS the lake". ⛔ That is an assumption
+// about the SOURCE, not a property of it, and huron disproved it: the 10 m 3DEP
+// mosaic carries Lake Erie hydro-flattened at more than one elevation, so the
+// global minimum landed on a patch over a metre below the real surface and the
+// drawn lake sat under its own bed across ~94% of its area. It reads as a bank.
+//
+// ⛔⛔ WHY THE DATUM AND NOT THE MESH. The exaggeration shader does
+// `transformed.y += terrain * uExag` — it pivots about y = 0. The water mesh has
+// no patchTerrain, so lifting IT to the lake's height would hold still while the
+// terrain scaled away from it at any exag ≠ 1. huron authors exag 1, so that fix
+// would have looked perfect here and come apart on the next town: `CLAUDE.md`
+// Class D exactly. ⇒ Move the DATUM so water at y ≈ 0 is TRUE, at any exag.
+//
+// ⭐ A hydro-flattened body is the one thing in a DEM that is genuinely level, so
+// its surface is the MODE of the samples beneath it — not the mean (the shore
+// drags it) and not the minimum (that is the bug being fixed).
+// ⛔ The water polygons come from `coastline.mjs` — the SAME `coastRings` and
+// `isWaterFeature` that `derive.js` uses. A second definition of "this is water"
+// is how the first vocabulary drifted.
+function waterDatum({ raw, width, height, bounds, boundary }) {
+  if (!fs.existsSync(OSM_PATH)) {
+    console.log('  water datum: no raw/osm.json — cannot ask where the water is')
+    return null
+  }
+  const osm = JSON.parse(fs.readFileSync(OSM_PATH, 'utf8'))
+  const ground = osm.ground || {}
+
+  // The coast, closed against the bb, exactly as derive.js closes it.
+  const bx = osm.bbox
+  const bb = bx ? (() => {
+    const a = wgs84ToLocal(bx.minLon, bx.maxLat), b = wgs84ToLocal(bx.maxLon, bx.minLat)
+    return { x0: Math.min(a[0], b[0]), x1: Math.max(a[0], b[0]),
+             z0: Math.min(a[1], b[1]), z1: Math.max(a[1], b[1]) }
+  })() : null
+  const rings = []
+  if (bb) {
+    const c = coastRings({ ground, buildings: osm.buildings || [],
+                           center: boundary.center, discR: boundary.radius, bb })
+    for (const r of (c.rings || [])) rings.push(r)
+  }
+  // ⭐ And the bodies the coast machinery deliberately does NOT reach — every
+  // CLOSED water way (an inland pond, a reservoir). `bake-ground.js` says so in
+  // as many words: coastline.mjs "applies only water" at the coast.
+  for (const bucket of Object.values(ground)) {
+    if (!Array.isArray(bucket)) continue
+    for (const f of bucket) {
+      if (!f?.isClosed || !isWaterFeature(f) || !Array.isArray(f.coords)) continue
+      if (f.coords.length >= 4) rings.push(f.coords.map(p => [p.x, p.z]))
+    }
+  }
+  if (!rings.length) {
+    console.log('  water datum: this town has no water — the datum stays the local minimum')
+    return null
+  }
+
+  // Scanline fill of every ring at once (even-odd), collecting the samples under water.
+  const stepX = (bounds.maxX - bounds.minX) / (width - 1)
+  const stepZ = (bounds.maxZ - bounds.minZ) / (height - 1)
+  const hist = new Map()
+  let wet = 0
+  for (let j = 0; j < height; j++) {
+    const z = bounds.minZ + stepZ * j
+    const xs = []
+    for (const ring of rings) {
+      for (let k = 0, n = ring.length; k < n; k++) {
+        const a = ring[k], b = ring[(k + 1) % n]
+        if ((a[1] > z) === (b[1] > z)) continue
+        xs.push(a[0] + (z - a[1]) * (b[0] - a[0]) / (b[1] - a[1]))
+      }
+    }
+    if (xs.length < 2) continue
+    xs.sort((m, n) => m - n)
+    for (let k = 0; k + 1 < xs.length; k += 2) {
+      const i0 = Math.max(0, Math.ceil((xs[k] - bounds.minX) / stepX))
+      const i1 = Math.min(width - 1, Math.floor((xs[k + 1] - bounds.minX) / stepX))
+      for (let i = i0; i <= i1; i++) {
+        const v = raw[j * width + i]
+        if (!Number.isFinite(v)) continue
+        wet++
+        const key = Math.round(v * 100)          // 1 cm buckets
+        hist.set(key, (hist.get(key) || 0) + 1)
+      }
+    }
+  }
+  if (!wet) {
+    // ⛔ LOUD. Water rings exist and not one sample fell inside them — the rings
+    // and the grid are in different frames, or the stencil excludes the body.
+    // Silently keeping the minimum here is the substitution this rewrite exists
+    // to end, so refuse instead.
+    throw new Error('⛔ water datum: ' + rings.length + ' water ring(s) and ZERO grid samples inside them. ' +
+      'The rings and the terrain grid disagree about the frame; a datum derived from nothing would be a plausible-looking lie.')
+  }
+  let mode = null, best = 0
+  for (const [k, c] of hist) if (c > best) { best = c; mode = k }
+  const elev = mode / 100
+  const share = best / wet
+  return { elev, share, wet, rings: rings.length }
+}
 
 // ⚠️ A THIRD derivation of the same polygon (sceneStencil.js + CartographApp.jsx
 // are the other two). sceneStencil.js's header claimed it was the only bake-side
@@ -256,12 +364,21 @@ async function main() {
     }
   }
 
-  let baseElev = Infinity, mx = -Infinity
-  for (const v of raw) { if (v < baseElev) baseElev = v; if (v > mx) mx = v }
+  let mn = Infinity, mx = -Infinity
+  for (const v of raw) { if (v < mn) mn = v; if (v > mx) mx = v }
+
+  // ⭐⭐ THE DATUM. Water when there is water, the local minimum when there is not —
+  // and which one was used is PRINTED, because a datum chosen silently is exactly
+  // how the previous one survived. ▶ checks/claims-a-level-body-has-one-surface.mjs
+  const wd = waterDatum({ raw, width, height, bounds, boundary })
+  const baseElev = wd ? wd.elev : mn
+  const datumKind = wd ? 'water' : 'local minimum'
+
   const normalized = new Float32Array(total)
   for (let k = 0; k < total; k++) normalized[k] = raw[k] - baseElev
 
-  const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100 }
+  const meta = { width, height, bounds, baseElev: Math.round(baseElev * 100) / 100,
+                 datum: datumKind, datumShare: wd ? Math.round(wd.share * 1000) / 1000 : null }
   fs.mkdirSync(CLEAN_DIR, { recursive: true })
   writeIfChanged(OUT_JSON, JSON.stringify(meta))
   writeIfChanged(OUT_BIN, Buffer.from(normalized.buffer))
@@ -271,7 +388,21 @@ async function main() {
   const elapsed = ((Date.now() - t0) / 1000).toFixed(1)
   console.log(`Wrote ${OUT_JSON}  (${jsonKb} KB)`)
   console.log(`Wrote ${OUT_BIN}   (${binKb} KB)`)
-  console.log(`  elevation range ${baseElev.toFixed(2)}..${mx.toFixed(2)}m  (normalized to 0..${(mx-baseElev).toFixed(2)})`)
+  console.log(`  elevation range ${mn.toFixed(2)}..${mx.toFixed(2)}m  (normalized to ${(mn-baseElev).toFixed(2)}..${(mx-baseElev).toFixed(2)})`)
+  if (wd) {
+    console.log(`  DATUM = the water: ${baseElev.toFixed(2)} m, from ${wd.wet.toLocaleString()} samples under ${wd.rings} ring(s)`)
+    console.log(`    the datum bucket holds ${(wd.share * 100).toFixed(1)}% of them — a hydro-flattened body should be most of its own area`)
+    if (wd.share < 0.5) {
+      // ⛔ NOT a fallback and not a silent pass: the datum is still the mode, but
+      // the body is NOT one surface and anything seated on it will be wrong
+      // somewhere. Name the instrument rather than pick a nicer number.
+      console.warn(`    ⚠️ UNDER HALF. This body is not one surface in the source — the mesh will sit on the`)
+      console.warn(`       dominant patch and stand off the others. ▶ node checks/claims-a-level-body-has-one-surface.mjs`)
+    }
+    console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
+  } else {
+    console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (this town has no water)`)
+  }
   console.log(`  misses filled: ${misses}`)
   console.log(`  done in ${elapsed}s`)
 }

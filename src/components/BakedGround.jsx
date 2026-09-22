@@ -475,11 +475,20 @@ function GravelMesh({ group, geometry, lightmap, tintHex, roughness, scale }) {
 // ⛔⛔ NO patchTerrain, AND THAT IS THE POINT, NOT AN OVERSIGHT. Every other
 // ground group drapes per-vertex over the DEM. Water does not: it is a LEVEL
 // SURFACE at ONE elevation. Lake Erie does not follow the ground — the ground
-// rises out of it. Measured 2026-09-20: huron's `terrain.json` records
-// baseElev 173.24 m and Lake Erie's surface is ~173.5 m, because `bake-terrain`
-// normalizes to local-min = 0 and ON A LAKESHORE TOWN THE LOCAL MINIMUM IS THE
-// LAKE. ⇒ y = 0 is the datum everything else is measured from, and draping this
-// would produce a lake that undulates.
+// rises out of it. ⇒ y = 0 is the datum everything else is measured from, and
+// draping this would produce a lake that undulates.
+// ⛔ CORRECTED 2026-09-21. This comment used to justify y = 0 by asserting that
+// `bake-terrain` normalizes to local-min and ON A LAKESHORE TOWN THE LOCAL
+// MINIMUM IS THE LAKE. ⛔ That was an assumption about the SOURCE, not a
+// property of it, and it was FALSE on the town it was written for: huron's 10 m
+// mosaic carries Lake Erie hydro-flattened at more than one elevation, the
+// minimum landed over a metre below the real surface, and the drawn lake sat
+// under its own bed across ~94% of its area — which reads as a bank, not a bug.
+// ⭐ `bake-terrain` now DERIVES the datum: when a scene has water, y = 0 is that
+// water's surface (the mode of the samples beneath it), and `terrain.json`
+// records `datum` + `datumShare` so the choice is legible in the artifact.
+// Ground below the water is NEGATIVE, by design.
+// ▶ node checks/claims-a-level-body-has-one-surface.mjs
 // ⚠️ THE DATUM IS y = 0; THE BAKED SURFACE IS NOT, AND THE 68 mm IS DELIBERATE.
 // Every ground group is separated by baked geometry rather than polygonOffset
 // (inert under log depth), at renderOrder × GROUND_Y_EPS — water is slot 34 of
