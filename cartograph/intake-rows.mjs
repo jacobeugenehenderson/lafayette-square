@@ -313,19 +313,31 @@ export const INTAKE_ROWS = [
     path: 'raw/elevation.tif',
     unlocks: 'terrain relief — the ground stops being flat',
     absent: { kind: ABSENT.FALLBACK, note: 'flat ground (bake-terrain.js exits)' },
-    // ⛔ WHAT THE READER ACTUALLY REQUIRES — corrected 2026-09-20, see below.
-    //   · ONE file. A town straddling two tiles is refused; nothing mosaics.
-    //   · LAT/LON. `bake-terrain` reads getOrigin()/getResolution() as degrees.
-    //     A UTM tile (every USGS 1 m product) is refused by the containment gate.
-    //   · COVERAGE. A tile whose extent misses the scene bbox is refused, by
-    //     name, with the right tile printed (`5ab6e555`).
-    // ⚠️ RESOLUTION IS A DECISION, NOT A DETAIL: 1/3 arc-sec is ~10 m and
-    //    smooths anything narrower than ~20 m. On Huron it erased a 15-20 ft
-    //    seawall entirely — 2 ft of rise measured over 200 ft inland. USGS 1 m
-    //    lidar covers the same ground at ~100× density and the kit cannot yet
-    //    ingest it (`docs/briefs/BRIEF-terrain-resolution.md`).
+    // ⛔ WHAT THE READER ACTUALLY ACCEPTS — rewritten 2026-09-21 when the ingest
+    // landed. The three limits recorded here on 2026-09-20 are GONE; do not
+    // reinstate them from memory:
+    //   · SEVERAL tiles, mosaicked. `raw/elevation/*.tif`, or one URL per line in
+    //     `raw/elevation-sources.txt` — read by HTTP RANGE REQUEST, nothing is
+    //     downloaded. `raw/elevation.tif` still works and is unchanged.
+    //   · LAT/LON **or UTM north** (EPSG 269xx/326xx). The CRS is read off the
+    //     tile's own GeoKeys. ⛔ Anything else is REFUSED BY EPSG CODE rather than
+    //     guessed at — a DEM read in the wrong CRS bakes terrain from the wrong
+    //     place and nothing downstream can tell.
+    //   · COVERAGE. If no source overlaps the scene it refuses by name.
+    //   · A COG's overview pyramid is used: the finest level still at least as
+    //     fine as the output grid. 1 m source onto a 5 m grid reads the 4 m level.
+    // ⚠️ RESOLUTION IS THE DECISION THIS ROW EXISTS TO SURFACE. 1/3 arc-sec (~10 m)
+    //    does not lose the relief — that claim was measured FALSE on 2026-09-21
+    //    (`cartograph/_archive/shore-wall-absent-premise-FALSE-2026-09-21.md`). What it
+    //    loses is the WATER'S EDGE: a 10 m cell straddling a shore averages land
+    //    and water, and the 3DEP mosaic carried Lake Erie at two elevations 1.17 m
+    //    apart. 1 m lidar fixed both — huron's lake went from a bed spreading
+    //    1.17 m to ONE surface (IQR 0.000 m). ▶ node checks/claims-a-level-body-has-one-surface.mjs
+    // ⚠️ ON A COASTAL TOWN EXPECT ~20% NODATA: lidar returns nothing off open
+    //    water. That is normal there and a red flag anywhere else; the bake prints
+    //    the share and says which case it is.
     // ⚠️ The no-data sentinel IS USGS-specific and wants checking per source.
-    acquisition: { kind: ACQUIRE.SOURCE, note: 'USGS 3DEP 1/3 arc-sec (US) or any national DEM — ONE tile, LAT/LON. Run the bake with no .tif: it names the exact tile for this town.' },
+    acquisition: { kind: ACQUIRE.SOURCE, note: 'USGS 3DEP 1/3 arc-sec (~10 m) for a first pour; USGS 1 m lidar where it exists and the shore matters — several tiles OK, lat/lon or UTM, and URLs are read in place without downloading. Run the bake with no source: it prints the exact curl for this town, both resolutions.' },
     doc: 'cartograph/INTAKE.md',
   },
   {

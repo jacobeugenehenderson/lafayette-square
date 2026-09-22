@@ -70,10 +70,17 @@ function terrainOf(scene) {
 const quantile = (sorted, p) => sorted[Math.min(sorted.length - 1, Math.floor(sorted.length * p))]
 
 /** The two predicates, isolated so they can be exercised against known inputs. */
-const verdict = (bed, meshY, stack) => {
+// ⭐ `lift` is the group's OWN coplanar offset (renderOrder × GROUND_Y_EPS), which
+// the bake puts there deliberately. ⛔ Subtract it rather than let the tolerance
+// absorb it: a known, computable offset is not measurement slack, and folding it
+// into the slack costs exactly the resolution this check needs. (huron's lake sits
+// in slot 34 of 35, so its mesh is 0.068 m up by construction — against a whole-
+// stack tolerance of 0.070 that left 2 mm of real headroom, and the check failed
+// a correct bake by ONE MILLIMETRE.)
+const verdict = (bed, meshY, stack, lift = 0) => {
   const s = bed.slice().sort((m, n) => m - n)
   const med = quantile(s, 0.5), iqr = quantile(s, 0.75) - quantile(s, 0.25)
-  return { med, iqr, flat: iqr <= stack, seated: Math.abs(med - meshY) <= stack }
+  return { med, iqr, flat: iqr <= stack, seated: Math.abs(med - (meshY - lift)) <= stack }
 }
 
 // ⛔⛔ MUTATION TEST, RUN EVERY TIME — not a one-off someone did once and wrote down.
@@ -90,6 +97,7 @@ const verdict = (bed, meshY, stack) => {
     ['a level bed, mesh seated on it', verdict(level, 1.4, stack), true, true],
     ['a level bed, mesh 1 m under it', verdict(level, 0.4, stack), true, false],
     ['a bed at two elevations', verdict(split, 0.03, stack), false, false],
+    ['a level bed under a mesh lifted by its own coplanar offset', verdict(level, 1.4 + 0.068, stack, 0.068), true, true],
   ]
   for (const [what, v, wantFlat, wantSeated] of cases) {
     if (v.flat !== wantFlat || v.seated !== wantSeated) {
@@ -154,9 +162,10 @@ for (const scene of list) {
       }
     }
     if (bed.length < 100) { console.log(`  ${scene}/${wg.id}: only ${bed.length} bed samples — not checked`); continue }
-    const { med, iqr, flat, seated } = verdict(bed, meshY, STACK)
-    const off = med - meshY
-    const proud = bed.filter(v => v - meshY > STACK).length / bed.length
+    const LIFT = (wg.renderOrder || 0) * EPS
+    const { med, iqr, flat, seated } = verdict(bed, meshY, STACK, LIFT)
+    const off = med - (meshY - LIFT)
+    const proud = bed.filter(v => v - (meshY - LIFT) > STACK).length / bed.length
     const mark = flat && seated ? '✅' : '⛔'
     console.log(`  ${mark} ${scene}/${wg.id}  bed median ${med.toFixed(3)} m · IQR ${iqr.toFixed(3)} m · mesh Y ${meshY.toFixed(3)} m · stack ${STACK.toFixed(3)} m · ${(area/1e6).toFixed(2)} km², ${bed.length.toLocaleString()} area-weighted samples`)
     if (!flat) {

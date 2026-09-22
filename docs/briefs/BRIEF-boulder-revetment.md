@@ -2,8 +2,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-20 · RE-SCOPED 2026-09-21 (the premise was measured false; see the banner)
-evict-when: node checks/claims-a-level-body-has-one-surface.mjs (the ground it stands on must be right FIRST)
-  AND RULING: Jacob's eye on huron's lakefront — does the revetment read as stacked rock from the water and from the street.
+evict-when: RULING: Jacob's eye on huron's lakefront — does the revetment read as stacked rock from the water and from the street.
 -->
 
 # BRIEF — HURON'S LAKEFRONT IS A BOULDER WALL AND WE DRAW NOTHING
@@ -14,20 +13,21 @@ evict-when: node checks/claims-a-level-body-has-one-surface.mjs (the ground it s
 > *"Huron has a built **rock** (boulder) retaining wall for a lot of it. We should procedurally
 > build that."*
 
-> ### ⛔⛔ BLOCKED — AND THE BLOCKER MOVED ON 2026-09-21. DO NOT START HERE.
-> **The ground this thing stands on is wrong, and stone would make it permanent.**
-> ▶ `node checks/claims-a-level-body-has-one-surface.mjs` — **RED on huron.** The drawn lake sits
-> below its own bed across most of its area, so the land stands proud of the water by a metre-odd
-> everywhere. **Any revetment fitted to today's shore inherits that offset as geometry**, and nobody
-> reading a boulder later will recognise it as a datum fault. ⇒ `BRIEF-terrain-resolution.md`.
-> ⭐ **Jacob saw this before any instrument did** (2026-09-21): *"there are gashes in the seam which
-> look like where our boulders will go."* They are at the shore, so they mark the right PLACE — but
-> their size is the datum error, not a wall.
+> ### ✅ UNBLOCKED 2026-09-21 — the ground it stands on is now right
+> This was blocked because the drawn lake sat below its own bed and **stone fitted to that shore would
+> have inherited the offset as geometry**, which nobody reading a boulder later would recognise as a
+> datum fault. ⭐ **Jacob saw it before any instrument did:** *"there are gashes in the seam which look
+> like where our boulders will go."* They were at the shore, so they marked the right PLACE — but their
+> size was the datum error, not a wall.
+> ▶ `node checks/claims-a-level-body-has-one-surface.mjs` — **GREEN.** huron now bakes from 1 m lidar;
+> the lake is one surface (IQR 0.000 m) and the mesh sits on it.
+> ⛔ **Re-run that check before placing stone, on every town, every time** — it is this brief's §7
+> precondition and it is cheap.
 
 ---
 
 ## 1. You are the dispatched agent. Name yourself — one word, yours.
-## 2. Agent: **FRESH.** ⚠️ Siblings: `BRIEF-terrain-resolution.md` (**blocks you** — the datum) ·
+## 2. Agent: **FRESH.** ⚠️ Siblings: `BRIEF-terrain-resolution.md` (the datum — ✅ landed, no longer blocks) ·
 `BRIEF-lu-map-layers.md` (owns where a linear STRUCTURE lives) · `BRIEF-water-shader.md` (adjacent —
 the revetment is the water's edge). ⭐ `BRIEF-lu-vocabulary` LANDED; it no longer blocks anything.
 

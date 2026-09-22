@@ -2,10 +2,10 @@
 status: OPEN
 dispatched: no
 written: 2026-09-20
-evict-when: node checks/claims-a-level-body-has-one-surface.mjs
-  ⛔ THE OLD CONDITION COULD NOT FIRE: it read `terrain.json.stepX`, and that file carries
-  {width,height,bounds,baseElev} and no `stepX` — so `undefined <= 2` was false forever. Re-scoped
-  2026-09-21 onto the defect this brief actually closes: the water's edge, not the grid spacing.
+evict-when: node checks/claims-a-brief-declares-how-it-dies.mjs --list will call this DONE on the
+  level-body check, and that is now GREEN — ⛔ but §4 (audit every acquisition note for the same
+  overstatement, and report the count) has NOT been done, and that was Jacob's explicit ask. This
+  brief dies when §4's audit is reported, not when the ingest works.
 -->
 
 # BRIEF — THE GOOD ELEVATION EXISTS AND THE PIPELINE CANNOT READ IT
@@ -37,7 +37,22 @@ evict-when: node checks/claims-a-level-body-has-one-surface.mjs
 > ⇒ **The payoff §3 demanded is therefore ANSWERED, and it is not "recover a missing bank".** It is
 > *the water's edge is in the wrong place, vertically and horizontally* — and everything we ever
 > put on a shore (revetment, dock, beach, waterline band) inherits that error and makes it
-> permanent. ⛔ **`BRIEF-boulder-revetment` WAITS ON THIS, and now for the right reason.**
+> permanent.
+>
+> ### ✅ THE INGEST LANDED 2026-09-21. **`node checks/claims-a-level-body-has-one-surface.mjs` IS GREEN.**
+> `bake-terrain` now reads **several** tiles, in **lat/lon or UTM** (the CRS off the tile's own
+> GeoKeys, refusing any EPSG it cannot name), at the **overview level matching the output grid**, and
+> from **URLs by HTTP range request** — ⭐ huron bakes from 1 m lidar in ~6 s with **nothing
+> downloaded**. The datum derives to the same 174.44 m from the 1 m source as from the 10 m one, now
+> with **98.7%** of the body agreeing instead of 32.7%.
+> | | 10 m source | 1 m source |
+> |---|---|---|
+> | lake bed spread (IQR) | 1.174 m | **0.000 m — one surface** |
+> | shoreline seam, median | 0.56 m | **0.44 m** |
+> | datum agreement | 32.7% | **98.7%** |
+> ⛔ **What is still OPEN is §4**, and it is the half Jacob asked for by name: audit every other
+> `acquisition` note for the same overstatement and **report the count**. The elevation row itself is
+> rewritten; the others are not. ⭐ **`BRIEF-boulder-revetment` is UNBLOCKED.**
 
 ---
 

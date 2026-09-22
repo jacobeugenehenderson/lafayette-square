@@ -39,11 +39,11 @@
 
 import fs from 'fs'
 import { join } from 'path'
-import { fromFile } from 'geotiff'
+import { fromFile, fromUrl } from 'geotiff'
 import { CARTOGRAPH_DIR, DEFAULT_MAP, requireExplicitMap} from './config.js'
 import { writeIfChanged } from './io.js'
 import { deriveFade } from './boundaryRecords.mjs'
-import { coastRings, isWaterFeature } from './coastline.mjs'
+import { coastRings } from './coastline.mjs'
 
 // ⛔ No silent default on a WRITE path (BRIEF-ls-bleed-excision site 11).
 requireExplicitMap('bake-terrain.js (writes terrain into the slab)')
@@ -83,6 +83,60 @@ const NODATA_THRESHOLD = -1000
 
 function wgs84ToLocal(lon, lat) {
   return [(lon - _geo.lon) * _geo.lonToMeters, (_geo.lat - lat) * _geo.latToMeters]
+}
+
+// ⭐⭐ A DEM IS NOT NECESSARILY IN DEGREES, AND THE FILE KNOWS WHICH. (2026-09-21)
+//
+// `intake-rows.mjs` claimed for two months that this reader was "source-agnostic —
+// any GeoTIFF". It was not: it read `getOrigin()`/`getResolution()` as lon/lat and
+// so accepted exactly one product, USGS 3DEP 1/3 arc-second. ⛔ Every USGS **1 m**
+// lidar tile is UTM — metres — so the better data was unreadable by construction.
+//
+// ⭐ THE CRS IS READ OFF THE TILE, never assumed and never configured: GeoTIFF
+// carries `ProjectedCSTypeGeoKey`, and an EPSG code names the zone. Anything we
+// cannot name is REFUSED BY CODE rather than guessed at — a DEM silently treated
+// as the wrong CRS bakes terrain from the wrong place, confidently.
+const WGS84_A = 6378137.0, WGS84_F = 1 / 298.257223563
+const UTM_K0 = 0.9996, UTM_FE = 500000
+
+/** Forward transverse Mercator for a UTM zone. Lon/lat in degrees → [easting, northing]. */
+function utmForward(lon, lat, zone) {
+  const e2 = WGS84_F * (2 - WGS84_F), ep2 = e2 / (1 - e2)
+  const lon0 = (6 * zone - 183) * Math.PI / 180
+  const p = lat * Math.PI / 180, l = lon * Math.PI / 180
+  const N = WGS84_A / Math.sqrt(1 - e2 * Math.sin(p) ** 2)
+  const T = Math.tan(p) ** 2, C = ep2 * Math.cos(p) ** 2
+  const A = (l - lon0) * Math.cos(p)
+  const M = WGS84_A * ((1 - e2 / 4 - 3 * e2 ** 2 / 64 - 5 * e2 ** 3 / 256) * p
+    - (3 * e2 / 8 + 3 * e2 ** 2 / 32 + 45 * e2 ** 3 / 1024) * Math.sin(2 * p)
+    + (15 * e2 ** 2 / 256 + 45 * e2 ** 3 / 1024) * Math.sin(4 * p)
+    - (35 * e2 ** 3 / 3072) * Math.sin(6 * p))
+  return [
+    UTM_FE + UTM_K0 * N * (A + (1 - T + C) * A ** 3 / 6
+      + (5 - 18 * T + T ** 2 + 72 * C - 58 * ep2) * A ** 5 / 120),
+    UTM_K0 * (M + N * Math.tan(p) * (A ** 2 / 2
+      + (5 - T + 9 * C + 4 * C ** 2) * A ** 4 / 24
+      + (61 - 58 * T + T ** 2 + 600 * C - 330 * ep2) * A ** 6 / 720)),
+  ]
+}
+
+/** How this image's own GeoKeys say to turn lon/lat into its pixel space. */
+function projectorFor(image, label) {
+  const keys = (typeof image.getGeoKeys === 'function' ? image.getGeoKeys() : image.geoKeys) || {}
+  const epsg = keys.ProjectedCSTypeGeoKey
+  if (!epsg || keys.GTModelTypeGeoKey === 2) {
+    return { kind: 'geographic', epsg: keys.GeographicTypeGeoKey || 4326, to: (lon, lat) => [lon, lat], unit: '°' }
+  }
+  // NAD83 / UTM north = 269xx · WGS84 / UTM north = 326xx. Both are metres.
+  const zone = (epsg >= 26903 && epsg <= 26923) ? epsg - 26900
+             : (epsg >= 32601 && epsg <= 32660) ? epsg - 32600
+             : null
+  if (zone == null) {
+    throw new Error(`⛔ ${label}: EPSG:${epsg} is a projected CRS this reader cannot name, so it cannot `
+      + `place a sample. Refusing rather than treating its coordinates as degrees — that bakes terrain `
+      + `from the wrong place and nothing downstream can tell. Supported: UTM north (EPSG 269xx/326xx) and geographic.`)
+  }
+  return { kind: `UTM ${zone}N`, epsg, to: (lon, lat) => utmForward(lon, lat, zone), unit: 'm' }
 }
 
 // ⭐⭐⭐ THE DATUM IS THE WATER, WHEN THERE IS WATER. (2026-09-21)
@@ -128,18 +182,22 @@ function waterDatum({ raw, width, height, bounds, boundary }) {
                            center: boundary.center, discR: boundary.radius, bb })
     for (const r of (c.rings || [])) rings.push(r)
   }
-  // ⭐ And the bodies the coast machinery deliberately does NOT reach — every
-  // CLOSED water way (an inland pond, a reservoir). `bake-ground.js` says so in
-  // as many words: coastline.mjs "applies only water" at the coast.
-  for (const bucket of Object.values(ground)) {
-    if (!Array.isArray(bucket)) continue
-    for (const f of bucket) {
-      if (!f?.isClosed || !isWaterFeature(f) || !Array.isArray(f.coords)) continue
-      if (f.coords.length >= 4) rings.push(f.coords.map(p => [p.x, p.z]))
-    }
-  }
+  // ⛔⛔ ONLY THE COAST, AND A POND MUST NOT BE THE DATUM. Caught 2026-09-21 by
+  // running this against Lafayette Square before trusting it on huron.
+  // The first version also took every CLOSED water way. LS's park pond is four
+  // rings and TWENTY-ONE grid samples, and it sits ~25 m above the valley floor —
+  // so it moved the entire town's datum by 25.22 m, for a town that has no
+  // `water:*` group in its slab at all. A perched pond is an OBJECT ON the land;
+  // a coast is the plane the land sits beside, and only the second can be a datum.
+  // ⭐ `coastline.mjs` already draws exactly this distinction and we should use its
+  // judgment rather than invent a size threshold: `coastRings` returns rings for a
+  // body that CROSSES THE BB, and nothing for an enclosed one. `bake-ground.js`
+  // says the same in as many words — coastline "does NOT reach an inland pond".
+  // ⚠️ So an inland pond is still drawn at y ≈ 0 and is still wrong for it. That is
+  // a REAL and separate defect — every body wants its own mesh Y — and it is not
+  // fixed by moving the whole world to meet one pond.
   if (!rings.length) {
-    console.log('  water datum: this town has no water — the datum stays the local minimum')
+    console.log('  water datum: no COAST in this town (an enclosed pond cannot be a datum) — the datum stays the local minimum')
     return null
   }
 
@@ -245,89 +303,143 @@ async function main() {
     tileName(latMin, lonMin), tileName(latMin, lonMax),
   ])]
 
-  if (!fs.existsSync(TIF_PATH)) {
-    console.error(`Missing input: ${TIF_PATH}`)
+  // ⭐⭐ THE SOURCES. One tile in degrees was the only thing this reader ever
+  // accepted; a town can straddle several, and the good data is in metres.
+  //   raw/elevation.tif           — a single tile (what every town has today)
+  //   raw/elevation/*.tif         — a directory of tiles, mosaicked here
+  //   raw/elevation-sources.txt   — one URL per line, read by HTTP RANGE REQUEST
+  // ⭐ The third is not a convenience: USGS 1 m covers a town in ~940 MB across
+  // four tiles, and geotiff pulls only the window actually needed (~1 s). Making
+  // that the acquisition step would put a gigabyte on disk per town for bytes we
+  // read once. ⛔ A town with no source at all is told exactly what to fetch.
+  const TIF_DIR = join(MAP_DIR, 'raw', 'elevation')
+  const URL_LIST = join(MAP_DIR, 'raw', 'elevation-sources.txt')
+  const specs = []
+  if (fs.existsSync(URL_LIST)) {
+    for (const line of fs.readFileSync(URL_LIST, 'utf8').split('\n')) {
+      const u = line.trim()
+      if (u && !u.startsWith('#')) specs.push({ kind: 'url', ref: u })
+    }
+  }
+  if (fs.existsSync(TIF_DIR) && fs.statSync(TIF_DIR).isDirectory()) {
+    for (const f of fs.readdirSync(TIF_DIR).sort()) {
+      if (/\.tiff?$/i.test(f)) specs.push({ kind: 'file', ref: join(TIF_DIR, f) })
+    }
+  }
+  if (!specs.length && fs.existsSync(TIF_PATH)) specs.push({ kind: 'file', ref: TIF_PATH })
+
+  if (!specs.length) {
+    console.error(`Missing elevation input for scene '${SCENE}'. Looked in:`)
+    console.error(`  ${TIF_PATH}\n  ${TIF_DIR}/*.tif\n  ${URL_LIST}`)
     console.error(`  scene spans lat ${latMin.toFixed(4)}..${latMax.toFixed(4)}, lon ${lonMin.toFixed(4)}..${lonMax.toFixed(4)}`)
-    console.error(`Acquire the tile THIS scene needs:`)
+    console.error(`\nAcquire the 1/3 arc-second (~10 m) tile(s) this scene needs:`)
     for (const t of neededTiles) {
       console.error(`  curl -o ${TIF_PATH} https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/${t}/USGS_13_${t}.tif`)
     }
-    if (neededTiles.length > 1) {
-      console.error(`  ⚠️ This scene STRADDLES ${neededTiles.length} tiles. One file cannot cover it —`)
-      console.error(`     they must be mosaicked before this script can read them. Not handled here.`)
-    }
+    if (neededTiles.length > 1) console.error(`  ⚠️ ${neededTiles.length} tiles — put them in ${TIF_DIR}/ instead; they are mosaicked here.`)
+    console.error(`\n⭐ Or ask for the 1 m lidar, which is ~100× denser and needs no download:`)
+    console.error(`  curl "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital%20Elevation%20Model%20(DEM)%201%20meter&bbox=${lonMin.toFixed(5)},${latMin.toFixed(5)},${lonMax.toFixed(5)},${latMax.toFixed(5)}&max=50"`)
+    console.error(`  then put each result's downloadURL on its own line in ${URL_LIST}`)
     process.exit(1)
   }
 
   const t0 = Date.now()
-  const tiff = await fromFile(TIF_PATH)
-  const image = await tiff.getImage()
-  const [origLon, origLat] = image.getOrigin()
-  const [resLon, resLat]   = image.getResolution()   // resLat is negative for N-up
-  const tifW = image.getWidth(), tifH = image.getHeight()
-  console.log(`  tif ${tifW}×${tifH}  origin=(${origLon.toFixed(4)}, ${origLat.toFixed(4)})  res=(${resLon.toExponential(3)}, ${resLat.toExponential(3)}) °/px`)
+  const PAD = 2
+  const sources = []
+  for (const spec of specs) {
+    const label = spec.ref.split('/').pop()
+    const tiff = spec.kind === 'url' ? await fromUrl(spec.ref) : await fromFile(spec.ref)
+    const base = await tiff.getImage(0)
+    const [bx0, by0] = base.getOrigin()
+    const [brx, bry] = base.getResolution()
+    const proj = projectorFor(base, label)
 
-  // (the scene's geographic bbox — lonMin/lonMax/latMin/latMax — was computed
-  // above the acquire gate so the missing-file message can name the right tile.)
-
-  // ⛔⛔ DOES THIS DEM ACTUALLY COVER THIS SCENE? REFUSE IF NOT.
-  // The window clamp below is `Math.max(0, …)` / `Math.min(tifW, …)`, so a tile
-  // from the wrong region does NOT error — it silently clamps to the tile's edge
-  // and bakes whatever pixels happen to be there. Terrain, confidently, from the
-  // wrong place. That is `CLAUDE.md` Layer 0 q2, and it is exactly what the old
-  // hardcoded `n39w091` instruction would have produced on any town but two.
-  const tifLonMin = origLon, tifLonMax = origLon + tifW * resLon
-  const tifLatMax = origLat, tifLatMin = origLat + tifH * resLat   // resLat < 0
-  if (lonMin < tifLonMin || lonMax > tifLonMax || latMin < tifLatMin || latMax > tifLatMax) {
-    console.error(`\n⛔ THIS DEM DOES NOT COVER THIS SCENE — refusing to bake clamped terrain.`)
-    console.error(`   scene needs  lat ${latMin.toFixed(4)}..${latMax.toFixed(4)}  lon ${lonMin.toFixed(4)}..${lonMax.toFixed(4)}`)
-    console.error(`   tif provides lat ${tifLatMin.toFixed(4)}..${tifLatMax.toFixed(4)}  lon ${tifLonMin.toFixed(4)}..${tifLonMax.toFixed(4)}`)
-    console.error(`   ⇒ ${TIF_PATH} is the wrong tile for scene '${SCENE}'. It needs: ${neededTiles.join(', ')}`)
-    console.error(`   Delete it and re-acquire:`)
-    for (const t of neededTiles) {
-      console.error(`     curl -o ${TIF_PATH} https://prd-tnm.s3.amazonaws.com/StagedProducts/Elevation/13/TIFF/current/${t}/USGS_13_${t}.tif`)
+    // ⭐⭐ READ THE OVERVIEW THAT MATCHES THE OUTPUT GRID, NOT THE FINEST ONE.
+    // A COG carries a pyramid, and USGS 1 m tiles carry six levels. Sampling a
+    // 1 m level onto a 5 m grid transfers and decodes 25× the bytes to throw 96%
+    // of them away — and over a 7 km town that is the difference between a second
+    // and a minute. ⛔ Never COARSER than the output step: that would smear the
+    // very edge we went to 1 m for. ⇒ the finest level whose pixel is still at
+    // least as fine as the grid, which for a 5 m grid off a 1 m tile is the 4 m
+    // level. ⚠️ Only level 0 carries a geotransform, so a level's scale is its
+    // size ratio to level 0 — geotiff throws on getResolution() for the rest.
+    // ⛔ THE GRID STEP IS IN METRES AND A PIXEL MAY BE IN DEGREES. The first cut of
+    // this compared the two directly and silently chose the coarsest overview for
+    // every geographic tile — LS lost 2.9 m of relief and nothing errored. That is
+    // CLAUDE.md's Class D tell exactly: a comparison whose unit is only stable
+    // because something else happens to be fixed. ⇒ Measure the grid step IN THE
+    // SOURCE'S OWN UNITS by projecting two points one step apart.
+    const stepM = Math.min(Math.abs((bounds.maxX - bounds.minX) / (width - 1)),
+                           Math.abs((bounds.maxZ - bounds.minZ) / (height - 1)))
+    const _a = proj.to(...localToWgs84(bounds.minX, bounds.minZ))
+    const _b = proj.to(...localToWgs84(bounds.minX + stepM, bounds.minZ))
+    const want = Math.hypot(_b[0] - _a[0], _b[1] - _a[1])
+    const levels = await tiff.getImageCount()
+    let pick = 0, image = base, w = base.getWidth(), h = base.getHeight(), rx = brx, ry = bry
+    for (let L = 1; L < levels; L++) {
+      const im = await tiff.getImage(L)
+      const scale = base.getWidth() / im.getWidth()
+      if (Math.abs(brx) * scale > want) break          // this level is coarser than the grid
+      pick = L; image = im; w = im.getWidth(); h = im.getHeight()
+      rx = brx * scale; ry = bry * scale
     }
+    const ox = bx0, oy = by0
+    if (pick) console.log(`  ${label}: grid step is ${stepM.toFixed(2)} m = ${want.toExponential(3)} ${proj.unit} — reading overview level ${pick}/${levels - 1} (${Math.abs(rx).toExponential(3)} ${proj.unit}/px) instead of level 0`)
+
+    // The scene's own corners, in THIS tile's coordinates. ⛔ All four, not a
+    // bbox of lon/lat: a projected frame is not axis-aligned to a geographic one.
+    let sx0 = Infinity, sx1 = -Infinity, sy0 = Infinity, sy1 = -Infinity
+    for (const [lon, lat] of _cornersLL) {
+      const [px, py] = proj.to(lon, lat)
+      if (px < sx0) sx0 = px; if (px > sx1) sx1 = px
+      if (py < sy0) sy0 = py; if (py > sy1) sy1 = py
+    }
+    const tx0 = ox, tx1 = ox + w * rx
+    const ty1 = oy, ty0 = oy + h * ry          // ry < 0 for a north-up image
+    const overlaps = sx1 > Math.min(tx0, tx1) && sx0 < Math.max(tx0, tx1)
+                  && sy1 > Math.min(ty0, ty1) && sy0 < Math.max(ty0, ty1)
+    console.log(`  source ${label}  ${w}×${h}  ${proj.kind} (EPSG:${proj.epsg})  res=(${rx}, ${ry}) ${proj.unit}/px  ${overlaps ? 'overlaps' : '⚠️ NO OVERLAP — skipped'}`)
+    if (!overlaps) continue
+
+    const px0 = Math.max(0, Math.floor((sx0 - ox) / rx) - PAD)
+    const px1 = Math.min(w, Math.ceil((sx1 - ox) / rx) + PAD)
+    const py0 = Math.max(0, Math.floor((sy1 - oy) / ry) - PAD)
+    const py1 = Math.min(h, Math.ceil((sy0 - oy) / ry) + PAD)
+    if (px1 <= px0 || py1 <= py0) { console.log(`    (empty window — skipped)`); continue }
+    const winW = px1 - px0, winH = py1 - py0
+    const rasters = await image.readRasters({ window: [px0, py0, px1, py1] })
+    const band = Array.isArray(rasters) ? rasters[0] : rasters
+    if (band.length !== winW * winH) throw new Error(`${label}: window read ${band.length}, expected ${winW * winH}`)
+    console.log(`    window px=[${px0},${px1}) py=[${py0},${py1}) = ${winW}×${winH}`)
+    sources.push({ label, band, winW, winH, rx, ry, proj,
+                   x0: ox + (px0 + 0.5) * rx, y0: oy + (py0 + 0.5) * ry })
+  }
+
+  // ⛔⛔ DOES THE UNION ACTUALLY COVER THE SCENE? REFUSE IF NOT.
+  // The window clamps are Math.max(0,…)/Math.min(w,…), so a tile from the wrong
+  // region does not error — it clamps to the tile's edge and bakes whatever is
+  // there. Terrain, confidently, from the wrong place: CLAUDE.md Layer 0 q2.
+  if (!sources.length) {
+    console.error(`\n⛔ NONE of the ${specs.length} elevation source(s) overlap scene '${SCENE}'.`)
+    console.error(`   scene needs lat ${latMin.toFixed(4)}..${latMax.toFixed(4)} lon ${lonMin.toFixed(4)}..${lonMax.toFixed(4)} — it needs: ${neededTiles.join(', ')}`)
     process.exit(1)
   }
 
-  // Pixel window in the tile (geotiff window is [left, top, right, bottom]
-  // in pixel coords; top-left origin). resLat < 0, so the bigger lat is
-  // closer to origin row.
-  const PAD = 2
-  const px0 = Math.max(0,     Math.floor((lonMin - origLon) / resLon) - PAD)
-  const px1 = Math.min(tifW,  Math.ceil ((lonMax - origLon) / resLon) + PAD)
-  const py0 = Math.max(0,     Math.floor((latMax - origLat) / resLat) - PAD)
-  const py1 = Math.min(tifH,  Math.ceil ((latMin - origLat) / resLat) + PAD)
-  const winW = px1 - px0, winH = py1 - py0
-  console.log(`  reading window  px=[${px0},${px1})  py=[${py0},${py1})  = ${winW}×${winH}`)
-
-  const rasters = await image.readRasters({ window: [px0, py0, px1, py1] })
-  const band = Array.isArray(rasters) ? rasters[0] : rasters
-  if (band.length !== winW * winH) {
-    throw new Error(`Window read size mismatch: got ${band.length}, expected ${winW * winH}`)
-  }
-
-  // Geographic coords of the window's top-left pixel center. (GeoTIFF
-  // convention: origin is the top-left corner of the top-left pixel, so
-  // the *center* of pixel (px0, py0) is at origin + (px0+0.5, py0+0.5)
-  // times resolution.)
-  const winLon0 = origLon + (px0 + 0.5) * resLon
-  const winLat0 = origLat + (py0 + 0.5) * resLat
-
   function sample(lon, lat) {
-    const fx = (lon - winLon0) / resLon
-    const fy = (lat - winLat0) / resLat
-    const ix = Math.floor(fx), iy = Math.floor(fy)
-    if (ix < 0 || iy < 0 || ix + 1 >= winW || iy + 1 >= winH) return NaN
-    const tx = fx - ix, ty = fy - iy
-    const v00 = band[iy * winW + ix],         v10 = band[iy * winW + ix + 1]
-    const v01 = band[(iy + 1) * winW + ix],   v11 = band[(iy + 1) * winW + ix + 1]
-    if (v00 < NODATA_THRESHOLD || v10 < NODATA_THRESHOLD ||
-        v01 < NODATA_THRESHOLD || v11 < NODATA_THRESHOLD) return NaN
-    return v00 * (1 - tx) * (1 - ty)
-         + v10 * tx       * (1 - ty)
-         + v01 * (1 - tx) * ty
-         + v11 * tx       * ty
+    for (const S of sources) {
+      const [px, py] = S.proj.to(lon, lat)
+      const fx = (px - S.x0) / S.rx, fy = (py - S.y0) / S.ry
+      const ix = Math.floor(fx), iy = Math.floor(fy)
+      if (ix < 0 || iy < 0 || ix + 1 >= S.winW || iy + 1 >= S.winH) continue
+      const tx = fx - ix, ty = fy - iy
+      const v00 = S.band[iy * S.winW + ix],         v10 = S.band[iy * S.winW + ix + 1]
+      const v01 = S.band[(iy + 1) * S.winW + ix],   v11 = S.band[(iy + 1) * S.winW + ix + 1]
+      if (v00 < NODATA_THRESHOLD || v10 < NODATA_THRESHOLD ||
+          v01 < NODATA_THRESHOLD || v11 < NODATA_THRESHOLD) continue
+      return v00 * (1 - tx) * (1 - ty) + v10 * tx * (1 - ty)
+           + v01 * (1 - tx) * ty       + v11 * tx * ty
+    }
+    return NaN
   }
 
   const raw = new Float32Array(total)
@@ -401,9 +513,20 @@ async function main() {
     }
     console.log(`    ⛔ y = 0 is now the WATER, not the lowest ground: ground below it is NEGATIVE, by design.`)
   } else {
-    console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (this town has no water)`)
+    console.log(`  DATUM = the local minimum: ${baseElev.toFixed(2)} m (no coast — see waterDatum for why a pond does not qualify)`)
   }
-  console.log(`  misses filled: ${misses}`)
+  const missShare = misses / total
+  console.log(`  misses filled: ${misses.toLocaleString()} (${(100 * missShare).toFixed(1)}% of the grid)`)
+  if (missShare > 0.05) {
+    // ⛔ SAY IT RATHER THAN BURY IT IN A COUNT. Lidar does not return off open
+    // water, so a lakeshore town reads a fifth of its grid as nodata and gets it
+    // nearest-neighbour filled — which is CORRECT here (the nearest valid value
+    // is the flattened water surface, and it is under the water mesh anyway), but
+    // the same number on a DRY town would mean the source does not cover it.
+    console.log(`    ⚠️ over 5%. On a town with open water this is expected — lidar returns nothing off water,`)
+    console.log(`       and the fill takes the nearest valid sample, which there is the water surface itself.`)
+    console.log(`       ⛔ On a town WITHOUT water, a share this high means the source does not cover the scene.`)
+  }
   console.log(`  done in ${elapsed}s`)
 }
 
