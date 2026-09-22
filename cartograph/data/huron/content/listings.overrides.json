@@ -4,6 +4,1340 @@
     "baseSource": "overture"
   },
   "adds": [],
-  "patches": {},
-  "drops": []
+  "patches": {
+    "ovt-7613ce95-3431-4b48-a8fd-a7ef8334904a": {
+      "_match_name": "Salvation Army",
+      "_source": "https://neo.salvationarmy.org/NortheastOhio/Service-Extension-Department",
+      "_source_secondary": "https://www.eriecountycares.com/provider/salvation-army-huron",
+      "_fetched": "2026-09-21",
+      "_confidence": "org's own divisional site (Northeast Ohio Division) lists a Huron service unit; no hours published anywhere on it",
+      "_url_finding": "The URL we hold (https://centralusa.salvationarmy.org/indiana) is the Salvation Army INDIANA DIVISION (USA Central Territory) and is NOT this place. Huron, Ohio falls under the Northeast Ohio Division (neo.salvationarmy.org). The held URL should be replaced.",
+      "_notes": "Huron is a volunteer-run SERVICE UNIT, not a staffed corps. The divisional Service Extension page lists Huron, Erie County, zips 44839 / 44879, phone 419-433-0500. Third-party directories give a different number (419-366-1721) and an address of 820 Cleveland Rd E; the two numbers are NOT reconciled by any first-party source, so only the divisional-site number is proposed below. Yellowpages/countyoffice list 'appointment only' - NOT recorded as hours, no first-party source states it.",
+      "phone": "419-433-0500",
+      "description": "A Salvation Army Service Unit serving Huron and Erie County. Per the Northeast Ohio Division: \"A Service Unit is located in a community church building or other facility, run solely by volunteers, and may offer a full limited array of services such as: Utilities, Prescriptions, Food vouchers and pantries, Gasoline, Rent & lodging, Back to school supplies, Coats for Kids, Residential Camping, Angel Tree\".",
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0119"
+    },
+    "ovt-42abdbea-4710-4444-8647-3f0e328f6ab0": {
+      "_match_name": "Huron Helping Hands Food Pantry",
+      "_source": "http://huronhelpinghands.org/",
+      "_source_secondary": "http://huronhelpinghands.org/receiving-goods.html",
+      "_fetched": "2026-09-21",
+      "_confidence": "stated on the org's own site, twice, in agreeing words",
+      "_last_entry": "Site states arrive at least 30 minutes before closing - an effective last-entry time (Wed 14:30, Thu 13:30) that the hours model cannot express.",
+      "_alt_phone": "419-366-0524 (appointments), 419-616-0088 (general) - both on their own site; we hold neither/one, so both recorded here.",
+      "hours": {
+        "wednesday": {
+          "open": "09:00",
+          "close": "15:00"
+        },
+        "thursday": {
+          "open": "10:00",
+          "close": "14:00"
+        }
+      },
+      "phone": "419-616-0088",
+      "description": "A food pantry at 607 S. Main St that, in its own words, \"provides food and hope to families across Huron, Berlin Heights, and the 44839 area.\" Walk-ins are welcome during regular hours and no income verification is required.",
+      "amenities": [
+        "Food pantry",
+        "Walk-in service during open hours",
+        "No income verification required"
+      ],
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0062"
+    },
+    "ovt-1961226d-15f9-4845-a4c5-618997855901": {
+      "_match_name": "Huron Sports Academy",
+      "_source": "https://huronsa.org/",
+      "_source_secondary": "https://huronsa.org/contact",
+      "_fetched": "2026-09-21",
+      "_confidence": "building hours stated on the org's own contact page",
+      "_assumption": "The site prints \"715 AM - 3:15 PM\" as building hours WITHOUT enumerating days. Monday-Friday below is the school-week reading, not a quoted fact. Drop the days if that is not acceptable.",
+      "_extra_schedules": "Same page also publishes a class schedule 07:45-15:15 and breakfast service 07:20-07:45 - three nested day-parts for one place; only the outermost is expressed below.",
+      "_building_note": "Occupies 712 Cleveland Road E., the former Shawnee Elementary building (see huro-lst-0132).",
+      "hours": {
+        "monday": {
+          "open": "07:15",
+          "close": "15:15"
+        },
+        "tuesday": {
+          "open": "07:15",
+          "close": "15:15"
+        },
+        "wednesday": {
+          "open": "07:15",
+          "close": "15:15"
+        },
+        "thursday": {
+          "open": "07:15",
+          "close": "15:15"
+        },
+        "friday": {
+          "open": "07:15",
+          "close": "15:15"
+        }
+      },
+      "phone": "419-387-5534",
+      "description": "A tuition-free, K-6 public charter school that integrates Ohio state academic standards with daily competitive athletics and physical conditioning, which it calls \"the Blitz Model.\" It serves families across Huron, Sandusky, Vermilion, Norwalk, Firelands, Berlin Heights and Perkins Township.",
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0021"
+    },
+    "ovt-7dac6e71-435c-432d-9d45-09fe3a64243d": {
+      "_match_name": "Shawnee Elementary",
+      "_source": "https://huronk12.org/",
+      "_source_secondary": "https://sanduskyregister.com/news/485444/16m-school-building-sale-closes/",
+      "_fetched": "2026-09-21",
+      "_notfound": "THIS PLACE NO LONGER EXISTS. The Huron City Schools district site (huronk12.org, to which the held URL huronhs.com/CentralOffice.aspx now 307-redirects) lists only Woodlands Elementary, McCormick Middle and Huron High School - Shawnee is absent from the school list. The Huron Board of Education voted to close Shawnee Elementary at the end of the 2022-23 school year (last day 2023-05-26) under a consolidation plan, and the building was auctioned and sold for $1.6M. Its address, 712 Cleveland Road E., is now occupied by Huron Sports Academy (huro-lst-0021). Shawnee survives on the district site only as the mailing location of the Title IX Coordinator. No hours, no description, and no phone of its own exist to record. Recommend the listing be marked closed/defunct rather than enriched.",
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0132"
+    },
+    "ovt-67e1ae1d-0ef1-4861-947b-85ac4cfe545a": {
+      "_match_name": "Old Homestead On The Lake Association",
+      "_source": "http://www.oldhomesteadone.com/",
+      "_source_secondary": "http://www.oldhomesteadone.com/docs/RR_Summary.pdf",
+      "_fetched": "2026-09-21",
+      "_confidence": "description and amenities from the association board's own rules sheet; no hours exist to find",
+      "_notfound_hours": "This is a lakefront homeowners' association, not a premises with opening hours. Its public site is a links-and-weather portal; the members' area (oldhomesteadone.com/membership/membership.htm) returns HTTP 401 and is credential-gated, so any hours behind it are unreachable. Nothing resembling open/close times is published.",
+      "_rule_windows": "The rules sheet publishes intervals that are NOT opening hours: quiet hours 22:00-08:00, and a seasonal pet ban on the beach and in the parks between Memorial Day and Labor Day.",
+      "description": "The homeowners' association for the Old Homestead on the Lake neighborhood on Lake Erie in Huron, run by a volunteer Board of Directors. It maintains the neighborhood's private beach and parks, publishes the community rules, and runs a public weather station for the lakefront.",
+      "amenities": [
+        "Private beach (beach pass required; no lifeguard)",
+        "Neighborhood parks",
+        "Boat lane west of the beach",
+        "Community weather station"
+      ],
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0096"
+    },
+    "ovt-dd08d3fb-ddf1-4f03-ac77-3ca00fad5aef": {
+      "_match_name": "Christ Episcopal Church",
+      "_source": "https://www.episcopalassetmap.org/dioceses/diocese-ohio/list/christ-episcopal-church",
+      "_fetched": "2026-09-21",
+      "_confidence": "NOT the org's own site - the parish's own site is DOWN. Data is from the Episcopal Church's diocesan asset map, which parishes maintain themselves; it carries no last-updated date, so treat the times as unverified against a first-party source.",
+      "_url_finding": "The held URL http://christchurchhuron.com/ does not resolve: christchurchhuron.com has no A record and no NS records at 8.8.8.8 or 1.1.1.1 (NXDOMAIN) as of 2026-09-21. The alternate domain christchurchhuron.org DOES resolve but 301-redirects straight to the dead .com, so the parish site is unreachable by either name. Search engines still index cached pages (christchurchhuron.com/services.html); those are stale, not live.",
+      "_service_times": "Sunday 10:00 (Holy Eucharist, with Facebook livestream); Wednesday 09:00 (Morning Prayer). Recorded here and NOT in `hours`: these are service START times with no published end, and writing a close time would be inventing one.",
+      "_notfound_hours": "No opening or office hours published by any source consulted.",
+      "phone": "419-433-4701",
+      "description": "An Episcopal parish at 120 Ohio Street whose congregation has gathered since 1837, in the Episcopal Diocese of Ohio. It describes itself as \"A Place of Grace\" with a mission to \"engage with Christ and our community to spread God's promise of hope, peace, joy, and love to the world.\"",
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0236"
+    },
+    "ovt-f857cf4c-0719-4fcd-a019-cb688a762bd0": {
+      "_match_name": "Huron High School",
+      "_source": "https://hhs.huronk12.org/",
+      "_fetched": "2026-09-21",
+      "_confidence": "office and school-day times stated on the school's own site",
+      "_url_note": "The held URL http://www.huronhs.com/ 307-redirects to https://huronk12.org/ (district). The school's own page is https://hhs.huronk12.org/.",
+      "_assumption": "The site prints office hours 6:30 AM - 3:30 PM without enumerating days. Monday-Friday below is the school-week reading, not a quoted fact.",
+      "_second_schedule": "The same page also publishes a distinct school day, 07:30-14:50 - a second, narrower set of hours for the same building that the model cannot hold alongside the office hours.",
+      "hours": {
+        "monday": {
+          "open": "06:30",
+          "close": "15:30"
+        },
+        "tuesday": {
+          "open": "06:30",
+          "close": "15:30"
+        },
+        "wednesday": {
+          "open": "06:30",
+          "close": "15:30"
+        },
+        "thursday": {
+          "open": "06:30",
+          "close": "15:30"
+        },
+        "friday": {
+          "open": "06:30",
+          "close": "15:30"
+        }
+      },
+      "phone": "419-433-1234",
+      "description": "The grades 9-12 public high school of Huron City Schools, at 710 Cleveland Road West. It describes itself as \"more than a school; it's a community,\" emphasising student-centred learning and links between classroom work and the real world through internships and community partnerships. Principal: Tim Lamb.",
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0276"
+    },
+    "ovt-b749730a-95a1-4813-871f-d874f0d1a158": {
+      "_match_name": "Bowling Green State University, Firelands College",
+      "_source": "https://www.bgsu.edu/firelands/library/about.html",
+      "_fetched": "2026-09-21",
+      "_confidence": "stated on the university's own library page; the page itself carries the caveat \"Hours may vary\"",
+      "_url_note": "The held URL https://www.firelands.bgsu.edu/library.html 301-redirects to https://www.bgsu.edu/firelands/library.html.",
+      "_seasonal": "Hours below are the FALL/SPRING semester set (in force on the fetch date). The same page publishes a separate SUMMER set: Mon-Thu 08:00-17:00, Fri 08:00-14:00, weekends closed. The model holds one set, so the summer schedule is dropped.",
+      "_phone_conflict": "The university publishes TWO different numbers for this library - 419-372-2531 on the About page and 419-372-0739 on the Library landing page. Not reconciled by any source, so no phone is proposed.",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "17:00"
+        }
+      },
+      "description": "The campus library of BGSU Firelands, on the second floor of Foundation Hall at One University Drive. Alongside its physical books it provides \"access to eBooks, databases, electronic journals, and streaming video,\" borrowing through OhioLINK and SearchOhio, and interlibrary loan.",
+      "amenities": [
+        "Print collection",
+        "eBooks and electronic journals",
+        "Research databases",
+        "Streaming video",
+        "OhioLINK and SearchOhio borrowing",
+        "Interlibrary loan",
+        "Special collections: Great Lakes and Holocaust"
+      ],
+      "_beat": "civic",
+      "_display_id_at_research": "huro-lst-0195"
+    },
+    "ovt-f475281d-5750-4cfb-8121-37a61584866c": {
+      "_match_name": "the Vikings Den - Huron, Ohio",
+      "_source": "http://www.huronlagoons.com/restaurant/",
+      "_source_secondary": "https://local.yahoo.com/info-15717506-viking-s-den-huron",
+      "_fetched": "2026-09-21",
+      "_address_from_source": "100 Laguna Dr. (P.O. Box 159), Huron, Ohio 44839 — marina address given in the site footer",
+      "_phone_conflict": "The marina's own restaurant page says 'Call us at 419-616-3336'. Yahoo Local lists (419) 433-7649 for Viking's Den. NOT RESOLVED — do not treat either as authoritative.",
+      "_confidence": "description + free-docking amenity are VERBATIM from the operator's own site (huronlagoons.com/restaurant/). ⚠️ HOURS ARE NOT ON THE OWN SITE — they come from Yahoo Local, an aggregator, and are UNVERIFIED. This is a marina restaurant on Lake Erie and is very likely SEASONAL (the marina site talks only about 'your summer'), so these hours may be in-season only and wrong for half the year. A human must confirm before this drives an open/closed indicator.",
+      "hours": {
+        "wednesday": {
+          "open": "11:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "11:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "11:00",
+          "close": "21:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "21:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "20:00"
+        }
+      },
+      "_hours_source": "https://local.yahoo.com/info-15717506-viking-s-den-huron (aggregator). Monday and Tuesday listed as Closed, so those days are omitted per the schema.",
+      "description": "Waterfront restaurant inside Huron Lagoons Marina on the Huron River, where diners can look out at the water and the wildlife. Boaters can dock free of charge while they eat.",
+      "_description_basis": "Paraphrased from the operator's own page: \"The Den's perfect setting lets you gaze at the water and the wildlife while you savor the nautical ambiance inside. And don't worry about docking fees—we make it easy to dock your boat for free while you dine!\"",
+      "amenities": [
+        "Free boat docking while you dine",
+        "Waterfront dining"
+      ],
+      "_amenities_basis": "Both stated plainly on huronlagoons.com/restaurant/. Yahoo Local additionally lists 'Family friendly' and 'Wifi' — NOT recorded here because they are aggregator-supplied, not operator-stated.",
+      "_menu_notfound": "The operator's page has a heading reading 'MENU' but publishes NO menu content, no linked menu file, and no menu page. The site's own page-sitemap.xml (https://www.huronlagoons.com/page-sitemap.xml) has no menu URL. The only PDF on the restaurant page is a bird-watching list. Nothing transcribable.",
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0266"
+    },
+    "ovt-f5d8b444-325f-4472-89bc-9b2219d13264": {
+      "_match_name": "Wink's Pizza",
+      "_source": "http://www.winkspizza.com",
+      "_fetched": "2026-09-21",
+      "_notfound": "The supplied domain winkspizza.com DOES NOT RESOLVE (DNS lookup fails: getaddrinfo ENOTFOUND www.winkspizza.com). No operator site exists to read. Yelp's listing for Wink's Pizza at 414 Cleveland Rd E, Huron OH (https://www.yelp.com/biz/winks-pizza-huron) is flagged CLOSED as of June 2026. Search results give conflicting hours from low-quality directory sites; NONE recorded, because a wrong open/closed signal is worse than none.",
+      "_duplicate_note": "414 Cleveland Rd E, Huron and phone 419-433-1500 are the SAME address and number reported for huro-lst-0214 Bruno's Pizzeria, and now for 'Sir Munchies Pizza of Huron' (https://www.yelp.com/biz/sir-munchies-pizza-huron). This looks like one storefront that has changed tenant at least twice. See dining-NOVEL.md §'Successive tenants at one address'.",
+      "_sources_checked": [
+        "http://www.winkspizza.com (DNS failure)",
+        "https://www.yelp.com/biz/winks-pizza-huron",
+        "https://www.yelp.com/biz/sir-munchies-pizza-huron"
+      ],
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0268"
+    },
+    "ovt-cd57c9e8-df51-4dd1-b132-fc5ad8cac1f4": {
+      "_match_name": "Bruno's Pizzeria",
+      "_source": "http://www.mybrunospizza.com",
+      "_fetched": "2026-09-21",
+      "_notfound": "mybrunospizza.com loads, but its navigation lists ONLY two locations — Willard and Marblehead (https://www.mybrunospizza.com/willard, /marblehead). There is NO Huron page, NO address, NO hours and NO menu anywhere on the site's home page; the home page is a hiring form. So the operator's own site does not cover this listing. Yelp's Bruno's Pizzeria, 414 Cleveland Rd E, Huron (https://www.yelp.com/biz/brunos-pizzeria-huron) is flagged CLOSED as of July 2025. No hours, description or menu recorded.",
+      "_duplicate_note": "Shares address 414 Cleveland Rd E and phone 419-433-1500 with huro-lst-0268 Wink's Pizza. Probable same storefront, different tenant/era — resolve at the source data, not here.",
+      "_sources_checked": [
+        "http://www.mybrunospizza.com",
+        "https://www.yelp.com/biz/brunos-pizzeria-huron"
+      ],
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0214"
+    },
+    "ovt-86020100-6824-4aea-b30a-fdfce0f3db53": {
+      "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/",
+      "_fetched": "2026-09-21",
+      "_blocked": "dairyqueen.com is behind Cloudflare and returned HTTP 403 to every read attempt (both the city locator page and the store page https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/12683/). NO HOURS COULD BE READ FROM THE OPERATOR. None are recorded. Directory sites quote 10:00–22:00 daily; that is UNVERIFIED and deliberately NOT recorded here.",
+      "_address_from_source": "428 Cleveland Rd E, Huron, OH 44839 — from the title of Dairy Queen's own store page as indexed: 'DQ Food and Treat in Huron, OH, 428 Cleveland Rd E | DairyQueen.com', store id 12683.",
+      "_store_id": "12683",
+      "_store_type_note": "Dairy Queen's OWN page titles this store 'DQ Food and Treat'. Aggregators (Yelp, Tripadvisor, Nextdoor) title the same 428 Cleveland Rd E store 'Dairy Queen Grill & Chill'. The store-type word in the listing name is therefore not reliable evidence of two stores.",
+      "_match_name": "Dairy Queen Grill & Chill",
+      "_confidence": "No operator-stated facts could be read (403). Address is from the indexed title of Dairy Queen's own store page.",
+      "_duplicate_note": "⚠️ DUPLICATE QUESTION — LIKELY THE SAME STORE. Dairy Queen's own locator surfaced exactly ONE Huron, OH store: 428 Cleveland Rd E, id 12683. Every aggregator found (Yelp, Tripadvisor, Nextdoor, Facebook page DQ12683, Apple Maps) points at that one address and phone (419) 433-2946. huro-lst-0139 'Dairy Queen Grill & Chill' and huro-lst-0042 'Dairy Queen' are therefore most likely ONE restaurant listed twice — the second name being the aggregator's styling of the same store. ⛔ NOT PROVEN: the DQ locator page itself returned 403, so I could not read its store count directly, and I could not compare the two listings' coordinates (they are in the product's own data, not on the web). An operator should compare the two listings' coordinates against 428 Cleveland Rd E before merging.",
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0139"
+    },
+    "ovt-32ca3887-62cc-4c00-90f5-45b989828617": {
+      "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/",
+      "_fetched": "2026-09-21",
+      "_blocked": "dairyqueen.com is behind Cloudflare and returned HTTP 403 to every read attempt (both the city locator page and the store page https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/12683/). NO HOURS COULD BE READ FROM THE OPERATOR. None are recorded. Directory sites quote 10:00–22:00 daily; that is UNVERIFIED and deliberately NOT recorded here.",
+      "_address_from_source": "428 Cleveland Rd E, Huron, OH 44839 — from the title of Dairy Queen's own store page as indexed: 'DQ Food and Treat in Huron, OH, 428 Cleveland Rd E | DairyQueen.com', store id 12683.",
+      "_store_id": "12683",
+      "_store_type_note": "Dairy Queen's OWN page titles this store 'DQ Food and Treat'. Aggregators (Yelp, Tripadvisor, Nextdoor) title the same 428 Cleveland Rd E store 'Dairy Queen Grill & Chill'. The store-type word in the listing name is therefore not reliable evidence of two stores.",
+      "_match_name": "Dairy Queen",
+      "_confidence": "No operator-stated facts could be read (403). Address is from the indexed title of Dairy Queen's own store page.",
+      "_duplicate_note": "⚠️ DUPLICATE QUESTION — LIKELY THE SAME STORE. Dairy Queen's own locator surfaced exactly ONE Huron, OH store: 428 Cleveland Rd E, id 12683. Every aggregator found (Yelp, Tripadvisor, Nextdoor, Facebook page DQ12683, Apple Maps) points at that one address and phone (419) 433-2946. huro-lst-0139 'Dairy Queen Grill & Chill' and huro-lst-0042 'Dairy Queen' are therefore most likely ONE restaurant listed twice — the second name being the aggregator's styling of the same store. ⛔ NOT PROVEN: the DQ locator page itself returned 403, so I could not read its store count directly, and I could not compare the two listings' coordinates (they are in the product's own data, not on the web). An operator should compare the two listings' coordinates against 428 Cleveland Rd E before merging.",
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0042"
+    },
+    "ovt-ec05a600-8bb3-4039-bc37-0720d83a3f59": {
+      "_match_name": "Berardi's Restaurant",
+      "_source": "https://berardisrestauranthuron.com/",
+      "_source_note": "The supplied URL http://www.berardisrestaurant.com/ 301-redirects to https://berardisrestauranthuron.com/ — the operator's live site. All facts below are from that site.",
+      "_fetched": "2026-09-21",
+      "_confidence": "ALL fields are verbatim or near-verbatim from the restaurant's OWN site. Hours are printed in the site footer on every page. Menu was parsed from the HTML text of /breakfast/ and /dinner-lunch/, not from a PDF or image — item names, descriptions and printed prices are transcribed, none inferred.",
+      "_address": "218 Cleveland Rd. East, Huron, Ohio 44839 — phone 419-433-4123",
+      "hours": {
+        "tuesday": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "07:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "07:00",
+          "close": "13:00"
+        }
+      },
+      "_hours_note": "Footer, verbatim: 'Monday: Closed / Tuesday - Saturday: 7:00am - 8:00pm / Sunday: 7:00am - 1:00pm (Serving Breakfast Only)'. Monday omitted per the schema. ⚠️ SUNDAY IS BREAKFAST ONLY — the open/close pair does not carry that restriction. ⚠️ A SECOND, NARROWER WINDOW EXISTS that these hours cannot express: the breakfast menu page states 'Breakfast hours are 7am-11am Tuesday through Saturday. 7am – 1pm on Sundays.' See dining-NOVEL.md §'Meal-period windows inside opening hours'.",
+      "description": "A family-owned Huron restaurant opened in 1979 by Albert and Roseanne Berardi and now in its fourth generation, serving scratch-made American, Italian and Lake Erie seafood dishes for breakfast, lunch and dinner.",
+      "_description_basis": "Condensed from the operator's own About text: 'Berardi's Restaurant in Huron was opened in 1979 by Albert and Roseanne Berardi and it is still family owned to this day… currently in the 4th generation… nearly everything we serve is made from scratch.' Menu content confirms the cuisine claim.",
+      "amenities": [
+        "Takeout",
+        "Online ordering",
+        "Catering",
+        "Gift cards",
+        "Beer and wine",
+        "Gluten-free bread available",
+        "Waitlist"
+      ],
+      "_amenities_basis": "Online ordering = the site's own order link https://order.toasttab.com/online/berardis-huron. Catering = /catering/ page in the nav. Gift cards = 'Purchase New Gift Card Here' / 'Check Gift Card Balance Here'. Beer and wine = 'Check out our new beer and wine list!' plus named beers on Today's Specials. Gluten-free bread = printed on the menu ('Gluten Free Bread is available for all sandwiches 1.00'). Waitlist = the site's Google waitlist link. ⛔ 'Takeout' is inferred ONLY from the presence of the Toast online-ordering link; if that is too weak, drop it.",
+      "_menu_source": [
+        "https://berardisrestauranthuron.com/breakfast/",
+        "https://berardisrestauranthuron.com/dinner-lunch/"
+      ],
+      "_menu_note": "Machine-readable HTML, transcribed in full below. Two further menus exist that were NOT transcribed: /catering/ and a Dessert menu linked in the footer. Items marked '(Market Price)' in the description carry no price key, correctly. Soups print two prices (cup/bowl, e.g. '4.50/8.00') which this schema's single `price` cannot hold, so the printed pair is left in the description and `price` is omitted.",
+      "menu": {
+        "sections": [
+          {
+            "name": "Breakfast — Classic Egg Breakfasts",
+            "items": [
+              {
+                "name": "Hearty Berardi Breakfast",
+                "price": 13.5,
+                "description": "Two eggs, breakfast meat, homefries and toast. Served with pancakes or French Toast"
+              },
+              {
+                "name": "Classic Breakfast",
+                "price": 10,
+                "description": "Two eggs, breakfast meat, homefries and toast"
+              },
+              {
+                "name": "Country Breakfast",
+                "price": 11,
+                "description": "Two eggs, with a hearty portion of sausage gravy and biscuits"
+              },
+              {
+                "name": "Steak and Eggs",
+                "price": 21,
+                "description": "8oz flat iron steak topped with rosemary garlic butter. Served with two eggs, homefries and toast"
+              },
+              {
+                "name": "Pot Roast Skillet",
+                "price": 12,
+                "description": "Layered homefries topped with cheddar cheese, pot roast, fresh scallions and over easy eggs. Served with toast"
+              },
+              {
+                "name": "Western Skillet Breakfast",
+                "price": 11.5,
+                "description": "Layered homefries topped with scrambled eggs, green peppers, onions, diced ham and cheddar cheese. Served with toast"
+              },
+              {
+                "name": "Homefry Heaven",
+                "price": 12.5,
+                "description": "Layered homefries with cheddar cheese and eggs topped with sausage gravy. Served with biscuits"
+              },
+              {
+                "name": "Sausage Gravy and Biscuits",
+                "price": 9.5,
+                "description": "Delicious homemade sausage gravy with biscuits"
+              },
+              {
+                "name": "Chipped Beef",
+                "price": 8,
+                "description": "Chipped beef served over Italian toast"
+              },
+              {
+                "name": "Green Eggs and Ham",
+                "price": 12,
+                "description": "Basil pesto scrambled eggs with asiago cheese. Served with a ham steak, homefries, and toast"
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Omelets",
+            "items": [
+              {
+                "name": "California Omelet",
+                "price": 13,
+                "description": "Bacon, onion, tomato and avocado with Monterey cheese"
+              },
+              {
+                "name": "Vegetable Omelet",
+                "price": 12,
+                "description": "Spinach, potatoes, mushrooms, onions, tomatoes and mozzarella cheese"
+              },
+              {
+                "name": "Denver Omelet",
+                "price": 12.5,
+                "description": "Diced ham, with green peppers, onions and topped with cheddar cheese"
+              },
+              {
+                "name": "Country Omelet",
+                "price": 12.5,
+                "description": "Ham, onion, mushroom and potato stuffed omelet served with American cheese"
+              },
+              {
+                "name": "Meat Lover’s Omelet",
+                "price": 13.5,
+                "description": "Bacon, sausage and ham stuffed omelet with American cheese"
+              },
+              {
+                "name": "Spinach & Feta Omelet",
+                "price": 12,
+                "description": "Spinach, tomato and feta"
+              },
+              {
+                "name": "Corned Beef Hash",
+                "price": 12.5,
+                "description": "Corned beef hash with American cheese"
+              }
+            ],
+            "_notes": [
+              "All of our omelets are served with homefries, substitute fruit for an additional .50. Included with your omelet is a choice of one of the following: Toast, Bran Muffin or Biscuits",
+              "We request modifications be limited on Sunday’s"
+            ]
+          },
+          {
+            "name": "Breakfast — Griddle Favorites",
+            "items": [
+              {
+                "name": "The Deuce",
+                "price": 9.5,
+                "description": "Two pancakes or French toast served with two eggs and two pieces of breakfast meat"
+              },
+              {
+                "name": "Griddle and Meat",
+                "price": 8,
+                "description": "A short stack of pancakes or French toast served with two pieces of breakfast meat"
+              },
+              {
+                "name": "Bananas Foster French Toast",
+                "price": 13,
+                "description": "Texas Toast topped with bourbon cinnamon & banana glaze. Served with choice of breakfast meat"
+              },
+              {
+                "name": "Pancakes",
+                "price": 8.5,
+                "description": "Delicious sweet cream pancakes served with warm syrup"
+              },
+              {
+                "name": "French Toast",
+                "price": 8.5,
+                "description": "Served with warm syrup"
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Lighter Plates",
+            "items": [
+              {
+                "name": "Oatmeal Breakfast",
+                "price": 9,
+                "description": "Organic steel cut oats with one topping: Blueberries, cranberries, raisins or pecans. Served with fresh fruit and a bran muffin"
+              },
+              {
+                "name": "Quinoa Breakfast",
+                "price": 12.5,
+                "description": "Two eggs served sunny side up over homemade quinoa patties with avocado, served with fresh fruit and toast"
+              },
+              {
+                "name": "Fresh Fruit, Yogurt and Muffin",
+                "price": 8.5
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Sandwiches",
+            "items": [
+              {
+                "name": "Breakfast Croissant",
+                "price": 12,
+                "description": "All butter croissant with two eggs over hard, and topped with bacon, American cheese, lettuce, tomato and mayonnaise"
+              },
+              {
+                "name": "Bagel Scramble",
+                "price": 10,
+                "description": "Toasted bagel topped with scrambled eggs, American cheese and sausage patties"
+              },
+              {
+                "name": "Breakfast Burrito",
+                "price": 10.5,
+                "description": "A warm burrito filled with scrambled eggs, peppers, onions, tomatoes, ham, potatoes, and cheddar cheese. Served with a side of salsa"
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Kid's Menu",
+            "items": [
+              {
+                "name": "Kids Pancakes or French Toast",
+                "price": 7,
+                "description": "Two small pancakes or French toast with two pieces of breakfast meat and a beverage"
+              },
+              {
+                "name": "Classic Kids Breakfast",
+                "price": 7,
+                "description": "Two eggs scrambled with two pieces of breakfast meat, toast and a beverage"
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Sides",
+            "items": [
+              {
+                "name": "Breakfast Meat",
+                "price": 4,
+                "description": "Hickory smoked bacon, sausage links, sausage patties, Canadian bacon, hickory smoked ham, corned beef hash"
+              },
+              {
+                "name": "Toast options",
+                "price": 1,
+                "description": "White, wheat, rye, sourdough, health, biscuits, bran muffin, English muffin 2.00, gluten free bread +"
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Warm Drinks",
+            "items": [
+              {
+                "name": "Locally Roasted House Coffee",
+                "price": 3.25
+              },
+              {
+                "name": "Hot Tea",
+                "price": 2.5
+              },
+              {
+                "name": "Hot Cider",
+                "price": 3
+              },
+              {
+                "name": "Hot Chocolate",
+                "price": 2.5
+              }
+            ]
+          },
+          {
+            "name": "Breakfast — Cold Drinks",
+            "items": [
+              {
+                "name": "White Milk",
+                "price": 2.5
+              },
+              {
+                "name": "Chocolate Milk",
+                "price": 2.5
+              },
+              {
+                "name": "Orange Juice",
+                "price": 2.5
+              },
+              {
+                "name": "Apple Juice",
+                "price": 2.5
+              },
+              {
+                "name": "Tomato Juice",
+                "price": 2.5
+              },
+              {
+                "name": "Mimosa",
+                "price": 9,
+                "description": "Delicious orange juice and champagne for breakfast"
+              }
+            ]
+          },
+          {
+            "name": "Appetizers",
+            "items": [
+              {
+                "name": "Berardi’s French Fry Platter",
+                "price": 12,
+                "description": "Made famous since 1942. A shareable portion of our thick hand cut fries made fresh to order"
+              },
+              {
+                "name": "Berardi’s Sampler",
+                "price": 15,
+                "description": "A variety of Berardi favorites including, Berardi’s Famous Fries, hand breaded sauerkraut balls, cheese sticks and onion rings"
+              },
+              {
+                "name": "Italian Meatballs",
+                "price": 10,
+                "description": "Pork meatballs served in our homemade Bolognese sauce"
+              },
+              {
+                "name": "Onion Rings",
+                "price": 10,
+                "description": "Crispy onion rings served with bistro sauce"
+              },
+              {
+                "name": "Sauerkraut Balls",
+                "price": 11,
+                "description": "Our famous sauerkraut balls stuffed with cream cheese, sauerkraut and sausage. Served with bistro sauce"
+              },
+              {
+                "name": "Cheese Sticks",
+                "price": 8.5,
+                "description": "served with marinara sauce"
+              }
+            ]
+          },
+          {
+            "name": "Soups",
+            "items": [
+              {
+                "name": "Potato Knoephle",
+                "description": "Potatoes, homemade dumplings and onions in chicken broth 4.50/8.00"
+              },
+              {
+                "name": "Seafood Bisque",
+                "description": "Our signature creamy seafood bisque is prepared fresh in house with clams, shrimp and lobster 5.00/10.00"
+              },
+              {
+                "name": "Daily Soup",
+                "description": "Ask your server about today’s soup special 4.50/8.00"
+              }
+            ]
+          },
+          {
+            "name": "Salads",
+            "items": [
+              {
+                "name": "Fruit and Nut Salad",
+                "price": 15,
+                "description": "Mixed greens, candied almonds, feta cheese, apples, berries and zinfandel vinaigrette dressing. Served with a bran muffin"
+              },
+              {
+                "name": "Chicken Caesar",
+                "price": 15,
+                "description": "Chopped romaine tossed with caesar dressing. Topped with shredded asiago, fresh cracked pepper, grilled chicken, and croutons. Served with garlic bread"
+              },
+              {
+                "name": "Greek",
+                "price": 13.5,
+                "description": "Romaine lettuce topped with feta cheese, kalamata olives, pepperoncinis, cucumbers, tomatoes, onions and Greek dressing. Served with grilled pita"
+              },
+              {
+                "name": "Chicken or Tuna Salad Fruit Plate",
+                "price": 11,
+                "description": "Homemade chicken or tuna salad, served with fresh fruit, cottage cheese and a bran muffin"
+              },
+              {
+                "name": "Spinach",
+                "price": 14,
+                "description": "Spinach, bacon, mozzarella cheese, mushroom, egg, tomatoes, red onions, croutons, sweet and sour dressing. Served with bran muffin"
+              },
+              {
+                "name": "Napa",
+                "price": 14,
+                "description": "Mixed greens, bacon, avocado, tomato, cucumber, red onions, cheddar cheese, egg and ranch dressing. Served with a bran muffin"
+              }
+            ]
+          },
+          {
+            "name": "Pair It Up",
+            "items": [],
+            "_notes": [
+              "Pick any two $10.00, Pick any three $15.00",
+              "No Duplicate items",
+              "Sandwiches: Chicken Salad Croissant, Tuna Salad Croissant, ½ Reuben, ½ Tuna melt, ½ Ultimate BLT, ½ BLT",
+              "Salads: Spinach Salad, Caesar Salad, Greek Salad, Tossed Salad",
+              "Sides: Berardi’s Fries, Onion Rings, Cup of Soup, Fresh Fruit, Vegetable Choice"
+            ]
+          },
+          {
+            "name": "Sides",
+            "items": [
+              {
+                "name": "Berardis Famous French Fries",
+                "price": 6.5
+              },
+              {
+                "name": "Twice Baked Potato"
+              },
+              {
+                "name": "Baked Potato (After 4pm)"
+              },
+              {
+                "name": "Garlic Mashed Potatoes"
+              },
+              {
+                "name": "Mashed Potatoes"
+              },
+              {
+                "name": "Rice Pilaf"
+              },
+              {
+                "name": "Onion Rings"
+              },
+              {
+                "name": "Tossed Salad"
+              },
+              {
+                "name": "Broccoli"
+              }
+            ]
+          },
+          {
+            "name": "Italian Entrees",
+            "items": [
+              {
+                "name": "Mama Berardi’s Baked Lasagna",
+                "price": 18,
+                "description": "Mama Berardi’s famous lasagna recipe. Filled with layers of cheese and marinara. Topped with bolognese sauce"
+              },
+              {
+                "name": "Spaghetti and Meatballs",
+                "price": 13.5,
+                "description": "Bolognese sauce served over spaghetti with meatballs and asiago cheese"
+              },
+              {
+                "name": "Chicken Toscana",
+                "price": 17,
+                "description": "Local all natural grilled chicken topped with sauteed spinach, mushrooms, bruschetta and alfredo sauce. Served with garlic mashed potatoes"
+              },
+              {
+                "name": "Chicken Parmesan",
+                "price": 18,
+                "description": "Local all natural chicken breaded to order and topped with mozzarella cheese and bolognese sauce"
+              },
+              {
+                "name": "Chicken Bruschetta Alfredo",
+                "price": 18,
+                "description": "Fettucine alfredo tossed with fresh bruschetta and topped with local all natural grilled chicken. Finished with balsamic reduction"
+              },
+              {
+                "name": "Eggplant Parmesan",
+                "price": 15,
+                "description": "Hand breaded eggplant topped with mozzarella cheese and homemade marinara sauce"
+              },
+              {
+                "name": "Chicken Picatta",
+                "price": 17.5,
+                "description": "Local all natural grilled chicken dredged in Italian seasonings and placed over garlic lemon pasta. Topped with capers, lemon wine sauce, and asiago cheese"
+              }
+            ]
+          },
+          {
+            "name": "Seafood",
+            "items": [
+              {
+                "name": "Perch Dinner",
+                "description": "Hand breaded daily, our Lake Erie Yellow Perch is served with fries and coleslaw (Market Price)"
+              },
+              {
+                "name": "Lake Erie Walleye",
+                "price": 22,
+                "description": "Crispy Lake Erie walleye served with fries and coleslaw"
+              },
+              {
+                "name": "Salmon",
+                "price": 1,
+                "description": "Grilled wild caught Alaskan Coho salmon served over orzo rice with choice of vegetable 18.00 + Asian Glaze $"
+              },
+              {
+                "name": "Cold Water Haddock - Traditional",
+                "price": 16.5,
+                "description": "Lightly breaded and either grilled or fried. Served with fries and coleslaw"
+              },
+              {
+                "name": "Cold Water Haddock - Lemon Wine",
+                "price": 18,
+                "description": "Grilled haddock topped with lemon wine sauce and capers. Served over rice with green beans"
+              }
+            ]
+          },
+          {
+            "name": "Classic Entrees",
+            "items": [
+              {
+                "name": "Roasted Beef and Gravy Sandwich",
+                "price": 14,
+                "description": "Tender house roasted beef with mashed potatoes and gravy. Served with mashed potatoes and green beans"
+              },
+              {
+                "name": "Garlic Herb Chicken Breast",
+                "price": 14,
+                "description": "Local all natural grilled chicken finished with rosemary garlic butter served over rice with broccoli"
+              },
+              {
+                "name": "Pierogies",
+                "price": 13.5,
+                "description": "Potato and cheddar stuffed pierogies. Topped with sauteed onions and kielbasa. Served with sour cream and homemade applesauce"
+              },
+              {
+                "name": "Chicken Tenders",
+                "price": 14,
+                "description": "Local all natural chicken breaded to order and served with fries and coleslaw"
+              },
+              {
+                "name": "Cabbage and Noodles",
+                "price": 13,
+                "description": "Tender cabbage with garlic, onion, and noodles. Served with sour cream and homemade applesauce"
+              },
+              {
+                "name": "Liver and Onions",
+                "price": 13.5,
+                "description": "Beef liver topped sauteed onions and beef gravy. Served with mashed potatoes and green beans"
+              },
+              {
+                "name": "8oz Center Prime Sirloin",
+                "price": 21,
+                "description": "Tender half pound prime sirloin steak finished with rosemary garlic butter. Served with garlic mashed potatoes and broccoli"
+              },
+              {
+                "name": "Bone-in Pork Chop",
+                "price": 18,
+                "description": "10oz grilled bone-in pork chop with rosemary garlic butter. Served with twice baked potato and green beans"
+              },
+              {
+                "name": "Chopped Sirloin",
+                "price": 16.5,
+                "description": "8 oz. chopped sirloin topped with grilled mushrooms and onions. Served with twice baked potato and broccoli"
+              },
+              {
+                "name": "Beef Tenderloin Tips",
+                "price": 20,
+                "description": "Filet tips sauteed with mushrooms, onions, and garlic. Served with garlic mashed potatoes and broccoli"
+              },
+              {
+                "name": "Meatloaf Dinner",
+                "price": 13.5,
+                "description": "Homemade grilled meatloaf served with mashed potatoes and green beans"
+              },
+              {
+                "name": "Pot Roast Stacker",
+                "price": 14.5,
+                "description": "Mashed potatoes layered with carrots, sauteed onions, house roasted beef, gravy, and scallions. Served with salad"
+              }
+            ]
+          },
+          {
+            "name": "Burgers",
+            "items": [
+              {
+                "name": "Berardi Burger",
+                "price": 14.5,
+                "description": "Served with grilled onions, mushrooms and mozzarella cheese. Topped with lettuce and tomato"
+              },
+              {
+                "name": "Cheeseburger",
+                "price": 12.5,
+                "description": "Topped with American cheese, lettuce, tomato and onion"
+              },
+              {
+                "name": "Patty Melt",
+                "price": 13.5,
+                "description": "Served on grilled rye bread with Swiss cheese and caramelized onions"
+              },
+              {
+                "name": "Hickory Burger",
+                "price": 14,
+                "description": "Topped with cheddar cheese, bacon, crispy onion ring. Served with lettuce, tomato and BBQ sauce"
+              },
+              {
+                "name": "Black Bean Veggie Burger",
+                "price": 13.5,
+                "description": "Southwest black bean patty topped with monterey cheese, lettuce, tomato, onion, and avocado"
+              },
+              {
+                "name": "Double Cheeseburger",
+                "price": 16,
+                "description": "Two quarter pound hand packed patties topped with lettuce, tomato and onion"
+              }
+            ],
+            "_notes": [
+              "All Sandwiches are served with Berardi’s Famous Fries or coleslaw.",
+              "Burger Add-ons: Fried Egg 1.50 Bacon 2.00 Avocado 3.00",
+              "Gluten Free Bread is available for all sandwiches 1.00"
+            ]
+          },
+          {
+            "name": "Sandwiches",
+            "items": [
+              {
+                "name": "Chicken BLT",
+                "price": 14.5,
+                "description": "Local all natural chicken breast topped with bacon, mozzarella cheese, lettuce, tomato and mayo on a grilled bun"
+              },
+              {
+                "name": "Philly cheesesteak",
+                "price": 16,
+                "description": "Tender beef with grilled mushrooms, onions and white American cheese on a toasted bun"
+              },
+              {
+                "name": "Ultimate BLT",
+                "price": 14,
+                "description": "Hickory bacon topped with American and mozzarella cheese on a grilled butter croissant with lettuce, tomato and mayo"
+              },
+              {
+                "name": "Cold Water Haddock",
+                "price": 13,
+                "description": "Fried cold water haddock served with lettuce, lemon, and tartar sauce on a grilled hoagie bun"
+              },
+              {
+                "name": "Perch Sandwich",
+                "description": "Lake Erie Yellow Perch, hand breaded daily served with lettuce, lemon, and tartar sauce on a grilled hoagie bun (Market Price)"
+              },
+              {
+                "name": "Tuna Melt",
+                "price": 12.5,
+                "description": "Grilled sourdough bread topped with cheddar cheese, bacon, tomato and homemade tuna salad"
+              },
+              {
+                "name": "Corned Beef Reuben",
+                "price": 15,
+                "description": "House roasted all natural corned beef on grilled rye bread with sauerkraut and Swiss cheese. Served with thousand island dressing"
+              },
+              {
+                "name": "Chicken or Tuna Salad Croissant",
+                "price": 12.5,
+                "description": "Homemade chicken or tuna salad. Served on a grilled butter croissant with lettuce and mayo"
+              },
+              {
+                "name": "Italian Grilled Cheese",
+                "price": 10,
+                "description": "Grilled sourdough bread topped with mozzarella cheese, grilled tomatoes, and oregano. Served with a side of marinara"
+              }
+            ],
+            "_notes": [
+              "All Sandwiches are served with one of the following; Berardi’s fries, chips, coleslaw or homemade applesauce",
+              "Gluten Free Bread is available for all sandwiches 1.00"
+            ]
+          }
+        ]
+      },
+      "_specials_note": "The home page carries a dated daily-specials block ('Today's Specials — September 19th, 2026') with soup, lunch, dinner, dessert, beer and wine lines and their own prices. It is dated, perishable and NOT part of the standing menu, so it is not recorded as menu data. See dining-NOVEL.md §'Dated daily specials'.",
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0252"
+    },
+    "ovt-ddd944bf-b685-43b8-9548-15ba0a46c2a6": {
+      "_match_name": "Marconi's Italian Restaurant - Huron, OH",
+      "_source": "https://www.italianhuronohio.com/",
+      "_fetched": "2026-09-21",
+      "_confidence": "Hours, address and the dinner-specials prices are printed as HTML text on the restaurant's OWN home page and are transcribed verbatim. ⚠️ The specials block is labelled 'Dinner Specials' and is rotating content, not the standing menu — prices may change without the page being re-dated (the page carries no date at all).",
+      "_address": "424 Berlin Road, Huron, Ohio 44839 — phone 419-433-4341, info@marconisrestaurant.com",
+      "hours": {
+        "monday": {
+          "open": "16:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "16:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "16:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "16:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "16:00",
+          "close": "21:00"
+        },
+        "saturday": {
+          "open": "16:00",
+          "close": "21:00"
+        },
+        "sunday": {
+          "open": "16:00",
+          "close": "20:00"
+        }
+      },
+      "_hours_note": "Footer, verbatim: 'Monday - Thursday: 4:00 PM - 8:00 PM / Friday - Saturday: 4:00 PM - 9:00 PM / Sunday: 4:00 PM - 8: 00 PM'. Open seven days; dinner service only.",
+      "description": "A Huron restaurant serving Sicilian and Italian cuisine, open for dinner only, with a banquet hall and catering.",
+      "_description_basis": "Site title 'Home | Marconis Italian Restaurant | Sicilian Cuisine'; the nav carries Banquet Hall and Catering Menu pages; hours start at 4:00 PM.",
+      "amenities": [
+        "Banquet hall",
+        "Catering",
+        "Wine list",
+        "Call to order"
+      ],
+      "_amenities_basis": "Banquet hall = https://www.italianhuronohio.com/banquethall in the nav. Catering = Catering Menu PDF in the nav. Wine list = Wine List PDF in the nav. 'Call to Order' is a button on the home page.",
+      "menu": {
+        "sections": [
+          {
+            "name": "Dinner Specials — Appetizer",
+            "items": [
+              {
+                "name": "Fried Portobellas",
+                "price": 12,
+                "description": "finished with parmesan. side of marinara."
+              },
+              {
+                "name": "Shrimp Diablo",
+                "price": 11,
+                "description": "seared shrimp in a spicy tomato basil sauce. grilled italian bread."
+              }
+            ]
+          },
+          {
+            "name": "Dinner Specials — Entrees",
+            "items": [
+              {
+                "name": "Salmon Caponata",
+                "price": 35,
+                "description": "blackened wester ross salmon. sweet & sour caponata sauce. grilled bread. choice side."
+              },
+              {
+                "name": "Pork Milanese",
+                "price": 28,
+                "description": "romano breaded bone-in pork chop baked with roasted red peppers, fresh basil, prosciutto, and italian cheeses. choice side."
+              },
+              {
+                "name": "Red Pepper Pesto",
+                "price": 20,
+                "description": "our signature creamy roasted red pepper and basil pesto w/ farfalle. (add-ons available)"
+              }
+            ]
+          }
+        ]
+      },
+      "_menu_note": "⛔ THE STANDING MENU IS NOT MACHINE-READABLE — it is published only as PDFs. Recorded here as locations, NOT transcribed: Dinner Menu (also linked as 'Our Menu') https://www.italianhuronohio.com/_files/ugd/b90d50_87dee955c6314d9db842a2d5787b44db.pdf · Wine List https://www.italianhuronohio.com/_files/ugd/3c960d_dffca0b120344531880ce37529302a8a.pdf · Family Menu https://www.italianhuronohio.com/_files/ugd/3c960d_9b50e102872f4be0a028519c6069d790.pdf · Special Events Menu https://www.italianhuronohio.com/_files/ugd/3c960d_ae6a0013c9014ecd97854aade1ea150a.pdf · Catering Menu https://www.italianhuronohio.com/_files/ugd/3c960d_b5499cd95f4744f7971c0d8a62e3ee54.pdf. The `menu` object above contains ONLY the five rotating dinner specials that are published as HTML on the home page.",
+      "_nav_note": "The site nav has a 'Weekly Specials' entry, implying a weekly cadence for the specials block above.",
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0239"
+    },
+    "ovt-bc4f3400-6683-40ef-ad56-b156a55f10bc": {
+      "_match_name": "Sand Bar",
+      "_source": "http://www.thesandbar.com",
+      "_fetched": "2026-09-21",
+      "_wrong_domain": "⛔ THE SUPPLIED URL IS THE WRONG BUSINESS. thesandbar.com is 'The Sandbar', a tropical-drinks bar at 17 East 8th Street, Lawrence, KANSAS 66044, phone 785.842.0111 ('Voted Best Bar… in the Best of Lawrence contest'). It has no connection to Huron, Ohio. NOTHING was taken from it. The URL on this listing should be removed or replaced.",
+      "_notfound": "No website operated by the Huron, Ohio Sand Bar was found. The business itself is real: Sand Bar, 54 McKinley St, Huron, OH 44839, phone (419) 433-2144, appearing on Yelp (https://www.yelp.com/biz/sand-bar-huron), Tripadvisor, Visit Huron Ohio (https://www.visithuronohio.com/food-and-drink) and a NetWaiter-hosted page (https://sandbar.netwaiter.com/). It posts its hours on Facebook rather than a site.",
+      "_hours_conflict": "⛔ HOURS DELIBERATELY OMITTED. Two third-party sources DISAGREE: sandbar.netwaiter.com says Sun 12:00pm–10:00pm, Mon–Sat 11:00am–10:00pm; search-surfaced directory data says Mon–Thu 11:00am–11:00pm, Fri–Sat 11:00am–12:00am, Sun 12:00pm–11:00pm. With no operator source to break the tie and an open/closed indicator downstream, recording either would be a guess.",
+      "_description_candidate": "Described by third parties as a pizza and pub-food bar. NOT recorded as `description` because no operator-written text was found.",
+      "_sources_checked": [
+        "http://www.thesandbar.com (wrong business — Lawrence, KS)",
+        "https://sandbar.netwaiter.com/",
+        "https://www.yelp.com/biz/sand-bar-huron",
+        "https://www.visithuronohio.com/food-and-drink"
+      ],
+      "_beat": "dining",
+      "_display_id_at_research": "huro-lst-0198"
+    },
+    "ovt-97789695-0854-4500-aa6c-ad6e37ab819e": {
+      "_match_name": "Rippin Lips Lake Erie Charters",
+      "_source": "https://tatteredwingswaterandfowl.com/lake-erie-walleye-fishing/ · https://tatteredwingswaterandfowl.com/contact-us/ · https://tatteredwingswaterandfowl.com/guest-info-2/",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH — stated on the operator's own site. ⭐ THE SUSPECTED URL IS CORRECT, NOT WRONG: the waterfowl domain is the right domain. The Contact page is headed verbatim 'Tattered Wings Waterfowl | Rippin Lips Lake Erie Charters', and Guest Info says 'RIppin Lips Lake Erie Charters offers ample opportunity...'. One operator (Capt. Aric Rothlisberger) runs a waterfowl-guide business and the charter under one site. Do not flag this URL as bad.",
+      "_seasonal": "NOT STATED. The site names no months, no open/close dates and no season for the charter. It does sell duck hunts ('this fall') and a spring Arkansas snow-goose season, but those are the OTHER business line on the same site and say nothing about walleye charter availability. Field deliberately left as a null finding rather than guessed.",
+      "_no_hours_reason": "This business has no opening hours and cannot have them. Trips are by reservation only, and the site states: 'Meeting location and time will be determined closer to reservation date.' A weekday open/close grid is the wrong shape for it — see NOVEL #3.",
+      "_trip_structure": "'7 hour fishing trips are dock to dock' · '$650 For Up to 4 People' · '50% non-refundable deposit required at time of booking' · remaining balance due 2 days prior · full refund on cancellation 30+ days prior.",
+      "_weather_dependency": "'Cancellations due to inclement weather will be solely at the discretion of the Captain... The Captain's decision to cancel will be made the morning of the charter.' See NOVEL #4.",
+      "description": "A guided Lake Erie walleye and perch fishing charter run by Captain Aric Rothlisberger, operating alongside the same owner's Tattered Wings waterfowl guide service. Trips troll, jig or cast for walleye and perch in Ohio's western basin.",
+      "amenities": [
+        "Fishing gear provided",
+        "Guided charter",
+        "Coolers permitted (no glass)"
+      ],
+      "phone": "(419) 835-4215",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0157"
+    },
+    "ovt-6c36398c-f642-4e35-adb8-c71b5ba8a557": {
+      "_match_name": "Holiday Harbor Marina",
+      "_source": "https://www.huronlagoons.com/holiday-harbor/ · https://www.huronlagoons.com/holiday-harbor/contact/",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH — stated on the marina's own site. ⛔ BUT SEE `_hours_caveat`: the `hours` block below is ONE OF FOUR month-banded schedules and is only correct for part of the year.",
+      "_seasonal": "The store runs FOUR different weekly schedules across the year, quoted verbatim from the Contact page: (a) 'Store Hours In Season May - October / 7 days a week 8:00 am to 5:00 PM / Closed Easter Sunday.' (b) 'November - March / Monday - Friday 8:00 AM to 5:00 PM / Closed Thanksgiving Day & Friday. Closed over the Holidays at end of year. December 20th-January 5th' (c) 'April / Monday - Saturday 8:00 am to 5:00 PM / Sunday 9:00 AM to 4:00 PM'. Separately, the marina page states 'Memorial Day to Labor Day pool hours: 9 AM to sunset' — a holiday-anchored range closing at a SOLAR event, not a clock time.",
+      "_hours_caveat": "⛔ The `hours` below are the MAY–OCTOBER in-season band only, chosen because the fetch date (2026-09-22) falls inside it. They are WRONG for November–April. Our model cannot express the other three bands. Do not treat this as the annual schedule. See NOVEL #1.",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "17:00"
+        }
+      },
+      "description": "A family-owned full-service marina on the Huron River about one mile from Lake Erie, offering seasonal dockage, boat service and winter storage. It is the sister facility to Huron Lagoons Marina and holds Gold status in the Ohio Clean Marina Program.",
+      "amenities": [
+        "Drive-up docks",
+        "Jet ski docks",
+        "Fixed and floating docks",
+        "Dockside parking",
+        "Heated pool",
+        "Free Wi-Fi",
+        "Ships store",
+        "Boat service and repair (boats up to 20 tons)",
+        "Winter boat storage",
+        "Shrink wrapping",
+        "Ohio Clean Marina - Gold"
+      ],
+      "phone": "(419) 433-2140",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0095"
+    },
+    "ovt-626f8f69-34cb-42c2-925c-4c61778541f8": {
+      "_match_name": "Holiday Harbor Marina",
+      "_source": "https://www.huronlagoons.com/holiday-harbor/ · https://www.huronlagoons.com/holiday-harbor/contact/",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH — stated on the marina's own site. ⛔ BUT SEE `_hours_caveat`: the `hours` block below is ONE OF FOUR month-banded schedules and is only correct for part of the year.",
+      "_seasonal": "The store runs FOUR different weekly schedules across the year, quoted verbatim from the Contact page: (a) 'Store Hours In Season May - October / 7 days a week 8:00 am to 5:00 PM / Closed Easter Sunday.' (b) 'November - March / Monday - Friday 8:00 AM to 5:00 PM / Closed Thanksgiving Day & Friday. Closed over the Holidays at end of year. December 20th-January 5th' (c) 'April / Monday - Saturday 8:00 am to 5:00 PM / Sunday 9:00 AM to 4:00 PM'. Separately, the marina page states 'Memorial Day to Labor Day pool hours: 9 AM to sunset' — a holiday-anchored range closing at a SOLAR event, not a clock time.",
+      "_hours_caveat": "⛔ The `hours` below are the MAY–OCTOBER in-season band only, chosen because the fetch date (2026-09-22) falls inside it. They are WRONG for November–April. Our model cannot express the other three bands. Do not treat this as the annual schedule. See NOVEL #1.",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "sunday": {
+          "open": "08:00",
+          "close": "17:00"
+        }
+      },
+      "description": "A family-owned full-service marina on the Huron River about one mile from Lake Erie, offering seasonal dockage, boat service and winter storage. It is the sister facility to Huron Lagoons Marina and holds Gold status in the Ohio Clean Marina Program.",
+      "amenities": [
+        "Drive-up docks",
+        "Jet ski docks",
+        "Fixed and floating docks",
+        "Dockside parking",
+        "Heated pool",
+        "Free Wi-Fi",
+        "Ships store",
+        "Boat service and repair (boats up to 20 tons)",
+        "Winter boat storage",
+        "Shrink wrapping",
+        "Ohio Clean Marina - Gold"
+      ],
+      "phone": "(419) 433-2140",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0095"
+    },
+    "ovt-e4759e09-ee50-4c1f-903a-c84e316910b2": {
+      "_match_name": "North Coast Boating",
+      "_source": "http://www.northcoastboating.com/ · http://www.northcoastboating.com/index_files/Page441.htm (Contact Us)",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH for identity and phone — the operator's own site. ⚠️ The site is stale: it carries '© 2014 North Coast Boating' and no content appears to have been updated since. Facts here may be twelve years old; treat the phone number as needing a callback to confirm.",
+      "_url_note": "The URL in our data is GOOD but fragile. https:// fails TLS ('unable to verify the first certificate') and http:// returns 403 Forbidden to some user-agents while returning 200 to others. An automated link-checker will likely mark this listing dead when it is not. Worth a separate flag from a genuinely bad URL.",
+      "_identity_correction": "⛔ A third-party aggregator (slipstreamboating.com) describes North Coast Boating as a 'boat club' offering 'exclusive memberships and access to luxury boats'. The operator's own site says nothing of the kind — it is a boating INSTRUCTION business and vessel delivery service. The aggregator description is wrong and must not be used.",
+      "_seasonal": "NOT STATED. No season, months or dates anywhere on the site.",
+      "_no_hours_reason": "No hours published anywhere on the site. Instruction is scheduled per student: 'we'll work with you at your schedule'.",
+      "_address": "100 Laguna Drive C-32, Huron, Ohio — i.e. a suite inside the Huron Lagoons Marina property (100 Laguna Dr). Two of our listings therefore share one street address.",
+      "description": "A boating instruction business staffed by Coast Guard-licensed instructors, offering free beginner seminars, on-the-water handling training, and advanced navigation and licensing courses. It also provides vessel delivery services across the Great Lakes, Eastern Canada and the East Coast.",
+      "amenities": [
+        "Free beginner boating seminars",
+        "On-the-water training",
+        "Coast Guard-licensed instructors",
+        "Group instruction",
+        "Vessel delivery service"
+      ],
+      "phone": "(216) 272-3964",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0243"
+    },
+    "ovt-6a43fa32-ceab-4b57-9293-95da77be007e": {
+      "_match_name": "Huron Lagoons Marina",
+      "_source": "https://www.huronlagoons.com/ · https://www.huronlagoons.com/contact/ · https://www.huronlagoons.com/amenities/",
+      "_fetched": "2026-09-22",
+      "_confidence": "HIGH — stated on the marina's own site. ⛔ BUT SEE `_hours_caveat`: the `hours` block is one of SIX month-banded schedules.",
+      "_seasonal": "The office runs SIX different weekly schedules across the year, quoted verbatim from the Contact page: 'January, February & March / Monday–Friday: 8 AM to 5 PM' · 'April & May / Monday–Saturday: 8 AM to 5 PM / Sunday: 10 AM to 3 PM' · 'June-August / Monday–Thursday: 8:00 AM to 5 PM / Friday–Saturday: 8:00 AM to 6 PM / Sunday: 10 AM to 3 PM' · 'September & October / Monday - Saturday 8:00 AM to 5:00 PM / Sunday 10:00 AM to 3:00 PM' · 'November / Monday–Friday: 8 AM to 5 PM / Closed Thanksgiving Day and Black Friday' · 'December / Monday–Friday: 8 AM to 5 PM / Closed between holidays. December 19th at noon-January 5th.' Note the December entry closes at NOON on a specific date — a mid-day closure on a named calendar date.",
+      "_hours_caveat": "⛔ The `hours` below are the SEPTEMBER & OCTOBER band only, chosen because the fetch date (2026-09-22) falls inside it. They are wrong for the other ten months. Our model cannot express the other five bands. See NOVEL #1.",
+      "_onsite_restaurant_hours": "The on-site Viking's Den restaurant keeps its OWN schedule, distinct from the marina's: 'Summer Seasonal Hours: Tuesday - Thursday 11 am to 8 pm / Friday 11 am to 10 pm / Saturday 8 am to 10 pm / Sunday 8 am to 8 pm / Closed Mondays except holidays'. Phone (419) 433-7649. Not merged into `hours` — a venue-inside-a-venue with its own hours is NOVEL #6.",
+      "hours": {
+        "monday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "tuesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "08:00",
+          "close": "17:00"
+        },
+        "sunday": {
+          "open": "10:00",
+          "close": "15:00"
+        }
+      },
+      "description": "Huron's largest full-service marina, family-owned for over 60 years and located on the Huron River in Erie County about one mile inland from Lake Erie. It offers yearly and guest dockage, boat sales and service, winter storage, a ships store with a fuel dock, and a waterfront restaurant.",
+      "amenities": [
+        "Guest docking",
+        "Yearly dockage",
+        "Fuel dock",
+        "Pump-out facilities",
+        "Launching ramp",
+        "Live bait",
+        "Ships store",
+        "50-amp and 30-amp shore power",
+        "Handicap accessibility",
+        "Heated swimming pool",
+        "Pool house with restrooms and showers",
+        "Playground",
+        "Basketball court",
+        "Picnic area",
+        "Free Wi-Fi",
+        "Viking's Den waterfront restaurant",
+        "Free docking while dining",
+        "Boat sales",
+        "Boat service and repair",
+        "Indoor and outdoor winter boat storage"
+      ],
+      "phone": "(419) 433-3200",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0102"
+    },
+    "ovt-d22f1305-ffaf-46ec-87f7-9e2d9ca8138d": {
+      "_match_name": "Two Rivers Waterfront Homes in Huron",
+      "_source": "http://www.joanneberardi/ (the URL in our data)",
+      "_fetched": "2026-09-22",
+      "_notfound": "⛔ THE URL IN OUR DATA IS GENUINELY BAD AND CANNOT BE REPAIRED SAFELY. 'www.joanneberardi' has no TLD; DNS returns NXDOMAIN and curl returns 000. There is nothing to fetch. ⛔ I did NOT adopt a guessed repair. A live site https://www.joanneberardi.com/ does exist, but it is the site of Joanne Berardi, a Sandusky-area REALTOR selling homes — it is not self-evidently the web presence of a lodging business called 'Two Rivers Waterfront Homes', and adopting it would mean asserting an identity the sources do not establish. Search also surfaces two OTHER distinct 'Two Rivers' entities in Huron — tworiversestates.com (a for-sale new-build condo development, not lodging) and a 'Two Rivers Waterfront Homes in Huron' Facebook page — so the listing name is ambiguous between at least three candidates. RECOMMENDED ACTION: flag the listing for human identity resolution; do not auto-repair the URL. No hours, description or amenities recorded, because none could be attributed to this listing with confidence.",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0220"
+    },
+    "ovt-cc70c91d-6280-43ad-8dc3-e03562707a18": {
+      "_match_name": "Voegirl's Vacation Rentals #2",
+      "_source": "https://www.vrbo.com/1217028",
+      "_fetched": "2026-09-22",
+      "_notfound": "NOT VERIFIED — could not retrieve. VRBO returned HTTP 429 (Too Many Requests) on every attempt, via both the fetch tool and direct request. Nothing was read, so nothing is recorded. ⚠️ Separately, a web search for 'Voegirl' + Huron Ohio returns no matching property under that name on any platform, so even the listing NAME is unconfirmed — 'Voegirl's Vacation Rentals #2' reads like an internal or owner-side label rather than a public business name. ⛔ Aggregator caveat applies regardless: this listing's only cited source is VRBO, a third-party rental platform, not the operator's own site. A VRBO listing can be delisted, retitled or reassigned to a different owner without the URL changing, so anything scraped from it is a weaker fact than a business's own page.",
+      "_recommended_action": "Retry later with backoff. If it resolves, still mark any resulting facts as aggregator-sourced.",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0213"
+    },
+    "ovt-3ce893bc-0acf-4fec-b2f8-9af7656cd2e4": {
+      "_match_name": "Old Homestead One Beach House Rental",
+      "_source": "https://www.vrbo.com/2736245?unitId=3307095",
+      "_fetched": "2026-09-22",
+      "_notfound": "⛔ IDENTITY MISMATCH — page retrieved, but it does not confirm this listing. The VRBO page loads, but the string 'Old Homestead' appears NOWHERE on it. The listing is titled 'Have it all: Cedar Point, Lake Erie Private Association Beach + Fishing', an entire home in Huron, OH. Because the name does not match, I am NOT promoting the page's content into product fields — doing so would attach one property's facts to another property's card. The retrieved content is preserved in `_observed` below for a human to adjudicate, deliberately NOT as `description`/`amenities`.",
+      "_observed": {
+        "title": "Have it all: Cedar Point, Lake Erie Private Association Beach + Fishing",
+        "property_type": "Entire home",
+        "city": "Huron, OH",
+        "amenities_listed": [
+          "Kitchen",
+          "Washer",
+          "Dryer",
+          "Free WiFi",
+          "Air conditioning",
+          "Outdoor Space"
+        ],
+        "checkin_checkout": "not shown on the page",
+        "minimum_stay": "not shown on the page"
+      },
+      "_confidence": "LOW — aggregator source AND a name mismatch. Two independent reasons to distrust. ⛔ The source is VRBO, a third-party rental platform, not the operator's own site. The `unitId=3307095` parameter means this URL points at ONE UNIT within a multi-unit property, which is a plausible explanation for the name mismatch ('Old Homestead One' may be the unit's name while the platform shows a marketing title) — but plausible is not verified, and I am not recording it as fact.",
+      "_seasonal": "NOT STATED. No season or availability window shown.",
+      "_recommended_action": "Human to confirm whether unit 3307095 is 'Old Homestead One Beach House'. If confirmed, the `_observed` block can be promoted.",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0052"
+    },
+    "ovt-6a7b8963-b36b-48db-a3bb-637078989b6e": {
+      "_match_name": "Comfort Inn River's Edge",
+      "_source": "https://www.choicehotels.com/ohio/huron/comfort-inn- (the truncated URL in our data)",
+      "_fetched": "2026-09-22",
+      "_notfound": "URL IN OUR DATA IS GENUINELY BAD — confirmed. The stored URL is truncated after 'comfort-inn-' and returns 000 (no response). It is not a working link. ⭐ THE CORRECT URL WAS IDENTIFIED, WITH EVIDENCE: https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017 — the truncated string is a clean prefix of it, and the page title returned by search is 'Hotel in Huron, OH | Comfort Inn® Official Site | Comfort Inn River's Edge', matching the listing name exactly. This is a high-confidence URL REPAIR and should be written back to the listing. ⛔ HOWEVER, NO FACTS ARE RECORDED FROM IT: choicehotels.com blocked every retrieval attempt (repeated 60s timeouts via the fetch tool, connection refused via direct request), so I never actually read the page. Hours, check-in/check-out, address, phone and amenities are all therefore absent by design. Search-result snippets offered an address and phone, but they disagreed with each other on the street number (132 vs 140 N Main St) and came from aggregators, so nothing is asserted.",
+      "_recommended_action": "① Write back the repaired URL (high confidence). ② Re-attempt fact collection from that page separately; choicehotels.com needs a client it does not block.",
+      "_seasonal": "Not applicable / unknown — a hotel is the one category here likely to be year-round, but that is an assumption and is not recorded as fact.",
+      "_beat": "waterfront",
+      "_display_id_at_research": "huro-lst-0103"
+    }
+  },
+  "drops": [],
+  "_comment_research": "Place-card research, 2026-09-21/22 — three beats (civic · dining · waterfront), 8 places each. ⛔ KEYED BY `ovt-<GERS>`, NOT by the `huro-lst-NNNN` display id the researchers used: display ids are assigned by `assignDisplayIds` at bake time and shift when the base set changes, and `applyListingOverrides` matches `patches` on `_key` (= `ovt-<GERS>`) — so display-id keys hit nothing and fall through to the `_match_name` fallback, which resolved only 19 of 24. Provenance rides in `_`-prefixed keys and is stripped by `stripMeta` before the slab."
 }
