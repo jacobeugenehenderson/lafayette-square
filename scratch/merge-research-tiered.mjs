@@ -22,9 +22,34 @@ const SHIPPING = new Set(['hours', 'description', 'amenities', 'phone', 'menu', 
 // records whose hours are printed on the operator's own page — Lucky Stone's twice over.
 // ⭐ A name correction is still the Host's business; it goes on the worklist as its own
 // short list rather than suppressing good data.
-const DOUBT_KEYS = ['_duplicate_of', '_status_flag', '_category_wrong', '_identity_correction', '_name_mismatch', '_duplicate', '_duplicate_relocation']
-const RELABEL_KEYS = ['_name_finding', '_category_wrong', '_identity_correction']
-const DOUBT_TEXT = /phantom|no longer trades|no longer exist|recommend dropping|recommend withholding|could not establish|not a business|permanently closed|temporarily closed|may be a phantom|is not one of them|does not list him/i
+// ⛔⛔ HOLD MEANS "THE PLACE MAY NOT EXIST OR MAY NOT BE WHAT THE RECORD SAYS" — NOTHING
+// WEAKER. Three things sat here that are not that, and each cost something real
+// (Jacob, 2026-09-22: "what's the worst outcome? 'Hey that's my building and the
+// business isn't called that anymore'?"):
+//
+//   ① `_name_mismatch` held Bennett's — SAME address, SAME phone as our listing, so
+//     unambiguously the same shop; the only open question was whether it still trades as
+//     "Novelties" or as "Designs". Worst case on merging is a stale NAME over correct
+//     hours and seven real photos. Worst case on holding is a rank-10 listing left blank
+//     when we had all of it. ⛔ A naming question is not an existence question.
+//
+//   ② `_duplicate` held Hello Gorgeous — and a duplicate note describes a PAIR. Holding
+//     whichever member carries the note is arbitrary: it is whichever researcher happened
+//     to write it down. ⭐ The pair is a Host question about which record to DROP, not a
+//     reason to withhold data from a correctly-named listing.
+//
+// ⭐ Both are now CAVEATED: merged, hedge kept, and on the worklist.
+const DOUBT_KEYS = ['_status_flag', '_category_wrong', '_identity_correction']
+const CAVEAT_ONLY_KEYS = ['_duplicate_of', '_duplicate', '_duplicate_relocation', '_name_mismatch', '_name_finding']
+const RELABEL_KEYS = ['_name_finding', '_name_mismatch', '_category_wrong', '_identity_correction']
+// ⚠️ PROSE MATCHING IS THE WEAKEST DETECTOR HERE AND IT WAS LOAD-BEARING. "Review Phim
+// Hay" — a Vietnamese SEO fragment scraped onto a real address — shipped as CLEAN with a
+// description and amenities, while the actual tenant was held, because its own
+// `_confidence` said "DATA CONTAMINATION, not a REAL business at this address" and the
+// pattern below only had "not a business". ⭐ One missing word between junk and the slab.
+// ⛔ So prose is a SUPPLEMENT: the structured flags above are the detector, and this
+// pattern exists to catch a researcher who wrote plainly and filed nothing.
+const DOUBT_TEXT = /phantom|no longer trades|no longer exist|recommend dropping|recommend withholding|could not establish|not a (real )?business|data contamination|permanently closed|temporarily closed|may be a phantom|is not one of them|does not list him/i
 // The agent's own hedge on a VALUE it still chose to record.
 const CAVEAT_TEXT = /unverified|aggregator|not first-party|seasonal|may be|likely|unconfirmed|not established|conflict|disagree|discrepan|not resolved|⚠|⛔/i
 const CAVEAT_KEYS = ['_seasonal', '_hours_caveat', '_phone_conflict', '_relative_hours', '_hours_conflict', '_assumption', '_seasonal_and_stale', '_hours_note', '_no_hours_reason']
@@ -148,6 +173,8 @@ function classify(r) {
   const text = [r._confidence, r._recommended_action, r._status_flag, r._notes].filter(Boolean).join(' ')
   const key = DOUBT_KEYS.find(k => r[k])
   if (key) return { tier: 'HOLD', why: `${key}: ${String(r[key]).slice(0, 180)}` }
+  const ck2 = CAVEAT_ONLY_KEYS.find(k => r[k])
+  if (ck2) return { tier: 'CAVEATED', why: `${ck2}: ${String(r[ck2]).slice(0, 180)}` }
   const m = DOUBT_TEXT.exec(text)
   if (m) return { tier: 'HOLD', why: `the researcher wrote "${m[0]}" — ${text.slice(Math.max(0, m.index - 40), m.index + 150).trim()}` }
   const ck = CAVEAT_KEYS.find(k => r[k])

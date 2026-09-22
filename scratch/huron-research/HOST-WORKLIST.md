@@ -4,43 +4,34 @@
 
 ⭐ Every line here is something the web could not settle and a person standing in Huron can, in one conversation. That is the division of labour the product already assumes: the kit pours a strong first draft, the **Host** corrects the directory in bulk, and the **business** claims its own card and fixes the rest. A hedge is not a failure of the research — it is the research telling the Host where to go.
 
-## ⛔ Ask before anything else — 29 places whose existence or identity is in doubt
+## ⛔ Ask before anything else — 20 places whose existence or identity is in doubt
 
 *Not merged. Hours on a listing that may not exist is worse than an empty listing, because it makes the map look better stocked than the town is.*
 
 | listing | question for the Host |
 |---|---|
 | **North Coast Boating** `huro-lst-0243` | _identity_correction: ⛔ A third-party aggregator (slipstreamboating.com) describes North Coast Boating as a 'boat club' offering 'exclusive memberships and access to luxury boats'. The operator's own si |
-| **Cornell's Foods** `huro-lst-0050` | _duplicate: huro-lst-0029 "Huron Iga" is the SAME REAL PLACE - identical address (408 Cleveland Rd E) and identical phone (+14194337733). Cornell's is an IGA member store (cornells.iga.com). T |
-| **Hello Gorgeous Beauty Bar** `huro-lst-0204` | "NOT ESTABLISHED" — EXT OR A CAPTION, so what each shows is NOT ESTABLISHED from the markup - a human must look before one is used on a card. |
-| **Angles Hair Design** `huro-lst-0174` | _duplicate_relocation: ⭐ huro-lst-0076 is ALSO named "Angles Hair Design" with the SAME phone (+14194335757) at a DIFFERENT address (816 Williams St vs 358 Main St). Same name + same phone + different ad |
-| **Bennett's Novelties** `huro-lst-0093` | _name_mismatch: Listing name "Bennett's Novelties"; the site's title is "Bennett's Designs LLC". Overture categorises it as sign_making. Rename or two trading names - NOT ESTABLISHED. |
 | **Breakwater Cottages** `huro-lst-0229` | _category_wrong: Listed as historic/landmark. It is a private residential cottage subdivision. Ship only if private residential streets are wanted. |
 | **Beachwood Villa Homeowners Condo Owners** `huro-lst-0207` | _category_wrong: Listed as historic/landmark. It is a private condominium association with no public access. |
 | **Sandpiper Cove Apartments** `huro-lst-0077` | _category_wrong: Listed as historic/landmark. It is a private apartment complex. |
 | **Lakehouse Apartments** `huro-lst-0221` | _category_wrong: Listed as historic/landmark. It is a private apartment complex. |
 | **Colonial Villa** `huro-lst-0274` | _category_wrong: Listed as historic/landmark; directories class it as lodging/resort. Overlaps the overnight beat. |
-| **Chad at Valley Ford & Truck Center** `huro-lst-0259` | _duplicate_of: huro-lst-0145 |
 | **Freedom Boat Club Lake Erie - Huron** `huro-lst-0144` | _category_wrong: Listed as arts/venue with Overture category amusement_park. It is a members-only boat club at a marina. |
-| **Goodwill Industries International, Inc.** `huro-lst-0218` | _duplicate_of: huro-lst-0120 |
-| **Huron Iga** `huro-lst-0029` | _duplicate_of: huro-lst-0050 |
 | **Erie Supply House** `huro-lst-0003` | the researcher wrote "Recommend withholding" — currently exists at 515 Cleveland Rd W. Recommend withholding from the pour until someone confirms it on the ground. |
 | **BJF Construction LLC.** `huro-lst-0033` | _category_wrong: Listed as shopping/retail. It is a contractor with no premises. |
 | **CUSH Cafe** `huro-lst-0193` | the researcher wrote "temporarily closed" — gistered domain. The lanes are reported temporarily closed. ⛔ Hours and trading status NOT ESTABLISHED. |
-| **I Fives** `huro-lst-0152` | _duplicate_of: huro-lst-0080 |
-| **3 Amigo's 132, Llp** `huro-lst-0232` | _duplicate_of: huro-lst-0166 |
-| **Old Plat** `huro-lst-0047` | _duplicate_of: huro-lst-0166 |
+| **I Fives** `huro-lst-0152` | _status_flag: possibly closed - unverified |
 | **Feddersens** `huro-lst-0260` | _status_flag: wholesale/B2B, not a consumer eatery |
 | **Hq Barbecue** `huro-lst-0256` | _status_flag: unresearched - source unreachable |
 | **Peace By Piece Pastries** `huro-lst-0161` | _status_flag: unresearched - social-only presence |
-| **Hph Pizza Llc** `huro-lst-0100` | _duplicate_of: huro-lst-0014 |
 | **Blimpie** `huro-lst-0168` | _status_flag: counter inside a fuel station; existence unverified |
 | **Dunkin'** `huro-lst-0040` | _status_flag: possibly does not exist; website is a different brand |
+| **Review Phim Hay** `huro-lst-0049` | the researcher wrote "DATA CONTAMINATION" — me 'Review Phim Hay' is confirmed to be DATA CONTAMINATION, not a real business at this address — it is Vietnamese for 'good film review' and has nothing to do with the beauty-bar conten |
 | **Huron Massotherapy** `huro-lst-0068` | the researcher wrote "Could NOT establish" — Could NOT establish whether Huron Massotherapy is a distinct tenant from Ruhe Haus (huro-lst-0267, same address 103 Wall St) or an older/alternate nam |
 | **Huron Health Care Center** `huro-lst-0179` | the researcher wrote "no longer trades" — ⚠️ Name finding: this facility no longer trades as 'Huron Health Care Center.' At the same address (1920 Cleveland Rd W) it now operates first-party as 'Admiral's Pointe Nursing and |
 | **Huron Lake Front Market** `huro-lst-0045` | the researcher wrote "NOT A BUSINESS" — This is NOT A BUSINESS WITH PREMISES — it is a recurring open-air market held in Lake Front Park, which is itself a separate listing (huro-lst-0178 / huro-lst |
 
-## Merged, but the researcher hedged — 107 places worth confirming
+## Merged, but the researcher hedged — 115 places worth confirming
 
 *These are live on the map now. Each carries the hedge in `_confidence` in the overrides file. ⭐ The commonest by far is **unmarked seasonal hours** — correct for the month they were sampled and silently wrong the rest of the year, which on a Lake Erie town is half the calendar.*
 
@@ -59,12 +50,17 @@
 | **Huron Lagoons Marina** `huro-lst-0102` | hours, description, amenities, phone | _seasonal: The office runs SIX different weekly schedules across the year, quoted verbatim from the Contact page: 'January, February & March / Monday–Friday: 8 AM to 5 PM' · 'April & May / Mo |
 | **Comfort Inn River's Edge** `huro-lst-0103` | hours, description, amenities, phone | "not first-party" — tly, so this is corroborated-secondary, not first-party. The 00:00-23:59 slots represent the STAFFED FRONT DESK, not check-in: check-in is 15:00 and check-out 11:00 (see overnight- |
 | **Huron Ace Hardware** `huro-lst-0242` | hours, phone, website, description, amenities | "aggregator" — ments. LESS confident on hours: several aggregators repeat the same grid, and the store's own site is gone, so there is no second independent first-party witness. |
+| **Cornell's Foods** `huro-lst-0050` | hours, phone, description, amenities | _duplicate: huro-lst-0029 "Huron Iga" is the SAME REAL PLACE - identical address (408 Cleveland Rd E) and identical phone (+14194337733). Cornell's is an IGA member store (cornells.iga.com). T |
+| **Lucky Stone Gifts And Promotions** `huro-lst-0172` | hours, phone, description, amenities | _name_finding: We hold the name "Lucky Stone Gifts And Promotions"; the site brands itself "LUCKY STONE UNIFORMS" and describes a public-safety uniform dealership, not a gift shop. Possibly a ren |
 | **Beagle Bay Knot Works** `huro-lst-0059` | description, amenities, photos | "unverified" — ode, i.e. NOT local to Huron (419/567); unverified, left unchanged. |
+| **Hello Gorgeous Beauty Bar** `huro-lst-0204` | description, amenities, photos | "NOT ESTABLISHED" — EXT OR A CAPTION, so what each shows is NOT ESTABLISHED from the markup - a human must look before one is used on a card. |
 | **Custom Concrete &Design LLC** `huro-lst-0247` | hours, phone, description, amenities | "unverified" — a storefront, so the address we hold is unverified from first-party. |
 | **All Builds Construction & Remodeling** `huro-lst-0051` | phone, description, amenities | "unverified" — ervice_area), so the address we hold is unverified from first-party. |
 | **River Monster Tours** `huro-lst-0017` | phone, description, amenities | _seasonal_and_stale: ⭐ The site's own banner reads: "Taking bookings now, opening May 22. Be sure to check out the Grand Opening of the Old Mill Harbor!" Read 2026-09-22 - four months after that date. |
+| **Dr. Eric Martin** `huro-lst-0058` | hours, phone, description, amenities | _name_finding: We hold "Dr. Eric Martin", a PRACTITIONER name. The business at 421 Berlin Rd is "Professional Eye Care" (peceyes.com), which has offices in Huron and Amherst plus an Oasis Eye Cli |
 | **Dr. Mark A. Myers, Dds** `huro-lst-0110` | phone, description, amenities | _relative_hours: ⭐⭐ The hours widget renders exactly one string: "Hours — Open today 08:00 am – 05:00 pm". NOT a weekly grid: a RELATIVE, CLIENT-EVALUATED statement about the day of the scrape. Rea |
 | **Fixed Performance** `huro-lst-0022` | description, amenities | _phone_conflict: site 419-433-8219 vs listing 419-433-0282. Neither is contradicted by a second first-party source. |
+| **Bennett's Novelties** `huro-lst-0093` | photos, hours, description, amenities, phone | _name_finding: The business trades as "Bennetts Designs" / "Bennett's Designs LLC" on its own site and describes itself as a print and sign shop. Our listing name is "Bennett's Novelties". Whethe |
 | **The Huron Historical Society** `huro-lst-0212` | hours, description, history, amenities, phone, photos | "not established" — story of the building itself was found; not established. |
 | **Central Basin Bait Tackle and Carryout** `huro-lst-0088` | hours, description, amenities, phone | "⛔" — (the page itself could not be fetched). ⛔ SATURDAY AND SUNDAY ARE NOT ESTABLISHED and are omitted - a bait shop almost certainly opens early at a weekend, but 'almost certainly' is not a sou |
 | **South Shore Marine** `huro-lst-0097` | hours, description, amenities, phone, photos | "not established" — not a first-party page - founding year not established. The listing's website field points at the dealer's YouTube channel, not its site. |
@@ -75,6 +71,9 @@
 | **Mudbrook Mercantile** `huro-lst-0026` | description, amenities, phone | "NOT ESTABLISHED" — not a retrieved first-party page. HOURS NOT ESTABLISHED. The 519 Main St address was NOT independently confirmed. Treat as low confidence. |
 | **Z Shoppe On Main** `huro-lst-0056` | description, amenities, phone | "NOT ESTABLISHED" — nippets; the shop has no website. HOURS NOT ESTABLISHED. |
 | **Firwood Collectibles** `huro-lst-0130` | description, amenities, phone | "NOT ESTABLISHED" — a shop the public can walk into. HOURS NOT ESTABLISHED and probably do not exist. The eBay store URL on the listing uses the retired stores.ebay.com form and may no longer resolve. |
+| **Chad at Valley Ford & Truck Center** `huro-lst-0259` | hours, description, amenities, phone | _duplicate_of: huro-lst-0145 |
+| **Goodwill Industries International, Inc.** `huro-lst-0218` | hours, description, amenities, phone | _duplicate_of: huro-lst-0120 |
+| **Huron Iga** `huro-lst-0029` | description, phone | _duplicate_of: huro-lst-0050 |
 | **Village Gallery & Framer** `huro-lst-0069` | description, amenities, phone | "NOT established" — ar of founding therefore roughly 1980s; NOT established precisely). HOURS NOT ESTABLISHED - no source publishes them. |
 | **First Acres Homestead** `huro-lst-0281` | description, amenities | "NOT established" — express. Beyond eggs, what it sells is NOT established. Recommend confirming on the ground before shipping. |
 | **Quality Inn Huron** `huro-lst-0075` | hours, description, amenities, phone | "not first-party" — out on fetch, so corroborated-secondary not first-party. ⚠ BRAND MAY HAVE CHANGED: choicehotels.com/ohio/huron/quality-inn-hotels/oh405 and .../rodeway-inn-hotels/oh405 are the sam |
@@ -154,7 +153,7 @@
 | **Wolph Title Inc** `huro-lst-0073` | hours, description, amenities, phone | "⚠" — are quoted from the company's own site. ⚠️ TWO PROBLEMS THE SCHEMA CANNOT HOLD. (1) SPLIT DAY: the published hours are 'Monday - Thursday: 9am - 12pm (lunch) 1pm- 4:30pm' — the office CLOSES |
 | **Bowling Green State University, Firelands College** `huro-lst-0195` | photos, history, description, amenities | "⚠" — he university's McBride Arboretum page. ⚠️ The About page URL is /firelands/about.html — /firelands/about-us.html is a 404. |
 
-## The record is mis-labelled — 2 names or categories to correct
+## The record is mis-labelled — 3 names or categories to correct
 
 *The data merged fine; the listing is filed under the wrong name or the wrong kind of place. ⭐ A private apartment complex filed as a historic landmark is the one to fix first — shipping a private address as a public attraction is worse than a wrong hour.*
 
@@ -162,3 +161,4 @@
 |---|---|
 | **Lucky Stone Gifts And Promotions** `huro-lst-0172` | _name_finding: We hold the name "Lucky Stone Gifts And Promotions"; the site brands itself "LUCKY STONE UNIFORMS" and describes a public-safety uniform dealership, not a gift shop. Possibly a rename, possibly two tr |
 | **Dr. Eric Martin** `huro-lst-0058` | _name_finding: We hold "Dr. Eric Martin", a PRACTITIONER name. The business at 421 Berlin Rd is "Professional Eye Care" (peceyes.com), which has offices in Huron and Amherst plus an Oasis Eye Clinic. Dr. Martin is n |
+| **Bennett's Novelties** `huro-lst-0093` | _name_finding: The business trades as "Bennetts Designs" / "Bennett's Designs LLC" on its own site and describes itself as a print and sign shop. Our listing name is "Bennett's Novelties". Whether Novelties is a ret |

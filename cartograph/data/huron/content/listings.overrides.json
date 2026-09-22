@@ -1625,6 +1625,55 @@
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0242"
     },
+    "ovt-3bfd3b76-275e-409c-931e-729f9ae188cb": {
+      "_match_name": "Cornell's Foods",
+      "_source": "https://cornellshuron.com/StoreLocator/",
+      "_fetched": "2026-09-22",
+      "_confidence": "Store hours, deli hours, lunch hours and phone are printed verbatim on the store's own site (store 1545). Note the site brands itself 'Cornell Foods' in prose while the domain and the listing say \"Cornell's\". WebFetch gets 403 from this host; curl with a browser UA succeeds.",
+      "_department_hours": "The site publishes THREE nested schedules for one address: store 7:00am-9:00pm daily; DELI 7am-7pm daily; LUNCH SERVED IN DELI 11am-2pm Monday-Friday. Only the outermost is expressed in `hours` below - the other two have nowhere to live. See retail-NOVEL.md #1.",
+      "_duplicate": "huro-lst-0029 \"Huron Iga\" is the SAME REAL PLACE - identical address (408 Cleveland Rd E) and identical phone (+14194337733). Cornell's is an IGA member store (cornells.iga.com). Two listings, one storefront; they should be merged, not both poured.",
+      "hours": {
+        "monday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "tuesday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "wednesday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "thursday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "friday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "saturday": {
+          "open": "07:00",
+          "close": "21:00"
+        },
+        "sunday": {
+          "open": "07:00",
+          "close": "21:00"
+        }
+      },
+      "phone": "+14194337733",
+      "description": "Huron's independent IGA grocery, open 7 to 9 every day of the year's week. The deli closes at 7pm and serves a hot lunch 11 to 2 on weekdays.",
+      "amenities": [
+        "Deli",
+        "Lunch counter (weekdays 11am-2pm)",
+        "Groceries",
+        "Open daily"
+      ],
+      "_beat": "retail",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0050"
+    },
     "ovt-e992aaa8-9939-469d-9088-d0faec1edea9": {
       "_match_name": "Huron Market",
       "_source": "https://www.huronmarket.com/",
@@ -1796,7 +1845,7 @@
         "Promotional products"
       ],
       "_beat": "retail",
-      "_tier": "CLEAN",
+      "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0172"
     },
     "ovt-bdfae96f-2af4-4ff8-8c59-7b79769e4ffe": {
@@ -1898,6 +1947,63 @@
       "_beat": "retail+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0059"
+    },
+    "ovt-c1f5688c-1377-4d74-b5f5-f7f7d6658d68": {
+      "_match_name": "Hello Gorgeous Beauty Bar",
+      "_source": "https://www.hellogorgeousbeautybarllc.com/ · https://www.hellogorgeousbeautybarllc.com/our-family",
+      "_fetched": "2026-09-22",
+      "_confidence": "First-party Wix site; page title is \"About Us | Hello Gorgeous Beauty Bar | Huron, OH\", so the town is confirmed on the site itself. Two large photographs are published on the home page (2048x1365 originals on the salon's own Wix media account, prefix 823c34_). NEITHER CARRIES ALT TEXT OR A CAPTION, so what each shows is NOT ESTABLISHED from the markup - a human must look before one is used on a card.",
+      "_per_stylist_hours": "The site states, verbatim: \"Please note our team is in charge of their own schedules please reach out to the team member you wish to book your service with!\" There is no house schedule to record. See retail-NOVEL.md #6.",
+      "_address_finding": "Carried forward from the retail beat: the salon's own site says 521 Main Street; our listing says 519 Main St.",
+      "_duplicate": "huro-lst-0049 is named \"Review Phim Hay\" (Vietnamese for 'watch good films' - SEO/junk text), sits at 521 Main St, and carries the SAME website http://Hellogorgeousbeautybarllc.com/. It is this same salon under a garbage name, with a different phone (+14197066395). One real place, two listings, one of them with a fabricated name. See retail-NOVEL.md #7.",
+      "description": "A Main Street salon open since 2018 doing hair, lashes, facials, waxing, nails and spray tanning.",
+      "amenities": [
+        "Eyelash extensions",
+        "Hair",
+        "HydraFacial",
+        "Waxing",
+        "Nails",
+        "Makeup and weddings",
+        "Spray tanning",
+        "Gift cards"
+      ],
+      "photos": [
+        {
+          "url": "https://static.wixstatic.com/media/823c34_8858aba644124233b9cdedefca3a3f29~mv2.jpg",
+          "what": "Full-bleed home-page photograph, original 2048x1365. Subject not established - no alt text.",
+          "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/823c34_c98ab5c3ba5c4a5cbc4ae8374fda12bb~mv2.jpg",
+          "what": "Second home-page photograph, portrait crop. Subject not established - no alt text.",
+          "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/823c34_740fd9da116d44ce976f59c467164d2a~mv2.jpg",
+          "what": "On /our-family - a team page, so this is very likely a staff portrait rather than the premises",
+          "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/823c34_79609e93adac461792ffee22510e44a8~mv2.jpg",
+          "what": "On /our-family - very likely a staff portrait",
+          "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+          "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+        }
+      ],
+      "_photos_rights_unclear": [
+        {
+          "url": "https://static.wixstatic.com/media/d7cb80_f075cdee7e3a46278a8ac7749a13ee1c~mv2.png",
+          "what": "One of ten images on the page under the Wix media prefix d7cb80_, a DIFFERENT account from the salon's own 823c34_",
+          "why": "A different Wix media account from the salon's own means these are template/stock decorations shipped with the Wix theme, not the operator's photographs. Do not use. See prominent-photos-NOVEL.md #2 for the prefix test."
+        }
+      ],
+      "_a_person_could_get_more": "The salon links an Instagram (instagram.com/hellogorgeousbeautybarllc) and a Facebook page (facebook.com/HelloGorgeousBeautyBarLLC). Neither serves image URLs to an unauthenticated fetch. That is where its storefront and work photos will be.",
+      "_beat": "retail+prominent-photos",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0204"
     },
     "ovt-e72f0cf9-9259-4ad5-ae42-c28da58c2c46": {
       "_match_name": "Custom Concrete &Design LLC",
@@ -2333,7 +2439,7 @@
         "Friday and Saturday by appointment"
       ],
       "_beat": "retail",
-      "_tier": "CLEAN",
+      "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0058"
     },
     "ovt-705ee15c-14b6-42f0-b825-cc95249abcf7": {
@@ -2445,6 +2551,111 @@
       "_beat": "retail",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0022"
+    },
+    "ovt-60aee211-977e-4e30-b3a7-cf70dd2c2d8e": {
+      "_match_name": "Bennett's Novelties",
+      "_source": "https://www.bennettsdesigns.com/ and https://www.bennettsdesigns.com/contact",
+      "_fetched": "2026-09-22",
+      "_confidence": "IDENTITY CONFIRMED. The site's own contact page gives 2408 Cleveland Rd. West, Huron, Ohio 44839 and 419-433-3569 - the exact address and phone on our listing. A previous beat read this site as empty (client-rendered); it is a Square Online site whose full page model is embedded in the served HTML as JSON, so the content and the photo set ARE first-party-readable. See prominent-photos-NOVEL.md #1.",
+      "_name_mismatch": "Listing name \"Bennett's Novelties\"; the site's title is \"Bennett's Designs LLC\". Overture categorises it as sign_making. Rename or two trading names - NOT ESTABLISHED.",
+      "_js_only": "Same structural blindness as the Vagaro case: live, first-party, and empty to a non-rendering fetch. See retail-NOVEL.md #19.",
+      "_no_fields_proposed": "Needs a rendered fetch.",
+      "_name_finding": "The business trades as \"Bennetts Designs\" / \"Bennett's Designs LLC\" on its own site and describes itself as a print and sign shop. Our listing name is \"Bennett's Novelties\". Whether Novelties is a retired name, a second trading name or a directory error is NOT ESTABLISHED - a person in Huron should read the sign.",
+      "photos": [
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260216_164655727_HDR_1787632832.jpg",
+          "what": "Home-page banner image, 3500x2635, captioned \"Your Trusted Local Print Shop in Huron Since 1999\"",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20251009_141802038_HDR_1787629065.jpg",
+          "what": "Illustrates the \"Quality Printing Services\" section",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260310_145748038_HDR_1787629388.jpg",
+          "what": "Illustrates the \"Fast Turnaround Time\" section",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20250111_150700671_HDR_AE_1787630552.jpg",
+          "what": "Illustrates \"Top-Quality Materials\"",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260128_110214618_HDR_1787629726.jpg",
+          "what": "Illustrates \"Banners and Rigid Signs\"",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/Resized_20161125_183758_1787631164.jpg",
+          "what": "Illustrates \"Vehicle Graphics\"",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/MAX_1787632159.jpg",
+          "what": "Illustrates \"Business Branding\"",
+          "credit": "Bennett's Designs LLC (own website)",
+          "credit_url": "https://www.bennettsdesigns.com/"
+        }
+      ],
+      "_photos_note": "None of these is confirmed to be the STOREFRONT at 2408 Cleveland Rd W. They are the shop's own photographs of its own work and premises-adjacent subjects, published by the operator on its own site; the exact subject of each is not stated in markup (all altText fields are empty). A human should pick. Verified servable: HEAD on the banner image returns 200 image/jpeg.",
+      "_photos_rights_unclear": [
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/FB_IMG_1716862463704_1787629966.jpg",
+          "what": "Image on the shop's own page whose filename (FB_IMG_...) shows it was saved out of Facebook",
+          "why": "Re-uploaded from Facebook; original photographer not established"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/orafol_1787629267.jpeg",
+          "what": "Named for ORAFOL, a vinyl-film manufacturer",
+          "why": "Almost certainly a supplier's product/brand image, not the shop's own photograph"
+        },
+        {
+          "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/01BENNETTSDESIGNS_1770058629.png",
+          "what": "The shop's logo, not a photograph",
+          "why": "A logo, not an image of the place; included only because a card may want a mark"
+        }
+      ],
+      "hours": {
+        "tuesday": {
+          "open": "12:00",
+          "close": "17:00"
+        },
+        "wednesday": {
+          "open": "12:00",
+          "close": "17:00"
+        },
+        "thursday": {
+          "open": "12:00",
+          "close": "17:00"
+        },
+        "friday": {
+          "open": "12:00",
+          "close": "17:00"
+        }
+      },
+      "_hours_source": "Verbatim from the shop's contact page: \"Tuesday to Friday: 12:00 PM to 5:00 PM (Eastern Time)\" / \"Closed Saturday, Sunday, and Monday.\" Monday, Saturday and Sunday are omitted, i.e. closed.",
+      "description": "A Huron print and sign shop going since 1999. Banners, rigid signs, vehicle graphics and team apparel.",
+      "amenities": [
+        "Indoor and outdoor signage",
+        "Banners and rigid signs",
+        "Vehicle graphics",
+        "Custom apparel and team spirit wear",
+        "Custom design services",
+        "Business branding"
+      ],
+      "phone": "+14194333569",
+      "_email": "sales@bennettsdesigns.com",
+      "_beat": "retail+prominent-photos",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0093"
     },
     "ovt-cb116127-246f-42ba-8481-cb700d0ab582": {
       "_match_name": "The Huron Historical Society",
@@ -2892,6 +3103,52 @@
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0145"
     },
+    "ovt-eecf2648-8f34-4d4b-95e0-06a48c067465": {
+      "_match_name": "Chad at Valley Ford & Truck Center",
+      "_source": "https://www.valleyfordofhuroninc.com/contact-us/",
+      "_fetched": "2026-09-22",
+      "_confidence": "THIS IS NOT A SEPARATE BUSINESS. The record names an individual SALESPERSON at Valley Ford of Huron, 55 Cleveland Rd E - the same premises as huro-lst-0145. Hours below are the dealership's SALES hours from its own contact page. Recommend merging into the dealership record rather than shipping a person as a place.",
+      "_duplicate_of": "huro-lst-0145",
+      "hours": {
+        "monday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "tuesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "wednesday": {
+          "open": "09:00",
+          "close": "18:00"
+        },
+        "thursday": {
+          "open": "09:00",
+          "close": "19:00"
+        },
+        "friday": {
+          "open": "09:00",
+          "close": "17:00"
+        },
+        "saturday": {
+          "open": "09:00",
+          "close": "16:00"
+        }
+      },
+      "description": "Huron's Ford dealership, on Cleveland Road East since before the bypass. New and used sales with its own service and parts departments.",
+      "amenities": [
+        "new Ford sales",
+        "used vehicles",
+        "service department",
+        "parts counter",
+        "financing"
+      ],
+      "phone": "+14194334404",
+      "_url_finding": "WRONG SITE FOR THIS STORE. Held URL valleysuperstore.com is the multi-brand Valley Automotive group. This store's own site is https://www.valleyfordofhuroninc.com/",
+      "_beat": "shopping",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0259"
+    },
     "ovt-993efaf4-0cd0-4a9e-aa5a-1f5742527666": {
       "_match_name": "Huron Outdoor Yamaha & Honda",
       "_source": "https://www.huronoutdoorshop.com/ ; hours from https://www.yelp.com/biz/huron-outdoor-yamaha-and-honda-huron",
@@ -3010,6 +3267,66 @@
       "_beat": "shopping+prominent-photos",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0120"
+    },
+    "ovt-d0d8627a-db73-4fb5-bb5f-d1e12d647a27": {
+      "_match_name": "Goodwill Industries International, Inc.",
+      "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
+      "_fetched": "2026-09-22",
+      "_confidence": "Carried forward from the shopping beat: this is a PROBABLE DUPLICATE of huro-lst-0120 under the national body's name. The regional operator lists exactly ONE Huron store, at 310 Lake Erie Parkway. No second Huron storefront photo exists, because there is no second store.",
+      "_duplicate_of": "huro-lst-0120",
+      "hours": {
+        "monday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "tuesday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "wednesday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "thursday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "friday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "saturday": {
+          "open": "10:00",
+          "close": "20:00"
+        },
+        "sunday": {
+          "open": "12:00",
+          "close": "17:00"
+        }
+      },
+      "description": "Huron's Goodwill thrift store on Lake Erie Parkway. Run by the regional Goodwill serving Erie, Huron, Ottawa and Sandusky counties.",
+      "amenities": [
+        "thrift retail",
+        "attended donation center"
+      ],
+      "phone": "+14194337542",
+      "_url_finding": "WRONG ENTITY, RETURNS 200. Held URL goodwill.org is the NATIONAL body in Maryland. The operator of this store is Goodwill of Erie, Huron, Ottawa & Sandusky Counties: https://www.goodwillsandusky.org/",
+      "_no_photos_reason": "Deliberately empty. If this record is kept rather than merged, the only honest image is huro-lst-0120's storefront photo - and using it here would put the same building on two cards. The fix is the merge, not a photo. Looked at: goodwillsandusky.org stores page (one Huron store only) and goodwill.org (the national body, no Huron premises).",
+      "_beat": "shopping+prominent-photos",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0218"
+    },
+    "ovt-24198e90-69c6-4c68-bfe3-ba5ef90ee68e": {
+      "_match_name": "Huron Iga",
+      "_source": "https://cornellshuron.com/ ; https://www.yelp.com/biz/huron-iga-huron",
+      "_fetched": "2026-09-22",
+      "_confidence": "DUPLICATE. Same address (408 Cleveland Rd E) and same phone as huro-lst-0050 'Cornell's Foods', which was already researched in retail.json. One grocery store, two listings: it is an IGA-banner store trading as Cornell's Foods, so both names are real names for one place. Recommend merging and keeping Cornell's Foods as the display name. No separate content written here.",
+      "_duplicate_of": "huro-lst-0050",
+      "description": "The IGA banner over Cornell's Foods on Cleveland Road East. One grocery store under two names.",
+      "phone": "+14194337733",
+      "_beat": "shopping",
+      "_tier": "CAVEATED",
+      "_display_id_at_research": "huro-lst-0029"
     },
     "ovt-18a5af9a-b937-4e5c-aa15-fff90c43b039": {
       "_match_name": "NAPA AUTO PARTS",
@@ -4808,30 +5125,6 @@
       "_beat": "services2",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0043"
-    },
-    "ovt-3bb75278-a31b-4f02-9c75-04757ab1b220": {
-      "_confidence": "The listing name 'Review Phim Hay' is confirmed to be DATA CONTAMINATION, not a real business at this address — it is Vietnamese for 'good film review' and has nothing to do with the beauty-bar content actually found. The held URL correctly resolves to Hello Gorgeous Beauty Bar, LLC, which the site itself states is 'located in the heart of Huron, Ohio' at 521 Main Street, Huron OH 44839, operating since 2018. No stated weekly hours were found on the site; it states individual team members manage their own schedules and clients should contact the specific provider.",
-      "_fetched": "2026-09-22",
-      "_match_name": "Review Phim Hay",
-      "_no_fields_proposed": "Hours: the salon's own site states each team member manages their own schedule and does not publish a single storefront weekly schedule; no independent aggregator with a stated schedule was checked given the identity finding took priority. Phone not found on the fetched content.",
-      "_source": "http://Hellogorgeousbeautybarllc.com/ (first-party site, fetched directly)",
-      "_url_finding": "The listing name 'Review Phim Hay' does not correspond to any business at 521 Main St, Huron, OH — it is a Vietnamese phrase ('good film review') that is almost certainly scraper/spam contamination in the source data, unrelated to this address. The held URL (Hellogorgeousbeautybarllc.com) is live and correctly describes the actual business at this address: Hello Gorgeous Beauty Bar, LLC. Recommend the listing name be corrected to 'Hello Gorgeous Beauty Bar' in the source data — this is a data-quality defect, not a same-business naming variant.",
-      "amenities": [
-        "eyelash extensions",
-        "hair services",
-        "HydraFacial",
-        "waxing",
-        "nails",
-        "makeup & weddings",
-        "spray tanning",
-        "Botox",
-        "in-store products",
-        "gift cards"
-      ],
-      "description": "Hello Gorgeous Beauty Bar, LLC — a multi-service beauty salon in Huron, Ohio (since 2018) offering eyelash extensions, hair services, HydraFacial, waxing, nails, makeup for weddings, spray tanning, and Botox.",
-      "_beat": "services2",
-      "_tier": "CLEAN",
-      "_display_id_at_research": "huro-lst-0049"
     },
     "ovt-3d898c9b-1a5c-4f26-8a50-3e1fcfea8af1": {
       "_confidence": "The held phone number (567) 623-4552 matches Dollar General Store #14867's own listed phone number EXACTLY, confirming the Western Union agent counter operates out of the Dollar General at 2202 Cleveland Rd W (SR 6). No separate Western Union-specific hours were found (the in-store WU counter's own service hours were not confirmed, only the store's overall hours), so the hours below are the host store's hours, not a confirmed WU-counter-specific window.",

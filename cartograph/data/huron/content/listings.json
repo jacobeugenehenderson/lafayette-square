@@ -6,7 +6,7 @@
   "generated": "2026-07-07",
   "generator": "bake-content.js",
   "count": 285,
-  "enriched": 197,
+  "enriched": 202,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -1434,7 +1434,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The IGA banner over Cornell's Foods on Cleveland Road East. One grocery store under two names.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1443,6 +1443,7 @@
    "osm_type": null,
    "overture_category": "grocery_store",
    "overture_confidence": 0.908726572394371,
+   "enriched": true,
    "prominence_rank": 23
   },
   {
@@ -1507,12 +1508,46 @@
    "phone": "+14194337733",
    "website": "http://www.cornellshuron.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "07:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Deli",
+    "Lunch counter (weekdays 11am-2pm)",
+    "Groceries",
+    "Open daily"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's independent IGA grocery, open 7 to 9 every day of the year's week. The deli closes at 7pm and serves a hot lunch 11 to 2 on weekdays.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1521,6 +1556,7 @@
    "osm_type": null,
    "overture_category": "grocery_store",
    "overture_confidence": 0.9583381414413452,
+   "enriched": true,
    "prominence_rank": 23
   },
   {
@@ -2753,12 +2789,44 @@
    "phone": "+14194337542",
    "website": "http://www.goodwill.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "thrift retail",
+    "attended donation center"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's Goodwill thrift store on Lake Erie Parkway. Run by the regional Goodwill serving Erie, Huron, Ottawa and Sandusky counties.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2767,6 +2835,7 @@
    "osm_type": null,
    "overture_category": "thrift_store",
    "overture_confidence": 0.989915554523468,
+   "enriched": true,
    "prominence_rank": 41
   },
   {
@@ -7381,15 +7450,46 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "55 Cleveland Rd E",
-   "phone": "+14196810027",
+   "phone": "+14194334404",
    "website": "http://www.valleysuperstore.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "new Ford sales",
+    "used vehicles",
+    "service department",
+    "parts counter",
+    "financing"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's Ford dealership, on Cleveland Road East since before the bypass. New and used sales with its own service and parts departments.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7398,6 +7498,7 @@
    "osm_type": null,
    "overture_category": "car_dealer",
    "overture_confidence": 0.9135563373565674,
+   "enriched": true,
    "prominence_rank": 40
   },
   {
@@ -8053,20 +8154,9 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [
-    "eyelash extensions",
-    "hair services",
-    "HydraFacial",
-    "waxing",
-    "nails",
-    "makeup & weddings",
-    "spray tanning",
-    "Botox",
-    "in-store products",
-    "gift cards"
-   ],
+   "amenities": [],
    "tags": [],
-   "description": "Hello Gorgeous Beauty Bar, LLC — a multi-service beauty salon in Huron, Ohio (since 2018) offering eyelash extensions, hair services, HydraFacial, waxing, nails, makeup for weddings, spray tanning, and Botox.",
+   "description": null,
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -8075,7 +8165,6 @@
    "osm_type": null,
    "overture_category": "spas",
    "overture_confidence": 0.882188618183136,
-   "enriched": true,
    "prominence_rank": 1814
   },
   {
@@ -8120,10 +8209,44 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "photos": [
+    {
+     "url": "https://static.wixstatic.com/media/823c34_8858aba644124233b9cdedefca3a3f29~mv2.jpg",
+     "what": "Full-bleed home-page photograph, original 2048x1365. Subject not established - no alt text.",
+     "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+     "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/823c34_c98ab5c3ba5c4a5cbc4ae8374fda12bb~mv2.jpg",
+     "what": "Second home-page photograph, portrait crop. Subject not established - no alt text.",
+     "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+     "credit_url": "https://www.hellogorgeousbeautybarllc.com/"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/823c34_740fd9da116d44ce976f59c467164d2a~mv2.jpg",
+     "what": "On /our-family - a team page, so this is very likely a staff portrait rather than the premises",
+     "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+     "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/823c34_79609e93adac461792ffee22510e44a8~mv2.jpg",
+     "what": "On /our-family - very likely a staff portrait",
+     "credit": "Hello Gorgeous Beauty Bar LLC (own website)",
+     "credit_url": "https://www.hellogorgeousbeautybarllc.com/our-family"
+    }
+   ],
+   "amenities": [
+    "Eyelash extensions",
+    "Hair",
+    "HydraFacial",
+    "Waxing",
+    "Nails",
+    "Makeup and weddings",
+    "Spray tanning",
+    "Gift cards"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Main Street salon open since 2018 doing hair, lashes, facials, waxing, nails and spray tanning.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -8132,6 +8255,7 @@
    "osm_type": null,
    "overture_category": "beauty_salon",
    "overture_confidence": 0.9199122190475464,
+   "enriched": true,
    "prominence_rank": 1814
   },
   {
@@ -10893,12 +11017,79 @@
    "phone": "+14194333569",
    "website": "http://bennettsdesigns.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "12:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
-   "photos": [],
-   "amenities": [],
+   "photos": [
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260216_164655727_HDR_1787632832.jpg",
+     "what": "Home-page banner image, 3500x2635, captioned \"Your Trusted Local Print Shop in Huron Since 1999\"",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20251009_141802038_HDR_1787629065.jpg",
+     "what": "Illustrates the \"Quality Printing Services\" section",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260310_145748038_HDR_1787629388.jpg",
+     "what": "Illustrates the \"Fast Turnaround Time\" section",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20250111_150700671_HDR_AE_1787630552.jpg",
+     "what": "Illustrates \"Top-Quality Materials\"",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/IMG_20260128_110214618_HDR_1787629726.jpg",
+     "what": "Illustrates \"Banners and Rigid Signs\"",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/Resized_20161125_183758_1787631164.jpg",
+     "what": "Illustrates \"Vehicle Graphics\"",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    },
+    {
+     "url": "https://www.bennettsdesigns.com/uploads/b/6846f50197538e830325a14f7205e350541a1aea58c1b24070bb5dceadfefeef/MAX_1787632159.jpg",
+     "what": "Illustrates \"Business Branding\"",
+     "credit": "Bennett's Designs LLC (own website)",
+     "credit_url": "https://www.bennettsdesigns.com/"
+    }
+   ],
+   "amenities": [
+    "Indoor and outdoor signage",
+    "Banners and rigid signs",
+    "Vehicle graphics",
+    "Custom apparel and team spirit wear",
+    "Custom design services",
+    "Business branding"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Huron print and sign shop going since 1999. Banners, rigid signs, vehicle graphics and team apparel.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -10907,6 +11098,7 @@
    "osm_type": null,
    "overture_category": "sign_making",
    "overture_confidence": 0.9199122190475464,
+   "enriched": true,
    "prominence_rank": 10
   },
   {
