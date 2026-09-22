@@ -13,6 +13,16 @@
  * has warned twice that the trunk moves and must never be quoted from memory; this is that
  * warning made executable.
  *
+ * ⛔⛔ STAGING NO LONGER GOES THROUGH A BRANCH AT ALL (2026-09-21). Ruled: one site per
+ * Map at `staging.theward.online/<map>/`, served by `workers/staging-sites` out of R2, and
+ * the Publish button uploads there directly instead of pushing a trunk that rebuilt ONE
+ * GitHub Pages site for every town. `staging.yml` is retired.
+ * ⭐ SO THE CHECK KEPT ITS JOB AND CHANGED ITS SUBJECT. The defect it was written for —
+ * a publish path that reports success and reaches nothing — is exactly what reintroducing
+ * the branch push would recreate, so the STAGING half is now the inverse assertion: the
+ * publish endpoint must NOT push to a staging branch. The PROD half is unchanged and still
+ * derived from the workflow that actually runs.
+ *
  *   node checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs
  */
 import { readFileSync, readdirSync } from 'node:fs'
@@ -27,7 +37,6 @@ const grab = (name) => {
   if (!m) { console.error(`⛔ PIN DRIFT — cartograph/serve.js no longer declares ${name}. Update this check.`); process.exit(2) }
   return m[1]
 }
-const STAGING = grab('STAGING_BRANCH')
 const PROD = grab('PROD_BRANCH')
 
 // What each workflow actually deploys from.
@@ -44,7 +53,21 @@ void wfDir
 
 let failed = 0
 console.log('The publish gate must push where the deploy listens\n')
-for (const [role, branch] of [['staging', STAGING], ['prod', PROD]]) {
+// ── STAGING: the publish endpoint must not push a branch for it any more.
+{
+  const pushesStaging = /git push origin \$\{branch\}:\$\{STAGING_BRANCH\}/.test(serve)
+  if (pushesStaging) {
+    failed++
+    console.error("  ⛔ staging  cartograph/serve.js still pushes a STAGING BRANCH. Staging is now a direct")
+    console.error("             upload to R2 (staging.theward.online/<map>/, workers/staging-sites); a branch")
+    console.error("             push rebuilds ONE site for every town, which is the defect the per-Map ruling")
+    console.error("             removed — and with `staging.yml` retired it now reaches nothing at all.")
+  } else {
+    console.log("  ✅ staging  no branch push — publish uploads to R2 directly (staging.theward.online/<map>/)")
+  }
+}
+
+for (const [role, branch] of [['prod', PROD]]) {
   const hit = Object.entries(deploysFrom).find(([, w]) => w.branches.includes(branch))
   if (hit) {
     console.log(`  ✅ ${role.padEnd(8)} serve.js pushes to '${branch}' → deployed by ${hit[0]} ("${hit[1].name}")`)
