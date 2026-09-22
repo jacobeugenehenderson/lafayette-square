@@ -422,7 +422,7 @@ function SubmeshInstances({ geometry, material, localMatrix, placementMatrices, 
       args={[geometry, material, placementMatrices.length]}
       castShadow={false}
       receiveShadow={false}
-      frustumCulled={false}   /* manual per-tile cull above (cullSphere + useFrame) sets .visible; three's auto-cull bound ignores runtime terrain-lift/sway → false drops, so it stays off */
+      frustumCulled={false}   /* ⛔ NOTHING culls these — the per-tile cull was excised 2026-06-27 (see the note at the top of this component); three's auto-cull bound ignores runtime terrain-lift/sway → false drops, so it stays off. Every placement is submitted every frame, at every camera angle. Measured on huron 2026-09-22: 42.18 M tris/frame, bit-identical at five points along the hero path. */
       onBeforeRender={onBeforeRender}
     />
   )
