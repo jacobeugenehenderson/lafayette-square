@@ -314,6 +314,15 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
   for (let i = 0; i < nAlong; i++) {
     const st = at(s0 + ((s1 - s0) * i) / (nAlong - 1))
     const h = crestAt(st.t)
+    // ⛔⛔ NO SHEET WHERE THERE IS NO WALL. MEASURED ON HURON 2026-09-21: arc #11 is
+    // 4.75 km that the armour predicate calls 0% armoured, and this builder still
+    // produced 493,164 triangles of revetment along it — because the resolution is
+    // sized from `hMax` over the WHOLE arc, so one tall stretch dressed the entire
+    // length in stone. ⭐ That is the map lying in this kit's signature way:
+    // continuous, plausible, and wrong, with nothing on screen to say so. A stretch
+    // below one course of armour is a kerb or a beach and the correct output is
+    // NOTHING. (`heap.js` already refused it; the drape did not.)
+    const bare = h < MIN_ARMOUR_D50_M
     const run = h / TAN_REPOSE
     // The face's own length and its down-slope unit vector — the sheet's second
     // axis. ⛔ Using the PLAN run here instead would squash the cells wherever the
@@ -386,7 +395,7 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
       // several blocks long so the trim can resolve it.
       const crestEdge = 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
       const toeEdge = 1.0 + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
-      keep[i * nAcross + j] = (u >= crestEdge && u <= toeEdge) ? 1 : 0
+      keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
       if (i && j) {
         const a = (i - 1) * nAcross + (j - 1), b = (i - 1) * nAcross + j, c = i * nAcross + (j - 1), e = i * nAcross + j
         // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the

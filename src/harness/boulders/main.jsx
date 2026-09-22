@@ -34,6 +34,7 @@ import { revetmentDrape, DRAPE_DEFAULT_GATHER } from '../../lib/revetmentDrape.j
 import { makeRevetmentMaterial } from '../../components/revetmentMaterial.js'
 import { revetmentHeap, demoShoreline, huronLikeCrest, MIN_ARMOUR_D50_M, RIPRAP_REPOSE_DEG } from './heap.js'
 import { shoreContext, chunkStones, CHUNK_M } from './chunked.js'
+import HuronShore from './HuronShore.jsx'
 
 const SHORE_LENGTH_M = 120
 
@@ -299,6 +300,9 @@ function App() {
   const [bench, setBench] = useState(null)
   const [st, setSt] = useState(null)
   const [ck, setCk] = useState(null)
+  const [huron, setHuron] = useState(null)
+  const [huronArcs, setHuronArcs] = useState(null)
+  const [arcIndex, setArcIndex] = useState(3)
   const palette = useMemo(() => boulderPalette({ count: paletteSize, seed: 1337 }), [paletteSize])
 
   // ⛔ THE FRAME COST IS BENCHED, NOT READ OFF AN FPS COUNTER. rAF is throttled in
@@ -384,7 +388,9 @@ function App() {
           shadow-mapSize={[2048, 2048]}
           shadow-camera-left={-90} shadow-camera-right={90}
           shadow-camera-top={70} shadow-camera-bottom={-70} shadow-camera-far={220} />
-        {mode === 'gallery' ? <Gallery /> : <Shore palette={palette} mode={mode} res={res} gather={gather} uniform={uniform} packing={packing} shadows={shadows} />}
+        {mode === 'huron 🏞'
+          ? <HuronShore palette={palette} material={stoneMaterial} arcIndex={arcIndex} onStats={setHuron} onArcs={setHuronArcs} />
+          : mode === 'gallery' ? <Gallery /> : <Shore palette={palette} mode={mode} res={res} gather={gather} uniform={uniform} packing={packing} shadows={shadows} />}
         <OrbitControls makeDefault target={[2, 0.8, 0]} maxPolarAngle={Math.PI * 0.499} />
         <ViewDriver view={view} />
         <Stats onSample={setLive} />
@@ -392,7 +398,7 @@ function App() {
 
       <div style={{ position: 'fixed', top: 12, left: 12, background: 'rgba(8,11,14,.88)', border: '1px solid #2a3440', borderRadius: 8, padding: '10px 12px', width: 440 }}>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginBottom: 6 }}>
-          {['gallery', 'instanced', 'chunked ⭐', 'drape ∥', 'gathered ▲', 'drape fbm', 'hybrid', 'compare', 'necklace'].map(m => (
+          {['gallery', 'instanced', 'chunked ⭐', 'huron 🏞', 'drape ∥', 'gathered ▲', 'drape fbm', 'hybrid', 'compare', 'necklace'].map(m => (
             <Btn key={m} on={mode === m} onClick={() => setMode(m)} tint="#3d6b8f">{m}</Btn>
           ))}
         </div>
@@ -431,6 +437,25 @@ function App() {
           <input type="range" min="0" max="120" value={Math.round(gather * 100)} style={{ flex: 1 }} onChange={e => setGather(+e.target.value / 100)} />
           <b>{gather.toFixed(2)}</b>
         </div>
+        {mode === 'huron 🏞' && <>
+          <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 4 }}>
+            <span style={{ opacity: .7 }}>🏞 arc</span>
+            <input type="range" min="0" max={Math.max(0, (huronArcs?.length || 14) - 1)} value={arcIndex}
+                   style={{ flex: 1 }} onChange={e => setArcIndex(+e.target.value)} />
+            <b>#{arcIndex}</b>
+          </div>
+          {huron && <>
+            <Row k="arc" v={`#${huron.arc} · ${huron.verts} verts · ${huron.len.toFixed(0)} m${huron.flip ? ' · flipped' : ''}`} />
+            <Row k="⭐ armoured by the predicate" v={`${huron.armouredPct.toFixed(0)}%`} />
+            <Row k="drape triangles (whole arc)" v={huron.drapeTris.toLocaleString()} />
+            <Row k="drape vertex data" v={`${(huron.drapeBytes / 1024).toFixed(0)} KB`} />
+            <Row k="⭐ stones IN VIEW" v={`${huron.stones.toLocaleString()} from ${huron.chunks} chunks`} />
+            <Row k="⭐ triangles IN VIEW (stone)" v={Math.round(huron.stones * 49.8).toLocaleString()} />
+            <Row k="⭐ stone draw calls" v={huron.calls} />
+            <Row k="chunk generation" v={`${huron.genMs.toFixed(0)} ms`} />
+          </>}
+          {huronArcs && huronArcs.length === 0 && <Row k="⛔ huron" v="artifact load FAILED — see console" />}
+        </>}
         <Row k="tris / boulder (palette mean)" v={`${meanPalette}  [${Math.min(...paletteTris)}–${Math.max(...paletteTris)}]`} />
         {st && st.stone && <>
           <Head>INSTANCED STONE — {st.stone.span.toFixed(0)} m of shore</Head>
