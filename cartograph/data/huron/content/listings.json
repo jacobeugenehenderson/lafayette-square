@@ -6,7 +6,7 @@
   "generated": "2026-07-07",
   "generator": "bake-content.js",
   "count": 285,
-  "enriched": 25,
+  "enriched": 196,
   "note": "BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction."
  },
  "listings": [
@@ -17,15 +17,22 @@
    "category": "services",
    "subcategory": null,
    "address": "203 Forest Hills Dr",
-   "phone": "4199214528",
+   "phone": "+14199214528",
    "website": "http://allbuildsconstructionoh.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full home remodeling",
+    "Kitchen remodeling",
+    "Bathroom remodeling",
+    "Home additions",
+    "Commercial remodeling",
+    "Free on-site estimates"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A remodeling contractor serving Huron, Norwalk and Sandusky, from bathroom refits to taking a house back to the studs.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -33,7 +40,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "kitchen_remodeling",
-   "overture_confidence": 0.9017539471387863
+   "overture_confidence": 0.9017539471387863,
+   "enriched": true
   },
   {
    "id": "huro-lst-0245",
@@ -42,15 +50,43 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "908 Main St",
-   "phone": "14194332000",
+   "phone": "+14194332000",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "10:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Automotive detailing shop on Main St offering complete interior detailing, ceramic coating, and vacuum/engine cleaning.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -58,7 +94,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "auto_detailing",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0086",
@@ -70,12 +107,41 @@
    "phone": null,
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "monday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "saturday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "sunday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "thursday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "tuesday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "wednesday": {
+     "close": "23:59",
+     "open": "00:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Self-service, coin/card-operated car wash bay open around the clock; unstaffed, no phone or website.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -83,7 +149,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "car_wash",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "enriched": true
   },
   {
    "id": "huro-lst-0088",
@@ -95,12 +162,40 @@
    "phone": "+14196020750",
    "website": "http://www.tatteredwingswaterandfowl.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "05:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "05:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "05:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "05:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "05:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Live bait",
+    "Tackle",
+    "Rods and reels",
+    "Beer",
+    "Ice",
+    "Snacks"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Bait, tackle and carryout on Main Street, open at 5am for anglers heading out on Lake Erie.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -108,7 +203,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hunting_and_fishing_supplies",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0246",
@@ -117,15 +213,19 @@
    "category": "services",
    "subcategory": null,
    "address": "914 Main St",
-   "phone": "14194336210",
+   "phone": "+14194336210",
    "website": null,
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "General veterinary care",
+    "Surgical procedures",
+    "Preventative/wellness services"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small-animal veterinary hospital in Huron offering general and surgical veterinary care.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -133,7 +233,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "animal_hospital",
-   "overture_confidence": 0.9885
+   "overture_confidence": 0.9885,
+   "enriched": true
   },
   {
    "id": "huro-lst-0091",
@@ -345,9 +446,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Wedding catering",
+    "Corporate events",
+    "Charcuterie tables",
+    "Event staffing",
+    "Tastings",
+    "Online and PDF menus"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Main Street caterer doing weddings, corporate events and holiday gatherings, charcuterie tables included.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -355,7 +463,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "caterer",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0095",
@@ -456,21 +565,15 @@
    "category": "parks",
    "subcategory": "recreation",
    "address": "100 Laguna Dr",
-   "phone": "(216) 272-3964",
+   "phone": "12162723964",
    "website": "http://www.northcoastboating.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [
-    "Free beginner boating seminars",
-    "On-the-water training",
-    "Coast Guard-licensed instructors",
-    "Group instruction",
-    "Vessel delivery service"
-   ],
+   "amenities": [],
    "tags": [],
-   "description": "A boating instruction business staffed by Coast Guard-licensed instructors, offering free beginner seminars, on-the-water handling training, and advanced navigation and licensing courses. It also provides vessel delivery services across the Great Lakes, Eastern Canada and the East Coast.",
+   "description": null,
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -478,8 +581,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_rental_and_training",
-   "overture_confidence": 0.65,
-   "enriched": true
+   "overture_confidence": 0.65
   },
   {
    "id": "huro-lst-0102",
@@ -564,7 +666,7 @@
    "category": "services",
    "subcategory": null,
    "address": "1020 Brittany Dr",
-   "phone": "(419) 433-1110",
+   "phone": "+14194331110",
    "website": "http://elwent.com",
    "logo": null,
    "hours": null,
@@ -572,7 +674,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A small Huron wholesaler of automotive parts and servicing equipment, trading since 1990.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -580,7 +682,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "industrial_equipment",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0220",
@@ -605,8 +708,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "river",
-   "overture_confidence": 0.8123106956481934,
-   "enriched": true
+   "overture_confidence": 0.8123106956481934
   },
   {
    "id": "huro-lst-0070",
@@ -615,15 +717,22 @@
    "category": "parks",
    "subcategory": "recreation",
    "address": "1299 marina Dr",
-   "phone": "8782012905",
+   "phone": "+18782012905",
    "website": "https://justhookinerie.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Walleye charters",
+    "Steelhead charters",
+    "Family and kid friendly",
+    "Licensed and insured",
+    "USCG-approved safety equipment",
+    "Online booking"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Lake Erie walleye and steelhead charter operation. Its published departure point is Conneaut, Ohio, not Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -631,7 +740,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fishing_charter",
-   "overture_confidence": 0.85
+   "overture_confidence": 0.85,
+   "enriched": true
   },
   {
    "id": "huro-lst-0247",
@@ -643,12 +753,45 @@
    "phone": "+14194335578",
    "website": "http://www.custom-concrete-design.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Residential driveways",
+    "Patios and front porches",
+    "Stamped concrete",
+    "Pool decks",
+    "Fire pits",
+    "Commercial work",
+    "By appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Berlin Road concrete contractor doing stamped patios, pool decks, driveways and fire pits across northern Ohio.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -656,7 +799,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "contractor",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0064",
@@ -681,7 +825,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "contractor",
-   "overture_confidence": 0.1008288711309433
+   "overture_confidence": 0.1008288711309433,
+   "enriched": true
   },
   {
    "id": "huro-lst-0207",
@@ -715,15 +860,42 @@
    "category": "services",
    "subcategory": null,
    "address": "1137 Cleveland Rd E",
-   "phone": "8006860587",
+   "phone": "+18006860587",
    "website": "http://eisenhourchurch.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Church furniture restoration and manufacturing workshop specializing in pew refinishing, kneelers, and upholstery, with over 40 years in the church-furnishings trade.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -731,7 +903,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "furniture_repair",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0213",
@@ -756,8 +929,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.6761288642883301,
-   "enriched": true
+   "overture_confidence": 0.6761288642883301
   },
   {
    "id": "huro-lst-0167",
@@ -919,8 +1091,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "elementary_school",
-   "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "overture_confidence": 0.9199122190475464
   },
   {
    "id": "huro-lst-0242",
@@ -929,15 +1100,54 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "402 Cleveland Rd E",
-   "phone": "14194334797",
-   "website": "https://www.huronacehardware.com",
+   "phone": "+14194334797",
+   "website": "https://www.acehardware.com/store-details/17674",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Hardware",
+    "Housewares",
+    "Plumbing",
+    "Lawn and Garden",
+    "Electrical",
+    "Paint and Sundries",
+    "Cleaning Supplies",
+    "Automotive",
+    "Hand and Power Tools"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's hardware store on Cleveland Road East, open seven days a week. Paint, plumbing, electrical, hand and power tools, lawn and garden, housewares and automotive under one roof.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -945,7 +1155,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hardware_store",
-   "overture_confidence": 0.9982236878573895
+   "overture_confidence": 0.9982236878573895,
+   "enriched": true
   },
   {
    "id": "huro-lst-0177",
@@ -957,12 +1168,46 @@
    "phone": "+14194334565",
    "website": "http://discount-drugmart.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pharmacy",
+    "household goods",
+    "groceries",
+    "greeting cards"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An Ohio-grown drugstore on Cleveland Road East with a pharmacy counter inside.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -970,7 +1215,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pharmacy",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0124",
@@ -1007,12 +1253,41 @@
    "phone": "+14194338062",
    "website": "http://oliverssalon.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "19:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "19:00",
+     "open": "10:00"
+    },
+    "saturday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "close": "14:00",
+     "open": "11:00"
+    },
+    "thursday": {
+     "close": "19:00",
+     "open": "10:00"
+    },
+    "tuesday": {
+     "close": "19:00",
+     "open": "10:00"
+    },
+    "wednesday": {
+     "close": "19:00",
+     "open": "10:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Walk-in hair salon in Huron, Ohio offering cuts, colors, perms and waxing for men, women and children.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1020,7 +1295,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0262",
@@ -1032,12 +1308,47 @@
    "phone": "+14195157267",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "18:00",
+     "open": "10:00"
+    },
+    "monday": {
+     "close": "18:00",
+     "open": "10:00"
+    },
+    "saturday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "18:00",
+     "open": "10:00"
+    },
+    "tuesday": {
+     "close": "18:00",
+     "open": "10:00"
+    },
+    "wednesday": {
+     "close": "18:00",
+     "open": "10:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "acrylic nails",
+    "gel nails",
+    "pedicure",
+    "manicure",
+    "nail art",
+    "dip powder"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Nail salon in Huron, Ohio offering acrylic and gel nails, manicures, pedicures, nail art, dip powder, and men's mani/pedi services.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1045,7 +1356,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "nail_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0254",
@@ -1062,7 +1374,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "H&R Block tax preparation office; note that in late September this office is in its off-season and likely operates reduced or by-appointment hours rather than full tax-season hours.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1070,7 +1382,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "trusts",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0029",
@@ -1120,8 +1433,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "overture_confidence": 0.9199122190475464
   },
   {
    "id": "huro-lst-0214",
@@ -1146,8 +1458,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.77,
-   "enriched": true
+   "overture_confidence": 0.77
   },
   {
    "id": "huro-lst-0050",
@@ -1222,8 +1533,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "ice_cream_shop",
-   "overture_confidence": 0.9931,
-   "enriched": true
+   "overture_confidence": 0.9931
   },
   {
    "id": "huro-lst-0042",
@@ -1248,8 +1558,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
-   "overture_confidence": 0.9604352116584778,
-   "enriched": true
+   "overture_confidence": 0.9604352116584778
   },
   {
    "id": "huro-lst-0013",
@@ -1258,7 +1567,7 @@
    "category": null,
    "subcategory": null,
    "address": "508 Berlin Rd",
-   "phone": "(419) 433-6204",
+   "phone": "+14194336204",
    "website": "http://www.shell.us",
    "logo": null,
    "hours": null,
@@ -1274,7 +1583,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0257",
@@ -1283,15 +1593,46 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "508 BERLIN ROAD",
-   "phone": null,
+   "phone": "+14194336204",
    "website": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2235-200322552",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "monday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "saturday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "sunday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "thursday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "tuesday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "wednesday": {
+     "close": "23:00",
+     "open": "06:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "convenience store"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hy-Miler convenience store and Mobil fuel station at 508 Berlin Road. Accepts Exxon Mobil Rewards+ and Walmart+ payment programs.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1299,7 +1640,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.8
+   "overture_confidence": 0.8,
+   "enriched": true
   },
   {
    "id": "huro-lst-0004",
@@ -1308,7 +1650,7 @@
    "category": "services",
    "subcategory": null,
    "address": "508 Berlin Rd",
-   "phone": "4194336204",
+   "phone": "+14194336204",
    "website": "https://bluerhino.com/propane-finder?utm_source=bing&utm_medium=map&utm_campaign=vending_map&utm_content=158962",
    "logo": null,
    "hours": null,
@@ -1316,7 +1658,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 508 Berlin Rd.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1324,7 +1666,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "propane_supplier",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0114",
@@ -1333,15 +1676,49 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "508 Berlin Road",
-   "phone": "4194336204",
+   "phone": "+14194336204",
    "website": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2235-200322552?utm_medium=referral&utm_source=yxt-bing&utm_campaign=us_fue_ret_xom_yxt",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "06:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Convenience store",
+    "Mobil fuel",
+    "Exxon Mobil Rewards+",
+    "Walmart+ accepted"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Mobil station and convenience store on Berlin Road, open from 6am to 11pm daily.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1349,7 +1726,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.984475
+   "overture_confidence": 0.984475,
+   "enriched": true
   },
   {
    "id": "huro-lst-0151",
@@ -1361,12 +1739,39 @@
    "phone": "+14194330328",
    "website": "http://www.citizensbankco.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "closed": true
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Civista Bank is a full-service community bank branch offering checking, savings, loans, and a drive-up ATM.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -1374,7 +1779,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "banks",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0046",
@@ -2177,15 +2583,41 @@
    "category": null,
    "subcategory": null,
    "address": "421 Berlin Rd A",
-   "phone": "4194331515",
+   "phone": "+14194331515",
    "website": "https://www.edwardjones.com/us-en/financial-advisor/ryan-reffner?y_source=1_MjU1MTY2MC00ODMtbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Retirement savings strategies",
+    "Estate and legacy strategies",
+    "AAMS-accredited advisor",
+    "Saturdays by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An Edward Jones branch office on Berlin Road, run by advisor Ryan M. Reffner with two branch administrators.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2193,7 +2625,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0218",
@@ -2230,12 +2663,41 @@
    "phone": "+14194333937",
    "website": "http://www.peceyes.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Adult and senior eye exams",
+    "Children's eye exams",
+    "Contact lens exams and fittings",
+    "Diabetic eye exams",
+    "Dry eye therapy",
+    "Myopia control",
+    "Macular degeneration management",
+    "Emergency eye care",
+    "Optos optomap imaging",
+    "Frames and sunglasses",
+    "Friday and Saturday by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Professional Eye Care's Huron office on Berlin Road, doing eye exams, dry eye therapy and specialty contacts. Fridays and Saturdays by appointment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2243,7 +2705,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "eye_care_clinic",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0261",
@@ -2343,8 +2806,7 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "overture_confidence": 0.9199122190475464
   },
   {
    "id": "huro-lst-0096",
@@ -2387,12 +2849,46 @@
    "phone": "+14194332144",
    "website": "http://www.thesandbar.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full bar",
+    "Pizza",
+    "Pub food",
+    "Patio"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Landlocked beach bar on McKinley Street doing pizza and pub food until late.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2443,7 +2939,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Listed as a Carmeuse lime and limestone operation on the Huron lakefront; current status unverified.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2451,7 +2947,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "mining",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0077",
@@ -2488,12 +2985,40 @@
    "phone": "+14194332890",
    "website": "https://www.key.com/locations/OH/Huron/BRCH01010406/601-Cleveland-Rd-W?ppc=cmpyxt",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "16:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "KeyBank branch offering personal and business banking services.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2501,7 +3026,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "banks",
-   "overture_confidence": 0.9992158419787883
+   "overture_confidence": 0.9992158419787883,
+   "enriched": true
   },
   {
    "id": "huro-lst-0118",
@@ -2588,12 +3114,43 @@
    "phone": "+15672650025",
    "website": "https://locations.dollartree.com/oh/huron/593-cleveland-rd",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "20:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "discount variety"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Dollar Tree on Cleveland Road, open to nine most nights.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2601,7 +3158,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "discount_store",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0045",
@@ -2635,15 +3193,23 @@
    "category": "parks",
    "subcategory": "parks",
    "address": "Park Street",
-   "phone": null,
+   "phone": "+14194338487",
    "website": "http://cityofhuron.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Public beach",
+    "Playground",
+    "Gazebo",
+    "Picnic tables",
+    "Grills",
+    "Restrooms",
+    "Wheelchair accessible"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A city park on Lake Erie at the foot of Park Street, with a public beach, playground and gazebo.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2651,7 +3217,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "park",
-   "overture_confidence": 0.77
+   "overture_confidence": 0.77,
+   "enriched": true
   },
   {
    "id": "huro-lst-0178",
@@ -2660,15 +3227,23 @@
    "category": "parks",
    "subcategory": "parks",
    "address": "310 Park St",
-   "phone": "+14194334848",
+   "phone": "+14194338487",
    "website": "http://cityofhuron.org",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Public beach",
+    "Playground",
+    "Gazebo",
+    "Picnic tables",
+    "Grills",
+    "Restrooms",
+    "Wheelchair accessible"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A city park on Lake Erie at the foot of Park Street, with a public beach, playground and gazebo.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2676,7 +3251,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "park",
-   "overture_confidence": 0.9169355630874634
+   "overture_confidence": 0.9169355630874634,
+   "enriched": true
   },
   {
    "id": "huro-lst-0236",
@@ -2744,7 +3320,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Stephanie Vineyard is a solo hairstylist operating out of 509 Cleveland Rd W, Suite A, in Huron, Ohio, booking clients via Square Appointments.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2752,7 +3328,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beauty_salon",
-   "overture_confidence": 0.7537409663200378
+   "overture_confidence": 0.7537409663200378,
+   "enriched": true
   },
   {
    "id": "huro-lst-0141",
@@ -2767,9 +3344,20 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "UV hybrid tanning beds",
+    "Medical-grade red light therapy",
+    "Custom spray tanning",
+    "Halotherapy infrared sauna",
+    "WELLFIT booth",
+    "Teeth whitening",
+    "Massage chairs",
+    "Retail lotions",
+    "Memberships",
+    "No appointment needed for UV"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A tanning and wellness studio on Cleveland Road West: UV and red-light beds, spray tans, infrared halotherapy sauna and teeth whitening.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2777,7 +3365,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "tanning_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0142",
@@ -2789,12 +3378,39 @@
    "phone": "+14194338224",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "10:00"
+    },
+    "monday": {
+     "close": "20:00",
+     "open": "12:00"
+    },
+    "saturday": {
+     "close": "14:00",
+     "open": "10:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "10:00"
+    },
+    "tuesday": {
+     "close": "20:00",
+     "open": "12:00"
+    },
+    "wednesday": {
+     "closed": true
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Hair salon in Huron, Ohio offering haircut services.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2802,7 +3418,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0109",
@@ -2814,12 +3431,45 @@
    "phone": "+14194330811",
    "website": "https://cameohuron.foodtecsolutions.com/ordering/home",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "16:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "16:00",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "16:00",
+     "close": "21:30"
+    },
+    "sunday": {
+     "open": "16:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "carry-out",
+    "delivery",
+    "online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A long-standing pizza carry-out in Port Huron Plaza. Open from 4pm daily for delivery and pickup.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2827,7 +3477,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "menu": {
+    "url": "https://www.cameopizza.com/menu/"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0276",
@@ -2886,12 +3540,47 @@
    "phone": "+14196021052",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "tuesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "wednesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "thursday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "friday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "00:00",
+     "close": "23:59"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24/7 member access",
+    "Free weights",
+    "Cardio",
+    "Personal training",
+    "Sauna"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Independent 24/7 gym on Cleveland Road West with free weights, training and a sauna.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2899,7 +3588,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gym",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0149",
@@ -2939,9 +3629,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "smoothies",
+    "sandwiches",
+    "takeout"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A smoothie bar and cafe built around real food. Smoothie bowls, paninis and sandwiches on Cleveland Road.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -2949,7 +3643,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "smoothie_juice_bar",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "enriched": true
   },
   {
    "id": "huro-lst-0256",
@@ -3039,9 +3734,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pickup",
+    "call-in ordering",
+    "online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Bubble tea, matcha and fruit teas on Cleveland Road. Paninis and breakfast alongside; call ahead or order for pickup.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3049,7 +3748,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bubble_tea",
-   "overture_confidence": 0.5914776921272278
+   "overture_confidence": 0.5914776921272278,
+   "menu": {
+    "url": "http://the-tea-bubble.square.site/"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0043",
@@ -3064,9 +3767,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "lash services",
+    "skincare",
+    "spa treatments",
+    "lash training/education"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Lash and spa studio in Huron, Ohio (\"Diva Lashes By Maggie & SPA\") offering lash services, skincare, and spa treatments, plus lash-training education and a skincare product shop.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3074,7 +3782,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beauty_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0241",
@@ -3089,9 +3798,11 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "bakery"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Bagels hand-rolled, kettle-boiled and baked fresh each morning. Chef Mike Trabel's neighborhood bakery.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3099,7 +3810,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bagel_shop",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0018",
@@ -3108,15 +3820,45 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "525 Cleveland Rd W",
-   "phone": "4194336350",
+   "phone": "+14194336350",
    "website": "https://www.napaonline.com/en/oh/huron/store/802182",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "car and truck parts",
+    "tools and equipment",
+    "online order pickup",
+    "curbside pickup"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron Auto Parts, the town's NAPA store, closed Sundays. Parts, tools and curbside pickup on Cleveland Road West.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3124,7 +3866,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "auto_parts_and_supply_store",
-   "overture_confidence": 0.991375
+   "overture_confidence": 0.991375,
+   "enriched": true
   },
   {
    "id": "huro-lst-0249",
@@ -3136,12 +3879,50 @@
    "phone": "+14194332499",
    "website": "http://huronmarket.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "21:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full deli",
+    "In-house bakery",
+    "In-house butcher (Choice beef cut daily)",
+    "Grab-and-go",
+    "Beer Cave",
+    "Wine and spirits",
+    "DoorDash delivery",
+    "Lunch menu"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A neighborhood market with an in-house butcher, bakery and deli, and one of Erie County's biggest beer selections.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3149,7 +3930,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "convenience_store",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0097",
@@ -3161,12 +3943,43 @@
    "phone": "+14197808516",
    "website": "https://youtube.com/@southshoremarine",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "new boats",
+    "brokerage and pre-owned",
+    "service department",
+    "financing",
+    "marine insurance"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Sawmill Parkway boatyard that will service any hull, bought here or not. It sells Regal, Pursuit, Grady-White and Back Cove.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3174,7 +3987,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_dealer",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0116",
@@ -3189,9 +4003,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "truckload freight",
+    "LTL freight",
+    "expedited shipping",
+    "hazmat transport",
+    "warehousing"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Asset-based trucking and logistics carrier running truckload, LTL, expedited and hazmat freight.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3199,7 +4019,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "freight_and_cargo_service",
-   "overture_confidence": 0.8790246486663819
+   "overture_confidence": 0.8790246486663819,
+   "enriched": true
   },
   {
    "id": "huro-lst-0039",
@@ -3214,9 +4035,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Chiropractic care",
+    "Sports medicine",
+    "Spinal decompression therapy"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A solo chiropractic practice run by Dr. J. Christopher Mariotti, DC, in Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3224,7 +4049,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "chiropractor",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0128",
@@ -3239,9 +4065,11 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "manufacturing facility"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Humanetics' Huron plant, where the company manufactures crash-test dummies.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3249,7 +4077,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "business_manufacturing_and_supply",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0195",
@@ -3316,12 +4145,38 @@
    "phone": "+14194335560",
    "website": "https://www.firelands.bgsu.edu/library.html",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Research databases",
+    "Interlibrary loan",
+    "Ask Us reference service",
+    "Second floor, Foundation Hall"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The academic library of BGSU Firelands, on the second floor of Foundation Hall. Research databases, interlibrary loan and an Ask Us reference service that answers outside opening hours.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3329,7 +4184,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "library",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0194",
@@ -3394,9 +4250,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Residential gutter guards",
+    "Commercial gutter guards",
+    "Slip-under-shingle guards",
+    "Direct online ordering",
+    "Contractor locator",
+    "DIY installation"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Huron manufacturer of aluminium gutter guards, sold direct to homeowners and through a contractor network.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3404,7 +4267,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "business_manufacturing_and_supply",
-   "overture_confidence": 0.30524274706840515
+   "overture_confidence": 0.30524274706840515,
+   "enriched": true
   },
   {
    "id": "huro-lst-0117",
@@ -3413,15 +4277,17 @@
    "category": "services",
    "subcategory": "health",
    "address": "2320 University Dr E  Ste A",
-   "phone": "14194334800",
+   "phone": "+14194334800",
    "website": null,
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Podiatry / foot and ankle care"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A podiatry practice in Huron affiliated with Firelands Regional Medical Center.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3429,7 +4295,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "public_health_clinic",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "enriched": true
   },
   {
    "id": "huro-lst-0089",
@@ -3446,7 +4313,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Everway, formerly n2y — special-education software, founded and long headquartered in Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3454,7 +4321,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "corporate_office",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0210",
@@ -3469,17 +4337,22 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "artificial turf field",
+    "running track",
+    "bleacher seating"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "The Tigers play here, on turf, under lights, since 1972. A 4,700-seat stadium with a track, off Jim Campbell Boulevard.",
+   "history": "The stadium opened in 1972 and seats about 4,700. In 2020 Mucci Farms and the Huron Athletic Booster Club financed a new turf field under an eight-year naming-rights agreement, making it \"Mucci Field at Huron Memorial Stadium.\"",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "overture",
    "osm_type": null,
    "overture_category": "stadium_arena",
-   "overture_confidence": 0.7630570530891418
+   "overture_confidence": 0.7630570530891418,
+   "enriched": true
   },
   {
    "id": "huro-lst-0081",
@@ -3494,9 +4367,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Books sent to grieving families",
+    "Hearts Open Wide (H.O.W.) program",
+    "Holiday Remembrance Ceremony",
+    "5K Color Run/Walk and Kids Fun Run",
+    "Babysitter training course",
+    "SIDS prevention resources",
+    "Breast milk banking partnership"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A foundation that supports families grieving the loss of a child, founded in memory of Abbey Rose Kudrin by her parents.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3504,7 +4385,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "community_services_non_profits",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0267",
@@ -3516,12 +4398,37 @@
    "phone": null,
    "website": "https://www.ruhehausllc.com/s/appointments",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "closed": true
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "closed": true
+    },
+    "tuesday": {
+     "close": "18:00",
+     "open": "11:00"
+    },
+    "wednesday": {
+     "close": "14:00",
+     "open": "10:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "dermaplane facials",
+    "wheelchair accessible entrance",
+    "wheelchair accessible parking"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Luxury spa studio in Huron, Ohio offering dermaplane facials and hair and body treatments, with a focus on skin health and whole-body wellness.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3529,7 +4436,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "spas",
-   "overture_confidence": 0.4602181613445282
+   "overture_confidence": 0.4602181613445282,
+   "enriched": true
   },
   {
    "id": "huro-lst-0006",
@@ -3538,15 +4446,30 @@
    "category": "dining",
    "subcategory": "restaurants",
    "address": "30 Main St",
-   "phone": "(419) 602-4664",
+   "phone": "+14196024664",
    "website": "http://www.oldfishhousehuron.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "open": "15:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "dog-friendly"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Home of the fresh-squeezed, hand-shaken lemonade, now serving perch sandwiches. A dog-friendly spot at the foot of Main Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3554,7 +4477,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "breakfast_and_brunch_restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "menu": {
+    "url": "https://oldnorthmaineats.com/old-fish-house/"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0183",
@@ -3566,12 +4493,29 @@
    "phone": "+14196024664",
    "website": "https://oldnorthmaineats.com/old-fish-house/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "open": "15:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Cocktail bar",
+    "Waterfront",
+    "Dog friendly"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Waterfront cocktail bar and local hangout at the foot of Main Street, open to 11pm.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3579,7 +4523,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
-   "overture_confidence": 0.9952545166015625
+   "overture_confidence": 0.9952545166015625,
+   "enriched": true
   },
   {
    "id": "huro-lst-0069",
@@ -3594,9 +4539,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "custom picture framing",
+    "conservation framing",
+    "shadowboxes",
+    "needlework framing",
+    "canvas stretching"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Forty years of framing in one room on Wall Street. Conservation work, shadowboxes and needlework, all done on the premises.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3604,7 +4555,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "art_gallery",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "enriched": true
   },
   {
    "id": "huro-lst-0113",
@@ -3613,15 +4565,23 @@
    "category": "services",
    "subcategory": "health",
    "address": "105 Wall St",
-   "phone": "14196023149",
+   "phone": "+14196023149",
    "website": "http://behpsychservices.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Psychological testing",
+    "Clinical therapy",
+    "Biofeedback",
+    "Educational support",
+    "Peak performance work",
+    "Wellness services",
+    "All ages"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Wall Street behavioural health practice doing psychological testing, therapy and biofeedback for all ages, 20 years in.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3629,7 +4589,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "psychologist",
-   "overture_confidence": 0.75
+   "overture_confidence": 0.75,
+   "enriched": true
   },
   {
    "id": "huro-lst-0155",
@@ -3669,9 +4630,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Clinical hypnotherapy",
+    "Free discovery call",
+    "Online sessions",
+    "Rest + Receive group events",
+    "Booking via Square"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A certified clinical hypnotherapy practice run by Sarah Steel, working on anxiety, overthinking, perfectionism and life transitions.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3679,7 +4646,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.08619300276041031
+   "overture_confidence": 0.08619300276041031,
+   "enriched": true
   },
   {
    "id": "huro-lst-0068",
@@ -3716,12 +4684,40 @@
    "phone": "+14194338487",
    "website": "http://www.cityofhuron.org/government/departments/parks-and-recreation",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "16:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Online program registration",
+    "Shelter reservations",
+    "Nickel Plate Beach parking passes",
+    "Youth and adult recreation programs",
+    "Sports, art and summer camps",
+    "Safety Town"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The city department that runs Huron's parks, beaches and boat basin. It programs youth and adult recreation, sports and art camps, Safety Town, shelter reservations and the summer entertainment season at the amphitheater.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3729,7 +4725,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sports_and_recreation_venue",
-   "overture_confidence": 0.9516571164131165
+   "overture_confidence": 0.9516571164131165,
+   "enriched": true
   },
   {
    "id": "huro-lst-0188",
@@ -3741,12 +4738,38 @@
    "phone": "+15673308043",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "11:30",
+     "close": "20:30"
+    },
+    "thursday": {
+     "open": "11:30",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "11:30",
+     "close": "21:30"
+    },
+    "saturday": {
+     "open": "11:30",
+     "close": "21:30"
+    },
+    "sunday": {
+     "open": "09:30",
+     "close": "19:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full bar",
+    "Waterfront patio",
+    "Seafood",
+    "Indoor and outdoor dining"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Family-run waterfront pub by the Huron pier, known for its perch sandwich and walleye fingers.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3754,7 +4777,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
-   "overture_confidence": 0.9677644968032837
+   "overture_confidence": 0.9677644968032837,
+   "enriched": true
   },
   {
    "id": "huro-lst-0166",
@@ -3766,12 +4790,48 @@
    "phone": "+14196166088",
    "website": "http://harborhousebar.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "tuesday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "12:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "12:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "12:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "20:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "waterfront seating",
+    "dog-friendly patio",
+    "outdoor seating",
+    "kids menu",
+    "live music (occasional)",
+    "banquet center"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family restaurant on the Huron River with a dog-friendly patio at the water. American menu built around burgers and the perch basket, with a banquet center attached.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3779,7 +4839,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "american_restaurant",
-   "overture_confidence": 0.9686952233314514
+   "overture_confidence": 0.9686952233314514,
+   "menu": {
+    "url": "http://harborhousebar.com/food-menu"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0193",
@@ -3819,9 +4883,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "18 lanes",
+    "Full-service bar",
+    "Cafe",
+    "Leagues"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An 18-lane bowling center on Main Street with a full-service bar and the Riverview Cafe. Operating status not established — reported temporarily closed since October 2025.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3829,7 +4898,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bowling_alley",
-   "overture_confidence": 0.9251940846443176
+   "overture_confidence": 0.9251940846443176,
+   "enriched": true
   },
   {
    "id": "huro-lst-0196",
@@ -3916,12 +4986,51 @@
    "phone": "+14194338000",
    "website": "https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017?pmf=yext&mc=llyxyxpx",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "tuesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "wednesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "thursday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "friday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "00:00",
+     "close": "23:59"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24-hour front desk",
+    "Indoor heated pool",
+    "Free hot breakfast",
+    "Free WiFi",
+    "Free parking",
+    "Fitness center",
+    "Business center",
+    "Meeting room",
+    "Riverside picnic area"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Riverside Comfort Inn off Main Street with a 24-hour front desk, indoor pool and free hot breakfast.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3967,12 +5076,37 @@
    "phone": "+14194331234",
    "website": "http://www.huron-city.k12.oh.us",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "15:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Grades 6-8",
+    "Office open 7:00 AM - 3:30 PM",
+    "School day 7:25 AM - 2:40 PM"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron City Schools' middle school for grades 6 through 8, on Ohio Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -3980,7 +5114,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "high_school",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "enriched": true
   },
   {
    "id": "huro-lst-0131",
@@ -3995,9 +5130,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Toddler House (18-36 months)",
+    "Children's House (ages 3-6)",
+    "Elementary (ages 6-12)",
+    "Prepared Montessori classrooms"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An independent Montessori school on Ohio Street taking children from 18 months through age 12.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4005,7 +5145,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "private_school",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0072",
@@ -4047,7 +5188,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Kristen Valenty is a Realtor with The Holden Agency Real Estate, based at the firm's Huron office at 304 Williams St.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4055,7 +5196,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_agent",
-   "overture_confidence": 0.49442368745803833
+   "overture_confidence": 0.49442368745803833,
+   "enriched": true
   },
   {
    "id": "huro-lst-0272",
@@ -4095,9 +5237,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Ages 3-5",
+    "1:10 staff-to-child ratio",
+    "20 children maximum",
+    "Ohio Step Up To Quality program",
+    "Term runs day after Labor Day to the Wednesday before Memorial Day"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A preschool for three- to five-year-olds at First Presbyterian Church, capped at 20 children with a one-to-ten staff ratio.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4105,7 +5253,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "preschool",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0225",
@@ -4120,9 +5269,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Lenten fish fries",
+    "Sunday breakfast buffets",
+    "Catholic school scholarships"
+   ],
    "tags": [],
-   "description": null,
+   "description": "St. Edward Council #5023 of the Knights of Columbus, a Catholic fraternal order serving St. Peter parish. Known locally for Lenten fish fries and Sunday breakfast buffets that fund Catholic school scholarships.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4130,7 +5283,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "community_services_non_profits",
-   "overture_confidence": 0.6436288356781006
+   "overture_confidence": 0.6436288356781006,
+   "enriched": true
   },
   {
    "id": "huro-lst-0136",
@@ -4139,15 +5293,21 @@
    "category": "community",
    "subcategory": "organizations",
    "address": "202 Cleveland Rd W",
-   "phone": "14196256421",
+   "phone": "+14196256421",
    "website": "https://www.greatersandusky.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Member directory",
+    "Networking events",
+    "Job listings",
+    "Young professionals group",
+    "Destination Huron program"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The regional chamber of commerce for the Greater Sandusky Bay region, which includes Huron. It runs business advocacy, networking, job listings and a young professionals group, and organises Huron's lakefront markets through its Destination Huron program.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4155,7 +5315,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "chambers_of_commerce",
-   "overture_confidence": 0.75
+   "overture_confidence": 0.75,
+   "enriched": true
   },
   {
    "id": "huro-lst-0208",
@@ -4172,7 +5333,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Jason Smith is a Simply Better Realty agent specializing in Lake Erie waterfront and Kelleys Island real estate, based out of the brokerage's Huron office.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4180,7 +5341,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_agent",
-   "overture_confidence": 0.43328922986984253
+   "overture_confidence": 0.43328922986984253,
+   "enriched": true
   },
   {
    "id": "huro-lst-0098",
@@ -4197,7 +5359,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The Huron Professional Building is a multi-tenant office building at 202 Cleveland Rd W in Huron, housing at least the local office of Simply Better Realty.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4205,7 +5367,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "party_and_event_planning",
-   "overture_confidence": 0.8949015140533447
+   "overture_confidence": 0.8949015140533447,
+   "enriched": true
   },
   {
    "id": "huro-lst-0037",
@@ -4222,7 +5385,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Chris Pisano is a mortgage loan officer with Union Home Mortgage, assisting with home purchase and refinance loans from this Huron office.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4230,7 +5393,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "installment_loans",
-   "overture_confidence": 0.5384074449539185
+   "overture_confidence": 0.5384074449539185,
+   "enriched": true
   },
   {
    "id": "huro-lst-0094",
@@ -4264,15 +5428,42 @@
    "category": "services",
    "subcategory": "health",
    "address": "204 Cleveland Rd W",
-   "phone": "14196166000",
+   "phone": "+14196166000",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Sebastian Dental LLC is a general dentistry practice run by Dr. Carlyn M. Sebastian-Wise, DDS, located next to the Huron Professional Building.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4280,7 +5471,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "dentist",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0205",
@@ -4297,7 +5489,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Angie Masterson is a Simply Better Realty agent serving the Lake Erie Shores and Islands region, based out of the brokerage's Huron office.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4305,7 +5497,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_agent",
-   "overture_confidence": 0.2978995442390442
+   "overture_confidence": 0.2978995442390442,
+   "enriched": true
   },
   {
    "id": "huro-lst-0148",
@@ -4322,7 +5515,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Brad Barbisch is a Realtor with The Barbisch Team at The Holden Agency Real Estate, working out of the firm's Huron office at 304 Williams St.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4330,7 +5523,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_agent",
-   "overture_confidence": 0.8125662207603455
+   "overture_confidence": 0.8125662207603455,
+   "enriched": true
   },
   {
    "id": "huro-lst-0066",
@@ -4342,12 +5536,37 @@
    "phone": "+14194332630",
    "website": "https://www.familyeyecarecenters-huron.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:30",
+     "close": "16:30"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "08:30",
+     "close": "16:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "16:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Comprehensive eye exams",
+    "Dry eye treatment",
+    "Myopia management for children",
+    "Contact lens fitting",
+    "Eyeglasses and designer frames",
+    "Online contact lens ordering",
+    "Saturday by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An optometry office on Williams Street that has served Ohio's North Coast for more than 50 years. Closed Fridays; Saturdays by appointment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4355,7 +5574,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "optometrist",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0273",
@@ -4364,15 +5584,21 @@
    "category": null,
    "subcategory": null,
    "address": "304 Williams St  Ste N",
-   "phone": "4199218347",
+   "phone": "+14199218347",
    "website": "http://myclaritycounseling.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Individual therapy for adults, teens and adolescents",
+    "Mindfulness-based practice",
+    "Cognitive behavioral therapy",
+    "Walk and Talk therapy",
+    "By appointment, Monday to Thursday"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A solo counseling practice on Williams Street offering individual therapy for adults, teens and adolescents, seen by appointment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4380,7 +5606,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0140",
@@ -4414,15 +5641,44 @@
    "category": "services",
    "subcategory": "health",
    "address": "300 Williams St",
-   "phone": "4194339570",
+   "phone": "+14194339570",
    "website": "https://www.firelands.com/medical-care/lab-services/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "12:00",
+     "open": "06:00"
+    },
+    "monday": {
+     "close": "14:00",
+     "open": "06:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "14:00",
+     "open": "06:00"
+    },
+    "tuesday": {
+     "close": "14:00",
+     "open": "06:00"
+    },
+    "wednesday": {
+     "close": "14:00",
+     "open": "06:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pre-registration available by phone at 419-557-7840"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Firelands Laboratory's Community Collection Center in Huron is a walk-in blood draw and lab specimen collection station at 300 Williams Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4430,7 +5686,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "diagnostic_imaging",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0164",
@@ -4470,9 +5727,22 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "120+ slips",
+    "50 transient slips",
+    "Floating docks",
+    "30-amp electric",
+    "Water at slip",
+    "Restrooms",
+    "Showers",
+    "Outdoor amphitheater",
+    "Docking assistance",
+    "VHF Channel 09",
+    "Ohio Clean Marina certified",
+    "Live webcam"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The city's municipal marina and amphitheater on the Huron River, a short walk from Main Street. More than 120 slips including 50 transient, on a floating dock system with water and 30-amp electric.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4480,7 +5750,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "marina",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0083",
@@ -4492,12 +5763,40 @@
    "phone": "+14194335170",
    "website": "https://www.huntington.com/Community/branch-info?locationId=23796&cmpid=seo%3Alocal_listings%3Abranch_info%3Ana",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "18:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Full-service Huntington Bank branch (locationId 23796, branch name \"The Firelands\") at 357 Main St, despite this listing being labeled as an ATM.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4505,7 +5804,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bank_credit_union",
-   "overture_confidence": 0.9995984894931317
+   "overture_confidence": 0.9995984894931317,
+   "enriched": true
   },
   {
    "id": "huro-lst-0284",
@@ -4517,12 +5817,40 @@
    "phone": null,
    "website": "https://www.huntington.com/Community/branch-info?locationId=23796",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "18:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Huntington Bank branch operating under the local name \"The Firelands,\" at 357 Main St -- the same branch as the \"Huntington Bank ATM\" listing at this address.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4530,7 +5858,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "banks",
-   "overture_confidence": 0.9497681260108948
+   "overture_confidence": 0.9497681260108948,
+   "enriched": true
   },
   {
    "id": "huro-lst-0274",
@@ -4570,9 +5899,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "neurotoxin injections",
+    "dermal fillers",
+    "microneedling",
+    "laser skin rejuvenation",
+    "medication-assisted weight loss",
+    "spray tan",
+    "gift cards"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Aesthetics and wellness clinic in Huron, Ohio (part of the multi-location June Aesthetics group) offering neurotoxin injections, dermal fillers, microneedling, laser skin rejuvenation, medication-assisted weight loss, and personalized skincare plans.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4580,7 +5917,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "medical_spa",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0150",
@@ -4595,9 +5933,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Saturday 5:00 PM relaxed worship",
+    "Sunday 8:00 AM praise band service",
+    "Sunday 9:00 AM coffee hour",
+    "Sunday 10:00 AM organ service",
+    "Weekday 4:30 PM daily devotions (livestreamed)",
+    "Wednesday 5:30 PM LIFT classes and supper",
+    "Facebook and YouTube livestream"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A United Methodist congregation on Williams Street with three weekend worship services. Saturdays at 5 in Fellowship Hall, Sundays at 8 with a praise band and 10 with the pipe organ.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4605,7 +5951,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "church_cathedral",
-   "overture_confidence": 0.9999402360022068
+   "overture_confidence": 0.9999402360022068,
+   "enriched": true
   },
   {
    "id": "huro-lst-0235",
@@ -4664,15 +6011,20 @@
    "category": null,
    "subcategory": null,
    "address": "358 Main St",
-   "phone": "4194334772",
+   "phone": "+14194334772",
    "website": "http://www.pabodie.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Canvas, acrylic and framed prints",
+    "Museum-quality paper",
+    "Pabodie Press books",
+    "Free US and Canada shipping"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An online fine-art print publisher selling digital art and photography as canvas, acrylic and framed prints, plus books under the Pabodie Press imprint.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4680,7 +6032,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.85
+   "overture_confidence": 0.85,
+   "enriched": true
   },
   {
    "id": "huro-lst-0056",
@@ -4695,9 +6048,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "home decor",
+    "jewelry",
+    "clothing",
+    "hand-crafted goods",
+    "upcycled goods"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Victorian, boho and upcycled, all in one Main Street room. A resale shop of home decor, jewelry and clothing.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4705,7 +6064,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "shopping",
-   "overture_confidence": 0.7434737086296082
+   "overture_confidence": 0.7434737086296082,
+   "enriched": true
   },
   {
    "id": "huro-lst-0080",
@@ -4792,20 +6152,30 @@
    "phone": "+14194335009",
    "website": "http://www.thehuronhistoricalsociety.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "wednesday": {
+     "open": "15:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "local archive",
+    "photograph collection",
+    "exhibits"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "Two hours a week in the library basement, the town keeps its own history. The society acquires, preserves and exhibits Huron's documents and photographs.",
+   "history": "Huron has been part of Erie County since 1838; before that it lay in Huron County. (Huron Historical Society.) The society's own founding date and the history of 333 Williams St are not established.",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "overture",
    "osm_type": null,
    "overture_category": "history_museum",
-   "overture_confidence": 0.8919472694396973
+   "overture_confidence": 0.8919472694396973,
+   "enriched": true
   },
   {
    "id": "huro-lst-0253",
@@ -4822,7 +6192,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A Rotary service club for Huron. It has no premises of its own and meets at local venues; the listing's Cleveland Road West address is not a clubhouse.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4830,7 +6200,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "community_services_non_profits",
-   "overture_confidence": 0.2614365220069885
+   "overture_confidence": 0.2614365220069885,
+   "enriched": true
   },
   {
    "id": "huro-lst-0030",
@@ -4845,9 +6216,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Wireless lavalier microphones",
+    "Wireless earbuds",
+    "Soundbars",
+    "Online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An online shop selling wireless microphones, earbuds and soundbars under the CrystalMic name.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4855,7 +6231,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.2088703215122223
+   "overture_confidence": 0.2088703215122223,
+   "enriched": true
   },
   {
    "id": "huro-lst-0019",
@@ -4895,9 +6272,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "cast miniatures",
+    "foam terrain",
+    "digital 3D-printable files",
+    "online only"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Toy soldiers cast in Huron and shipped worldwide. A family-run maker of 28mm and 54mm wargaming miniatures and foam terrain.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4905,7 +6287,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "toy_store",
-   "overture_confidence": 0.5163470506668091
+   "overture_confidence": 0.5163470506668091,
+   "enriched": true
   },
   {
    "id": "huro-lst-0053",
@@ -4945,9 +6328,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "City Manager's Office",
+    "Finance",
+    "Planning, Zoning & Building",
+    "Police (non-emergency 419-433-4114)",
+    "Fire administration (non-emergency 419-433-3544)",
+    "Huron Municipal Court (419-433-5430)",
+    "Water Department at 10 Waterworks Drive (419-433-9502)"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's municipal government, in the municipal building at 417 Main Street. City hall houses the city manager's office, finance, planning and zoning, police, fire administration and the municipal court.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4955,7 +6346,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "central_government_office",
-   "overture_confidence": 0.9846013784408569
+   "overture_confidence": 0.9846013784408569,
+   "enriched": true
   },
   {
    "id": "huro-lst-0187",
@@ -4967,12 +6359,45 @@
    "phone": "+14196160002",
    "website": "http://www.gatheringgroundscoffeehouse.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:30",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "06:30",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "06:30",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "06:30",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "06:30",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "07:00",
+     "close": "17:00"
+    },
+    "sunday": {
+     "open": "07:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "drive-thru",
+    "free Wi-Fi",
+    "indoor seating"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Lake Erie coffee house in the heart of Huron, open at 6:30 with a drive-thru. Built for sitting a while: free Wi-Fi, room to read, and company.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -4980,7 +6405,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "coffee_shop",
-   "overture_confidence": 0.9516680836677551
+   "overture_confidence": 0.9516680836677551,
+   "menu": {
+    "url": "http://www.gatheringgroundscoffeehouse.com/menu-1"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0035",
@@ -4989,15 +6418,21 @@
    "category": "community",
    "subcategory": "organizations",
    "address": "417 Main St",
-   "phone": "+14194333544",
+   "phone": "+14194335000",
    "website": "http://www.cityofhuron.org/government/departments/fire-department",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Station 1, 413 Main Street",
+    "Station 2, 1830 Bogart Road",
+    "24/7/365 staffing",
+    "Emergency medical services",
+    "Dive Rescue and Recovery Team"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron's fire and EMS service, staffed around the clock from two stations. Most of its work is medical: 1,935 of 2,208 responses in 2025 were EMS calls.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5005,7 +6440,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fire_department",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0121",
@@ -5014,15 +6450,18 @@
    "category": "community",
    "subcategory": "organizations",
    "address": "380 Huron St",
-   "phone": "14196160060",
+   "phone": "+14196160060",
    "website": "https://www.usgs.gov/newsroom/article.asp",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "USGS Great Lakes Science Center field station",
+    "Research facility, not open to the public"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A USGS field station on Huron Street, one of six belonging to the Great Lakes Science Center. Its parent center studies Great Lakes fish populations, invasive species and sea lamprey control for the agencies that manage the lakes.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5030,7 +6469,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "central_government_office",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "enriched": true
   },
   {
    "id": "huro-lst-0020",
@@ -5042,12 +6482,46 @@
    "phone": "+14194333113",
    "website": "http://www.huronyachtcluboh.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "18:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Members only",
+    "Clubhouse restaurant and bar",
+    "Fuel dock (gas and diesel)",
+    "Transient slips",
+    "Berths via the Huron Boat Basin",
+    "Direct Lake Erie access",
+    "Inter-Lake Yachting Association member",
+    "Seasonal: May through December"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A private boating and social club at the mouth of the Huron River, founded in 1955. Members get fuel, transient slips and a clubhouse restaurant, and the season runs from Opening Day in May to New Year's Eve.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5055,7 +6529,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "community_services_non_profits",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0104",
@@ -5064,15 +6539,43 @@
    "category": "services",
    "subcategory": null,
    "address": "378 Main St",
-   "phone": "8002758777",
+   "phone": "+18002758777",
    "website": "https://tools.usps.com/locations/details/1367709?utm_source=website-url&utm_medium=search&utm_campaign=yext",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "08:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The Huron, Ohio post office (USPS), located at the corner of Main St and Mill St, offering retail window service, PO boxes, and mail collection.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5080,7 +6583,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "post_office",
-   "overture_confidence": 0.9655
+   "overture_confidence": 0.9655,
+   "enriched": true
   },
   {
    "id": "huro-lst-0085",
@@ -5092,12 +6596,40 @@
    "phone": "+14194335630",
    "website": "https://www.usps.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "saturday": {
+     "close": "12:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "08:30"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "08:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The Huron, Ohio post office (USPS) -- same physical location as huro-lst-0104, situated at the corner of Main St and Mill St, addressed here to the Mill St side.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5105,7 +6637,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "post_office",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "enriched": true
   },
   {
    "id": "huro-lst-0158",
@@ -5120,9 +6653,18 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Cremation",
+    "Traditional burial services",
+    "Pre-arrangement planning",
+    "Veterans' services, headstones and burial flags",
+    "Out-of-state shipping",
+    "Grief support resources",
+    "Facility tours",
+    "24/7 phone"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small family-owned funeral home and crematory on Main Street, serving Huron since 1925, answering the phone at any hour.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5130,7 +6672,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "funeral_services_and_cemeteries",
-   "overture_confidence": 0.9996699541807175
+   "overture_confidence": 0.9996699541807175,
+   "enriched": true
   },
   {
    "id": "huro-lst-0217",
@@ -5145,9 +6688,18 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Primary care, birth through adulthood",
+    "Same-day sick visits",
+    "Well-child visits and immunizations",
+    "School and sports physicals",
+    "Chronic disease management",
+    "Preventive screenings",
+    "Home visits",
+    "Patient portal"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family primary-care clinic on Main Street doing same-day sick visits, physicals and well-child care, in the office or at your home.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5155,7 +6707,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "family_practice",
-   "overture_confidence": 0.3381790518760681
+   "overture_confidence": 0.3381790518760681,
+   "enriched": true
   },
   {
    "id": "huro-lst-0180",
@@ -5164,15 +6717,46 @@
    "category": "services",
    "subcategory": null,
    "address": "401-423 Main St",
-   "phone": "(419) 433-2437",
+   "phone": "+14194332437",
    "website": "http://www.firstfedlorain.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "13:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "16:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24/7 ATM",
+    "night deposit"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Full-service community bank branch of First Federal Savings of Lorain, offering deposit accounts, mortgages, night deposit, and 24/7 ATM access.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5180,7 +6764,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "banks",
-   "overture_confidence": 0.77
+   "overture_confidence": 0.77,
+   "enriched": true
   },
   {
    "id": "huro-lst-0175",
@@ -5220,9 +6805,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "River tours",
+    "Harbor tours",
+    "Private parties",
+    "Online booking",
+    "Wildlife and migratory bird viewing",
+    "Ten minutes from Cedar Point"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The exclusive tour boat on the Huron River, running river and harbor cruises and private parties.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5230,7 +6822,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sightseeing_tour_agency",
-   "overture_confidence": 0.565488338470459
+   "overture_confidence": 0.565488338470459,
+   "enriched": true
   },
   {
    "id": "huro-lst-0138",
@@ -5245,9 +6838,19 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Boat slips",
+    "Boat racks",
+    "Cosmetic fiberglass and gelcoat repair",
+    "Paint and detailing",
+    "Bottom painting",
+    "Garmin and marine electronics installation",
+    "Boat hoisting",
+    "Boat, rack and trailer storage",
+    "River Monster Tours charters"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small marina on Huron Street with slips and boat racks, plus a repair shop that does gelcoat, paint and marine electronics.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5255,7 +6858,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "marina",
-   "overture_confidence": 0.36397066712379456
+   "overture_confidence": 0.36397066712379456,
+   "enriched": true
   },
   {
    "id": "huro-lst-0092",
@@ -5267,12 +6871,48 @@
    "phone": "+14194332954",
    "website": "http://www.mesenburg.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "20:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Wedding catering",
+    "Off-premise catering",
+    "Mesenburg Hall / Plaza Place venue",
+    "All-inclusive hall rental",
+    "Menu tastings",
+    "Venue tours by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Off-premise caterer since 1984, and the Plaza Place wedding hall on Main Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5280,7 +6920,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "caterer",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0162",
@@ -5297,7 +6938,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "The town's morning stop for freshly baked donuts, made with love and care.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5305,7 +6946,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bakery",
-   "overture_confidence": 0.9532211422920227
+   "overture_confidence": 0.9532211422920227,
+   "enriched": true
   },
   {
    "id": "huro-lst-0127",
@@ -5320,9 +6962,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Junior high youth group",
+    "High school youth group",
+    "NET retreat",
+    "Catholic Youth Summer Camp",
+    "Damascus Retreat",
+    "Beulah Beach"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The youth ministry of St. Peter Catholic Church on Main Street, with separate junior high and high school groups.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5330,7 +6979,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "youth_organizations",
-   "overture_confidence": 0.6349037289619446
+   "overture_confidence": 0.6349037289619446,
+   "enriched": true
   },
   {
    "id": "huro-lst-0259",
@@ -5364,15 +7014,48 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "502 Main St",
-   "phone": "14194337323",
+   "phone": "+14194337323",
    "website": "https://www.mickeythemoose.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "05:00",
+     "close": "24:00"
+    },
+    "saturday": {
+     "open": "05:00",
+     "close": "24:00"
+    },
+    "sunday": {
+     "open": "06:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "fuel",
+    "convenience store",
+    "hot food"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The Main Street gas station, open from five in the morning. Fuel, coffee and a convenience counter.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5380,7 +7063,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "convenience_store",
-   "overture_confidence": 0.9631699323654175
+   "overture_confidence": 0.9631699323654175,
+   "enriched": true
   },
   {
    "id": "huro-lst-0040",
@@ -5417,12 +7101,45 @@
    "phone": "+14194335494",
    "website": "https://www.dominos.com/en/?utm_source=google&utm_medium=loclist&utm_campaign=localmaps",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:30",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "10:30",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "10:30",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "10:30",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "10:30",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "10:30",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "10:30",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Delivery",
+    "Carryout",
+    "Online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Domino's on Main Street, delivering and carrying out until midnight on Friday and Saturday.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5430,7 +7147,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9760689735412598
+   "overture_confidence": 0.9760689735412598,
+   "enriched": true
   },
   {
    "id": "huro-lst-0010",
@@ -5445,9 +7163,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "tea service",
+    "party packages",
+    "boutique",
+    "by reservation"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A tea room and boutique on Main Street for luxury and children's tea parties. The operator's site announces the doors are closing at the end of February.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5455,7 +7178,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "tea_room",
-   "overture_confidence": 0.9511064887046814
+   "overture_confidence": 0.9511064887046814,
+   "enriched": true
   },
   {
    "id": "huro-lst-0200",
@@ -5470,9 +7194,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Online booking",
+    "Hot towel shave",
+    "Beard trim",
+    "Kids' cuts",
+    "Scalp massage",
+    "Deep pore cleansing facial"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A one-chair Main Street barbershop doing fades, beard work and hot-towel shaves, by appointment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5480,7 +7211,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "barber",
-   "overture_confidence": 0.8974579572677612
+   "overture_confidence": 0.8974579572677612,
+   "enriched": true
   },
   {
    "id": "huro-lst-0111",
@@ -5497,7 +7229,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Everway, formerly n2y and Texthelp — assistive and special-education technology.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5505,7 +7237,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "software_development",
-   "overture_confidence": 0.21278509497642517
+   "overture_confidence": 0.21278509497642517,
+   "enriched": true
   },
   {
    "id": "huro-lst-0084",
@@ -5520,9 +7253,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Business insurance",
+    "Family and personal insurance",
+    "Quotes",
+    "Claims assistance",
+    "Walk-ins"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An independent insurance agency on Main Street writing cover for local businesses and families.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5530,7 +7269,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "insurance_agency",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0146",
@@ -5545,9 +7285,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Youth studios (ages 7-13)",
+    "Adult studios",
+    "Child and adult partner sessions (ages 3+)",
+    "Private group sessions for homeschools, scouts, birthdays and team building",
+    "Booking by session, no walk-in hours"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small instructor-led art studio on Main Street running youth, adult and parent-and-child painting, watercolor and clay sessions.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5555,7 +7301,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "art_school",
-   "overture_confidence": 0.553705096244812
+   "overture_confidence": 0.553705096244812,
+   "enriched": true
   },
   {
    "id": "huro-lst-0033",
@@ -5597,7 +7344,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "bp-branded gas station at 502 Main St, Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5605,7 +7352,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0082",
@@ -5645,9 +7393,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Hand-tied nautical bracelets",
+    "Home and boat decor",
+    "Cotton cordage, fids and books",
+    "Online shop",
+    "Wholesale"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Main Street \"boat\"-ique of hand-tied nautical bracelets, knotwork decor and marlin-spike supplies.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5655,7 +7409,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "arts_and_crafts",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0063",
@@ -5664,15 +7419,50 @@
    "category": "parks",
    "subcategory": "recreation",
    "address": "410 Huron St",
-   "phone": "4196993585",
+   "phone": "+14196993585",
    "website": "https://bikinibottomws.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "19:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "19:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Sea-Doo Switch boats (13, 18 and 21 ft)",
+    "Sea-Doo Spark jet skis",
+    "Online reservations",
+    "Seasonal: mid-May to early September",
+    "Weather permitting"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Summer rentals of Sea-Doo Switch pontoon boats and Spark jet skis on Sandusky Bay, open daily in season, weather permitting.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5680,7 +7470,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sport_equipment_rentals",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0176",
@@ -5695,9 +7486,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Preschool",
+    "Kindergarten",
+    "Grades 1-8",
+    "Diocese of Toledo",
+    "Friday 8:30 AM all-school Mass"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Catholic parish school serving preschool through eighth grade, fully accredited through the Ohio Catholic Schools Accreditation Association.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5705,7 +7502,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "catholic_church",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0248",
@@ -5720,9 +7518,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "estate auctions",
+    "furniture and antiques",
+    "by auction date"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Huron auctioneer who has been calling estate and furniture sales since 2002.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5730,7 +7532,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "auction_house",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0049",
@@ -5745,9 +7548,20 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "eyelash extensions",
+    "hair services",
+    "HydraFacial",
+    "waxing",
+    "nails",
+    "makeup & weddings",
+    "spray tanning",
+    "Botox",
+    "in-store products",
+    "gift cards"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hello Gorgeous Beauty Bar, LLC — a multi-service beauty salon in Huron, Ohio (since 2018) offering eyelash extensions, hair services, HydraFacial, waxing, nails, makeup for weddings, spray tanning, and Botox.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5755,7 +7569,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "spas",
-   "overture_confidence": 0.882188618183136
+   "overture_confidence": 0.882188618183136,
+   "enriched": true
   },
   {
    "id": "huro-lst-0026",
@@ -5770,9 +7585,12 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "consignment furniture",
+    "home decor"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An upscale furniture-consignment shop in a historic Main Street storefront.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5780,7 +7598,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "furniture_store",
-   "overture_confidence": 0.3453887403011322
+   "overture_confidence": 0.3453887403011322,
+   "enriched": true
   },
   {
    "id": "huro-lst-0204",
@@ -5822,7 +7641,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Sly Bail Bonds provides 24/7 on-call bail bond services, with agents available to meet clients at home, court, or jail rather than fixed storefront hours.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5830,7 +7649,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bail_bonds_service",
-   "overture_confidence": 0.21993544697761536
+   "overture_confidence": 0.21993544697761536,
+   "enriched": true
   },
   {
    "id": "huro-lst-0009",
@@ -5845,9 +7665,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Motorcycle service and repair",
+    "ATV service",
+    "UTV service",
+    "Off-season storage",
+    "Parts and accessories store",
+    "Online parts ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Main Street powersports shop servicing motorcycles, ATVs and UTVs, with off-season storage and a parts store.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5855,7 +7682,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "motorcycle_repair",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0199",
@@ -5917,12 +7745,34 @@
    "phone": "+14196166008",
    "website": "https://www.luckystoneuniforms.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Public-safety uniforms",
+    "Duty gear",
+    "Department portal stores",
+    "Promotional products"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A locally owned public-safety uniform dealer supplying police, fire, EMS and medical agencies across north-central Ohio.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5930,7 +7780,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "flowers_and_gifts_shop",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0230",
@@ -5942,12 +7793,39 @@
    "phone": "+14194338468",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "08:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "08:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "08:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "08:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "08:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Full-service auto repair and brake shop (also known locally as Joe's Muffler & Brake), owner Joe Pendergrass, in business since 1999.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5955,7 +7833,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "automotive_repair",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0244",
@@ -5967,12 +7846,41 @@
    "phone": "+14196160025",
    "website": "http://www.mainsthuron.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full bar",
+    "American menu",
+    "Takeout"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Cozy neighbourhood tavern at the top of Main Street with an American bar menu.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -5980,7 +7888,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
-   "overture_confidence": 0.9991120225191117
+   "overture_confidence": 0.9991120225191117,
+   "enriched": true
   },
   {
    "id": "huro-lst-0277",
@@ -5992,12 +7901,32 @@
    "phone": "+14194331400",
    "website": "https://cornercuts.glossgenius.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "closed": true
+    },
+    "saturday": {
+     "close": "14:30",
+     "open": "09:30"
+    },
+    "sunday": {
+     "closed": true
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "women's haircuts",
+    "men's cuts",
+    "kids cuts",
+    "highlights",
+    "color treatments",
+    "hair extensions",
+    "manicures",
+    "pedicures"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hair salon on Main Street in Huron, Ohio (booking under the name 'Corner Cuts') offering women's and men's haircuts, kids' cuts, highlights, color treatments, hair extensions, manicures, and pedicures.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6005,7 +7934,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_extensions",
-   "overture_confidence": 0.27795276045799255
+   "overture_confidence": 0.27795276045799255,
+   "enriched": true
   },
   {
    "id": "huro-lst-0134",
@@ -6017,12 +7947,40 @@
    "phone": "+14194331400",
    "website": "https://cornercuts.glossgenius.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "09:30",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "09:30",
+     "close": "17:00"
+    },
+    "thursday": {
+     "open": "09:30",
+     "close": "17:00"
+    },
+    "friday": {
+     "open": "09:30",
+     "close": "16:00"
+    },
+    "saturday": {
+     "open": "09:30",
+     "close": "14:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Online booking",
+    "Hair color and balayage",
+    "Hair extensions (weft)",
+    "Manicures and pedicures",
+    "Kids' cuts",
+    "Eyebrow waxing"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Main Street hair salon doing cuts, color, extensions and nails, closed Mondays and Sundays.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6030,7 +7988,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0011",
@@ -6070,9 +8029,19 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "48 docks, sail and power",
+    "Dockside electricity",
+    "Dockside water",
+    "Restrooms",
+    "Showers",
+    "Covered picnic pavilion",
+    "Ample parking",
+    "Seasonal docks",
+    "Members only"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A privately owned members' marina with 48 seasonal docks for sail and power boats.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6080,7 +8049,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "marina",
-   "overture_confidence": 0.8990850448608398
+   "overture_confidence": 0.8990850448608398,
+   "enriched": true
   },
   {
    "id": "huro-lst-0263",
@@ -6092,12 +8062,41 @@
    "phone": "+14194331010",
    "website": "https://www.simplybetterrealty.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "17:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "17:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "real estate brokerage office"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Lighthouse Real Estate Team, doing business as Simply Better Realty, is a real estate brokerage with a physical office in Huron serving Erie, Huron and Ottawa counties.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6105,7 +8104,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_service",
-   "overture_confidence": 0.7616450190544128
+   "overture_confidence": 0.7616450190544128,
+   "enriched": true
   },
   {
    "id": "huro-lst-0189",
@@ -6120,9 +8120,12 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "drive-in",
+    "ice cream"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A nostalgic drive-in for burgers, chicken tenders and soft-serve.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6130,7 +8133,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "theme_restaurant",
-   "overture_confidence": 0.9588589072227478
+   "overture_confidence": 0.9588589072227478,
+   "enriched": true
   },
   {
    "id": "huro-lst-0206",
@@ -6145,9 +8149,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Barre classes",
+    "Pilates",
+    "Beginner friendly",
+    "Drop-in $25",
+    "14-day unlimited trial $49",
+    "Schedule and booking via Zenplanner"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A barre and pilates studio on Main Street running low-impact, music-driven classes that need no dance experience.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6155,7 +8166,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gym",
-   "overture_confidence": 0.7637417316436768
+   "overture_confidence": 0.7637417316436768,
+   "enriched": true
   },
   {
    "id": "huro-lst-0145",
@@ -6164,15 +8176,45 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "55 Cleveland Rd E",
-   "phone": "+14194334404",
+   "phone": "+14192162647",
    "website": "https://www.valleyfordofhuroninc.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "17:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "genuine Ford parts",
+    "aftermarket parts",
+    "service department",
+    "new and used sales"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The parts counter at Huron's Ford dealership on Cleveland Road East.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6180,7 +8222,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "car_dealer",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0270",
@@ -6195,9 +8238,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Family medicine",
+    "Adolescent medicine",
+    "Women's health",
+    "Geriatrics",
+    "Sports medicine"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A NOMS Healthcare family-practice office in Huron offering adolescent medicine, women's health, geriatrics, and sports medicine.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6205,7 +8254,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "diagnostic_services",
-   "overture_confidence": 0.9831629991531372
+   "overture_confidence": 0.9831629991531372,
+   "enriched": true
   },
   {
    "id": "huro-lst-0250",
@@ -6217,12 +8267,39 @@
    "phone": "+14194334463",
    "website": "https://www.jimspizzabox.com/Huron-OH",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "tuesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "21:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "20:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "online ordering"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family-owned pizza shop making pies for the Cedar Point area since 1978. Closed Mondays; order online.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6230,7 +8307,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9695203304290771
+   "overture_confidence": 0.9695203304290771,
+   "menu": {
+    "url": "https://www.jimspizzabox.com/menus"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0076",
@@ -6264,15 +8345,23 @@
    "category": "services",
    "subcategory": "health",
    "address": "107 Bogart Rd",
-   "phone": "14194332751",
+   "phone": "+14194332751",
    "website": "markmyersdds.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "General dentistry",
+    "Cosmetic dentistry",
+    "Pediatric dentistry",
+    "Digital X-rays",
+    "Emergency dental care",
+    "Online appointment requests",
+    "New patient forms"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family dentist on Bogart Road doing general, cosmetic and pediatric dentistry, with emergency care.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6280,7 +8369,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "dentist",
-   "overture_confidence": 0.9973471701145172
+   "overture_confidence": 0.9973471701145172,
+   "enriched": true
   },
   {
    "id": "huro-lst-0014",
@@ -6295,9 +8385,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "dine-in",
+    "carry-out",
+    "delivery",
+    "gluten-free crust"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family Italian kitchen on South Main, open daily at 4pm. Pizza, spaghetti and carry-out, with gluten-free crust and delivery.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6305,7 +8400,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9484351277351379
+   "overture_confidence": 0.9484351277351379,
+   "menu": {
+    "url": "https://www.pizzahousehuron.com/menu/"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0100",
@@ -6347,7 +8446,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "A family-medicine physician (DO) whose listed office address matches NOMS Family Practice - Huron, though he no longer appears on NOMS's own current provider roster for that location.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6355,7 +8454,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "family_practice",
-   "overture_confidence": 0.9375893473625183
+   "overture_confidence": 0.9375893473625183,
+   "enriched": true
   },
   {
    "id": "huro-lst-0007",
@@ -6364,15 +8464,43 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "808 Williams St",
-   "phone": "14194336700",
+   "phone": "+14194336700",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "monday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "saturday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "tuesday": {
+     "close": "16:00",
+     "open": "09:00"
+    },
+    "wednesday": {
+     "close": "16:00",
+     "open": "09:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Independent auto repair and routine-maintenance shop, in business since 2007, run by two co-owners.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6380,7 +8508,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "automotive_repair",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "enriched": true
   },
   {
    "id": "huro-lst-0168",
@@ -6414,7 +8543,7 @@
    "category": "services",
    "subcategory": null,
    "address": "805 Main St",
-   "phone": "4194336597",
+   "phone": "+14194336597",
    "website": "https://bluerhino.com/propane-finder?utm_source=bing&utm_medium=map&utm_campaign=vending_map&utm_content=158961",
    "logo": null,
    "hours": null,
@@ -6422,7 +8551,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 805 S. Main Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6430,7 +8559,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "propane_supplier",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0060",
@@ -6439,15 +8569,50 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "805 S. Main Street",
-   "phone": "4194336597",
+   "phone": "+14194336597",
    "website": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2234-200322563?utm_medium=referral&utm_source=yxt-bing&utm_campaign=us_fue_ret_xom_yxt",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "06:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "06:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Convenience store",
+    "Car wash",
+    "Diesel",
+    "Exxon Mobil Rewards+",
+    "Walmart+ accepted"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Mobil station on South Main with a convenience store, car wash and diesel.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6455,7 +8620,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.984475
+   "overture_confidence": 0.984475,
+   "enriched": true
   },
   {
    "id": "huro-lst-0282",
@@ -6464,15 +8630,47 @@
    "category": "services",
    "subcategory": "automotive",
    "address": "805 S. MAIN STREET",
-   "phone": null,
+   "phone": "+14194336597",
    "website": "https://www.exxon.com/en/find-station/mobil-huron-oh-hymiler2234-200322563",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "monday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "saturday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "sunday": {
+     "close": "22:00",
+     "open": "06:00"
+    },
+    "thursday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "tuesday": {
+     "close": "23:00",
+     "open": "06:00"
+    },
+    "wednesday": {
+     "close": "23:00",
+     "open": "06:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "convenience store",
+    "car wash"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hy-Miler convenience store and Mobil fuel station with car wash at 805 S. Main Street.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6480,7 +8678,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.8
+   "overture_confidence": 0.8,
+   "enriched": true
   },
   {
    "id": "huro-lst-0126",
@@ -6497,7 +8696,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Likely a stale directory duplicate for the Mobil/Hy-Miler #2234 station at this address, not a separately operating Shell station; the phone number on file belongs to an unrelated marina.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6505,7 +8704,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0171",
@@ -6564,23 +8764,29 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "902 Taylor Ave",
-   "phone": "4194332442",
+   "phone": "+14194332442",
    "website": "http://www.gordonlumber.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "lumber",
+    "building materials",
+    "windows and doors",
+    "contractor sales"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "A lumber yard on Taylor Avenue that has outlasted most of the town. It supplies builders and contractors with lumber, windows and doors.",
+   "history": "Gordon Lumber traces to 1868, when Washington Gordon started with a single sawmill in Oak Harbor, Ohio. (Company about page, reached only via search snippet - re-verify.)",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "overture",
    "osm_type": null,
    "overture_category": "lumber_store",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0074",
@@ -6595,9 +8801,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "custom butchering",
+    "game processing",
+    "poultry processing"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Bogart Road custom butcher doing meat, poultry and game processing.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6605,7 +8815,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "butcher_shop",
-   "overture_confidence": 0.9583381414413452
+   "overture_confidence": 0.9583381414413452,
+   "enriched": true
   },
   {
    "id": "huro-lst-0281",
@@ -6620,9 +8831,11 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "eggs"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A small Rye Beach Road homestead selling eggs to neighbours.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6630,7 +8843,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "farmers_market",
-   "overture_confidence": 0.9425601363182068
+   "overture_confidence": 0.9425601363182068,
+   "enriched": true
   },
   {
    "id": "huro-lst-0285",
@@ -6639,7 +8853,7 @@
    "category": "services",
    "subcategory": null,
    "address": "2112 Cleveland Rd W",
-   "phone": "4194335937",
+   "phone": "+14194335937",
    "website": "https://www.uhaul.com/Locations/Truck-Rentals-near-Huron-OH-44839/048773/",
    "logo": null,
    "hours": null,
@@ -6647,7 +8861,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "U-Haul Neighborhood Dealer (truck/trailer rental) hosted inside McGraw Auto Sales LLC, a used-car dealership at 2112 Cleveland Rd W.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6655,7 +8869,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "truck_rentals",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0005",
@@ -6664,15 +8879,44 @@
    "category": "services",
    "subcategory": null,
    "address": "2026 Cleveland Rd W",
-   "phone": "4194337848",
+   "phone": "+14194337848",
    "website": "https://bluerhino.com/propane-finder?utm_source=bing&utm_medium=map&utm_campaign=vending_map&utm_content=158963",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "monday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "saturday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "sunday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "thursday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "tuesday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "wednesday": {
+     "close": "23:59",
+     "open": "00:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Shell station, 2026 Cleveland Rd W, accessible during the station's 24-hour operation.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6680,7 +8924,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "propane_supplier",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0075",
@@ -6689,15 +8934,52 @@
    "category": "hospitality",
    "subcategory": "hotels",
    "address": "2119 Cleveland Rd W",
-   "phone": "4194335359",
+   "phone": "+14194335359",
    "website": "https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405?pmf=yext&mc=llyxyxpx",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "tuesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "wednesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "thursday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "friday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "00:00",
+     "close": "23:59"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24-hour front desk",
+    "Indoor pool",
+    "Free breakfast",
+    "Free WiFi",
+    "Free parking",
+    "Business area",
+    "Meeting room"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Highway-side inn on Cleveland Road West with a 24-hour front desk, indoor pool and free breakfast.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6705,7 +8987,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "resort",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0034",
@@ -6717,12 +9000,47 @@
    "phone": "+14194337491",
    "website": "https://restaurants.subway.com/united-states/oh/huron/2117-cleveland-rd-w",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "09:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Drive-thru",
+    "Breakfast",
+    "Catering",
+    "Mobile ordering",
+    "Delivery"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Subway on Cleveland Road West with a drive-thru, open until 11pm Friday through Sunday.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6730,7 +9048,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
-   "overture_confidence": 0.9633245468139648
+   "overture_confidence": 0.9633245468139648,
+   "enriched": true
   },
   {
    "id": "huro-lst-0173",
@@ -6742,12 +9061,53 @@
    "phone": "+14194337848",
    "website": "http://hy-miler.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "monday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "saturday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "sunday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "thursday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "tuesday": {
+     "close": "23:59",
+     "open": "00:00"
+    },
+    "wednesday": {
+     "close": "23:59",
+     "open": "00:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "convenience store",
+    "car wash",
+    "propane",
+    "ATM",
+    "restaurant",
+    "restrooms",
+    "air pump",
+    "pay at pump",
+    "lottery",
+    "beer",
+    "wine"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hy-Miler convenience store on Shell-branded fuel at 2026 Cleveland Rd W, open 24 hours, with car wash, propane exchange, ATM, and a small restaurant counter.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6755,7 +9115,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gas_station",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0185",
@@ -6767,12 +9128,44 @@
    "phone": "+14196160112",
    "website": "https://www.ljsilvers.com/?y_source=1_MjAxNTE0NTAzMy01NTktbG9jYXRpb24ud2Vic2l0ZQ%3D%3D",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "pickup",
+    "delivery"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Fried fish and hushpuppies on Cleveland Road, for pickup or delivery.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6780,7 +9173,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "seafood_restaurant",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0184",
@@ -6792,12 +9186,45 @@
    "phone": "+14194336017",
    "website": "http://Www.CostaAzulMexican.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "11:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "11:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "11:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "patio",
+    "takeout",
+    "open year-round"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family-run Mexican kitchen and patio on Cleveland Road, open year-round. Longer hours in summer.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6805,7 +9232,11 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "mexican_restaurant",
-   "overture_confidence": 0.9720896482467651
+   "overture_confidence": 0.9720896482467651,
+   "menu": {
+    "url": "https://www.costaazulhuron.com/"
+   },
+   "enriched": true
   },
   {
    "id": "huro-lst-0024",
@@ -6820,9 +9251,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "reservations",
+    "full bar",
+    "seasonal menu"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The resort's dining room, with a seasonal menu built on Ohio ingredients. Wine, cocktails and craft beer; reservations taken.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6830,7 +9265,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.9868365526199341
+   "overture_confidence": 0.9868365526199341,
+   "enriched": true
   },
   {
    "id": "huro-lst-0002",
@@ -6845,9 +9281,18 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "lodge accommodation",
+    "18-hole golf course",
+    "marina",
+    "restaurants",
+    "swimming pools",
+    "fitness center",
+    "meeting and event space",
+    "walking trails"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A 200-acre Lake Erie resort with a lodge, Fazio golf course, marina and dining.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6855,7 +9300,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "logging_contractor",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "enriched": true
   },
   {
    "id": "huro-lst-0054",
@@ -6945,9 +9391,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "outdoor deck",
+    "waterfront views",
+    "sports viewing",
+    "seasonal"
+   ],
    "tags": [],
-   "description": null,
+   "description": "The pub at the Sawmill Creek golf clubhouse. A back deck over the water and a snack shack for the course; open seasonally.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -6955,7 +9406,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pub",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0023",
@@ -7014,7 +9466,7 @@
    "category": "services",
    "subcategory": null,
    "address": "28 Middle Ave",
-   "phone": "4194332525",
+   "phone": "+14194332525",
    "website": "http://findlayfostorialaw.com/",
    "logo": null,
    "hours": null,
@@ -7022,7 +9474,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Alicia Wolph Roshong is a solo-practice attorney offering legal consultation, per her firm's website.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7030,7 +9482,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "general_litigation",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0073",
@@ -7039,15 +9492,40 @@
    "category": null,
    "subcategory": null,
    "address": "28 Middle Ave Ste B",
-   "phone": "4194350462",
+   "phone": "+14194332525",
    "website": "http://wolphtitle.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "16:30"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "16:30"
+    },
+    "wednesday": {
+     "open": "09:00",
+     "close": "16:30"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "16:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Title insurance",
+    "Residential, commercial and industrial closings",
+    "Subdivision services",
+    "Escrow",
+    "After-hours and weekend closings",
+    "Closed 12-1 for lunch",
+    "Friday and Saturday by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A title insurance and real-estate settlement office on Middle Avenue, closed over lunch and open Fridays and Saturdays by appointment.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7055,7 +9533,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.85
+   "overture_confidence": 0.85,
+   "enriched": true
   },
   {
    "id": "huro-lst-0221",
@@ -7092,12 +9571,39 @@
    "phone": "+14196165450",
    "website": "http://www.edwardjones.com/melissa-danicki",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "16:00",
+     "open": "08:00"
+    },
+    "monday": {
+     "close": "16:00",
+     "open": "08:00"
+    },
+    "saturday": {
+     "closed": true
+    },
+    "sunday": {
+     "closed": true
+    },
+    "thursday": {
+     "close": "16:00",
+     "open": "08:00"
+    },
+    "tuesday": {
+     "close": "16:00",
+     "open": "08:00"
+    },
+    "wednesday": {
+     "close": "16:00",
+     "open": "08:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Edward Jones financial advisor office (advisor Melissa A Danicki) offering investment and retirement planning services.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7105,7 +9611,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "financial_service",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0160",
@@ -7117,12 +9624,47 @@
    "phone": "+14194336944",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "02:30"
+    },
+    "sunday": {
+     "open": "10:00",
+     "close": "02:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Full bar",
+    "Bar and grill menu",
+    "Live music",
+    "Pool table",
+    "Happy hour 2-7pm"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Biker-friendly saloon on Cleveland Road West serving until 2:30am, with live music most summer weekends.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7130,7 +9672,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sports_bar",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0197",
@@ -7145,9 +9688,11 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Chiropractic care"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Dr. John P. Heilman, DC, a solo chiropractor trading as Associated Healthcare, LLC, in Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7155,7 +9700,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "chiropractor",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "enriched": true
   },
   {
    "id": "huro-lst-0107",
@@ -7164,15 +9710,17 @@
    "category": "services",
    "subcategory": "health",
    "address": "2012 Cleveland Rd W",
-   "phone": null,
+   "phone": "+14196165000",
    "website": null,
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Chiropractic care"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Dr. John P. Heilman, DC, a solo chiropractor trading as Associated Healthcare, LLC, in Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7180,7 +9728,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "health_and_medical",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "enriched": true
   },
   {
    "id": "huro-lst-0130",
@@ -7195,9 +9744,12 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "vintage collectibles",
+    "online storefront"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A vintage-collectibles seller trading online out of Firwood Road.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7205,7 +9757,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "shopping",
-   "overture_confidence": 0.6253195405006409
+   "overture_confidence": 0.6253195405006409,
+   "enriched": true
   },
   {
    "id": "huro-lst-0240",
@@ -7320,9 +9873,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24/7 skilled nursing",
+    "Physical therapy",
+    "Occupational therapy",
+    "Speech therapy",
+    "Respite care",
+    "Hospice care",
+    "Tours by appointment"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A CMS five-star skilled nursing and rehabilitation facility on Cleveland Road West.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7330,7 +9891,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "retirement_home",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0279",
@@ -7342,12 +9904,44 @@
    "phone": "+15676239210",
    "website": "https://www.dollargeneral.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "08:00",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "08:00",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "discount variety",
+    "groceries"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A Dollar General out on Cleveland Road West, open eight to ten daily.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7355,7 +9949,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "discount_store",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "enriched": true
   },
   {
    "id": "huro-lst-0209",
@@ -7389,15 +9984,40 @@
    "category": "community",
    "subcategory": "schools",
    "address": "1810 Maple Ave",
-   "phone": "14194334870",
+   "phone": "+14194331234",
    "website": "huronhs.com",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "tuesday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "wednesday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "thursday": {
+     "open": "07:00",
+     "close": "15:30"
+    },
+    "friday": {
+     "open": "07:00",
+     "close": "15:30"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Grades K-5",
+    "Office open 7:00 AM - 3:30 PM",
+    "School day 7:45 AM - 2:40 PM"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Huron City Schools' elementary school, serving kindergarten through fifth grade on Maple Avenue.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7405,7 +10025,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "elementary_school",
-   "overture_confidence": 0.9195
+   "overture_confidence": 0.9195,
+   "enriched": true
   },
   {
    "id": "huro-lst-0251",
@@ -7420,9 +10041,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "by-order only",
+    "custom cakes",
+    "pickup",
+    "delivery (fee)"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A from-scratch home bakery taking orders for custom cakes, cupcakes and cookies. By order only - pickup or delivery, no storefront.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7430,7 +10056,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bakery",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0112",
@@ -7467,12 +10094,47 @@
    "phone": "+14194337555",
    "website": "https://www.mcdonalds.com/us/en-us/location/oh/huron/2118-cleveland-rd-w/6106.html?cid=RF%3AYXT%3ARoN%3A%3AClicks%3Fcid%3DRF%3AYXT%3AFB%3A%3AClicks",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "tuesday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "wednesday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "thursday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "friday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "saturday": {
+     "open": "05:00",
+     "close": "23:00"
+    },
+    "sunday": {
+     "open": "05:00",
+     "close": "23:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Drive-thru",
+    "Mobile order",
+    "McCafe",
+    "Free WiFi",
+    "Breakfast"
+   ],
    "tags": [],
-   "description": null,
+   "description": "McDonald's on Cleveland Road West, open from 5am to 11pm with a drive-thru.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7480,7 +10142,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
-   "overture_confidence": 0.980089545249939
+   "overture_confidence": 0.980089545249939,
+   "enriched": true
   },
   {
    "id": "huro-lst-0120",
@@ -7489,23 +10152,57 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "310 Lake Erie Pkwy",
-   "phone": "4194337542",
+   "phone": "+14194337542",
    "website": "https://www.goodwillsandusky.org/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "tuesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "wednesday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "thursday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "friday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "saturday": {
+     "open": "10:00",
+     "close": "20:00"
+    },
+    "sunday": {
+     "open": "12:00",
+     "close": "17:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "thrift retail",
+    "attended donation center",
+    "open until 8pm Mon-Sat"
+   ],
    "tags": [],
-   "description": null,
-   "history": null,
+   "description": "Huron's thrift store, open until eight and taking donations at the door. Run by the regional Goodwill, which funds job training across four counties.",
+   "history": "Run by Goodwill Industries of Erie, Huron, Ottawa & Sandusky Counties, which operates seven stores across four counties and funds job training for people with disabilities and other barriers to employment.",
    "menu_url": null,
    "reservation_url": null,
    "status": "unverified",
    "source": "overture",
    "osm_type": null,
    "overture_category": "thrift_store",
-   "overture_confidence": 0.85
+   "overture_confidence": 0.85,
+   "enriched": true
   },
   {
    "id": "huro-lst-0258",
@@ -7522,7 +10219,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Held listing is for a Redbox DVD-rental kiosk inside the Dollar General store at 2202 Cleveland Rd W; the Redbox company appears to have ceased operating (its website no longer resolves), so this kiosk is very likely no longer in service.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7530,7 +10227,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "rental_kiosks",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0055",
@@ -7539,15 +10237,44 @@
    "category": "services",
    "subcategory": null,
    "address": "2202 CLEVELAND RD WEST (SR 6)",
-   "phone": "5676234552",
+   "phone": "+15676234552",
    "website": "http://locations.westernunion.com/us/oh/huron/4d1cd8eda94df39846d71e23576689f9?utm_source=bing&utm_medium=distrib&utm_campaign=bing-distrib",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "friday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "monday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "saturday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "sunday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "thursday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "tuesday": {
+     "close": "22:00",
+     "open": "08:00"
+    },
+    "wednesday": {
+     "close": "22:00",
+     "open": "08:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Western Union agent counter inside the Dollar General store at 2202 Cleveland Rd W (SR 6).",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7555,7 +10282,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "money_transfer_services",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0093",
@@ -7595,9 +10323,14 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "turf runway 2,501 ft x 70 ft",
+    "open to the public",
+    "privately owned",
+    "unattended"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Hinde Airport, a public-use turf airstrip in Huron with a 2,501 ft runway.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7605,7 +10338,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "airport",
-   "overture_confidence": 0.8422932028770447
+   "overture_confidence": 0.8422932028770447,
+   "enriched": true
   },
   {
    "id": "huro-lst-0123",
@@ -7620,9 +10354,13 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "used motorcycle parts",
+    "motorcycle service",
+    "salvage"
+   ],
    "tags": [],
-   "description": null,
+   "description": "An indoor motorcycle salvage yard and repair shop out on Boos Road.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7630,7 +10368,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "motorcycle_dealer",
-   "overture_confidence": 0.9488615661859512
+   "overture_confidence": 0.9488615661859512,
+   "enriched": true
   },
   {
    "id": "huro-lst-0201",
@@ -7667,12 +10406,48 @@
    "phone": "+14194332849",
    "website": "https://locations.wendys.com/united-states/oh/huron/600-rye-beach-road",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "tuesday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "wednesday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "thursday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "friday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "saturday": {
+     "open": "06:30",
+     "close": "22:00"
+    },
+    "sunday": {
+     "open": "06:30",
+     "close": "22:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Drive-thru",
+    "Breakfast",
+    "Mobile ordering",
+    "Mobile payment",
+    "Free WiFi",
+    "Kids' meals"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Wendy's on Rye Beach Road, open 6:30am to 10pm with a drive-thru.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7680,7 +10455,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
-   "overture_confidence": 0.9902192950248718
+   "overture_confidence": 0.9902192950248718,
+   "enriched": true
   },
   {
    "id": "huro-lst-0016",
@@ -7692,12 +10468,50 @@
    "phone": "+14194066904",
    "website": "http://www.motel6.com/",
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "tuesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "wednesday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "thursday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "friday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "saturday": {
+     "open": "00:00",
+     "close": "23:59"
+    },
+    "sunday": {
+     "open": "00:00",
+     "close": "23:59"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "24-hour front desk",
+    "Indoor pool",
+    "Hot tub",
+    "Free WiFi",
+    "Free parking",
+    "Pet friendly",
+    "Laundry facilities",
+    "Vending"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Budget motel on Rye Beach Road with a 24-hour front desk, indoor pool and hot tub.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7705,7 +10519,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "motel",
-   "overture_confidence": 0.9985466599464417
+   "overture_confidence": 0.9985466599464417,
+   "enriched": true
   },
   {
    "id": "huro-lst-0278",
@@ -7720,9 +10535,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Young Eagles flights",
+    "Scholarships",
+    "Technical Counselors and Flight Advisors",
+    "Fly-ins and chapter events",
+    "Newsletter",
+    "Based at Hinde Airfield (88D)"
+   ],
    "tags": [],
-   "description": null,
+   "description": "EAA Chapter 50, the local Experimental Aircraft Association chapter, based at Hinde Airfield (88D) on the edge of Huron. It flies Young Eagles, awards scholarships and hosts fly-ins.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7730,7 +10552,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "community_services_non_profits",
-   "overture_confidence": 0.5118817090988159
+   "overture_confidence": 0.5118817090988159,
+   "enriched": true
   },
   {
    "id": "huro-lst-0027",
@@ -7739,15 +10562,22 @@
    "category": "services",
    "subcategory": null,
    "address": "608 Rye Beach Rd",
-   "phone": "4194332888",
+   "phone": "+14194332888",
    "website": "http://www.labelaidinc.com/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Custom label printing",
+    "Craft beer and spirits labels",
+    "Food and dairy labels",
+    "Industrial and barcode labels",
+    "Foil stamping",
+    "Quote requests"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family-founded, woman-owned label printer on Rye Beach Road, making labels for craft beer, spirits, wine, food and industry since 1984.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7755,7 +10585,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "printing_services",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0159",
@@ -7764,15 +10595,41 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "1803 Sawmill Pkwy",
-   "phone": "14194336979",
+   "phone": "+14194336979",
    "website": null,
    "logo": null,
-   "hours": null,
+   "hours": {
+    "monday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "tuesday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "thursday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "friday": {
+     "open": "09:00",
+     "close": "18:00"
+    },
+    "saturday": {
+     "open": "09:00",
+     "close": "14:00"
+    }
+   },
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Honda and Yamaha equipment",
+    "Toro and Husqvarna service",
+    "pickup and delivery",
+    "boat and bulk storage on site"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Mowers out front, boat storage out back, and closed Wednesdays. An outdoor power-equipment dealer sharing its site with Sawmill Mini Storage.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7780,7 +10637,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "lawn_mower_store",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "enriched": true
   },
   {
    "id": "huro-lst-0260",
@@ -7814,15 +10672,23 @@
    "category": "shopping",
    "subcategory": "retail",
    "address": "2455 Sawmill Pkwy",
-   "phone": "4196166017",
+   "phone": "+14196166017",
    "website": "http://www.stridemobility.net/",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "power and manual wheelchairs",
+    "seating and positioning",
+    "pediatric equipment",
+    "scooters",
+    "lift chairs",
+    "certified therapist fittings",
+    "mobile service team"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Wheelchairs, scooters and lift chairs, fitted by a certified therapist. A mobility dealer out on Sawmill Parkway.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7830,7 +10696,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "medical_supply",
-   "overture_confidence": 0.9949824810028076
+   "overture_confidence": 0.9949824810028076,
+   "enriched": true
   },
   {
    "id": "huro-lst-0133",
@@ -7845,9 +10712,17 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Propeller repair and truing",
+    "PROPSCAN authorized facility",
+    "Propeller diagnostics",
+    "Dockside services",
+    "New and used propellers",
+    "Inboard shafts and couplings",
+    "Shaft seals"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A propeller shop on Sawmill Parkway truing, repairing and re-pitching boat props for the whole North Coast.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7855,7 +10730,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
-   "overture_confidence": 0.8752639889717102
+   "overture_confidence": 0.8752639889717102,
+   "enriched": true
   },
   {
    "id": "huro-lst-0186",
@@ -7864,15 +10740,22 @@
    "category": "services",
    "subcategory": null,
    "address": "2401 Sawmill Pkwy Ste 7",
-   "phone": "(419) 433-5915",
+   "phone": "+14194335915",
    "website": "http://www.breckenridgekitchen.com",
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Commercial kitchen design and engineering",
+    "Equipment supply",
+    "Installation and assembly",
+    "Warehousing and delivery",
+    "Bid management",
+    "Serveries and banquet facilities"
+   ],
    "tags": [],
-   "description": null,
+   "description": "Food-service kitchen designers and equippers, founded in 1935, fitting out commercial kitchens, serveries and banquet halls nationwide from Huron.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7880,7 +10763,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "contractor",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0191",
@@ -7895,9 +10779,20 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Roof repair and installation",
+    "Roof inspections",
+    "Storm damage",
+    "Commercial roofing",
+    "Gutters",
+    "Siding",
+    "Windows",
+    "Insurance claims assistance",
+    "Financing",
+    "Free estimates"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A northern Ohio roofing contractor covering Huron, doing roofs, gutters, siding and windows with insurance-claim assistance.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7905,7 +10800,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "roofing",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0169",
@@ -7920,9 +10816,15 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Wedding photography",
+    "Senior portraits",
+    "Family portraits",
+    "On-location sessions",
+    "Inquiry form booking"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A North Coast portrait photographer in Huron shooting weddings, seniors and families on location.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7930,7 +10832,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "professional_services",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0165",
@@ -7945,9 +10848,19 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Carpet cleaning",
+    "Upholstery cleaning",
+    "Tile and grout cleaning",
+    "LVT and LVP cleaning",
+    "Floor strip and wax",
+    "Janitorial services",
+    "Condo, apartment and marina common areas",
+    "Free quotes",
+    "Fully insured"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A family-owned Erie County cleaning company doing carpet, tile, floors and janitorial work, three years running the Firelands Best carpet cleaner.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7955,7 +10868,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "home_cleaning",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "enriched": true
   },
   {
    "id": "huro-lst-0022",
@@ -7970,9 +10884,16 @@
    "hours": null,
    "opening_hours_raw": null,
    "photos": [],
-   "amenities": [],
+   "amenities": [
+    "Fixed operations consulting",
+    "Remote and onsite coaching",
+    "Warranty reimbursement",
+    "Warranty compliance audits",
+    "Service advisor training",
+    "Speaking engagements"
+   ],
    "tags": [],
-   "description": null,
+   "description": "A consultancy that audits and coaches car dealerships' service and body-shop operations, onsite or remote.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -7980,7 +10901,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "professional_services",
-   "overture_confidence": 0.6127704381942749
+   "overture_confidence": 0.6127704381942749,
+   "enriched": true
   },
   {
    "id": "huro-lst-0012",
@@ -8022,7 +10944,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Routh at Rye is a private lakefront vacation rental cottage in the Rye Beach neighborhood of Huron, booked via Airbnb.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -8030,7 +10952,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "business_advertising",
-   "overture_confidence": 0.5434233546257019
+   "overture_confidence": 0.5434233546257019,
+   "enriched": true
   },
   {
    "id": "huro-lst-0275",
@@ -8047,7 +10970,7 @@
    "photos": [],
    "amenities": [],
    "tags": [],
-   "description": null,
+   "description": "Mariner Village Condominiums is a residential condominium complex on the Huron waterfront; the address also houses its homeowners association and a property management company.",
    "history": null,
    "menu_url": null,
    "reservation_url": null,
@@ -8055,7 +10978,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "real_estate_agent",
-   "overture_confidence": 0.7048439979553223
+   "overture_confidence": 0.7048439979553223,
+   "enriched": true
   },
   {
    "id": "huro-lst-0001",
