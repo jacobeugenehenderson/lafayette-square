@@ -608,5 +608,262 @@
     "_source": "https://www.bgsu.edu/firelands.html",
     "_fetched": "2026-09-22",
     "_confidence": "NOT ESTABLISHED beyond the campus it sits on. The listing has no address, phone or website. I confirmed the BGSU Firelands campus at 1 University Dr, Huron, OH 44839 (419-433-5560), but EVERY candidate URL for a Cedar Point Center page on bgsu.edu returned 404, and the campus home page does not list buildings. What the building is used for, whether it can be rented, and its hours are all unsourced. ⚠️ Note the name collides with the Cedar Point amusement park in nearby Sandusky — a searcher will land in the wrong place."
+  },
+  "huro-lst-0149": {
+    "_match_name": "All About Dance Productions",
+    "_source": "https://www.allaboutdancenevada.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ WRONG ENTITY. The URL on this listing belongs to All About Dance in MINDEN, NEVADA — two studios on US 395 N and Precision Dr, phone 775-782-3425, teaching dance, cheer, cirque, aerial and tumbling. Its site says explicitly it operates only in Carson Valley, Nevada and mentions no Ohio location. The URL appears to have been matched by BUSINESS NAME, not by place. Nothing about the Huron business at 511 Cleveland Rd W is established — not its services, not its hours, not whether it still trades. The URL must be dropped, not enriched."
+  },
+  "huro-lst-0273": {
+    "_match_name": "Clarity Counseling & Wellness",
+    "_source": "http://myclaritycounseling.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "Services, therapist, address and phone are from the practice's own site. Its published hours are 'Monday-Thursday (by appointment)' — a DAY SET WITH NO TIMES, so no `hours` object can be filled in without inventing times. Recorded as an amenity instead.",
+    "description": "A solo counseling practice on Williams Street offering individual therapy for adults, teens and adolescents, seen by appointment.",
+    "amenities": [
+      "Individual therapy for adults, teens and adolescents",
+      "Mindfulness-based practice",
+      "Cognitive behavioral therapy",
+      "Walk and Talk therapy",
+      "By appointment, Monday to Thursday"
+    ],
+    "phone": "+14199218347",
+    "_what_is_it": "A licensed counseling practice (Ashley Modolo, LPCC-S), confirmed from its own site. High confidence."
+  },
+  "huro-lst-0216": {
+    "_match_name": "Subconscious Sarah",
+    "_source": "https://subconscioussarah.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Practitioner, services and booking method are from her own site. The site publishes NO street address, NO phone and NO hours — work is booked through a Square scheduling page and is described as primarily online — so the 103 Wall St address on the listing is unverified and no hours are recorded.",
+    "description": "A certified clinical hypnotherapy practice run by Sarah Steel, working on anxiety, overthinking, perfectionism and life transitions.",
+    "amenities": [
+      "Clinical hypnotherapy",
+      "Free discovery call",
+      "Online sessions",
+      "Rest + Receive group events",
+      "Booking via Square"
+    ],
+    "phone": "+15676239414",
+    "_what_is_it": "A one-practitioner hypnotherapy and coaching practice, largely delivered online. Sourced to her own site. High confidence on what it is; LOW confidence that 103 Wall St is a premises the public can visit."
+  },
+  "huro-lst-0265": {
+    "_match_name": "Pabodie Design Studios",
+    "_source": "https://pabodie.art/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The listing's URL pabodie.com 301-redirects to pabodie.art, which is an ONLINE fine-art print shop — canvas, acrylic, framed and museum-paper wall art, plus books under a Pabodie Press imprint. The site publishes no address, no phone and no hours, and nothing ties it to a storefront at 358 Main St. Whether there is a walk-in studio there is NOT established.",
+    "description": "An online fine-art print publisher selling digital art and photography as canvas, acrylic and framed prints, plus books under the Pabodie Press imprint.",
+    "amenities": [
+      "Canvas, acrylic and framed prints",
+      "Museum-quality paper",
+      "Pabodie Press books",
+      "Free US and Canada shipping"
+    ],
+    "phone": "+14194334772",
+    "_what_is_it": "An art print business trading online as pabodie.art. Confirmed from the site the listing's own URL redirects to. Confident about the business; NOT confident it is a visitable storefront."
+  },
+  "huro-lst-0030": {
+    "_match_name": "CrystalMic Premium Audio",
+    "_source": "http://crystalmic.myshopify.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "The listing's URL is an unbranded Shopify subdomain selling wireless earbuds, a soundbar and a lavalier microphone, with a 2026 copyright. It publishes NO address, NO phone, NO hours and does not mention Huron or Ohio anywhere. Whether this shop is the business at 415 Center St, and whether that address is a premises at all, is NOT established.",
+    "description": "An online shop selling wireless microphones, earbuds and soundbars under the CrystalMic name.",
+    "amenities": [
+      "Wireless lavalier microphones",
+      "Wireless earbuds",
+      "Soundbars",
+      "Online ordering"
+    ],
+    "phone": "+14196022985",
+    "_what_is_it": "An e-commerce audio brand on Shopify. LOW confidence that it corresponds to a visitable place in Huron: the store front-page is generic dropship-style catalogue and names no location."
+  },
+  "huro-lst-0046": {
+    "_match_name": "Semper CrossFit",
+    "_source": "http://www.sempercrossfit.com (DEAD)",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing's domain sempercrossfit.com DOES NOT RESOLVE (DNS NXDOMAIN, with and without www) — dead, must not ship. No class schedule, no hours, no confirmation the gym still trades at 250 Cleveland Rd E. Needs a phone check."
+  },
+  "huro-lst-0124": {
+    "_match_name": "Marcellas Pizza Huron",
+    "_source": "http://Marcellashuron.com/ (DEAD)",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing's domain marcellashuron.com DOES NOT RESOLVE (DNS NXDOMAIN) — dead, must not ship. No hours, no menu, no confirmation it still trades at 414 Cleveland Rd E. ⚠️ ALSO: this is an uncategorised record that is plainly a RESTAURANT and therefore belongs to the dining beat, not this one — flagged so it is not lost between slices.",
+    "_what_is_it": "By name, a pizzeria at 414 Cleveland Rd E. NOT sourced — its only URL is dead and I found no first-party page. Belongs to the dining slice."
+  },
+  "huro-lst-0073": {
+    "_match_name": "Wolph Title Inc",
+    "_source": "http://wolphtitle.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Hours, both office addresses and both phones are quoted from the company's own site. ⚠️ TWO PROBLEMS THE SCHEMA CANNOT HOLD. (1) SPLIT DAY: the published hours are 'Monday - Thursday: 9am - 12pm (lunch) 1pm- 4:30pm' — the office CLOSES FOR LUNCH. One open/close pair per day cannot express that, so what I recorded (09:00-16:30) OVERSTATES the opening by an hour a day. (2) Friday and Saturday are 'By appointment', which is not a time range, so both days are omitted rather than shown as closed. PHONE CORRECTION: the listing's 4194350462 is the FOSTORIA office; the Huron office at 28 Middle Avenue is (419) 433-2525.",
+    "hours": {
+      "monday": {
+        "open": "09:00",
+        "close": "16:30"
+      },
+      "tuesday": {
+        "open": "09:00",
+        "close": "16:30"
+      },
+      "wednesday": {
+        "open": "09:00",
+        "close": "16:30"
+      },
+      "thursday": {
+        "open": "09:00",
+        "close": "16:30"
+      }
+    },
+    "description": "A title insurance and real-estate settlement office on Middle Avenue, closed over lunch and open Fridays and Saturdays by appointment.",
+    "amenities": [
+      "Title insurance",
+      "Residential, commercial and industrial closings",
+      "Subdivision services",
+      "Escrow",
+      "After-hours and weekend closings",
+      "Closed 12-1 for lunch",
+      "Friday and Saturday by appointment"
+    ],
+    "phone": "+14194332525",
+    "_what_is_it": "A title agency, confirmed from its own site, which lists Huron as one of its two offices. High confidence."
+  },
+  "huro-lst-0090": {
+    "_match_name": "Edward Jones - Financial Advisor: Ryan M Reffner, AAMS®",
+    "_source": "https://www.edwardjones.com/us-en/financial-advisor/ryan-reffner",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, hours and team are quoted from the advisor's own Edward Jones page and match the listing. Saturday is published as 'By Appointment Only', which is not a time range, so Saturday is omitted rather than invented.",
+    "hours": {
+      "monday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "tuesday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "wednesday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "thursday": {
+        "open": "08:00",
+        "close": "16:00"
+      },
+      "friday": {
+        "open": "08:00",
+        "close": "16:00"
+      }
+    },
+    "description": "An Edward Jones branch office on Berlin Road, run by advisor Ryan M. Reffner with two branch administrators.",
+    "amenities": [
+      "Retirement savings strategies",
+      "Estate and legacy strategies",
+      "AAMS-accredited advisor",
+      "Saturdays by appointment"
+    ],
+    "phone": "+14194331515",
+    "_what_is_it": "A single-advisor Edward Jones branch office. Confirmed from Edward Jones' own advisor page. High confidence."
+  },
+  "huro-lst-0167": {
+    "_match_name": "Beachwood Cove Beach",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED, but one sourced negative: this beach DOES NOT APPEAR on the City of Huron's own list of parks and beaches, which names only Nickel Plate Park/Public Beach and Lake Front Park's beach. So it is not a city facility. Whether it is a private subdivision beach, who may use it, and whether it has any hours are all unsourced — the listing has no phone and no website, and I could find no first-party page. Do not publish it as a public beach."
+  },
+  "huro-lst-0031": {
+    "_match_name": "Chaska Beach, Huron",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED, same sourced negative as Beachwood Cove: Chaska Beach is NOT on the city's own parks-and-beaches list, so it is not a city facility. No address, no phone, no website on the listing and no first-party page found. ⚠️ DUPLICATE: huro-lst-0008 'Chaska Beach Lake Erie' is the same place under a second name; both records are addressless. Do not publish either as a public beach."
+  },
+  "huro-lst-0008": {
+    "_match_name": "Chaska Beach Lake Erie",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. Duplicate of huro-lst-0031 'Chaska Beach, Huron' — same beach, second Overture name, both with no address, phone or website. Not on the city's list of parks and beaches, so not a city facility. Merge and drop."
+  },
+  "huro-lst-0019": {
+    "_match_name": "Rye Beach Rd/W",
+    "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/parks/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED, and the record looks like a ROAD, not a place: the name 'Rye Beach Rd/W' is a street-name string with a directional suffix, there is no address, no phone and no website, and nothing of that name is on the city's parks-and-beaches list. Most likely a road segment or a transit/geocoder artifact that was typed as a beach. Recommend deletion rather than research."
+  },
+  "huro-lst-0067": {
+    "_match_name": "Lake Erie",
+    "_source": "n/a - no research possible",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT A PLACE IN THIS TOWN'S SENSE. This record is the Great Lake itself: no address, no phone, no website, overture_category 'lake'. It is a 25,000 km2 body of water spanning two countries, not a listing a visitor can be directed to. huro-lst-0112 is a SECOND record with the identical name. Both should be deleted from the directory."
+  },
+  "huro-lst-0112": {
+    "_match_name": "Lake Erie",
+    "_source": "n/a - no research possible",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ Duplicate of huro-lst-0067, and the same problem: the record is the Great Lake, not a visitable listing. No address, phone or website. Delete."
+  },
+  "huro-lst-0094": {
+    "_match_name": "On Lake Erie",
+    "_source": "n/a - no research possible",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ NOT A PLACE. The name is a PREPOSITIONAL PHRASE — a fragment of marketing copy ('on Lake Erie') that has been promoted to a business name, typed as overture_category 'lake', and given the address 202 Cleveland Rd W, which is the Greater Sandusky Partnership's Huron address (huro-lst-0136). Almost certainly a parse artifact off that organisation's page. Delete."
+  },
+  "huro-lst-0001": {
+    "_match_name": "Lake Erie Massotherapy",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "MISCATEGORISED, and nothing else established. Overture typed this as category 'parks' / overture_category 'lake' — clearly because the NAME BEGINS WITH 'Lake Erie'. By its name it is a massage therapy practice, not a body of water or a park. It has no address, no phone and no website on the listing and I found no first-party page, so services, location and hours are all unsourced.",
+    "_what_is_it": "By name, a massotherapy (massage therapy) practice. The 'parks/lake' typing is a string-matching error on the words 'Lake Erie' in the business name. NOT sourced beyond the name itself."
+  },
+  "huro-lst-0143": {
+    "_match_name": "Mindology Counseling, Llc.",
+    "_source": "n/a - no first-party page found for the Huron business",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing carries no website. The nearest domain by name, mindologycounseling.com, is a VIRTUAL therapy practice licensed in DC and Maryland with no Ohio presence — I reached it by guessing the URL, so this is a NAME COLLISION I found, not a bad link in the data, and it must NOT be attached to this record. Services, hours and whether the Huron practice at 520 Cleveland Rd W still trades are all unsourced.",
+    "_what_is_it": "By name and by the 'Llc.' suffix, a counseling practice at 520 Cleveland Rd W. Nothing beyond the name is sourced. LOW confidence."
+  },
+  "huro-lst-0032": {
+    "_match_name": "Huron Health Club",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. No website on the listing and huronhealthclub.com does not resolve. No hours, no membership terms, no confirmation it still trades at 511 Cleveland Rd W. Note that 511 Cleveland Rd W is shared with huro-lst-0149 (All About Dance Productions) — a multi-tenant building, so a single pin covers several businesses."
+  },
+  "huro-lst-0061": {
+    "_match_name": "Lakeshore Golf Studio",
+    "_source": "https://my.pga.com/coach/codymartin/schedule",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing's URL is not the studio's own site — it is a PGA coach's booking page for Cody Martin, and it rendered EMPTY (the schedule is loaded by script, so there is no readable content and no hours, rates or address). What the studio is, whether it has simulators, and when it is open are all unsourced. The business's identity is delegated to a third-party booking platform that publishes nothing static."
+  },
+  "huro-lst-0115": {
+    "_match_name": "Lakefront E-Bike Rentals",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. No website on the listing and no first-party page found. Seasonality is the obvious question for an outdoor rental business in a Lake Erie town and it is unanswered. Note the address, 300 Cleveland Rd E, is near the Huron River boat access, which is consistent with a seasonal waterfront rental, but that is inference, not a source."
+  },
+  "huro-lst-0082": {
+    "_match_name": "Market on Main",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing has NO category, NO phone and NO website — the thinnest record in this slice. ⚠️ NAME AMBIGUITY worth flagging: 'Market on Main' at 513 Main St could be a grocery/deli storefront or another of the town's market EVENTS (compare huro-lst-0045 Huron Lake Front Market, which is an event series). Which one it is determines whether it ships at all.",
+    "_what_is_it": "Cannot be determined from any source I could reach. Recommend a phone or on-the-ground check before this record ships."
+  },
+  "huro-lst-0091": {
+    "_match_name": "Medicare Insurance Advisors Huron",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. No website on the listing. ⚠️ Two tells that this may not be a visitable place: the address is '101 Forest Hills Dr Unit 99' — a UNIT NUMBER in what reads as a residential subdivision — and the phone, 800-647-7598, is a TOLL-FREE number, which is typical of a call-centre or remote agency rather than a local office with a door. Neither is proof. Services, hours and whether anyone is at that address are unsourced.",
+    "_what_is_it": "By name, a Medicare insurance brokerage. The toll-free number and residential unit address suggest a remote or home-based agency rather than a storefront. LOW confidence, unsourced."
+  },
+  "huro-lst-0013": {
+    "_match_name": "Shell",
+    "_source": "http://www.shell.us",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing's URL is Shell's GLOBAL CORPORATE SITE, not this station — a brand URL stamped onto a franchise location, which tells a visitor nothing and links them out of the town. The station locator path I tried returned 404. Hours, whether there is a convenience store, and who operates the site at 508 Berlin Rd are all unsourced. ⚠️ The record is also bare-named 'Shell' with no category, which will read badly in a directory next to named local businesses.",
+    "phone": "+14194336204",
+    "_what_is_it": "A branded fuel station at 508 Berlin Rd. The brand is certain from the name; everything about the individual site — hours, store, car wash, operator — is unsourced, and the attached URL is corporate, not local."
+  },
+  "huro-lst-0209": {
+    "_match_name": "Huron Butterfly Garden",
+    "_source": "n/a - no first-party page found",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. No phone, no website, no category on the listing. Its address, 1810 Maple Ave, is EXACTLY the address of Woodlands Elementary School (huro-lst-0041), so the garden is very likely on school grounds — but the school's own site says nothing about a butterfly or pollinator garden, so that is unconfirmed. If it is on school grounds, public access is a live question, not an assumption.",
+    "_what_is_it": "By name, a pollinator/butterfly garden. It shares an address with Woodlands Elementary School, which makes a school garden the strongest reading, but NOTHING is sourced — not the owner, not public access, not whether it still exists."
   }
 }
