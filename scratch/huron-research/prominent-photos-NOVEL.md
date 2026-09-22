@@ -50,19 +50,32 @@ the right state, town, brand and store number, and it is still empty.
 compare hashes. Identical ⇒ the per-instance page does not exist. Also assert the instance's own town
 name appears in the body. Both are content-free rules; neither needs anyone to know the town.
 
-## 4. The places with the most published photography are the ones we can fetch least
+## 4. A fetcher gets the independents and misses the chains — and that is the RIGHT way round
 
-Every independent on this beat gave up its pictures. **All three hotels gave up nothing** — and hotels
-are the listings with the largest, best-lit, most professionally shot galleries in the directory.
+Every independent on this beat gave up its pictures. **All three hotels gave up nothing** —
 `choicehotels.com` resets the HTTP/2 stream, times out on HTTP/1.1 and times out in WebFetch;
-`motel6.com` resets the stream. The gallery exists, is one click away in a browser, and is unreachable
-to us. So the photo gap is **inverted from the prominence gap**: it is worst exactly where the
-imagery is richest and the operator is a corporation with a bot wall.
+`motel6.com` resets the stream.
 
-⭐ **Consequence for the kit, not a check:** a photo pipeline that is a fetcher will, in every town,
-return nothing for the chain lodging and something for the independents. That is not a data problem to
-retry harder — it is a **structural hole that needs a different instrument** (an operator with a
-browser, or a licensed feed). Budget for it as a category, not as failures.
+### ⛔ CORRECTED 2026-09-22 (Jacob): *"Comfort Inn, Quality Inn and Motel 6 do not have photo
+galleries Huron is going to be incomplete without."*
+
+This section first called the hotels "the listings with the largest, best-lit, most professionally
+shot galleries in the directory" and concluded the kit therefore needs **a different instrument** to
+reach them. ⛔ **Both halves were wrong, and they were wrong in the same way: they measured the
+photography and not the PLACE.** A chain hotel's gallery is branded room stock, interchangeable
+between Huron and Sandusky and Toledo — it is the *least* town-specific imagery in the town. A
+directory of Huron loses nothing by lacking it.
+
+⭐ **So the gap is not inverted, and nothing needs budgeting as a category.** The fetcher succeeded on
+exactly the places that make a town look like itself — a storefront, a rope wreath, a drone shot of a
+marina, thirteen captioned historical markers — and failed on the ones a visitor could see anywhere.
+⚠️ **The prominence rank is what made this look alarming**: three hotels rank high on footprint and
+brand signals, so a "high prominence, no photos" query surfaces them first. That is a property of the
+scorer, not evidence about what a card needs — and it is the same reason prominence was rejected as
+the directory's primary sort, where it put six fast-food chains above a 1979 family restaurant.
+
+⇒ The real photo queue is the **independents still without pictures**, and a browser-operator pass on
+chain lodging is worth roughly what a stock room shot is worth.
 
 ## 5. Stock photography on the operator's own CDN — and it usually says so in the filename
 
