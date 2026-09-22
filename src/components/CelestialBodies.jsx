@@ -208,6 +208,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const camera = useThree(s => s.camera)
   const townHalfRef = useRef(null)
   const fitHalfRef = useRef(null)
+  const fitLightRef = useRef(null)   // the LAST FITTED light transform, re-asserted per frame
   useFrame(() => {
     const light = lightRef.current
     const townHalf = townHalfRef.current
@@ -321,6 +322,39 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
       .addScaledVector(_lightDir, c0)
 
 
+    // ⛔⛔ RE-ASSERT THE LIGHT'S DIRECTION EVERY FRAME — IT HAS TWO WRITERS AND ONLY ONE
+    // OF THEM IS THIS PASS. React rewrites `light.position` from the
+    // `position={lightPosition.toArray()}` prop on EVERY re-render of this component
+    // (it subscribes to `useTimeOfDay`, so a TOD tick is enough). This pass owns the
+    // matching `light.target`. A directional light's direction is `position − target`,
+    // so the two writers must land together or the sun points somewhere that is neither.
+    //
+    // ⚠️ These writes used to sit BELOW the `halfChanged || moved` gate. So on any
+    // re-render where the shadow box had NOT moved, React's position was left paired
+    // with this pass's stale target — hundreds of metres apart — and the key light shone
+    // from a direction nothing had chosen, until the camera moved enough to re-fit.
+    // ⭐ THE TELL, and it is what identified this (Jacob, 2026-09-22): "Sun-hit places are
+    // flashing, I don't think the shadows are." A wrong light DIRECTION re-shades every
+    // lit surface via N·L and leaves already-black shadow interiors alone. It also
+    // explains why the flash survived `castShadow = false` — the light still SHADES when
+    // it casts nothing — and why it is camera-dependent: the gate that strands it is the
+    // camera-driven re-fit.
+    // ⛔ Cheap by construction: two vector copies + one matrix update per frame. The
+    // EXPENSIVE work (ortho bounds, projection matrix, shadow re-render) stays gated.
+    // ⛔ RE-ASSERT THE **LAST FITTED** TRANSFORM, NEVER THE LIVE ONE. The shadow MAP is
+    // rendered only when the gate below fires; if the light's transform moved every frame
+    // while the map did not re-render, the map would be sampled through a matrix it was
+    // not rendered with and the shadows would land wrong or vanish outright. (It did —
+    // first cut of this fix, caught by the operator's eye within a minute.) So the frame
+    // re-assert restores exactly what the last fit chose, and nothing else.
+    if (fitLightRef.current) {
+      light.position.copy(fitLightRef.current.pos)
+      if (!light.target.position.equals(fitLightRef.current.tgt)) {
+        light.target.position.copy(fitLightRef.current.tgt)
+        light.target.updateMatrixWorld()
+      }
+    }
+
     // The bucket either changed or it did not; there is no 5% drift any more.
     const halfChanged = fitHalfRef.current !== half
     const moved = _focus.distanceToSquared(_prevFocus) > (texel * texel)
@@ -334,11 +368,15 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     const depth = townHalf + LIGHT_RADIUS + 1000
     cam.near = -depth; cam.far = depth
     cam.updateProjectionMatrix()
-    // The light is directional: only its DIRECTION matters for shading, so the
-    // shadow box may be re-centred on the focus without touching the look.
+    // The light is directional: only its DIRECTION matters for shading, so the shadow box
+    // may be re-centred on the focus without touching the look. Recorded so the per-frame
+    // re-assert above can undo React's prop write without moving the box.
     light.target.position.copy(_focus)
     light.target.updateMatrixWorld()
     light.position.copy(_focus).addScaledVector(_lightDir, LIGHT_RADIUS)
+    if (!fitLightRef.current) fitLightRef.current = { pos: new THREE.Vector3(), tgt: new THREE.Vector3() }
+    fitLightRef.current.pos.copy(light.position)
+    fitLightRef.current.tgt.copy(light.target.position)
     light.shadow.normalBias = 1.0 * texel
     light.shadow.bias = -(0.5 / (2 * depth))
     light.shadow.needsUpdate = true
