@@ -18,7 +18,8 @@
  * would break it. Measured on huron: the 11 LU faces tile the parcels (0 of 219,065
  * cells overlapping) AND the street cross-section tiles the roadway (asphalt ∩
  * sidewalk ZERO, asphalt ∩ curb ZERO, sidewalk ∩ curb 0.0%, at 0.25 m resolution).
- * 25 of 35 groups now share slot 0.
+ * How many groups share a plane per town is printed per run — ⛔ do not quote it here;
+ * this line used to carry a count and it had already drifted. ▶ run the check.
  *
  * ⚠️ RESOLUTION IS PART OF THE MEASUREMENT. An 8 m sample grid FATTENS a 2 m
  * sidewalk and invents overlap that is not there — the first pass of this analysis
@@ -40,7 +41,23 @@ import { join } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const BAKED = join(ROOT, 'public/baked')
-const N = 2200                      // ~3 m cells town-wide; see resolution note
+// ⭐⭐ THE GRID IS SIZED IN METRES, NOT IN CELLS — and that is the whole point.
+// ⛔ This was `N = 2200` cells town-wide, a FIXED COUNT, so the cell SIZE scaled
+// with the town: 0.8 m on Lafayette Square's ~1.8 km span, but 3.26 m on huron's
+// 7.18 km and worse on altadena. The instrument therefore got blurrier the bigger
+// the town — and then reported the blur as a defect. huron's `island` ∩
+// `treelawn:island` was flagged as a 5% overlap that "will z-fight"; re-measured at
+// ~1 m the same slab is clean, 33 groups sharing a plane with nothing overlapping.
+// ⛔ A traffic island is a few metres across, so at 3.26 m cells its own perimeter
+// IS most of its area — the grid fattened two adjacent bands into an overlap that
+// does not exist. That is this file's own header warning ("an 8 m sample grid
+// FATTENS a 2 m sidewalk and invents overlap that is not there") coming true in the
+// file that wrote it, and it is `CLAUDE.md` Layer 0 q3 committed by a detector:
+// it calls correct output a defect, and it does so WORST on the biggest town.
+// ⇒ Fix the cell in METRES and let the count follow the span. Cost is bounded by
+// MAX_N so a very large town degrades loudly rather than allocating a huge grid.
+const CELL_M = 1.0                  // metres per sample cell — the real resolution
+const MAX_N = 8192                  // allocation ceiling; see the warning below
 const OVERLAP_NOISE_PCT = 2.0       // below this = shared-edge sampling, not contact
 let fail = 0, warn = 0, checked = 0
 
@@ -56,7 +73,18 @@ for (const look of readdirSync(BAKED)) {
   checked++
 
   const bb = g.bbox
-  const sx = (bb.max[0] - bb.min[0]) / N, sz = (bb.max[2] - bb.min[2]) / N
+  // Cells are CELL_M metres on a side, so the measurement means the same thing on
+  // every town. ⛔ If the span forces more than MAX_N, say so — a silently coarser
+  // grid is exactly the failure this constant replaced.
+  const spanX = bb.max[0] - bb.min[0], spanZ = bb.max[2] - bb.min[2]
+  const wantN = Math.ceil(Math.max(spanX, spanZ) / CELL_M)
+  const N = Math.min(MAX_N, wantN)
+  if (wantN > MAX_N) {
+    console.log(`  \u26a0\ufe0f  ${look}: span ${Math.max(spanX, spanZ).toFixed(0)} m needs `
+      + `${wantN} cells at ${CELL_M} m; capped at ${MAX_N} \u21d2 `
+      + `${(Math.max(spanX, spanZ) / MAX_N).toFixed(2)} m cells. Small features may read as overlapping.`)
+  }
+  const sx = spanX / N, sz = spanZ / N
 
   // baked Y per group → the slot it shares with its peers
   const yOf = (x) => {
