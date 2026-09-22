@@ -230,7 +230,7 @@
     "transitionOut": 30,
     "values": {
       "noon": {
-        "value": 1.75
+        "value": 0.95
       },
       "dawn": {
         "value": 1
@@ -267,8 +267,8 @@
     "values": {
       "noon": {
         "radius": 12.5,
-        "intensity": 1.9,
-        "distanceFalloff": 0.3
+        "intensity": 3.7,
+        "distanceFalloff": 0.2
       }
     }
   },
@@ -431,7 +431,7 @@
     "animated": "tod",
     "values": {
       "noon": {
-        "value": 1.5
+        "value": 0.92
       },
       "dawn": {
         "value": 1.8
