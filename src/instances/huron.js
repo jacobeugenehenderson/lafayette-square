@@ -40,6 +40,11 @@ export default {
   branding: {
     title: 'Huron',
     faviconUrl: null,
+    // ⭐ THE TOWN'S MARK, AUTHORED — one glyph drives the tab icon, the load screen and the
+    // default visitor badge. ⚠️ Unicode has no lighthouse, which is the obvious choice for
+    // Huron Harbor; ⚓ is the stand-in. ▶ paste any glyph that renders for you — that is the
+    // whole authoring surface, and nothing needs rebuilding but the player.
+    mark: '⚓',
     ogImage: null,
     assetSlug: 'huron',
   },

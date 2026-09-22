@@ -52,7 +52,11 @@ export default {
   // DEFERRED to Phase 4 — it stays literal in the components until then.
   branding: {
     title: 'Lafayette Square',                                   // index.html <title>/OG (Phase 4)
-    faviconUrl: 'https://lafayette-square.com/favicon.svg',      // index.html (Phase 4)
+    faviconUrl: 'https://lafayette-square.com/favicon.svg',      // read at runtime (townMark.js)
+    // ⭐ LS's mark is the GATEWAY ARCH and it stays — this is the override working, not an
+    // exception. The arch was never the kit's; it is this town's, and it is already live.
+    markSvg: 'arch',
+    mark: null,
     ogImage: 'https://lafayette-square.com/photos/og-preview.jpg', // index.html (Phase 4)
     assetSlug: 'lafayette-square',                               // per-look asset filenames; == lookId for #1
   },

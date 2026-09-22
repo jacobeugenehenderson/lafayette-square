@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 195,
+  "total": 196,
   "counts": {
-    "safe": 153,
+    "safe": 154,
     "local-effect": 6,
     "live": 36
   },
@@ -570,6 +570,13 @@
     },
     {
       "file": "checks/claims-no-slab-outlives-its-schema.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-no-town-wears-another-towns-mark.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

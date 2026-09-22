@@ -36,7 +36,11 @@ export default {
 
   branding: {
     title: 'Hi-Pointe–DeMun',
-    faviconUrl: null,   // Phase 4 (index.html inject) — not read at runtime
+    faviconUrl: null,
+    // ⛔ UNAUTHORED ON PURPOSE — nobody has chosen HiPointe-DeMun's glyph, so it draws its
+    // own INITIAL rather than borrowing another town's mark. Visibly a placeholder, which
+    // is the honest state; ⛔ do not give it LS's arch to make it look finished.
+    mark: null,
     ogImage: null,
     assetSlug: 'hipointe-demun',
   },

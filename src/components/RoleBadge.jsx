@@ -7,7 +7,11 @@
  *   "guardian"  — teal / aquamarine
  *
  * Shares the same size map as AvatarCircle for layout consistency.
+ *
+ * ⛔ The arch is LAFAYETTE SQUARE'S mark, authored as `branding.markSvg`. Every other
+ * town draws its own glyph or its own initial — see `src/lib/townMark.js`.
  */
+import { townMark } from '../lib/townMark.js'
 
 const SIZES = {
   5:  { box: 'w-5 h-5',   arch: 10, scale: 0.35 },
@@ -52,6 +56,7 @@ function scaleBoxShadow(shadow, factor) {
  * Gateway Arch — from the favicon. Left leg has a dark body with bright
  * outline, right leg is solid filled. Matches the LS loading screen mark.
  */
+
 function ArchSvg({ size, fill, dark }) {
   return (
     <svg
@@ -102,7 +107,14 @@ export default function RoleBadge({ role = 'resident', size = 9, className = '' 
         borderStyle: 'solid',
       }}
     >
-      <ArchSvg size={s.arch} fill={theme.archFill} dark={theme.archDark} />
+      {/* ⛔⛔ THE ARCH IS LAFAYETTE SQUARE'S MARK, NOT THE KIT'S. This drew the Gateway
+          Arch for EVERY anonymous visitor in EVERY town — a Huron partner's own avatar
+          was a St. Louis monument. A town that authors `branding.markSvg: 'arch'` still
+          gets it; everyone else gets their own glyph or their own initial, and nobody
+          gets somebody else's. (`src/lib/townMark.js`.) */}
+      {townMark().kind === 'svg'
+        ? <ArchSvg size={s.arch} fill={theme.archFill} dark={theme.archDark} />
+        : <span style={{ fontSize: Math.round(s.arch * 0.82), lineHeight: 1 }}>{townMark().value}</span>}
     </div>
   )
 }

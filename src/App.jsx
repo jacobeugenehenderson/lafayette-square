@@ -17,6 +17,8 @@ import CodeDeskModal, { useCodeDesk } from './components/CodeDeskModal'
 import SmsInbox, { useSmsInbox } from './components/SmsInbox'
 import ChatModal from './components/ChatModal'
 import EventTicker from './components/EventTicker'
+import TownMarkGlyph from './components/TownMarkGlyph'
+import { applyTownBranding } from './lib/townMark.js'
 import BrowseHeader from './components/BrowseHeader'
 import FeatureBoundary from './components/FeatureBoundary'
 import AdminPrompt from './components/AdminPrompt'
@@ -598,12 +600,11 @@ function Splash() {
           }}
         />
       ))}
-      <img
-        src={import.meta.env.BASE_URL + 'favicon.svg'}
-        alt={INSTANCE.name}
-        className="w-20 h-20"
-        style={{ filter: 'invert(1) brightness(0.87)', opacity: 0.7 }}
-      />
+      {/* ⛔ THE LOAD SCREEN IS THE FIRST THING A PARTNER SEES, and it used to be ONE shared
+          `favicon.svg` — Lafayette Square's arch — on every town's own address. It is now
+          the town's authored mark: its emoji, its own SVG, or its initial. ⛔ Never
+          another town's. (`src/lib/townMark.js`.) */}
+      <TownMarkGlyph size={80} style={{ opacity: 0.7 }} />
     </div>
   )
 }
@@ -625,6 +626,10 @@ function SmsUnreadBadge() {
     </span>
   )
 }
+
+// ⛔ Runtime, not build-time: ONE player build serves every town, so only the running
+// app knows which town this is. See `applyTownBranding`.
+applyTownBranding()
 
 function App() {
   const route = parseRoute()
