@@ -938,7 +938,6 @@ function PublishPanel({ lookId }) {
   // promote; that is the one thing the git counts are still load-bearing for. The
   // moment one of these reaches the operator's eye, this panel is leaking git again.
   const aheadProd = status.vsProd?.ahead || 0
-  const aheadStaging = status.vsStaging?.ahead || 0
   // ⭐ ONE CONDITION DRIVES BOTH THE TENSE AND THE DISABLE (Jacob, 2026-08-31).
   // They used to be two: `disabled` keyed on `ahead === 0`, the LABEL on the live
   // site having finished building. So the moment after a promote the button was
@@ -961,7 +960,20 @@ function PublishPanel({ lookId }) {
   // ⛔ UNKNOWN IS NOT CURRENT. A site we cannot reach leaves `deploys[key]` undefined and the
   // button stays live — it offers to ship rather than claiming a state it could not read.
   const slabCurrent = (key) => ['ready', 'building'].includes(deploys[key]?.status)
-  const stagingDone = clean && aheadStaging === 0 && slabCurrent('staging')
+  // ⛔⛔ STAGING NO LONGER GOES THROUGH A BRANCH, SO A COMMIT COUNT CANNOT ANSWER FOR IT.
+  // This read `aheadStaging === 0`, which was right while Publish pushed a trunk that
+  // `staging.yml` deployed. Since staging became a direct upload to R2 (2026-09-21) that
+  // count never returns to zero — measured 18 the same evening — so the button could NEVER
+  // say "Published to Staging", however many times it succeeded. The operator pressed it,
+  // it worked, and it told him nothing: "it's hard to tell" (Jacob).
+  // ⭐ The two things staging actually ships are the SLAB and the shared PLAYER, so both
+  // must be current: `slabCurrent` reads the live scene.json's bakedAt, and `status.player`
+  // compares the published build marker against local source. ⛔ An absent marker counts as
+  // STALE — an unstamped player is not a current one.
+  const playerCurrent = status.player ? status.player.stale === false : false
+  const stagingDone = clean && slabCurrent('staging') && playerCurrent
+  // ⛔ PROD IS UNCHANGED and still branch-based: `git push` to main → deploy.yml. Do not
+  // "harmonise" these two — they ship by different mechanisms on purpose.
   const prodDone    = clean && aheadProd === 0 && slabCurrent('prod')
   const btn = (extra) => ({ width: '100%', padding: '7px 10px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.14)', fontSize: 12, fontWeight: 600, cursor: 'pointer', marginTop: 6, ...extra })
   // ⛔ NO GIT IN THIS PANEL (Jacob, 2026-08-29: "the user shouldn't know about the git").

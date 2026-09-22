@@ -222,11 +222,48 @@ const PARCEL_FILE = join(import.meta.dirname, '..', 'scripts', 'raw', 'stl_parce
 // are treated as mtime=0 (won't force a rebuild on their own); missing
 // outputs always force a rebuild. Both inputs and outputs lists may include
 // .js source paths so script edits invalidate downstream artifacts.
+/**
+ * ⛔⛔ THE NEWEST mtime UNDER A PATH — A DIRECTORY DOES NOT CARRY ITS CHILDREN'S.
+ *
+ * `statSync('src').mtimeMs` changes only when an entry is added to or removed from `src`
+ * ITSELF; editing `src/components/SidePanel.jsx` does not move it. So handing a directory
+ * to a plain mtime gate makes every edit inside it invisible.
+ *
+ * Instance, 2026-09-21: the Publish button's player step used `needsRebuild([... 'src'], [stamp])`
+ * and therefore SKIPPED the rebuild after four files under `src/` changed — the operator
+ * pressed Publish, it thought for a while, reported success, and staging kept serving the
+ * previous build including the crash he had just asked to have fixed. A publish that
+ * reports success and ships nothing is the exact defect the publish panel exists to
+ * prevent. (`arborist/serve.js#maxMtimeOf` already walked; this side did not.)
+ * ⛔ Unreadable ⇒ Infinity ⇒ dirty. Never skip on a stat we could not take.
+ */
+function newestMtime(p) {
+  let st
+  try { st = statSync(p) } catch { return Infinity }
+  if (!st.isDirectory()) return st.mtimeMs
+  let max = st.mtimeMs
+  for (const e of readdirSync(p)) {
+    const m = newestMtime(join(p, e))
+    if (m > max) max = m
+  }
+  return max
+}
+
+/**
+ * ⛔ THE PLAYER'S SOURCES — ONE LIST, and `scripts/publish-player-to-staging.mjs` carries
+ * the same one. The status read asks "is the published player behind these?"; the publish
+ * step asks "must I rebuild from these?" Two lists would make the button lie.
+ */
+const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
+const playerSrcPaths = (root) => PLAYER_SRC.map((p) => join(root, p))
+
 function needsRebuild(inputs, outputs) {
   const outMtimes = outputs.map(o => existsSync(o) ? statSync(o).mtimeMs : 0)
   if (outMtimes.some(t => t === 0)) return true
   const minOut = Math.min(...outMtimes)
-  const inMtimes = inputs.map(i => existsSync(i) ? statSync(i).mtimeMs : 0)
+  // ⛔ `newestMtime`, not `statSync` — an input may be a DIRECTORY, and a directory's own
+  // mtime says nothing about the files under it. See the header above.
+  const inMtimes = inputs.map(i => existsSync(i) ? newestMtime(i) : 0)
   const maxIn = inMtimes.length ? Math.max(...inMtimes) : 0
   return maxIn > minOut
 }
@@ -2668,9 +2705,30 @@ createServer(async (req, res) => {
       // own gating; they are not for display.
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
+
+      // ⛔⛔ THE SLAB IS ONLY HALF THE ANSWER. `bakedAt` measures the MAP DATA; since the
+      // Publish button also ships the shared player, a code-only change leaves `bakedAt`
+      // untouched and the panel could not tell whether staging carried the operator's fix
+      // (Jacob, 2026-09-21: "it's hard to tell"). This is the other half, read off the
+      // published artifact rather than remembered here: the build marker records the
+      // newest source mtime that build was made from.
+      // ⛔ NO MARKER ⇒ STALE. An unstamped player was published before this existed, or
+      // there is none; either way the honest answer is "not known to be current".
+      let player = { published: false, stale: true, why: 'no build marker at staging/player/build.json' }
+      try {
+        const r = await fetch(`${ASSET_BASE_URL}staging/player/build.json`, { cache: 'no-store' })
+        if (r.ok) {
+          const m = await r.json()
+          const localSrc = Math.max(...playerSrcPaths(REPO_ROOT).map(newestMtime))
+          const stale = !(m.srcMtimeMs > 0) || localSrc > m.srcMtimeMs
+          player = { published: true, stale, builtAt: m.builtAt ?? null,
+            why: stale ? 'the player on staging was built before your latest source change' : null }
+        }
+      } catch { /* unreachable ⇒ leave "not known to be current" */ }
+
       res.writeHead(200, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({
-        ok: true, branch, unbaked, dirty, vsStaging, vsProd, bakedAt,
+        ok: true, branch, unbaked, dirty, vsStaging, vsProd, bakedAt, player,
         // Per-look, because every town gets its own staging site.
         // ⛔ Per-look, derived. Each side is { url, … } or { url: null, why } — the panel
         // shows the reason instead of a link it cannot honestly offer.
@@ -2836,10 +2894,7 @@ createServer(async (req, res) => {
       // ── 2. The PLAYER, rebuilt only when the source moved. `needsRebuild` is the same
       // mtime gate the bake chain uses, against a stamp written by the publish script.
       const PLAYER_STAMP = join(REPO_ROOT, '.player-published')
-      const playerInputs = [
-        join(REPO_ROOT, 'src'), join(REPO_ROOT, 'index.html'), join(REPO_ROOT, 'vite.config.js'),
-        join(REPO_ROOT, 'package.json'),
-      ]
+      const playerInputs = playerSrcPaths(REPO_ROOT)
       let playerPublished = false
       const playerLive = await fetch(`${ASSET_BASE_URL}staging/player/index.html`, { method: 'HEAD' }).catch(() => null)
       if (!playerLive?.ok || needsRebuild(playerInputs, [PLAYER_STAMP])) {

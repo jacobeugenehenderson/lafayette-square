@@ -30,7 +30,7 @@
  * under one roof, which is the shape `bakedUrl.js` argues for — "pouring town #2 needs no
  * code change and no entry in any table." ⛔ Neither script may grow a list of towns.
  */
-import { readdirSync, statSync, existsSync, rmSync } from 'node:fs'
+import { readdirSync, statSync, existsSync, rmSync, writeFileSync } from 'node:fs'
 import { join, relative, extname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { execFile, execFileSync } from 'node:child_process'
@@ -57,6 +57,27 @@ const MIME = {
   '.wasm': 'application/wasm', '.txt': 'text/plain; charset=utf-8', '.map': 'application/json',
 }
 const mb = (b) => `${(b / 1048576).toFixed(1)} MB`
+
+/**
+ * The newest mtime anywhere under the player's sources. ⛔ Recursive: a directory's own
+ * mtime does not move when a file in a SUBdirectory changes, and reading it instead is
+ * exactly the bug that made the Publish button skip a rebuild after four files under
+ * `src/` had changed (2026-09-21). ⛔ Unreadable ⇒ Infinity ⇒ always stale.
+ * ⚠️ Keep the input list in step with `serve.js`'s `playerInputs`; they answer the same
+ * question from the two ends and a drift between them is a button that lies.
+ */
+const PLAYER_SRC = ['src', 'index.html', 'vite.config.js', 'package.json']
+function newestSrcMtime() {
+  const walk = (p) => {
+    let st
+    try { st = statSync(p) } catch { return Infinity }
+    if (!st.isDirectory()) return st.mtimeMs
+    let max = st.mtimeMs
+    for (const e of readdirSync(p)) { const m = walk(join(p, e)); if (m > max) max = m }
+    return max
+  }
+  return Math.max(...PLAYER_SRC.map((p) => walk(join(REPO_ROOT, p))))
+}
 
 function walk(dir, out = []) {
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -180,5 +201,18 @@ async function alreadyThere(files) {
       if (++done % 25 === 0) console.log(`         ${done}/${pending.length}`)
     }
   }))
+  // ⛔⛔ STAMP WHAT WAS BUILT, IN THE BUCKET — the panel cannot otherwise know.
+  // The Publish row answers "is the site showing my work?" by comparing the live slab's
+  // `bakedAt` to the local one. That measures the MAP DATA and says nothing about the
+  // player, so a code-only publish left the button present-tense forever and the operator
+  // with no way to tell whether staging had their fix. This marker is the missing half:
+  // the newest source mtime the published build was made from, written where the site is,
+  // so the answer is read off the artifact rather than remembered by this machine.
+  const marker = { builtAt: new Date().toISOString(), srcMtimeMs: newestSrcMtime(), files: files.length }
+  const tmp = join(REPO_ROOT, 'dist', 'build.json')
+  writeFileSync(tmp, JSON.stringify(marker, null, 2))
+  await put({ abs: tmp, rel: 'build.json' })
+  console.log(`stamp    build.json · srcMtime ${new Date(marker.srcMtimeMs).toISOString()}`)
+
   console.log(`\n✅ player published — every town at https://staging.theward.online/<map>/`)
 })().catch((e) => { console.error('\n⛔ publish FAILED:', e.message); process.exit(1) })

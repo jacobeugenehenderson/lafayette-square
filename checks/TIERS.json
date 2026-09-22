@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 194,
+  "total": 195,
   "counts": {
-    "safe": 152,
+    "safe": 153,
     "local-effect": 6,
     "live": 36
   },
@@ -1041,6 +1041,13 @@
     },
     {
       "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-publish-button-can-say-it-is-done.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
