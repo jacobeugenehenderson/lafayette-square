@@ -38,7 +38,12 @@ export default {
   contentRoot: 'content/huron/',
 
   branding: {
-    title: 'Huron',
+    // ⭐ THE TAB NAME IS WHAT A PARTNER BOOKMARKS, and "Huron" alone is a lake, a
+    // county and three towns. "<Town> Online" says what the thing IS, and it rhymes
+    // with the kit's own roof — the player lives at theward.ONLINE. Per-town authored,
+    // so it is a convention rather than a rule: ⛔ Lafayette Square keeps its own name,
+    // because lafayette-square.com is a live product nobody asked to rename.
+    title: 'Huron Online',
     faviconUrl: null,
     // ⭐ THE TOWN'S MARK, AUTHORED — one glyph drives the tab icon, the load screen and the
     // default visitor badge. ⚠️ Unicode has no lighthouse, which is the obvious choice for

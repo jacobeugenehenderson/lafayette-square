@@ -604,7 +604,7 @@ function Splash() {
           `favicon.svg` — Lafayette Square's arch — on every town's own address. It is now
           the town's authored mark: its emoji, its own SVG, or its initial. ⛔ Never
           another town's. (`src/lib/townMark.js`.) */}
-      <TownMarkGlyph size={80} style={{ opacity: 0.7 }} />
+      <TownMarkGlyph size={72} badge style={{ opacity: 0.85 }} />
     </div>
   )
 }
