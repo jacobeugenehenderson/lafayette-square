@@ -290,8 +290,31 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     _lightUp.crossVectors(_lightDir, _lightRight).normalize()
     const texel = (2 * half) / SHADOW_MAP_SIZE
     const snap = (v) => Math.round(v / texel) * texel
-    const a = snap(_focus.dot(_lightRight))
-    const b = snap(_focus.dot(_lightUp))
+
+    // ⛔⛔ QUANTISING THE SIZE IS HALF THE FIX. THE POSITION HAS THE SAME CLIFF.
+    // `c8bb79d9` made the box's SIZE continuous at the horizon; its CENTRE was left
+    // with an UNBOUNDED discontinuity in the same place. Looking down, the focus is
+    // the ground hit at `-camY / fwd.y`, which runs to INFINITY as the pitch
+    // approaches level; grazing or up, it snaps to the point under the camera.
+    // Measured on huron (camY 60, fov 45, townHalf 3697.9) by sweeping pitch at
+    // 0.001°: the focus jumped 573 km in one step at pitch −0.005°, bounded only by
+    // the sampling resolution. A 3.7 km box re-centred hundreds of km out contains
+    // no town at all ⇒ EVERY shadow in frame vanishes, and comes back when the pitch
+    // jitters over the horizon again. Two states, whole screen, angle-dependent.
+    //
+    // ⭐ THE FIX IS NOT A CLAMP ON THE RAY — it is the observation that the box has
+    // only `townHalf − half` of slack to move in before it starts pushing town off
+    // its own edge. Hold the focus inside that slack, in the light's own tangent
+    // axes, and the whole thing falls out: at a near-level camera the fit saturates
+    // (`half === townHalf`), the slack is ZERO, and the focus is the town centre —
+    // which is exactly the whole-town box the static fit uses. Both sides of the
+    // horizon land on the same value, so the discontinuity is gone rather than
+    // damped, and the box can never be aimed at ground the town does not occupy.
+    // ⛔ No constant: the slack is derived from the scene's own stencil extent.
+    const slack = Math.max(0, townHalf - half)
+    const clamp = (v) => Math.max(-slack, Math.min(slack, v))
+    const a = snap(clamp(_focus.dot(_lightRight)))
+    const b = snap(clamp(_focus.dot(_lightUp)))
     const c0 = _focus.dot(_lightDir)
     _focus.copy(_lightRight).multiplyScalar(a)
       .addScaledVector(_lightUp, b)

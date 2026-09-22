@@ -48,9 +48,12 @@ Design table for a fitted box of any size (`2·half/4096` = `half/2048`):
 The fit used to fall back to the point straight *below* the camera when the view ray missed
 the ground — the smallest extent at the angle that sees furthest — giving a **55× step in
 texel size across 0.1° of pitch**, which was the flash (`ROADMAP` H-16, `c8bb79d9`). The fix
-makes the grazing case the whole town, which is continuous and correct and **guarantees
-1.73 m texels whenever the camera is near level**. ⇒ the flash became teeth. ⛔ Do not
-revert it; it is the right shape for a single map and the single map is the problem.
+makes the grazing case the whole town, which **guarantees 1.806 m texels whenever the
+camera is near level**. ⇒ the flash became teeth. ⛔ Do not revert it; it is the right
+shape for a single map and the single map is the problem. ⚠️ **It was continuous in SIZE
+only** — the box's CENTRE had an unbounded cliff in the same place (573 km in one step of
+pitch, closed 2026-09-22; `ROADMAP` H-16), so a near-level camera was ALSO losing every
+shadow in frame. The teeth are what is left once that is gone.
 
 ⚠️ **huron is 3,539 m of disc against Lafayette Square's 892.** At LS the same code gives
 0.495 m/texel and nobody ever saw this. Signature kit shape: fine on town #1.
@@ -107,5 +110,8 @@ foreground resolves finely and the distance stays cheap.
   512 m ⇒ 0.25 m texels) was the cheap alternative offered and NOT chosen; it remains the
   fallback if cascades prove too costly, and a cap is the first cascade's far plane anyway.
 - Whether the residual "sometimes" flash Jacob still saw after `c8bb79d9` is the ordinary
-  2× bucket steps or something else. ⛔ **Not measured.** Do not assume cascades fix it.
+  2× bucket steps or something else. **One candidate was measured and closed since — the
+  box's 573 km CENTRE cliff (`ROADMAP` H-16) — but ⛔ NOBODY HAS MATCHED ANY on-screen
+  flash to ANY mechanism**, because Preview currently renders no scene at all on either
+  town (H-16's eye-gate note). Do not assume cascades fix what is left.
 - The frame-rate cost. Uncosted on purpose.
