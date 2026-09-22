@@ -28,6 +28,49 @@ const ovt = rd('cartograph/data/huron/raw/overture-places.json').places
 // ⛔ Returns the REASON as well as the tier. The first worklist printed whatever text a
 // record happened to carry, so a held place's "why" column read "High confidence on the
 // hours" — useless to the person holding the clipboard. The trigger is the reason.
+
+// ──────────────────────────────────────────────────────────────────────────
+// ⛔⛔ A MENU PRICE IS CENTS, AND NOTHING IN THE FIELD'S NAME SAYS SO. Lafayette
+// Square stores `price: 2400` for a $24 oyster plate — 781 prices, every one an
+// integer — and `MenuRow` renders `(shownPrice / 100).toFixed(0)`. A researcher
+// transcribing a printed menu writes `13.5`, which is correct about the world and
+// renders as **$0**. All 97 prices in this research came back in dollars, so the
+// whole Berardi's menu showed a column of zeroes and read as "no prices listed".
+//
+// ⭐⭐ CLASS D, TEXTBOOK: a constant with NO UNIT, whose value happened to be right
+// for town #1 only because a human authored LS's menus in cents by hand. No
+// fallback, no scene name, nothing to grep. ⛔ The conversion is stated HERE, once,
+// rather than left as something the next merge must remember:
+//   research files carry PRINTED-MENU DOLLARS · the schema is CENTS · × 100.
+// ▶ `checks/claims-a-menu-price-is-in-cents.mjs` is what keeps it true.
+//
+// ⛔ AND IT STRIPS NESTED `_` KEYS, because `stripMeta` does not. `bake-content.js`
+// strips the top level of a patch only, so a researcher's section-level `_notes` rode
+// all the way into the slab — 906 bytes shipped to every visitor and displayed nowhere,
+// since the renderer has no section-notes field. ⚠️ My first "no provenance leaked"
+// check missed it by looking only at a listing's own keys; the convention says
+// `_`-prefixed never ships, and a convention enforced one level deep is not enforced.
+// ⭐ The CONTENT is real and worth having — "all omelets served with homefries",
+// "gluten free bread 1.00" is exactly what a diner wants — so this is an input kind
+// with nowhere to live, not junk. Dropped here rather than shipped dead; recorded in
+// the research files, which is where it can be picked up when the card grows a home
+// for it.
+function menuToCents(menu) {
+  const toCents = (v) => (typeof v === 'number' ? Math.round(v * 100) : v)
+  const clean = (o) => Object.fromEntries(Object.entries(o).filter(([k]) => !k.startsWith('_')))
+  return {
+    ...clean(menu),
+    sections: (menu.sections || []).map(s => ({
+      ...clean(s),
+      items: (s.items || []).map(i => ({
+        ...clean(i),
+        ...(typeof i.price === 'number' ? { price: toCents(i.price) } : {}),
+        ...(Array.isArray(i.modifiers) ? { modifiers: i.modifiers.map(m => ({ ...m, ...(typeof m.price === 'number' ? { price: toCents(m.price) } : {}) })) } : {}),
+      })),
+    })),
+  }
+}
+
 function classify(r) {
   const text = [r._confidence, r._recommended_action, r._status_flag, r._notes].filter(Boolean).join(' ')
   const key = DOUBT_KEYS.find(k => r[k])
@@ -103,6 +146,7 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
     continue
   }
   const payload = { ...rec, _beat: beat, _tier: tier, _display_id_at_research: id, _match_name: base.name }
+  if (payload.menu) payload.menu = menuToCents(payload.menu)
   for (const c of cands) { ov.patches[`ovt-${c.id}`] = payload; keys++ }
   merged++
 }
