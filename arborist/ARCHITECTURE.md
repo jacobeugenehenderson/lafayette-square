@@ -61,11 +61,49 @@ src/components/InstancedTrees.jsx
 
 ---
 
-## Tree-render reality at LS (2026-07-22) — the IMPOSTOR IS THE FOUNDATION; geometry is an enhancement on the TALLEST trees
+## Tree-render reality (2026-07-22, ruled 2026-09-22) — ⛔ EVERY TREE IS AN IMPOSTOR. MESH IS AN ARBORIST DECISION, NOT A RUNTIME ONE.
 
 This is the load-bearing as-built of how Arborist trees actually render in production today, and the doctrine that governs how that changes. Design record: `_handoffs/HANDOFF-hero-impostor-foundation.md` (locked at standup 2026-07-17, built by Slat, merged to trunk `3e809a56` 2026-07-22).
 
-**⭐ THE SPLIT — every tree paints; the tallest slice gets geometry.** The impostor is the **foundation, not the fallback**. Every placement renders as a canopy impostor by default; the **tallest `heroGeomFraction`** (default **0.15**, live via `?heroGeom=`) keeps real `lod1` mesh as the **anchors** — sprinkled through the whole depth of the scene, not clustered in a front row, so articulated branch-motion and real parallax read as truth-anchors while the impostor sea between them breathes. Tallest is the rule because that is where geometry earns its cost (crowns break the skyline, most parallax against the sky, worst to fake) and because it is **scene-generic** — it ports to town #2 and #3, unlike a hero-pan-prominence classifier. The selection is **stable at load** (a tree's height never changes → no thrash), which is why it is *not* the banned per-frame camera-distance swap. Doctrine it satisfies: **the LOD ladder is baked; the selection is runtime.**
+### ⛔⛔ THE RULING (Jacob, 2026-09-22, verbatim): **"THERE ARE NO MESHES UNLESS SPECIFIED IN THE ARBORIST, PERIOD."**
+
+**Every placement renders as a canopy impostor.** Mesh exists only where an operator
+specified it in the Arborist — it is an **authoring** decision, never a runtime selection.
+⛔ No height rule, no shot rule, no prominence classifier, no automatic anchors. huron's
+runtime printing `mesh=0earned+0leaked` is the CORRECT state, not a deficiency.
+
+> ### ⚠️ WHAT THIS SECTION USED TO SAY, AND WHY IT IS RECORDED RATHER THAN DELETED
+> It described a **split**: *"the tallest `heroGeomFraction` (default 0.15, live via
+> `?heroGeom=`) keeps real `lod1` mesh as the anchors… so articulated branch-motion and
+> real parallax read as truth-anchors while the impostor sea between them breathes."*
+> ⛔ **That is not how the product runs and it has not been for some time** —
+> `BACKLOG.md §5` already recorded the hero-LOD arc ARCHIVED and `no-cull` as locked
+> doctrine, and `NOTES.md:243` reopened the anchor rule outright (*"the geometry-anchor
+> rule wants FOREGROUND, not height"*). This section stayed loud and current-tense while
+> the decision moved underneath it, and it is named in this folder as the **single source
+> of truth for render state** — so it was believed. ⭐ It sent one session to the wrong
+> conclusion twice in an hour on 2026-09-22.
+>
+> ⭐ **THE INTENT IT CARRIED IS REAL AND IS DEFERRED, NOT DEAD.** Mesh was wanted for
+> **STREET VIEW**, where a tree is read close and articulated bough motion earns its cost.
+> ⛔ Street view is **not currently being developed**, so nothing consumes it today. That is
+> an unbuilt intent filed as done — surfaced here as WORK, per `CLAUDE.md`'s ASPIRATION
+> rule, rather than evicted.
+>
+> ⚠️ **THE MACHINERY IS STILL IN THE CODE** and still prints every load —
+> `heroGeomFraction`, `?heroGeom=`, the legacy `dbhCut`. It reaches nothing under the
+> ruling. ⛔ Do not read its output as a defect, and do not "fix" it by turning anchors on.
+> ⚠️ **AND THE SLAB STILL CARRIES THE GEOMETRY:** huron ships **47 `lod1` GLBs, 222 MB**,
+> which nothing can consume while the ruling stands. Measured 2026-09-22; not addressed.
+
+### ⭐ WHY THE CANOPY STILL READS AS ALIVE WITHOUT MESH — the parallax finding
+Jacob, 2026-09-22, eye-gating the flutter on huron: *"the pan hides the effect and what we
+get from simple parallax from the layered cards does all the work… when the camera is
+stopped, it's a nice effect."* ⇒ During camera motion the **layered cards' own parallax**
+carries the canopy, and the per-vertex flutter is not legible; at rest the flutter is what
+sells it. ⭐ **So the card's tessellation is a STILL-FRAME cost, not a motion one** — and
+this is the argument the anchor rule was reaching for when it said articulation reads as
+truth. It is a per-shot look decision (`scene.shotLooks`), not a geometry one.
 
 > ⛔ **THE CULL IS RETIRED in foundation mode — do not reintroduce it as a density lever.** `classifyHeroTiers`'s `cull` verdict ran *before* the split and dropped most of HPDM onto bare ground with shadow-spots where trees should be (`ca38ad66`). Impostors are cheap billboards; nothing needs dropping. The legacy `cull`/prominence-role path survives **only** for foundation-off looks (no `heroImpostorBySpecies` record, or `scene.heroImpostor === false`). If density looks thin, the question is *"is the foundation on for this look?"* — never *"should we cull less?"*
 >
@@ -95,12 +133,23 @@ This is the load-bearing as-built of how Arborist trees actually render in produ
 > costing most of a session. Now on `injectHeroImpostorStamp`, where the live tier is.
 > ⭐ **An instrument's silence is not evidence of absence — prove it REACHES the thing first.**
 >
-> ### ⚠️ THE IMPOSTOR TIER IS NOT CHEAP — 1.2× THE MESH IT REPLACED
-> Each card is a **20×20 grid = 800 tris**, ×3 cards/tree = **2,400 tris**; 4,867 trees = **11.68M**,
-> against 10.13M for the 260 mesh trees. A billboard is 2 tris. The tessellation is what buys the
-> flutter, so it is a real trade — but it was never chosen. ⭐ **Jacob's lever (2026-08-28): only the
-> FRONT leaf shell needs to flutter; the under shell and bark can be flat cards on randomised
-> figure-8 paths.** front@20 + 2 flat = **3.97M (2.9×)**; front@12 = **1.48M (8×)**, no silhouette loss.
+> ### ⚠️ THE IMPOSTOR TIER WAS THE WHOLE FRAME BUDGET — CUT 18× ON 2026-09-22
+> Each card was a **20×20 grid = 800 tris**, ×3 cards/tree. On huron's 17,575 placements
+> that is **42.18 M triangles every frame**, and it was the entire cost: trees off took the
+> scene **9.8 → 23.6 FPS**; suppressing only `drawElementsInstanced` did the same.
+> ⭐ **The tessellation exists for ONE term** — the fbm flutter in `OVERHEAD_WIND_BEGIN`
+> samples noise at `position.xz`, so it needs interior vertices to warp. Hula and lean scale
+> by `aTreeHeightNorm` and survive on a 2×2 card.
+> ⇒ **Landed: front shell 8×8, the two occluded layers flat (2 tris).** 42.18 M → **2.32 M**.
+> Eye-gated by Jacob on huron at the pan and at rest; `?frontGrid=` / `?backGrid=` override.
+> ⛔ **NOT a blanket cut — that was tried and reverted** (`c0056ffd` → `4433b301`): dropping
+> *every* layer to a flat quad killed the flutter outright and the canopy went visibly dead
+> within minutes of the operator looking. The front shell's flutter is the motion that reads.
+> ⭐ **AMPLITUDE IS FREE.** `window.__setHeroWindFloor(v)` is a uniform multiply — a coarser
+> grid is compensated by turning the floor UP, never by more triangles.
+> ⚠️ **OWED: the floor is two bare constants** — `heroWindFloor = 1.0`, `browseWindFloor = 1.5`
+> in `treeAtlasMaterial.js`, with no per-town authoring. A windier town cannot say so
+> (`CLAUDE.md` Layer 0 q1). It wants to be an authored channel, forkable per shot.
 > ▶ `node scratch/hero-actual-triangles.mjs`
 
 **TWO impostor systems, split by VIEWING HEMISPHERE — both live.** They are different constructions of the same tree, not competing versions; a top-down cross reads as an ugly line and a hero-viewed disc-stack reads as flat plates, so each hemisphere gets its own carrier:

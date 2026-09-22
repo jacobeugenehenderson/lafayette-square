@@ -147,6 +147,26 @@ function azimuthForInstance(x, z, n) {
 // TRANSLATION+SCALE only (no rotY) — injectHeroImpostorStamp owns orientation
 // (Y-billboard to face the camera). Front leaf shell bright → back darker; the bark
 // layer sits at the rear. Relights + sways off the shared atmosphere/wind.
+// Front shell keeps the shipped 20×20; the occluded layers drop to a flat quad that
+// still leans. Both overridable from the URL so the canopy can be eye-gated live.
+const _q = (k, d) => {
+  try {
+    const v = parseInt(new URLSearchParams(window.location.search).get(k), 10)
+    return Number.isFinite(v) && v > 0 ? v : d
+  } catch { return d }
+}
+// ⭐ EYE-GATED DEFAULTS (Jacob, 2026-09-22, on huron at the hero pan and at rest):
+// front 8 / back 1 = 2.32 M tris/frame against the shipped 20/20/20's 42.18 M — 18×.
+// His verdict: "we can see 8 when the camera is still and with some finessing it would
+// probably be worth it. However: the pan hides the effect and what we get from simple
+// parallax from the layered cards does all the work."
+// ⇒ The flutter's spatial detail is only legible at rest; during motion the layered
+// cards' parallax carries the canopy, so the fine grid is paying for something the shot
+// hides. ⛔ AMPLITUDE IS FREE — `window.__setHeroWindFloor(v)` is a uniform multiply, so
+// a coarser grid is compensated by turning the floor UP, not by more triangles.
+const FRONT_GRID = _q('frontGrid', 8)
+const BACK_GRID  = _q('backGrid', 1)
+
 export function HeroImpostorSpecies({ asset, instances, visible = true, opacity = 1 }) {
   const refs = useRef({})
   const invalidate = useThree(s => s.invalidate)
@@ -179,7 +199,24 @@ export function HeroImpostorSpecies({ asset, instances, visible = true, opacity 
       const groupInstances = groups.get(azSet.azIdx) || []
       if (!groupInstances.length) continue
       for (const layer of azSet.layers) {
-        const geo = buildHeroImpostorCard(rec, { cardDepthFrac: layer.cardDepthFrac })
+        // ⭐⭐ THE FRONT-SHELL LEVER (Jacob, 2026-08-28: "only the FRONT leaf shell needs
+        // to flutter; the under shell and bark can be flat cards").
+        // The card's tessellation exists for ONE term: the fbm flutter in
+        // OVERHEAD_WIND_BEGIN samples noise at `position.xz`, so it needs interior
+        // vertices to warp. Hula and lean scale by `aTreeHeightNorm` and survive on a
+        // 2×2 card, so a flat under-shell still LEANS with the wind, it just stops
+        // paying for per-vertex flutter nobody can see through the front shell's
+        // alphaTest. ⛔ Not a blanket cut: a previous attempt flattened EVERY layer and
+        // the canopy went visibly dead (reverted, c0056ffd) — the front shell's flutter
+        // is the motion the operator actually sees.
+        // ⛔ Derived from the layer's own role, not a scene name: shellIdx 0 of a leaf
+        // layer is the front shell on every town. `?frontGrid=` / `?backGrid=` override
+        // for eye-gating; defaults leave the front shell exactly as it shipped.
+        const isFrontShell = layer.kind !== 'bark' && (layer.shellIdx ?? 0) === 0
+        const geo = buildHeroImpostorCard(rec, {
+          cardDepthFrac: layer.cardDepthFrac,
+          grid: isFrontShell ? FRONT_GRID : BACK_GRID,
+        })
         if (!geo) continue
         const bright = layer.kind === 'bark'
           ? 0.8
