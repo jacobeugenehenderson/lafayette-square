@@ -342,5 +342,25 @@ scratch/AB.html
 # ──────────────────────────────────────────────────────────────────────────
 photos-wikimedia/
 authoring/cloud-photos/
-public/photos/
 cartograph/data/*/photos/
+# ⛔ `public/photos/*/` — the SUBDIRECTORIES, not the directory. Git cannot re-include a
+# file whose parent directory is excluded, so `public/photos/` + a `!` negation silently
+# does nothing: git never descends far enough to see the exception. Excluding the
+# per-listing folders leaves files sitting directly in public/photos/ visible.
+public/photos/*/
+
+# ⛔⛔ AND THE ONE FILE UNDER public/photos/ THAT IS NOT A LIBRARY. `og-preview.jpg` is
+# the 164 KB link-preview image captured from Preview, and `cartograph/serve.js`
+# STAGES IT ON EVERY PUBLISH (`slabPathspecs`). Ignoring it broke the Publish to
+# Staging button outright: `git add` refuses an ignored path and the endpoint
+# reports "git add failed".
+# ⭐ The file beside it already warned about this exact class — slabPathspecs' comment
+# explains why `public/baked/<id>` is DELIBERATELY ABSENT from that list, because
+# staging an ignored path makes a publish that ships nothing while reporting ok. I
+# created the same hazard one directory over and only escaped the silent version of
+# it because `git add` happens to exit non-zero here.
+# ⛔ A blanket ignore on a directory that mixes a deployed artifact with a bulk
+# library is the defect. ⚠️ And the first fix did not work: `public/photos/` +
+# `!public/photos/og-preview.jpg` still reported the file ignored, because git does not
+# descend into an excluded directory and so never reads the negation. The rule above
+# excludes `public/photos/*/` instead.
