@@ -1,0 +1,1595 @@
+{
+  "huro-lst-0002": {
+    "_confidence": "Identity established: this is Sawmill Creek Resort, a 200-acre Lake Erie resort now operated by Six Flags Entertainment (post Cedar Fair merger) and marketed as an official Cedar Point resort. ⭐ NOTE THE CONFLICT: the operator's own page says the resort is in SANDUSKY, Ohio, while our record and the resort's postal address place it in HURON (100 Sawmill Creek Dr W). I have NOT resolved which is correct — it is most likely a marketing choice (Cedar Point is in Sandusky) over a postal fact, but that is not established. ⛔ No hours of any kind are published on the operator page; a resort has a 24h front desk plus separate golf/marina/dining hours, none of which are given. The overture category 'logging_contractor' is a name-derived misclassification ('Sawmill') — this is a resort.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Sawmill Creek Huron",
+    "_no_fields_proposed": "hours: none published by the operator, and a resort has several distinct hour sets (front desk, pro shop, marina, dining) rather than one. Not established.",
+    "_source": "https://www.sixflags.com/sawmillcreekresort (first-party operator page, reached via a 301 from sawmillcreekresort.com)",
+    "amenities": [
+      "lodge accommodation",
+      "18-hole golf course",
+      "marina",
+      "restaurants",
+      "swimming pools",
+      "fitness center",
+      "meeting and event space",
+      "walking trails"
+    ],
+    "description": "A 200-acre Lake Erie resort with a lodge, Fazio golf course, marina and dining.",
+    "phone": "+14194332030"
+  },
+  "huro-lst-0004": {
+    "_confidence": "The locator returned no address-specific page; Blue Rhino cages are self-serve exchange racks hosted outside a retail store and carry no independent posted hours of their own — access follows the host store's (Hy-Miler #2235 / Mobil, 508 Berlin Rd) hours, 06:00-23:00 daily per that station's own page, but this was not separately confirmed for the propane cage itself.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_no_fields_proposed": "No location-specific hours exist to fetch; bluerhino.com/propane-finder is a national locator with no page for this address. Host-station hours (06:00-23:00 daily) are a reasonable proxy but not confirmed as the cage's own access hours, so 'hours' is omitted rather than assumed.",
+    "_source": "https://bluerhino.com/propane-finder — a generic nationwide locator tool, NOT a page for this location (aggregator/brand page, not first-party for this site)",
+    "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 508 Berlin Rd.",
+    "phone": "+14194336204"
+  },
+  "huro-lst-0005": {
+    "_confidence": "No dedicated Blue Rhino page for this address exists. The host station (Hy-Miler/Shell, 2026 Cleveland Rd W, huro-lst-0173) is confirmed open 24 hours via GasBuddy, and GasBuddy lists \"propane\" among that station's amenities, so the exchange cage is very likely accessible whenever the station is, i.e. 24 hours — but this is inferred from the host, not read off a page for the cage itself.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_source": "https://bluerhino.com/propane-finder — generic nationwide locator, not location-specific; presence of a cage at this address corroborated by GasBuddy's amenity list for the Hy-Miler/Shell station at the same address/phone (gasbuddy.com/station/10209)",
+    "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Shell station, 2026 Cleveland Rd W, accessible during the station's 24-hour operation.",
+    "hours": {
+      "friday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "monday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "saturday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "sunday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "thursday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "tuesday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "wednesday": {
+        "close": "23:59",
+        "open": "00:00"
+      }
+    },
+    "phone": "+14194337848"
+  },
+  "huro-lst-0007": {
+    "_confidence": "Address (808 Williams St) and phone (419-433-6700) confirmed by BBB, matching held record exactly. Hours are aggregator-only, not first-party-confirmed. BBB additionally states this is a partnership (co-owners Steve Mantkowski and Red Penwell), operating since 2007 — consistent detail across sources, but not itself load-bearing for hours.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Rpm Automotive Repair",
+    "_source": "BBB profile (bbb.org) for address/phone confirmation; hours from aggregator listings (Loc8NearMe, nears.me, auto-usa.org) which agree with each other. No first-party website found.",
+    "_url_finding": "No website is held for this listing; none was found — business appears to have no web presence beyond directories and BBB.",
+    "description": "Independent auto repair and routine-maintenance shop, in business since 2007, run by two co-owners.",
+    "hours": {
+      "friday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "16:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194336700"
+  },
+  "huro-lst-0025": {
+    "_confidence": "Address 300 Williams Street, Huron OH 44839 confirmed. Hours are a typical draw-station pattern (early morning, weekdays, shorter Friday) which matches the expected shape for this service type: Mon/Tue/Wed/Thu 6:00 AM-2:00 PM, Fri 6:00 AM-12:00 PM, closed weekends. Pulled from Firelands' own location-specific profile page (via search snippet, not a direct successful fetch — the live page blocked automated fetch), not the generic service-wide lab-services page. A separate phone (419-557-7840) is given for pre-registration and differs from the main listed number.",
+    "_entity_kind": "firm",
+    "_fetched": "2026-09-22",
+    "_match_name": "Firelands Laboratory Community Collection Center - Huron",
+    "_source": "WebSearch results citing https://www.firelands.com/locations/profile/huron-lab/ (first-party location profile page — direct WebFetch returned 403/bot-blocked, so relying on search-engine-cached snippet of that same first-party URL) and yellowpages.com aggregator echo of the same data",
+    "_url_finding": "The held URL https://www.firelands.com/medical-care/lab-services/ is a service-wide page describing lab services generally, not this specific Huron collection center. The location-specific first-party page is https://www.firelands.com/locations/profile/huron-lab/ (blocked to direct automated fetch; hours here are sourced from a search-engine snippet of that same URL, not a raw page fetch).",
+    "amenities": [
+      "pre-registration available by phone at 419-557-7840"
+    ],
+    "description": "Firelands Laboratory's Community Collection Center in Huron is a walk-in blood draw and lab specimen collection station at 300 Williams Street.",
+    "hours": {
+      "friday": {
+        "close": "12:00",
+        "open": "06:00"
+      },
+      "monday": {
+        "close": "14:00",
+        "open": "06:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "14:00",
+        "open": "06:00"
+      },
+      "tuesday": {
+        "close": "14:00",
+        "open": "06:00"
+      },
+      "wednesday": {
+        "close": "14:00",
+        "open": "06:00"
+      }
+    },
+    "phone": "+14194339570"
+  },
+  "huro-lst-0028": {
+    "_confidence": "⚠️ Discrepancy: third-party aggregators (Doximity, US News, WebMD, NPI registry, dr-leonardo) all describe Dr. Christopher Emery, DO/MD, as a family-medicine physician at 808 Main St, Huron — the same address and phone as NOMS Family Practice - Huron (huro-lst-0270). But NOMS's own live physician directory and the NOMS Huron Family Practice group page, fetched directly, do NOT list a 'Christopher Emery' among current providers (only Prosser, Ketvertis, Case, Richardson appear). This may mean he has left the practice, retired, or that the aggregator data (much of which reads as stale/templated) has not caught up — cause not established. Per rule 7, NOMS's group hours are not attached to him.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Christopher Emery",
+    "_no_fields_proposed": "Hours not written: the only source giving hours (the dr-leonardo claim-your-profile aggregator, Mon-Fri 9:00-17:00) is not first-party and directly conflicts with NOMS's own current directory not listing this physician at all — too thin and too contradicted to record as fact.",
+    "_source": "Aggregators/directories only — Doximity, US News Doctors, WebMD, npiprofile.com, and a claim-your-profile provider-directory site (christopheremerye8e.dr-leonardo.com). Checked against NOMS's own first-party physician directory (nomshealthcare.com/contact/directory/) and the NOMS Huron Family Practice physician-group page, fetched directly.",
+    "description": "A family-medicine physician (DO) whose listed office address matches NOMS Family Practice - Huron, though he no longer appears on NOMS's own current provider roster for that location.",
+    "phone": "+14194336117"
+  },
+  "huro-lst-0037": {
+    "_confidence": "Established: this is a MORTGAGE LOAN OFFICER (not an installment-loan storefront) -- Chris Pisano is a loan originator (NMLS 351631) for Union Home Mortgage Corp (NMLS 2229), headquartered in Strongsville OH, working out of this Huron office. The category \"installment_loans\" in the source data is a rough/generic match for a mortgage loan officer, not literally an installment-loan shop. Address (202 Cleveland Rd W Suite 4) and phone match held record exactly. No hours were listed on the site -- typical for a one-person loan-officer office that works by appointment.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Chris Pisano",
+    "_no_fields_proposed": "No hours published on the first-party site; a single loan officer typically works by appointment rather than posted walk-in hours.",
+    "_source": "https://www.pisanoteamohio.com/ (first-party site for the loan officer)",
+    "description": "Chris Pisano is a mortgage loan officer with Union Home Mortgage, assisting with home purchase and refinance loans from this Huron office.",
+    "phone": "+14192399074"
+  },
+  "huro-lst-0038": {
+    "_confidence": "⛔ NEGATIVE FINDING, and it is the substance of this record: Carmeuse's OWN North American locations page does NOT list Huron. The Ohio entries it does list are Grand River Operation (Grand River), Maple Grove Operation (Bettsville), Millersville Operation (Millersville), Cleveland Dock and Lorain Dock. ⛔ I have NOT established whether the Huron operation at 100 Meeker St is closed, sold, renamed, or merely absent from the public map — search access was exhausted before that could be settled, and absence from a marketing page is not proof of closure. This record should be treated as UNVERIFIED, not as confirmed-live. Our data carries no phone for it.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Carmeuse Huron Operation",
+    "_no_fields_proposed": "hours AND continued existence: the operator's own locations page omits Huron entirely. Nothing to record; the open question is whether this listing is stale.",
+    "_source": "https://www.carmeuse.com/na-en/products-map (FIRST-PARTY — Carmeuse's own North American locations map, reached via a 301 from the held carmeusena.com)",
+    "_url_finding": "Held URL http://carmeusena.com/ 301-redirects to https://www.carmeuse.com/ — the domain is superseded but reaches the right company. However the company's own locations map does not list a Huron site.",
+    "description": "Listed as a Carmeuse lime and limestone operation on the Huron lakefront; current status unverified."
+  },
+  "huro-lst-0039": {
+    "_confidence": "Directory-order name resolves to Dr. J. Christopher Mariotti, D.C. — no separate trading/practice name found beyond his own name; BBB lists the registered business simply as 'J. Christopher Mariotti D.C.' Address (801 Rye Beach Rd) and phone (419-433-5432) corroborated on BBB, Wellness.com, and Yellowpages. A synthesized aggregate search result claimed Mon-Fri 9:00-17:00, weekends closed, but neither BBB nor Wellness.com — the two directory pages actually fetched and inspected — display hours on the page itself, so this is unconfirmed aggregator noise, not two independent structured sources.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Mariotti J C DC",
+    "_no_fields_proposed": "Hours not written: no first-party site exists, and the only pages actually fetched (BBB, Wellness.com) do not display hours on the page.",
+    "_source": "Aggregators only — BBB (bbb.org), Yelp, Wellness.com, Vitals, Healthgrades, WebMD, Yellowpages, CMac.ws. No first-party website could be located for this practice.",
+    "amenities": [
+      "Chiropractic care",
+      "Sports medicine",
+      "Spinal decompression therapy"
+    ],
+    "description": "A solo chiropractic practice run by Dr. J. Christopher Mariotti, DC, in Huron.",
+    "phone": "+14194335432"
+  },
+  "huro-lst-0043": {
+    "_confidence": "Confirmed the Linktree is a hub, not the destination; followed it to divalashesbymaggie.net, the business's real first-party website, which also offers lash training/education, a skincare shop, and a model-application form. Could not retrieve stated hours of operation from the site content available to the fetch tool (the homepage did not surface a posted schedule, and a guessed /contact path 404'd). Address/phone taken from the held record; not independently re-verified against the site in this pass.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Diva Lashes By Maggie",
+    "_no_fields_proposed": "Hours: the business's own website did not surface a posted weekly schedule in the content retrievable by the fetch tool, and no independent aggregator with a stated schedule was found in this pass. Hours are genuinely not established from available sources.",
+    "_source": "https://linktr.ee/diva.salon (Linktree hub, owner-maintained) leading to https://www.divalashesbymaggie.net (the business's own site, also referred to as \"Diva Lashes By Maggie & SPA\")",
+    "_url_finding": "The held URL is a Linktree (linktr.ee/diva.salon), a link hub rather than the business's own site. It leads to the real first-party site at divalashesbymaggie.net, plus separate Square booking, Square gift-card, Google review, and Amazon storefront links.",
+    "amenities": [
+      "lash services",
+      "skincare",
+      "spa treatments",
+      "lash training/education"
+    ],
+    "description": "Lash and spa studio in Huron, Ohio (\"Diva Lashes By Maggie & SPA\") offering lash services, skincare, and spa treatments, plus lash-training education and a skincare product shop.",
+    "phone": "+14192397895"
+  },
+  "huro-lst-0049": {
+    "_confidence": "The listing name 'Review Phim Hay' is confirmed to be DATA CONTAMINATION, not a real business at this address — it is Vietnamese for 'good film review' and has nothing to do with the beauty-bar content actually found. The held URL correctly resolves to Hello Gorgeous Beauty Bar, LLC, which the site itself states is 'located in the heart of Huron, Ohio' at 521 Main Street, Huron OH 44839, operating since 2018. No stated weekly hours were found on the site; it states individual team members manage their own schedules and clients should contact the specific provider.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Review Phim Hay",
+    "_no_fields_proposed": "Hours: the salon's own site states each team member manages their own schedule and does not publish a single storefront weekly schedule; no independent aggregator with a stated schedule was checked given the identity finding took priority. Phone not found on the fetched content.",
+    "_source": "http://Hellogorgeousbeautybarllc.com/ (first-party site, fetched directly)",
+    "_url_finding": "The listing name 'Review Phim Hay' does not correspond to any business at 521 Main St, Huron, OH — it is a Vietnamese phrase ('good film review') that is almost certainly scraper/spam contamination in the source data, unrelated to this address. The held URL (Hellogorgeousbeautybarllc.com) is live and correctly describes the actual business at this address: Hello Gorgeous Beauty Bar, LLC. Recommend the listing name be corrected to 'Hello Gorgeous Beauty Bar' in the source data — this is a data-quality defect, not a same-business naming variant.",
+    "amenities": [
+      "eyelash extensions",
+      "hair services",
+      "HydraFacial",
+      "waxing",
+      "nails",
+      "makeup & weddings",
+      "spray tanning",
+      "Botox",
+      "in-store products",
+      "gift cards"
+    ],
+    "description": "Hello Gorgeous Beauty Bar, LLC — a multi-service beauty salon in Huron, Ohio (since 2018) offering eyelash extensions, hair services, HydraFacial, waxing, nails, makeup for weddings, spray tanning, and Botox."
+  },
+  "huro-lst-0054": {
+    "_confidence": "⚠️ MAJOR FINDING, not merely a URL mismatch: 221 Rye Beach Rd, Huron, OH 44839 — the address held for this listing — is Erie Village Apartments, an income-based residential apartment complex (confirmed via HotPads, Trulia, and Erie County Cares provider listings, phone 419-433-5575, unrelated to this business). There is no commercial storefront at this address. The only active 'Global Traditional Flavors' found online (Instagram @gtflavors, DoorDash, Uber Eats) is a Thai/Colombian restaurant at 140 S Walnut St, Wooster, OH — a different city roughly 45 miles away, with no stated Huron connection. Two explanations are consistent with the evidence and neither is confirmed: (a) this is a genuinely separate home-based/cottage food operation run out of a residential unit in Huron, unconnected to the Wooster restaurant despite the identical name — plausible given the food_delivery_service category and residential address; or (b) the Huron address in our source data is simply wrong/stale and the real business is the Wooster restaurant. Could not resolve further before the session's search budget was exhausted.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Global Traditional Flavors",
+    "_no_fields_proposed": "No hours obtainable and identity itself is unresolved between a possible Huron home-based food business and an apparently unrelated same-named Wooster, OH restaurant. Do not merge these — flagging the ambiguity is the finding.",
+    "_source": "Instagram (@gtflavors, likely owner-run — closer to first-party than an aggregator, but does not itself state a Huron address), DoorDash and Uber Eats listings, and an independent property search on the held address.",
+    "_url_finding": "No website is held; none exists. The only web presence found for this exact business name is centered on Wooster, OH, not Huron."
+  },
+  "huro-lst-0055": {
+    "_confidence": "The held phone number (567) 623-4552 matches Dollar General Store #14867's own listed phone number EXACTLY, confirming the Western Union agent counter operates out of the Dollar General at 2202 Cleveland Rd W (SR 6). No separate Western Union-specific hours were found (the in-store WU counter's own service hours were not confirmed, only the store's overall hours), so the hours below are the host store's hours, not a confirmed WU-counter-specific window.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Western Union",
+    "_source": "Dollar General's own store-directory page (dollargeneral.com/store-directory/oh/huron/14867, first-party) for the host store's hours; location.westernunion.com/us/oh/huron/ (first-party Western Union locator) did not return location-specific content on fetch",
+    "description": "Western Union agent counter inside the Dollar General store at 2202 Cleveland Rd W (SR 6).",
+    "hours": {
+      "friday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "monday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "saturday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "sunday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "thursday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "tuesday": {
+        "close": "22:00",
+        "open": "08:00"
+      },
+      "wednesday": {
+        "close": "22:00",
+        "open": "08:00"
+      }
+    },
+    "phone": "+15676234552"
+  },
+  "huro-lst-0060": {
+    "_confidence": "Same physical site/listing as huro-lst-0282 (Hy-Miler #2234) under the Mobil brand name.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563 (first-party, Exxon/Mobil station locator; original held URL 301-redirects here)",
+    "amenities": [
+      "convenience store",
+      "car wash"
+    ],
+    "description": "Mobil-branded fuel station with car wash at 805 S. Main Street, operated as the Hy-Miler #2234 convenience store site.",
+    "hours": {
+      "friday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "monday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "saturday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "sunday": {
+        "close": "22:00",
+        "open": "06:00"
+      },
+      "thursday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "tuesday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "wednesday": {
+        "close": "23:00",
+        "open": "06:00"
+      }
+    },
+    "phone": "+14194336597"
+  },
+  "huro-lst-0064": {
+    "_confidence": "Our held record has NO address at all; BBB supplies one — 537 Washington Ave, Huron, OH 44839-1951 — which this research surfaces for the caller's awareness (not written to a field since the schema holds no address key). Phone (419-602-2028) matches the held number exactly. BBB shows the entity as active (formed 2021, A+ rating, zero complaints, owner Thomas Finley, 2 employees) — no indication of dissolution. This is a small residential contractor; no published storefront hours exist anywhere researched, consistent with a by-appointment/project-dispatch trade.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Lakeside Custom Construction LLC",
+    "_no_fields_proposed": "No hours obtainable: small owner-operated construction/remodeling contractor with a residential-scale premises, no first-party site, and no published hours on BBB or Facebook. Contractor work of this kind is scheduled by appointment/project, not walk-in hours — writing hours would be invented.",
+    "_source": "BBB profile (bbb.org) for address/phone/entity status; Facebook page (facebook.com/LakesideCustomConstruction) exists but fetch returned no usable content (likely gated for non-logged-in fetch) — described in search snippets as having 6 reviews, 100% recommend, and offering pressure-washing services for houses/driveways in addition to construction/remodeling.",
+    "phone": "+14196022028"
+  },
+  "huro-lst-0068": {
+    "_confidence": "Could NOT establish whether Huron Massotherapy is a distinct tenant from Ruhe Haus (huro-lst-0267, same address 103 Wall St) or an older/alternate name for the same operation. No independent web presence (site, social page, or aggregator listing) for 'Huron Massotherapy' was found in this pass — its absence from search engines that do carry other small Huron businesses (e.g. Ravi'n Hair & Body, Oliver's) is itself notable and suggests it may be inactive, a name no longer in current use, or a very low-visibility solo practice. This is reported as a finding rather than resolved either way; do not assume duplicate with Ruhe Haus.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Massotherapy",
+    "_no_fields_proposed": "No hours, description, phone, or amenities could be sourced for this listing name at all; every direct search for 'Huron Massotherapy' returned no matching business page. Flagging as unresolved rather than filling in Ruhe Haus's data, since the two are recorded as separate listings and merging them would be an assumption, not a finding.",
+    "_source": "No usable source found. Searched aggregators (Yelp, Manta, YellowPages, Facebook, Bing, Brave) directly by name; all either had no listing, returned 403/429, or 404'd."
+  },
+  "huro-lst-0071": {
+    "_confidence": "Phone (800-686-0587) confirmed exactly matching the held number, on the first-party site. The first-party site itself only publishes a PO Box (PO Box 489, Huron, OH 44839) — it does NOT confirm a street-level Huron premises. However, 5+ independent third-party directories (including Yelp, which hosts 23 photos of the location) all agree on 1137 Cleveland Rd E, Huron, OH as a physical address, which corroborates our held street address even though the first-party site is silent on it — consistent with the briefing's note that this may be a workshop location distinct from a mailing/sales address. The 800 number plus PO Box supports a national mail-order/sales operation; the Cleveland Rd E address (with photos) supports a real workshop/showroom premises at that street address. Hours (M–F 9–5, closed weekends) are third-party-aggregator-sourced (Yelp/Yahoo/RocketReach agree) — not stated on the first-party site itself.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Eisenhour Church Furnishings",
+    "_source": "First-party: eisenhourchurch.com/contact/ (states only a PO Box + toll-free phone + email, no street address). Corroborating third-party: Yelp, Nextdoor, Manta, YellowPagesDirectory, local.yahoo.com — all independently list the same street address and phone.",
+    "description": "Church furniture restoration and manufacturing workshop specializing in pew refinishing, kneelers, and upholstery, with over 40 years in the church-furnishings trade.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+18006860587"
+  },
+  "huro-lst-0076": {
+    "_confidence": "Not established. Held address (816 Williams St, Huron, OH) and phone ((419) 433-5757) could not be independently confirmed or contradicted in this pass; the business may have a real but low-visibility web presence not reachable through the search/fetch paths available this session, or may be a very small/informal operation with no online listing at all.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Angles Hair Design",
+    "_no_fields_proposed": "No hours, description, or amenities could be sourced. Every aggregator/search path attempted either had no matching result or actively blocked the fetch (403/429/CAPTCHA). This is a genuine access gap, not a confirmed absence of the business.",
+    "_source": "No usable source reached. Attempted YellowPages, Yelp, Facebook, Bing, Brave, DuckDuckGo (CAPTCHA-blocked), Mojeek (403) — all either returned no relevant result, or blocked/403/429'd the fetch."
+  },
+  "huro-lst-0083": {
+    "_confidence": "ESTABLISHED: despite the listing name \"Huntington Bank ATM\", 357 Main St is a FULL-SERVICE Huntington Bank branch (locationId=23796), branded \"The Firelands\" -- not an ATM-only site. Aggregator (banklocationmaps.com) explicitly states this location has no walk-up or interior ATM, only a 24-hour envelope-free deposit ATM. So the listing name is misleading: this is the branch, and huro-lst-0284 (\"The Firelands\") is the SAME physical branch under its actual name. Hours are aggregator-sourced, not first-party confirmed (huntington.com blocked automated fetch).",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huntington Bank ATM",
+    "_source": "Aggregators (bankbranchlocator.com, banklocationmaps.com, hoursmap.com) echoing the huntington.com branch page; huntington.com itself returned HTTP 403 to WebFetch and could not be fetched directly.",
+    "_url_finding": "Same as huro-lst-0284 below: this listing's name (\"Huntington Bank ATM\") is misleading -- the address is a full branch, not an ATM-only site.",
+    "description": "Full-service Huntington Bank branch (locationId 23796, branch name \"The Firelands\") at 357 Main St, despite this listing being labeled as an ATM.",
+    "hours": {
+      "friday": {
+        "close": "18:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194335170"
+  },
+  "huro-lst-0085": {
+    "_confidence": "Established: this record's held address \"Mill Street\" and huro-lst-0104's \"378 Main St\" are the SAME single post office -- Huron OH 44839 has only one post office, and it sits at the corner of Main St and Mill St (confirmed by a Yahoo Local snippet describing it as near \"the intersection of Main St and Mill St\"). This record's held phone, (419) 433-5630, matches the branch's direct line found on Yelp exactly, distinct from the generic USPS 800-number held on huro-lst-0104. Recorded retail/lobby hours are aggregator-sourced (Yelp), not confirmed first-party. Last-collection time is a separate, earlier cutoff not captured here.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Post Office",
+    "_source": "Aggregators (Yelp, postofficeshours.com, PostcodeBase, Yahoo Local) corroborating the address; first-party tools.usps.com detail page could not be reliably parsed by automated fetch.",
+    "_url_finding": "This id is very likely a duplicate of huro-lst-0104: both describe the single Huron OH post office at the corner of Main St/Mill St, just addressed to different cross streets.",
+    "description": "The Huron, Ohio post office (USPS) -- same physical location as huro-lst-0104, situated at the corner of Main St and Mill St, addressed here to the Mill St side.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "08:30"
+      }
+    },
+    "phone": "+14194335630"
+  },
+  "huro-lst-0086": {
+    "_confidence": "Address (908 Main St, Huron, OH 44839) confirmed by aggregator and matches the held record. This shares its address with Enzo's Detailing (huro-lst-0245) — established as TWO DISTINCT businesses, not a duplicate: VIP Car Wash is an unstaffed, coin/card self-serve wash bay (hence 24-hr, no phone), and Enzo's Detailing is a staffed detail shop with its own posted hours, evidently operating out of/adjacent-to the same building. This is a common real-world pattern (detailer operating from a self-serve wash bay) and matches the caller's guidance. No phone number found for VIP Car Wash anywhere; likely genuinely has none (unstaffed self-serve operation).",
+    "_fetched": "2026-09-22",
+    "_match_name": "Vip Car Wash",
+    "_source": "ohiocarwashes.com (a self-serve-car-wash directory) and selfcarwashfinder.com — both aggregators, but independently and consistently describe this as a self-service (unstaffed) wash bay, which is internally consistent with '24 hours' and 'no phone/website.'",
+    "description": "Self-service, coin/card-operated car wash bay open around the clock; unstaffed, no phone or website.",
+    "hours": {
+      "friday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "monday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "saturday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "sunday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "thursday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "tuesday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "wednesday": {
+        "close": "23:59",
+        "open": "00:00"
+      }
+    }
+  },
+  "huro-lst-0087": {
+    "_confidence": "IDENTIFIED with high confidence: the phone on our record, 419-503-5665, matches the AirNav manager phone for HINDE AIRPORT (FAA id 88D), Huron OH, EXACTLY. So 'Huron Airport' in our data is Hinde Airport. Privately owned by Elaine H & Joseph A Bores but OPEN TO THE PUBLIC; 2,501 ft x 70 ft turf runway. ⛔ NO clock hours exist: the FAA record reads 'UNATNDD' (unattended — nobody is on site) and the remark 'ARPT CLSD AT NGT' (closed at night), i.e. daylight operation, which is a sunrise/sunset rule and not a weekly grid. I have deliberately recorded no hours rather than inventing a daylight approximation. The name in our data is NOT the airport's real name; 'Hinde Airport' is.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Airport",
+    "_no_fields_proposed": "hours: the field is not applicable in the weekly-grid sense. The airport is UNATTENDED and 'closed at night' — a daylight rule, not clock times. Recording 'sunrise to sunset' as hours would bake an invented number in.",
+    "_source": "https://www.airnav.com/airport/88D (AGGREGATOR of FAA data — AirNav republishes the FAA's official airport record; the underlying data is first-party FAA, the presentation is not)",
+    "_url_finding": "We hold no URL for this record. The authoritative record is the FAA's, republished at https://www.airnav.com/airport/88D.",
+    "amenities": [
+      "turf runway 2,501 ft x 70 ft",
+      "open to the public",
+      "privately owned",
+      "unattended"
+    ],
+    "description": "Hinde Airport, a public-use turf airstrip in Huron with a 2,501 ft runway.",
+    "phone": "+14195035665"
+  },
+  "huro-lst-0089": {
+    "_confidence": "Company identity confirmed first-party: everway.com states verbatim 'Formerly n2y and Texthelp'. n2y was founded in Huron OH and 909 University Dr S is its long-standing Huron campus, but the Everway site itself lists only a New York NY mailing address and does NOT list the Huron office — so the Huron premises is NOT confirmed as still occupied from a first-party source. No office hours published anywhere; this is a software company with no public-facing counter, so hours are not a meaningful field here.",
+    "_fetched": "2026-09-22",
+    "_match_name": "n2y",
+    "_no_fields_proposed": "hours: a corporate software office publishes none, and the Huron site is not listed on the company's own site. Not established.",
+    "_source": "https://www.n2y.com (first-party) — now 308-redirects to https://www.everway.com/ (first-party)",
+    "_url_finding": "The held URL http://www.n2y.com is a redirect, not the live brand. n2y rebranded to Everway (merged with Texthelp); n2y.com now 308-redirects to everway.com. The listing name 'n2y' is the superseded brand.",
+    "description": "Everway, formerly n2y — special-education software, founded and long headquartered in Huron."
+  },
+  "huro-lst-0098": {
+    "_confidence": "Established that 202 Cleveland Rd W, Huron is a multi-tenant office building: it is the confirmed office address for Simply Better Realty agents Jason Smith (huro-lst-0208) and Angie Masterson (huro-lst-0205). Could not independently confirm other tenants beyond Simply Better Realty via search (the building's own Facebook page and a LoopNet commercial listing exist but returned no accessible content). The category 'party_and_event_planning' held in our data appears wrong for a professional/office building — no evidence found supporting an event-space use; it reads as a straightforward multi-tenant professional office building housing at least a real estate brokerage.",
+    "_entity_kind": "building",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Professional Building",
+    "_no_fields_proposed": "No hours found for the building itself (as distinct from individual tenant businesses); the building's Facebook page and a LoopNet listing exist but were not accessible to automated fetch (login-walled / truncated).",
+    "_source": "https://www.simplybetterrealty.com/ (first-party, confirms 202 Cleveland Road W, Huron, Ohio 44839 as Simply Better Realty's Huron office address); https://ohio.simplybetterrealty.com/jason-smith/ and /angie-masterson/ (first-party agent pages, same address); WebSearch for 'Huron Professional Building' turned up only a Facebook page (blocked to fetch) and a LoopNet commercial listing snippet with no accessible detail",
+    "description": "The Huron Professional Building is a multi-tenant office building at 202 Cleveland Rd W in Huron, housing at least the local office of Simply Better Realty.",
+    "phone": "+14193667392"
+  },
+  "huro-lst-0099": {
+    "_confidence": "The held URL is CORRECT despite the suspicious domain name -- findlayfostorialaw.com is in fact the live site for Alicia Wolph Roshong Esq., a solo attorney; it is not about attorneys in Findlay or Fostoria, Ohio (the domain name is misleading but the content matches this business). Phone number on the site, (419) 433-2525, matches the held record exactly, which further confirms identity. No office address or hours are published on the page itself.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Alicia Wolph Roshong - Attorney At Law",
+    "_no_fields_proposed": "No hours or address published on the first-party site to record.",
+    "_source": "http://findlayfostorialaw.com/ (first-party attorney site, despite its domain name)",
+    "description": "Alicia Wolph Roshong is a solo-practice attorney offering legal consultation, per her firm's website.",
+    "phone": "+14194332525"
+  },
+  "huro-lst-0104": {
+    "_confidence": "Address confirmed by three independent aggregators as 378 Main St, Huron, OH 44839 (matches held address exactly). Retail/lobby hours recorded per Yelp: Mon-Fri 8:30 AM-5:00 PM, Sat 9:00 AM-12:00 PM, Sun closed -- this is aggregator-sourced, not confirmed directly on usps.com, so treat as moderate confidence. This location is at the intersection of Main St and Mill St, which explains why huro-lst-0085 (\"Huron Post Office\", addressed to \"Mill Street\") is almost certainly the SAME physical post office as this record, just addressed to the cross street rather than Main St -- Huron OH has only one post office. Held phone for this id is the generic USPS national line (800-275-8777); the branch's own direct line is (419) 433-5630 (see huro-lst-0085).",
+    "_fetched": "2026-09-22",
+    "_match_name": "United States Postal Service",
+    "_source": "Aggregators (Yelp, postofficeshours.com, PostcodeBase) corroborating tools.usps.com/locations/details/1367709; the first-party USPS location-detail page could not be reliably parsed by automated fetch (returned template/placeholder content instead of the live location data on repeated attempts).",
+    "_url_finding": "This is likely a duplicate listing of huro-lst-0085 -- both describe the single USPS post office serving Huron OH 44839, at 378 Main St (corner of Main/Mill).",
+    "description": "The Huron, Ohio post office (USPS), located at the corner of Main St and Mill St, offering retail window service, PO boxes, and mail collection.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "08:30"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "08:30"
+      }
+    },
+    "phone": "+18002758777"
+  },
+  "huro-lst-0105": {
+    "_confidence": "Held URL confirmed CORRECT and current: first-party page lists advisor as Melissa A Danicki at 2012 Cleveland Rd W Suite F, Huron, OH 44839, phone (419) 616-5450 -- exact match to held record. (A stale aggregator, Yelp, lists the advisor under a different surname \"Shorts\", possibly an outdated maiden/married-name variant, but the live edwardjones.com page still shows Danicki -- treating first-party as authoritative.) Saturday is by-appointment only, not open walk-in hours. Saturday recorded as closed for standard walk-in purposes since it is by-appointment-only rather than posted open hours; office also offers evening/weekend availability by appointment and web conferencing, not captured in the hours grid.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Edward Jones",
+    "_source": "http://www.edwardjones.com/melissa-danicki (first-party, Edward Jones official advisor page)",
+    "description": "Edward Jones financial advisor office (advisor Melissa A Danicki) offering investment and retirement planning services.",
+    "hours": {
+      "friday": {
+        "close": "16:00",
+        "open": "08:00"
+      },
+      "monday": {
+        "close": "16:00",
+        "open": "08:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "16:00",
+        "open": "08:00"
+      },
+      "tuesday": {
+        "close": "16:00",
+        "open": "08:00"
+      },
+      "wednesday": {
+        "close": "16:00",
+        "open": "08:00"
+      }
+    },
+    "phone": "+14196165450"
+  },
+  "huro-lst-0107": {
+    "_confidence": "Same human as huro-lst-0197 (John Heilman, Dc) — filled identically. Full address per BBB: '2012 Cleveland Rd W Unit G, Huron, OH 44839-2901' (held address lacks the Unit G). Trading name per npino.com/orthopedic.io: 'Associated Healthcare, LLC.' The held record for this id has no phone; BBB/npino give 419-616-5000, the same number held on huro-lst-0197.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "John Paul Heilman",
+    "_no_fields_proposed": "Hours not written: no source, first-party or aggregator, states them; the practice's own domain (jpheilmandc.com) no longer resolves.",
+    "_source": "Aggregators/directories only — BBB (bbb.org), npino.com, orthopedic.io. First-party site jpheilmandc.com failed to resolve (DNS: ENOTFOUND), suggesting the domain is no longer live.",
+    "amenities": [
+      "Chiropractic care"
+    ],
+    "description": "Dr. John P. Heilman, DC, a solo chiropractor trading as Associated Healthcare, LLC, in Huron.",
+    "phone": "+14196165000"
+  },
+  "huro-lst-0111": {
+    "_confidence": "This listing and huro-lst-0089 ('n2y') are the SAME COMPANY under old and new names — everway.com states 'Formerly n2y and Texthelp'. This record carries no address at all; 0089 carries the Huron address (909 University Dr S). ⛔ Not a dedupe call for me to make, but the roster should know. No hours published; corporate office, no public counter.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Everway",
+    "_no_fields_proposed": "hours and address: no address in our data, none published for a Huron site on the company's own site. Not established.",
+    "_source": "https://www.everway.com/ (first-party)",
+    "description": "Everway, formerly n2y and Texthelp — assistive and special-education technology."
+  },
+  "huro-lst-0114": {
+    "_confidence": "Same physical site/listing as huro-lst-0257 (Hy-Miler #2235), just under the Mobil brand name — one station, two listing ids.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Mobil",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552 (first-party, Exxon/Mobil station locator; original held URL 301-redirects here)",
+    "amenities": [
+      "convenience store"
+    ],
+    "description": "Mobil-branded fuel station at 508 Berlin Road, operated as the Hy-Miler #2235 convenience store site.",
+    "hours": {
+      "friday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "monday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "saturday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "sunday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "thursday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "tuesday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "wednesday": {
+        "close": "23:00",
+        "open": "06:00"
+      }
+    },
+    "phone": "+14194336204"
+  },
+  "huro-lst-0116": {
+    "_confidence": "Phone matches our record exactly ((419) 433-6200), so the held URL IS this business. ⛔ BUT the site gives its address as 203 Republic Street, NORWALK, OH 44857 and never mentions Huron or Sawmill Pkwy. The published 'Monday - Friday 8:00 AM to 6:00 PM' therefore belongs to the Norwalk office, NOT demonstrably to the 1711 Sawmill Pkwy Huron site. I have NOT recorded those hours for that reason. Whether Huron is a terminal, a yard, or a stale address is not established.",
+    "_fetched": "2026-09-22",
+    "_match_name": "CLE Transportation Company and DS Express Carriers",
+    "_no_fields_proposed": "hours: the only published hours are the Norwalk office's. Recording them against the Huron address would be the brand-vs-location error. Not established for Huron.",
+    "_source": "http://cletransportation.com/ (first-party)",
+    "_url_finding": "URL is correct for the company but the site documents a Norwalk OH address only; the Huron 1711 Sawmill Pkwy premises is unconfirmed first-party.",
+    "amenities": [
+      "truckload freight",
+      "LTL freight",
+      "expedited shipping",
+      "hazmat transport",
+      "warehousing"
+    ],
+    "description": "Asset-based trucking and logistics carrier running truckload, LTL, expedited and hazmat freight.",
+    "phone": "+14194336200"
+  },
+  "huro-lst-0117": {
+    "_confidence": "Address (2320 University Dr E Ste A) and phone (419-433-4800) corroborated across multiple listings. This appears to be the office of Dr. Martin Lesnak, DPM, affiliated with Firelands Regional Medical Center/Firelands Physician Group; Dr. Angela Fraifogl, DPM is also associated with this address per Vitals. No source, first-party or aggregator, published business hours.",
+    "_entity_kind": "practice",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Podiatry",
+    "_no_fields_proposed": "Hours not written: no source (first-party or aggregator) states them; the Firelands.com provider-location pages that likely hold this returned HTTP 403 on fetch.",
+    "_source": "Aggregators only — WebMD, Healthgrades, Yellowpages, Yelp; firelands.com provider-location pages (ids 95 and 230) returned 403 on fetch so could not be independently verified beyond search-result snippets.",
+    "amenities": [
+      "Podiatry / foot and ankle care"
+    ],
+    "description": "A podiatry practice in Huron affiliated with Firelands Regional Medical Center.",
+    "phone": "+14194334800"
+  },
+  "huro-lst-0118": {
+    "_confidence": "Nothing established. No website in our data; siegelfamilyfarm.com does not resolve (DNS failure). No search engine was reachable to look for a Facebook page, a farm-market directory entry or a chamber listing — see _no_fields_proposed.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Siegel Family Farm",
+    "_no_fields_proposed": "EVERYTHING. Search access collapsed for this session before this record could be worked: the WebSearch tool's budget was exhausted (200/200) and every fetchable substitute failed — Brave 429 from this IP (also via curl), DuckDuckGo html and lite both serving a CAPTCHA, Ecosia 403, Startpage blocked, searx.be browser-verification, Bing returning geographically wrong results. 760 Chestnut Dr is a residential-style address, so a home farm with seasonal roadside or farm-market hours is the likely shape, but that is a GUESS and nothing here is recorded as fact. ▶ NEXT PERSON: start with a Facebook page search and the Erie County / Ohio Proud farm-market directories; do not re-run generic web search until the budget resets.",
+    "_source": "none obtained"
+  },
+  "huro-lst-0122": {
+    "_confidence": "Confirmed this is a solo hairstylist (person's own name as the business name) booking via Square Appointments at 509 Cleveland Rd W Suite A. The booking flow redirects through app.squareup.com/appointments/... and exposes only next-available appointment slots, not a stated weekly open/close schedule, so hours are NOT established. No independent website or social page found to cross-check.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Stephanie Vineyard",
+    "_no_fields_proposed": "Hours: the only source is a Square Appointments booking calendar, which surfaces next-available slots rather than a stated weekly schedule. Converting available booking slots into hours would be inventing a schedule from demand rather than reading a posted one, so hours are omitted rather than guessed.",
+    "_source": "https://app.squareup.com/book/L7ABWGSGGYKY1/stephanie-vineyard-huron-oh (Square Appointments booking page, first-party in the sense the stylist controls it, but it is a booking calendar, not a published weekly schedule)",
+    "description": "Stephanie Vineyard is a solo hairstylist operating out of 509 Cleveland Rd W, Suite A, in Huron, Ohio, booking clients via Square Appointments.",
+    "phone": "+14195152402"
+  },
+  "huro-lst-0125": {
+    "_confidence": "NOT first-party confirmed -- key.com blocked automated fetch (403). Multiple independent aggregators agree on: Mon-Thu 9:00-16:00, Fri 9:00-17:00, Sat 9:00-12:00, Sun closed. This is a plausible bank schedule and the aggregators are consistent with each other, but per the rules this is not first-party evidence. Treating as moderate-confidence, not verified against key.com directly.",
+    "_fetched": "2026-09-22",
+    "_match_name": "KeyBank",
+    "_source": "Aggregators (yelp.com/biz/keybank-huron, bankbranchlocator.com, bank-locations.com) -- the first-party key.com branch page returned HTTP 403 (blocked WebFetch) and could not be directly verified.",
+    "description": "KeyBank branch offering personal and business banking services.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "16:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194332890"
+  },
+  "huro-lst-0126": {
+    "_confidence": "STRONG evidence this is a stale/duplicate record, not a real, separate operating station. The held phone +14194332140 belongs to Holiday Harbor Marina at 944 Main St (confirmed via web search), not to any gas station. Meanwhile the actual, currently-operating station at 805 S. Main St is the Mobil/Hy-Miler #2234 site (huro-lst-0282/huro-lst-0060), phone 419-433-6597. Yelp separately shows a \"SHELL HY-MILER - CLOSED\" listing (for the 2026 Cleveland Rd W site, not this address), indicating Shell-Hy-Miler co-branding has since been dropped in this town generally. No evidence 805 Main St hosts an independently operating Shell station today.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Shell",
+    "_no_fields_proposed": "No hours proposed: the held phone number is wrong (traces to Holiday Harbor Marina, 944 Main St), no first-party Shell page exists for 805 Main St, and the likeliest explanation is this listing duplicates the Mobil/Hy-Miler #2234 station rather than describing an independent business.",
+    "_source": "Aggregators only: Yelp \"Shell Gasoline\" (yelp.com/biz/shell-gasoline-huron-2), auto-usa.org/shell-2907, Yellow Pages shell listing — all echoing the same stale record; no first-party Shell page resolves for 805 Main St",
+    "_url_finding": "Held URL https://www.shell.com is Shell's global homepage, not a station page, and gives no location evidence either way.",
+    "description": "Likely a stale directory duplicate for the Mobil/Hy-Miler #2234 station at this address, not a separately operating Shell station; the phone number on file belongs to an unrelated marina."
+  },
+  "huro-lst-0128": {
+    "_confidence": "Site confirmed FIRST-PARTY and verbatim: '900 Denton Drive, Huron, OH 44839', described as the ATD Manufacturing facility. ⛔ No hours are published for ANY Humanetics location on its own contact page — this is a manufacturing plant with no public counter, so hours are not a meaningful field. Held URL humaneticsatd.com 301-redirects to humaneticsgroup.com (a rebrand of the domain, not a wrong URL).",
+    "_fetched": "2026-09-22",
+    "_match_name": "Humanetics ATD Manufacturing",
+    "_no_fields_proposed": "hours: a manufacturing plant, no hours published first-party for any site. Not established. phone: the contact page gives numbers for Detroit/Boston/Greenville but NOT for Huron; our held +15672655200 is uncorroborated.",
+    "_source": "https://www.humaneticsgroup.com/contact-us (first-party locations page)",
+    "_url_finding": "Held URL http://www.humaneticsatd.com still resolves but 301-redirects to humaneticsgroup.com; the ATD-specific domain is superseded by the group brand.",
+    "amenities": [
+      "manufacturing facility"
+    ],
+    "description": "Humanetics' Huron plant, where the company manufactures crash-test dummies."
+  },
+  "huro-lst-0142": {
+    "_confidence": "Address (507 Cleveland Rd W, Huron, OH 44839) matches the held record. Hours are from an unclaimed Birdeye aggregator profile, not confirmed by the owner — treat as low-to-moderate confidence. A separate 2023-era note (via search snippet, not directly verified) suggested the business may have relocated to 509 Cleveland Rd W Suite A at one point; could not confirm this is still the case, and the Birdeye/Yelp listings still show 507 Cleveland Rd W as current, so the held address was kept as-is.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Ravi'n Hair & Body",
+    "_source": "https://reviews.birdeye.com/ravin-hair-body-168112939250342 (aggregator; Birdeye states the business profile is UNCLAIMED by the owner)",
+    "description": "Hair salon in Huron, Ohio offering haircut services.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "10:00"
+      },
+      "monday": {
+        "close": "20:00",
+        "open": "12:00"
+      },
+      "saturday": {
+        "close": "14:00",
+        "open": "10:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "10:00"
+      },
+      "tuesday": {
+        "close": "20:00",
+        "open": "12:00"
+      },
+      "wednesday": {
+        "closed": true
+      }
+    },
+    "phone": "+14194338224"
+  },
+  "huro-lst-0148": {
+    "_confidence": "High confidence the held URL is WRONG. Brad Barbisch is part of 'The Barbisch Team' at The Holden Agency, working the Huron market with a team office presence at 304 Williams St (same building as Kristen Valenty, huro-lst-0255). The Holden Agency's own corporate address is in Mansfield, OH (28 Park Ave West Suite 601) — 304 Williams St functions as a local branch/team office. The 979-area-code phone on file is a Texas area code and does not match any number found for Brad Barbisch in research; flagging as likely a data error, not confirmed.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Brad Barbisch-The Holden Agency Real Estate",
+    "_no_fields_proposed": "No working first-party site found for this agent (held URL is a dead parked domain); hours not established. The 979 area code phone could not be verified as belonging to Brad Barbisch and is flagged, not confirmed, as an error.",
+    "_source": "held URL http://www.debcsellsohio.com/ — WebSearch corroboration via Facebook (facebook.com/p/The-Barbisch-Team-The-Holden-Agency) and Yelp listing for a related team member (Amy Barbisch) at 304 Williams St, Huron",
+    "_url_finding": "http://www.debcsellsohio.com/ is a dead/parked domain — curl shows it auto-redirects to a generic GoDaddy-style '/lander' parking page (window.LANDER_SYSTEM=\"PW\", 'parking' signal script) with no content whatsoever about Brad Barbisch, real estate, or any business. It is unrelated to this listing; the name 'debcsells' does not match Brad Barbisch and no connection between the two was found.",
+    "description": "Brad Barbisch is a Realtor with The Barbisch Team at The Holden Agency Real Estate, working out of the firm's Huron office at 304 Williams St."
+  },
+  "huro-lst-0151": {
+    "_confidence": "Confirmed: the held URL (citizensbankco.com) is WRONG/stale -- Civista Bank absorbed Citizens Banking Company years ago and the live branch page is on civista.bank. This branch at 410 Cleveland Rd E (site lists it as 410 E Cleveland Rd) is confirmed live/current. Lobby hours page lists Mon-Tue and Thu-Fri only (no Wed listed), which for a bank branch typically means closed Wed lobby -- recorded as closed. Recorded LOBBY hours; drive-thru hours differ (Mon-Fri 8:30-5:00, Sat 8:30-12:00) and are broader -- noted here, not recorded as the primary hours per instructions.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Civista Bank",
+    "_source": "https://www.civista.bank/locations/huron-branch (first-party, Civista Bank official site)",
+    "_url_finding": "Held URL http://www.citizensbankco.com does NOT point to this business -- Civista Bank was formerly Citizens Banking Company, and the correct live branch page is https://www.civista.bank/locations/huron-branch.",
+    "description": "Civista Bank is a full-service community bank branch offering checking, savings, loans, and a drive-up ATM.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "closed": true
+      }
+    },
+    "phone": "+14194330328"
+  },
+  "huro-lst-0153": {
+    "_confidence": "Confirmed 'June Aesthetics- Huron' is one location of a multi-site business (Tiffin, Catawba, Huron, Vermilion each have separate Linktree booking links) — per the task's own warning, no sibling-location hours were imported. The Huron JaneApp page gave address, phone, staff and services but explicitly did NOT list stated business hours (it said to call or check the booking page for availability), so hours are not established. Address given (364 Main Street) differs from the held record's listed address (364 Main St) — matches.",
+    "_fetched": "2026-09-22",
+    "_match_name": "June Aesthetics- Huron",
+    "_no_fields_proposed": "Hours: the Huron-location booking page did not publish a stated weekly schedule (only a live appointment calendar), and per the task's explicit instruction, hours from a sibling location (Tiffin, Catawba, or Vermilion) were not substituted.",
+    "_source": "https://juneaestheticsllc.janeapp.com/locations/june-aesthetics-huron/book (first-party booking site, Huron-location-specific page, via the held Linktree http://Linktr.ee/juneaesthetics)",
+    "amenities": [
+      "neurotoxin injections",
+      "dermal fillers",
+      "microneedling",
+      "laser skin rejuvenation",
+      "medication-assisted weight loss",
+      "spray tan",
+      "gift cards"
+    ],
+    "description": "Aesthetics and wellness clinic in Huron, Ohio (part of the multi-location June Aesthetics group) offering neurotoxin injections, dermal fillers, microneedling, laser skin rejuvenation, medication-assisted weight loss, and personalized skincare plans.",
+    "phone": "+15672077804"
+  },
+  "huro-lst-0163": {
+    "_confidence": "Address and phone corroborated exactly by BBB (1020 Brittany Dr, Huron OH 44839-2662; (419) 433-1110). Legal name 'Elw Enterprises Ltd', owner Edward Walent, founded 1990-01-10, 3 employees, BBB rating A+ but NOT BBB-accredited. ⛔ BBB lists NO business hours, and directories disagree on what the business even is — BBB files it under 'new auto parts', D&B under 'Wholesale - Automotive Servicing Equipment', ZoomInfo under 'Information & Document Management', our own source under 'industrial_equipment'. I have therefore written a deliberately narrow description and NO amenities. A 3-employee firm at a residential-style Brittany Dr address is plausibly home- or small-unit-based.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Elw Enterprises",
+    "_no_fields_proposed": "hours: no first-party site, BBB lists none, and the directories that carry this business disagree about its trade — nothing to record. Not established.",
+    "_source": "https://www.bbb.org/us/oh/huron/profile/new-auto-parts/elw-enterprises-ltd-0422-90008893 (AGGREGATOR — BBB). Held URL elwent.com returned an EMPTY BODY on two fetches (http and https), so no first-party source was obtainable.",
+    "_url_finding": "Held URL http://elwent.com resolves but returns an EMPTY BODY over both http and https — a dead or content-less site, not a wrong-target site. Do not treat it as a usable first-party source.",
+    "description": "A small Huron wholesaler of automotive parts and servicing equipment, trading since 1990.",
+    "phone": "+14194331110"
+  },
+  "huro-lst-0171": {
+    "_confidence": "Not established. Held address (911 Taylor Ave, Huron, OH) and phone (419-433-3178) could not be independently confirmed or contradicted in this pass.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Tan Pro Usa",
+    "_no_fields_proposed": "No hours, description, or amenities could be sourced. Every aggregator/search path attempted either had no matching result or actively blocked the fetch. This is a genuine access gap, not a confirmed absence of the business.",
+    "_source": "No usable source reached. Attempted YellowPages, Yelp, PlacesRadar, Bing, Brave, Mojeek — all either returned no relevant result or blocked the fetch (403/429)."
+  },
+  "huro-lst-0173": {
+    "_confidence": "The held URL http://hy-miler.com is dead (redirects to an expired-domain parking page — see _url_finding), so no first-party Hy-Miler page could be used. Current fuel brand at this address is Shell (per Shell's own locator), while the c-store keeps the Hy-Miler name. Yelp separately lists a \"SHELL HY-MILER\" entry as CLOSED (likely the old combined-brand name) and an active plain \"HY-MILER\" entry, consistent with a brand-name change rather than a closure. Hours (24 hours) and amenities are GasBuddy-sourced (aggregator, not first-party) but corroborated by the exact phone match.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Hy-Miler",
+    "_source": "Aggregators corroborating each other: GasBuddy (gasbuddy.com/station/10209) and Shell's own locator (find.shell.com/us/fuel/10013544-2026-cleveland-rd-w/en_US, first-party for the address only, no hours/phone given there). GasBuddy's phone (419-433-7848) matches our held phone exactly, which is the strongest evidence GasBuddy's entry is this exact site.",
+    "_url_finding": "Held URL http://hy-miler.com does not resolve to a working Hy-Miler site — it 302-redirects to a DNS-Made-Easy \"lost redirect\" parking page, i.e. the domain/hosting has lapsed.",
+    "amenities": [
+      "convenience store",
+      "car wash",
+      "propane",
+      "ATM",
+      "restaurant",
+      "restrooms",
+      "air pump",
+      "pay at pump",
+      "lottery",
+      "beer",
+      "wine"
+    ],
+    "description": "Hy-Miler convenience store on Shell-branded fuel at 2026 Cleveland Rd W, open 24 hours, with car wash, propane exchange, ATM, and a small restaurant counter.",
+    "hours": {
+      "friday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "monday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "saturday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "sunday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "thursday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "tuesday": {
+        "close": "23:59",
+        "open": "00:00"
+      },
+      "wednesday": {
+        "close": "23:59",
+        "open": "00:00"
+      }
+    },
+    "phone": "+14194337848"
+  },
+  "huro-lst-0175": {
+    "_confidence": "Established only by elimination: NOT the municipal marina (the City of Huron's own site names only the Huron Boat Basin). westbankmarina.com does not serve (socket hang up). 422 Huron St sits on the west bank of the Huron River, and our source categorises it 'private_association', which together fit a private dock or condo boat-slip association rather than a public marina — but that is INFERENCE, not evidence, and no hours or phone are established.",
+    "_fetched": "2026-09-22",
+    "_match_name": "West Bank Marina",
+    "_no_fields_proposed": "EVERYTHING. Same search collapse as huro-lst-0118: WebSearch budget exhausted (200/200) and every fetchable substitute engine blocked, rate-limited or CAPTCHA'd. ▶ NEXT PERSON: a private slip association may have no public hours at all, in which case the right answer is a permanent loud gap, not a search.",
+    "_source": "none obtained. Checked https://www.huronohio.us (FIRST-PARTY city site): it names the city-run HURON BOAT BASIN as its marina and does NOT mention West Bank Marina — so this is not a city facility."
+  },
+  "huro-lst-0179": {
+    "_confidence": "⚠️ Name finding: this facility no longer trades as 'Huron Health Care Center.' At the same address (1920 Cleveland Rd W) it now operates first-party as 'Admiral's Pointe Nursing and Rehabilitation' (phone 419-433-4990, differs from held blank phone). The admirals-pointe.net site never mentions the old name. It is a 90-bed skilled-nursing/rehab facility offering skilled nursing, PT/OT/speech therapy, respite care, and hospice care. Per the task's own guidance, 'hours' for a residential care facility means visiting hours, not opening hours — but neither the About nor Contact page on the first-party site publishes visiting hours, and no aggregator states them either.",
+    "_entity_kind": "practice",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Health Care Center",
+    "_no_fields_proposed": "Visiting hours (the relevant 'hours' concept for a residential care facility) are not published on the first-party site's About or Contact pages, nor stated by any aggregator checked.",
+    "_source": "First-party: admirals-pointe.net/about-us and admirals-pointe.net/contact (fetched directly). Cross-checked against Yelp, SeniorHousingNet, A Place For Mom, Erie County Cares (aggregators).",
+    "_url_finding": "The held name 'Huron Health Care Center' is superseded — the facility at this address now trades first-party as 'Admiral's Pointe Nursing and Rehabilitation' (admirals-pointe.net).",
+    "amenities": [
+      "Skilled nursing care",
+      "Physical therapy",
+      "Occupational therapy",
+      "Speech therapy",
+      "Respite care",
+      "Hospice care"
+    ],
+    "description": "A 90-bed skilled-nursing and rehabilitation facility in Huron, now operating as Admiral's Pointe Nursing and Rehabilitation.",
+    "phone": "+14194334990"
+  },
+  "huro-lst-0180": {
+    "_confidence": "Branch still exists and still operates under the SAME name (First Federal Savings of Lorain) -- not acquired or renamed, contrary to the suspicion in the brief. First-party page lists the address as 427 Main Street (held address was 401-423 Main St -- same block, likely the same building/complex); phone number matches exactly (419) 433-2437.",
+    "_fetched": "2026-09-22",
+    "_match_name": "First Federal Savings Of Lorain",
+    "_source": "https://www.fflorain.bank/contact/ (first-party, First Federal Savings of Lorain official site)",
+    "_url_finding": "Held URL (firstfedlorain.com) appears to be stale/redirected; the live official domain is fflorain.bank. Confirm firstfedlorain.com redirects there or update to https://www.fflorain.bank/.",
+    "amenities": [
+      "24/7 ATM",
+      "night deposit"
+    ],
+    "description": "Full-service community bank branch of First Federal Savings of Lorain, offering deposit accounts, mortgages, night deposit, and 24/7 ATM access.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "13:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "16:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194332437"
+  },
+  "huro-lst-0182": {
+    "_confidence": "Address 502 Main St is confirmed present across multiple directories (MapQuest, way.com, auto-usa.org). A search-result snippet for auto-usa.org read \"BP · Gas station · Open now: Open 24 Hours · 502 Main Street, Huron, OH 44839\" but the source page itself could not be loaded (expired TLS cert) to verify that claim in context, and no other source corroborated it. This is thin, single-snippet sourcing per rule 7 — not writing hours on it.",
+    "_fetched": "2026-09-22",
+    "_match_name": "bp",
+    "_no_fields_proposed": "Hours not established. The only claim of '24 hours' appeared in an unfetchable aggregator's search snippet (auto-usa.org, expired TLS cert) and could not be corroborated on a live page; per the thin-sourcing rule, omitting rather than reporting an unverified relative/aggregator claim.",
+    "_source": "Aggregator snippets only: huron-oh.auto-usa.org/gas-station/ (site TLS certificate has expired, could not be fetched despite appearing in search results), MapQuest \"BP Oil, 502 Main St\" (mapquest.com/us/ohio/bp-oil-542734588, page returned empty/unloadable content), way.com listing (also returned no populated data)",
+    "_url_finding": "Held URL https://map.bp.com/en-US/US/gas-station/huron/bp/62494404505024483900100000000000 returns HTTP 404 — the bp station-locator page for this id no longer resolves.",
+    "description": "bp-branded gas station at 502 Main St, Huron.",
+    "phone": "+14194337323"
+  },
+  "huro-lst-0197": {
+    "_confidence": "Same human as huro-lst-0107 (John Paul Heilman) — same name, same address, one BBB record. BBB confirms full address as '2012 Cleveland Rd W Unit G, Huron, OH 44839-2901' (held address lacks the Unit G). npino.com/orthopedic.io identify the trading entity as 'Associated Healthcare, LLC', owner John P. Heilman, DC, phone 419-616-5000 — matches held phone. No source publishes hours.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "John Heilman, Dc",
+    "_no_fields_proposed": "Hours not written: no source, first-party or aggregator, states them; the practice's own domain (jpheilmandc.com) no longer resolves.",
+    "_source": "Aggregators/directories only — BBB (bbb.org), npino.com, orthopedic.io. First-party site jpheilmandc.com failed to resolve (DNS: ENOTFOUND), suggesting the domain is no longer live.",
+    "amenities": [
+      "Chiropractic care"
+    ],
+    "description": "Dr. John P. Heilman, DC, a solo chiropractor trading as Associated Healthcare, LLC, in Huron.",
+    "phone": "+14196165000"
+  },
+  "huro-lst-0205": {
+    "_confidence": "High that Angie Masterson is a licensed individual agent with Simply Better Realty LLC, office address 202 Cleveland Rd W, Huron. No posted personal hours.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Angie Masterson-Simply Better Realty",
+    "_no_fields_proposed": "No posted hours for this individual agent; see brokerage hours under huro-lst-0098/0263 notes.",
+    "_source": "https://ohio.simplybetterrealty.com/angie-masterson/ (first-party, reached via 301 redirect from held URL http://Angie.Ohio.simplybetterrealty.com/)",
+    "description": "Angie Masterson is a Simply Better Realty agent serving the Lake Erie Shores and Islands region, based out of the brokerage's Huron office.",
+    "phone": "+14192394144"
+  },
+  "huro-lst-0208": {
+    "_confidence": "High that Jason Smith is a licensed individual agent hanging his license with Simply Better Realty LLC, working out of the brokerage's Huron office. Not confident about hours specific to him (agents keep their own schedules, not posted office hours).",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Jason Smith - Simply Better Realty - Real Estate and Vacation Rentals",
+    "_no_fields_proposed": "No posted hours for this individual agent; only the brokerage office (202 Cleveland Rd W) has stated hours (see huro-lst-0098/brokerage notes). Amenities not applicable to an individual agent.",
+    "_source": "https://ohio.simplybetterrealty.com/jason-smith/ (first-party, reached via frameset redirect from held URL http://JasonSmithListings.com/); corroborated by https://www.simplybetterrealty.com/ (first-party, brokerage site)",
+    "_url_finding": "http://JasonSmithListings.com/ is a bare frameset wrapper page that embeds https://ohio.simplybetterrealty.com/jason-smith/ — it renders correctly but has no content of its own; the real content lives at the embedded Simply Better Realty URL.",
+    "description": "Jason Smith is a Simply Better Realty agent specializing in Lake Erie waterfront and Kelleys Island real estate, based out of the brokerage's Huron office.",
+    "phone": "+14195030604"
+  },
+  "huro-lst-0211": {
+    "_confidence": "Same as huro-lst-0004: no address-specific page exists. Host station is Hy-Miler #2234/Mobil at 805 S. Main St, itself open Mon-Sat 06:00-23:00, Sun 06:00-22:00 per that station's own locator page, but that has not been confirmed as the propane cage's own access window.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Blue Rhino Propane Exchange",
+    "_no_fields_proposed": "No location-specific hours exist to fetch; bluerhino.com/propane-finder is a national locator with no page for this address.",
+    "_source": "https://bluerhino.com/propane-finder — a generic nationwide locator tool, NOT a page for this location",
+    "description": "Self-serve propane tank exchange cage hosted at the Hy-Miler/Mobil station, 805 S. Main Street.",
+    "phone": "+14194336597"
+  },
+  "huro-lst-0215": {
+    "_confidence": "Confirmed 24/7 on-call bail bonds service -- site states \"Sly Bail Bonds never closes... 24/7 365 ANYWHERE.\" No single storefront address is published; the company operates via multiple Ohio/Indiana/Michigan offices and agents who meet clients at home, office, court, or jail. The 607 Main St Huron address in the held record may be one such office/agent meeting point rather than a staffed storefront -- not separately confirmed on the site.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Sly Bail Bonds",
+    "_no_fields_proposed": "No posted hours to record -- the business is explicitly 24/7/365 on-call rather than operating fixed open/close hours.",
+    "_source": "http://www.slybailbonds.com/ (first-party)",
+    "description": "Sly Bail Bonds provides 24/7 on-call bail bond services, with agents available to meet clients at home, court, or jail rather than fixed storefront hours.",
+    "phone": "+14195442245"
+  },
+  "huro-lst-0219": {
+    "_confidence": "Hours come from aggregator listings (PlacesRadar/YellowPages-style), not first-party; moderately confident but not confirmed against an owner-maintained source. Address/phone confirmed via Facebook page name and multiple aggregators matching 416 Cleveland Rd E, (419) 433-8062.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Oliver's Hair Salon",
+    "_source": "https://placesradar.com/oliver-s-hair-salon-416-cleveland-rd-e-huron-oh and https://www.yellowpages.com/huron-oh/mip/olivers-hair-salon-5195555 (aggregators, cross-checked); held URL oliverssalon.com is WRONG",
+    "_url_finding": "The held URL http://oliverssalon.com is a DIFFERENT business: Oliver's Hair Salon at 7590 W 119th St, Overland Park, KS 66213 (phone 913-338-2266). It has no connection to the Huron, OH location. The Huron salon (run by Ron Oliver) appears to have no website; its presence is on Facebook (facebook.com/olivers.hair.1) and aggregator listings only.",
+    "description": "Walk-in hair salon in Huron, Ohio offering cuts, colors, perms and waxing for men, women and children.",
+    "hours": {
+      "friday": {
+        "close": "19:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "19:00",
+        "open": "10:00"
+      },
+      "saturday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "close": "14:00",
+        "open": "11:00"
+      },
+      "thursday": {
+        "close": "19:00",
+        "open": "10:00"
+      },
+      "tuesday": {
+        "close": "19:00",
+        "open": "10:00"
+      },
+      "wednesday": {
+        "close": "19:00",
+        "open": "10:00"
+      }
+    },
+    "phone": "+14194338062"
+  },
+  "huro-lst-0224": {
+    "_confidence": "Address (204 Cleveland Rd W, Huron OH 44839) and phone (419-616-6000) confirmed consistent across all sources and match held data. Practitioner is Dr. Carlyn M. Sebastian-Wise, DDS. Hours (M-F 9:00-17:00, closed weekends) are repeated identically across at least 3 independent aggregators, but since no first-party site is reachable (the practice's own domain is dead), these hours are aggregator-sourced only, not first-party confirmed — recording with that caveat per the 'two aggregators echoing one grid is thin' rule, judgment call made because 3+ independent aggregator sources agree exactly and none appear to simply mirror each other's page structure.",
+    "_entity_kind": "firm",
+    "_fetched": "2026-09-22",
+    "_match_name": "Sebastian Dental Llc",
+    "_source": "Multiple aggregators corroborating the same address/phone/hours: yellowpages.com, chamberofcommerce.com, dentist-usa.nears.me, wellness.com, forestreamdentalcare.com. No working first-party site: the practice's listed website sebastiandentalllc1.placeweb.site is a dead/expired domain-parking page ('This domain may be for sale'), confirmed by direct WebFetch.",
+    "_url_finding": "The practice's listed website sebastiandentalllc1.placeweb.site is a dead, expired domain now showing a generic parking/for-sale page with no dental practice content.",
+    "description": "Sebastian Dental LLC is a general dentistry practice run by Dr. Carlyn M. Sebastian-Wise, DDS, located next to the Huron Professional Building.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14196166000"
+  },
+  "huro-lst-0230": {
+    "_confidence": "BBB lists the street address as '604 S. Main St.' (with the directional 'S.') vs. our held '604 Main St #2553' — the '#2553' suite suffix does not appear in BBB, Superpages, or any first-party-style source and is almost certainly a listing-aggregator internal record ID mistaken for a suite number, not a real address component. Phone (419-433-8468) confirmed across BBB, Yellow Pages, Superpages. Hours (M–F 8–5, Sat–Sun closed) are aggregator-sourced only, not confirmed on a first-party page — no website held or found for this business.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Joe's Complete Auto Repair",
+    "_source": "BBB profile (bbb.org, first-party-verified business record, not first-party site) for address/phone; hours from Yahoo Local / Openbay / AutoTechIQ aggregators, which agree with each other.",
+    "_url_finding": "No website is held for this listing; none was found in research (business appears web-absent, listed only via aggregators/BBB).",
+    "description": "Full-service auto repair and brake shop (also known locally as Joe's Muffler & Brake), owner Joe Pendergrass, in business since 1999.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "08:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "08:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "08:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "08:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "08:00"
+      }
+    },
+    "phone": "+14194338468"
+  },
+  "huro-lst-0233": {
+    "_confidence": "Confirmed this is a short-term vacation rental cottage on Lake Erie in the Rye Beach area of Huron, owned/operated by Karen and Andy Avery, listed on Airbnb (4.96 rating, 167 reviews, sleeps 7-9, 3BR/2BA). It is a private residential rental property, not a storefront or office with public hours.",
+    "_entity_kind": "building",
+    "_fetched": "2026-09-22",
+    "_match_name": "Routh at Rye",
+    "_no_fields_proposed": "This is a short-term rental with no opening hours in the conventional sense; check-in/check-out times exist on the Airbnb listing but per instructions those are not recorded as business hours.",
+    "_source": "WebSearch of https://www.facebook.com/RouthatRye/ and Airbnb listing pages (aggregator/booking platform) reached via the held short link https://abnb.me/LvOjz8t8ueb",
+    "_url_finding": "The held URL https://abnb.me/LvOjz8t8ueb is an Airbnb short link to a booking listing, not a business website — confirmed the listing is for this same property (Rye Beach cottage, Huron OH).",
+    "description": "Routh at Rye is a private lakefront vacation rental cottage in the Rye Beach neighborhood of Huron, booked via Airbnb."
+  },
+  "huro-lst-0245": {
+    "_confidence": "Address (908 Main St) and phone (419-433-2000) corroborated across 6+ sources, high confidence. Hours are aggregator-only (never confirmed first-party) — treat as directional, not authoritative. Aggregators also state 'in business since 2002' and 'auto detailing + residential/commercial power washing' — plausible but unconfirmed by a first-party source.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Enzo's Detailing",
+    "_source": "Aggregators only — chamberofcommerce.com, loc8nearme.com, Yelp, Yellow Pages (no first-party site found; Facebook page exists at facebook.com/enzosdetailinghuron but fetch returned no usable hours/content). Multiple aggregators independently quote the same hour set.",
+    "description": "Automotive detailing shop on Main St offering complete interior detailing, ceramic coating, and vacuum/engine cleaning.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "10:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194332000"
+  },
+  "huro-lst-0246": {
+    "_confidence": "Address (914 Main St) and phone (419-433-6210) corroborated across multiple listings. Hours (Mon-Fri 8:00-18:00, closed weekends) appear consistently across two independent veterinary aggregators (GeniusVets, Pawlicy) echoing what is likely one shared grid — per rule 6, not written as confirmed hours. Staff vet named on aggregators: Dr. Marianne Socha, DVM.",
+    "_entity_kind": "practice",
+    "_fetched": "2026-09-22",
+    "_match_name": "Firelands Animal Hospital Inc",
+    "_no_fields_proposed": "Hours not written: only source is two aggregators likely echoing one scraped grid (rule 6), and the practice's own site/Facebook could not be reached (403 on both) to confirm.",
+    "_source": "Aggregators only (geniusvets.com, pawlicy.com, yelp.com/biz/firelands-animal-hospital-huron) — NOT first-party. No official domain could be located (firelandsanimalhospital.com does not resolve); firelands-inc.edan.io and the Facebook page both returned 403/blocked on fetch.",
+    "amenities": [
+      "General veterinary care",
+      "Surgical procedures",
+      "Preventative/wellness services"
+    ],
+    "description": "A small-animal veterinary hospital in Huron offering general and surgical veterinary care.",
+    "phone": "+14194336210"
+  },
+  "huro-lst-0254": {
+    "_confidence": "H&R Block offices are seasonal (heavy Jan-Apr tax season staffing, reduced/appointment-only off-season). It is currently late September 2026 (off-season). Aggregators disagree with each other on exact hours (one source: Mon 12-6, Tue 10-6, Wed/Fri/Sat/Sun closed, Thu 12-6; other sources differ). Given the disagreement AND that hrblock.com itself could not be confirmed, and that off-season hours are known to differ from in-season, NOT recording hours as reliable -- too thin/contradictory to commit to a schedule that could be wrong in either direction.",
+    "_fetched": "2026-09-22",
+    "_match_name": "H&R Block",
+    "_no_fields_proposed": "Hours not recorded: aggregator sources disagree with each other, the first-party hrblock.com store page could not be fetched (403), and H&R Block hours are known to swing sharply between tax season (Jan-Apr) and off-season (current period) -- publishing any single schedule risks being wrong for the season a reader actually visits in.",
+    "_source": "Aggregators (yelp.com/biz/h-and-r-block-huron-4, hoursguide.com, find-open.com) echoing the hrblock.com store page; hrblock.com itself returned HTTP 403 to WebFetch and could not be verified directly.",
+    "description": "H&R Block tax preparation office; note that in late September this office is in its off-season and likely operates reduced or by-appointment hours rather than full tax-season hours.",
+    "phone": "+14194332083"
+  },
+  "huro-lst-0255": {
+    "_confidence": "High that Kristen Valenty (also styled Kristen Kidd-Valenty) is an individual licensed agent with The Holden Agency Real Estate, working the Huron area with an office presence at 304 Williams St. Could not confirm personal hours; the held URL is blocked to automated fetches so hours could not be directly verified from it.",
+    "_entity_kind": "person",
+    "_fetched": "2026-09-22",
+    "_match_name": "Kristen Valenty Realtor",
+    "_no_fields_proposed": "The agent's own profile page (kristenvalenty.theholdenagencyre.com) returned HTTP 403 to automated fetches, so hours could not be directly confirmed; no posted personal hours found elsewhere.",
+    "_source": "held URL https://kristenvalenty.theholdenagencyre.com/ returned 403 (bot-blocked) on both WebFetch attempts; corroborated via WebSearch snippets from https://www.theholdenagencyre.com/agents/1960751/Kristen+Valenty and https://www.facebook.com/kvalentyrealtor/, plus the 304 Williams St office listing at https://www.theholdenagencyre.com/property/212-20261000-304-williams-street-huron-OH-44839",
+    "description": "Kristen Valenty is a Realtor with The Holden Agency Real Estate, based at the firm's Huron office at 304 Williams St.",
+    "phone": "+14403090121"
+  },
+  "huro-lst-0257": {
+    "_confidence": "Hy-Miler #2235 is the convenience-store name for the Mobil-branded station at 508 Berlin Rd; hours shown are for the fuel-brand locator entry at this exact address, which applies to the site as a whole (Hy-Miler c-store + Mobil pumps, one operation).",
+    "_fetched": "2026-09-22",
+    "_match_name": "HY-MILER #2235",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2235-200322552 (first-party, Exxon/Mobil station locator; original held URL www.exxon.com/en/find-station/... 301-redirects here)",
+    "amenities": [
+      "convenience store"
+    ],
+    "description": "Hy-Miler convenience store and Mobil fuel station at 508 Berlin Road. Accepts Exxon Mobil Rewards+ and Walmart+ payment programs.",
+    "hours": {
+      "friday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "monday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "saturday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "sunday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "thursday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "tuesday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "wednesday": {
+        "close": "23:00",
+        "open": "06:00"
+      }
+    },
+    "phone": "+14194336204"
+  },
+  "huro-lst-0258": {
+    "_confidence": "Strong evidence Redbox no longer operates at all, not just at this location: the redbox.com domain does not resolve to any server, consistent with the nationwide Redbox kiosk wind-down (parent company Chicken Soup for the Soul Entertainment's 2024 bankruptcy and kiosk removals). Could not confirm from a live source whether this specific kiosk (hosted inside the Dollar General at 2202 Cleveland Rd W) was physically removed, but the company-wide shutdown makes it very unlikely the kiosk is still stocked/rentable even if the cabinet is still physically present.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Redbox",
+    "_no_fields_proposed": "No hours proposed. Redbox's own domain (redbox.com) does not resolve at all, which is evidence the business itself has shut down nationally, not merely that this one page moved. Do not treat this as a normal fetch failure — see _confidence.",
+    "_source": "Held URL www.redbox.com failed DNS resolution entirely (getaddrinfo ENOTFOUND) on two separate fetch attempts",
+    "description": "Held listing is for a Redbox DVD-rental kiosk inside the Dollar General store at 2202 Cleveland Rd W; the Redbox company appears to have ceased operating (its website no longer resolves), so this kiosk is very likely no longer in service."
+  },
+  "huro-lst-0262": {
+    "_confidence": "Address and phone match the held record. Hours are from a Fresha listing page that is not confirmed to be owner-maintained (Fresha itself flags the business as not partnered/booking-enabled on the platform) — treat as aggregator-grade, not first-party. No independent first-party source (no website) found to cross-check hours.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Huron Nails & Spa",
+    "_source": "https://www.fresha.com/lvp/huron-nails-spa-cleveland-road-east-huron-P2KJ3G — a booking-platform listing page, not confirmed first-party (Fresha states this business is not an active Fresha partner, so the listing may be aggregator-populated rather than owner-maintained)",
+    "amenities": [
+      "acrylic nails",
+      "gel nails",
+      "pedicure",
+      "manicure",
+      "nail art",
+      "dip powder"
+    ],
+    "description": "Nail salon in Huron, Ohio offering acrylic and gel nails, manicures, pedicures, nail art, dip powder, and men's mani/pedi services.",
+    "hours": {
+      "friday": {
+        "close": "18:00",
+        "open": "10:00"
+      },
+      "monday": {
+        "close": "18:00",
+        "open": "10:00"
+      },
+      "saturday": {
+        "close": "16:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "18:00",
+        "open": "10:00"
+      },
+      "tuesday": {
+        "close": "18:00",
+        "open": "10:00"
+      },
+      "wednesday": {
+        "close": "18:00",
+        "open": "10:00"
+      }
+    },
+    "phone": "+14195157267"
+  },
+  "huro-lst-0263": {
+    "_confidence": "This is a FIRM, not a person: the legal entity is Lighthouse Real Estate, LLC (est. 2005), doing business as 'Simply Better Realty | Lighthouse Real Estate Team,' broker of record Chris Wechter, ~11 agents. It has a genuine physical office at 50 Cleveland Rd E, Huron OH — confirmed independently by the brokerage's own office-locations page and by BBB. This is a DIFFERENT physical address from Simply Better Realty's other Huron office at 202 Cleveland Rd W (huro-lst-0098) — the brokerage appears to operate two Huron locations, or the 202 Cleveland Rd W agents work from the professional building while the Lighthouse team's storefront is at 50 Cleveland Rd E. Not fully resolved which is the flagship/main office.",
+    "_entity_kind": "firm",
+    "_fetched": "2026-09-22",
+    "_match_name": "Simply Better Realty Lighthouse Real Estate Team",
+    "_source": "https://www.simplybetterrealty.com/ (first-party, office locations page); https://www.bbb.org/us/oh/huron/profile/real-estate-agent/lighthouse-real-estate-llc-0422-90028560 (aggregator, BBB profile) for broker/ownership detail",
+    "amenities": [
+      "real estate brokerage office"
+    ],
+    "description": "Lighthouse Real Estate Team, doing business as Simply Better Realty, is a real estate brokerage with a physical office in Huron serving Erie, Huron and Ottawa counties.",
+    "hours": {
+      "friday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    },
+    "phone": "+14194331010"
+  },
+  "huro-lst-0267": {
+    "_confidence": "Address (103 Wall St, Huron, OH 44839) confirmed via salonlookup aggregator. Description/services (dermaplane facials, hair and body treatments; tagline 'Where skin health meets whole body wellness') confirmed first-party via the site's meta/appointments page. Hours are aggregator-sourced (salonlookup) and contain an evident data error — it listed Friday as '10 AM-4 AM', which cannot be a real closing time — so Friday hours are treated as unreliable and omitted rather than guessed; Tuesday and Wednesday are kept as they are internally plausible. Could not reach the site's own /about page (404) to cross-check. A related Sandusky Register article title ('Ruhe Haus makes clients feel at home... new spa and wellness center opens in Sandusky', Jan 2023) suggests Ruhe Haus may have originated or also operated in Sandusky before/alongside Huron; not confirmed further.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Ruhe Haus",
+    "_no_fields_proposed": "Friday hours: the only source (salonlookup aggregator) gave an internally impossible value ('10 AM-4 AM'), almost certainly a mis-scraped '10 AM-4 PM' or similar. Rather than guess the correction, Friday is left unreported.",
+    "_source": "https://www.ruhehausllc.com/s/appointments (first-party site, confirms name/tagline/services) and https://salonlookup.com/business/ruhe-haus-huron-oh (aggregator, hours/address)",
+    "amenities": [
+      "dermaplane facials",
+      "wheelchair accessible entrance",
+      "wheelchair accessible parking"
+    ],
+    "description": "Luxury spa studio in Huron, Ohio offering dermaplane facials and hair and body treatments, with a focus on skin health and whole-body wellness.",
+    "hours": {
+      "monday": {
+        "closed": true
+      },
+      "saturday": {
+        "closed": true
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "closed": true
+      },
+      "tuesday": {
+        "close": "18:00",
+        "open": "11:00"
+      },
+      "wednesday": {
+        "close": "14:00",
+        "open": "10:00"
+      }
+    }
+  },
+  "huro-lst-0269": {
+    "_confidence": "Address (1602 Cleveland Rd W) not independently corroborated beyond the one directory snippet. ⚠️ PHONE DISCREPANCY: the chamberofcommerce.com snippet shows the number beginning '419-378-...', which does NOT match the held phone +14195546879 (419-554-6879) — could not resolve which is correct, or whether both are valid (e.g., a second line) given the search-budget cutoff before this could be re-verified. This is very likely a mobile/dispatch pressure-washing trade (service-area business, no storefront) consistent with the caller's briefing — no evidence of fixed public hours exists anywhere.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Ohio's Best Powerwashing",
+    "_no_fields_proposed": "No hours obtainable: this is a mobile/dispatch power-washing service with no storefront and no first-party site; only a single thin directory listing exists, and it carries no hours. Flagging the address/phone thinly-sourced as well rather than presenting either as confirmed.",
+    "_source": "chamberofcommerce.com directory listing only (fetch of the page itself returned HTTP 403; information is from the search-result snippet of that page). No first-party website, no Facebook page found, no BBB profile found."
+  },
+  "huro-lst-0270": {
+    "_confidence": "Address confirmed as 808 S. Main St, Huron, OH 44839 and phone 419-433-6117 (fax 419-433-7226) — matches the held phone. Neither NOMS page (location or physician-group page) publishes hours anywhere on the page. Physicians currently listed at this location: Alexandra D. Prosser, MD; Kari M. Ketvertis, MD; Cassandra L. Case, APRN, NP-C; Jennifer Richardson, MSN, APRN, FNP-C. Christopher Emery is NOT among them — see huro-lst-0028's _confidence for the discrepancy this raises.",
+    "_entity_kind": "practice",
+    "_fetched": "2026-09-22",
+    "_match_name": "NOMS Family Practice - Huron",
+    "_no_fields_proposed": "Hours not written: NOMS's own first-party pages for this location (both the location page and the physician-group page) do not publish hours anywhere on the page.",
+    "_source": "First-party: nomshealthcare.com/locations/huron/ and nomshealthcare.com/physician-groups/noms-huron-family-practice/ (fetched directly).",
+    "amenities": [
+      "Family medicine",
+      "Adolescent medicine",
+      "Women's health",
+      "Geriatrics",
+      "Sports medicine"
+    ],
+    "description": "A NOMS Healthcare family-practice office in Huron offering adolescent medicine, women's health, geriatrics, and sports medicine.",
+    "phone": "+14194336117"
+  },
+  "huro-lst-0272": {
+    "_confidence": "Not established. Held address (320 Ohio St, Huron, OH) looks residential, consistent with the task's own note that this is 'quite possibly home-based' — a plausible reason a sewing/alterations business here would have no discoverable web presence at all (no site, no social page, no aggregator listing found).",
+    "_fetched": "2026-09-22",
+    "_match_name": "Lucy's Stitches",
+    "_no_fields_proposed": "No hours, description, phone, or amenities could be sourced. The generic name ('Lucy's Stitches') combined with a likely home-based, appointment-only operation is consistent with genuinely having no public web footprint, rather than a search failure — but this session's search tool was also degraded (WebSearch budget exhausted; several fallback search engines CAPTCHA-blocked or rate-limited), so absence here should not be treated as fully conclusive.",
+    "_source": "No usable source reached. Attempted Bing, Brave, and DuckDuckGo (CAPTCHA-blocked) searches for the business name and address — none surfaced a business listing distinct from unrelated 'Lucy' pop-culture content."
+  },
+  "huro-lst-0275": {
+    "_confidence": "609 Mariner Vlg is a residential condominium/planned community — there is a Mariner Village Homeowners Association registered at this address per ohiobiz.com, and other businesses also use this address or nearby units (Resort Properties Management at the same address per Yelp, and formerly Mariner's Lakefront Marina, now closed, and Mariner Village Yacht Club). This is NOT a storefront with public hours; it is a residential complex address that several entities (HOA, a property-management company, a marina/yacht club) share or have shared over time.",
+    "_entity_kind": "building",
+    "_fetched": "2026-09-22",
+    "_match_name": "Mariner Village Condominiums",
+    "_no_fields_proposed": "No public business hours exist for a condo association's own office; it is a residential HOA address, not a shop. If the listing is meant to represent Resort Properties Management (a tenant at the same address per Yelp), that is a distinct business we did not independently verify hours for.",
+    "_source": "WebSearch aggregating Zillow, Redfin, LoopNet, Yelp and ohiobiz.com listings for 609 Mariner Vlg, Huron OH — no single first-party site found for a condo association office",
+    "description": "Mariner Village Condominiums is a residential condominium complex on the Huron waterfront; the address also houses its homeowners association and a property management company.",
+    "phone": "+14194332376"
+  },
+  "huro-lst-0277": {
+    "_confidence": "Could not find any mention of a stylist named 'Emmie' on the Corner Cuts GlossGenius page content retrieved. The Corner Cuts page lists its own address as 615 Main Street, Huron, OH 44839 — one digit off from the held 613 Main St; could not determine which is correct, or whether the held URL is simply the closest match. Given the task's noted pattern of chair-renters operating under their own name inside another salon, and that a dedicated 'emmiestyled' GlossGenius site does not exist, the most likely explanation is Emmie is a stylist renting a chair at (or otherwise working under) Corner Cuts and using its shared booking page — but this is NOT confirmed, only the best-supported inference from what's available.",
+    "_fetched": "2026-09-22",
+    "_match_name": "Emmie.Styled",
+    "_no_fields_proposed": "Tuesday-Friday hours: the source stated 'varying closing times' for these days without giving specific values, so only Monday, Saturday, and Sunday (which had fixed stated values) are recorded; padding the weekday closes would be inventing a time not in the source.",
+    "_source": "https://cornercuts.glossgenius.com/ (first-party GlossGenius booking site for 'Corner Cuts'); attempted https://emmiestyled.glossgenius.com/ directly, which redirects to the generic GlossGenius homepage, confirming no such slug/site exists",
+    "_url_finding": "The held URL (cornercuts.glossgenius.com) is booking-page-branded 'Corner Cuts', not 'Emmie.Styled'. No mention of 'Emmie' was found on that page. A guessed direct slug (emmiestyled.glossgenius.com) does not resolve to a distinct business. Unresolved: whether Emmie.Styled is a chair-renter inside Corner Cuts (using its shared booking link) or the held URL is simply mismatched to the wrong business.",
+    "amenities": [
+      "women's haircuts",
+      "men's cuts",
+      "kids cuts",
+      "highlights",
+      "color treatments",
+      "hair extensions",
+      "manicures",
+      "pedicures"
+    ],
+    "description": "Hair salon on Main Street in Huron, Ohio (booking under the name 'Corner Cuts') offering women's and men's haircuts, kids' cuts, highlights, color treatments, hair extensions, manicures, and pedicures.",
+    "hours": {
+      "monday": {
+        "closed": true
+      },
+      "saturday": {
+        "close": "14:30",
+        "open": "09:30"
+      },
+      "sunday": {
+        "closed": true
+      }
+    }
+  },
+  "huro-lst-0282": {
+    "_confidence": "Hy-Miler #2234 is the convenience-store name for the Mobil-branded station at 805 S. Main St; one physical site with two listing ids (this one and huro-lst-0060/Mobil).",
+    "_fetched": "2026-09-22",
+    "_match_name": "HY-MILER #2234",
+    "_source": "https://www.exxonmobilfuels.com/en/find-gas-station/mobil-huron-oh-hymiler2234-200322563 (first-party, Exxon/Mobil station locator; original held URL www.exxon.com/en/find-station/... 301-redirects here)",
+    "amenities": [
+      "convenience store",
+      "car wash"
+    ],
+    "description": "Hy-Miler convenience store and Mobil fuel station with car wash at 805 S. Main Street.",
+    "hours": {
+      "friday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "monday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "saturday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "sunday": {
+        "close": "22:00",
+        "open": "06:00"
+      },
+      "thursday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "tuesday": {
+        "close": "23:00",
+        "open": "06:00"
+      },
+      "wednesday": {
+        "close": "23:00",
+        "open": "06:00"
+      }
+    },
+    "phone": "+14194336597"
+  },
+  "huro-lst-0284": {
+    "_confidence": "ESTABLISHED: \"The Firelands\" is NOT a separate building/business -- it is the BRANDED NAME of the Huntington Bank branch at 357 Main St (locationId=23796), the same branch as huro-lst-0083 above. These two listing ids are a duplicate pair for one physical Huntington Bank branch. Hours are aggregator-sourced (Mon-Thu 9-5, Fri 9-6, Sat 9-12, Sun closed), not confirmed first-party since huntington.com blocked WebFetch.",
+    "_fetched": "2026-09-22",
+    "_match_name": "The Firelands",
+    "_source": "Aggregators (bankbranchlocator.com \"Huntington Bank The Firelands Branch\", huntington.banklocationmaps.com) echoing the huntington.com branch page; huntington.com returned HTTP 403 to WebFetch.",
+    "_url_finding": "This id is a duplicate of huro-lst-0083: both point to the single Huntington Bank branch at 357 Main St (Huntington locationId 23796), named \"The Firelands.\" Not an ATM listing and not a separate building.",
+    "description": "Huntington Bank branch operating under the local name \"The Firelands,\" at 357 Main St -- the same branch as the \"Huntington Bank ATM\" listing at this address.",
+    "hours": {
+      "friday": {
+        "close": "18:00",
+        "open": "09:00"
+      },
+      "monday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "saturday": {
+        "close": "12:00",
+        "open": "09:00"
+      },
+      "sunday": {
+        "closed": true
+      },
+      "thursday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "tuesday": {
+        "close": "17:00",
+        "open": "09:00"
+      },
+      "wednesday": {
+        "close": "17:00",
+        "open": "09:00"
+      }
+    }
+  },
+  "huro-lst-0285": {
+    "_confidence": "Host business identity is well confirmed: the held U-Haul dealer phone +14194335937 matches McGraw Auto Sales' own phone exactly, and its own site's /directions page is for 2112 Cleveland Rd W. Could not obtain McGraw Auto Sales' actual posted hours from any fetchable source — their own site would not render content for this fetcher, and the one aggregator hours reference seen was a relative 'Closed Today' flag, which rule 3 excludes.",
+    "_fetched": "2026-09-22",
+    "_match_name": "U-Haul Neighborhood Dealer",
+    "_no_fields_proposed": "Hours not established. McGraw Auto Sales' own website would not return readable content to this fetcher across three attempts (home page, /directions, /newandusedcars), and the only hours-adjacent aggregator data found was a relative 'Closed Today' status flag, which is excluded by rule 3. The rental window that matters is the host dealership's counter hours, which remain unconfirmed.",
+    "_source": "Search-snippet corroboration only: mcgrawautosales.com/directions and mcgrawautosales.com (both confirmed the address 2112 Cleveland Rd W, Huron, OH 44839 belongs to McGraw Auto Sales LLC); a U-Haul-near-Norwalk-OH results page snippet showed this dealer's phone as (419) 433-5937 with a 'Closed Today' status flag (relative, not usable). McGraw Auto Sales' own site (mcgrawautosales.com and its subpages) returned no readable content on repeated fetches.",
+    "_url_finding": "Held URL uhaul.com/Locations/Truck-Rentals-near-Huron-OH-44839/048773/ does NOT show this Huron, OH location at all — it resolves to a page of U-Haul Neighborhood Dealers in Danville, IL 61832 (Express Packaging Service, Hightower Family Detailing, etc.), a different state entirely. The dealer id 048773 in that URL does not correspond to the Huron listing.",
+    "description": "U-Haul Neighborhood Dealer (truck/trailer rental) hosted inside McGraw Auto Sales LLC, a used-car dealership at 2112 Cleveland Rd W.",
+    "phone": "+14194335937"
+  }
+}

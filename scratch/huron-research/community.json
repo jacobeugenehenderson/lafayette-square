@@ -3,7 +3,7 @@
     "_match_name": "Huron Parks & Recreation Department",
     "_source": "https://www.cityofhuron.org/government/departments/parks_recreation/index.php",
     "_fetched": "2026-09-22",
-    "_confidence": "Office hours and director phone are from the city's own department page. NOT sure the office is at 110 Wall St as the listing says: the department page gives 417 Main Street (the municipal building) as its address, while a city news page and the parks contact list give 110 Wall St / (419) 433-8487 for the Parks & Municipal Grounds Coordinator. Both numbers are the city's; address conflict not resolved.",
+    "_confidence": "Address resolved: the city's own contact directory gives Parks & Recreation as 110 Wall Street, phone (419) 433-8487 — which matches the listing. The department page's 417 Main Street is the municipal building's footer address, not the department's. Hours (Mon-Fri 8 AM to 4 PM) are quoted from the department page. Two phones are in use: 433-8487 for the department office at 110 Wall St and 433-4848 for the director and the marina.",
     "hours": {
       "monday": {
         "open": "08:00",
@@ -31,9 +31,11 @@
       "Online program registration",
       "Shelter reservations",
       "Nickel Plate Beach parking passes",
-      "Youth and adult recreation programs"
+      "Youth and adult recreation programs",
+      "Sports, art and summer camps",
+      "Safety Town"
     ],
-    "phone": "+14194334848"
+    "phone": "+14194338487"
   },
   "huro-lst-0203": {
     "_match_name": "Huron Boat Basin",
@@ -413,5 +415,198 @@
       "Private group sessions for homeschools, scouts, birthdays and team building",
       "Booking by session, no walk-in hours"
     ]
+  },
+  "huro-lst-0063": {
+    "_match_name": "Bikini Bottom Watersports Rentals",
+    "_source": "https://bikinibottomws.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "ADDRESS CONFLICT, unresolved: the business's own site gives 101 Shelby St, Sandusky — the listing says 410 Huron St, Huron. Season (May 17 - September 3) and the daily 10-7 banner are quoted from the site. ⚠️ The site states its hours TWICE AND DIFFERENTLY: a banner reading 'OPEN DAILY 10AM - 7PM (WEATHER PERMITTING)' and a booking widget reading 'Open today 09:00 am - 06:00 pm'. I recorded the banner's hours, which are the authored ones, but they are qualified by weather and by season and should not be trusted as a week.",
+    "hours": {
+      "monday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "tuesday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "wednesday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "thursday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "friday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "saturday": {
+        "open": "10:00",
+        "close": "19:00"
+      },
+      "sunday": {
+        "open": "10:00",
+        "close": "19:00"
+      }
+    },
+    "description": "Summer rentals of Sea-Doo Switch pontoon boats and Spark jet skis on Sandusky Bay, open daily in season, weather permitting.",
+    "amenities": [
+      "Sea-Doo Switch boats (13, 18 and 21 ft)",
+      "Sea-Doo Spark jet skis",
+      "Online reservations",
+      "Seasonal: mid-May to early September",
+      "Weather permitting"
+    ],
+    "phone": "+14196993585"
+  },
+  "huro-lst-0138": {
+    "_match_name": "Old Mill Harbor",
+    "_source": "https://oldmillharbor.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone and service list are from the marina's own site. It publishes NO office hours and NO season dates and NO slip count, so none are recorded.",
+    "description": "A small marina on Huron Street with slips and boat racks, plus a repair shop that does gelcoat, paint and marine electronics.",
+    "amenities": [
+      "Boat slips",
+      "Boat racks",
+      "Cosmetic fiberglass and gelcoat repair",
+      "Paint and detailing",
+      "Bottom painting",
+      "Garmin and marine electronics installation",
+      "Boat hoisting",
+      "Boat, rack and trailer storage",
+      "River Monster Tours charters"
+    ],
+    "phone": "+14194336010"
+  },
+  "huro-lst-0192": {
+    "_match_name": "Gull Harbor Sailing",
+    "_source": "http://www.gullharborsailing.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Dock count and amenities are quoted from the marina's own site. It is a PRIVATE MEMBERS' marina, not a sailing school or charter operation despite the name. NO hours and NO season dates are published. ADDRESS: the site gives only P.O. Box 492, not the 43 Cleveland Rd E on the listing. PHONE CONFLICT: the site gives 419.616.5000, the listing +14196027035; unresolved.",
+    "description": "A privately owned members' marina with 48 seasonal docks for sail and power boats.",
+    "amenities": [
+      "48 docks, sail and power",
+      "Dockside electricity",
+      "Dockside water",
+      "Restrooms",
+      "Showers",
+      "Covered picnic pavilion",
+      "Ample parking",
+      "Seasonal docks",
+      "Members only"
+    ]
+  },
+  "huro-lst-0070": {
+    "_match_name": "Just Hookin",
+    "_source": "https://justhookinerie.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "⛔ WRONG TOWN. The charter's own site gives its departure point as 26 Naylor Dr, CONNEAUT, OH — roughly 100 miles east of Huron — and titles itself 'Lake Erie Walleye & Steelhead Fishing Charters in Conneaut, Ohio'. The listing places it at 1299 Marina Dr, Huron. Nothing on the site connects it to Huron. Whether it ever operated from Huron is NOT established. Recommend this listing be dropped from Huron rather than enriched. Phone on the site matches the listing.",
+    "description": "A Lake Erie walleye and steelhead charter operation. Its published departure point is Conneaut, Ohio, not Huron.",
+    "amenities": [
+      "Walleye charters",
+      "Steelhead charters",
+      "Family and kid friendly",
+      "Licensed and insured",
+      "USCG-approved safety equipment",
+      "Online booking"
+    ],
+    "phone": "+18782012905"
+  },
+  "huro-lst-0206": {
+    "_match_name": "The Barre Collective - Huron ",
+    "_source": "http://Barrecollectivehuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "Class description, address, phone and pricing are from the studio's own site. NO hours recorded: the studio publishes no static schedule — class times live only in a Zenplanner booking system (barrecollectivehuron.zenplanner.com) that the site links out to. Note the studio's email uses a DIFFERENT brand name, thebarremethodhuron.com.",
+    "description": "A barre and pilates studio on Main Street running low-impact, music-driven classes that need no dance experience.",
+    "amenities": [
+      "Barre classes",
+      "Pilates",
+      "Beginner friendly",
+      "Drop-in $25",
+      "14-day unlimited trial $49",
+      "Schedule and booking via Zenplanner"
+    ],
+    "phone": "+14195678962"
+  },
+  "huro-lst-0035": {
+    "_match_name": "Huron Fire Division",
+    "_source": "https://www.cityofhuron.org/government/safety_services/fire/index.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Stations, staffing, chief and 2025 call volume are quoted from the city's own fire page. ADDRESS CORRECTION: the division's Station 1 is 413 Main Street (the listing says 417 Main Street, which is the municipal building) and there is a SECOND station at 1830 Bogart Road — one listing, two premises. No `hours`: the division operates 24/7/365, which is a coverage statement, not opening hours, and the page publishes no public-counter hours.",
+    "description": "Huron's fire and EMS service, staffed around the clock from two stations. Most of its work is medical: 1,935 of 2,208 responses in 2025 were EMS calls.",
+    "amenities": [
+      "Station 1, 413 Main Street",
+      "Station 2, 1830 Bogart Road",
+      "24/7/365 staffing",
+      "Emergency medical services",
+      "Dive Rescue and Recovery Team"
+    ],
+    "phone": "+14194335000"
+  },
+  "huro-lst-0278": {
+    "_match_name": "Chapter 50",
+    "_source": "https://chapters.eaa.org/eaa50",
+    "_fetched": "2026-09-22",
+    "_confidence": "The listing's URL eaachapter50.com is a REDIRECT to chapters.eaa.org/eaa50 (HTTP 200 after redirect) — it works, but the canonical page is the EAA one. Confirmed the chapter is based at Hinde Airfield (FAA identifier 88D) in Huron. MEETING SCHEDULE NOT ESTABLISHED: the chapter page lists programs but no meeting day or time that I could read. The listing's name 'Chapter 50' is a fragment; the full name is EAA Chapter 50.",
+    "description": "EAA Chapter 50, the local Experimental Aircraft Association chapter, based at Hinde Airfield (88D) on the edge of Huron. It flies Young Eagles, awards scholarships and hosts fly-ins.",
+    "amenities": [
+      "Young Eagles flights",
+      "Scholarships",
+      "Technical Counselors and Flight Advisors",
+      "Fly-ins and chapter events",
+      "Newsletter",
+      "Based at Hinde Airfield (88D)"
+    ],
+    "phone": "+14192398292",
+    "_what_is_it": "A volunteer aviation club at a private grass airfield, not a business. Confirmed from the EAA's own chapter page. High confidence."
+  },
+  "huro-lst-0065": {
+    "_match_name": "City of Huron - Government",
+    "_source": "https://www.cityofhuron.org/how_do_i/contact_us.php",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address, phone, fax and the department roster are from the city's own contact page; the city manager's name and start date from the City Manager's Office page. ⚠️ THE CITY PUBLISHES NO CITY HALL OFFICE HOURS ANYWHERE I could find — not on the contact page, the departments index or the city manager's page. No hours recorded.",
+    "description": "Huron's municipal government, in the municipal building at 417 Main Street. City hall houses the city manager's office, finance, planning and zoning, police, fire administration and the municipal court.",
+    "amenities": [
+      "City Manager's Office",
+      "Finance",
+      "Planning, Zoning & Building",
+      "Police (non-emergency 419-433-4114)",
+      "Fire administration (non-emergency 419-433-3544)",
+      "Huron Municipal Court (419-433-5430)",
+      "Water Department at 10 Waterworks Drive (419-433-9502)"
+    ],
+    "phone": "+14194335000"
+  },
+  "huro-lst-0135": {
+    "_match_name": "Mariner Village Yacht Club",
+    "_source": "https://www.sixflags.com/sawmillcreekresort",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing points at sawmillcreekresort.com, which now 301-redirects to sixflags.com/sawmillcreekresort after the resort changed hands; that page describes the resort and its marina but says NOTHING about a Mariner Village Yacht Club. Mariner Village is a residential/condo development adjacent to the resort, but I could not source a single first-party page for the yacht club itself, so no description, hours or amenities are recorded. Recommend this listing be verified by phone before it ships."
+  },
+  "huro-lst-0078": {
+    "_match_name": "Mariner Village Beach",
+    "_source": "https://www.sixflags.com/sawmillcreekresort",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED. The listing's URL sawmillcreekresort.com/amenities/beach is GONE — it 301-redirects to sixflags.com/sawmillcreekresort, the new owner's brand landing page, which has no beach page and does not say whether any beach is open to the public. Public-versus-private access, hours and amenities are all unsourced. The listing's phone (+18007296455) is a resort reservations number, not a beach."
+  },
+  "huro-lst-0121": {
+    "_match_name": "Usgs Lake Erie Biological Station",
+    "_source": "https://www.usgs.gov/centers/great-lakes-science-center/connect/locations",
+    "_fetched": "2026-09-22",
+    "_confidence": "Address (380 Huron Street, Huron, OH 44839-1752) and phone (419-616-0060) are quoted from the USGS Great Lakes Science Center's own locations page and both match the listing. The station's specific research programme is NOT published on any page I could read — the station-level page returns 403 and the center page does not break work down by field station — so the description stays at the level the center itself states. ⚠️ The listing's URL https://www.usgs.gov/newsroom/article.asp is a dead generic stub and must not ship; the locations page above is the live first-party source. No hours: this is a federal research facility, not a public-access building, and none are published.",
+    "description": "A USGS field station on Huron Street, one of six belonging to the Great Lakes Science Center. Its parent center studies Great Lakes fish populations, invasive species and sea lamprey control for the agencies that manage the lakes.",
+    "amenities": [
+      "USGS Great Lakes Science Center field station",
+      "Research facility, not open to the public"
+    ],
+    "phone": "+14196160060"
+  },
+  "huro-lst-0226": {
+    "_match_name": "Cedar Point Center",
+    "_source": "https://www.bgsu.edu/firelands.html",
+    "_fetched": "2026-09-22",
+    "_confidence": "NOT ESTABLISHED beyond the campus it sits on. The listing has no address, phone or website. I confirmed the BGSU Firelands campus at 1 University Dr, Huron, OH 44839 (419-433-5560), but EVERY candidate URL for a Cedar Point Center page on bgsu.edu returned 404, and the campus home page does not list buildings. What the building is used for, whether it can be rented, and its hours are all unsourced. ⚠️ Note the name collides with the Cedar Point amusement park in nearby Sandusky — a searcher will land in the wrong place."
   }
 }
