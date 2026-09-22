@@ -77,7 +77,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 156. This is `npm test`.
+## safe — 157. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -233,6 +233,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-survey-reaches-the-measure.mjs` | ⭐⭐⭐ DOES THE CITY'S SURVEY REACH THE MAP? — the join, scored, for any town that has one. |
 | `checks/claims-through-node-width-step.mjs` | THE CHECK: at a THROUGH-NODE — a ring vertex where two consecutive runs carry |
 | `checks/claims-twilio-webhook-guard.mjs` | does sms-webhook actually reject a forged POST? |
+| `checks/claims-two-listings-are-not-one-place.mjs` | no two listings share an address AND a phone. |
 | `checks/claims-uturn-outer-edge-walk.mjs` | THE CHECK: walk the OUTER EDGE (the asphalt polygon `iA`) of every tile that |
 | `checks/claims-verify-taxon.mjs` | taxon.mjs — asserts vocabulary.mjs `verifyTaxon`. |
 | `checks/claims-water-scales-with-its-body.mjs` | body.mjs — DOES THE WATER KNOW HOW BIG IT IS? |

@@ -1,0 +1,120 @@
+{
+  "huro-lst-0119": {
+    "_match_name": "Salvation Army",
+    "_source": "https://neo.salvationarmy.org/NortheastOhio/Service-Extension-Department",
+    "_source_secondary": "https://www.eriecountycares.com/provider/salvation-army-huron",
+    "_fetched": "2026-09-21",
+    "_confidence": "org's own divisional site (Northeast Ohio Division) lists a Huron service unit; no hours published anywhere on it",
+    "_url_finding": "The URL we hold (https://centralusa.salvationarmy.org/indiana) is the Salvation Army INDIANA DIVISION (USA Central Territory) and is NOT this place. Huron, Ohio falls under the Northeast Ohio Division (neo.salvationarmy.org). The held URL should be replaced.",
+    "_notes": "Huron is a volunteer-run SERVICE UNIT, not a staffed corps. The divisional Service Extension page lists Huron, Erie County, zips 44839 / 44879, phone 419-433-0500. Third-party directories give a different number (419-366-1721) and an address of 820 Cleveland Rd E; the two numbers are NOT reconciled by any first-party source, so only the divisional-site number is proposed below. Yellowpages/countyoffice list 'appointment only' - NOT recorded as hours, no first-party source states it.",
+    "phone": "419-433-0500",
+    "description": "A Salvation Army Service Unit serving Huron and Erie County. Per the Northeast Ohio Division: \"A Service Unit is located in a community church building or other facility, run solely by volunteers, and may offer a full limited array of services such as: Utilities, Prescriptions, Food vouchers and pantries, Gasoline, Rent & lodging, Back to school supplies, Coats for Kids, Residential Camping, Angel Tree\"."
+  },
+
+  "huro-lst-0062": {
+    "_match_name": "Huron Helping Hands Food Pantry",
+    "_source": "http://huronhelpinghands.org/",
+    "_source_secondary": "http://huronhelpinghands.org/receiving-goods.html",
+    "_fetched": "2026-09-21",
+    "_confidence": "stated on the org's own site, twice, in agreeing words",
+    "_last_entry": "Site states arrive at least 30 minutes before closing - an effective last-entry time (Wed 14:30, Thu 13:30) that the hours model cannot express.",
+    "_alt_phone": "419-366-0524 (appointments), 419-616-0088 (general) - both on their own site; we hold neither/one, so both recorded here.",
+    "hours": {
+      "wednesday": { "open": "09:00", "close": "15:00" },
+      "thursday":  { "open": "10:00", "close": "14:00" }
+    },
+    "phone": "419-616-0088",
+    "description": "A food pantry at 607 S. Main St that, in its own words, \"provides food and hope to families across Huron, Berlin Heights, and the 44839 area.\" Walk-ins are welcome during regular hours and no income verification is required.",
+    "amenities": ["Food pantry", "Walk-in service during open hours", "No income verification required"]
+  },
+
+  "huro-lst-0021": {
+    "_match_name": "Huron Sports Academy",
+    "_source": "https://huronsa.org/",
+    "_source_secondary": "https://huronsa.org/contact",
+    "_fetched": "2026-09-21",
+    "_confidence": "building hours stated on the org's own contact page",
+    "_assumption": "The site prints \"715 AM - 3:15 PM\" as building hours WITHOUT enumerating days. Monday-Friday below is the school-week reading, not a quoted fact. Drop the days if that is not acceptable.",
+    "_extra_schedules": "Same page also publishes a class schedule 07:45-15:15 and breakfast service 07:20-07:45 - three nested day-parts for one place; only the outermost is expressed below.",
+    "_building_note": "Occupies 712 Cleveland Road E., the former Shawnee Elementary building (see huro-lst-0132).",
+    "hours": {
+      "monday":    { "open": "07:15", "close": "15:15" },
+      "tuesday":   { "open": "07:15", "close": "15:15" },
+      "wednesday": { "open": "07:15", "close": "15:15" },
+      "thursday":  { "open": "07:15", "close": "15:15" },
+      "friday":    { "open": "07:15", "close": "15:15" }
+    },
+    "phone": "419-387-5534",
+    "description": "A tuition-free, K-6 public charter school that integrates Ohio state academic standards with daily competitive athletics and physical conditioning, which it calls \"the Blitz Model.\" It serves families across Huron, Sandusky, Vermilion, Norwalk, Firelands, Berlin Heights and Perkins Township."
+  },
+
+  "huro-lst-0132": {
+    "_match_name": "Shawnee Elementary",
+    "_source": "https://huronk12.org/",
+    "_source_secondary": "https://sanduskyregister.com/news/485444/16m-school-building-sale-closes/",
+    "_fetched": "2026-09-21",
+    "_notfound": "THIS PLACE NO LONGER EXISTS. The Huron City Schools district site (huronk12.org, to which the held URL huronhs.com/CentralOffice.aspx now 307-redirects) lists only Woodlands Elementary, McCormick Middle and Huron High School - Shawnee is absent from the school list. The Huron Board of Education voted to close Shawnee Elementary at the end of the 2022-23 school year (last day 2023-05-26) under a consolidation plan, and the building was auctioned and sold for $1.6M. Its address, 712 Cleveland Road E., is now occupied by Huron Sports Academy (huro-lst-0021). Shawnee survives on the district site only as the mailing location of the Title IX Coordinator. No hours, no description, and no phone of its own exist to record. Recommend the listing be marked closed/defunct rather than enriched."
+  },
+
+  "huro-lst-0096": {
+    "_match_name": "Old Homestead On The Lake Association",
+    "_source": "http://www.oldhomesteadone.com/",
+    "_source_secondary": "http://www.oldhomesteadone.com/docs/RR_Summary.pdf",
+    "_fetched": "2026-09-21",
+    "_confidence": "description and amenities from the association board's own rules sheet; no hours exist to find",
+    "_notfound_hours": "This is a lakefront homeowners' association, not a premises with opening hours. Its public site is a links-and-weather portal; the members' area (oldhomesteadone.com/membership/membership.htm) returns HTTP 401 and is credential-gated, so any hours behind it are unreachable. Nothing resembling open/close times is published.",
+    "_rule_windows": "The rules sheet publishes intervals that are NOT opening hours: quiet hours 22:00-08:00, and a seasonal pet ban on the beach and in the parks between Memorial Day and Labor Day.",
+    "description": "The homeowners' association for the Old Homestead on the Lake neighborhood on Lake Erie in Huron, run by a volunteer Board of Directors. It maintains the neighborhood's private beach and parks, publishes the community rules, and runs a public weather station for the lakefront.",
+    "amenities": ["Private beach (beach pass required; no lifeguard)", "Neighborhood parks", "Boat lane west of the beach", "Community weather station"]
+  },
+
+  "huro-lst-0236": {
+    "_match_name": "Christ Episcopal Church",
+    "_source": "https://www.episcopalassetmap.org/dioceses/diocese-ohio/list/christ-episcopal-church",
+    "_fetched": "2026-09-21",
+    "_confidence": "NOT the org's own site - the parish's own site is DOWN. Data is from the Episcopal Church's diocesan asset map, which parishes maintain themselves; it carries no last-updated date, so treat the times as unverified against a first-party source.",
+    "_url_finding": "The held URL http://christchurchhuron.com/ does not resolve: christchurchhuron.com has no A record and no NS records at 8.8.8.8 or 1.1.1.1 (NXDOMAIN) as of 2026-09-21. The alternate domain christchurchhuron.org DOES resolve but 301-redirects straight to the dead .com, so the parish site is unreachable by either name. Search engines still index cached pages (christchurchhuron.com/services.html); those are stale, not live.",
+    "_service_times": "Sunday 10:00 (Holy Eucharist, with Facebook livestream); Wednesday 09:00 (Morning Prayer). Recorded here and NOT in `hours`: these are service START times with no published end, and writing a close time would be inventing one.",
+    "_notfound_hours": "No opening or office hours published by any source consulted.",
+    "phone": "419-433-4701",
+    "description": "An Episcopal parish at 120 Ohio Street whose congregation has gathered since 1837, in the Episcopal Diocese of Ohio. It describes itself as \"A Place of Grace\" with a mission to \"engage with Christ and our community to spread God's promise of hope, peace, joy, and love to the world.\""
+  },
+
+  "huro-lst-0276": {
+    "_match_name": "Huron High School",
+    "_source": "https://hhs.huronk12.org/",
+    "_fetched": "2026-09-21",
+    "_confidence": "office and school-day times stated on the school's own site",
+    "_url_note": "The held URL http://www.huronhs.com/ 307-redirects to https://huronk12.org/ (district). The school's own page is https://hhs.huronk12.org/.",
+    "_assumption": "The site prints office hours 6:30 AM - 3:30 PM without enumerating days. Monday-Friday below is the school-week reading, not a quoted fact.",
+    "_second_schedule": "The same page also publishes a distinct school day, 07:30-14:50 - a second, narrower set of hours for the same building that the model cannot hold alongside the office hours.",
+    "hours": {
+      "monday":    { "open": "06:30", "close": "15:30" },
+      "tuesday":   { "open": "06:30", "close": "15:30" },
+      "wednesday": { "open": "06:30", "close": "15:30" },
+      "thursday":  { "open": "06:30", "close": "15:30" },
+      "friday":    { "open": "06:30", "close": "15:30" }
+    },
+    "phone": "419-433-1234",
+    "description": "The grades 9-12 public high school of Huron City Schools, at 710 Cleveland Road West. It describes itself as \"more than a school; it's a community,\" emphasising student-centred learning and links between classroom work and the real world through internships and community partnerships. Principal: Tim Lamb."
+  },
+
+  "huro-lst-0195": {
+    "_match_name": "BGSU Firelands Library",
+    "_source": "https://www.bgsu.edu/firelands/library/about.html",
+    "_fetched": "2026-09-21",
+    "_confidence": "stated on the university's own library page; the page itself carries the caveat \"Hours may vary\"",
+    "_url_note": "The held URL https://www.firelands.bgsu.edu/library.html 301-redirects to https://www.bgsu.edu/firelands/library.html.",
+    "_seasonal": "Hours below are the FALL/SPRING semester set (in force on the fetch date). The same page publishes a separate SUMMER set: Mon-Thu 08:00-17:00, Fri 08:00-14:00, weekends closed. The model holds one set, so the summer schedule is dropped.",
+    "_phone_conflict": "The university publishes TWO different numbers for this library - 419-372-2531 on the About page and 419-372-0739 on the Library landing page. Not reconciled by any source, so no phone is proposed.",
+    "hours": {
+      "monday":    { "open": "08:00", "close": "17:00" },
+      "tuesday":   { "open": "08:00", "close": "17:00" },
+      "wednesday": { "open": "08:00", "close": "17:00" },
+      "thursday":  { "open": "08:00", "close": "17:00" },
+      "friday":    { "open": "08:00", "close": "17:00" }
+    },
+    "description": "The campus library of BGSU Firelands, on the second floor of Foundation Hall at One University Drive. Alongside its physical books it provides \"access to eBooks, databases, electronic journals, and streaming video,\" borrowing through OhioLINK and SearchOhio, and interlibrary loan.",
+    "amenities": ["Print collection", "eBooks and electronic journals", "Research databases", "Streaming video", "OhioLINK and SearchOhio borrowing", "Interlibrary loan", "Special collections: Great Lakes and Holocaust"]
+  }
+}

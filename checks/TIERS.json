@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 198,
+  "total": 199,
   "counts": {
-    "safe": 156,
+    "safe": 157,
     "local-effect": 6,
     "live": 36
   },
@@ -1142,6 +1142,13 @@
       "tier": "safe",
       "why": [
         "computed import of a data: module — hermetic"
+      ]
+    },
+    {
+      "file": "checks/claims-two-listings-are-not-one-place.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
       ]
     },
     {

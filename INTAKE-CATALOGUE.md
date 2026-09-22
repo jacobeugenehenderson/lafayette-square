@@ -288,6 +288,29 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 >
 > ⛔ **altadena is the instructive one.** Every building has a category and none has an address, so wiring it would add 15,397 buildings that the address filter drops on the floor — Society exactly as empty as before, while *looking* wired to the next reader. **An entry that reaches nothing is worse than no entry**, because it stops anyone looking. Its address well is undeclared; wire it the day that changes.
 
+### 3.2b ⭐ WHAT PLACE-CARD RESEARCH ACTUALLY TURNS UP — the input kinds, from the first live pass *(2026-09-22)*
+
+Three research agents worked 24 of huron's 285 listings (civic · dining · waterfront). ⛔ These are **input KINDS**, catalogued because the next town will have the same ones — ▶ the evidence is in `scratch/huron-research/`, and the per-fact provenance (`_source`, `_fetched`, `_confidence`) lives in each town's `listings.overrides.json`, stripped before the slab by `bake-content.js#stripMeta`.
+
+**⭐ A PLACE HAS SEVERAL SCHEDULES AT ONCE — and this is an EXTENSION OF `menu.schedule`, not a new model.** *(Jacob, 2026-09-22: "we already show 'active menus' so this is just an extension of that.")* `PLACE-CARDS §3` already carries `menu.schedule = { <menuType>: { <day>: { start, end } } }` — per-menu-type availability — so Berardi's breakfast 07:00–11:00 inside opening 07:00–20:00 is **already expressible**, and so is kitchen-closes-before-the-bar. ⛔ **THE GAP IS A PLACE WITH NO MENU TO HANG IT ON:** Huron High publishes office 06:30–15:30 *and* school day 07:30–14:50; Huron Sports Academy publishes building, classes and breakfast. Both are true at once and neither is a menu. ⇒ the same per-type shape wants to exist on the LISTING, not only inside `menu`. ⭐ Two agents on unrelated beats reached this independently, which is why it leads. It generalises far past schools: a pool inside a rec centre, a clerk's window inside a courthouse, a café inside a museum.
+
+**⛔ UNMARKED SEASONAL HOURS — the kit's signature failure shape.** A Lake Erie marina restaurant is summer copy; hours scraped in September are correct for the month you sampled and silently wrong the rest of the year, and would tell a visitor a shuttered place is open. `{open, close}` has nowhere to put a validity window. ⚠️ BGSU publishes fall/spring *and* summer side by side; the library's real hours live in **LibCal**, which has a JSON/iCal API and is near-universal in academic libraries — a machine-readable well worth naming.
+
+**Other kinds found, each with a town-agnostic equivalent:**
+- **Service times as an INSTANT, not an interval** — a church has 08:00 and 10:30, not open/close. Sourced from the **Episcopal Asset Map**, a denomination-wide structured directory covering every US town.
+- **Last entry ≠ close** — "arrive 30 minutes before closing" is a real 14:30 door time behind a 15:00 close.
+- **Rule windows that are not opening hours** — an HOA's quiet hours 22:00–08:00; a pet ban bounded by **Memorial Day–Labor Day**, i.e. two FLOATING holidays, unstorable as a month range.
+- **PDF-only menus, and a place with SEVERAL menus.** The single `menu` object has no room for Dinner + Wine + Family + Catering. ⛔ A menu in a PDF or an image is not machine-readable: record that it exists and where, never transcribe it by guessing.
+- **Market-price and multi-price items** — "Perch … Market Price", "4.50/8.00" cup/bowl. ⛔ Keep the printed text; emit no `price`.
+- **Ordering/reservation integrations** (Toast, ChowNow, Google waitlist) whose hosted menu is often fresher than the restaurant's own site.
+- **Rented web presences** — NetWaiter pages, Facebook-as-primary-source, VRBO as a lodging listing's only home. An aggregator is not first-party and the record must say so.
+
+**⛔⛔ AND THE THREE WAYS OUR OWN DATA WAS WRONG, which cost more research time than the hours did:**
+- **A URL that resolves to the wrong organisation.** `huro-lst-0119` Salvation Army points at the *Indiana Division*; Huron OH is Northeast Ohio. ⭐ **It returns 200 OK on a plausible page**, so any "are our links alive?" check passes it clean. Liveness is not identity.
+- **A URL for a business in another state.** `huro-lst-0198` Sand Bar → `thesandbar.com`, a bar in Lawrence, Kansas.
+- **Dead domains that look alive** — `christchurchhuron.com` is NXDOMAIN and `winkspizza.com` does not resolve, while search engines still index their old pages.
+⇒ ▶ `node checks/claims-two-listings-are-not-one-place.mjs` catches the duplicate half of this class from two fields we already collect. The wrong-entity half has no check yet and is boarded as `ROADMAP` H-27.
+
 ### 3.3 Layer 2 — listings (JOINED base + AUTHORED override)
 `content/listings.json` → the reader's `landmarks`. Drives place cards, search, Society tab, **neon colour + open-now**, Places stat.
 **Two bases:** **OSM POIs** (`classifyPoi` maps ~45 amenity/shop/leisure/tourism/office tags → the Society taxonomy) and **Overture Places**, declared via `meta.baseSource:"overture"`.

@@ -1,0 +1,854 @@
+{
+  "huro-lst-0266": {
+    "_match_name": "Viking's Den (Vikings Den) at Huron Lagoons Marina",
+    "_source": "http://www.huronlagoons.com/restaurant/",
+    "_source_secondary": "https://local.yahoo.com/info-15717506-viking-s-den-huron",
+    "_fetched": "2026-09-21",
+    "_address_from_source": "100 Laguna Dr. (P.O. Box 159), Huron, Ohio 44839 — marina address given in the site footer",
+    "_phone_conflict": "The marina's own restaurant page says 'Call us at 419-616-3336'. Yahoo Local lists (419) 433-7649 for Viking's Den. NOT RESOLVED — do not treat either as authoritative.",
+    "_confidence": "description + free-docking amenity are VERBATIM from the operator's own site (huronlagoons.com/restaurant/). ⚠️ HOURS ARE NOT ON THE OWN SITE — they come from Yahoo Local, an aggregator, and are UNVERIFIED. This is a marina restaurant on Lake Erie and is very likely SEASONAL (the marina site talks only about 'your summer'), so these hours may be in-season only and wrong for half the year. A human must confirm before this drives an open/closed indicator.",
+    "hours": {
+      "wednesday": {
+        "open": "11:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "11:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "11:00",
+        "close": "21:00"
+      },
+      "saturday": {
+        "open": "08:00",
+        "close": "21:00"
+      },
+      "sunday": {
+        "open": "08:00",
+        "close": "20:00"
+      }
+    },
+    "_hours_source": "https://local.yahoo.com/info-15717506-viking-s-den-huron (aggregator). Monday and Tuesday listed as Closed, so those days are omitted per the schema.",
+    "description": "Waterfront restaurant inside Huron Lagoons Marina on the Huron River, where diners can look out at the water and the wildlife. Boaters can dock free of charge while they eat.",
+    "_description_basis": "Paraphrased from the operator's own page: \"The Den's perfect setting lets you gaze at the water and the wildlife while you savor the nautical ambiance inside. And don't worry about docking fees—we make it easy to dock your boat for free while you dine!\"",
+    "amenities": [
+      "Free boat docking while you dine",
+      "Waterfront dining"
+    ],
+    "_amenities_basis": "Both stated plainly on huronlagoons.com/restaurant/. Yahoo Local additionally lists 'Family friendly' and 'Wifi' — NOT recorded here because they are aggregator-supplied, not operator-stated.",
+    "_menu_notfound": "The operator's page has a heading reading 'MENU' but publishes NO menu content, no linked menu file, and no menu page. The site's own page-sitemap.xml (https://www.huronlagoons.com/page-sitemap.xml) has no menu URL. The only PDF on the restaurant page is a bird-watching list. Nothing transcribable."
+  },
+  "huro-lst-0268": {
+    "_match_name": "Wink's Pizza",
+    "_source": "http://www.winkspizza.com",
+    "_fetched": "2026-09-21",
+    "_notfound": "The supplied domain winkspizza.com DOES NOT RESOLVE (DNS lookup fails: getaddrinfo ENOTFOUND www.winkspizza.com). No operator site exists to read. Yelp's listing for Wink's Pizza at 414 Cleveland Rd E, Huron OH (https://www.yelp.com/biz/winks-pizza-huron) is flagged CLOSED as of June 2026. Search results give conflicting hours from low-quality directory sites; NONE recorded, because a wrong open/closed signal is worse than none.",
+    "_duplicate_note": "414 Cleveland Rd E, Huron and phone 419-433-1500 are the SAME address and number reported for huro-lst-0214 Bruno's Pizzeria, and now for 'Sir Munchies Pizza of Huron' (https://www.yelp.com/biz/sir-munchies-pizza-huron). This looks like one storefront that has changed tenant at least twice. See dining-NOVEL.md §'Successive tenants at one address'.",
+    "_sources_checked": [
+      "http://www.winkspizza.com (DNS failure)",
+      "https://www.yelp.com/biz/winks-pizza-huron",
+      "https://www.yelp.com/biz/sir-munchies-pizza-huron"
+    ]
+  },
+  "huro-lst-0214": {
+    "_match_name": "Bruno's Pizzeria",
+    "_source": "http://www.mybrunospizza.com",
+    "_fetched": "2026-09-21",
+    "_notfound": "mybrunospizza.com loads, but its navigation lists ONLY two locations — Willard and Marblehead (https://www.mybrunospizza.com/willard, /marblehead). There is NO Huron page, NO address, NO hours and NO menu anywhere on the site's home page; the home page is a hiring form. So the operator's own site does not cover this listing. Yelp's Bruno's Pizzeria, 414 Cleveland Rd E, Huron (https://www.yelp.com/biz/brunos-pizzeria-huron) is flagged CLOSED as of July 2025. No hours, description or menu recorded.",
+    "_duplicate_note": "Shares address 414 Cleveland Rd E and phone 419-433-1500 with huro-lst-0268 Wink's Pizza. Probable same storefront, different tenant/era — resolve at the source data, not here.",
+    "_sources_checked": [
+      "http://www.mybrunospizza.com",
+      "https://www.yelp.com/biz/brunos-pizzeria-huron"
+    ]
+  },
+  "huro-lst-0139": {
+    "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/",
+    "_fetched": "2026-09-21",
+    "_blocked": "dairyqueen.com is behind Cloudflare and returned HTTP 403 to every read attempt (both the city locator page and the store page https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/12683/). NO HOURS COULD BE READ FROM THE OPERATOR. None are recorded. Directory sites quote 10:00–22:00 daily; that is UNVERIFIED and deliberately NOT recorded here.",
+    "_address_from_source": "428 Cleveland Rd E, Huron, OH 44839 — from the title of Dairy Queen's own store page as indexed: 'DQ Food and Treat in Huron, OH, 428 Cleveland Rd E | DairyQueen.com', store id 12683.",
+    "_store_id": "12683",
+    "_store_type_note": "Dairy Queen's OWN page titles this store 'DQ Food and Treat'. Aggregators (Yelp, Tripadvisor, Nextdoor) title the same 428 Cleveland Rd E store 'Dairy Queen Grill & Chill'. The store-type word in the listing name is therefore not reliable evidence of two stores.",
+    "_match_name": "Dairy Queen Grill & Chill",
+    "_confidence": "No operator-stated facts could be read (403). Address is from the indexed title of Dairy Queen's own store page.",
+    "_duplicate_note": "⚠️ DUPLICATE QUESTION — LIKELY THE SAME STORE. Dairy Queen's own locator surfaced exactly ONE Huron, OH store: 428 Cleveland Rd E, id 12683. Every aggregator found (Yelp, Tripadvisor, Nextdoor, Facebook page DQ12683, Apple Maps) points at that one address and phone (419) 433-2946. huro-lst-0139 'Dairy Queen Grill & Chill' and huro-lst-0042 'Dairy Queen' are therefore most likely ONE restaurant listed twice — the second name being the aggregator's styling of the same store. ⛔ NOT PROVEN: the DQ locator page itself returned 403, so I could not read its store count directly, and I could not compare the two listings' coordinates (they are in the product's own data, not on the web). An operator should compare the two listings' coordinates against 428 Cleveland Rd E before merging."
+  },
+  "huro-lst-0042": {
+    "_source": "https://www.dairyqueen.com/en-us/locations/oh/huron/",
+    "_fetched": "2026-09-21",
+    "_blocked": "dairyqueen.com is behind Cloudflare and returned HTTP 403 to every read attempt (both the city locator page and the store page https://www.dairyqueen.com/en-us/locations/oh/huron/428-cleveland-rd-e/12683/). NO HOURS COULD BE READ FROM THE OPERATOR. None are recorded. Directory sites quote 10:00–22:00 daily; that is UNVERIFIED and deliberately NOT recorded here.",
+    "_address_from_source": "428 Cleveland Rd E, Huron, OH 44839 — from the title of Dairy Queen's own store page as indexed: 'DQ Food and Treat in Huron, OH, 428 Cleveland Rd E | DairyQueen.com', store id 12683.",
+    "_store_id": "12683",
+    "_store_type_note": "Dairy Queen's OWN page titles this store 'DQ Food and Treat'. Aggregators (Yelp, Tripadvisor, Nextdoor) title the same 428 Cleveland Rd E store 'Dairy Queen Grill & Chill'. The store-type word in the listing name is therefore not reliable evidence of two stores.",
+    "_match_name": "Dairy Queen",
+    "_confidence": "No operator-stated facts could be read (403). Address is from the indexed title of Dairy Queen's own store page.",
+    "_duplicate_note": "⚠️ DUPLICATE QUESTION — LIKELY THE SAME STORE. Dairy Queen's own locator surfaced exactly ONE Huron, OH store: 428 Cleveland Rd E, id 12683. Every aggregator found (Yelp, Tripadvisor, Nextdoor, Facebook page DQ12683, Apple Maps) points at that one address and phone (419) 433-2946. huro-lst-0139 'Dairy Queen Grill & Chill' and huro-lst-0042 'Dairy Queen' are therefore most likely ONE restaurant listed twice — the second name being the aggregator's styling of the same store. ⛔ NOT PROVEN: the DQ locator page itself returned 403, so I could not read its store count directly, and I could not compare the two listings' coordinates (they are in the product's own data, not on the web). An operator should compare the two listings' coordinates against 428 Cleveland Rd E before merging."
+  },
+  "huro-lst-0252": {
+    "_match_name": "Berardi's Restaurant",
+    "_source": "https://berardisrestauranthuron.com/",
+    "_source_note": "The supplied URL http://www.berardisrestaurant.com/ 301-redirects to https://berardisrestauranthuron.com/ — the operator's live site. All facts below are from that site.",
+    "_fetched": "2026-09-21",
+    "_confidence": "ALL fields are verbatim or near-verbatim from the restaurant's OWN site. Hours are printed in the site footer on every page. Menu was parsed from the HTML text of /breakfast/ and /dinner-lunch/, not from a PDF or image — item names, descriptions and printed prices are transcribed, none inferred.",
+    "_address": "218 Cleveland Rd. East, Huron, Ohio 44839 — phone 419-433-4123",
+    "hours": {
+      "tuesday": {
+        "open": "07:00",
+        "close": "20:00"
+      },
+      "wednesday": {
+        "open": "07:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "07:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "07:00",
+        "close": "20:00"
+      },
+      "saturday": {
+        "open": "07:00",
+        "close": "20:00"
+      },
+      "sunday": {
+        "open": "07:00",
+        "close": "13:00"
+      }
+    },
+    "_hours_note": "Footer, verbatim: 'Monday: Closed / Tuesday - Saturday: 7:00am - 8:00pm / Sunday: 7:00am - 1:00pm (Serving Breakfast Only)'. Monday omitted per the schema. ⚠️ SUNDAY IS BREAKFAST ONLY — the open/close pair does not carry that restriction. ⚠️ A SECOND, NARROWER WINDOW EXISTS that these hours cannot express: the breakfast menu page states 'Breakfast hours are 7am-11am Tuesday through Saturday. 7am – 1pm on Sundays.' See dining-NOVEL.md §'Meal-period windows inside opening hours'.",
+    "description": "A family-owned Huron restaurant opened in 1979 by Albert and Roseanne Berardi and now in its fourth generation, serving scratch-made American, Italian and Lake Erie seafood dishes for breakfast, lunch and dinner.",
+    "_description_basis": "Condensed from the operator's own About text: 'Berardi's Restaurant in Huron was opened in 1979 by Albert and Roseanne Berardi and it is still family owned to this day… currently in the 4th generation… nearly everything we serve is made from scratch.' Menu content confirms the cuisine claim.",
+    "amenities": [
+      "Takeout",
+      "Online ordering",
+      "Catering",
+      "Gift cards",
+      "Beer and wine",
+      "Gluten-free bread available",
+      "Waitlist"
+    ],
+    "_amenities_basis": "Online ordering = the site's own order link https://order.toasttab.com/online/berardis-huron. Catering = /catering/ page in the nav. Gift cards = 'Purchase New Gift Card Here' / 'Check Gift Card Balance Here'. Beer and wine = 'Check out our new beer and wine list!' plus named beers on Today's Specials. Gluten-free bread = printed on the menu ('Gluten Free Bread is available for all sandwiches 1.00'). Waitlist = the site's Google waitlist link. ⛔ 'Takeout' is inferred ONLY from the presence of the Toast online-ordering link; if that is too weak, drop it.",
+    "_menu_source": [
+      "https://berardisrestauranthuron.com/breakfast/",
+      "https://berardisrestauranthuron.com/dinner-lunch/"
+    ],
+    "_menu_note": "Machine-readable HTML, transcribed in full below. Two further menus exist that were NOT transcribed: /catering/ and a Dessert menu linked in the footer. Items marked '(Market Price)' in the description carry no price key, correctly. Soups print two prices (cup/bowl, e.g. '4.50/8.00') which this schema's single `price` cannot hold, so the printed pair is left in the description and `price` is omitted.",
+    "menu": {
+      "sections": [
+        {
+          "name": "Breakfast — Classic Egg Breakfasts",
+          "items": [
+            {
+              "name": "Hearty Berardi Breakfast",
+              "price": 13.5,
+              "description": "Two eggs, breakfast meat, homefries and toast. Served with pancakes or French Toast"
+            },
+            {
+              "name": "Classic Breakfast",
+              "price": 10.0,
+              "description": "Two eggs, breakfast meat, homefries and toast"
+            },
+            {
+              "name": "Country Breakfast",
+              "price": 11.0,
+              "description": "Two eggs, with a hearty portion of sausage gravy and biscuits"
+            },
+            {
+              "name": "Steak and Eggs",
+              "price": 21.0,
+              "description": "8oz flat iron steak topped with rosemary garlic butter. Served with two eggs, homefries and toast"
+            },
+            {
+              "name": "Pot Roast Skillet",
+              "price": 12.0,
+              "description": "Layered homefries topped with cheddar cheese, pot roast, fresh scallions and over easy eggs. Served with toast"
+            },
+            {
+              "name": "Western Skillet Breakfast",
+              "price": 11.5,
+              "description": "Layered homefries topped with scrambled eggs, green peppers, onions, diced ham and cheddar cheese. Served with toast"
+            },
+            {
+              "name": "Homefry Heaven",
+              "price": 12.5,
+              "description": "Layered homefries with cheddar cheese and eggs topped with sausage gravy. Served with biscuits"
+            },
+            {
+              "name": "Sausage Gravy and Biscuits",
+              "price": 9.5,
+              "description": "Delicious homemade sausage gravy with biscuits"
+            },
+            {
+              "name": "Chipped Beef",
+              "price": 8.0,
+              "description": "Chipped beef served over Italian toast"
+            },
+            {
+              "name": "Green Eggs and Ham",
+              "price": 12.0,
+              "description": "Basil pesto scrambled eggs with asiago cheese. Served with a ham steak, homefries, and toast"
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Omelets",
+          "items": [
+            {
+              "name": "California Omelet",
+              "price": 13.0,
+              "description": "Bacon, onion, tomato and avocado with Monterey cheese"
+            },
+            {
+              "name": "Vegetable Omelet",
+              "price": 12.0,
+              "description": "Spinach, potatoes, mushrooms, onions, tomatoes and mozzarella cheese"
+            },
+            {
+              "name": "Denver Omelet",
+              "price": 12.5,
+              "description": "Diced ham, with green peppers, onions and topped with cheddar cheese"
+            },
+            {
+              "name": "Country Omelet",
+              "price": 12.5,
+              "description": "Ham, onion, mushroom and potato stuffed omelet served with American cheese"
+            },
+            {
+              "name": "Meat Lover’s Omelet",
+              "price": 13.5,
+              "description": "Bacon, sausage and ham stuffed omelet with American cheese"
+            },
+            {
+              "name": "Spinach & Feta Omelet",
+              "price": 12.0,
+              "description": "Spinach, tomato and feta"
+            },
+            {
+              "name": "Corned Beef Hash",
+              "price": 12.5,
+              "description": "Corned beef hash with American cheese"
+            }
+          ],
+          "_notes": [
+            "All of our omelets are served with homefries, substitute fruit for an additional .50. Included with your omelet is a choice of one of the following: Toast, Bran Muffin or Biscuits",
+            "We request modifications be limited on Sunday’s"
+          ]
+        },
+        {
+          "name": "Breakfast — Griddle Favorites",
+          "items": [
+            {
+              "name": "The Deuce",
+              "price": 9.5,
+              "description": "Two pancakes or French toast served with two eggs and two pieces of breakfast meat"
+            },
+            {
+              "name": "Griddle and Meat",
+              "price": 8.0,
+              "description": "A short stack of pancakes or French toast served with two pieces of breakfast meat"
+            },
+            {
+              "name": "Bananas Foster French Toast",
+              "price": 13.0,
+              "description": "Texas Toast topped with bourbon cinnamon & banana glaze. Served with choice of breakfast meat"
+            },
+            {
+              "name": "Pancakes",
+              "price": 8.5,
+              "description": "Delicious sweet cream pancakes served with warm syrup"
+            },
+            {
+              "name": "French Toast",
+              "price": 8.5,
+              "description": "Served with warm syrup"
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Lighter Plates",
+          "items": [
+            {
+              "name": "Oatmeal Breakfast",
+              "price": 9.0,
+              "description": "Organic steel cut oats with one topping: Blueberries, cranberries, raisins or pecans. Served with fresh fruit and a bran muffin"
+            },
+            {
+              "name": "Quinoa Breakfast",
+              "price": 12.5,
+              "description": "Two eggs served sunny side up over homemade quinoa patties with avocado, served with fresh fruit and toast"
+            },
+            {
+              "name": "Fresh Fruit, Yogurt and Muffin",
+              "price": 8.5
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Sandwiches",
+          "items": [
+            {
+              "name": "Breakfast Croissant",
+              "price": 12.0,
+              "description": "All butter croissant with two eggs over hard, and topped with bacon, American cheese, lettuce, tomato and mayonnaise"
+            },
+            {
+              "name": "Bagel Scramble",
+              "price": 10.0,
+              "description": "Toasted bagel topped with scrambled eggs, American cheese and sausage patties"
+            },
+            {
+              "name": "Breakfast Burrito",
+              "price": 10.5,
+              "description": "A warm burrito filled with scrambled eggs, peppers, onions, tomatoes, ham, potatoes, and cheddar cheese. Served with a side of salsa"
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Kid's Menu",
+          "items": [
+            {
+              "name": "Kids Pancakes or French Toast",
+              "price": 7.0,
+              "description": "Two small pancakes or French toast with two pieces of breakfast meat and a beverage"
+            },
+            {
+              "name": "Classic Kids Breakfast",
+              "price": 7.0,
+              "description": "Two eggs scrambled with two pieces of breakfast meat, toast and a beverage"
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Sides",
+          "items": [
+            {
+              "name": "Breakfast Meat",
+              "price": 4.0,
+              "description": "Hickory smoked bacon, sausage links, sausage patties, Canadian bacon, hickory smoked ham, corned beef hash"
+            },
+            {
+              "name": "Toast options",
+              "price": 1.0,
+              "description": "White, wheat, rye, sourdough, health, biscuits, bran muffin, English muffin 2.00, gluten free bread +"
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Warm Drinks",
+          "items": [
+            {
+              "name": "Locally Roasted House Coffee",
+              "price": 3.25
+            },
+            {
+              "name": "Hot Tea",
+              "price": 2.5
+            },
+            {
+              "name": "Hot Cider",
+              "price": 3.0
+            },
+            {
+              "name": "Hot Chocolate",
+              "price": 2.5
+            }
+          ]
+        },
+        {
+          "name": "Breakfast — Cold Drinks",
+          "items": [
+            {
+              "name": "White Milk",
+              "price": 2.5
+            },
+            {
+              "name": "Chocolate Milk",
+              "price": 2.5
+            },
+            {
+              "name": "Orange Juice",
+              "price": 2.5
+            },
+            {
+              "name": "Apple Juice",
+              "price": 2.5
+            },
+            {
+              "name": "Tomato Juice",
+              "price": 2.5
+            },
+            {
+              "name": "Mimosa",
+              "price": 9.0,
+              "description": "Delicious orange juice and champagne for breakfast"
+            }
+          ]
+        },
+        {
+          "name": "Appetizers",
+          "items": [
+            {
+              "name": "Berardi’s French Fry Platter",
+              "price": 12.0,
+              "description": "Made famous since 1942. A shareable portion of our thick hand cut fries made fresh to order"
+            },
+            {
+              "name": "Berardi’s Sampler",
+              "price": 15.0,
+              "description": "A variety of Berardi favorites including, Berardi’s Famous Fries, hand breaded sauerkraut balls, cheese sticks and onion rings"
+            },
+            {
+              "name": "Italian Meatballs",
+              "price": 10.0,
+              "description": "Pork meatballs served in our homemade Bolognese sauce"
+            },
+            {
+              "name": "Onion Rings",
+              "price": 10.0,
+              "description": "Crispy onion rings served with bistro sauce"
+            },
+            {
+              "name": "Sauerkraut Balls",
+              "price": 11.0,
+              "description": "Our famous sauerkraut balls stuffed with cream cheese, sauerkraut and sausage. Served with bistro sauce"
+            },
+            {
+              "name": "Cheese Sticks",
+              "price": 8.5,
+              "description": "served with marinara sauce"
+            }
+          ]
+        },
+        {
+          "name": "Soups",
+          "items": [
+            {
+              "name": "Potato Knoephle",
+              "description": "Potatoes, homemade dumplings and onions in chicken broth 4.50/8.00"
+            },
+            {
+              "name": "Seafood Bisque",
+              "description": "Our signature creamy seafood bisque is prepared fresh in house with clams, shrimp and lobster 5.00/10.00"
+            },
+            {
+              "name": "Daily Soup",
+              "description": "Ask your server about today’s soup special 4.50/8.00"
+            }
+          ]
+        },
+        {
+          "name": "Salads",
+          "items": [
+            {
+              "name": "Fruit and Nut Salad",
+              "price": 15.0,
+              "description": "Mixed greens, candied almonds, feta cheese, apples, berries and zinfandel vinaigrette dressing. Served with a bran muffin"
+            },
+            {
+              "name": "Chicken Caesar",
+              "price": 15.0,
+              "description": "Chopped romaine tossed with caesar dressing. Topped with shredded asiago, fresh cracked pepper, grilled chicken, and croutons. Served with garlic bread"
+            },
+            {
+              "name": "Greek",
+              "price": 13.5,
+              "description": "Romaine lettuce topped with feta cheese, kalamata olives, pepperoncinis, cucumbers, tomatoes, onions and Greek dressing. Served with grilled pita"
+            },
+            {
+              "name": "Chicken or Tuna Salad Fruit Plate",
+              "price": 11.0,
+              "description": "Homemade chicken or tuna salad, served with fresh fruit, cottage cheese and a bran muffin"
+            },
+            {
+              "name": "Spinach",
+              "price": 14.0,
+              "description": "Spinach, bacon, mozzarella cheese, mushroom, egg, tomatoes, red onions, croutons, sweet and sour dressing. Served with bran muffin"
+            },
+            {
+              "name": "Napa",
+              "price": 14.0,
+              "description": "Mixed greens, bacon, avocado, tomato, cucumber, red onions, cheddar cheese, egg and ranch dressing. Served with a bran muffin"
+            }
+          ]
+        },
+        {
+          "name": "Pair It Up",
+          "items": [],
+          "_notes": [
+            "Pick any two $10.00, Pick any three $15.00",
+            "No Duplicate items",
+            "Sandwiches: Chicken Salad Croissant, Tuna Salad Croissant, ½ Reuben, ½ Tuna melt, ½ Ultimate BLT, ½ BLT",
+            "Salads: Spinach Salad, Caesar Salad, Greek Salad, Tossed Salad",
+            "Sides: Berardi’s Fries, Onion Rings, Cup of Soup, Fresh Fruit, Vegetable Choice"
+          ]
+        },
+        {
+          "name": "Sides",
+          "items": [
+            {
+              "name": "Berardis Famous French Fries",
+              "price": 6.5
+            },
+            {
+              "name": "Twice Baked Potato"
+            },
+            {
+              "name": "Baked Potato (After 4pm)"
+            },
+            {
+              "name": "Garlic Mashed Potatoes"
+            },
+            {
+              "name": "Mashed Potatoes"
+            },
+            {
+              "name": "Rice Pilaf"
+            },
+            {
+              "name": "Onion Rings"
+            },
+            {
+              "name": "Tossed Salad"
+            },
+            {
+              "name": "Broccoli"
+            }
+          ]
+        },
+        {
+          "name": "Italian Entrees",
+          "items": [
+            {
+              "name": "Mama Berardi’s Baked Lasagna",
+              "price": 18.0,
+              "description": "Mama Berardi’s famous lasagna recipe. Filled with layers of cheese and marinara. Topped with bolognese sauce"
+            },
+            {
+              "name": "Spaghetti and Meatballs",
+              "price": 13.5,
+              "description": "Bolognese sauce served over spaghetti with meatballs and asiago cheese"
+            },
+            {
+              "name": "Chicken Toscana",
+              "price": 17.0,
+              "description": "Local all natural grilled chicken topped with sauteed spinach, mushrooms, bruschetta and alfredo sauce. Served with garlic mashed potatoes"
+            },
+            {
+              "name": "Chicken Parmesan",
+              "price": 18.0,
+              "description": "Local all natural chicken breaded to order and topped with mozzarella cheese and bolognese sauce"
+            },
+            {
+              "name": "Chicken Bruschetta Alfredo",
+              "price": 18.0,
+              "description": "Fettucine alfredo tossed with fresh bruschetta and topped with local all natural grilled chicken. Finished with balsamic reduction"
+            },
+            {
+              "name": "Eggplant Parmesan",
+              "price": 15.0,
+              "description": "Hand breaded eggplant topped with mozzarella cheese and homemade marinara sauce"
+            },
+            {
+              "name": "Chicken Picatta",
+              "price": 17.5,
+              "description": "Local all natural grilled chicken dredged in Italian seasonings and placed over garlic lemon pasta. Topped with capers, lemon wine sauce, and asiago cheese"
+            }
+          ]
+        },
+        {
+          "name": "Seafood",
+          "items": [
+            {
+              "name": "Perch Dinner",
+              "description": "Hand breaded daily, our Lake Erie Yellow Perch is served with fries and coleslaw (Market Price)"
+            },
+            {
+              "name": "Lake Erie Walleye",
+              "price": 22.0,
+              "description": "Crispy Lake Erie walleye served with fries and coleslaw"
+            },
+            {
+              "name": "Salmon",
+              "price": 1.0,
+              "description": "Grilled wild caught Alaskan Coho salmon served over orzo rice with choice of vegetable 18.00 + Asian Glaze $"
+            },
+            {
+              "name": "Cold Water Haddock - Traditional",
+              "price": 16.5,
+              "description": "Lightly breaded and either grilled or fried. Served with fries and coleslaw"
+            },
+            {
+              "name": "Cold Water Haddock - Lemon Wine",
+              "price": 18.0,
+              "description": "Grilled haddock topped with lemon wine sauce and capers. Served over rice with green beans"
+            }
+          ]
+        },
+        {
+          "name": "Classic Entrees",
+          "items": [
+            {
+              "name": "Roasted Beef and Gravy Sandwich",
+              "price": 14.0,
+              "description": "Tender house roasted beef with mashed potatoes and gravy. Served with mashed potatoes and green beans"
+            },
+            {
+              "name": "Garlic Herb Chicken Breast",
+              "price": 14.0,
+              "description": "Local all natural grilled chicken finished with rosemary garlic butter served over rice with broccoli"
+            },
+            {
+              "name": "Pierogies",
+              "price": 13.5,
+              "description": "Potato and cheddar stuffed pierogies. Topped with sauteed onions and kielbasa. Served with sour cream and homemade applesauce"
+            },
+            {
+              "name": "Chicken Tenders",
+              "price": 14.0,
+              "description": "Local all natural chicken breaded to order and served with fries and coleslaw"
+            },
+            {
+              "name": "Cabbage and Noodles",
+              "price": 13.0,
+              "description": "Tender cabbage with garlic, onion, and noodles. Served with sour cream and homemade applesauce"
+            },
+            {
+              "name": "Liver and Onions",
+              "price": 13.5,
+              "description": "Beef liver topped sauteed onions and beef gravy. Served with mashed potatoes and green beans"
+            },
+            {
+              "name": "8oz Center Prime Sirloin",
+              "price": 21.0,
+              "description": "Tender half pound prime sirloin steak finished with rosemary garlic butter. Served with garlic mashed potatoes and broccoli"
+            },
+            {
+              "name": "Bone-in Pork Chop",
+              "price": 18.0,
+              "description": "10oz grilled bone-in pork chop with rosemary garlic butter. Served with twice baked potato and green beans"
+            },
+            {
+              "name": "Chopped Sirloin",
+              "price": 16.5,
+              "description": "8 oz. chopped sirloin topped with grilled mushrooms and onions. Served with twice baked potato and broccoli"
+            },
+            {
+              "name": "Beef Tenderloin Tips",
+              "price": 20.0,
+              "description": "Filet tips sauteed with mushrooms, onions, and garlic. Served with garlic mashed potatoes and broccoli"
+            },
+            {
+              "name": "Meatloaf Dinner",
+              "price": 13.5,
+              "description": "Homemade grilled meatloaf served with mashed potatoes and green beans"
+            },
+            {
+              "name": "Pot Roast Stacker",
+              "price": 14.5,
+              "description": "Mashed potatoes layered with carrots, sauteed onions, house roasted beef, gravy, and scallions. Served with salad"
+            }
+          ]
+        },
+        {
+          "name": "Burgers",
+          "items": [
+            {
+              "name": "Berardi Burger",
+              "price": 14.5,
+              "description": "Served with grilled onions, mushrooms and mozzarella cheese. Topped with lettuce and tomato"
+            },
+            {
+              "name": "Cheeseburger",
+              "price": 12.5,
+              "description": "Topped with American cheese, lettuce, tomato and onion"
+            },
+            {
+              "name": "Patty Melt",
+              "price": 13.5,
+              "description": "Served on grilled rye bread with Swiss cheese and caramelized onions"
+            },
+            {
+              "name": "Hickory Burger",
+              "price": 14.0,
+              "description": "Topped with cheddar cheese, bacon, crispy onion ring. Served with lettuce, tomato and BBQ sauce"
+            },
+            {
+              "name": "Black Bean Veggie Burger",
+              "price": 13.5,
+              "description": "Southwest black bean patty topped with monterey cheese, lettuce, tomato, onion, and avocado"
+            },
+            {
+              "name": "Double Cheeseburger",
+              "price": 16.0,
+              "description": "Two quarter pound hand packed patties topped with lettuce, tomato and onion"
+            }
+          ],
+          "_notes": [
+            "All Sandwiches are served with Berardi’s Famous Fries or coleslaw.",
+            "Burger Add-ons: Fried Egg 1.50 Bacon 2.00 Avocado 3.00",
+            "Gluten Free Bread is available for all sandwiches 1.00"
+          ]
+        },
+        {
+          "name": "Sandwiches",
+          "items": [
+            {
+              "name": "Chicken BLT",
+              "price": 14.5,
+              "description": "Local all natural chicken breast topped with bacon, mozzarella cheese, lettuce, tomato and mayo on a grilled bun"
+            },
+            {
+              "name": "Philly cheesesteak",
+              "price": 16.0,
+              "description": "Tender beef with grilled mushrooms, onions and white American cheese on a toasted bun"
+            },
+            {
+              "name": "Ultimate BLT",
+              "price": 14.0,
+              "description": "Hickory bacon topped with American and mozzarella cheese on a grilled butter croissant with lettuce, tomato and mayo"
+            },
+            {
+              "name": "Cold Water Haddock",
+              "price": 13.0,
+              "description": "Fried cold water haddock served with lettuce, lemon, and tartar sauce on a grilled hoagie bun"
+            },
+            {
+              "name": "Perch Sandwich",
+              "description": "Lake Erie Yellow Perch, hand breaded daily served with lettuce, lemon, and tartar sauce on a grilled hoagie bun (Market Price)"
+            },
+            {
+              "name": "Tuna Melt",
+              "price": 12.5,
+              "description": "Grilled sourdough bread topped with cheddar cheese, bacon, tomato and homemade tuna salad"
+            },
+            {
+              "name": "Corned Beef Reuben",
+              "price": 15.0,
+              "description": "House roasted all natural corned beef on grilled rye bread with sauerkraut and Swiss cheese. Served with thousand island dressing"
+            },
+            {
+              "name": "Chicken or Tuna Salad Croissant",
+              "price": 12.5,
+              "description": "Homemade chicken or tuna salad. Served on a grilled butter croissant with lettuce and mayo"
+            },
+            {
+              "name": "Italian Grilled Cheese",
+              "price": 10.0,
+              "description": "Grilled sourdough bread topped with mozzarella cheese, grilled tomatoes, and oregano. Served with a side of marinara"
+            }
+          ],
+          "_notes": [
+            "All Sandwiches are served with one of the following; Berardi’s fries, chips, coleslaw or homemade applesauce",
+            "Gluten Free Bread is available for all sandwiches 1.00"
+          ]
+        }
+      ]
+    },
+    "_specials_note": "The home page carries a dated daily-specials block ('Today's Specials — September 19th, 2026') with soup, lunch, dinner, dessert, beer and wine lines and their own prices. It is dated, perishable and NOT part of the standing menu, so it is not recorded as menu data. See dining-NOVEL.md §'Dated daily specials'."
+  },
+  "huro-lst-0239": {
+    "_match_name": "Marconis Italian Restaurant",
+    "_source": "https://www.italianhuronohio.com/",
+    "_fetched": "2026-09-21",
+    "_confidence": "Hours, address and the dinner-specials prices are printed as HTML text on the restaurant's OWN home page and are transcribed verbatim. ⚠️ The specials block is labelled 'Dinner Specials' and is rotating content, not the standing menu — prices may change without the page being re-dated (the page carries no date at all).",
+    "_address": "424 Berlin Road, Huron, Ohio 44839 — phone 419-433-4341, info@marconisrestaurant.com",
+    "hours": {
+      "monday": {
+        "open": "16:00",
+        "close": "20:00"
+      },
+      "tuesday": {
+        "open": "16:00",
+        "close": "20:00"
+      },
+      "wednesday": {
+        "open": "16:00",
+        "close": "20:00"
+      },
+      "thursday": {
+        "open": "16:00",
+        "close": "20:00"
+      },
+      "friday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "saturday": {
+        "open": "16:00",
+        "close": "21:00"
+      },
+      "sunday": {
+        "open": "16:00",
+        "close": "20:00"
+      }
+    },
+    "_hours_note": "Footer, verbatim: 'Monday - Thursday: 4:00 PM - 8:00 PM / Friday - Saturday: 4:00 PM - 9:00 PM / Sunday: 4:00 PM - 8: 00 PM'. Open seven days; dinner service only.",
+    "description": "A Huron restaurant serving Sicilian and Italian cuisine, open for dinner only, with a banquet hall and catering.",
+    "_description_basis": "Site title 'Home | Marconis Italian Restaurant | Sicilian Cuisine'; the nav carries Banquet Hall and Catering Menu pages; hours start at 4:00 PM.",
+    "amenities": [
+      "Banquet hall",
+      "Catering",
+      "Wine list",
+      "Call to order"
+    ],
+    "_amenities_basis": "Banquet hall = https://www.italianhuronohio.com/banquethall in the nav. Catering = Catering Menu PDF in the nav. Wine list = Wine List PDF in the nav. 'Call to Order' is a button on the home page.",
+    "menu": {
+      "sections": [
+        {
+          "name": "Dinner Specials — Appetizer",
+          "items": [
+            {
+              "name": "Fried Portobellas",
+              "price": 12.0,
+              "description": "finished with parmesan. side of marinara."
+            },
+            {
+              "name": "Shrimp Diablo",
+              "price": 11.0,
+              "description": "seared shrimp in a spicy tomato basil sauce. grilled italian bread."
+            }
+          ]
+        },
+        {
+          "name": "Dinner Specials — Entrees",
+          "items": [
+            {
+              "name": "Salmon Caponata",
+              "price": 35.0,
+              "description": "blackened wester ross salmon. sweet & sour caponata sauce. grilled bread. choice side."
+            },
+            {
+              "name": "Pork Milanese",
+              "price": 28.0,
+              "description": "romano breaded bone-in pork chop baked with roasted red peppers, fresh basil, prosciutto, and italian cheeses. choice side."
+            },
+            {
+              "name": "Red Pepper Pesto",
+              "price": 20.0,
+              "description": "our signature creamy roasted red pepper and basil pesto w/ farfalle. (add-ons available)"
+            }
+          ]
+        }
+      ]
+    },
+    "_menu_note": "⛔ THE STANDING MENU IS NOT MACHINE-READABLE — it is published only as PDFs. Recorded here as locations, NOT transcribed: Dinner Menu (also linked as 'Our Menu') https://www.italianhuronohio.com/_files/ugd/b90d50_87dee955c6314d9db842a2d5787b44db.pdf · Wine List https://www.italianhuronohio.com/_files/ugd/3c960d_dffca0b120344531880ce37529302a8a.pdf · Family Menu https://www.italianhuronohio.com/_files/ugd/3c960d_9b50e102872f4be0a028519c6069d790.pdf · Special Events Menu https://www.italianhuronohio.com/_files/ugd/3c960d_ae6a0013c9014ecd97854aade1ea150a.pdf · Catering Menu https://www.italianhuronohio.com/_files/ugd/3c960d_b5499cd95f4744f7971c0d8a62e3ee54.pdf. The `menu` object above contains ONLY the five rotating dinner specials that are published as HTML on the home page.",
+    "_nav_note": "The site nav has a 'Weekly Specials' entry, implying a weekly cadence for the specials block above."
+  },
+  "huro-lst-0198": {
+    "_match_name": "Sand Bar",
+    "_source": "http://www.thesandbar.com",
+    "_fetched": "2026-09-21",
+    "_wrong_domain": "⛔ THE SUPPLIED URL IS THE WRONG BUSINESS. thesandbar.com is 'The Sandbar', a tropical-drinks bar at 17 East 8th Street, Lawrence, KANSAS 66044, phone 785.842.0111 ('Voted Best Bar… in the Best of Lawrence contest'). It has no connection to Huron, Ohio. NOTHING was taken from it. The URL on this listing should be removed or replaced.",
+    "_notfound": "No website operated by the Huron, Ohio Sand Bar was found. The business itself is real: Sand Bar, 54 McKinley St, Huron, OH 44839, phone (419) 433-2144, appearing on Yelp (https://www.yelp.com/biz/sand-bar-huron), Tripadvisor, Visit Huron Ohio (https://www.visithuronohio.com/food-and-drink) and a NetWaiter-hosted page (https://sandbar.netwaiter.com/). It posts its hours on Facebook rather than a site.",
+    "_hours_conflict": "⛔ HOURS DELIBERATELY OMITTED. Two third-party sources DISAGREE: sandbar.netwaiter.com says Sun 12:00pm–10:00pm, Mon–Sat 11:00am–10:00pm; search-surfaced directory data says Mon–Thu 11:00am–11:00pm, Fri–Sat 11:00am–12:00am, Sun 12:00pm–11:00pm. With no operator source to break the tie and an open/closed indicator downstream, recording either would be a guess.",
+    "_description_candidate": "Described by third parties as a pizza and pub-food bar. NOT recorded as `description` because no operator-written text was found.",
+    "_sources_checked": [
+      "http://www.thesandbar.com (wrong business — Lawrence, KS)",
+      "https://sandbar.netwaiter.com/",
+      "https://www.yelp.com/biz/sand-bar-huron",
+      "https://www.visithuronohio.com/food-and-drink"
+    ]
+  }
+}
