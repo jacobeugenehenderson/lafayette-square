@@ -325,6 +325,27 @@ Per-device sliders (**Levels · Resolution · Radius**) that tune the **shared d
 
 The per-platform **inclusion manifest** — *which channels ship to desktop vs. mobile* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built** — the editorial surface lands with the v0.2 measurement regime (`HANDOFF-preview-measurement.md`, Phase 3–4). Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
 
+## The Host's contact sheet — `host/<scene>/` *(look at the whole town at once)*
+
+▶ `node cartograph/contact-sheet.mjs --scene=<scene>` → **`host/<scene>/contact-sheet.html`**. Open it
+in a browser. Every listing in the order a visitor meets them, with its photographs, hours,
+description and a chip for each thing the card carries; a listing that is only a name and an address
+is dimmed, because that is the work.
+
+⭐ **It is a CHECK as well as a view.** It references photo URLs exactly as the product does and
+rehosts nothing — so a dead link, a hotlink block or an image that was never there renders as a tile
+marked *"image did not load"*. A URL we hold and have never loaded is not evidence of anything.
+
+Beside it, `host/<scene>/worklist.md`, written by the research merge: the places whose existence is in
+doubt, the ones a researcher hedged, the records that are mis-labelled. The sheet is what the town
+looks like; the worklist is what to ask about.
+
+⛔ **Both are DERIVED. Regenerate, never hand-edit.** A correction belongs in
+`cartograph/data/<scene>/content/listings.overrides.json`, where it is reviewable in git and a fresh
+intake cannot destroy it. ▶ `host/README.md` · `ROADMAP` H-28.
+
+---
+
 ## The town calendar — `content/events.json` *(the knob: authored, no UI)*
 
 A town's own happenings — a festival, a fireworks night, a farmers market — live in

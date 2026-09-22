@@ -318,5 +318,9 @@ const md = [
   ...worklist.RELABEL.map(w => `| **${w.name}** \`${w.id}\` | ${String(w.why).replace(/\|/g, '／').replace(/\n/g, ' ').slice(0, 220)} |`),
   '',
 ]
+// ⭐ WRITTEN TO THE HOST'S FOLDER, not to scratch. Ruled 2026-09-22: the worklist and the
+// contact sheet are a persistent asset a Host is handed, not a by-product of a merge.
+fs.mkdirSync('host/huron', { recursive: true })
+fs.writeFileSync('host/huron/worklist.md', md.join('\n'))
 fs.writeFileSync('scratch/huron-research/HOST-WORKLIST.md', md.join('\n'))
 console.log(`  → scratch/huron-research/HOST-WORKLIST.md (${worklist.HOLD.length} to ask about, ${worklist.CAVEATED.length} to confirm)`)
