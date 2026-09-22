@@ -254,8 +254,17 @@ function fieldAt(x, y, z, { lam0, amp0, octaves, seed, uniform, cellAt = 1 }) {
  *                  this to put two approaches on one shore, side by side)
  * @returns { geometry, stats }
  */
-export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', octaves = 3, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, tRange = [0, 1], seed = 99 } = {}) {
-  // ── the spine, resampled at the resolution the blocks need ──────────────────
+/**
+ * ⭐⭐ THE ARC-GLOBAL PARAMETERS, HOISTED — and hoisting them is the ENTIRE
+ * precondition for chunking this build. ⛔ `hMax` is taken over the WHOLE arc, and
+ * it decides `blk`, which decides `lam0`/`amp0`/`step`/`nAcross`, which decide the
+ * lattice. So a chunk that could only see its own stretch would compute a DIFFERENT
+ * grid from its neighbour and the two would not meet. ⭐ Computing them once from
+ * the whole arc costs 201 crest samples — under a millisecond — and makes every
+ * chunk build the same lattice by construction, which is why the seam is exact
+ * rather than approximately exact.
+ */
+export function drapeGlobals({ poly, crestAt, octaves = 3, tRange = [0, 1] } = {}) {
   const segs = []
   let total = 0
   for (let i = 1; i < poly.length; i++) {
@@ -264,23 +273,37 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
     if (L < 1e-9) continue
     segs.push({ a, b, L, s0: total }); total += L
   }
-  // Block size is set by the tallest crest in range — one resolution for the
-  // strip, because a mesh with a varying step is a mesh with seams.
   let hMax = 0
   for (let k = 0; k <= 200; k++) {
     const t = tRange[0] + (tRange[1] - tRange[0]) * (k / 200)
     hMax = Math.max(hMax, crestAt(t))
   }
   const blk = d50For(hMax)
-  // ⭐⭐ THE VERTEX BUDGET, DERIVED RATHER THAN CHOSEN. The macro masses are several
-  // stones across; each further octave halves the wavelength. The shortest octave
-  // the GEOMETRY carries is lam0 / 2^(octaves-1), and representing a wavelength
-  // needs ~`VERTS_PER_WAVELENGTH` vertices — 3, not "as many as we can afford".
-  // ⛔ Everything above that octave is the shader's, and costs no vertices at all.
   const lam0 = blk * MACRO_WAVELENGTHS_PER_BLOCK
   const amp0 = blk * MACRO_AMPLITUDE_PER_BLOCK
   const lamMin = lam0 / Math.pow(2, Math.max(0, octaves - 1))
   const step = lamMin / VERTS_PER_WAVELENGTH
+  const span = U_HI - U_LO
+  const s0 = tRange[0] * total, s1 = tRange[1] * total
+  const nAlong = Math.max(2, Math.round((s1 - s0) / step) + 1)
+  const nAcross = Math.max(3, Math.round(Math.hypot(hMax / TAN_REPOSE, hMax) * span / step) + 1)
+  return { segs, total, hMax, blk, lam0, amp0, lamMin, step, span, s0, s1, nAlong, nAcross }
+}
+
+/**
+ * @param globals  from `drapeGlobals` — pass it to build a CHUNK; omit and the whole
+ *                 arc is built with globals computed from the whole arc (identical).
+ * @param stations [i0, i1] inclusive station range to OWN. Vertices are built with a
+ *                 `normalMargin` of extra stations on each side so boundary normals
+ *                 are computed from the same triangle fan the neighbour sees; those
+ *                 margin triangles are then dropped. ⛔ Without the margin the
+ *                 positions still match exactly but the NORMALS do not, and a normal
+ *                 seam is a thin dark line at a grazing angle and invisible from above.
+ */
+export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', octaves = 3, gather = DRAPE_DEFAULT_GATHER, uniform = false, faceted = false, tRange = [0, 1], seed = 99, globals = null, stations = null, normalMargin = 1 } = {}) {
+  // ── the spine and the lattice: arc-global, and shared by every chunk ─────────
+  const G = globals || drapeGlobals({ poly, crestAt, octaves, tRange })
+  const { segs, total, hMax, blk, lam0, amp0, lamMin, step, span, s0, s1, nAlong, nAcross } = G
 
   const at = (s) => {
     const sg = segs.find(g => s < g.s0 + g.L) || segs[segs.length - 1]
@@ -289,29 +312,23 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
     return { x: sg.a.x + (sg.b.x - sg.a.x) * f, z: sg.a.z + (sg.b.z - sg.a.z) * f, nx: uz, nz: -ux, t: s / total }
   }
 
-  const s0 = tRange[0] * total, s1 = tRange[1] * total
-  const nAlong = Math.max(2, Math.round((s1 - s0) / step) + 1)
-  // Across: the slope face is h/tan(repose) long in plan, so its run varies with
-  // the crest. The grid is parameterised on u (0 = crest, 1 = toe) and the
-  // spacing in metres therefore varies along the shore — correct, because the
-  // face really is wider where the wall is taller.
-  // ⭐⭐ THE DOMAIN IS WIDER THAN THE BAND, ON PURPOSE. u now runs U_LO…U_HI, past
-  // both the crest and the toe, and the actual edge is TRIMMED out of it by a noise
-  // contour below. ⛔ THE EDGE MUST BE WHERE THE STONE RUNS OUT, NOT WHERE THE MESH
-  // ENDS — a constant-width offset from the shore arc is the beaded-necklace failure
-  // rotated 90°: mechanical regularity along the length instead of in the spacing.
-  // (Jacob, 2026-09-21: *"if the edges were less mechanically sharp they would
-  // likely work better."*) This outranks any amount of surface detail, because a
-  // ruled line is wrong at every distance and in every render.
-  const span = U_HI - U_LO
-  const nAcross = Math.max(3, Math.round(Math.hypot(hMax / TAN_REPOSE, hMax) * span / step) + 1)
+  // The stations this call OWNS, and the wider range it BUILDS so that boundary
+  // normals match the neighbour's.
+  const own0 = stations ? Math.max(0, stations[0]) : 0
+  const own1 = stations ? Math.min(nAlong - 1, stations[1]) : nAlong - 1
+  const bld0 = Math.max(0, own0 - (stations ? normalMargin : 0))
+  const bld1 = Math.min(nAlong - 1, own1 + (stations ? normalMargin : 0))
 
   const pos = new Float32Array(nAlong * nAcross * 3)
   const keep = new Uint8Array(nAlong * nAcross)
   const idx = []
+  const quadStation = []      // one entry per TRIANGLE, the station it belongs to
   const inv = 1 / blk
 
-  for (let i = 0; i < nAlong; i++) {
+  for (let i = bld0; i <= bld1; i++) {
+    // ⭐ `i` stays the GLOBAL station index, so a chunk's vertex for station i is
+    // computed from exactly the inputs its neighbour uses for the same i. That is
+    // what makes the seam identical rather than close.
     const st = at(s0 + ((s1 - s0) * i) / (nAlong - 1))
     const h = crestAt(st.t)
     // ⛔⛔ NO SHEET WHERE THERE IS NO WALL. MEASURED ON HURON 2026-09-21: arc #11 is
@@ -396,7 +413,7 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
       const crestEdge = 0.0 - EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.5), 71)) - EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS), 72)
       const toeEdge = 1.0 + EDGE_WANDER * (0.5 + wob(1 / (lam0 * 2.2), 73)) + EDGE_RAGGED * wob(1 / (blk * EDGE_RAGGED_BLOCKS * 0.85), 74)
       keep[i * nAcross + j] = (!bare && u >= crestEdge && u <= toeEdge) ? 1 : 0
-      if (i && j) {
+      if (i > bld0 && j) {
         const a = (i - 1) * nAcross + (j - 1), b = (i - 1) * nAcross + j, c = i * nAcross + (j - 1), e = i * nAcross + j
         // ⛔ A quad survives only if ALL FOUR corners are inside the contour, so the
         // boundary is a staircase of whole quads at stone scale — an edge, not a
@@ -405,7 +422,12 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
         // ⛔ 3-of-4, not 4-of-4. Requiring all four corners punches a hole for every
         // single boundary vertex and shreds the edge into teeth; 3-of-4 lets the
         // boundary staircase instead of perforating.
-        if (keep[a] + keep[b] + keep[c] + keep[e] >= 3) idx.push(a, c, b, b, c, e)
+        // ⛔ A quad spanning stations (i−1, i) belongs to station i. Margin quads are
+        // BUILT (so the boundary vertex's normal sees its whole fan) and then dropped.
+        if (keep[a] + keep[b] + keep[c] + keep[e] >= 3) {
+          idx.push(a, c, b, b, c, e)
+          quadStation.push(i, i)
+        }
       }
     }
   }
@@ -413,17 +435,52 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
   // ⛔ COMPACT. The grid is built wider than the band so the edge can be cut out of
   // it; the trimmed-away vertices are still sitting in `pos` and would ship in the
   // slab as bytes nothing references. Remap to only what the index uses.
-  const remap = new Int32Array(nAlong * nAcross).fill(-1)
-  const packed = []
-  const idx2 = new Array(idx.length)
-  for (let k = 0; k < idx.length; k++) {
-    const v = idx[k]
-    if (remap[v] < 0) { remap[v] = packed.length / 3; packed.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]) }
-    idx2[k] = remap[v]
+  // ⭐⭐ AND THE NORMAL MARGIN IS HANDLED HERE, IN ONE PLACE AND IN THIS ORDER:
+  //   ① index EVERY built triangle, margin included
+  //   ② compute vertex normals over that extended patch
+  //   ③ THEN drop the margin triangles and compact
+  // ⛔ Doing ③ before ② is the bug this ordering exists to prevent: a boundary
+  // vertex would see only the triangles on its own side, its normal would differ
+  // from the neighbour's for the same vertex, and the seam becomes a thin dark line
+  // at a grazing angle — invisible from above, which is where it would be signed off.
+  const buildIdx = idx
+  let geo0 = new THREE.BufferGeometry()
+  {
+    const remapAll = new Int32Array(nAlong * nAcross).fill(-1)
+    const packedAll = []
+    const idxAll = new Array(buildIdx.length)
+    for (let k = 0; k < buildIdx.length; k++) {
+      const v = buildIdx[k]
+      if (remapAll[v] < 0) { remapAll[v] = packedAll.length / 3; packedAll.push(pos[v * 3], pos[v * 3 + 1], pos[v * 3 + 2]) }
+      idxAll[k] = remapAll[v]
+    }
+    geo0.setAttribute('position', new THREE.BufferAttribute(new Float32Array(packedAll), 3))
+    geo0.setIndex(idxAll)
+    geo0.computeVertexNormals()
+  }
+
+  // ③ keep only the triangles this call owns, carrying the normals computed above.
+  const N0 = geo0.attributes.normal.array, P0 = geo0.attributes.position.array, I0 = geo0.index.array
+  const remap = new Int32Array(P0.length / 3).fill(-1)
+  const packed = [], packedN = [], idx2 = []
+  for (let tri = 0; tri < I0.length / 3; tri++) {
+    if (quadStation[tri] < own0 + (stations ? 1 : 0) || quadStation[tri] > own1) {
+      if (stations) continue
+    }
+    for (let c = 0; c < 3; c++) {
+      const v = I0[tri * 3 + c]
+      if (remap[v] < 0) {
+        remap[v] = packed.length / 3
+        packed.push(P0[v * 3], P0[v * 3 + 1], P0[v * 3 + 2])
+        packedN.push(N0[v * 3], N0[v * 3 + 1], N0[v * 3 + 2])
+      }
+      idx2.push(remap[v])
+    }
   }
 
   let geo = new THREE.BufferGeometry()
   geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(packed), 3))
+  geo.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(packedN), 3))
   geo.setIndex(idx2)
   // ⭐⭐ INDEXED OR NOT IS A 3× SLAB-BYTES DECISION, MEASURED: flat shading needs
   // per-face normals, which means un-indexing, which TRIPLES the vertex count —
@@ -463,7 +520,9 @@ export function revetmentDrape({ poly, crestAt, waterY = 0, noise = 'cellular', 
   }
 
   if (faceted) geo = geo.toNonIndexed()
-  geo.computeVertexNormals()
+  // ⛔ NOT recomputed: the normals already carry the margin's contribution, which is
+  // the whole point. Recomputing here would undo it and re-open the seam.
+  if (faceted) geo.computeVertexNormals()
   geo.computeBoundingSphere()
 
   const tris = geo.index ? geo.index.count / 3 : geo.attributes.position.count / 3
