@@ -77,7 +77,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 151. This is `npm test`.
+## safe — 152. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -222,6 +222,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs` | THE PUBLISH GATE MUST PUSH WHERE THE DEPLOY ACTUALLY LISTENS. |
 | `checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs` | no site URL is a module constant. |
 | `checks/claims-the-ramp-has-room.mjs` | ⭐⭐⭐ THE RAMP NEEDS SOMEWHERE TO HAPPEN, AND ① HAS NOWHERE TO PUT IT. |
+| `checks/claims-the-shore-says-what-it-is-made-of.mjs` | of.mjs — CAN THE KIT TELL STONE FROM SAND? |
 | `checks/claims-the-slab-envs-do-not-collide.mjs` | STAGING AND PRODUCTION MUST NOT SERVE THE SAME SLAB. |
 | `checks/claims-the-slab-freshness-key-is-not-stale.mjs` | NO SLAB ARTIFACT MAY BE NEWER THAN THE KEY THAT BUSTS IT. |
 | `checks/claims-the-slope-is-on-the-leg.mjs` | ⭐⭐⭐ THE ACCEPTANCE FOR THE RAMP, AND IT IS A CONTINUITY TEST, NOT A DIMENSION ONE. |

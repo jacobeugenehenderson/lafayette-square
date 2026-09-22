@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 193,
+  "total": 194,
   "counts": {
-    "safe": 151,
+    "safe": 152,
     "local-effect": 6,
     "live": 36
   },
@@ -1062,6 +1062,13 @@
     },
     {
       "file": "checks/claims-the-ramp-has-room.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-says-what-it-is-made-of.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
