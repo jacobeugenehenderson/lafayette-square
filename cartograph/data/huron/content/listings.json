@@ -7719,6 +7719,30 @@
      "credit": "Upside Down Art Studio LLC",
      "credit_url": "http://www.upsidedownartstudio.com/",
      "license": "NOT STATED — business's own published image of itself."
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+     "what": "The adult studio room (alt text: \"adult studio.jpg\")",
+     "credit": "Upside Down Art Studio LLC (own website)",
+     "credit_url": "https://www.upsidedownartstudio.com/"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+     "what": "The youth studio room (alt text: \"youth studio.jpg\")",
+     "credit": "Upside Down Art Studio LLC (own website)",
+     "credit_url": "https://www.upsidedownartstudio.com/"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+     "what": "Camera-roll photo, alt text is the capture filename \"20251004_145702.jpg\" - dated 4 Oct 2025; subject not stated",
+     "credit": "Upside Down Art Studio LLC (own website)",
+     "credit_url": "https://www.upsidedownartstudio.com/"
+    },
+    {
+     "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+     "what": "Camera-roll photo, alt text \"20250222_163919.jpg\" - 22 Feb 2025; subject not stated",
+     "credit": "Upside Down Art Studio LLC (own website)",
+     "credit_url": "https://www.upsidedownartstudio.com/"
     }
    ],
    "amenities": [
@@ -8645,7 +8669,14 @@
    "logo": null,
    "hours": null,
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/96e6a204-ef03-4213-8454-312de1f03848/Barre+Class+Smiling+Clients.png",
+     "what": "A barre class in progress, clients smiling. 1080x1080, square - reads as a card thumbnail without cropping. Filename is the operator's own description; no alt text.",
+     "credit": "The Barre Collective (own website)",
+     "credit_url": "https://barrecollectivehuron.com/"
+    }
+   ],
    "amenities": [
     "Barre classes",
     "Pilates",
@@ -10737,7 +10768,20 @@
     }
    },
    "opening_hours_raw": null,
-   "photos": [],
+   "photos": [
+    {
+     "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store.jpg",
+     "what": "Exterior of the Huron Goodwill store at 310 Lake Erie Parkway. 2174x1761, uploaded June 2025 by the operator.",
+     "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+     "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+    },
+    {
+     "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store-300x300.jpg",
+     "what": "Same photograph, 300x300 square crop as used in the store list - useful as a card thumbnail",
+     "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+     "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+    }
+   ],
    "amenities": [
     "thrift retail",
     "attended donation center",

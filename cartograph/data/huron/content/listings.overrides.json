@@ -1459,9 +1459,9 @@
     },
     "ovt-6a7b8963-b36b-48db-a3bb-637078989b6e": {
       "_match_name": "Comfort Inn River's Edge",
-      "_source": "https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017",
+      "_source": "attempted https://www.choicehotels.com/ohio/huron/comfort-inn-hotels/oh017",
       "_fetched": "2026-09-22",
-      "_confidence": "24-HOUR FRONT DESK is attested consistently across the property's Tripadvisor, Hotels.com and Yelp amenity facts; the Choice Hotels official page (the listing's own website field) timed out repeatedly on fetch and could not be read directly, so this is corroborated-secondary, not first-party. The 00:00-23:59 slots represent the STAFFED FRONT DESK, not check-in: check-in is 15:00 and check-out 11:00 (see overnight-NOVEL.md). Breakfast 6:00-10:00 daily is a separate sub-service our shape cannot hold.",
+      "_confidence": "NO USABLE IMAGE OBTAINED. The property's own page is on choicehotels.com, which refuses automated fetches: HTTP/2 stream reset on curl, timeout on HTTP/1.1 and on WebFetch, all with an empty (truncated) output file so nothing stale was read. The property has no independent website. Every image of this hotel that IS reachable sits on an OTA (Tripadvisor, Expedia, Hotels.com, Booking) and is licensed to that OTA, not to us.",
       "hours": {
         "monday": {
           "open": "00:00",
@@ -1505,7 +1505,15 @@
         "Riverside picnic area"
       ],
       "phone": "+14194338000",
-      "_beat": "overnight",
+      "_no_photos_reason": "choicehotels.com/ohio/huron/comfort-inn-hotels/oh017 blocked (three fetch methods). No independent property domain found. A person with a browser can open that page and read the gallery straight off it - that is the whole remaining job for all three Choice/G6 properties. See prominent-photos-NOVEL.md #4.",
+      "_photos_rights_unclear": [
+        {
+          "url": "not established",
+          "what": "The property gallery on choicehotels.com (oh017) and the OTA galleries",
+          "why": "Choice Hotels gallery images are the brand's, under its terms; OTA images are the OTA's or a contributing guest's. Neither can be used without a stated licence, and a Comfort Inn brand render is not necessarily 132 Main St."
+        }
+      ],
+      "_beat": "overnight+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0103"
     },
@@ -2539,6 +2547,37 @@
       ],
       "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
       "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level.",
+      "_open_licence_alternatives": [
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Main_St.%2C_Huron%2C_Ohio_-_DPLA_-_46d3330ff2a8041c31b0920b2039215e_%28page_1%29.jpg",
+          "what": "Historic postcard view of Main Street, Huron, Ohio",
+          "licence": "Public domain",
+          "credit": "Wikimedia Commons / DPLA",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Main_St.,_Huron,_Ohio_-_DPLA_-_46d3330ff2a8041c31b0920b2039215e_(page_1).jpg"
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Huron_Ohio_aerial_view.jpg",
+          "what": "Aerial view of Huron harbour and the Confined Disposal Facility",
+          "licence": "Public domain (US Army Corps of Engineers)",
+          "credit": "Ken Winters, U.S. Army Corps of Engineers",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Huron_Ohio_aerial_view.jpg"
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Ohio-Huron_River.jpg",
+          "what": "Mouth of the Huron River where it enters Sandusky Bay, looking south",
+          "licence": "CC BY-SA 4.0",
+          "credit": "Mike Sharp (Wikivoyage user 2old)",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Ohio-Huron_River.jpg"
+        },
+        {
+          "url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Huron_Ohio_01-25-08.jpg",
+          "what": "Park at Huron, Ohio, on Lake Erie just west of the Huron River",
+          "licence": "CC BY-SA 4.0",
+          "credit": "Mike Sharp (Wikivoyage user 2old)",
+          "credit_url": "https://commons.wikimedia.org/wiki/File:Huron_Ohio_01-25-08.jpg"
+        }
+      ],
+      "_open_licence_note": "SECOND TIER, and NOT photographs of this society. Parked here because it is the history listing, but this is a TOWN-WIDE open-licence pool for whoever needs a Huron image with a stateable licence. Searched Wikimedia Commons (namespace 6, \"Huron Ohio\", 50 results): the pool is these four plus ~40 frames of the Huron-ConAgra redevelopment project. NOT ONE COMMONS IMAGE DEPICTS ANY BUSINESS IN THIS DIRECTORY.",
       "_beat": "shopping+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0212"
@@ -2913,7 +2952,7 @@
       "_match_name": "Goodwill Store",
       "_source": "https://www.goodwillsandusky.org/shop/stores-hours/",
       "_fetched": "2026-09-22",
-      "_confidence": "Address, phone and hours quoted from the regional Goodwill's own stores page. This is the REAL Huron store. It also takes donations, attended, during store hours. NOTE: huro-lst-0218 'Goodwill Industries International, Inc.' carries the SAME PHONE and a nearby address (422 Cleveland Rd E) - almost certainly the same operation recorded twice under the national body's name.",
+      "_confidence": "BEST PHOTO ON THIS BEAT. The regional operator publishes one storefront photograph per store, and the Huron one sits inside the row that reads \"Huron Goodwill / 310 Lake Erie Parkway / Huron, OH 44839 / 419-433-7542\" - the exact address and phone on our listing. It is also the page's og:image, declared 2174x1761. Operator-published, address-anchored, full resolution.",
       "hours": {
         "monday": {
           "open": "10:00",
@@ -2952,7 +2991,23 @@
         "open until 8pm Mon-Sat"
       ],
       "phone": "+14194337542",
-      "_beat": "shopping",
+      "photos": [
+        {
+          "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store.jpg",
+          "what": "Exterior of the Huron Goodwill store at 310 Lake Erie Parkway. 2174x1761, uploaded June 2025 by the operator.",
+          "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+        },
+        {
+          "url": "https://www.goodwillsandusky.org/wp-content/uploads/2025/06/huron-store-300x300.jpg",
+          "what": "Same photograph, 300x300 square crop as used in the store list - useful as a card thumbnail",
+          "credit": "Goodwill of Erie, Huron, Ottawa and Sandusky Counties (own website)",
+          "credit_url": "https://www.goodwillsandusky.org/shop/stores-hours/"
+        }
+      ],
+      "_hours_reconfirmed": "The same row reads MON-SAT 10am-8pm, SUN Noon-5pm, which matches the hours already held. No change proposed.",
+      "_url_finding": "Held website https://www.goodwillsandusky.org/ is correct for this record.",
+      "_beat": "shopping+prominent-photos",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0120"
     },
@@ -3002,9 +3057,9 @@
     },
     "ovt-a59a0fcf-4025-45ad-8cb9-119934db3bb3": {
       "_match_name": "Discount Drug Mart",
-      "_source": "https://ddmphoto.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24 (403 to fetch; hours via https://pharmacyfinder.rxlocal.com/pharmacyFinder/oh/huron/discount-drug-mart-inc-24 and Yelp)",
+      "_source": "https://www.discount-drugmart.com/ and https://www.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24",
       "_fetched": "2026-09-22",
-      "_confidence": "Store #24. The chain's own store page refused the fetch, so the hours below are from pharmacy directories that agree with each other. STORE hours are below; the PHARMACY counter inside keeps different and shorter hours (Mon-Fri 09:00-21:00, Sat 09:00-18:00, Sun 10:00-18:00) which this schema cannot hold. Regional Ohio chain, not a national one.",
+      "_confidence": "NO PHOTOGRAPH OF STORE #24 IS PUBLISHED. Worse, the store URL is a SOFT 404: the per-store path returns HTTP 200 and 82,426 bytes that are BYTE-IDENTICAL to the corporate home page (same md5), and contain zero occurrences of \"Huron\". Anything scraped from that URL is corporate homepage content mis-filed as this store. See prominent-photos-NOVEL.md #3.",
       "hours": {
         "monday": {
           "open": "08:00",
@@ -3043,7 +3098,9 @@
         "greeting cards"
       ],
       "phone": "+14194334565",
-      "_beat": "shopping",
+      "_no_photos_reason": "Looked at discount-drugmart.com and the Huron store path. The only images the chain serves are UPC product thumbnails on cdn.discount-drugmart.com and social-network icons. No storefront photography of any store, let alone #24.",
+      "_url_finding": "SOFT 404 AT HTTP 200. https://www.discount-drugmart.com/stores/ohio/huron/discount-drug-mart-huron-24 returns the corporate home page byte for byte. The held website http://discount-drugmart.com/ is the right company but carries nothing specific to this store.",
+      "_beat": "shopping+prominent-photos",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0177"
     },
@@ -3138,9 +3195,9 @@
     },
     "ovt-dc489336-661f-4ec8-84bf-67dc694d034f": {
       "_match_name": "Mickey Mart",
-      "_source": "https://www.mickeythemoose.com (corporate site; no store page for Huron) ; hours via https://www.yelp.com/biz/mickey-mart-huron",
+      "_source": "https://www.mickeythemoose.com/ · /pages/store-locator · /pages/about-us",
       "_fetched": "2026-09-22",
-      "_confidence": "Huron Mickey Mart #35, a gas station and convenience store. The chain's own site (Milan, Ohio corporate office) has a store locator but served no Huron page to the fetch, so the hours below are from directories and should be re-checked. The chain is a small Ohio one, not national.",
+      "_confidence": "NO PHOTOGRAPH OF THIS STORE IS PUBLISHED BY THE CHAIN. Everything on mickeythemoose.com is brand and merchandise artwork - Shopify product images, home-page banner graphics and a screenshot. The store locator at /pages/store-locator serves HTTP 200 but contains zero occurrences of \"Huron\" in the returned HTML: the locations are loaded client-side, so no per-store page and no per-store photo is reachable.",
       "hours": {
         "monday": {
           "open": "05:00",
@@ -3179,7 +3236,20 @@
       ],
       "phone": "+14194337323",
       "_url_finding": "RIGHT CHAIN, NO STORE PAGE. Held URL mickeythemoose.com is the correct corporate site (Milan, OH) but serves no page for the Huron store, so it carries no hours.",
-      "_beat": "shopping",
+      "_no_photos_reason": "Looked at the chain home page, /pages/store-locator (200 but no Huron in the markup), /pages/about-us and /pages/contact. /pages/locations is a 404. The chain publishes no storefront photography at all.",
+      "_photos_rights_unclear": [
+        {
+          "url": "https://mickeythemoose.com/cdn/shop/files/Mickey_s_-_Full_Color_-_Black_Text.png",
+          "what": "The Mickey Mart logo (the moose wordmark) - artwork, not a photograph",
+          "why": "A brand mark, not an image of 502 Main St. Usable as a logo if the card has a logo slot; it is not a photo and must never fill a photo slot."
+        },
+        {
+          "url": "https://mickeythemoose.com/cdn/shop/files/Homepage_FINAL_12.png",
+          "what": "Chain home-page banner artwork",
+          "why": "Chain marketing artwork, not this location - the exact trap this beat was told to flag"
+        }
+      ],
+      "_beat": "shopping+prominent-photos",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0234"
     },
@@ -3402,9 +3472,9 @@
     },
     "ovt-508c7174-8959-469e-aba4-2e210630a5e1": {
       "_match_name": "Quality Inn Huron",
-      "_source": "https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405",
+      "_source": "attempted https://www.choicehotels.com/ohio/huron/quality-inn-hotels/oh405",
       "_fetched": "2026-09-22",
-      "_confidence": "24-HOUR FRONT DESK attested by Booking.com property facts and the Choice Hotels listing summary; the Choice page itself timed out on fetch, so corroborated-secondary not first-party. ⚠ BRAND MAY HAVE CHANGED: choicehotels.com/ohio/huron/quality-inn-hotels/oh405 and .../rodeway-inn-hotels/oh405 are the same property code and hotelplanner titles it 'Rodeway Inn Huron'. Whether the sign on the building today reads Quality Inn or Rodeway Inn is NOT ESTABLISHED. Slots are the staffed front desk; check-in 15:00.",
+      "_confidence": "NO USABLE IMAGE OBTAINED - same block as huro-lst-0103. AND THERE IS A REASON NOT TO TRUST A CHAIN IMAGE HERE EVEN IF ONE WERE OBTAINED: the overnight beat established that property code oh405 also resolves under choicehotels.com/ohio/huron/rodeway-inn-hotels/, i.e. the BRAND ON THIS BUILDING IS IN DOUBT. A Quality Inn-branded gallery image could be showing signage the building no longer carries.",
       "hours": {
         "monday": {
           "open": "00:00",
@@ -3446,15 +3516,23 @@
         "Meeting room"
       ],
       "phone": "+14194335359",
-      "_beat": "overnight",
+      "_no_photos_reason": "choicehotels.com blocked on curl HTTP/2, curl HTTP/1.1 and WebFetch; empty output each time. No independent property domain. Needs a person with a browser, who should also settle the Quality Inn / Rodeway Inn question by looking at the sign in the photo.",
+      "_photos_rights_unclear": [
+        {
+          "url": "not established",
+          "what": "Choice Hotels gallery for oh405 and OTA galleries",
+          "why": "Brand-licensed or OTA-licensed; and the brand shown may be the retired one - a photo that settles a question the wrong way is worse than none"
+        }
+      ],
+      "_beat": "overnight+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0075"
     },
     "ovt-14cd6b7e-a4c9-4b9a-81e2-ee6851a2cf1b": {
       "_match_name": "Motel 6",
-      "_source": "https://www.motel6.com/us/ohio/huron/",
+      "_source": "attempted https://www.motel6.com/en/motels.oh.huron.html",
       "_fetched": "2026-09-22",
-      "_confidence": "24-HOUR FRONT DESK attested by Tripadvisor, Expedia and Hotels.com property facts for Motel 6 Huron, OH - Sandusky at 601 Rye Beach Rd; motel6.com timed out on fetch, so corroborated-secondary. This is the CURRENT operator of 601 Rye Beach Rd - the Microtel record (huro-lst-0201) is the same building under a retired brand. Phone: the listing carries +14194066904; secondary sources give 419-433-7829. Which is live is NOT ESTABLISHED, so the listing's own number is kept.",
+      "_confidence": "NO USABLE IMAGE OBTAINED. motel6.com resets the HTTP/2 stream on fetch. THIS IS THE SHARPEST CASE OF THE BRAND-STOCK TRAP IN THE DIRECTORY: 601 Rye Beach Rd carries TWO listings, this one and huro-lst-0201 Microtel Inn Suites, because the building changed brand. A generic Motel 6 exterior would therefore be doubly wrong - not this property, and possibly not even this property's current sign.",
       "hours": {
         "monday": {
           "open": "00:00",
@@ -3497,7 +3575,15 @@
         "Vending"
       ],
       "phone": "+14194066904",
-      "_beat": "overnight",
+      "_no_photos_reason": "motel6.com blocked (HTTP/2 stream reset, empty output). No independent property domain. Any image used here must be confirmed to show 601 Rye Beach Rd, Huron, specifically - a person on site or a browser session is the only way.",
+      "_photos_rights_unclear": [
+        {
+          "url": "not established",
+          "what": "Any Motel 6 brand exterior image",
+          "why": "A chain stock exterior is not the Huron property. Flagged exactly as the brief requires, with the extra reason that this building has traded under at least two brands."
+        }
+      ],
+      "_beat": "overnight+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0016"
     },
@@ -4020,11 +4106,11 @@
       "_display_id_at_research": "huro-lst-0126"
     },
     "ovt-a33596f6-ee0e-430a-a71c-8a3b4bedc6c8": {
-      "_confidence": "The held URL http://hy-miler.com is dead (redirects to an expired-domain parking page — see _url_finding), so no first-party Hy-Miler page could be used. Current fuel brand at this address is Shell (per Shell's own locator), while the c-store keeps the Hy-Miler name. Yelp separately lists a \"SHELL HY-MILER\" entry as CLOSED (likely the old combined-brand name) and an active plain \"HY-MILER\" entry, consistent with a brand-name change rather than a closure. Hours (24 hours) and amenities are GasBuddy-sourced (aggregator, not first-party) but corroborated by the exact phone match.",
+      "_confidence": "NO PHOTO, AND THE HELD URL IS A PARKED PAGE. hy-miler.com returns HTTP 200 with 1,391 bytes whose entire body is \"Lost Redirection - The page you are trying to access uses the redirection services of DNS Made Easy / Constellix / DigiCert DNS.\" Zero occurrences of \"Huron\". It is a DNS redirect that no longer redirects anywhere.",
       "_fetched": "2026-09-22",
       "_match_name": "Hy-Miler",
-      "_source": "Aggregators corroborating each other: GasBuddy (gasbuddy.com/station/10209) and Shell's own locator (find.shell.com/us/fuel/10013544-2026-cleveland-rd-w/en_US, first-party for the address only, no hours/phone given there). GasBuddy's phone (419-433-7848) matches our held phone exactly, which is the strongest evidence GasBuddy's entry is this exact site.",
-      "_url_finding": "Held URL http://hy-miler.com does not resolve to a working Hy-Miler site — it 302-redirects to a DNS-Made-Easy \"lost redirect\" parking page, i.e. the domain/hosting has lapsed.",
+      "_source": "http://hy-miler.com",
+      "_url_finding": "DEAD, RETURNS 200. http://hy-miler.com is a DNS Made Easy \"Lost Redirection\" placeholder, not the chain's site. Whether Hy-Miler has a current website is not established.",
       "amenities": [
         "convenience store",
         "car wash",
@@ -4070,7 +4156,8 @@
         }
       },
       "phone": "+14194337848",
-      "_beat": "services2",
+      "_no_photos_reason": "The only URL we hold is a dead DNS-redirect placeholder. No other Hy-Miler source was looked at on this beat.",
+      "_beat": "services2+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0173"
     },
@@ -4109,12 +4196,14 @@
     },
     "ovt-9d77a8e9-f672-4342-aeef-c42dbb1d6321": {
       "_match_name": "Donut Shop - Huron, OH",
-      "_source": "https://www.visithuronohio.com/food-and-drink",
+      "_source": "http://www.mesenburg.com",
       "_fetched": "2026-09-22",
-      "_confidence": "Description and phone from the City of Huron's visitor site. HOURS NOT ESTABLISHED (no first-party page; a morning-only window is widely reported but unconfirmed). NOTE: the website on the listing, mesenburg.com, belongs to Mesenburg Creative Catering at 503 Main St - a NEIGHBOURING but DIFFERENT business. Treat the URL as wrong-entity until the relationship is confirmed.",
+      "_confidence": "NO PHOTO SOUGHT - flagged because the held URL is suspect and a photo beat would have scraped it. www.mesenburg.com returns HTTP 200 and is titled \"Catering | Mesenburg Creative Catering | Huron\" - a Huron business, so not the wrong-town trap, but the served page contains ZERO occurrences of the word \"donut\". Whether the donut shop at 501 Main St and Mesenburg Creative Catering are the same operator is NOT ESTABLISHED. Recorded so nobody puts a catering photo on a donut card.",
       "description": "The town's morning stop for freshly baked donuts, made with love and care.",
       "phone": "+14194337117",
-      "_beat": "dining2",
+      "_no_photos_reason": "Not researched. This record exists only to carry the URL warning.",
+      "_url_finding": "RIGHT TOWN, POSSIBLY WRONG BUSINESS, RETURNS 200. www.mesenburg.com is Mesenburg Creative Catering of Huron; no donut content on the page. Needs a person to say whether it is the same operator.",
+      "_beat": "dining2+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0162"
     },
@@ -5468,11 +5557,11 @@
       "_display_id_at_research": "huro-lst-0215"
     },
     "ovt-d1184b54-a756-4b97-b985-f9f83dc9d1f5": {
-      "_confidence": "Hours come from aggregator listings (PlacesRadar/YellowPages-style), not first-party; moderately confident but not confirmed against an owner-maintained source. Address/phone confirmed via Facebook page name and multiple aggregators matching 416 Cleveland Rd E, (419) 433-8062.",
+      "_confidence": "NO PHOTO, AND THE HELD URL IS WRONG. oliverssalon.com returns HTTP 200 and 634 KB of a real, live salon website - for a salon in OVERLAND PARK, KANSAS. Its own text reads \"Kansas City's premier locally owned\" and \"Kansas on 119th & Metcalf\". Zero connection to 416 Cleveland Rd E, Huron. Every image on it is a Kansas salon's.",
       "_fetched": "2026-09-22",
       "_match_name": "Oliver's Hair Salon",
-      "_source": "https://placesradar.com/oliver-s-hair-salon-416-cleveland-rd-e-huron-oh and https://www.yellowpages.com/huron-oh/mip/olivers-hair-salon-5195555 (aggregators, cross-checked); held URL oliverssalon.com is WRONG",
-      "_url_finding": "The held URL http://oliverssalon.com is a DIFFERENT business: Oliver's Hair Salon at 7590 W 119th St, Overland Park, KS 66213 (phone 913-338-2266). It has no connection to the Huron, OH location. The Huron salon (run by Ron Oliver) appears to have no website; its presence is on Facebook (facebook.com/olivers.hair.1) and aggregator listings only.",
+      "_source": "http://oliverssalon.com",
+      "_url_finding": "WRONG BUSINESS, WRONG STATE, RETURNS 200. http://oliverssalon.com is OHS, Overland Park, Kansas (119th & Metcalf). The correct site for the Huron salon is not established. This is trap #1 again, and it would have handed a photo beat a whole gallery of the wrong salon.",
       "description": "Walk-in hair salon in Huron, Ohio offering cuts, colors, perms and waxing for men, women and children.",
       "hours": {
         "friday": {
@@ -5505,7 +5594,8 @@
         }
       },
       "phone": "+14194338062",
-      "_beat": "services2",
+      "_no_photos_reason": "The only site we hold for this business is a different business in another state, so nothing on it can be used. No Huron-specific source was looked at on this beat.",
+      "_beat": "services2+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0219"
     },
@@ -6333,9 +6423,9 @@
     },
     "ovt-8ca15e90-bdd7-4448-af04-ca9f815314fe": {
       "_match_name": "Upside Down Art Studio LLC",
-      "_source": "http://www.upsidedownartstudio.com/ (Wix-hosted; assets on static.wixstatic.com)",
+      "_source": "https://www.upsidedownartstudio.com/",
       "_fetched": "2026-09-22",
-      "_confidence": "Photos are the studio's own, served from its own Wix site. ⛔ HOURS: still none, and the 2026-09-22 beat's reasoning holds — sessions are booked individually, so there are no premises hours to record. HISTORY: not established; the site publishes no founding date.",
+      "_confidence": "IDENTITY CONFIRMED - the studio's own Wix site says \"509 Main Street in the cozy, coastal town of Huron, Ohio\", matching our listing. TWO INTERIOR PHOTOGRAPHS ARE SELF-LABELLED by their alt text: \"adult studio.jpg\" and \"youth studio.jpg\". That is an operator naming its own rooms, which is the strongest what-does-it-show evidence found anywhere on this beat. NOT a target the brief named; added because it is rank 22, independent, on Main Street and photoless.",
       "description": "A small instructor-led art studio on Main Street running youth, adult and parent-and-child painting, watercolor and clay sessions.",
       "amenities": [
         "Youth studios (ages 7-13)",
@@ -6379,6 +6469,30 @@
           "credit": "Upside Down Art Studio LLC",
           "credit_url": "http://www.upsidedownartstudio.com/",
           "license": "NOT STATED — business's own published image of itself."
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+          "what": "The adult studio room (alt text: \"adult studio.jpg\")",
+          "credit": "Upside Down Art Studio LLC (own website)",
+          "credit_url": "https://www.upsidedownartstudio.com/"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+          "what": "The youth studio room (alt text: \"youth studio.jpg\")",
+          "credit": "Upside Down Art Studio LLC (own website)",
+          "credit_url": "https://www.upsidedownartstudio.com/"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+          "what": "Camera-roll photo, alt text is the capture filename \"20251004_145702.jpg\" - dated 4 Oct 2025; subject not stated",
+          "credit": "Upside Down Art Studio LLC (own website)",
+          "credit_url": "https://www.upsidedownartstudio.com/"
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+          "what": "Camera-roll photo, alt text \"20250222_163919.jpg\" - 22 Feb 2025; subject not stated",
+          "credit": "Upside Down Art Studio LLC (own website)",
+          "credit_url": "https://www.upsidedownartstudio.com/"
         }
       ],
       "_photos_rights_unclear": [
@@ -6391,10 +6505,21 @@
           "url": "https://static.wixstatic.com/media/6ef22a_dd04578ae19141ee92093a3a2712fb11~mv2.jpg",
           "what": "Source filename Screenshot_20240607_100825_Canva.jpg — a screenshot of a Canva design.",
           "why": "Same reason: a screenshot of a design tool, not a photograph of the premises."
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_dd04578ae19141ee92093a3a2712fb11~mv2.jpg",
+          "what": "alt text \"Screenshot_20240607_100825_Canva.jpg\"",
+          "why": "A SCREENSHOT OF A CANVA DESIGN, not a photograph - the alt text says so. Would pass a first-party test and is still not an image of the place."
+        },
+        {
+          "url": "https://static.wixstatic.com/media/6ef22a_384041744fd84bad98029438a14277ef~mv2.jpg",
+          "what": "alt text \"Screenshot_20241006_125606_Facebook.jpg\"",
+          "why": "A screenshot taken inside the Facebook app and re-uploaded. Original photographer and what is actually in frame both unknown."
         }
       ],
       "_photo_url_note": "⭐ Wix serves every image through a transform path (/v1/fill/w_198,h_241,...). The URLs above have that path STRIPPED, which returns the full-resolution original. The page markup only ever exposes the thumbnail URL; harvesting it verbatim would have captured ~200px images.",
-      "_beat": "community+civic-deep",
+      "_description_lead": "The site's own words: the studio is at 509 Main Street in Huron, Ohio, and runs separate adult and youth studios. A one-line summary was not drafted because the site's prose was not read in full on this beat.",
+      "_beat": "community+civic-deep+prominent-photos",
       "_tier": "CAVEATED",
       "_display_id_at_research": "huro-lst-0146"
     },
@@ -6510,9 +6635,9 @@
     },
     "ovt-c47fdabf-258f-40b3-b468-989076cb8e92": {
       "_match_name": "The Barre Collective - Huron ",
-      "_source": "http://Barrecollectivehuron.com/",
+      "_source": "https://barrecollectivehuron.com/",
       "_fetched": "2026-09-22",
-      "_confidence": "Class description, address, phone and pricing are from the studio's own site. NO hours recorded: the studio publishes no static schedule — class times live only in a Zenplanner booking system (barrecollectivehuron.zenplanner.com) that the site links out to. Note the studio's email uses a DIFFERENT brand name, thebarremethodhuron.com.",
+      "_confidence": "IDENTITY CONFIRMED on the studio's own Squarespace site, which prints \"524 Main St. · Huron, OH 44839\" - the exact address on our listing - and titles itself \"Beginner-Friendly Barre & Pilates in Huron, Ohio\". One genuine first-party photograph is published; one further image on the same page is STOCK and is flagged below. NOT a target the brief named, added because it is rank 16, independent, on Main Street and photoless.",
       "description": "A barre and pilates studio on Main Street running low-impact, music-driven classes that need no dance experience.",
       "amenities": [
         "Barre classes",
@@ -6523,7 +6648,32 @@
         "Schedule and booking via Zenplanner"
       ],
       "phone": "+14195678962",
-      "_beat": "community",
+      "photos": [
+        {
+          "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/96e6a204-ef03-4213-8454-312de1f03848/Barre+Class+Smiling+Clients.png",
+          "what": "A barre class in progress, clients smiling. 1080x1080, square - reads as a card thumbnail without cropping. Filename is the operator's own description; no alt text.",
+          "credit": "The Barre Collective (own website)",
+          "credit_url": "https://barrecollectivehuron.com/"
+        }
+      ],
+      "_photos_rights_unclear": [
+        {
+          "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/dbcfbd68-0f93-4e6e-97fc-ee7de5241a5c/unsplash-image-yKlzaQNb-QY.jpg",
+          "what": "Full-width image on the studio's own home page",
+          "why": "STOCK. The filename is literally unsplash-image-yKlzaQNb-QY.jpg - a stock photo from Unsplash re-uploaded to the operator's own CDN. It is on the operator's own site and would pass any first-party test, but it is not a picture of this studio. See prominent-photos-NOVEL.md #5."
+        },
+        {
+          "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/1b8fd447-ab2f-4a92-826b-ba3f5250f5f9/b+logo+white+on+blck+450+x+450.png",
+          "what": "Studio logo (alt text \"The Barre Collective\")",
+          "why": "A logo, not a photograph"
+        },
+        {
+          "url": "http://static1.squarespace.com/static/68911304259b9e6024ace01f/t/692e70a28225e1370928d94b/1764651170745/social+media+image+the+barre+collection+1628x453.png",
+          "what": "The page's og:image",
+          "why": "A social-share banner graphic with wordmark, not a photograph of the premises. Note this is the image a naive og:image scraper would take - it is artwork."
+        }
+      ],
+      "_beat": "community+prominent-photos",
       "_tier": "CLEAN",
       "_display_id_at_research": "huro-lst-0206"
     },

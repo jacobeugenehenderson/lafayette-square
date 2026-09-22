@@ -305,7 +305,38 @@
       }
     ],
     "_reusable_for_other_listings": "slide5.jpg is the Christ Episcopal Church marker and slide8.jpg is the Huron Playhouse marker. Both name places that are separate listings in this directory. A human may want to cross-post them, with the society credited.",
-    "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level."
+    "_no_premises_photo_reason": "The society's site publishes no photograph of 333 Williams St or of its own rooms in the library's lower level.",
+    "_open_licence_alternatives": [
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/4/44/Main_St.%2C_Huron%2C_Ohio_-_DPLA_-_46d3330ff2a8041c31b0920b2039215e_%28page_1%29.jpg",
+        "what": "Historic postcard view of Main Street, Huron, Ohio",
+        "licence": "Public domain",
+        "credit": "Wikimedia Commons / DPLA",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Main_St.,_Huron,_Ohio_-_DPLA_-_46d3330ff2a8041c31b0920b2039215e_(page_1).jpg"
+      },
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Huron_Ohio_aerial_view.jpg",
+        "what": "Aerial view of Huron harbour and the Confined Disposal Facility",
+        "licence": "Public domain (US Army Corps of Engineers)",
+        "credit": "Ken Winters, U.S. Army Corps of Engineers",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Huron_Ohio_aerial_view.jpg"
+      },
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Ohio-Huron_River.jpg",
+        "what": "Mouth of the Huron River where it enters Sandusky Bay, looking south",
+        "licence": "CC BY-SA 4.0",
+        "credit": "Mike Sharp (Wikivoyage user 2old)",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Ohio-Huron_River.jpg"
+      },
+      {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Huron_Ohio_01-25-08.jpg",
+        "what": "Park at Huron, Ohio, on Lake Erie just west of the Huron River",
+        "licence": "CC BY-SA 4.0",
+        "credit": "Mike Sharp (Wikivoyage user 2old)",
+        "credit_url": "https://commons.wikimedia.org/wiki/File:Huron_Ohio_01-25-08.jpg"
+      }
+    ],
+    "_open_licence_note": "SECOND TIER, and NOT photographs of this society. Parked here because it is the history listing, but this is a TOWN-WIDE open-licence pool for whoever needs a Huron image with a stateable licence. Searched Wikimedia Commons (namespace 6, \"Huron Ohio\", 50 results): the pool is these four plus ~40 frames of the Huron-ConAgra redevelopment project. NOT ONE COMMONS IMAGE DEPICTS ANY BUSINESS IN THIS DIRECTORY."
   },
   "huro-lst-0120": {
     "_match_name": "Goodwill Store",
@@ -411,5 +442,108 @@
         "why": "A chain stock exterior is not the Huron property. Flagged exactly as the brief requires, with the extra reason that this building has traded under at least two brands."
       }
     ]
+  },
+  "huro-lst-0206": {
+    "_match_name": "The Barre Collective - Huron ",
+    "_source": "https://barrecollectivehuron.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CONFIRMED on the studio's own Squarespace site, which prints \"524 Main St. · Huron, OH 44839\" - the exact address on our listing - and titles itself \"Beginner-Friendly Barre & Pilates in Huron, Ohio\". One genuine first-party photograph is published; one further image on the same page is STOCK and is flagged below. NOT a target the brief named, added because it is rank 16, independent, on Main Street and photoless.",
+    "photos": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/96e6a204-ef03-4213-8454-312de1f03848/Barre+Class+Smiling+Clients.png",
+        "what": "A barre class in progress, clients smiling. 1080x1080, square - reads as a card thumbnail without cropping. Filename is the operator's own description; no alt text.",
+        "credit": "The Barre Collective (own website)",
+        "credit_url": "https://barrecollectivehuron.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/dbcfbd68-0f93-4e6e-97fc-ee7de5241a5c/unsplash-image-yKlzaQNb-QY.jpg",
+        "what": "Full-width image on the studio's own home page",
+        "why": "STOCK. The filename is literally unsplash-image-yKlzaQNb-QY.jpg - a stock photo from Unsplash re-uploaded to the operator's own CDN. It is on the operator's own site and would pass any first-party test, but it is not a picture of this studio. See prominent-photos-NOVEL.md #5."
+      },
+      {
+        "url": "https://images.squarespace-cdn.com/content/v1/68911304259b9e6024ace01f/1b8fd447-ab2f-4a92-826b-ba3f5250f5f9/b+logo+white+on+blck+450+x+450.png",
+        "what": "Studio logo (alt text \"The Barre Collective\")",
+        "why": "A logo, not a photograph"
+      },
+      {
+        "url": "http://static1.squarespace.com/static/68911304259b9e6024ace01f/t/692e70a28225e1370928d94b/1764651170745/social+media+image+the+barre+collection+1628x453.png",
+        "what": "The page's og:image",
+        "why": "A social-share banner graphic with wordmark, not a photograph of the premises. Note this is the image a naive og:image scraper would take - it is artwork."
+      }
+    ]
+  },
+  "huro-lst-0146": {
+    "_match_name": "Upside Down Art Studio LLC",
+    "_source": "https://www.upsidedownartstudio.com/",
+    "_fetched": "2026-09-22",
+    "_confidence": "IDENTITY CONFIRMED - the studio's own Wix site says \"509 Main Street in the cozy, coastal town of Huron, Ohio\", matching our listing. TWO INTERIOR PHOTOGRAPHS ARE SELF-LABELLED by their alt text: \"adult studio.jpg\" and \"youth studio.jpg\". That is an operator naming its own rooms, which is the strongest what-does-it-show evidence found anywhere on this beat. NOT a target the brief named; added because it is rank 22, independent, on Main Street and photoless.",
+    "photos": [
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_d30a315520eb402d9935b159c144f81b~mv2.jpg",
+        "what": "The adult studio room (alt text: \"adult studio.jpg\")",
+        "credit": "Upside Down Art Studio LLC (own website)",
+        "credit_url": "https://www.upsidedownartstudio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_507b5bffccff49b2ba95da30852c912d~mv2.jpg",
+        "what": "The youth studio room (alt text: \"youth studio.jpg\")",
+        "credit": "Upside Down Art Studio LLC (own website)",
+        "credit_url": "https://www.upsidedownartstudio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_1a0262bab1d14214958f9f09cb7ac50b~mv2.jpg",
+        "what": "Camera-roll photo, alt text is the capture filename \"20251004_145702.jpg\" - dated 4 Oct 2025; subject not stated",
+        "credit": "Upside Down Art Studio LLC (own website)",
+        "credit_url": "https://www.upsidedownartstudio.com/"
+      },
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_c4d9c7bc4ac9423d8773c55517dbb361~mv2.jpg",
+        "what": "Camera-roll photo, alt text \"20250222_163919.jpg\" - 22 Feb 2025; subject not stated",
+        "credit": "Upside Down Art Studio LLC (own website)",
+        "credit_url": "https://www.upsidedownartstudio.com/"
+      }
+    ],
+    "_photos_rights_unclear": [
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_dd04578ae19141ee92093a3a2712fb11~mv2.jpg",
+        "what": "alt text \"Screenshot_20240607_100825_Canva.jpg\"",
+        "why": "A SCREENSHOT OF A CANVA DESIGN, not a photograph - the alt text says so. Would pass a first-party test and is still not an image of the place."
+      },
+      {
+        "url": "https://static.wixstatic.com/media/6ef22a_384041744fd84bad98029438a14277ef~mv2.jpg",
+        "what": "alt text \"Screenshot_20241006_125606_Facebook.jpg\"",
+        "why": "A screenshot taken inside the Facebook app and re-uploaded. Original photographer and what is actually in frame both unknown."
+      }
+    ],
+    "_description_lead": "The site's own words: the studio is at 509 Main Street in Huron, Ohio, and runs separate adult and youth studios. A one-line summary was not drafted because the site's prose was not read in full on this beat."
+  },
+  "huro-lst-0219": {
+    "_match_name": "Oliver's Hair Salon",
+    "_source": "http://oliverssalon.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO PHOTO, AND THE HELD URL IS WRONG. oliverssalon.com returns HTTP 200 and 634 KB of a real, live salon website - for a salon in OVERLAND PARK, KANSAS. Its own text reads \"Kansas City's premier locally owned\" and \"Kansas on 119th & Metcalf\". Zero connection to 416 Cleveland Rd E, Huron. Every image on it is a Kansas salon's.",
+    "photos": [],
+    "_no_photos_reason": "The only site we hold for this business is a different business in another state, so nothing on it can be used. No Huron-specific source was looked at on this beat.",
+    "_url_finding": "WRONG BUSINESS, WRONG STATE, RETURNS 200. http://oliverssalon.com is OHS, Overland Park, Kansas (119th & Metcalf). The correct site for the Huron salon is not established. This is trap #1 again, and it would have handed a photo beat a whole gallery of the wrong salon."
+  },
+  "huro-lst-0173": {
+    "_match_name": "Hy-Miler",
+    "_source": "http://hy-miler.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO PHOTO, AND THE HELD URL IS A PARKED PAGE. hy-miler.com returns HTTP 200 with 1,391 bytes whose entire body is \"Lost Redirection - The page you are trying to access uses the redirection services of DNS Made Easy / Constellix / DigiCert DNS.\" Zero occurrences of \"Huron\". It is a DNS redirect that no longer redirects anywhere.",
+    "photos": [],
+    "_no_photos_reason": "The only URL we hold is a dead DNS-redirect placeholder. No other Hy-Miler source was looked at on this beat.",
+    "_url_finding": "DEAD, RETURNS 200. http://hy-miler.com is a DNS Made Easy \"Lost Redirection\" placeholder, not the chain's site. Whether Hy-Miler has a current website is not established."
+  },
+  "huro-lst-0162": {
+    "_match_name": "Donut Shop - Huron, OH",
+    "_source": "http://www.mesenburg.com",
+    "_fetched": "2026-09-22",
+    "_confidence": "NO PHOTO SOUGHT - flagged because the held URL is suspect and a photo beat would have scraped it. www.mesenburg.com returns HTTP 200 and is titled \"Catering | Mesenburg Creative Catering | Huron\" - a Huron business, so not the wrong-town trap, but the served page contains ZERO occurrences of the word \"donut\". Whether the donut shop at 501 Main St and Mesenburg Creative Catering are the same operator is NOT ESTABLISHED. Recorded so nobody puts a catering photo on a donut card.",
+    "photos": [],
+    "_no_photos_reason": "Not researched. This record exists only to carry the URL warning.",
+    "_url_finding": "RIGHT TOWN, POSSIBLY WRONG BUSINESS, RETURNS 200. www.mesenburg.com is Mesenburg Creative Catering of Huron; no donut content on the page. Needs a person to say whether it is the same operator."
   }
 }
