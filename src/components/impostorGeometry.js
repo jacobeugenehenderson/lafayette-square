@@ -361,50 +361,7 @@ export function buildHeroImpostorCard(rec, opts = {}) {
   const d = Math.min(1, Math.max(0, opts.cardDepthFrac ?? ((opts.depthLoFrac ?? 0) + (opts.depthHiFrac ?? 1)) / 2))
   const z = (1 - 2 * d) * R
 
-  // ⭐⭐ TESSELLATE WHERE THE VERTEX PROGRAM BENDS, AND NOWHERE ELSE.
-  // ⛔ This was `opts.grid ?? 20` — a 20×20 grid, 800 triangles per card, ×3 cards
-  // per tree. On huron that is 17,575 placements × 2,400 = **42.18 M triangles every
-  // frame**, and it was the whole frame budget: trees off took the scene 9.8 → 23.6 FPS.
-  // The comment called it "wind flutter tessellation" and `ARCHITECTURE.md` priced it at
-  // 1.2× the mesh it replaced — but nobody checked what the vertex program actually needs.
-  //
-  // ⭐ IT NEEDS ALMOST NOTHING. The card is PLANAR (every vertex shares `z`), so the grid
-  // shapes no silhouette. And the only per-vertex input to the wind is `aTreeHeightNorm`
-  // (`treeAtlasMaterial.js#injectHeroImpostorStamp`): every other term — phase, gust,
-  // advection — comes from `instanceMatrix[3]`, the INSTANCE's world position. Its own
-  // comment says so: "The whole canopy is one billboard, so sway it as a unit (no per-
-  // tier damping)". So the card does not flutter, it SHEARS — a rigid lean, linear in
-  // height. ⛔ There is ZERO horizontal variation, so every horizontal division was
-  // interpolating a constant, and the vertical ones were interpolating a straight line.
-  //
-  // ⚠️ EXCEPT FOR ONE KINK, and it is why this is not simply a 2-triangle quad:
-  // `aTreeHeightNorm` is CLAMPED to [0,1]. `half` is `max(halfW, halfH)` — a square frame
-  // — so on a canopy wider than it is tall the card's top edge sits ABOVE `maxY` and the
-  // norm saturates partway up. Linear below the saturation point, constant above it.
-  // ⇒ Put a row at the bottom, a row at the saturation height when it falls inside the
-  // card, and a row at the top. That is EXACT, not an approximation — the interpolant
-  // reproduces the clamped ramp with no error at any vertex or between them.
-  // ⛔ NO CONSTANT TUNED TO A TOWN: the row set is derived from this card's own frame.
-  // ⭐ `opts.grid` still overrides, so the Salon can force a dense card to compare.
-  const yBot = midY - half, yTop = midY + half
-  const rows = []
-  if (opts.grid != null) {
-    const N = Math.max(1, Math.round(opts.grid))
-    for (let i = 0; i <= N; i++) rows.push(yBot + (yTop - yBot) * (i / N))
-  } else {
-    // ⚠️ `aTreeHeightNorm` clamps at BOTH ends — `min(1, max(0, wy / maxY))` — so the ramp
-    // has TWO possible kinks, and the square frame reaches past both: below y=0 on a wide
-    // short canopy (the card extends under the ground) and above y=maxY on a wide tall one.
-    // ⛔ A first cut placed a row only at `maxY` and was wrong by 0.65 of a full norm on a
-    // 6 m × 14 m canopy — caught by sampling the interpolant against the exact ramp, not by
-    // reading it. Put a row at each saturation point that falls strictly inside the card.
-    rows.push(yBot)
-    if (0 > yBot + 1e-6 && 0 < yTop - 1e-6) rows.push(0)
-    if (maxY > yBot + 1e-6 && maxY < yTop - 1e-6) rows.push(maxY)
-    rows.push(yTop)
-    rows.sort((a, b) => a - b)
-  }
-  const COLS = 1                                    // no horizontal term exists in the shader
+  const N = Math.max(2, Math.round(opts.grid ?? 20))   // grid cells per side (wind flutter tessellation)
 
   const positions = []
   const uvs = []
@@ -412,23 +369,23 @@ export function buildHeroImpostorCard(rec, opts = {}) {
   const aTreeHeightNorm = []
   const indices = []
 
-  const span = Math.max(1e-6, yTop - yBot)
-  for (let iy = 0; iy < rows.length; iy++) {
-    const wy = rows[iy]
-    const vy = (wy - yBot) / span
-    for (let ix = 0; ix <= COLS; ix++) {
-      const u = ix / COLS
-      positions.push((u * 2 - 1) * half, wy, z)
-      uvs.push(u, vy)                               // full [0,1] → the full square capture
+  for (let iy = 0; iy <= N; iy++) {
+    for (let ix = 0; ix <= N; ix++) {
+      const u = ix / N, vy = iy / N
+      const wx = (u * 2 - 1) * half
+      const wy = midY + (vy * 2 - 1) * half
+      positions.push(wx, wy, z)
+      uvs.push(u, vy)                                 // full [0,1] → the full square capture
       aOverhead.push(1)
-      // Ground-anchored height norm → the card leans base-anchored (top-most vertices
-      // move most, canopy leans as a mass).
+      // Ground-anchored height norm → the card sways base-anchored (top-most vertices
+      // move most, canopy leans as a mass). Sitting high off the ground, its norms are
+      // large → a lively canopy sway, not a rigid slide.
       aTreeHeightNorm.push(Math.min(1, Math.max(0, wy / Math.max(1e-3, maxY))))
     }
   }
-  for (let iy = 0; iy < rows.length - 1; iy++) {
-    for (let ix = 0; ix < COLS; ix++) {
-      const a = iy * (COLS + 1) + ix, b = a + 1, cc = a + (COLS + 1), d = cc + 1
+  for (let iy = 0; iy < N; iy++) {
+    for (let ix = 0; ix < N; ix++) {
+      const a = iy * (N + 1) + ix, b = a + 1, cc = a + (N + 1), d = cc + 1
       indices.push(a, cc, b, b, cc, d)
     }
   }
