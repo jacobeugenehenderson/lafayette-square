@@ -942,9 +942,26 @@ function applyListingOverrides(base, overrides, ctx) {
   return { listings: merged, report }
 }
 
+/**
+ * ⛔⛔ ANY `_`-PREFIXED KEY IS META AND NEVER REACHES THE SLAB. This deleted a hardcoded
+ * list of four, so every new meta field had to remember to edit this function — and the
+ * one that forgets ships into `listings.json`, into the bundle, and to a visitor.
+ *
+ * ⭐ THE UNDERSCORE IS ALREADY THE CONVENTION HERE (`_match_name`, `_key`,
+ * `_stale_building_id`, `_comment`), so honour the convention instead of listing its
+ * members — the same "read the rule, don't restate it" the checks use.
+ *
+ * ⭐ AND IT IS WHAT MAKES RESEARCH AUDITABLE. An enriched listing must be able to say
+ * where its hours came from and when they were read, without that provenance riding into
+ * the slab: `_source` and `_fetched` live in `listings.overrides.json` forever, are
+ * reviewable in a diff, and are stripped here. ⛔ A fact with no `_source` is not a fact.
+ */
 function stripMeta(o) {
-  const c = { ...o }
-  delete c._match_name; delete c.anchor; delete c._key; delete c._stale_building_id
+  const c = {}
+  for (const [k, v] of Object.entries(o)) {
+    if (k.startsWith('_') || k === 'anchor') continue
+    c[k] = v
+  }
   return c
 }
 
