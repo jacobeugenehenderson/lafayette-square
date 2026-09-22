@@ -21,9 +21,24 @@ confirm the four numbers, build §3.
 (`PrimaryOrb`), one box fitted to what the camera sees. Ground resolution is therefore
 `2 × half / 4096`:
 
-| box half | m/texel | a building's shadow edge |
+⛔ **AND `half` IS NOT THE DISC RADIUS.** `shadowHalfExtent()` is `radius + hypot(center) + 100`
+— the frustum is centred on the light→origin axis, not on the disc, plus a rim margin. The
+first draft of this brief put the RADIUS in the `box half` column and published 1.73 / 0.44;
+the correct figures are below and `CelestialBodies.jsx:186,199` already carried them in
+prose. ⭐ **The code was right and the brief was wrong — re-derive, never quote:**
+`node -e "const s=require('./public/baked/<look>/ground.json').stencil; const h=s.radius+Math.hypot(...s.center)+100; console.log(h, 2*h/4096)"`
+
+| town | radius | half | **m/texel** | a building's shadow edge |
+|---|---|---|---|---|
+| **huron** | 3539 | **3697.9** | **1.806** | a staircase you can count — **the teeth** |
+| altadena | 4161 | 4261.0 | 2.081 | worse still, and nobody has looked |
+| hipointe-demun | 1251 | 1351.0 | 0.660 | visibly stepped |
+| Lafayette Square | 892 | 1013.2 | 0.495 | soft — which is why this was never seen |
+
+Design table for a fitted box of any size (`2·half/4096` = `half/2048`):
+
+| box half | m/texel | edge |
 |---|---|---|
-| **3539 m** (huron town-wide) | **1.73** | a staircase you can count — **the teeth** |
 | 2048 m | 1.00 | visibly stepped |
 | 1024 m | 0.50 | soft, acceptable |
 | 512 m | 0.25 | clean |
@@ -37,8 +52,8 @@ makes the grazing case the whole town, which is continuous and correct and **gua
 1.73 m texels whenever the camera is near level**. ⇒ the flash became teeth. ⛔ Do not
 revert it; it is the right shape for a single map and the single map is the problem.
 
-⚠️ **huron is 3,539 m of disc against Lafayette Square's ~900.** At LS the same code gives
-0.44 m/texel and nobody ever saw this. Signature kit shape: fine on town #1.
+⚠️ **huron is 3,539 m of disc against Lafayette Square's 892.** At LS the same code gives
+0.495 m/texel and nobody ever saw this. Signature kit shape: fine on town #1.
 
 ## 2 · WHAT ELSE READS THE TEXEL — the blast radius, so nothing is discovered late
 
@@ -79,7 +94,7 @@ foreground resolves finely and the distance stays cheap.
 1. `node checks/claims-the-shadow-box-has-no-cliff.mjs` — extended to cascades, still green,
    still mutation-tested (restoring the old fallback must fail it).
 2. A number, not an adjective: **m/texel in the foreground of a near-level huron shot.**
-   It is 1.73 today. Say what it becomes.
+   It is **1.806** today. Say what it becomes.
 3. 👁️ **Jacob's eye, on the shot he actually wants** — a near-level 360 sweep of huron from
    the bay, half water and sky. ⛔ Overhead proves nothing; the whole defect is at grazing
    angles. The verdict records its scene (`A17`).
