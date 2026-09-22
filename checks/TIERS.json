@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 197,
+  "total": 198,
   "counts": {
-    "safe": 155,
+    "safe": 156,
     "local-effect": 6,
     "live": 36
   },
@@ -1083,6 +1083,13 @@
     },
     {
       "file": "checks/claims-the-shadow-box-has-no-cliff.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shore-knows-which-side-is-wet.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

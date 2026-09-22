@@ -35,25 +35,33 @@
 
 /**
  * ⛔⛔ AND WHOEVER PLACES STONE FROM THESE ARCS MUST READ THIS FIRST:
- * ⭐ **THE WALK DIRECTION OF A SHORELINE ARC *IS* THE WET SIDE.**
- * A revetment is built on ONE face of its arc — the face toward the water — and
- * that face is decided by the arc's winding, not by anything in the tags. Reverse
- * the walk and the whole structure turns inside out: the wetted band paints
+ * ⭐ **WHICH SIDE OF A SHORELINE ARC IS WET IS NOT A CONVENTION. MEASURE IT.**
+ *
+ * A revetment is built on ONE face of its arc — the face toward the water. Get it
+ * backwards and the whole structure turns inside out: the wetted band paints
  * inland, the slope leans the wrong way, and the drape's triangles wind backwards
  * so its normals point DOWN and it renders as a dark ribbon with correct geometry
- * in the correct position.
- * ⚠️ MEASURED 2026-09-21 in the boulder probe, on a demo shore that happened to be
- * walked the wrong way. It was invisible in every oblique view and only showed when
- * a camera was put deliberately at the waterline — which is exactly the shape of
- * failure this kit calls the worst kind: plausible, and wrong.
- * ⛔ `shape.json`'s `__water__` runs have their own winding and NOBODY HAS CHECKED
- * IT AGAINST THIS ASSUMPTION. Before placing stone on a real shore, assert which
- * side of the arc the water is on — per arc, not per town, because a lake's arcs
- * need not agree with each other. ▶ The drape builder
- * (`src/lib/revetmentDrape.js`) normalises its own winding and REPORTS the flip in
- * `stats.flipped` rather than fixing it silently; a scene that needs the flip is
- * telling you its arcs are wound the other way, and that is a fact about the town,
- * not a rendering detail.
+ * in the correct position. ⚠️ It is invisible in every oblique view and only shows
+ * from a camera at the waterline — plausible, and wrong, which is the worst kind.
+ *
+ * ⛔⛔ THIS COMMENT USED TO SAY *"the walk direction IS the wet side"*. **MEASURED
+ * FALSE on huron's own arcs, 2026-09-21**, hours after it was written, by the check
+ * that now guards it. Of 14 `__water__` arcs: **9 have the water on the LEFT of the
+ * walk, 1 on the RIGHT, 3 are too short to tell and 1 has no terrain under it.**
+ * ▶ `node checks/claims-the-shore-knows-which-side-is-wet.mjs`
+ * ⇒ There is no per-town convention to adopt, and **a per-town flip would be wrong
+ * on at least one real arc.** Nor does the run's own `side` stamp predict it — arcs
+ * stamped `left` appear in both camps.
+ *
+ * ⭐ **WHY IT CANNOT BE A CONVENTION, which is the part worth keeping:** an arc is
+ * OPEN ink, not a ring (`coastline.mjs`: we stroke the ARC, never the ring), so it
+ * has no orientation to inherit. And a stretch of bank between a river and a lake
+ * has water on BOTH sides, where "the wet side" is not defined by winding at all.
+ * ⇒ ⛔ Do not look for the rule. **Sample both sides and ask the ground**, which is
+ * what `wetSideOf` below does — derived, per arc, no authoring, and it travels.
+ *
+ * ⚠️ AND MOST OF THESE ARCS ARE STUBS: 5 of huron's 14 are under 10 m long. They
+ * cannot carry a revetment and must be REFUSED by name, not quietly skipped.
  */
 
 /** Minimum armour stone, metres. Quarried armour below this washes out, so a
@@ -178,4 +186,79 @@ export function shoreArmourFor(ground) {
     if (!Number.isFinite(h)) return { armour: false, why: 'no-height', dispute: 'no terrain under this shore vertex' }
     return { armour: h >= MIN_ARMOUR_D50_M, why: h >= MIN_ARMOUR_D50_M ? 'height' : 'below-one-course', dispute: null }
   }
+}
+
+/**
+ * Which side of this arc is the water on? ⛔ Derived by sampling the ground, never
+ * assumed from winding — see the note above, where the convention was measured false.
+ *
+ * @param poly      [[x,z], …] one arc, in local metres
+ * @param heightAt  (x, z) => metres relative to the water plane (NaN off-grid)
+ * @param gridM     the terrain grid's own step, in metres — the finest thing it can say
+ * @returns { side: 'left'|'right'|null, probeM, right, left, samples, why }
+ *          ⛔ side === null means REFUSE this arc, loudly. It does not mean "pick one".
+ *
+ * ⭐⭐ IT SWEEPS OUTWARD RATHER THAN PROBING AT ONE DISTANCE, and that is not a
+ * refinement — a single probe distance is a constant that is correct for one town.
+ * Measured on huron: a 539 m arc runs along a spit ~16-20 m wide. At 2-8 m out BOTH
+ * sides are still on the spit and read the same; at 12 m the water appears. An 8 m
+ * probe refuses it and a 20 m probe would blur an ordinary shore by sampling deep
+ * inland. ⇒ Sweep out from the grid's own resolution and take the FIRST distance
+ * that answers — the nearest reading wins, which is this kit's rule everywhere else.
+ *
+ * ⭐ AND THE TEST IS PHYSICAL, NOT A THRESHOLD: the wet side is the side that
+ * REACHES THE WATER PLANE. Water is at the plane by definition — that is what the
+ * datum means since bake-terrain started deriving it — so "which side is water" is
+ * "which side is at y <= 0", not "which side is lower by some margin".
+ */
+export function wetSideOf(poly, heightAt, gridM = 5) {
+  if (!Array.isArray(poly) || poly.length < 3) {
+    return { side: null, samples: 0, why: 'arc has fewer than 3 vertices' }
+  }
+  let len = 0
+  for (let i = 1; i < poly.length; i++) len += Math.hypot(poly[i][0] - poly[i - 1][0], poly[i][1] - poly[i - 1][1])
+
+  // ⛔ THE BOUND IS DERIVED, AND IT IS NOT A TASTE SETTING. Past a handful of grid
+  // cells you are no longer describing a shore edge, you are describing the
+  // hinterland — and the heightfield cannot resolve a shore feature finer than its
+  // own step anyway. Six cells is the width of the widest spit the grid can still
+  // call a spit; beyond that, refusing is the honest answer.
+  const maxProbe = 6 * gridM
+  if (len < 2 * gridM) {
+    return { side: null, samples: 0, why: `arc is ${len.toFixed(1)} m — shorter than the terrain can resolve (${(2 * gridM).toFixed(0)} m)` }
+  }
+
+  let lastRight = NaN, lastLeft = NaN, lastN = 0
+  for (let probeM = gridM; probeM <= maxProbe; probeM += gridM) {
+    let rSum = 0, lSum = 0, n = 0, rWet = 0, lWet = 0
+    for (let i = 1; i < poly.length - 1; i++) {
+      const tx = poly[i + 1][0] - poly[i - 1][0], tz = poly[i + 1][1] - poly[i - 1][1]
+      const m = Math.hypot(tx, tz)
+      if (!m) continue
+      const nx = -tz / m, nz = tx / m          // right of the walk, +x east / +z south
+      const hr = heightAt(poly[i][0] + nx * probeM, poly[i][1] + nz * probeM)
+      const hl = heightAt(poly[i][0] - nx * probeM, poly[i][1] - nz * probeM)
+      if (!Number.isFinite(hr) || !Number.isFinite(hl)) continue
+      rSum += hr; lSum += hl; n++
+      // AT the water plane, with one armour course of slack for the grid's own noise.
+      if (hr <= MIN_ARMOUR_D50_M) rWet++
+      if (hl <= MIN_ARMOUR_D50_M) lWet++
+    }
+    if (!n) continue
+    lastRight = rSum / n; lastLeft = lSum / n; lastN = n
+    // The first distance at which one side is decisively at the water and the other
+    // is not. ⛔ Both-at-water is a bank between two waters — a real case, and one
+    // this function must refuse rather than pick a face for.
+    const rAt = rWet / n > 0.6, lAt = lWet / n > 0.6
+    if (rAt !== lAt) {
+      return { side: rAt ? 'right' : 'left', probeM, right: lastRight, left: lastLeft, samples: n, why: `water reached at ${probeM} m` }
+    }
+    if (rAt && lAt) {
+      return { side: null, probeM, right: lastRight, left: lastLeft, samples: n,
+               why: `water on BOTH sides at ${probeM} m — a bank between two waters, not a shore edge` }
+    }
+  }
+  if (!lastN) return { side: null, samples: 0, why: 'no terrain under either side of this arc' }
+  return { side: null, probeM: maxProbe, right: lastRight, left: lastLeft, samples: lastN,
+           why: `neither side reaches the water within ${maxProbe} m — this arc is not at a water edge` }
 }
