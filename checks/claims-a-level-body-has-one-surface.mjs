@@ -123,12 +123,29 @@ for (const scene of list) {
     const idx = new Uint32Array(bin.buffer, bin.byteOffset + wg.indexByteOffset, wg.indexCount)
     const meshY = pos[1]
 
-    // Area-weighted sampling of the bed, by walking the body's own triangles.
-    const bed = []
+    // ⛔⛔ SAMPLES ARE ALLOCATED BY AREA, AND THE FIRST VERSION OF THIS CHECK WAS NOT.
+    // It drew a fixed 24 samples PER TRIANGLE and its comment claimed that was
+    // area-weighted. It is not, and on a real body it is badly wrong: huron's lake
+    // is 657 triangles spanning 99 m² to 2.6 km², so hundreds of shoreline slivers
+    // outvoted the open water and the verdict described the SHORE while claiming to
+    // describe the BODY. ⭐ Caught 2026-09-21 by a peer's independent count of the
+    // artifact disagreeing with this check — the instrument was the defect, which is
+    // the commonest place for one to be.
+    const tris = []
+    let area = 0
     for (let t = 0; t < idx.length; t += 3) {
       const P = [0, 1, 2].map(k => [pos[idx[t + k] * 3], pos[idx[t + k] * 3 + 2]])
-      for (let s = 0; s < 24; s++) {
-        let a = ((s * 2654435761) % 1000) / 1000, b = ((s * 40503 + 7) % 997) / 997
+      const A = Math.abs((P[1][0] - P[0][0]) * (P[2][1] - P[0][1]) - (P[2][0] - P[0][0]) * (P[1][1] - P[0][1])) / 2
+      if (!(A > 0)) continue
+      tris.push({ P, A }); area += A
+    }
+    const BUDGET = 40000
+    const bed = []
+    for (const { P, A } of tris) {
+      const n = Math.max(1, Math.round(BUDGET * A / area))
+      for (let s = 0; s < n; s++) {
+        // deterministic low-discrepancy pair — same bed every run, no seed to drift
+        let a = ((s + 1) * 0.7548776662) % 1, b = ((s + 1) * 0.5698402909) % 1
         if (a + b > 1) { a = 1 - a; b = 1 - b }
         const x = P[0][0] + a * (P[1][0] - P[0][0]) + b * (P[2][0] - P[0][0])
         const z = P[0][1] + a * (P[1][1] - P[0][1]) + b * (P[2][1] - P[0][1])
@@ -141,7 +158,7 @@ for (const scene of list) {
     const off = med - meshY
     const proud = bed.filter(v => v - meshY > STACK).length / bed.length
     const mark = flat && seated ? '✅' : '⛔'
-    console.log(`  ${mark} ${scene}/${wg.id}  bed median ${med.toFixed(3)} m · IQR ${iqr.toFixed(3)} m · mesh Y ${meshY.toFixed(3)} m · stack ${STACK.toFixed(3)} m`)
+    console.log(`  ${mark} ${scene}/${wg.id}  bed median ${med.toFixed(3)} m · IQR ${iqr.toFixed(3)} m · mesh Y ${meshY.toFixed(3)} m · stack ${STACK.toFixed(3)} m · ${(area/1e6).toFixed(2)} km², ${bed.length.toLocaleString()} area-weighted samples`)
     if (!flat) {
       fail.push(`   ${scene}/${wg.id}: the bed beneath a LEVEL body spreads ${iqr.toFixed(2)} m (IQR), ${(iqr / STACK).toFixed(0)}× the coplanar stack.`)
       fail.push(`     A level surface has ONE bed elevation. More than one means the source carries this body`)
@@ -150,6 +167,12 @@ for (const scene of list) {
     if (!seated) {
       fail.push(`   ${scene}/${wg.id}: the water mesh is drawn ${off > 0 ? 'BELOW' : 'ABOVE'} its own bed by ${Math.abs(off).toFixed(2)} m.`)
       fail.push(`     ${(100 * proud).toFixed(1)}% of the body's area has ground standing proud of the water it should meet.`)
+      // ⭐ The two directions are NOT equally urgent and the report must say so, or
+      // this reads as one defect with a sign. Ground above water is the one you SEE.
+      fail.push(off > 0
+        ? `     ⛔ BELOW is the VISIBLE failure: ground pokes through the surface and reads as a bank.`
+        : `     ⚠️ ABOVE is INVISIBLE from the camera (you cannot see under water) but still means the`
+          + `\n        source and the mesh disagree — shore geometry fitted here still inherits the offset.`)
     }
   }
 }
