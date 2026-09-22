@@ -41,7 +41,8 @@
    "osm_type": null,
    "overture_category": "kitchen_remodeling",
    "overture_confidence": 0.9017539471387863,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1868
   },
   {
    "id": "huro-lst-0245",
@@ -95,7 +96,8 @@
    "osm_type": null,
    "overture_category": "auto_detailing",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 537
   },
   {
    "id": "huro-lst-0086",
@@ -150,7 +152,8 @@
    "osm_type": null,
    "overture_category": "car_wash",
    "overture_confidence": 0.65,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 537
   },
   {
    "id": "huro-lst-0088",
@@ -204,7 +207,8 @@
    "osm_type": null,
    "overture_category": "hunting_and_fishing_supplies",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 590
   },
   {
    "id": "huro-lst-0246",
@@ -234,7 +238,8 @@
    "osm_type": null,
    "overture_category": "animal_hospital",
    "overture_confidence": 0.9885,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1670
   },
   {
    "id": "huro-lst-0091",
@@ -259,7 +264,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.85
+   "overture_confidence": 0.85,
+   "prominence_rank": 1812
   },
   {
    "id": "huro-lst-0157",
@@ -289,7 +295,8 @@
    "osm_type": null,
    "overture_category": "fishing_charter",
    "overture_confidence": 0.3068450391292572,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2471
   },
   {
    "id": "huro-lst-0106",
@@ -356,7 +363,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.9722161889076233,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3672
   },
   {
    "id": "huro-lst-0266",
@@ -406,7 +414,8 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.5860055088996887,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 239
   },
   {
    "id": "huro-lst-0079",
@@ -431,7 +440,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
-   "overture_confidence": 0.6581670045852661
+   "overture_confidence": 0.6581670045852661,
+   "prominence_rank": 239
   },
   {
    "id": "huro-lst-0181",
@@ -464,7 +474,8 @@
    "osm_type": null,
    "overture_category": "caterer",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 274
   },
   {
    "id": "huro-lst-0095",
@@ -531,7 +542,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.9591095447540283,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1750
   },
   {
    "id": "huro-lst-0144",
@@ -556,7 +568,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "amusement_park",
-   "overture_confidence": 0.921627140045166
+   "overture_confidence": 0.921627140045166,
+   "prominence_rank": 902
   },
   {
    "id": "huro-lst-0243",
@@ -581,7 +594,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_rental_and_training",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "prominence_rank": 902
   },
   {
    "id": "huro-lst-0102",
@@ -657,7 +671,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 902
   },
   {
    "id": "huro-lst-0163",
@@ -683,7 +698,8 @@
    "osm_type": null,
    "overture_category": "industrial_equipment",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 318
   },
   {
    "id": "huro-lst-0220",
@@ -708,7 +724,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "river",
-   "overture_confidence": 0.8123106956481934
+   "overture_confidence": 0.8123106956481934,
+   "prominence_rank": 531
   },
   {
    "id": "huro-lst-0070",
@@ -741,7 +758,8 @@
    "osm_type": null,
    "overture_category": "fishing_charter",
    "overture_confidence": 0.85,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1162
   },
   {
    "id": "huro-lst-0247",
@@ -800,7 +818,8 @@
    "osm_type": null,
    "overture_category": "contractor",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2525
   },
   {
    "id": "huro-lst-0064",
@@ -826,7 +845,8 @@
    "osm_type": null,
    "overture_category": "contractor",
    "overture_confidence": 0.1008288711309433,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1384
   },
   {
    "id": "huro-lst-0207",
@@ -851,7 +871,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 193
   },
   {
    "id": "huro-lst-0071",
@@ -904,7 +925,8 @@
    "osm_type": null,
    "overture_category": "furniture_repair",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 497
   },
   {
    "id": "huro-lst-0213",
@@ -929,7 +951,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.6761288642883301
+   "overture_confidence": 0.6761288642883301,
+   "prominence_rank": 1410
   },
   {
    "id": "huro-lst-0167",
@@ -954,7 +977,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beach",
-   "overture_confidence": 0.9384403824806213
+   "overture_confidence": 0.9384403824806213,
+   "prominence_rank": 704
   },
   {
    "id": "huro-lst-0119",
@@ -980,7 +1004,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 38
   },
   {
    "id": "huro-lst-0062",
@@ -1019,7 +1044,8 @@
    "osm_type": null,
    "overture_category": "charity_organization",
    "overture_confidence": 0.6219924092292786,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 38
   },
   {
    "id": "huro-lst-0021",
@@ -1066,7 +1092,8 @@
    "osm_type": null,
    "overture_category": "elementary_school",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 34
   },
   {
    "id": "huro-lst-0132",
@@ -1091,7 +1118,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "elementary_school",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 34
   },
   {
    "id": "huro-lst-0242",
@@ -1156,7 +1184,8 @@
    "osm_type": null,
    "overture_category": "hardware_store",
    "overture_confidence": 0.9982236878573895,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 236
   },
   {
    "id": "huro-lst-0177",
@@ -1216,7 +1245,8 @@
    "osm_type": null,
    "overture_category": "pharmacy",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0124",
@@ -1241,7 +1271,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0219",
@@ -1296,7 +1327,8 @@
    "osm_type": null,
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0262",
@@ -1357,7 +1389,8 @@
    "osm_type": null,
    "overture_category": "nail_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0254",
@@ -1383,7 +1416,8 @@
    "osm_type": null,
    "overture_category": "trusts",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0029",
@@ -1408,7 +1442,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "grocery_store",
-   "overture_confidence": 0.908726572394371
+   "overture_confidence": 0.908726572394371,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0268",
@@ -1433,7 +1468,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0214",
@@ -1458,7 +1494,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pizza_restaurant",
-   "overture_confidence": 0.77
+   "overture_confidence": 0.77,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0050",
@@ -1483,7 +1520,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "grocery_store",
-   "overture_confidence": 0.9583381414413452
+   "overture_confidence": 0.9583381414413452,
+   "prominence_rank": 23
   },
   {
    "id": "huro-lst-0115",
@@ -1508,7 +1546,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bike_rentals",
-   "overture_confidence": 0.2447020411491394
+   "overture_confidence": 0.2447020411491394,
+   "prominence_rank": 267
   },
   {
    "id": "huro-lst-0139",
@@ -1533,7 +1572,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "ice_cream_shop",
-   "overture_confidence": 0.9931
+   "overture_confidence": 0.9931,
+   "prominence_rank": 12
   },
   {
    "id": "huro-lst-0042",
@@ -1558,7 +1598,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
-   "overture_confidence": 0.9604352116584778
+   "overture_confidence": 0.9604352116584778,
+   "prominence_rank": 12
   },
   {
    "id": "huro-lst-0013",
@@ -1584,7 +1625,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 98
   },
   {
    "id": "huro-lst-0257",
@@ -1641,7 +1683,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.8,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 98
   },
   {
    "id": "huro-lst-0004",
@@ -1667,7 +1710,8 @@
    "osm_type": null,
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 98
   },
   {
    "id": "huro-lst-0114",
@@ -1727,7 +1771,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.984475,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 98
   },
   {
    "id": "huro-lst-0151",
@@ -1780,7 +1825,8 @@
    "osm_type": null,
    "overture_category": "banks",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 52
   },
   {
    "id": "huro-lst-0046",
@@ -1805,7 +1851,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "gym",
-   "overture_confidence": 0.6613802313804626
+   "overture_confidence": 0.6613802313804626,
+   "prominence_rank": 52
   },
   {
    "id": "huro-lst-0252",
@@ -2455,7 +2502,8 @@
      }
     ]
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 43
   },
   {
    "id": "huro-lst-0239",
@@ -2554,7 +2602,8 @@
      }
     ]
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 41
   },
   {
    "id": "huro-lst-0090",
@@ -2606,7 +2655,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 633
   },
   {
    "id": "huro-lst-0218",
@@ -2631,7 +2681,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "thrift_store",
-   "overture_confidence": 0.989915554523468
+   "overture_confidence": 0.989915554523468,
+   "prominence_rank": 41
   },
   {
    "id": "huro-lst-0058",
@@ -2686,7 +2737,8 @@
    "osm_type": null,
    "overture_category": "eye_care_clinic",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 633
   },
   {
    "id": "huro-lst-0261",
@@ -2711,7 +2763,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "naturopathic_holistic",
-   "overture_confidence": 0.8080986738204956
+   "overture_confidence": 0.8080986738204956,
+   "prominence_rank": 1653
   },
   {
    "id": "huro-lst-0031",
@@ -2736,7 +2789,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beach",
-   "overture_confidence": 0.6695507168769836
+   "overture_confidence": 0.6695507168769836,
+   "prominence_rank": 116
   },
   {
    "id": "huro-lst-0008",
@@ -2761,7 +2815,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beach",
-   "overture_confidence": 0.8938100934028625
+   "overture_confidence": 0.8938100934028625,
+   "prominence_rank": 55
   },
   {
    "id": "huro-lst-0052",
@@ -2786,7 +2841,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 1033
   },
   {
    "id": "huro-lst-0096",
@@ -2817,7 +2873,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1352
   },
   {
    "id": "huro-lst-0198",
@@ -2877,7 +2934,8 @@
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9267725944519043,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1216
   },
   {
    "id": "huro-lst-0229",
@@ -2902,7 +2960,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
-   "overture_confidence": 0.5159870386123657
+   "overture_confidence": 0.5159870386123657,
+   "prominence_rank": 3329
   },
   {
    "id": "huro-lst-0038",
@@ -2928,7 +2987,8 @@
    "osm_type": null,
    "overture_category": "mining",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1122
   },
   {
    "id": "huro-lst-0077",
@@ -2953,7 +3013,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
-   "overture_confidence": 0.9714129185676574
+   "overture_confidence": 0.9714129185676574,
+   "prominence_rank": 327
   },
   {
    "id": "huro-lst-0125",
@@ -3007,7 +3068,8 @@
    "osm_type": null,
    "overture_category": "banks",
    "overture_confidence": 0.9992158419787883,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 29
   },
   {
    "id": "huro-lst-0118",
@@ -3032,7 +3094,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "farm",
-   "overture_confidence": 0.8417461514472961
+   "overture_confidence": 0.8417461514472961,
+   "prominence_rank": 341
   },
   {
    "id": "huro-lst-0067",
@@ -3057,7 +3120,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "lake",
-   "overture_confidence": 0.7329153418540955
+   "overture_confidence": 0.7329153418540955,
+   "prominence_rank": 428
   },
   {
    "id": "huro-lst-0222",
@@ -3082,7 +3146,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "advertising_agency",
-   "overture_confidence": 0.26709333062171936
+   "overture_confidence": 0.26709333062171936,
+   "prominence_rank": 428
   },
   {
    "id": "huro-lst-0238",
@@ -3139,7 +3204,8 @@
    "osm_type": null,
    "overture_category": "discount_store",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 168
   },
   {
    "id": "huro-lst-0045",
@@ -3164,7 +3230,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.34179285168647766
+   "overture_confidence": 0.34179285168647766,
+   "prominence_rank": 2490
   },
   {
    "id": "huro-lst-0227",
@@ -3198,7 +3265,8 @@
    "osm_type": null,
    "overture_category": "park",
    "overture_confidence": 0.77,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3503
   },
   {
    "id": "huro-lst-0178",
@@ -3232,7 +3300,8 @@
    "osm_type": null,
    "overture_category": "park",
    "overture_confidence": 0.9169355630874634,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2490
   },
   {
    "id": "huro-lst-0236",
@@ -3258,7 +3327,8 @@
    "osm_type": null,
    "overture_category": "church_cathedral",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2
   },
   {
    "id": "huro-lst-0143",
@@ -3283,7 +3353,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 2125
   },
   {
    "id": "huro-lst-0122",
@@ -3309,7 +3380,8 @@
    "osm_type": null,
    "overture_category": "beauty_salon",
    "overture_confidence": 0.7537409663200378,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0141",
@@ -3346,7 +3418,8 @@
    "osm_type": null,
    "overture_category": "tanning_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3622
   },
   {
    "id": "huro-lst-0142",
@@ -3399,7 +3472,8 @@
    "osm_type": null,
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0109",
@@ -3462,7 +3536,8 @@
     "url": "https://www.cameopizza.com/menu/",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3622
   },
   {
    "id": "huro-lst-0276",
@@ -3509,7 +3584,8 @@
    "osm_type": null,
    "overture_category": "high_school",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 67
   },
   {
    "id": "huro-lst-0032",
@@ -3570,7 +3646,8 @@
    "osm_type": null,
    "overture_category": "gym",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0149",
@@ -3595,7 +3672,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "dance_school",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0264",
@@ -3625,7 +3703,8 @@
    "osm_type": null,
    "overture_category": "smoothie_juice_bar",
    "overture_confidence": 0.55,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0256",
@@ -3650,7 +3729,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0061",
@@ -3675,7 +3755,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "golf_instructor",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0003",
@@ -3700,7 +3781,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "liquor_store",
-   "overture_confidence": 0.28271639347076416
+   "overture_confidence": 0.28271639347076416,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0015",
@@ -3734,7 +3816,8 @@
     "url": "http://the-tea-bubble.square.site/",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0043",
@@ -3765,7 +3848,8 @@
    "osm_type": null,
    "overture_category": "beauty_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0241",
@@ -3793,7 +3877,8 @@
    "osm_type": null,
    "overture_category": "bagel_shop",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0018",
@@ -3849,7 +3934,8 @@
    "osm_type": null,
    "overture_category": "auto_parts_and_supply_store",
    "overture_confidence": 0.991375,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0249",
@@ -3913,7 +3999,8 @@
    "osm_type": null,
    "overture_category": "convenience_store",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 24
   },
   {
    "id": "huro-lst-0097",
@@ -3970,7 +4057,8 @@
    "osm_type": null,
    "overture_category": "boat_dealer",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 165
   },
   {
    "id": "huro-lst-0116",
@@ -4002,7 +4090,8 @@
    "osm_type": null,
    "overture_category": "freight_and_cargo_service",
    "overture_confidence": 0.8790246486663819,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 194
   },
   {
    "id": "huro-lst-0039",
@@ -4032,7 +4121,8 @@
    "osm_type": null,
    "overture_category": "chiropractor",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1117
   },
   {
    "id": "huro-lst-0128",
@@ -4060,7 +4150,8 @@
    "osm_type": null,
    "overture_category": "business_manufacturing_and_supply",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 159
   },
   {
    "id": "huro-lst-0195",
@@ -4115,7 +4206,8 @@
    "osm_type": null,
    "overture_category": "library",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 7
   },
   {
    "id": "huro-lst-0280",
@@ -4167,7 +4259,8 @@
    "osm_type": null,
    "overture_category": "library",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1
   },
   {
    "id": "huro-lst-0194",
@@ -4192,7 +4285,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "credit_union",
-   "overture_confidence": 0.77
+   "overture_confidence": 0.77,
+   "prominence_rank": 1164
   },
   {
    "id": "huro-lst-0226",
@@ -4217,7 +4311,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "campus_building",
-   "overture_confidence": 0.7235404253005981
+   "overture_confidence": 0.7235404253005981,
+   "prominence_rank": 14
   },
   {
    "id": "huro-lst-0048",
@@ -4250,7 +4345,8 @@
    "osm_type": null,
    "overture_category": "business_manufacturing_and_supply",
    "overture_confidence": 0.30524274706840515,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 170
   },
   {
    "id": "huro-lst-0117",
@@ -4278,7 +4374,8 @@
    "osm_type": null,
    "overture_category": "public_health_clinic",
    "overture_confidence": 0.95,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 516
   },
   {
    "id": "huro-lst-0089",
@@ -4304,7 +4401,8 @@
    "osm_type": null,
    "overture_category": "corporate_office",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 186
   },
   {
    "id": "huro-lst-0210",
@@ -4334,7 +4432,8 @@
    "osm_type": null,
    "overture_category": "stadium_arena",
    "overture_confidence": 0.7630570530891418,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 334
   },
   {
    "id": "huro-lst-0081",
@@ -4368,7 +4467,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2274
   },
   {
    "id": "huro-lst-0267",
@@ -4419,7 +4519,8 @@
    "osm_type": null,
    "overture_category": "spas",
    "overture_confidence": 0.4602181613445282,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0006",
@@ -4464,7 +4565,8 @@
     "url": "https://oldnorthmaineats.com/old-fish-house/",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2576
   },
   {
    "id": "huro-lst-0183",
@@ -4507,7 +4609,8 @@
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9952545166015625,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2576
   },
   {
    "id": "huro-lst-0069",
@@ -4539,7 +4642,8 @@
    "osm_type": null,
    "overture_category": "art_gallery",
    "overture_confidence": 0.55,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0113",
@@ -4573,7 +4677,8 @@
    "osm_type": null,
    "overture_category": "psychologist",
    "overture_confidence": 0.75,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0155",
@@ -4598,7 +4703,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "massage_therapy",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0216",
@@ -4630,7 +4736,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.08619300276041031,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0068",
@@ -4655,7 +4762,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "health_and_medical",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 287
   },
   {
    "id": "huro-lst-0228",
@@ -4709,7 +4817,8 @@
    "osm_type": null,
    "overture_category": "sports_and_recreation_venue",
    "overture_confidence": 0.9516571164131165,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2464
   },
   {
    "id": "huro-lst-0188",
@@ -4761,7 +4870,8 @@
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9677644968032837,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 589
   },
   {
    "id": "huro-lst-0166",
@@ -4827,7 +4937,8 @@
     "url": "http://harborhousebar.com/food-menu",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 44
   },
   {
    "id": "huro-lst-0193",
@@ -4852,7 +4963,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "burger_restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 26
   },
   {
    "id": "huro-lst-0237",
@@ -4883,7 +4995,8 @@
    "osm_type": null,
    "overture_category": "bowling_alley",
    "overture_confidence": 0.9251940846443176,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 26
   },
   {
    "id": "huro-lst-0196",
@@ -4908,7 +5021,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "cafe",
-   "overture_confidence": 0.724886953830719
+   "overture_confidence": 0.724886953830719,
+   "prominence_rank": 26
   },
   {
    "id": "huro-lst-0232",
@@ -4933,7 +5047,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 44
   },
   {
    "id": "huro-lst-0047",
@@ -4958,7 +5073,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "eat_and_drink",
-   "overture_confidence": 0.7443719506263733
+   "overture_confidence": 0.7443719506263733,
+   "prominence_rank": 44
   },
   {
    "id": "huro-lst-0103",
@@ -5023,7 +5139,8 @@
    "osm_type": null,
    "overture_category": "hotel",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 8
   },
   {
    "id": "huro-lst-0156",
@@ -5048,7 +5165,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bed_and_breakfast",
-   "overture_confidence": 0.9374552965164185
+   "overture_confidence": 0.9374552965164185,
+   "prominence_rank": 668
   },
   {
    "id": "huro-lst-0283",
@@ -5099,7 +5217,8 @@
    "osm_type": null,
    "overture_category": "high_school",
    "overture_confidence": 0.9722161889076233,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 68
   },
   {
    "id": "huro-lst-0131",
@@ -5130,7 +5249,8 @@
    "osm_type": null,
    "overture_category": "private_school",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 70
   },
   {
    "id": "huro-lst-0072",
@@ -5155,7 +5275,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "diagnostic_services",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0255",
@@ -5181,7 +5302,8 @@
    "osm_type": null,
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.49442368745803833,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0272",
@@ -5206,7 +5328,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sewing_and_alterations",
-   "overture_confidence": 0.3147471249103546
+   "overture_confidence": 0.3147471249103546,
+   "prominence_rank": 3093
   },
   {
    "id": "huro-lst-0101",
@@ -5238,7 +5361,8 @@
    "osm_type": null,
    "overture_category": "preschool",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 36
   },
   {
    "id": "huro-lst-0225",
@@ -5268,7 +5392,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.6436288356781006,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 321
   },
   {
    "id": "huro-lst-0136",
@@ -5300,7 +5425,8 @@
    "osm_type": null,
    "overture_category": "chambers_of_commerce",
    "overture_confidence": 0.75,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0208",
@@ -5326,7 +5452,8 @@
    "osm_type": null,
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.43328922986984253,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0098",
@@ -5352,7 +5479,8 @@
    "osm_type": null,
    "overture_category": "party_and_event_planning",
    "overture_confidence": 0.8949015140533447,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0037",
@@ -5378,7 +5506,8 @@
    "osm_type": null,
    "overture_category": "installment_loans",
    "overture_confidence": 0.5384074449539185,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0094",
@@ -5403,7 +5532,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "lake",
-   "overture_confidence": 0.6028739213943481
+   "overture_confidence": 0.6028739213943481,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0224",
@@ -5456,7 +5586,8 @@
    "osm_type": null,
    "overture_category": "dentist",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0205",
@@ -5482,7 +5613,8 @@
    "osm_type": null,
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.2978995442390442,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1287
   },
   {
    "id": "huro-lst-0148",
@@ -5508,7 +5640,8 @@
    "osm_type": null,
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.8125662207603455,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0066",
@@ -5559,7 +5692,8 @@
    "osm_type": null,
    "overture_category": "optometrist",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0273",
@@ -5591,7 +5725,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0140",
@@ -5616,7 +5751,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "alternative_medicine",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0025",
@@ -5671,7 +5807,8 @@
    "osm_type": null,
    "overture_category": "diagnostic_imaging",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0164",
@@ -5696,7 +5833,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "diagnostic_services",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "prominence_rank": 259
   },
   {
    "id": "huro-lst-0203",
@@ -5735,7 +5873,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 99
   },
   {
    "id": "huro-lst-0083",
@@ -5789,7 +5928,8 @@
    "osm_type": null,
    "overture_category": "bank_credit_union",
    "overture_confidence": 0.9995984894931317,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 292
   },
   {
    "id": "huro-lst-0284",
@@ -5843,7 +5983,8 @@
    "osm_type": null,
    "overture_category": "banks",
    "overture_confidence": 0.9497681260108948,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 292
   },
   {
    "id": "huro-lst-0274",
@@ -5868,7 +6009,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
-   "overture_confidence": 0.6422938108444214
+   "overture_confidence": 0.6422938108444214,
+   "prominence_rank": 292
   },
   {
    "id": "huro-lst-0153",
@@ -5902,7 +6044,8 @@
    "osm_type": null,
    "overture_category": "medical_spa",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 209
   },
   {
    "id": "huro-lst-0150",
@@ -5936,7 +6079,8 @@
    "osm_type": null,
    "overture_category": "church_cathedral",
    "overture_confidence": 0.9999402360022068,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 37
   },
   {
    "id": "huro-lst-0235",
@@ -5961,7 +6105,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0174",
@@ -5986,7 +6131,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_salon",
-   "overture_confidence": 0.416169136762619
+   "overture_confidence": 0.416169136762619,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0265",
@@ -6017,7 +6163,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.85,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0056",
@@ -6049,7 +6196,8 @@
    "osm_type": null,
    "overture_category": "shopping",
    "overture_confidence": 0.7434737086296082,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1763
   },
   {
    "id": "huro-lst-0080",
@@ -6074,7 +6222,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sports_bar",
-   "overture_confidence": 0.9568439722061157
+   "overture_confidence": 0.9568439722061157,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0152",
@@ -6099,7 +6248,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.77
+   "overture_confidence": 0.77,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0202",
@@ -6124,7 +6274,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "accommodation",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 206
   },
   {
    "id": "huro-lst-0212",
@@ -6159,7 +6310,8 @@
    "osm_type": null,
    "overture_category": "history_museum",
    "overture_confidence": 0.8919472694396973,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 35
   },
   {
    "id": "huro-lst-0253",
@@ -6185,7 +6337,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.2614365220069885,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2097
   },
   {
    "id": "huro-lst-0030",
@@ -6216,7 +6369,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.2088703215122223,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2412
   },
   {
    "id": "huro-lst-0019",
@@ -6241,7 +6395,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beach",
-   "overture_confidence": 0.39875471591949463
+   "overture_confidence": 0.39875471591949463,
+   "prominence_rank": 790
   },
   {
    "id": "huro-lst-0036",
@@ -6272,7 +6427,8 @@
    "osm_type": null,
    "overture_category": "toy_store",
    "overture_confidence": 0.5163470506668091,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1964
   },
   {
    "id": "huro-lst-0053",
@@ -6297,7 +6453,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "cottage",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 2149
   },
   {
    "id": "huro-lst-0065",
@@ -6331,7 +6488,8 @@
    "osm_type": null,
    "overture_category": "central_government_office",
    "overture_confidence": 0.9846013784408569,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 13
   },
   {
    "id": "huro-lst-0187",
@@ -6394,7 +6552,8 @@
     "url": "http://www.gatheringgroundscoffeehouse.com/menu-1",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 89
   },
   {
    "id": "huro-lst-0035",
@@ -6426,7 +6585,8 @@
    "osm_type": null,
    "overture_category": "fire_department",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 13
   },
   {
    "id": "huro-lst-0121",
@@ -6455,7 +6615,8 @@
    "osm_type": null,
    "overture_category": "central_government_office",
    "overture_confidence": 0.65,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 868
   },
   {
    "id": "huro-lst-0020",
@@ -6515,7 +6676,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 308
   },
   {
    "id": "huro-lst-0104",
@@ -6569,7 +6731,8 @@
    "osm_type": null,
    "overture_category": "post_office",
    "overture_confidence": 0.9655,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 21
   },
   {
    "id": "huro-lst-0085",
@@ -6623,7 +6786,8 @@
    "osm_type": null,
    "overture_category": "post_office",
    "overture_confidence": 0.9722161889076233,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 21
   },
   {
    "id": "huro-lst-0158",
@@ -6658,7 +6822,8 @@
    "osm_type": null,
    "overture_category": "funeral_services_and_cemeteries",
    "overture_confidence": 0.9996699541807175,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 46
   },
   {
    "id": "huro-lst-0217",
@@ -6693,7 +6858,8 @@
    "osm_type": null,
    "overture_category": "family_practice",
    "overture_confidence": 0.3381790518760681,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 46
   },
   {
    "id": "huro-lst-0180",
@@ -6750,7 +6916,8 @@
    "osm_type": null,
    "overture_category": "banks",
    "overture_confidence": 0.77,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 401
   },
   {
    "id": "huro-lst-0175",
@@ -6775,7 +6942,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "private_association",
-   "overture_confidence": 0.7973589897155762
+   "overture_confidence": 0.7973589897155762,
+   "prominence_rank": 2405
   },
   {
    "id": "huro-lst-0017",
@@ -6808,7 +6976,8 @@
    "osm_type": null,
    "overture_category": "sightseeing_tour_agency",
    "overture_confidence": 0.565488338470459,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 179
   },
   {
    "id": "huro-lst-0138",
@@ -6844,7 +7013,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.36397066712379456,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 179
   },
   {
    "id": "huro-lst-0092",
@@ -6906,7 +7076,8 @@
    "osm_type": null,
    "overture_category": "caterer",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 53
   },
   {
    "id": "huro-lst-0162",
@@ -6932,7 +7103,8 @@
    "osm_type": null,
    "overture_category": "bakery",
    "overture_confidence": 0.9532211422920227,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 20
   },
   {
    "id": "huro-lst-0127",
@@ -6965,7 +7137,8 @@
    "osm_type": null,
    "overture_category": "youth_organizations",
    "overture_confidence": 0.6349037289619446,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 25
   },
   {
    "id": "huro-lst-0259",
@@ -6990,7 +7163,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "car_dealer",
-   "overture_confidence": 0.9135563373565674
+   "overture_confidence": 0.9135563373565674,
+   "prominence_rank": 40
   },
   {
    "id": "huro-lst-0234",
@@ -7049,7 +7223,8 @@
    "osm_type": null,
    "overture_category": "convenience_store",
    "overture_confidence": 0.9631699323654175,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3
   },
   {
    "id": "huro-lst-0040",
@@ -7074,7 +7249,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 3
   },
   {
    "id": "huro-lst-0223",
@@ -7133,7 +7309,8 @@
    "osm_type": null,
    "overture_category": "pizza_restaurant",
    "overture_confidence": 0.9760689735412598,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3
   },
   {
    "id": "huro-lst-0010",
@@ -7164,7 +7341,8 @@
    "osm_type": null,
    "overture_category": "tea_room",
    "overture_confidence": 0.9511064887046814,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2920
   },
   {
    "id": "huro-lst-0200",
@@ -7197,7 +7375,8 @@
    "osm_type": null,
    "overture_category": "barber",
    "overture_confidence": 0.8974579572677612,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2920
   },
   {
    "id": "huro-lst-0111",
@@ -7223,7 +7402,8 @@
    "osm_type": null,
    "overture_category": "software_development",
    "overture_confidence": 0.21278509497642517,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0084",
@@ -7255,7 +7435,8 @@
    "osm_type": null,
    "overture_category": "insurance_agency",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0146",
@@ -7287,7 +7468,8 @@
    "osm_type": null,
    "overture_category": "art_school",
    "overture_confidence": 0.553705096244812,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0033",
@@ -7312,7 +7494,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "home_improvement_store",
-   "overture_confidence": 0.07049264013767242
+   "overture_confidence": 0.07049264013767242,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0182",
@@ -7338,7 +7521,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 33
   },
   {
    "id": "huro-lst-0082",
@@ -7363,7 +7547,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.8945028185844421
+   "overture_confidence": 0.8945028185844421,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0059",
@@ -7395,7 +7580,8 @@
    "osm_type": null,
    "overture_category": "arts_and_crafts",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 22
   },
   {
    "id": "huro-lst-0063",
@@ -7456,7 +7642,8 @@
    "osm_type": null,
    "overture_category": "sport_equipment_rentals",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3092
   },
   {
    "id": "huro-lst-0176",
@@ -7488,7 +7675,8 @@
    "osm_type": null,
    "overture_category": "catholic_church",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 25
   },
   {
    "id": "huro-lst-0248",
@@ -7518,7 +7706,8 @@
    "osm_type": null,
    "overture_category": "auction_house",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1873
   },
   {
    "id": "huro-lst-0049",
@@ -7555,7 +7744,8 @@
    "osm_type": null,
    "overture_category": "spas",
    "overture_confidence": 0.882188618183136,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1814
   },
   {
    "id": "huro-lst-0026",
@@ -7584,7 +7774,8 @@
    "osm_type": null,
    "overture_category": "furniture_store",
    "overture_confidence": 0.3453887403011322,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1814
   },
   {
    "id": "huro-lst-0204",
@@ -7609,7 +7800,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beauty_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 1814
   },
   {
    "id": "huro-lst-0215",
@@ -7635,7 +7827,8 @@
    "osm_type": null,
    "overture_category": "bail_bonds_service",
    "overture_confidence": 0.21993544697761536,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 164
   },
   {
    "id": "huro-lst-0009",
@@ -7668,7 +7861,8 @@
    "osm_type": null,
    "overture_category": "motorcycle_repair",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 164
   },
   {
    "id": "huro-lst-0199",
@@ -7693,7 +7887,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "property_management",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 3518
   },
   {
    "id": "huro-lst-0190",
@@ -7718,7 +7913,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "construction_services",
-   "overture_confidence": 0.9045772761106491
+   "overture_confidence": 0.9045772761106491,
+   "prominence_rank": 164
   },
   {
    "id": "huro-lst-0172",
@@ -7766,7 +7962,8 @@
    "osm_type": null,
    "overture_category": "flowers_and_gifts_shop",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3439
   },
   {
    "id": "huro-lst-0230",
@@ -7819,7 +8016,8 @@
    "osm_type": null,
    "overture_category": "automotive_repair",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 27
   },
   {
    "id": "huro-lst-0244",
@@ -7874,7 +8072,8 @@
    "osm_type": null,
    "overture_category": "bar_and_grill_restaurant",
    "overture_confidence": 0.9991120225191117,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 27
   },
   {
    "id": "huro-lst-0277",
@@ -7920,7 +8119,8 @@
    "osm_type": null,
    "overture_category": "hair_extensions",
    "overture_confidence": 0.27795276045799255,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3439
   },
   {
    "id": "huro-lst-0134",
@@ -7974,7 +8174,8 @@
    "osm_type": null,
    "overture_category": "hair_salon",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3439
   },
   {
    "id": "huro-lst-0011",
@@ -7999,7 +8200,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "convenience_store",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "prominence_rank": 27
   },
   {
    "id": "huro-lst-0192",
@@ -8035,7 +8237,8 @@
    "osm_type": null,
    "overture_category": "marina",
    "overture_confidence": 0.8990850448608398,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3433
   },
   {
    "id": "huro-lst-0263",
@@ -8090,7 +8293,8 @@
    "osm_type": null,
    "overture_category": "real_estate_service",
    "overture_confidence": 0.7616450190544128,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 64
   },
   {
    "id": "huro-lst-0189",
@@ -8119,7 +8323,8 @@
    "osm_type": null,
    "overture_category": "theme_restaurant",
    "overture_confidence": 0.9588589072227478,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 56
   },
   {
    "id": "huro-lst-0206",
@@ -8152,7 +8357,8 @@
    "osm_type": null,
    "overture_category": "gym",
    "overture_confidence": 0.7637417316436768,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 16
   },
   {
    "id": "huro-lst-0145",
@@ -8208,7 +8414,8 @@
    "osm_type": null,
    "overture_category": "car_dealer",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 40
   },
   {
    "id": "huro-lst-0270",
@@ -8240,7 +8447,8 @@
    "osm_type": null,
    "overture_category": "diagnostic_services",
    "overture_confidence": 0.9831629991531372,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 542
   },
   {
    "id": "huro-lst-0250",
@@ -8297,7 +8505,8 @@
     "url": "https://www.jimspizzabox.com/menus",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 45
   },
   {
    "id": "huro-lst-0076",
@@ -8322,7 +8531,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "hair_salon",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 2051
   },
   {
    "id": "huro-lst-0110",
@@ -8356,7 +8566,8 @@
    "osm_type": null,
    "overture_category": "dentist",
    "overture_confidence": 0.9973471701145172,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1652
   },
   {
    "id": "huro-lst-0014",
@@ -8391,7 +8602,8 @@
     "url": "https://www.pizzahousehuron.com/menu/",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 49
   },
   {
    "id": "huro-lst-0100",
@@ -8416,7 +8628,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 49
   },
   {
    "id": "huro-lst-0028",
@@ -8442,7 +8655,8 @@
    "osm_type": null,
    "overture_category": "family_practice",
    "overture_confidence": 0.9375893473625183,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 542
   },
   {
    "id": "huro-lst-0007",
@@ -8496,7 +8710,8 @@
    "osm_type": null,
    "overture_category": "automotive_repair",
    "overture_confidence": 0.65,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 455
   },
   {
    "id": "huro-lst-0168",
@@ -8521,7 +8736,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "restaurant",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 463
   },
   {
    "id": "huro-lst-0211",
@@ -8547,7 +8763,8 @@
    "osm_type": null,
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 463
   },
   {
    "id": "huro-lst-0060",
@@ -8608,7 +8825,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.984475,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1078
   },
   {
    "id": "huro-lst-0282",
@@ -8666,7 +8884,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.8,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1078
   },
   {
    "id": "huro-lst-0126",
@@ -8692,7 +8911,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 463
   },
   {
    "id": "huro-lst-0171",
@@ -8717,7 +8937,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "tanning_salon",
-   "overture_confidence": 0.65
+   "overture_confidence": 0.65,
+   "prominence_rank": 352
   },
   {
    "id": "huro-lst-0170",
@@ -8742,7 +8963,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 352
   },
   {
    "id": "huro-lst-0154",
@@ -8773,7 +8995,8 @@
    "osm_type": null,
    "overture_category": "lumber_store",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 221
   },
   {
    "id": "huro-lst-0074",
@@ -8803,7 +9026,8 @@
    "osm_type": null,
    "overture_category": "butcher_shop",
    "overture_confidence": 0.9583381414413452,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 651
   },
   {
    "id": "huro-lst-0281",
@@ -8831,7 +9055,8 @@
    "osm_type": null,
    "overture_category": "farmers_market",
    "overture_confidence": 0.9425601363182068,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2902
   },
   {
    "id": "huro-lst-0285",
@@ -8857,7 +9082,8 @@
    "osm_type": null,
    "overture_category": "truck_rentals",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 741
   },
   {
    "id": "huro-lst-0005",
@@ -8912,7 +9138,8 @@
    "osm_type": null,
    "overture_category": "propane_supplier",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 32
   },
   {
    "id": "huro-lst-0075",
@@ -8975,7 +9202,8 @@
    "osm_type": null,
    "overture_category": "resort",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 19
   },
   {
    "id": "huro-lst-0034",
@@ -9036,7 +9264,8 @@
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.9633245468139648,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 9
   },
   {
    "id": "huro-lst-0173",
@@ -9103,7 +9332,8 @@
    "osm_type": null,
    "overture_category": "gas_station",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 30
   },
   {
    "id": "huro-lst-0185",
@@ -9161,7 +9391,8 @@
    "osm_type": null,
    "overture_category": "seafood_restaurant",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 31
   },
   {
    "id": "huro-lst-0184",
@@ -9224,7 +9455,8 @@
     "url": "https://www.costaazulhuron.com/",
     "sections": []
    },
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 48
   },
   {
    "id": "huro-lst-0024",
@@ -9254,7 +9486,8 @@
    "osm_type": null,
    "overture_category": "restaurant",
    "overture_confidence": 0.9868365526199341,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 166
   },
   {
    "id": "huro-lst-0002",
@@ -9289,7 +9522,8 @@
    "osm_type": null,
    "overture_category": "logging_contractor",
    "overture_confidence": 0.9722161889076233,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 3152
   },
   {
    "id": "huro-lst-0054",
@@ -9314,7 +9548,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "food_delivery_service",
-   "overture_confidence": 0.3115483820438385
+   "overture_confidence": 0.3115483820438385,
+   "prominence_rank": 420
   },
   {
    "id": "huro-lst-0147",
@@ -9339,7 +9574,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "contractor",
-   "overture_confidence": 0.28225746750831604
+   "overture_confidence": 0.28225746750831604,
+   "prominence_rank": 1276
   },
   {
    "id": "huro-lst-0078",
@@ -9364,7 +9600,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "beach",
-   "overture_confidence": 0.9632793068885803
+   "overture_confidence": 0.9632793068885803,
+   "prominence_rank": 382
   },
   {
    "id": "huro-lst-0137",
@@ -9395,7 +9632,8 @@
    "osm_type": null,
    "overture_category": "pub",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 42
   },
   {
    "id": "huro-lst-0023",
@@ -9420,7 +9658,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "resort",
-   "overture_confidence": 0.9847981333732605
+   "overture_confidence": 0.9847981333732605,
+   "prominence_rank": 216
   },
   {
    "id": "huro-lst-0271",
@@ -9445,7 +9684,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.5867830514907837
+   "overture_confidence": 0.5867830514907837,
+   "prominence_rank": 2053
   },
   {
    "id": "huro-lst-0099",
@@ -9471,7 +9711,8 @@
    "osm_type": null,
    "overture_category": "general_litigation",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1539
   },
   {
    "id": "huro-lst-0073",
@@ -9522,7 +9763,8 @@
    "osm_type": null,
    "overture_category": null,
    "overture_confidence": 0.85,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1539
   },
   {
    "id": "huro-lst-0221",
@@ -9547,7 +9789,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "landmark_and_historical_building",
-   "overture_confidence": 0.5451522469520569
+   "overture_confidence": 0.5451522469520569,
+   "prominence_rank": 227
   },
   {
    "id": "huro-lst-0105",
@@ -9600,7 +9843,8 @@
    "osm_type": null,
    "overture_category": "financial_service",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 181
   },
   {
    "id": "huro-lst-0160",
@@ -9661,7 +9905,8 @@
    "osm_type": null,
    "overture_category": "sports_bar",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 181
   },
   {
    "id": "huro-lst-0197",
@@ -9689,7 +9934,8 @@
    "osm_type": null,
    "overture_category": "chiropractor",
    "overture_confidence": 0.55,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 181
   },
   {
    "id": "huro-lst-0107",
@@ -9717,7 +9963,8 @@
    "osm_type": null,
    "overture_category": "health_and_medical",
    "overture_confidence": 0.95,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 181
   },
   {
    "id": "huro-lst-0130",
@@ -9746,7 +9993,8 @@
    "osm_type": null,
    "overture_category": "shopping",
    "overture_confidence": 0.6253195405006409,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1928
   },
   {
    "id": "huro-lst-0240",
@@ -9771,7 +10019,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "pet_sitting",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 967
   },
   {
    "id": "huro-lst-0269",
@@ -9796,7 +10045,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "home_cleaning",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 967
   },
   {
    "id": "huro-lst-0161",
@@ -9821,7 +10071,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bakery",
-   "overture_confidence": 0.14329273998737335
+   "overture_confidence": 0.14329273998737335,
+   "prominence_rank": 1332
   },
   {
    "id": "huro-lst-0179",
@@ -9846,7 +10097,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "health_and_medical",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 66
   },
   {
    "id": "huro-lst-0231",
@@ -9880,7 +10132,8 @@
    "osm_type": null,
    "overture_category": "retirement_home",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 66
   },
   {
    "id": "huro-lst-0279",
@@ -9938,7 +10191,8 @@
    "osm_type": null,
    "overture_category": "discount_store",
    "overture_confidence": 0.55,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2833
   },
   {
    "id": "huro-lst-0209",
@@ -9963,7 +10217,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": null,
-   "overture_confidence": 0.6443824172019958
+   "overture_confidence": 0.6443824172019958,
+   "prominence_rank": 156
   },
   {
    "id": "huro-lst-0041",
@@ -10014,7 +10269,8 @@
    "osm_type": null,
    "overture_category": "elementary_school",
    "overture_confidence": 0.9195,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 156
   },
   {
    "id": "huro-lst-0251",
@@ -10045,7 +10301,8 @@
    "osm_type": null,
    "overture_category": "bakery",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1720
   },
   {
    "id": "huro-lst-0112",
@@ -10070,7 +10327,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "lake",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "prominence_rank": 389
   },
   {
    "id": "huro-lst-0057",
@@ -10131,7 +10389,8 @@
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.980089545249939,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 4
   },
   {
    "id": "huro-lst-0120",
@@ -10190,7 +10449,8 @@
    "osm_type": null,
    "overture_category": "thrift_store",
    "overture_confidence": 0.85,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 11
   },
   {
    "id": "huro-lst-0258",
@@ -10216,7 +10476,8 @@
    "osm_type": null,
    "overture_category": "rental_kiosks",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 231
   },
   {
    "id": "huro-lst-0055",
@@ -10271,7 +10532,8 @@
    "osm_type": null,
    "overture_category": "money_transfer_services",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 231
   },
   {
    "id": "huro-lst-0093",
@@ -10296,7 +10558,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "sign_making",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 10
   },
   {
    "id": "huro-lst-0087",
@@ -10327,7 +10590,8 @@
    "osm_type": null,
    "overture_category": "airport",
    "overture_confidence": 0.8422932028770447,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 222
   },
   {
    "id": "huro-lst-0123",
@@ -10357,7 +10621,8 @@
    "osm_type": null,
    "overture_category": "motorcycle_dealer",
    "overture_confidence": 0.9488615661859512,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 222
   },
   {
    "id": "huro-lst-0201",
@@ -10382,7 +10647,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "accommodation",
-   "overture_confidence": 0.95
+   "overture_confidence": 0.95,
+   "prominence_rank": 18
   },
   {
    "id": "huro-lst-0108",
@@ -10444,7 +10710,8 @@
    "osm_type": null,
    "overture_category": "fast_food_restaurant",
    "overture_confidence": 0.9902192950248718,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 6
   },
   {
    "id": "huro-lst-0016",
@@ -10508,7 +10775,8 @@
    "osm_type": null,
    "overture_category": "motel",
    "overture_confidence": 0.9985466599464417,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 18
   },
   {
    "id": "huro-lst-0278",
@@ -10541,7 +10809,8 @@
    "osm_type": null,
    "overture_category": "community_services_non_profits",
    "overture_confidence": 0.5118817090988159,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 758
   },
   {
    "id": "huro-lst-0027",
@@ -10574,7 +10843,8 @@
    "osm_type": null,
    "overture_category": "printing_services",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 154
   },
   {
    "id": "huro-lst-0159",
@@ -10626,7 +10896,8 @@
    "osm_type": null,
    "overture_category": "lawn_mower_store",
    "overture_confidence": 0.65,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 258
   },
   {
    "id": "huro-lst-0260",
@@ -10651,7 +10922,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "bakery",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 238
   },
   {
    "id": "huro-lst-0044",
@@ -10685,7 +10957,8 @@
    "osm_type": null,
    "overture_category": "medical_supply",
    "overture_confidence": 0.9949824810028076,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 28
   },
   {
    "id": "huro-lst-0133",
@@ -10719,7 +10992,8 @@
    "osm_type": null,
    "overture_category": "boat_service_and_repair",
    "overture_confidence": 0.8752639889717102,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 28
   },
   {
    "id": "huro-lst-0186",
@@ -10752,7 +11026,8 @@
    "osm_type": null,
    "overture_category": "contractor",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 28
   },
   {
    "id": "huro-lst-0191",
@@ -10789,7 +11064,8 @@
    "osm_type": null,
    "overture_category": "roofing",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 28
   },
   {
    "id": "huro-lst-0169",
@@ -10821,7 +11097,8 @@
    "osm_type": null,
    "overture_category": "professional_services",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2487
   },
   {
    "id": "huro-lst-0165",
@@ -10857,7 +11134,8 @@
    "osm_type": null,
    "overture_category": "home_cleaning",
    "overture_confidence": 0.9199122190475464,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1974
   },
   {
    "id": "huro-lst-0022",
@@ -10890,7 +11168,8 @@
    "osm_type": null,
    "overture_category": "professional_services",
    "overture_confidence": 0.6127704381942749,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1660
   },
   {
    "id": "huro-lst-0012",
@@ -10915,7 +11194,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "dentist",
-   "overture_confidence": 0.9199122190475464
+   "overture_confidence": 0.9199122190475464,
+   "prominence_rank": 506
   },
   {
    "id": "huro-lst-0233",
@@ -10941,7 +11221,8 @@
    "osm_type": null,
    "overture_category": "business_advertising",
    "overture_confidence": 0.5434233546257019,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2962
   },
   {
    "id": "huro-lst-0275",
@@ -10967,7 +11248,8 @@
    "osm_type": null,
    "overture_category": "real_estate_agent",
    "overture_confidence": 0.7048439979553223,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 1098
   },
   {
    "id": "huro-lst-0001",
@@ -10992,7 +11274,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "lake",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "prominence_rank": 346
   },
   {
    "id": "huro-lst-0135",
@@ -11017,7 +11300,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "boating_places",
-   "overture_confidence": 0.55
+   "overture_confidence": 0.55,
+   "prominence_rank": 346
   },
   {
    "id": "huro-lst-0129",
@@ -11042,7 +11326,8 @@
    "source": "overture",
    "osm_type": null,
    "overture_category": "holiday_rental_home",
-   "overture_confidence": 0.9722161889076233
+   "overture_confidence": 0.9722161889076233,
+   "prominence_rank": 1639
   }
  ]
 }

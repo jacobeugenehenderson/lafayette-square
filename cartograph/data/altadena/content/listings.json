@@ -31,7 +31,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 15311
   },
   {
    "id": "alta-lst-0021",
@@ -54,7 +55,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 2068
   },
   {
    "id": "alta-lst-0003",
@@ -77,7 +79,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "library"
+   "osm_type": "library",
+   "prominence_rank": 2
   },
   {
    "id": "alta-lst-0004",
@@ -100,7 +103,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 7370
   },
   {
    "id": "alta-lst-0011",
@@ -123,7 +127,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "hospital"
+   "osm_type": "hospital",
+   "prominence_rank": 242
   },
   {
    "id": "alta-lst-0012",
@@ -146,7 +151,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "place_of_worship"
+   "osm_type": "place_of_worship",
+   "prominence_rank": 199
   },
   {
    "id": "alta-lst-0014",
@@ -169,7 +175,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 178
   },
   {
    "id": "alta-lst-0015",
@@ -192,7 +199,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "community_centre"
+   "osm_type": "community_centre",
+   "prominence_rank": 5
   },
   {
    "id": "alta-lst-0022",
@@ -215,7 +223,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "fuel"
+   "osm_type": "fuel",
+   "prominence_rank": 4152
   },
   {
    "id": "alta-lst-0001",
@@ -238,7 +247,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 6427
   },
   {
    "id": "alta-lst-0002",
@@ -261,7 +271,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 148
   },
   {
    "id": "alta-lst-0019",
@@ -284,7 +295,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "park"
+   "osm_type": "park",
+   "prominence_rank": 11301
   },
   {
    "id": "alta-lst-0005",
@@ -307,7 +319,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 14922
   },
   {
    "id": "alta-lst-0006",
@@ -330,7 +343,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 9
   },
   {
    "id": "alta-lst-0007",
@@ -353,7 +367,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 4
   },
   {
    "id": "alta-lst-0008",
@@ -376,7 +391,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 4
   },
   {
    "id": "alta-lst-0009",
@@ -399,7 +415,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 7
   },
   {
    "id": "alta-lst-0010",
@@ -422,7 +439,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "garden"
+   "osm_type": "garden",
+   "prominence_rank": 10
   },
   {
    "id": "alta-lst-0013",
@@ -445,7 +463,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "pitch"
+   "osm_type": "pitch",
+   "prominence_rank": 13449
   },
   {
    "id": "alta-lst-0023",
@@ -468,7 +487,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "sports_centre"
+   "osm_type": "sports_centre",
+   "prominence_rank": 327
   },
   {
    "id": "alta-lst-0016",
@@ -491,7 +511,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 6
   },
   {
    "id": "alta-lst-0017",
@@ -514,7 +535,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 6
   },
   {
    "id": "alta-lst-0018",
@@ -537,7 +559,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 11
   }
  ]
 }

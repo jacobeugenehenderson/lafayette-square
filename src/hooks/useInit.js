@@ -1,4 +1,5 @@
 import { getInit } from '../lib/api'
+import { orderListings } from '../lib/listingOrder.js'
 import { getDeviceHash } from '../lib/device'
 import { supabase } from '../lib/supabase'
 import useListings, { bareBuildingListings, landmarksWithMenus, _landmarksReady, normalizeListingMenu } from './useListings'
@@ -68,7 +69,12 @@ export async function runInit() {
         if (!apiIds.has(lm.id)) merged.push(lm)
       })
 
-      useListings.setState({ listings: [...merged, ...bareBuildingListings], fetched: true, loading: false })
+      // ⛔ ORDERED HERE TOO, AND THIS IS THE PATH THAT MATTERS. The seed in
+      // `useListings` is replaced by this merge the moment the API answers, so ordering
+      // only the seed would have looked right in a cold dev reload and reverted to
+      // Overture's file order in production — the failure would appear exactly where
+      // nobody was testing. One order, every writer.
+      useListings.setState({ listings: orderListings([...merged, ...bareBuildingListings]), fetched: true, loading: false })
     } else {
       useListings.setState({ fetched: true, loading: false })
     }

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { orderListings } from '../lib/listingOrder.js'
 import { loadInstanceData } from '../data/loadInstanceData.js'
 import { INSTANCE } from '../instance.js'
 import { buildings as _allBuildings, ready as _buildingsReady } from '../data/buildings'
@@ -128,7 +129,7 @@ export const _landmarksReady = Promise.all([
   // Seed the store with landmarks now they're ready — unless the API init
   // already populated + fetched (then it owns the list).
   if (!useListings.getState().fetched) {
-    useListings.setState({ listings: [...landmarksWithMenus, ...bareBuildingListings] })
+    useListings.setState({ listings: orderListings([...landmarksWithMenus, ...bareBuildingListings]) })
   }
   return landmarksWithMenus
 })
@@ -142,12 +143,16 @@ Promise.all([_landmarksReady, _buildingsReady]).then(([, { buildings }]) => {
   const state = useListings.getState()
   if (state.fetched) {
     const current = state.listings.filter(l => !l._bare)
-    useListings.setState({ listings: [...current, ...bareBuildingListings] })
+    useListings.setState({ listings: orderListings([...current, ...bareBuildingListings]) })
   }
 })
 
 export { bareBuildingListings }
 
+// ⛔ ORDERED ONCE, HERE, so every consumer inherits it — `Array.filter` preserves
+// order, so the category accordions, the search and the ticker all present the same
+// sequence without any of them knowing there is one. The same discipline as
+// `src/lib/openNow.js`: a predicate with four homes had three of them wrong.
 const useListings = create((set, get) => ({
   listings: [],
   loading: false,

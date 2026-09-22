@@ -36,7 +36,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "sports_hall",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 68
   },
   {
    "id": "hpdm-lst-0033",
@@ -59,7 +60,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "fitness_centre"
+   "osm_type": "fitness_centre",
+   "prominence_rank": 72
   },
   {
    "id": "hpdm-lst-0101",
@@ -82,7 +84,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "pitch"
+   "osm_type": "pitch",
+   "prominence_rank": 100
   },
   {
    "id": "hpdm-lst-0139",
@@ -105,7 +108,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "fitness_centre"
+   "osm_type": "fitness_centre",
+   "prominence_rank": 20
   },
   {
    "id": "hpdm-lst-0151",
@@ -128,7 +132,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 39
   },
   {
    "id": "hpdm-lst-0062",
@@ -151,7 +156,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "library"
+   "osm_type": "library",
+   "prominence_rank": 29
   },
   {
    "id": "hpdm-lst-0070",
@@ -174,7 +180,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 40
   },
   {
    "id": "hpdm-lst-0092",
@@ -201,7 +208,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "cinema",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 2
   },
   {
    "id": "hpdm-lst-0086",
@@ -224,7 +232,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "university"
+   "osm_type": "university",
+   "prominence_rank": 650
   },
   {
    "id": "hpdm-lst-0157",
@@ -251,7 +260,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "cinema",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 21
   },
   {
    "id": "hpdm-lst-0042",
@@ -278,7 +288,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "cafe",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 5
   },
   {
    "id": "hpdm-lst-0119",
@@ -305,7 +316,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "pharmacy",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 19
   },
   {
    "id": "hpdm-lst-0117",
@@ -328,7 +340,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "library"
+   "osm_type": "library",
+   "prominence_rank": 33
   },
   {
    "id": "hpdm-lst-0125",
@@ -351,7 +364,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "library"
+   "osm_type": "library",
+   "prominence_rank": 18
   },
   {
    "id": "hpdm-lst-0162",
@@ -379,7 +393,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "fast_food",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 4
   },
   {
    "id": "hpdm-lst-0134",
@@ -402,7 +417,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 17
   },
   {
    "id": "hpdm-lst-0135",
@@ -425,7 +441,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 13
   },
   {
    "id": "hpdm-lst-0057",
@@ -451,7 +468,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "bank",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 26
   },
   {
    "id": "hpdm-lst-0188",
@@ -477,7 +495,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "bank",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 22
   },
   {
    "id": "hpdm-lst-0137",
@@ -500,7 +519,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "place_of_worship"
+   "osm_type": "place_of_worship",
+   "prominence_rank": 12
   },
   {
    "id": "hpdm-lst-0120",
@@ -527,7 +547,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "restaurant",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 21
   },
   {
    "id": "hpdm-lst-0142",
@@ -550,7 +571,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "fuel"
+   "osm_type": "fuel",
+   "prominence_rank": 184
   },
   {
    "id": "hpdm-lst-0145",
@@ -573,7 +595,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "school"
+   "osm_type": "school",
+   "prominence_rank": 55
   },
   {
    "id": "hpdm-lst-0150",
@@ -596,7 +619,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "events_venue"
+   "osm_type": "events_venue",
+   "prominence_rank": 315
   },
   {
    "id": "hpdm-lst-0164",
@@ -619,7 +643,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "parking"
+   "osm_type": "parking",
+   "prominence_rank": 70
   },
   {
    "id": "hpdm-lst-0067",
@@ -646,7 +671,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "restaurant",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 8
   },
   {
    "id": "hpdm-lst-0068",
@@ -674,7 +700,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "cafe",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 8
   },
   {
    "id": "hpdm-lst-0170",
@@ -697,7 +724,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "library"
+   "osm_type": "library",
+   "prominence_rank": 34
   },
   {
    "id": "hpdm-lst-0035",
@@ -720,7 +748,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "community_centre"
+   "osm_type": "community_centre",
+   "prominence_rank": 30
   },
   {
    "id": "hpdm-lst-0091",
@@ -743,7 +772,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 46
   },
   {
    "id": "hpdm-lst-0094",
@@ -766,7 +796,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 241
   },
   {
    "id": "hpdm-lst-0095",
@@ -789,7 +820,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 253
   },
   {
    "id": "hpdm-lst-0096",
@@ -812,7 +844,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 3
   },
   {
    "id": "hpdm-lst-0097",
@@ -835,7 +868,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 242
   },
   {
    "id": "hpdm-lst-0098",
@@ -858,7 +892,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 1078
   },
   {
    "id": "hpdm-lst-0001",
@@ -881,7 +916,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 24
   },
   {
    "id": "hpdm-lst-0002",
@@ -904,7 +940,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 93
   },
   {
    "id": "hpdm-lst-0003",
@@ -927,7 +964,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 248
   },
   {
    "id": "hpdm-lst-0006",
@@ -950,7 +988,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 233
   },
   {
    "id": "hpdm-lst-0007",
@@ -973,7 +1012,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 95
   },
   {
    "id": "hpdm-lst-0008",
@@ -996,7 +1036,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 35
   },
   {
    "id": "hpdm-lst-0009",
@@ -1019,7 +1060,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 93
   },
   {
    "id": "hpdm-lst-0011",
@@ -1042,7 +1084,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 95
   },
   {
    "id": "hpdm-lst-0012",
@@ -1065,7 +1108,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 285
   },
   {
    "id": "hpdm-lst-0013",
@@ -1088,7 +1132,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 48
   },
   {
    "id": "hpdm-lst-0015",
@@ -1111,7 +1156,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 97
   },
   {
    "id": "hpdm-lst-0016",
@@ -1134,7 +1180,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 97
   },
   {
    "id": "hpdm-lst-0017",
@@ -1157,7 +1204,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 94
   },
   {
    "id": "hpdm-lst-0019",
@@ -1180,7 +1228,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 35
   },
   {
    "id": "hpdm-lst-0020",
@@ -1203,7 +1252,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 240
   },
   {
    "id": "hpdm-lst-0021",
@@ -1226,7 +1276,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 91
   },
   {
    "id": "hpdm-lst-0022",
@@ -1249,7 +1300,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "museum"
+   "osm_type": "museum",
+   "prominence_rank": 1
   },
   {
    "id": "hpdm-lst-0023",
@@ -1272,7 +1324,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 91
   },
   {
    "id": "hpdm-lst-0026",
@@ -1295,7 +1348,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 259
   },
   {
    "id": "hpdm-lst-0027",
@@ -1318,7 +1372,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 35
   },
   {
    "id": "hpdm-lst-0028",
@@ -1341,7 +1396,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 99
   },
   {
    "id": "hpdm-lst-0032",
@@ -1364,7 +1420,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 94
   },
   {
    "id": "hpdm-lst-0037",
@@ -1387,7 +1444,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 8
   },
   {
    "id": "hpdm-lst-0038",
@@ -1410,7 +1468,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 52
   },
   {
    "id": "hpdm-lst-0039",
@@ -1433,7 +1492,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 260
   },
   {
    "id": "hpdm-lst-0040",
@@ -1456,7 +1516,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 96
   },
   {
    "id": "hpdm-lst-0041",
@@ -1479,7 +1540,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 254
   },
   {
    "id": "hpdm-lst-0043",
@@ -1502,7 +1564,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 264
   },
   {
    "id": "hpdm-lst-0044",
@@ -1525,7 +1588,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 277
   },
   {
    "id": "hpdm-lst-0046",
@@ -1548,7 +1612,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 258
   },
   {
    "id": "hpdm-lst-0047",
@@ -1571,7 +1636,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 256
   },
   {
    "id": "hpdm-lst-0048",
@@ -1594,7 +1660,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 47
   },
   {
    "id": "hpdm-lst-0051",
@@ -1617,7 +1684,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 58
   },
   {
    "id": "hpdm-lst-0052",
@@ -1640,7 +1708,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 301
   },
   {
    "id": "hpdm-lst-0053",
@@ -1663,7 +1732,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 298
   },
   {
    "id": "hpdm-lst-0058",
@@ -1686,7 +1756,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 296
   },
   {
    "id": "hpdm-lst-0059",
@@ -1709,7 +1780,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 57
   },
   {
    "id": "hpdm-lst-0060",
@@ -1732,7 +1804,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 265
   },
   {
    "id": "hpdm-lst-0061",
@@ -1755,7 +1828,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 300
   },
   {
    "id": "hpdm-lst-0063",
@@ -1778,7 +1852,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 275
   },
   {
    "id": "hpdm-lst-0064",
@@ -1801,7 +1876,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 59
   },
   {
    "id": "hpdm-lst-0065",
@@ -1824,7 +1900,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 288
   },
   {
    "id": "hpdm-lst-0066",
@@ -1847,7 +1924,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 44
   },
   {
    "id": "hpdm-lst-0069",
@@ -1870,7 +1948,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 39
   },
   {
    "id": "hpdm-lst-0071",
@@ -1893,7 +1972,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 418
   },
   {
    "id": "hpdm-lst-0072",
@@ -1916,7 +1996,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 428
   },
   {
    "id": "hpdm-lst-0073",
@@ -1939,7 +2020,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 347
   },
   {
    "id": "hpdm-lst-0074",
@@ -1962,7 +2044,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 439
   },
   {
    "id": "hpdm-lst-0076",
@@ -1985,7 +2068,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 308
   },
   {
    "id": "hpdm-lst-0077",
@@ -2008,7 +2092,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 35
   },
   {
    "id": "hpdm-lst-0078",
@@ -2031,7 +2116,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 346
   },
   {
    "id": "hpdm-lst-0079",
@@ -2054,7 +2140,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 250
   },
   {
    "id": "hpdm-lst-0080",
@@ -2077,7 +2164,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 54
   },
   {
    "id": "hpdm-lst-0081",
@@ -2100,7 +2188,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 50
   },
   {
    "id": "hpdm-lst-0082",
@@ -2123,7 +2212,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 276
   },
   {
    "id": "hpdm-lst-0083",
@@ -2146,7 +2236,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 53
   },
   {
    "id": "hpdm-lst-0084",
@@ -2169,7 +2260,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 74
   },
   {
    "id": "hpdm-lst-0085",
@@ -2192,7 +2284,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 257
   },
   {
    "id": "hpdm-lst-0087",
@@ -2215,7 +2308,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 25
   },
   {
    "id": "hpdm-lst-0088",
@@ -2238,7 +2332,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": "hotel"
+   "osm_type": "hotel",
+   "prominence_rank": 9
   },
   {
    "id": "hpdm-lst-0089",
@@ -2261,7 +2356,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 1078
   },
   {
    "id": "hpdm-lst-0090",
@@ -2284,7 +2380,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 25
   },
   {
    "id": "hpdm-lst-0045",
@@ -2311,7 +2408,8 @@
    "status": "active",
    "source": "osm",
    "osm_type": "supermarket",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 41
   },
   {
    "id": "hpdm-lst-0099",
@@ -2334,7 +2432,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 249
   },
   {
    "id": "hpdm-lst-0100",
@@ -2357,7 +2456,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 3
   },
   {
    "id": "hpdm-lst-0102",
@@ -2380,7 +2480,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 960
   },
   {
    "id": "hpdm-lst-0104",
@@ -2403,7 +2504,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 737
   },
   {
    "id": "hpdm-lst-0106",
@@ -2426,7 +2528,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 100
   },
   {
    "id": "hpdm-lst-0108",
@@ -2449,7 +2552,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 90
   },
   {
    "id": "hpdm-lst-0109",
@@ -2472,7 +2576,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 227
   },
   {
    "id": "hpdm-lst-0111",
@@ -2495,7 +2600,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 43
   },
   {
    "id": "hpdm-lst-0112",
@@ -2518,7 +2624,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 43
   },
   {
    "id": "hpdm-lst-0113",
@@ -2541,7 +2648,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 56
   },
   {
    "id": "hpdm-lst-0114",
@@ -2564,7 +2672,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 96
   },
   {
    "id": "hpdm-lst-0115",
@@ -2587,7 +2696,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 31
   },
   {
    "id": "hpdm-lst-0116",
@@ -2610,7 +2720,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 272
   },
   {
    "id": "hpdm-lst-0118",
@@ -2633,7 +2744,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 36
   },
   {
    "id": "hpdm-lst-0121",
@@ -2656,7 +2768,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 793
   },
   {
    "id": "hpdm-lst-0122",
@@ -2679,7 +2792,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 27
   },
   {
    "id": "hpdm-lst-0123",
@@ -2702,7 +2816,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 27
   },
   {
    "id": "hpdm-lst-0126",
@@ -2725,7 +2840,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 37
   },
   {
    "id": "hpdm-lst-0163",
@@ -2752,7 +2868,8 @@
    "status": "unverified",
    "source": "osm",
    "osm_type": "paint",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 4
   },
   {
    "id": "hpdm-lst-0127",
@@ -2775,7 +2892,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 60
   },
   {
    "id": "hpdm-lst-0129",
@@ -2798,7 +2916,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 60
   },
   {
    "id": "hpdm-lst-0130",
@@ -2821,7 +2940,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 60
   },
   {
    "id": "hpdm-lst-0131",
@@ -2844,7 +2964,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 13
   },
   {
    "id": "hpdm-lst-0132",
@@ -2867,7 +2988,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 82
   },
   {
    "id": "hpdm-lst-0133",
@@ -2890,7 +3012,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 17
   },
   {
    "id": "hpdm-lst-0136",
@@ -2913,7 +3036,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 23
   },
   {
    "id": "hpdm-lst-0138",
@@ -2936,7 +3060,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 23
   },
   {
    "id": "hpdm-lst-0140",
@@ -2959,7 +3084,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 104
   },
   {
    "id": "hpdm-lst-0141",
@@ -2982,7 +3108,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 146
   },
   {
    "id": "hpdm-lst-0143",
@@ -3005,7 +3132,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 32
   },
   {
    "id": "hpdm-lst-0146",
@@ -3028,7 +3156,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 46
   },
   {
    "id": "hpdm-lst-0147",
@@ -3051,7 +3180,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 25
   },
   {
    "id": "hpdm-lst-0148",
@@ -3074,7 +3204,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 25
   },
   {
    "id": "hpdm-lst-0149",
@@ -3097,7 +3228,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 99
   },
   {
    "id": "hpdm-lst-0152",
@@ -3120,7 +3252,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 251
   },
   {
    "id": "hpdm-lst-0153",
@@ -3143,7 +3276,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 46
   },
   {
    "id": "hpdm-lst-0154",
@@ -3166,7 +3300,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 291
   },
   {
    "id": "hpdm-lst-0156",
@@ -3189,7 +3324,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 303
   },
   {
    "id": "hpdm-lst-0158",
@@ -3212,7 +3348,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 48
   },
   {
    "id": "hpdm-lst-0159",
@@ -3235,7 +3372,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 24
   },
   {
    "id": "hpdm-lst-0160",
@@ -3258,7 +3396,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 24
   },
   {
    "id": "hpdm-lst-0161",
@@ -3281,7 +3420,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 48
   },
   {
    "id": "hpdm-lst-0165",
@@ -3304,7 +3444,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 379
   },
   {
    "id": "hpdm-lst-0166",
@@ -3327,7 +3468,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 406
   },
   {
    "id": "hpdm-lst-0167",
@@ -3350,7 +3492,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 102
   },
   {
    "id": "hpdm-lst-0168",
@@ -3373,7 +3516,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 102
   },
   {
    "id": "hpdm-lst-0169",
@@ -3396,7 +3540,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 323
   },
   {
    "id": "hpdm-lst-0171",
@@ -3419,7 +3564,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 367
   },
   {
    "id": "hpdm-lst-0034",
@@ -3442,7 +3588,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 25
   },
   {
    "id": "hpdm-lst-0036",
@@ -3465,7 +3612,8 @@
    "reservation_url": null,
    "status": "unverified",
    "source": "osm",
-   "osm_type": null
+   "osm_type": null,
+   "prominence_rank": 38
   },
   {
    "id": "hpdm-lst-0004",
@@ -3514,7 +3662,8 @@
    "source": "research",
    "denomination": "Episcopal",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 6
   },
   {
    "id": "hpdm-lst-0005",
@@ -3549,7 +3698,8 @@
    "source": "research",
    "school_type": "Episcopal parish day school (JK–grade 6)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 6
   },
   {
    "id": "hpdm-lst-0010",
@@ -3578,7 +3728,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 23
   },
   {
    "id": "hpdm-lst-0014",
@@ -3641,7 +3792,8 @@
    "instagram": "https://www.instagram.com/thecheshirestl",
    "photo_credit": "The Cheshire (cheshirestl.com)",
    "price_range": "$$$",
-   "order_url": null
+   "order_url": null,
+   "prominence_rank": 9
   },
   {
    "id": "hpdm-lst-0018",
@@ -3719,7 +3871,8 @@
    "price_range": "$$",
    "seating_capacity": 414,
    "ticket_url": "https://hipointetheatre.org",
-   "order_url": null
+   "order_url": null,
+   "prominence_rank": 21
   },
   {
    "id": "hpdm-lst-0024",
@@ -3749,7 +3902,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 7
   },
   {
    "id": "hpdm-lst-0025",
@@ -3779,7 +3933,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 63
   },
   {
    "id": "hpdm-lst-0029",
@@ -3808,7 +3963,8 @@
    "source": "research",
    "denomination": "Seventh-day Adventist",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 12
   },
   {
    "id": "hpdm-lst-0030",
@@ -3839,7 +3995,8 @@
    "source": "research",
    "school_type": "Public elementary (School District of Clayton)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 45
   },
   {
    "id": "hpdm-lst-0031",
@@ -3875,7 +4032,8 @@
    "source": "research",
    "denomination": "Hindu (Ramakrishna Order / Vedanta)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 14
   },
   {
    "id": "hpdm-lst-0049",
@@ -3903,7 +4061,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 294
   },
   {
    "id": "hpdm-lst-0050",
@@ -3939,7 +4098,8 @@
    "source": "research",
    "units": 45,
    "price_range": "$$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 79
   },
   {
    "id": "hpdm-lst-0054",
@@ -3967,7 +4127,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 269
   },
   {
    "id": "hpdm-lst-0055",
@@ -4034,7 +4195,8 @@
    "enriched": true,
    "photo_credit": "Warren LeMay / Flickr (public domain)",
    "price_range": "$",
-   "order_url": null
+   "order_url": null,
+   "prominence_rank": 175
   },
   {
    "id": "hpdm-lst-0056",
@@ -4064,7 +4226,8 @@
    "source": "research",
    "denomination": "Presbyterian (PC-USA)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 10
   },
   {
    "id": "hpdm-lst-0075",
@@ -4108,7 +4271,8 @@
    "source": "research",
    "school_type": "Independent (JK–grade 6)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 55
   },
   {
    "id": "hpdm-lst-0093",
@@ -4137,7 +4301,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 80
   },
   {
    "id": "hpdm-lst-0103",
@@ -4173,7 +4338,8 @@
    "source": "research",
    "school_type": "Public middle school (School District of Clayton)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 15
   },
   {
    "id": "hpdm-lst-0105",
@@ -4201,7 +4367,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 281
   },
   {
    "id": "hpdm-lst-0107",
@@ -4246,7 +4413,8 @@
    "denomination": "Non-denominational (Washington University chapel)",
    "photo_credit": "Warren LeMay / Flickr (public domain)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 77
   },
   {
    "id": "hpdm-lst-0110",
@@ -4275,7 +4443,8 @@
    "source": "research",
    "denomination": "United Church of Christ",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 331
   },
   {
    "id": "hpdm-lst-0124",
@@ -4304,7 +4473,8 @@
    "source": "research",
    "denomination": "Lutheran",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 53
   },
   {
    "id": "hpdm-lst-0128",
@@ -4332,7 +4502,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 286
   },
   {
    "id": "hpdm-lst-0144",
@@ -4360,7 +4531,8 @@
    "source": "research",
    "denomination": "Christian Science",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 11
   },
   {
    "id": "hpdm-lst-0155",
@@ -4387,7 +4559,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 62
   },
   {
    "id": "hpdm-lst-0177",
@@ -4426,7 +4599,8 @@
    "source": "research",
    "school_type": "Independent (age 3–grade 6)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 960
   },
   {
    "id": "hpdm-lst-0180",
@@ -4455,7 +4629,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 627
   },
   {
    "id": "hpdm-lst-0183",
@@ -4485,7 +4660,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 883
   },
   {
    "id": "hpdm-lst-0186",
@@ -4515,7 +4691,8 @@
    "source": "research",
    "denomination": "Roman Catholic (campus ministry)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 28
   },
   {
    "id": "hpdm-lst-0191",
@@ -4546,7 +4723,8 @@
    "source": "research",
    "denomination": "Lutheran (LCMS — Concordia Seminary)",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 75
   },
   {
    "id": "hpdm-lst-0193",
@@ -4575,7 +4753,8 @@
    "source": "research",
    "denomination": "Lutheran",
    "price_range": null,
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 16
   },
   {
    "id": "hpdm-lst-0212",
@@ -4601,7 +4780,8 @@
    "status": "unverified",
    "source": "research",
    "price_range": "$$",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 243
   },
   {
    "id": "hpdm-lst-0213",
@@ -4692,7 +4872,8 @@
    "instagram": "https://www.instagram.com/kaldiscoffee",
    "photo_credit": "Kaldi's Coffee (kaldiscoffee.com)",
    "price_range": "$$",
-   "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun"
+   "order_url": "https://order.kaldiscoffee.com/order/kaldis-coffee-demun",
+   "prominence_rank": 361
   },
   {
    "id": "hpdm-lst-0214",
@@ -4774,7 +4955,8 @@
    "instagram": "https://www.instagram.com/louiedemun",
    "photo_credit": "Louie (louiedemun.com)",
    "price_range": "$$$",
-   "order_url": null
+   "order_url": null,
+   "prominence_rank": 393
   },
   {
    "id": "hpdm-lst-0215",
@@ -4861,7 +5043,8 @@
    "instagram": "https://www.instagram.com/sashaswinebar",
    "photo_credit": "Sasha's Wine Bar (sashaswinebar.com)",
    "price_range": "$$",
-   "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave"
+   "order_url": "https://www.toasttab.com/local/order/sashas-de-mun-706-de-mun-ave",
+   "prominence_rank": 393
   },
   {
    "id": "hpdm-lst-0216",
@@ -4953,7 +5136,8 @@
    "instagram": "https://www.instagram.com/barrioburgersandtacos",
    "photo_credit": "Barrio (barrioburgersandtacos.com)",
    "price_range": "$$",
-   "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave"
+   "order_url": "https://order.toasttab.com/online/barrio-740-demun-ave",
+   "prominence_rank": 362
   },
   {
    "id": "hpdm-lst-0217",
@@ -4980,7 +5164,8 @@
    "reservation_url": null,
    "status": "closed",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 362
   },
   {
    "id": "hpdm-lst-0218",
@@ -5069,7 +5254,8 @@
    "instagram": "https://www.instagram.com/clementinescreamery",
    "photo_credit": "Clementine's Creamery (clementinescreamery.com)",
    "price_range": "$$",
-   "order_url": "https://www.clementinescreamery.com/pages/clayton"
+   "order_url": "https://www.clementinescreamery.com/pages/clayton",
+   "prominence_rank": 697
   },
   {
    "id": "hpdm-lst-0219",
@@ -5095,7 +5281,8 @@
    "reservation_url": null,
    "status": "active",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 141
   },
   {
    "id": "hpdm-lst-0220",
@@ -5122,7 +5309,8 @@
    "reservation_url": null,
    "status": "active",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 221
   },
   {
    "id": "hpdm-lst-0221",
@@ -5206,7 +5394,8 @@
    "enriched": true,
    "instagram": "https://www.instagram.com/hipointedrivein",
    "photo_credit": "Hi-Pointe Drive-In (hipointedrivein.com)",
-   "price_range": "$$"
+   "price_range": "$$",
+   "prominence_rank": 887
   },
   {
    "id": "hpdm-lst-0222",
@@ -5232,7 +5421,8 @@
    "reservation_url": null,
    "status": "active",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 965
   },
   {
    "id": "hpdm-lst-0224",
@@ -5259,7 +5449,8 @@
    "reservation_url": null,
    "status": "active",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 965
   },
   {
    "id": "hpdm-lst-0225",
@@ -5285,7 +5476,8 @@
    "reservation_url": null,
    "status": "active",
    "source": "research",
-   "enriched": true
+   "enriched": true,
+   "prominence_rank": 455
   }
  ]
 }

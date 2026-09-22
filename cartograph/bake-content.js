@@ -1255,6 +1255,34 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
   const { roster, stat, prominenceCtx } = buildRoster(scene, bakedBuildings, buildingGeom, parcelGrid, luMap, nrIndex, listings, rosterOverrides, osmProm.byBuilding)
   console.log(`  roster: ${roster.length} buildings · parcel-matched ${stat.parcel_matched} · nr ${stat.nr_attributed} · in-district ${stat.in_district} · with-listings ${stat.with_listings}`)
 
+  // ── ⭐ THE RANK REACHES THE LISTING. ————————————————————————————
+  //
+  // ⛔ `prominence` was computed on every building, printed in the census every run,
+  // and READ BY NOTHING. The Society Pages had no ordering at all — no `.sort()` in
+  // `SidePanel`, `useListings` or `useLandmarkFilter` — so 285 listings rendered in
+  // Overture's file order, with a car wash and a remodeling contractor above the
+  // town's best-documented restaurant. A scorer that runs, reports and reaches no
+  // surface is the doc/code smell in its purest form: the capability shipped and
+  // nobody knew.
+  //
+  // ⚠️ Stamped HERE rather than joined at runtime, because a runtime join needs the
+  // ROSTER loaded and altadena's is deliberately not wired — the join would return
+  // nothing and the order would silently degrade on exactly the town that cannot say so.
+  //
+  // ⛔ A LISTING WHOSE BUILDING HAS NO RANK GETS `null`, NEVER 0. Zero is a rank, and
+  // the best one; an absent rank must sort LAST and the consumer must see that it is
+  // absent rather than infer it from a number.
+  {
+    const rankOf = new Map(roster.map(b => [b.id, b.prominence?.rank ?? null]))
+    let stamped = 0, unranked = 0
+    for (const l of listings) {
+      const r = l.building_id ? rankOf.get(l.building_id) : undefined
+      l.prominence_rank = (r === undefined || r === null) ? null : r
+      if (l.prominence_rank === null) unranked++; else stamped++
+    }
+    console.log(`  prominence → listings: ${stamped} stamped${unranked ? ` · ⚠️ ${unranked} with no ranked building (sort LAST, explicitly null)` : ''}`)
+  }
+
   // ── ⭐ THE PROMINENCE CENSUS — `§4.3`'s work queue, and the operator's dial. ──
   //
   // ⛔ THIS IS A SORT, NOT A FILTER. Every one of the buildings above carries a rank
