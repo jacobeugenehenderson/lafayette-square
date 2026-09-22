@@ -1,10 +1,10 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 165,
+  "total": 191,
   "counts": {
-    "safe": 131,
-    "local-effect": 5,
-    "live": 29
+    "safe": 149,
+    "local-effect": 6,
+    "live": 36
   },
   "checks": [
     {
@@ -30,6 +30,13 @@
     },
     {
       "file": "checks/claims-a-kink-recovers-but-a-corner-does-not.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -71,6 +78,17 @@
       ]
     },
     {
+      "file": "checks/claims-an-external-base-survives-a-bake.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files",
+        "runs `node` — not a known-local command"
+      ]
+    },
+    {
       "file": "checks/claims-anchors-follow-the-placements.mjs",
       "tier": "safe",
       "why": [
@@ -92,6 +110,14 @@
       ]
     },
     {
+      "file": "checks/claims-baked-consumers-get-a-cache-bust.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "child_process with a non-literal command — cannot be read"
+      ]
+    },
+    {
       "file": "checks/claims-band-is-one-ring.mjs",
       "tier": "safe",
       "why": [
@@ -100,6 +126,13 @@
     },
     {
       "file": "checks/claims-band-vs-partition-state.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-both-surfaces-draw-the-same-water.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -156,6 +189,13 @@
     },
     {
       "file": "checks/claims-coplanar-ground-has-a-painters-order.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-coplanar-groups-do-not-overlap.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -239,6 +279,13 @@
       ]
     },
     {
+      "file": "checks/claims-displaced-casters-have-a-depth-material.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-divided-seam-step.mjs",
       "tier": "safe",
       "why": [
@@ -253,6 +300,13 @@
       ]
     },
     {
+      "file": "checks/claims-every-baked-species-has-an-impostor.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-every-corner-is-configured.mjs",
       "tier": "safe",
       "why": [
@@ -261,6 +315,13 @@
     },
     {
       "file": "checks/claims-every-corner-is-one-of-three.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-lu-tag-has-a-home.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -288,7 +349,30 @@
       ]
     },
     {
+      "file": "checks/claims-every-water-body-reaches-the-kit-material.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-faces-on-the-ssot.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-fade-derives-from-radius.mjs",
+      "tier": "local-effect",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "deletes files"
+      ]
+    },
+    {
+      "file": "checks/claims-fade-has-something-to-dissolve.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -367,6 +451,13 @@
     },
     {
       "file": "checks/claims-inner-edge-side-selector.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-intake-absence-is-loud.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -464,6 +555,13 @@
       ]
     },
     {
+      "file": "checks/claims-no-slab-outlives-its-schema.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-no-tree-stands-on-drawn-hardscape.mjs",
       "tier": "safe",
       "why": [
@@ -472,6 +570,13 @@
     },
     {
       "file": "checks/claims-node-pair-key-parity.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-objects-dissolve-with-the-ground.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -492,6 +597,13 @@
       ]
     },
     {
+      "file": "checks/claims-opting-out-of-the-fade-is-explicit.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-orphaned-customs.mjs",
       "tier": "safe",
       "why": [
@@ -503,6 +615,15 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-overture-licence-table-is-current.mjs",
+      "tier": "live",
+      "reasonClass": "outbound",
+      "why": [
+        "calls fetch()",
+        "child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -538,6 +659,14 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-prominence-recovers-ls-landmarks.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "imports cartograph/bake-content.js, which can: mkdirSync, imports cartograph/io.js, which can: writeFileSync, imports cartograph/scene.js, which can: child_process with a non-literal command — cannot be read"
       ]
     },
     {
@@ -730,6 +859,13 @@
       ]
     },
     {
+      "file": "checks/claims-scene-flag-is-the-equals-form.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-shader-fragments-declare-what-they-use.mjs",
       "tier": "safe",
       "why": [
@@ -765,10 +901,37 @@
       ]
     },
     {
+      "file": "checks/claims-sky-follows-its-town.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "computed import() with no readable target — runs arbitrary modules",
+        "imports cartograph/proceduralSky.js, which can: child_process with a non-literal command — cannot be read",
+        "imports package(s) suncalc — not read from source"
+      ]
+    },
+    {
+      "file": "checks/claims-species-map-routes-are-composed.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-spur-leg-offset.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-stage-preview-parity.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "writeFileSync",
+        "mkdirSync",
+        "computed import() with no readable target — runs arbitrary modules"
       ]
     },
     {
@@ -794,6 +957,13 @@
     },
     {
       "file": "checks/claims-swap-reaches-the-paint.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-ao-belongs-to-its-ground.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -828,6 +998,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
       "file": "checks/claims-the-ease-is-the-corner.mjs",
       "tier": "safe",
       "why": [
@@ -842,6 +1019,13 @@
       ]
     },
     {
+      "file": "checks/claims-the-key-light-is-a-real-body.mjs",
+      "tier": "safe",
+      "why": [
+        "imports package(s) suncalc, three — not read from source"
+      ]
+    },
+    {
       "file": "checks/claims-the-pad-is-the-size-of-the-corner.mjs",
       "tier": "safe",
       "why": [
@@ -850,6 +1034,13 @@
     },
     {
       "file": "checks/claims-the-publish-gate-pushes-where-staging-deploys.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-publish-panel-reports-the-address-it-shipped.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
@@ -919,10 +1110,18 @@
       ]
     },
     {
-      "file": "checks/claims-writers-name-the-scene.mjs",
+      "file": "checks/claims-water-scales-with-its-body.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-writers-name-the-scene.mjs",
+      "tier": "live",
+      "reasonClass": "unreadable",
+      "why": [
+        "runs `git` — not a known-local command"
       ]
     },
     {

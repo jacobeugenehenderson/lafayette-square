@@ -517,6 +517,36 @@ that reports "no policies" on it is reporting the intent.
 independent locks, deliberately redundant. Do not tidy either away: each one alone still holds if the other
 is restored by mistake.
 
+### F-18 · MEDIUM (IP / anti-scraping, not data exposure) · The whole slab of every town is bulk-downloadable by anyone, unauthenticated  *(new, 2026-09-21)*
+- **Measured, from a shell, with no browser and no referrer:**
+  `curl https://assets.theward.online/baked/lafayette-square/scene.json` → **200**. Same for
+  `…/staging/baked/huron/scene.json`. The R2 bucket is served by a **public custom domain with no gate
+  of any kind** — no token, no `Origin` check, no rate limit.
+- **And the enumeration key is published with it.** Keys are `baked/<look>/<file>`, a documented and
+  regular layout (`upload-baked-to-r2.mjs`: *"Keys mirror the on-disk tree exactly"*), and
+  `public/looks/index.json` — served by the site — lists every look id. ⇒ a script can walk every town's
+  geometry, textures and census in bulk. ▶ re-derive, never quote: the two curls above.
+- ⭐ **This is a NEW requirement, not a regression** (Jacob, 2026-09-21: *"we want the final product to be
+  rather impenetrable for IP, secret sauce, security, etc. reasons (anti-scraping)"*). Nothing was broken;
+  the property was never asked for. Filed here so it is not mistaken for a leak: ⛔ **no private or
+  personal data is exposed** — this is the rendered product, and much of its source is OSM, which carries
+  its own attribution terms.
+- ⛔⛔ **THE HONEST CEILING, AND IT MUST NOT BE PAPERED OVER: A BROWSER-DELIVERED PRODUCT CANNOT BE MADE
+  IMPENETRABLE.** The bytes reach the client or nothing renders, and anyone with a browser can capture
+  what is on screen. ⛔ Any plan that depends on the slab being *secret* will fail. What is achievable is
+  removing **bulk, anonymous, scriptable** access — the difference between rebuilding the map from a
+  script in ten minutes and having to work for it. Say that out loud whenever this is scoped.
+- ⭐ **The enforcement point already exists.** `workers/staging-sites` sits in front of the sites as of
+  tonight; putting the slab behind it and closing the public bucket domain is mostly configuration, and it
+  is the one change that buys most of the available ground: a short-lived token minted by the page, an
+  `Origin` check, per-IP rate limiting. Then `public/looks/index.json` stops being served publicly.
+  ⚠️ ⛔ **Both prefixes must move together** — leaving `baked/` open while gating `staging/baked/` protects
+  the preview and not the product.
+- ⭐ **And the moat is not here.** The defensible IP is the KIT — the skeleton, the derivation chain,
+  Survey/Section, the authoring tools — none of which is on the CDN. Hardening the render is worth doing
+  and is not where the value is.
+- **Class: ASPIRATION** (a decision newly taken, nothing built). → `ROADMAP` H-19.
+
 ### F-11 · LOW · `credential-check` cron auth is fail-open
 - **Where:** `cary/supabase/functions/credential-check/index.js` (`if (cronSecret && authHeader !== …)`).
 - **Impact:** If `CRON_SECRET` is unset, the guard is skipped and the endpoint (which suspends

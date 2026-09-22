@@ -1,0 +1,20 @@
+{
+  "rules": [
+    {
+      "allowed": {
+        "origins": [
+          "https://lafayette-square.com",
+          "https://www.lafayette-square.com",
+          "https://jacobeugenehenderson.github.io",
+          "https://staging.theward.online",
+          "http://localhost:5173",
+          "http://localhost:4173"
+        ],
+        "methods": ["GET", "HEAD"],
+        "headers": ["range", "content-type"]
+      },
+      "exposeHeaders": ["content-length", "content-range", "etag"],
+      "maxAgeSeconds": 3600
+    }
+  ]
+}

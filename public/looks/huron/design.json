@@ -849,10 +849,6 @@
       "variantId": 1
     },
     {
-      "species": "birch",
-      "variantId": 1
-    },
-    {
       "species": "blackgum",
       "variantId": 1
     },
@@ -867,22 +863,6 @@
     {
       "species": "oak_white",
       "variantId": 1
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 1
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 2
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 3
-    },
-    {
-      "species": "platanus_acerifolia",
-      "variantId": 4
     }
   ]
 }

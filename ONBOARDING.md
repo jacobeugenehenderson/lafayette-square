@@ -24,7 +24,7 @@ Deep refs: `cartograph/INTAKE.md §0.5` (the Extent tool), `NEIGHBORHOOD-INPUTS.
 **Without this, `?look=<scene>` boots the DEFAULT (Lafayette Square) instance — the player wears LS's labels, lamps, landmark name, geography.** Two files:
 
 1. **`src/instances/<look>.js`** — self-contained identity: `lookId`, `geography` (lat/lon/timezone/bbox — timezone drives weather/sun/TOD), `locale` (`{language, units, clock}` — the i18n/localisation-service track), `name`, `branding`, `legal`, `profile` (Layer-0: name/population/founded/tagline/about/landmarkName), and `modules` (see Stage 4). Mirror `hipointe-demun.js`. **References NOTHING about any other installation.**
-2. **Register** it in `src/instance.js` `INSTANCES` + add a **`loadInstanceData` manifest entry** (`src/data/loadInstanceData.js`) pointing `landmarks`→`content/listings.json`, `menus`→`content/menus.json` (the `normalizeEnvelope` unwraps `{meta,listings}`→`{landmarks}`).
+2. **Register** it in `src/instances/registry.js` `INSTANCES` (⛔ not `instance.js` — that one imports the looks index and the dev servers may not load it) + add a **`loadInstanceData` manifest entry** (`src/data/loadInstanceData.js`) pointing `landmarks`→`content/listings.json`, `menus`→`content/menus.json` (the `normalizeEnvelope` unwraps `{meta,listings}`→`{landmarks}`).
 
 ---
 

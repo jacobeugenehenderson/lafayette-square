@@ -706,7 +706,6 @@ The afternoon found the foundational blocker and the strategy to beat it. **Full
 3. **Interface = the "fashion plates" pivot** — rubric-named + thumbnailed visual plates (kill `Bark007`), plate-based selection, **Grove/Salon render parity** (Grove=published GLB@LOD1/master atlas vs Salon=`generateSingleCompositionGLB`@LOD0 — same tree, two pipelines, they diverge).
 
 **Follow-ups surfaced:**
-- Fold **regenerate-from-source** (`generateSalon`) into `/grove/bake` so a bake never ships stale GLBs (the May-25-vs-June-leaf trap). Decided doctrine, not yet wired.
 - **Birch authored renders bare** — connected-mesh leaf UVs map to empty atlas space (per-species texturing fix).
 - Commit tonight's work (code + compositions + baked slab) — left for operator review.
 

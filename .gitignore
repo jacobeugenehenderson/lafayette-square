@@ -308,3 +308,8 @@ scratch/*.jpeg
 scratch/*.gif
 scratch/*.svg
 scratch/AB.html
+
+# Local marker: when this machine last published the shared player to staging R2.
+# Read by the Publish button (`needsRebuild`) to skip a full vite build when the
+# source has not moved since. Per-machine state, never shared.
+.player-published

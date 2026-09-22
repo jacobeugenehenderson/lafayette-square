@@ -1,0 +1,44 @@
+{
+  // ⛔⛔ THE STAGING SITE HOST FOR EVERY TOWN. One Worker, one route, forever.
+  //
+  // WHY THIS EXISTS AND WHY IT IS NOT CLOUDFLARE PAGES (ruled 2026-09-21):
+  // the address is `staging.theward.online/<map>/`, one per Map, and publishing one town
+  // must not touch another. Pages deploys a whole site atomically, so N towns in one
+  // project means every press rebuilds and reships every town — which is exactly the
+  // "one trunk, one deploy" defect the ruling settled against — and one project per town
+  // serves a HOSTNAME, not a subpath, so it cannot produce the ruled address at all.
+  //
+  // ⭐ THE SHAPE IS THE SLAB LAYER'S, DELIBERATELY. `bakedUrl.js`: "one prefix per look
+  // under one bucket, so pouring town #2 needs no code change and no entry in any table."
+  // A town's SITE is now a second prefix under the same roof, written by the same pour.
+  // A new town needs no project, no key, no DNS record and no edit here.
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "theward-staging-sites",
+  "main": "src/index.js",
+  "compatibility_date": "2026-09-01",
+  "observability": { "enabled": true },
+  // ⭐ The one address, bound from here rather than by hand. ⚠️ The dashboard's "Connect
+  // domain" dialog answered "No zones match staging.theward.online" for this same zone —
+  // it was wrong, and `wrangler deploy` created the custom domain without complaint
+  // (2026-09-21). ⛔ Don't re-diagnose the zone on the dashboard's word; the CLI is the
+  // authority. ▶ npx wrangler r2 bucket domain list theward-assets  (zone_name: theward.online)
+  "routes": [{ "pattern": "staging.theward.online", "custom_domain": true }],
+  // ⛔ NO `*.workers.dev` ADDRESS. It was disabled as a side effect of adding the route
+  // above; it is declared here so it stays off ON PURPOSE. A second ungated public URL
+  // serving the same towns is exactly the bulk-access surface `SECURITY.md` F-18 is about,
+  // and an unlisted partner link is worth nothing if the same bytes sit at a second address
+  // nobody is watching. ⚠️ It also means there is no fallback URL while DNS settles — that
+  // is accepted, not overlooked.
+  "workers_dev": false,
+  "preview_urls": false,
+  "r2_buckets": [
+    // The same bucket the slab already lives in. Sites go under `staging/sites/<map>/`,
+    // slabs under `staging/baked/<look>/` — two prefixes, one roof.
+    { "binding": "ASSETS", "bucket_name": "theward-assets" }
+  ],
+  "vars": {
+    "SITE_PREFIX": "staging/sites/",
+    // The ONE player build every town is served from.
+    "PLAYER_PREFIX": "staging/player/"
+  }
+}

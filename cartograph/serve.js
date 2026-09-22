@@ -13,6 +13,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, rmSync
 import { join, extname, dirname } from 'path'
 import { spawn } from 'child_process'
 import { DEFAULT_MAP, mapRawDir, mapCleanDir } from './config.js'
+import { instanceForMap } from '../src/instances/registry.js'
 import { treeBakeInputsForMap } from './tree-bake-inputs.mjs'
 import { intakeStatusForMap, sampleForRow, addAltSource } from './intake-rows.mjs'
 import { writeIfChanged } from './io.js'
@@ -96,8 +97,65 @@ const ASSET_BASE_URL = process.env.ASSET_BASE || 'https://assets.theward.online/
 // `scripts/upload-baked-to-r2.mjs`'s ENV_PREFIX; the two drifting apart means the panel
 // measures a key space nothing writes. ▶ node checks/claims-the-slab-envs-do-not-collide.mjs
 const ASSET_ENV_PREFIX = { prod: '', staging: 'staging/' }
-const STAGING_SITE_URL = 'https://jacobeugenehenderson.github.io/lafayette-square-staging/'
-const PROD_SITE_URL = 'https://lafayette-square.com/'
+// ⛔ THE ONE STAGING HOST FOR EVERY TOWN, and it is a HOST, not an answer: the address of
+// a particular pour is `siteUrlsForLook()` below, never this constant on its own.
+// ⭐ It is kit-level on purpose (ruled 2026-09-21). It was
+// `jacobeugenehenderson.github.io/lafayette-square-staging/`, which is wrong twice over —
+// a person's account name AND a town's name, and neither is the product. The Ward is the
+// kit-level term; Lafayette Square is installation #1.
+// ▶ served by `workers/staging-sites`, one Worker for every town.
+const STAGING_SITE_BASE = 'https://staging.theward.online/'
+// ⛔ LAFAYETTE SQUARE'S OWN DOMAIN, and it is used for ONE thing: the `/og-deployed`
+// probe, which asks whether the link-preview image is live on the production site.
+// ⛔ That probe is LS-shaped and stays boarded (H-18): another town's production site
+// is `instanceForMap(map).domain`, and most towns declare none.
+const LS_PROD_SITE_URL = 'https://lafayette-square.com/'
+
+/**
+ * ⛔⛔ THE ADDRESS IS DERIVED FROM THE LOOK — NEVER PRINTED FROM A CONSTANT.
+ *
+ * `STAGING_SITE_URL` / `PROD_SITE_URL` were module constants, so the Publish panel
+ * reported the SAME two addresses whatever town you shipped: press Publish on huron,
+ * get told it went to `…/lafayette-square-staging/` and lives at `lafayette-square.com`.
+ * Both wrong, and wrong in the worst available way — a truthful "published ✓" handing
+ * back an address that belongs to another town (`CLAUDE.md` Layer 0 q2, and H-18 ③).
+ *
+ * ⭐ THE PROD ADDRESS IS THE TOWN'S OWN AUTHORED FACT. Every instance module declares
+ * `domain` — LS `lafayette-square.com`, hipointe-demun a subpath, **huron `null`, "no
+ * deploy target yet"**. So this reads the registry rather than deciding anything:
+ * ⛔ a town with no domain has NO production address and this returns `null` with the
+ * reason, because printing LS's domain for huron is the same bleed one layer up.
+ *
+ * ⭐ THE STAGING ADDRESS IS CORRECT TODAY AND ITS NAME IS WRONG, and those are two
+ * different problems. Verified in a browser 2026-09-21: `…/?look=huron` renders huron
+ * off its own slab. So the honest address is the shared site WITH the look named on it,
+ * and `shared: true` discloses that the site's NAME is another town's (H-18 ①) instead
+ * of implying this town has one of its own. ⛔ The `?look=` is always written, including
+ * for Lafayette Square: the address must name the thing that was shipped, not lean on a
+ * site default that H-18 ② is about to change.
+ */
+function siteUrlsForLook(lookId) {
+  const entry = readLooksIndex().looks.find(l => l.id === lookId)
+  const mapId = entry?.scene || null
+  const town = mapId ? instanceForMap(mapId) : null
+  const noTown = `look '${lookId}' declares no scene, so there is no town to address`
+
+  // ⭐ THE MAP IS THE PATH, AND THAT IS THE ADDRESS A PARTNER IS GIVEN — no query string,
+  // because it is an address rather than an invocation. A LOOK that is not its map's own
+  // name still needs naming, so it keeps `?look=`; the common case does not.
+  const staging = mapId
+    ? { url: `${STAGING_SITE_BASE}${mapId}/${lookId === mapId ? '' : `?look=${encodeURIComponent(lookId)}`}` }
+    : { url: null, why: noTown }
+
+  const prod = !mapId ? { url: null, why: noTown }
+    : !town ? { url: null, why: `map '${mapId}' has no instance module, so it declares no domain — `
+        + `register src/instances/${mapId}.js` }
+    : !town.domain ? { url: null, why: `'${mapId}' declares no domain (src/instances/${mapId}.js#domain `
+        + `is null) — it has no production address yet` }
+    : { url: `https://${String(town.domain).replace(/^https?:\/\//, '').replace(/\/?$/, '/')}` }
+
+  return { staging, prod }
+}
 // The coherent slab set a publish commits (SLAB-CONTRACT §9): the per-look
 // bundle + its source design + the registry + shared derived geometry/trees.
 // SCOPED git pathspecs — a publish NEVER sweeps unrelated dirty files (e.g.
@@ -2614,7 +2672,9 @@ createServer(async (req, res) => {
       res.end(JSON.stringify({
         ok: true, branch, unbaked, dirty, vsStaging, vsProd, bakedAt,
         // Per-look, because every town gets its own staging site.
-        sites: { staging: STAGING_SITE_URL, prod: PROD_SITE_URL },
+        // ⛔ Per-look, derived. Each side is { url, … } or { url: null, why } — the panel
+        // shows the reason instead of a link it cannot honestly offer.
+        sites: siteUrlsForLook(id),
       }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
@@ -2657,7 +2717,7 @@ createServer(async (req, res) => {
     try { localBytes = statSync(join(import.meta.dirname, '..', 'public', 'photos', 'og-preview.jpg')).size } catch { /* none */ }
     let prodStatus = null, prodBytes = null
     try {
-      const r = await fetch(`${PROD_SITE_URL}photos/og-preview.jpg?cb=${Date.now()}`, { cache: 'no-store' })
+      const r = await fetch(`${LS_PROD_SITE_URL}photos/og-preview.jpg?cb=${Date.now()}`, { cache: 'no-store' })
       prodStatus = r.status
       if (r.ok) prodBytes = (await r.arrayBuffer()).byteLength
     } catch { /* offline */ }
@@ -2715,10 +2775,24 @@ createServer(async (req, res) => {
     return
   }
 
-  // POST /looks/<id>/publish — commit the look's slab (scoped pathspecs only)
-  // and push the current branch to the STAGING trunk. The UI bakes first (the
-  // existing /bake endpoint), then calls this. Staging is the dry-run: its own
-  // URL, not prod. Promote-to-prod is the separate, gated step below.
+  // POST /looks/<id>/publish — put this Look on its own staging address.
+  //
+  // ⛔⛔ IT NO LONGER PUSHES A BRANCH (2026-09-21). It used to `git push` the trunk and
+  // let `staging.yml` rebuild ONE GitHub Pages site for every town — so publishing Huron
+  // reshipped Lafayette Square, and a partner's link could change under them because
+  // somebody poured a different town. Ruled out: one address per Map, the Publish button
+  // is the unit. Now the button ships to R2, which is where both artifacts already live.
+  //
+  // THE TWO ARTIFACTS, AND THEY HAVE DIFFERENT LIFECYCLES:
+  //   · the SLAB — this town's, written by the bake to `staging/baked/<look>/`. Already
+  //     uploaded by the time this runs; verified here, never assumed.
+  //   · the PLAYER — the universal build, `staging/player/`, ONE for every town. Rebuilt
+  //     only when the source is newer than the last publish, because it costs a full vite
+  //     build. ⚠️ AND IT IS SHARED: republishing it reaches every town at once. That is
+  //     correct — it is one product — but it means a code change is never "just this town".
+  //
+  // ⛔ The git commit stays. It is the AUTHORING state (design.json, the looks index),
+  // which must survive a machine, and it is not what gets served.
   if (req.method === 'POST' && (m = path.match(/^\/looks\/([^/]+)\/publish$/))) {
     const id = m[1]
     const REPO_ROOT = join(import.meta.dirname, '..')
@@ -2745,14 +2819,42 @@ createServer(async (req, res) => {
         if (commit.code !== 0) throw new Error(`git commit failed: ${commit.stderr || commit.stdout}`)
         committed = true
       }
-      const push = await runCapture(`git push origin ${branch}:${STAGING_BRANCH}`, { cwd: REPO_ROOT, timeout: 60000 })
-      if (push.code !== 0) throw new Error(`push to staging failed: ${push.stderr}`)
-      // bakedAt of the just-shipped slab — the UI polls the live site for this
-      // exact value to know when the deploy has actually propagated.
+      const site = siteUrlsForLook(id)
+      if (!site.staging.url) throw new Error(site.staging.why)
+
+      // ── 1. The SLAB must actually be in the bucket. ⛔ ASK, never assume: the bake
+      // uploads it, and the bake can fail at the upload while everything else succeeded
+      // (it did, tonight). Reporting an address for a slab that is not there is the
+      // plausible-looking success this whole panel exists to prevent.
+      const slabKey = `${ASSET_ENV_PREFIX.staging}baked/${id}/scene.json`
+      const slabHead = await fetch(`${ASSET_BASE_URL}${slabKey}`, { method: 'HEAD' }).catch(() => null)
+      if (!slabHead?.ok) {
+        throw new Error(`this Look's slab is not in the bucket (${slabKey} → `
+          + `${slabHead ? slabHead.status : 'unreachable'}). Bake it first — the bake is what uploads it.`)
+      }
+
+      // ── 2. The PLAYER, rebuilt only when the source moved. `needsRebuild` is the same
+      // mtime gate the bake chain uses, against a stamp written by the publish script.
+      const PLAYER_STAMP = join(REPO_ROOT, '.player-published')
+      const playerInputs = [
+        join(REPO_ROOT, 'src'), join(REPO_ROOT, 'index.html'), join(REPO_ROOT, 'vite.config.js'),
+        join(REPO_ROOT, 'package.json'),
+      ]
+      let playerPublished = false
+      const playerLive = await fetch(`${ASSET_BASE_URL}staging/player/index.html`, { method: 'HEAD' }).catch(() => null)
+      if (!playerLive?.ok || needsRebuild(playerInputs, [PLAYER_STAMP])) {
+        await runShell('node scripts/publish-player-to-staging.mjs', { cwd: REPO_ROOT, timeout: 1800000 })
+        writeFileSync(PLAYER_STAMP, new Date().toISOString())
+        playerPublished = true
+      }
+
+      // bakedAt of the just-shipped slab — the UI polls the live artifact for this exact
+      // value to know the publish has propagated.
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, stagingUrl: STAGING_SITE_URL }))
+      res.end(JSON.stringify({ ok: true, committed, changed, branch, bakedAt, playerPublished,
+        stagingUrl: site.staging.url, staging: site.staging }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))
@@ -2810,7 +2912,9 @@ createServer(async (req, res) => {
       let bakedAt = null
       try { bakedAt = JSON.parse(readFileSync(join(REPO_ROOT, `public/baked/${id}/scene.json`), 'utf-8')).bakedAt ?? null } catch { /* leave null */ }
       res.writeHead(200, { 'Content-Type': 'application/json' })
-      res.end(JSON.stringify({ ok: true, promoted: ahead, pushed, r2, branch, bakedAt, prodUrl: PROD_SITE_URL }))
+      const site = siteUrlsForLook(id)
+      res.end(JSON.stringify({ ok: true, promoted: ahead, pushed, r2, branch, bakedAt,
+        prodUrl: site.prod.url, prod: site.prod }))
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json' })
       res.end(JSON.stringify({ error: err.message }))

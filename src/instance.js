@@ -20,52 +20,59 @@
  * deferred horizon; this selection swaps to it without touching consumers.
  * Doctrine: project_slab_is_the_instance_identity, project_kit_helpers_pattern.
  */
-import lafayetteSquare from './instances/lafayette-square.js'
-import hipointeDemun from './instances/hipointe-demun.js'
-import huron from './instances/huron.js'
-// ⛔ The look→map table, statically. It is the authoring index, bundled at BUILD
-// time — which is the right currency here: the player ships with slabs baked at
-// build time, so a Look the build never saw has no slab to render either. A fetch
-// cannot serve this: INSTANCE must resolve SYNCHRONOUSLY (consumers read it at
-// module load, e.g. `const CENTER_LAT = INSTANCE.geography.lat`).
+import { instanceForMap, registeredMaps, DEFAULT_MAP } from './instances/registry.js'
+// ⛔⛔ THE LOOK→MAP TABLE, STATICALLY — AND THIS IMPORT IS WHY `registry.js` EXISTS.
+// It is the authoring index, bundled at BUILD time, which is the right currency
+// here: the player ships with slabs baked at build time, so a Look the build never
+// saw has no slab to render either. A fetch cannot serve it — INSTANCE must resolve
+// SYNCHRONOUSLY (consumers read it at module load, e.g. `const CENTER_LAT =
+// INSTANCE.geography.lat`).
+// ⛔ BUT THE DEV SERVER REWRITES THIS FILE ON EVERY BAKE (`bakedAt`) AND ON EVERY
+// look create / rename / delete, and `node --watch` watches a module graph. So any
+// Node-side importer of THIS module kills itself mid-request whenever it saves the
+// looks index — which is exactly what took down the pour on 2026-09-21
+// (`src/instances/registry.js` has the full account). ⛔ Node-side code imports
+// `./instances/registry.js`, never this file; the browser imports this one.
+// ▶ node checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs
 import looksIndex from '../public/looks/index.json' with { type: 'json' }
 
-// ⭐⭐ THESE ARE KEYED BY THE **MAP**, NOT BY THE LOOK. (Jacob, 2026-09-19: "Looks
-// are always superficial 'looks' … for now it is only cosmetic things.")
+// ⛔ The PLAYER's default look — what the BARE address shows, with no `?look=`. It is
+// NOT `looksIndex.default`: that is the authoring 0-state (`kit-default`), an empty Look
+// bound to no map with nothing baked, and defaulting a visitor to it would render
+// nothing. (`DEFAULT_MAP` is the registry's, imported above — one constant, one home.)
 //
-// A map can carry MANY Looks — seasonal, sponsor — and every one of them is the
-// same town: same geography, same legal jurisdiction, same tax rate, same phone
-// number. Keying this registry by LOOK meant a winter Lafayette Square needed a
-// second file repeating all of it, to drift from the first.
-//
-// ⛔ AND THAT DUPLICATION WOULD HAVE HIDDEN THE BUG BELOW, because a winter LS
-// Look with no module falls back to LS and looks PERFECT — right answer, wrong
-// reason. A winter Huron Look renders St. Louis. The failure is invisible on
-// exactly the case anyone would test first.
-//
-// ⭐ There is deliberately no per-LOOK module to go with this one: a Look is
-// cosmetic, and cosmetics already travel through `design.json` → the slab
-// (`project_slab_is_the_instance_identity`). A look module would have nothing to
-// hold. What lives HERE is the fixed truth the slab does not carry.
-const INSTANCES = {
-  'lafayette-square': lafayetteSquare,
-  'hipointe-demun': hipointeDemun,
-  huron,
-}
-
-// ⛔ The PLAYER's default look, and it is NOT `looksIndex.default`. That is the
-// authoring 0-state (`kit-default`) — an empty Look bound to no map with nothing
-// baked; defaulting a visitor to it would render nothing. This is a deployment
-// fact: Lafayette Square is installation #1 and owns the bare domain.
+// ⭐ IT IS THE ANSWER FOR THE BUILD THAT OWNS THE BARE DOMAIN, and only that one. Every
+// other town is addressed by PATH — see `readLookParam` below.
 const DEFAULT_LOOK = 'lafayette-square'
-const DEFAULT_MAP  = 'lafayette-square'
 
-// Read `?look=`. Guarded so non-browser importers (node scripts, tests) fall back
-// rather than throw on `window`.
+/**
+ * Which look this page is. `?look=` wins; otherwise the FIRST PATH SEGMENT, if it names a
+ * look we know; otherwise the bare-domain default.
+ *
+ * ⭐⭐ THE PATH IS HOW A TOWN IS ADDRESSED, AND IT IS WHY THERE IS ONE BUILD RATHER THAN N
+ * (2026-09-21). The Ward is the UNIVERSAL PLAYER and a town is a slab instantiated inside
+ * it (`project_the_ward_is_the_player_not_the_neighborhood`), so compiling the player once
+ * per town is a category error — it makes ten builds of the thing whose whole definition is
+ * being one thing. `staging.theward.online/<map>/` therefore serves the SAME bytes for every
+ * town and reads the town off its own URL.
+ * ⛔ This replaced a `VITE_DEFAULT_LOOK` baked in at build time (H-18 ②), which worked and
+ * was the wrong shape: it put the town in the bundle, so pouring town #10 meant a build and
+ * an upload. Nothing per-town is compiled now.
+ *
+ * ⛔ THE SEGMENT IS VALIDATED AGAINST THE LOOKS INDEX, NEVER TRUSTED. An unknown segment is
+ * NOT a look — it is a deep link into the SPA (`/legal`, `/preview`) — and treating it as a
+ * town would resolve every route to a missing installation and fall back loudly for no
+ * reason. ⭐ Validating also means this needs no list of towns and no edit per pour.
+ */
 function readLookParam() {
   try {
-    return new URLSearchParams(window.location.search).get('look') || DEFAULT_LOOK
+    const q = new URLSearchParams(window.location.search).get('look')
+    if (q) return q
+    const seg = window.location.pathname.split('/').filter(Boolean)[0]
+    if (seg && (looksIndex.looks || []).some(l => l.id === seg)) return seg
+    return DEFAULT_LOOK
   } catch {
+    // Non-browser importers (node scripts, tests) have no `window`.
     return DEFAULT_LOOK
   }
 }
@@ -113,16 +120,17 @@ function resolveInstance() {
       `[instance] Look "${lookId}" is not in public/looks/index.json, so there is no ` +
       `map to resolve its identity from. Falling back to "${DEFAULT_MAP}" — THIS PAGE ` +
       `IS NOW WEARING ANOTHER TOWN'S identity, geography and legal jurisdiction.`)
-    return { ...INSTANCES[DEFAULT_MAP], lookId, mapId: DEFAULT_MAP, identityResolved: false }
+    return { ...instanceForMap(DEFAULT_MAP), lookId, mapId: DEFAULT_MAP, identityResolved: false }
   }
-  const town = INSTANCES[mapId]
+  const town = instanceForMap(mapId)
   if (!town) {
     console.error(
       `[instance] No installation module for map "${mapId}" (look "${lookId}") — ` +
-      `src/instances/${mapId}.js is not registered. Falling back to "${DEFAULT_MAP}", so ` +
+      `src/instances/${mapId}.js is not registered (registry has: ` +
+      `${registeredMaps().join(', ')}). Falling back to "${DEFAULT_MAP}", so ` +
       `THIS PAGE IS NOW WEARING ANOTHER TOWN'S identity, geography and legal ` +
       `jurisdiction. Register the map before shipping it.`)
-    return { ...INSTANCES[DEFAULT_MAP], lookId, mapId, identityResolved: false }
+    return { ...instanceForMap(DEFAULT_MAP), lookId, mapId, identityResolved: false }
   }
   // ⛔ `lookId` last: it OVERRIDES the module's own literal, which names the map.
   return { ...town, lookId, mapId, identityResolved: true }

@@ -827,7 +827,7 @@ function PublishPanel({ lookId }) {
           setDeploys(prev => {
             // Never clobber a push this session is still watching land.
             if (prev[key]?.status === 'building') return prev
-            return { ...prev, [key]: { status: String(j.bakedAt) === String(status.bakedAt) ? 'ready' : 'behind', bakedAt: j.bakedAt, url: status.sites?.[key] } }
+            return { ...prev, [key]: { status: String(j.bakedAt) === String(status.bakedAt) ? 'ready' : 'behind', bakedAt: j.bakedAt, url: status.sites?.[key]?.url ?? null } }
           })
         } catch { /* a site that cannot be reached stays unknown rather than claiming ready */ }
       }
@@ -968,17 +968,27 @@ function PublishPanel({ lookId }) {
   // A branch name and a commit count answer a question the operator does not have. The
   // one they DO have is "is the site showing my work?", and that is `bakedAt` on the live
   // site vs ours — see the derive-on-mount effect above.
-  // ⭐ VISIT ALWAYS RENDERS. It is a property of the look (every town gets its own staging
-  // site), not of a deploy this tab happened to watch, so it must not come and go with
-  // session state — that was the reported bug.
+  // ⭐ VISIT ALWAYS RENDERS WHEN THERE IS AN ADDRESS. It is a property of the look, not of
+  // a deploy this tab happened to watch, so it must not come and go with session state —
+  // that was the reported bug.
   // ⛔ ONE LINE PER TARGET (Jacob, 2026-08-29: "why are there two staging areas").
   // A "Staging · Visit →" row above a "Publish to Staging" button named the same thing
   // twice. The button IS the row: it says the state (past-tense and inert when the site
   // is current) and carries that site's link beside it.
+  // ⛔⛔ AND WHEN THERE IS NO ADDRESS, IT SAYS SO RATHER THAN OFFERING ONE (H-18 ③,
+  // 2026-09-21). `sites` is now derived per look on the server and each side is
+  // `{ url }` or `{ url: null, why }`: huron declares no domain, so it has no production
+  // address, and the panel prints that reason instead of linking Lafayette Square's —
+  // which is exactly what it used to do, from a module constant, for every town.
   const visitLink = (key) => {
-    const url = deploys[key]?.url || status.sites?.[key]
-    if (!url) return null
-    return <a href={url} target="_blank" rel="noopener noreferrer"
+    const site = status.sites?.[key]
+    const url = deploys[key]?.url || site?.url
+    if (!url) {
+      if (!site?.why) return null
+      return <span title={site.why}
+        style={{ flex: '0 0 auto', color: '#9ca3af', fontSize: 11 }}>no address</span>
+    }
+    return <a href={url} target="_blank" rel="noopener noreferrer" title={site?.note || undefined}
       style={{ flex: '0 0 auto', color: '#bfdbfe', textDecoration: 'underline', fontSize: 11 }}>Visit →</a>
   }
   const targetRow = (key, button) => (

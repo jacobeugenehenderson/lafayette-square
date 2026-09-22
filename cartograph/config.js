@@ -10,7 +10,13 @@
  * instance.js or clobbering LS: `CARTOGRAPH_SCENE=hipointe-demun node fetch.js`
  * fetches HiPointe's extent and writes to data/hipointe-demun/raw/. With the
  * env unset, every export below is byte-identical to before.
- * (instance.js is pure/dependency-free, so this node backend can import it.)
+ * ⛔ IT IMPORTS THE MAP **REGISTRY**, NOT `src/instance.js` (2026-09-21). instance.js
+ * statically imports `public/looks/index.json`, which the dev server REWRITES on
+ * every bake — and `node --watch` watches a module graph, so importing it here made
+ * serve.js (and arborist, via this file) kill themselves mid-pour. The registry is
+ * the same town modules with the look→map table left out, which is all this file
+ * ever wanted. Full account: `src/instances/registry.js`.
+ * ▶ node checks/claims-the-dev-servers-do-not-import-the-looks-index.mjs
  *
  * ⛔ SCENE RESOLUTION LIVES IN `scene.js`, NOT HERE — and importing THIS file to
  * ask what scene you are on is a mistake. `_loadGeography()` runs at module load
@@ -20,7 +26,7 @@
  * `config.js` keep working; `scene.js`'s header explains why the split is
  * load-bearing and must not be undone.
  */
-import { INSTANCE } from '../src/instance.js'
+import { instanceForMap } from '../src/instances/registry.js'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import {
@@ -34,7 +40,7 @@ export {
 }
 
 // Geography resolver: a non-default scene's data/<scene>/geography.json wins;
-// otherwise the instance.js SSOT (LS). Same shape either way.
+// otherwise the default map's registry module (LS). Same shape either way.
 function _loadGeography() {
   if (SCENE !== DEFAULT_MAP) {
     const p = join(mapDir(SCENE), 'geography.json')
@@ -53,7 +59,21 @@ function _loadGeography() {
 `)
     process.exit(2)
   }
-  return INSTANCE.geography
+  // The DEFAULT scene's geography is the default map's own module — this branch is
+  // only reached when `SCENE === DEFAULT_MAP`, so there is one right answer and no
+  // look involved. ⛔ An unregistered default map is unbuildable, not degraded: say
+  // so and exit, exactly as an absent geography.json does above.
+  const town = instanceForMap(DEFAULT_MAP)
+  if (!town?.geography) {
+    console.error(`
+⛔ the default map '${DEFAULT_MAP}' has no registered instance module (looked in
+   src/instances/registry.js), so there is no geography to project from.
+
+   Register src/instances/${DEFAULT_MAP}.js before building.
+`)
+    process.exit(2)
+  }
+  return town.geography
 }
 const _geo = _loadGeography()
 

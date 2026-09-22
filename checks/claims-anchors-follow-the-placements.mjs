@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * claims-anchors-follow-the-placements.mjs
+ * claims-anchors-follow-the-placements — `tree-anchors.json` keys to its own slab’s placements.
  *
  * `tree-anchors.json` is index-parallel to `trees.json`, and the runtime's gate is
  * ALL-OR-NOTHING: one wrong `placementKey` discards EVERY anchor and the whole town's

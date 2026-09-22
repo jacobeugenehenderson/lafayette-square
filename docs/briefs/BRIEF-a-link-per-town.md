@@ -2,7 +2,7 @@
 status: OPEN
 dispatched: no
 written: 2026-09-21
-evict-when: RULING: one site per town, or one site serving every town? Until that is answered nothing here is buildable — and see §1, which may make the answer smaller than it looks.
+evict-when: the four named breakages (1 URL name, 2 DEFAULT_LOOK, 3 the printed link, 4 per-town deploy) are each closed or re-boarded. RULED 2026-09-21: one site per Map; the partner link is unlisted but durable. Sec 1's browser gate is PASSED.
 -->
 
 # A link per town
@@ -24,7 +24,7 @@ Every one of these is a command, not a recollection. ▶ re-run them; do not quo
 
 | Claim | How it was measured | Result |
 |---|---|---|
-| The player boots any town from the URL | read `src/instance.js` | `INSTANCE` resolves from **`?look=`** at module load; `INSTANCES` holds `lafayette-square`, `hipointe-demun`, **`huron`** |
+| The player boots any town from the URL | read `src/instance.js` | `INSTANCE` resolves from **`?look=`** at module load; the registry (`src/instances/registry.js`) holds `lafayette-square`, `hipointe-demun`, **`huron`** |
 | Huron's slab is on the staging CDN | `curl -o /dev/null -w '%{http_code}' https://assets.theward.online/staging/baked/huron/scene.json` | **200** |
 | …and its ground, too | same, `…/baked/huron/ground.json` | **200** |
 | The staging site is up | `curl … https://jacobeugenehenderson.github.io/lafayette-square-staging/` | **200** |
@@ -35,11 +35,21 @@ Every one of these is a command, not a recollection. ▶ re-run them; do not quo
 https://jacobeugenehenderson.github.io/lafayette-square-staging/?look=huron
 ```
 
-⛔ **NOT VERIFIED IN A BROWSER.** The four probes above are HTTP and source reads; nobody has loaded
-that URL and looked at it. **That is the single cheapest act in this brief and it must happen before
-any other work** — it decides whether this is a *naming* problem (hours) or a *routing* problem
-(days). ⚠️ If it renders Lafayette Square rather than Huron, `?look=` is not reaching `INSTANCE` in a
-production build and **that is the whole finding** — stop and re-scope.
+### ✅ VERIFIED IN A BROWSER, 2026-09-21 19:46. **IT RENDERS HURON.** ⇒ **This is a NAMING problem, not a
+routing one** — `?look=` reaches `INSTANCE` in a production build, the page pulls
+`staging/baked/huron/*` off the CDN, and the town draws: buildings, streets, the shoreline. The
+re-scope this gate was protecting against does not apply; ①–④ below are the whole job.
+
+⚠️ **TWO THINGS THE GATE TURNED UP THAT THE BRIEF DID NOT ASK FOR, AND THEY MATTER TO A PARTNER:**
+- **~90 SECONDS TO FIRST PAINT**, on both towns, on a warm CDN. Until then the viewport is BLACK with
+  the UI chrome already drawn, which reads as broken rather than loading. ⛔ A partner link is opened
+  once, by someone who was not told to wait. ⚠️ Plausibly the same unexplained cost as `H-9`; ⛔ not
+  established, and ⛔ **I twice called this "the site is black" from screenshots taken too early** —
+  the correct measurement is a screenshot AFTER 90 s, and the wrong one nearly became a finding.
+- **Staging serves the PREVIOUS slab.** The console reported huron's birch leak (1,679 placements on
+  mesh) that the 19:11 Grove bake had already cleared on disk. ⇒ **a Grove bake writes
+  `public/baked/<look>/` and ships nothing**; only the cartograph Stage bake uploads to R2. Two
+  gestures, one artifact, and the operator is not told which one ships.
 
 ### What is genuinely broken, assuming the link renders
 
@@ -100,9 +110,13 @@ per-town. ⛔ **And the prod path is not symmetrical** — `promote` fast-forwar
 **Option C — one site per town for PROD, one shared preview for STAGING.** Preview is a dry run
 whose churn nobody should care about; a partner link is an address someone remembers.
 
-⚠️ **A fourth thing Jacob has not been asked and should be, because it changes A vs B:** is a
-partner link **public** — indexable, permanent — or an **unlisted preview** for a specific
-conversation? ⛔ Not established, and it decides whether these need real domains.
+### ✅ RULED 2026-09-21 (Jacob): **OPTION B — ONE SITE PER MAP.** *"One for each separate 'publish to
+staging' button; so practically, one for each Map or Scene."* The BUTTON is the unit.
+### ✅ And the fourth question, answered the same day: **UNLISTED, BUT IT PERSISTS.** *"Permanent
+insofar as it survives alongside the pushed site… but we won't publicize it and nobody will go to it
+except in the case of updates."* ⇒ **no domains, no indexing, no share cards needed — and NO
+TEARDOWN.** A partner holds the address and returns months later, so a site may never break or move.
+⛔ Do not design the regime around standing a site up and taking it down again.
 
 ---
 

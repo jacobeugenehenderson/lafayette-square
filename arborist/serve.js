@@ -1239,7 +1239,19 @@ const server = createServer(async (req, res) => {
         const tRegen = Date.now()
         let regenLog = ''
         try {
-          const { stdout } = await execAsync('node', [join(__dirname, 'generate-salon.js')])
+          // ⛔ `--look` IS REQUIRED AND THIS CALLER DID NOT PASS IT (fixed 2026-09-21).
+          // `generate-salon#requireLookArg` began refusing an implicit Look on 2026-09-20
+          // (58a91317) — it had been hardcoding `syncLookRoster('lafayette-square', …)`,
+          // editing LS's authoring SSoT whichever town you were in, ruled a Class C bleed.
+          // The refusal is right and stays. The caller was never updated, so from that
+          // commit EVERY Grove "Bake → Slab" died here, on every town, with
+          // "regenerate-from-source failed (generate-salon)" and the reason buried in a
+          // stderr field the header does not show.
+          // ▶ node checks/claims-a-look-keyed-tool-is-called-with-its-look.mjs
+          const { stdout } = await execAsync('node', [
+            join(__dirname, 'generate-salon.js'),
+            '--look', lookName,
+          ])
           regenLog = String(stdout).slice(-2000)
           const { rebuildIndex } = await import('./build-index.js')
           await rebuildIndex()
@@ -1777,18 +1789,29 @@ const server = createServer(async (req, res) => {
     // no longer fires bakeLook. Shipping to the slab is now the explicit Grove
     // gesture (POST /atlas/bake?look=<id>). Per
     // [[project_authoring_is_live_production_is_static]], Re-publish stages to
-    // the library; Grove bakes the slab. The ?look= param is still accepted
-    // (echoed in the response) but is now vestigial — it no longer triggers a bake.
+    // the library; Grove bakes the slab.
     if (req.method === 'POST' && (m = path.match(/^\/salon\/([^/]+)\/publish$/))) {
       const species = m[1]
       const lookName = new URL(req.url, 'http://x').searchParams.get('look') || null
       if (lookName && (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.'))) {
         return jsonRes(res, 400, { error: 'invalid look name' })
       }
+      // ⛔ `?look=` IS REQUIRED. Publishing writes the built variants into
+      // `<look>/design.json`, the authoring SSoT, so `generate-salon` refuses without an
+      // explicit Look rather than defaulting to Lafayette Square's roster (58a91317).
+      // ⛔ Refuse here too — a default chosen by the server is the same bleed one layer up.
+      if (!lookName) {
+        return jsonRes(res, 400, {
+          error: 'missing ?look=<id> — publishing writes this Look\'s design.json roster, '
+            + 'and defaulting would edit another town\'s (generate-salon#requireLookArg).',
+          species,
+        })
+      }
       const t0 = Date.now()
       try {
         const { stdout } = await execAsync('node', [
           join(__dirname, 'generate-salon.js'),
+          '--look', lookName,
           '--species', species,
         ])
         try {
@@ -1946,8 +1969,7 @@ const server = createServer(async (req, res) => {
     // bakeLook. Shipping to the slab is now the explicit Grove gesture
     // (POST /atlas/bake?look=<id>). Per
     // [[project_authoring_is_live_production_is_static]], Re-publish stages to
-    // the library; Grove bakes the slab. The ?look= param is still accepted
-    // (echoed in the response) but is now vestigial — it no longer triggers a bake.
+    // the library; Grove bakes the slab.
     if (req.method === 'POST' && (m = path.match(/^\/procedural\/([^/]+)\/publish$/))) {
       const species = m[1]
       if (!PROCEDURAL_PRESETS[species]) {
@@ -1957,10 +1979,21 @@ const server = createServer(async (req, res) => {
       if (lookName && (lookName.includes('/') || lookName.includes('..') || lookName.startsWith('.'))) {
         return jsonRes(res, 400, { error: 'invalid look name' })
       }
+      // ⛔ `?look=` IS REQUIRED — same as the Salon publish beside it, and for the same
+      // reason: the roster write lands in `<look>/design.json`, so `generate-procedural`
+      // refuses an implicit Look rather than editing Lafayette Square's (58a91317).
+      if (!lookName) {
+        return jsonRes(res, 400, {
+          error: 'missing ?look=<id> — publishing writes this Look\'s design.json roster, '
+            + 'and defaulting would edit another town\'s (generate-procedural#requireLookArg).',
+          species,
+        })
+      }
       const t0 = Date.now()
       try {
         const { stdout } = await execAsync('node', [
           join(__dirname, 'generate-procedural.js'),
+          '--look', lookName,
           '--species', species,
         ])
         // Rebuild index so the new manifest is visible to the runtime picker.

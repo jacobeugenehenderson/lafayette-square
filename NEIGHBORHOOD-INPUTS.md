@@ -105,11 +105,11 @@ the Salon. An unreviewed plate presented as ground truth is worse than no plate.
 | Almanac rules | 16 weather→sky directives | authored (Conditions editor) | **global — shared** | authored |
 | Modulators | 7 continuous phenomena (cold front, smoke, pre-storm gold…) | authored | **global — shared** | authored |
 | Reference photos | 42 WMO/Wikimedia cloud refs | curated | **global — shared** | curated |
-| **Instance geography** | lat/lon/timezone | `src/instance.js` | **per-town** | measured (1 line) |
+| **Instance geography** | lat/lon/timezone | `src/instances/<map>.js` | **per-town** | measured (1 line) |
 | Real weather | live temp/cloud/precip/wind | **Open-Meteo API**, polled with instance coords | per-town (automatic) | real-world (zero authoring) |
 | Sun position | solar altitude/azimuth | SunCalc from instance coords | per-town (automatic) | procedural |
 
-**A new town authors nothing here.** It inherits the whole engine and gets real weather + correct sun path *for free* the moment `instance.js` has the right coordinates. This is the inverse of a per-town baked asset — the library is maximally portable. (`public/clouds/*.json` are live artifacts; `public/clouds/fixtures/` is orphaned — Phase-5b stub.)
+**A new town authors nothing here.** It inherits the whole engine and gets real weather + correct sun path *for free* the moment `src/instances/<map>.js` has the right coordinates. This is the inverse of a per-town baked asset — the library is maximally portable. (`public/clouds/*.json` are live artifacts; `public/clouds/fixtures/` is orphaned — Phase-5b stub.)
 
 ---
 
@@ -315,7 +315,7 @@ Seeded from the LS build + the HiPointe/PTown contrast. **This section is meant 
 
 Not yet a runbook; the honest skeleton of one, sequenced by Jacob's acquisition axis.
 
-1. **Extent + geography** — pick center + radius; fill `src/instance.js` (weather goes live immediately, §3).
+1. **Extent + geography** — pick center + radius; fill `src/instances/<map>.js` and register it in `src/instances/registry.js` (weather goes live immediately, §3).
 2. **Automated fetch (Tier ①)** — OSM, footprints, LiDAR, Mapillary → the map + building geometry. Same scripts, new extent.
 3. **Re-point the municipal wells (Tier ②)** — the new town's assessor parcels + tree census. *The one engineering task per town* (new fetch adapter). HiPointe ≈ free; PTown = MassGIS adapter.
 4. **Author SHAPE debt to zero** — survey widths; drive curated-centerline count toward 0 (kit invariant).

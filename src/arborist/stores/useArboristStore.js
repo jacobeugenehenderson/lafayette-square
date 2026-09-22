@@ -170,14 +170,42 @@ const useArboristStore = create((set, get) => ({
   enterGrove: async () => {
     await get()._saveSalonDebounced.flush()
     const pending = [...get().salonUnpublished]
-    if (pending.length) {
+    // ⛔ THE LOOK TRAVELS WITH THE PUBLISH (fixed 2026-09-21). Publishing writes the
+    // built variants into `<look>/design.json` — the authoring SSoT — so
+    // `generate-salon` refuses without an explicit Look rather than defaulting to
+    // Lafayette Square's roster (58a91317, the Class C bleed ruled 2026-09-20). This
+    // call sent no `?look=` at all, so every pending species silently failed to
+    // republish on the way into the Grove: the `catch` below only warned, and the set
+    // was cleared regardless, so the edits were marked published having reached nothing.
+    const lookId = get().activeLookId
+    if (pending.length && !lookId) {
+      console.error(`[grove] ⛔ ${pending.length} unpublished species (${pending.join(', ')}) and no `
+        + `active Look — refusing to publish, because the roster write needs a town and `
+        + `defaulting would edit another one's. They stay marked unpublished.`)
+    } else if (pending.length) {
       set({ grovePublishing: true })
+      const failed = []
       for (const sp of pending) {
         try {
-          await fetch(`/api/arborist/salon/${encodeURIComponent(sp)}/publish`, { method: 'POST' })
-        } catch (e) { console.warn('[grove] republish failed for', sp, e) }
+          const r = await fetch(
+            `/api/arborist/salon/${encodeURIComponent(sp)}/publish?look=${encodeURIComponent(lookId)}`,
+            { method: 'POST' },
+          )
+          // ⛔ A non-OK response is a FAILED publish. This used to be swallowed by the
+          // bare `catch` (fetch resolves on 4xx/5xx), so a refused publish looked
+          // identical to a successful one.
+          if (!r.ok) {
+            const err = await r.json().catch(() => ({}))
+            throw new Error(err.error || `HTTP ${r.status}`)
+          }
+        } catch (e) { failed.push(sp); console.error('[grove] ⛔ republish failed for', sp, e) }
       }
-      set({ salonUnpublished: new Set(), grovePublishing: false })
+      // Only the ones that actually landed lose their unpublished mark.
+      set(st => {
+        const unpub = new Set(st.salonUnpublished)
+        for (const sp of pending) if (!failed.includes(sp)) unpub.delete(sp)
+        return { salonUnpublished: unpub, grovePublishing: false }
+      })
     }
     await get().loadGrove()
   },

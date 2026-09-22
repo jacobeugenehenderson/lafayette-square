@@ -635,7 +635,7 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // is a bug that hides a bug.
   const placementsUrl = bakeUrl || `${ASSET_BASE}baked/${lookName}/trees.json`
 
-  const [bake, setBake] = useState(null)
+  const [rawBake, setBake] = useState(null)
   useEffect(() => {
     if (cacheBust == null) return
     let cancelled = false
@@ -771,6 +771,48 @@ function ParkPopulation({ maxVariants, lookId: propLookId, bakeLastMs, bakeUrl }
   // cut-trunk lod2 (browse tier) to high telephoto / shallow-browse framings →
   // "floating, cut-off trunks." Retired. Depth gauges (DoF/fog) own visual
   // distance; geometry follows the baked heroTier role (see lodForRole below).
+
+  /**
+   * ⛔⛔ A SPECIES THIS ATLAS NEVER REWROTE MUST BE DROPPED, LOUDLY — NOT LOADED.
+   *
+   * It has no GLB in the slab, so asking for one 404s inside the loader, and the throw
+   * takes out the whole `<InstancedTrees>` subtree: **one missing file and the town has
+   * no canopy at all.** Measured 2026-09-21 on huron's staging slab — `birch` is in the
+   * Look's roster (`design.json#trees`) with no composition behind it, so the pour emitted
+   * 1,679 birch placements, the runtime routed them to mesh exactly as designed, and
+   * `trees/birch/skeleton-1-lod1.glb` 404'd. 18,616 trees vanished for want of one file.
+   * ⭐ The code already KNEW: it logs "kept MESH because their species has NO baked hero
+   * impostor … Shoot these in the Grove: birch(1679)" one line before it loads it anyway.
+   *
+   * ⭐ `barkBySpecies` is the honest test and it is the Grove's own (`Grove.jsx`): bake-look
+   * writes a species there exactly when it rewrote that species' GLB into THIS atlas. So
+   * this needs no roster, no list, and no edit per town.
+   * ⛔ Unknown atlas ⇒ judge nothing. "The atlas has not answered yet" is not "the atlas
+   * says no", and conflating them would empty the canopy on every cold load.
+   * ⛔ NOT a substitution. Dropping loses those trees and says so; silently promoting them
+   * to some other species would put a tree the operator did not choose on the map.
+   */
+  const bake = useMemo(() => {
+    const bark = atlas?.manifest?.barkBySpecies
+    if (!rawBake?.instances || !bark) return rawBake
+    const missing = new Map()
+    const keep = rawBake.instances.filter((i) => {
+      if (bark[i.species]) return true
+      missing.set(i.species, (missing.get(i.species) || 0) + 1)
+      return false
+    })
+    if (missing.size) {
+      console.error(
+        `[InstancedTrees] ⛔ dropped ${rawBake.instances.length - keep.length} of ` +
+        `${rawBake.instances.length} placements: their species is not in this slab's atlas, so it has ` +
+        `no GLB and loading one would 404 and take the WHOLE canopy down — ` +
+        `${[...missing].map(([sp, n]) => `${sp}(${n})`).join(', ')}. ` +
+        `▶ compose them in the Salon and re-bake the Grove, or remove them from ` +
+        `public/looks/<look>/design.json#trees. ` +
+        `▶ node checks/claims-every-baked-species-has-an-impostor.mjs`)
+    }
+    return keep.length === rawBake.instances.length ? rawBake : { ...rawBake, instances: keep }
+  }, [rawBake, atlas?.manifest?.barkBySpecies])
 
   // Group bake instances by URL. Instances whose (species, variantId) is
   // in the Look's roster render as themselves; out-of-roster placements
