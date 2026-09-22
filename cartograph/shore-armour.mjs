@@ -68,6 +68,19 @@
  *  "wall" shorter than one course of it is a kerb, not a revetment. */
 export const MIN_ARMOUR_D50_M = 0.5
 
+/** ⭐ RULED 2026-09-21 (Jacob): a tall face is STILL RIPRAP. huron's arc #3 is a
+ *  genuine ~9.2 m step down to the water with a flat terrace behind it — 2.5× the
+ *  tallest wall in the 1 m lidar survey — and the question was whether dumped stone
+ *  is the right structure at that height or whether it becomes an engineered wall.
+ *  Jacob: *"treat it as riprap."* ⛔ So there is NO height cap and no exclusion; a
+ *  tall stretch takes the full `crest / tan(REPOSE)` band like any other.
+ *  ⚠️ THE CONSEQUENCE IS GEOMETRIC AND IT IS NOT OPTIONAL: that band is ~13 m wide,
+ *  and **a revetment cannot follow a curve tighter than its own width — the real
+ *  structure could not either.** So a consumer must simplify the shoreline arc to
+ *  the scale of the BAND, not merely to the scale of the heightfield, or the ribbon
+ *  folds through itself on the inside of a bend. ⛔ Not a constant: derive it from
+ *  the local crest, floored at the terrain grid. */
+
 /** Angle of repose of dumped riprap, degrees — what sets the revetment's slope.
  *  ⛔ Measured 2026-09-21: the ground landward of huron's shore is nearly FLAT
  *  (median 0.07 m rise per metre) and then drops at the line, so the BANK cannot
