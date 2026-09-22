@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 192,
+  "total": 193,
   "counts": {
-    "safe": 150,
+    "safe": 151,
     "local-effect": 6,
     "live": 36
   },
@@ -311,6 +311,13 @@
       "tier": "safe",
       "why": [
         "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-every-category-has-a-full-treatment.mjs",
+      "tier": "safe",
+      "why": [
+        "computed import of src/tokens/categories.js — read, safe"
       ]
     },
     {

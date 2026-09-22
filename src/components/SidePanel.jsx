@@ -6,7 +6,7 @@ import useLandmarkFilter from '../hooks/useLandmarkFilter'
 import useSelectedBuilding from '../hooks/useSelectedBuilding'
 import useCamera from '../hooks/useCamera'
 import useUserLocation from '../hooks/useUserLocation'
-import { CATEGORY_LIST, COLOR_CLASSES } from '../tokens/categories'
+import { CATEGORY_LIST, COLOR_CLASSES, UNCLASSIFIED_CLASSES } from '../tokens/categories'
 import { buildings as _buildings, buildingMap as _buildingMap, buildingCount as _buildingCount, ready as _buildingsReady } from '../data/buildings'
 import { resolveBuildingPosition } from '../lib/buildingPosition'
 import useSlabBuildingIndex from '../hooks/useSlabBuildingIndex'
@@ -506,7 +506,8 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
   const flyTo = useCamera((s) => s.flyTo)
   const clearFly = useCamera((s) => s.clearFly)
   const listings = useListings((s) => s.listings)
-  const colors = COLOR_CLASSES[color]
+  // ⛔ `unclassified` carries `color: null` on purpose — see UNCLASSIFIED_CLASSES.
+  const colors = COLOR_CLASSES[color] || UNCLASSIFIED_CLASSES
   const isActive = activeTags.has(section.id)
 
   const places = useMemo(() => {
@@ -588,7 +589,8 @@ function LafayetteSubsection({ section, color, scrollToSelected }) {
 
 function LafayetteCategoryAccordion({ category, isExpanded, onToggle, scrollToSelected }) {
   const listings = useListings((s) => s.listings)
-  const colors = COLOR_CLASSES[category.color]
+  // ⛔ `unclassified` carries `color: null` on purpose — see UNCLASSIFIED_CLASSES.
+  const colors = COLOR_CLASSES[category.color] || UNCLASSIFIED_CLASSES
 
   const totalCount = useMemo(() => {
     return listings.filter(l =>

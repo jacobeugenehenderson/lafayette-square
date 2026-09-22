@@ -77,7 +77,7 @@ Writes into the repo or a scratch dir.
 | `scratch/claims-protopolygon.mjs` | THE PROTOPOLYGON — Jacob's construction, built for the first time. READ-ONLY. |
 | `scratch/claims-wind-tier-extraction.mjs` | Does the extracted stampWindTier still classify exactly as the two hand-kept |
 
-## safe — 150. This is `npm test`.
+## safe — 151. This is `npm test`.
 
 | check | the claim it falsifies |
 |---|---|
@@ -122,6 +122,7 @@ Writes into the repo or a scratch dir.
 | `checks/claims-divided-seam-step.mjs` | DOES THE DIVIDED↔UNDIVIDED SEAM STEP SURVIVE INTO THE FROZEN ARTIFACT? |
 | `checks/claims-docs-carry-their-commands.mjs` | ⭐⭐⭐ THE DOC WRAP, AS A GATE INSTEAD OF A PROMISE. (Jacob, 2026-09-07: "The docs must be fixed |
 | `checks/claims-every-baked-species-has-an-impostor.mjs` | every species in a baked census is in that slab’s atlas. |
+| `checks/claims-every-category-has-a-full-treatment.mjs` | every category resolves to a COMPLETE class set. |
 | `checks/claims-every-corner-is-configured.mjs` | pad is a band-slice, NOT predicated on the arc — so it works square OR round." |
 | `checks/claims-every-corner-is-one-of-three.mjs` | ⭐⭐⭐ EVERY CORNER RENDERS AS ONE OF THE THREE SANCTIONED SPECS — OR IT IS A DEFECT. |
 | `checks/claims-every-lu-tag-has-a-home.mjs` | home.mjs — CAN A TOWN BRING A WORD WE DO NOT KNOW? |

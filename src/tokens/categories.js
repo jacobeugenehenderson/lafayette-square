@@ -293,6 +293,32 @@ export const COLOR_CLASSES = Object.fromEntries(
   Object.entries(CATEGORIES).map(([, c]) => [c.tw, c.classes])
 )
 
+/**
+ * ⛔⛔ THE TREATMENT FOR A CATEGORY WITH NO COLOUR — `CATEGORY_LIST`'s `unclassified`
+ * carries `color: null` ON PURPOSE, so every consumer that indexes `COLOR_CLASSES` by it
+ * gets `undefined` unless it falls back here.
+ *
+ * ⭐ It is SLATE, the same neutral as `UNKNOWN_HEX`, and it is deliberately not one of the
+ * twelve: "unclassified" must read as the absence of a category, never as a quiet member of
+ * the taxonomy.
+ *
+ * Instance, 2026-09-21: `SidePanel` did `COLOR_CLASSES[category.color].border` with no
+ * guard and threw "Cannot read properties of undefined (reading 'border')" — the whole
+ * panel down. The row had existed unexercised because LS's assessor classifies every
+ * building; huron's 338 buildings with no readable use are the first to reach it. ⛔ The
+ * defect is the missing guard, NOT the null: `classifyZoning` returns null for an
+ * unreadable code and null must travel, or a town with no St. Louis zoning letter gets
+ * every building filed as residential (the Layer 0 q2 bug that rule was written to kill).
+ */
+export const UNCLASSIFIED_CLASSES = {
+  bg: 'bg-[#6B7280]/10',
+  border: 'border-[#6B7280]/20',
+  text: 'text-[#6B7280]',
+  hover: 'hover:bg-[#6B7280]/15',
+  dot: 'bg-[#6B7280]',
+  activeBg: 'bg-[#6B7280]/20',
+}
+
 /** { dining: '#C2185B', ... } — hex colors for Three.js neon bands + QR codes */
 export const CATEGORY_HEX = Object.fromEntries(
   Object.entries(CATEGORIES).map(([id, c]) => [id, c.hex])
