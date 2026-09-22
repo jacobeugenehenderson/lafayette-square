@@ -276,9 +276,24 @@ export default function EventTicker() {
 
   if (viewMode === 'planetarium') return null
   if (showCard || bulletinOpen || courierOpen || contactOpen || codeDeskOpen || infoOpen || panelFull) return null
-  if (tickerItems.length === 0) return null
 
-  const current = tickerItems[index % tickerItems.length]
+  // ⛔⛔ THE ENTRY COUNT MAY NOT GATE THE CHROME. This used to be
+  // `if (tickerItems.length === 0) return null`, and the bar carries more than the
+  // ticker: the two glass zones the header is composed of, the bottom edge highlight,
+  // and — rendered inside this same return — `SearchDrawer`, the ONLY pulldown search
+  // in the player. So a town with nothing open right now lost its search entirely, and
+  // an empty ticker and an unwired one looked identical.
+  //
+  // ⭐ IT IS A TIME-OF-DAY HOLE, WHICH IS WHY IT SURVIVED. Entries come from
+  // `_isOpenNow`, so the bar vanished nightly and returned by morning; measured on huron
+  // 2026-09-22, the eligible listings are open 07:00–21:00 and the search was gone for
+  // the other ten hours. ⚠️ Worse on a town with fewer hours on file, and — the kit's
+  // signature shape — invisible on a town whose directory is full.
+  //
+  // ⭐ The empty state is BLANK, deliberately: an activated feature with empty assets
+  // degrades to an empty state, and inventing filler copy would put words in a town's
+  // mouth. `current` is null and every consumer below already reads it optionally.
+  const current = tickerItems.length ? tickerItems[index % tickerItems.length] : null
   const isEvent = current?._source === 'event'
 
   return (
@@ -300,27 +315,29 @@ export default function EventTicker() {
           }}
         >
           <button
-            onClick={() => openEvent(current)}
+            onClick={() => current && openEvent(current)}
+            disabled={!current}
+            aria-label={current ? undefined : 'Nothing open right now'}
             className="flex-1 min-w-0 flex items-center text-left h-full"
           >
-            <div
-              key={`${current?.listing_id || ''}-${index}`}
+            {current && <div
+              key={`${current.listing_id || ''}-${index}`}
               className="flex-1 min-w-0 animate-ticker-in space-y-0.5"
             >
-              {current?._venueName && (
+              {current._venueName && (
                 <ScrollLine tickKey={`v-${index}`} className={`text-label tracking-wide ${isEvent ? 'text-amber-300' : 'text-on-surface'}`}>
                   {current._venueName}
                 </ScrollLine>
               )}
               <ScrollLine tickKey={`t-${index}`} className={`text-label-sm ${isEvent ? 'text-amber-300/70' : 'text-on-surface-variant'}`}>
-                {current?.title}
+                {current.title}
               </ScrollLine>
-              {current?._time && (
+              {current._time && (
                 <p className="text-caption text-on-surface-subtle">
                   {current._time}
                 </p>
               )}
-            </div>
+            </div>}
           </button>
         </div>
         {/* Right zone — button area (light glass, sky visible) */}
