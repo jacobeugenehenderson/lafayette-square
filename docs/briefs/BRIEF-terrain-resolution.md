@@ -2,7 +2,10 @@
 status: OPEN
 dispatched: no
 written: 2026-09-20
-evict-when: node cartograph/bake-terrain.js --scene=huron && node -e "const t=require('./cartograph/data/huron/clean/terrain.json');process.exit(t.stepX<=2?0:1)"
+evict-when: node checks/claims-a-level-body-has-one-surface.mjs
+  ⛔ THE OLD CONDITION COULD NOT FIRE: it read `terrain.json.stepX`, and that file carries
+  {width,height,bounds,baseElev} and no `stepX` — so `undefined <= 2` was false forever. Re-scoped
+  2026-09-21 onto the defect this brief actually closes: the water's edge, not the grid spacing.
 -->
 
 # BRIEF — THE GOOD ELEVATION EXISTS AND THE PIPELINE CANNOT READ IT
@@ -13,12 +16,28 @@ evict-when: node cartograph/bake-terrain.js --scene=huron && node -e "const t=re
 > Jacob, describing his own town: *"when you walk out Francesca's back door when you get to the big
 > rock wall it's a drop from her yard to the water"* — **15–20 ft, in many places.**
 >
-> **The elevation we baked does not contain it.** Measured across huron's 2,064,969 samples, mean
-> elevation walking inland from the waterline:
-> ```
->  5 m inland   0.9 ft        30 m inland   1.5 ft        60 m inland   2.3 ft
-> ```
-> ⛔ **A 2 ft rise over 200 feet.** Not a smeared wall — **no wall at all.**
+> ### ⛔⛔ RE-SCOPED 2026-09-21 — THE PROVOKING MEASUREMENT WAS WRONG, AND THE REAL DEFECT IS BETTER
+> This brief opened on *"the elevation we baked does not contain it — a 2 ft rise over 200 feet, no
+> wall at all."* **That is false**, re-derived from the same shipped artifact the morning after it
+> was written. The bank IS in the bake, at close to full height.
+> ▶ `node scratch/huron-shore-transect/bake-gradient.mjs` · the excised text and the lesson:
+> `cartograph/_archive/shore-wall-absent-premise-FALSE-2026-09-21.md`
+>
+> ⭐⭐ **WHAT IS ACTUALLY WRONG IS THE WATERLINE, NOT THE BANK — and that is a stronger reason to
+> want 1 m, not a weaker one.** Two things, both measured, both new:
+> 1. **The lake has more than one surface in our own heightfield.** `bake-terrain` normalizes to
+>    local-min = 0 and `BakedGround` reasons that on a lakeshore town the local minimum IS the lake.
+>    huron's 10 m source carries Lake Erie hydro-flattened at several elevations, so the minimum
+>    lands on the wrong patch and the drawn lake sits below its own bed over most of its area.
+>    ▶ `node checks/claims-a-level-body-has-one-surface.mjs` — **RED on huron today.**
+> 2. **A 10 m cell straddling the shore averages land and water, so the shore edge stands proud of
+>    its own lake.** The 1 m lidar puts the land AT the water, which is what a shoreline is.
+>    ▶ `node scratch/huron-shore-transect/two-sources.mjs`
+>
+> ⇒ **The payoff §3 demanded is therefore ANSWERED, and it is not "recover a missing bank".** It is
+> *the water's edge is in the wrong place, vertically and horizontally* — and everything we ever
+> put on a shore (revetment, dock, beach, waterline band) inherits that error and makes it
+> permanent. ⛔ **`BRIEF-boulder-revetment` WAITS ON THIS, and now for the right reason.**
 
 ---
 
@@ -29,33 +48,42 @@ evict-when: node cartograph/bake-terrain.js --scene=huron && node -e "const t=re
 
 We acquired **USGS 3DEP 1/3 arc-second — ~10 m per sample.** Queried today against huron's bbox via
 the TNM Access API, **1-metre lidar also covers it:**
-```
-USGS 1 Meter 17 x36y459  OH_Statewide_Phase1_2019_B19   GeoTIFF  212 MB
-USGS 1 Meter 17 x37y459  OH_Statewide_Phase1_2019_B19   GeoTIFF   87 MB
-```
-⇒ ⭐ **~100× the sample density.** A 15–20 ft bank is **~2 samples wide at 10 m and ~20 at 1 m** —
-the difference between invisible and crisp. ▶ Re-query; do not trust this listing:
+⇒ ⭐ **~100× the sample density**, and a shore edge ~2 samples wide at 10 m is ~20 at 1 m.
+⛔ **DO NOT TRUST A TILE LIST WRITTEN INTO A DOC — this one was already wrong.** It named two tiles;
+the re-query on 2026-09-21 returns **four** (huron straddles both axes), ~940 MB in total. ▶ Re-query
+every time, and read the count off the result:
 `curl "https://tnmaccess.nationalmap.gov/api/v1/products?datasets=Digital%20Elevation%20Model%20(DEM)%201%20meter&bbox=<W,S,E,N>"`
 
 ### ⛔ THREE REASONS THE PIPELINE CANNOT INGEST IT TODAY
-1. **TWO TILES.** huron straddles `x36y459` and `x37y459`. `bake-terrain` reads **one**
-   `raw/elevation.tif`. ⚠️ The straddle *warning* added today (`5ab6e555`) fires for 1°×1° naming and
-   **does not mosaic** — it tells you one file cannot cover you and stops.
+1. **FOUR TILES — the brief said two and the API says four.** `bake-terrain` reads **one**
+   `raw/elevation.tif`. ⚠️ The straddle *warning* added 2026-09-20 (`5ab6e555`) fires for 1°×1°
+   naming and **does not mosaic** — it tells you one file cannot cover you and stops. ⭐ Derive the
+   tile set from the bbox; never carry a list.
 2. ⛔⛔ **A DIFFERENT COORDINATE SYSTEM.** *"1 Meter 17"* is **UTM zone 17N — metres, not degrees.**
    `bake-terrain` reads `image.getOrigin()` / `getResolution()` and treats them as lon/lat. ⭐ The
    containment check added today would **correctly refuse** a UTM tile (its extent will not contain a
    lat/lon bbox) — **so it fails safe, loudly, rather than baking nonsense. Verify that before you
    change anything: it is the check earning its keep, not a bug.**
-3. **Volume.** 299 MB of source at 1 m over a 7.2 km span. ⚠️ The 5 m output grid is already
-   2,064,969 samples / 8 MB; **decide what output resolution is actually wanted** before assuming
-   1 m in ⇒ 1 m out.
+3. **Volume — and this one is SMALLER than it looks.** ⭐ **Measured 2026-09-21: the tiles never
+   have to land on disk.** `geotiff`'s `fromUrl` does HTTP range reads against the USGS S3 bucket and
+   pulls an arbitrary window in about a second; every measurement in `scratch/huron-shore-transect/`
+   was taken that way, against all four tiles, with nothing downloaded. ▶ Establish whether the BAKE
+   can read the same way before designing an acquisition-and-mosaic step for ~940 MB.
+   ⚠️ Still open and unchanged: the 5 m output grid is already 2,064,969 samples / 8 MB, so **decide
+   what output resolution is wanted** rather than assuming 1 m in ⇒ 1 m out.
 
-⚠️ **AND ESTABLISH THE PAYOFF BEFORE BUILDING THE INGEST.** ⛔ Do not assume the wall appears. ▶ Pull
-one tile by hand, sample a transect across Francesca's stretch of shore, and **measure whether a
-15–20 ft rise is actually there.** ⭐ If it is, this brief is worth its cost and `BRIEF-boulder-revetment`
-changes from *"invent a missing edge"* to *"decorate an edge that exists."* **If it is NOT, say so —
-that is a finding, and it means huron's shore is genuinely low and the wall is a structure to place,
-not a landform to recover.**
+### ✅ THE PAYOFF IS ESTABLISHED — 2026-09-21, and it came out the third way
+This section used to say *"pull one tile by hand, measure whether a 15–20 ft rise is actually there,
+and say so either way."* **Done.** Neither branch it offered was right:
+- The rise **is** there, on the lidar AND in the shipped 10 m-sourced bake, which agree closely on the
+  bank's HEIGHT. So this brief is not recovering a missing landform.
+- What 1 m buys is the **EDGE**: the bank climbs in a couple of metres on the lidar and takes ten to
+  fifteen on the bake, and the coarse cell pushes the waterline itself up and inland.
+⇒ ⭐ **`BRIEF-boulder-revetment` moves from *"invent a missing edge"* to *"decorate an edge that
+exists"* — its own second branch — and the stone stops having to carry terrain shape.**
+▶ `node scratch/huron-shore-transect/shore2.mjs` (the shore, both sources) ·
+  `node scratch/huron-shore-transect/profiles.mjs` (the cross-sections, printed) ·
+  `node scratch/huron-shore-transect/walls.mjs` (every tagged wall feature)
 
 ## 4. ⛔⛔ THE SECOND HALF, AND JACOB ASKED FOR IT EXPLICITLY — **THE INTAKE ROW SHOULD HAVE WARNED US**
 
@@ -78,9 +106,9 @@ An acquisition note that says only *where to get it* has answered the easy quest
 carry the DECISION POINTS the operator will hit**, because every one of these cost real time today:
 | owed | today's cost |
 |---|---|
-| **WHICH RESOLUTION, and what it buys** | we took 10 m without knowing 1 m existed; lost the shore |
+| **WHICH RESOLUTION, and what it buys** | we took 10 m without knowing 1 m existed; lost the WATER'S EDGE (not the bank — see the re-scope) |
 | **HOW THE TILE IS CHOSEN** | hardcoded to LS's `n39w091` until `5ab6e555` |
-| **WHETHER A TOWN CAN STRADDLE TILES** | discovered by the API returning two |
+| **WHETHER A TOWN CAN STRADDLE TILES** | discovered by the API returning several — and the count written down here was itself wrong |
 | **WHICH CRS THE READER ACCEPTS** | discovered by reading the code, after downloading |
 | **WHAT THE CODE ACTUALLY REQUIRES** vs what the row claims | the false "any GeoTIFF" |
 
@@ -92,19 +120,24 @@ real deliverable of §4, and it may be the more valuable half of this brief.
 whatever prose it carries that a command could answer instead.
 
 ## 5. ⛔ Can the instrument SEE the change?
-✅ **Yes, and it is unusually clean:** `clean/terrain.json` records the grid and step; the bake prints
-`elevation range … misses filled: N`.
-▶ **The check worth writing:** *the baked step size matches what the source can actually support* —
-⛔ a 1 m source resampled to a 5 m grid is throwing away 96% of what was downloaded, silently, and
-nothing says so today.
+✅ **The one that matters now EXISTS and is RED**, written 2026-09-21 with the re-scope:
+▶ `node checks/claims-a-level-body-has-one-surface.mjs` — *a water body is a level surface, so the
+heightfield beneath it must be ONE surface and the drawn mesh must sit on it.* Its tolerance is the
+coplanar stack, read out of `bake-ground.js`; it carries its own mutation test because huron is the
+only town with water and nothing in the corpus can show it going green.
+▶ **Still worth writing:** *the baked step size matches what the source can actually support* — a 1 m
+source resampled to a 5 m grid throws away 96% of what was fetched, silently.
 ⚠️ **AND MUTATION-TEST THE UTM REFUSAL** — feed a UTM tile, prove it refuses by name. That check
 exists as of `5ab6e555` and has never been exercised against a real UTM file.
-**Eye-gate:** huron's shoreline in Hero, ⛔ **against the 10 m bake as the control** — the question is
-whether the bank appears, and only a before/after answers it.
+**Eye-gate:** huron's shoreline in Hero, ⛔ **against the current bake as the control.** ⚠️ The question
+is NOT "does the bank appear" — it is in both. It is **does the land meet the water**, which is what
+Jacob was looking at on 2026-09-21 ("gashes in the seam") and what the check above measures.
 
 ## 6. Write/commit bounds
-**In bounds:** `cartograph/bake-terrain.js` (multi-tile + CRS) · a mosaic/reproject acquisition step ·
-`cartograph/intake-rows.mjs` (the row AND the audit) · `cartograph/INTAKE.md` · the new check.
+**In bounds:** `cartograph/bake-terrain.js` (multi-tile + CRS + **the water datum**) · a mosaic/reproject
+acquisition step · `cartograph/intake-rows.mjs` (the row AND the audit) · `cartograph/INTAKE.md` · the checks.
+⭐ **The water datum is explicitly yours now:** normalizing to local-min is what seats the lake, and it is
+wrong when the source carries the body at more than one elevation.
 ⛔ **OUT:** the boulder revetment (`BRIEF-boulder-revetment.md` — it WAITS on your answer) · the water
 shader · `V_EXAG`/`terrainExag` (that is `BRIEF-ls-bleed-excision` site 15).
 ⚠️ **huron is the only safe town to re-bake terrain on.** ⛔ LS, HPDM and altadena have working
@@ -114,52 +147,22 @@ terrain from the coarse source; **re-fetching theirs is a separate decision and 
 ---
 
 ## What "done" looks like
-1. The transect is measured and **the payoff is stated either way, before the ingest is built.**
-2. If it pays: huron bakes from 1 m lidar — multi-tile, correct CRS — and **Francesca's wall is in the heightfield.**
+1. ✅ **The transect is measured and the payoff is stated** (2026-09-21, above). It is the EDGE, not the bank.
+2. huron bakes from 1 m lidar — four tiles, correct CRS — and **`node checks/claims-a-level-body-has-one-surface.mjs` goes green**, which is the falsifiable form of "the water's edge is in the right place".
 3. The elevation row tells the next person **resolution, tiling, CRS and what the reader truly accepts.**
 4. ⭐ **Every other `acquisition` note is audited for the same overstatement, and the count is reported.**
 5. The UTM refusal has been **seen to fire** against a real UTM file.
 
 ---
 
-> # ⭐⭐ THE GATE THIS BRIEF IS ACTUALLY JUDGED ON *(Jacob, 2026-09-20 — applied to every open brief)*
+> # ⭐⭐ THE GATE THIS BRIEF IS ACTUALLY JUDGED ON *(Jacob, 2026-09-20)*
 >
-> ### ⛔ "DOES IT LOOK GOOD" IS NOT AN EYE-GATE. IT IS AN AUTHORING SESSION, AND IT IS NOT YOURS.
-> *"Until I am in the authoring moments of the camera, I'm just looking at elements. I think we spend
-> a lot of time worrying about the moment an operator sees the map for the first time being ugly or
-> random, and I think that's a silly concern."*
+> ⛔ **"Does it look good" is not an eye-gate.** A first pour being ugly is fine and expected; do not
+> tune. ▶ **The gate is: is the element PRESENT and CORRECT** — does it arrive, is it seated, did the
+> count change. ⛔ **The one exception is the real risk here:** a WRONG element that looks PLAUSIBLE —
+> *"the map is lying and nothing says so."* ⭐ **This brief is entirely inside that exception.** Land
+> that does not meet its water looks like a bank; it renders beautifully and it is false.
 >
-> ⭐ **A first pour being ugly is FINE AND EXPECTED.** *"Even grass with houses on it looks beautiful
-> and gets the project advancing."* ⇒ **Do not hedge against an aesthetic judgment. Do not tune.**
-> ▶ **THE GATE IS: is the element PRESENT and CORRECT?** Does it arrive · is it seated · does the
-> class exist · did the count change. Measurable, falsifiable, and none of it about composition.
->
-> ⛔ **THE ONE EXCEPTION, AND IT IS THE REAL RISK:** where a WRONG element looks PLAUSIBLE — a
-> cornfield rendering as lawn, a pond rendering as nothing, buildings buried under terrain. ⭐ That
-> is not an aesthetic worry, it is *"the map is lying and nothing says so."* **Protect that. Ignore
-> the rest.**
->
-> ### ⭐⭐ AND THE QUESTION THAT REPLACES IT — ASK IT EXPLICITLY, IN WRITING
-> *"When I decide that cornfields are a priority, have we paved the way for that or did we screw
-> ourselves? We have color pickers today, but 'color' is hardly what row crops are made of."*
->
-> **MEASURED 2026-09-20 — what a land-use class can carry TODAY:**
-> ```
-> face group in the slab :  kind · id · color · renderOrder · polygonOffsetUnits
-> authorable per class   :  layerColors · luColors          ← COLOUR, and nothing else
->                           materialPhysics · materialColors ← present, EMPTY, and PBR-shaped
-> ```
-> ⇒ ✅ **THE RENDER SIDE IS NOT FORECLOSED.** `BakedGround.jsx`'s `GRASS_FACES` selects a whole
-> shader by class id, so attaching a generator to a class is **purely additive.** The road is paved.
-> ⇒ ⛔ **THE AUTHORING SIDE HAS NO SHAPE FOR IT.** There is nowhere to put row bearing, wave
-> direction or stone grading, and `materialPhysics` is the WRONG SHAPE, not merely empty — a material
-> says *how a surface answers light*; a generator says *what structures exist and how they are laid out.*
->
-> ### ⛔⛔ SO THIS BRIEF OWES ONE THING BEFORE IT BUILDS ANYTHING
-> ▶ **STATE THE PARAMETERS THIS FEATURE NEEDS AUTHORED** — name them, with units — **and say whether
-> today's model can hold them.** ⚠️ **THREE OPEN BRIEFS HIT THIS SAME WALL** (`BRIEF-field-shader`
-> rows/bearing/season · `BRIEF-water-shader` wave scale/turbidity/shoreline band ·
-> `BRIEF-boulder-revetment` stone grading/slope/overlap).
-> ⛔ **DO NOT INVENT A PARAMETER HOME. THREE BRIEFS EACH INVENTING ONE IS THE ACTUAL WAY WE SCREW
-> OURSELVES** — three incompatible authoring models and no panel that can hold them. ▶ **Propose the
-> shape, bring it to Boz, and it gets decided ONCE for all three.**
+> *(The gate's second half — "state the parameters this feature needs authored" — does not apply:
+> terrain has no authored parameters and this brief must not invent any. Its full text, and the
+> answer to it, are in `BRIEF-boulder-revetment.md`, which is where the question was live.)*

@@ -41,9 +41,20 @@ samples of the resulting bake, mean elevation walking inland from the waterline:
  5 m inland  0.9 ft      30 m inland  1.5 ft      60 m inland  2.3 ft
 ```
 
-⛔ **A 2 ft rise over 200 feet. The seawall is not smeared — it is absent.** USGS **1 m** lidar covers
-the same ground (`OH_Statewide_Phase1_2019_B19`, two tiles) at ~100× the density, and the kit cannot
-ingest it. ⇒ `docs/briefs/BRIEF-terrain-resolution.md`.
+> ### ⛔ CORRECTED 2026-09-21 — THE COST PARAGRAPH ABOVE IS ITSELF WRONG
+> This entry's statement of cost said *"the seawall is not smeared — it is absent."* **Measured false
+> the next day**, from the same artifact: the bank IS in the bake at close to full height. The figures
+> quoted above are kept because this is the Diary, but ⛔ **do not carry them forward.**
+> ⇒ `shore-wall-absent-premise-FALSE-2026-09-21.md` · ▶ `node scratch/huron-shore-transect/bake-gradient.mjs`
+>
+> ⭐ **The lesson of THIS file is untouched and still the point:** a doc that overstates the code is a
+> bug lying in the open, and *"Verified"* with a date is what made it durable. What the correction adds
+> is that **a fresh measurement earns no more trust than an old doc** — this one was a day old and
+> already load-bearing for two briefs.
+
+USGS **1 m** lidar covers the same ground (`OH_Statewide_Phase1_2019_B19`) at ~100× the density — ⚠️
+**four tiles, not two, and the count written here was wrong as well** — and the kit cannot ingest it.
+⇒ `docs/briefs/BRIEF-terrain-resolution.md`.
 
 ## ⭐⭐ The lesson, which is why this file exists
 

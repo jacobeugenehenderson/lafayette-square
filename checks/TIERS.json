@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 191,
+  "total": 192,
   "counts": {
-    "safe": 149,
+    "safe": 150,
     "local-effect": 6,
     "live": 36
   },
@@ -30,6 +30,13 @@
     },
     {
       "file": "checks/claims-a-kink-recovers-but-a-corner-does-not.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-a-level-body-has-one-surface.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"
