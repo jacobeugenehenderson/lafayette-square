@@ -47,7 +47,11 @@ const WATER_EDGE_SKEL = '__water__'
   const cases = [
     ['water right of the walk', wetSideOf(straight, rightWet), 'right'],
     ['water left of the walk', wetSideOf(straight, leftWet), 'left'],
-    ['both sides identical', wetSideOf(straight, flat), null],
+    // ⭐ Flat AT the water plane genuinely IS water on two faces — the old
+    // expectation of `null` here was written against the separation test and did
+    // not survive the change to a physical one. Both cases are asserted now.
+    ['flat at the water plane', wetSideOf(straight, flat), 'both'],
+    ['flat well above the water', wetSideOf(straight, () => 3), null],
     ['a stub', wetSideOf([[0, 0], [1, 0], [2, 0]], rightWet), null],
     ['no terrain', wetSideOf(straight, () => NaN), null],
   ]
@@ -96,14 +100,17 @@ for (const scene of list) {
   }
 
   shores++
-  const tally = { left: 0, right: 0, refused: 0 }
+  const tally = { left: 0, right: 0, both: 0, refused: 0 }
   const refusals = []
   let buildable = 0
   for (const r of arcs) {
     let len = 0
     for (let i = 1; i < r.poly.length; i++) len += Math.hypot(r.poly[i][0] - r.poly[i - 1][0], r.poly[i][1] - r.poly[i - 1][1])
     const w = wetSideOf(r.poly, heightAt)
-    if (w.side) { tally[w.side]++; buildable++ }
+    if (w.side) {
+      tally[w.side]++; buildable++
+      if (w.side === 'both') twoWater.push(`${scene}: ${len.toFixed(0)} m — ${w.why}`)
+    }
     else {
       tally.refused++
       refusals.push({ len, why: w.why })
@@ -116,15 +123,11 @@ for (const scene of list) {
       //     faces, or none), not a fix.
       //   · "neither side reaches the water" on a long arc means we do not
       //     understand this arc. THAT is the failure.
-      if (len >= 100 && !/BOTH sides/.test(w.why)) {
-        fail.push(`   ${scene}: a ${len.toFixed(0)} m arc cannot say which side its water is on — ${w.why}`)
-      } else if (len >= 100) {
-        twoWater.push(`${scene}: ${len.toFixed(0)} m — ${w.why}`)
-      }
+      if (len >= 100) fail.push(`   ${scene}: a ${len.toFixed(0)} m arc cannot say which side its water is on — ${w.why}`)
     }
   }
   const mixed = tally.left > 0 && tally.right > 0
-  console.log(`\n  ${scene} — ${arcs.length} arcs · water LEFT of walk ${tally.left} · RIGHT ${tally.right} · refused ${tally.refused}`)
+  console.log(`\n  ${scene} — ${arcs.length} arcs · LEFT ${tally.left} · RIGHT ${tally.right} · BOTH ${tally.both} · refused ${tally.refused}`)
   if (mixed) console.log(`     ⭐ THE ARCS DISAGREE, and that is the measured truth — a per-town flip would be wrong on ${Math.min(tally.left, tally.right)} of them.`)
   for (const r of refusals.slice(0, 4)) console.log(`     refused: ${r.len.toFixed(0)} m — ${r.why}`)
   if (refusals.length > 4) console.log(`     … and ${refusals.length - 4} more refusals`)
@@ -133,10 +136,10 @@ for (const scene of list) {
 
 console.log(`\n  ${shores} shoreline(s) · ${dry} town(s) without one`)
 if (twoWater.length) {
-  console.log(`\n  ⭐ ${twoWater.length} arc(s) have WATER ON BOTH SIDES — correctly identified, not a defect:`)
+  console.log(`\n  ⭐ ${twoWater.length} arc(s) have WATER ON BOTH SIDES — two faces, both offered to the predicate:`)
   for (const t of twoWater) console.log(`     ${t}`)
-  console.log(`     ▶ These are piers, jetties or banks between two waters. They have no single wet face.`)
-  console.log(`       ⛔ UNRULED: does such an arc get stone on both faces, or none? Nobody has decided.`)
+  console.log(`     ▶ RULED 2026-09-21: 'both' is an answer, not a refusal. A breakwater is armoured on`)
+  console.log(`       two faces and a sand bar on neither — and \`shoreArmourFor\` already knows which.`)
 }
 if (fail.length) {
   console.error(`\n⛔ A BUILD-WORTHY ARC DOES NOT KNOW WHICH SIDE ITS WATER IS ON:\n${fail.join('\n')}`)

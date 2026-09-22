@@ -195,8 +195,10 @@ export function shoreArmourFor(ground) {
  * @param poly      [[x,z], …] one arc, in local metres
  * @param heightAt  (x, z) => metres relative to the water plane (NaN off-grid)
  * @param gridM     the terrain grid's own step, in metres — the finest thing it can say
- * @returns { side: 'left'|'right'|null, probeM, right, left, samples, why }
+ * @returns { side: 'left'|'right'|'both'|null, probeM, right, left, samples, why }
  *          ⛔ side === null means REFUSE this arc, loudly. It does not mean "pick one".
+ *          ⭐ side === 'both' means water on two faces — a breakwater, a jetty, a bar.
+ *            It is an ANSWER: build on both faces and let `shoreArmourFor` rule on each.
  *
  * ⭐⭐ IT SWEEPS OUTWARD RATHER THAN PROBING AT ONE DISTANCE, and that is not a
  * refinement — a single probe distance is a constant that is correct for one town.
@@ -254,8 +256,16 @@ export function wetSideOf(poly, heightAt, gridM = 5) {
       return { side: rAt ? 'right' : 'left', probeM, right: lastRight, left: lastLeft, samples: n, why: `water reached at ${probeM} m` }
     }
     if (rAt && lAt) {
-      return { side: null, probeM, right: lastRight, left: lastLeft, samples: n,
-               why: `water on BOTH sides at ${probeM} m — a bank between two waters, not a shore edge` }
+      // ⭐⭐ 'both' IS AN ANSWER, NOT A REFUSAL — ruled 2026-09-21 after measuring what
+      // huron's only such arc actually is. A breakwater or a rubble mound genuinely
+      // has water on two sides and is armoured on both faces; a sand bar has water
+      // on two sides and is armoured on neither. ⛔ THE SIDE-FINDER MUST NOT DECIDE
+      // THAT — it reports both faces and `shoreArmourFor` rules on each one, which
+      // is the predicate that already exists and already knows the difference.
+      // ⚠️ Returning null here made the pipeline STOP on a case it could answer, and
+      // the caller would then have had to invent a rule the kit already has.
+      return { side: 'both', probeM, right: lastRight, left: lastLeft, samples: n,
+               why: `water on BOTH sides at ${probeM} m — two faces; the armour predicate rules on each` }
     }
   }
   if (!lastN) return { side: null, samples: 0, why: 'no terrain under either side of this arc' }
