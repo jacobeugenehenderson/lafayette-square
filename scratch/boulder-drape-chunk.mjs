@@ -57,6 +57,13 @@ for (let t = 0; t < EI.length / 3; t++) {
 }
 
 // ── chunked ──────────────────────────────────────────────────────────────────
+// ⛔ THE CHUNK SIZE GOVERNS EVERY TIMING BELOW, SO IT IS PRINTED WITH THEM. A figure
+// quoted without the parameter it was measured at is the same class as a per-vertex
+// percentage quoted across two different samplings — two honest runs of this script
+// disagreed by 2× (394 chunks / 9.3 ms per chunk vs 148 / 16.8) purely on this
+// argument, and neither was wrong. ⚠️ Note this default is the SCRIPT's; the live
+// renderer derives stations-per-chunk from CHUNK_M / step so a chunk spans ~12 m of
+// shore whatever the lattice step is, which on arc #3 is 24.
 const STATIONS_PER_CHUNK = Number(process.argv[3] ?? 64)
 const ranges = []
 for (let i = 0; i < G.nAlong - 1; i += STATIONS_PER_CHUNK) {
@@ -99,7 +106,7 @@ console.log(`   ⇒ ${missing === 0 && extra === 0 && eagerTris.size === seen.si
 console.log(`\n② NORMALS`)
 console.log(`   vertices whose normal differs from eager: ${normalMismatch}   worst Δ ${worstN.toExponential(2)}`)
 console.log(`   ⇒ ${normalMismatch === 0 ? '✅ SEAM-CONSISTENT' : '⛔ SEAM'}`)
-console.log(`\n③ TIME`)
+console.log(`\n③ TIME — all figures at ${STATIONS_PER_CHUNK} stations/chunk = ${(STATIONS_PER_CHUNK * G.step).toFixed(1)} m of shore`)
 console.log(`   eager   cold ${eagerCold.toFixed(0)} ms   warm ${eagerWarm.toFixed(0)} ms`)
 console.log(`   chunked cold ${chunkedCold.toFixed(0)} ms   warm ${chunkedWarm.toFixed(0)} ms   (${ranges.length} chunks, whole arc)`)
 const inView = Math.min(ranges.length, 11)

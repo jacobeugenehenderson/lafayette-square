@@ -445,10 +445,10 @@ function App() {
             <b>#{arcIndex}</b>
           </div>
           {huron && <>
-            <Row k="arc" v={`#${huron.arc} · ${huron.verts} verts · ${huron.len.toFixed(0)} m${huron.flip ? ' · flipped' : ''}`} />
+            <Row k="arc" v={`#${huron.arc} · ${huron.verts} verts · ${huron.len.toFixed(0)} m${huron.flip ? ' · flipped' : ''}${huron.twoFaced ? ' · TWO-FACED' : ''}`} />
             <Row k="⭐ armoured by the predicate" v={`${huron.armouredPct.toFixed(0)}%`} />
-            <Row k="drape triangles (whole arc)" v={huron.drapeTris.toLocaleString()} />
-            <Row k="drape vertex data" v={`${(huron.drapeBytes / 1024).toFixed(0)} KB`} />
+            <Row k="⭐ drape triangles IN VIEW" v={`${huron.drapeTris.toLocaleString()} from ${huron.drapeChunks} of ${huron.arcChunks} chunks`} />
+            <Row k="drape build (in view)" v={`${huron.drapeMs.toFixed(0)} ms`} />
             <Row k="⭐ stones IN VIEW" v={`${huron.stones.toLocaleString()} from ${huron.chunks} chunks`} />
             <Row k="⭐ triangles IN VIEW (stone)" v={Math.round(huron.stones * 49.8).toLocaleString()} />
             <Row k="⭐ stone draw calls" v={huron.calls} />
