@@ -70,14 +70,34 @@ const MANIFESTS = {
     // photo, streets stat 0). Park/labels/lamps are LS-guarded off for non-LS looks.
   },
 
-  // Installations #3/#4 — `landmarks` only, because that is all that has been
-  // verified. Each town's listings carry a `building_id` that resolves in ITS OWN
-  // slab (checked against public/baked/<scene>/buildings.json: huron 36/36,
-  // altadena 23/23). ⛔ Do not add `buildings`/`menus` here on the assumption the
-  // files are equivalent — roster.json exists for both and its consumers were not
-  // measured. Add an entry when you have checked the thing that reads it.
+  // Installations #3/#4. Each town's listings carry a `building_id` that resolves in
+  // ITS OWN slab (checked against public/baked/<scene>/buildings.json: huron 36/36,
+  // altadena 23/23).
+  //
+  // ⭐⭐ WHAT A ROSTER MUST CARRY TO BE WORTH WIRING, and it is two fields, measured
+  // per town before the entry is added (2026-09-21):
+  //   · `address`  — `useListings._buildBareBuildingListings` DROPS a building without
+  //                  one; it cannot be listed with nothing to call it.
+  //   · `category` — how it files on the Society Pages. ⭐ The town's OWN category is
+  //                  preferred and the St. Louis zoning letter is only the FALLBACK
+  //                  (`category: b.category || (zoned && zoned.category) || null`).
+  //                  LS is the town that ships zoning and no category; every other
+  //                  town so far ships category and no zoning. ⛔ "Categorised by
+  //                  zoning" describes Lafayette Square, not the kit.
+  //
+  // Measured 2026-09-21 — ▶ re-derive, never quote:
+  //   huron           3,678 buildings · 3,573 address (97%) · 3,340 category (91%)  → WIRED
+  //   hipointe-demun  1,281 buildings · 1,133 address (88%) · 1,281 category (100%) → wired above
+  //   altadena       15,397 buildings ·     0 address  (0%) · 15,397 category       → ⛔ NOT WIRED
+  //
+  // ⛔ ALTADENA IS DELIBERATELY ABSENT AND THAT IS THE POINT OF THIS BLOCK. Its roster
+  // has ZERO addresses, so every one of its 15,397 buildings would be dropped by the
+  // address filter: the Society Pages would be exactly as empty as they are now, while
+  // LOOKING wired to the next reader. An entry that reaches nothing is worse than no
+  // entry, because it stops anyone looking. Wire it when its address well is declared.
   huron: {
     landmarks: () => import('../../cartograph/data/huron/content/listings.json'),
+    buildings: () => import('../../cartograph/data/huron/content/roster.json'),
   },
   altadena: {
     landmarks: () => import('../../cartograph/data/altadena/content/listings.json'),

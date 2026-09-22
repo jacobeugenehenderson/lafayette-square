@@ -269,6 +269,25 @@ i18n service reads it**) · `profile{}` (population/founded/landmark/tagline/abo
 - **Render fields** (`wall_material`, `roof_material`, `stories`, `zoning`) — ✅ read back **out of the baked slab**; derived, never hand-collected. Correct architecture.
 - **Overrides** — `content/roster.overrides.json`, AUTHORED.
 
+> ### ⭐⭐ WHAT THE ROSTER MUST CARRY TO REACH THE SOCIETY PAGES — two fields, and they are the acceptance test for this layer *(2026-09-21)*
+> A roster is only worth wiring into `src/data/loadInstanceData.js` when it has both:
+> - **`address`** — `useListings._buildBareBuildingListings` **drops** a building without one. There is nothing to call it. The count of dropped buildings is reported, loudly, so "this town has no address spine" cannot look like a small town.
+> - **`category`** — how the building files on the Society Pages.
+>
+> ⭐⭐ **THE CATEGORY COMES FROM THE TOWN. The building's OWN `category` is preferred, and the St. Louis zoning letter is only the FALLBACK** — `category: b.category || (zoned && zoned.category) || null`. **Lafayette Square is the outlier, not the pattern:** it ships zoning and *no* category; huron, hipointe-demun and altadena each ship a category and *no zoning at all*. ⇒ **a town does not need a St. Louis-shaped assessor to file its buildings.** It needs a category from any source; the zoning derivation exists for the one town that lacks one.
+>
+> ▶ **Measure before wiring, never quote** — the figures below are from 2026-09-21 and exist to show the SHAPE of the test, not to be trusted:
+> ```
+> node -e "const b=require('./cartograph/data/<scene>/content/roster.json').buildings; > const n=k=>b.filter(x=>x[k]&&String(x[k]).trim()).length; > console.log(b.length,'buildings ·',n('address'),'address ·',n('category'),'category')"
+> ```
+> | scene | buildings | address | category | wired? |
+> |---|---|---|---|---|
+> | huron | 3,678 | 3,573 (97%) | 3,340 (91%) | ✅ |
+> | hipointe-demun | 1,281 | 1,133 (88%) | 1,281 (100%) | ✅ |
+> | altadena | 15,397 | **0** | 15,397 | ⛔ **no** |
+>
+> ⛔ **altadena is the instructive one.** Every building has a category and none has an address, so wiring it would add 15,397 buildings that the address filter drops on the floor — Society exactly as empty as before, while *looking* wired to the next reader. **An entry that reaches nothing is worse than no entry**, because it stops anyone looking. Its address well is undeclared; wire it the day that changes.
+
 ### 3.3 Layer 2 — listings (JOINED base + AUTHORED override)
 `content/listings.json` → the reader's `landmarks`. Drives place cards, search, Society tab, **neon colour + open-now**, Places stat.
 **Two bases:** **OSM POIs** (`classifyPoi` maps ~45 amenity/shop/leisure/tourism/office tags → the Society taxonomy) and **Overture Places**, declared via `meta.baseSource:"overture"`.

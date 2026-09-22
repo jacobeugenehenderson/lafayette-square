@@ -17,8 +17,11 @@ import { classifyZoning } from '../tokens/categories.js'
  * two hydration paths for one store is how the two drift apart, and it had
  * already happened: the menu-id normalizer went onto the dead one first.
  *
- * Bare buildings (no landmark listing) are included as synthetic
- * listings, categorized by St. Louis zoning code.
+ * Bare buildings (no landmark listing) are included as synthetic listings, categorised
+ * by THE BUILDING'S OWN `category` where it has one, and only by the St. Louis zoning
+ * letter where it does not. ⛔ "Categorised by zoning" describes Lafayette Square — the
+ * one town that ships zoning and no category — never the kit: huron, hipointe-demun and
+ * altadena all ship a category and no zoning at all.
  *
  * Consumers access `listings` (the array) or use the lookup helpers.
  */
@@ -52,11 +55,15 @@ let _landmarkBids = new Set()
 let _landmarkAddrs = new Set()
 function _buildBareBuildingListings(buildings) {
   // ⛔⛔ `b.address &&` WAS A SILENT DROP, AND IT WAS MOST OF THE TOWN. A building with
-  // no address vanished from the Society Pages with nothing said — on a town whose
-  // assessor has not been wired up that is very nearly the whole roster (huron: ~3,627
-  // of 3,678 before its parcel well was declared). The building still cannot be listed
-  // without something to call it, but the count is now reported rather than swallowed,
-  // so "this town has no address spine" is visible instead of looking like a small town.
+  // no address vanished from the Society Pages with nothing said. The building still
+  // cannot be listed without something to call it, but the count is now reported rather
+  // than swallowed, so "this town has no address spine" is visible instead of looking
+  // like a small town.
+  // ⭐ AND THE NUMBER THAT USED TO SIT HERE — "huron: ~3,627 of 3,678" — WAS FROM BEFORE
+  // ITS PARCEL WELL WAS DECLARED and is now false: huron is 105 of 3,678 (97% addressed),
+  // which is why its roster was wired into `loadInstanceData` on 2026-09-21. ⛔ Re-derive,
+  // never quote — the town that currently has NO address spine is altadena (0 of 15,397),
+  // and that is why it is deliberately not wired.
   const addressless = buildings.filter(b => !b.address).length
   if (addressless) {
     console.warn(`[listings] ${addressless} of ${buildings.length} buildings have NO ADDRESS and cannot appear in the ` +
