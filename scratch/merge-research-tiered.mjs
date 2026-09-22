@@ -13,6 +13,13 @@ const BEATS = ['civic', 'dining', 'waterfront', 'retail', 'shopping', 'overnight
 const SHIPPING = new Set(['hours', 'description', 'amenities', 'phone', 'menu', 'menu_url', 'history',
   'website', 'reservation_url', 'photos', 'logo', 'email', 'social', 'awards', 'order_url',
   'gift_card_url', 'gift_card_balance_url', 'employment_url', 'tags'])
+// ⛔ PHOTO SUB-FIELDS ARE ALLOWLISTED SEPARATELY, because SHIPPING governs the TOP level
+// only and `stripDeep` removes just `_` keys. The civic beat recorded `license` and
+// `license_url` on every Wikimedia image — CC BY-SA obliges us to NAME the licence, not
+// merely credit the photographer — and nothing was carrying them through.
+// ⭐ `source_url` is written by `fetch-photos.mjs`: once the file is ours, that field is
+// the ONLY record of where it came from, so it is the one that must never be dropped.
+const PHOTO_FIELDS = new Set(['url', 'what', 'credit', 'credit_url', 'license', 'license_url', 'source_url'])
 
 // A place whose EXISTENCE or IDENTITY is in doubt. ⛔ Merging hours onto one of these is
 // the worst of the three tiers: it makes a listing that may not exist look researched.
@@ -284,6 +291,11 @@ for (const [id, { beat, rec, tier, why, n }] of best) {
   for (const k of Object.keys(payload)) {
     if (k.startsWith('_')) { ship[k] = payload[k]; continue }   // provenance: kept HERE, stripped by stripMeta before the slab
     if (!SHIPPING.has(k)) { console.log(`  ⚠️  ${base.name}: dropped unknown field ${JSON.stringify(k)} — not in the shipping allowlist`); continue }
+    if (k === 'photos' && Array.isArray(payload[k])) {
+      ship[k] = payload[k].map(p => typeof p === 'string' ? p
+        : Object.fromEntries(Object.entries(p).filter(([f]) => PHOTO_FIELDS.has(f))))
+      continue
+    }
     ship[k] = stripDeep(payload[k])
   }
   Object.keys(payload).forEach(k => delete payload[k])
