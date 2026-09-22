@@ -325,6 +325,39 @@ Per-device sliders (**Levels · Resolution · Radius**) that tune the **shared d
 
 The per-platform **inclusion manifest** — *which channels ship to desktop vs. mobile* — is a **cost-driven deployment decision**, so it's authored here at the gate, beside the instrument that responds (`PREVIEW.md §0.2`). ⚠️ **Not yet built** — the editorial surface lands with the v0.2 measurement regime (`HANDOFF-preview-measurement.md`, Phase 3–4). Until then Preview writes nothing; its product is the operator's *verdict* ("ship the slab" / "back to Stage").
 
+## The town calendar — `content/events.json` *(the knob: authored, no UI)*
+
+A town's own happenings — a festival, a fireworks night, a farmers market — live in
+`cartograph/data/<scene>/content/events.json`, beside `listings.json`. **Fully authored; there is no
+intake and no panel.** Edit the file, re-bake the scene, reload.
+
+⭐ **An event with dates and NO times runs all day, every day, across the range.** That is the point:
+it carries the ticker at 3am, when every business in town is shut. Supplying `start_time` *and*
+`end_time` makes it clock-dependent again, so omit both unless you mean it.
+
+**The one distinction that matters — what the event is ABOUT, not where it points:**
+
+| | key | behaviour |
+|---|---|---|
+| `listing_id` set | the listing | the event is **about that place** and **replaces** its open-now ticker entry |
+| `listing_id` absent | its own `id` | a **town event**; stands beside the places rather than displacing one |
+
+⛔ **A town event needs a unique `id`** — the bake refuses the scene without one, because every
+listing-less event would otherwise collide on a single key and they would overwrite each other.
+
+⭐ **`links_to` is where the event SENDS you** — the sponsor, the venue, whoever you chose. Optional,
+authored per event, and never the key: two festivals sponsored by one marina are still two festivals.
+
+⛔ **Every `listing_id`/`links_to` must resolve to a listing in that scene or the bake refuses.**
+Listing ids are re-derived on every pour, so this is precisely the reference that rots; a dead one
+would be a ticker headline that clicks through to nothing.
+
+▶ The file carries its own `_schema` and `_example`. Any `_`-prefixed key is provenance and never
+ships. ▶ `node cartograph/bake-content.js --scene=<id>` prints the count, and
+`node checks/claims-a-town-event-is-not-clock-dependent.mjs` guards the all-day rule.
+
+---
+
 ## CLI / bake operations
 
 - The two-step build: `node skeleton.js` → `node pipeline.js` → `node promote-ribbons.js` → `node bake-ground.js` (the pipeline does **not** re-run the extractor — `[[feedback_skeleton_pipeline_two_step]]`).

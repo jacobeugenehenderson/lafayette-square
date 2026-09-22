@@ -1,0 +1,26 @@
+{
+  "_comment": "THE TOWN CALENDAR — fully authored (Layer 0). Validated by bake-content.js#validateEvents, read by src/hooks/useEvents.js through the `seedEvents` seam in loadInstanceData, rendered by EventTicker in amber.",
+  "_schema": {
+    "title": "REQUIRED. The headline. On a town event this is the bold line.",
+    "start_date": "REQUIRED. YYYY-MM-DD.",
+    "end_date": "Optional; defaults to start_date. An event with dates and NO times is active all day, every day, across the range — that is the whole point of a town event.",
+    "start_time": "Optional HH:MM. ⛔ Supplying start_time AND end_time makes the event clock-dependent, so it disappears outside those hours. Omit both for an all-day run.",
+    "end_time": "Optional HH:MM. See start_time.",
+    "id": "REQUIRED on a TOWN event (one with no listing_id), and unique. Without it every town event collides on a single key and they overwrite each other.",
+    "listing_id": "Optional. Present = the event is ABOUT that place and REPLACES its open-now ticker entry. This is the guardian channel's shape.",
+    "links_to": "Optional. Where the event SENDS you — the sponsor, the venue, whoever the operator chose. ⛔ Never the key: two festivals sponsored by one marina are still two festivals. Must resolve to a listing id in this scene or the bake refuses.",
+    "description": "Optional. On a town event this is the sub-line under the title.",
+    "type": "Optional 'recurring' + recurrence:'weekly' + day_of_week:'saturday' for a farmers market.",
+    "_source": "Convention, not schema: any _-prefixed key is provenance and never ships."
+  },
+  "_example": {
+    "id": "huron-pumpkin-festival-2026",
+    "title": "Pumpkin Festival",
+    "description": "Main Street, all day",
+    "start_date": "2026-10-01",
+    "end_date": "2026-10-14",
+    "links_to": "huro-lst-0102",
+    "_source": "REPLACE THIS — the example is not an event and is ignored; only `events` is read."
+  },
+  "events": []
+}

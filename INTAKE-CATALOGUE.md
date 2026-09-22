@@ -319,6 +319,25 @@ Three research agents worked 24 of huron's 285 listings (civic · dining · wate
 ⚠️ **An aggregator was actively wrong about what a business IS**, fluently: `slipstreamboating.com` describes North Coast Boating as a boat club with luxury memberships; its own site is a boating *school* and delivery service. Trusting the aggregator would have written a confident, wrong description.
 ⇒ ▶ `node checks/claims-two-listings-are-not-one-place.mjs` catches the duplicate half from two fields we already collect. The wrong-entity half has no check and is boarded as `ROADMAP` H-27; bulk human correction is `H-28`.
 
+### 3.2c ⭐ THE TOWN CALENDAR — an input kind with no intake, and deliberately so *(2026-09-22)*
+
+A town's own happenings — a festival, a fireworks night, a farmers market — are **not a property of
+any listing**, so they have no home in Layer 2. They live in `content/events.json`, **fully
+authored**: there is no acquisition step because no open well publishes "what this town does in
+October" in a machine-readable form, and the honest answer is the operator typing it.
+
+⭐ **The date model was already there and nobody had used it.** `isActiveEvent` gates its clock test
+behind `if (timeStr && e.start_time && e.end_time)` — so an event with dates and **no times is
+active all day, every day, across its range.** ⛔ The gap was never the model; it was that the
+ticker keyed its entries by `listing_id`, and a town festival has no listing.
+
+⚠️ **The neighbouring unsolved case, from the civic beat:** a school is closed on **~180 named days a
+year**, which no weekly `hours` structure can express and which no town publishes as a feed we
+found — Huron City Schools ships a **PDF** through ParentSquare. A closure calendar is the same
+shape as a town calendar pointed the other way, and it is unbuilt.
+
+▶ Operator instructions: `cartograph/OPERATIONS.md § The town calendar`.
+
 ### 3.3 Layer 2 — listings (JOINED base + AUTHORED override)
 `content/listings.json` → the reader's `landmarks`. Drives place cards, search, Society tab, **neon colour + open-now**, Places stat.
 **Two bases:** **OSM POIs** (`classifyPoi` maps ~45 amenity/shop/leisure/tourism/office tags → the Society taxonomy) and **Overture Places**, declared via `meta.baseSource:"overture"`.

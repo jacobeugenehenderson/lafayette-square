@@ -1386,12 +1386,79 @@ export function bakeContent({ scene, force = false, dryRun = false } = {}) {
       note: 'BASE = OSM-POI spatial join onto the baked set; hand-authoring lives in listings.overrides.json (adds + patches) and wins. Every building_id ∈ baked set by construction.' },
     listings,
   }
+  // ⛔ Validated BEFORE anything is written: a scene with a dead event reference
+  // must not leave a half-updated content dir behind.
+  const ev = validateEvents(scene, listings)
+  if (ev.present) console.log(`  events.json: ${ev.count} authored (${ev.town} town-wide, ${ev.linked} pointing at a place) — every reference resolves ✓`)
+
   writeIfChanged(join(cdir, 'roster.json'), JSON.stringify(rosterOut, null, 1) + '\n')
   if (!skipListings) writeIfChanged(join(cdir, 'listings.json'), JSON.stringify(listingsOut, null, 1) + '\n')
   // profile.json is fully authored (Layer 0) — leave it in place; the join
   // does not regenerate it. (It rides the instance/content payload as-is.)
   console.log(`[bake-content] wrote roster.json (${roster.length})${skipListings ? ' — listings.json PRESERVED (external base)' : ` + listings.json (${listings.length})`} in ${Date.now() - t0}ms`)
   return { roster, listings, orphans: orphans.length, report, stat }
+}
+
+// ──────────────────────────────────────────────────────────────────────────
+// ⭐ THE TOWN CALENDAR — `content/events.json`, fully AUTHORED (Layer 0), and this
+// step VALIDATES it rather than producing it. Ruled 2026-09-22 (Jacob): it lives
+// beside listings.json, where a poured town's content already lives, and each
+// event says for itself what it links to.
+//
+// ⭐ TWO KINDS, distinguished by what the event is ABOUT, never by where it points:
+//   · `listing_id` — the event is ABOUT that place; it replaces that place's
+//     open-now ticker entry. This is the guardian channel's existing shape.
+//   · no `listing_id` — a TOWN event. It keys by its own `id` and stands beside
+//     the places. ⛔ `id` is therefore REQUIRED and UNIQUE: without one every town
+//     event collides on a single undefined key and they overwrite each other
+//     (measured 2026-09-22 — three in, one out, survivor arbitrary).
+//   · `links_to` — OPTIONAL, and it is where the event SENDS you: the sponsor, the
+//     venue, whoever the operator chose. ⛔ Never the key. Two festivals sponsored
+//     by one marina are still two festivals.
+//
+// ⛔⛔ EVERY REFERENCE MUST RESOLVE, AND THIS IS THE WHOLE POINT OF VALIDATING HERE.
+// A `links_to` pointing at a listing that no longer exists is a ticker headline
+// that clicks through to nothing — a plausible-looking success, and invisible until
+// someone taps it. The bake refuses the scene instead. ⭐ And because listing ids
+// are re-derived every pour, this is exactly the reference that rots on its own.
+// ──────────────────────────────────────────────────────────────────────────
+function validateEvents(scene, listings) {
+  const p = join(contentDir(scene), 'events.json')
+  if (!existsSync(p)) return { count: 0, present: false }
+  const raw = JSON.parse(readFileSync(p, 'utf8'))
+  const events = Array.isArray(raw) ? raw : (raw.events || [])
+  const ids = new Set(listings.map(l => l.id))
+  const seen = new Set()
+  const errs = []
+  const where = (e, i) => `events[${i}]${e.title ? ` "${e.title}"` : ''}`
+
+  events.forEach((e, i) => {
+    if (!e.title) errs.push(`${where(e, i)}: no \`title\``)
+    if (!e.start_date) errs.push(`${where(e, i)}: no \`start_date\``)
+    if (e.end_date && e.start_date && e.end_date < e.start_date) {
+      errs.push(`${where(e, i)}: \`end_date\` ${e.end_date} is before \`start_date\` ${e.start_date}`)
+    }
+    if (!e.listing_id) {
+      if (!e.id) errs.push(`${where(e, i)}: a TOWN event (no \`listing_id\`) needs a unique \`id\` — without one it collides with every other town event`)
+      else if (seen.has(e.id)) errs.push(`${where(e, i)}: duplicate \`id\` "${e.id}" — the later event silently replaces the earlier`)
+      else seen.add(e.id)
+    }
+    for (const field of ['listing_id', 'links_to']) {
+      if (e[field] && !ids.has(e[field])) {
+        errs.push(`${where(e, i)}: \`${field}\` "${e[field]}" resolves to no listing in this scene — the headline would click through to nothing`)
+      }
+    }
+  })
+
+  if (errs.length) {
+    throw new Error(
+      `content/events.json is invalid for scene "${scene}" — ${errs.length} problem(s):\n` +
+      errs.map(m => `   ⛔ ${m}`).join('\n') +
+      `\n   ▶ An event that references a missing listing is a dead link in the ticker, and\n` +
+      `     listing ids are re-derived on every pour, so this is the reference that rots.`)
+  }
+  const town = events.filter(e => !e.listing_id).length
+  return { count: events.length, town, linked: events.filter(e => e.links_to).length, present: true }
 }
 
 // ── CLI ──

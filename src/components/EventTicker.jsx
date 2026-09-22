@@ -93,6 +93,22 @@ function _firstSentence(text) {
   if (sentence.length <= TAGLINE_MAX) return sentence
   return sentence.slice(0, TAGLINE_MAX).replace(/\s+\S*$/, '') + '\u2026'
 }
+// A town event's caption. ⛔ Returns undefined rather than a placeholder when the
+// event is a single day — "Oct 4 – Oct 4" is noise, and an absent caption already
+// renders as nothing.
+const _MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+function _dateRangeLabel(e) {
+  const fmt = (d) => {
+    const [, m, day] = (d || '').split('-')
+    return m ? `${_MON[Number(m) - 1]} ${Number(day)}` : null
+  }
+  const start = fmt(e.start_date)
+  const end = fmt(e.end_date)
+  if (!start) return undefined
+  if (!end || e.end_date === e.start_date) return undefined
+  return `through ${end}`
+}
+
 function buildTickerEntries(allListings, allEvents, clockTime) {
   const now = clockTime || new Date()
   const dayAbbrev = DAY_ABBREVS[now.getDay()]
@@ -167,31 +183,61 @@ function buildTickerEntries(allListings, allEvents, clockTime) {
     })
   })
 
-  // 3. Manual events (yellow text) — override all other entries
+  // 3. Events (amber) — two kinds, and the difference is what the event is ABOUT.
+  //
+  // ⭐⭐ A GUARDIAN EVENT CARRIES `listing_id`: it is about that place ("Kyle is
+  // bartending tonight"), so it keys by the listing and REPLACES that place's
+  // open-now entry — one entry per listing, the original rule, unchanged.
+  //
+  // ⭐⭐ A TOWN EVENT CARRIES NONE: it is about the town ("Pumpkin Festival,
+  // Oct 1–14"), so it keys by its OWN `id` and stands BESIDE the places rather
+  // than displacing one. ⛔ This used to key by `e.listing_id` unconditionally,
+  // so every listing-less event wrote the key `undefined` and they overwrote each
+  // other — measured 2026-09-22: three town events in, ONE out, and the survivor
+  // arbitrary, because the tie-break is `(e.start_time || '') > (existing._startTime
+  // || '')` and `'' > ''` is false, so first-in won by accident.
+  //
+  // ⭐ `links_to` IS WHERE THE EVENT SENDS YOU, NOT WHAT IT IS ABOUT — the sponsor,
+  // the venue, whoever the operator chose (Jacob, 2026-09-22: "point it at a place;
+  // the sponsor or whatever … what it links to"). It is authored per event and is
+  // NEVER the key: two festivals sponsored by one marina are still two festivals.
+  //
+  // ⛔ A town event with no `id` cannot be keyed and is DROPPED LOUDLY here rather
+  // than silently colliding. The real gate is `bake-content.js`, which refuses the
+  // scene; this is the second line of defence for an event arriving from the API.
   allEvents.forEach(e => {
     if (!isActiveEvent(e, dateStr, timeStr)) return
-    const listing = useListings.getState().getById(e.listing_id)
-    const existing = entries.get(e.listing_id)
+    const isTown = !e.listing_id
+    if (isTown && !e.id) {
+      console.error('[EventTicker] a town event has no `id` and cannot be keyed — dropped:', e.title || e)
+      return
+    }
+    const key = isTown ? `event:${e.id}` : e.listing_id
+    const linkId = e.listing_id || e.links_to || null
+    const listing = linkId ? useListings.getState().getById(linkId) : null
+    const existing = entries.get(key)
 
     const entry = {
-      listing_id: e.listing_id,
-      title: e.title,
+      listing_id: linkId,
+      title: isTown ? (e.description || '') : e.title,
       description: e.description,
-      _venueName: listing?.name || '',
+      // A town event is its own headline; a guardian event is the venue's.
+      _venueName: isTown ? e.title : (listing?.name || ''),
+      _time: isTown ? _dateRangeLabel(e) : undefined,
       _buildingId: listing?.building_id || e._buildingId,
       _source: 'event',
       _startTime: e.start_time || '',
     }
 
     if (!existing) {
-      entries.set(e.listing_id, entry)
+      entries.set(key, entry)
     } else if (existing._source !== 'event') {
-      // Manual event overrides schedule and tagline entries
-      entries.set(e.listing_id, entry)
+      // Guardian event overrides schedule and tagline entries
+      entries.set(key, entry)
     } else {
-      // Two manual events — latest start_time wins
+      // Two events on one key — latest start_time wins
       if ((e.start_time || '') > (existing._startTime || '')) {
-        entries.set(e.listing_id, entry)
+        entries.set(key, entry)
       }
     }
   })

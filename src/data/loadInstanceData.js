@@ -98,6 +98,13 @@ const MANIFESTS = {
   huron: {
     landmarks: () => import('../../cartograph/data/huron/content/listings.json'),
     buildings: () => import('../../cartograph/data/huron/content/roster.json'),
+    // ⭐ THE SAME SEAM, A DIFFERENT HOME — and that is what MANIFESTS is for.
+    // LS's seed set is reader-private (`src/data/lafayette-square/seedEvents.json`);
+    // a POURED town's calendar lives with the rest of its content, beside
+    // listings.json, so one town's content is in one place (Jacob, 2026-09-22).
+    // ⛔ Validated at bake time by `bake-content.js#validateEvents` — every
+    // `listing_id`/`links_to` must resolve or the scene refuses to bake.
+    seedEvents: () => import('../../cartograph/data/huron/content/events.json'),
   },
   altadena: {
     landmarks: () => import('../../cartograph/data/altadena/content/listings.json'),
@@ -118,6 +125,13 @@ function normalizeEnvelope(name, raw) {
   if (!raw) return raw
   if (name === 'landmarks') return raw.landmarks ? raw : { landmarks: raw.listings ?? [] }
   if (name === 'menus') return raw.menus ?? raw
+  // ⭐ TWO HOMES SHIP TWO SHAPES, AND THAT IS THE ENVELOPE'S JOB, NOT THE STORE'S.
+  // LS's reader-private seed set is a bare array; a poured town's calendar lives in
+  // the content dir and wears the `{ _comment, _schema, events }` envelope its
+  // neighbours listings.json/roster.json wear. ⛔ Unwrapped HERE so `useEvents`
+  // keeps one shape to reason about — a store that accepts two is a store that
+  // silently accepts a third.
+  if (name === 'seedEvents') return Array.isArray(raw) ? raw : (raw.events ?? [])
   return raw
 }
 
