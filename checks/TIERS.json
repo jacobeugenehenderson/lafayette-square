@@ -1,8 +1,8 @@
 {
   "generated_by": "node checks/tier.mjs --json",
-  "total": 196,
+  "total": 197,
   "counts": {
-    "safe": 154,
+    "safe": 155,
     "local-effect": 6,
     "live": 36
   },
@@ -1076,6 +1076,13 @@
     },
     {
       "file": "checks/claims-the-ramp-has-room.mjs",
+      "tier": "safe",
+      "why": [
+        "reads repo files only"
+      ]
+    },
+    {
+      "file": "checks/claims-the-shadow-box-has-no-cliff.mjs",
       "tier": "safe",
       "why": [
         "reads repo files only"

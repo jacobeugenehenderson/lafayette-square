@@ -116,6 +116,7 @@ const _WORLD_UP = new THREE.Vector3(0, 1, 0)
 // a feature are worse than no props: BRIEF-two-bodies-two-lights (retired 2026-09-21 to cartograph/_archive/) called the
 // twilight `visualPosition: blendedLP` "the orb IS the lie", and the orb it
 // described has not existed here for some time.
+
 function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
   const lightRef = useRef()
 
@@ -212,18 +213,47 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     const townHalf = townHalfRef.current
     if (!light || !light.castShadow || townHalf == null) return
 
-    // Ground point the camera is looking at (ray → y=0), else straight below.
+    // Ground point the camera is looking at (ray → y=0).
+    //
+    // ⛔⛔ AT OR ABOVE THE HORIZON THERE IS NO GROUND HIT, AND THE ANSWER IS "EVERYTHING",
+    // NOT "NOTHING". This used to fall back to the point straight BELOW the camera, i.e.
+    // the SMALLEST possible extent, at exactly the angle where the camera can see the
+    // FURTHEST. The two branches met at the horizon with a cliff between them.
+    //
+    // ⭐ THE FLASH, MEASURED 2026-09-21. At camY 60 / fov 45 / townHalf 3539, the shadow
+    // box went 3539 m → 64 m across 0.1° of pitch — a 55× change in `texel`, which
+    // re-snaps EVERY shadow edge in the scene at once. A near-level camera sits on that
+    // cliff and the smallest jitter flips it every frame: a whole-frame, two-state,
+    // angle-dependent flicker. The recording measured exactly that — two discrete luma
+    // values (67.2 / 73.5) alternating at 30 Hz, with bright regions moving twice as far
+    // as dark ones, which is shadow coverage changing rather than exposure.
+    // ⚠️ It only appeared now because the frustum became CAMERA-FITTED today (3dcb5dd3);
+    // a fixed ±900 box could not flap. And it is worse the bigger the town, because the
+    // two sides of the cliff are further apart.
+    // ⛔ The hysteresis below is NOT the bug and must not be "tuned" to hide this — it
+    // governs a continuous input, and no band can damp a 55× step.
     camera.getWorldDirection(_shadowFwd)
-    const t = Math.abs(_shadowFwd.y) > 1e-4 ? -camera.position.y / _shadowFwd.y : -1
-    if (t > 0) _focus.copy(camera.position).addScaledVector(_shadowFwd, t)
-    else _focus.set(camera.position.x, 0, camera.position.z)
+    const lookingDown = _shadowFwd.y < -1e-4
+    if (lookingDown) {
+      _focus.copy(camera.position).addScaledVector(_shadowFwd, -camera.position.y / _shadowFwd.y)
+    } else {
+      // Level or tilted up: the shot runs to the horizon, so the visible ground is the
+      // whole town. Keep the focus under the camera — the SIZE is what matters here, and
+      // `seen` below is forced to the town's own extent so the two sides meet smoothly.
+      _focus.set(camera.position.x, 0, camera.position.z)
+    }
 
     // How much ground is in shot. Perspective: grows with distance. Ortho: the
     // camera's own half-height IS the answer, and it is exact.
     const dist = camera.position.distanceTo(_focus)
     const seen = camera.isOrthographicCamera
       ? (camera.top - camera.bottom) * 0.5 / (camera.zoom || 1)
-      : dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
+      // ⛔ No ground hit ⇒ the horizon is in shot ⇒ the whole town is visible. `Infinity`
+      // is deliberate and safe: `rawHalf` clamps it to `townHalf` two lines down, and it
+      // makes the grazing case continuous with the looking-down case instead of a cliff.
+      : lookingDown
+        ? dist * Math.tan(THREE.MathUtils.degToRad(camera.fov * 0.5))
+        : Infinity
     // 1.6× so shadows CAST FROM OFFSCREEN still land in frame.
     const rawHalf = Math.min(townHalf, Math.max(60, seen * 1.6))
 
@@ -266,6 +296,7 @@ function PrimaryOrb({ lightPosition, color, intensity, intensityMulRef }) {
     _focus.copy(_lightRight).multiplyScalar(a)
       .addScaledVector(_lightUp, b)
       .addScaledVector(_lightDir, c0)
+
 
     // The bucket either changed or it did not; there is no 5% drift any more.
     const halfChanged = fitHalfRef.current !== half
