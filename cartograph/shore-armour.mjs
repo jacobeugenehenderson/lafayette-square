@@ -33,6 +33,29 @@
  * constant with no unit, or a unit stable only because something else is fixed).
  */
 
+/**
+ * ⛔⛔ AND WHOEVER PLACES STONE FROM THESE ARCS MUST READ THIS FIRST:
+ * ⭐ **THE WALK DIRECTION OF A SHORELINE ARC *IS* THE WET SIDE.**
+ * A revetment is built on ONE face of its arc — the face toward the water — and
+ * that face is decided by the arc's winding, not by anything in the tags. Reverse
+ * the walk and the whole structure turns inside out: the wetted band paints
+ * inland, the slope leans the wrong way, and the drape's triangles wind backwards
+ * so its normals point DOWN and it renders as a dark ribbon with correct geometry
+ * in the correct position.
+ * ⚠️ MEASURED 2026-09-21 in the boulder probe, on a demo shore that happened to be
+ * walked the wrong way. It was invisible in every oblique view and only showed when
+ * a camera was put deliberately at the waterline — which is exactly the shape of
+ * failure this kit calls the worst kind: plausible, and wrong.
+ * ⛔ `shape.json`'s `__water__` runs have their own winding and NOBODY HAS CHECKED
+ * IT AGAINST THIS ASSUMPTION. Before placing stone on a real shore, assert which
+ * side of the arc the water is on — per arc, not per town, because a lake's arcs
+ * need not agree with each other. ▶ The drape builder
+ * (`src/lib/revetmentDrape.js`) normalises its own winding and REPORTS the flip in
+ * `stats.flipped` rather than fixing it silently; a scene that needs the flip is
+ * telling you its arcs are wound the other way, and that is a fact about the town,
+ * not a rendering detail.
+ */
+
 /** Minimum armour stone, metres. Quarried armour below this washes out, so a
  *  "wall" shorter than one course of it is a kerb, not a revetment. */
 export const MIN_ARMOUR_D50_M = 0.5
